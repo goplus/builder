@@ -1,8 +1,6 @@
-# sprite edit
+# Sprite Edit
 
-## Competitive product function
-
-![](static/ZGsTbtgrooicnSxwQg5cYcZnnpf.png)
+<img src="static/ZGsTbtgrooicnSxwQg5cYcZnnpf.png" width=400>
 
 ## Functional Overview
 
