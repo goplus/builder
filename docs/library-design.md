@@ -6,7 +6,7 @@
 | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | Sprite Library | Support for importing materials from the librarySupport for searching materialsSupport for local uploading of materials<br />🌟🌟Support for hovering over the clip to show multi-frame animation<br />🌟🌟Support for clicking on the SURPRISE button to randomize the clip. | Supports importing materials from the librarySupport for searching materials<br />🌟🌟Support for your own material library |
 
-## **STEM** Functional Design
+## STEM Functional Design
 
 | Module                 | Function                                                     | Description                                                  |
 | ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -29,9 +29,9 @@ Application: Frame Animation with Multi-Shape Sprite Material
 
 Switch image URL : a material corresponds to multiple shapes, each shape is saved with a svg, switch md5ext(.svg) to switch the image to realize the animation.
 
-#### Scratch Example
+#### Scratch Sprite Json Example
 
-```typescript
+```json
 [
     {
         "name": "Abby",
@@ -73,7 +73,7 @@ Switch image URL : a material corresponds to multiple shapes, each shape is save
 
 ### Other possible approaches
 
-#### generate gif animations
+#### option 1: generate gif animations
 
 Automatically generate animations on multiple images in the cloud and save the animations to show the animations directly instead of cutting them one by one.
 
@@ -85,7 +85,7 @@ Automatically generate animations on multiple images in the cloud and save the a
 
 ##### GIF.js example
 
-```
+```js
 import GIF from 'gif.js';
 
 function createGif() {
@@ -108,13 +108,13 @@ function createGif() {
 
 ```
 
-##### **Qiniu Dora Animate API**
+##### Qiniu Dora Animate API
 
 https://developer.qiniu.com/dora/5448/animate
 
 API
 
-```TypeScript
+```
 animate/duration/<duration>
        /merge/key/<encodedImageKey>
              /key/<encodedImageKey>
@@ -130,7 +130,7 @@ Params
 | <encodedImageKey> | N        | The source image key (Base64 encoded) of the synthetic GIF ensures that all the source images come from the same bucket. |
 | <effectType>      | N        | Define the playback order, with values of 0 and 1. (0: Loop playback in positive order; 1: Reverse loop playback; The default is 0. |
 
-#### generate real-time canvas animations
+#### option 2: generate real-time canvas animations
 
 | Library/Tool | Processing Area | Processing Method  | Brief Description                                            |
 | ------------ | --------------- | ------------------ | ------------------------------------------------------------ |
@@ -142,7 +142,7 @@ Need Sprite Chart to render.
 
 ### Step-by-step Comparison
 
-| Step | Scratch Step Description                                     | GIF.js                                                       | konva.js                                                     |
+| Step | Scratch                                                      | Gif(gif.js/dora)                                             | Canvas(konva.js)                                             |
 | ---- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | 1    | Contains the official default library's material array in the project json file. | Generate gif animations in the cloud and display them directly. | Create a canvas                                              |
 | 2    | Retrieve json data from the sprite-library component; pass it to the LibraryComponent. | Randomize import positions using a random function in Scratch. | Create real-time canvas animations for sprite graphics with multi-frame compositions |
@@ -166,7 +166,7 @@ There are three sources of homemade official sprite stock footage: GIFs, videos,
 
 Use FFmpeg
 
-```
+```js
 const { exec } = require('child_process');
 
 const generateFramesFromGIF = (inputGifPath, outputFramePrefix) => {
@@ -184,13 +184,11 @@ generateFramesFromGIF('input.gif', 'output_frame');
 
 ```
 
-
-
 #### Videos
 
 Use FFmpeg
 
-```
+```js
 const { exec } = require('child_process');
 
 const extractFramesFromVideo = (inputVideoPath, outputFramePrefix) => {
@@ -214,7 +212,7 @@ extractFramesFromVideo('input.mp4', 'output_frame');
 
 Use PIL (Python)
 
-```
+```python
 from PIL import Image
 
 def extract_sprites(sprite_sheet_path, sprite_size, output_prefix):
@@ -235,9 +233,9 @@ extract_sprites("sprite_sheet.png", (64, 64), "sprite")
 
 ### Ready-made sprite material library
 
-Free:https://q18vvabpxaw.feishu.cn/docx/JtrzdSWkkoJOybxQQJhclfPVnqd#doxcnp2UZQgMJiiNSyaYdqifLKg
+Free: https://www.aigei.com/game2d/character/dynamic_1
 
-Paid:https://q18vvabpxaw.feishu.cn/docx/JtrzdSWkkoJOybxQQJhclfPVnqd#doxcnoysErlmqQ57fSxHGxzRo4g
+Paid: https://craftpix.net/categorys/sprites/
 
 
 
@@ -258,7 +256,7 @@ https://developer.qiniu.com/kodo/1234/upload-types
 
 #### Form Upload Example
 
-```TypeScript
+```html
 <form method="post" action="http://upload.qiniup.com/"
  enctype="multipart/form-data">
   <input name="key" type="hidden" value="<resource_key>">
@@ -276,4 +274,4 @@ https://developer.qiniu.com/kodo/1234/upload-types
 
 - **How to realize sprite preview online:** Generate gif animations by Qiniu Dora animate API. 
 - **Official sprite material library construction:** Generate our official stock footage library from Gif and Video by FFmpeg, and from Sprite Chart by PIL(Python). The same library is used to reduce the development cost. Because it is an official material library production without offline problem, and we use server-side processing to reduce the overhead of the client.
-- **How to save the library:** Use form-upload method to store library in Qiniu's kodo
+- **How to save the library:** Use form-upload method to store library in Qiniu's kodo.
