@@ -8,16 +8,16 @@
 
 ## **STEM** Functional Design
 
-| **模块**                   | **功能名称**                                                 | **功能描述**                                                 |
-| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| **Sprite Library**(User)   | ✅ Add a Sprite file to your stage                            | You can select a Sprite file from the Sprite library, or you can import it locally, you can import jpg, png, gif |
-|                            | ✅Delete the Sprite file                                      | ✅Delete directly <br/>⭕️ expires 30 days after being placed in the recycle bin |
-|                            | ✅Find a Sprite file                                          | Support name search, fuzzy search, later can support multi-language |
-|                            | ✅ Online preview of the Multi-Modeling Sprite file           | The hover state plays a multistyled Sprite animation (gif)   |
-| **Sprite Library**(Market) | ⭕️ Publishing Sprite Files                                    | User can  publish their Sprite files to market               |
-|                            | ⭕️ download Sprite file                                       | User can download Sprite from market to their own local area |
-|                            | ✅Sprite Ranking                                              | Sort by heat, posting time, etc                              |
-| **Innovative**             | ⭕️ Support user sprite cloud material library<br/>⭕️ Sprite Favorites<br/> ✅Support for clicking on the SURPRISE button to randomly generate material<br/>✅Support for hiding sprite layers | Users upload their own Sprites to add to their own cloud library for easy recall, and users uploading gifs are automatically split into multi-graphic materials<br/>Users create their own Sprite favorites- Randomly import a clip from the clip market to the stage- User can choose whether a layer is visible or not |
+| Module                 | Function                                                     | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Sprite Library(User)   | ✅ Add a Sprite file to your stage                            | You can select a Sprite file from the Sprite library, or you can import it locally, you can import jpg, png, gif |
+|                        | ✅Delete the Sprite file                                      | ✅Delete directly <br/>⭕️ expires 30 days after being placed in the recycle bin |
+|                        | ✅Find a Sprite file                                          | Support name search, fuzzy search, later can support multi-language |
+|                        | ✅ Online preview of the Multi-Modeling Sprite file           | The hover state plays a multistyled Sprite animation (gif)   |
+| Sprite Library(Market) | ⭕️ Publishing Sprite Files                                    | User can  publish their Sprite files to market               |
+|                        | ⭕️ download Sprite file                                       | User can download Sprite from market to their own local area |
+|                        | ✅Sprite Ranking                                              | Sort by heat, posting time, etc                              |
+| Innovative             | ⭕️ Support user sprite cloud material library<br/>⭕️ Sprite Favorites<br/> ✅Support for clicking on the SURPRISE button to randomly generate material<br/>✅Support for hiding sprite layers | Users upload their own Sprites to add to their own cloud library for easy recall, and users uploading gifs are automatically split into multi-graphic materials<br/>Users create their own Sprite favorites- Randomly import a clip from the clip market to the stage- User can choose whether a layer is visible or not |
 
 # Difficulty analysis
 
@@ -136,7 +136,7 @@ There are three sources of homemade official sprite stock footage: GIFs, videos,
 
 #### GiFs
 
-| Implementation method | Tools/techniques | Advantages                                                   | Treatment area | 适用场景                                              |
+| Implementation method | Tools/techniques | Advantages                                                   | Treatment area | Scene                                                 |
 | --------------------- | ---------------- | ------------------------------------------------------------ | -------------- | ----------------------------------------------------- |
 | Diffraction (physics) | FFmpeg           | Highly efficient with multimedia data handling<br/>Supports multiple video and image formats, including GIF<br/>Highly customizable with command line arguments | Server-side    | More power in video and audio processing              |
 | Diffraction (physics) | ImageMagick      | Powerful in image editing and conversion<br/>Supports a wide range of image formats | Server-side    | Excellent performance in image editing and conversion |
