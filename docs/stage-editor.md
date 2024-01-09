@@ -60,4 +60,27 @@ Use the multi-layer concept that comes with konvajs to render the background and
         draggableImgObj.src = 'https://ts1.cn.mm.bing.net/th/id/R-C.55019df335721bf296a2aa14decf640d?rik=196S0D50ycT0ig&riu=http%3a%2f%2fpic3.nipic.com%2f20090701%2f1939028_155144097_2.jpg&ehk=1tdke6IVZ32tPnM8CDSfaY%2f6uVZJOPiyCYXZOZOXREY%3d&risl=&pid=ImgRaw&r=0';
     </script>
 ```
+## Steps
+1. Get spirte (json,spx) and background (json,spx) from the global state  
+## Process flow
+<img src="static/stage-editor-process-design.png" >
 
+## Object interface design [refer to scratch]
+```javascript
+class Sprite {
+    costumeIndex=0
+    costumes=[]
+}
+class Background extends Sprite {
+    constructor() {
+        super()
+        this.costumes=[]
+    }
+}
+class Role extends Sprite {
+    constructor() {
+        super()
+        this.costumes=[]
+    }
+}
+```
