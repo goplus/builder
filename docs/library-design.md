@@ -81,6 +81,7 @@ Automatically generate animations on multiple images in the cloud and save the a
 | ------------ | --------------- | ------------------ | ------------------------------------------------------------ |
 | GIF.js       | Client-Side     | JavaScript Library | Generates GIF animations directly in the browser using JavaScript. Suitable for small or client-heavy projects. |
 | ImageMagick  | Server-Side     | Command-Line Tool  | Creating complex GIFs or other image formats on the server.  |
+| Qiniu Dora   | Server-Side     | API                | Currently only available for images stored in Qiniu Limitations of the original image: Supported formats are JPEG and PNG The maximum number of frames supported is 20 The maximum supported image size is 1080*1080 |
 
 ##### GIF.js example
 
@@ -107,6 +108,28 @@ function createGif() {
 
 ```
 
+##### **Qiniu Dora Animate API**
+
+https://developer.qiniu.com/dora/5448/animate
+
+API
+
+```TypeScript
+animate/duration/<duration>
+       /merge/key/<encodedImageKey>
+             /key/<encodedImageKey>
+             ...
+       /effect/<effectType>
+```
+
+Params
+
+| Name              | Required | Description                                                  |
+| ----------------- | -------- | ------------------------------------------------------------ |
+| <duration>        | Y        | The interval between each frame of a GIF (unit: 0.01s) must be an integer greater than 0. |
+| <encodedImageKey> | N        | The source image key (Base64 encoded) of the synthetic GIF ensures that all the source images come from the same bucket. |
+| <effectType>      | N        | Define the playback order, with values of 0 and 1. (0: Loop playback in positive order; 1: Reverse loop playback; The default is 0. |
+
 #### generate real-time canvas animations
 
 | Library/Tool | Processing Area | Processing Method  | Brief Description                                            |
@@ -128,7 +151,7 @@ Need Sprite Chart to render.
 | 5    | Handle mouse hover over sprites in library-item for multi-frame materials; rotate icons and update URL in LibraryItemComponent. | -                                                            |                                                              |
 | 6    | Render image in LibraryItemComponent.                        | -                                                            |                                                              |
 
-## Official sprite material library construction
+## How to construct official sprite library
 
 ### Homemade sprite material
 
@@ -216,9 +239,41 @@ Free:https://q18vvabpxaw.feishu.cn/docx/JtrzdSWkkoJOybxQQJhclfPVnqd#doxcnp2UZQgM
 
 Paid:https://q18vvabpxaw.feishu.cn/docx/JtrzdSWkkoJOybxQQJhclfPVnqd#doxcnoysErlmqQ57fSxHGxzRo4g
 
- 
+
+
+## How to save the library
+
+### Qiniu Kodo
+
+> Kodo is a self-developed unstructured data storage management platform that supports both central and edge storage
+
+https://developer.qiniu.com/kodo/1234/upload-types
+
+#### Methods
+
+| Method         | Description                                                  | Advantage                                                    | Disadvantage                                                 |
+| -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Form upload    | Complete the upload of a file in a single HTTP POST request  | Ideal for simple application scenarios and small file sizes  | If the file size is large (larger than 1GB) or the network environment is poor, the HTTP connection may time out and the upload may fail. |
+| Chunked Upload | A Chunked Upload divides a file into multiple small chunks, each of which is uploaded separately in a separate HTTP request. | It is suitable for large file transfers, and uses sharding to avoid connection timeouts caused by the large amount of single HTTP data.Resumable upload is supported. | require multiple HTTP requests to complete the upload process, which will incur additional costsIncreased code complexity |
+
+#### Form Upload Example
+
+```TypeScript
+<form method="post" action="http://upload.qiniup.com/"
+ enctype="multipart/form-data">
+  <input name="key" type="hidden" value="<resource_key>">
+  <input name="x:<custom_name>" type="hidden" value="<custom_value>">
+  <input name="token" type="hidden" value="<upload_token>">
+  <input name="crc32" type="hidden" />
+  <input name="accept" type="hidden" />
+  <input name="file" type="file" />
+  <input type="submit" value="上传文件" />
+</form>
+```
+
 
 ## Recommended Solutions
 
-- **How to realize sprite preview online:** Generate gif animations by gif.js. The uploaded multi-frame images are stored in the cache and backend, and the images are asynchronously processed into GIF animations and stored, improving the invocation efficiency and reducing the rendering overhead.
+- **How to realize sprite preview online:** Generate gif animations by Qiniu Dora animate API. 
 - **Official sprite material library construction:** Generate our official stock footage library from Gif and Video by FFmpeg, and from Sprite Chart by PIL(Python). The same library is used to reduce the development cost. Because it is an official material library production without offline problem, and we use server-side processing to reduce the overhead of the client.
+- **How to save the library:** Use form-upload method to store library in Qiniu's kodo
