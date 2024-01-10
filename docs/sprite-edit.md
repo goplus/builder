@@ -161,5 +161,7 @@ this.konvaLayer.draw()
 ![](static/DVxkbGZJKowV6ax7y8HcSHL4nre.png)
 
 
-
+## Conclusion
+Do not use the independent drag-and-drop library used by scratch, because it does not directly support canvas content, the complexity of secondary encapsulation is high, and the rotation / scaling function is not directly integrated, so the canvas editing library is directly used to implement spirte edit.
+In the optional library, there are two mainstream canvas libraries 1. Konvajs 2. Fabric.js. In the demo test, it is found that the rendering speed of fabricjs is faster, but the performance of konvajs is better in terms of operational performance, and konvajs directly supports typescript, and the package is smaller. Although its concept is more, it is more in line with web development, so konvajs is adopted as the technical selection of spirte-edit.
 
