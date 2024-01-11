@@ -84,3 +84,5 @@ class Role extends Sprite {
     }
 }
 ```
+## Conclusion
+Rely on the multi-layer concept of konvajs to realize the separate rendering of concrete background and sprite.
