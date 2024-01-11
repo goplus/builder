@@ -28,6 +28,7 @@ DevTool will run in `localhost:5173/__devtools__/`
     ├── components   // Components
     ├── router       // Routing
     ├── store        // State/Storage Management
+        ├── modules  // State Modules
     └── util         // Utils
 ```
 
@@ -123,6 +124,8 @@ export const useUserStore = defineStore(
 
 
 ```
+
+
 
 
 ### Route Addition

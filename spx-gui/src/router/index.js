@@ -21,4 +21,13 @@ const router = createRouter({
     routes,
 });
 
-export default router;
+export const initRouter = async (app) => {
+    app.use(router)
+    // This is an example of a routing result that needs to be loaded.
+    await new Promise(resolve => {
+        setTimeout(() => {
+            resolve(true)
+        }, 2000);
+    })
+}
+
