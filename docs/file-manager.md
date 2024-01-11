@@ -1,5 +1,7 @@
 # FileManager
 
+## Competitive Analysis
+
 |                       | File System API                                              | JavaScript Tree                                              |
 | :-------------------- | :----------------------------------------------------------- | ------------------------------------------------------------ |
 | **Local Disk Access** | Provides a standard API for interacting with the local file system, supporting reading and writing local files and directories, as well as accessing the disk, but requires user authorization. | Requires uploading directories through file compression, unable to read and write to the disk in real-time, and necessitates abstracting the directory structure. |
@@ -9,60 +11,81 @@
 | **Flexibility**       | Can flexibly operate on files in the browser environment, avoiding direct handling of underlying operating system differences. | Has high customization capabilities, but may vary in different environments. |
 | **docs**              | [File System API - Web APIs](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) | -                                                            |
 
-Considering specific use cases, using the local file read/write disk method is not advisable. Therefore, we choose to manage files using an abstract JavaScript tree. We will save this directory structure and pass it to the backend in JSON format.
+## Final Selection: Using JavaScript Tree with State Management Tools
 
-In this structure, the `filename` will serve as the file name, `code` will generate a corresponding code file with the `.spx` extension for the sprite, and `config` represents the configuration file for that item, generating the corresponding `index.json` file.
+Considering specific use cases, we do not advise using the local file read/write disk method. Therefore, we choose to manage files using an abstract JavaScript tree. To better manage this file structure and allow everyone to access corresponding functions, we use state management tools corresponding to mainstream frameworks, such as Vue’s `pinia` or React’s `Redux`.
 
-Below is a possible demo. 
+Below is a type restriction for file management. In this structure, `name` will serve as the file name, `code` will generate a corresponding code file with the `.spx` extension, `file` will save related files (such as audio or images), and `config` represents the configuration file for that item, generating the corresponding `index.json` file.
 
-```js
-const sprites = [
-    {
-        filename: "Monkey",
-        code: `onStart => {\n\tsay "hello monkey"\n}`,
-        config: {
-            x: 10,
-            y: 20
-        }
-    },
-    {
-        filename: "Banana",
-        code: `onStart => {\n\tsay "hello banana"\n}`,
-        config: {
-            x: 10,
-            y: 20
-        }
+```typescript
+// types/FileType.ts
+
+export type SpriteType = {
+    name: string
+    code?: string
+    file?: FileType[]
+    config: {
+        [key: string]: any
     }
-]
-
-const sounds = [
-    {
-        filename: "audioName",
-        config: {
-            path: "xx.wav",
-            rate: 11025,
-            sampleCount: 2912
-        }
-    }
-]
-
-const backdrop = {
-    scenes: [
-        {
-            "name": "backdropName",
-            "path": "xx.png"
-        }
-    ],
-    zorder: [
-        "Monkey",
-        "Banana"
-    ]
 }
 
-const project = {
-    sprites,
-    sounds,
-    backdrop
+export type SoundType = {
+    name: string
+    file?: FileType[]
+    config: {
+        path: string
+        rate?: number
+        [key: string]: any
+    }
 }
+
+export type BackdropType = {
+    file?: FileType[]
+    [key: string]: any
+}
+
+
+export type ProjectType = {
+    title: string
+    sprites: SpriteType[]
+    sounds?: SoundType[]
+    backdrop: BackdropType
+}
+
+export type FileType = {
+    name: string
+    value: Blob | string
+    type: string
+}
+```
+
+Finally, we unify them in the repository to form a JavaScript tree for the spx project.
+
+```ts
+// stores/FileManager.ts
+
+export const useFileManagerStore = defineStore('FileManager', () => {
+    const spriteStore = useSpriteStore()
+    const { sprites } = storeToRefs(spriteStore)
+
+    const soundStore = useSoundStore()
+    const { sounds } = storeToRefs(soundStore)
+
+    const backdropStore = useBackdropStore()
+    const { backdrop } = storeToRefs(backdropStore)
+
+    const title = ref('')
+
+    const project = computed(() => ({
+        title: title.value,
+        sprites: sprites.value,
+        sounds: sounds.value,
+        backdrop: backdrop.value
+    }))
+    
+    return {
+        project: readonly(project)
+    }
+})
 ```
 
