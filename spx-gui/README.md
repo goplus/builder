@@ -19,6 +19,9 @@ Dependencies are as follows:
 
 DevTool will run in `localhost:5173/__devtools__/`
 
+## Workspace Setttings
+You need to use vscode's eslint extension and enable it to use eslint formatting code when saving
+
 ## Code Architecture
 ```arduino
 ├── public 

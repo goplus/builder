@@ -4,21 +4,20 @@
 
 <script setup>
 // ----------Import required packages / components-----------
-import {computed, onMounted, ref} from "vue";
-// import aaa;
+import { computed, onMounted, ref } from 'vue'
 
 // ----------props & emit-------------------------
-const props = defineProps({ spriteName: String }); // Props based on type declaration
-const emit = defineEmits(['update']);
+const props = defineProps({ spriteName: String }) // Props based on type declaration
+const emit = defineEmits(['update'])
 
 // ----------data related (reactive, ref..)-----------
-const count = ref(0);
+const count = ref(0)
 
 // ----------computed properties------------------
-const doubled = computed(() => count.value * 2);
+const doubled = computed(() => count.value * 2)
 
 // ----------lifecycle hooks-----------------------
-onMounted(() => { console.log('Component is mounted!'); });
+onMounted(() => { console.log('Component is mounted!') })
 
 // ----------other composition functions-----------
 // Such as useRouter, useStore..

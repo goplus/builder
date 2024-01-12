@@ -1,3 +1,3 @@
-import initAssets  from './assets';
+import initAssets from './assets'
 
-export { initAssets  };
+export { initAssets }
