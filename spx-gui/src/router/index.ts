@@ -1,6 +1,6 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 
-const routes: any = [
+const routes: Array<RouteRecordRaw> = [
   { path: "/", redirect: "/spx/home" },
   {
     path: "/spx/home",
