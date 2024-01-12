@@ -2,14 +2,14 @@
   <div>Display SpriteList</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // ----------Import required packages / components-----------
-import {computed, onMounted, ref} from "vue";
+import { computed, onMounted, ref } from "vue";
 // import aaa;
 
 // ----------props & emit-------------------------
 const props = defineProps({ spriteName: String }); // Props based on type declaration
-const emit = defineEmits(['update']);
+const emit = defineEmits(["update"]);
 
 // ----------data related (reactive, ref..)-----------
 const count = ref(0);
@@ -18,7 +18,9 @@ const count = ref(0);
 const doubled = computed(() => count.value * 2);
 
 // ----------lifecycle hooks-----------------------
-onMounted(() => { console.log('Component is mounted!'); });
+onMounted(() => {
+  console.log("Component is mounted!", props, doubled);
+});
 
 // ----------other composition functions-----------
 // Such as useRouter, useStore..
