@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
-    { path: '/', redirect: '/spx/homepage' },
+    { path: '/', redirect: '/spx/home' },
     {
-        path: '/spx/homepage',
-        name: 'SpxHomepage',
+        path: '/spx/home',
+        name: 'SpxHome',
         component: () =>
-            import("../components/SpxHomepage.vue"),
+            import("@/view/HomeView.vue"),
     },
     {
         path: '/spirte/list',
