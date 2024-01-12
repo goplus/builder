@@ -11,6 +11,7 @@
   "dependencies": {
     "axios": "^1.6.5",
     "pinia": "^2.1.7",
+    "pinia-plugin-persist": "^1.0.0",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
     "vue-router": "^4.2.5",
@@ -19,8 +20,13 @@
   "devDependencies": {
     "@vicons/ionicons5": "^0.12.0",
     "@vitejs/plugin-vue": "^4.5.2",
+    "@vue/runtime-dom": "^3.4.10",
+    "install": "^0.13.0",
     "naive-ui": "^2.37.3",
+    "npm": "^10.3.0",
     "scss": "^0.2.4",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3",
     "vfonts": "^0.0.3",
     "vite": "^5.0.10",
     "vite-plugin-vue-devtools": "^7.0.7"

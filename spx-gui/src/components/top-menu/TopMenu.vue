@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 17:10:53
- * @FilePath: /spx-gui-front-private/src/components/top-menu/TopMenu.vue
+ * @LastEditTime: 2024-01-12 21:42:31
+ * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description: 
 -->
 <template>
@@ -15,9 +15,9 @@
   />
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { h, ref } from "vue";
-import { NIcon, NMenu, NButton, NInput } from "naive-ui";
+import { NMenu, NButton, NInput } from "naive-ui";
 
 const menuOptions = [
   {
@@ -131,10 +131,9 @@ const menuOptions = [
 ];
 const activeKey = ref(null);
 
-function renderIcon(icon) {
-  return () => h(NIcon, null, { default: () => h(icon) });
-}
+// function renderIcon(icon) {
+//   return () => h(NIcon, null, { default: () => h(icon) });
+// }
 </script>
 
-<style type="scss" scoped>
-</style>
+<style type="scss" scoped></style>

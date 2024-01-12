@@ -1,9 +1,9 @@
 <!--
- * @Author: xuning
+ * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 17:09:40
- * @FilePath: /spx-gui-front-private/src/App.vue
+ * @LastEditTime: 2024-01-12 21:47:27
+ * @FilePath: /builder/spx-gui/src/App.vue
  * @Description: 
 -->
 <template>
@@ -13,13 +13,13 @@
         <TopMenu />
       </n-layout-header>
       <n-layout-content content-style="padding: 24px;">
-        <router-view :key="$route.fullPath"></router-view>
+        <router-view></router-view>
       </n-layout-content>
     </n-layout>
   </n-config-provider>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   NConfigProvider,
   NLayout,
@@ -35,9 +35,6 @@ const themeOverrides = {
   common: {
     primaryColor: "#FF0000",
     fontWeightStrong: "600",
-  },
-  Button: {
-    textColor: "#FF0000",
   },
   Button: {
     color: "#ED729EFF",
