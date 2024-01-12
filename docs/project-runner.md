@@ -1,107 +1,106 @@
 # Project runner
 
-# spx research
+# Module Overview
 
-## Github Address：[https://github.com/goplus/spx](https://github.com/goplus/spx)
+This module is part of the compiler implementation for an online editor. This document investigates the existing ecosystem tools of Spx and organizes the technical challenges and feasible solutions for implementing online compilation.
 
-## Startup problem in window10/11 environment
+# GitHub Repository
+- https://github.com/goplus/spx
+- https://github.com/goplus/gop
+- https://github.com/goplus/ispx
+- https://github.com/goplus/igop
 
-- spx cannot be compiled normally in window environment
+# Client-Side vs. Server-Side Compilation Comparison
 
-  - After replacing the Go version with 1.18, it prompts that the C compilation environment is missing
-    - download mingW（https://qzone.work/talks/656.html）
-  - The mingw version is too new, causing startup errors
-    - Currently available mingw versions->11.2.0
-  - Prompt for lack of alc.h header file
-    - Download OpenAL and configure environment variables [https://www.openal.org/downloads/](https://www.openal.org/downloads/)
-    - No AL/alc.h
-      > Manually create the AL folder and import the include directory in the openal directory into AL.
-      >
-    - ld.exe cannot find AL32
-      > C:/ProgramData/mingw64/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe:  cannot find -lOpenAL32: No such file or directory collect2.exe: error: ld returned 1 exit statusd
-      >
+## Client-Side Compilation
 
-      - Revise alc_notandroid.go
-- After completing the above configuration, execute gop run. The game can be compiled successfully, but the warning message still exists
+**Advantages:**
 
-> ./wrappers.h:22:16: warning: 'alcGetString' redeclared without dllimport attribute: previous dllimport ignored [-Wattributes]
-> 22 | const ALCchar *alcGetString( ALCdevice *device, ALCenum param );
-> |                ^~~~~~~~~~~~
+1. Immediate Compilation and Execution: Users can compile and run code immediately in the same environment, enhancing user experience.
+2. Reduced Server Load: Compilation occurs on the user's device, not occupying server resources.
+3. Offline Capability: The application can operate offline without needing to interact with the server.
+4. Real-time Feedback: Users can see the results of code changes instantly, aiding in learning and debugging.
 
-# ispx project research
+**Disadvantages:**
 
-## Github Address：[https://github.com/goplus/ispx](https://github.com/goplus/ispx)
+1. Performance Limitations: Client-side devices might not perform as well as servers, especially for complex compilation tasks.
+2. Security Concerns: Exposing the compiler to the client may pose security risks.
+3. Compatibility and Consistency: Different devices and browsers among users may lead to variations in compilation behavior.
+4. Increased Frontend Complexity: Implementing file assembly, reading, and compilation functions on the frontend is required.
 
-## Startup problem
+## Server-Side Compilation
 
-- problem ：`go get [github.com/goplus/ispx](autolinkhttp://github.com/goplus/ispxautolink)` 、`go install github.com/goplus/ispx@latest` fail
-- Solution: Download ispx source code, cd ispx, go install
+**Advantages:**
 
-## ispx compilation principle
+1. Unified Compilation Environment: The server provides a consistent compilation environment, ensuring uniformity in compilation results.
+2. Powerful Processing Capability: Servers typically have more computing power than clients, suitable for complex compilation tasks.
+3. Enhanced Security: Compilation on the server reduces security risks on the client side.
+4. Convenient File Management: Servers are better suited for file storage and management.
 
-- ispx uses igop to convert spx (classfile) into gop code, and then uses igop to run the gop code to realize the operation of spx
+**Disadvantages:**
 
-# Goplus playground research
+1. Response Time: Uploading files from the client to the server and sending back compilation results may cause delays.
+2. Server Load: All compilation tasks occurring on the server can increase its load.
+3. Network Dependency: Continuous network connection is required for file transfer and receiving compilation results.
+4. Lack of Immediate Feedback: Users may not see the effects of their changes right away, affecting the experience.
 
-## Github Address：[https://github.com/goplusjs/play](https://github.com/goplusjs/play)
+## Summary
 
-## Startup problem
+### **Supported**
 
-- Problem: Online playground cannot start normally
-- Solution: Because I used other versions of goterjs when running other projects before, I can execute the build.sh script after replacing the version.
+> Client-side compilation has unique advantages
 
-## Principle
+| Feature                 | network dependency | response speed | real time feedback |
+| ----------------------- | ------------------ | -------------- | ------------------ |
+| Client compilation      | no                 | fast           | yes                |
+| Server side compilation | yes                | slow           | no                 |
 
-The implementation principle of [https://jsplay.goplus.org/](https://jsplay.goplus.org/) is to run the igop interpreter on js (GoperJS compilation) or wasm (Go official compilation). When running the code, igop first compiles the Go+ code into Go code (compiled by github. com/goplus/gop/cl implementation), and then execute the Go code in interpreted mode (src -> ast -> types -> ssa -> reflect call). This process is actually similar to igop running on the local platform, except that igop itself is compiled into js/wasm and run on the web platform (because it runs on the web, you can call the syscall/js library to operate canvas)
+# Front-End Storage Solutions Research
 
-# Wspx
+## Existing Web Storage Technologies
+| Technology             | Capacity Limit                                  | Data Persistence                                  | Access Speed                                      | Sync/Async   | Security                                       | Use Cases                                   |
+|------------------------|-------------------------------------------------|---------------------------------------------------|---------------------------------------------------|--------------|------------------------------------------------|---------------------------------------------|
+| LocalStorage           | 5MB per domain                                  | Persistent until browser cache is cleared         | Usually fast                                      | Synchronous  | Not suitable for sensitive data               | Storing small amounts of non-sensitive data |
+| SessionStorage         | 5MB per domain                                  | Persistent only during browser session            | Usually fast                                      | Synchronous  | Not suitable for sensitive data               | Storing small amounts of non-sensitive data |
+| Cookies                | 4KB per domain                                  | Expirable, but can be cleared by user             | Fast, but sent with every HTTP request            | Synchronous  | Can be set to HTTPS only to enhance security | Storing small pieces of data like user authentication |
+| IndexedDB              | Several hundred MB or more, depending on user's browser and disk space | Persistent storage                               | Fast, but can be slower due to asynchronicity     | Asynchronous | Not suitable for sensitive data               | Storing large amounts or structured text data |
+| Cache API              | Depends on user's disk space                    | Persistent, but can be cleared by user            | Depends on data size and disk speed               | Asynchronous | Not suitable for sensitive data               | Caching requests and supporting offline content |
+| File System Access API | Depends on user's disk space                    | Persistent, but can be cleared by user            | Depends on data size and disk speed               | Asynchronous | Provides more direct file access, but requires user permission | Applications that interact with user's local files |
 
-Online compiler for spx projects based on ispx
+## Compare three technologies based on different perspectives
+| Perspectives                | IndexedDB                                                   | File System Access API                                          | Cache API                                            |
+|-----------------------------|------------------------------------------------------------|----------------------------------------------------------------|-----------------------------------------------------|
+| Basic Compatibility         | Supported by all mainstream browsers, but implementation details may vary | Mainly supported by Chrome, lower or no support in Firefox, Safari, and Edge | Part of Service Workers, well supported in mainstream browsers |
+| Performance and Limitations | Performance and database size limits vary by browser       | Usage may be limited, especially for security and privacy reasons | Storage policies and limitations may slightly differ |
+| Mobile Device Compatibility | Well supported on mobile versions of Chrome and Firefox, potential issues with Safari | Mainly supported on Chrome, other browsers offer lower or no support | Generally well-supported on mobile browsers         |
+| Data Synchronization        | Requires custom sync logic with the server; suitable for complex data structures | Sync is more complex, often manual; interacts directly with local files | Mainly used for resource caching, not designed specifically for data sync |
+| Offline Support             | Excellent for offline data storage; supports large and structured data | Direct read and write to local files; very suitable for offline operations | Key component for offline access in PWAs; caches network requests and responses |
+| Storage Space Management    | Large storage capacity, decided by the browser; monitoring needed to avoid exceeding limits | Depends on the user's local file system; potentially very large, but management is complex | Managed by the browser's caching mechanisms; constrained by browser cache limits |
+| User Prompt                 | Usually no user prompt required, operates silently in the background | Explicit user permission needed to access files; requires direct and ongoing user interaction | No user prompt needed for caching storage; operates silently in the background |
+| User Interface              | Operates in the background; does not directly affect the user interface | Requires direct user interaction, such as file selectors and other UI elements | Invisible to the user; operates silently in the background |
+| Experience Design           | Indirectly impacts user experience; very useful for complex data processing within apps | Significantly affects user experience; user permission prompts and file management are core aspects | Improves user experience by speeding up load times and providing offline content access |
+## Summary
 
-- Difficulty: Implementation of file system objects
-  - github file system object (implemented)
-  - Receive from cloud server (to be implemented)
-    - Refer to the key code of the file system object implemented by github and rewrite the three methods of FileSystem
-  - User local files (default)
-    - Problem: The local file system cannot be obtained in the wasm environment
-    - Solution: TODO
-  - localstorage on web side
+### **Supported**
 
-# Research on front-end file browsers
+The following web API was chosen to support a generic browser FileSystem.
 
-## envision prototype
+| Feature                                                                     | Firefox | Chrome | Edge | Safari | IE |
+| --------------------------------------------------------------------------- | ------- | ------ | ---- | ------ | -- |
+| [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) | yes     | yes    | yes  | yes    | no |
 
-![](static/R6zcbvMlToqgy2xM0XScQCKgn5e.png)
+### **Rejected**
 
-Various files defined by the project are received through the front end and stored in localstorage on the web side. When you click run, each file is read from localstorage and compiled and run.
+The following APIs were all considered in choosing a backend to support
 
-## Survey of existing components
-
-### angular-filemanager
-
-**Github**** Address：**[https://github.com/joni2back/angular-filemanager](https://github.com/joni2back/angular-filemanager)
-
-**Demo：**
-
-![](static/OmwEbqwC6oXeIuxLEjkc38oGnXd.png)
-
-analyze:
-
-- Support file upload
-- Multiple files support
-- Directory tree navigation
-- Search files
-- Copy, move, rename (interactive user experience)
-- Delete, edit, preview, download
-
-### eact-sortable-tree-theme-file-explorer
-
-**Github**** Address：**[https://github.com/frontend-collective/react-sortable-tree-theme-file-explorer](https://github.com/frontend-collective/react-sortable-tree-theme-file-explorer)
-
-**Demo：**
-
-![](static/Np5VbTIzQoiebyx701tcVJYonKd.png)
+| Rejected APIs                                                                            | Reason                 |
+| ---------------------------------------------------------------------------------------- | ---------------------- |
+| [LocalStorage](https://developer.mozilla.org/en/docs/Web/API/Window/localStorage)        | Limited storage        |
+| [SessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) | Limited storage        |
+| [Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)                     | Limited storage        |
+| [Cache API](https://developer.mozilla.org/en-US/docs/Web/API/Cache)                      | Requires a request URL |
+| [File System Access API](https://web.dev/file-system-access/)                            | Chromium only          |
 
 # participants
 
-ou_5f3689ae1b7c64b4fccefb439fd6bec4ou_6c67722a7531b1003e86b28943ee21a8
+[a-linye](https://github.com/a-linye), [motongxue](https://github.com/motongxue).
