@@ -5,7 +5,11 @@
 
 Dependencies are as follows:
 ```node
-"axios": "^1.6.5",  
+"axios": "^1.6.5",
+"file-saver": "^2.0.5",
+"jszip": "^3.10.1",
+"localforage": "^1.10.0",
+"pinia": "^2.1.7", 
 "vue": "^3.3.11",  
 "vue-router": "^4.2.5",  
 "vuex": "^4.0.2"
