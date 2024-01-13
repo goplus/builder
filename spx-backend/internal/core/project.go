@@ -27,12 +27,12 @@ type CloudFile struct {
 }
 
 
-type In struct {
+type Project struct {
 	bucket *blob.Bucket
 	db     *sql.DB
 }
 
-func New(ctx context.Context, conf *Config) (ret *In, err error) {
+func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	if conf == nil {
 		conf = new(Config)
 	}
@@ -56,18 +56,18 @@ func New(ctx context.Context, conf *Config) (ret *In, err error) {
 	if err != nil {
 		return
 	}
-	return &In{bucket, db}, nil
+	return &Project{bucket, db}, nil
 }
 
 
 // Find file address from db
-func (i *In) CloudFile(ctx context.Context, id string) (*CloudFile,error) {
+func (p *Project) FileInfo(ctx context.Context, id string) (*CloudFile,error) {
 	if id != "" {
 		var address string
 		// table need fill
 		//TODO
     	query := "SELECT address FROM table WHERE id = ?"
-    	err := i.db.QueryRow(query, id).Scan(&address)
+    	err := p.db.QueryRow(query, id).Scan(&address)
     	if err != nil {
         	return nil, err
     	}

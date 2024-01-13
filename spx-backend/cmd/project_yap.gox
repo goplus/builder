@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	in *core.In
+	p *core.Project
 )
 
 todo := context.TODO()
 
-get "/load/cloud/:id", ctx => {
+get "/code/:id", ctx => {
 	id := ctx.param("id")
-	cloudFile, _ := in.CloudFile(todo, id)
+	cloudFile, _ := p.FileInfo(todo, id)
 	ctx.json {
 		"id": ctx.param("id"),
 		"address":cloudFile.Address,
@@ -21,6 +21,6 @@ get "/load/cloud/:id", ctx => {
 
 
 conf := &core.Config{}
-in, _ = core.New(todo, conf)
+p, _ = core.New(todo, conf)
 
 run ":8080"
