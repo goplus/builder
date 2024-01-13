@@ -1,0 +1,26 @@
+import (
+	"context"
+
+	"github.com/goplus/builder/internal/core"
+)
+
+var (
+	in *core.In
+)
+
+todo := context.TODO()
+
+get "/load/cloud/:id", ctx => {
+	id := ctx.param("id")
+	cloudFile, _ := in.CloudFile(todo, id)
+	ctx.json {
+		"id": ctx.param("id"),
+		"address":cloudFile.Address,
+	}
+}
+
+
+conf := &core.Config{}
+in, _ = core.New(todo, conf)
+
+run ":8080"
