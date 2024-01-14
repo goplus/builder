@@ -12,6 +12,11 @@ const routes: Array<RouteRecordRaw> = [
     name: "SpriteList",
     component: () => import("../components/sprite-list/SpriteList.vue"),
   },
+  {
+    path: '/editor/homepage',
+    name: 'EditorHomepage',
+    component: () => import("../view/EditorHomepage.vue"),
+  }
 ];
 
 const router = createRouter({

@@ -4,7 +4,7 @@
  * @LastEditors: Xu Ning
  * @LastEditTime: 2024-01-12 21:47:27
  * @FilePath: /builder/spx-gui/src/App.vue
- * @Description: 
+ * @Description:
 -->
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
@@ -65,6 +65,13 @@ const themeOverrides = {
 </script>
 
 <style type="scss">
+
+@import './assets/fonts/font.css';
+
+body {
+  font-family: ChauPhilomeneOne, sans-serif;
+}
+
 .n-layout-header{
   background: #696a5a;
   height: 80px;
