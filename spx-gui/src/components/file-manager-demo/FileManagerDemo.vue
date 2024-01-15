@@ -1,10 +1,11 @@
 <template>
     <h1>FileManager</h1>
+    <h1>{{ title }}</h1>
     <h2>Load Zip</h2>
-    <input type="file" name="" id="" @change="loadProjectFromZip($event.target.files[0])" accept=".zip">
+    <input type="file" name="" id="" @change="getZip" accept=".zip">
 
     <h2>Save Zip to Computer</h2>
-    <button type="button" @click="saveProject2Computer">save</button>
+    <button type="button" @click="saveProjectToComputer">save</button>
 
     <h2>Add Sprite</h2>
     <label for="name">SpriteName: </label>
@@ -39,19 +40,24 @@
 </template>
 
 
-<script setup>
+<script setup lang="ts">
 import Sprite from "@/class/sprite";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useProjectStore } from '@/store/project'
 import { useSpriteStore } from "@/store/sprite";
 import { storeToRefs } from "pinia";
 
-const { loadProjectFromZip, saveProject2Computer, saveProject, watchProjectChange } = useProjectStore()
-const { project } = storeToRefs(useProjectStore())
+const { getDirPathFromZip, loadProject, saveProjectToComputer, saveProject, watchProjectChange } = useProjectStore()
+const { project, title } = storeToRefs(useProjectStore())
 const { addSprite, removeSpriteByRef } = useSpriteStore()
 const spriteName = ref("")
 const code = ref("")
-const file = ref(null)
+const file: any = ref(null)
+
+async function getZip(e: any) {
+    const dir = await getDirPathFromZip(e.target.files[0])
+    loadProject(dir)
+}
 
 function addASprite() {
     addSprite(new Sprite(spriteName.value, file.value.files, code.value))
@@ -61,19 +67,25 @@ function addASprite() {
 }
 
 watchProjectChange(() => {
-    console.log('save')
+    console.log('project changed');
+
     saveProject()
 })
 
 // the window will shake because of the change of the URL
 // use this to avoid
 const map = new Map()
-const file2URL = (file) => {
+const file2URL = (file: File) => {
     if (!map.has(file.name)) {
         map.set(file.name, URL.createObjectURL(file))
     }
     return map.get(file.name)
 }
+
+onMounted(async () => {
+    // const dir = await getDirPathFromLocal('1')
+    // loadProject(dir!)
+})
 </script>
 
 

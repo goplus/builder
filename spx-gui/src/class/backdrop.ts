@@ -12,11 +12,21 @@ export default class Backdrop {
     static ROOT_PATH = "assets/"
 
     /**
+     * The files of the backdrop.
+     */
+    files: File[];
+
+    /**
+     * The config of the backdrop.
+     */
+    config: Record<string, any>;
+
+    /**
      * @constructor create a new backdrop
      * @param {File[]} files the files of the backdrop
-     * @param {any} config the config of the backdrop using json to generate `index.json`
+     * @param {Record<string, any>} config the config of the backdrop using json to generate `index.json`
      */
-    constructor(files, config = {}) {
+    constructor(files: File[] = [], config: Record<string, any> = {}) {
         this.files = files
         this.config = config
     }
@@ -25,7 +35,7 @@ export default class Backdrop {
      * Get the directory of the backdrop.
      */
     get dir() {
-        const dir = {}
+        const dir: Record<string, any> = {}
         dir[`${this.path}index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}${file.name}`] = file
@@ -46,4 +56,4 @@ export default class Backdrop {
  * @param {any} obj 
  * @returns {boolean}
  */
-export const isBackdrop = (obj) => obj instanceof Backdrop
+export const isBackdrop = (obj: any) => obj instanceof Backdrop

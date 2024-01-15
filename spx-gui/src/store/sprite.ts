@@ -1,4 +1,4 @@
-import { ref } from "vue"
+import { Ref, ref } from "vue"
 import { defineStore } from "pinia"
 import Sprite, { isSprite } from "@/class/sprite"
 
@@ -7,7 +7,7 @@ export const useSpriteStore = defineStore('sprite', () => {
     /**
      * All sprites in project.
      */
-    const sprites = ref([])
+    const sprites: Ref<Sprite[]> = ref([])
 
     /**
      * Set sprites in project.
@@ -17,7 +17,7 @@ export const useSpriteStore = defineStore('sprite', () => {
      * setSprite([new Sprite('sound1', [])])
      * setSprite([])    // You can also reset sprites by passing an empty array.
      */
-    function setSprite(sps) {
+    function setSprite(sps: Sprite[]) {
         if (sps.some(sprite => !isSprite(sprite))) {
             throw new Error('All sprites must be an instance of Sprite.')
         }
@@ -26,9 +26,9 @@ export const useSpriteStore = defineStore('sprite', () => {
 
     /**
      * Add sprite to project.
-     * @param {Sprite} sps 
+     * @param {Sprite[]} sps 
      */
-    function addSprite(...sps) {
+    function addSprite(...sps: Sprite[]) {
         if (sps.some(sprite => !isSprite(sprite))) {
             throw new Error('All sprites must be an instance of Sprite.')
         }
@@ -42,16 +42,16 @@ export const useSpriteStore = defineStore('sprite', () => {
      * Remove sprite from project by name.
      * @param {string} name 
      */
-    function removeSpriteByName(name) {
+    function removeSpriteByName(name: string): void {
         const index = sprites.value.findIndex(sprite => sprite.name === name)
-        sprites.value.splice(index, 1)
+        index > -1 && sprites.value.splice(index, 1)
     }
 
     /**
      * Remove sprite from project by reference.
      * @param {Sprite} sprite 
      */
-    function removeSpriteByRef(sprite) {
+    function removeSpriteByRef(sprite: Sprite): void {
         if (!isSprite(sprite)) {
             throw new Error('Sprite must be an instance of Sprite.')
         }
@@ -65,7 +65,7 @@ export const useSpriteStore = defineStore('sprite', () => {
      * @param {Sprite[]} array
      * @returns {boolean}
      */
-    function isSpriteExistByName(name, array = sprites.value) {
+    function isSpriteExistByName(name: string, array: Sprite[] = sprites.value): boolean {
         return array.some(sprite => sprite.name === name)
     }
 
@@ -75,7 +75,7 @@ export const useSpriteStore = defineStore('sprite', () => {
      * @param {Sprite[]} array
      * @returns {boolean}
      */
-    function isSpriteExistByRef(sprite, array = sprites.value) {
+    function isSpriteExistByRef(sprite: Sprite, array: Sprite[] = sprites.value): boolean {
         if (!isSprite(sprite)) {
             throw new Error('Sprite must be an instance of Sprite.')
         }
@@ -86,7 +86,7 @@ export const useSpriteStore = defineStore('sprite', () => {
      * Get sprite from project by name.
      * @param {string} name
      */
-    function getSpriteByName(name) {
+    function getSpriteByName(name: string): Sprite | null {
         const s = sprites.value.find(sprite => sprite.name === name) || null
         return s
     }

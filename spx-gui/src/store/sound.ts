@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly, Ref } from 'vue'
 import { defineStore } from 'pinia'
 import Sound, { isSound } from '@/class/sound'
 
@@ -6,7 +6,7 @@ export const useSoundStore = defineStore('sound', () => {
     /**
      * All sounds in project.
      */
-    const sounds = ref([])
+    const sounds: Ref<Sound[]> = ref([])
 
     /**
      * Set sounds in project.
@@ -16,7 +16,7 @@ export const useSoundStore = defineStore('sound', () => {
      * setSound([new Sound('sound1', [])])
      * setSound([])    // You can also reset sounds by passing an empty array.
      */
-    function setSound(snds) {
+    function setSound(snds: Sound[]) {
         if (snds.some(sound => !isSound(sound))) {
             throw new Error('All sounds must be an instance of Sound.')
         }
@@ -25,9 +25,9 @@ export const useSoundStore = defineStore('sound', () => {
 
     /**
      * Add sound to project.
-     * @param {Sound} snds
+     * @param {Sound[]} snds
      */
-    function addSound(...snds) {
+    function addSound(...snds: Sound[]) {
         if (snds.some(sound => !isSound(sound))) {
             throw new Error('All sounds must be an instance of Sound.')
         }
@@ -41,19 +41,21 @@ export const useSoundStore = defineStore('sound', () => {
      * Remove sound from project by name.
      * @param {string} name 
      */
-    function removeSoundByName(name) {
-        sounds.value = sounds.value.filter(sound => sound.name !== name)
+    function removeSoundByName(name: string) {
+        const index = sounds.value.findIndex(sound => sound.name === name)
+        index > -1 && sounds.value.splice(index, 1)
     }
 
     /**
      * Remove sound from project by reference.
      * @param {Sound} sound 
      */
-    function removeSoundByRef(sound) {
+    function removeSoundByRef(sound: Sound) {
         if (!isSound(sound)) {
             throw new Error('Sound must be an instance of Sound.')
         }
-        sounds.value = sounds.value.filter(s => s !== sound)
+        const index = sounds.value.indexOf(sound)
+        index > -1 && sounds.value.splice(index, 1)
     }
 
     /**
@@ -61,9 +63,9 @@ export const useSoundStore = defineStore('sound', () => {
      * @param {string} name 
      * @returns {Sound}
      */
-    function getSoundByName(name) {
+    function getSoundByName(name: string): Sound | null {
         const s = sounds.value.find(sound => sound.name === name) || null
-        return readonly(s)
+        return s
     }
 
     /**
@@ -72,7 +74,7 @@ export const useSoundStore = defineStore('sound', () => {
      * @param {Sound[]} array
      * @returns {boolean}
      */
-    function isSoundExistByName(name, array = sounds.value) {
+    function isSoundExistByName(name: string, array: Sound[] = sounds.value): boolean {
         return array.some(sound => sound.name === name)
     }
 
@@ -82,7 +84,7 @@ export const useSoundStore = defineStore('sound', () => {
      * @param {Sound[]} array
      * @returns {boolean}
      */
-    function isSoundExistByRef(sound, array = sounds.value) {
+    function isSoundExistByRef(sound: Sound, array: Sound[] = sounds.value): boolean {
         if (!isSound(sound)) {
             throw new Error('Sound must be an instance of Sound.')
         }

@@ -12,12 +12,27 @@ export default class Sound {
     static ROOT_PATH = "assets/sounds/"
 
     /**
+     * The name of the sound.
+     */
+    name: string;
+
+    /**
+     * The files of the sound.
+     */
+    files: File[];
+
+    /**
+     * The config of the sound.
+     */
+    config: Record<string, any>;
+
+    /**
      * @constructor create a new sound
      * @param {string} name the name of the sound
      * @param {File[]} files the files of the sound
-     * @param {any} config the config of the sound using json to generate `index.json`
+     * @param {Record<string, any>} config the config of the sound using json to generate `index.json`
      */
-    constructor(name, files, config = {}) {
+    constructor(name: string, files: File[], config: Record<string, any> = {}) {
         this.name = name
         this.files = files
         this.config = config
@@ -27,7 +42,7 @@ export default class Sound {
      * Get the directory of the sound.
      */
     get dir() {
-        const dir = {}
+        const dir: Record<string, any> = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file
@@ -48,4 +63,4 @@ export default class Sound {
  * @param {any} obj 
  * @returns {boolean}
  */
-export const isSound = (obj) => obj instanceof Sound
+export const isSound = (obj: any) => obj instanceof Sound

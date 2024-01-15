@@ -11,13 +11,33 @@ export default class Sprite {
     static ROOT_PATH = "assets/sprites/"
 
     /**
+     * The name of the sprite.
+     */
+    name: string;
+
+    /**
+     * The files of the sprite.
+     */
+    files: File[];
+
+    /**
+     * The code of the sprite.
+     */
+    code: string;
+
+    /**
+     * The config of the sprite.
+     */
+    config: Record<string, any>;
+
+    /**
      * @constructor create a new sprite
      * @param {string} name the name of the sprite
      * @param {File[]} files the files of the sprite
      * @param {string} code the code of the sprite
-     * @param {any} config the config of the sprite using json to generate `index.json`
+     * @param {Record<string, any>} config the config of the sprite using json to generate `index.json`
      */
-    constructor(name, files, code = "", config = {}) {
+    constructor(name: string, files: File[], code: string = "", config: Record<string, any> = {}) {
         this.name = name
         this.files = files
         this.code = code
@@ -28,7 +48,7 @@ export default class Sprite {
      * Get the directory of the sprite.
      */
     get dir() {
-        const dir = {}
+        const dir: Record<string, any> = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file
@@ -50,4 +70,4 @@ export default class Sprite {
  * @param {any} obj 
  * @returns {boolean}
  */
-export const isSprite = (obj) => obj instanceof Sprite
+export const isSprite = (obj: any) => obj instanceof Sprite
