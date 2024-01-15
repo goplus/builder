@@ -12,7 +12,7 @@ Dependencies are as follows:
 "pinia": "^2.1.7", 
 "vue": "^3.3.11",  
 "vue-router": "^4.2.5",  
-"vuex": "^4.0.2"
+"pinia": "^2.1.7"
 ```
 
 ## Project Execution
@@ -32,6 +32,7 @@ DevTool will run in `localhost:5173/__devtools__/`
     ├── components   // Components
     ├── router       // Routing
     ├── store        // State/Storage Management
+        ├── modules  // State Modules
     └── util         // Utils
 ```
 
@@ -39,7 +40,7 @@ DevTool will run in `localhost:5173/__devtools__/`
 ### Directory Naming Convention
 1. Use lowercase, separated by hyphens, e.g., sprite-library
 
-### Component Development Standards
+### Component Standards
 1. CamelCase naming
 2. The order of tags is unified as `<script>, <template>, <style>`
 3. Use the Composition API for coding
@@ -91,6 +92,45 @@ Example of component invocation:
 import SpriteList from "@/components/sprite-list/SpriteList.vue";
 </script>
 ```
+
+### Store Standards
+1. The returned value of `defineStore () `is named using the name of store.
+2. This value needs to start with `use` and end with `Store`. for example, `useAssetStore`, `useUserStore`, `useStyleStore`
+3. The first parameter is the unique ID of the Store in the application
+3. Use `Setup Store` to write Store
+4. Read-only properties in store are exposed after being wrapped with `vue.readonly`
+```javascript
+export const useUserStore = defineStore(
+    'user',
+    () => {
+        // ----------state------------------------------------
+        const token = ref("");
+        const username = ref("");
+
+        // ----------getters------------------------------------
+        const getFullToken = computed(() => "Bear " + token.value)
+
+        // ----------actions------------------------------------
+        const setToken = (_token) => {
+            token.value = _token
+        }
+        return {
+        //  state
+            username:readonly(username),
+            token: readonly(token),
+        //  getters
+            getFullToken,
+        //  actions
+            setToken
+        }
+    }
+)
+
+
+```
+
+
+
 
 ### Route Addition
 Adding SpriteList as an example:

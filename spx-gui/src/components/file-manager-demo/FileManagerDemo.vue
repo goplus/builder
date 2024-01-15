@@ -1,6 +1,5 @@
 <template>
-    <h1>FileManager</h1>
-    <h1>{{ title }}</h1>
+    <h1>ProjectTitle:{{ title }}</h1>
     <h2>Load Zip</h2>
     <input type="file" name="" id="" @change="getZip" accept=".zip">
 
@@ -43,8 +42,8 @@
 <script setup lang="ts">
 import Sprite from "@/class/sprite";
 import { ref, onMounted } from "vue";
-import { useProjectStore } from '@/store/project'
-import { useSpriteStore } from "@/store/sprite";
+import { useProjectStore } from '@/store/modules/project'
+import { useSpriteStore } from "@/store/modules/sprite";
 import { storeToRefs } from "pinia";
 
 const { getDirPathFromZip, loadProject, saveProjectToComputer, saveProject, watchProjectChange } = useProjectStore()
@@ -60,7 +59,7 @@ async function getZip(e: any) {
 }
 
 function addASprite() {
-    addSprite(new Sprite(spriteName.value, file.value.files, code.value))
+    addSprite(new Sprite(spriteName.value, Array.from(file.value.files), code.value))
     spriteName.value = ""
     code.value = ""
     file.value.value = null
