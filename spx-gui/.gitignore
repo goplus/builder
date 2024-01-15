@@ -11,20 +11,23 @@ node_modules
 .DS_Store
 dist
 dist-ssr
-coverage
 *.local
+.eslintcache
+report.html
 
-/cypress/videos/
-/cypress/screenshots/
+yarn.lock
+npm-debug.log*
+.pnpm-error.log*
+.pnpm-debug.log
+tests/**/coverage/
+
+# Local debug
+.vscode/launch.json
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
-
-*.tsbuildinfo
+tsconfig.tsbuildinfo

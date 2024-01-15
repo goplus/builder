@@ -1,3 +1,11 @@
+<!--
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-01-15 09:16:18
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-15 09:50:04
+ * @FilePath: /builder/spx-gui/src/components/loading/Loading.vue
+ * @Description: 
+-->
 <template>
     <div class="loading">
         <div>
@@ -6,7 +14,7 @@
         <p>SPX GUI 正在加载中...</p>
     </div>
 </template>
-<script setup>
+<script lang="ts" setup>
 import Logo from "@/assets/logo.png"
 </script>
 <style>
