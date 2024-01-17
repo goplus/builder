@@ -1,9 +1,9 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 09:16:18
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 09:50:04
- * @FilePath: /builder/spx-gui/src/components/loading/Loading.vue
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-16 11:10:25
+ * @FilePath: /spx-gui-front-private/src/components/loading/Loading.vue
  * @Description: 
 -->
 <template>
@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import Logo from "@/assets/logo.png"
 </script>
-<style>
+<style scoped>
 .loading {
     position: fixed;
     top: 0;
