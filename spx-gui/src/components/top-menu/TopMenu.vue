@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-01-17 18:12:15
+ * @LastEditTime: 2024-01-17 21:26:30
  * @FilePath: /spx-gui-front-private/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -19,7 +19,7 @@
 import { h, ref } from "vue";
 import { NMenu, NButton, NInput, NAvatar, NIcon, NDropdown } from "naive-ui";
 import { useI18n } from "vue-i18n";
-import { useLanguageStore } from "store/modules/language";
+import { useLanguageStore } from "@/store/modules/language";
 import Logo from "@/assets/logo.png";
 import { ArrowLeftOutlined as ReturnIcon } from "@vicons/antd";
 import {
