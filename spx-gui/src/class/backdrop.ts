@@ -1,3 +1,6 @@
+import { AssetBase, asset } from "@/interface/asset";
+import { isInstance } from "@/util/class";
+
 /**
  * @class Backdrop
  * 
@@ -5,11 +8,21 @@
  * @createDate 2024-01-11
  */
 
-export default class Backdrop {
+export default class Backdrop extends AssetBase implements asset {
     /**
      * The root path of the backdrop.
      */
     static ROOT_PATH = "assets/"
+
+    /**
+     * The regular expression of the backdrop.
+     */
+    static REG_EXP = new RegExp(`^${Backdrop.ROOT_PATH}([^/]+)$`);
+
+    /**
+     * The name of the backdrop.
+     */
+    name: string = 'Backdrop';
 
     /**
      * The files of the backdrop.
@@ -27,6 +40,7 @@ export default class Backdrop {
      * @param {Record<string, any>} config the config of the backdrop using json to generate `index.json`
      */
     constructor(files: File[] = [], config: Record<string, any> = {}) {
+        super()
         this.files = files
         this.config = config
     }
@@ -49,11 +63,11 @@ export default class Backdrop {
     get path() {
         return Backdrop.ROOT_PATH
     }
-}
 
-/**
- * Check if obj is an instance of Backdrop
- * @param {any} obj 
- * @returns {boolean}
- */
-export const isBackdrop = (obj: any) => obj instanceof Backdrop
+    /**
+     * Check if an object is an instance of a backdrop.
+     */
+    static isInstance(obj: any): boolean {
+        return isInstance(obj, Backdrop);
+    }
+}

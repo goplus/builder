@@ -1,3 +1,6 @@
+import { AssetBase, asset } from "@/interface/asset";
+import { isInstance } from "@/util/class";
+
 /**
  * @class Sound
  * 
@@ -5,11 +8,16 @@
  * @createDate 2024-01-11
  */
 
-export default class Sound {
+export default class Sound extends AssetBase implements asset {
     /**
      * The root path of the sounds.
      */
     static ROOT_PATH = "assets/sounds/"
+
+    /**
+     * The regular expression of the sound.
+     */
+    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`);
 
     /**
      * The name of the sound.
@@ -32,7 +40,8 @@ export default class Sound {
      * @param {File[]} files the files of the sound
      * @param {Record<string, any>} config the config of the sound using json to generate `index.json`
      */
-    constructor(name: string, files: File[], config: Record<string, any> = {}) {
+    constructor(name: string, files: File[] = [], config: Record<string, any> = {}) {
+        super()
         this.name = name
         this.files = files
         this.config = config
@@ -56,11 +65,11 @@ export default class Sound {
     get path() {
         return Sound.ROOT_PATH + this.name
     }
-}
 
-/**
- * Check if obj is an instance of Sound
- * @param {any} obj 
- * @returns {boolean}
- */
-export const isSound = (obj: any) => obj instanceof Sound
+    /**
+     * Check if an object is an instance of a sound.
+     */
+    static isInstance(obj: any): boolean {
+        return isInstance(obj, Sound);
+    }
+}

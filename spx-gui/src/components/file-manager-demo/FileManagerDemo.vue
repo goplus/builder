@@ -23,7 +23,7 @@
         <h3>Sprite/{{ sprite.name }}</h3>
         <p>code: {{ sprite.code }}</p>
         <button @click="sprite.name += '!'">name + !</button>
-        <button @click="removeSpriteByRef(sprite)">remove</button>
+        <button @click="spriteStore.removeItemByRef(sprite)">remove</button>
         <img :src="file2URL(img)" v-for="img in sprite.files" alt="" :key="img.name">
     </div>
 
@@ -41,14 +41,14 @@
 
 <script setup lang="ts">
 import Sprite from "@/class/sprite";
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from "@/store/modules/sprite";
 import { storeToRefs } from "pinia";
 
-const { getDirPathFromZip, loadProject, saveProjectToComputer, saveProject, watchProjectChange } = useProjectStore()
+const { getDirPathFromZip, loadProject, saveProjectToComputer, saveProject, watchProjectChange, getAllLocalProjects, getDirPathFromLocal } = useProjectStore()
 const { project, title } = storeToRefs(useProjectStore())
-const { addSprite, removeSpriteByRef } = useSpriteStore()
+const spriteStore = useSpriteStore()
 const spriteName = ref("")
 const code = ref("")
 const file: any = ref(null)
@@ -59,7 +59,8 @@ async function getZip(e: any) {
 }
 
 function addASprite() {
-    addSprite(new Sprite(spriteName.value, Array.from(file.value.files), code.value))
+    const sprite = new Sprite(spriteName.value, Array.from(file.value.files), code.value)
+    spriteStore.addItem(sprite)
     spriteName.value = ""
     code.value = ""
     file.value.value = null
@@ -67,7 +68,6 @@ function addASprite() {
 
 watchProjectChange(() => {
     console.log('project changed');
-
     saveProject()
 })
 
@@ -81,10 +81,12 @@ const file2URL = (file: File) => {
     return map.get(file.name)
 }
 
-onMounted(async () => {
-    // const dir = await getDirPathFromLocal('1')
-    // loadProject(dir!)
-})
+async function init() {
+    const projects = await getAllLocalProjects()
+    const dir = await getDirPathFromLocal(projects[0])
+    dir && loadProject(dir)
+}
+init()
 </script>
 
 

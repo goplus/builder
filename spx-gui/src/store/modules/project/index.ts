@@ -1,4 +1,5 @@
 import { ref, computed, watch, toRaw, ComputedRef, WatchStopHandle, readonly } from 'vue'
+import { getMimeFromExt, Content2ArrayBuffer, ArrayBuffer2Content } from '@/util/file'
 import { defineStore, storeToRefs } from 'pinia'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
@@ -9,109 +10,28 @@ import { useBackdropStore } from '../backdrop'
 import Backdrop from '@/class/backdrop'
 import Sprite from '@/class/sprite'
 import Sound from '@/class/sound'
+import type { projectType, dirPath, FileType } from '@/types/file'
 
 const UNTITLED_NAME = 'Untitled'
-
-type projectType = {
-    title: string,
-    sprites: Sprite[],
-    sounds: Sound[],
-    backdrop: Backdrop
-}
-
-type FileType = {
-    content: ArrayBuffer,
-    path: string,
-    type: string,
-    size: number,
-    modifyTime: Date
-}
-
-type dirPath = Record<string, FileType>
-
-/**
- * Map file type to mime type.
- */
-const ext2mime: Record<string, string> = {
-    'png': 'image/png',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'gif': 'image/gif',
-    'svg': 'image/svg+xml',
-    'webp': 'image/webp',
-    'avif': 'image/avif',
-    'mp3': 'audio/mpeg',
-    'wav': 'audio/wav',
-    'ogg': 'audio/ogg',
-    'json': 'application/json',
-    'spx': 'text/plain',
-}
-
-/**
- * Get mime type from file extension.
- * @param ext the file extension
- * @returns the mime type
- */
-const getMimeFromExt = (ext: string) => ext2mime[ext] || 'text/plain'
-
-/**
- * Convert array buffer to content.
- * @param arr the array buffer
- * @param type the mime type
- * @param name the file name
- * @returns the content
- */
-const ArrayBuffer2Content = (arr: ArrayBuffer, type: string, name?: string) => {
-    name = name || UNTITLED_NAME
-    switch (type) {
-        case 'application/json':
-            return JSON.parse(new TextDecoder().decode(arr))
-        case 'text/plain':
-            return new TextDecoder().decode(arr)
-        default:
-            return new File([arr], name, { type })
-    }
-}
-
-/**
- * Convert content to array buffer.
- * @param content the content
- * @param type the mime type
- * @returns the array buffer
- */
-const Content2ArrayBuffer = async (content: any, type: string): Promise<ArrayBuffer> => {
-    switch (type) {
-        case 'application/json':
-            return new TextEncoder().encode(JSON.stringify(content)).buffer
-        case 'text/plain':
-            return new TextEncoder().encode(content).buffer
-        default:
-            const reader = new FileReader()
-            reader.readAsArrayBuffer(content)
-            await new Promise(resolve => reader.onload = resolve)
-            return reader.result as ArrayBuffer
-    }
-}
-
 
 export const useProjectStore = defineStore('project', () => {
     const spriteStore = useSpriteStore()
     const { sprites } = storeToRefs(spriteStore)
-    const { setSprite } = spriteStore
 
     const soundStore = useSoundStore()
     const { sounds } = storeToRefs(soundStore)
-    const { setSound } = soundStore
 
     const backdropStore = useBackdropStore()
     const { backdrop } = storeToRefs(backdropStore)
-    const { setBackdrop } = backdropStore
 
     const title = ref(UNTITLED_NAME)
     const setTitle = (t: string) => {
-        removeProject(title.value)
         title.value = t
-        saveProject()
+    }
+
+    const defaultDir = ref<dirPath>({})
+    const setDefaultDir = (d: dirPath) => {
+        defaultDir.value = d
     }
 
     // @ts-ignore
@@ -119,7 +39,8 @@ export const useProjectStore = defineStore('project', () => {
         title: title.value,
         sprites: sprites.value,
         sounds: sounds.value,
-        backdrop: backdrop.value
+        backdrop: backdrop.value,
+        defaultDir: defaultDir.value
     }))
 
     /**
@@ -143,12 +64,50 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
+     * Add Sprite or Sound to project.
+     * @param item 
+     */
+    function addItem(item: Sprite | Sound) {
+        if (Sprite.isInstance(item)) {
+            spriteStore.addItem(item as Sprite)
+        } else if (Sound.isInstance(item)) {
+            soundStore.addItem(item)
+        }
+    }
+
+    /**
+     * Set Sprite or Sound to project.
+     * @param item 
+     */
+    function setItem(item: Sprite[] | Sound[] | Backdrop) {
+        if (Sprite.isInstance(item)) {
+            spriteStore.setItem(item as Sprite[])
+        } else if (Sound.isInstance(item)) {
+            soundStore.setItem(item as Sound[])
+        } else if (Backdrop.isInstance(item)) {
+            backdropStore.setItem(item as Backdrop)
+        }
+    }
+
+    /**
+     * Remove Sprite or Sound from project.
+     * @param item 
+     */
+    function removeItem(item: Sprite | Sound) {
+        if (item instanceof Sprite) {
+            spriteStore.removeItemByRef(item)
+        } else if (item instanceof Sound) {
+            soundStore.removeItemByRef(item)
+        }
+    }
+
+    /**
      * Save current project to local storage.
      */
     async function saveProject() {
+        await removeProject(title.value)
         const dir = convertProjectToDirectory()
         const dirBuffer = await convertDirectoryToBuffer(dir)
-        await removeProject(project.value.title)
         for (const [key, value] of Object.entries(dirBuffer)) {
             await localForage.setItem(key, value)
         }
@@ -161,7 +120,9 @@ export const useProjectStore = defineStore('project', () => {
     async function removeProject(name: string) {
         const keys = await localForage.keys()
         const projectKeys = keys.filter(key => key.startsWith(name))
-        projectKeys.forEach(key => localForage.removeItem(key))
+        for (const key of projectKeys) {
+            await localForage.removeItem(key)
+        }
     }
 
     /**
@@ -170,9 +131,12 @@ export const useProjectStore = defineStore('project', () => {
      */
     function convertProjectToDirectory(): Record<string, any> {
         const project = getRawProject();
-        const files: Record<string, any> = Object.assign({}, ...[project.backdrop, ...project.sprites, ...project.sounds].map(item => item.dir))
+        const files: Record<string, any> = Object.assign({}, project.defaultDir, ...[project.backdrop, ...project.sprites, ...project.sounds].map(item => item.dir))
 
-        files['main.spx'] = `var (\n\t${project.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${project.sounds?.map(sound => sound.name + ' Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${project.title}"}`
+        // if no entry in files, add main.spx as default
+        if (!('main.spx' in files || 'index.spx' in files || 'index.gmx' in files || 'main.gmx' in files)) {
+            files['main.spx'] = `var (\n\t${project.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${project.sounds?.map(sound => sound.name + ' Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${project.title}"}`
+        }
         return files
     }
 
@@ -184,11 +148,16 @@ export const useProjectStore = defineStore('project', () => {
         const directory: dirPath = {}
 
         for (const [path, value] of Object.entries(dir)) {
+            const fullPath = project.value.title + '/' + path
+            if (value.content && value.content instanceof ArrayBuffer) {
+                directory[fullPath] = Object.assign(value, { path: fullPath })
+                continue
+            }
             const ext = path.split('.').pop()!
             const content = await Content2ArrayBuffer(value, getMimeFromExt(ext))
-            directory[project.value.title + '/' + path] = {
+            directory[fullPath] = {
                 content,
-                path: path,
+                path: fullPath,
                 type: getMimeFromExt(ext),
                 size: content.byteLength,
                 modifyTime: new Date()
@@ -202,9 +171,9 @@ export const useProjectStore = defineStore('project', () => {
      * Reset project.
      */
     function resetProject() {
-        setBackdrop(new Backdrop())
-        setSprite([])
-        setSound([])
+        backdropStore.setItem(new Backdrop())
+        spriteStore.setItem([])
+        soundStore.setItem([])
         setTitle(UNTITLED_NAME)
     }
 
@@ -223,6 +192,7 @@ export const useProjectStore = defineStore('project', () => {
         const dir: dirPath = {};
 
         for (let [relativePath, zipEntry] of Object.entries(zip.files)) {
+            if (zipEntry.dir) continue
             const content = await zipEntry.async('arraybuffer')
             const path = projectName + '/' + relativePath
             const type = getMimeFromExt(relativePath.split('.').pop()!)
@@ -245,85 +215,62 @@ export const useProjectStore = defineStore('project', () => {
      * @returns {projectType} project
      */
     function parseProject(dir: dirPath): projectType {
-        const project: projectType = {
-            title: UNTITLED_NAME,
-            sprites: [],
-            sounds: [],
-            backdrop: new Backdrop([])
-        };
-
-        project.title = Object.keys(dir).pop()?.split('/').shift() || UNTITLED_NAME
-
-        for (const [path, file] of Object.entries(dir)) {
-            if (/\/assets\/sprites\/.+\//.test(path)) {
-                const spriteName = path.match(/\/assets\/sprites\/(.+)\//)?.[1] || '';
-                const sprite = project.sprites.find(sprite => sprite.name === spriteName);
-                if (sprite) {
-                    switch (file.type) {
-                        case 'application/json':
-                            sprite.config = ArrayBuffer2Content(file.content, file.type) as Record<string, any>;
-                            break;
-                        default:
-                            sprite.files.push(ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()) as File);
-                            break;
-                    }
-                } else {
-                    switch (file.type) {
-                        case 'application/json':
-                            project.sprites.push(new Sprite(spriteName, [], '', ArrayBuffer2Content(file.content, file.type) as Record<string, any>));
-                            break;
-                        default:
-                            project.sprites.push(new Sprite(spriteName, [ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()) as File]));
-                            break;
-                    }
-                }
-            }
-            else if (!path.includes('main.spx') && /\/.+\.spx$/.test(path)) {
-                const spriteName = path.match(/\/(.+)\.spx$/)?.[1] || '';
-                const sprite = project.sprites.find(sprite => sprite.name === spriteName);
-                if (sprite) {
-                    sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
-                } else {
-                    project.sprites.push(new Sprite(spriteName, [], ArrayBuffer2Content(file.content, file.type) as string));
-                }
-            }
-            else if (/\/assets\/sounds\/.+\//.test(path)) {
-                const soundName = path.match(/\/assets\/sounds\/(.+)\//)?.[1] || '';
-                const sound = project.sounds.find(sound => sound.name === soundName);
-
-                if (sound) {
-                    switch (file.type) {
-                        case 'application/json':
-                            sound.config = ArrayBuffer2Content(file.content, file.type) as Record<string, any>;
-                            break;
-                        default:
-                            sound.files.push(ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()) as File);
-                            break;
-                    }
-                } else {
-                    switch (file.type) {
-                        case 'application/json':
-                            project.sounds.push(new Sound(soundName, [], ArrayBuffer2Content(file.content, file.type) as Record<string, any>));
-                            break;
-                        default:
-                            project.sounds.push(new Sound(soundName, [ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()) as File], {}));
-                            break;
-                    }
-                }
-            }
-            else if (/\/assets\/[^\/]+$/.test(path)) {
-                switch (file.type) {
-                    case 'application/json':
-                        project.backdrop.config = ArrayBuffer2Content(file.content, file.type) as Record<string, any>;
-                        break;
-                    default:
-                        project.backdrop.files.push(ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()) as File);
-                        break;
-                }
+        function handleFile(file: FileType, filename: string, item: any) {
+            switch (file.type) {
+                case 'application/json':
+                    item.config = ArrayBuffer2Content(file.content, file.type) as Record<string, any>;
+                    break;
+                default:
+                    item.files.push(ArrayBuffer2Content(file.content, file.type, filename) as File);
+                    break;
             }
         }
 
-        return project
+        function findOrCreateItem(name: string, collection: any[], constructor: typeof Sprite | typeof Sound) {
+            let item = collection.find(item => item.name === name);
+            if (!item) {
+                item = new constructor(name, []);
+                collection.push(item);
+            }
+            return item;
+        }
+
+        const proj: projectType = {
+            title: UNTITLED_NAME,
+            sprites: [],
+            sounds: [],
+            backdrop: new Backdrop([]),
+            defaultDir: {}
+        };
+
+        proj.title = Object.keys(dir).pop()?.split('/').shift() || UNTITLED_NAME
+
+        for (let [path, file] of Object.entries(dir)) {
+            const filename = file.path.split('/').pop()!;
+            path = path.replace(proj.title + '/', '')
+            if (Sprite.REG_EXP.test(path)) {
+                const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
+                const sprite: Sprite = findOrCreateItem(spriteName, proj.sprites, Sprite);
+                handleFile(file, filename, sprite);
+            }
+            else if (!path.includes('main.spx') && /^.+\.spx$/.test(path)) {
+                const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
+                const sprite: Sprite = findOrCreateItem(spriteName, proj.sprites, Sprite);
+                sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
+            }
+            else if (Sound.REG_EXP.test(path)) {
+                const soundName = path.match(Sound.REG_EXP)?.[1] || '';
+                const sound: Sound = findOrCreateItem(soundName, proj.sounds, Sound);
+                handleFile(file, filename, sound);
+            }
+            else if (Backdrop.REG_EXP.test(path)) {
+                handleFile(file, filename, proj.backdrop);
+            }
+            else {
+                proj.defaultDir[path] = ArrayBuffer2Content(file.content, file.type, filename)
+            }
+        }
+        return proj
     }
 
     /**
@@ -331,11 +278,12 @@ export const useProjectStore = defineStore('project', () => {
      * @param {dirPath} dir
      */
     function loadProject(dir: dirPath) {
-        const project = parseProject(dir);
-        setBackdrop(project.backdrop);
-        setSprite(project.sprites);
-        setSound(project.sounds);
-        setTitle(project.title);
+        const proj = parseProject(dir);
+        backdropStore.setItem(proj.backdrop);
+        spriteStore.setItem(proj.sprites);
+        soundStore.setItem(proj.sounds);
+        setTitle(proj.title);
+        setDefaultDir(proj.defaultDir);
     }
 
     /**
@@ -362,6 +310,23 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
+     * Get all local project from IndexedDB (localForage).
+     * @returns {Promise<string[]>}
+     */
+    async function getAllLocalProjects(): Promise<string[]> {
+        const keys = await localForage.keys()
+        const map = new Map()
+        for (const key of keys) {
+            const k = key.split('/').shift()
+            if (!k) continue
+            if (!map.has(k)) {
+                map.set(k, true)
+            }
+        }
+        return Array.from(map.keys())
+    }
+
+    /**
      * Save project to computer.
      */
     async function saveProjectToComputer() {
@@ -375,8 +340,6 @@ export const useProjectStore = defineStore('project', () => {
                 return [key, JSON.stringify(value)]
             }
         }
-
-        console.log(dir);
 
         for (const [key, value] of Object.entries(dir)) {
             zip.file(...zipFileValue(key, value));
@@ -397,7 +360,11 @@ export const useProjectStore = defineStore('project', () => {
         getDirPathFromLocal,
         saveProjectToComputer,
         title: readonly(title),
-        project
+        getAllLocalProjects,
+        project,
+        addItem,
+        removeItem,
+        setItem
     }
 
 })
