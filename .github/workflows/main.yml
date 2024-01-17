@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - main
+      - ci-cd
 
 env:
-  DOCKER_HUB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/builder-spx-gui:${{ github.sha }}
+  DOCKER_HUB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/builder-spx-gui:latest
 
 jobs:
   build-and-deploy:
@@ -16,27 +17,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '18'
           cache: 'npm'
-
-      - name: CD into project directory
-        run: cd spx-gui
+          cache-dependency-path: spx-gui/package-lock.json
 
       - name: Install dependencies
+        working-directory: spx-gui
         run: npm install
 
       - name: Build project
+        working-directory: spx-gui
         run: npm run build
 
       - name: Login to Docker Hub
@@ -46,19 +39,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and push Docker image
+        working-directory: spx-gui
         run: |
           docker build -t $DOCKER_HUB_IMAGE .
           docker push $DOCKER_HUB_IMAGE
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
-
-      - name: Configure kubectl
-        run: sed -i 's|IMAGE_PLACEHOLDER|$DOCKER_HUB_IMAGE|g' deployment.yaml
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
-
-      - name: Apply Kubernetes manifest
-        run: |
-          kubectl apply -f deployment.yaml

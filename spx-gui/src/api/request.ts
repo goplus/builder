@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 /**
  * @description Basic ajax request method
@@ -12,31 +12,38 @@ import axios from 'axios';
  * @author yxy
  * @createDate 2024.1.10
  */
-export async function request(method, url, dataOrParams = null,headers={} ) {
-    const base_url = "http://localhost:xxxx" + url;
-    try {
-        const defaultHeaders = {
-            "Content-Type": "application/json",
-        };
+export async function request(
+  method: "POST" | "GET",
+  url: string,
+  dataOrParams = null,
+  headers: Record<string, string> = {},
+) {
+  const base_url = "http://localhost:xxxx" + url;
+  try {
+    const defaultHeaders = {
+      "Content-Type": "application/json",
+    };
 
-        const mergedHeaders = {
-            ...defaultHeaders,
-            ...headers,
-        };
+    const mergedHeaders = {
+      ...defaultHeaders,
+      ...headers,
+    };
 
-        const response = await axios({
-            method,
-            url: base_url,
-            data: method.toLowerCase() === "get" ? null : dataOrParams,
-            params: method.toLowerCase() === "get" ? dataOrParams : null,
-            headers: mergedHeaders,
-        });
-        console.log(`[request] ${base_url} |request successful，response:`);
-        console.log(response)
-        return response.data;
-    } catch (error) {
-        console.log(`[request] ${base_url} |request failed, dataOrParams: ${JSON.stringify(dataOrParams)}`);
-        console.log(error);
-        throw error;
-    }
+    const response = await axios({
+      method,
+      url: base_url,
+      data: method.toLowerCase() === "get" ? null : dataOrParams,
+      params: method.toLowerCase() === "get" ? dataOrParams : null,
+      headers: mergedHeaders,
+    });
+    console.log(`[request] ${base_url} |request successful，response:`);
+    console.log(response);
+    return response.data;
+  } catch (error) {
+    console.log(
+      `[request] ${base_url} |request failed, dataOrParams: ${JSON.stringify(dataOrParams)}`,
+    );
+    console.log(error);
+    throw error;
+  }
 }
