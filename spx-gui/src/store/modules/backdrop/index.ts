@@ -1,6 +1,6 @@
 import { ref, readonly, Ref } from 'vue'
 import { defineStore } from 'pinia'
-import Backdrop, { isBackdrop } from '@/class/backdrop'
+import Backdrop from '@/class/backdrop'
 
 export const useBackdropStore = defineStore('backdrop', () => {
     /**
@@ -12,15 +12,12 @@ export const useBackdropStore = defineStore('backdrop', () => {
      * Set current backdrop.
      * @param {Backdrop} back
      */
-    function setBackdrop(back: Backdrop) {
-        if (!isBackdrop(back)) {
-            throw new Error('Backdrop must be a instance of Backdrop.')
-        }
+    function setItem(back: Backdrop) {
         backdrop.value = back
     }
 
     return {
-        setBackdrop,
+        setItem,
         backdrop: readonly(backdrop),
     }
 })
