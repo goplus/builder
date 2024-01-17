@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:30:39
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-16 15:36:01
+ * @LastEditTime: 2024-01-17 22:59:45
  * @FilePath: /spx-gui-front-private/src/view/EditorHomepage.vue
  * @Description:
 -->
@@ -19,7 +19,7 @@
         <SpxStage />
         <!-- E Component SpxStage -->
         <!-- S Component assetLibrary -->
-        <AssetLibrary />
+        <SpriteList />
         <!-- E Component assetLibrary -->
       </n-layout-content>
     </n-layout>
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import SpxEditor from "@/components/spx-editor/SpxEditor.vue";
 import SpxStage from "@/components/spx-stage/SpxStage.vue";
-import AssetLibrary from "@/components/spx-library/AssetLibrary.vue";
+import SpriteList from "@/components/sprite-list/SpriteList.vue";
 import { NLayout, NLayoutContent } from "naive-ui";
 
 </script>

@@ -1,5 +1,5 @@
 <!--
- * @Author: xuning 453594138@qq.com
+ * @Author: Xu Ning
  * @Date: 2024-01-12 14:59:12
  * @LastEditors: Xu Ning
  * @LastEditTime: 2024-01-12 16:42:14
@@ -8,15 +8,15 @@
 -->
 <template>
     <div>
-        <!--  S Component SpirteList -->
+        <!--  S Component SpriteList -->
         <SpriteList></SpriteList>
         <NButton>aaa</NButton>
-        <!--  E Component SpirteList -->
+        <!--  E Component SpriteList -->
     </div>
   </template>
   
   <script setup>
-  import SpriteList from "@/components/spirte-list/SpriteList.vue";
+  import SpriteList from "@/components/sprite-list/SpriteList.vue";
   import { NButton } from 'naive-ui';
   </script>
   

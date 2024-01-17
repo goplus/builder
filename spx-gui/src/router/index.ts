@@ -1,9 +1,9 @@
 /*
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:38:44
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-01-17 18:13:31
- * @FilePath: /spx-gui-front-private/src/router/index.ts
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-17 23:23:10
+ * @FilePath: /builder/spx-gui/src/router/index.ts
  * @Description: 
  */
 import { App } from "vue";
@@ -18,10 +18,10 @@ const routes: Array<RouteRecordRaw> = [
             import("@/view/HomeView.vue"),
     },
     {
-        path: '/spirte/list',
-        name: 'SpirteList',
+        path: '/sprite/list',
+        name: 'SpriteList',
         component: () =>
-            import("../components/spirte-list/SpriteList.vue"),
+            import("../components/sprite-list/SpriteList.vue"),
     },
     {
         path: '/editor/homepage',
