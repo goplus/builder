@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-16 15:28:09
- * @FilePath: /spx-gui-front-private/src/components/spx-library/SpriteCard.vue
+ * @LastEditTime: 2024-01-18 16:42:48
+ * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
 <template>
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { NImage } from "naive-ui";
 import { defineProps } from "vue";
-import { SpriteInfoType } from "@/interface/library";
+import type { SpriteInfoType } from "@/interface/library";
 
 interface propsType {
   spriteInfo: SpriteInfoType;

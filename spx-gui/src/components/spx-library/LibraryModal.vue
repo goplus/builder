@@ -73,7 +73,7 @@ import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon } from "naive-u
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
 import SpriteCard from "./SpriteCard.vue";
-import { SpriteInfoType } from "@/interface/library";
+import type { SpriteInfoType } from "@/interface/library";
 
 interface propsType {
   spriteInfos: SpriteInfoType[];

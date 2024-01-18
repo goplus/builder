@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 23:44:28
+ * @LastEditTime: 2024-01-18 16:41:28
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -24,7 +24,7 @@ import {
   NButton
 } from "naive-ui";
 
-import { SpriteInfoType } from "@/interface/library";
+import type { SpriteInfoType } from "@/interface/library";
 // TODO: replace mock by api link
 import { SpriteInfosMock } from "@/mock/library";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue"
