@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 09:16:18
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-16 11:10:25
- * @FilePath: /spx-gui-front-private/src/components/loading/Loading.vue
+ * @LastEditTime: 2024-01-18 11:19:56
+ * @FilePath: /builder/spx-gui/src/components/loading/Loading.vue
  * @Description: 
 -->
 <template>
@@ -11,7 +11,7 @@
         <div>
             <img :src="Logo" />
         </div>
-        <p>SPX GUI 正在加载中...</p>
+        <p>SPX GUI is loading...</p>
     </div>
 </template>
 <script lang="ts" setup>

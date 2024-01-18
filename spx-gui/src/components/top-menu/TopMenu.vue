@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 21:26:30
- * @FilePath: /spx-gui-front-private/src/components/top-menu/TopMenu.vue
+ * @LastEditTime: 2024-01-18 11:18:06
+ * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
 <template>
@@ -97,8 +97,8 @@ const buttonStyle = {
 
 const dropdownStyle = {
   "min-width": "7vw",
-  "text-align" : "center"
-}
+  "text-align": "center",
+};
 
 /**
  * @description: topmenu options render
@@ -172,7 +172,7 @@ const menuOptions = [
           trigger: "hover",
           options: saveOptions,
           onSelect: handleSelectImport,
-          style : dropdownStyle
+          style: dropdownStyle,
         },
         {
           default: () =>
@@ -195,7 +195,7 @@ const menuOptions = [
           trigger: "hover",
           options: exportOptions,
           onSelect: handleSelectImport,
-          style: dropdownStyle
+          style: dropdownStyle,
         },
         {
           default: () =>
@@ -281,7 +281,6 @@ const menuOptions = [
   },
 ];
 
-
 /**
  * @description: generate default button style for menu
  * @param {*} color1 gradient color 1
@@ -289,7 +288,7 @@ const menuOptions = [
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:56:06
  */
- const computedButtonStyle = (color1: string, color2: string) => {
+const computedButtonStyle = (color1: string, color2: string) => {
   return {
     ...buttonStyle,
     background: `linear-gradient(to right, ${color1}, ${color2})`,
@@ -302,10 +301,9 @@ const menuOptions = [
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:55:13
  */
- const handleSelectImport = (key: string | number) => {
-  // message.info(String(key));
+const handleSelectImport = (key: string | number) => {
+  console.log("key", key);
 };
-
 
 /**
  * @description: render top menu icon

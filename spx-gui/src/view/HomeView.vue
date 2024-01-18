@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 14:59:12
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 16:42:14
- * @FilePath: /spx-gui-front-private/src/view/HomeView.vue
+ * @LastEditTime: 2024-01-18 11:20:25
+ * @FilePath: /builder/spx-gui/src/view/HomeView.vue
  * @Description: edit page
 -->
 <template>
@@ -15,7 +15,7 @@
     </div>
   </template>
   
-  <script setup>
+  <script setup lang="ts">
   import SpriteList from "@/components/sprite-list/SpriteList.vue";
   import { NButton } from 'naive-ui';
   </script>
