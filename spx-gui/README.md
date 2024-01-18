@@ -239,43 +239,44 @@ Taking the creation of an Audio Editing Page as an example:
 If your project includes custom CSS styles with color definitions, follow these steps to define these styles in a theme file:
 
 1. Add custom color variables in the file located at src/assets/theme.scss
-···sdscss
-Copy code
+```scss
 // SpxEditor  
 $spx-editor-tab-font-uncheck: black;   // Please start the name with the component name, for example, for CSS styles in SpxEditor, start with spx-editor
-Import and use these variables in SpxEditor
-scss
-Copy code
+```
+2. Import and use these variables in SpxEditor
+```scss
 <style scoped lang="scss">  
 @import "@/assets/theme.scss";  
 
 .tab-font-uncheck {  
   font-size: 20px;  
   color: $spx-editor-tab-font-uncheck;  
-}  
+}
   
 </style>
-i18n/i10n
-Configure languages in src/language/index.ts
-typescript
-Copy code
-export const initI18n = async (app: App) => {  
-console.log("init i18n start")  
-// This is an example of a routing result that needs to be loaded.  
-const messages = {  
-en: {  
-sounds: {  
-hint: 'Sounds',  
-}  
-},  
-zh: {  
-sounds: {  
-hint: '音频'
-}  
-}  
-};
+```
+
+## i18n/i10n
+1. Configure languages in `src/language/index.ts`
+```typescript
+export const initI18n = async (app:App) => {
+      const messages = {
+          en: {
+                sounds: {
+                  hint: 'Sounds',
+                }
+          },
+          zh: {
+              sounds: {
+                hint: '音频'
+              }
+          }
+    };
 }
-How to use it
-html
-Copy code
+```
+
+2. How to use it
+```html
 <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
+```
+
