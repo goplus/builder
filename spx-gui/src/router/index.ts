@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 09:16:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 10:14:39
+ * @LastEditTime: 2024-01-18 15:46:53
  * @FilePath: /builder/spx-gui/src/router/index.ts
  * @Description: 
  */
@@ -34,7 +34,7 @@ export const initRouter = async (app:App) => {
   await new Promise(resolve => {
       setTimeout(() => {
           resolve(true)
-      }, 1000);
+      }, 0);
   })
 }
 

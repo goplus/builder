@@ -30,6 +30,8 @@
     "typescript": "^5.3.3",
     "vfonts": "^0.0.3",
     "vite": "^5.0.10",
-    "vite-plugin-vue-devtools": "^7.0.7"
+    "vite-plugin-vue-devtools": "^7.0.7",
+    "vite-plugin-wasm": "^3.3.0",
+    "vite-plugin-top-level-await": "^1.4.1"
   }
 }

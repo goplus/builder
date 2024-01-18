@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-16 13:35:59
+ * @LastEditTime: 2024-01-18 18:04:56
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -12,6 +12,7 @@
         <button v-for="item in store.spx_list" :key="item.id" @click="toggleCodeById(item.id)">{{ item.id }}</button>
         <button @click="insertCode('onStart => {\n\t\n}')">onStart</button>
         <button @click="submit">submit</button>
+        <button @click="format">format</button>
         <div id="code-editor" ref="code_editor"></div>
     </div>
 </template>
@@ -28,9 +29,18 @@ let code = ref<string>('');
 const store = useEditorStore();
 
 
+
 watch(() => store.current, () => {
     editor.setValue(store.getCurrentSpxCode())
 })
+
+const format = () => {
+    console.log()
+    const forRes=formatSPX(editor.getValue())
+    if(forRes.Body){
+        editor.setValue(forRes.Body)
+    }
+}
 
 onMounted(() => {
     console.log(store.spx_list)
