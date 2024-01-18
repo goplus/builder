@@ -1,11 +1,10 @@
-/*
- * @Author: Xu Ning
- * @Date: 2024-01-17 18:12:24
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 16:41:03
- * @FilePath: /builder/spx-gui/src/interface/library.ts
- * @Description: 
- */
+interface PageData<T> {
+  totalCount: number,
+  totalPage: number,
+  data: T
+}
+
+
 interface SpriteInfoType {
   name: string;
   image: string;
@@ -14,4 +13,27 @@ interface SpriteInfoType {
   popularity?: number;
 }
 
-export type { SpriteInfoType };
+interface Asset {
+  id: number;
+  name: string;
+  authorId?: number;
+  category?: string;
+  isPublic?: number;
+  address?: string;
+  assetType?: number;
+  status?: number;
+  cTime?: number;
+  uTime?: number;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  authorId: number;
+  address: string;
+  cTime: number;
+  uTime: number;
+}
+
+
+export { PageData, SpriteInfoType, Asset, Project };

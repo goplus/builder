@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 23:40:02
+ * @LastEditTime: 2024-01-18 23:30:40
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -126,9 +126,7 @@ const closeModalFunc = () => {
     }
   }
 }
-.asset-library {
-  height: calc(60vh - 80px - 48px);
-}
+
 .asset-library-content {
   margin: 60px 0 20px 0;
 }

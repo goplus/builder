@@ -1,33 +1,36 @@
 <!--
- * @Author: Xu Ning
+ * @Author: xuning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 17:49:46
- * @FilePath: /spx-gui-front-private/src/App.vue
+ * @LastEditTime: 2024-01-18 23:28:23
+ * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
-    <n-layout>
-      <n-layout-header>
-        <TopMenu />
-      </n-layout-header>
-      <n-layout-content content-style="padding: 24px;">
-        <router-view></router-view>
-      </n-layout-content>
-    </n-layout>
+    <n-message-provider>
+      <n-layout>
+        <n-layout-header>
+          <TopMenu />
+        </n-layout-header>
+        <n-layout-content content-style="padding: 24px 24px 0 24px;">
+          <router-view></router-view>
+        </n-layout-content>
+      </n-layout>
+    </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
 import {
   NConfigProvider,
+  NMessageProvider,
   NLayout,
   NLayoutHeader,
   NLayoutContent,
 } from "naive-ui";
 import TopMenu from "@/components/top-menu/TopMenu.vue";
-import "@/assets/theme.scss"
+import "@/assets/theme.scss";
 /**
  * @description: Override spx-gui theme
  * @return {*}
@@ -82,8 +85,11 @@ const themeOverrides = {
     optionTextColorActive: "#18a058",
     optionTextColorChildActive: "#18a058",
     optionColorHoverInverted: "#18a058",
-    optionColorActiveInverted: "#18a058"
-  }
+    optionColorActiveInverted: "#18a058",
+  },
+  Switch: {
+    railColorActive: "#ED729E",
+  },
 };
 </script>
 
@@ -110,20 +116,20 @@ body {
   padding: 13px;
 }
 
-
-.n-menu, .n-menu--horizontal, .n-menu--responsive{
-  --n-item-height:38px !important;
+.n-menu,
+.n-menu--horizontal,
+.n-menu--responsive {
+  --n-item-height: 38px !important;
 }
-.n-menu.n-menu--horizontal .n-menu-item-content{
+.n-menu.n-menu--horizontal .n-menu-item-content {
   padding: 0;
 }
 
-.v-overflow{
+.v-overflow {
   width: 100%;
-    display: flex;
-    overflow: hidden;
-    flex-direction: row;
-    justify-content: space-around;
+  display: flex;
+  overflow: hidden;
+  flex-direction: row;
+  justify-content: space-around;
 }
-
 </style>
