@@ -8,7 +8,9 @@
 *.so
 *.dylib
 .DS_Store
-.vscode
+
+# ignore .vscode folder
+.vscode/
 
 # Test binary, built with `go test -c`
 *.test
