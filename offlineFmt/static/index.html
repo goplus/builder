@@ -1,0 +1,56 @@
+<!--
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-01-17 10:19:30
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-18 14:49:59
+ * @FilePath: /offlineFmt/static/index.html
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <div style="width: 100%;display: flex;justify-content: space-between;">
+        <div style="flex: 1;width: 0;">
+            <p>Try to enter a spx code</p>
+            <textarea id="input" style="width: 200px;height: 200px;"></textarea>
+            <button style="display: block;" id="formatTextBtn">format it</button>
+            <pre id="textOutput"></pre>
+        </div>
+        <div style="flex: 1;width: 0;">
+            <p>Try to select a spx code file</p>
+            <input type="file" id="fileInput">
+            <pre id="fileOutput"></pre>
+        </div>
+    </div>
+
+    <script src="wasm_exec.js"></script>
+</head>
+
+<body>
+    <script type="module">
+        document.getElementById("formatTextBtn").addEventListener("click", () => {
+            console.log("das")
+            const input = document.getElementById("input").value;
+            let res = formatSPX(input)
+            console.log(res)
+            if (res.Error) {
+                document.getElementById("textOutput").innerText = `line:${res.Error.Line},column:${res.Error.Column},errorInfo:${res.Error.Msg}`;
+            } else {
+                document.getElementById("textOutput").innerText = res.Body;
+            }
+        })
+        document.getElementById("fileInput").addEventListener("change", (e) => selectFile(e))
+        const go = new Go();
+        const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+        await go.run(result.instance)
+
+
+
+    </script>
+</body>
+
+</html>
