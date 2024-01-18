@@ -1,9 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 21:47:27
- * @FilePath: /builder/spx-gui/src/App.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-16 08:59:50
+ * @FilePath: /workspace/builder/spx-gui/src/App.vue
  * @Description: 
 -->
 <template>
@@ -65,9 +65,19 @@ const themeOverrides = {
 </script>
 
 <style type="scss">
-.n-layout-header{
+#app,
+body,
+html {
+  height: 100%;
+}
+
+.n-config-provider,
+.n-layout {
+  height: 100%;
+}
+
+.n-layout-header {
   background: #696a5a;
   height: 80px;
   padding: 24px;
-}
-</style>
+}</style>
