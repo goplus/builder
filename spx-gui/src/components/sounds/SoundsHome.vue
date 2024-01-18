@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:27:57
  * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-12 17:27:57
+ * @LastEditTime: 2024-01-18 17:37:57
  * @FilePath: src/components/sounds/SoundsHome.vue
  * @Description: Sounds Homepage, includes Edit Part And Card List
 -->
@@ -20,7 +20,7 @@
       ></SoundsCard>
     </n-layout-sider>
     <n-layout-content>
-      <SoundsEdit></SoundsEdit>
+      <SoundsEdit style="margin-left: 10px"></SoundsEdit>
     </n-layout-content>
   </n-layout>
 </template>

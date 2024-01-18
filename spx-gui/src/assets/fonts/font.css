@@ -2,3 +2,9 @@
     font-family: 'ChauPhilomeneOne';
     src: url("ChauPhilomeneOne.ttf") format("truetype");
 }
+
+@font-face {
+    font-family: 'AlibabaPuHuiT';
+    src: url("AlibabaPuHuiT.ttf") format("truetype");
+}
+

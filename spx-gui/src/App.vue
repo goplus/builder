@@ -65,16 +65,26 @@ const themeOverrides = {
 </script>
 
 <style type="scss">
-
-@import './assets/fonts/font.css';
+@import "./assets/fonts/font.css";
 
 body {
-  font-family: ChauPhilomeneOne, sans-serif;
+  font-family: ChauPhilomeneOne, AlibabaPuHuiT, sans-serif;
 }
 
-.n-layout-header{
+:lang(en) {
+  font-size: 15.8px;
+  line-height: 1.6;
+}
+
+:lang(zh) {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.n-layout-header {
   background: #696a5a;
   height: 80px;
   padding: 24px;
 }
+
 </style>

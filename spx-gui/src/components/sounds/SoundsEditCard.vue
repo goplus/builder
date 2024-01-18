@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:28:15
  * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-12 17:28:15
+ * @LastEditTime: 2024-01-18 15:18:19
  * @FilePath: src/components/sounds/SoundsEditCard.vue
  * @Description: Sounds Card
 -->
@@ -46,6 +46,11 @@
   overflow: visible;  // show x button
 
   cursor: pointer;
+
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: scale(1.08);
+  }
 }
 
 .sounds-card-waveform {

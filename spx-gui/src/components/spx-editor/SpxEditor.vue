@@ -1,11 +1,3 @@
-<!--
- * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-01-12 17:35:49
- * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-12 17:35:49
- * @FilePath: src/components/spx-editor/SpxEditor.vue
- * @Description: Main Spx Editor Part
--->
 <template>
   <n-tabs
       type="card"
@@ -17,11 +9,11 @@
       <template #tab>
         <div v-if="currentTab === 'code'" class="tab-container">
           <img class="tab-icon" src="@/assets/icon/code/tab-code-check.svg">
-          <div class="tab-font-check">Code</div>
+          <div class="tab-font-check">{{ $t('tab.code') }}</div>
         </div>
         <div v-else class="tab-container">
           <img class="tab-icon" src="@/assets/icon/code/tab-code-uncheck.svg">
-          <div class="tab-font-uncheck">Code</div>
+          <div class="tab-font-uncheck">{{ $t('tab.code') }}</div>
         </div>
       </template>
       <!-- TODO Code Editor Part   -->
@@ -31,11 +23,11 @@
       <template #tab>
         <div v-if="currentTab === 'sound'" class="tab-container">
           <img class="tab-icon" src="@/assets/icon/sound/tab-music-check.svg">
-          <div class="tab-font-check">Sound</div>
+          <div class="tab-font-check">{{ $t('tab.sound') }}</div>
         </div>
         <div v-else class="tab-container">
           <img class="tab-icon" src="@/assets/icon/sound/tab-music-uncheck.svg">
-          <div class="tab-font-uncheck">Sound</div>
+          <div class="tab-font-uncheck">{{ $t('tab.sound') }}</div>
         </div>
       </template>
       <!--  S Component SoundsEditHome-->
