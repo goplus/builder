@@ -1,4 +1,5 @@
-import { AssetBase, asset } from "@/interface/asset";
+import { asset } from "@/interface/asset";
+import { Asset } from "./asset";
 import { isInstance } from "@/util/class";
 
 /**
@@ -6,9 +7,37 @@ import { isInstance } from "@/util/class";
  * 
  * @author tgb
  * @createDate 2024-01-11
+ * 
+ * @example
+ * // create a sprite just with name
+ * const spt1 = new Sprite("monkey")
+ * // create a sprite with all params
+ * const spt2 = new Sprite("banana", [file1, file2], "onStart => {}", { x: 12, y: 21 })
+ * 
+ * // change any params
+ * spt2.name = "banana~~"
+ * spt2.code = "onCloned => {}"
+ * spt2.config.x = 23
+ * 
+ * // provide addFile and removeFile method
+ * const file = fileDom.target.files[0]   // typeof file ==> File
+ * spt1.addFile(file)
+ * spt1.removeFile(file)
+ * 
+ * // check if an obj is an instance of a sound
+ * Sprite.isInstance(spt1)  // true
+ * Sprite.isInstance([spt1, spt2])  // true
+ * Sprite.isInstance("hello")  // false
+ * 
+ * // conputed path (depend on the name of the sprite)
+ * spt1.path  // assets/sprites/monkey
+ * spt2.path  // assets/sprites/banana~~
+ * 
+ * // computed dir
+ * spt2.dir  // { "banana~~.spx": "onCloned => {}", "assets/sprites/banana~~/index.json": {x: 23, y: 21}, "assets/sprites/banana~~/[file1.name]": file1, "assets/sprites/banana~~/[file2.name]": file2 }
  */
 
-export default class Sprite extends AssetBase implements asset {
+export default class Sprite extends Asset implements asset {
     /**
      * The root path of the sprites.
      */
@@ -20,24 +49,9 @@ export default class Sprite extends AssetBase implements asset {
     static REG_EXP = new RegExp(`^${Sprite.ROOT_PATH}(.+)/(.+)$`);
 
     /**
-     * The name of the sprite.
-     */
-    name: string;
-
-    /**
-     * The files of the sprite.
-     */
-    files: File[];
-
-    /**
      * The code of the sprite.
      */
     code: string;
-
-    /**
-     * The config of the sprite.
-     */
-    config: Record<string, any>;
 
     /**
      * @constructor create a new sprite
@@ -47,11 +61,8 @@ export default class Sprite extends AssetBase implements asset {
      * @param {Record<string, any>} config the config of the sprite using json to generate `index.json`
      */
     constructor(name: string, files: File[] = [], code: string = "", config: Record<string, any> = {}) {
-        super()
-        this.name = name
-        this.files = files
+        super(name, files, config)
         this.code = code
-        this.config = config
     }
 
     /**

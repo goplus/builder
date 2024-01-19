@@ -19,3 +19,7 @@ export type FileType = {
 }
 
 export type dirPath = Record<string, FileType>
+
+export type rawFile = string | File | Record<string, any> | FileType
+
+export type rawDir = Record<string, rawFile>

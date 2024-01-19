@@ -8,7 +8,7 @@
 
 import { ref, Ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { AssetBase } from '@/interface/asset'
+import { Asset } from '@/class/asset'
 
 /**
  * Create a store to manage assets.
@@ -16,12 +16,39 @@ import { AssetBase } from '@/interface/asset'
  * @param hook a function that returns an object to be mixed into the store
  * @returns the store
  */
-export default function createStore<T extends AssetBase>(name: string, hook?: () => Partial<T>) {
+export default function createStore<T extends Asset>(name: string, hook?: () => Partial<T>) {
     return defineStore(name, () => {
         /**
          * The list of assets named by name. If the name is sprite, the list will be `sprites`.
          */
         const list: Ref<T[]> = ref([])
+
+        /**
+         * The current asset.
+         */
+        const current: Ref<T | null> = ref(null)
+
+        /**
+         * Set current item by name.
+         * @param name the name of item
+         */
+        function setCurrentByName(name: string) {
+            if (!isItemExistByName(name)) {
+                throw new Error(`${name} does not exist.`)
+            }
+            current.value = getItemByName(name)
+        }
+
+        /**
+         * Set current item by reference.
+         * @param item the reference of item
+         */
+        function setCurrentByRef(item: T) {
+            if (!isItemExistByRef(item)) {
+                throw new Error(`${item.name} does not exist.`)
+            }
+            current.value = item
+        }
 
         /**
          * The map of assets in order to get item by name in `O(1)`.
@@ -39,7 +66,8 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * @param newItems the new items
          */
         function setItem(newItems: T[]) {
-            list.value = newItems
+            list.value = []
+            addItem(...newItems)
         }
 
         /**
@@ -47,12 +75,15 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * @param newItems the new items
          */
         function addItem(...newItems: T[]) {
-            newItems.forEach(item => {
-                if (isItemExistByName(item.name)) {
-                    throw new Error(`All ${name}s must be unique, ${item.name} already exists.`)
+            let exist = [];
+            for (const item of newItems) {
+                if (isItemExistByRef(item)) {
+                    exist.push(item)
+                    continue
                 }
                 list.value.push(item)
-            })
+            }
+            throw new Error(`All items in ${name} must be unique. ${exist.map(item => item.name).join(', ')} already exist.`)
         }
 
         /**
@@ -123,7 +154,10 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
             getItemByName,
             isItemExistByName,
             isItemExistByRef,
-            [name + 's']: list,
+            current,
+            setCurrentByName,
+            setCurrentByRef,
+            list,
             ...hooks
         }
     })

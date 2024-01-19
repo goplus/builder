@@ -1,4 +1,5 @@
-import { AssetBase, asset } from "@/interface/asset";
+import { asset } from "@/interface/asset";
+import { Asset } from "./asset";
 import { isInstance } from "@/util/class";
 
 /**
@@ -6,9 +7,30 @@ import { isInstance } from "@/util/class";
  * 
  * @author tgb
  * @createDate 2024-01-11
+ * 
+ * @example
+ * // create a backdrop with all params
+ * const backdrop = new Backdrop([file1, file2], { height: 200 })
+ * 
+ * // change any params
+ * backdrop.config.height = 300
+ * 
+ * // provide addFile and removeFile method
+ * const file = fileDom.target.files[0]   // typeof file ==> File
+ * backdrop.addFile(file)
+ * backdrop.removeFile(file)
+ * 
+ * // check if an obj is an instance of a backdrop
+ * Backdrop.isInstance(backdrop)  // true
+ * 
+ * // conputed path
+ * backdrop.path  // assets/
+ * 
+ * // computed dir
+ * backdrop.dir  // { "assets/index.json": { height: 300 }, "assets/[file1.name]": file1, "assets/[file2.name]": file2 }
  */
 
-export default class Backdrop extends AssetBase implements asset {
+export default class Backdrop extends Asset implements asset {
     /**
      * The root path of the backdrop.
      */
@@ -20,29 +42,12 @@ export default class Backdrop extends AssetBase implements asset {
     static REG_EXP = new RegExp(`^${Backdrop.ROOT_PATH}([^/]+)$`);
 
     /**
-     * The name of the backdrop.
-     */
-    name: string = 'Backdrop';
-
-    /**
-     * The files of the backdrop.
-     */
-    files: File[];
-
-    /**
-     * The config of the backdrop.
-     */
-    config: Record<string, any>;
-
-    /**
      * @constructor create a new backdrop
      * @param {File[]} files the files of the backdrop
      * @param {Record<string, any>} config the config of the backdrop using json to generate `index.json`
      */
     constructor(files: File[] = [], config: Record<string, any> = {}) {
-        super()
-        this.files = files
-        this.config = config
+        super("Backdrop", files, config)
     }
 
     /**

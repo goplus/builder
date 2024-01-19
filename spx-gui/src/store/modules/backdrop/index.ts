@@ -1,12 +1,19 @@
-import { ref, readonly, Ref } from 'vue'
+import { ref, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import Backdrop from '@/class/backdrop'
 
+/**
+ * Backdrop store.
+ * @example
+ * const backdropStore = useBackdropStore()
+ * const { backdrop } = storeToRefs(backdropStore)
+ * backdropStore.setItem(new Backdrop())
+ */
 export const useBackdropStore = defineStore('backdrop', () => {
     /**
      * Current backdrop.
      */
-    const backdrop: Ref<Backdrop> = ref(new Backdrop())
+    const backdrop = ref<Backdrop>(new Backdrop())
 
     /**
      * Set current backdrop.

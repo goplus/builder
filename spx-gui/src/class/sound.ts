@@ -1,4 +1,5 @@
-import { AssetBase, asset } from "@/interface/asset";
+import { asset } from "@/interface/asset";
+import { Asset } from "./asset";
 import { isInstance } from "@/util/class";
 
 /**
@@ -6,9 +7,36 @@ import { isInstance } from "@/util/class";
  * 
  * @author tgb
  * @createDate 2024-01-11
+ * 
+ * @example
+ * // create a sound just with name
+ * const snd1 = new Sound("1")
+ * // create a sound with all params
+ * const snd2 = new Sound("2", [file1, file2], { rate: 1 })
+ * 
+ * // change any params
+ * snd2.name = "3"
+ * snd2.config.rate = 2
+ * 
+ * // provide addFile and removeFile method
+ * const file = fileDom.target.files[0]   // typeof file ==> File
+ * snd1.addFile(file)
+ * snd1.removeFile(file)
+ * 
+ * // check if an obj is an instance of a sound
+ * Sound.isInstance(snd1)  // true
+ * Sound.isInstance([snd1, snd2])  // true
+ * Sound.isInstance("hello")  // false
+ * 
+ * // conputed path (depend on the name of the sound)
+ * snd1.path  // assets/sounds/1
+ * snd2.path  // assets/sounds/3
+ * 
+ * // computed dir
+ * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
  */
 
-export default class Sound extends AssetBase implements asset {
+export default class Sound extends Asset implements asset {
     /**
      * The root path of the sounds.
      */
@@ -20,31 +48,13 @@ export default class Sound extends AssetBase implements asset {
     static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`);
 
     /**
-     * The name of the sound.
-     */
-    name: string;
-
-    /**
-     * The files of the sound.
-     */
-    files: File[];
-
-    /**
-     * The config of the sound.
-     */
-    config: Record<string, any>;
-
-    /**
      * @constructor create a new sound
      * @param {string} name the name of the sound
      * @param {File[]} files the files of the sound
      * @param {Record<string, any>} config the config of the sound using json to generate `index.json`
      */
     constructor(name: string, files: File[] = [], config: Record<string, any> = {}) {
-        super()
-        this.name = name
-        this.files = files
-        this.config = config
+        super(name, files, config)
     }
 
     /**

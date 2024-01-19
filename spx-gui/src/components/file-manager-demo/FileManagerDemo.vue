@@ -4,7 +4,7 @@
     <input type="file" name="" id="" @change="getZip" accept=".zip">
 
     <h2>Save Zip to Computer</h2>
-    <button type="button" @click="saveProjectToComputer">save</button>
+    <button type="button" @click="saveToComputerByProject(void 0)">save</button>
 
     <h2>Add Sprite</h2>
     <label for="name">SpriteName: </label>
@@ -46,7 +46,7 @@ import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from "@/store/modules/sprite";
 import { storeToRefs } from "pinia";
 
-const { getDirPathFromZip, loadProject, saveProjectToComputer, saveProject, watchProjectChange, getAllLocalProjects, getDirPathFromLocal } = useProjectStore()
+const { getDirPathFromZip, loadProject, saveToComputerByProject, saveByProject, watchProjectChange, getAllLocalProjects, getDirPathFromLocal } = useProjectStore()
 const { project, title } = storeToRefs(useProjectStore())
 const spriteStore = useSpriteStore()
 const spriteName = ref("")
@@ -61,6 +61,8 @@ async function getZip(e: any) {
 function addASprite() {
     const sprite = new Sprite(spriteName.value, Array.from(file.value.files), code.value)
     spriteStore.addItem(sprite)
+    console.log(sprite);
+
     spriteName.value = ""
     code.value = ""
     file.value.value = null
@@ -68,7 +70,7 @@ function addASprite() {
 
 watchProjectChange(() => {
     console.log('project changed');
-    saveProject()
+    saveByProject()
 })
 
 // the window will shake because of the change of the URL
@@ -87,6 +89,7 @@ async function init() {
     dir && loadProject(dir)
 }
 init()
+
 </script>
 
 

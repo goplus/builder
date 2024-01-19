@@ -1,4 +1,4 @@
-import { ref, computed, watch, toRaw, ComputedRef, WatchStopHandle, Ref, readonly } from 'vue'
+import { ref, computed, watch, toRaw, WatchStopHandle, readonly } from 'vue'
 import { getMimeFromExt, Content2ArrayBuffer, ArrayBuffer2Content } from '@/util/file'
 import { defineStore, storeToRefs } from 'pinia'
 import JSZip from 'jszip'
@@ -10,20 +10,16 @@ import { useBackdropStore } from '../backdrop'
 import Backdrop from '@/class/backdrop'
 import Sprite from '@/class/sprite'
 import Sound from '@/class/sound'
-import type { projectType, dirPath, FileType } from '@/types/file'
+import type { projectType, dirPath, FileType, rawDir, rawFile } from '@/types/file'
 
 const UNTITLED_NAME = 'Untitled'
 
 export const useProjectStore = defineStore('project', () => {
     const spriteStore = useSpriteStore()
-    // @ts-ignore
-    // The type system is unable to recognize dynamic property names, which may lead to type errors during compilation.
-    const { sprites }: { sprites: Ref<Sprite[]> } = storeToRefs(spriteStore)
+    const { list: sprites } = storeToRefs(spriteStore)
 
     const soundStore = useSoundStore()
-    // @ts-ignore
-    // The type system is unable to recognize dynamic property names, which may lead to type errors during compilation.
-    const { sounds }: { sounds: Ref<Sound[]> } = storeToRefs(soundStore)
+    const { list: sounds } = storeToRefs(soundStore)
 
     const backdropStore = useBackdropStore()
     const { backdrop } = storeToRefs(backdropStore)
@@ -39,7 +35,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     // @ts-ignore
-    const project: ComputedRef<projectType> = computed(() => ({
+    const project = computed<projectType>(() => ({
         title: title.value,
         sprites: sprites.value,
         sounds: sounds.value,
@@ -60,6 +56,9 @@ export const useProjectStore = defineStore('project', () => {
      * @param {Function} fn 
      * @param {Boolean} deep
      * @returns {Function} stopWatch
+     * 
+     * @example
+     * watchProjectChange(saveProject)  // while project change, save project to IndexedDB
      */
     function watchProjectChange(fn?: Function, deep: boolean = true, immediate: boolean = false): WatchStopHandle {
         return watch(project, (newVal, oldVal) => {
@@ -70,18 +69,24 @@ export const useProjectStore = defineStore('project', () => {
     /**
      * Add Sprite or Sound to project.
      * @param item 
+     * 
+     * @example
+     * addItem(sprite)
      */
-    function addItem(item: Sprite | Sound) {
+    function addItem(...item: Sprite[] | Sound[]) {
         if (Sprite.isInstance(item)) {
-            spriteStore.addItem(item as Sprite)
+            spriteStore.addItem(...item as Sprite[])
         } else if (Sound.isInstance(item)) {
-            soundStore.addItem(item)
+            soundStore.addItem(...item as Sound[])
         }
     }
 
     /**
      * Set Sprite or Sound to project.
      * @param item 
+     * 
+     * @example
+     * setItem([sprite])
      */
     function setItem(item: Sprite[] | Sound[] | Backdrop) {
         if (Sprite.isInstance(item)) {
@@ -96,6 +101,9 @@ export const useProjectStore = defineStore('project', () => {
     /**
      * Remove Sprite or Sound from project.
      * @param item 
+     * 
+     * @example
+     * removeItem(sprite)
      */
     function removeItem(item: Sprite | Sound) {
         if (item instanceof Sprite) {
@@ -106,20 +114,44 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Save current project to local storage.
+     * Save project to local storage (IndexedDB) using project.
+     * @param {projectType} proj
+     * 
+     * @example
+     * saveProject()  // save current project
      */
-    async function saveProject() {
-        await removeProject(title.value)
-        const dir = convertProjectToDirectory()
-        const dirBuffer = await convertDirectoryToBuffer(dir)
-        for (const [key, value] of Object.entries(dirBuffer)) {
+    async function saveByProject(proj: projectType = getRawProject()) {
+        await removeProject(proj.title)
+        const dir = convertProjectToRawDir(proj)
+        const dirPath = await convertRawDirToDirPath(dir)
+        await saveByDirPath(dirPath)
+    }
+
+    /**
+     * Save project to local storage (IndexedDB) using directory path.
+     * @param dirPath 
+     */
+    async function saveByDirPath(dirPath: dirPath) {
+        for (const [key, value] of Object.entries(dirPath)) {
             await localForage.setItem(key, value)
         }
     }
 
     /**
-     * Remove project from local storage.
+     * Save project to local storage (IndexedDB) using directory object.
+     * @param dir 
+     */
+    async function saveByRawDir(dir: rawDir) {
+        const dirPath = await convertRawDirToDirPath(dir)
+        await saveByDirPath(dirPath)
+    }
+
+    /**
+     * Remove project from local storage (IndexedDB).
      * @param {string} name
+     * 
+     * @example
+     * removeProject("test")
      */
     async function removeProject(name: string) {
         const keys = await localForage.keys()
@@ -130,38 +162,44 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Convert project(computedRef) to directory object.
-     * @returns {Record<string, any>} project
+     * Convert project (computedRef) to directory object.
+     * @returns {rawDir} project
      */
-    function convertProjectToDirectory(): Record<string, any> {
-        const project = getRawProject();
-        const files: Record<string, any> = Object.assign({}, project.defaultDir, ...[project.backdrop, ...project.sprites, ...project.sounds].map(item => item.dir))
+    function convertProjectToRawDir(proj: projectType = getRawProject()): rawDir {
+        const files: rawDir = Object.assign({}, proj.defaultDir, ...[proj.backdrop, ...proj.sprites, ...proj.sounds].map(item => item.dir))
+
+        const title = proj.title
 
         // if no entry in files, add main.spx as default
         if (!('main.spx' in files || 'index.spx' in files || 'index.gmx' in files || 'main.gmx' in files)) {
-            files['main.spx'] = `var (\n\t${project.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${project.sounds?.map(sound => sound.name + ' Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${project.title}"}`
+            files['main.spx'] = `var (\n\t${proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${proj.sounds?.map(sound => sound.name + ' Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${proj.title}"}`
         }
-        return files
+
+        const dir: rawDir = {}
+        for (const [key, value] of Object.entries(files)) {
+            const fullPath = title + '/' + key
+            dir[fullPath] = value
+        }
+
+        return dir
     }
 
     /**
      * Convert directory object to ArrayBuffer.
      * @returns {dirPath} project
      */
-    async function convertDirectoryToBuffer(dir: Record<string, any>): Promise<dirPath> {
+    async function convertRawDirToDirPath(dir: rawDir): Promise<dirPath> {
         const directory: dirPath = {}
-
         for (const [path, value] of Object.entries(dir)) {
-            const fullPath = project.value.title + '/' + path
-            if (value.content && value.content instanceof ArrayBuffer) {
-                directory[fullPath] = Object.assign(value, { path: fullPath })
+            if ((value as FileType).content && (value as FileType).content instanceof ArrayBuffer) {
+                directory[path] = Object.assign(value as FileType, { path })
                 continue
             }
             const ext = path.split('.').pop()!
             const content = await Content2ArrayBuffer(value, getMimeFromExt(ext))
-            directory[fullPath] = {
+            directory[path] = {
                 content,
-                path: fullPath,
+                path,
                 type: getMimeFromExt(ext),
                 size: content.byteLength,
                 modifyTime: new Date()
@@ -179,6 +217,7 @@ export const useProjectStore = defineStore('project', () => {
         spriteStore.setItem([])
         soundStore.setItem([])
         setTitle(UNTITLED_NAME)
+        setDefaultDir({})
     }
 
     /**
@@ -278,8 +317,55 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
+     * Convert file type to raw.
+     * @param file the file
+     * @returns 
+     */
+    function convertFileTypeToRaw(file: FileType): any {
+        return ArrayBuffer2Content(file.content, file.type, file.path.split('/').pop()!)
+    }
+
+    /**
+     * Convert directory path `<string, FileType>` to raw `<string, any>`.
+     * @param dir the directory
+     * @returns 
+     */
+    function convertDirPathToRawDir(dir: dirPath): rawDir {
+        return Object.fromEntries(Object.entries(dir).map(([path, file]) => [path, convertFileTypeToRaw(file)]))
+    }
+
+    /**
+     * 
+     * @param key 
+     * @param value 
+     * @returns 
+     */
+    const zipFileValue = (key: string, value: rawFile): [string, string | File] => {
+        if (typeof value === 'string' || value instanceof File) {
+            return [key, value]
+        } else {
+            return [key, JSON.stringify(value)]
+        }
+    }
+
+    async function convertRawDirToZip(dir: rawDir): Promise<Blob> {
+        const zip = new JSZip();
+        const prefix = getPrefix(dir)
+        for (let [path, value] of Object.entries(dir)) {
+            prefix && (path = path.replace(prefix + '/', ''));
+            zip.file(...zipFileValue(path, value));
+        }
+        const content = await zip.generateAsync({ type: 'blob' })
+        return content
+    }
+
+    /**
      * Load project from local storage using directory path.
      * @param {dirPath} dir
+     * 
+     * @example
+     * const dir = await getDirPathFromLocal('test')
+     * dir && loadProject(dir)
      */
     function loadProject(dir: dirPath) {
         const proj = parseProject(dir);
@@ -291,13 +377,14 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Get project from local storage.
+     * Get project from local storage (IndexedDB).
      * @param {string} name the name of project
      * @returns {dirPath} the directory of project
      * 
      * @example
-     * const dir = await getProjectFromLocal('test')
-     * loadProject(dir)
+     * const dir = await getDirPathFromLocal('test')
+     * dir && loadProject(dir)
+     * dir && saveToComputerByDirPath(dir!)
      */
     async function getDirPathFromLocal(name: string): Promise<dirPath | null> {
         const keys = await localForage.keys()
@@ -316,6 +403,11 @@ export const useProjectStore = defineStore('project', () => {
     /**
      * Get all local project from IndexedDB (localForage).
      * @returns {Promise<string[]>}
+     * 
+     * @example
+     * const projects = await getAllLocalProjects()  // get all local projects' name
+     * const dir = await getDirPathFromLocal(projects[0])  // get dirpath of the first local project
+     * dir && loadProject(dir)  // if dir exists, load project
      */
     async function getAllLocalProjects(): Promise<string[]> {
         const keys = await localForage.keys()
@@ -331,38 +423,75 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Save project to computer.
+     * Generate zip file from project.
      */
-    async function saveProjectToComputer() {
-        const zip = new JSZip();
-        const dir = convertProjectToDirectory()
+    async function convertProjectToZip(proj: projectType = getRawProject()): Promise<Blob> {
+        const dir = convertProjectToRawDir(proj)
+        const content = await convertRawDirToZip(dir)
+        return content
+    }
 
-        const zipFileValue = (key: string, value: string | File | Record<string, any>): [string, string | File] => {
-            if (typeof value === 'string' || value instanceof File) {
-                return [key, value]
-            } else {
-                return [key, JSON.stringify(value)]
+    /**
+     * Save project to computer.
+     * 
+     * @example
+     * saveToComputerByProject()
+     */
+    async function saveToComputerByProject(proj: projectType = getRawProject()) {
+        const content = await convertProjectToZip(proj);
+        saveAs(content, `${proj.title}.zip`);
+    }
+
+    /**
+     * Save dirPath to computer.
+     * 
+     * @example
+     * const dir = await getDirPathFromLocal('test')
+     * dir && saveToComputerByDirPath(dir)
+     */
+    async function saveToComputerByDirPath(dir: dirPath) {
+        const rawDir = convertDirPathToRawDir(dir)
+        const content = await convertRawDirToZip(rawDir)
+        const title = getPrefix(dir) || UNTITLED_NAME
+        saveAs(content, `${title}.zip`);
+    }
+
+    function getPrefix(dir: Record<string, any>) {
+        const keys = Object.keys(dir);
+        let prefixCount = 0;
+        let singlePrefix: string | null = null;
+        for (const key of keys) {
+            const currentPrefix = key.split('/').shift()!;
+            if (!singlePrefix) {
+                prefixCount++;
+                singlePrefix = currentPrefix;
+
+                if (prefixCount > 1) {
+                    return null;
+                }
             }
         }
-
-        for (const [key, value] of Object.entries(dir)) {
-            zip.file(...zipFileValue(key, value));
+        if (prefixCount === 1) {
+            return singlePrefix;
         }
-
-        const content = await zip.generateAsync({ type: 'blob' });
-        saveAs(content, `${project.value.title}.zip`);
+        return null;
     }
 
     return {
         setTitle,
         watchProjectChange,
         resetProject,
-        saveProject,
+        saveByProject,
+        saveByDirPath,
+        saveByRawDir,
         removeProject,
         loadProject,
         getDirPathFromZip,
         getDirPathFromLocal,
-        saveProjectToComputer,
+        convertProjectToZip,
+        convertRawDirToZip,
+        saveToComputerByDirPath,
+        saveToComputerByProject,
         title: readonly(title),
         getAllLocalProjects,
         project,
