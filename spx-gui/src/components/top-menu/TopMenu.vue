@@ -328,6 +328,16 @@ function renderIcon(icon: any) {
     );
 }
 
+/**
+ * @description: toggle language function , now for Chinese and English
+ * @Author: Yao xinyue
+ * @Date: 2024-01-17 17:58:26
+ */
+const toggleLanguage = () => {
+  locale.value = locale.value === "en" ? "zh" : "en";
+  languageStore.setLanguage(languageStore.language === "en" ? "zh" : "en");
+};
+
 // function renderIcon(icon) {
 //   return () => h(NIcon, null, { default: () => h(icon) });
 // }
