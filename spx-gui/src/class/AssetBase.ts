@@ -1,13 +1,13 @@
-import { asset } from "@/interface/asset";
+import file from "@/interface/file";
 
 /**
  * @abstract
- * @class Asset
+ * @class AssetBase
  * 
  * @author tgb
  * @createDate 2024-01-18
  */
-export abstract class Asset implements asset {
+export default abstract class AssetBase implements file {
     protected _files: File[];
     public name: string;
     public config: Record<string, any>;

@@ -1,7 +1,7 @@
 /**
- * Asset interface
+ * file interface
  */
-export interface asset {
+export default interface file {
     files: File[];
     config: Record<string, any>;
     dir?: Record<string, any>;

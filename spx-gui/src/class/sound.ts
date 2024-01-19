@@ -1,5 +1,5 @@
-import { asset } from "@/interface/asset";
-import { Asset } from "./asset";
+import file from "@/interface/file";
+import AssetBase from "./AssetBase";
 import { isInstance } from "@/util/class";
 
 /**
@@ -36,7 +36,7 @@ import { isInstance } from "@/util/class";
  * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
  */
 
-export default class Sound extends Asset implements asset {
+export default class Sound extends AssetBase implements file {
     /**
      * The root path of the sounds.
      */

@@ -8,7 +8,7 @@
 
 import { ref, Ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { Asset } from '@/class/asset'
+import AssetBase from '@/class/AssetBase'
 
 /**
  * Create a store to manage assets.
@@ -16,7 +16,7 @@ import { Asset } from '@/class/asset'
  * @param hook a function that returns an object to be mixed into the store
  * @returns the store
  */
-export default function createStore<T extends Asset>(name: string, hook?: () => Partial<T>) {
+export default function createStore<T extends AssetBase>(name: string, hook?: () => Partial<T>) {
     return defineStore(name, () => {
         /**
          * The list of assets named by name. If the name is sprite, the list will be `sprites`.

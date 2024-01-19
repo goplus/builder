@@ -1,5 +1,5 @@
-import { asset } from "@/interface/asset";
-import { Asset } from "./asset";
+import file from "@/interface/file";
+import AssetBase from "./AssetBase";
 import { isInstance } from "@/util/class";
 
 /**
@@ -30,7 +30,7 @@ import { isInstance } from "@/util/class";
  * backdrop.dir  // { "assets/index.json": { height: 300 }, "assets/[file1.name]": file1, "assets/[file2.name]": file2 }
  */
 
-export default class Backdrop extends Asset implements asset {
+export default class Backdrop extends AssetBase implements file {
     /**
      * The root path of the backdrop.
      */

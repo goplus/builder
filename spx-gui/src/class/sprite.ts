@@ -1,5 +1,5 @@
-import { asset } from "@/interface/asset";
-import { Asset } from "./asset";
+import file from "@/interface/file";
+import AssetBase from "./AssetBase";
 import { isInstance } from "@/util/class";
 
 /**
@@ -37,7 +37,7 @@ import { isInstance } from "@/util/class";
  * spt2.dir  // { "banana~~.spx": "onCloned => {}", "assets/sprites/banana~~/index.json": {x: 23, y: 21}, "assets/sprites/banana~~/[file1.name]": file1, "assets/sprites/banana~~/[file2.name]": file2 }
  */
 
-export default class Sprite extends Asset implements asset {
+export default class Sprite extends AssetBase implements file {
     /**
      * The root path of the sprites.
      */
