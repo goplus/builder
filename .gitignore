@@ -23,3 +23,6 @@
 
 # Go workspace file
 go.work
+
+# The dependency file
+spx-gui/node_modules/*

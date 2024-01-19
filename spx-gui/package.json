@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "axios": "^1.6.5",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "localforage": "^1.10.0",
     "pinia": "^2.1.7",
     "pinia-plugin-persist": "^1.0.0",
     "vicons": "^0.0.1",
@@ -18,6 +21,7 @@
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@vicons/antd": "^0.12.0",
     "@vicons/ionicons5": "^0.12.0",
     "@vicons/material": "^0.12.0",

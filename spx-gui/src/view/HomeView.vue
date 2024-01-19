@@ -13,12 +13,15 @@
         <NButton>aaa</NButton>
         <!--  E Component SpriteList -->
     </div>
-  </template>
+
+    <FileManagerDemo></FileManagerDemo>
+</template>
   
-  <script setup lang="ts">
-  import SpriteList from "@/components/sprite-list/SpriteList.vue";
-  import { NButton } from 'naive-ui';
-  </script>
+<script setup lang="ts">
+import SpriteList from "@/components/sprite-list/SpriteList.vue";
+import FileManagerDemo from "@/components/file-manager-demo/FileManagerDemo.vue";
+import { NButton } from 'naive-ui';
+</script>
   
   
   
