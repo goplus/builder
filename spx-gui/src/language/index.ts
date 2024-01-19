@@ -7,7 +7,6 @@
  * @Description:
 */
 import { App } from "vue";
-import { useLanguageStore } from "store/modules/language";
 import { useLanguageStore } from "@/store/modules/language";
 import { createI18n } from "vue-i18n";
 
