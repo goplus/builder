@@ -28,7 +28,6 @@ async function initApp() {
 
     await initI18n(app);
 
-
     loading.unmount()
     app.mount('#app')
 }

@@ -1,13 +1,14 @@
 /*
  * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-01-17 01:56:51
- * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-17 01:56:51
+ * @Date: 2024-01-18 01:56:51
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-17 21:26:53
  * @FilePath: src/language/index.ts
  * @Description:
 */
 import { App } from "vue";
 import { useLanguageStore } from "store/modules/language";
+import { useLanguageStore } from "@/store/modules/language";
 import { createI18n } from "vue-i18n";
 
 export const initI18n = async (app:App) => {

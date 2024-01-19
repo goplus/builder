@@ -1,9 +1,9 @@
 <!--
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:28:28
- * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-18 14:28:28
- * @FilePath: src/components/sounds/SoundsEdit.vue
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-18 11:19:32
+ * @FilePath: /builder/spx-gui/src/components/sounds/SoundsEdit.vue
  * @Description: Sounds Edit Part
 -->
 <template>

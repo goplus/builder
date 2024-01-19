@@ -4,6 +4,7 @@ interface PageData<T> {
   data: T
 }
 
+
 interface SpriteInfoType {
   name: string;
   image: string;
@@ -15,14 +16,14 @@ interface SpriteInfoType {
 interface Asset {
   id: number;
   name: string;
-  authorId: number;
-  category: string;
-  isPublic: number;
-  address: string;
-  assetType: number;
-  status: number;
-  cTime: number;
-  uTime: number;
+  authorId?: number;
+  category?: string;
+  isPublic?: number;
+  address?: string;
+  assetType?: number;
+  status?: number;
+  cTime?: number;
+  uTime?: number;
 }
 
 interface Project {
