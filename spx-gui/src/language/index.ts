@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-01-18 01:56:51
+ * @Date: 2024-01-17 01:56:51
  * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-18 01:56:51
+ * @LastEditTime: 2024-01-17 01:56:51
  * @FilePath: src/language/index.ts
  * @Description:
 */
@@ -12,7 +12,6 @@ import { createI18n } from "vue-i18n";
 
 export const initI18n = async (app:App) => {
     console.log("init i18n start")
-    // This is an example of a routing result that needs to be loaded.
     const messages = {
         en: {
             language: "English",

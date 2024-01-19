@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:28:15
  * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-18 15:18:19
+ * @LastEditTime: 2024-01-12 17:28:15
  * @FilePath: src/components/sounds/SoundsEditCard.vue
  * @Description: Sounds Card
 -->
@@ -13,7 +13,7 @@
     </div>
     <div class="sounds-card-content">
       <div class="sounds-card-title">
-        Meow Sound
+        {{ props.asset.name }}
       </div>
       <div class="sounds-card-subtitle">
         0.85s
@@ -24,6 +24,15 @@
 
 <script setup lang="ts">
 
+import { Asset } from "@/interface/library.ts";
+import { defineProps } from "vue";
+
+const props = defineProps({
+  asset: {
+    type: Object as () => Asset,
+    required: true,
+  },
+});
 
 </script>
 
