@@ -13,7 +13,7 @@
     </div>
     <div class="sounds-card-content">
       <div class="sounds-card-title">
-        Meow Sound
+        {{ props.asset.name }}
       </div>
       <div class="sounds-card-subtitle">
         0.85s
@@ -24,6 +24,15 @@
 
 <script setup lang="ts">
 
+import { Asset } from "@/interface/library.ts";
+import { defineProps } from "vue";
+
+const props = defineProps({
+  asset: {
+    type: Object as () => Asset,
+    required: true,
+  },
+});
 
 </script>
 

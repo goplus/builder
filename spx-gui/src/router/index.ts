@@ -1,10 +1,10 @@
 /*
  * @Author: Xu Ning
- * @Date: 2024-01-15 14:38:44
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 23:23:10
+ * @Date: 2024-01-15 09:16:35
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-19 23:10:11
  * @FilePath: /builder/spx-gui/src/router/index.ts
- * @Description: 
+ * @Description:
  */
 import { App } from "vue";
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";

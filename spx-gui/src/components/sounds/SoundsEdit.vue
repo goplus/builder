@@ -10,91 +10,68 @@
   <div class="sound-edit-content">
     <div class="sound-edit-content-top">
       <span class="text-sound">
-        <n-gradient-text type="danger">
-          <div class="sounds-hint">| {{ $t("sounds.hint") }}</div>
-        </n-gradient-text>
+         <n-gradient-text type="danger">
+           <div class="sounds-hint">| {{ $t('sounds.hint') }}</div>
+         </n-gradient-text>
       </span>
       <n-input
-        size="small"
-        round
-        placeholder="Meow Sound"
-        class="sound-edit-content-top-input-sound-name"
+          size="small"
+          round
+          placeholder="Meow Sound"
+          class="sound-edit-content-top-input-sound-name"
       />
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text"
-          src="@/assets/icon/sound/withdraw.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.undo") }}</div>
+        <img class="sound-icon-with-text" src="@/assets/icon/sound/withdraw.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.undo') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-flip-horizontal"
-          src="@/assets/icon/sound/withdraw.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.reUndo") }}</div>
+        <img class="sound-icon-with-text-flip-horizontal" src="@/assets/icon/sound/withdraw.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.reUndo') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-rotate-left"
-          src="@/assets/icon/sound/cut.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.delete") }}</div>
+        <img class="sound-icon-with-text-rotate-left" src="@/assets/icon/sound/cut.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.delete') }}</div>
       </div>
     </div>
     <div>
-      <img
-        style="width: 550px"
-        src="@/assets/image/sounds/sounds-edit-part.png"
-      />
+      <img style="width: 550px;" src="@/assets/image/sounds/sounds-edit-part.png">
     </div>
     <div class="sound-edit-content-bottom">
-      <img class="sound-icon" src="@/assets/icon/sound/play.svg" />
+
+      <img class="sound-icon" src="@/assets/icon/sound/play.svg"/>
 
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text"
-          src="@/assets/icon/sound/faster.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.forward") }}</div>
+        <img class="sound-icon-with-text" src="@/assets/icon/sound/faster.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.forward') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-flip-horizontal"
-          src="@/assets/icon/sound/faster.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.rewind") }}</div>
+        <img class="sound-icon-with-text-flip-horizontal" src="@/assets/icon/sound/faster.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.rewind') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-flip-horizontal"
-          src="@/assets/icon/sound/mute.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.mute") }}</div>
+        <img class="sound-icon-with-text-flip-horizontal" src="@/assets/icon/sound/mute.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.mute') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-flip-horizontal"
-          src="@/assets/icon/sound/volume.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.volume") }}</div>
+        <img class="sound-icon-with-text-flip-horizontal" src="@/assets/icon/sound/volume.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.volume') }}</div>
       </div>
       <div class="sound-icon-container">
-        <img
-          class="sound-icon-with-text-flip-horizontal"
-          src="@/assets/icon/sound/replay.svg"
-        />
-        <div class="sound-icon-text">{{ $t("sounds.replay") }}</div>
+        <img class="sound-icon-with-text-flip-horizontal" src="@/assets/icon/sound/replay.svg"/>
+        <div class="sound-icon-text">{{ $t('sounds.replay') }}</div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { NInput, NGradientText } from "naive-ui";
+
+
 </script>
 
 <style scoped>
+
 .sounds-hint {
   font-size: 30px;
 }
@@ -122,6 +99,7 @@ import { NInput, NGradientText } from "naive-ui";
   display: flex;
   gap: 20px;
 }
+
 
 .sound-icon {
   width: 50px;
@@ -156,4 +134,7 @@ import { NInput, NGradientText } from "naive-ui";
 .sound-icon-with-text-rotate-left {
   transform: rotate(-90deg);
 }
+
+
+
 </style>

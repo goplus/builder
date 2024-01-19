@@ -4,7 +4,7 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-01-19 11:19:06
  * @FilePath: /builder/spx-gui/vite.config.ts
- * @Description: 
+ * @Description:
  */
 import { fileURLToPath, URL } from 'node:url'
 
@@ -32,7 +32,8 @@ export default defineConfig({
       views: resolve('src/views'),
       utils: resolve('src/utils'),
       routes: resolve('src/routes'),
-      styles: resolve('src/styles')
+      styles: resolve('src/styles'),
+      store: resolve('src/store')
     }
   }
 })

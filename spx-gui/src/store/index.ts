@@ -10,7 +10,7 @@ import { createPinia, defineStore } from "pinia"
 import { App } from "vue";
 import piniaPluginPersist from "pinia-plugin-persist";
 
-export function initStore(app: App) {
+export const initStore = async (app: App)=> {
     const store = createPinia();
     store.use(piniaPluginPersist)
     app.use(store);

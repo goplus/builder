@@ -12,7 +12,6 @@ import { createI18n } from "vue-i18n";
 
 export const initI18n = async (app:App) => {
     console.log("init i18n start")
-    // This is an example of a routing result that needs to be loaded.
     const messages = {
         en: {
             language: "English",
@@ -41,7 +40,7 @@ export const initI18n = async (app:App) => {
             sounds: {
                 hint: '音频',
                 undo: '撤销',
-                reUndo: '重做',
+                reUndo: '返回',
                 delete: '删除',
                 forward: '快进',
                 rewind: '倒带',
