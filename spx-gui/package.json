@@ -14,8 +14,7 @@
     "pinia-plugin-persist": "^1.0.0",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
-    "vue-router": "^4.2.5",
-    "vuex": "^4.0.2"
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@vicons/ionicons5": "^0.12.0",

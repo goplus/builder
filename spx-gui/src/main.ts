@@ -1,40 +1,30 @@
 /*
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 21:48:00
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-15 10:22:42
  * @FilePath: /builder/spx-gui/src/main.ts
  * @Description:
  */
-
 import { createApp } from "vue";
-import { createStore } from "vuex";
-import { createPinia } from "pinia";
 import App from "./App.vue";
-import piniaPluginPersist from "pinia-plugin-persist";
-import router from "@/router/index.ts";
-import "vfonts/Lato.css";
-import "vfonts/FiraCode.css";
 
-const pinia = createPinia();
-pinia.use(piniaPluginPersist);
-const app = createApp(App);
+import Loading from "@/components/loading/Loading.vue"
+import { initAssets } from './plugins';
+import { initRouter } from "@/router/index.ts";
+import { initStore } from "./store";
+async function initApp() {
+    // Give priority to loading css,js resources
+    initAssets()
 
-app.use(pinia);
-app.use(router).mount("#app");
+    const loading = createApp(Loading);
+    loading.mount('#appLoading');
 
-// vuex store
-const store = createStore({
-  state() {
-    return {
-      count: 0,
-    };
-  },
-  mutations: {
-    increment(state) {
-      state.count++;
-    },
-  },
-});
+    const app = createApp(App);
+    initStore(app);
+    await initRouter(app);
 
-app.use(store);
+    loading.unmount()
+    app.mount('#app')
+}
+initApp()
