@@ -107,6 +107,10 @@ const dropdownStyle = {
  */
 const menuOptions = [
   {
+    label: () => h(NButton, {}, "logo"),
+    key: "hear-the-wind-sing",
+  },
+  {
     label: () =>
       h(NAvatar, {
         round: true,
@@ -333,6 +337,10 @@ const toggleLanguage = () => {
   locale.value = locale.value === "en" ? "zh" : "en";
   languageStore.setLanguage(languageStore.language === "en" ? "zh" : "en");
 };
+
+// function renderIcon(icon) {
+//   return () => h(NIcon, null, { default: () => h(icon) });
+// }
 </script>
 
 <style type="scss" scoped></style>
