@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/goplus/builder/internal/common"
@@ -30,6 +31,19 @@ type Config struct {
 	Driver string // database driver. default is `mysql`.
 	DSN    string // database data source name
 	BlobUS string // blob URL scheme
+}
+
+type Asset struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	AuthorId  string    `json:"authorId"`
+	Category  string    `json:"category"`
+	IsPublic  int       `json:"isPublic"`
+	Address   string    `json:"address"`
+	AssetType string    `json:"assetType"`
+	Status    int       `json:"status"`
+	CTime     time.Time `json:"cTime"`
+	UTime     time.Time `json:"uTime"`
 }
 
 type CodeFile struct {
@@ -223,4 +237,64 @@ func (p *Project) CodeFmt(ctx context.Context, body, fiximport string) (res *For
 		Error: FormatError{},
 	}
 	return
+}
+
+// Asset returns an Asset.
+func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
+	asset, err := common.QueryById[Asset](p.db, id)
+	if err != nil {
+		return nil, err
+	}
+	if asset == nil {
+		return nil, err
+	}
+	modifiedAddress, err := p.modifyAddress(asset.Address)
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = modifiedAddress
+
+	return asset, nil
+}
+
+// AssetList list assets
+func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string) (*common.Pagination[Asset], error) {
+	wheres := []common.FilterCondition{
+		{Column: "asset_type", Operation: "=", Value: assetType},
+	}
+	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres)
+	for i, asset := range pagination.Data {
+		modifiedAddress, err := p.modifyAddress(asset.Address)
+		if err != nil {
+			return nil, err
+		}
+		pagination.Data[i].Address = modifiedAddress
+	}
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// modifyAddress transfers relative path to download url
+func (p *Project) modifyAddress(address string) (string, error) {
+	var data struct {
+		Assets    map[string]string `json:"assets"`
+		IndexJson string            `json:"indexJson"`
+	}
+	if err := json.Unmarshal([]byte(address), &data); err != nil {
+		return "", err
+	}
+	qiniuPath := os.Getenv("QINIU_PATH") // TODO: Replace with real URL prefix
+	for key, value := range data.Assets {
+		data.Assets[key] = qiniuPath + value
+	}
+	if data.IndexJson != "" {
+		data.IndexJson = qiniuPath + data.IndexJson
+	}
+	modifiedAddress, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return string(modifiedAddress), nil
 }
