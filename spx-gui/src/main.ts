@@ -13,6 +13,7 @@ import Loading from "@/components/loading/Loading.vue"
 import { initAssets,initCodeEditor } from './plugins';
 import { initRouter } from "@/router/index.ts";
 import { initStore } from "./store";
+import {initI18n} from "@/language";
 async function initApp() {
     
 
@@ -28,9 +29,11 @@ async function initApp() {
 
 
     const app = createApp(App);
-    initStore(app);
+    await initStore(app);
     await initRouter(app);
     await initCodeEditor();
+
+    await initI18n(app);
 
     loading.unmount()
     app.mount('#app')

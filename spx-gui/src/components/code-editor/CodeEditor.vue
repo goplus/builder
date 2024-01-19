@@ -2,18 +2,26 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 16:27:28
+ * @LastEditTime: 2024-01-19 17:36:52
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
 <template>
-    <div>
+    <div style="height: 400px;">
         <div>
+            <p> toolbox</p>
             <n-button v-for="snippet in store.toolbox" @click="insertCode(toRaw(snippet))">{{ snippet.label }}</n-button>
         </div>
-        <button v-for="item in store.spx_list" :key="item.id" @click="toggleCodeById(item.id)">{{ item.id }}</button>
-        <button @click="submit">submit</button>
-        <button @click="format">format</button>
+        <div>
+            <p>spx</p>
+            <n-button v-for="item in store.spx_list" :key="item.id" @click="toggleCodeById(item.id)">{{
+                item.id }}</n-button>
+        </div>
+        <div>
+            <p>action</p>
+            <n-button @click="submit">submit</n-button>
+            <n-button @click="format">format</n-button>
+        </div>
         <div id="code-editor" ref="code_editor"></div>
     </div>
 </template>
@@ -99,8 +107,8 @@ const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
 store.$onAction(({
     name,
     store,
-    args, 
-    after, 
+    args,
+    after,
     onError,
 }) => {
 
