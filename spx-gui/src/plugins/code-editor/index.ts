@@ -39,48 +39,50 @@ const initCodeEditor = async () => {
     monaco.languages.setMonarchTokensProvider('spx', MonarchTokensProviderConfig);
 
     // Code hint
-    monaco.languages.registerCompletionItemProvider('spx', {
-        provideCompletionItems: (model, position) => {
-            var word = model.getWordUntilPosition(position);
-            var range = {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn,
-            };
-            let suggestions: monaco.languages.CompletionItem[] = [
-                ...keywords.map((keyword) => ({
-                    label: keyword,
-                    insertText: keyword,
-                    kind: monaco.languages.CompletionItemKind.Keyword,
-                    detail: 'This is a keyword',
-                    range
-                })),
-                ...function_completions.map(e => ({
-                    ...e,
-                    range: {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn
-                    }
-                })),
-                ...typeKeywords.map((typeKeyword) => ({
-                    label: typeKeyword,
-                    insertText: typeKeyword,
-                    kind: monaco.languages.CompletionItemKind.TypeParameter,
-                    detail: 'This is a type',
-                    range
-                }))
-            ]
-            return { suggestions }
-        }
-    })
+    monaco.languages.registerCompletionItemProvider('spx', completionItemProvider);
     console.log(window.Go)
     const go = new window.Go();
     const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
     await go.run(result.instance)
 }
+
+const completionItemProvider = {
+    provideCompletionItems: (model, position) => {
+        var word = model.getWordUntilPosition(position);
+        var range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+        };
+        let suggestions: monaco.languages.CompletionItem[] = completionItem(range)
+        return { suggestions }
+    }
+}
+
+function completionItem(range) : monaco.languages.CompletionItem[] {
+    return [
+        ...keywords.map((keyword) => ({
+            label: keyword,
+            insertText: keyword,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            detail: 'This is a keyword',
+            range
+        })),
+        ...function_completions.map(e => ({
+            ...e,
+            range
+        })),
+        ...typeKeywords.map((typeKeyword) => ({
+            label: typeKeyword,
+            insertText: typeKeyword,
+            kind: monaco.languages.CompletionItemKind.TypeParameter,
+            detail: 'This is a type',
+            range
+        }))
+    ]
+}
+
 export {
     monaco,
     keywords,
