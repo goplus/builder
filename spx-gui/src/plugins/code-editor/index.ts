@@ -2,12 +2,12 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:27
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 10:11:05
+ * @LastEditTime: 2024-01-19 14:07:15
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/index.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
-import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, functions, function_completions } from "./config.ts"
+import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
 
 import wasmModuleUrl from '/wasm/main.wasm?url&wasmModule';
 
@@ -27,6 +27,15 @@ monaco.editor.registerCommand(
         }]);
     }
 );
+const initFormat = async () => {
+    // console.log(window.Go)
+    const go = new window.Go();
+    console.log("go")
+    const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
+    console.log("result")
+    // TODO:abstract the logic of wasm
+    go.run(result.instance)
+}
 
 const initCodeEditor = async () => {
 
@@ -56,6 +65,25 @@ const initCodeEditor = async () => {
                     detail: 'This is a keyword',
                     range
                 })),
+                // ...functions.map((func) => ({
+                //     label: func,
+                //     // If you can match the function at the beginning of 'on', The content inserted is onFunc => { }
+                //     // Then the input box will be jumped to the function
+                //     insertText: func.match(/^on/) ? `${func} => {\n\t\${1:condition}\t\n}` : `${func}`,
+                //     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                //     kind: monaco.languages.CompletionItemKind.Function,
+                //     detail: 'This is a function',
+                //     range: {
+                //         startLineNumber: position.lineNumber,
+                //         endLineNumber: position.lineNumber,
+                //         startColumn: word.startColumn,
+                //         endColumn: word.endColumn
+                //     },
+                //     command: {
+                //         id: "editor.suggest",
+                //         arguments: ['est1']
+                //     }
+                // })),
                 ...function_completions.map(e => ({
                     ...e,
                     range: {
@@ -72,14 +100,14 @@ const initCodeEditor = async () => {
                     detail: 'This is a type',
                     range
                 }))
+
             ]
             return { suggestions }
         }
     })
-    console.log(window.Go)
-    const go = new window.Go();
-    const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
-    await go.run(result.instance)
+
+    initFormat()
+
 }
 export {
     monaco,

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-18 15:46:01
+ * @LastEditTime: 2024-01-19 14:11:09
  * @FilePath: /builder/spx-gui/src/main.ts
  * @Description:
  */
@@ -16,19 +16,21 @@ import { initStore } from "./store";
 async function initApp() {
     
 
-
     const loading = createApp(Loading);
     loading.mount('#appLoading');
     
+
     // Give priority to loading css,js resources
     initAssets()
+
+
 
 
 
     const app = createApp(App);
     initStore(app);
     await initRouter(app);
-    initCodeEditor();
+    await initCodeEditor();
 
     loading.unmount()
     app.mount('#app')
