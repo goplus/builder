@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 09:16:18
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 09:50:04
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-18 11:19:56
  * @FilePath: /builder/spx-gui/src/components/loading/Loading.vue
  * @Description: 
 -->
@@ -11,13 +11,13 @@
         <div>
             <img :src="Logo" />
         </div>
-        <p>SPX GUI 正在加载中...</p>
+        <p>SPX GUI is loading...</p>
     </div>
 </template>
 <script lang="ts" setup>
 import Logo from "@/assets/logo.png"
 </script>
-<style>
+<style scoped>
 .loading {
     position: fixed;
     top: 0;
