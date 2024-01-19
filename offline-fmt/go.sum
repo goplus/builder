@@ -1,0 +1,4 @@
+github.com/goplus/gop v1.1.13 h1:Nnyzy7BeE25SbpGfOX/mHGBCpvVsmkr/9hW0FtUXZwY=
+github.com/goplus/gop v1.1.13/go.mod h1:iRl6Rxc4bazQaDr4yUlxSpa9Wxs8J2nXG0ON8vcfh4g=
+github.com/qiniu/x v1.13.1 h1:hi7tkXFq6BWGbBpMoLV7kvA2elop69j6Kl7TlxnFAiU=
+github.com/qiniu/x v1.13.1/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
