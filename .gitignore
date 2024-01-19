@@ -24,5 +24,7 @@
 # Go workspace file
 go.work
 
-# The dependency file
+.vscode/
+.idea/
+*.wasm
 spx-gui/node_modules/*
