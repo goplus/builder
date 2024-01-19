@@ -2,12 +2,12 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:27
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-18 17:57:39
+ * @LastEditTime: 2024-01-19 10:11:05
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/index.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
-import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, functions } from "./config.ts"
+import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, functions, function_completions } from "./config.ts"
 
 import wasmModuleUrl from '/wasm/main.wasm?url&wasmModule';
 
@@ -29,9 +29,6 @@ monaco.editor.registerCommand(
 );
 
 const initCodeEditor = async () => {
-
-
-
 
     monaco.languages.register({
         id: 'spx',
@@ -59,23 +56,13 @@ const initCodeEditor = async () => {
                     detail: 'This is a keyword',
                     range
                 })),
-                ...functions.map((func) => ({
-                    label: func,
-                    // If you can match the function at the beginning of 'on', The content inserted is onFunc => { }
-                    // Then the input box will be jumped to the function
-                    insertText: func.match(/^on/) ? `${func} => {\n\t\${1:condition}\t\n}` : `${func}`,
-                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                    kind: monaco.languages.CompletionItemKind.Function,
-                    detail: 'This is a function',
+                ...function_completions.map(e => ({
+                    ...e,
                     range: {
                         startLineNumber: position.lineNumber,
                         endLineNumber: position.lineNumber,
                         startColumn: word.startColumn,
                         endColumn: word.endColumn
-                    },
-                    command: {
-                        id: "editor.suggest",
-                        arguments: ['est1']
                     }
                 })),
                 ...typeKeywords.map((typeKeyword) => ({
@@ -85,7 +72,6 @@ const initCodeEditor = async () => {
                     detail: 'This is a type',
                     range
                 }))
-
             ]
             return { suggestions }
         }
