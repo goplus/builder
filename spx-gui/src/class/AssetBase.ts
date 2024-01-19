@@ -38,7 +38,9 @@ export default abstract class AssetBase implements file {
             }
             this._files.push(f);
         }
-        throw new Error(`All files in ${this.name} must be unique. ${exist.map(file => file.name).join(', ')} already exist.`)
+        if (exist.length) {
+            throw new Error(`All files in ${this.name} must be unique. ${exist.map(file => file.name).join(', ')} already exist.`)
+        }
     }
 
     /**
@@ -50,5 +52,13 @@ export default abstract class AssetBase implements file {
         if (index > -1) {
             this._files.splice(index, 1);
         }
+    }
+
+    /**
+     * Load file from URL
+     * @param url the url of zip file
+     */
+    loadFileFromURL(url: string) {
+        // TODO
     }
 }
