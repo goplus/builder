@@ -17,6 +17,7 @@
         </div>
       </template>
       <!-- TODO Code Editor Part   -->
+      <CodeEditorHome/>
     </n-tab-pane>
     <!--Tab Sound Part-->
     <n-tab-pane name="sound">
@@ -41,6 +42,7 @@
 import { ref } from 'vue';
 import { NTabs, NTabPane } from 'naive-ui';
 import SoundsEditHome from "@/components/sounds/SoundsHome.vue";
+import CodeEditorHome from "@/components/code-editor/CodeEditorHome.vue";
 
 const currentTab = ref('code');
 

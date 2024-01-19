@@ -2,25 +2,28 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 17:36:52
+ * @LastEditTime: 2024-01-19 18:11:29
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
 <template>
-    <div style="height: 400px;">
-        <div>
-            <p> toolbox</p>
-            <n-button v-for="snippet in store.toolbox" @click="insertCode(toRaw(snippet))">{{ snippet.label }}</n-button>
-        </div>
-        <div>
-            <p>spx</p>
-            <n-button v-for="item in store.spx_list" :key="item.id" @click="toggleCodeById(item.id)">{{
-                item.id }}</n-button>
-        </div>
-        <div>
-            <p>action</p>
-            <n-button @click="submit">submit</n-button>
-            <n-button @click="format">format</n-button>
+    <div class="code-editor">
+        <div class="toolbox">
+            <div>
+                <p> toolbox</p>
+                <n-button v-for="snippet in store.toolbox" @click="insertCode(toRaw(snippet))">{{ snippet.label
+                }}</n-button>
+            </div>
+            <div>
+                <p>spx</p>
+                <n-button v-for="item in store.spx_list" :key="item.id" @click="toggleCodeById(item.id)">{{
+                    item.id }}</n-button>
+            </div>
+            <div>
+                <p>action</p>
+                <n-button @click="submit">submit</n-button>
+                <n-button @click="format">format</n-button>
+            </div>
         </div>
         <div id="code-editor" ref="code_editor"></div>
     </div>
@@ -127,6 +130,15 @@ const toggleCodeById = (id: string) => {
 <style scoped>
 #code-editor {
     height: 100%;
-    width: 600px;
+    /* width: 70%; */
+    width: 0;
+    flex: 2;
+}
+.toolbox{
+    flex: 1;
+}
+.code-editor {
+    display: flex;
+    height: 100%;
 }
 </style>
