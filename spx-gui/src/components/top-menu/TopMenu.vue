@@ -7,12 +7,7 @@
  * @Description:
 -->
 <template>
-  <NMenu
-    v-model:value="activeKey"
-    mode="horizontal"
-    :options="menuOptions"
-    responsive
-  />
+  <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
 </template>
 
 <script setup lang="ts">
@@ -32,6 +27,8 @@ import {
   topMenuReturnBtn1,
   topMenuReturnBtn2,
 } from "@/assets/theme.ts";
+import { useProjectStore } from "@/store/modules/project";
+const projectStore = useProjectStore()
 
 /**
  * @description: dropdown options of import/save/export
@@ -106,6 +103,10 @@ const dropdownStyle = {
  * @Date: 2024-01-17 17:53:53
  */
 const menuOptions = [
+  {
+    label: () => h(NButton, {}, "logo"),
+    key: "hear-the-wind-sing",
+  },
   {
     label: () =>
       h(NAvatar, {
@@ -303,6 +304,22 @@ const computedButtonStyle = (color1: string, color2: string) => {
  */
 const handleSelectImport = (key: string | number) => {
   console.log("key", key);
+
+  // TODO: use for test
+  if (key === 'Local') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    input.click()
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      const dir = await projectStore.getDirPathFromZip(file)
+      projectStore.loadProject(dir)
+      // must set window.project_path 
+      window.project_path = projectStore.project.title
+      await projectStore.saveByProject()
+    }
+  }
 };
 
 /**
@@ -333,6 +350,10 @@ const toggleLanguage = () => {
   locale.value = locale.value === "en" ? "zh" : "en";
   languageStore.setLanguage(languageStore.language === "en" ? "zh" : "en");
 };
+
+// function renderIcon(icon) {
+//   return () => h(NIcon, null, { default: () => h(icon) });
+// }
 </script>
 
 <style type="scss" scoped></style>
