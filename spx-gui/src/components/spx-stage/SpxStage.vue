@@ -29,7 +29,7 @@ useProjectStore().watchProjectChange(() => {
   // wait 2000ms render because of async load
   setTimeout(() => {
     show.value = true
-  }, 2000)
+  }, 100)
 })
 </script>
 

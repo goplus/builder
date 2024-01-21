@@ -13,7 +13,8 @@ import Loading from "@/components/loading/Loading.vue"
 import { initAssets } from './plugins';
 import { initRouter } from "@/router/index.ts";
 import { initStore } from "./store";
-import {initI18n} from "@/language";
+import { initI18n } from "@/language";
+
 async function initApp() {
     // Give priority to loading css,js resources
     initAssets()

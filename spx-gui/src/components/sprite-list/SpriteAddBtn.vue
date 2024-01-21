@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+// ----------Import required packages / components-----------
 import { ref, defineProps, computed } from "vue";
 import type { UploadFileInfo } from "naive-ui";
 import { NIcon, NUpload, NButton, useMessage } from "naive-ui";
@@ -51,14 +52,18 @@ import type { SpriteInfoType } from "@/interface/library";
 import { SpriteInfosMock } from "@/mock/library";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 
+// ----------props & emit------------------------------------
 interface propType {
   type?: string;
 }
 const props = defineProps<propType>();
 const message = useMessage();
-// sprite infos
+
+// ----------data related -----------------------------------
+// Ref about sprite information
 const spriteInfos = ref<SpriteInfoType[]>(SpriteInfosMock);
-// sprite categories
+
+// Const variable about sprite categories
 const spriteCategories = [
   "ALL",
   "Animals",
@@ -67,16 +72,22 @@ const spriteCategories = [
   "Food",
   "Fantasy",
 ];
-// show modal or not
+
+// Ref about showing modal or not
 const showModal = ref<boolean>(false);
-// change css style by props.type
+
+// Ref about showing upload buttons or not
+const showUploadButtons = ref<boolean>(false);
+
+// ----------computed properties-----------------------------
+// Computed variable about changing css style by props.type
 const addBtnClassName = computed(() =>
   props.type === "bg" ? "bg-add-div" : "sprite-add-div"
 );
-// show upload buttons
-const showUploadButtons = ref<boolean>(false);
+
+// ----------methods-----------------------------------------
 /**
- * @description: add button click to change button css style
+ * @description: A Function about clicking add button to change button style
  * @Author: Xu Ning
  * @Date: 2024-01-18 20:31:00
  */
@@ -85,7 +96,7 @@ const handleAddButtonClick = () => {
 };
 
 /**
- * @description: open library modal function
+ * @description: A Function about opening library modal
  * @Author: Xu Ning
  * @Date: 2024-01-16 11:53:40
  */
@@ -94,7 +105,7 @@ const openLibraryFunc = () => {
 };
 
 /**
- * @description:
+ * @description: A Function about checking the file before it upload
  * @Author: Xu Ning
  * @Date: 2024-01-18 20:36:25
  */
