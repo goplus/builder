@@ -35,7 +35,7 @@ let show = ref(false)
 // })
 const run = () => {
   show.value = false
-  // wait 300ms render because of async load
+  // wait 100ms render because of async load
   setTimeout(() => {
     show.value = true
   }, 100)
