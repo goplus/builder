@@ -26,7 +26,7 @@ defineProps({
 let show = ref(false)
 useProjectStore().watchProjectChange(() => {
   show.value = false
-  // wait 2000ms render because of async load
+  // wait 100ms render because of async load
   setTimeout(() => {
     show.value = true
   }, 100)
