@@ -7,13 +7,41 @@
  * @Description: 
 -->
 <template>
-  <div class="spx-stage">stage</div>
+  <div class="spx-stage">
+    <h1>stage</h1>
+    <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
+    <div v-else class="show">loading...</div>
+  </div>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { defineProps, ref } from 'vue';
+import type { projectType } from '@/types/file';
+import { useProjectStore } from "@/store/modules/project";
+defineProps({
+  project: {
+    type: Object as () => projectType,
+  }
+})
+let show = ref(false)
+useProjectStore().watchProjectChange(() => {
+  show.value = false
+  // wait 2000ms render because of async load
+  setTimeout(() => {
+    show.value = true
+  }, 2000)
+})
+</script>
 
 <style scoped lang="scss">
 .spx-stage {
   height: 40vh;
+  display: flex;
+  flex-direction: column;
+
+  .show {
+    flex: 1;
+    text-align: center;
+  }
 }
 </style>

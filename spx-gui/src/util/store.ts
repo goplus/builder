@@ -83,7 +83,9 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
                 }
                 list.value.push(item)
             }
-            throw new Error(`All items in ${name} must be unique. ${exist.map(item => item.name).join(', ')} already exist.`)
+            if (exist.length > 0) {
+                throw new Error(`All items in ${name} must be unique. ${exist.map(item => item.name).join(', ')} already exist.`)
+            }
         }
 
         /**

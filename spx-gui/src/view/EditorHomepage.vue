@@ -16,7 +16,7 @@
     <n-layout style="width: 40%;">
       <n-layout-content>
         <!-- S Component SpxStage -->
-        <SpxStage />
+        <SpxStage :project="project" />
         <!-- E Component SpxStage -->
         <!-- S Component assetLibrary -->
         <SpriteList />
@@ -31,9 +31,11 @@ import SpxEditor from "@/components/spx-editor/SpxEditor.vue";
 import SpxStage from "@/components/spx-stage/SpxStage.vue";
 import SpriteList from "@/components/sprite-list/SpriteList.vue";
 import { NLayout, NLayoutContent } from "naive-ui";
+import { storeToRefs } from 'pinia';
+import { useProjectStore } from "@/store/modules/project"
+const projectStore = useProjectStore()
+const { project } = storeToRefs(projectStore)
 
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
