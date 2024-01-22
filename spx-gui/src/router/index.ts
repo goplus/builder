@@ -1,8 +1,8 @@
 /*
- * @Author: Zhang Zhi Yang
+ * @Author: Xu Ning
  * @Date: 2024-01-15 09:16:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 10:14:39
+ * @LastEditTime: 2024-01-19 23:10:11
  * @FilePath: /builder/spx-gui/src/router/index.ts
  * @Description:
  */
@@ -37,13 +37,13 @@ const router = createRouter({
     routes,
 });
 
-
 export const initRouter = async (app:App) => {
-    app.use(router)
-    // This is an example of a routing result that needs to be loaded.
-    await new Promise(resolve => {
-        setTimeout(() => {
-            resolve(true)
-        }, 1000);
-    })
-  }
+  app.use(router)
+  // This is an example of a routing result that needs to be loaded.
+  await new Promise(resolve => {
+      setTimeout(() => {
+          resolve(true)
+      }, 0);
+  })
+}
+
