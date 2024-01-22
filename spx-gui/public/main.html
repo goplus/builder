@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<script src="js/filesystem.js"></script>
-<script src="js/wasm_exec.js"></script>
+<script src="/js/filesystem.js"></script>
+<script src="/js/wasm_exec.js"></script>
 <script>
     // Polyfill
     if (!WebAssembly.instantiateStreaming) {
@@ -11,7 +11,8 @@
     }
 
     const go = new Go();
-    WebAssembly.instantiateStreaming(fetch("wasm/main.wasm"), go.importObject).then(result => {
+    WebAssembly.instantiateStreaming(fetch("/wasm/run.wasm"), go.importObject).then(result => {
+
         go.run(result.instance);
     });
 </script>

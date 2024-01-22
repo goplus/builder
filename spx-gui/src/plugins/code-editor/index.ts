@@ -9,7 +9,7 @@
 import * as monaco from 'monaco-editor'
 import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
 
-import wasmModuleUrl from '/wasm/main.wasm?url&wasmModule';
+import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 
 
 
@@ -53,7 +53,7 @@ const completionItemProvider: monaco.languages.CompletionItemProvider = {
     }
 }
 
-function completionItem(range:monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
+function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
     return [
         ...keywords.map((keyword) => ({
             label: keyword,
