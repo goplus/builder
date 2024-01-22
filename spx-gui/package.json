@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "axios": "^1.6.5",
+    "monaco-editor": "^0.45.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "localforage": "^1.10.0",
     "pinia": "^2.1.7",
     "pinia-plugin-persist": "^1.0.0",
+    "prettier": "^3.2.2",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
     "vue-i18n": "^9.9.0",
@@ -36,6 +38,8 @@
     "typescript": "^5.3.3",
     "vfonts": "^0.0.3",
     "vite": "^5.0.10",
-    "vite-plugin-vue-devtools": "^7.0.7"
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-vue-devtools": "^7.0.7",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

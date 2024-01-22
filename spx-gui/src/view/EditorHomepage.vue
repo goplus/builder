@@ -1,9 +1,9 @@
 <!--
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:30:39
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 22:59:45
- * @FilePath: /spx-gui-front-private/src/view/EditorHomepage.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-19 17:49:28
+ * @FilePath: /builder/spx-gui/src/view/EditorHomepage.vue
  * @Description:
 -->
 <template>
