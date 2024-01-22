@@ -14,6 +14,11 @@ import type { projectType, dirPath, FileType, rawDir, rawFile } from '@/types/fi
 
 const UNTITLED_NAME = 'Untitled'
 
+const storage = localForage.createInstance({
+    name: 'project',
+    storeName: 'dir',
+})
+
 export const useProjectStore = defineStore('project', () => {
     const spriteStore = useSpriteStore()
     const { list: sprites } = storeToRefs(spriteStore)
@@ -133,7 +138,7 @@ export const useProjectStore = defineStore('project', () => {
      */
     async function saveByDirPath(dirPath: dirPath) {
         for (const [key, value] of Object.entries(dirPath)) {
-            await localForage.setItem(key, value)
+            await storage.setItem(key, value)
         }
     }
 
@@ -154,10 +159,10 @@ export const useProjectStore = defineStore('project', () => {
      * removeProject("test")
      */
     async function removeProject(name: string) {
-        const keys = await localForage.keys()
+        const keys = await storage.keys()
         const projectKeys = keys.filter(key => key.startsWith(name))
         for (const key of projectKeys) {
-            await localForage.removeItem(key)
+            await storage.removeItem(key)
         }
     }
 
@@ -387,14 +392,14 @@ export const useProjectStore = defineStore('project', () => {
      * dir && saveToComputerByDirPath(dir!)
      */
     async function getDirPathFromLocal(name: string): Promise<dirPath | null> {
-        const keys = await localForage.keys()
+        const keys = await storage.keys()
         const projectKeys = keys.filter(key => key.startsWith(name))
         if (projectKeys.length === 0) {
             return null
         }
         const project: dirPath = {}
         for (const key of projectKeys) {
-            const value: FileType = await localForage.getItem(key) as FileType || null
+            const value: FileType = await storage.getItem(key) as FileType || null
             project[key] = value
         }
         return project
@@ -410,7 +415,7 @@ export const useProjectStore = defineStore('project', () => {
      * dir && loadProject(dir)  // if dir exists, load project
      */
     async function getAllLocalProjects(): Promise<string[]> {
-        const keys = await localForage.keys()
+        const keys = await storage.keys()
         const map = new Map()
         for (const key of keys) {
             const k = key.split('/').shift()

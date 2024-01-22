@@ -19,8 +19,8 @@
 				outputBuf += decoder.decode(buf);
 				const nl = outputBuf.lastIndexOf("\n");
 				if (nl != -1) {
-					console.log(outputBuf.substring(0, nl));
-					outputBuf = outputBuf.substring(nl + 1);
+					console.log(outputBuf.substr(0, nl));
+					outputBuf = outputBuf.substr(nl + 1);
 				}
 				return buf.length;
 			},
@@ -112,6 +112,7 @@
 				this.mem.setUint32(addr + 0, v, true);
 				this.mem.setUint32(addr + 4, Math.floor(v / 4294967296), true);
 			}
+
 
 			const setInt32 = (addr, v) => {
 				this.mem.setUint32(addr + 0, v, true);
@@ -276,7 +277,7 @@
 									this._resume();
 								}
 							},
-							getInt64(sp + 8),
+							getInt64(sp + 8) + 1, // setTimeout has been seen to fire up to 1 millisecond early
 						));
 						this.mem.setInt32(sp + 16, id, true);
 					},
