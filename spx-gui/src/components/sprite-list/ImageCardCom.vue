@@ -2,14 +2,14 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 00:14:39
+ * @LastEditTime: 2024-01-24 00:22:50
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
 <template>
   <div :class="cardClassName">
     <div class="close-button" v-if="props.type === 'sprite'" @click="deleteSprite(props.asset.name)">×</div>
-    <div class="close-button" v-else @click="deleteBackdrop(props.asset)">×</div>
+    <div class="close-button" v-else @click="deleteBackdrop(props.asset.name)">×</div>
     <n-image
       preview-disabled
       :width="imageWidth"
@@ -26,6 +26,7 @@
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
 import { useSpriteStore } from "@/store/modules/sprite";
+import { useBackdropStore } from '@/store/modules/backdrop'
 import AssetBase from "@/class/AssetBase"
 import Backdrop from "@/class/backdrop"
 
@@ -38,6 +39,7 @@ const props = defineProps<propType>();
 
 // ----------data related -----------------------------------
 const spriteStore = useSpriteStore()
+const backdropStore = useBackdropStore()
 
 // ----------computed properties-----------------------------
 const cardClassName = computed(() =>
@@ -64,8 +66,9 @@ const deleteSprite = (name: string) =>{
   spriteStore.removeItemByName(name)
 }
 
-const deleteBackdrop = (a:any) =>{
-  console.log('delete',a)
+const deleteBackdrop = (name:string) =>{
+  console.log('delete',name)
+  backdropStore.removeItemByName(name)
 }
 
 </script>
