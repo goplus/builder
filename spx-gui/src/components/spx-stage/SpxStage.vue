@@ -1,9 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-16 11:46:28
- * @FilePath: /spx-gui-front-private/src/components/spx-stage/SpxStage.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-22 16:58:02
+ * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
 <template>
@@ -19,7 +19,7 @@
 import { defineProps, ref } from 'vue';
 import type { projectType } from '@/types/file';
 import { NButton } from "naive-ui";
-// import { useProjectStore } from "@/store/modules/project";
+import { useProjectStore } from "@/store/modules/project";
 defineProps({
   project: {
     type: Object as () => projectType,
@@ -33,9 +33,11 @@ let show = ref(false)
 //     show.value = true
 //   }, 300)
 // })
-const run = () => {
+const run =async () => {
   show.value = false
+  await useProjectStore().saveByProject()
   // wait 100ms render because of async load
+
   setTimeout(() => {
     show.value = true
   }, 100)
