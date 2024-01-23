@@ -30,6 +30,7 @@ post "/project/save", ctx=>{
 		Name:name,
 		AuthorId :uid,
 		IsPublic:0,
+		Status:1,
 	}
 	res,_ := p.SaveProject(todo,codeFile,file,header)
 	ctx.json {
@@ -72,6 +73,18 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     pageSize := ctx.param("pageSize")
     assetType := ctx.param("assetType")
     result, _ := p.AssetList(todo, pageIndex, pageSize, assetType)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+get "/list/pubProject/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    result, _ := p.PubProjectList(todo, pageIndex, pageSize)
     ctx.json {
             "code":200,
             "msg":"ok",

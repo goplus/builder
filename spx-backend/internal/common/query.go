@@ -78,31 +78,6 @@ func QueryById[T any](db *sql.DB, id string) (*T, error) {
 	return &results[0], nil
 }
 
-// QuerySelect common select query, can customize the wheres
-func QuerySelect[T any](db *sql.DB, filters []FilterCondition) ([]T, error) {
-	tableName := getTableName[T]()
-	scan := tScan[T]()
-	whereClause, args := buildWhereClause(filters)
-
-	query := fmt.Sprintf("SELECT * FROM %s%s", tableName, whereClause)
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var results []T
-	for rows.Next() {
-		item, err := scan(rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, item)
-	}
-
-	return results, nil
-}
-
 // tScan Creates and returns a scan that applies to any struct
 func tScan[T any]() func(rows *sql.Rows) (T, error) {
 	return func(rows *sql.Rows) (T, error) {
@@ -136,6 +111,31 @@ func tScan[T any]() func(rows *sql.Rows) (T, error) {
 
 		return item, nil
 	}
+}
+
+// QuerySelect common select query, can customize the wheres
+func QuerySelect[T any](db *sql.DB, filters []FilterCondition) ([]T, error) {
+	tableName := getTableName[T]()
+	scan := tScan[T]()
+	whereClause, args := buildWhereClause(filters)
+
+	query := fmt.Sprintf("SELECT * FROM %s%s", tableName, whereClause)
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []T
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, item)
+	}
+
+	return results, nil
 }
 
 // buildWhereClause Build a WHERE clause based on FilterCondition
