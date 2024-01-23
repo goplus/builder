@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/goplus/builder/internal/common"
+	"github.com/goplus/builder/spx-backend/internal/common"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
@@ -114,7 +114,7 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
 		var address string
-		query := "SELECT address FROM project WHERE id = ?"
+		query := "SELECT address FROM codefile WHERE id = ?"
 		err := p.db.QueryRow(query, id).Scan(&address)
 		if err != nil {
 			return nil, err
@@ -318,4 +318,22 @@ func (p *Project) PubProjectList(ctx context.Context, pageIndex string, pageSize
 		return nil, err
 	}
 	return pagination, nil
+}
+
+// UserProjectList user project list
+func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSize string, uid string) (*common.Pagination[CodeFile], error) {
+	wheres := []common.FilterCondition{
+		{Column: "author_id", Operation: "=", Value: uid},
+	}
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres)
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// UpdatePublic user project list
+func (p *Project) UpdatePublic(ctx context.Context, id string) error {
+	return UpdateProjectIsPublic(p, id)
+
 }

@@ -1,4 +1,4 @@
-module github.com/goplus/builder
+module github.com/goplus/builder/spx-backend
 
 go 1.19
 

@@ -1,7 +1,8 @@
 import (
 	"context"
 	"os"
-	"github.com/goplus/builder/internal/core"
+	"strconv"
+	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
 var (
@@ -23,13 +24,15 @@ get "/project/:id", ctx => {
 post "/project/save", ctx=>{
 	id := ctx.FormValue("id")
 	uid := ctx.FormValue("uid")
-	name:=ctx.FormValue("name") 
+	name:=ctx.FormValue("name")
+	isPublic:=ctx.FormValue("isPublic")
+	ip, _ := strconv.Atoi(isPublic)
 	file,header,_:=ctx.FormFile("file")
 	codeFile:=&core.CodeFile{
 		ID:id,
 		Name:name,
 		AuthorId :uid,
-		IsPublic:0,
+		IsPublic:ip,
 		Status:1,
 	}
 	res,_ := p.SaveProject(todo,codeFile,file,header)
@@ -90,6 +93,30 @@ get "/list/pubProject/:pageIndex/:pageSize", ctx => {
             "msg":"ok",
             "data": result,
     }
+}
+get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    uid := ctx.param("uid")
+    result, _ := p.UserProjectList(todo, pageIndex, pageSize,uid)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+post "/project/updateIsPublic", ctx=>{
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	id := ctx.FormValue("id")
+	_ = p.UpdatePublic(todo,id)
+	ctx.json {
+		"code":200,
+		"msg":"ok",
+		"data":"",
+	}
 }
 
 conf := &core.Config{}
