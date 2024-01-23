@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 14:29:22
+ * @LastEditTime: 2024-01-23 15:45:23
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteCom.vue
  * @Description: 
 -->
@@ -10,6 +10,7 @@
   <div :class="cardClassName">
     <div class="close-button" @click="deleteSprite">×</div>
     <n-image
+      preview-disabled
       :width="imageWidth"
       :height="imageHeight"
       :src="props.asset.address"
@@ -20,28 +21,37 @@
 </template>
 
 <script setup lang="ts">
-import { Asset } from "@/interface/library.ts";
+// ----------Import required packages / components-----------
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
+import { Asset } from "@/interface/library.ts";
+import { useSpriteStore } from "@/store/modules/sprite";
+
+// ----------props & emit------------------------------------
 interface propType {
   type?: string;
   asset: Asset;
 }
 const props = defineProps<propType>();
 
+// ----------data related -----------------------------------
+const spriteStore = useSpriteStore()
+
+// ----------computed properties-----------------------------
 const cardClassName = computed(() =>
   props.type === "bg" ? "bg-list-card" : "sprite-list-card"
 );
 const imageWidth = computed(() => (props.type === "bg" ? 40 : 75));
 const imageHeight = computed(() => (props.type === "bg" ? 40 : 75));
 
+// ----------methods-----------------------------------------
 /**
  * @description: Function for deleting sprite
  * @Author: Xu Ning
  * @Date: 2024-01-23 14:29:02
  */
-const deleteSprite = () =>{
-  
+const deleteSprite = (name: string) =>{
+  spriteStore.removeItemByName(name)
 }
 </script>
 

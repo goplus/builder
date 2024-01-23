@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 15:03:25
+ * @LastEditTime: 2024-01-23 15:05:17
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -10,7 +10,7 @@
   <div class="asset-library">
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
-      <n-grid-item class="asset-library-left" span="4 m:3">
+      <n-grid-item class="asset-library-left" span="3">
         <!-- S Component SpriteEditBtn -->
         <SpriteEditBtn />
         <!-- E Component SpriteEditBtn -->
@@ -33,7 +33,7 @@
       </n-grid-item>
       <!-- E Layout Sprite List -->
       <!-- S Layout Stage List -->
-      <n-grid-item class="asset-library-right" span="0 m:1">
+      <n-grid-item class="asset-library-right" span="1">
         <StageCom />
       </n-grid-item>
       <!-- E Layout Stage List -->
@@ -50,6 +50,9 @@ import StageCom from "@/components/sprite-list/StageCom.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import SpriteCom from "@/components/sprite-list/SpriteCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
+import { useSpriteStore } from "@/store/modules/sprite";
+
+const spriteStore = useSpriteStore()
 
 // sprite list assets
 const spriteAssets = ref<Asset[]>([
@@ -108,6 +111,8 @@ const spriteAssets = ref<Asset[]>([
       "https://ouch-cdn2.icons8.com/O-AakvilkEvzHQMO05aDTGUX21YUKmR58tsiNb0E4T4/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMjc3/L2M5OWExNmFmLTQ4/N2QtNDdkOS04YTVj/LTE2NGUzNjg3Nzg5/OS5wbmc.png",
   },
 ]);
+
+
 </script>
 
 <style scoped lang="scss">

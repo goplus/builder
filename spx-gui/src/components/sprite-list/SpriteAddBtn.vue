@@ -21,10 +21,10 @@
         <n-button v-else color="#fff" :text-color="commonColor"> Upload </n-button>
       </n-upload>
       
-      <n-button v-if="props.type == 'bg'" color="#fff" quaternary size="tiny" @click="openLibraryFunc" text-color="#fff">
+      <n-button v-if="props.type == 'bg'" color="#fff" quaternary size="tiny" @click="openLibraryFunc(true)" text-color="#fff">
         Choose
       </n-button>
-      <n-button v-else color="#fff" @click="openLibraryFunc" :text-color="commonColor">
+      <n-button v-else color="#fff" @click="openLibraryFunc(false)" :text-color="commonColor">
         Choose
       </n-button>
       <!-- E Component Add Button second step -->
@@ -58,10 +58,10 @@ interface propType {
 }
 const props = defineProps<propType>();
 const message = useMessage();
-
 // ----------data related -----------------------------------
 // Ref about sprite information
-const spriteInfos = ref<SpriteInfoType[]>(SpriteInfosMock);
+// const spriteInfos = ref<SpriteInfoType[]>(SpriteInfosMock);
+const spriteInfos = ref<SpriteInfoType[]>([]);
 
 // Const variable about sprite categories
 const spriteCategories = [
@@ -100,8 +100,18 @@ const handleAddButtonClick = () => {
  * @Author: Xu Ning
  * @Date: 2024-01-16 11:53:40
  */
-const openLibraryFunc = () => {
+const openLibraryFunc = (isBg?:boolean) => {
   showModal.value = true;
+  if(isBg){
+    // load the bg infos
+    // TODO : get sprite library infos from backend
+    spriteInfos.value = SpriteInfosMock;
+  }
+  else{
+    // load the sprite infos
+    // TODO : get sprite library infos from backend
+    spriteInfos.value = SpriteInfosMock;
+  }
 };
 
 /**
