@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import Backdrop from '@/class/backdrop'
 
@@ -25,6 +25,6 @@ export const useBackdropStore = defineStore('backdrop', () => {
 
     return {
         setItem,
-        backdrop: readonly(backdrop),
+        backdrop
     }
 })

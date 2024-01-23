@@ -2,18 +2,19 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 16:29:11
- * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteCom.vue
+ * @LastEditTime: 2024-01-23 23:07:58
+ * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
 <template>
   <div :class="cardClassName">
     <div class="close-button" @click="deleteSprite(props.asset.name)">×</div>
+    
     <n-image
       preview-disabled
       :width="imageWidth"
       :height="imageHeight"
-      :src="props.asset.address"
+      :src="spriteUrl"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
     />
     {{ props.type === "bg" ? "" : props.asset.name }}
@@ -24,13 +25,13 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
-import { Asset } from "@/interface/library.ts";
 import { useSpriteStore } from "@/store/modules/sprite";
+import AssetBase from "@/class/AssetBase"
 
 // ----------props & emit------------------------------------
 interface propType {
   type?: string;
-  asset: Asset;
+  asset: AssetBase;
 }
 const props = defineProps<propType>();
 
@@ -43,6 +44,14 @@ const cardClassName = computed(() =>
 );
 const imageWidth = computed(() => (props.type === "bg" ? 40 : 75));
 const imageHeight = computed(() => (props.type === "bg" ? 40 : 75));
+const spriteUrl = computed(() => {
+  // check file is not empty
+  if (props.asset && props.asset.files && props.asset.files.length > 0) {
+    return props.asset.files[0].url;
+  } else {
+    return '';
+  }
+});
 
 // ----------methods-----------------------------------------
 /**
@@ -53,6 +62,7 @@ const imageHeight = computed(() => (props.type === "bg" ? 40 : 75));
 const deleteSprite = (name: string) =>{
   spriteStore.removeItemByName(name)
 }
+
 </script>
 
 <style scoped lang="scss">
