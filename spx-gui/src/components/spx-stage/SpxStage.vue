@@ -8,29 +8,38 @@
 -->
 <template>
   <div class="spx-stage">
-    <h1>stage</h1>
+    <h1>stage <n-button @click="run">Run</n-button>
+    </h1>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div v-else class="show">loading...</div>
+    <div v-else class="show center">waiting for load...</div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { defineProps, ref } from 'vue';
 import type { projectType } from '@/types/file';
-import { useProjectStore } from "@/store/modules/project";
+import { NButton } from "naive-ui";
+// import { useProjectStore } from "@/store/modules/project";
 defineProps({
   project: {
     type: Object as () => projectType,
   }
 })
 let show = ref(false)
-useProjectStore().watchProjectChange(() => {
+// useProjectStore().watchProjectChange(() => {
+//   show.value = false
+//   // wait 300ms render because of async load
+//   setTimeout(() => {
+//     show.value = true
+//   }, 300)
+// })
+const run = () => {
   show.value = false
   // wait 100ms render because of async load
   setTimeout(() => {
     show.value = true
   }, 100)
-})
+}
 </script>
 
 <style scoped lang="scss">
@@ -42,6 +51,12 @@ useProjectStore().watchProjectChange(() => {
   .show {
     flex: 1;
     text-align: center;
+  }
+
+  .center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>
