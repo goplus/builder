@@ -165,7 +165,7 @@ const beforeUpload = (data: {
     );
     if(isBg){
       const backdrop = new Backdrop(fileArray);
-      backdropStore.setItem(backdrop);
+      backdropStore.addItem(backdrop);
     }
     else{
       const sprite = new Sprite(fileNameWithoutExtension, fileArray);
