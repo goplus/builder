@@ -7,6 +7,22 @@
  */
 
 /**
+ * Add url property to File with getter and setter.
+ * If there is no url, it will be created.
+ */
+export function addFileUrl() {
+    Object.defineProperty(File.prototype, 'url', {
+        get() {
+            if (!this._url) this._url = URL.createObjectURL(this)
+            return this._url
+        },
+        set(url) {
+            this._url = url
+        }
+    })
+}
+
+/**
  * Map file type to mime type.
  */
 const ext2mime: Record<string, string> = {

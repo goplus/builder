@@ -91,4 +91,12 @@ export default class Sprite extends AssetBase implements file {
     static isInstance(obj: any): boolean {
         return isInstance(obj, Sprite);
     }
+
+    /**
+     * Get the image url of the sprite.
+     */
+    get imgUrl() {
+        // TODO: get image url from files and config.costumes
+        return this.files[0].url
+    }
 }

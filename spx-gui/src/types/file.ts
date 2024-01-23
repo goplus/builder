@@ -2,12 +2,18 @@ import Sprite from "@/class/sprite"
 import Sound from "@/class/sound"
 import Backdrop from "@/class/backdrop"
 
+export type codeType = {
+    path: string,
+    content: string
+}
+
 export type projectType = {
     title: string,
     sprites: Sprite[],
     sounds: Sound[],
     backdrop: Backdrop,
-    defaultDir: dirPath
+    defaultDir: dirPath,
+    code: codeType
 }
 
 export type FileType = {

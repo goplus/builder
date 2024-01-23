@@ -10,9 +10,10 @@ import { useBackdropStore } from '../backdrop'
 import Backdrop from '@/class/backdrop'
 import Sprite from '@/class/sprite'
 import Sound from '@/class/sound'
-import type { projectType, dirPath, FileType, rawDir, rawFile } from '@/types/file'
+import type { projectType, dirPath, FileType, rawDir, rawFile, codeType } from '@/types/file'
 
 const UNTITLED_NAME = 'Untitled'
+const ENTRY_FILE_NAME = 'index.gmx'
 
 const storage = localForage.createInstance({
     name: 'project',
@@ -29,7 +30,7 @@ export const useProjectStore = defineStore('project', () => {
     const backdropStore = useBackdropStore()
     const { backdrop } = storeToRefs(backdropStore)
 
-    const title = ref(UNTITLED_NAME)
+    const title = ref<string>(UNTITLED_NAME)
     const setTitle = (t: string) => {
         title.value = t
     }
@@ -39,13 +40,32 @@ export const useProjectStore = defineStore('project', () => {
         defaultDir.value = d
     }
 
+    const code = ref<codeType>({
+        content: '',
+        path: '',
+    })
+    const setCode = (c: codeType = { content: '', path: '' }) => {
+        code.value = c
+    }
+
+    /**
+     * The project(computedRef) is composed of `title`, `sprites`, `sounds`, `backdrop`, `defaultDir`, `code`.
+     * - `title` is the name of the project.
+     * - `sprites` is the list of sprites. Refer to [Sprite](../../../class/sprite.ts).
+     * - `sounds` is the list of sounds. Refer to [Sound](../../../class/sound.ts).
+     * - `backdrop` is the backdrop. Refer to [Backdrop](../../../class/backdrop.ts).
+     * - `defaultDir` is used to store unparsed files, such as `assets/video/` and so on.
+     * - `code` is the entry code of the project which is used to generate the `main.spx` or `index.gmx`.
+     * @returns {projectType}
+     */
     // @ts-ignore
     const project = computed<projectType>(() => ({
         title: title.value,
         sprites: sprites.value,
         sounds: sounds.value,
         backdrop: backdrop.value,
-        defaultDir: defaultDir.value
+        defaultDir: defaultDir.value,
+        code: code.value
     }))
 
     /**
@@ -63,7 +83,7 @@ export const useProjectStore = defineStore('project', () => {
      * @returns {Function} stopWatch
      * 
      * @example
-     * watchProjectChange(saveProject)  // while project change, save project to IndexedDB
+     * watchProjectChange(saveByProject)  // while project change, save project to IndexedDB
      */
     function watchProjectChange(fn?: Function, deep: boolean = true, immediate: boolean = false): WatchStopHandle {
         return watch(project, (newVal, oldVal) => {
@@ -123,13 +143,12 @@ export const useProjectStore = defineStore('project', () => {
      * @param {projectType} proj
      * 
      * @example
-     * saveProject()  // save current project
+     * saveByProject()  // save current project
      */
     async function saveByProject(proj: projectType = getRawProject()) {
         await removeProject(proj.title)
         const dir = convertProjectToRawDir(proj)
-        const dirPath = await convertRawDirToDirPath(dir)
-        await saveByDirPath(dirPath)
+        await saveByRawDir(dir)
     }
 
     /**
@@ -167,22 +186,26 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
+     * Generate entry code of the project.
+     * @param proj the project
+     * @returns the entry code of the project
+     */
+    function genEntryCode(proj: projectType) {
+        return `var (\n\t${proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${proj.sounds?.map(sound => sound.name + ' ' + 'Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${proj.title}"}`
+    }
+
+    /**
      * Convert project (computedRef) to directory object.
      * @returns {rawDir} project
      */
     function convertProjectToRawDir(proj: projectType = getRawProject()): rawDir {
         const files: rawDir = Object.assign({}, proj.defaultDir, ...[proj.backdrop, ...proj.sprites, ...proj.sounds].map(item => item.dir))
-
-        const title = proj.title
-
-        // if no entry in files, add main.spx as default
-        if (!('main.spx' in files || 'index.spx' in files || 'index.gmx' in files || 'main.gmx' in files)) {
-            files['main.spx'] = `var (\n\t${proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${proj.sounds?.map(sound => sound.name + ' Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${proj.title}"}`
-        }
-
+        const path = proj.code.path || ENTRY_FILE_NAME
+        const code = proj.code.content || genEntryCode(proj)
+        files[path] = code
         const dir: rawDir = {}
         for (const [key, value] of Object.entries(files)) {
-            const fullPath = title + '/' + key
+            const fullPath = proj.title + '/' + key
             dir[fullPath] = value
         }
 
@@ -223,6 +246,7 @@ export const useProjectStore = defineStore('project', () => {
         soundStore.setItem([])
         setTitle(UNTITLED_NAME)
         setDefaultDir({})
+        setCode()
     }
 
     /**
@@ -233,16 +257,40 @@ export const useProjectStore = defineStore('project', () => {
      * @example
      * const dir = await getDirPathFromZip(zipFile)
      * loadProject(dir)
+     * 
+     * // Your directory structure of zipFile should be organized this way, otherwise you may fail to read resources in `parseProject` (which is a step in `loadProject`) and resources that fail to read will be saved in `project.defaultDir`.
+     * └─ ProjectName
+     *     ├─ main.spx
+     *     ├─ spriteName1.spx
+     *     ├─ spriteName2.spx
+     *     └─ assets
+     *         ├─ sprites
+     *         │   ├─ spriteName1
+     *         │   │   ├─ 1.png
+     *         │   │   └─ index.json
+     *         │   └─ spriteName2
+     *         │       ├─ 2.png
+     *         │       └─ index.json
+     *         ├─ sounds
+     *         │   ├─ soundName1
+     *         │   │   ├─ 3.wav
+     *         │   │   └─ index.json
+     *         │   └─ soundName2
+     *         │       ├─ 4.wav
+     *         │       └─ index.json
+     *         ├─ 5.png
+     *         └─ index.json
      */
     async function getDirPathFromZip(zipFile: File): Promise<dirPath> {
         const zip = await JSZip.loadAsync(zipFile);
         const projectName = zipFile.name.split('.')[0];
         const dir: dirPath = {};
+        const prefix = getPrefix(zip.files)
 
         for (let [relativePath, zipEntry] of Object.entries(zip.files)) {
             if (zipEntry.dir) continue
             const content = await zipEntry.async('arraybuffer')
-            const path = projectName + '/' + relativePath
+            const path = projectName + '/' + relativePath.replace(prefix, '')
             const type = getMimeFromExt(relativePath.split('.').pop()!)
             const size = content.byteLength
             const modifyTime = zipEntry.date || new Date();
@@ -277,7 +325,7 @@ export const useProjectStore = defineStore('project', () => {
         function findOrCreateItem(name: string, collection: any[], constructor: typeof Sprite | typeof Sound) {
             let item = collection.find(item => item.name === name);
             if (!item) {
-                item = new constructor(name, []);
+                item = new constructor(name);
                 collection.push(item);
             }
             return item;
@@ -287,8 +335,12 @@ export const useProjectStore = defineStore('project', () => {
             title: UNTITLED_NAME,
             sprites: [],
             sounds: [],
-            backdrop: new Backdrop([]),
-            defaultDir: {}
+            backdrop: new Backdrop(),
+            defaultDir: {},
+            code: {
+                path: '',
+                content: ''
+            }
         };
 
         proj.title = Object.keys(dir).pop()?.split('/').shift() || UNTITLED_NAME
@@ -301,7 +353,13 @@ export const useProjectStore = defineStore('project', () => {
                 const sprite: Sprite = findOrCreateItem(spriteName, proj.sprites, Sprite);
                 handleFile(file, filename, sprite);
             }
-            else if (!path.includes('main.spx') && /^.+\.spx$/.test(path)) {
+            else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+                proj.code = {
+                    path,
+                    content: ArrayBuffer2Content(file.content, file.type) as string
+                }
+            }
+            else if (/^.+\.spx$/.test(path)) {
                 const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
                 const sprite: Sprite = findOrCreateItem(spriteName, proj.sprites, Sprite);
                 sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
@@ -379,6 +437,7 @@ export const useProjectStore = defineStore('project', () => {
         soundStore.setItem(proj.sounds);
         setTitle(proj.title);
         setDefaultDir(proj.defaultDir);
+        setCode(proj.code);
     }
 
     /**
@@ -389,7 +448,7 @@ export const useProjectStore = defineStore('project', () => {
      * @example
      * const dir = await getDirPathFromLocal('test')
      * dir && loadProject(dir)
-     * dir && saveToComputerByDirPath(dir!)
+     * dir && saveToComputerByDirPath(dir)
      */
     async function getDirPathFromLocal(name: string): Promise<dirPath | null> {
         const keys = await storage.keys()
@@ -461,25 +520,21 @@ export const useProjectStore = defineStore('project', () => {
         saveAs(content, `${title}.zip`);
     }
 
+    /**
+     * Get the prefix of the directory
+     * @param dir the directory
+     * @returns the prefix of the directory
+     */
     function getPrefix(dir: Record<string, any>) {
-        const keys = Object.keys(dir);
-        let prefixCount = 0;
-        let singlePrefix: string | null = null;
-        for (const key of keys) {
-            const currentPrefix = key.split('/').shift()!;
-            if (!singlePrefix) {
-                prefixCount++;
-                singlePrefix = currentPrefix;
-
-                if (prefixCount > 1) {
-                    return null;
-                }
+        let keys = Object.keys(dir);
+        let prefix = keys[0];
+        for (let i = 1; i < keys.length; i++) {
+            while (!keys[i].startsWith(prefix)) {
+                prefix = prefix.substring(0, prefix.lastIndexOf('/'));
             }
         }
-        if (prefixCount === 1) {
-            return singlePrefix;
-        }
-        return null;
+        if (!prefix) return '';
+        return prefix.endsWith('/') ? prefix : prefix + '/';
     }
 
     return {
