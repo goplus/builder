@@ -8,7 +8,7 @@
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card" @click="addSpriteFunc(props.spriteInfo.name)">
+  <div class="sprite-card" @click="addSpriteToListFunc(props.spriteInfo.name)">
     <n-image
       preview-disabled
       width="100"
@@ -39,14 +39,13 @@ const props = defineProps<propsType>();
 const spriteStore = useSpriteStore()
 
 
-const addSpriteFunc = (spriteName: string) =>{
+const addSpriteToListFunc = (spriteName: string, file?: File[]) =>{
   // TODO use the function: get file from url
-  let file = undefined
   let code = ""
   // const sprite = new Sprite(spriteName, Array.from(file.value.files), code)
   const sprite = new Sprite(spriteName, file, code)
   spriteStore.addItem(sprite)
-  console.log('addSpriteFunc', sprite, spriteStore.list)
+  console.log('addSpriteToListFunc', sprite, spriteStore.list)
 }
 
 </script>

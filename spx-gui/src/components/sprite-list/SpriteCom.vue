@@ -2,13 +2,13 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 15:45:23
+ * @LastEditTime: 2024-01-23 16:29:11
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteCom.vue
  * @Description: 
 -->
 <template>
   <div :class="cardClassName">
-    <div class="close-button" @click="deleteSprite">×</div>
+    <div class="close-button" @click="deleteSprite(props.asset.name)">×</div>
     <n-image
       preview-disabled
       :width="imageWidth"
