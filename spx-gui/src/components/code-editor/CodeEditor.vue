@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-22 14:35:49
+ * @LastEditTime: 2024-01-22 17:10:33
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -10,8 +10,11 @@
     <div class="code-editor">
         <div class="sprite">
             <span>spx</span>
-            <n-button v-for="item in spriteStore.list" :key="item.name" @click="toggleCodeById(item.name)">{{
-                item.name }}</n-button>
+            <n-scrollbar x-scrollable>
+                <n-button v-for="item in spriteStore.list" :key="item.name" @click="toggleCodeById(item.name)">{{
+                    item.name }}</n-button>
+            </n-scrollbar>
+
         </div>
         <div class="action">
             <span>action</span>
@@ -23,7 +26,7 @@
 </template>
   
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { monaco, options } from "@/plugins/code-editor/index"
 import { useEditorStore } from "@/store"
 import { useSpriteStore } from '@/store/modules/sprite';
@@ -123,7 +126,9 @@ const toggleCodeById = (name: string) => {
     flex-direction: column;
     height: 100%;
 }
-.action,.sprite{
+
+.action,
+.sprite {
     display: flex;
     justify-content: end;
     margin-top: 10px;
