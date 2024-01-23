@@ -9,11 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@rollup/pluginutils": "^5.1.0",
     "axios": "^1.6.5",
-    "monaco-editor": "^0.45.0",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
     "localforage": "^1.10.0",
+    "monaco-editor": "^0.45.0",
     "pinia": "^2.1.7",
     "pinia-plugin-persist": "^1.0.0",
     "prettier": "^3.2.2",

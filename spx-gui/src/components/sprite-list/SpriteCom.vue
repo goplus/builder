@@ -2,13 +2,13 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 22:56:59
- * @FilePath: /spx-gui-front-private/src/components/sprite-list/SpriteCom.vue
+ * @LastEditTime: 2024-01-23 14:29:22
+ * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteCom.vue
  * @Description: 
 -->
 <template>
   <div :class="cardClassName">
-    <div class="close-button">×</div>
+    <div class="close-button" @click="deleteSprite">×</div>
     <n-image
       :width="imageWidth"
       :height="imageHeight"
@@ -34,6 +34,15 @@ const cardClassName = computed(() =>
 );
 const imageWidth = computed(() => (props.type === "bg" ? 40 : 75));
 const imageHeight = computed(() => (props.type === "bg" ? 40 : 75));
+
+/**
+ * @description: Function for deleting sprite
+ * @Author: Xu Ning
+ * @Date: 2024-01-23 14:29:02
+ */
+const deleteSprite = () =>{
+  
+}
 </script>
 
 <style scoped lang="scss">

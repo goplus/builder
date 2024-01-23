@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 23:32:54
+ * @LastEditTime: 2024-01-23 15:03:25
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -15,9 +15,9 @@
         <SpriteEditBtn />
         <!-- E Component SpriteEditBtn -->
         <div class="sprite-list-card">
-          <n-flex >
+          <n-flex>
             <!-- S Component Add Button -->
-            <SpriteAddBtn :type="'sprite'"/>
+            <SpriteAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
             <!-- S Component SpriteCom -->
             <SpriteCom
@@ -60,22 +60,52 @@ const spriteAssets = ref<Asset[]>([
       "https://ouch-cdn2.icons8.com/tX5Nqomcl5Ar98OkTCv_-6564NJq78WutoyiY6TVijY/rs:fit:368:350/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMi9i/MDZiZTI4OC02NDg1/LTQ3NjctOTVmOC1m/YmVjYWU3M2EyMDMu/cG5n.png",
   },
   {
-    id: 1,
-    name: "dog",
-    address:
-      "https://ouch-cdn2.icons8.com/tX5Nqomcl5Ar98OkTCv_-6564NJq78WutoyiY6TVijY/rs:fit:368:350/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMi9i/MDZiZTI4OC02NDg1/LTQ3NjctOTVmOC1m/YmVjYWU3M2EyMDMu/cG5n.png",
-  },
-  {
     id: 2,
     name: "cat",
     address:
-      "https://ouch-cdn2.icons8.com/tX5Nqomcl5Ar98OkTCv_-6564NJq78WutoyiY6TVijY/rs:fit:368:350/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMi9i/MDZiZTI4OC02NDg1/LTQ3NjctOTVmOC1m/YmVjYWU3M2EyMDMu/cG5n.png",
+      "https://ouch-cdn2.icons8.com/IGT5Zlv5RwD3EvQyiXem4rgISKLjSlw9k2PfNTJhps0/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvOS9i/ODU2Mzg5MS1jZTEy/LTRkYmMtYmY3NS0z/MjY5NDc1MDAwNTku/cG5n.png",
   },
   {
-    id: 1,
-    name: "dog",
+    id: 3,
+    name: "chicken",
     address:
-      "https://ouch-cdn2.icons8.com/tX5Nqomcl5Ar98OkTCv_-6564NJq78WutoyiY6TVijY/rs:fit:368:350/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMi9i/MDZiZTI4OC02NDg1/LTQ3NjctOTVmOC1m/YmVjYWU3M2EyMDMu/cG5n.png",
+      "https://ouch-cdn2.icons8.com/PjdXAGc-QYc1tcSmg7xFgH6aR_RMLCrflDLr8atwpaw/rs:fit:368:349/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvODAz/LzFkOGI1MDU2LTU0/MzMtNDBjMy05MmYz/LWVjMjFlZjEzYjhj/Ni5wbmc.png",
+  },
+  {
+    id: 4,
+    name: "pullet",
+    address:
+      "https://ouch-cdn2.icons8.com/DF-XRInvbvWS9fQSpWc_SegC3meXZK8BmE-PjrdrF3Q/rs:fit:368:396/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvNzI3/LzQyYWIyNzliLWJj/ZDgtNGEyMC04MGRi/LTk3MzU4YWFmNTVk/OS5wbmc.png",
+  },
+  {
+    id: 5,
+    name: "stand cat",
+    address:
+      "https://ouch-cdn2.icons8.com/Abf5hV1fVxcw5rhxiVPO7Ys9hZm70wdPI-1Un0WJHxE/rs:fit:368:362/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvNzY5/L2MyNTg3MDgxLTE1/NzYtNGIwMy05Zjhj/LTkyOWYxNGY2MWI3/Yi5wbmc.png",
+  },
+  {
+    id: 6,
+    name: "pig",
+    address:
+      "https://ouch-cdn2.icons8.com/Gl2K_zUyMcFzrqoOSoW23o2tEThehG1cOvm4FgYf1mQ/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvNDcv/MDRhZThmZTUtYWQ4/OS00OWFiLWFiYTYt/MjE3MjkwMzg5MmM2/LnBuZw.png",
+  },
+  {
+    id: 7,
+    name: "duck",
+    address:
+      "https://ouch-cdn2.icons8.com/O-AakvilkEvzHQMO05aDTGUX21YUKmR58tsiNb0E4T4/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMjc3/L2M5OWExNmFmLTQ4/N2QtNDdkOS04YTVj/LTE2NGUzNjg3Nzg5/OS5wbmc.png",
+  },
+  {
+    id: 8,
+    name: "pig",
+    address:
+      "https://ouch-cdn2.icons8.com/Gl2K_zUyMcFzrqoOSoW23o2tEThehG1cOvm4FgYf1mQ/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvNDcv/MDRhZThmZTUtYWQ4/OS00OWFiLWFiYTYt/MjE3MjkwMzg5MmM2/LnBuZw.png",
+  },
+  {
+    id: 9,
+    name: "duck",
+    address:
+      "https://ouch-cdn2.icons8.com/O-AakvilkEvzHQMO05aDTGUX21YUKmR58tsiNb0E4T4/rs:fit:368:368/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvMjc3/L2M5OWExNmFmLTQ4/N2QtNDdkOS04YTVj/LTE2NGUzNjg3Nzg5/OS5wbmc.png",
   },
 ]);
 </script>
@@ -87,7 +117,7 @@ const spriteAssets = ref<Asset[]>([
   // background:#f0f0f0;
   .asset-library-left,
   .asset-library-right {
-    max-height: calc(60vh - 80px - 24px);
+    max-height: calc(60vh - 60px - 24px);
     overflow: scroll;
   }
 }
