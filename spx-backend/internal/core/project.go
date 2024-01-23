@@ -51,6 +51,7 @@ type CodeFile struct {
 	Name     string
 	AuthorId string
 	Address  string
+	IsPublic int
 	Ctime    time.Time
 	Utime    time.Time
 }

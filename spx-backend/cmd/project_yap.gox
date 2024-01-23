@@ -29,6 +29,7 @@ post "/project/save", ctx=>{
 		ID:id,
 		Name:name,
 		AuthorId :uid,
+		IsPublic:0,
 	}
 	res,_ := p.SaveProject(todo,codeFile,file,header)
 	ctx.json {
