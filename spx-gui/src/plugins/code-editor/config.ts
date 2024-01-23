@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:32
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 16:45:05
+ * @LastEditTime: 2024-01-22 17:50:44
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/config.ts
  * @Description: 
  */
@@ -440,7 +440,7 @@ const event_fn_completions: monaco.languages.CompletionItem[] = [
     },
     {
         label: 'onMsg',
-        insertText: 'onMsg => {\n\t\${1:condition}\t\n}',
+        insertText: 'onMsg ${1:key},=> {\n\t\${2:condition}\t\n}',
         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         kind: monaco.languages.CompletionItemKind.Function,
         range: new monaco.Range(1, 1, 1, 1)
@@ -468,7 +468,7 @@ const event_fn_completions: monaco.languages.CompletionItem[] = [
     },
     {
         label: 'broadcast',
-        insertText: 'broadcast => {\n\t\${1:condition}\t\n}',
+        insertText: 'broadcast "${1:condition}"',
         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         kind: monaco.languages.CompletionItemKind.Function,
         range: new monaco.Range(1, 1, 1, 1)
@@ -498,7 +498,7 @@ const brackets = [
 // editor options
 export const options: monaco.editor.IStandaloneEditorConstructionOptions = {
     language: 'spx', // define the language mode
-    theme: 'vs-dark', // choose vs, hc-black, or vs-dark
+    theme: 'vs', // choose vs, hc-black, or vs-dark
     selectOnLineNumbers: true, // select the line number's of the code
     roundedSelection: true, // rounded selection
     readOnly: false, // read/write
@@ -595,5 +595,10 @@ export const LanguageConfig: monaco.languages.LanguageConfiguration = {
 }
 export {
     keywords, typeKeywords, operators, brackets,
-    event_fn_completions, function_completions
+    function_completions,
+    motion_fn_completions,
+    event_fn_completions,
+    control_fn_completions,
+    sound_fn_completions,
+    look_fn_completions
 }

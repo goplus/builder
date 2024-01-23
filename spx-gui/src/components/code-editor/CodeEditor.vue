@@ -2,55 +2,44 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-20 14:23:47
+ * @LastEditTime: 2024-01-22 17:10:33
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
 <template>
     <div class="code-editor">
-        <div class="toolbox">
-            <div>
-                <input type="file" name="" id="" @change="getZip" accept=".zip">
-            </div>
-            <div>
-                <p> toolbox</p>
-                <n-button v-for="snippet in store.toolbox" @click="insertCode(toRaw(snippet))">{{ snippet.label
-                }}</n-button>
-            </div>
-            <div>
-                <p>spx</p>
+        <div class="sprite">
+            <span>spx</span>
+            <n-scrollbar x-scrollable>
                 <n-button v-for="item in spriteStore.list" :key="item.name" @click="toggleCodeById(item.name)">{{
                     item.name }}</n-button>
-            </div>
-            <div>
-                <p>action</p>
-                <n-button @click="submit">submit</n-button>
-                <n-button @click="format">format</n-button>
-            </div>
+            </n-scrollbar>
+
+        </div>
+        <div class="action">
+            <span>action</span>
+            <n-button @click="submit">submit</n-button>
+            <n-button @click="format">format</n-button>
         </div>
         <div id="code-editor" ref="code_editor"></div>
     </div>
 </template>
   
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch, toRaw } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { monaco, options } from "@/plugins/code-editor/index"
 import { useEditorStore } from "@/store"
-import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from '@/store/modules/sprite';
 import { storeToRefs } from 'pinia'
 import { NButton } from 'naive-ui';
-const { getDirPathFromZip, loadProject } = useProjectStore()
 
 const { setCurrentByName } = useSpriteStore()
 const spriteStore = useSpriteStore()
-const { project } = storeToRefs(useProjectStore())
 const store = useEditorStore();
 const code_editor = ref<HTMLElement | null>(null);
 let editor: monaco.editor.IStandaloneCodeEditor;
 
 onMounted(() => {
-    console.log(store.spx_list)
     editor = monaco.editor.create(code_editor.value as HTMLElement, {
         value: "", // set the initial value of the editor
         ...options
@@ -91,12 +80,7 @@ const submit = () => {
     console.log(editor.getValue())
 }
 
-// toolbox call this function
-// TODO:abstract this function to toolbox
-const insertCode = (snippet: monaco.languages.CompletionItem) => {
-    console.log(snippet)
-    store.insertSnippet(snippet)
-}
+
 // Listen for insert events triggered by store, registered with store.$onAction
 const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
     let contribution = editor.getContribution("snippetController2") as monaco.editor.IEditorContribution;
@@ -128,26 +112,25 @@ store.$onAction(({
 const toggleCodeById = (name: string) => {
     setCurrentByName(name)
 }
-async function getZip(e: any) {
-    const dir = await getDirPathFromZip(e.target.files[0])
-    loadProject(dir)
-}
+
 </script>
   
 <style scoped>
 #code-editor {
     height: 100%;
-    /* width: 70%; */
-    width: 0;
-    flex: 2;
 }
 
-.toolbox {
-    flex: 1;
-}
 
 .code-editor {
     display: flex;
+    flex-direction: column;
     height: 100%;
+}
+
+.action,
+.sprite {
+    display: flex;
+    justify-content: end;
+    margin-top: 10px;
 }
 </style>
