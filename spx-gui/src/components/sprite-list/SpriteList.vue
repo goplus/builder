@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 21:46:52
+ * @LastEditTime: 2024-01-24 12:19:24
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -56,8 +56,8 @@ import Sprite from "@/class/sprite"
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore()
 
-// ----------data related -----------------------------------
-// Sprite lists
+// ----------computed properties-----------------------------
+// Computed spriteAssets from spriteStore.
 const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list  as Sprite[]);
 
 </script>

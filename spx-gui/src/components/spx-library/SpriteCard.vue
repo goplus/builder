@@ -34,18 +34,19 @@ interface propsType {
   spriteInfo: SpriteInfoType;
 }
 const props = defineProps<propsType>();
-
-// ----------data related -----------------------------------
 const spriteStore = useSpriteStore()
 
-
+// ----------methods-----------------------------------------
+/**
+ * @description: A function to add sprite to list
+ * @param {*} spriteName
+ * @param {*} file
+ * @Author: Xu Ning
+ * @Date: 2024-01-24 12:18:12
+ */
 const addSpriteToListFunc = (spriteName: string, file?: File[]) =>{
-  // TODO use the function: get file from url
-  let code = ""
-  // const sprite = new Sprite(spriteName, Array.from(file.value.files), code)
-  const sprite = new Sprite(spriteName, file, code)
+  const sprite = new Sprite(spriteName, file)
   spriteStore.addItem(sprite)
-  console.log('addSpriteToListFunc', sprite, spriteStore.list)
 }
 
 </script>

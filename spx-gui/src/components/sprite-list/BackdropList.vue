@@ -1,9 +1,8 @@
-import SpriteAddBtn from '@/components/sprite-list/SpriteAddBtn.vue';
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 00:11:54
+ * @LastEditTime: 2024-01-24 11:52:58
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
@@ -13,10 +12,8 @@ import SpriteAddBtn from '@/components/sprite-list/SpriteAddBtn.vue';
     <div class="stage-list-space">
       <SpriteAddBtn :type="'bg'" />
       <ImageCardCom
-        v-for="(backdrop, index) in backdrops"
-        :key="index"
         :type="'bg'"
-        :asset="(backdrop as Backdrop)"
+        :asset="backdrop"
         :style="{ 'margin-bottom': '26px' }"
       />
     </div>
@@ -24,18 +21,18 @@ import SpriteAddBtn from '@/components/sprite-list/SpriteAddBtn.vue';
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ComputedRef } from "vue";
+import { useBackdropStore } from "@/store/modules/backdrop";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
-import { useBackdropStore } from "@/store/modules/backdrop";
 import Backdrop from "@/class/backdrop";
 
 // ----------props & emit------------------------------------
 const backdropStore = useBackdropStore();
 
-// ----------data related -----------------------------------
-// Backdrop lists
-const backdrops = computed(() => backdropStore.backdrops);
+// ----------computed properties-----------------------------
+// Computed backdrop from backdropStore.
+const backdrop : ComputedRef<Backdrop> = computed(() => backdropStore.backdrop as Backdrop);
 </script>
 
 <style scoped lang="scss">

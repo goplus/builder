@@ -2,22 +2,36 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 00:22:50
+ * @LastEditTime: 2024-01-24 12:21:49
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
 <template>
-  <div :class="cardClassName">
-    <div class="close-button" v-if="props.type === 'sprite'" @click="deleteSprite(props.asset.name)">×</div>
-    <div class="close-button" v-else @click="deleteBackdrop(props.asset.name)">×</div>
+  <div :class="computedProperties.cardClassName" v-if="props.type === 'sprite'">
+    <div class="close-button" @click="deleteSprite(props.asset.name)">×</div>
     <n-image
       preview-disabled
-      :width="imageWidth"
-      :height="imageHeight"
-      :src="spriteUrl"
+      :width="computedProperties.imageWidth"
+      :height="computedProperties.imageHeight"
+      :src="computedProperties.spriteUrl"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
     />
-    {{ props.type === "bg" ? "" : props.asset.name }}
+    {{ props.asset.name }}
+  </div>
+  <div
+    :class="computedProperties.cardClassName"
+    v-else
+    v-for="(file, index) in computedProperties.backdropFiles"
+    :key="index"
+  >
+    <div class="close-button" @click="deleteBackdrop(file)">×</div>
+    <n-image
+      preview-disabled
+      :width="computedProperties.imageWidth"
+      :height="computedProperties.imageHeight"
+      :src="file.url"
+      fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
+    />
   </div>
 </template>
 
@@ -26,9 +40,10 @@
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
 import { useSpriteStore } from "@/store/modules/sprite";
-import { useBackdropStore } from '@/store/modules/backdrop'
-import AssetBase from "@/class/AssetBase"
-import Backdrop from "@/class/backdrop"
+import { useBackdropStore } from "@/store/modules/backdrop";
+import AssetBase from "@/class/AssetBase";
+import Backdrop from "@/class/backdrop";
+import FileWithUrl from "@/class/FileWithUrl";
 
 // ----------props & emit------------------------------------
 interface propType {
@@ -36,41 +51,45 @@ interface propType {
   asset: AssetBase | Backdrop;
 }
 const props = defineProps<propType>();
-
-// ----------data related -----------------------------------
-const spriteStore = useSpriteStore()
-const backdropStore = useBackdropStore()
+const spriteStore = useSpriteStore();
+const backdropStore = useBackdropStore();
 
 // ----------computed properties-----------------------------
-const cardClassName = computed(() =>
-  props.type === "bg" ? "bg-list-card" : "sprite-list-card"
-);
-const imageWidth = computed(() => (props.type === "bg" ? 40 : 75));
-const imageHeight = computed(() => (props.type === "bg" ? 40 : 75));
-const spriteUrl = computed(() => {
-  // check file is not empty
-  if (props.asset && props.asset.files && props.asset.files.length > 0) {
-    return props.asset.files[0].url;
-  } else {
-    return '';
-  }
+// Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
+const computedProperties = computed(() => {
+  const isBg = props.type === "bg";
+  const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
+
+  return {
+    cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
+    imageWidth: isBg ? 40 : 75,
+    imageHeight: isBg ? 40 : 75,
+    spriteUrl: !isBg && hasFiles ? props.asset.files[0].url : "",
+    backdropFiles: isBg && hasFiles ? props.asset.files : []
+  };
 });
 
 // ----------methods-----------------------------------------
 /**
- * @description: Function for deleting sprite
+ * @description: A Function about deleting sprite by name.
+ * @param {*} name
  * @Author: Xu Ning
  * @Date: 2024-01-23 14:29:02
  */
-const deleteSprite = (name: string) =>{
-  spriteStore.removeItemByName(name)
-}
+const deleteSprite = (name: string) => {
+  spriteStore.removeItemByName(name);
+};
 
-const deleteBackdrop = (name:string) =>{
-  console.log('delete',name)
-  backdropStore.removeItemByName(name)
-}
-
+/**
+ * @description: A Function about deleting backdrop's file.
+ * @param {*} file
+ * @Author: Xu Ning
+ * @Date: 2024-01-24 12:11:38
+ */
+const deleteBackdrop = (file: FileWithUrl) => {
+  let { backdrop } = backdropStore;
+  backdrop.removeFile(file);
+};
 </script>
 
 <style scoped lang="scss">

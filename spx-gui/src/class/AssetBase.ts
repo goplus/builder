@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-23 18:59:27
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 19:13:53
+ * @LastEditTime: 2024-01-24 10:51:50
  * @FilePath: /builder/spx-gui/src/class/AssetBase.ts
  * @Description: 
  */
@@ -56,7 +56,7 @@ export default abstract class AssetBase implements file {
      * Remove file from Asset.
      * @param file File
      */
-    removeFile(file: File): void {
+    removeFile(file: FileWithUrl): void {
         const index = this._files.indexOf(file);
         if (index > -1) {
             this._files.splice(index, 1);
