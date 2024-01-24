@@ -14,8 +14,8 @@
           <n-layout-header>
             <TopMenu />
           </n-layout-header>
-          <n-layout-content content-style="padding: 24px 24px 0 24px;">
-            <router-view></router-view>
+          <n-layout-content>
+            <router-view />
           </n-layout-content>
         </n-layout>
       </n-message-provider>
