@@ -1,23 +1,19 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:27
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 14:25:16
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/index.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
 import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
 
-import wasmModuleUrl from '/wasm/main.wasm?url&wasmModule';
-
-
+import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 
 
 const initFormat = async () => {
     // console.log(window.Go)
     const go = new window.Go();
-    console.log("go")
+    console.log(go)
     const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
     console.log("result")
     // TODO:abstract the logic of wasm
@@ -53,7 +49,7 @@ const completionItemProvider: monaco.languages.CompletionItemProvider = {
     }
 }
 
-function completionItem(range:monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
+function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
     return [
         ...keywords.map((keyword) => ({
             label: keyword,
