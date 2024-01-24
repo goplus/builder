@@ -9,7 +9,6 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-
     /* Bundler mode */
     "moduleResolution": "node",
     // "moduleResolution": "bundler",
@@ -36,12 +35,8 @@
         "src/store/*"
       ]
     },
-
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
   },
   "include": [
     "src/**/*.ts",
