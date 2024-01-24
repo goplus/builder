@@ -20,8 +20,9 @@
           :key="index"
           @click="insertCode(toRaw(snippet))"
           style="margin-top: 24px"
-          >{{ snippet.label }}</n-button
         >
+          {{ snippet.label }}
+        </n-button>
       </n-tab-pane>
     </n-tabs>
   </div>

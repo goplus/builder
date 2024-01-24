@@ -39,7 +39,7 @@ import "@/assets/theme.ts";
  */
 const themeOverrides = {
   common: {
-    primaryColor: "#FF0000",
+    primaryColor: "#FF7E6C",
     fontWeightStrong: "600",
   },
   Button: {
