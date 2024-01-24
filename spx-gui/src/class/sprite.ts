@@ -2,14 +2,14 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:46:22
+ * @LastEditTime: 2024-01-24 17:52:06
  * @FilePath: \builder\spx-gui\src\class\sprite.ts
  * @Description: The class of a sprite.
  */
 
 import file from "@/interface/file";
 import AssetBase from "./AssetBase";
-import { isInstance } from "@/util/class";
+import { isInstance, getAllFromLocal } from "@/util/class";
 
 /**
  * @class Sprite
@@ -63,6 +63,28 @@ export default class Sprite extends AssetBase implements file {
     code: string;
 
     /**
+     * The name of the sprite.
+     */
+    static NAME = "sprite"
+
+    /**
+     * Get the store name for the sprite.
+     * @returns the name of the store
+     */
+    protected getStoreName(): string {
+        return Sprite.NAME;
+    }
+
+    /**
+     * Get all items in the storage.
+     * @returns all items in the storage
+     */
+    static async getAllFromLocal() {
+        // @ts-ignore
+        return await getAllFromLocal(Sprite);
+    }
+
+    /**
      * @constructor create a new sprite
      * @param {string} name the name of the sprite
      * @param {File[]} files the files of the sprite
@@ -72,6 +94,15 @@ export default class Sprite extends AssetBase implements file {
     constructor(name: string, files: File[] = [], code: string = "", config: Record<string, any> = {}) {
         super(name, files, config)
         this.code = code
+    }
+
+    /**
+     * Create a new sprite from raw data.
+     * @param data the data of the sprite
+     * @returns the sprite instance
+     */
+    static fromRawData(data: any): Sprite {
+        return new Sprite(data.name, data._files, data.code, data.config)
     }
 
     /**

@@ -2,11 +2,12 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 10:28:03
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:48:01
+ * @LastEditTime: 2024-01-24 17:50:02
  * @FilePath: \builder\spx-gui\src\class\AssetBase.ts
  * @Description: The abstract class of an asset.
  */
 import file from "@/interface/file";
+import { getStorage } from "@/util/class";
 
 /**
  * @abstract
@@ -68,5 +69,32 @@ export default abstract class AssetBase implements file {
      */
     loadFileFromURL(url: string) {
         // TODO
+    }
+
+    /**
+     * Get the name of the asset.
+     */
+    static NAME = "asset";
+
+    /**
+     * Save the asset to local storage.
+     */
+    async save(): Promise<void> {
+        const storage = getStorage(this.getStoreName());
+        await storage.setItem(this.name, this);
+    }
+
+    /**
+     * Get the store name for the asset.
+     * This method should be overridden by subclasses.
+     */
+    protected abstract getStoreName(): string;
+
+    /**
+     * Create a new instance from raw data.
+     * This method should be overridden by subclasses.
+     */
+    public static fromRawData(data: any): AssetBase {
+        throw new Error(`[Method] fromRawData not implemented. Please override it. Data: ${data}.`);
     }
 }

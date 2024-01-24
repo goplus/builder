@@ -2,13 +2,13 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:47:26
+ * @LastEditTime: 2024-01-24 17:22:45
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
 import file from "@/interface/file";
 import AssetBase from "./AssetBase";
-import { isInstance } from "@/util/class";
+import { isInstance, getAllFromLocal } from "@/util/class";
 
 /**
  * @class Sound
@@ -56,6 +56,27 @@ export default class Sound extends AssetBase implements file {
     static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`);
 
     /**
+     * The name of the sound.
+     */
+    static NAME = "sound"
+
+    /**
+     * Get the store name for the sound.
+     * @returns the name of the store
+     */
+    protected getStoreName(): string {
+        return Sound.NAME;
+    }
+
+    /**
+     * Get all items in the storage.
+     * @returns all items in the storage
+     */
+    static async getAllFromLocal() {
+        return await getAllFromLocal(Sound);
+    }
+
+    /**
      * @constructor create a new sound
      * @param {string} name the name of the sound
      * @param {File[]} files the files of the sound
@@ -63,6 +84,15 @@ export default class Sound extends AssetBase implements file {
      */
     constructor(name: string, files: File[] = [], config: Record<string, any> = {}) {
         super(name, files, config)
+    }
+
+    /**
+     * Create a new sound from raw data.
+     * @param data the data of the sound
+     * @returns the sound instance
+     */
+    static fromRawData(data: any): Sound {
+        return new Sound(data.name, data._files, data.config)
     }
 
     /**
