@@ -35,5 +35,4 @@ interface Project {
   uTime: number;
 }
 
-
-export { PageData, SpriteInfoType, Asset, Project };
+export type { PageData, SpriteInfoType, Asset, Project };

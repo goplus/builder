@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: builder-spx-gui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: builder-spx-gui
+  template:
+    metadata:
+      labels:
+        app: builder-spx-gui
+    spec:
+      containers:
+        - name: builder-spx-gui
+          image: IMAGE_PLACEHOLDER # Will be replaced by GitHub Actions
+          ports:
+            - containerPort: 80

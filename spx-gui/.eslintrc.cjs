@@ -3,6 +3,7 @@ module.exports = {
     "eslint:recommended",
     "plugin:vue/vue3-recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:prettier-vue/recommended",
   ],
   parser: "vue-eslint-parser",
   parserOptions: {
@@ -10,8 +11,10 @@ module.exports = {
     sourceType: "module",
   },
   rules: {
-    // override/add rules settings here, such as:
-    // 'vue/no-unused-vars': 'error'
-    "@typescript-eslint/no-unused-vars": "off",
+    "no-unused-vars": "off",
+    // "vue/no-unused-vars": "warn",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "prettier-vue/prettier": "off",
+    "no-useless-escape": "warn",
   },
 };
