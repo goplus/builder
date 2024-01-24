@@ -1,3 +1,12 @@
+/*
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-22 10:28:03
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:50:56
+ * @FilePath: \builder\spx-gui\src\util\wasm.ts
+ * @Description: A util to load and save wasm.
+ */
+
 import JSzip from "jszip";
 import localforage from "localforage";
 

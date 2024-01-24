@@ -1,10 +1,27 @@
 /*
- * @Author: Tu Guobin
- * @Date: 2024-01-17 18:48
- * @LastEditors: Tu Guobin
- * @LastEditTime: 2024-01-17 18:48
- * @FilePath: /spx-gui/src/util/file.ts
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-19 21:53:50
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:49:51
+ * @FilePath: \builder\spx-gui\src\util\file.ts
+ * @Description: The util of file.
  */
+
+/**
+ * Add url property to File with getter and setter.
+ * If there is no url, it will be created.
+ */
+export function addFileUrl() {
+    Object.defineProperty(File.prototype, 'url', {
+        get() {
+            if (!this._url) this._url = URL.createObjectURL(this)
+            return this._url
+        },
+        set(url) {
+            this._url = url
+        }
+    })
+}
 
 /**
  * Map file type to mime type.
@@ -70,4 +87,21 @@ export const Content2ArrayBuffer = async (content: any, type: string): Promise<A
             await new Promise(resolve => reader.onload = resolve)
             return reader.result as ArrayBuffer
     }
+}
+
+/**
+ * Get the prefix of the directory
+ * @param dir the directory
+ * @returns the prefix of the directory
+ */
+export function getPrefix(dir: Record<string, any>) {
+    let keys = Object.keys(dir);
+    let prefix = keys[0];
+    for (let i = 1; i < keys.length; i++) {
+        while (!keys[i].startsWith(prefix)) {
+            prefix = prefix.substring(0, prefix.lastIndexOf('/'));
+        }
+    }
+    if (!prefix) return '';
+    return prefix.endsWith('/') ? prefix : prefix + '/';
 }

@@ -1,9 +1,10 @@
 /*
- * @Author: Tu Guobin
- * @Date: 2024-01-17 18:48
- * @LastEditors: Tu Guobin
- * @LastEditTime: 2024-01-17 18:48
- * @FilePath: /spx-gui/src/util/store.ts
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-22 10:28:03
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:50:22
+ * @FilePath: \builder\spx-gui\src\util\store.ts
+ * @Description: A util to create asset store.
  */
 
 import { ref, Ref, computed } from 'vue'
