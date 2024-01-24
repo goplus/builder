@@ -16,7 +16,7 @@ import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 
 const initFormat = async () => {
     // console.log(window.Go)
-    const go = new window.Go();
+    const go = new Go();
     console.log(go)
     const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
     console.log("result")

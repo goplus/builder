@@ -53,7 +53,7 @@ onBeforeUnmount(() => {
 watch(() => spriteStore.current, (newVal, oldVal) => {
     console.log(newVal?.name, oldVal?.name)
     if (newVal?.name !== oldVal?.name) {
-        newVal.code && editor.setValue(newVal.code)
+        newVal?.code && editor.setValue(newVal.code)
     }
 }, {
     deep: true
