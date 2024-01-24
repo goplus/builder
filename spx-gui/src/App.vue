@@ -2,23 +2,25 @@
  * @Author: xuning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 23:28:23
+ * @LastEditTime: 2024-01-24 17:47:21
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
 <template>
-  <n-config-provider :theme-overrides="themeOverrides">
-    <n-message-provider>
-      <n-layout>
-        <n-layout-header>
-          <TopMenu />
-        </n-layout-header>
-        <n-layout-content content-style="padding: 24px 24px 0 24px;">
-          <router-view></router-view>
-        </n-layout-content>
-      </n-layout>
-    </n-message-provider>
-  </n-config-provider>
+  <div id="spx">
+    <n-config-provider :theme-overrides="themeOverrides">
+      <n-message-provider>
+        <n-layout embedded>
+          <n-layout-header>
+            <TopMenu />
+          </n-layout-header>
+          <n-layout-content content-style="padding: 24px 24px 0 24px;">
+            <router-view></router-view>
+          </n-layout-content>
+        </n-layout>
+      </n-message-provider>
+    </n-config-provider>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -30,7 +32,7 @@ import {
   NLayoutContent,
 } from "naive-ui";
 import TopMenu from "@/components/top-menu/TopMenu.vue";
-import "@/assets/theme.scss";
+import "@/assets/theme.ts";
 /**
  * @description: Override spx-gui theme
  * @return {*}
@@ -93,8 +95,14 @@ const themeOverrides = {
 };
 </script>
 
-<style type="scss">
+<style lang="scss">
 @import "./assets/fonts/font.css";
+@import "./assets/theme.scss";
+
+#spx {
+  height: 100%;
+  background: linear-gradient(180deg, #ffffff, $yellow-background-color);
+}
 
 body {
   font-family: ChauPhilomeneOne, AlibabaPuHuiT, sans-serif;
@@ -116,6 +124,11 @@ body {
   padding: 13px;
 }
 
+.n-layout {
+  height: 100%;
+  background: #ffffff00;
+}
+
 .n-menu,
 .n-menu--horizontal,
 .n-menu--responsive {
@@ -132,5 +145,4 @@ body {
   flex-direction: row;
   justify-content: space-around;
 }
-
 </style>
