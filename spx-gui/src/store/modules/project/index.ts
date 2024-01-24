@@ -1,5 +1,14 @@
+/*
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-22 11:26:18
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:46:59
+ * @FilePath: \builder\spx-gui\src\store\modules\project\index.ts
+ * @Description: The store of project.
+ */
+
 import { ref, computed, watch, toRaw, WatchStopHandle, readonly } from 'vue'
-import { getMimeFromExt, Content2ArrayBuffer, ArrayBuffer2Content } from '@/util/file'
+import { getMimeFromExt, Content2ArrayBuffer, ArrayBuffer2Content, getPrefix } from '@/util/file'
 import { defineStore, storeToRefs } from 'pinia'
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
@@ -186,16 +195,16 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Generate entry code of the project.
+     * Generate entry code of the project. Default project is current project.
      * @param proj the project
      * @returns the entry code of the project
      */
-    function genEntryCode(proj: projectType) {
+    function genEntryCode(proj: projectType = getRawProject()) {
         return `var (\n\t${proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${proj.sounds?.map(sound => sound.name + ' ' + 'Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${proj.title}"}`
     }
 
     /**
-     * Convert project (computedRef) to directory object.
+     * Convert project to directory object. Default project is current project.
      * @returns {rawDir} project
      */
     function convertProjectToRawDir(proj: projectType = getRawProject()): rawDir {
@@ -411,6 +420,11 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    /**
+     * Convert directory object to zip.
+     * @param dir the directory object with raw files to be converted
+     * @returns the zip
+     */
     async function convertRawDirToZip(dir: rawDir): Promise<Blob> {
         const zip = new JSZip();
         const prefix = getPrefix(dir)
@@ -487,7 +501,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Generate zip file from project.
+     * Generate zip file from project. Default project is current project.
      */
     async function convertProjectToZip(proj: projectType = getRawProject()): Promise<Blob> {
         const dir = convertProjectToRawDir(proj)
@@ -496,7 +510,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Save project to computer.
+     * Save project to computer. Default project is current project.
      * 
      * @example
      * saveToComputerByProject()
@@ -520,23 +534,6 @@ export const useProjectStore = defineStore('project', () => {
         saveAs(content, `${title}.zip`);
     }
 
-    /**
-     * Get the prefix of the directory
-     * @param dir the directory
-     * @returns the prefix of the directory
-     */
-    function getPrefix(dir: Record<string, any>) {
-        let keys = Object.keys(dir);
-        let prefix = keys[0];
-        for (let i = 1; i < keys.length; i++) {
-            while (!keys[i].startsWith(prefix)) {
-                prefix = prefix.substring(0, prefix.lastIndexOf('/'));
-            }
-        }
-        if (!prefix) return '';
-        return prefix.endsWith('/') ? prefix : prefix + '/';
-    }
-
     return {
         setTitle,
         watchProjectChange,
@@ -546,6 +543,7 @@ export const useProjectStore = defineStore('project', () => {
         saveByRawDir,
         removeProject,
         loadProject,
+        genEntryCode,
         getDirPathFromZip,
         getDirPathFromLocal,
         convertProjectToZip,

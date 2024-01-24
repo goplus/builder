@@ -1,3 +1,11 @@
+/*
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-22 10:28:03
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:48:01
+ * @FilePath: \builder\spx-gui\src\class\AssetBase.ts
+ * @Description: The abstract class of an asset.
+ */
 import file from "@/interface/file";
 
 /**

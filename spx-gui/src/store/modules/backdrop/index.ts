@@ -1,3 +1,12 @@
+/*
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-19 21:53:50
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:49:26
+ * @FilePath: \builder\spx-gui\src\store\modules\backdrop\index.ts
+ * @Description: The store of backdrop.
+ */
+
 import { ref, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import Backdrop from '@/class/backdrop'

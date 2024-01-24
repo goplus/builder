@@ -1,9 +1,10 @@
 /*
- * @Author: Tu Guobin
- * @Date: 2024-01-17 19:48
- * @LastEditors: Tu Guobin
- * @LastEditTime: 2024-01-17 19:48
- * @FilePath: /spx-gui/src/util/class.ts
+ * @Author: TuGitee tgb@std.uestc.edu.cn
+ * @Date: 2024-01-19 21:53:50
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-24 08:51:42
+ * @FilePath: \builder\spx-gui\src\util\class.ts
+ * @Description: The util of class.
  */
 
 /**
