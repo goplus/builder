@@ -1,13 +1,13 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:49:26
- * @FilePath: \builder\spx-gui\src\store\modules\backdrop\index.ts
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-24 19:30:18
+ * @FilePath: /builder/spx-gui/src/store/modules/backdrop/index.ts
  * @Description: The store of backdrop.
  */
 
-import { ref, readonly } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import Backdrop from '@/class/backdrop'
 
@@ -23,7 +23,7 @@ export const useBackdropStore = defineStore('backdrop', () => {
      * Current backdrop.
      */
     const backdrop = ref<Backdrop>(new Backdrop())
-
+   
     /**
      * Set current backdrop.
      * @param {Backdrop} back
@@ -34,6 +34,6 @@ export const useBackdropStore = defineStore('backdrop', () => {
 
     return {
         setItem,
-        backdrop: readonly(backdrop),
+        backdrop,
     }
 })

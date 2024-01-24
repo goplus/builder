@@ -36,10 +36,15 @@
 </template>
 
 <script setup lang="ts">
+// ----------Import required packages / components-----------
 import { defineEmits, ref } from "vue";
 import { NInput, NFlex, NSwitch } from "naive-ui";
 
+// ----------props & emit------------------------------------
 const emits = defineEmits(["update:isSpriteShow"]);
+
+// ----------data related -----------------------------------
+// Ref about show sprite state
 const isSpriteShow = ref<boolean>(true)
 </script>
 

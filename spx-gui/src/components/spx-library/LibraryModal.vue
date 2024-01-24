@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 23:30:40
+ * @LastEditTime: 2024-01-24 12:16:38
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -72,24 +72,27 @@ import { defineEmits, defineProps, ref, watch } from "vue";
 import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon } from "naive-ui";
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
-import SpriteCard from "./SpriteCard.vue";
 import type { SpriteInfoType } from "@/interface/library";
+import SpriteCard from "./SpriteCard.vue";
 
+// ----------props & emit------------------------------------
 interface propsType {
   spriteInfos: SpriteInfoType[];
   show: boolean;
   categories: string[];
 }
-
 const props = defineProps<propsType>();
 const emits = defineEmits(["update:show"]);
-// show modal state
+
+// ----------data related -----------------------------------
+// Ref about show modal state.
 const showModal = ref<boolean>(false);
-// search text
+// Ref about search text.
 const searchQuery = ref("");
 
+// ----------methods-----------------------------------------
 /**
- * @description: watch the state of show
+ * @description: Watch the state of show.
  * @Author: Xu Ning
  * @Date: 2024-01-17 23:42:44
  */
@@ -100,7 +103,7 @@ watch(() => props.show, (newShow) => {
 });
 
 /**
- * @description: close modal function
+ * @description: A function about closing modal.
  * @Author: Xu Ning
  * @Date: 2024-01-17 23:42:57
  */

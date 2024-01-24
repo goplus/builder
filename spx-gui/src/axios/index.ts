@@ -1,3 +1,11 @@
+/*
+ * @Author: Yao Xinyue
+ * @Date: 2024-01-22 11:17:08
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-23 14:27:36
+ * @FilePath: /builder/spx-gui/src/axios/index.ts
+ * @Description: 
+ */
 import { createDiscreteApi } from "naive-ui";
 import axios, {AxiosResponse} from "axios";
 
@@ -15,7 +23,6 @@ interface ResponseData<T> {
   data: T;
   msg: string;
 }
-
 
 //  response interceptor
 service.interceptors.response.use((response: AxiosResponse<ResponseData<any>>) => {

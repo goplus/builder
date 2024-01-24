@@ -1,8 +1,6 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:27
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-22 14:25:16
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/index.ts
  * @Description: 
  */
@@ -10,8 +8,6 @@ import * as monaco from 'monaco-editor'
 import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
 
 import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
-
-
 
 
 const initFormat = async () => {

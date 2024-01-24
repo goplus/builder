@@ -1,17 +1,10 @@
-/*
- * @Author: TuGitee tgb@std.uestc.edu.cn
- * @Date: 2024-01-19 21:53:50
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:53:47
- * @FilePath: \builder\spx-gui\src\interface\file.ts
- * @Description: The interface of file.
- */
+import FileWithUrl from "@/class/FileWithUrl";
 
 /**
  * file interface
  */
 export default interface file {
-    files: File[];
+    files: FileWithUrl[];
     config: Record<string, any>;
     dir?: Record<string, any>;
     path?: string;
