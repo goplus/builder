@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:53:46
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-22 14:38:24
+ * @LastEditTime: 2024-01-25 16:07:05
  * @FilePath: /builder/spx-gui/src/store/modules/editor/index.ts
  * @Description: 
  */
@@ -18,7 +18,9 @@ export type ToolboxItem = {
 export type Toolbox = ToolboxItem[];
 
 export const useEditorStore = defineStore('editor', () => {
-    let toolbox = ref<monaco.languages.CompletionItem[]>(event_fn_completions);
+    /**
+     * toolbox list rely the monaco.languages.CompletionItem
+     */
     let completionToolbox = ref<Toolbox>([
         {
             label: 'event',
@@ -38,6 +40,7 @@ export const useEditorStore = defineStore('editor', () => {
             completionItems: control_fn_completions
         }
     ]);
+    
     /**
      * @description: trigger the insertion function
      * The code editor component is subscribed the event
@@ -51,7 +54,6 @@ export const useEditorStore = defineStore('editor', () => {
 
 
     return {
-        toolbox,
         completionToolbox,
         insertSnippet,
     }
