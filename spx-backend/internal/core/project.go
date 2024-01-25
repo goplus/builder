@@ -73,7 +73,7 @@ type FormatResponse struct {
 }
 
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
-	err = godotenv.Load("./.env")
+	err = godotenv.Load("../.env")
 	if err != nil {
 		println(err.Error())
 		return
@@ -110,7 +110,7 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	return &Project{bucket, db}, nil
 }
 
-// Find file address from db
+// FileInfo Find file address from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
 		var address string
@@ -338,7 +338,7 @@ func (p *Project) UpdatePublic(ctx context.Context, id string) error {
 }
 
 func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
-	path, err := UploadFile(ctx, p, os.Getenv("ASSET_PATH"), file, header)
+	path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, header)
 	if err != nil {
 		return nil, err
 	}
