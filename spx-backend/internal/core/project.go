@@ -335,5 +335,14 @@ func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSiz
 // UpdatePublic user project list
 func (p *Project) UpdatePublic(ctx context.Context, id string) error {
 	return UpdateProjectIsPublic(p, id)
+}
 
+func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
+	path, err := UploadFile(ctx, p, os.Getenv("ASSET_PATH"), file, header)
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = path
+	asset.ID, err = AddAsset(p, asset)
+	return asset, err
 }

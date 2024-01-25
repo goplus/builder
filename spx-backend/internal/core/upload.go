@@ -45,7 +45,7 @@ func Encrypt(salt, password string) string {
 }
 
 func AddProject(p *Project, c *CodeFile) (string, error) {
-	sqlStr := "insert into codefile (name,author_id , address,is_public,status c_time,u_time) values (?, ?, ?,?, ?, ?)"
+	sqlStr := "insert into codefile (name,author_id , address,is_public,status, c_time,u_time) values (?, ?,?, ?,?, ?, ?)"
 	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
@@ -55,6 +55,16 @@ func AddProject(p *Project, c *CodeFile) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
+func AddAsset(p *Project, c *Asset) (string, error) {
+	sqlStr := "insert into asset (name,author_id , address,is_public,status,assetType,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
+	if err != nil {
+		println(err.Error())
+		return "", err
+	}
+	idInt, err := res.LastInsertId()
+	return strconv.Itoa(int(idInt)), err
+}
 func GetProjectAddress(id string, p *Project) string {
 	var address string
 	query := "SELECT address FROM codefile WHERE id = ?"

@@ -69,6 +69,31 @@ get "/asset/:id", ctx => {
     }
 }
 
+post "/asset/upload", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+        uid := ctx.FormValue("uid")
+        name:=ctx.FormValue("name")
+        category:=ctx.FormValue("category")
+        isPublic:=ctx.FormValue("isPublic")
+        assetType := ctx.FormValue("assetType")
+        ip, _ := strconv.Atoi(isPublic)
+        file,header,_:=ctx.FormFile("file")
+        	asset:=&core.Asset{
+        		 Name:name,
+                 AuthorId:uid,
+                 Category:category,
+                 IsPublic:ip,
+                 AssetType:assetType,
+                 Status:1,
+        	}
+        	res,_ := p.UploadAsset(todo,asset,file,header)
+        	ctx.json {
+        		"code":200,
+        		"msg":"ok",
+        		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
+        	}
+}
 get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
