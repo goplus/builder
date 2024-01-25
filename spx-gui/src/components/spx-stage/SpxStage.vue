@@ -1,9 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-25 11:53:52
- * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-26 17:40:03
+ * @FilePath: /spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
 <template>
@@ -11,7 +11,7 @@
     <h1>stage <n-button @click="run">Run</n-button>
     </h1>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div v-else class="show center">waiting for load...</div>
+    <StageViewer v-else></StageViewer>
   </div>
 </template>
 
@@ -21,6 +21,7 @@ import type { projectType } from '@/types/file';
 import { NButton } from "naive-ui";
 import { useProjectStore } from "@/store/modules/project";
 import { useBackdropStore } from '@/store/modules/backdrop'
+import StageViewer from "./StageViewer.vue"
 defineProps({
   project: {
     type: Object as () => projectType,
