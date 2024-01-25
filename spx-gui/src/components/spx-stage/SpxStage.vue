@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-22 16:58:02
+ * @LastEditors: TuGitee tgb@std.uestc.edu.cn
+ * @LastEditTime: 2024-01-25 11:53:52
  * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -20,27 +20,23 @@ import { defineProps, ref } from 'vue';
 import type { projectType } from '@/types/file';
 import { NButton } from "naive-ui";
 import { useProjectStore } from "@/store/modules/project";
+import { useBackdropStore } from '@/store/modules/backdrop'
 defineProps({
   project: {
     type: Object as () => projectType,
   }
 })
 let show = ref(false)
-// useProjectStore().watchProjectChange(() => {
-//   show.value = false
-//   // wait 300ms render because of async load
-//   setTimeout(() => {
-//     show.value = true
-//   }, 300)
-// })
-const run =async () => {
+const backdropStore = useBackdropStore()
+const projectStore = useProjectStore()
+const run = async () => {
   show.value = false
-  await useProjectStore().saveByProject()
-  // wait 100ms render because of async load
-
-  setTimeout(() => {
-    show.value = true
-  }, 100)
+  // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
+  backdropStore.setZOrder()
+  projectStore.setCode(projectStore.genEntryCode())
+  await projectStore.saveByProject()
+  window.project_path = projectStore.project.title
+  show.value = true
 }
 </script>
 
