@@ -1,8 +1,6 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-16 10:59:27
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 16:46:36
  * @FilePath: /builder/spx-gui/src/plugins/code-editor/index.ts
  * @Description: 
  */
@@ -12,12 +10,10 @@ import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageC
 import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 
 
-
-
 const initFormat = async () => {
     // console.log(window.Go)
-    const go = new window.Go();
-    console.log("go")
+    const go = new Go();
+    console.log(go)
     const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
     console.log("result")
     // TODO:abstract the logic of wasm

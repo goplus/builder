@@ -1,8 +1,10 @@
+import FileWithUrl from "@/class/FileWithUrl";
+
 /**
  * file interface
  */
 export default interface file {
-    files: File[];
+    files: FileWithUrl[];
     config: Record<string, any>;
     dir?: Record<string, any>;
     path?: string;

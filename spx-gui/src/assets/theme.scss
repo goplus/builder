@@ -2,13 +2,14 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-13 23:15:42
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 23:29:02
+ * @LastEditTime: 2024-01-24 18:08:53
  * @FilePath: /builder/spx-gui/src/assets/theme.scss
  * @Description:
  */
 
 //common
 $button-color:#ED729EFF;
+$yellow-background-color:#FFF0E5;
 
 //TopMenu
 $top-menu-height: 80px;
@@ -25,8 +26,8 @@ $sounds-edit-card-close-button-x: #eb99af;
 $sounds-edit-card-close-button-border: #e34e7c;
 
 // SpxEditor
-$spx-editor-tab-font-uncheck: black;
-$spx-editor-tab-font-check: #db1b5e;
+$spx-editor-tab-font-uncheck: #A4A4A3;
+$spx-editor-tab-font-check: #FF7E6C;
 
 //assetLibrary
 $asset-library-card-title-1: #E87FA7;

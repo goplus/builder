@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 11:18:06
+ * @LastEditTime: 2024-01-24 17:47:38
  * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -103,10 +103,6 @@ const dropdownStyle = {
  * @Date: 2024-01-17 17:53:53
  */
 const menuOptions = [
-  {
-    label: () => h(NButton, {}, "logo"),
-    key: "hear-the-wind-sing",
-  },
   {
     label: () =>
       h(NAvatar, {
@@ -356,4 +352,4 @@ const toggleLanguage = () => {
 // }
 </script>
 
-<style type="scss" scoped></style>
+<style lang="scss" scoped></style>

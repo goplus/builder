@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { NInput, NGradientText } from "naive-ui";
 
 

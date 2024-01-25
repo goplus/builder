@@ -2,14 +2,15 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 16:42:48
+ * @LastEditTime: 2024-01-23 16:22:33
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card">
+  <div class="sprite-card" @click="addSpriteToListFunc(props.spriteInfo.name)">
     <n-image
+      preview-disabled
       width="100"
       height="100"
       :src="props.spriteInfo.image"
@@ -21,15 +22,32 @@
 </template>
 
 <script setup lang="ts">
+// ----------Import required packages / components-----------
 import { NImage } from "naive-ui";
 import { defineProps } from "vue";
 import type { SpriteInfoType } from "@/interface/library";
+import { useSpriteStore } from "@/store/modules/sprite";
+import Sprite from "@/class/sprite";
 
+// ----------props & emit------------------------------------
 interface propsType {
   spriteInfo: SpriteInfoType;
 }
-
 const props = defineProps<propsType>();
+const spriteStore = useSpriteStore()
+
+// ----------methods-----------------------------------------
+/**
+ * @description: A function to add sprite to list
+ * @param {*} spriteName
+ * @param {*} file
+ * @Author: Xu Ning
+ * @Date: 2024-01-24 12:18:12
+ */
+const addSpriteToListFunc = (spriteName: string, file?: File[]) =>{
+  const sprite = new Sprite(spriteName, file)
+  spriteStore.addItem(sprite)
+}
 
 </script>
 

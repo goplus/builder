@@ -12,7 +12,6 @@
 
     const go = new Go();
     WebAssembly.instantiateStreaming(fetch("/wasm/run.wasm"), go.importObject).then(result => {
-
         go.run(result.instance);
     });
 </script>
