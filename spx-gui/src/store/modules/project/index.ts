@@ -2,7 +2,7 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 11:26:18
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 08:46:59
+ * @LastEditTime: 2024-01-25 11:47:33
  * @FilePath: \builder\spx-gui\src\store\modules\project\index.ts
  * @Description: The store of project.
  */
@@ -50,11 +50,11 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     const code = ref<codeType>({
-        content: '',
+        content: "\r\n",
         path: '',
     })
-    const setCode = (c: codeType = { content: '', path: '' }) => {
-        code.value = c
+    const setCode = (c: string = "\r\n") => {
+        code.value.content = c
     }
 
     /**
@@ -363,10 +363,8 @@ export const useProjectStore = defineStore('project', () => {
                 handleFile(file, filename, sprite);
             }
             else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
-                proj.code = {
-                    path,
-                    content: ArrayBuffer2Content(file.content, file.type) as string
-                }
+                proj.code.path = path
+                proj.code.content = ArrayBuffer2Content(file.content, file.type) as string
             }
             else if (/^.+\.spx$/.test(path)) {
                 const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
@@ -451,7 +449,8 @@ export const useProjectStore = defineStore('project', () => {
         soundStore.setItem(proj.sounds);
         setTitle(proj.title);
         setDefaultDir(proj.defaultDir);
-        setCode(proj.code);
+        code.value.path = proj.code.path;
+        setCode(proj.code.content);
     }
 
     /**
@@ -536,6 +535,8 @@ export const useProjectStore = defineStore('project', () => {
 
     return {
         setTitle,
+        setCode,
+        code,
         watchProjectChange,
         resetProject,
         saveByProject,
