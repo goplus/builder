@@ -1,0 +1,3 @@
+/dist
+/.*.cjs
+wasm_exec.js

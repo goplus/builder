@@ -2,138 +2,354 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-12 21:42:31
+ * @LastEditTime: 2024-01-24 17:47:38
  * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
- * @Description: 
+ * @Description:
 -->
 <template>
-  <NMenu
-    v-model:value="activeKey"
-    mode="horizontal"
-    :options="menuOptions"
-    responsive
-  />
+  <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { h, ref } from "vue";
-import { NMenu, NButton, NInput } from "naive-ui";
+import { NMenu, NButton, NInput, NAvatar, NIcon, NDropdown } from "naive-ui";
+import { useI18n } from "vue-i18n";
+import { useLanguageStore } from "@/store/modules/language";
+import Logo from "@/assets/logo.png";
+import { ArrowLeftOutlined as ReturnIcon } from "@vicons/antd";
+import {
+  topMenuImportBtn1,
+  topMenuImportBtn2,
+  topMenuSaveBtn1,
+  topMenuSaveBtn2,
+  topMenuExportBtn1,
+  topMenuExportBtn2,
+  topMenuReturnBtn1,
+  topMenuReturnBtn2,
+} from "@/assets/theme.ts";
+import { useProjectStore } from "@/store/modules/project";
+const projectStore = useProjectStore()
 
+/**
+ * @description: dropdown options of import/save/export
+ * @Author: Xu Ning
+ * @Date: 2024-01-17 17:54:27
+ */
+const importOptions = [
+  {
+    label: "Local",
+    key: "Local",
+  },
+  {
+    label: "Cloud",
+    key: "Cloud",
+  },
+  {
+    label: "Github",
+    key: "Github",
+  },
+];
+
+const saveOptions = [
+  {
+    label: "Local",
+    key: "Local",
+  },
+  {
+    label: "Cloud",
+    key: "Cloud",
+  },
+];
+
+const exportOptions = [
+  {
+    label: "Video",
+    key: "Video",
+  },
+  {
+    label: "App",
+    key: "App",
+  },
+];
+
+// active key for route
+const activeKey = ref(null);
+
+// i18n/i10n config
+const { locale } = useI18n({
+  inheritLocale: true,
+  useScope: "global",
+});
+const languageStore = useLanguageStore();
+
+// default button style for menu
+const buttonStyle = {
+  "--n-border": "0px !important",
+  "--n-border-hover": "0px !important",
+  "--n-border-press": "0px !important",
+  "--n-border-focus": "0px !important",
+  "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
+  "min-width": "7vw",
+};
+
+const dropdownStyle = {
+  "min-width": "7vw",
+  "text-align": "center",
+};
+
+/**
+ * @description: topmenu options render
+ * @Author: Xu Ning
+ * @Date: 2024-01-17 17:53:53
+ */
 const menuOptions = [
   {
-    label: () => h(NButton, {}, "logo"),
-    key: "hear-the-wind-sing",
+    label: () =>
+      h(NAvatar, {
+        round: true,
+        size: "large",
+        src: Logo,
+        style: {
+          height: "34px",
+          width: "34px",
+        },
+      }),
+    key: "logo",
   },
   {
     label: () =>
       h(
         NButton,
         {
+          circle: true,
           style: {
-            // width: "53px",
+            background: `linear-gradient(145deg, ${topMenuReturnBtn1}, ${topMenuReturnBtn2})`,
+            "--n-border": "0px !important",
+            "--n-border-hover": "0px !important",
+            "--n-border-press": "0px !important",
+            "--n-border-focus": "0px !important",
+            "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
           },
         },
-        "ret"
+        renderIcon(ReturnIcon)
       ),
-    key: "hear-the-wind-sing",
+    key: "return-btn",
   },
   {
     label: () =>
       h(
-        NButton,
+        NDropdown,
         {
-          style: {
-            // width: "53px",
-          },
+          trigger: "hover",
+          options: importOptions,
+          onSelect: handleSelectImport,
+          style: dropdownStyle,
         },
-        "import"
+        {
+          default: () =>
+            h(
+              NButton,
+              {
+                style: computedButtonStyle(
+                  topMenuImportBtn1,
+                  topMenuImportBtn2
+                ),
+              },
+              "Import"
+            ),
+        }
       ),
-    key: "hear-the-wind-sing",
+    key: "import-btn",
   },
   {
     label: () =>
       h(
-        NButton,
+        NDropdown,
         {
-          style: {
-            // width: "53px",
-          },
+          trigger: "hover",
+          options: saveOptions,
+          onSelect: handleSelectImport,
+          style: dropdownStyle,
         },
-        "save"
+        {
+          default: () =>
+            h(
+              NButton,
+              {
+                style: computedButtonStyle(topMenuSaveBtn1, topMenuSaveBtn2),
+              },
+              "Save"
+            ),
+        }
       ),
-    key: "hear-the-wind-sing",
+    key: "save-btn",
   },
   {
     label: () =>
       h(
-        NButton,
+        NDropdown,
         {
-          style: {
-            // width: "53px",
-          },
+          trigger: "hover",
+          options: exportOptions,
+          onSelect: handleSelectImport,
+          style: dropdownStyle,
         },
-        "export"
+        {
+          default: () =>
+            h(
+              NButton,
+              {
+                style: computedButtonStyle(
+                  topMenuExportBtn1,
+                  topMenuExportBtn2
+                ),
+              },
+              "Export"
+            ),
+        }
       ),
-    key: "hear-the-wind-sing",
+    key: "export-btn",
   },
   {
     label: () =>
       h(
         NInput,
         {
+          placeholder: "Untitled",
           style: {
-            // width: "53px",
+            "border-radius": "25px",
+            "text-align": "center",
+            width: "30vw",
           },
         },
         "title"
       ),
-    key: "hear-the-wind-sing",
+    key: "title-btn",
   },
   {
     label: () =>
       h(
         NButton,
         {
-          style: {
-            // width: "53px",
-          },
+          style: computedButtonStyle(topMenuImportBtn1, topMenuImportBtn2),
         },
-        "code"
+        "Code"
       ),
-    key: "hear-the-wind-sing",
+    key: "code-btn",
   },
   {
     label: () =>
       h(
         NButton,
         {
-          style: {
-            // width: "53px",
-          },
+          style: computedButtonStyle(topMenuImportBtn1, topMenuImportBtn2),
         },
-        "tutorial"
+        "Tutorial"
       ),
-    key: "hear-the-wind-sing",
+    key: "tutorial-btn",
+  },
+  {
+    label: () =>
+      h(NAvatar, {
+        round: true,
+        size: "large",
+        src: Logo,
+        style: {
+          height: "34px",
+          width: "34px",
+        },
+      }),
+    key: "logo",
   },
   {
     label: () =>
       h(
-        NButton,
+        "span",
         {
+          onClick: toggleLanguage,
           style: {
-            // width: "53px",
+            cursor: "pointer",
+            padding: "0 16px",
+            color: "white",
           },
         },
-        "ava"
+        "En/中文"
       ),
-    key: "hear-the-wind-sing",
   },
 ];
-const activeKey = ref(null);
+
+/**
+ * @description: generate default button style for menu
+ * @param {*} color1 gradient color 1
+ * @param {*} color2 gradient color 2
+ * @Author: Xu Ning
+ * @Date: 2024-01-17 17:56:06
+ */
+const computedButtonStyle = (color1: string, color2: string) => {
+  return {
+    ...buttonStyle,
+    background: `linear-gradient(to right, ${color1}, ${color2})`,
+  };
+};
+
+/**
+ * @description: import dropdown select func
+ * @param {*} key
+ * @Author: Xu Ning
+ * @Date: 2024-01-17 17:55:13
+ */
+const handleSelectImport = (key: string | number) => {
+  console.log("key", key);
+
+  // TODO: use for test
+  if (key === 'Local') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    input.click()
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      const dir = await projectStore.getDirPathFromZip(file)
+      projectStore.loadProject(dir)
+      // must set window.project_path 
+      window.project_path = projectStore.project.title
+      await projectStore.saveByProject()
+    }
+  }
+};
+
+/**
+ * @description: render top menu icon
+ * @param {*} icon
+ * @Author: Xu Ning
+ * @Date: 2024-01-16 11:45:58
+ */
+function renderIcon(icon: any) {
+  return () =>
+    h(
+      NIcon,
+      {
+        style: {
+          "font-size": "34px",
+        },
+      },
+      { default: () => h(icon) }
+    );
+}
+
+/**
+ * @description: toggle language function , now for Chinese and English
+ * @Author: Yao xinyue
+ * @Date: 2024-01-17 17:58:26
+ */
+const toggleLanguage = () => {
+  locale.value = locale.value === "en" ? "zh" : "en";
+  languageStore.setLanguage(languageStore.language === "en" ? "zh" : "en");
+};
 
 // function renderIcon(icon) {
 //   return () => h(NIcon, null, { default: () => h(icon) });
 // }
 </script>
 
-<style type="scss" scoped></style>
+<style lang="scss" scoped></style>
