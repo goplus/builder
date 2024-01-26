@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 19:29:17
+ * @LastEditTime: 2024-01-26 22:00:23
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -20,13 +20,12 @@
         >
       </n-scrollbar>
     </div>
-   
+
     <n-button-group class="formatBtnGroup" size="small">
-        <n-button class="" @click="format">clear</n-button>
-        <n-button class="formatBtn" @click="format">format</n-button>
+      <n-button class="" @click="format">clear</n-button>
+      <n-button class="formatBtn" @click="format">format</n-button>
     </n-button-group>
-    <div id="code-editor" ref="code_editor">
-    </div>
+    <div id="code-editor" ref="code_editor"></div>
   </div>
 </template>
 
@@ -151,17 +150,17 @@ const toggleCodeById = (name: string) => {
   height: calc(100% - 24px);
 }
 
-.code-button{
-    background:#CDF5EF;
-    width:80px;
-    height:auto;
-    text-align:center;
-    position:absolute;
-    top: -2px;
-    font-size:18px;
-    border: 2px solid #00142970;
-    border-radius: 0 0 10px 10px;
-    z-index:2;
+.code-button {
+  background: #cdf5ef;
+  width: 80px;
+  height: auto;
+  text-align: center;
+  position: absolute;
+  top: -2px;
+  font-size: 18px;
+  border: 2px solid #00142970;
+  border-radius: 0 0 10px 10px;
+  z-index: 2;
 }
 
 .code-editor-space {
@@ -170,26 +169,25 @@ const toggleCodeById = (name: string) => {
   height: calc(100% - 44px);
   border: 2px solid #00142970;
   position: relative;
-  background: white; 
-  border-radius: 24px; 
-  padding: 10px; 
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+  background: white;
+  border-radius: 24px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
-
-.formatBtnGroup{
-    z-index: 99;
-    right: 20px;
-    position: absolute;
-    .n-button{
-        background:#00000000;
-        color:#001429;
-        border: 1px solid black;
-    }
-    .n-button:hover{
-        background:#ED729E20;
-    }
+.formatBtnGroup {
+  z-index: 99;
+  right: 20px;
+  position: absolute;
+  .n-button {
+    background: #00000000;
+    color: #001429;
+    border: 1px solid black;
+  }
+  .n-button:hover {
+    background: #ed729e20;
+  }
 }
 
 .action,

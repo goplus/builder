@@ -2,15 +2,16 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:19:24
+ * @LastEditTime: 2024-01-26 22:26:39
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
 <template>
   <div class="asset-library">
+    <div class="asset-library-edit-button">Edit</div>
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
-      <n-grid-item class="asset-library-left" span="3">
+      <n-grid-item  class="asset-library-left" span="3">
         <!-- S Component SpriteEditBtn -->
         <SpriteEditBtn />
         <!-- E Component SpriteEditBtn -->
@@ -51,15 +52,16 @@ import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
 import { useSpriteStore } from "@/store/modules/sprite";
-import Sprite from "@/class/sprite"
+import Sprite from "@/class/sprite";
 
 // ----------props & emit------------------------------------
-const spriteStore = useSpriteStore()
+const spriteStore = useSpriteStore();
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
-const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list  as Sprite[]);
-
+const spriteAssets: ComputedRef<Sprite[]> = computed(
+  () => spriteStore.list as Sprite[],
+);
 </script>
 
 <style scoped lang="scss">
@@ -67,10 +69,36 @@ const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list  as 
 .asset-library {
   // TODO: Delete the background, it is just for check the position.
   // background:#f0f0f0;
-  .asset-library-left,
+  height: calc(60vh - 60px - 24px - 24px);
+  border: 2px solid #00142970;
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  margin: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  .asset-library-edit-button {
+    background: rgba(255, 170, 0, 0.5);
+    width: 80px;
+    height: auto;
+    text-align: center;
+    position: absolute;
+    top: -2px;
+    left:8px;
+    font-size: 18px;
+    border: 2px solid #00142970;
+    border-radius: 0 0 10px 10px;
+    z-index: 2;
+  }
   .asset-library-right {
     max-height: calc(60vh - 60px - 24px);
     overflow: scroll;
+  }
+  .asset-library-left{
+    margin-top:30px;
+    max-height: calc(60vh - 60px - 24px - 40px);
+    overflow: scroll;
+    padding:10px;
   }
 }
 </style>
