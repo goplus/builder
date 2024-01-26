@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 17:37:49
+ * @LastEditTime: 2024-01-26 23:02:17
  * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -21,7 +21,12 @@ import { NMenu, NButton, NInput, NAvatar, NIcon, NDropdown } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useLanguageStore } from "@/store/modules/language";
 import Logo from "@/assets/logo.png";
-import { ComputerTwotone as CodeIcon, FilePresentTwotone as FileIcon, SaveTwotone as SaveIcon, PublishTwotone as PublishIcon } from "@vicons/material";
+import {
+  ComputerTwotone as CodeIcon,
+  FilePresentTwotone as FileIcon,
+  SaveTwotone as SaveIcon,
+  PublishTwotone as PublishIcon,
+} from "@vicons/material";
 import { Book as TutorialIcon } from "@vicons/ionicons5";
 import {
   topMenuImportBtn1,
@@ -86,6 +91,12 @@ const { locale } = useI18n({
 });
 const languageStore = useLanguageStore();
 
+// theme style config
+import { ThemeStyleType } from "@/constant/constant.ts";
+
+const themeStyle = ref<number>(ThemeStyleType.Pink);
+const themeMap = ["Pink", "Yellow", "Blue"];
+
 // default button style for menu
 const buttonStyle = {
   "--n-border": "0px !important",
@@ -94,7 +105,7 @@ const buttonStyle = {
   "--n-border-focus": "0px !important",
   "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
   "min-width": "7vw",
-  "border-radius": "20px"
+  "border-radius": "20px",
 };
 
 const dropdownStyle = {
@@ -103,24 +114,11 @@ const dropdownStyle = {
 };
 
 /**
- * @description: topmenu options render
+ * @description: top menu options render
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:53:53
  */
 const menuOptions = [
-  // {
-  //     label: () =>
-  //       h(NAvatar, {
-  //         round: true,
-  //         size: "large",
-  //         src: Logo,
-  //         style: {
-  //           height: "34px",
-  //           width: "34px",
-  //         },
-  //       }),
-  //     key: "logo",
-  //   },
   {
     label: () =>
       h(
@@ -210,7 +208,7 @@ const menuOptions = [
             ),
         },
       ),
-    key: "export-btn",
+    key: "publish-btn",
   },
   {
     label: () =>
@@ -235,11 +233,11 @@ const menuOptions = [
         NButton,
         {
           style: {
-            "background-color": "#FFF8CC", 
-            color: "#000", 
-            "border-radius": "20px", 
-            border: "2px solid #001429", 
-            "box-shadow": "-1px 2px #001429", 
+            "background-color": "#FFF8CC",
+            color: "#000",
+            "border-radius": "20px",
+            border: "2px solid #001429",
+            "box-shadow": "-1px 2px #001429",
             cursor: "pointer",
           },
           renderIcon: renderIcon(CodeIcon),
@@ -254,15 +252,14 @@ const menuOptions = [
         NButton,
         {
           style: {
-            "background-color": "#00509D", 
-            color: "#FFF", 
-            "border-radius": "20px", 
-            border: "2px solid #001429", 
-            "box-shadow": "-1px 2px #001429", 
+            "background-color": "#00509D",
+            color: "#FFF",
+            "border-radius": "20px",
+            border: "2px solid #001429",
+            "box-shadow": "-1px 2px #001429",
             cursor: "pointer",
           },
           renderIcon: renderIcon(TutorialIcon),
-
         },
         "Tutorial",
       ),
@@ -296,6 +293,21 @@ const menuOptions = [
         "En/中文",
       ),
   },
+  {
+    label: () =>
+      h(
+        "span",
+        {
+          onClick: toggleThemeStyle,
+          style: {
+            cursor: "pointer",
+            padding: "0 16px",
+            color: "white",
+          },
+        },
+        { default: () => themeMap[themeStyle.value] },
+      ),
+  },
 ];
 
 /**
@@ -320,7 +332,6 @@ const computedButtonStyle = (color1: string, color2: string) => {
  */
 const handleSelectImport = (key: string | number) => {
   console.log("key", key);
-
   // TODO: use for test
   if (key === "Local") {
     const input = document.createElement("input");
@@ -367,11 +378,15 @@ const toggleLanguage = () => {
   languageStore.setLanguage(languageStore.language === "en" ? "zh" : "en");
 };
 
-// function renderIcon(icon) {
-//   return () => h(NIcon, null, { default: () => h(icon) });
-// }
+/**
+ * @description:
+ * @Author: Xu Ning
+ * @Date: 2024-01-26 22:49:59
+ */
+const toggleThemeStyle = () => {
+  themeStyle.value = ++themeStyle.value % 3;
+  //TODO: change the style
+};
 </script>
 
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>
