@@ -1,8 +1,8 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:53:46
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-22 14:38:24
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-26 14:58:14
  * @FilePath: /builder/spx-gui/src/store/modules/editor/index.ts
  * @Description: 
  */
@@ -21,20 +21,20 @@ export const useEditorStore = defineStore('editor', () => {
     let toolbox = ref<monaco.languages.CompletionItem[]>(event_fn_completions);
     let completionToolbox = ref<Toolbox>([
         {
-            label: 'event',
+            label: 'Event',
             completionItems: event_fn_completions
         },
         {
-            label: 'look',
+            label: 'Look',
             completionItems: look_fn_completions
         }, {
-            label: "motion",
+            label: "Motion",
             completionItems: motion_fn_completions
         }, {
-            label: "sound",
+            label: "Sound",
             completionItems: sound_fn_completions
         }, {
-            label: "control",
+            label: "Control",
             completionItems: control_fn_completions
         }
     ]);
@@ -48,7 +48,6 @@ export const useEditorStore = defineStore('editor', () => {
     const insertSnippet = (snippet: monaco.languages.CompletionItem) => {
         // This function is notify code-editor component's insert Function
     }
-
 
     return {
         toolbox,

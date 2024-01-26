@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-22 09:12:31
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 18:10:22
+ * @LastEditTime: 2024-01-26 17:52:20
  * @FilePath: /builder/spx-gui/src/components/code-editor/ToolBox.vue
  * @Description:Code Editor Toolbox
 -->
@@ -19,7 +19,7 @@
           v-for="(snippet, index) in item.completionItems"
           :key="index"
           @click="insertCode(toRaw(snippet))"
-          style="margin-top: 24px"
+          style="margin-top: 16px"
         >
           {{ snippet.label }}
         </n-button>
@@ -40,3 +40,12 @@ const insertCode = (snippet: monaco.languages.CompletionItem) => {
   store.insertSnippet(snippet);
 };
 </script>
+<style scoped lang="scss">
+.n-button{
+  width: auto;
+  border: 1px solid #FF81A7;
+  background: #ed729d10;
+  color:#333333;
+  margin-right:3px;
+}
+</style>

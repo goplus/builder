@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:16:38
+ * @LastEditTime: 2024-01-26 12:24:11
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -32,7 +32,11 @@
       <!-- S Library Sub Header -->
       <div class="asset-library-sub-header">
         <n-flex>
-          <n-button size="large" v-for="category in props.categories" :key="category">
+          <n-button
+            size="large"
+            v-for="category in props.categories"
+            :key="category"
+          >
             {{ category }}
           </n-button>
           <span class="sort-btn">
@@ -52,8 +56,15 @@
       <!-- E Library Sub Header -->
       <!-- S Library Content -->
       <div class="asset-library-content">
-        <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-          <n-grid-item v-for="spriteInfo in props.spriteInfos" :key="spriteInfo.name">
+        <n-grid
+          v-if="props.spriteInfos.length != 0"
+          cols="3 s:4 m:5 l:6 xl:7 2xl:8"
+          responsive="screen"
+        >
+          <n-grid-item
+            v-for="spriteInfo in props.spriteInfos"
+            :key="spriteInfo.name"
+          >
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
               <SpriteCard :spriteInfo="spriteInfo" />
@@ -61,6 +72,7 @@
             </div>
           </n-grid-item>
         </n-grid>
+        <n-empty class="n-empty-style" :show-icon="false" size="large" v-else description="There's nothing." />
       </div>
       <!-- E Library Content -->
     </template>
@@ -69,15 +81,24 @@
 
 <script lang="ts" setup>
 import { defineEmits, defineProps, ref, watch } from "vue";
-import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon } from "naive-ui";
+import {
+  NModal,
+  NButton,
+  NFlex,
+  NGrid,
+  NGridItem,
+  NInput,
+  NIcon,
+  NEmpty,
+} from "naive-ui";
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
-import type { SpriteInfoType } from "@/interface/library";
+import type { Asset } from "@/interface/library";
 import SpriteCard from "./SpriteCard.vue";
 
 // ----------props & emit------------------------------------
 interface propsType {
-  spriteInfos: SpriteInfoType[];
+  spriteInfos: Asset[];
   show: boolean;
   categories: string[];
 }
@@ -96,11 +117,14 @@ const searchQuery = ref("");
  * @Author: Xu Ning
  * @Date: 2024-01-17 23:42:44
  */
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    showModal.value = newShow
-  }
-});
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow) {
+      showModal.value = newShow;
+    }
+  },
+);
 
 /**
  * @description: A function about closing modal.
@@ -108,12 +132,11 @@ watch(() => props.show, (newShow) => {
  * @Date: 2024-01-17 23:42:57
  */
 const closeModalFunc = () => {
-  emits('update:show', false);
-}
-
+  emits("update:show", false);
+};
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 @import "@/assets/theme.scss";
 .asset-library-sub-header {
   background: $asset-library-card-title-2;
@@ -132,6 +155,14 @@ const closeModalFunc = () => {
 
 .asset-library-content {
   margin: 60px 0 20px 0;
+  min-height: 300px;
+  .n-empty-style{
+    min-height:300px;
+    line-height:300px;
+     .n-empty__description{
+      line-height:300px;
+    }
+  }
 }
 .asset-library-sprite-item {
   display: flex;

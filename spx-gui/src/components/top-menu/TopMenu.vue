@@ -2,12 +2,17 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 17:47:38
+ * @LastEditTime: 2024-01-26 17:37:49
  * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
 <template>
-  <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
+  <NMenu
+    v-model:value="activeKey"
+    mode="horizontal"
+    :options="menuOptions"
+    responsive
+  />
 </template>
 
 <script setup lang="ts">
@@ -16,7 +21,8 @@ import { NMenu, NButton, NInput, NAvatar, NIcon, NDropdown } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useLanguageStore } from "@/store/modules/language";
 import Logo from "@/assets/logo.png";
-import { ArrowLeftOutlined as ReturnIcon } from "@vicons/antd";
+import { ComputerTwotone as CodeIcon, FilePresentTwotone as FileIcon, SaveTwotone as SaveIcon, PublishTwotone as PublishIcon } from "@vicons/material";
+import { Book as TutorialIcon } from "@vicons/ionicons5";
 import {
   topMenuImportBtn1,
   topMenuImportBtn2,
@@ -24,11 +30,9 @@ import {
   topMenuSaveBtn2,
   topMenuExportBtn1,
   topMenuExportBtn2,
-  topMenuReturnBtn1,
-  topMenuReturnBtn2,
 } from "@/assets/theme.ts";
 import { useProjectStore } from "@/store/modules/project";
-const projectStore = useProjectStore()
+const projectStore = useProjectStore();
 
 /**
  * @description: dropdown options of import/save/export
@@ -90,6 +94,7 @@ const buttonStyle = {
   "--n-border-focus": "0px !important",
   "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
   "min-width": "7vw",
+  "border-radius": "20px"
 };
 
 const dropdownStyle = {
@@ -103,37 +108,31 @@ const dropdownStyle = {
  * @Date: 2024-01-17 17:53:53
  */
 const menuOptions = [
-  {
-    label: () =>
-      h(NAvatar, {
-        round: true,
-        size: "large",
-        src: Logo,
-        style: {
-          height: "34px",
-          width: "34px",
-        },
-      }),
-    key: "logo",
-  },
+  // {
+  //     label: () =>
+  //       h(NAvatar, {
+  //         round: true,
+  //         size: "large",
+  //         src: Logo,
+  //         style: {
+  //           height: "34px",
+  //           width: "34px",
+  //         },
+  //       }),
+  //     key: "logo",
+  //   },
   {
     label: () =>
       h(
-        NButton,
+        "div",
         {
-          circle: true,
           style: {
-            background: `linear-gradient(145deg, ${topMenuReturnBtn1}, ${topMenuReturnBtn2})`,
-            "--n-border": "0px !important",
-            "--n-border-hover": "0px !important",
-            "--n-border-press": "0px !important",
-            "--n-border-focus": "0px !important",
-            "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
+            color: "white",
           },
         },
-        renderIcon(ReturnIcon)
+        "SPX+",
       ),
-    key: "return-btn",
+    key: "logo",
   },
   {
     label: () =>
@@ -152,12 +151,13 @@ const menuOptions = [
               {
                 style: computedButtonStyle(
                   topMenuImportBtn1,
-                  topMenuImportBtn2
+                  topMenuImportBtn2,
                 ),
+                renderIcon: renderIcon(FileIcon),
               },
-              "Import"
+              "File",
             ),
-        }
+        },
       ),
     key: "import-btn",
   },
@@ -177,10 +177,11 @@ const menuOptions = [
               NButton,
               {
                 style: computedButtonStyle(topMenuSaveBtn1, topMenuSaveBtn2),
+                renderIcon: renderIcon(SaveIcon),
               },
-              "Save"
+              "Save",
             ),
-        }
+        },
       ),
     key: "save-btn",
   },
@@ -201,12 +202,13 @@ const menuOptions = [
               {
                 style: computedButtonStyle(
                   topMenuExportBtn1,
-                  topMenuExportBtn2
+                  topMenuExportBtn2,
                 ),
+                renderIcon: renderIcon(PublishIcon),
               },
-              "Export"
+              "Publish",
             ),
-        }
+        },
       ),
     key: "export-btn",
   },
@@ -217,12 +219,13 @@ const menuOptions = [
         {
           placeholder: "Untitled",
           style: {
-            "border-radius": "25px",
+            "border-radius": "10px",
             "text-align": "center",
+            border: "2px solid #001429",
             width: "30vw",
           },
         },
-        "title"
+        "title",
       ),
     key: "title-btn",
   },
@@ -231,9 +234,17 @@ const menuOptions = [
       h(
         NButton,
         {
-          style: computedButtonStyle(topMenuImportBtn1, topMenuImportBtn2),
+          style: {
+            "background-color": "#FFF8CC", 
+            color: "#000", 
+            "border-radius": "20px", 
+            border: "2px solid #001429", 
+            "box-shadow": "-1px 2px #001429", 
+            cursor: "pointer",
+          },
+          renderIcon: renderIcon(CodeIcon),
         },
-        "Code"
+        "Code",
       ),
     key: "code-btn",
   },
@@ -242,9 +253,18 @@ const menuOptions = [
       h(
         NButton,
         {
-          style: computedButtonStyle(topMenuImportBtn1, topMenuImportBtn2),
+          style: {
+            "background-color": "#00509D", 
+            color: "#FFF", 
+            "border-radius": "20px", 
+            border: "2px solid #001429", 
+            "box-shadow": "-1px 2px #001429", 
+            cursor: "pointer",
+          },
+          renderIcon: renderIcon(TutorialIcon),
+
         },
-        "Tutorial"
+        "Tutorial",
       ),
     key: "tutorial-btn",
   },
@@ -273,7 +293,7 @@ const menuOptions = [
             color: "white",
           },
         },
-        "En/中文"
+        "En/中文",
       ),
   },
 ];
@@ -302,19 +322,19 @@ const handleSelectImport = (key: string | number) => {
   console.log("key", key);
 
   // TODO: use for test
-  if (key === 'Local') {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.zip';
-    input.click()
+  if (key === "Local") {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".zip";
+    input.click();
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
-      const dir = await projectStore.getDirPathFromZip(file)
-      projectStore.loadProject(dir)
-      // must set window.project_path 
-      window.project_path = projectStore.project.title
-      await projectStore.saveByProject()
-    }
+      const dir = await projectStore.getDirPathFromZip(file);
+      projectStore.loadProject(dir);
+      // must set window.project_path
+      window.project_path = projectStore.project.title;
+      await projectStore.saveByProject();
+    };
   }
 };
 
@@ -333,7 +353,7 @@ function renderIcon(icon: any) {
           "font-size": "34px",
         },
       },
-      { default: () => h(icon) }
+      { default: () => h(icon) },
     );
 }
 
@@ -352,4 +372,6 @@ const toggleLanguage = () => {
 // }
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+
+</style>

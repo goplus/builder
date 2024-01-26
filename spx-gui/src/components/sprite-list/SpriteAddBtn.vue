@@ -56,19 +56,19 @@
   <LibraryModal
     v-model:show="showModal"
     :categories="spriteCategories"
-    :spriteInfos="spriteInfos"
+    :spriteInfos="props.type === 'bg' ? backdropInfos : spriteInfos"
   />
   <!-- E Modal Library -->
 </template>
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { ref, defineProps, computed } from "vue";
+import { ref, defineProps, computed, onMounted } from "vue";
 import type { UploadFileInfo } from "naive-ui";
 import { NIcon, NUpload, NButton, useMessage } from "naive-ui";
 import { Add as AddIcon } from "@vicons/ionicons5";
 import { commonColor } from "@/assets/theme.ts";
-import type { SpriteInfoType } from "@/interface/library";
+import type { Asset } from "@/interface/library";
 // TODO: replace mock by api link
 import { SpriteInfosMock } from "@/mock/library";
 import { useSpriteStore } from "@/store/modules/sprite";
@@ -76,6 +76,8 @@ import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 import Sprite from "@/class/sprite";
 import FileWithUrl from "@/class/FileWithUrl";
+import { getAssetList } from "@/api/asset"
+import { AssetType } from "@/constant/constant.ts";
 
 // ----------props & emit------------------------------------
 interface propType {
@@ -106,8 +108,10 @@ const showModal = ref<boolean>(false);
 // Ref about showing upload buttons or not.
 const showUploadButtons = ref<boolean>(false);
 
-// Ref about sprite information.
-const spriteInfos = ref<SpriteInfoType[]>([]);
+// Ref about sprite/backdrop information.
+const spriteInfos = ref<Asset[]>([]);
+const backdropInfos = ref<Asset[]>([]);
+
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -115,7 +119,35 @@ const addBtnClassName = computed(() =>
   props.type === "bg" ? "bg-add-div" : "sprite-add-div"
 );
 
+// ----------lifecycle hooks---------------------------------
+// onMounted hook.
+onMounted(async () => {
+  if (props.type === "bg") {
+    backdropInfos.value = await fetchAssets(AssetType.Backdrop);
+  } else {
+    spriteInfos.value = await fetchAssets(AssetType.Sprite);
+  }
+});
+
 // ----------methods-----------------------------------------
+/**
+ * @description: A function to fetch asset from backend by getAssetList.
+ * @param {*} assetType
+ * @Author: Xu Ning
+ * @Date: 2024-01-25 23:50:45
+ */
+const fetchAssets = async (assetType: number) => {
+  try {
+    const pageIndex = 1;
+    const pageSize = 20;
+    const response = await getAssetList(pageIndex, pageSize, assetType);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching assets:", error);
+    return [];
+  }
+};
+
 /**
  * @description: A Function about clicking add button to change button style.
  * @Author: Xu Ning
@@ -133,15 +165,6 @@ const handleAddButtonClick = () => {
  */
 const openLibraryFunc = (isBg?: boolean) => {
   showModal.value = true;
-  if (isBg) {
-    // load the bg infos
-    // TODO : get sprite library infos from backend
-    spriteInfos.value = SpriteInfosMock;
-  } else {
-    // load the sprite infos
-    // TODO : get sprite library infos from backend
-    spriteInfos.value = SpriteInfosMock;
-  }
 };
 
 /**
@@ -154,8 +177,8 @@ const openLibraryFunc = (isBg?: boolean) => {
 const beforeUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];},isBg: boolean) => {
   let uploadFile = data.file;
   if (uploadFile.file) {
-    const fileURL = URL.createObjectURL(uploadFile.file);
-    const fileWithUrl = new FileWithUrl(uploadFile.file, fileURL);
+    let fileURL = URL.createObjectURL(uploadFile.file);
+    let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL);
 
     let fileArray: FileWithUrl[] = [fileWithUrl];
     let fileName = uploadFile.name;
@@ -164,10 +187,11 @@ const beforeUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];},i
       fileName.lastIndexOf(".")
     );
     if (isBg) {
-      const backdrop = backdropStore.backdrop;
+      let backdrop = backdropStore.backdrop;
       backdrop.addFile(...fileArray)
     } else {
-      const sprite = new Sprite(fileNameWithoutExtension, fileArray);
+      let sprite = new Sprite(fileNameWithoutExtension, [uploadFile.file]);
+      // const sprite = new Sprite(fileNameWithoutExtension, fileArray);uploadFile.file
       spriteStore.addItem(sprite);
     }
   } else {
@@ -188,7 +212,7 @@ const beforeBackdropUpload = (data: {file: UploadFileInfo;fileList: UploadFileIn
 };
 
 /**
- * @description: A Function before uploading Sprite. 
+ * @description: A Function before uploading Sprite.
  * @param {*} data
  * @Author: Xu Ning
  * @Date: 2024-01-24 11:48:33
@@ -199,7 +223,6 @@ const beforeSpriteUpload = (data: {
 }) => {
   beforeUpload(data, false);
 };
-
 </script>
 
 <style scoped lang="scss">
@@ -220,6 +243,9 @@ const beforeSpriteUpload = (data: {
 
   .add-new {
     color: white;
+    .add-new-font{
+      font-family:'Heyhoo'
+    }
   }
 
   .n-icon {

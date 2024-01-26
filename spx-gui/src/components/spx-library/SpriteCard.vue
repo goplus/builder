@@ -13,7 +13,7 @@
       preview-disabled
       width="100"
       height="100"
-      :src="props.spriteInfo.image"
+      :src="props.spriteInfo.address"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
     />
     {{ props.spriteInfo.name }}
@@ -25,13 +25,13 @@
 // ----------Import required packages / components-----------
 import { NImage } from "naive-ui";
 import { defineProps } from "vue";
-import type { SpriteInfoType } from "@/interface/library";
+import type { Asset } from "@/interface/library";
 import { useSpriteStore } from "@/store/modules/sprite";
 import Sprite from "@/class/sprite";
 
 // ----------props & emit------------------------------------
 interface propsType {
-  spriteInfo: SpriteInfoType;
+  spriteInfo: Asset;
 }
 const props = defineProps<propsType>();
 const spriteStore = useSpriteStore()

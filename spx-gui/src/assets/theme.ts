@@ -14,6 +14,6 @@ const topMenuExportBtn1 = "#FFC179";
 const topMenuExportBtn2 = "#FE715C";
 const topMenuReturnBtn1 = "#F8D3C3";
 const topMenuReturnBtn2 = "#EFB0A7";
-const commonColor = "#E87FA7";
+const commonColor = "#FF81A7";
 
 export {commonColor, topMenuImportBtn1, topMenuImportBtn2, topMenuSaveBtn1, topMenuSaveBtn2, topMenuExportBtn1, topMenuExportBtn2, topMenuReturnBtn1, topMenuReturnBtn2}

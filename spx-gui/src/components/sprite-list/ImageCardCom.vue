@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:21:49
+ * @LastEditTime: 2024-01-25 16:49:15
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
@@ -59,7 +59,7 @@ const backdropStore = useBackdropStore();
 const computedProperties = computed(() => {
   const isBg = props.type === "bg";
   const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
-
+  
   return {
     cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
     imageWidth: isBg ? 40 : 75,
