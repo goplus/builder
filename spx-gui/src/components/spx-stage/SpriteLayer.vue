@@ -1,43 +1,28 @@
+<!--
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-01-25 16:13:37
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-26 17:26:21
+ * @FilePath: /spx-gui/src/components/spx-stage/SpriteLayer.vue
+ * @Description: 
+-->
 <template>
     <v-layer>
-        <Sprite @on-drag-end="onSpriteDragEnd" :config="currentSprite" />
+        <Sprite v-if="spriteStore.current" @on-drag-end="onSpriteDragEnd"  :config="spriteStore.current" />
     </v-layer>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import Sprite from "./Sprite.vue"
-import { ref, computed } from "vue"
+import { ref, computed,onMounted } from "vue"
 // todo:use the filemanager's interface of spirteConfig
-import type { SpriteConfig } from "@/store"
+import { useSpriteStore } from "@/store";
+const spriteStore = useSpriteStore()
 
 
-// ----------computed properties-----------------------------
-
-// TODO: get current sprite from store
-// computed the current sprite config info from store
-const currentSprite = computed<SpriteConfig>(() => {
-    return {
-        name: "calf-1",
-        visible: true,
-        size: 1,
-        x: 0,
-        y: 0,
-        heading: 90,
-        costumeIndex: 0,
-        costumes: [{
-            path: "calf-1.png",
-            x: 0,
-            y: 0
-        }, {
-            path: "calf-1.png",
-            x: 50,
-            y: 50
-        }]
-    }
-    // return spriteStore.current
+onMounted(()=>{
+    console.log(spriteStore.current)
 })
-
-
 // ----------methods-----------------------------------------
 
 /**
@@ -49,5 +34,7 @@ const currentSprite = computed<SpriteConfig>(() => {
  * @Date: 2024-01-25 15:47:53
  */
 const onSpriteDragEnd = (e: { x: number, y: number }) => {
+    spriteStore.current?.setSx(e.x)
+    spriteStore.current?.setSy(e.y)
 }
 </script>

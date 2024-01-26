@@ -2,29 +2,33 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-25 17:43:54
- * @FilePath: /builder/spx-gui/src/components/spx-stage/Sprite.vue
+ * @LastEditTime: 2024-01-26 16:49:16
+ * @FilePath: /spx-gui/src/components/spx-stage/Sprite.vue
  * @Description: 
 -->
 <template>
     <Costume @on-drag-end="onDragEnd" :sprite_config="{
-        x: props.config.x,
-        y: props.config.y,
-        heading: props.config.heading
+        x: currentCostume.sx as number,
+        y: currentCostume.sy as number,
+        heading: currentCostume.heading,
+        size:currentCostume.size,
     }" :costume_config="{
-    x: currentCostume.x,
-    y: currentCostume.y
+    x: currentCostume.cx as number,
+    y: currentCostume.cy as number,
+    url:currentCostume.url as string
 }"></Costume>
 </template>
 <script lang="ts" setup>
 // TODO:use the interface from filemanager
-import { CostumeConfig, SpriteConfig } from "@/store";
+import type { SpriteConfig, Costume as CostumeConfig } from "@/interface/file";
+import SpriteType from "@/class/sprite"
+
 import Costume from "./Costume.vue"
-import { defineProps, onMounted, computed, defineEmits, ComputedRef } from "vue"
+import { defineProps, onMounted, computed, defineEmits, ComputedRef, Ref } from "vue"
 
 // ----------props & emit------------------------------------
 const props = defineProps<{
-    config: SpriteConfig;
+    config: SpriteType;
 }>();
 
 // when ths costume dragend,emit the sprite position
@@ -34,9 +38,10 @@ const emits = defineEmits<{
 
 
 // ----------computed properties-----------------------------
-// computed the current costume
-const currentCostume: ComputedRef<CostumeConfig> = computed(() => {
-    return props.config.costumes[props.config.costumeIndex]
+// computed the current costume with current image
+const currentCostume: ComputedRef<CostumeConfig & SpriteConfig> = computed(() => {
+    console.log(props.config)
+    return props.config.currentCostumeConfig
 })
 
 onMounted(() => {
