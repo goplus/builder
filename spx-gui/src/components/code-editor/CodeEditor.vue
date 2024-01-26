@@ -2,14 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 22:00:23
+ * @LastEditTime: 2024-01-26 23:29:54
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
 <template>
   <div class="code-editor-space">
     <div class="code-button">Code</div>
-    <!-- TODO: 还原  -->
+    <!-- TODO: Delete  -->
     <div class="sprite">
       <n-scrollbar x-scrollable>
         <n-button
