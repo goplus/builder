@@ -111,6 +111,13 @@ export default class Sound extends AssetBase implements file {
      * @returns the default config
      */
     genDefualtConfig(): SoundConfig {
+        return this.defaultConfig
+    }
+
+    /**
+     * Generate the default sound config.
+     */
+    get defaultConfig(): SoundConfig {
         return {
             "path": this.files[0]?.name
         }

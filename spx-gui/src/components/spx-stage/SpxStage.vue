@@ -8,7 +8,7 @@
 -->
 <template>
   <div class="spx-stage">
-    <h1>stage <n-button @click="run">Run</n-button>
+    <h1>stage <n-button @click="run">Run</n-button> <n-button @click="save">Save</n-button>
     </h1>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
     <div v-else class="show center">waiting for load...</div>
@@ -32,11 +32,14 @@ const projectStore = useProjectStore()
 const run = async () => {
   show.value = false
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
-  backdropStore.setZOrder()
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
   projectStore.setCode(projectStore.genEntryCode())
   await projectStore.saveByProject()
   window.project_path = projectStore.project.title
   show.value = true
+}
+const save = () => {
+  projectStore.saveToComputerByProject()
 }
 </script>
 

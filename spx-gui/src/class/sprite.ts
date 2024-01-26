@@ -126,6 +126,13 @@ export default class Sprite extends AssetBase implements file {
      * @returns the default config
      */
     genDefualtConfig(): SpriteConfig {
+        return this.defaultConfig
+    }
+
+    /**
+     * Generate the default sprite config.
+     */
+    get defaultConfig(): SpriteConfig {
         return {
             "costumes": this.files.map(item => ({
                 "name": item.name.split(".")[0],
