@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-25 17:48:11
- * @FilePath: /builder/spx-gui/src/components/spx-stage/Costume.vue
+ * @LastEditTime: 2024-01-26 17:04:41
+ * @FilePath: /spx-gui/src/components/spx-stage/Costume.vue
  * @Description: 
 -->
 <template>
@@ -15,11 +15,13 @@
         rotation: SpriteRotation,
         offsetX: props.costume_config.x,
         offsetY: props.costume_config.y,
+        scaleX:props.sprite_config.size,
+        scaleY:props.sprite_config.size
     }" />
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, onMounted, ref, computed } from "vue"
+import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted } from "vue"
 import Calf from "./calf-0.png"
 
 
@@ -30,10 +32,12 @@ const props = defineProps<{
         x: number,
         y: number,
         heading: number,
+        size:number
     },
     costume_config: {
         x: number,
         y: number,
+        url: string
     }
 }>()
 // define the emits
@@ -63,17 +67,21 @@ const SpriteRotation = computed(() => {
     return getRotation(props.sprite_config.heading);
 })
 
+// watch the url change to change the image
+const stop = watchEffect(() => {
+    
+    const _image = new window.Image();
+    _image.src = props.costume_config.url;
+    _image.onload = () => {
+        image.value = _image;
+        console.log(_image.width, _image.height)
+    };
+})
+
 // ----------lifecycle hooks---------------------------------
 
 // TODO:use the costume image
-onMounted(() => {
-    const _image = new window.Image();
-    _image.src = Calf;
-    _image.onload = () => {
-        image.value = _image;
-    };
-    console.log(props.costume_config)
-})
+onUnmounted(() => stop())
 
 // ----------methods-----------------------------------------
 /**
