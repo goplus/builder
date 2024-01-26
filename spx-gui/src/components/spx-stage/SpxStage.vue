@@ -63,6 +63,7 @@ const run = async () => {
     text-align: center;
     position: absolute;
     top: -2px;
+    left: 8px;
     font-size: 18px;
     border: 2px solid #00142970;
     border-radius: 0 0 10px 10px;

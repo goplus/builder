@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-25 16:49:15
+ * @LastEditTime: 2024-01-26 22:33:47
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
@@ -96,6 +96,7 @@ const deleteBackdrop = (file: FileWithUrl) => {
 @import "@/assets/theme.scss";
 
 @mixin listCardBase {
+  font-family:'Heyhoo';
   margin: 10px auto;
   border-radius: 20px;
   box-shadow: 0 0 5px $sprite-list-card-box-shadow;
