@@ -9,6 +9,7 @@
 import file, { SoundConfig } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
+import { rawFile } from "@/types/file";
 
 /**
  * @class Sound
@@ -127,7 +128,7 @@ export default class Sound extends AssetBase implements file {
      * Get the directory of the sound.
      */
     get dir() {
-        const dir: Record<string, any> = {}
+        const dir: Record<string, rawFile> = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file

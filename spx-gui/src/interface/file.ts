@@ -8,6 +8,7 @@
  */
 
 import FileWithUrl from "@/class/FileWithUrl";
+import { rawFile } from "@/types/file";
 
 /**
  * file interface
@@ -15,7 +16,7 @@ import FileWithUrl from "@/class/FileWithUrl";
 export default interface file {
     files: FileWithUrl[];
     config: Config;
-    dir?: Record<string, any>;
+    dir?: Record<string, rawFile>;
     path?: string;
 
     /**
