@@ -71,12 +71,7 @@ type FormatResponse struct {
 }
 
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
-	// _ = godotenv.Load("../.env")
-	err = godotenv.Load("/Users/xuning/builder/spx-backend/.env")
-	if err != nil {
-		println(err.Error())
-		return
-	}
+	_ = godotenv.Load("../.env")
 	if conf == nil {
 		conf = new(Config)
 	}
