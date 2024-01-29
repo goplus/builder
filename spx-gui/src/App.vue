@@ -71,6 +71,7 @@ const themeOverrides = {
   Input: {
     // caretColor: "#F1518A",
     borderHover: "1px solid #FF81A7",
+    borderRadius:"25px",
     // border: "1px solid #FF81A7",
     borderFocus: "1px solid #FF81A7",
   },

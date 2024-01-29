@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 22:15:41
+ * @LastEditTime: 2024-01-29 10:38:29
  * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -11,7 +11,7 @@
     <div class="stage-button">Stage</div>
     <n-button type="success" class="stage-run-button" @click="run">Run</n-button>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div v-else class="show center">waiting for load...</div>
+    <StageViewer v-else></StageViewer>
   </div>
 </template>
 
@@ -20,28 +20,28 @@ import { defineProps, ref } from "vue";
 import type { projectType } from "@/types/file";
 import { NButton } from "naive-ui";
 import { useProjectStore } from "@/store/modules/project";
+import { useBackdropStore } from '@/store/modules/backdrop'
+import StageViewer from "./StageViewer.vue"
 defineProps({
   project: {
     type: Object as () => projectType,
-  },
-});
-let show = ref(false);
-// useProjectStore().watchProjectChange(() => {
-//   show.value = false
-//   // wait 300ms render because of async load
-//   setTimeout(() => {
-//     show.value = true
-//   }, 300)
-// })
+  }
+})
+let show = ref(false)
+const backdropStore = useBackdropStore()
+const projectStore = useProjectStore()
 const run = async () => {
-  show.value = false;
-  await useProjectStore().saveByProject();
-  // wait 100ms render because of async load
-
-  setTimeout(() => {
-    show.value = true;
-  }, 100);
-};
+  show.value = false
+  // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
+  projectStore.setCode(projectStore.genEntryCode())
+  await projectStore.saveByProject()
+  window.project_path = projectStore.project.title
+  show.value = true
+}
+const save = () => {
+  projectStore.saveToComputerByProject()
+}
 </script>
 
 <style scoped lang="scss">

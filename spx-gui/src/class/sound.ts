@@ -2,13 +2,14 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 17:22:45
+ * @LastEditTime: 2024-01-25 14:15:35
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
-import file from "@/interface/file";
+import file, { SoundConfig } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
+import { rawFile } from "@/types/file";
 
 /**
  * @class Sound
@@ -21,6 +22,8 @@ import { isInstance, getAllFromLocal } from "@/util/class";
  * const snd1 = new Sound("1")
  * // create a sound with all params
  * const snd2 = new Sound("2", [file1, file2], { rate: 1 })
+ * // create a sound from raw data
+ * const snd3 = Sound.fromRawData({ name: "3", _files: [file1, file2], config: { rate: 2 } })
  * 
  * // change any params
  * snd2.name = "3"
@@ -42,6 +45,9 @@ import { isInstance, getAllFromLocal } from "@/util/class";
  * 
  * // computed dir
  * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
+ * 
+ * // config
+ * snd1.config = snd1.genDefualtConfig()
  */
 
 export default class Sound extends AssetBase implements file {
@@ -59,6 +65,11 @@ export default class Sound extends AssetBase implements file {
      * The name of the sound.
      */
     static NAME = "sound"
+
+    /**
+     * The config of the sound.
+     */
+    public config: SoundConfig;
 
     /**
      * Get the store name for the sound.
@@ -80,10 +91,11 @@ export default class Sound extends AssetBase implements file {
      * @constructor create a new sound
      * @param {string} name the name of the sound
      * @param {File[]} files the files of the sound
-     * @param {Record<string, any>} config the config of the sound using json to generate `index.json`
+     * @param {SoundConfig} config the config of the sound using json to generate `index.json`
      */
-    constructor(name: string, files: File[] = [], config: Record<string, any> = {}) {
-        super(name, files, config)
+    constructor(name: string, files: File[] = [], config?: SoundConfig) {
+        super(name, files)
+        this.config = this.genConfig(config)
     }
 
     /**
@@ -96,10 +108,27 @@ export default class Sound extends AssetBase implements file {
     }
 
     /**
+     * Generate the default sound config.
+     * @returns the default config
+     */
+    genDefualtConfig(): SoundConfig {
+        return this.defaultConfig
+    }
+
+    /**
+     * Generate the default sound config.
+     */
+    get defaultConfig(): SoundConfig {
+        return {
+            "path": this.files[0]?.name
+        }
+    }
+
+    /**
      * Get the directory of the sound.
      */
     get dir() {
-        const dir: Record<string, any> = {}
+        const dir: Record<string, rawFile> = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file
