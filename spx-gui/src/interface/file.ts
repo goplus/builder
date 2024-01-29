@@ -8,6 +8,7 @@
  */
 
 import FileWithUrl from "@/class/FileWithUrl";
+import { rawFile } from "@/types/file";
 
 /**
  * file interface
@@ -15,7 +16,7 @@ import FileWithUrl from "@/class/FileWithUrl";
 export default interface file {
     files: FileWithUrl[];
     config: Config;
-    dir?: Record<string, any>;
+    dir?: Record<string, rawFile>;
     path?: string;
 
     /**
@@ -37,37 +38,7 @@ export interface Source {
     path: string;
 }
 
-export interface Costume extends Source {
-    /**
-     * x is the x position of the costume in the sprite
-     */
-    x: number;
-
-    /**
-     * y is the y position of the costume in the sprite
-     */
-    y: number;
-
-    /**
-     * cx is the x position of the costume in the sprite
-     */
-    cx?: number;
-
-    /**
-     * cy is the y position of the costume in the sprite
-     */
-    cy?: number;
-
-    /**
-     * sx is the x position of the costume in the sprite
-     */
-    sx?: number;
-
-    /**
-     * sy is the y position of the costume in the sprite
-     */
-    sy?: number;
-
+export interface CurrentConfig extends Config {
     /**
      * index of the costume
      */
@@ -82,6 +53,43 @@ export interface Costume extends Source {
      * url of the costume
      */
     url?: string;
+}
+
+export interface CostumeConfig extends CurrentConfig {
+    /**
+     * cx is the x position of the costume in the sprite
+     */
+    cx?: number;
+
+    /**
+     * cy is the y position of the costume in the sprite
+     */
+    cy?: number;
+
+    /**
+     * sx is the x position of the sprite in the stage
+     */
+    sx?: number;
+
+    /**
+     * sy is the y position of the sprite in the stage
+     */
+    sy?: number;
+}
+
+export interface Scene extends Source, CurrentConfig {
+}
+
+export interface Costume extends Source, CostumeConfig {
+    /**
+     * x is the x position of the costume in the sprite
+     */
+    x: number;
+
+    /**
+     * y is the y position of the costume in the sprite
+     */
+    y: number;
 }
 
 export interface Config {
@@ -156,10 +164,15 @@ export interface BackdropConfig extends Config {
     /**
      * The image of the backdrop.
      */
-    scenes: Source[];
+    scenes: Scene[];
 
     /**
      * The sprite zorder in the stage, the later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
      */
     zorder: string[];
+
+    /**
+     * The index of the current scene.
+     */
+    sceneIndex?: number;
 }

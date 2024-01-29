@@ -200,7 +200,21 @@ export const useProjectStore = defineStore('project', () => {
      * @returns the entry code of the project
      */
     function genEntryCode(proj: projectType = getRawProject()) {
-        return `var (\n\t${proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')}\n\t${proj.sounds?.map(sound => sound.name + ' ' + 'Sound').join('\n\t')}\n)\n\nrun "assets", {Title: "${proj.title}"}`
+        let str = ""
+        str += `var(\n`
+        if (proj.sprites.length) {
+            str += '\t'
+            str += proj.sprites.map(sprite => sprite.name + " " + sprite.name).join('\n\t')
+            str += '\n'
+        }
+        if (proj.sounds?.length) {
+            str += '\t'
+            str += proj.sounds.map(sound => sound.name + ' ' + 'Sound').join('\n\t')
+            str += '\n'
+        }
+        str += ')\n\n'
+        str += `run "assets", {Title: "${proj.title}"}`
+        return str
     }
 
     /**
@@ -210,7 +224,7 @@ export const useProjectStore = defineStore('project', () => {
     function convertProjectToRawDir(proj: projectType = getRawProject()): rawDir {
         const files: rawDir = Object.assign({}, proj.defaultDir, ...[proj.backdrop, ...proj.sprites, ...proj.sounds].map(item => item.dir))
         const path = proj.code.path || ENTRY_FILE_NAME
-        const code = proj.code.content || genEntryCode(proj)
+        const code = proj.code.content.trim() || genEntryCode(proj)
         files[path] = code
         const dir: rawDir = {}
         for (const [key, value] of Object.entries(files)) {
@@ -267,7 +281,7 @@ export const useProjectStore = defineStore('project', () => {
      * const dir = await getDirPathFromZip(zipFile)
      * loadProject(dir)
      * 
-     * // Your directory structure of zipFile should be organized this way, otherwise you may fail to read resources in `parseProject` (which is a step in `loadProject`) and resources that fail to read will be saved in `project.defaultDir`.
+     * // Your directory structure of zipFile should be organized this way, otherwise you may fail to read resources in `convertDirPathToProject` (which is a step in `loadProject`) and resources that fail to read will be saved in `project.defaultDir`.
      * └─ ProjectName
      *     ├─ main.spx
      *     ├─ spriteName1.spx
@@ -319,7 +333,7 @@ export const useProjectStore = defineStore('project', () => {
      * @param {dirPath} dir
      * @returns {projectType} project
      */
-    function parseProject(dir: dirPath): projectType {
+    function convertDirPathToProject(dir: dirPath): projectType {
         function handleFile(file: FileType, filename: string, item: any) {
             switch (file.type) {
                 case 'application/json':
@@ -396,7 +410,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     /**
-     * Convert directory path `<string, FileType>` to raw `<string, any>`.
+     * Convert directory path `<string, FileType>` to raw `<string, rawFile>`.
      * @param dir the directory
      * @returns 
      */
@@ -443,7 +457,7 @@ export const useProjectStore = defineStore('project', () => {
      * dir && loadProject(dir)
      */
     function loadProject(dir: dirPath) {
-        const proj = parseProject(dir);
+        const proj = convertDirPathToProject(dir);
         backdropStore.setItem(proj.backdrop);
         spriteStore.setItem(proj.sprites);
         soundStore.setItem(proj.sounds);
@@ -547,6 +561,10 @@ export const useProjectStore = defineStore('project', () => {
         genEntryCode,
         getDirPathFromZip,
         getDirPathFromLocal,
+        convertProjectToRawDir,
+        convertDirPathToRawDir,
+        convertRawDirToDirPath,
+        convertDirPathToProject,
         convertProjectToZip,
         convertRawDirToZip,
         saveToComputerByDirPath,

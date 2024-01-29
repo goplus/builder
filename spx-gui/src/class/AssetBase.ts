@@ -2,11 +2,11 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 10:28:03
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-25 12:28:43
+ * @LastEditTime: 2024-01-25 15:03:08
  * @FilePath: \builder\spx-gui\src\class\AssetBase.ts
  * @Description: The abstract class of an asset.
  */
-import file from "@/interface/file";
+import file, { Config } from "@/interface/file";
 import { getStorage } from "@/util/class";
 import FileWithUrl from "@/class/FileWithUrl";
 import { isObjectEmpty } from "@/util/global";
@@ -21,7 +21,7 @@ import { isObjectEmpty } from "@/util/global";
 export default abstract class AssetBase implements file {
     protected _files: FileWithUrl[];
     public name: string;
-    public abstract config: Record<string, any>;
+    public abstract config: Config;
 
     constructor(name: string, files: FileWithUrl[] = []) {
         this.name = name
@@ -123,7 +123,7 @@ export default abstract class AssetBase implements file {
      * Generate a default config.
      * This method should be overridden by subclasses.
      */
-    protected abstract genDefualtConfig(): Record<string, any>;
+    protected abstract genDefualtConfig(): Config;
 
     /**
      * Generate the config of the asset.

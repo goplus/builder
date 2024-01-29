@@ -6,9 +6,11 @@
  * @FilePath: \builder\spx-gui\src\class\backdrop.ts
  * @Description: The class of a backdrop.
  */
-import file, { BackdropConfig } from "@/interface/file";
+import file, { BackdropConfig, Scene } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
+import { useSpriteStore } from "@/store/modules/sprite";
+import { rawFile } from "@/types/file";
 
 /**
  * @class Backdrop
@@ -108,20 +110,64 @@ export default class Backdrop extends AssetBase implements file {
      * @returns the default config
      */
     genDefualtConfig(): BackdropConfig {
+        return this.defaultConfig
+    }
+
+    /**
+     * Generate the default backdrop config.
+     */
+    get defaultConfig(): BackdropConfig {
         return {
             "scenes": this.files.map(file => ({
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": []
+            "zorder": useSpriteStore().list.map(sprite => sprite.name),
+            "sceneIndex": 0
         }
+    }
+
+    /**
+     * Get the current scene index.
+     */
+    get currentSceneIndex(): number {
+        return this.config.sceneIndex ?? 0
+    }
+
+    /**
+     * Set the current scene index.
+     */
+    set currentSceneIndex(index: number) {
+        if (!this.config.scenes[index]) {
+            throw new Error(`Scene ${index} does not exist.`)
+        }
+        this.config.sceneIndex = index
+    }
+
+    /**
+     * Get the current scene.
+     */
+    get currentScene() {
+        return this.config.scenes[this.currentSceneIndex]
+    }
+
+    /**
+     * Get the current scene with config.
+     */
+    get currentSceneConfig(): Scene {
+        const scene = this.currentScene
+        return Object.assign({}, scene, {
+            index: this.currentSceneIndex,
+            file: this.files[this.currentSceneIndex],
+            url: this.files[this.currentSceneIndex].url
+        })
     }
 
     /**
      * Get the directory of the backdrop.
      */
     get dir() {
-        const dir: Record<string, any> = {}
+        const dir: Record<string, rawFile> = {}
         dir[`${this.path}index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}${file.name}`] = file
