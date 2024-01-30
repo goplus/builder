@@ -20,32 +20,62 @@
             <span>action</span>
             <n-button @click="submit">submit</n-button>
             <n-button @click="format">format</n-button>
+            <n-button @click="addFile">add</n-button>
+            <n-button v-show="isNew" @click="save">save</n-button>
         </div>
         <div id="code-editor" ref="code_editor"></div>
+        <n-modal v-model:show="showModal" :mask-closable="false" preset="dialog" title="Warning" size="huge"
+            content="do you want to save?" positive-text="Save" negative-text="Cancel" @positive-click="onPositiveClick"
+            @negative-click="onNegativeClick">
+            <n-input v-model:value="fileName" type="text" placeholder="please input file name" />
+            <n-upload action="https://www.mocky.io/v2/5e4bafc63100007100d8b70f" @before-upload="beforeUpload">
+                <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+            </n-upload>
+        </n-modal>
     </div>
 </template>
-  
+
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { monaco, options } from "@/plugins/code-editor/index"
 import { useEditorStore } from "@/store"
 import { useSpriteStore } from '@/store/modules/sprite';
 import { storeToRefs } from 'pinia'
-import { NButton } from 'naive-ui';
+import FileWithUrl from "@/class/FileWithUrl"
+import Sprite from "@/class/sprite";
+import { commonColor } from "@/assets/theme.ts";
+
+import {
+    NButton,
+    NModal,
+    useMessage,
+    NInput,
+    NUpload,
+    UploadFileInfo,
+} from "naive-ui";
 
 const { setCurrentByName } = useSpriteStore()
 const spriteStore = useSpriteStore()
 const store = useEditorStore();
 const code_editor = ref<HTMLElement | null>(null);
 let editor: monaco.editor.IStandaloneCodeEditor;
+const editorState = ref({
+    loaded: false,
+    hasValue: false,
+    value:""
+})
+const showModal = ref(false);
+const message = useMessage();
 
 onMounted(() => {
     editor = monaco.editor.create(code_editor.value as HTMLElement, {
         value: "", // set the initial value of the editor
-        ...options
+        ...options,
     })
     editor.onDidChangeModelContent(onEditorValueChange)
+    editorState.value.loaded = true;
 })
+
 onBeforeUnmount(() => {
     editor.dispose()
 })
@@ -80,6 +110,51 @@ const submit = () => {
     console.log(editor.getValue())
 }
 
+// show the save button 
+const isNew = computed(() => {
+    return spriteStore.current == null && editorState.value.loaded && editorState.value.hasValue
+})
+const save = () => {
+    if (isNew.value) {
+        showModal.value = true;
+    }
+};
+
+// add file when editor change and current sprite is null
+const addFile = () => {
+    // If there are currently any modifications that have not been saved
+    if (spriteStore.current == null && editor.getValue() !== "") {
+        showModal.value = true;
+        return;
+    }
+    initEditor();
+};
+
+// init editor when current sprite is null
+const initEditor = () => {
+    spriteStore.current = null;
+    editor.setValue("");
+};
+
+const fileName = ref("");
+const beforeUpload = (data: {
+    file: UploadFileInfo;
+    fileList: UploadFileInfo[];
+}) => {
+    let uploadFile = data.file;
+    if (uploadFile.file) {
+        const fileURL = URL.createObjectURL(uploadFile.file);
+        const fileWithUrl = new FileWithUrl(uploadFile.file, fileURL);
+
+        let fileArray: FileWithUrl[] = [fileWithUrl];
+        const sprite = new Sprite(fileName.value, fileArray, editor.getValue());
+        spriteStore.addItem(sprite);
+    } else {
+        message.error("Invalid or non-existent uploaded files");
+        return false;
+    }
+    return true;
+};
 
 // Listen for insert events triggered by store, registered with store.$onAction
 const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
@@ -89,6 +164,8 @@ const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
 }
 // Listen for editor value change, sync to sprite store
 const onEditorValueChange = (e: monaco.editor.IModelContentChangedEvent) => {
+    // editorState.value.value = editor.getValue()
+    editorState.value.hasValue = editor.getValue() !== ""
     // store.setCurrentSpxCode(editor.getValue() || '')
     if (spriteStore.current) {
         spriteStore.current.code = editor.getValue() || ''
@@ -109,12 +186,29 @@ store.$onAction(({
         }
     })
 })
+
+const negativeSpriteName = ref("");
 const toggleCodeById = (name: string) => {
-    setCurrentByName(name)
+    negativeSpriteName.value = name;
+    if (spriteStore.current == null && editor.getValue() !== "") {
+        showModal.value = true;
+        return;
+    }
+    setCurrentByName(negativeSpriteName.value);
+};
+
+function onNegativeClick() {
+    showModal.value = false;
+    setCurrentByName(negativeSpriteName.value);
+    message.success("Cancel");
+}
+function onPositiveClick() {
+    showModal.value = false;
+    setCurrentByName(negativeSpriteName.value);
+    message.success("Save success");
 }
 
 </script>
-  
 <style scoped>
 #code-editor {
     height: 100%;
