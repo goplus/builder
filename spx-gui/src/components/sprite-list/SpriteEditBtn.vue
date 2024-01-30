@@ -1,12 +1,36 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
+<<<<<<< HEAD
  * @LastEditors: Xu Ning
  * @LastEditTime: 2024-01-29 15:31:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
+=======
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-01-26 16:46:15
+ * @FilePath: /spx-gui/src/components/sprite-list/SpriteEditBtn.vue
+>>>>>>> upstreamDev
  * @Description: 
 -->
 <template>
+  <n-flex justify="space-around">
+
+    <div class="sprite-edit-btn">
+      X
+      <n-input-number round autosize clearable type="number" :value="x" :disabled="!spriteStore.current"
+        @update:value="(val) => { spriteStore.current && spriteStore.current.setSx(val as number) }"></n-input-number>
+    </div>
+    <div class="sprite-edit-btn">
+      Y
+      <n-input-number type="number" :value="y" :disabled="!spriteStore.current"
+        @update:value="(val) => { spriteStore.current && spriteStore.current.setSy(val as number) }" />
+    </div>
+    <div class="sprite-edit-btn">
+      Size
+      <n-input-number type="number" :min="0" :value="size*100" :disabled="!spriteStore.current"
+        @update:value="(val) => { spriteStore.current && spriteStore.current.setSize(val as number / 100) }"></n-input-number>
+    </div>
+  </n-flex>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
       Sprite
@@ -22,10 +46,6 @@
       <n-input-number type="number" :value="y" :disabled="!spriteStore.current"
         @update:value="(val) => { spriteStore.current && spriteStore.current.setSy(val as number) }" />
     </div>
-   
-   
-  <!-- </n-flex>
-  <n-flex justify="space-around"> -->
     <div class="sprite-edit-btn">
       Show
       <n-switch v-model:value="isSpriteShow" />
@@ -68,12 +88,19 @@ const size = computed(() => spriteStore.current ? spriteStore.current.config.siz
 .sprite-edit-btn {
   flex: 1;
   display: flex;
+<<<<<<< HEAD
   margin: 2px;
   .n-input, .n-input-number, .n-switch{
     margin-left:3px;
   }
   .n-input-number{
     max-width:100px;
+=======
+  margin: 5px;
+
+  .n-input-number {
+    border-radius: 25px;
+>>>>>>> upstreamDev
   }
 }
 </style>

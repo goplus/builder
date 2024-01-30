@@ -2,14 +2,16 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-29 10:38:29
+ * @LastEditTime: 2024-01-30 10:55:51
  * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
 <template>
   <div class="spx-stage">
     <div class="stage-button">Stage</div>
-    <n-button type="success" class="stage-run-button" @click="run">Run</n-button>
+    <n-button type="success" class="stage-run-button" @click="run"
+      >Run</n-button
+    >
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
     <StageViewer v-else></StageViewer>
   </div>
@@ -20,28 +22,28 @@ import { defineProps, ref } from "vue";
 import type { projectType } from "@/types/file";
 import { NButton } from "naive-ui";
 import { useProjectStore } from "@/store/modules/project";
-import { useBackdropStore } from '@/store/modules/backdrop'
-import StageViewer from "./StageViewer.vue"
+import { useBackdropStore } from "@/store/modules/backdrop";
+import StageViewer from "./StageViewer.vue";
 defineProps({
   project: {
     type: Object as () => projectType,
-  }
-})
-let show = ref(false)
-const backdropStore = useBackdropStore()
-const projectStore = useProjectStore()
+  },
+});
+let show = ref(false);
+const backdropStore = useBackdropStore();
+const projectStore = useProjectStore();
 const run = async () => {
-  show.value = false
+  show.value = false;
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
-  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
-  projectStore.setCode(projectStore.genEntryCode())
-  await projectStore.saveByProject()
-  window.project_path = projectStore.project.title
-  show.value = true
-}
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
+  projectStore.setCode(projectStore.genEntryCode());
+  await projectStore.saveByProject();
+  window.project_path = projectStore.project.title;
+  show.value = true;
+};
 const save = () => {
-  projectStore.saveToComputerByProject()
-}
+  projectStore.saveToComputerByProject();
+};
 </script>
 
 <style scoped lang="scss">
@@ -69,14 +71,14 @@ const save = () => {
     border-radius: 0 0 10px 10px;
     z-index: 2;
   }
-  .n-button{
-    background:#3A8B3B;
+  .n-button {
+    background: #3a8b3b;
     width: 50px;
     position: absolute;
     right: 6px;
-    top:2px;
+    top: 2px;
     border: 2px solid #00142970;
-    border-radius:16px;
+    border-radius: 16px;
   }
   .show {
     flex: 1;
