@@ -9,9 +9,11 @@
 <template>
   <div class="spx-stage">
     <div class="stage-button">Stage</div>
-    <n-button type="success" class="stage-run-button" @click="run">Run</n-button>
+    <n-button type="success" class="stage-run-button" @click="run"
+      >Run</n-button
+    >
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div v-else class="show center">waiting for load...</div>
+    <StageViewer v-else></StageViewer>
   </div>
 </template>
 
@@ -20,27 +22,27 @@ import { defineProps, ref } from "vue";
 import type { projectType } from "@/types/file";
 import { NButton } from "naive-ui";
 import { useProjectStore } from "@/store/modules/project";
+import { useBackdropStore } from "@/store/modules/backdrop";
+import StageViewer from "./StageViewer.vue";
 defineProps({
   project: {
     type: Object as () => projectType,
   },
 });
 let show = ref(false);
-// useProjectStore().watchProjectChange(() => {
-//   show.value = false
-//   // wait 300ms render because of async load
-//   setTimeout(() => {
-//     show.value = true
-//   }, 300)
-// })
+const backdropStore = useBackdropStore();
+const projectStore = useProjectStore();
 const run = async () => {
   show.value = false;
-  await useProjectStore().saveByProject();
-  // wait 100ms render because of async load
-
-  setTimeout(() => {
-    show.value = true;
-  }, 100);
+  // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
+  projectStore.setCode(projectStore.genEntryCode());
+  await projectStore.saveByProject();
+  window.project_path = projectStore.project.title;
+  show.value = true;
+};
+const save = () => {
+  projectStore.saveToComputerByProject();
 };
 </script>
 
@@ -69,14 +71,14 @@ const run = async () => {
     border-radius: 0 0 10px 10px;
     z-index: 2;
   }
-  .n-button{
-    background:#3A8B3B;
+  .n-button {
+    background: #3a8b3b;
     width: 50px;
     position: absolute;
     right: 6px;
-    top:2px;
+    top: 2px;
     border: 2px solid #00142970;
-    border-radius:16px;
+    border-radius: 16px;
   }
   .show {
     flex: 1;
