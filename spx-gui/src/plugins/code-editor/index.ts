@@ -6,7 +6,7 @@
  */
 import * as monaco from 'monaco-editor'
 import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
-
+import { editerTheme } from "@/assets/theme.ts";
 import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 
 
@@ -31,20 +31,36 @@ const initCodeEditor = async () => {
     monaco.languages.setMonarchTokensProvider('spx', MonarchTokensProviderConfig);
     // Code hint
     monaco.languages.registerCompletionItemProvider('spx', completionItemProvider);
-    initFormat()
 
+    // set theme
+    monaco.editor.defineTheme('spx', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+            { token: 'comment', foreground: editerTheme.comment,},
+            { token: 'keyword', foreground: editerTheme.keyword },
+            { token: 'string', foreground: editerTheme.string },
+            { token: 'number', foreground: editerTheme.number },
+            { token: 'function', foreground: editerTheme.function },
+            { token: 'operator', foreground: editerTheme.operator },
+        ],
+        colors: {
+            // "editor.background": editerTheme.background,
+        }
+    });
+    initFormat()
 }
 
 const completionItemProvider: monaco.languages.CompletionItemProvider = {
     provideCompletionItems: (model, position) => {
-        var word = model.getWordUntilPosition(position);
-        var range = {
+        const word = model.getWordUntilPosition(position);
+        const range = {
             startLineNumber: position.lineNumber,
             endLineNumber: position.lineNumber,
             startColumn: word.startColumn,
             endColumn: word.endColumn,
         };
-        let suggestions: monaco.languages.CompletionItem[] = completionItem(range)
+        const suggestions: monaco.languages.CompletionItem[] = completionItem(range)
         return { suggestions }
     }
 }

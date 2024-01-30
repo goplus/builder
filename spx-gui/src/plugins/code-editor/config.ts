@@ -618,7 +618,7 @@ const brackets = [
 // editor options
 export const options: monaco.editor.IStandaloneEditorConstructionOptions = {
   language: "spx", // define the language mode
-  theme: "vs", // choose vs, hc-black, or vs-dark
+  theme: "spx", // choose vs, hc-black, or vs-dark
   selectOnLineNumbers: true, // select the line number's of the code
   roundedSelection: true, // rounded selection
   readOnly: false, // read/write
