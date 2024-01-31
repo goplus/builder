@@ -1,11 +1,3 @@
-<!--
- * @Author: Xu Ning
- * @Date: 2024-01-31 23:30:29
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 00:03:05
- * @FilePath: /builder/docs/architecture/01_architecture.md
- * @Description: 
--->
 # STEM Education Architecture
 
 ## Architecture Overview
