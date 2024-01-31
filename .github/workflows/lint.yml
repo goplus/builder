@@ -10,12 +10,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: spx-gui/yarn.lock
 
       - name: Install modules
         working-directory: spx-gui
@@ -23,7 +25,7 @@ jobs:
 
       - name: Run Vue TSC
         working-directory: spx-gui
-        run: yarn vue-tsc
+        run: yarn vue-tsc --noEmit
 
       - name: Run ESLint
         working-directory: spx-gui
