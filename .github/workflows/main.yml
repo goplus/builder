@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
+      - dev
       - ci-cd
 
 env:
@@ -14,25 +14,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - uses: actions/checkout@v4
 
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          # cache: 'yarn'
-          # cache-dependency-path: spx-gui/yarn.lock
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: spx-gui/yarn.lock
 
-      - name: Install dependencies
+      - name: Install modules
         working-directory: spx-gui
-        run: yarn install
+        run: yarn
 
       - name: Build project
         working-directory: spx-gui

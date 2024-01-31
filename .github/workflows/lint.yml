@@ -28,8 +28,8 @@ jobs:
 
       - name: Run Vue TSC
         working-directory: spx-gui
-        run: yarn vue-tsc --noEmit
+        run: yarn type-check
 
       - name: Run ESLint
         working-directory: spx-gui
-        run: yarn eslint .
+        run: yarn lint
