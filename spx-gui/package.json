@@ -26,10 +26,11 @@
     "wavesurfer.js": "^6.0.4"
   },
   "devDependencies": {
+    "@rushstack/eslint-patch": "^1.7.2",
+    "@tsconfig/node20": "^20.1.2",
     "@types/file-saver": "^2.0.7",
     "@types/golang-wasm-exec": "^1.15.2",
-    "@typescript-eslint/eslint-plugin": "^6.18.1",
-    "@typescript-eslint/parser": "^6.18.1",
+    "@types/node": "^20.11.10",
     "@vicons/antd": "^0.12.0",
     "@vicons/ionicons5": "^0.12.0",
     "@vicons/material": "^0.12.0",

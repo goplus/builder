@@ -1165,6 +1165,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rushstack/eslint-patch@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "@rushstack/eslint-patch@npm:1.7.2"
+  checksum: 10c0/bfb3e2110bfaf4cf9f900db2626bec62f5cd492907de0c5e43feaac0aa8c1fb13d6c89978dc60f6d7a1bc5d6906e8a3bf009aa2cd79d031b70ab1d8026a0975d
+  languageName: node
+  linkType: hard
+
 "@sigstore/bundle@npm:^2.1.1":
   version: 2.1.1
   resolution: "@sigstore/bundle@npm:2.1.1"
@@ -1379,6 +1386,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tsconfig/node20@npm:^20.1.2":
+  version: 20.1.2
+  resolution: "@tsconfig/node20@npm:20.1.2"
+  checksum: 10c0/e438fa9b93f0e6ea667affbbd3217692bf3f92db1b3dcbfba1dd141a7dbcd647c19ed87ce76871c723bed398759ec4a5590685f3e669b600c9371f143a19e0c1
+  languageName: node
+  linkType: hard
+
 "@tufjs/canonical-json@npm:2.0.0":
   version: 2.0.0
   resolution: "@tufjs/canonical-json@npm:2.0.0"
@@ -1447,6 +1461,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^20.11.10":
+  version: 20.11.13
+  resolution: "@types/node@npm:20.11.13"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: 10c0/8ff8526fa0dbabcf4e9c538c6a7220675f750c39d0794e34998daa0656d7e0dfdf3e47403d2ab8beb756422a517e1f2646b4494afa59ef330495d65fc58fa4d8
+  languageName: node
+  linkType: hard
+
 "@types/semver@npm:^7.5.0":
   version: 7.5.6
   resolution: "@types/semver@npm:7.5.6"
@@ -1454,7 +1477,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^6.18.1, @typescript-eslint/eslint-plugin@npm:^6.7.0":
+"@typescript-eslint/eslint-plugin@npm:^6.7.0":
   version: 6.20.0
   resolution: "@typescript-eslint/eslint-plugin@npm:6.20.0"
   dependencies:
@@ -1479,7 +1502,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^6.18.1, @typescript-eslint/parser@npm:^6.7.0":
+"@typescript-eslint/parser@npm:^6.7.0":
   version: 6.20.0
   resolution: "@typescript-eslint/parser@npm:6.20.0"
   dependencies:
@@ -5364,10 +5387,11 @@ __metadata:
   resolution: "spx-gui@workspace:."
   dependencies:
     "@rollup/pluginutils": "npm:^5.1.0"
+    "@rushstack/eslint-patch": "npm:^1.7.2"
+    "@tsconfig/node20": "npm:^20.1.2"
     "@types/file-saver": "npm:^2.0.7"
     "@types/golang-wasm-exec": "npm:^1.15.2"
-    "@typescript-eslint/eslint-plugin": "npm:^6.18.1"
-    "@typescript-eslint/parser": "npm:^6.18.1"
+    "@types/node": "npm:^20.11.10"
     "@vicons/antd": "npm:^0.12.0"
     "@vicons/ionicons5": "npm:^0.12.0"
     "@vicons/material": "npm:^0.12.0"
@@ -5684,6 +5708,13 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 10c0/1d0a5f4ce496c42caa9a30e659c467c5686eae15d54b027ee7866744952547f1be1262f2d40de911618c242b510029d51d43ff605dba8fb740ec85ca2d3f9500
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~5.26.4":
+  version: 5.26.5
+  resolution: "undici-types@npm:5.26.5"
+  checksum: 10c0/bb673d7876c2d411b6eb6c560e0c571eef4a01c1c19925175d16e3a30c4c428181fb8d7ae802a261f283e4166a0ac435e2f505743aa9e45d893f9a3df017b501
   languageName: node
   linkType: hard
 
