@@ -93,3 +93,9 @@ func UpdateProjectIsPublic(p *Project, id string) error {
 	}
 	return nil
 }
+
+func (p *Project) UploadFile(ctx context.Context, relativePath string, file multipart.File) (err error) {
+	defer file.Close()
+	err = p.fileStorage.SaveFile(relativePath, file)
+	return
+}

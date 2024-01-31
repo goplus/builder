@@ -58,8 +58,9 @@ type CodeFile struct {
 }
 
 type Project struct {
-	bucket *blob.Bucket
-	db     *sql.DB
+	bucket      *blob.Bucket
+	db          *sql.DB
+	fileStorage FileStorage
 }
 
 type FormatError struct {
@@ -107,7 +108,8 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 		println(err.Error())
 		return
 	}
-	return &Project{bucket, db}, nil
+	fileStorage := &LocalFileStorage{BasePath: os.Getenv("UPLOAD_PATH")}
+	return &Project{bucket, db, fileStorage}, nil
 }
 
 // FileInfo Find file address from db
