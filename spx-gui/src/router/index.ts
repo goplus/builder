@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 09:16:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 23:10:11
- * @FilePath: /builder/spx-gui/src/router/index.ts
+ * @LastEditTime: 2024-01-26 19:12:30
+ * @FilePath: /spx-gui/src/router/index.ts
  * @Description:
  */
 import type { App } from "vue";
@@ -22,6 +22,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'SpriteList',
         component: () =>
             import("../components/sprite-list/SpriteList.vue"),
+    },
+    {
+        path:"/code/editor",
+        name:'codeeditor',
+        component:()=>
+            import("../components/code-editor-demo/CodeEditorDemo.vue"),
     },
     {
         path: '/editor/homepage',
