@@ -22,7 +22,8 @@
     "vue": "^3.3.11",
     "vue-i18n": "^9.9.0",
     "vue-konva": "^3.0.2",
-    "vue-router": "^4.2.5"
+    "vue-router": "^4.2.5",
+    "wavesurfer.js": "^6.0.4"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",

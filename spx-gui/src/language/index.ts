@@ -20,15 +20,21 @@ export const initI18n = async (app:App) => {
                 sound: 'Sound'
             },
             sounds: {
-                hint: 'Sounds',
+                hint: '🎵 Sounds Edit',
                 undo: 'Undo',
                 reUndo: 'ReUndo',
                 delete: 'Delete',
                 forward: 'Forward',
-                rewind: 'Rewind',
+                backward: 'Backward',
                 mute: 'Mute',
-                volume: 'Volume',
+                volumeHigh: 'Volume+',
+                volumeLow: 'Volume-',
                 replay: 'Replay',
+                cut: 'Cut',
+                paste: 'Paste',
+                copy: 'Copy',
+                insert: 'Insert',
+                download: 'Download'
             }
         },
         zh: {
@@ -38,15 +44,22 @@ export const initI18n = async (app:App) => {
                 sound: '音频'
             },
             sounds: {
-                hint: '音频',
+                hint: '🎵 音频编辑',
                 undo: '撤销',
                 reUndo: '返回',
                 delete: '删除',
                 forward: '快进',
-                rewind: '倒带',
+                backward: '后退',
                 mute: '静音',
+                volumeHigh: '音量+',
+                volumeLow: '音量-',
                 volume: '音量',
                 replay: '重放',
+                cut: '剪切',
+                paste: '粘贴',
+                copy: '复制',
+                insert: '插入',
+                download: '下载'
             }
         }
     };

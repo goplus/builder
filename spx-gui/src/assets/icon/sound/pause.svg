@@ -1,1 +1,22 @@
-<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg t="1705151258751" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5311" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200"><path d="M512 42.666667C252.793333 42.666667 42.666667 252.793333 42.666667 512s210.126667 469.333333 469.333333 469.333333 469.333333-210.126667 469.333333-469.333333S771.206667 42.666667 512 42.666667z m106.666667 682.666666a21.333333 21.333333 0 0 1-21.333334-21.333333V320a21.333333 21.333333 0 0 1 42.666667 0v384a21.333333 21.333333 0 0 1-21.333333 21.333333z m-213.333334 0a21.333333 21.333333 0 0 1-21.333333-21.333333V320a21.333333 21.333333 0 0 1 42.666667 0v384a21.333333 21.333333 0 0 1-21.333334 21.333333z" fill="#dd799d" p-id="5312"></path></svg>
+<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none">
+ <defs>
+  <image xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAu0lEQVR4nO3WMWpCQRCA4QeCmCZ2aS1M7wU8QRpv4RXSpvQKXsHW0ioEsQ68G1hGbMQmkHwiOGBn45tN0O8CPyyzu1NVdyVhiU+MssPnVhiWCIc5nkuEj74xxVN2OOzwhofscFhjjFZ2ONR4KREOCwxKhI9+MEMvOxz2mKCbHQ4bvKKdHQ7vNxP+yj7qGK7Hi8H/fJ0W2Q9Inf1krrM/ie1pUjtXCYa/tAj8nia130gwlFz2Poqst3dVAw7eod7DBH1B9AAAAABJRU5ErkJggg==" height="30" width="30" id="image0_225_2143"/>
+  <pattern height="1" width="1" patternContentUnits="objectBoundingBox" id="pattern0">
+   <use id="svg_1" transform="scale(0.03333330154418945) " xlink:href="#image0_225_2143"/>
+  </pattern>
+  <radialGradient gradientTransform="translate(20 20) rotate(90) scale(20)" gradientUnits="userSpaceOnUse" r="1" cy="0" cx="0" id="paint0_radial_225_2143">
+   <stop stop-color="#ED729E"/>
+   <stop stop-opacity="0.51" stop-color="#ED729E" offset="1"/>
+  </radialGradient>
+ </defs>
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="667" width="1026" y="-1" x="-1"/>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <circle id="svg_2" fill="url(#paint0_radial_225_2143)" r="20" cy="20" cx="20"/>
+  <circle id="svg_3" fill="#ED729E" r="15" cy="20" cx="20"/>
+  <rect rx="2" id="svg_5" height="15" width="15" y="12.647481" x="12.397959" stroke-width="0" stroke="#000" fill="#fff"/>
+ </g>
+</svg>
