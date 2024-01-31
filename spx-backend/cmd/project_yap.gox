@@ -2,6 +2,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"encoding/json"
 	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
@@ -43,6 +44,46 @@ post "/project/save", ctx=>{
 	}
 }
 
+post "/project/check-update",ctx=>{
+    var fileInfoWrapper core.FileInfoWrapper
+    err := json.NewDecoder(ctx.Body).Decode(&fileInfoWrapper)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":"err",
+        }
+    }
+    res,_:= p.CheckUpdate(todo,fileInfoWrapper.FileInfo)
+    ctx.json {
+        "code":200,
+        "msg":"ok",
+        "data":res,
+    }
+}
+
+post "/project/upload", ctx=>{
+    err:=ctx.ParseMultipartForm(10 << 20)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":"err",
+        }
+    }
+    relativePath := ctx.FormValue("relativePath")
+    file,_,_:=ctx.FormFile("file")
+    err= p.UploadFile(todo,relativePath,file)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":err,
+        }
+    }else{
+        ctx.json {
+            "code":200,
+            "msg":"ok",
+        }
+    }
+}
 
 post "/project/fmt", ctx=>{
 	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
