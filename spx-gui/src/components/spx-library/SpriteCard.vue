@@ -2,21 +2,21 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 16:22:33
+ * @LastEditTime: 2024-01-31 21:40:39
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card" @click="addSpriteToListFunc(props.spriteInfo.name)">
+  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.name, props.assetInfo.address)">
     <n-image
       preview-disabled
       width="100"
       height="100"
-      :src="props.spriteInfo.address"
+      :src="props.assetInfo.address"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
     />
-    {{ props.spriteInfo.name }}
+    {{ props.assetInfo.name }}
   </div>
   <!-- E Component Sprite Card -->
 </template>
@@ -24,29 +24,29 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { NImage } from "naive-ui";
-import { defineProps } from "vue";
+import { defineProps, defineEmits } from "vue";
 import type { Asset } from "@/interface/library";
-import { useSpriteStore } from "@/store/modules/sprite";
-import Sprite from "@/class/sprite";
+import FileWithUrl from "@/class/FileWithUrl";
 
 // ----------props & emit------------------------------------
 interface propsType {
-  spriteInfo: Asset;
+  assetInfo: Asset;
 }
 const props = defineProps<propsType>();
-const spriteStore = useSpriteStore()
+const emits = defineEmits(['add-asset']);
 
 // ----------methods-----------------------------------------
 /**
  * @description: A function to add sprite to list
- * @param {*} spriteName
+ * @param {*} name
  * @param {*} file
  * @Author: Xu Ning
  * @Date: 2024-01-24 12:18:12
  */
-const addSpriteToListFunc = (spriteName: string, file?: File[]) =>{
-  const sprite = new Sprite(spriteName, file)
-  spriteStore.addItem(sprite)
+// TODO: change one address as a obj
+const addAssetToListFunc = (name: string, address: string) =>{
+  console.log('1111', name, address)
+  emits('add-asset', name, address);
 }
 
 </script>

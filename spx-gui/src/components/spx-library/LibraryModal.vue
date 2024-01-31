@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 12:24:11
+ * @LastEditTime: 2024-01-31 22:10:59
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -32,11 +32,7 @@
       <!-- S Library Sub Header -->
       <div class="asset-library-sub-header">
         <n-flex>
-          <n-button
-            size="large"
-            v-for="category in props.categories"
-            :key="category"
-          >
+          <n-button v-for="category in categories" :key="category" size="large">
             {{ category }}
           </n-button>
           <span class="sort-btn">
@@ -57,22 +53,28 @@
       <!-- S Library Content -->
       <div class="asset-library-content">
         <n-grid
-          v-if="props.spriteInfos.length != 0"
+          v-if="assetInfos.length != 0"
           cols="3 s:4 m:5 l:6 xl:7 2xl:8"
           responsive="screen"
         >
-          <n-grid-item
-            v-for="spriteInfo in props.spriteInfos"
-            :key="spriteInfo.name"
-          >
+          <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
-              <SpriteCard :spriteInfo="spriteInfo" />
+              <SpriteCard
+                :assetInfo="assetInfo"
+                @add-asset="handleAddAsset"
+              />
               <!-- S Component Sprite Card -->
             </div>
           </n-grid-item>
         </n-grid>
-        <n-empty class="n-empty-style" :show-icon="false" size="large" v-else description="There's nothing." />
+        <n-empty
+          v-else
+          class="n-empty-style"
+          :show-icon="false"
+          size="large"
+          description="There's nothing."
+        />
       </div>
       <!-- E Library Content -->
     </template>
@@ -80,7 +82,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps, ref, watch } from "vue";
+import { defineEmits, defineProps, ref, watch, onMounted } from "vue";
 import {
   NModal,
   NButton,
@@ -94,24 +96,68 @@ import {
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
 import type { Asset } from "@/interface/library";
+import { AssetType } from "@/constant/constant.ts";
+import FileWithUrl from "@/class/FileWithUrl";
 import SpriteCard from "./SpriteCard.vue";
+import { getAssetList } from "@/api/asset";
+import { SpriteInfosMock } from "@/mock/library.ts"
 
 // ----------props & emit------------------------------------
 interface propsType {
-  spriteInfos: Asset[];
   show: boolean;
-  categories: string[];
+  type: string;
 }
 const props = defineProps<propsType>();
-const emits = defineEmits(["update:show"]);
+const emits = defineEmits(["update:show", "add-asset-to-store"]);
 
 // ----------data related -----------------------------------
 // Ref about show modal state.
 const showModal = ref<boolean>(false);
 // Ref about search text.
 const searchQuery = ref("");
+// Const variable about sprite categories.
+// TODO: Get categories from api.
+const categories = [
+  "ALL",
+  "Animals",
+  "People",
+  "Sports",
+  "Food",
+  "Fantasy",
+];
+// Ref about sprite/backdrop information.
+const assetInfos = ref<Asset[]>([]);
+
+// ----------lifecycle hooks---------------------------------
+// onMounted hook.
+onMounted(async () => {
+  if (props.type === "backdrop") {
+    assetInfos.value = await fetchAssets(AssetType.Backdrop);
+  } else if (props.type === "sprite") {
+    // assetInfos.value = await fetchAssets(AssetType.Sprite);
+    assetInfos.value = SpriteInfosMock
+  }
+});
 
 // ----------methods-----------------------------------------
+/**
+ * @description: A function to fetch asset from backend by getAssetList.
+ * @param {*} assetType
+ * @Author: Xu Ning
+ * @Date: 2024-01-25 23:50:45
+ */
+const fetchAssets = async (assetType: number) => {
+  try {
+    const pageIndex = 1;
+    const pageSize = 20;
+    const response = await getAssetList(pageIndex, pageSize, assetType);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching assets:", error);
+    return [];
+  }
+};
+
 /**
  * @description: Watch the state of show.
  * @Author: Xu Ning
@@ -133,6 +179,17 @@ watch(
  */
 const closeModalFunc = () => {
   emits("update:show", false);
+};
+
+/**
+ * @description: A function to emit add object.
+ * @param {*} name
+ * @Author: Xu Ning
+ * @Date: 2024-01-30 11:51:05
+ */
+const handleAddAsset = (name: string, address: string) => {
+  console.log('libraryModal handleAddAsset',name,address)
+  emits("add-asset-to-store", name, address);
 };
 </script>
 
@@ -156,11 +213,11 @@ const closeModalFunc = () => {
 .asset-library-content {
   margin: 60px 0 20px 0;
   min-height: 300px;
-  .n-empty-style{
-    min-height:300px;
-    line-height:300px;
-     .n-empty__description{
-      line-height:300px;
+  .n-empty-style {
+    min-height: 300px;
+    line-height: 300px;
+    .n-empty__description {
+      line-height: 300px;
     }
   }
 }

@@ -23,7 +23,6 @@
             <!-- S Component ImageCardCom -->
             <ImageCardCom
               v-for="asset in spriteAssets"
-              v-if="spriteAssets.length > 0"
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 22:30:35
+ * @LastEditTime: 2024-01-31 17:55:06
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
@@ -10,7 +10,7 @@
   <div class="stage-list">
     Stage
     <div class="stage-list-space">
-      <SpriteAddBtn :type="'bg'" />
+      <SpriteAddBtn :type="'backdrop'" />
       <ImageCardCom
         :type="'bg'"
         :asset="backdrop"

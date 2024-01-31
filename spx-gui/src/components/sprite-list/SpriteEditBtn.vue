@@ -1,15 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
-<<<<<<< HEAD
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-30 10:57:50
+ * @LastEditTime: 2024-01-31 23:19:19
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
-=======
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-26 16:46:15
- * @FilePath: /spx-gui/src/components/sprite-list/SpriteEditBtn.vue
->>>>>>> upstreamDev
  * @Description: 
 -->
 <template>
