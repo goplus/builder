@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install modules
+        working-directory: spx-gui
+        run: yarn
+
+      - name: Run Vue TSC
+        working-directory: spx-gui
+        run: yarn vue-tsc
+
+      - name: Run ESLint
+        working-directory: spx-gui
+        run: yarn eslint .

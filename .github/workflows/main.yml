@@ -27,16 +27,16 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: spx-gui/package-lock.json
+          # cache: 'yarn'
+          # cache-dependency-path: spx-gui/yarn.lock
 
       - name: Install dependencies
         working-directory: spx-gui
-        run: npm install
+        run: yarn install
 
       - name: Build project
         working-directory: spx-gui
-        run: npm run build
+        run: yarn build
 
       - name: Build and push Docker image
         working-directory: spx-gui
