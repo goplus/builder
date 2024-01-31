@@ -1921,6 +1921,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vue/tsconfig@npm:^0.5.1":
+  version: 0.5.1
+  resolution: "@vue/tsconfig@npm:0.5.1"
+  checksum: 10c0/cf4049c0daf26579e42803eca661809f95f9196323b4a6aec1714ac3c80df37b44d3878468f56e2f3d1fe64640fe9cb42f20db42509ef858ab059fe05e0dd862
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^2.0.0":
   version: 2.0.0
   resolution: "abbrev@npm:2.0.0"
@@ -5399,6 +5406,7 @@ __metadata:
     "@vue/eslint-config-prettier": "npm:^8.0.0"
     "@vue/eslint-config-typescript": "npm:^12.0.0"
     "@vue/runtime-dom": "npm:^3.4.10"
+    "@vue/tsconfig": "npm:^0.5.1"
     axios: "npm:^1.6.5"
     eslint: "npm:^8.56.0"
     eslint-plugin-vue: "npm:^9.20.1"
