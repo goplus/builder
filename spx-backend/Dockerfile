@@ -5,8 +5,8 @@ RUN apt update -y
 RUN apt install -y \
     wget \
     curl \
-    git \
-    build-essential
+    git
+#     build-essential
 
 RUN wget https://golang.org/dl/go1.20.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.20.linux-amd64.tar.gz && \
@@ -14,7 +14,7 @@ RUN wget https://golang.org/dl/go1.20.linux-amd64.tar.gz && \
 
 ENV PATH="/usr/local/go/bin:${PATH}"
 
-RUN go version
+# RUN go version
 
 RUN mkdir usr/local/gop
 
@@ -24,12 +24,17 @@ RUN wget https://github.com/goplus/gop/releases/download/v1.2.0-pre.2/gop_v1.2.0
 
 ENV PATH="/usr/local/gop/bin:${PATH}"
 
-RUN gop version
+# RUN gop version
 
-WORKDIR cmd
+WORKDIR /app
+
+COPY . .
+
+WORKDIR /app/cmd
 
 RUN gop build .
 
 EXPOSE 8080
 
 CMD ["./cmd"]
+
