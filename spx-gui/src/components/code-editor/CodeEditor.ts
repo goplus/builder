@@ -2,16 +2,30 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 16:26:20
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-31 16:16:05
+ * @LastEditTime: 2024-02-01 16:06:09
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
 import CodeEditor from "./CodeEditor.vue"
 
-import { register } from './register';
+import { register } from './Register';
 import { editorOptions } from "./Language"
 export default CodeEditor;
+
+export interface Snippet extends monaco.languages.CompletionItem {
+    spxSnippetType: string;
+}
+
+export interface FormatError {
+    Column: number;
+    Line: number;
+    Msg: string;
+};
+export interface FormatResponse {
+    Body: string;
+    Error: FormatError;
+};
 
 
 export interface EditorOptions {
@@ -19,13 +33,13 @@ export interface EditorOptions {
         enabled: boolean
     }
     readOnly?: boolean
-    cursorStyle?: "line" // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
+    cursorStyle?: string // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
 }
 
 export interface CodeEditorProps {
     modelValue: string
-    height: string
-    width: string
+    height?: string
+    width?: string
     editorOptions?: EditorOptions
 }
 export interface CodeEditorEmits {

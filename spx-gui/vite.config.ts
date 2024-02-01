@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 11:19:06
+ * @LastEditTime: 2024-02-01 15:44:27
  * @FilePath: /builder/spx-gui/vite.config.ts
  * @Description:
  */
@@ -35,5 +35,10 @@ export default defineConfig({
       styles: resolve('src/styles'),
       store: resolve('src/store')
     }
+  },
+  optimizeDeps: {
+    include: [
+      `monaco-editor/esm/vs/editor/editor.worker`
+    ]
   }
 })

@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 11:20:34
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-02 11:04:18
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -14,8 +14,8 @@
 import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue';
 import { monaco } from "./CodeEditor"
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import { CodeEditorProps, CodeEditorEmits, editorOptions } from './CodeEditor';
-
+import { CodeEditorProps, CodeEditorEmits, editorOptions, FormatError, FormatResponse } from './CodeEditor';
+import { formatSpxCode as onlineFormatSpxCode } from "@/api/project";
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
     modelValue: '',
@@ -94,8 +94,46 @@ const insertSnippet = (fn: () => {
     contribution.insert(snippet.insertText);
     editor.focus()
 }
+
+const formatCode = async () => {
+    return new Promise<FormatResponse>((resolve)=>{
+        if(false){
+          resolve(formatSPX(editor.getValue()) as FormatResponse)  
+        }else{
+            onlineFormatSpxCode(editor.getValue()).then(res=>{
+                resolve(res.data.data)
+            })
+        }
+    })
+}
+
+/**
+ * @description: Format code
+ * @return {*}
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-02-01 11:55:13
+ */
+const format = async () => {
+ 
+    const forRes = await formatCode();
+    if (forRes.Body) {
+        editor.setValue(forRes.Body);
+    } else {
+        monaco.editor.setModelMarkers(editor.getModel() as monaco.editor.ITextModel, "owner",
+            [{
+                message: forRes.Error.Msg,
+                severity: monaco.MarkerSeverity.Warning,
+                startLineNumber: forRes.Error.Line,
+                startColumn: forRes.Error.Column,
+                endLineNumber: forRes.Error.Column,
+                endColumn: forRes.Error.Line
+            }]);
+    }
+}
+
 defineExpose({
     insertSnippet,
+    format,
 })
 
 
