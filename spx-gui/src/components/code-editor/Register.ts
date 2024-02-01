@@ -2,11 +2,12 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 17:29:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-30 17:32:27
+ * @LastEditTime: 2024-02-01 15:55:04
  * @FilePath: /builder/spx-gui/src/components/code-editor/register.ts
  * @Description: 
  */
 import { keywords, typeKeywords, LanguageConfig, MonarchTokensProviderConfig } from './Language'
+import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
 import function_completions from './Snippet';
 import { monaco } from './CodeEditor';
 function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
@@ -46,6 +47,14 @@ const completionItemProvider: monaco.languages.CompletionItemProvider = {
     }
 }
 
+
+
+const initFormat = async () => {
+    const go = new Go();
+    const result = await WebAssembly.instantiateStreaming(fetch(wasmModuleUrl), go.importObject)
+    go.run(result.instance)
+}
+
 export const register=()=>{
     monaco.languages.register({
         id: 'spx',
@@ -56,6 +65,7 @@ export const register=()=>{
     monaco.languages.setMonarchTokensProvider('spx', MonarchTokensProviderConfig);
     // Code hint
     monaco.languages.registerCompletionItemProvider('spx', completionItemProvider);
+    initFormat()
 }
 
 
