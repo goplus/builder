@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-31 21:40:39
+ * @LastEditTime: 2024-02-01 10:31:06
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -26,7 +26,6 @@
 import { NImage } from "naive-ui";
 import { defineProps, defineEmits } from "vue";
 import type { Asset } from "@/interface/library";
-import FileWithUrl from "@/class/FileWithUrl";
 
 // ----------props & emit------------------------------------
 interface propsType {
@@ -44,8 +43,7 @@ const emits = defineEmits(['add-asset']);
  * @Date: 2024-01-24 12:18:12
  */
 // TODO: change one address as a obj
-const addAssetToListFunc = (name: string, address: string) =>{
-  console.log('1111', name, address)
+const addAssetToListFunc = (name: string, address: string|undefined) =>{
   emits('add-asset', name, address);
 }
 

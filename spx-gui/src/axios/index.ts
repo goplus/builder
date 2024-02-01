@@ -2,14 +2,14 @@
  * @Author: Yao Xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-23 14:27:36
+ * @LastEditTime: 2024-02-01 13:28:32
  * @FilePath: /builder/spx-gui/src/axios/index.ts
  * @Description:
  */
 import { createDiscreteApi } from "naive-ui";
 import axios, { AxiosResponse } from "axios";
 
-const baseURL = "http://127.0.0.1:8080";
+const baseURL = "http://116.62.66.126:8081";
 
 const service = axios.create({
   baseURL: baseURL,

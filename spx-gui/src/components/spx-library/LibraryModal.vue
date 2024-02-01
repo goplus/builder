@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-31 22:10:59
+ * @LastEditTime: 2024-02-01 13:32:40
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -134,8 +134,8 @@ onMounted(async () => {
   if (props.type === "backdrop") {
     assetInfos.value = await fetchAssets(AssetType.Backdrop);
   } else if (props.type === "sprite") {
-    // assetInfos.value = await fetchAssets(AssetType.Sprite);
-    assetInfos.value = SpriteInfosMock
+    assetInfos.value = await fetchAssets(AssetType.Sprite);
+    // assetInfos.value = SpriteInfosMock
   }
 });
 

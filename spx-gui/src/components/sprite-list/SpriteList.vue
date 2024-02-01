@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 22:26:39
+ * @LastEditTime: 2024-02-01 11:12:23
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -26,7 +26,8 @@
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :style="{ 'margin-bottom': '26px' }"
+              :style="getImageCardStyle(asset.name)"
+              @click="toggleCodeById(asset.name)"
             />
             <!-- E Component ImageCardCom -->
           </n-flex>
@@ -44,7 +45,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { ComputedRef, computed } from "vue";
+import { ComputedRef, computed,ref } from "vue";
 import { NGrid, NGridItem, NFlex } from "naive-ui";
 import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
@@ -55,12 +56,33 @@ import Sprite from "@/class/sprite";
 
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore();
+const { setCurrentByName } = useSpriteStore();
+const currentActiveName = ref('');
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
 const spriteAssets: ComputedRef<Sprite[]> = computed(
   () => spriteStore.list as Sprite[],
 );
+
+// ----------methods-----------------------------------------
+/**
+ * @description: A function to toggle code.
+ * @param {*} name - asset name
+ * @Author: Xu Ning
+ * @Date: 2024-02-01 10:51:23
+ */
+const toggleCodeById = (name: string) => {
+  console.log('name',name)
+  currentActiveName.value = name;
+  setCurrentByName(name);
+};
+
+const getImageCardStyle = (name: string) => {
+  return name === currentActiveName.value
+    ? { 'margin-bottom': '26px', 'box-shadow': '0px 0px 0px 4px #FF81A7' }
+    : { 'margin-bottom': '26px' };
+};
 </script>
 
 <style scoped lang="scss">

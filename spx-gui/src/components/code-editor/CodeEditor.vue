@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 23:29:54
+ * @LastEditTime: 2024-02-01 11:20:34
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -10,7 +10,7 @@
   <div class="code-editor-space">
     <div class="code-button">Code</div>
     <!-- TODO: Delete  -->
-    <div class="sprite">
+    <!-- <div class="sprite">
       <n-scrollbar x-scrollable>
         <n-button
           v-for="item in spriteStore.list"
@@ -19,7 +19,7 @@
           >{{ item.name }}</n-button
         >
       </n-scrollbar>
-    </div>
+    </div> -->
 
     <n-button-group class="formatBtnGroup" size="small">
       <n-button class="" @click="format">clear</n-button>
