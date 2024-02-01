@@ -37,7 +37,7 @@ export const initI18n = async (app:App) => {
             tab: {
                 code: '编程',
                 sound: '音频',
-                costume: '造型'，
+                costume: '造型',
             },
             sounds: {
                 hint: '音频',

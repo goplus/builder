@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 18:05:02
+ * @LastEditTime: 2024-02-01 15:04:45
  * @FilePath: /builder/spx-gui/src/components/spx-editor/SpxEditor.vue
  * @Description: 
 -->
@@ -42,12 +42,32 @@
       <SoundsEditHome />
       <!--  E Component SoundsEditHome-->
     </n-tab-pane>
+    <!-- Tab Costume Part -->
+    <!--Tab Code Part-->
+    <n-tab-pane name="costume">
+      <template #tab>
+        <div v-if="currentTab === 'costume'" class="tab-container">
+          <n-icon>
+            <CostumeIcon />
+          </n-icon>
+          <div class="tab-font-check">{{ $t("tab.costume") }}</div>
+        </div>
+        <div v-else class="tab-container">
+          <n-icon>
+            <CostumeIcon />
+          </n-icon>
+          <div class="tab-font-uncheck">{{ $t("tab.costume") }}</div>
+        </div>
+      </template>
+      <!-- TODO Costume Editor Part   -->
+    </n-tab-pane>
   </n-tabs>
 </template>
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { NTabs, NTabPane } from "naive-ui";
+import { NTabs, NTabPane, NIcon } from "naive-ui";
+import { HighlightOutlined as CostumeIcon } from "@vicons/antd";
 import SoundsEditHome from "@/components/sounds/SoundsHome.vue";
 import CodeEditorHome from "@/components/code-editor/CodeEditorHome.vue";
 
@@ -62,6 +82,9 @@ const currentTab = ref("code");
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  .n-icon {
+    margin: 0 2px 5px 0;
+  }
 }
 
 .tab-font-uncheck {
