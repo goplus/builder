@@ -37,8 +37,8 @@ import { useSpriteStore } from "@/store/modules/sprite";
 import { storeToRefs } from "pinia";
 import { NButton, NButtonGroup } from "naive-ui";
 
-const { setCurrentByName } = useSpriteStore();
-const spriteStore = useSpriteStore();
+const { setCurrent } = useSpriteStore()
+const spriteStore = useSpriteStore()
 const store = useEditorStore();
 const code_editor = ref<HTMLElement | null>(null);
 let editor: monaco.editor.IStandaloneCodeEditor;
@@ -135,8 +135,9 @@ store.$onAction(({ name, store, args, after, onError }) => {
   });
 });
 const toggleCodeById = (name: string) => {
-  setCurrentByName(name);
-};
+  setCurrentByName(name)
+}
+
 </script>
 
 <style>
@@ -180,11 +181,13 @@ const toggleCodeById = (name: string) => {
   z-index: 99;
   right: 20px;
   position: absolute;
+
   .n-button {
     background: #00000000;
     color: #001429;
     border: 1px solid black;
   }
+
   .n-button:hover {
     background: #ed729e20;
   }

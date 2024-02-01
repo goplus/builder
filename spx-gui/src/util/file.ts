@@ -55,7 +55,7 @@ export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'text/plain'
  * @param name the file name
  * @returns the content
  */
-export const ArrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled') => {
+export const ArrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): rawFile => {
     if (!(arr instanceof ArrayBuffer)) {
         return arr
     }
@@ -104,4 +104,188 @@ export function getPrefix(dir: Record<string, any>) {
     }
     if (!prefix) return '';
     return prefix.endsWith('/') ? prefix : prefix + '/';
+}
+
+import { Project } from "@/class/Project"
+import Backdrop from "@/class/backdrop"
+import Sound from "@/class/sound"
+import Sprite from "@/class/sprite"
+import { Config } from "@/interface/file"
+import { useSpriteStore } from "@/store/modules/sprite";
+import { FileType, dirPath, rawDir, rawFile } from "@/types/file"
+import JSZip from "jszip"
+
+/**
+ * Generate the zorder of the Sprite in the stage based on the order of the Sprite.
+ * The later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
+ */
+export function genZOrder() {
+    const spriteStore = useSpriteStore()
+    const { list: sprites } = spriteStore
+    return sprites.map(sprite => sprite.name)
+}
+
+/**
+ * Generate a file from content.
+ */
+export function genFile(content: string, type: string, name: string) {
+    return new File([new Blob([content], { type })], name)
+}
+
+export async function convertRawDirToDirPath(dir: rawDir): Promise<dirPath> {
+    const directory: dirPath = {}
+    for (const [path, value] of Object.entries(dir)) {
+        const ext = path.split('.').pop()!
+        const content = await Content2ArrayBuffer(value, getMimeFromExt(ext))
+        directory[path] = {
+            content,
+            path,
+            type: getMimeFromExt(ext),
+            size: content.byteLength,
+            modifyTime: (value instanceof File) ? new Date(value.lastModified) : new Date()
+        }
+    }
+    return directory
+}
+
+/**
+ * Get directory from zip file.
+ * @param {File} zipFile the zip file
+ * @returns {Promise<dirPath>} the directory of the zip
+ * 
+ * @example
+ * const dir = await getDirPathFromZip(zipFile)
+ * loadProject(dir)
+ * 
+ * // Your directory structure of zipFile should be organized this way, otherwise you may fail to read resources in `convertDirPathToProject` (which is a step in `loadProject`) and resources that fail to read will be saved in `project.defaultDir`.
+ * └─ ProjectName
+ *     ├─ main.spx
+ *     ├─ spriteName1.spx
+ *     ├─ spriteName2.spx
+ *     └─ assets
+ *         ├─ sprites
+ *         │   ├─ spriteName1
+ *         │   │   ├─ 1.png
+ *         │   │   └─ index.json
+ *         │   └─ spriteName2
+ *         │       ├─ 2.png
+ *         │       └─ index.json
+ *         ├─ sounds
+ *         │   ├─ soundName1
+ *         │   │   ├─ 3.wav
+ *         │   │   └─ index.json
+ *         │   └─ soundName2
+ *         │       ├─ 4.wav
+ *         │       └─ index.json
+ *         ├─ 5.png
+ *         └─ index.json
+ */
+export async function getDirPathFromZip(zipFile: File): Promise<dirPath> {
+    const zip = await JSZip.loadAsync(zipFile);
+    const projectName = zipFile.name.split('.')[0] || 'project';
+    const dir: dirPath = {};
+    const prefix = getPrefix(zip.files)
+    for (let [relativePath, zipEntry] of Object.entries(zip.files)) {
+        if (zipEntry.dir) continue
+        const content = await zipEntry.async('arraybuffer')
+        const path = projectName + '/' + relativePath.replace(prefix, '')
+        const type = getMimeFromExt(relativePath.split('.').pop()!)
+        const size = content.byteLength
+        const modifyTime = zipEntry.date || new Date();
+        dir[path] = {
+            content,
+            path,
+            type,
+            size,
+            modifyTime
+        }
+    }
+    return dir
+}
+
+const UNTITLED_NAME = 'untitled';
+
+/**
+ * Parse directory to project.
+ * @param {dirPath} dir
+ * @returns project
+ */
+export function convertDirPathToProject(dir: dirPath): Project {
+    function handleFile(file: FileType, filename: string, item: any) {
+        switch (file.type) {
+            case 'application/json':
+                item.config = ArrayBuffer2Content(file.content, file.type) as Config;
+                break;
+            default:
+                item.files.push(ArrayBuffer2Content(file.content, file.type, filename) as File);
+                break;
+        }
+    }
+
+    function findOrCreateItem(name: string, collection: any[], constructor: typeof Sprite | typeof Sound) {
+        let item = collection.find(item => item.name === name);
+        if (!item) {
+            item = new constructor(name);
+            collection.push(item);
+        }
+        return item;
+    }
+
+    const proj: Project = new Project(Object.keys(dir).pop()?.split('/').shift() || UNTITLED_NAME)
+
+    for (let [path, file] of Object.entries(dir)) {
+        const filename = file.path.split('/').pop()!;
+        path = path.replace(proj.title + '/', '')
+        if (Sprite.REG_EXP.test(path)) {
+            const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
+            const sprite: Sprite = findOrCreateItem(spriteName, proj.spriteList, Sprite);
+            handleFile(file, filename, sprite);
+        }
+        else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+            proj.entryCode = ArrayBuffer2Content(file.content, file.type, filename) as string
+        }
+        else if (/^.+\.spx$/.test(path)) {
+            const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
+            const sprite: Sprite = findOrCreateItem(spriteName, proj.spriteList, Sprite);
+            sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
+        }
+        else if (Sound.REG_EXP.test(path)) {
+            const soundName = path.match(Sound.REG_EXP)?.[1] || '';
+            const sound: Sound = findOrCreateItem(soundName, proj.soundList, Sound);
+            handleFile(file, filename, sound);
+        }
+        else if (Backdrop.REG_EXP.test(path)) {
+            handleFile(file, filename, proj.backdrop);
+        }
+        else {
+            proj.UnidentifiedFile[path] = ArrayBuffer2Content(file.content, file.type, filename)
+        }
+    }
+    return proj
+}
+
+const zipFileValue = (key: string, value: rawFile): [string, string | File] => {
+    if (typeof value === 'string' || value instanceof File) {
+        return [key, value]
+    } else {
+        return [key, JSON.stringify(value)]
+    }
+}
+
+/**
+ * Convert directory object to zip.
+ * @param dir the directory object with raw files to be converted
+ * @returns the zip
+ */
+export async function convertRawDirToZip(dir: rawDir): Promise<Blob> {
+    const zip = new JSZip();
+
+    const prefix = getPrefix(dir)
+    for (let [path, value] of Object.entries(dir)) {
+        prefix && (path = path.replace(prefix + '/', ''));
+        zip.file(...zipFileValue(path, value));
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' })
+    return content
 }

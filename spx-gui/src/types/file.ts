@@ -10,13 +10,14 @@
 import Sprite from "@/class/sprite"
 import Sound from "@/class/sound"
 import Backdrop from "@/class/backdrop"
+import { Config } from "@/interface/file"
 
 export type codeType = {
     path: string,
     content: string
 }
 
-export type projectType = {
+export interface projectType {
     title: string,
     sprites: Sprite[],
     sounds: Sound[],
@@ -25,7 +26,7 @@ export type projectType = {
     code: codeType
 }
 
-export type FileType = {
+export interface FileType {
     content: ArrayBuffer,
     path: string,
     type: string,
@@ -33,8 +34,16 @@ export type FileType = {
     modifyTime: Date
 }
 
-export type dirPath = Record<string, FileType>
+export interface dirPath {
+    [path: string]: FileType
+}
 
-export type rawFile = string | File | Record<string, any> | FileType
+export type rawFile = string | File | Config
 
-export type rawDir = Record<string, rawFile>
+export interface rawDir {
+    [path: string]: rawFile
+}
+
+export interface directory {
+    [path: string]: File
+}

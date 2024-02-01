@@ -7,7 +7,7 @@
  * @Description: A util to create asset store.
  */
 
-import { ref, Ref, computed } from 'vue'
+import { ref, Ref } from 'vue'
 import { defineStore } from 'pinia'
 import AssetBase from '@/class/AssetBase'
 
@@ -33,34 +33,17 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * Set current item by name.
          * @param name the name of item
          */
-        function setCurrentByName(name: string) {
-            if (!isItemExistByName(name)) {
-                throw new Error(`${name} does not exist.`)
-            }
-            current.value = getItemByName(name)
-        }
+        function setCurrent(name: string): void;
 
         /**
          * Set current item by reference.
          * @param item the reference of item
          */
-        function setCurrentByRef(item: T) {
-            if (!isItemExistByRef(item)) {
-                throw new Error(`${item.name} does not exist.`)
-            }
-            current.value = item
-        }
+        function setCurrent(item: T): void;
 
-        /**
-         * The map of assets in order to get item by name in `O(1)`.
-         */
-        const map = computed(() => {
-            let map = new Map<string, T>()
-            list.value.forEach(item => {
-                map.set(item.name, item)
-            })
-            return map
-        })
+        function setCurrent(item: T | string) {
+            current.value = typeof item === 'string' ? getItem(item) : item
+        }
 
         /**
          * Set items to replace list.
@@ -78,7 +61,7 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
         function addItem(...newItems: T[]) {
             let exist = [];
             for (const item of newItems) {
-                if (isItemExistByRef(item)) {
+                if (isItemExist(item)) {
                     exist.push(item)
                     continue
                 }
@@ -94,23 +77,19 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * @param name the name of item
          * @returns the removed item
          */
-        function removeItemByName(name: string): T | null {
-            if (!isItemExistByName(name)) return null
-            const index = list.value.findIndex(item => item.name === name)
-            if (index > -1) {
-                return list.value.splice(index, 1).pop() as T
-            }
-            return null
-        }
+        function removeItem(name: string): T | null;
 
         /**
          * Remove item from list by reference.
          * @param item the reference of item
          * @returns the removed item
          */
-        function removeItemByRef(item: T): T | null {
-            if (!isItemExistByRef(item)) return null
-            const index = list.value.indexOf(item)
+        function removeItem(item: T): T | null;
+
+        function removeItem(item: string | T): T | null {
+            let index = -1;
+            if (typeof item === 'string') index = list.value.findIndex(i => i.name === item)
+            else index = list.value.findIndex(i => i === item)
             if (index > -1) {
                 return list.value.splice(index, 1).pop() as T
             }
@@ -122,8 +101,8 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * @param name the name of item
          * @returns the item
          */
-        function getItemByName(name: string): T | null {
-            return map.value.get(name) || null
+        function getItem(name: string): T | null {
+            return list.value.find(i => i.name === name) || null
         }
 
         /**
@@ -131,17 +110,20 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
          * @param name the name of item
          * @returns true if the item exists
          */
-        function isItemExistByName(name: string): boolean {
-            return map.value.has(name)
-        }
+        function isItemExist(name: string): boolean;
 
         /**
          * Check if item exists by reference.
          * @param item the reference of item
          * @returns true if the item exists
          */
-        function isItemExistByRef(item: T): boolean {
-            return map.value.has(item.name)
+        function isItemExist(item: T): boolean;
+
+        function isItemExist(item: string | T): boolean {
+            if (typeof item === 'string') {
+                return list.value.some(i => i.name === item)
+            }
+            return list.value.includes(item) || list.value.some(i => i.name === item.name)
         }
 
         /**
@@ -152,15 +134,11 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
         return {
             setItem,
             addItem,
-            removeItemByName,
-            removeItemByRef,
-            getItemByName,
-            isItemExistByName,
-            isItemExistByRef,
-            current,
-            setCurrentByName,
-            setCurrentByRef,
+            removeItem,
+            getItem,
             list,
+            isItemExist,
+            setCurrent,
             ...hooks
         }
     })
