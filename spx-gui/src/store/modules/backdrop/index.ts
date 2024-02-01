@@ -10,7 +10,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import Backdrop from '@/class/backdrop'
-import { useSpriteStore } from '../sprite'
 
 /**
  * Backdrop store.
@@ -33,28 +32,8 @@ export const useBackdropStore = defineStore('backdrop', () => {
         backdrop.value = back
     }
 
-    /**
-     * Set the zorder of the backdrop.
-     * @param zOrder 
-     */
-    function setZOrder(zOrder: string[] = genZOrder()) {
-        backdrop.value.config.zorder = zOrder
-    }
-
-    /**
-     * Generate the zorder of the Sprite in the stage.
-     * The later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
-     */
-    function genZOrder() {
-        const spriteStore = useSpriteStore()
-        const { list: sprites } = spriteStore
-        return sprites.map(sprite => sprite.name)
-    }
-
     return {
         setItem,
-        backdrop,
-        setZOrder,
-        genZOrder
+        backdrop
     }
 })

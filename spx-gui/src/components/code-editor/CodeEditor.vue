@@ -33,7 +33,7 @@ import { useSpriteStore } from '@/store/modules/sprite';
 import { storeToRefs } from 'pinia'
 import { NButton } from 'naive-ui';
 
-const { setCurrentByName } = useSpriteStore()
+const { setCurrent } = useSpriteStore()
 const spriteStore = useSpriteStore()
 const store = useEditorStore();
 const code_editor = ref<HTMLElement | null>(null);
@@ -110,7 +110,7 @@ store.$onAction(({
     })
 })
 const toggleCodeById = (name: string) => {
-    setCurrentByName(name)
+    setCurrent(name)
 }
 
 </script>

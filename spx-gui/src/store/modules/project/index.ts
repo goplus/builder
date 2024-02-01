@@ -141,9 +141,9 @@ export const useProjectStore = defineStore('project', () => {
      */
     function removeItem(item: Sprite | Sound) {
         if (item instanceof Sprite) {
-            spriteStore.removeItemByRef(item)
+            spriteStore.removeItem(item)
         } else if (item instanceof Sound) {
-            soundStore.removeItemByRef(item)
+            soundStore.removeItem(item)
         }
     }
 
@@ -569,7 +569,7 @@ export const useProjectStore = defineStore('project', () => {
         convertRawDirToZip,
         saveToComputerByDirPath,
         saveToComputerByProject,
-        title: readonly(title),
+        title,
         getAllLocalProjects,
         project,
         addItem,
