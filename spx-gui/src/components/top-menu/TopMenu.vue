@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 23:02:17
+ * @LastEditTime: 2024-02-01 16:18:12
  * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -29,12 +29,7 @@ import {
 } from "@vicons/material";
 import { Book as TutorialIcon } from "@vicons/ionicons5";
 import {
-  topMenuImportBtn1,
-  topMenuImportBtn2,
-  topMenuSaveBtn1,
-  topMenuSaveBtn2,
-  topMenuExportBtn1,
-  topMenuExportBtn2,
+  tutorialColor, publishColor, saveColor, fileColor, codeColor
 } from "@/assets/theme.ts";
 import { useProjectStore } from "@/store/modules/project";
 const projectStore = useProjectStore();
@@ -99,13 +94,11 @@ const themeMap = ["Pink", "Yellow", "Blue"];
 
 // default button style for menu
 const buttonStyle = {
-  "--n-border": "0px !important",
-  "--n-border-hover": "0px !important",
-  "--n-border-press": "0px !important",
-  "--n-border-focus": "0px !important",
-  "box-shadow": "4px 4px rgba(0, 0, 0, 0.1)",
-  "min-width": "7vw",
+  color: "#000",
   "border-radius": "20px",
+  border: "2px solid #001429",
+  "box-shadow": "-1px 2px #001429",
+  cursor: "pointer",
 };
 
 const dropdownStyle = {
@@ -147,10 +140,7 @@ const menuOptions = [
             h(
               NButton,
               {
-                style: computedButtonStyle(
-                  topMenuImportBtn1,
-                  topMenuImportBtn2,
-                ),
+                style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon),
               },
               "File",
@@ -174,7 +164,7 @@ const menuOptions = [
             h(
               NButton,
               {
-                style: computedButtonStyle(topMenuSaveBtn1, topMenuSaveBtn2),
+                style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon),
               },
               "Save",
@@ -198,10 +188,7 @@ const menuOptions = [
             h(
               NButton,
               {
-                style: computedButtonStyle(
-                  topMenuExportBtn1,
-                  topMenuExportBtn2,
-                ),
+                style:computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon),
               },
               "Publish",
@@ -232,14 +219,7 @@ const menuOptions = [
       h(
         NButton,
         {
-          style: {
-            "background-color": "#FFF8CC",
-            color: "#000",
-            "border-radius": "20px",
-            border: "2px solid #001429",
-            "box-shadow": "-1px 2px #001429",
-            cursor: "pointer",
-          },
+          style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon),
         },
         "Code",
@@ -317,10 +297,10 @@ const menuOptions = [
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:56:06
  */
-const computedButtonStyle = (color1: string, color2: string) => {
+const computedButtonStyle = (color1: string) => {
   return {
     ...buttonStyle,
-    background: `linear-gradient(to right, ${color1}, ${color2})`,
+    "background-color": `${color1}`,
   };
 };
 

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 13:32:40
+ * @LastEditTime: 2024-02-01 18:13:14
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -61,7 +61,7 @@
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
               <SpriteCard
-                :assetInfo="assetInfo"
+                :asset-info="assetInfo"
                 @add-asset="handleAddAsset"
               />
               <!-- S Component Sprite Card -->
@@ -97,10 +97,8 @@ import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
 import type { Asset } from "@/interface/library";
 import { AssetType } from "@/constant/constant.ts";
-import FileWithUrl from "@/class/FileWithUrl";
 import SpriteCard from "./SpriteCard.vue";
 import { getAssetList } from "@/api/asset";
-import { SpriteInfosMock } from "@/mock/library.ts"
 
 // ----------props & emit------------------------------------
 interface propsType {
@@ -131,10 +129,13 @@ const assetInfos = ref<Asset[]>([]);
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
+  console.log('111111111',props.type)
   if (props.type === "backdrop") {
     assetInfos.value = await fetchAssets(AssetType.Backdrop);
+    console.log('22222222',props.type,assetInfos.value.length,assetInfos.value,'backassetInfos.length')
   } else if (props.type === "sprite") {
     assetInfos.value = await fetchAssets(AssetType.Sprite);
+    console.log(assetInfos.value.length,assetInfos.value,'assetInfos.length')
     // assetInfos.value = SpriteInfosMock
   }
 });
@@ -151,7 +152,10 @@ const fetchAssets = async (assetType: number) => {
     const pageIndex = 1;
     const pageSize = 20;
     const response = await getAssetList(pageIndex, pageSize, assetType);
-    return response.data;
+    console.log('get',response,response.data,response.data.data)
+    if (response.data.data.data == null)
+      return [];
+    return response.data.data.data;
   } catch (error) {
     console.error("Error fetching assets:", error);
     return [];

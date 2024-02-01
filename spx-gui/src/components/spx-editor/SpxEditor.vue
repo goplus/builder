@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 15:04:45
+ * @LastEditTime: 2024-02-01 15:21:04
  * @FilePath: /builder/spx-gui/src/components/spx-editor/SpxEditor.vue
  * @Description: 
 -->
@@ -12,11 +12,15 @@
     <n-tab-pane name="code">
       <template #tab>
         <div v-if="currentTab === 'code'" class="tab-container">
-          <img class="tab-icon" src="@/assets/icon/code/tab-code-check.svg" />
+          <n-icon>
+            <CodeIcon />
+          </n-icon>
           <div class="tab-font-check">{{ $t("tab.code") }}</div>
         </div>
         <div v-else class="tab-container">
-          <img class="tab-icon" src="@/assets/icon/code/tab-code-uncheck.svg" />
+          <n-icon>
+            <CodeIcon />
+          </n-icon>
           <div class="tab-font-uncheck">{{ $t("tab.code") }}</div>
         </div>
       </template>
@@ -27,14 +31,15 @@
     <n-tab-pane name="sound">
       <template #tab>
         <div v-if="currentTab === 'sound'" class="tab-container">
-          <img class="tab-icon" src="@/assets/icon/sound/tab-music-check.svg" />
+          <n-icon>
+            <MusicIcon />
+          </n-icon>
           <div class="tab-font-check">{{ $t("tab.sound") }}</div>
         </div>
         <div v-else class="tab-container">
-          <img
-            class="tab-icon"
-            src="@/assets/icon/sound/tab-music-uncheck.svg"
-          />
+          <n-icon>
+            <MusicIcon />
+          </n-icon>
           <div class="tab-font-uncheck">{{ $t("tab.sound") }}</div>
         </div>
       </template>
@@ -68,6 +73,7 @@
 import { ref } from "vue";
 import { NTabs, NTabPane, NIcon } from "naive-ui";
 import { HighlightOutlined as CostumeIcon } from "@vicons/antd";
+import { CodeSlash as CodeIcon, MusicalNotes as MusicIcon } from "@vicons/ionicons5"
 import SoundsEditHome from "@/components/sounds/SoundsHome.vue";
 import CodeEditorHome from "@/components/code-editor/CodeEditorHome.vue";
 

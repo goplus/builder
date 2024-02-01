@@ -2,18 +2,18 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 10:31:06
+ * @LastEditTime: 2024-02-01 18:02:02
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.name, props.assetInfo.address)">
+  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.name, assetImageUrl)">
     <n-image
       preview-disabled
       width="100"
       height="100"
-      :src="props.assetInfo.address"
+      :src="assetImageUrl"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
     />
     {{ props.assetInfo.name }}
@@ -24,7 +24,7 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { NImage } from "naive-ui";
-import { defineProps, defineEmits } from "vue";
+import { defineProps, defineEmits, computed } from "vue";
 import type { Asset } from "@/interface/library";
 
 // ----------props & emit------------------------------------
@@ -33,6 +33,21 @@ interface propsType {
 }
 const props = defineProps<propsType>();
 const emits = defineEmits(['add-asset']);
+
+// ----------computed properties-----------------------------
+// Compute the asset images' url
+const assetImageUrl = computed(() => {
+  try {
+    const addressObj = JSON.parse(props.assetInfo.address);
+    const assets = addressObj.assets;
+    const firstKey = Object.keys(assets)[0];
+    console.log('addressObj',addressObj,firstKey)
+    return assets[firstKey];
+  } catch (error) {
+    console.error('Failed to parse address:', error);
+    return ''; // 返回一个空字符串或者默认图像URL
+  }
+});
 
 // ----------methods-----------------------------------------
 /**
