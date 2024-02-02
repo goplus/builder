@@ -21,6 +21,9 @@ export const useEditorStore = defineStore('editor', () => {
     /**
      * toolbox list rely the monaco.languages.CompletionItem
      */
+    /**
+     * toolbox list rely the monaco.languages.CompletionItem
+     */
     let completionToolbox = ref<Toolbox>([
         {
             label: 'Event',
@@ -40,7 +43,8 @@ export const useEditorStore = defineStore('editor', () => {
             completionItems: control_fn_completions
         }
     ]);
-    
+
+
     /**
      * @description: trigger the insertion function
      * The code editor component is subscribed the event

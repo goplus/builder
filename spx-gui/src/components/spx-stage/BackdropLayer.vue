@@ -1,11 +1,8 @@
 <template>
   <v-layer>
-    <v-image
-      v-if="imageRef"
-      :config="{
-        image: imageRef,
-      }"
-    />
+    <v-image v-if="imageRef" :config="{
+      image: imageRef,
+    }" />
   </v-layer>
 </template>
 <script setup lang="ts">

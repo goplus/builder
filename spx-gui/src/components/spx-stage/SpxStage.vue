@@ -9,10 +9,9 @@
 <template>
   <div class="spx-stage">
     <div class="stage-button">Stage</div>
-    <n-button type="success" class="stage-run-button" @click="run"
-      >Run</n-button
-    >
+    <n-button type="success" class="stage-run-button" @click="run">Run</n-button>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
+    <StageViewer v-else></StageViewer>
     <StageViewer v-else></StageViewer>
   </div>
 </template>
@@ -58,6 +57,7 @@ const save = () => {
   margin: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+
   .stage-button {
     background: rgba(90, 196, 236, 0.4);
     width: 80px;
@@ -71,6 +71,7 @@ const save = () => {
     border-radius: 0 0 10px 10px;
     z-index: 2;
   }
+
   .n-button {
     background: #3a8b3b;
     width: 50px;
@@ -80,6 +81,7 @@ const save = () => {
     border: 2px solid #00142970;
     border-radius: 16px;
   }
+
   .show {
     flex: 1;
     text-align: center;

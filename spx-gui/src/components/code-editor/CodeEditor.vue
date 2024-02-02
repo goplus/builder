@@ -135,7 +135,7 @@ store.$onAction(({ name, store, args, after, onError }) => {
   });
 });
 const toggleCodeById = (name: string) => {
-  setCurrentByName(name)
+  setCurrent(name)
 }
 
 </script>
