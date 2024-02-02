@@ -6,51 +6,37 @@ const storage = localforage.createInstance({
     storeName: 'file'
 })
 
+async function performAsyncOperation(operation: Promise<any>, callback?: (err: any, data: any) => void) {
+    try {
+        const res = await operation;
+        callback?.(null, res);
+        return res;
+    } catch (error) {
+        callback?.(error, null);
+        throw error;
+    }
+}
+
 const fs = {
-    async writeFile(filename: string, data: FileType, callback?: (err: any, data: any) => void) {
-        try {
-            const res = await storage.setItem(filename, data);
-            return callback ? callback(null, res) : res;
-        } catch (error) {
-            return callback ? callback(error, null) : error;
-        }
+    writeFile(filename: string, data: FileType, callback?: (err: any, data: any) => void): Promise<FileType> {
+        return performAsyncOperation(storage.setItem(filename, data), callback);
     },
 
-    async unlink(filename: string, callback?: (err: any, data: any) => void) {
-        try {
-            const res = await storage.removeItem(filename);
-            return callback ? callback(null, res) : res;
-        } catch (error) {
-            return callback ? callback(error, null) : error;
-        }
+    unlink(filename: string, callback?: (err: any, data: any) => void) {
+        return performAsyncOperation(storage.removeItem(filename), callback);
     },
 
-    async readFile(filename: string, callback?: (err: any, data: any) => void) {
-        try {
-            const res = await storage.getItem(filename) as FileType;
-            return callback ? callback(null, res) : res;
-        } catch (error) {
-            return callback ? callback(error, null) : error;
-        }
+    readFile(filename: string, callback?: (err: any, data: any) => void): Promise<FileType> {
+        return performAsyncOperation(storage.getItem(filename) as Promise<FileType>, callback);
     },
 
-    async readdir(dirname: string, callback?: (err: any, data: any) => void) {
-        try {
-            const res = await storage.keys();
-            const files = res.filter(key => key.startsWith(dirname))
-            return callback ? callback(null, files) : files;
-        } catch (error) {
-            return callback ? callback(error, null) : error;
-        }
+    readdir(dirname: string, callback?: (err: any, data: any) => void): Promise<string[]> {
+        const operation = storage.keys().then(keys => keys.filter(key => key.startsWith(dirname)));
+        return performAsyncOperation(operation, callback);
     },
 
-    async rmdir(dirname: string, callback?: (err: any, data: any) => void) {
-        try {
-            const res = await storage.removeItem(dirname);
-            return callback ? callback(null, res) : res;
-        } catch (error) {
-            return callback ? callback(error, null) : error;
-        }
+    rmdir(dirname: string, callback?: (err: any, data: any) => void) {
+        return performAsyncOperation(storage.removeItem(dirname), callback);
     },
 }
 

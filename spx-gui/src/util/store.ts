@@ -139,6 +139,7 @@ export default function createStore<T extends AssetBase>(name: string, hook?: ()
             list,
             isItemExist,
             setCurrent,
+            current,
             ...hooks
         }
     })

@@ -238,7 +238,7 @@ export function convertDirPathToProject(dir: dirPath): Project {
         path = path.replace(proj.title + '/', '')
         if (Sprite.REG_EXP.test(path)) {
             const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
-            const sprite: Sprite = findOrCreateItem(spriteName, proj.spriteList, Sprite);
+            const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
             handleFile(file, filename, sprite);
         }
         else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
@@ -246,12 +246,12 @@ export function convertDirPathToProject(dir: dirPath): Project {
         }
         else if (/^.+\.spx$/.test(path)) {
             const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
-            const sprite: Sprite = findOrCreateItem(spriteName, proj.spriteList, Sprite);
+            const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
             sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
         }
         else if (Sound.REG_EXP.test(path)) {
             const soundName = path.match(Sound.REG_EXP)?.[1] || '';
-            const sound: Sound = findOrCreateItem(soundName, proj.soundList, Sound);
+            const sound: Sound = findOrCreateItem(soundName, proj.sound.list, Sound);
             handleFile(file, filename, sound);
         }
         else if (Backdrop.REG_EXP.test(path)) {

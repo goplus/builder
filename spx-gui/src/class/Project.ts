@@ -1,15 +1,14 @@
 import Backdrop from "./backdrop";
-import Sound from "./sound";
-import Sprite from "./sprite";
 import fs from "@/util/FileSystem";
 import { FileType, dirPath, rawDir } from "@/types/file";
 import { convertDirPathToProject, convertRawDirToDirPath, convertRawDirToZip, getDirPathFromZip } from "@/util/file";
 import saveAs from "file-saver";
+import { SoundList, SpriteList } from "./AssetList";
 
 interface ProjectData {
     title: string
-    spriteList: Sprite[]
-    soundList: Sound[]
+    sprite: SpriteList
+    sound: SoundList
     backdrop: Backdrop
     entryCode: string
     UnidentifiedFile: rawDir
@@ -17,8 +16,8 @@ interface ProjectData {
 
 export class Project implements ProjectData {
     title: string;
-    spriteList: Sprite[];
-    soundList: Sound[];
+    sprite: SpriteList;
+    sound: SoundList;
     backdrop: Backdrop;
     entryCode: string;
     UnidentifiedFile: rawDir;
@@ -26,13 +25,13 @@ export class Project implements ProjectData {
     static ENTRY_FILE_NAME = 'index.gmx'
 
     static fromRawData(data: ProjectData): Project {
-        return new Project(data.title, data.spriteList, data.soundList, data.backdrop, data.entryCode, data.UnidentifiedFile)
+        return new Project(data.title, data.sprite, data.sound, data.backdrop, data.entryCode, data.UnidentifiedFile)
     }
 
-    constructor(title: string, spriteList: Sprite[] = [], soundList: Sound[] = [], backdrop: Backdrop = new Backdrop(), entryCode: string = "", UnidentifiedFile: rawDir = {}) {
+    constructor(title: string, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", UnidentifiedFile: rawDir = {}) {
         this.title = title
-        this.spriteList = spriteList
-        this.soundList = soundList
+        this.sprite = sprite
+        this.sound = sound
         this.backdrop = backdrop
         this.entryCode = entryCode
         this.UnidentifiedFile = UnidentifiedFile
@@ -54,8 +53,8 @@ export class Project implements ProjectData {
             this.load(dirPath)
         } else if (typeof arg === 'object' && arg instanceof Project) {
             this.title = arg.title
-            this.spriteList = arg.spriteList
-            this.soundList = arg.soundList
+            this.sprite = arg.sprite
+            this.sound = arg.sound
             this.backdrop = arg.backdrop
             this.entryCode = arg.entryCode
             this.UnidentifiedFile = arg.UnidentifiedFile
@@ -94,7 +93,7 @@ export class Project implements ProjectData {
 
     get rawDir() {
         const dir: rawDir = {}
-        const files: rawDir = Object.assign({}, this.UnidentifiedFile, ...[this.backdrop, ...this.spriteList, ...this.soundList].map(item => item.dir))
+        const files: rawDir = Object.assign({}, this.UnidentifiedFile, ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map(item => item.dir))
         files[Project.ENTRY_FILE_NAME] = this.entryCode
         for (const [path, value] of Object.entries(files)) {
             const fullPath = this.path + path
