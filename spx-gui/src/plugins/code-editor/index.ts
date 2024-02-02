@@ -7,13 +7,9 @@
 
 import { register } from '@/components/code-editor/Register';
 
-
-
 const initCodeEditor = async () => {
     register();
 }
-
-
 
 export {
     initCodeEditor

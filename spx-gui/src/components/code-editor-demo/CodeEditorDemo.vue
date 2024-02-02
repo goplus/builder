@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-26 19:07:52
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-01 17:28:18
+ * @LastEditTime: 2024-02-02 10:16:30
  * @FilePath: /builder/spx-gui/src/components/code-editor-demo/CodeEditorDemo.vue
  * @Description: 
 -->
@@ -12,11 +12,12 @@
         <div>
             <button @click="format">format</button>
             <button @click="insertSnippet">start snippet</button>
+            <button @click="toggleReadOnly">{{ editorOptions.readOnly ? 'disable' :  'enable'}} readonly</button>
             <div v-for="(item, index) in codeArray" @click="codeIndex = index"> code: {{ index }} </div>
         </div>
 
         <CodeEditor width="500px" height="500px" ref="codeEditor"
-            :editor-options="{ minimap: { enabled: false }, readOnly: false }" :model-value="editorContent"
+            :editor-options="editorOptions" :model-value="editorContent"
             @update:model-value="onCodeChange" />
     </div>
 </template>
@@ -24,6 +25,12 @@
 import CodeEditor, { onStartSnippet } from "../code-editor/CodeEditor"
 import { ref, computed } from "vue"
 let codeEditor = ref();
+const editorOptions = ref({
+    minimap: {
+        enabled: false
+    },
+    readOnly: false
+})
 const editorContent = computed(() => {
     return codeArray.value[codeIndex.value].code;
 })
@@ -45,6 +52,11 @@ const insertSnippet = () => {
 const onCodeChange = (e: string) => {
     codeArray.value[codeIndex.value].code = e;
 }
+
+const toggleReadOnly = () => {
+    editorOptions.value.readOnly = !editorOptions.value.readOnly;
+}
+
 const format = () => {
     codeEditor.value.format();
 }

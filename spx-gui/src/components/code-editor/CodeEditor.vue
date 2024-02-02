@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:21:18
+ * @LastEditTime: 2024-02-02 11:53:11
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -20,7 +20,8 @@ import { formatSpxCode as onlineFormatSpxCode } from "@/api/project";
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
     modelValue: '',
     height: "100%",
-    width: "100%"
+    width: "100%",
+    editorOptions:{},
 });
 const emit = defineEmits<CodeEditorEmits>()
 
@@ -52,6 +53,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
     editor.dispose()
 })
+
+watch(() => prop.editorOptions, (val) => {
+    console.log("editorOptions changed", val)
+    editor.updateOptions(val)
+}, { deep: true })
+
+
 
 watch(() => prop.modelValue, (val) => {
     if (editor) {
@@ -97,11 +105,11 @@ const insertSnippet = (fn: () => {
 }
 
 const formatCode = async () => {
-    return new Promise<FormatResponse>((resolve)=>{
-        if(false){
-          resolve(formatSPX(editor.getValue()) as FormatResponse)  
-        }else{
-            onlineFormatSpxCode(editor.getValue()).then(res=>{
+    return new Promise<FormatResponse>((resolve) => {
+        if (false) {
+            resolve(formatSPX(editor.getValue()) as FormatResponse)
+        } else {
+            onlineFormatSpxCode(editor.getValue()).then(res => {
                 resolve(res.data.data)
             })
         }
@@ -115,7 +123,8 @@ const formatCode = async () => {
  * @Date: 2024-02-01 11:55:13
  */
 const format = async () => {
- 
+
+
     const forRes = await formatCode();
     if (forRes.Body) {
         editor.setValue(forRes.Body);
