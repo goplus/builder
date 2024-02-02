@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-31 23:19:19
+ * @LastEditTime: 2024-02-01 23:47:09
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
@@ -10,7 +10,7 @@
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
       Sprite
-      <n-input  round autosize clearable default-value="Monkey"></n-input>
+      <n-input  round autosize clearable :default-value=name></n-input>
     </div>
     <div class="sprite-edit-btn">
       X
@@ -58,6 +58,7 @@ const x = computed(() => spriteStore.current ? spriteStore.current.config.x : 0)
 const y = computed(() => spriteStore.current ? spriteStore.current.config.y : 0)
 const heading = computed(() => spriteStore.current ? spriteStore.current.config.heading : 0)
 const size = computed(() => spriteStore.current ? spriteStore.current.config.size : 0)
+const name = computed(() => spriteStore.current ? spriteStore.current.config.name : 0)
 </script>
 
 <style scoped lang="scss">

@@ -88,6 +88,7 @@ watch(
 );
 // format function power by gopfmt
 const format = () => {
+  console.log('format')
   const model = editor.getModel() as monaco.editor.ITextModel;
   const forRes = formatSPX(editor.getValue());
   if (forRes.Body) {
