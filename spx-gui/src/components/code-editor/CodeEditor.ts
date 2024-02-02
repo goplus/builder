@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 16:26:20
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-01 16:06:09
+ * @LastEditTime: 2024-02-02 10:23:49
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.ts
  * @Description: 
  */
@@ -33,14 +33,14 @@ export interface EditorOptions {
         enabled: boolean
     }
     readOnly?: boolean
-    cursorStyle?: string // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
+    cursorStyle?: "line" // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
 }
 
 export interface CodeEditorProps {
     modelValue: string
     height?: string
     width?: string
-    editorOptions?: EditorOptions
+    editorOptions?: EditorOptions | {}
 }
 export interface CodeEditorEmits {
     (e: 'change', value: string): void
