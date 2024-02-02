@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 17:29:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-01 15:55:04
+ * @LastEditTime: 2024-02-02 11:20:28
  * @FilePath: /builder/spx-gui/src/components/code-editor/register.ts
  * @Description: 
  */
@@ -59,6 +59,25 @@ export const register=()=>{
     monaco.languages.register({
         id: 'spx',
     })
+
+    monaco.editor.defineTheme("myTransparentTheme", {
+        base: "vs",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#FFFFFF", // 透明背景
+          "scrollbar.shadow": "#FFFFFF00", // 滚动条阴影颜色
+          "scrollbarSlider.background": "#fa81a833", // 滚动条背景颜色
+          "scrollbarSlider.hoverBackground": "#fa81a866", // 鼠标悬停时滚动条背景颜色
+          "scrollbarSlider.activeBackground": "#fa81a899", // 激活时滚动条背景颜色
+          "scrollbarSlider.width": "8px !important", // 激活时滚动条背景颜色
+          "minimap.background": "#fa81a810", // 小地图背景颜色
+          "minimapSlider.background": "#fa81a833", // 小地图滑块背景颜色
+          "minimapSlider.hoverBackground": "#FFFFFF66", // 小地图滑块鼠标悬停背景颜色
+          "minimapSlider.activeBackground": "#FFFFFF99", // 小地图滑块激活背景颜色
+        },
+      });
+
     monaco.languages.setLanguageConfiguration('spx', LanguageConfig)
     
     // Match token and highlight

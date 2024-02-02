@@ -2,24 +2,17 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-01 11:52:40
+ * @LastEditTime: 2024-02-02 11:22:01
  * @FilePath: /builder/spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
 <template>
-    <div class="code-editor">
-        <div class="sprite">
-            <span>spx</span>
-            <n-scrollbar x-scrollable>
-                <n-button v-for="item in spriteStore.list" :key="item.name" @click="toggleCodeById(item.name)">{{
-                    item.name }}</n-button>
-            </n-scrollbar>
-
-        </div>
-        <div class="action">
-            <span>action</span>
-            <n-button @click="format">format</n-button>
-        </div>
+    <div class="code-editor-space">
+        <div class="code-button">Code</div>
+        <n-button-group class="formatBtnGroup" size="small">
+            <n-button class="" @click="format">clear</n-button>
+            <n-button class="formatBtn" @click="format">format</n-button>
+        </n-button-group>
         <CodeEditor ref="code_editor" :modelValue="currentCode" @update:modelValue="onCodeChange" />
     </div>
 </template>
@@ -93,16 +86,50 @@ const toggleCodeById = (name: string) => {
 }
 
 
-.code-editor {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+.code-button {
+  background: #cdf5ef;
+  width: 80px;
+  height: auto;
+  text-align: center;
+  position: absolute;
+  top: -2px;
+  font-size: 18px;
+  border: 2px solid #00142970;
+  border-radius: 0 0 10px 10px;
+  z-index: 2;
+}
+
+.code-editor-space {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 44px);
+  border: 2px solid #00142970;
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.formatBtnGroup {
+  z-index: 99;
+  right: 20px;
+  position: absolute;
+  .n-button {
+    background: #00000000;
+    color: #001429;
+    border: 1px solid black;
+  }
+  .n-button:hover {
+    background: #ed729e20;
+  }
 }
 
 .action,
 .sprite {
-    display: flex;
-    justify-content: end;
-    margin-top: 10px;
+  display: flex;
+  justify-content: end;
+  margin-top: 10px;
 }
 </style>

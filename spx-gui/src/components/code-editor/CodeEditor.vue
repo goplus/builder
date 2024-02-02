@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:07:59
+ * @LastEditTime: 2024-02-02 11:21:18
  * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -42,6 +42,7 @@ let editor: monaco.editor.IStandaloneCodeEditor;
 onMounted(() => {
     editor = monaco.editor.create(code_editor.value as HTMLElement, {
         value: prop.modelValue, // set the initial value of the editor
+        theme:"myTransparentTheme",
         ...editorOptions,
         ...prop.editorOptions
     })
