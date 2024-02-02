@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:53:11
- * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.vue
+ * @LastEditTime: 2024-02-02 15:31:08
+ * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
 <template>
@@ -20,8 +20,7 @@ import { formatSpxCode as onlineFormatSpxCode } from "@/api/project";
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
     modelValue: '',
     height: "100%",
-    width: "100%",
-    editorOptions:{},
+    width: "100%"
 });
 const emit = defineEmits<CodeEditorEmits>()
 
@@ -54,9 +53,10 @@ onBeforeUnmount(() => {
     editor.dispose()
 })
 
-watch(() => prop.editorOptions, (val) => {
-    console.log("editorOptions changed", val)
-    editor.updateOptions(val)
+watch(() => prop.editorOptions, (option) => {
+    if(option){
+        editor.updateOptions(option)
+    }
 }, { deep: true })
 
 
@@ -100,6 +100,7 @@ const insertSnippet = (fn: () => {
         editor.setPosition(position);
     }
     let contribution = editor.getContribution("snippetController2") as monaco.editor.IEditorContribution;
+    // @ts-ignore
     contribution.insert(snippet.insertText);
     editor.focus()
 }
@@ -107,7 +108,7 @@ const insertSnippet = (fn: () => {
 const formatCode = async () => {
     return new Promise<FormatResponse>((resolve) => {
         if (false) {
-            resolve(formatSPX(editor.getValue()) as FormatResponse)
+            resolve(formatSPX(editor.getValue()))
         } else {
             onlineFormatSpxCode(editor.getValue()).then(res => {
                 resolve(res.data.data)
