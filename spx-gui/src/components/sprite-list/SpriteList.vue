@@ -2,15 +2,16 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:19:24
+ * @LastEditTime: 2024-02-01 11:12:23
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
 <template>
   <div class="asset-library">
+    <div class="asset-library-edit-button">Edit</div>
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
-      <n-grid-item class="asset-library-left" span="3">
+      <n-grid-item  class="asset-library-left" span="3">
         <!-- S Component SpriteEditBtn -->
         <SpriteEditBtn />
         <!-- E Component SpriteEditBtn -->
@@ -22,11 +23,11 @@
             <!-- S Component ImageCardCom -->
             <ImageCardCom
               v-for="asset in spriteAssets"
-              v-if="spriteAssets.length > 0"
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :style="{ 'margin-bottom': '26px' }"
+              :style="getImageCardStyle(asset.name)"
+              @click="toggleCodeById(asset.name)"
             />
             <!-- E Component ImageCardCom -->
           </n-flex>
@@ -44,22 +45,44 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { ComputedRef, computed } from "vue";
+import { ComputedRef, computed,ref } from "vue";
 import { NGrid, NGridItem, NFlex } from "naive-ui";
 import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
 import { useSpriteStore } from "@/store/modules/sprite";
-import Sprite from "@/class/sprite"
+import Sprite from "@/class/sprite";
 
 // ----------props & emit------------------------------------
-const spriteStore = useSpriteStore()
+const spriteStore = useSpriteStore();
+const { setCurrentByName } = useSpriteStore();
+const currentActiveName = ref('');
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
-const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list  as Sprite[]);
+const spriteAssets: ComputedRef<Sprite[]> = computed(
+  () => spriteStore.list as Sprite[],
+);
 
+// ----------methods-----------------------------------------
+/**
+ * @description: A function to toggle code.
+ * @param {*} name - asset name
+ * @Author: Xu Ning
+ * @Date: 2024-02-01 10:51:23
+ */
+const toggleCodeById = (name: string) => {
+  console.log('name',name)
+  currentActiveName.value = name;
+  setCurrentByName(name);
+};
+
+const getImageCardStyle = (name: string) => {
+  return name === currentActiveName.value
+    ? { 'margin-bottom': '26px', 'box-shadow': '0px 0px 0px 4px #FF81A7' }
+    : { 'margin-bottom': '26px' };
+};
 </script>
 
 <style scoped lang="scss">
@@ -67,10 +90,36 @@ const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list  as 
 .asset-library {
   // TODO: Delete the background, it is just for check the position.
   // background:#f0f0f0;
-  .asset-library-left,
+  height: calc(60vh - 60px - 24px - 24px);
+  border: 2px solid #00142970;
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  margin: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  .asset-library-edit-button {
+    background: rgba(255, 170, 0, 0.5);
+    width: 80px;
+    height: auto;
+    text-align: center;
+    position: absolute;
+    top: -2px;
+    left:8px;
+    font-size: 18px;
+    border: 2px solid #00142970;
+    border-radius: 0 0 10px 10px;
+    z-index: 2;
+  }
   .asset-library-right {
     max-height: calc(60vh - 60px - 24px);
     overflow: scroll;
+  }
+  .asset-library-left{
+    margin-top:30px;
+    max-height: calc(60vh - 60px - 24px - 40px);
+    overflow: scroll;
+    padding:10px;
   }
 }
 </style>

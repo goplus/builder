@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 11:52:58
+ * @LastEditTime: 2024-01-31 17:55:06
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
@@ -10,7 +10,7 @@
   <div class="stage-list">
     Stage
     <div class="stage-list-space">
-      <SpriteAddBtn :type="'bg'" />
+      <SpriteAddBtn :type="'backdrop'" />
       <ImageCardCom
         :type="'bg'"
         :asset="backdrop"
@@ -41,12 +41,9 @@ const backdrop : ComputedRef<Backdrop> = computed(() => backdropStore.backdrop a
   height: calc(100% - 20px);
   padding: 10px;
   .stage-list-space {
-    background: white;
-    box-shadow: 0 5px 5px 0 #00000019;
     margin: 0 10px;
-    height: calc(100% - 20px);
+    height: calc(100% - 40px);
     overflow: scroll;
-    border-radius: 20px;
   }
 }
 </style>

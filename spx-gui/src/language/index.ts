@@ -2,8 +2,8 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-17 21:26:53
- * @FilePath: src/language/index.ts
+ * @LastEditTime: 2024-02-01 14:51:57
+ * @FilePath: /builder/spx-gui/src/language/index.ts
  * @Description:
 */
 import { App } from "vue";
@@ -17,7 +17,8 @@ export const initI18n = async (app:App) => {
             language: "English",
             tab: {
                 code: 'Code',
-                sound: 'Sound'
+                sound: 'Sounds',
+                costume:'Costume',
             },
             sounds: {
                 hint: 'Sounds',
@@ -35,7 +36,8 @@ export const initI18n = async (app:App) => {
             language: "中文",
             tab: {
                 code: '编程',
-                sound: '音频'
+                sound: '音频',
+                costume: '造型',
             },
             sounds: {
                 hint: '音频',

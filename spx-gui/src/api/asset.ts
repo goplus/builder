@@ -1,5 +1,13 @@
+/*
+ * @Author: Yao xinyue
+ * @Date: 2024-01-22 11:17:08
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-01-25 23:26:44
+ * @FilePath: /builder/spx-gui/src/api/asset.ts
+ * @Description: 
+ */
 import { service } from "@/axios";
-import {Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
+import { Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
 
 
 /**

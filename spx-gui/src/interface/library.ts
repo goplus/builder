@@ -19,7 +19,7 @@ interface Asset {
   authorId?: number;
   category?: string;
   isPublic?: number;
-  address?: string;
+  address: string;
   assetType?: number;
   status?: number;
   cTime?: number;

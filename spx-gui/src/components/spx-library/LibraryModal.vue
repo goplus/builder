@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:16:38
+ * @LastEditTime: 2024-02-01 18:13:14
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -32,7 +32,7 @@
       <!-- S Library Sub Header -->
       <div class="asset-library-sub-header">
         <n-flex>
-          <n-button size="large" v-for="category in props.categories" :key="category">
+          <n-button v-for="category in categories" :key="category" size="large">
             {{ category }}
           </n-button>
           <span class="sort-btn">
@@ -52,15 +52,29 @@
       <!-- E Library Sub Header -->
       <!-- S Library Content -->
       <div class="asset-library-content">
-        <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-          <n-grid-item v-for="spriteInfo in props.spriteInfos" :key="spriteInfo.name">
+        <n-grid
+          v-if="assetInfos.length != 0"
+          cols="3 s:4 m:5 l:6 xl:7 2xl:8"
+          responsive="screen"
+        >
+          <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
-              <SpriteCard :spriteInfo="spriteInfo" />
+              <SpriteCard
+                :asset-info="assetInfo"
+                @add-asset="handleAddAsset"
+              />
               <!-- S Component Sprite Card -->
             </div>
           </n-grid-item>
         </n-grid>
+        <n-empty
+          v-else
+          class="n-empty-style"
+          :show-icon="false"
+          size="large"
+          description="There's nothing."
+        />
       </div>
       <!-- E Library Content -->
     </template>
@@ -68,39 +82,99 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps, ref, watch } from "vue";
-import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon } from "naive-ui";
+import { defineEmits, defineProps, ref, watch, onMounted } from "vue";
+import {
+  NModal,
+  NButton,
+  NFlex,
+  NGrid,
+  NGridItem,
+  NInput,
+  NIcon,
+  NEmpty,
+} from "naive-ui";
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
-import type { SpriteInfoType } from "@/interface/library";
+import type { Asset } from "@/interface/library";
+import { AssetType } from "@/constant/constant.ts";
 import SpriteCard from "./SpriteCard.vue";
+import { getAssetList } from "@/api/asset";
 
 // ----------props & emit------------------------------------
 interface propsType {
-  spriteInfos: SpriteInfoType[];
   show: boolean;
-  categories: string[];
+  type: string;
 }
 const props = defineProps<propsType>();
-const emits = defineEmits(["update:show"]);
+const emits = defineEmits(["update:show", "add-asset-to-store"]);
 
 // ----------data related -----------------------------------
 // Ref about show modal state.
 const showModal = ref<boolean>(false);
 // Ref about search text.
 const searchQuery = ref("");
+// Const variable about sprite categories.
+// TODO: Get categories from api.
+const categories = [
+  "ALL",
+  "Animals",
+  "People",
+  "Sports",
+  "Food",
+  "Fantasy",
+];
+// Ref about sprite/backdrop information.
+const assetInfos = ref<Asset[]>([]);
+
+// ----------lifecycle hooks---------------------------------
+// onMounted hook.
+onMounted(async () => {
+  console.log('111111111',props.type)
+  if (props.type === "backdrop") {
+    assetInfos.value = await fetchAssets(AssetType.Backdrop);
+    console.log('22222222',props.type,assetInfos.value.length,assetInfos.value,'backassetInfos.length')
+  } else if (props.type === "sprite") {
+    assetInfos.value = await fetchAssets(AssetType.Sprite);
+    console.log(assetInfos.value.length,assetInfos.value,'assetInfos.length')
+    // assetInfos.value = SpriteInfosMock
+  }
+});
 
 // ----------methods-----------------------------------------
+/**
+ * @description: A function to fetch asset from backend by getAssetList.
+ * @param {*} assetType
+ * @Author: Xu Ning
+ * @Date: 2024-01-25 23:50:45
+ */
+const fetchAssets = async (assetType: number) => {
+  try {
+    const pageIndex = 1;
+    const pageSize = 20;
+    const response = await getAssetList(pageIndex, pageSize, assetType);
+    console.log('get',response,response.data,response.data.data)
+    if (response.data.data.data == null)
+      return [];
+    return response.data.data.data;
+  } catch (error) {
+    console.error("Error fetching assets:", error);
+    return [];
+  }
+};
+
 /**
  * @description: Watch the state of show.
  * @Author: Xu Ning
  * @Date: 2024-01-17 23:42:44
  */
-watch(() => props.show, (newShow) => {
-  if (newShow) {
-    showModal.value = newShow
-  }
-});
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow) {
+      showModal.value = newShow;
+    }
+  },
+);
 
 /**
  * @description: A function about closing modal.
@@ -108,12 +182,22 @@ watch(() => props.show, (newShow) => {
  * @Date: 2024-01-17 23:42:57
  */
 const closeModalFunc = () => {
-  emits('update:show', false);
-}
+  emits("update:show", false);
+};
 
+/**
+ * @description: A function to emit add object.
+ * @param {*} name
+ * @Author: Xu Ning
+ * @Date: 2024-01-30 11:51:05
+ */
+const handleAddAsset = (name: string, address: string) => {
+  console.log('libraryModal handleAddAsset',name,address)
+  emits("add-asset-to-store", name, address);
+};
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 @import "@/assets/theme.scss";
 .asset-library-sub-header {
   background: $asset-library-card-title-2;
@@ -132,6 +216,14 @@ const closeModalFunc = () => {
 
 .asset-library-content {
   margin: 60px 0 20px 0;
+  min-height: 300px;
+  .n-empty-style {
+    min-height: 300px;
+    line-height: 300px;
+    .n-empty__description {
+      line-height: 300px;
+    }
+  }
 }
 .asset-library-sprite-item {
   display: flex;
