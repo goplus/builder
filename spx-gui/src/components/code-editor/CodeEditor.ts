@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 16:26:20
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 10:23:49
- * @FilePath: /builder/spx-gui/src/components/code-editor/CodeEditor.ts
+ * @LastEditTime: 2024-02-02 15:26:45
+ * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
@@ -40,7 +40,7 @@ export interface CodeEditorProps {
     modelValue: string
     height?: string
     width?: string
-    editorOptions?: EditorOptions | {}
+    editorOptions?: EditorOptions 
 }
 export interface CodeEditorEmits {
     (e: 'change', value: string): void
