@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-26 19:07:52
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 11:51:03
+ * @LastEditTime: 2024-02-04 13:23:31
  * @FilePath: /spx-gui/src/components/code-editor-demo/CodeEditorDemo.vue
  * @Description: 
 -->
@@ -21,7 +21,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import CodeEditor, { onStartSnippet } from "../code-editor/index.ts"
+import CodeEditor, { onStartSnippet } from "../code-editor"
 import { ref, computed } from "vue"
 let codeEditor = ref();
 const editorOptions = ref({
@@ -68,4 +68,4 @@ const format = () => {
     display: flex;
     justify-content: center;
 }
-</style>../code-editor/code-editor../code-editor/index.ts
+</style>

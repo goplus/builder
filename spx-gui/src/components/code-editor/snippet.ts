@@ -1,4 +1,4 @@
-import { monaco, Snippet } from ".";
+import { monaco, Snippet } from "./index";
 // motion snippet
 export const stepSnippet: Snippet = {
     label: "step",

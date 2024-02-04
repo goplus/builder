@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-22 09:12:31
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 11:43:44
+ * @LastEditTime: 2024-02-04 13:11:59
  * @FilePath: /spx-gui/src/components/spx-code-editor/ToolBox.vue
  * @Description:Code Editor Toolbox
 -->
@@ -58,4 +58,4 @@ const insertCode = (snippet: monaco.languages.CompletionItem) => {
   color: #333333;
   margin-right: 3px;
 }
-</style>@/components/code-editor/snippet
+</style>
