@@ -38,7 +38,7 @@ It exposes the method of formatting the code, allowing the user to trigger the f
 |Name| Type | Description |
 | --------- | -------- | ------- | 
 |`onStartSnippet`,`stepSnippet`,`changeEffectSnippet`...|Snippet|Default spx snippet|
-|`motion_fn_completions`,`event_fn_completions`,`control_fn_completions`,`sound_fn_completions`,`look_fn_completions`|Snippet[]|Code snippets of different categories|
+|`motionSnippets`,`eventSnippets`,`controlSnippets`,`soundSnippets`,`lookSnippets`|Snippet[]|Code snippets of different categories|
 
 ## Example Usage
 In the following example, we configure the `editor-options` to `{minimap: {enabled: false}, readOnly: false}`, the current configuration determines that minimap is not displayed and writable. 
