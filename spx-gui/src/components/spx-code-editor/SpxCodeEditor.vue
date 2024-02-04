@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:19:59
- * @FilePath: /builder/spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
+ * @LastEditTime: 2024-02-04 11:52:42
+ * @FilePath: /spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
 <template>
@@ -18,14 +18,12 @@
 </template>
   
 <script setup lang="ts">
-import CodeEditor from "@/components/code-editor/CodeEditor"
+import CodeEditor, { monaco } from "@/components/code-editor"
 import { onBeforeUnmount, onMounted, ref, watch, computed } from 'vue';
-import { monaco, options } from "@/plugins/code-editor/index"
 import { useEditorStore } from "@/store"
 import { useSpriteStore } from '@/store/modules/sprite';
 import { storeToRefs } from 'pinia'
-import { NButton } from 'naive-ui';
-
+import { NButton } from "naive-ui"
 const { setCurrentByName } = useSpriteStore()
 const spriteStore = useSpriteStore()
 const store = useEditorStore();
@@ -51,11 +49,9 @@ const format = () => {
 
 // Listen for insert events triggered by store, registered with store.$onAction
 const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
-    code_editor.value.insertSnippet(() => {
-        return {
-            snippet
-        }
-    })
+    code_editor.value.insertSnippet(
+        snippet
+    )
 }
 
 
@@ -87,49 +83,52 @@ const toggleCodeById = (name: string) => {
 
 
 .code-button {
-  background: #cdf5ef;
-  width: 80px;
-  height: auto;
-  text-align: center;
-  position: absolute;
-  top: -2px;
-  font-size: 18px;
-  border: 2px solid #00142970;
-  border-radius: 0 0 10px 10px;
-  z-index: 2;
+    background: #cdf5ef;
+    width: 80px;
+    height: auto;
+    text-align: center;
+    position: absolute;
+    top: -2px;
+    font-size: 18px;
+    border: 2px solid #00142970;
+    border-radius: 0 0 10px 10px;
+    z-index: 2;
 }
 
 .code-editor-space {
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - 44px);
-  border: 2px solid #00142970;
-  position: relative;
-  background: white;
-  border-radius: 24px;
-  padding: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 44px);
+    border: 2px solid #00142970;
+    position: relative;
+    background: white;
+    border-radius: 24px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .formatBtnGroup {
-  z-index: 99;
-  right: 20px;
-  position: absolute;
-  .n-button {
-    background: #00000000;
-    color: #001429;
-    border: 1px solid black;
-  }
-  .n-button:hover {
-    background: #ed729e20;
-  }
+    z-index: 99;
+    right: 20px;
+    position: absolute;
+
+    .n-button {
+        background: #00000000;
+        color: #001429;
+        border: 1px solid black;
+    }
+
+    .n-button:hover {
+        background: #ed729e20;
+    }
 }
 
 .action,
 .sprite {
-  display: flex;
-  justify-content: end;
-  margin-top: 10px;
+    display: flex;
+    justify-content: end;
+    margin-top: 10px;
 }
 </style>
+@/components/code-editor/code-editor../code-editor

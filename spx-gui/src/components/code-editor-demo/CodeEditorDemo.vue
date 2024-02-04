@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-26 19:07:52
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 10:16:30
- * @FilePath: /builder/spx-gui/src/components/code-editor-demo/CodeEditorDemo.vue
+ * @LastEditTime: 2024-02-04 11:51:03
+ * @FilePath: /spx-gui/src/components/code-editor-demo/CodeEditorDemo.vue
  * @Description: 
 -->
 <template>
@@ -12,17 +12,16 @@
         <div>
             <button @click="format">format</button>
             <button @click="insertSnippet">start snippet</button>
-            <button @click="toggleReadOnly">{{ editorOptions.readOnly ? 'disable' :  'enable'}} readonly</button>
+            <button @click="toggleReadOnly">{{ editorOptions.readOnly ? 'disable' : 'enable' }} readonly</button>
             <div v-for="(item, index) in codeArray" @click="codeIndex = index"> code: {{ index }} </div>
         </div>
 
-        <CodeEditor width="500px" height="500px" ref="codeEditor"
-            :editor-options="editorOptions" :model-value="editorContent"
-            @update:model-value="onCodeChange" />
+        <CodeEditor width="500px" height="500px" ref="codeEditor" :editor-options="editorOptions"
+            :model-value="editorContent" @update:model-value="onCodeChange" />
     </div>
 </template>
 <script setup lang="ts">
-import CodeEditor, { onStartSnippet } from "../code-editor/CodeEditor"
+import CodeEditor, { onStartSnippet } from "../code-editor/index.ts"
 import { ref, computed } from "vue"
 let codeEditor = ref();
 const editorOptions = ref({
@@ -42,11 +41,9 @@ const codeArray = ref([{
 }])
 
 const insertSnippet = () => {
-    codeEditor.value.insertSnippet(() => {
-        return {
-            snippet: onStartSnippet
-        }
-    });
+    codeEditor.value.insertSnippet(
+        onStartSnippet
+    );
 }
 
 const onCodeChange = (e: string) => {
@@ -71,4 +68,4 @@ const format = () => {
     display: flex;
     justify-content: center;
 }
-</style>
+</style>../code-editor/code-editor../code-editor/index.ts

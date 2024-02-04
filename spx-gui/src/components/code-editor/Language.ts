@@ -6,8 +6,8 @@
  * @FilePath: /builder/spx-gui/src/components/code-editor/Language.ts
  * @Description: 
  */
-import { monaco } from "./CodeEditor"
-import function_completions from "./Snippet";
+import { monaco } from "."
+import function_completions from "./snippet";
 const keywords = [
     "func",
     "main",

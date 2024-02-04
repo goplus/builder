@@ -6,10 +6,10 @@
  * @FilePath: /builder/spx-gui/src/components/code-editor/register.ts
  * @Description: 
  */
-import { keywords, typeKeywords, LanguageConfig, MonarchTokensProviderConfig } from './Language'
+import { keywords, typeKeywords, LanguageConfig, MonarchTokensProviderConfig } from './language'
 import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
-import function_completions from './Snippet';
-import { monaco } from './CodeEditor';
+import function_completions from './snippet';
+import { monaco } from '.';
 function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {
     return [
         ...keywords.map((keyword) => ({

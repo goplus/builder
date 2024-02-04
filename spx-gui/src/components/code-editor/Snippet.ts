@@ -1,8 +1,6 @@
-import { ExitToAppRound } from "@vicons/material";
-import { monaco, Snippet } from "./CodeEditor";
+import { monaco, Snippet } from ".";
 // motion snippet
 export const stepSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "step",
     insertText: "step ${1:}",
     insertTextRules:
@@ -11,7 +9,6 @@ export const stepSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const moveSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "move",
     insertText: "move ${1:}",
     insertTextRules:
@@ -20,7 +17,6 @@ export const moveSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const turnSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "turn",
     insertText: "turn ${1:}",
     insertTextRules:
@@ -29,7 +25,6 @@ export const turnSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const changeHeadingSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "changeHeading",
     insertText: "changeHeading ${1:}",
     insertTextRules:
@@ -38,7 +33,7 @@ export const changeHeadingSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const gotoSnippet: Snippet = {
-    spxSnippetType: "motion",
+
     label: "goto",
     insertText: "goto ${1:}",
     insertTextRules:
@@ -47,7 +42,6 @@ export const gotoSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const setXYposSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "setXYpos",
     insertText: "setXYpos ${1:X}, ${2:Y}",
     insertTextRules:
@@ -56,7 +50,6 @@ export const setXYposSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const glideSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "glide",
     insertText: "glide ${1:X} ${2:Y} ${3:N}",
     insertTextRules:
@@ -65,7 +58,6 @@ export const glideSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const turnToSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "turnTo",
     insertText: "turnTo ${1:}",
     insertTextRules:
@@ -74,7 +66,7 @@ export const turnToSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const setHeadingSnippet: Snippet = {
-    spxSnippetType: "motion",
+
     label: "setHeading",
     insertText: "setHeading ${1:}",
     insertTextRules:
@@ -83,7 +75,7 @@ export const setHeadingSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const setRotationStyleSnippet: Snippet = {
-    spxSnippetType: "motion",
+
     label: "setRotationStyle",
     insertText: "setRotationStyle",
     insertTextRules:
@@ -92,7 +84,6 @@ export const setRotationStyleSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const changeXposSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "changeXpos",
     insertText: "changeXpos ${1:}",
     insertTextRules:
@@ -101,7 +92,6 @@ export const changeXposSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const setXposSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "setXpos",
     insertText: "setXpos ${1:}",
     insertTextRules:
@@ -111,7 +101,6 @@ export const setXposSnippet: Snippet = {
 }
 
 export const changeYposSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "changeYpos",
     insertText: "changeYpos ${1:}",
     insertTextRules:
@@ -120,7 +109,6 @@ export const changeYposSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const setYposSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "setYpos",
     insertText: "setYpos ${1:}",
     insertTextRules:
@@ -129,7 +117,7 @@ export const setYposSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const changeXYposSnippet: Snippet = {
-    spxSnippetType: "motion",
+
     label: "changeXYpos",
     insertText: "changeXYpos ${1:X}, ${2:Y}",
     insertTextRules:
@@ -139,7 +127,6 @@ export const changeXYposSnippet: Snippet = {
 }
 
 export const bounceOffEdgeSnippet: Snippet = {
-    spxSnippetType: "motion",
     label: "bounceOffEdge",
     insertText: "bounceOffEdge ${1:}",
     insertTextRules:
@@ -152,7 +139,6 @@ export const bounceOffEdgeSnippet: Snippet = {
 // look snippet
 
 export const saySnippet: Snippet = {
-    spxSnippetType: "look",
     label: "say",
     insertText: "say ${1:}",
     insertTextRules:
@@ -163,7 +149,6 @@ export const saySnippet: Snippet = {
 }
 
 export const thinkSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "think",
     insertText: "think ${1:}",
     insertTextRules:
@@ -173,7 +158,6 @@ export const thinkSnippet: Snippet = {
     detail: "This is a think function",
 }
 export const setCostumeSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "setCostume",
     insertText: "setCostume ${1:costumeName}",
     insertTextRules:
@@ -183,7 +167,6 @@ export const setCostumeSnippet: Snippet = {
     detail: "This is a setCostume function",
 }
 export const nextCostumeSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "nextCostume",
     insertText: "nextCostume",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -191,7 +174,6 @@ export const nextCostumeSnippet: Snippet = {
     detail: "This is a nextCostume function",
 }
 export const prevCostumeSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "prevCostume",
     insertText: "prevCostume",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -199,7 +181,6 @@ export const prevCostumeSnippet: Snippet = {
     detail: "This is a prevCostume function",
 }
 export const animateSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "animate",
     insertText: "animate ${1:name}",
     insertTextRules:
@@ -210,7 +191,6 @@ export const animateSnippet: Snippet = {
 }
 
 export const startSceneSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "startScene ",
     insertText: "startScene ${1:costumeName}, ${2:wait}",
     insertTextRules:
@@ -220,7 +200,6 @@ export const startSceneSnippet: Snippet = {
     detail: "This is a startScene function",
 }
 export const nextSceneSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "nextScene",
     insertText: "nextScene ${1:condition}",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -228,7 +207,6 @@ export const nextSceneSnippet: Snippet = {
     detail: "This is a nextScene function",
 }
 export const CameraSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "Camera",
     insertText: "Camera",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -236,7 +214,6 @@ export const CameraSnippet: Snippet = {
     detail: "This is a Camera function",
 }
 export const changeSizeSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "changeSize",
     insertText: "changeSize ${1:N}",
     insertTextRules:
@@ -246,7 +223,6 @@ export const changeSizeSnippet: Snippet = {
     detail: "This is a changeSize function",
 }
 export const setSizeSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "setSize",
     insertText: "setSize ${1:G}, ${2:N}",
     insertTextRules:
@@ -256,7 +232,6 @@ export const setSizeSnippet: Snippet = {
     detail: "This is a setSize function",
 }
 export const clearGraphEffectsSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "clearGraphEffects",
     insertText: "clearGraphEffects",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -264,7 +239,6 @@ export const clearGraphEffectsSnippet: Snippet = {
     detail: "This is clearGraphEffects function",
 }
 export const showSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "show",
     insertText: "show",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -272,7 +246,6 @@ export const showSnippet: Snippet = {
     detail: "This is show function",
 }
 export const hideSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "hide",
     insertText: "hide",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -280,7 +253,6 @@ export const hideSnippet: Snippet = {
     detail: "This is hide function",
 }
 export const gotoFrontSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "gotoFront",
     insertText: "gotoFront",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -289,7 +261,6 @@ export const gotoFrontSnippet: Snippet = {
 }
 
 export const gotoBackSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "gotoBack",
     insertText: "gotoBack",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -297,7 +268,6 @@ export const gotoBackSnippet: Snippet = {
     detail: "This is gotoBack function",
 }
 export const goBackLayersSnippet: Snippet = {
-    spxSnippetType: "look",
     label: "goBackLayers",
     insertText: "goBackLayers ${1:N}",
     insertTextRules:
@@ -311,7 +281,6 @@ export const goBackLayersSnippet: Snippet = {
 
 
 export const playSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "play",
     insertText: "play ${1:S}, ${2:condition}",
     insertTextRules:
@@ -321,7 +290,6 @@ export const playSnippet: Snippet = {
     detail: "play function with condition",
 }
 export const stopAllSoundsSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "stopAllSounds",
     insertText: "stopAllSounds",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -329,7 +297,6 @@ export const stopAllSoundsSnippet: Snippet = {
     detail: "This is stopAllSounds function",
 }
 export const changeEffectSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "changeEffect",
     insertText: "changeEffect ${1:S}, ${2:N}",
     insertTextRules:
@@ -339,7 +306,6 @@ export const changeEffectSnippet: Snippet = {
     detail: "This is changeEffect function",
 }
 export const setEffectSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "setEffect",
     insertText: "setEffect ${1:S}, ${2:N}",
     insertTextRules:
@@ -349,7 +315,6 @@ export const setEffectSnippet: Snippet = {
     detail: "This is setEffect function",
 }
 export const clearSoundEffectSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "clearSoundEffect",
     insertText: "clearSoundEffect",
     kind: monaco.languages.CompletionItemKind.Function,
@@ -357,7 +322,6 @@ export const clearSoundEffectSnippet: Snippet = {
     detail: "This is clearSoundEffect function",
 }
 export const changeVolumeSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "changeVolume",
     insertText: "changeVolume ${1:N}",
     insertTextRules:
@@ -368,7 +332,6 @@ export const changeVolumeSnippet: Snippet = {
 }
 
 export const setVolumeSnippet: Snippet = {
-    spxSnippetType: "sound",
     label: "setVolume",
     insertText: "setVolume ${1:N}",
     insertTextRules:
@@ -380,7 +343,6 @@ export const setVolumeSnippet: Snippet = {
 // control snippet
 
 export const waitSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "wait",
     insertText: "wait ${1:seconds}",
     insertTextRules:
@@ -391,7 +353,6 @@ export const waitSnippet: Snippet = {
 }
 
 export const forSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "for",
     insertText: "for ${1:} {\n\t${2:}\t\n}",
     insertTextRules:
@@ -401,7 +362,6 @@ export const forSnippet: Snippet = {
     detail: "This is a for function",
 }
 export const forRangeSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "forr",
     insertText: "for range :${1:N} {\n\t${2:code}\t\n}",
     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
@@ -410,7 +370,6 @@ export const forRangeSnippet: Snippet = {
     detail: "This is a for range function",
 }
 export const stopSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "stop",
     insertText: "stop ${1:all}",
     insertTextRules:
@@ -420,7 +379,6 @@ export const stopSnippet: Snippet = {
     detail: "This is a stop function",
 }
 export const onClonedSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "onCloned",
     insertText: "onCloned => {\n\t${1:param}\t\n}",
     insertTextRules:
@@ -430,7 +388,6 @@ export const onClonedSnippet: Snippet = {
     detail: "This is a onCloned function",
 }
 export const cloneSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "clone",
     insertText: "clone ${1:param}",
     insertTextRules:
@@ -440,7 +397,6 @@ export const cloneSnippet: Snippet = {
     detail: "This is a clone function",
 }
 export const destroySnippet: Snippet = {
-    spxSnippetType: "control",
     label: "destroy",
     insertText: "destroy ${1:param}",
     insertTextRules:
@@ -450,7 +406,6 @@ export const destroySnippet: Snippet = {
     detail: "This is a destroy function",
 }
 export const dieSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "die",
     insertText: "die ${1:param}",
     insertTextRules:
@@ -460,7 +415,6 @@ export const dieSnippet: Snippet = {
     detail: "This is a die function",
 }
 export const setDyingSnippet: Snippet = {
-    spxSnippetType: "control",
     label: "setDying",
     insertText: "setDying ${1:param}",
     insertTextRules:
@@ -471,7 +425,6 @@ export const setDyingSnippet: Snippet = {
 }
 // event snippet
 export const onStartSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onStart",
     insertText: "onStart => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -481,7 +434,6 @@ export const onStartSnippet: Snippet = {
     detail: "This is onStart Function",
 }
 export const onAnyKeySnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onAnyKey",
     insertText: "onAnyKey ${1:key} => {\n\t${2:condition}\t\n}",
     insertTextRules:
@@ -491,7 +443,6 @@ export const onAnyKeySnippet: Snippet = {
     detail: "This is onAnyKey Function",
 }
 export const onKeySnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onKey",
     insertText: "onKey ${1:key},=> {\n\t${2:condition}\t\n}",
     insertTextRules:
@@ -500,7 +451,6 @@ export const onKeySnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const onEndSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onEnd",
     insertText: "onEnd => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -509,7 +459,6 @@ export const onEndSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const onClickSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onClick",
     insertText: "onClick => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -519,7 +468,6 @@ export const onClickSnippet: Snippet = {
     detail: "This is a click event",
 }
 export const onMsgSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onMsg",
     insertText: "onMsg ${1:key},=> {\n\t${2:condition}\t\n}",
     insertTextRules:
@@ -528,7 +476,6 @@ export const onMsgSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const onSceneSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onScene",
     insertText: "onScene => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -537,7 +484,6 @@ export const onSceneSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const onMovingSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onMoving",
     insertText: "onMoving => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -546,7 +492,6 @@ export const onMovingSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const onTurningSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "onTurning",
     insertText: "onTurning => {\n\t${1:condition}\t\n}",
     insertTextRules:
@@ -555,7 +500,6 @@ export const onTurningSnippet: Snippet = {
     range: new monaco.Range(1, 1, 1, 1),
 }
 export const broadcastSnippet: Snippet = {
-    spxSnippetType: "event",
     label: "broadcast",
     insertText: 'broadcast "${1:condition}"',
     insertTextRules:
@@ -563,7 +507,7 @@ export const broadcastSnippet: Snippet = {
     kind: monaco.languages.CompletionItemKind.Function,
     range: new monaco.Range(1, 1, 1, 1),
 }
-const motion_fn_completions = [
+const motionSnippets = [
     stepSnippet,
     moveSnippet,
     turnSnippet,
@@ -581,7 +525,7 @@ const motion_fn_completions = [
     changeXYposSnippet,
     bounceOffEdgeSnippet,
 ]
-const look_fn_completions = [
+const lookSnippets = [
     saySnippet,
     thinkSnippet,
     setCostumeSnippet,
@@ -601,7 +545,7 @@ const look_fn_completions = [
     gotoBackSnippet,
     goBackLayersSnippet
 ]
-const sound_fn_completions = [
+const soundSnippets = [
     playSnippet,
     stopAllSoundsSnippet,
     changeEffectSnippet,
@@ -610,7 +554,7 @@ const sound_fn_completions = [
     changeVolumeSnippet,
     setVolumeSnippet,
 ]
-const control_fn_completions = [
+const controlSnippets = [
     waitSnippet,
     forSnippet,
     forRangeSnippet,
@@ -621,7 +565,7 @@ const control_fn_completions = [
     dieSnippet,
     setDyingSnippet,
 ]
-const event_fn_completions = [
+const eventSnippets = [
     onStartSnippet,
     onAnyKeySnippet,
     onKeySnippet,
@@ -634,17 +578,17 @@ const event_fn_completions = [
     broadcastSnippet,
 ]
 const function_completions = [
-    ...motion_fn_completions,
-    ...event_fn_completions,
-    ...control_fn_completions,
-    ...sound_fn_completions,
-    ...look_fn_completions,
+    ...motionSnippets,
+    ...eventSnippets,
+    ...controlSnippets,
+    ...soundSnippets,
+    ...lookSnippets,
 ];
 export default function_completions;
 export {
-    motion_fn_completions,
-    event_fn_completions,
-    control_fn_completions,
-    sound_fn_completions,
-    look_fn_completions,
+    motionSnippets,
+    eventSnippets,
+    controlSnippets,
+    soundSnippets,
+    lookSnippets,
 }

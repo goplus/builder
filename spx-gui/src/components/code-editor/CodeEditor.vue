@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 15:31:08
+ * @LastEditTime: 2024-02-04 11:50:32
  * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -12,9 +12,9 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue';
-import { monaco } from "./CodeEditor"
+import { monaco } from "./index.ts"
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import { CodeEditorProps, CodeEditorEmits, editorOptions, FormatError, FormatResponse } from './CodeEditor';
+import { CodeEditorProps, CodeEditorEmits, editorOptions, FormatError, FormatResponse } from "./index.ts";
 import { formatSpxCode as onlineFormatSpxCode } from "@/api/project";
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -42,7 +42,7 @@ let editor: monaco.editor.IStandaloneCodeEditor;
 onMounted(() => {
     editor = monaco.editor.create(code_editor.value as HTMLElement, {
         value: prop.modelValue, // set the initial value of the editor
-        theme:"myTransparentTheme",
+        theme: "myTransparentTheme",
         ...editorOptions,
         ...prop.editorOptions
     })
@@ -54,7 +54,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => prop.editorOptions, (option) => {
-    if(option){
+    if (option) {
         editor.updateOptions(option)
     }
 }, { deep: true })
@@ -91,11 +91,10 @@ const onEditorValueChange = (e: monaco.editor.IModelContentChangedEvent) => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-31 13:46:49
  */
-const insertSnippet = (fn: () => {
-    position?: monaco.Position
-    snippet: monaco.languages.CompletionItem
-}) => {
-    const { snippet, position } = fn();
+const insertSnippet = (
+    snippet: monaco.languages.CompletionItem,
+    position?: monaco.Position,
+) => {
     if (position) {
         editor.setPosition(position);
     }
@@ -152,8 +151,8 @@ defineExpose({
 
 <style>
 .decorationsOverviewRuler {
-  border-radius: 25px;
-  width: 8px !important;
+    border-radius: 25px;
+    width: 8px !important;
 }
 </style>
 <style scoped>
@@ -162,3 +161,4 @@ defineExpose({
     width: v-bind("prop.width");
 }
 </style>
+./code-editor./code-editor..

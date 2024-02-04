@@ -7,7 +7,7 @@
  * @Description: 
  */
 import { defineStore } from "pinia";
-import { monaco } from "@/components/code-editor/CodeEditor";
+import { monaco } from "@/components/code-editor";
 
 export const useEditorStore = defineStore('editor', () => {
     /**

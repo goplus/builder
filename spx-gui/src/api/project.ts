@@ -1,6 +1,7 @@
 import type { Project } from "@/interface/library";
 import { service,ResponseData } from "@/axios";
-import { FormatResponse } from "@/components/code-editor/CodeEditor";
+import { FormatResponse } from "@/components/code-editor";
+import {Project} from "@/interface/library.ts";
 import { AxiosResponse } from "axios";
 
 /**

@@ -6,7 +6,7 @@
  * @FilePath: /spx-gui/src/global.d.ts
  * @Description: The global declaration.
  */
-import { FormatResponse } from "./components/code-editor/CodeEditor";
+import { FormatResponse } from "./components/code-editor";
 /**
  * Add global declaration for File with url property.
  */

@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-22 09:12:31
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:23:44
- * @FilePath: /builder/spx-gui/src/components/spx-code-editor/ToolBox.vue
+ * @LastEditTime: 2024-02-04 11:43:44
+ * @FilePath: /spx-gui/src/components/spx-code-editor/ToolBox.vue
  * @Description:Code Editor Toolbox
 -->
 <template>
@@ -19,30 +19,29 @@
   </div>
 </template>
 <script setup lang="ts">
-import { monaco } from "@/plugins/code-editor/index";
-import { motion_fn_completions, event_fn_completions, look_fn_completions, control_fn_completions, sound_fn_completions } from "@/components/code-editor/Snippet"
+import { monaco, motionSnippets, eventSnippets, lookSnippets, controlSnippets, soundSnippets } from "@/components/code-editor"
 import { NButton, NTabs, NTabPane } from "naive-ui";
 import { useEditorStore } from "@/store";
 import { toRaw, ref } from "vue";
 const store = useEditorStore();
-console.log(motion_fn_completions)
+console.log(motionSnippets)
 let completionToolbox = ref([
   {
     label: 'event',
-    completionItems: event_fn_completions
+    completionItems: eventSnippets
   },
   {
     label: 'look',
-    completionItems: look_fn_completions
+    completionItems: lookSnippets
   }, {
     label: "motion",
-    completionItems: motion_fn_completions
+    completionItems: motionSnippets
   }, {
     label: "sound",
-    completionItems: sound_fn_completions
+    completionItems: soundSnippets
   }, {
     label: "control",
-    completionItems: control_fn_completions
+    completionItems: controlSnippets
   }
 ]);
 // dispatch insertCode
@@ -52,11 +51,11 @@ const insertCode = (snippet: monaco.languages.CompletionItem) => {
 };
 </script>
 <style scoped lang="scss">
-.n-button{
+.n-button {
   width: auto;
   border: 1px solid #FF81A7;
   background: #ed729d10;
-  color:#333333;
-  margin-right:3px;
+  color: #333333;
+  margin-right: 3px;
 }
-</style>
+</style>@/components/code-editor/snippet

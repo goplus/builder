@@ -2,19 +2,18 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 16:26:20
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 15:26:45
- * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.ts
+ * @LastEditTime: 2024-02-04 11:26:26
+ * @FilePath: /spx-gui/src/components/code-editor/code-editor.ts
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
 import CodeEditor from "./CodeEditor.vue"
 
-import { register } from './Register';
-import { editorOptions } from "./Language"
+import { register } from './register.ts';
+import { editorOptions } from "./language.ts"
 export default CodeEditor;
 
 export interface Snippet extends monaco.languages.CompletionItem {
-    spxSnippetType: string;
 }
 
 export interface FormatError {
@@ -46,7 +45,7 @@ export interface CodeEditorEmits {
     (e: 'change', value: string): void
     (e: 'update:modelValue', value: string): void
 }
-export * from "./Snippet"
+export * from "./snippet.ts"
 export {
     monaco,
     register,
