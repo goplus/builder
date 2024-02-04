@@ -9,7 +9,7 @@
 import type { BackdropConfig, Scene } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
 
 /**
  * @class Backdrop
@@ -46,7 +46,7 @@ import { rawFile } from "@/types/file";
  * backdrop.config = backdrop.genDefualtConfig()
  */
 
-export default class Backdrop extends AssetBase implements file {
+export default class Backdrop extends AssetBase {
     /**
      * The root path of the backdrop.
      */
@@ -80,7 +80,6 @@ export default class Backdrop extends AssetBase implements file {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        // @ts-ignore
         return await getAllFromLocal(Backdrop);
     }
 

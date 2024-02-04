@@ -107,8 +107,8 @@ import { Project } from "@/store/modules/project"
 import Backdrop from "@/class/backdrop"
 import Sound from "@/class/sound"
 import Sprite from "@/class/sprite"
-import { Config } from "@/interface/file"
-import { FileType, dirPath, rawDir, rawFile } from "@/types/file"
+import type { Config } from "@/interface/file"
+import type { FileType, dirPath, rawDir, rawFile } from "@/types/file"
 import JSZip from "jszip"
 
 /**

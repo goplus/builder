@@ -10,9 +10,9 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import * as fs from '@/util/FileSystem'
-import { FileType, dirPath, rawDir } from "@/types/file";
+import type { FileType, dirPath, rawDir } from "@/types/file";
 import { convertDirPathToProject, convertRawDirToDirPath, convertRawDirToZip, getDirPathFromZip } from "@/util/file";
-import saveAs from "file-saver";
+import { saveAs } from "file-saver";
 import { SoundList, SpriteList } from "@/class/AssetList";
 import Backdrop from '@/class/backdrop';
 

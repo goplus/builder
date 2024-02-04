@@ -10,7 +10,7 @@
 import Sprite from "@/class/sprite"
 import Sound from "@/class/sound"
 import Backdrop from "@/class/backdrop"
-import { Config } from "@/interface/file"
+import type { Config } from "@/interface/file"
 
 export type codeType = {
     path: string,

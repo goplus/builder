@@ -1,4 +1,4 @@
-import { FileType } from '@/types/file';
+import type { FileType } from '@/types/file';
 import localforage from 'localforage';
 
 const storage = localforage.createInstance({

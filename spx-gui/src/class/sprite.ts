@@ -7,7 +7,6 @@
  * @Description: The class of a sprite.
  */
 
-import type file from "@/interface/file";
 import type { Costume, SpriteConfig } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
@@ -58,7 +57,7 @@ import type { rawFile } from "@/types/file";
  * spt1.config = spt1.genDefualtConfig()
  */
 
-export default class Sprite extends AssetBase implements file {
+export default class Sprite extends AssetBase {
     /**
      * The root path of the sprites.
      */
@@ -97,7 +96,6 @@ export default class Sprite extends AssetBase implements file {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        // @ts-ignore
         return await getAllFromLocal(Sprite);
     }
 
