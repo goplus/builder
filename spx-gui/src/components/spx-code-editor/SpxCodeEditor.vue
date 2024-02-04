@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 11:52:42
+ * @LastEditTime: 2024-02-04 13:10:42
  * @FilePath: /spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
@@ -131,4 +131,3 @@ const toggleCodeById = (name: string) => {
     margin-top: 10px;
 }
 </style>
-@/components/code-editor/code-editor../code-editor

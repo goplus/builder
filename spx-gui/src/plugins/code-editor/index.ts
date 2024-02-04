@@ -5,7 +5,7 @@
  * @Description: 
  */
 
-import { register } from '@/components/code-editor/register';
+import { register } from '@/components/code-editor';
 
 const initCodeEditor = async () => {
     register();

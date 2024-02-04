@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 11:50:32
+ * @LastEditTime: 2024-02-04 13:32:13
  * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -12,9 +12,9 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue';
-import { monaco } from "./index.ts"
+import { monaco } from "./index"
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import { CodeEditorProps, CodeEditorEmits, editorOptions, FormatError, FormatResponse } from "./index.ts";
+import { CodeEditorProps, CodeEditorEmits, editorOptions, FormatError, FormatResponse } from "./index";
 import { formatSpxCode as onlineFormatSpxCode } from "@/api/project";
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -161,4 +161,3 @@ defineExpose({
     width: v-bind("prop.width");
 }
 </style>
-./code-editor./code-editor..
