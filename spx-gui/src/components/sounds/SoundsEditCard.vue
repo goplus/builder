@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 
-import { Asset } from "@/interface/library";
+import { type Asset } from "@/interface/library";
 import { defineProps } from "vue";
 
 const props = defineProps({

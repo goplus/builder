@@ -6,10 +6,11 @@
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
-import file, { SoundConfig } from "@/interface/file";
+import type file from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
+import type { SoundConfig } from '@/interface/file';
 
 /**
  * @class Sound

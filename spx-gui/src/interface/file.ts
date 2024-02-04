@@ -8,7 +8,7 @@
  */
 
 import FileWithUrl from "@/class/FileWithUrl";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
 
 /**
  * file interface
