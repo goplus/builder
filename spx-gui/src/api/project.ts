@@ -1,5 +1,8 @@
-import { service } from "@/axios";
-import {Project} from "@/interface/library.ts";
+import type { Project } from "@/interface/library";
+import { service } from "@/axios"
+import type { ResponseData } from "@/axios";
+import type { FormatResponse } from "@/components/code-editor";
+import type { AxiosResponse } from "axios";
 
 /**
  * Saves a project.
@@ -32,7 +35,7 @@ export function saveProject(name: string, uid: number, file: File): Promise<Proj
  * @param body The string content to be formatted.
  * @returns string
  */
-export function formatSpxCode(body: string): Promise<string> {
+export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<FormatResponse>>> {
     const url = '/project/fmt';
     const formData = new FormData();
     formData.append('body', body);

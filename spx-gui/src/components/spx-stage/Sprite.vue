@@ -24,7 +24,7 @@ import type { SpriteConfig, Costume as CostumeConfig } from "@/interface/file";
 import SpriteType from "@/class/sprite"
 
 import Costume from "./Costume.vue"
-import { defineProps, onMounted, computed, defineEmits, ComputedRef, Ref } from "vue"
+import { defineProps, onMounted, computed, defineEmits, type ComputedRef } from "vue"
 
 // ----------props & emit------------------------------------
 const props = defineProps<{

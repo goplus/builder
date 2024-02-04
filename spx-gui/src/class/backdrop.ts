@@ -1,16 +1,15 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-25 14:15:02
- * @FilePath: \builder\spx-gui\src\class\backdrop.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-04 16:41:48
+ * @FilePath: /spx-gui/src/class/backdrop.ts
  * @Description: The class of a backdrop.
  */
-import file, { BackdropConfig, Scene } from "@/interface/file";
+import type { BackdropConfig, Scene } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import { useSpriteStore } from "@/store/modules/sprite";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
 
 /**
  * @class Backdrop
@@ -122,7 +121,7 @@ export default class Backdrop extends AssetBase implements file {
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": useSpriteStore().list.map(sprite => sprite.name),
+            "zorder": [],
             "sceneIndex": 0
         }
     }

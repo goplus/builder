@@ -1,12 +1,12 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 14:51:57
- * @FilePath: /builder/spx-gui/src/language/index.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-04 11:23:12
+ * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
-import { App } from "vue";
+import type { App } from "vue";
 import { useLanguageStore } from "@/store/modules/language";
 import { createI18n } from "vue-i18n";
 
@@ -21,15 +21,21 @@ export const initI18n = async (app:App) => {
                 costume:'Costume',
             },
             sounds: {
-                hint: 'Sounds',
+                hint: '🎵 Sounds Edit',
                 undo: 'Undo',
                 reUndo: 'ReUndo',
                 delete: 'Delete',
                 forward: 'Forward',
-                rewind: 'Rewind',
+                backward: 'Backward',
                 mute: 'Mute',
-                volume: 'Volume',
+                volumeHigh: 'Volume+',
+                volumeLow: 'Volume-',
                 replay: 'Replay',
+                cut: 'Cut',
+                paste: 'Paste',
+                copy: 'Copy',
+                insert: 'Insert',
+                download: 'Download'
             }
         },
         zh: {
@@ -40,15 +46,22 @@ export const initI18n = async (app:App) => {
                 costume: '造型',
             },
             sounds: {
-                hint: '音频',
+                hint: '🎵 音频编辑',
                 undo: '撤销',
                 reUndo: '返回',
                 delete: '删除',
                 forward: '快进',
-                rewind: '倒带',
+                backward: '后退',
                 mute: '静音',
+                volumeHigh: '音量+',
+                volumeLow: '音量-',
                 volume: '音量',
                 replay: '重放',
+                cut: '剪切',
+                paste: '粘贴',
+                copy: '复制',
+                insert: '插入',
+                download: '下载'
             }
         }
     };

@@ -32,7 +32,7 @@ import {
   NLayoutContent,
 } from "naive-ui";
 import TopMenu from "@/components/top-menu/TopMenu.vue";
-import "@/assets/theme.ts";
+import "@/assets/theme";
 /**
  * @description: Override spx-gui theme
  * @return {*}

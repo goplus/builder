@@ -7,7 +7,7 @@
  * @Description: 
  */
 import { service } from "@/axios";
-import { Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
+import type { Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
 
 
 /**
