@@ -42,13 +42,12 @@ export interface StageScene {
     name: string
     url: string
 }
-
 /**
  * @description: Backdrop 
  */
 export interface StageBackdrop {
     scenes: StageScene[]
-    sceneIndex: number[]
+    sceneIndex: number
 }
 /**
  * @description: Map Config,some spx project havent this config,the stage size will depend on the SceneSize
@@ -60,17 +59,6 @@ export interface mapConfig {
 
 
 
-/**
- * @description: Sprite Appearance,Use by SpriteAppearanceChangeEvent
- * @return {*}
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-02 17:19:45
- */
-export interface SpriteAppearance {
-    sprite: StageSprite // Sprite  witch is changed
-    costume: StageCostume // costume witch is changed
-    position: StagePosition // position witch is changed
-}
 
 
 /**
@@ -84,14 +72,32 @@ export interface StageViewerProps {
     width?: string // container width
     mapConfig?: mapConfig // some spx project havent this config,the stage size will depend on the SceneSize
     sprites: StageSprite[] // sprite list
-    backdrop: StageBackdrop // backdrop 
+    backdrop?: StageBackdrop // backdrop 
 }
 
-export interface SpriteAppearanceChangeEvent {
-    spriteAppearances: SpriteAppearance[]
+
+/**
+ * @description: Info of dragend target
+ * @return {*}
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-02-04 17:20:49
+ */
+export interface spriteDragEndTarget {
+    sprite: StageSprite // Sprite  witch is changed
+    costume: StageCostume // costume witch is changed
+    position: StagePosition // end position witch is changed
 }
 
-export interface CodeEditorEmits {
-    // sprite move event
-    (e: 'spriteAppearanceChange', value: SpriteAppearanceChangeEvent): void
+/**
+ * @description: sprite dragend event
+ * @return {*}
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-02-04 17:28:04
+ */
+export interface spriteDragEndEvent {
+    targets: spriteDragEndTarget[]
+}
+
+export interface StageViewerEmits {
+    (e: 'spriteDragEnd', value: spriteDragEndEvent): void
 }
