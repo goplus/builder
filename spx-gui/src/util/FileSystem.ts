@@ -1,4 +1,12 @@
-import { FileType } from '@/types/file';
+/*
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-02-04 16:39:59
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-04 16:45:22
+ * @FilePath: /spx-gui/src/util/FileSystem.ts
+ * @Description: 
+ */
+import type { FileType } from '@/types/file';
 import localforage from 'localforage';
 
 const storage = localforage.createInstance({

@@ -1,16 +1,16 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 11:26:18
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-25 11:47:33
- * @FilePath: \builder\spx-gui\src\store\modules\project\index.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-04 16:46:21
+ * @FilePath: /spx-gui/src/store/modules/project/index.ts
  * @Description: The store of project.
  */
 
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import * as fs from '@/util/FileSystem'
-import { FileType, dirPath, rawDir } from "@/types/file";
+import type { FileType, dirPath, rawDir } from "@/types/file";
 import { convertDirPathToProject, convertRawDirToDirPath, convertRawDirToZip, getDirPathFromZip } from "@/util/file";
 import saveAs from "file-saver";
 import { SoundList, SpriteList } from "@/class/AssetList";
