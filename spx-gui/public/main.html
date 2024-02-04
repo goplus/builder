@@ -2,47 +2,12 @@
 <script src="/js/filesystem.js"></script>
 <script src="/js/wasm_exec.js"></script>
 <script type="module">
-    // Polyfill
-    if (!WebAssembly.instantiateStreaming) {
-        WebAssembly.instantiateStreaming = async (resp, importObject) => {
-            const source = await (await resp).arrayBuffer();
-            return await WebAssembly.instantiate(source, importObject);
-        };
-    }
-
-    import {
-        readWasmFromZip,
-        readWasmFromURL,
-        readWasmFromStorage,
-        saveWasm,
-        removeWasm
-    } from "/js/wasm.js";
-
-    async function readWasm() {
-        const buffer = await readWasmFromStorage("run.wasm") || await readWasmFromZip("/wasm/run.zip") || await readWasmFromURL("/wasm/run.wasm")
-        return buffer
-    }
-
     const go = new Go();
-    let total = 1;
-    async function init() {
-        const buffer = await readWasm()
-        if (!buffer) {
-            console.error("wasm not found")
-            return
-        }
-        await saveWasm(buffer, "run.wasm")
-        WebAssembly.instantiate(buffer, go.importObject).then(result => {
-            go.run(result.instance);
-        }).catch(async e => {
-            // if current wasm is erroneous, remove it and try again
-            await removeWasm("run.wasm")
-            if (total--) {
-                init()
-            } else {
-                throw new Error("wasm not found")
-            }
-        })
-    }
-    init()
+    (async () => {
+        const wasm = await WebAssembly.instantiateStreaming(
+            fetch("/wasm/run.wasm"),
+            go.importObject
+        );
+        go.run(wasm.instance);
+    })()
 </script>

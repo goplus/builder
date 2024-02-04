@@ -20,7 +20,7 @@
   
 <script setup lang="ts">
 import SpriteList from "@/components/sprite-list/SpriteList.vue";
-import FileManagerDemo from "@/components/file-manager-demo/FileManagerDemo.vue";
+// import FileManagerDemo from "@/components/file-manager-demo/FileManagerDemo.vue";
 import { NButton } from 'naive-ui';
 </script>
   
