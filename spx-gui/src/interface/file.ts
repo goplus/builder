@@ -13,7 +13,7 @@ import type { rawFile } from "@/types/file";
 /**
  * file interface
  */
-export default interface file {
+export interface assetBase {
     files: FileWithUrl[];
     config: Config;
     dir?: Record<string, rawFile>;

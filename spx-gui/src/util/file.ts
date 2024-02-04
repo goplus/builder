@@ -108,7 +108,7 @@ import Backdrop from "@/class/backdrop"
 import Sound from "@/class/sound"
 import Sprite from "@/class/sprite"
 import type { Config } from "@/interface/file"
-import type{ FileType, dirPath, rawDir, rawFile } from "@/types/file"
+import type { FileType, dirPath, rawDir, rawFile } from "@/types/file"
 import JSZip from "jszip"
 
 /**

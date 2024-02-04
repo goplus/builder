@@ -6,7 +6,6 @@
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
-import type file from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
 import type { rawFile } from "@/types/file";
@@ -51,7 +50,7 @@ import type { SoundConfig } from '@/interface/file';
  * snd1.config = snd1.genDefualtConfig()
  */
 
-export default class Sound extends AssetBase implements file {
+export default class Sound extends AssetBase {
     /**
      * The root path of the sounds.
      */
