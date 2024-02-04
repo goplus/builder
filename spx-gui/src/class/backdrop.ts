@@ -9,9 +9,7 @@
 import type { BackdropConfig, Scene } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import { useSpriteStore } from "@/store/modules/sprite";
-import type { rawFile } from "@/types/file";
-import type file from '@/interface/file';
+import { rawFile } from "@/types/file";
 
 /**
  * @class Backdrop
@@ -123,7 +121,7 @@ export default class Backdrop extends AssetBase implements file {
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": useSpriteStore().list.map(sprite => sprite.name),
+            "zorder": [],
             "sceneIndex": 0
         }
     }
