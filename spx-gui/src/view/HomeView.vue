@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 14:59:12
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-19 17:47:37
+ * @LastEditTime: 2024-02-02 11:11:55
  * @FilePath: /builder/spx-gui/src/view/HomeView.vue
  * @Description: edit page
 -->
@@ -15,7 +15,7 @@
         <!--  E Component SpriteList -->
     </div>
 
-    <FileManagerDemo></FileManagerDemo>
+    <!-- <FileManagerDemo></FileManagerDemo> -->
 </template>
   
 <script setup lang="ts">

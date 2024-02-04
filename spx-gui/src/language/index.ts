@@ -1,9 +1,9 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 14:51:57
- * @FilePath: /builder/spx-gui/src/language/index.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-04 11:23:12
+ * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
 import type { App } from "vue";
