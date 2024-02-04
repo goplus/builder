@@ -6,10 +6,11 @@
  * @FilePath: \builder\spx-gui\src\class\AssetBase.ts
  * @Description: The abstract class of an asset.
  */
-import file, { Config } from "@/interface/file";
+import type file from "@/interface/file";
 import { getStorage } from "@/util/class";
 import FileWithUrl from "@/class/FileWithUrl";
 import { isObjectEmpty } from "@/util/global";
+import type { Config } from '@/interface/file';
 
 /**
  * @abstract

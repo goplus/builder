@@ -7,10 +7,11 @@
  * @Description: The class of a sprite.
  */
 
-import file, { Costume, SpriteConfig } from "@/interface/file";
+import type file from "@/interface/file";
+import type { Costume, SpriteConfig } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
 
 /**
  * @class Sprite

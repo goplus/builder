@@ -67,7 +67,7 @@ import { ref, defineProps, computed } from "vue";
 import type { UploadFileInfo } from "naive-ui";
 import { NIcon, NUpload, NButton, useMessage } from "naive-ui";
 import { Add as AddIcon } from "@vicons/ionicons5";
-import { commonColor } from "@/assets/theme.ts";
+import { commonColor } from "@/assets/theme";
 import { useSpriteStore } from "@/store/modules/sprite";
 import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";

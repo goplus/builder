@@ -30,7 +30,7 @@ import {
 import { Book as TutorialIcon } from "@vicons/ionicons5";
 import {
   tutorialColor, publishColor, saveColor, fileColor, codeColor
-} from "@/assets/theme.ts";
+} from "@/assets/theme";
 import { useProjectStore } from "@/store/modules/project";
 const projectStore = useProjectStore();
 
@@ -87,7 +87,7 @@ const { locale } = useI18n({
 const languageStore = useLanguageStore();
 
 // theme style config
-import { ThemeStyleType } from "@/constant/constant.ts";
+import { ThemeStyleType } from "@/constant/constant";
 
 const themeStyle = ref<number>(ThemeStyleType.Pink);
 const themeMap = ["Pink", "Yellow", "Blue"];

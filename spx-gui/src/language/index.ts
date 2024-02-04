@@ -6,7 +6,7 @@
  * @FilePath: /builder/spx-gui/src/language/index.ts
  * @Description:
 */
-import { App } from "vue";
+import type { App } from "vue";
 import { useLanguageStore } from "@/store/modules/language";
 import { createI18n } from "vue-i18n";
 

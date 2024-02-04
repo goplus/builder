@@ -7,7 +7,7 @@
  * @Description: 
  */
 import { createPinia, defineStore } from "pinia"
-import { App } from "vue";
+import { type App } from "vue";
 import piniaPluginPersist from "pinia-plugin-persist";
 
 export const initStore = async (app: App)=> {

@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { ComputedRef, computed,ref } from "vue";
+import { type ComputedRef, computed,ref } from "vue";
 import { NGrid, NGridItem, NFlex } from "naive-ui";
 import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";

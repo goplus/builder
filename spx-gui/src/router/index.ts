@@ -6,8 +6,8 @@
  * @FilePath: /builder/spx-gui/src/router/index.ts
  * @Description:
  */
-import { App } from "vue";
-import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
+import type { App } from "vue";
+import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 
 const routes: Array<RouteRecordRaw> = [
     { path: '/', redirect: '/editor/homepage' },

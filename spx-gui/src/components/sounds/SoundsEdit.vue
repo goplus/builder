@@ -141,10 +141,10 @@ import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.js';
 import CursorPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.cursor.js';
-import { ref, onMounted, Ref } from 'vue';
+import { ref, onMounted, type Ref } from 'vue';
 import { nextTick } from "@vue/runtime-dom";
-import { WavesurferEdit } from "@/util/wavesurferEdit.ts";
-import { NGradientText, NInput, useMessage, MessageApi } from "naive-ui";
+import { WavesurferEdit } from "@/util/wavesurferEdit";
+import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
 
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer = ref(null);

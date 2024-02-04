@@ -7,7 +7,7 @@
  * @Description: A util to create asset store.
  */
 
-import { ref, Ref, computed } from 'vue'
+import { ref, type Ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import AssetBase from '@/class/AssetBase'
 

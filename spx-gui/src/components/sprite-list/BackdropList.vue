@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef } from "vue";
+import { computed, type ComputedRef } from "vue";
 import { useBackdropStore } from "@/store/modules/backdrop";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";

@@ -7,7 +7,7 @@
  * @Description: The store of project.
  */
 
-import { ref, computed, watch, toRaw, WatchStopHandle, readonly } from 'vue'
+import { ref, computed, watch, toRaw, type WatchStopHandle, readonly } from 'vue'
 import { getMimeFromExt, Content2ArrayBuffer, ArrayBuffer2Content, getPrefix } from '@/util/file'
 import { defineStore, storeToRefs } from 'pinia'
 import JSZip from 'jszip'

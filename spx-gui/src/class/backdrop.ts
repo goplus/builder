@@ -6,11 +6,12 @@
  * @FilePath: \builder\spx-gui\src\class\backdrop.ts
  * @Description: The class of a backdrop.
  */
-import file, { BackdropConfig, Scene } from "@/interface/file";
+import type { BackdropConfig, Scene } from "@/interface/file";
 import AssetBase from "./AssetBase";
 import { isInstance, getAllFromLocal } from "@/util/class";
 import { useSpriteStore } from "@/store/modules/sprite";
-import { rawFile } from "@/types/file";
+import type { rawFile } from "@/types/file";
+import type file from '@/interface/file';
 
 /**
  * @class Backdrop

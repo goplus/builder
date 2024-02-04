@@ -7,7 +7,7 @@
  * @Description:
  */
 import { createDiscreteApi } from "naive-ui";
-import axios, { AxiosResponse } from "axios";
+import axios, { type AxiosResponse } from "axios";
 
 const baseURL = "http://116.62.66.126:8081";
 
