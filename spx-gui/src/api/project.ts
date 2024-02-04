@@ -1,8 +1,8 @@
 import type { Project } from "@/interface/library";
-import { service,ResponseData } from "@/axios";
-import { FormatResponse } from "@/components/code-editor";
-import {Project} from "@/interface/library.ts";
-import { AxiosResponse } from "axios";
+import { service } from "@/axios"
+import type { ResponseData } from "@/axios";
+import type { FormatResponse } from "@/components/code-editor";
+import type { AxiosResponse } from "axios";
 
 /**
  * Saves a project.
