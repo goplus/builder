@@ -143,7 +143,7 @@ import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.js';
 import CursorPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.cursor.js';
 import { ref, onMounted, Ref } from 'vue';
 import { nextTick } from "@vue/runtime-dom";
-import { WavesurferEdit } from "@/util/wavesurferEdit.ts";
+import { WavesurferEdit } from "@/util/wavesurferEdit";
 import { NGradientText, NInput, useMessage, MessageApi } from "naive-ui";
 
 const message: MessageApi = useMessage();

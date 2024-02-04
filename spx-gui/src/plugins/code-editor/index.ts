@@ -5,9 +5,9 @@
  * @Description: 
  */
 import * as monaco from 'monaco-editor'
-import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config.ts"
+import { keywords, typeKeywords, options, MonarchTokensProviderConfig, LanguageConfig, function_completions } from "./config"
 
-import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';
+import wasmModuleUrl from '/wasm/format.wasm?url';
 
 
 const initFormat = async () => {

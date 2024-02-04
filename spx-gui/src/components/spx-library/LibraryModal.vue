@@ -96,7 +96,7 @@ import {
 import { FireFilled as hotIcon } from "@vicons/antd";
 import { NewReleasesFilled as newIcon } from "@vicons/material";
 import type { Asset } from "@/interface/library";
-import { AssetType } from "@/constant/constant.ts";
+import { AssetType } from "@/constant/constant";
 import SpriteCard from "./SpriteCard.vue";
 import { getAssetList } from "@/api/asset";
 

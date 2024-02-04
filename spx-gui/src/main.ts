@@ -11,7 +11,7 @@ import App from "./App.vue";
 
 import Loading from "@/components/loading/Loading.vue"
 import { initAssets, initCodeEditor } from './plugins';
-import { initRouter } from "@/router/index.ts";
+import { initRouter } from "@/router/index";
 import { initStore } from "./store";
 import { initI18n } from "@/language";
 

@@ -30,10 +30,10 @@
 import SoundsEditCard from "@/components/sounds/SoundsEditCard.vue";
 import { NLayout, NLayoutContent, NLayoutSider } from "naive-ui";
 import SoundsEdit from "@/components/sounds/SoundsEdit.vue";
-import { Asset } from "@/interface/library.ts";
+import { Asset } from "@/interface/library";
 import { onMounted, ref } from "vue";
-import { getAssetList } from "@/api/asset.ts";
-import { AssetType } from "@/constant/constant.ts";
+import { getAssetList } from "@/api/asset";
+import { AssetType } from "@/constant/constant";
 
 const assets = ref<Asset[]>([]);
 

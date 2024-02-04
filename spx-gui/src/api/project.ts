@@ -1,5 +1,5 @@
 import { service } from "@/axios";
-import {Project} from "@/interface/library.ts";
+import {Project} from "@/interface/library";
 
 /**
  * Saves a project.
