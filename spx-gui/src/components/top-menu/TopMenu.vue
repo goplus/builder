@@ -1,9 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 16:18:12
- * @FilePath: /builder/spx-gui/src/components/top-menu/TopMenu.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-05 13:23:09
+ * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
 <template>
@@ -320,11 +320,8 @@ const handleSelectImport = (key: string | number) => {
     input.click();
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
-      const dir = await projectStore.getDirPathFromZip(file);
-      projectStore.loadProject(dir);
-      // must set window.project_path
+      projectStore.loadProject(e.target.files[0], e.target.files[0].name.split(".")[0]);
       window.project_path = projectStore.project.title;
-      await projectStore.saveByProject();
     };
   }
 };
