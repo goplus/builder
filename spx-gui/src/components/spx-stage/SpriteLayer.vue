@@ -1,7 +1,7 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
- * @LastEditors: xuning 453594138@qq.com
+ * @LastEditors: Xu Ning
  * @LastEditTime: 2024-02-05 11:16:22
  * @FilePath: /spx-gui/src/components/spx-stage/SpriteLayer.vue
  * @Description: 

@@ -15,6 +15,10 @@ export const useSpriteStore = defineStore("sprite", () => {
 
     const map = computed(() => new Map(list.value.map(item => [item.name, item])))
 
+    function addItem(item: Sprite){
+        project.value.sprite.add(item)
+    }
+
     function setCurrentByName(name: string) {
         if (map.value.has(name)) {
             current.value = map.value.get(name) || null
@@ -31,10 +35,9 @@ export const useSpriteStore = defineStore("sprite", () => {
         }
     }
 
-
-
     return {
         list, current,
+        addItem,
         setCurrentByName,
         removeItemByName
     }

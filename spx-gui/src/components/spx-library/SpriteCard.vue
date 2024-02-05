@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 18:02:02
+ * @LastEditTime: 2024-02-05 17:06:23
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -28,10 +28,10 @@ import { defineProps, defineEmits, computed } from "vue";
 import type { Asset } from "@/interface/library";
 
 // ----------props & emit------------------------------------
-interface propsType {
+interface PropsType {
   assetInfo: Asset;
 }
-const props = defineProps<propsType>();
+const props = defineProps<PropsType>();
 const emits = defineEmits(['add-asset']);
 
 // ----------computed properties-----------------------------

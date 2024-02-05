@@ -101,11 +101,11 @@ import SpriteCard from "./SpriteCard.vue";
 import { getAssetList } from "@/api/asset";
 
 // ----------props & emit------------------------------------
-interface propsType {
+interface PropsType {
   show: boolean;
   type: string;
 }
-const props = defineProps<propsType>();
+const props = defineProps<PropsType>();
 const emits = defineEmits(["update:show", "add-asset-to-store"]);
 
 // ----------data related -----------------------------------
@@ -114,7 +114,6 @@ const showModal = ref<boolean>(false);
 // Ref about search text.
 const searchQuery = ref("");
 // Const variable about sprite categories.
-// TODO: Get categories from api.
 const categories = [
   "ALL",
   "Animals",

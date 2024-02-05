@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-05 11:46:46
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-02-05 17:38:03
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
@@ -39,8 +39,8 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
-import { useProjectStore } from "@/store/modules/project";
-import { storeToRefs } from "pinia";
+import { useSpriteStore } from '@/store/modules/sprite';
+import { useBackdropStore } from '@/store/modules/backdrop';
 import AssetBase from "@/class/AssetBase";
 import Backdrop from "@/class/backdrop";
 import FileWithUrl from "@/class/FileWithUrl";
@@ -51,10 +51,8 @@ interface PropType {
   asset: AssetBase | Backdrop;
 }
 const props = defineProps<PropType>();
-const projectStore = useProjectStore();
-const { project } = storeToRefs(projectStore);
-const spriteStore = project.value.sprite;
-const backdropStore = project.value.backdrop;;
+const spriteStore = useSpriteStore(); 
+const backdropStore = useBackdropStore(); 
 
 // ----------computed properties-----------------------------
 // Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
@@ -79,7 +77,7 @@ const computedProperties = computed(() => {
  * @Date: 2024-01-23 14:29:02
  */
 const deleteSprite = (name: string) => {
-  spriteStore.remove(name)
+  spriteStore.removeItemByName(name)
 };
 
 /**
@@ -89,7 +87,7 @@ const deleteSprite = (name: string) => {
  * @Date: 2024-01-24 12:11:38
  */
 const deleteBackdrop = (file: FileWithUrl) => {
-  backdropStore.removeFile(file)
+  backdropStore.backdrop.removeFile(file)
 };
 </script>
 

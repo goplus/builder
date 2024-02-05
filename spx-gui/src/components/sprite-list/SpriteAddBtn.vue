@@ -35,16 +35,16 @@
         color="#fff"
         quaternary
         size="tiny"
-        @click="openLibraryFunc(true)"
         text-color="#fff"
+        @click="openLibraryFunc()"
       >
         Choose
       </n-button>
       <n-button
         v-else
         color="#fff"
-        @click="openLibraryFunc(false)"
         :text-color="commonColor"
+        @click="openLibraryFunc()"
       >
         Choose
       </n-button>
@@ -73,13 +73,12 @@ import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 import Sprite from "@/class/sprite";
 import FileWithUrl from "@/class/FileWithUrl";
-// import 'whatwg-fetch'
 
 // ----------props & emit------------------------------------
-interface propType {
+interface PropType {
   type: string;
 }
-const props = defineProps<propType>();
+const props = defineProps<PropType>();
 const message = useMessage();
 const spriteStore = useSpriteStore();
 const backdropStore = useBackdropStore();
@@ -116,7 +115,7 @@ const handleAddButtonClick = () => {
  * @Author: Xu Ning
  * @Date: 2024-01-16 11:53:40
  */
-const openLibraryFunc = (isBg?: boolean) => {
+const openLibraryFunc = () => {
   showModal.value = true;
 };
 
