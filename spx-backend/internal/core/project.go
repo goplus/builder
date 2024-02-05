@@ -271,7 +271,9 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
-		{Column: "category", Operation: "=", Value: category},
+	}
+	if category != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "category", Operation: "=", Value: category})
 	}
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres)
 	for i, asset := range pagination.Data {

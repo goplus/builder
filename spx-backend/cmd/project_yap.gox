@@ -135,7 +135,7 @@ post "/asset/upload", ctx => {
         		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
         	}
 }
-get "/list/asset/:pageIndex/:pageSize/:assetType/:category", ctx => {
+get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     pageIndex := ctx.param("pageIndex")
@@ -149,6 +149,7 @@ get "/list/asset/:pageIndex/:pageSize/:assetType/:category", ctx => {
             "data": result,
     }
 }
+
 get "/list/pubProject/:pageIndex/:pageSize", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
