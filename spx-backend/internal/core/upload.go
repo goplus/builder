@@ -45,8 +45,8 @@ func Encrypt(salt, password string) string {
 }
 
 func AddProject(p *Project, c *CodeFile) (string, error) {
-	sqlStr := "insert into project (name,author_id , address, c_time,u_time) values (?, ?, ?, ?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, time.Now(), time.Now())
+	sqlStr := "insert into codefile (name,author_id , address,is_public,status, c_time,u_time) values (?, ?,?, ?,?, ?, ?)"
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err
@@ -55,9 +55,19 @@ func AddProject(p *Project, c *CodeFile) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
+func AddAsset(p *Project, c *Asset) (string, error) {
+	sqlStr := "insert into asset (name,author_id , address,is_public,status,assetType,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
+	if err != nil {
+		println(err.Error())
+		return "", err
+	}
+	idInt, err := res.LastInsertId()
+	return strconv.Itoa(int(idInt)), err
+}
 func GetProjectAddress(id string, p *Project) string {
 	var address string
-	query := "SELECT address FROM project WHERE id = ?"
+	query := "SELECT address FROM codefile WHERE id = ?"
 	err := p.db.QueryRow(query, id).Scan(&address)
 	if err != nil {
 		return ""
@@ -66,7 +76,7 @@ func GetProjectAddress(id string, p *Project) string {
 }
 
 func UpdateProject(p *Project, c *CodeFile) error {
-	stmt, err := p.db.Prepare("UPDATE project SET name = ?, address = ? WHERE id = ?")
+	stmt, err := p.db.Prepare("UPDATE codefile SET name = ?, address = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -74,4 +84,18 @@ func UpdateProject(p *Project, c *CodeFile) error {
 
 	_, err = stmt.Exec(c.Name, c.Address, c.ID)
 	return err
+}
+func UpdateProjectIsPublic(p *Project, id string) error {
+	query := "UPDATE codefile SET is_public = CASE WHEN is_public = 1 THEN 0 ELSE 1 END WHERE id = ?"
+	err := p.db.QueryRow(query, id)
+	if err != nil {
+		return err.Err()
+	}
+	return nil
+}
+
+func (p *Project) UploadFile(ctx context.Context, relativePath string, file multipart.File) (err error) {
+	defer file.Close()
+	err = p.fileStorage.SaveFile(relativePath, file)
+	return
 }

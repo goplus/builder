@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/goplus/builder/internal/common"
+	"github.com/goplus/builder/spx-backend/internal/common"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
@@ -47,17 +47,20 @@ type Asset struct {
 }
 
 type CodeFile struct {
-	ID       string
-	Name     string
+	ID       string `json:"id"`
+	Name     string `json:"name"`
 	AuthorId string
 	Address  string
+	IsPublic int
+	Status   int
 	Ctime    time.Time
 	Utime    time.Time
 }
 
 type Project struct {
-	bucket *blob.Bucket
-	db     *sql.DB
+	bucket      *blob.Bucket
+	db          *sql.DB
+	fileStorage FileStorage
 }
 
 type FormatError struct {
@@ -71,7 +74,11 @@ type FormatResponse struct {
 }
 
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
-	_ = godotenv.Load("../.env")
+	err = godotenv.Load("./.env")
+	if err != nil {
+		println(err.Error())
+		return
+	}
 	if conf == nil {
 		conf = new(Config)
 	}
@@ -87,6 +94,9 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	if bus == "" {
 		bus = os.Getenv("GOP_SPX_BLOBUS")
 	}
+	println(bus)
+	println("000")
+	println(dsn)
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
 		println(err.Error())
@@ -98,14 +108,15 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 		println(err.Error())
 		return
 	}
-	return &Project{bucket, db}, nil
+	fileStorage := &LocalFileStorage{BasePath: os.Getenv("UPLOAD_PATH")}
+	return &Project{bucket, db, fileStorage}, nil
 }
 
-// Find file address from db
+// FileInfo Find file address from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
 		var address string
-		query := "SELECT address FROM project WHERE id = ?"
+		query := "SELECT address FROM codefile WHERE id = ?"
 		err := p.db.QueryRow(query, id).Scan(&address)
 		if err != nil {
 			return nil, err
@@ -285,7 +296,7 @@ func (p *Project) modifyAddress(address string) (string, error) {
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
 		return "", err
 	}
-	qiniuPath := os.Getenv("QINIU_PATH") // TODO: Replace with real URL prefix
+	qiniuPath := os.Getenv("QINIU_PATH")
 	for key, value := range data.Assets {
 		data.Assets[key] = qiniuPath + value
 	}
@@ -297,4 +308,43 @@ func (p *Project) modifyAddress(address string) (string, error) {
 		return "", err
 	}
 	return string(modifiedAddress), nil
+}
+
+// PubProjectList Public project list
+func (p *Project) PubProjectList(ctx context.Context, pageIndex string, pageSize string) (*common.Pagination[CodeFile], error) {
+	wheres := []common.FilterCondition{
+		{Column: "is_public", Operation: "=", Value: 1},
+	}
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres)
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// UserProjectList user project list
+func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSize string, uid string) (*common.Pagination[CodeFile], error) {
+	wheres := []common.FilterCondition{
+		{Column: "author_id", Operation: "=", Value: uid},
+	}
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres)
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// UpdatePublic user project list
+func (p *Project) UpdatePublic(ctx context.Context, id string) error {
+	return UpdateProjectIsPublic(p, id)
+}
+
+func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
+	path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, header)
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = path
+	asset.ID, err = AddAsset(p, asset)
+	return asset, err
 }

@@ -1,7 +1,9 @@
 import (
 	"context"
 	"os"
-	"github.com/goplus/builder/internal/core"
+	"strconv"
+	"encoding/json"
+	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
 var (
@@ -23,12 +25,16 @@ get "/project/:id", ctx => {
 post "/project/save", ctx=>{
 	id := ctx.FormValue("id")
 	uid := ctx.FormValue("uid")
-	name:=ctx.FormValue("name") 
+	name:=ctx.FormValue("name")
+	isPublic:=ctx.FormValue("isPublic")
+	ip, _ := strconv.Atoi(isPublic)
 	file,header,_:=ctx.FormFile("file")
 	codeFile:=&core.CodeFile{
 		ID:id,
 		Name:name,
 		AuthorId :uid,
+		IsPublic:ip,
+		Status:1,
 	}
 	res,_ := p.SaveProject(todo,codeFile,file,header)
 	ctx.json {
@@ -38,6 +44,46 @@ post "/project/save", ctx=>{
 	}
 }
 
+post "/project/check-update",ctx=>{
+    var fileInfoWrapper core.FileInfoWrapper
+    err := json.NewDecoder(ctx.Body).Decode(&fileInfoWrapper)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":"err",
+        }
+    }
+    res,_:= p.CheckUpdate(todo,fileInfoWrapper.FileInfo)
+    ctx.json {
+        "code":200,
+        "msg":"ok",
+        "data":res,
+    }
+}
+
+post "/project/upload", ctx=>{
+    err:=ctx.ParseMultipartForm(10 << 20)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":"err",
+        }
+    }
+    relativePath := ctx.FormValue("relativePath")
+    file,_,_:=ctx.FormFile("file")
+    err= p.UploadFile(todo,relativePath,file)
+    if err != nil {
+        ctx.json {
+            "code":500,
+            "msg":err,
+        }
+    }else{
+        ctx.json {
+            "code":200,
+            "msg":"ok",
+        }
+    }
+}
 
 post "/project/fmt", ctx=>{
 	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
@@ -64,6 +110,31 @@ get "/asset/:id", ctx => {
     }
 }
 
+post "/asset/upload", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+        uid := ctx.FormValue("uid")
+        name:=ctx.FormValue("name")
+        category:=ctx.FormValue("category")
+        isPublic:=ctx.FormValue("isPublic")
+        assetType := ctx.FormValue("assetType")
+        ip, _ := strconv.Atoi(isPublic)
+        file,header,_:=ctx.FormFile("file")
+        	asset:=&core.Asset{
+        		 Name:name,
+                 AuthorId:uid,
+                 Category:category,
+                 IsPublic:ip,
+                 AssetType:assetType,
+                 Status:1,
+        	}
+        	res,_ := p.UploadAsset(todo,asset,file,header)
+        	ctx.json {
+        		"code":200,
+        		"msg":"ok",
+        		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
+        	}
+}
 get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
@@ -76,6 +147,42 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
             "msg":"ok",
             "data": result,
     }
+}
+get "/list/pubProject/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    result, _ := p.PubProjectList(todo, pageIndex, pageSize)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    uid := ctx.param("uid")
+    result, _ := p.UserProjectList(todo, pageIndex, pageSize,uid)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+post "/project/updateIsPublic", ctx=>{
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	id := ctx.FormValue("id")
+	_ = p.UpdatePublic(todo,id)
+	ctx.json {
+		"code":200,
+		"msg":"ok",
+		"data":"",
+	}
 }
 
 conf := &core.Config{}
