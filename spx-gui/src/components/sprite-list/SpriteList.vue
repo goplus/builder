@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 11:12:23
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-05 12:07:44
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -51,13 +51,17 @@ import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
-import { useSpriteStore } from "@/store/modules/sprite";
+import { useProjectStore } from "@/store/modules/project";
+import { storeToRefs } from "pinia";
 import Sprite from "@/class/sprite";
 
 // ----------props & emit------------------------------------
-const spriteStore = useSpriteStore();
 const { setCurrentByName } = useSpriteStore();
 const currentActiveName = ref('');
+const projectStore = useProjectStore();
+const { project } = storeToRefs(projectStore);
+const spriteStore = project.value.sprite;
+const setCurrentByName = project.value.sprite
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
