@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <script src="/js/filesystem.js"></script>
 <script src="/js/wasm_exec.js"></script>
-<script>
-    // Polyfill
-    if (!WebAssembly.instantiateStreaming) {
-        WebAssembly.instantiateStreaming = async (resp, importObject) => {
-            const source = await (await resp).arrayBuffer();
-            return await WebAssembly.instantiate(source, importObject);
-        };
-    }
-
+<script type="module">
     const go = new Go();
-    WebAssembly.instantiateStreaming(fetch("/wasm/run.wasm"), go.importObject).then(result => {
-        go.run(result.instance);
-    });
+    (async () => {
+        const wasm = await WebAssembly.instantiateStreaming(
+            fetch("/wasm/run.wasm"),
+            go.importObject
+        );
+        go.run(wasm.instance);
+    })()
 </script>

@@ -2,7 +2,7 @@
  * @Author: xuning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 17:47:21
+ * @LastEditTime: 2024-01-26 17:37:21
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
@@ -32,18 +32,18 @@ import {
   NLayoutContent,
 } from "naive-ui";
 import TopMenu from "@/components/top-menu/TopMenu.vue";
-import "@/assets/theme.ts";
+import "@/assets/theme";
 /**
  * @description: Override spx-gui theme
  * @return {*}
  */
 const themeOverrides = {
   common: {
-    primaryColor: "#FF7E6C",
+    primaryColor: "#FF81A7",
     fontWeightStrong: "600",
   },
   Button: {
-    color: "#ED729EFF",
+    color: "#FF81A7FF",
     colorHover: "#FF7CB5FF",
     colorPressed: "#F1518AFF",
     colorFocus: "#F1518AFF",
@@ -59,7 +59,7 @@ const themeOverrides = {
     borderRadiusSmall: "25px",
     borderRadiusMedium: "25px",
     borderRadiusLarge: "25px",
-    border: "1px solid #ED729E",
+    border: "1px solid #FF81A7",
   },
   Select: {
     peers: {
@@ -69,20 +69,21 @@ const themeOverrides = {
     },
   },
   Input: {
-    caretColor: "#F1518A",
-    borderHover: "1px solid #F1518A",
-    border: "1px solid #ED729E",
-    borderFocus: "1px solid #F1518A",
+    // caretColor: "#F1518A",
+    borderHover: "1px solid #FF81A7",
+    borderRadius:"25px",
+    // border: "1px solid #FF81A7",
+    borderFocus: "1px solid #FF81A7",
   },
   Dropdown: {
     color: "#fff",
     optionTextColor: "rgb(51, 54, 57)",
     dividerColor: "rgb(239, 239, 245)",
-    // optionColorHover: "#E87FA74A",
+    // optionColorHover: "#FF81A74A",
     prefixColor: "rgb(51, 54, 57)",
     suffixColor: "rgb(51, 54, 57)",
     optionColorActive: "rgba(24, 160, 88, 0.1)",
-    // optionTextColorHover: "#E87FA7FF",
+    // optionTextColorHover: "#FF81A7FF",
     borderRadius: "15px",
     optionTextColorActive: "#18a058",
     optionTextColorChildActive: "#18a058",
@@ -90,7 +91,7 @@ const themeOverrides = {
     optionColorActiveInverted: "#18a058",
   },
   Switch: {
-    railColorActive: "#ED729E",
+    railColorActive: "#FF81A7",
   },
 };
 </script>
@@ -101,11 +102,11 @@ const themeOverrides = {
 
 #spx {
   height: 100%;
-  background: linear-gradient(180deg, #ffffff, $yellow-background-color);
+  background: linear-gradient(180deg, #ffffff, $background-color);
 }
 
 body {
-  font-family: ChauPhilomeneOne, AlibabaPuHuiT, sans-serif;
+  font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
 }
 
 :lang(en) {
@@ -119,7 +120,7 @@ body {
 }
 
 .n-layout-header {
-  background: #696a5a;
+  background: $base-color;
   height: 60px;
   padding: 13px;
 }

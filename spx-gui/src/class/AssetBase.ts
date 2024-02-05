@@ -2,13 +2,15 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 10:28:03
  * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-24 18:35:17
+ * @LastEditTime: 2024-01-25 15:03:08
  * @FilePath: \builder\spx-gui\src\class\AssetBase.ts
  * @Description: The abstract class of an asset.
  */
-import file from "@/interface/file";
+import type file from "@/interface/file";
 import { getStorage } from "@/util/class";
 import FileWithUrl from "@/class/FileWithUrl";
+import { isObjectEmpty } from "@/util/global";
+import type { Config } from '@/interface/file';
 
 /**
  * @abstract
@@ -20,12 +22,11 @@ import FileWithUrl from "@/class/FileWithUrl";
 export default abstract class AssetBase implements file {
     protected _files: FileWithUrl[];
     public name: string;
-    public config: Record<string, any>;
+    public abstract config: Config;
 
-    constructor(name: string, files: FileWithUrl[] = [], config: Record<string, any> = {}) {
+    constructor(name: string, files: FileWithUrl[] = []) {
         this.name = name
         this._files = files
-        this.config = config
     }
 
     /**
@@ -117,5 +118,20 @@ export default abstract class AssetBase implements file {
      */
     public static fromRawData(data: any): AssetBase {
         throw new Error(`[Method] fromRawData not implemented. Please override it. Data: ${data}.`);
+    }
+
+    /**
+     * Generate a default config.
+     * This method should be overridden by subclasses.
+     */
+    protected abstract genDefualtConfig(): Config;
+
+    /**
+     * Generate the config of the asset.
+     * @param config The config of the asset
+     * @returns 
+     */
+    protected genConfig<T>(config?: T) {
+        return isObjectEmpty(config) ? this.genDefualtConfig() as T : config!
     }
 }

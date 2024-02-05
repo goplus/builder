@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 12:21:49
+ * @LastEditTime: 2024-01-26 22:33:47
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
@@ -59,7 +59,7 @@ const backdropStore = useBackdropStore();
 const computedProperties = computed(() => {
   const isBg = props.type === "bg";
   const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
-
+  
   return {
     cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
     imageWidth: isBg ? 40 : 75,
@@ -96,6 +96,7 @@ const deleteBackdrop = (file: FileWithUrl) => {
 @import "@/assets/theme.scss";
 
 @mixin listCardBase {
+  font-family:'Heyhoo';
   margin: 10px auto;
   border-radius: 20px;
   box-shadow: 0 0 5px $sprite-list-card-box-shadow;

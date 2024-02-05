@@ -95,7 +95,6 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 		bus = os.Getenv("GOP_SPX_BLOBUS")
 	}
 	println(bus)
-	println("000")
 	println(dsn)
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
