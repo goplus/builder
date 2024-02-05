@@ -1,4 +1,5 @@
-
+import StageViewer from "./StageViewer.vue"
+export default StageViewer
 /**
  * @description:  The Stage Position,Relative to the stage center
  */
@@ -68,8 +69,8 @@ export interface mapConfig {
  * @Date: 2024-02-02 17:18:49
  */
 export interface StageViewerProps {
-    height?: string // container height
-    width?: string // container width
+    height?: number // container height
+    width?: number // container width
     mapConfig?: mapConfig // some spx project havent this config,the stage size will depend on the SceneSize
     sprites: StageSprite[] // sprite list
     backdrop?: StageBackdrop // backdrop 
