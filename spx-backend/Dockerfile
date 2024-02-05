@@ -34,7 +34,7 @@ WORKDIR /app/cmd
 
 RUN gop build .
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["./cmd"]
 
