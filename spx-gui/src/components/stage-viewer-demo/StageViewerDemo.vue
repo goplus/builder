@@ -2,14 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 15:48:16
+ * @LastEditTime: 2024-02-05 17:31:51
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <input type="file" @change="add" accept=".zip">
     <div style="width:400px;height:400px;">
-        <StageViewer :map-config="{ width: 500, height: 500 }" :sprites="sprites" />
+        <StageViewer :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
     </div>
 </template>
 <script setup lang="ts">
