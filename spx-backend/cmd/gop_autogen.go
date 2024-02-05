@@ -9,8 +9,6 @@ import (
 	"strconv"
 )
 
-const _ = true
-
 type project struct {
 	yap.App
 	p *core.Project
@@ -156,7 +154,7 @@ func (this *project) MainEntry() {
 		}{"code": 200, "msg": "ok", "data": map[string]string{"id": res.ID, "address": os.Getenv("QINIU_PATH") + res.Address}})
 	})
 //line cmd/project_yap.gox:138:1
-	this.Get("/list/asset/:pageIndex/:pageSize/:assetType", func(ctx *yap.Context) {
+	this.Get("/list/asset/:pageIndex/:pageSize/:assetType/:category", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:139:1
 		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:140:1
@@ -168,67 +166,68 @@ func (this *project) MainEntry() {
 //line cmd/project_yap.gox:143:1
 		assetType := ctx.Param("assetType")
 //line cmd/project_yap.gox:144:1
-		result, _ := this.p.AssetList(todo, pageIndex, pageSize, assetType)
+		category := ctx.Param("category")
 //line cmd/project_yap.gox:145:1
+		result, _ := this.p.AssetList(todo, pageIndex, pageSize, assetType, category)
+//line cmd/project_yap.gox:146:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": result})
 	})
-//line cmd/project_yap.gox:151:1
-	this.Get("/list/pubProject/:pageIndex/:pageSize", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:152:1
-		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	this.Get("/list/pubProject/:pageIndex/:pageSize", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:153:1
-		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:154:1
-		pageIndex := ctx.Param("pageIndex")
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 //line cmd/project_yap.gox:155:1
-		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:156:1
-		result, _ := this.p.PubProjectList(todo, pageIndex, pageSize)
-//line cmd/project_yap.gox:157:1
-		ctx.Json__1(map[string]interface {
-		}{"code": 200, "msg": "ok", "data": result})
-	})
-//line cmd/project_yap.gox:163:1
-	this.Get("/list/userProject/:uid/:pageIndex/:pageSize", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:164:1
-		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-//line cmd/project_yap.gox:165:1
-		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-//line cmd/project_yap.gox:166:1
 		pageIndex := ctx.Param("pageIndex")
-//line cmd/project_yap.gox:167:1
+//line cmd/project_yap.gox:156:1
 		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:168:1
-		uid := ctx.Param("uid")
-//line cmd/project_yap.gox:169:1
-		result, _ := this.p.UserProjectList(todo, pageIndex, pageSize, uid)
-//line cmd/project_yap.gox:170:1
+//line cmd/project_yap.gox:157:1
+		result, _ := this.p.PubProjectList(todo, pageIndex, pageSize)
+//line cmd/project_yap.gox:158:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": result})
 	})
-//line cmd/project_yap.gox:176:1
-	this.Post("/project/updateIsPublic", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:177:1
+//line cmd/project_yap.gox:164:1
+	this.Get("/list/userProject/:uid/:pageIndex/:pageSize", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:165:1
 		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-//line cmd/project_yap.gox:178:1
+//line cmd/project_yap.gox:166:1
 		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//line cmd/project_yap.gox:167:1
+		pageIndex := ctx.Param("pageIndex")
+//line cmd/project_yap.gox:168:1
+		pageSize := ctx.Param("pageSize")
+//line cmd/project_yap.gox:169:1
+		uid := ctx.Param("uid")
+//line cmd/project_yap.gox:170:1
+		result, _ := this.p.UserProjectList(todo, pageIndex, pageSize, uid)
+//line cmd/project_yap.gox:171:1
+		ctx.Json__1(map[string]interface {
+		}{"code": 200, "msg": "ok", "data": result})
+	})
+//line cmd/project_yap.gox:177:1
+	this.Post("/project/updateIsPublic", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:178:1
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:179:1
-		id := ctx.FormValue("id")
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 //line cmd/project_yap.gox:180:1
-		_ = this.p.UpdatePublic(todo, id)
+		id := ctx.FormValue("id")
 //line cmd/project_yap.gox:181:1
+		_ = this.p.UpdatePublic(todo, id)
+//line cmd/project_yap.gox:182:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": ""})
 	})
-//line cmd/project_yap.gox:188:1
-	conf := &core.Config{}
 //line cmd/project_yap.gox:189:1
+	conf := &core.Config{}
+//line cmd/project_yap.gox:190:1
 	this.p, _ = core.New(todo, conf)
-//line cmd/project_yap.gox:191:1
+//line cmd/project_yap.gox:192:1
 	this.Run(":8080")
 }
 func main() {
-//line cmd/project_yap.gox:191:1
 	yap.Gopt_App_Main(new(project))
 }

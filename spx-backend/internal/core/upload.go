@@ -56,7 +56,7 @@ func AddProject(p *Project, c *CodeFile) (string, error) {
 }
 
 func AddAsset(p *Project, c *Asset) (string, error) {
-	sqlStr := "insert into asset (name,author_id , address,is_public,status,assetType,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
+	sqlStr := "insert into asset (name,author_id , address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
 	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
