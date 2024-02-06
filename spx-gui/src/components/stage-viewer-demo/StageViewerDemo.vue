@@ -2,17 +2,42 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 17:31:51
+ * @LastEditTime: 2024-02-06 11:22:34
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <input type="file" @change="add" accept=".zip">
-    <div style="width:400px;height:400px;">
-        <StageViewer :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
+    <button v-for="sprite in project.sprite.list" :key="sprite.name" @click="currentSprite = sprite">
+        {{ sprite.name }}</button>
+    <div style="display: flex;">
+        <div style="display: flex;flex-direction: column;">
+            <p>sprite position</p>
+            <n-input-number type="number" :value="x"
+                @update:value="(val) => { currentSprite && currentSprite.setSx(val as number) }"></n-input-number>
+            <n-input-number type="number" :value="y"
+                @update:value="(val) => { currentSprite && currentSprite.setSy(val as number) }"></n-input-number>
+            <p>sprite heading</p>
+            <n-input-number type="number" :value="heading"
+                @update:value="(val) => { currentSprite && currentSprite.setHeading(val as number) }"></n-input-number>
+            <p>sprite size</p>
+            <n-input-number type="number" :value="size"
+                @update:value="(val) => { currentSprite && currentSprite.setSize(val as number / 100) }"></n-input-number>
+            <p>costume position</p>
+            <n-input-number type="number" :value="costumeX"
+                @update:value="(val) => { currentSprite && currentSprite.setCx(val as number) }"></n-input-number>
+            <n-input-number type="number" :value="costumeY"
+                @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
+        </div>
+        <div style="width:400px;height:400px;">
+            <StageViewer :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
+        </div>
     </div>
 </template>
 <script setup lang="ts">
+import { NInputNumber } from "naive-ui";
+import type Sprite from "@/class/sprite";
+
 import StageViewer, { type StageSprite } from "../stage-viewer";
 import { useProjectStore } from "@/store/modules/project";
 import { storeToRefs } from "pinia";
@@ -23,6 +48,19 @@ const { project } = storeToRefs(projectStore);
 const add = async (e: any) => {
     await projectStore.loadProject(e.target.files[0], e.target.files[0].name.split(".")[0]);
 }
+
+const x = computed(() => currentSprite.value ? currentSprite.value.config.x : 0)
+const y = computed(() => currentSprite.value ? currentSprite.value.config.y : 0)
+const heading = computed(() => currentSprite.value ? currentSprite.value.config.heading : 0)
+const size = computed(() => currentSprite.value ? currentSprite.value.config.size * 100 : 0)
+
+
+const costumeX = computed(() => currentSprite.value ? currentSprite.value.config.costumes[currentSprite.value.config.costumeIndex].x : 0)
+const costumeY = computed(() => currentSprite.value ? currentSprite.value.config.costumes[currentSprite.value.config.costumeIndex].y : 0)
+
+
+
+const currentSprite = ref<Sprite | null>(null);
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
     const list = project.value.sprite.list.map(sprite => {
         return {
@@ -33,7 +71,7 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
             heading: sprite.config.heading,
             size: sprite.config.size,
             visible: sprite.config.visible, // Visible at run time
-            stageVisible: true, // Visible at preview time
+            stageVisible: currentSprite.value?.name === sprite.name, // Visible at preview time
             zorder: 1,
             costumes: sprite.config.costumes.map((costume, index) => {
                 return {
@@ -48,5 +86,7 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
     })
     return list as StageSprite[];
 })
+
+
 
 </script>
