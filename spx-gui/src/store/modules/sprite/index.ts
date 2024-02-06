@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from 'pinia'
-import Sprite from '@/class/sprite'
+import { Sprite } from '@/class/sprite'
 import { computed, ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useProjectStore } from '../index'

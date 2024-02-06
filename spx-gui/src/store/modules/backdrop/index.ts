@@ -1,27 +1,30 @@
 /*
  * @Author: Xu Ning
  * @Date: 2024-02-05 17:08:23
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 17:37:09
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 12:34:43
  * @FilePath: /spx-gui/src/store/modules/backdrop/index.ts
- * @Description: 
+ * @Description:
  */
 import { defineStore, storeToRefs } from 'pinia'
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useSpriteStore } from '../sprite'
-import Backdrop from '@/class/backdrop'
+import { Backdrop } from '@/class/backdrop'
 import { useProjectStore } from '../index'
 export const useBackdropStore = defineStore('backdrop', () => {
   const projectStore = useProjectStore()
   const { project } = storeToRefs(projectStore)
-  const backdrop = ref<Backdrop>(project.value.backdrop as Backdrop)
+  const backdrop = computed(() => {
+    console.log('project.value', project.value, project.value.backdrop)
+    return project.value.backdrop
+  })
 
   /**
    * Set current backdrop.
    * @param {Backdrop} back
    */
   function setItem(back: Backdrop) {
-    backdrop.value = back
+    project.value.backdrop = back
   }
 
   /**

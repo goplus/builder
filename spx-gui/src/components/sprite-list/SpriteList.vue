@@ -52,7 +52,7 @@ import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
-import Sprite from "@/class/sprite";
+import { Sprite } from "@/class/sprite";
 
 // ----------props & emit------------------------------------
 const currentActiveName = ref('');

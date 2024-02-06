@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 17:38:03
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 12:54:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
@@ -41,9 +41,9 @@ import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
 import { useSpriteStore } from '@/store/modules/sprite';
 import { useBackdropStore } from '@/store/modules/backdrop';
-import AssetBase from "@/class/AssetBase";
-import Backdrop from "@/class/backdrop";
-import FileWithUrl from "@/class/FileWithUrl";
+import { AssetBase } from "@/class/asset-base";
+import { Backdrop } from "@/class/backdrop";
+import FileWithUrl from "@/class/file-with-url";
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -59,7 +59,6 @@ const backdropStore = useBackdropStore();
 const computedProperties = computed(() => {
   const isBg = props.type === "bg";
   const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
-  
   return {
     cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
     imageWidth: isBg ? 40 : 75,

@@ -71,8 +71,8 @@ import { commonColor } from "@/assets/theme";
 import { useSpriteStore } from "@/store/modules/sprite";
 import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
-import Sprite from "@/class/sprite";
-import FileWithUrl from "@/class/FileWithUrl";
+import { Sprite } from "@/class/sprite";
+import FileWithUrl from "@/class/file-with-url";
 
 // ----------props & emit------------------------------------
 interface PropType {

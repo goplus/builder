@@ -1,13 +1,13 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 16:41:48
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 12:52:11
  * @FilePath: /spx-gui/src/class/backdrop.ts
  * @Description: The class of a backdrop.
  */
 import type { BackdropConfig, Scene } from "@/interface/file";
-import { AssetBase } from "./asset-base";
+import { AssetBase } from "@/class/asset-base";
 import { isInstance, getAllFromLocal } from "@/util/class";
 import type { RawDir } from "@/types/file";
 import { useProjectStore } from "@/store/modules/project";
