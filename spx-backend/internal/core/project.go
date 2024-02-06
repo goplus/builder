@@ -374,7 +374,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, err
 			println(err.Error())
 			return nil, err
 		}
-
+		asset.Address = os.Getenv("QINIU_PATH") + asset.Address
 		// 将每行数据追加到切片中
 		assets = append(assets, &asset)
 	}
