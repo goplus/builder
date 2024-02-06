@@ -38,28 +38,32 @@ DevTool will run in `localhost:5173/__devtools__/`
 
 ## Development Standards
 
-## Naming Convention
+### Code Styles
+
+#### Naming Convention
 
 - For variables/functions/types: follow ESLint rule `@typescript-eslint/naming-convention`. For things "defining the shape" like class, interface, etc., use CamelCase. For "instances" like a regular variable, use camelCase.
 - For filenames/folders: use CamelCase for Vue component files, use kebab-case for others.
 
-## Exports
+#### Exports
 
 - Use default export for Vue components. Use named export for all other cases.
 
-## Type Checks
+#### Type Checks
 
 - Do not ignore TypeScript errors. Try not to use `any`.
 - Type Checks are run on PR (`vue-tsc`).
 
-## ESLint Rules
+#### ESLint Rules
 
  - ESLint rules can be ignored in some cases, but with Code Review.
  - ESLint is run on PR.
 
-## Format
+#### Format
 
 - Install extension Prettier to format your code. Format on PR for changed files is required. You can also turn on the feature Format on Save in VSCode.
+
+#### Examples
 
 Here is a complete example of a component named SpriteList:
 ```vue
