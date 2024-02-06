@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 12:55:20
+ * @LastEditTime: 2024-02-06 12:56:22
  * @FilePath: /spx-gui/src/components/spx-stage/Sprite.vue
  * @Description: 
 -->
@@ -25,18 +25,18 @@
 <script lang="ts" setup>
 // TODO:use the interface from filemanager
 import type { SpriteConfig, Costume as CostumeConfig } from '@/interface/file'
-import SpriteType from '@/class/sprite'
+// import SpriteType from '@/class/sprite'
 //TODO xn 
 import Costume from './Costume.vue'
 import { defineProps, onMounted, computed, defineEmits, type ComputedRef } from 'vue'
 
 // ----------props & emit------------------------------------
-const props = defineProps<{
-  config: SpriteType
-}>()
 // const props = defineProps<{
-//   config: any
+//   config: SpriteType
 // }>()
+const props = defineProps<{
+  config: any
+}>()
 
 // when ths costume dragend,emit the sprite position
 const emits = defineEmits<{

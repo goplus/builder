@@ -2,13 +2,13 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 12:45:43
+ * @LastEditTime: 2024-02-06 12:57:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
 <template>
   <div class="stage-list">
-    Stage {{backdrop}}
+    Stage
     <div class="stage-list-space">
       <SpriteAddBtn :type="'backdrop'" />
       <ImageCardCom :type="'bg'" :asset="backdrop" :style="{ 'margin-bottom': '26px' }" />

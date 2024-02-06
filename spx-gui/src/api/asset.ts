@@ -1,14 +1,13 @@
 /*
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-25 23:26:44
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 13:43:02
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description: 
  */
 import { service } from "@/axios";
 import type { Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
-
 
 /**
  * Fetches a list of assets.
@@ -16,10 +15,14 @@ import type { Asset, PageData } from "@/interface/library.ts"; // Adjust the imp
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of assets to retrieve per page.
  * @param assetType The type of the asset. See src/constant/constant.ts for details.
+ * @param category (Optional) The category of the assets to filter by.
  * @returns PageData<Asset[]>
  */
-export function getAssetList(pageIndex: number, pageSize: number, assetType: number): Promise<PageData<Asset[]>> {
-    const url = `/list/asset/${pageIndex}/${pageSize}/${assetType}`;
+export function getAssetList(pageIndex: number, pageSize: number, assetType: number, category?: string): Promise<PageData<Asset[]>> {
+    let url = `/list/asset/${pageIndex}/${pageSize}/${assetType}`;
+    if (category) {
+        url += `?category=${category}`;
+    }
     return service({
         url: url,
         method: "get",
