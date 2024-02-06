@@ -349,7 +349,6 @@ func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.
 }
 
 func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, error) {
-	// 构建 SQL 查询语句
 	query := "SELECT * FROM asset WHERE name LIKE ?"
 	searchString := "%" + search + "%"
 
