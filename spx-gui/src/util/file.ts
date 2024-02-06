@@ -55,7 +55,7 @@ export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'text/plain'
  * @param name the file name
  * @returns the content
  */
-export const ArrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): rawFile => {
+export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): RawFile => {
     switch (type) {
         case 'application/json':
             return JSON.parse(new TextDecoder().decode(arr))
@@ -72,7 +72,7 @@ export const ArrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string
  * @param type the mime type
  * @returns the array buffer
  */
-export const Content2ArrayBuffer = async (content: any, type: string): Promise<ArrayBuffer> => {
+export const content2ArrayBuffer = async (content: any, type: string): Promise<ArrayBuffer> => {
     switch (type) {
         case 'application/json':
             return new TextEncoder().encode(JSON.stringify(content))
@@ -104,11 +104,11 @@ export function getPrefix(dir: Record<string, any>) {
 }
 
 import { Project } from "@/store/modules/project"
-import Backdrop from "@/class/backdrop"
-import Sound from "@/class/sound"
-import Sprite from "@/class/sprite"
+import { Backdrop } from "@/class/backdrop"
+import { Sound } from "@/class/sound"
+import { Sprite } from "@/class/sprite"
 import type { Config } from "@/interface/file"
-import type{ FileType, dirPath, rawDir, rawFile } from "@/types/file"
+import type { FileType, DirPath, RawDir, RawFile } from "@/types/file"
 import JSZip from "jszip"
 
 /**
@@ -118,11 +118,11 @@ export function genFile(content: string, type: string, name: string) {
     return new File([new Blob([content], { type })], name)
 }
 
-export async function convertRawDirToDirPath(dir: rawDir): Promise<dirPath> {
-    const directory: dirPath = {}
+export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
+    const directory: DirPath = {}
     for (const [path, value] of Object.entries(dir)) {
         const ext = path.split('.').pop()!
-        const content = await Content2ArrayBuffer(value, getMimeFromExt(ext))
+        const content = await content2ArrayBuffer(value, getMimeFromExt(ext))
         directory[path] = {
             content,
             path,
@@ -137,7 +137,7 @@ export async function convertRawDirToDirPath(dir: rawDir): Promise<dirPath> {
 /**
  * Get directory from zip file.
  * @param {File} zipFile the zip file
- * @returns {Promise<dirPath>} the directory of the zip
+ * @returns {Promise<DirPath>} the directory of the zip
  * 
  * @example
  * const dir = await getDirPathFromZip(zipFile)
@@ -166,10 +166,10 @@ export async function convertRawDirToDirPath(dir: rawDir): Promise<dirPath> {
  *         ├─ 5.png
  *         └─ index.json
  */
-export async function getDirPathFromZip(zipFile: File, title?: string): Promise<dirPath> {
+export async function getDirPathFromZip(zipFile: File, title?: string): Promise<DirPath> {
     const zip = await JSZip.loadAsync(zipFile);
     const projectName = title || zipFile.name.split('.')[0] || 'project';
-    const dir: dirPath = {};
+    const dir: DirPath = {};
     const prefix = getPrefix(zip.files)
     for (let [relativePath, zipEntry] of Object.entries(zip.files)) {
         if (zipEntry.dir) continue
@@ -193,17 +193,17 @@ const UNTITLED_NAME = 'untitled';
 
 /**
  * Parse directory to project.
- * @param {dirPath} dir
+ * @param {DirPath} dir
  * @returns project
  */
-export function convertDirPathToProject(dir: dirPath): Project {
+export function convertDirPathToProject(dir: DirPath): Project {
     function handleFile(file: FileType, filename: string, item: any) {
         switch (file.type) {
             case 'application/json':
-                item.config = ArrayBuffer2Content(file.content, file.type) as Config;
+                item.config = arrayBuffer2Content(file.content, file.type) as Config;
                 break;
             default:
-                item.files.push(ArrayBuffer2Content(file.content, file.type, filename) as File);
+                item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
                 break;
         }
     }
@@ -228,12 +228,12 @@ export function convertDirPathToProject(dir: dirPath): Project {
             handleFile(file, filename, sprite);
         }
         else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
-            proj.entryCode = ArrayBuffer2Content(file.content, file.type, filename) as string
+            proj.entryCode = arrayBuffer2Content(file.content, file.type, filename) as string
         }
         else if (/^.+\.spx$/.test(path)) {
             const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
             const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
-            sprite.code = ArrayBuffer2Content(file.content, file.type) as string;
+            sprite.code = arrayBuffer2Content(file.content, file.type) as string;
         }
         else if (Sound.REG_EXP.test(path)) {
             const soundName = path.match(Sound.REG_EXP)?.[1] || '';
@@ -244,13 +244,13 @@ export function convertDirPathToProject(dir: dirPath): Project {
             handleFile(file, filename, proj.backdrop);
         }
         else {
-            proj.UnidentifiedFile[path] = ArrayBuffer2Content(file.content, file.type, filename)
+            proj.UnidentifiedFile[path] = arrayBuffer2Content(file.content, file.type, filename)
         }
     }
     return proj
 }
 
-const zipFileValue = (key: string, value: rawFile): [string, string | File] => {
+const zipFileValue = (key: string, value: RawFile): [string, string | File] => {
     if (typeof value === 'string' || value instanceof File) {
         return [key, value]
     } else {
@@ -263,7 +263,7 @@ const zipFileValue = (key: string, value: rawFile): [string, string | File] => {
  * @param dir the directory object with raw files to be converted
  * @returns the zip
  */
-export async function convertRawDirToZip(dir: rawDir): Promise<Blob> {
+export async function convertRawDirToZip(dir: RawDir): Promise<Blob> {
     const zip = new JSZip();
 
     const prefix = getPrefix(dir)

@@ -1,6 +1,6 @@
-import AssetBase from "./AssetBase";
-import Sound from "./sound";
-import Sprite from "./sprite";
+import { AssetBase } from "./asset-base";
+import { Sound } from "./sound";
+import { Sprite } from "./sprite";
 
 export abstract class AssetList<T extends AssetBase> {
     public list: T[] = [];
