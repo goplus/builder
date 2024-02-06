@@ -351,6 +351,30 @@ func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.
 	return asset, err
 }
 
+func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
+	address := GetAssetAddress(asset.ID, p)
+	var data struct {
+		Assets    map[string]string `json:"assets"`
+		IndexJson string            `json:"indexJson"`
+	}
+	if err := json.Unmarshal([]byte(address), &data); err != nil {
+		return nil, err
+	}
+	for _, value := range data.Assets {
+		address = value // find /sounds/sound.wav
+		break
+	}
+	err := p.bucket.Delete(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	_, err = UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header)
+	if err != nil {
+		return nil, err
+	}
+	return asset, UpdateAsset(p, asset)
+}
+
 func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, error) {
 	query := "SELECT * FROM asset WHERE name LIKE ?"
 	searchString := "%" + search + "%"

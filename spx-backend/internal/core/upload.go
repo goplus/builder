@@ -65,6 +65,28 @@ func AddAsset(p *Project, c *Asset) (string, error) {
 	idInt, err := res.LastInsertId()
 	return strconv.Itoa(int(idInt)), err
 }
+
+func GetAssetAddress(id string, p *Project) string {
+	var address string
+	query := "SELECT address FROM asset WHERE id = ?"
+	err := p.db.QueryRow(query, id).Scan(&address)
+	if err != nil {
+		return ""
+	}
+	return address
+}
+
+func UpdateAsset(p *Project, c *Asset) error {
+	stmt, err := p.db.Prepare("UPDATE asset SET name = ?, address = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(c.Name, c.Address, c.ID)
+	return err
+}
+
 func GetProjectAddress(id string, p *Project) string {
 	var address string
 	query := "SELECT address FROM codefile WHERE id = ?"
