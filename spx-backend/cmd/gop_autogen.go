@@ -221,14 +221,28 @@ func (this *project) MainEntry() {
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": ""})
 	})
+//line cmd/project_yap.gox:187:1
+	this.Post("/asset/search", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:188:1
-	conf := &core.Config{}
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:189:1
-	this.p, _ = core.New(todo, conf)
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//line cmd/project_yap.gox:190:1
+		search := ctx.FormValue("search")
 //line cmd/project_yap.gox:191:1
-	this.Run(":8080")
+		assets, _ := this.p.SearchAsset(todo, search)
+//line cmd/project_yap.gox:192:1
+		ctx.Json__1(map[string]interface {
+		}{"code": 200, "msg": "ok", "data": assets})
+	})
+//line cmd/project_yap.gox:199:1
+	conf := &core.Config{}
+//line cmd/project_yap.gox:200:1
+	this.p, _ = core.New(todo, conf)
+//line cmd/project_yap.gox:202:1
+	this.Run(":8081")
 }
 func main() {
-//line cmd/project_yap.gox:191:1
+//line cmd/project_yap.gox:202:1
 	yap.Gopt_App_Main(new(project))
 }
