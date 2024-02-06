@@ -7,24 +7,7 @@
  * @Description: The type of file.
  */
 
-import Sprite from "@/class/sprite"
-import Sound from "@/class/sound"
-import Backdrop from "@/class/backdrop"
 import type { Config } from "@/interface/file"
-
-export type codeType = {
-    path: string,
-    content: string
-}
-
-export interface projectType {
-    title: string,
-    sprites: Sprite[],
-    sounds: Sound[],
-    backdrop: Backdrop,
-    defaultDir: dirPath,
-    code: codeType
-}
 
 export interface FileType {
     content: ArrayBuffer,
@@ -34,16 +17,12 @@ export interface FileType {
     modifyTime: Date
 }
 
-export interface dirPath {
+export interface DirPath {
     [path: string]: FileType
 }
 
-export type rawFile = string | File | Config
+export type RawFile = string | File | Config
 
-export interface rawDir {
-    [path: string]: rawFile
-}
-
-export interface directory {
-    [path: string]: File
+export interface RawDir {
+    [path: string]: RawFile
 }

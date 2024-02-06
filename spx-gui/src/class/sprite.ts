@@ -8,9 +8,9 @@
  */
 
 import type { Costume, SpriteConfig } from "@/interface/file";
-import AssetBase from "./AssetBase";
+import { AssetBase } from "./asset-base";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import type { rawFile } from "@/types/file";
+import type { RawDir } from "@/types/file";
 
 /**
  * @class Sprite
@@ -57,7 +57,7 @@ import type { rawFile } from "@/types/file";
  * spt1.config = spt1.genDefualtConfig()
  */
 
-export default class Sprite extends AssetBase {
+export class Sprite extends AssetBase {
     /**
      * The root path of the sprites.
      */
@@ -263,7 +263,7 @@ export default class Sprite extends AssetBase {
      * Get the directory of the sprite.
      */
     get dir() {
-        const dir: Record<string, rawFile> = {}
+        const dir: RawDir = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file

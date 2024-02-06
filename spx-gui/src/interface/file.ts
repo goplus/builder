@@ -8,15 +8,15 @@
  */
 
 import FileWithUrl from "@/class/FileWithUrl";
-import type { rawFile } from "@/types/file";
+import type { RawDir } from "@/types/file";
 
 /**
  * file interface
  */
-export interface assetBase {
+export interface AssetBaseInterface {
     files: FileWithUrl[];
     config: Config;
-    dir?: Record<string, rawFile>;
+    dir?: RawDir;
     path?: string;
 
     /**
