@@ -7,7 +7,7 @@
  * @Description: The interface of file.
  */
 
-import FileWithUrl from "@/class/FileWithUrl";
+import FileWithUrl from "@/class/file-with-url";
 import type { RawDir } from "@/types/file";
 
 /**

@@ -1,8 +1,8 @@
 <!--
- * @Author: Xu Ning
+ * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-30 10:55:51
+ * @LastEditTime: 2024-02-01 23:01:10
  * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -33,6 +33,7 @@ let show = ref(false);
 const backdropStore = useBackdropStore();
 const projectStore = useProjectStore();
 const run = async () => {
+  console.log('run')
   show.value = false;
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
   backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
@@ -79,6 +80,7 @@ const save = () => {
     top: 2px;
     border: 2px solid #00142970;
     border-radius: 16px;
+    z-index:100;
   }
   .show {
     flex: 1;

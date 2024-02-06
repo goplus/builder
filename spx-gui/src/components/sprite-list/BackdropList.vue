@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-31 17:55:06
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 12:57:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
@@ -11,28 +11,27 @@
     Stage
     <div class="stage-list-space">
       <SpriteAddBtn :type="'backdrop'" />
-      <ImageCardCom
-        :type="'bg'"
-        :asset="backdrop"
-        :style="{ 'margin-bottom': '26px' }"
-      />
+      <ImageCardCom :type="'bg'" :asset="backdrop" :style="{ 'margin-bottom': '26px' }" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type ComputedRef } from "vue";
-import { useBackdropStore } from "@/store/modules/backdrop";
-import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
-import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
-import Backdrop from "@/class/backdrop";
+import { computed, type ComputedRef } from 'vue'
+import { useBackdropStore } from '@/store/modules/backdrop'
+import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
+import SpriteAddBtn from '@/components/sprite-list/SpriteAddBtn.vue'
+import { Backdrop } from '@/class/backdrop'
 
 // ----------props & emit------------------------------------
-const backdropStore = useBackdropStore();
+const backdropStore = useBackdropStore()
 
 // ----------computed properties-----------------------------
 // Computed backdrop from backdropStore.
-const backdrop : ComputedRef<Backdrop> = computed(() => backdropStore.backdrop as Backdrop);
+const backdrop: ComputedRef<Backdrop> = computed(() => {
+  console.log('backdropStore.backdrop', backdropStore.backdrop,backdropStore.backdrop.files)
+  return backdropStore.backdrop as Backdrop
+})
 </script>
 
 <style scoped lang="scss">
