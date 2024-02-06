@@ -186,8 +186,19 @@ post "/project/updateIsPublic", ctx=>{
 		"data":"",
 	}
 }
+post "/asset/search", ctx=>{
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	search := ctx.FormValue("search")
+	assets,_ := p.SearchAsset(todo,search)
+	ctx.json {
+		"code":200,
+		"msg":"ok",
+		"data":assets,
+	}
+}
 
 conf := &core.Config{}
 p, _ = core.New(todo, conf)
 
-run ":8080"
+run ":8081"

@@ -350,3 +350,38 @@ func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.
 	asset.ID, err = AddAsset(p, asset)
 	return asset, err
 }
+
+func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, error) {
+	query := "SELECT * FROM asset WHERE name LIKE ?"
+	searchString := "%" + search + "%"
+
+	// 执行查询
+	rows, err := p.db.Query(query, searchString)
+	if err != nil {
+		println(err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 创建指向 Asset 结构体切片的指针
+	var assets []*Asset
+
+	// 遍历结果集
+	for rows.Next() {
+		var asset Asset
+		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.Status, &asset.CTime, &asset.UTime)
+		if err != nil {
+			println(err.Error())
+			return nil, err
+		}
+		asset.Address, _ = p.modifyAddress(asset.Address)
+		// 将每行数据追加到切片中
+		assets = append(assets, &asset)
+	}
+	if len(assets) == 0 {
+		println("kkk")
+		return nil, nil
+	}
+	return assets, nil
+
+}
