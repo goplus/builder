@@ -9,7 +9,7 @@
 <template>
   <div class="toolbox">
     <n-tabs type="line" animated placement="left" style="height: 240px">
-      <n-tab-pane v-for="item in completionToolbox" :key="item.label" :name="item.label" :tab="item.label">
+      <n-tab-pane v-for="item in completionToolbox" :key="item.label" :name="item.label" :tab="$t(`toolbox.${item.label}`)">
         <n-button v-for="(snippet, index) in item.completionItems" :key="index" @click="insertCode(toRaw(snippet))"
           style="margin-top: 24px">
           {{ snippet.label }}

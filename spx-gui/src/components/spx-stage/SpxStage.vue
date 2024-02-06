@@ -1,16 +1,16 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 23:01:10
+ * @LastEditors: Hu JingJing
+ * @LastEditTime: 2024-02-06 17:57:25
  * @FilePath: /builder/spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
 <template>
   <div class="spx-stage">
-    <div class="stage-button">Stage</div>
+    <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button type="success" class="stage-run-button" @click="run"
-      >Run</n-button
+      >{{ $t('stage.run') }}</n-button
     >
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
     <StageViewer v-else></StageViewer>
