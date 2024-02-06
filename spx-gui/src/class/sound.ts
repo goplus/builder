@@ -6,10 +6,9 @@
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
-import type file from "@/interface/file";
-import AssetBase from "./AssetBase";
+import { AssetBase } from "./asset-base";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import type { rawFile } from "@/types/file";
+import type { RawDir } from "@/types/file";
 import type { SoundConfig } from '@/interface/file';
 
 /**
@@ -51,7 +50,7 @@ import type { SoundConfig } from '@/interface/file';
  * snd1.config = snd1.genDefualtConfig()
  */
 
-export default class Sound extends AssetBase implements file {
+export class Sound extends AssetBase {
     /**
      * The root path of the sounds.
      */
@@ -129,7 +128,7 @@ export default class Sound extends AssetBase implements file {
      * Get the directory of the sound.
      */
     get dir() {
-        const dir: Record<string, rawFile> = {}
+        const dir: RawDir = {}
         dir[`${this.path}/index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}/${file.name}`] = file

@@ -7,9 +7,10 @@
  * @Description: The class of a backdrop.
  */
 import type { BackdropConfig, Scene } from "@/interface/file";
-import AssetBase from "./AssetBase";
+import { AssetBase } from "./asset-base";
 import { isInstance, getAllFromLocal } from "@/util/class";
-import type { rawFile } from "@/types/file";
+import type { RawDir } from "@/types/file";
+import { useProjectStore } from "@/store/modules/project";
 
 /**
  * @class Backdrop
@@ -46,7 +47,7 @@ import type { rawFile } from "@/types/file";
  * backdrop.config = backdrop.genDefualtConfig()
  */
 
-export default class Backdrop extends AssetBase implements file {
+export class Backdrop extends AssetBase {
     /**
      * The root path of the backdrop.
      */
@@ -80,7 +81,6 @@ export default class Backdrop extends AssetBase implements file {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        // @ts-ignore
         return await getAllFromLocal(Backdrop);
     }
 
@@ -121,7 +121,7 @@ export default class Backdrop extends AssetBase implements file {
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": [],
+            "zorder": useProjectStore().project?.sprite.list.map(sprite => sprite.name) || [],
             "sceneIndex": 0
         }
     }
@@ -166,7 +166,7 @@ export default class Backdrop extends AssetBase implements file {
      * Get the directory of the backdrop.
      */
     get dir() {
-        const dir: Record<string, rawFile> = {}
+        const dir: RawDir = {}
         dir[`${this.path}index.json`] = this.config
         for (const file of this.files) {
             dir[`${this.path}${file.name}`] = file
