@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 11:22:34
+ * @LastEditTime: 2024-02-06 15:27:49
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -30,15 +30,15 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
         </div>
         <div style="width:400px;height:400px;">
-            <StageViewer :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
+            <StageViewer @on-sprites-drag-end="onDragEnd" :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import { NInputNumber } from "naive-ui";
-import type Sprite from "@/class/sprite";
+import type { Sprite } from "@/class/sprite";
 
-import StageViewer, { type StageSprite } from "../stage-viewer";
+import StageViewer, { type StageSprite, spriteDragEndEvent } from "../stage-viewer";
 import { useProjectStore } from "@/store/modules/project";
 import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
@@ -61,6 +61,12 @@ const costumeY = computed(() => currentSprite.value ? currentSprite.value.config
 
 
 const currentSprite = ref<Sprite | null>(null);
+
+const onDragEnd = (e: spriteDragEndEvent) => {
+    currentSprite.value?.setSx(e.targets[0].position.x)
+    currentSprite.value?.setSy(e.targets[0].position.y)
+}
+
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
     const list = project.value.sprite.list.map(sprite => {
         return {

@@ -100,5 +100,5 @@ export interface spriteDragEndEvent {
 }
 
 export interface StageViewerEmits {
-    (e: 'spriteDragEnd', value: spriteDragEndEvent): void
+    (e: 'onSpritesDragEnd', value: spriteDragEndEvent): void
 }

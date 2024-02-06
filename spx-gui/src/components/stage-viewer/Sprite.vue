@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 15:04:15
+ * @LastEditTime: 2024-02-06 14:26:21
  * @FilePath: /spx-gui/src/components/stage-viewer/Sprite.vue
  * @Description: 
 -->
@@ -11,11 +11,9 @@
         :map_config="map_config"></Costume>
 </template>
 <script lang="ts" setup>
-// TODO:use the interface from filemanager
-
 import Costume from "./Costume.vue"
 import { defineProps, onMounted, computed, defineEmits, type ComputedRef } from "vue"
-import type { StageSprite, StageCostume, mapConfig } from ".";
+import type { StageSprite, StageCostume, mapConfig, spriteDragEndTarget } from ".";
 
 // ----------props & emit------------------------------------
 const props = defineProps<{
@@ -25,7 +23,7 @@ const props = defineProps<{
 
 // when ths costume dragend,emit the sprite position
 const emits = defineEmits<{
-    (e: 'onDragEnd', spirte: { x: number, y: number; }): void
+    (e: 'onDragEnd', event: spriteDragEndTarget): void
 }>()
 
 
@@ -48,7 +46,7 @@ onMounted(() => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:39:27
  */
-const onDragEnd = (e: { x: number, y: number }) => {
+const onDragEnd = (e: spriteDragEndTarget) => {
     emits("onDragEnd", e)
 }
 </script>

@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 11:19:31
+ * @LastEditTime: 2024-02-06 14:52:55
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
@@ -12,14 +12,14 @@
         y: offset_config.offsetY
     }">
         <template v-for="sprite in props.sprites">
-            <Sprite v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id" :sprite_config="sprite" />
+            <Sprite @on-drag-end="onSpriteDragEnd" v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id"
+                :sprite_config="sprite" />
         </template>
-        <!-- <Sprite :map_config="map_config" :sprite_config="sprite_config" /> -->
     </v-layer>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import type { StageSprite, mapConfig } from ".";
+import type { StageSprite, mapConfig, spriteDragEndTarget, spriteDragEndEvent } from ".";
 import Sprite from "./Sprite.vue"
 import { ref, computed, onMounted } from "vue"
 
@@ -29,21 +29,22 @@ const props = defineProps<{
     sprites: StageSprite[]
 }>()
 
-// onMounted(()=>{
-//     console.log(spriteStore.current)
-// })
+
 // ----------methods-----------------------------------------
+const emits = defineEmits<{
+    (e: 'onSpritesDragEnd', value: spriteDragEndEvent): void
+}>()
 
 /**
- * @todo set to store
- * @description: When the sprite is dragged, update the sprite's position to the store
+ * @description: Single sprite drag end
  * @param {*} e
  * @return {*}
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:47:53
  */
-// const onSpriteDragEnd = (e: { x: number, y: number }) => {
-//     spriteStore.current?.setSx(e.x)
-//     spriteStore.current?.setSy(e.y)
-// }
+const onSpriteDragEnd = (e: spriteDragEndTarget) => {
+    emits('onSpritesDragEnd', {
+        targets: [e]
+    })
+}
 </script>

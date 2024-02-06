@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 16:49:44
+ * @LastEditTime: 2024-02-06 15:00:16
  * @FilePath: /spx-gui/src/components/stage-viewer/Costume.vue
  * @Description: 
 -->
@@ -21,8 +21,8 @@
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted} from "vue"
-import type { StageCostume, StageSprite, mapConfig } from "./index";
+import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted } from "vue"
+import type { StageCostume, StageSprite, mapConfig, spriteDragEndTarget } from "./index";
 
 
 // ----------props & emit------------------------------------
@@ -34,7 +34,7 @@ const props = defineProps<{
 // define the emits
 const emits = defineEmits<{
     // when ths costume dragend,emit the sprite position
-    (e: 'onDragEnd', spirte: { x: number, y: number; }): void
+    (e: 'onDragEnd', event: spriteDragEndTarget): void
 }>()
 
 
@@ -112,8 +112,8 @@ const getRotation = (heading: number): number => {
  */
 const getSpxPostion = (x: number, y: number): { x: number; y: number; } => {
     return {
-        x: x - 500 / 2,
-        y: 300 / 2 - y,
+        x: x - props.map_config.width / 2,
+        y: props.map_config.height / 2 - y,
     }
 }
 
@@ -124,9 +124,12 @@ const getSpxPostion = (x: number, y: number): { x: number; y: number; } => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:44:18
  */
-const handleDragEnd = (event) => {
-    console.log(getSpxPostion(event.target.attrs.x, event.target.attrs.y))
-    emits('onDragEnd', { ...getSpxPostion(event.target.attrs.x, event.target.attrs.y) })
+const handleDragEnd = (event: { target: { attrs: { x: number, y: number } } }) => {
+    emits('onDragEnd', {
+        sprite: props.sprite_config,
+        costume: props.costume_config,
+        position: getSpxPostion(event.target.attrs.x, event.target.attrs.y)
+    })
 }
 
 </script>
