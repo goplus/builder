@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 17:49:21
+ * @LastEditTime: 2024-02-06 11:26:19
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -12,16 +12,16 @@
             width: prop.width,
             height: prop.height,
             scaleX: scale,
-            scaleY: scale
+            scaleY: scale,
         }">
-            <v-layer>
-                <v-rect :config="{
-                    width: spxMapConfig.width,
-                    height: spxMapConfig.height,
-                    fill: '#eb65a9'
-                }"></v-rect>
-            </v-layer>
-            <SpriteLayer :sprites="prop.sprites" :map_config="spxMapConfig"></SpriteLayer>
+            <BackdropLayer :offset_config="{
+                offsetX: (prop.width / scale - spxMapConfig.width) / 2,
+                offsetY: (prop.height / scale - spxMapConfig.height) / 2,
+            }" :map_config="spxMapConfig" />
+            <SpriteLayer :offset_config="{
+                offsetX: (prop.width / scale - spxMapConfig.width) / 2,
+                offsetY: (prop.height / scale - spxMapConfig.height) / 2
+            }" :sprites="prop.sprites" :map_config="spxMapConfig" />
         </v-stage>
     </div>
 </template>
@@ -30,6 +30,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults } from '
 import type { ComputedRef } from 'vue';
 import type { StageViewerEmits, StageViewerProps, mapConfig } from './index';
 import SpriteLayer from './SpriteLayer.vue';
+import BackdropLayer from './BackdropLayer.vue';
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<StageViewerProps>(), {
     height: 400, // container height

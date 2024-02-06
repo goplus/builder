@@ -2,13 +2,18 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 16:36:49
+ * @LastEditTime: 2024-02-06 11:19:31
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
 <template>
-    <v-layer>
-        <Sprite v-for="sprite in props.sprites" :map_config="map_config" :key="sprite.id" :sprite_config="sprite" />"
+    <v-layer :config="{
+        x: offset_config.offsetX,
+        y: offset_config.offsetY
+    }">
+        <template v-for="sprite in props.sprites">
+            <Sprite v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id" :sprite_config="sprite" />
+        </template>
         <!-- <Sprite :map_config="map_config" :sprite_config="sprite_config" /> -->
     </v-layer>
 </template>
@@ -17,9 +22,9 @@
 import type { StageSprite, mapConfig } from ".";
 import Sprite from "./Sprite.vue"
 import { ref, computed, onMounted } from "vue"
-// todo:use the filemanager's interface of spirteConfig
 
 const props = defineProps<{
+    offset_config: { offsetX: number, offsetY: number },
     map_config: mapConfig
     sprites: StageSprite[]
 }>()
