@@ -2,14 +2,16 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 15:27:49
+ * @LastEditTime: 2024-02-06 17:52:13
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <input type="file" @change="add" accept=".zip">
+
     <button v-for="sprite in project.sprite.list" :key="sprite.name" @click="currentSprite = sprite">
-        {{ sprite.name }}</button>
+        {{ sprite.name }}
+    </button>
     <div style="display: flex;">
         <div style="display: flex;flex-direction: column;">
             <p>sprite position</p>
@@ -30,7 +32,7 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
         </div>
         <div style="width:400px;height:400px;">
-            <StageViewer @on-sprites-drag-end="onDragEnd" :map-config="{ width: 404, height: 720 }" :sprites="sprites" />
+            <StageViewer @on-sprites-drag-end="onDragEnd" :backdrop="backdrop" :sprites="sprites" />
         </div>
     </div>
 </template>
@@ -38,7 +40,8 @@
 import { NInputNumber } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
 
-import StageViewer, { type StageSprite, spriteDragEndEvent } from "../stage-viewer";
+import StageViewer from "../stage-viewer";
+import type { StageSprite, spriteDragEndEvent, StageBackdrop } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
@@ -67,8 +70,21 @@ const onDragEnd = (e: spriteDragEndEvent) => {
     currentSprite.value?.setSy(e.targets[0].position.y)
 }
 
+const backdrop: ComputedRef<StageBackdrop> = computed(() => {
+
+    return {
+        scenes: project.value.backdrop.config.scenes.map((scene, index) => ({
+            id: scene.name as string,
+            name: scene.name as string,
+            url: project.value.backdrop.files[index].url as string
+        })),
+        sceneIndex: project.value.backdrop.currentSceneIndex
+    }
+})
+
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
     const list = project.value.sprite.list.map(sprite => {
+        console.log(sprite)
         return {
             id: sprite.name,
             name: sprite.name,

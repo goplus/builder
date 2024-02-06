@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 15:22:21
+ * @LastEditTime: 2024-02-06 16:48:05
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -14,7 +14,7 @@
             scaleX: scale,
             scaleY: scale,
         }">
-            <BackdropLayer :offset_config="{
+            <BackdropLayer :backdrop_config="props.backdrop" :offset_config="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2,
             }" :map_config="spxMapConfig" />
@@ -26,7 +26,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults, watchEffect } from 'vue';
 import type { ComputedRef } from 'vue';
 import type { StageViewerEmits, StageViewerProps, mapConfig, spriteDragEndEvent } from './index';
 import SpriteLayer from './SpriteLayer.vue';
@@ -57,17 +57,29 @@ const scale = computed(() => {
 });
 
 // get spx map size
-const spxMapConfig: ComputedRef<mapConfig> = computed(() => {
+const spxMapConfig = ref<mapConfig>({
+    width: 400,
+    height: 400
+});
+watchEffect(() => {
     if (props.mapConfig) {
-        return props.mapConfig
-    } else {
-        // TODO: get spx map size from backdrop
-        return {
-            width: 300,
-            height: 300
-        }
+        spxMapConfig.value = props.mapConfig
     }
 })
+watch(() => props.backdrop, (_new, _old) => {
+    console.log(_new?.scenes.length, props.backdrop)
+    if (_new?.scenes.length && props.backdrop) {
+        const _image = new window.Image();
+        _image.src = props.backdrop?.scenes[props.backdrop.sceneIndex].url
+        _image.onload = () => {
+            spxMapConfig.value = {
+                width: _image.width,
+                height: _image.height
+            }
+        };
+    }
+})
+
 
 const checkProps = () => {
     if (!props.mapConfig && !props.backdrop) {
