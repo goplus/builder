@@ -26,15 +26,15 @@ Project Management.
 
 ```ts
 enum ProjectSource {
-    local = 'local',
-    cloud = 'cloud'
+    local,
+    cloud
 }
 
 interface ProjectSummary {
-    // Temporary id
-    tempId: string
-    // Real id, not uploaded to the cloud as null
-    id: string | null
+    // Temporary id when not uploaded to cloud, replace with real id after uploaded
+    id: string
+    // Project title
+    title: string
     // version number
     version: number
     // Project source
@@ -42,8 +42,6 @@ interface ProjectSummary {
 }
 
 interface ProjectData {
-    // Project title
-    title: string
     // Sprite list
     sprite: SpriteList
     // Sound list
@@ -92,10 +90,8 @@ Here is the basic usage of Project Management.
 
 <script setup lang="ts">
 import { useProjectStore } from "@/store/modules/project";
-import { storeToRefs } from "pinia";
     
 const projectStore = useProjectStore();
-const { project } = storeToRefs(projectStore);
 
 const loadFile = async (e: any) => {
     await projectStore.loadFromZip(e.target.files[0]);  // load project by zip file
@@ -103,11 +99,13 @@ const loadFile = async (e: any) => {
 
 const loadProjects = async () => {
     const projects = await projectStore.getProjects();  // [ProjectSummary{}, ProjectSummary{}]
-    await projectStore.load(projects[0].id, projects[0].source);  // load the first project
+    const id = projects[0].id;
+    const source = projects[0].source;
+    await projectStore.load(id, source);  // load the first project
 }
 
 const download = () => {
-    project.value.download();  // save project to computer
+    projectStore.project.value.download();  // save project to computer
 }
 </script>
 ```
