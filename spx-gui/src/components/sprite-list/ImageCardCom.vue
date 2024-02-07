@@ -1,13 +1,13 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 22:33:47
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 12:54:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description: 
 -->
 <template>
-  <div :class="computedProperties.cardClassName" v-if="props.type === 'sprite'">
+  <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName" >
     <div class="close-button" @click="deleteSprite(props.asset.name)">×</div>
     <n-image
       preview-disabled
@@ -19,10 +19,10 @@
     {{ props.asset.name }}
   </div>
   <div
-    :class="computedProperties.cardClassName"
-    v-else
     v-for="(file, index) in computedProperties.backdropFiles"
+    v-else
     :key="index"
+    :class="computedProperties.cardClassName"
   >
     <div class="close-button" @click="deleteBackdrop(file)">×</div>
     <n-image
@@ -39,27 +39,26 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from "vue";
 import { NImage } from "naive-ui";
-import { useSpriteStore } from "@/store/modules/sprite";
-import { useBackdropStore } from "@/store/modules/backdrop";
-import AssetBase from "@/class/AssetBase";
-import Backdrop from "@/class/backdrop";
-import FileWithUrl from "@/class/FileWithUrl";
+import { useSpriteStore } from '@/store/modules/sprite';
+import { useBackdropStore } from '@/store/modules/backdrop';
+import { AssetBase } from "@/class/asset-base";
+import { Backdrop } from "@/class/backdrop";
+import FileWithUrl from "@/class/file-with-url";
 
 // ----------props & emit------------------------------------
-interface propType {
+interface PropType {
   type?: string;
   asset: AssetBase | Backdrop;
 }
-const props = defineProps<propType>();
-const spriteStore = useSpriteStore();
-const backdropStore = useBackdropStore();
+const props = defineProps<PropType>();
+const spriteStore = useSpriteStore(); 
+const backdropStore = useBackdropStore(); 
 
 // ----------computed properties-----------------------------
 // Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
 const computedProperties = computed(() => {
   const isBg = props.type === "bg";
   const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
-  
   return {
     cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
     imageWidth: isBg ? 40 : 75,
@@ -77,7 +76,7 @@ const computedProperties = computed(() => {
  * @Date: 2024-01-23 14:29:02
  */
 const deleteSprite = (name: string) => {
-  spriteStore.removeItemByName(name);
+  spriteStore.removeItemByName(name)
 };
 
 /**
@@ -87,8 +86,7 @@ const deleteSprite = (name: string) => {
  * @Date: 2024-01-24 12:11:38
  */
 const deleteBackdrop = (file: FileWithUrl) => {
-  let { backdrop } = backdropStore;
-  backdrop.removeFile(file);
+  backdropStore.backdrop.removeFile(file)
 };
 </script>
 

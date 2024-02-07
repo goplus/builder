@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 18:13:14
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 13:46:50
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -32,7 +32,7 @@
       <!-- S Library Sub Header -->
       <div class="asset-library-sub-header">
         <n-flex>
-          <n-button v-for="category in categories" :key="category" size="large">
+          <n-button v-for="category in categories" :key="category" @click="handleCategoryClick(category)" size="large">
             {{ category }}
           </n-button>
           <span class="sort-btn">
@@ -101,11 +101,11 @@ import SpriteCard from "./SpriteCard.vue";
 import { getAssetList } from "@/api/asset";
 
 // ----------props & emit------------------------------------
-interface propsType {
+interface PropsType {
   show: boolean;
   type: string;
 }
-const props = defineProps<propsType>();
+const props = defineProps<PropsType>();
 const emits = defineEmits(["update:show", "add-asset-to-store"]);
 
 // ----------data related -----------------------------------
@@ -114,7 +114,6 @@ const showModal = ref<boolean>(false);
 // Ref about search text.
 const searchQuery = ref("");
 // Const variable about sprite categories.
-// TODO: Get categories from api.
 const categories = [
   "ALL",
   "Animals",
@@ -129,14 +128,10 @@ const assetInfos = ref<Asset[]>([]);
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
-  console.log('111111111',props.type)
   if (props.type === "backdrop") {
     assetInfos.value = await fetchAssets(AssetType.Backdrop);
-    console.log('22222222',props.type,assetInfos.value.length,assetInfos.value,'backassetInfos.length')
   } else if (props.type === "sprite") {
     assetInfos.value = await fetchAssets(AssetType.Sprite);
-    console.log(assetInfos.value.length,assetInfos.value,'assetInfos.length')
-    // assetInfos.value = SpriteInfosMock
   }
 });
 
@@ -147,12 +142,11 @@ onMounted(async () => {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssets = async (assetType: number) => {
+const fetchAssets = async (assetType: number, category?: string) => {
   try {
     const pageIndex = 1;
     const pageSize = 20;
-    const response = await getAssetList(pageIndex, pageSize, assetType);
-    console.log('get',response,response.data,response.data.data)
+    const response = await getAssetList(pageIndex, pageSize, assetType, category);
     if (response.data.data.data == null)
       return [];
     return response.data.data.data;
@@ -195,6 +189,22 @@ const handleAddAsset = (name: string, address: string) => {
   console.log('libraryModal handleAddAsset',name,address)
   emits("add-asset-to-store", name, address);
 };
+
+/**
+ * @description: A function to search assets by type.
+ * @param {*} category - asset type.
+ * @return {*}
+ * @Author: Xu Ning
+ * @Date: 2024-02-06 13:47:05
+ */
+const handleCategoryClick = async (category: string) => {
+  if (props.type === "backdrop") {
+    assetInfos.value = await fetchAssets(AssetType.Backdrop, category);
+  }
+  else if (props.type === "sprite") {
+    assetInfos.value = await fetchAssets(AssetType.Sprite, category);
+  }
+}
 </script>
 
 <style lang="scss">

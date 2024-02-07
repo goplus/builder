@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-01 11:12:23
+ * @LastEditTime: 2024-02-05 16:51:53
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description: 
 -->
@@ -47,17 +47,17 @@
 // ----------Import required packages / components-----------
 import { type ComputedRef, computed,ref } from "vue";
 import { NGrid, NGridItem, NFlex } from "naive-ui";
+import { useSpriteStore } from '@/store/modules/sprite';
 import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
 import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
-import { useSpriteStore } from "@/store/modules/sprite";
-import Sprite from "@/class/sprite";
+import { Sprite } from "@/class/sprite";
 
 // ----------props & emit------------------------------------
-const spriteStore = useSpriteStore();
-const { setCurrentByName } = useSpriteStore();
 const currentActiveName = ref('');
+const spriteStore = useSpriteStore(); 
+const { setCurrentByName } = spriteStore;
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
@@ -80,8 +80,8 @@ const toggleCodeById = (name: string) => {
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
-    ? { 'margin-bottom': '26px', 'box-shadow': '0px 0px 0px 4px #FF81A7' }
-    : { 'margin-bottom': '26px' };
+    ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
+    : { marginBottom: '26px' };
 };
 </script>
 

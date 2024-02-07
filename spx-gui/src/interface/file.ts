@@ -7,16 +7,16 @@
  * @Description: The interface of file.
  */
 
-import FileWithUrl from "@/class/FileWithUrl";
-import type { rawFile } from "@/types/file";
+import FileWithUrl from "@/class/file-with-url";
+import type { RawDir } from "@/types/file";
 
 /**
  * file interface
  */
-export default interface file {
+export interface AssetBaseInterface {
     files: FileWithUrl[];
     config: Config;
-    dir?: Record<string, rawFile>;
+    dir?: RawDir;
     path?: string;
 
     /**

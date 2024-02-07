@@ -7,7 +7,7 @@
  * @Description: The util of class.
  */
 
-import AssetBase from "@/class/AssetBase";
+import { AssetBase } from "@/class/asset-base";
 import localforage from "localforage";
 
 /**

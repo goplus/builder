@@ -1,20 +1,20 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 11:26:18
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 16:46:21
+ * @LastEditors: Xu Ning
+ * @LastEditTime: 2024-02-05 17:32:55
  * @FilePath: /spx-gui/src/store/modules/project/index.ts
  * @Description: The store of project.
  */
 
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import * as fs from '@/util/FileSystem'
-import type { FileType, dirPath, rawDir } from "@/types/file";
+import * as fs from '@/util/file-system'
+import type { FileType, DirPath, RawDir } from "@/types/file";
 import { convertDirPathToProject, convertRawDirToDirPath, convertRawDirToZip, getDirPathFromZip } from "@/util/file";
 import saveAs from "file-saver";
-import { SoundList, SpriteList } from "@/class/AssetList";
-import Backdrop from '@/class/backdrop';
+import { SoundList, SpriteList } from "@/class/asset-list";
+import { Backdrop } from '@/class/backdrop';
 
 const UNTITLED_NAME = 'Untitled'
 interface ProjectData {
@@ -23,7 +23,7 @@ interface ProjectData {
     sound: SoundList
     backdrop: Backdrop
     entryCode: string
-    UnidentifiedFile: rawDir
+    UnidentifiedFile: RawDir
 }
 
 export class Project implements ProjectData {
@@ -32,7 +32,7 @@ export class Project implements ProjectData {
     sound: SoundList;
     backdrop: Backdrop;
     entryCode: string;
-    UnidentifiedFile: rawDir;
+    UnidentifiedFile: RawDir;
 
     static ENTRY_FILE_NAME = 'index.gmx'
 
@@ -40,7 +40,7 @@ export class Project implements ProjectData {
         return new Project(data.title, data.sprite, data.sound, data.backdrop, data.entryCode, data.UnidentifiedFile)
     }
 
-    constructor(title: string, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", UnidentifiedFile: rawDir = {}) {
+    constructor(title: string, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", UnidentifiedFile: RawDir = {}) {
         this.title = title
         this.sprite = sprite
         this.sound = sound
@@ -66,7 +66,7 @@ export class Project implements ProjectData {
     async load(arg: string | File, title?: string): Promise<void> {
         if (typeof arg === 'string') {
             const paths = await fs.readdir(arg) as string[]
-            const dirPath: dirPath = {}
+            const dirPath: DirPath = {}
             for (const path of paths) {
                 const content = await fs.readFile(path) as FileType
                 dirPath[path] = content
@@ -80,9 +80,9 @@ export class Project implements ProjectData {
 
     /**
      * Load project from directory.
-     * @param dirPath The directory
+     * @param DirPath The directory
      */
-    private _load(dirPath: dirPath): void;
+    private _load(dirPath: DirPath): void;
 
     /**
      * Load project.
@@ -90,7 +90,7 @@ export class Project implements ProjectData {
      */
     private _load(proj: Project): void;
 
-    private _load(arg: dirPath | Project): void {
+    private _load(arg: DirPath | Project): void {
         if (typeof arg === 'object' && arg instanceof Project) {
             this.title = arg.title
             this.sprite = arg.sprite
@@ -126,8 +126,8 @@ export class Project implements ProjectData {
     }
 
     get rawDir() {
-        const dir: rawDir = {}
-        const files: rawDir = Object.assign({}, this.UnidentifiedFile, ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map(item => item.dir))
+        const dir: RawDir = {}
+        const files: RawDir = Object.assign({}, this.UnidentifiedFile, ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map(item => item.dir))
         files[Project.ENTRY_FILE_NAME] = this.entryCode
         for (const [path, value] of Object.entries(files)) {
             const fullPath = this.path + path
@@ -136,7 +136,7 @@ export class Project implements ProjectData {
         return dir
     }
 
-    get dirPath(): Promise<dirPath> {
+    get dirPath(): Promise<DirPath> {
         return convertRawDirToDirPath(this.rawDir)
     }
 }

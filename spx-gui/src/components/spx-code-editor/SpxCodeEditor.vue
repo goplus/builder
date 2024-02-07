@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 13:10:42
+ * @LastEditTime: 2024-02-05 13:24:58
  * @FilePath: /spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
@@ -24,7 +24,6 @@ import { useEditorStore } from "@/store"
 import { useSpriteStore } from '@/store/modules/sprite';
 import { storeToRefs } from 'pinia'
 import { NButton } from "naive-ui"
-const { setCurrentByName } = useSpriteStore()
 const spriteStore = useSpriteStore()
 const store = useEditorStore();
 const code_editor = ref();
@@ -70,9 +69,7 @@ store.$onAction(({
         }
     })
 })
-const toggleCodeById = (name: string) => {
-    setCurrentByName(name)
-}
+
 
 </script>
   
