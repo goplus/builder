@@ -10,35 +10,41 @@
       <n-input
           size="small"
           round
-          placeholder="Meow Sound"
+          :placeholder="props.asset?.name || ''"
           class="sound-edit-content-top-input-sound-name"
       />
       <!--   Speed Change   -->
-      <div @click="togglePlaybackSpeed()" class="speed-change-container">
+      <div class="speed-change-container" @click="togglePlaybackSpeed()">
         <div class="speed-change-container-text">{{ currentSpeed }}x</div>
       </div>
       <!--   Undo && ReUndo   -->
       <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.backout }">
         <button :disabled="isOperateDisabled.backout" @click="handleOperate('backout')">
-          <img class="sound-icon-with-text" v-if="!isOperateDisabled.backout" src="@/assets/icon/sound/undo.svg"/>
-          <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/undo-unable.svg"/>
+          <img v-if="!isOperateDisabled.backout" class="sound-icon-with-text" src="@/assets/icon/sound/undo.svg"/>
+          <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/undo-unable.svg"/>
         </button>
         <div class="sound-icon-text">{{ $t('sounds.undo') }}</div>
       </div>
       <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.renewal }">
         <button :disabled="isOperateDisabled.renewal" @click="handleOperate('renewal')">
-          <img class="sound-icon-with-text" v-if="!isOperateDisabled.renewal" src="@/assets/icon/sound/reUndo.svg"/>
-          <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/reUndo-unable.svg"/>
+          <img v-if="!isOperateDisabled.renewal" class="sound-icon-with-text" src="@/assets/icon/sound/reUndo.svg"/>
+          <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/reUndo-unable.svg"/>
         </button>
         <div class="sound-icon-text">{{ $t('sounds.reUndo') }}</div>
       </div>
       <div class="vertical-dashed-line-short"></div>
-      <!--   Save   -->
+      <!--   Download And Save -->
       <div class="sound-icon-container">
         <button @click="downloadSound()">
           <img class="sound-icon-with-text" src="@/assets/icon/sound/download.svg"/>
         </button>
         <div class="sound-icon-text">{{ $t('sounds.download') }}</div>
+      </div>
+      <div class="sound-icon-container">
+        <button @click="saveSound()">
+          <img class="sound-icon-with-text" src="@/assets/icon/sound/save.svg"/>
+        </button>
+        <div class="sound-icon-text">{{ $t('sounds.save') }}</div>
       </div>
     </div>
   </div>
@@ -52,8 +58,8 @@
     <!--  play  -->
     <div>
       <button @click="togglePlayPause()">
-        <img class="sound-icon" v-if="!isPlaying" src="@/assets/icon/sound/play.svg"/>
-        <img class="sound-icon" v-else src="@/assets/icon/sound/pause.svg" />
+        <img v-if="!isPlaying" class="sound-icon" src="@/assets/icon/sound/play.svg"/>
+        <img v-else class="sound-icon" src="@/assets/icon/sound/pause.svg" />
       </button>
     </div>
     <div class="vertical-dashed-line-long"></div>
@@ -100,36 +106,36 @@
     <!--  Edit  -->
     <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.remove }">
       <button :disabled="isOperateDisabled.remove" @click="handleOperate('remove')">
-        <img class="sound-icon-with-text" v-if="!isOperateDisabled.remove" src="@/assets/icon/sound/delete.svg"/>
-        <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/delete-unable.svg"/>
+        <img v-if="!isOperateDisabled.remove" class="sound-icon-with-text" src="@/assets/icon/sound/delete.svg"/>
+        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/delete-unable.svg"/>
       </button>
       <div class="sound-icon-text">{{ $t('sounds.delete') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.cut }">
       <button :disabled="isOperateDisabled.cut" @click="handleOperate('cut')">
-        <img class="sound-icon-with-text" v-if="!isOperateDisabled.cut" src="@/assets/icon/sound/cut.svg"/>
-        <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/cut-unable.svg"/>
+        <img v-if="!isOperateDisabled.cut" class="sound-icon-with-text" src="@/assets/icon/sound/cut.svg"/>
+        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/cut-unable.svg"/>
       </button>
       <div class="sound-icon-text">{{ $t('sounds.cut') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.copy }">
       <button :disabled="isOperateDisabled.copy" @click="handleOperate('copy')">
-        <img class="sound-icon-with-text" v-if="!isOperateDisabled.copy" src="@/assets/icon/sound/copy.svg"/>
-        <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/copy-unable.svg"/>
+        <img v-if="!isOperateDisabled.copy" class="sound-icon-with-text" src="@/assets/icon/sound/copy.svg"/>
+        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/copy-unable.svg"/>
       </button>
       <div class="sound-icon-text">{{ $t('sounds.copy') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.paste }">
       <button :disabled="isOperateDisabled.paste" @click="handleOperate('paste')">
-        <img class="sound-icon-with-text" v-if="!isOperateDisabled.paste" src="@/assets/icon/sound/paste.svg"/>
-        <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/paste-unable.svg"/>
+        <img v-if="!isOperateDisabled.paste" class="sound-icon-with-text" src="@/assets/icon/sound/paste.svg"/>
+        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/paste-unable.svg"/>
       </button>
       <div class="sound-icon-text">{{ $t('sounds.paste') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ 'disabled': isOperateDisabled.insert }">
       <button :disabled="isOperateDisabled.insert" @click="handleOperate('insert')">
-        <img class="sound-icon-with-text" v-if="!isOperateDisabled.insert" src="@/assets/icon/sound/insert.svg"/>
-        <img class="sound-icon-with-text" v-else src="@/assets/icon/sound/insert-unable.svg"/>
+        <img v-if="!isOperateDisabled.insert" class="sound-icon-with-text" src="@/assets/icon/sound/insert.svg"/>
+        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/insert-unable.svg"/>
       </button>
       <div class="sound-icon-text">{{ $t('sounds.insert') }}</div>
     </div>
@@ -141,10 +147,20 @@ import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.js';
 import CursorPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.cursor.js';
-import { ref, onMounted, type Ref } from 'vue';
-import { nextTick } from "@vue/runtime-dom";
-import { WavesurferEdit } from "@/util/wavesurferEdit";
+import { ref, onMounted, type Ref, computed, watch } from 'vue'
+import { nextTick } from "vue";
+import { WavesurferEdit } from "@/util/wavesurfer-edit";
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
+import type { Asset } from "@/interface/library";
+import { saveAsset } from '@/api/asset'
+import { AssetType } from '@/constant/constant'
+
+const props = defineProps({
+  asset: {
+    type: Object as () => Asset,
+    required: true,
+  }
+})
 
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer = ref(null);
@@ -238,8 +254,15 @@ const initWaveSurfer = () => {
         })
       ],
     });
-    // load music
-    wavesurfer.load("/audio.mp3");
+    // load music TODO replace with real url
+    // wavesurfer.load("/audio.mp3");
+
+    console.log(props.asset?.address)
+    const addressObj = JSON.parse(props.asset?.address);
+    const assets = addressObj.assets;
+    const url = assets[Object.keys(assets)[0]]
+
+    wavesurfer.load(url);
 
     wavesurfer.on('ready', () => {
       buffer = wavesurfer.backend.buffer!;
@@ -389,10 +412,24 @@ function backward(): void {
   wavesurfer.skip(-5)
 }
 
+/* Save sound */
+async function saveSound(): void {
+  const wavBlob = audioBufferToWavBlob(wavesurfer.backend.buffer);
+  const wavFile = wavBlobToFile(wavBlob, "example.wav");
+  await saveAsset(props.asset?.id, props.asset?.name, props.asset?.id, "sound", 1, AssetType.Sounds, wavFile);
+  console.log("Save successfully")
+}
+
+/* Convert WAV Blob to File */
+function wavBlobToFile(wavBlob: Blob, fileName: string): File {
+  return new File([wavBlob], fileName, { type: 'audio/wav' });
+}
+
 /* Download sound file */
 function downloadSound(): void {
-  downloadAudioBuffer(wavesurfer.backend.buffer, "sound.wav");
+  downloadAudioBuffer(wavesurfer.backend.buffer, props.asset.name + ".wav");
 }
+
 
 /* Transfer AudioBuffer to WAV Blob */
 function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
@@ -537,14 +574,14 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
 
 .sound-icon-container {
   font-size: 18px;
-  color: #474343; /* 默认颜色 */
+  color: #474343;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .sound-icon-container.disabled {
-  color: grey; /* 当添加了 disabled 类时的颜色 */
+  color: grey;
 }
 
 .sound-icon-container button[disabled] {
