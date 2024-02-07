@@ -19,7 +19,7 @@
     "localforage": "^1.10.0",
     "monaco-editor": "^0.45.0",
     "pinia": "^2.1.7",
-    "pinia-plugin-persist": "^1.0.0",
+    "pinia-plugin-persistedstate": "^3.2.1",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
     "vue-i18n": "^9.9.0",
