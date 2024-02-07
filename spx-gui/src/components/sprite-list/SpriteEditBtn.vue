@@ -1,19 +1,19 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 16:56:06
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-07 14:06:12
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      Sprite
+      <p>Sprite</p>
       <n-input round autosize clearable :default-value="name"></n-input>
     </div>
     <div class="sprite-edit-btn">
-      X
+      <p>X</p>
       <n-input-number
         style="border-radius: 25px"
         class="edit-input"
@@ -31,7 +31,7 @@
       ></n-input-number>
     </div>
     <div class="sprite-edit-btn">
-      Y
+      <p>Y</p>
       <n-input-number
         type="number"
         :value="y"
@@ -44,11 +44,11 @@
       />
     </div>
     <div class="sprite-edit-btn">
-      Show
+      <p>Show</p>
       <n-switch v-model:value="isSpriteShow" />
     </div>
     <div class="sprite-edit-btn">
-      Size
+      <p>Size</p>
       <n-input-number
         type="number"
         :min="0"
@@ -63,7 +63,7 @@
     </div>
 
     <div class="sprite-edit-btn">
-      Dir
+      <p>Dir</p>
       <n-input-number
         type="number"
         :min="-180"
@@ -105,10 +105,20 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.config.na
   flex: 1;
   display: flex;
   margin: 2px;
+  min-width: 100px;
+  p{
+    margin: 0;
+    line-height: 2rem;
+  }
   .n-input,
   .n-input-number,
   .n-switch {
     margin-left: 3px;
+    min-width:70%;
+  }
+  .n-switch{
+    height: 100%;
+    margin: auto;
   }
   .n-input-number {
     max-width: 100px;
