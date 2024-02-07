@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 14:59:12
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:11:55
- * @FilePath: /builder/spx-gui/src/view/HomeView.vue
+ * @LastEditTime: 2024-02-04 17:41:15
+ * @FilePath: /spx-gui/src/view/HomeView.vue
  * @Description: edit page
 -->
 <template>
