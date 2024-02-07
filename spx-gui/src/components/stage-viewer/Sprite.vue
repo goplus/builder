@@ -2,34 +2,34 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 10:24:34
+ * @LastEditTime: 2024-02-07 12:14:11
  * @FilePath: /spx-gui/src/components/stage-viewer/Sprite.vue
  * @Description: 
 -->
 <template>
-    <Costume @on-drag-end="onDragEnd" :sprite_config="sprite_config" :costume_config="currentCostume"
-        :map_config="map_config"></Costume>
+    <Costume @onDragEnd="onDragEnd" :spriteConfig="spriteConfig" :costumeConfig="currentCostume" :mapConfig="mapConfig">
+    </Costume>
 </template>
 <script lang="ts" setup>
 import Costume from "./Costume.vue"
-import { defineProps, onMounted, computed, defineEmits, type ComputedRef } from "vue"
-import type { StageSprite, StageCostume, mapConfig, spriteDragEndTarget } from ".";
+import { defineProps, computed, defineEmits, type ComputedRef } from "vue"
+import type { StageSprite, StageCostume, MapConfig, SpriteDragEndTarget } from ".";
 
 // ----------props & emit------------------------------------
 const props = defineProps<{
-    sprite_config: StageSprite
-    map_config: mapConfig
+    spriteConfig: StageSprite
+    mapConfig: MapConfig
 }>();
 
 // when ths costume dragend,emit the sprite position
 const emits = defineEmits<{
-    (e: 'onDragEnd', event: spriteDragEndTarget): void
+    (e: 'onDragEnd', event: SpriteDragEndTarget): void
 }>()
 
 // ----------computed properties-----------------------------
 // computed the current costume with current image
 const currentCostume: ComputedRef<StageCostume> = computed(() => {
-    return props.sprite_config.costumes[props.sprite_config.costumeIndex]
+    return props.spriteConfig.costumes[props.spriteConfig.costumeIndex]
 })
 
 // ----------methods-----------------------------------------
@@ -42,7 +42,7 @@ const currentCostume: ComputedRef<StageCostume> = computed(() => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:39:27
  */
-const onDragEnd = (e: spriteDragEndTarget) => {
+const onDragEnd = (e: SpriteDragEndTarget) => {
     emits("onDragEnd", e)
 }
 </script>

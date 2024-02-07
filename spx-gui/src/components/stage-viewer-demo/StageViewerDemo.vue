@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 17:52:13
+ * @LastEditTime: 2024-02-07 12:24:12
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -32,7 +32,8 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
         </div>
         <div style="width:400px;height:400px;">
-            <StageViewer @on-sprites-drag-end="onDragEnd" :backdrop="backdrop" :sprites="sprites" />
+            <StageViewer @onSpritesDragEnd="onDragEnd" :backdrop="backdrop" :sprites="sprites"
+                :currentSpriteIds="currentSpriteIds" />
         </div>
     </div>
 </template>
@@ -41,7 +42,7 @@ import { NInputNumber } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
 
 import StageViewer from "../stage-viewer";
-import type { StageSprite, spriteDragEndEvent, StageBackdrop } from "../stage-viewer"
+import type { StageSprite, SpriteDragEndEvent, StageBackdrop } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
@@ -64,8 +65,14 @@ const costumeY = computed(() => currentSprite.value ? currentSprite.value.config
 
 
 const currentSprite = ref<Sprite | null>(null);
+const currentSpriteIds = computed(() => {
+    if (currentSprite.value) {
+        return [currentSprite.value.name]
+    }
+    return []
+})
 
-const onDragEnd = (e: spriteDragEndEvent) => {
+const onDragEnd = (e: SpriteDragEndEvent) => {
     currentSprite.value?.setSx(e.targets[0].position.x)
     currentSprite.value?.setSy(e.targets[0].position.y)
 }
@@ -93,7 +100,6 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
             heading: sprite.config.heading,
             size: sprite.config.size,
             visible: sprite.config.visible, // Visible at run time
-            stageVisible: currentSprite.value?.name === sprite.name, // Visible at preview time
             zorder: 1,
             costumes: sprite.config.costumes.map((costume, index) => {
                 return {

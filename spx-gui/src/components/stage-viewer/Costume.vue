@@ -13,28 +13,28 @@
         x: spritePosition.x,
         y: spritePosition.y,
         rotation: spriteRotation,
-        offsetX: props.costume_config.x,
-        offsetY: props.costume_config.y,
-        scaleX: props.sprite_config.size,
-        scaleY: props.sprite_config.size
+        offsetX: props.costumeConfig.x,
+        offsetY: props.costumeConfig.y,
+        scaleX: props.spriteConfig.size,
+        scaleY: props.spriteConfig.size
     }" />
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted, watch } from "vue"
-import type { StageCostume, StageSprite, mapConfig, spriteDragEndTarget } from "./index";
+import type { StageCostume, StageSprite, MapConfig, SpriteDragEndTarget } from "./index";
 
 
 // ----------props & emit------------------------------------
 const props = defineProps<{
-    sprite_config: StageSprite,
-    costume_config: StageCostume,
-    map_config: mapConfig
+    spriteConfig: StageSprite,
+    costumeConfig: StageCostume,
+    mapConfig: MapConfig
 }>()
 // define the emits
 const emits = defineEmits<{
     // when ths costume dragend,emit the sprite position
-    (e: 'onDragEnd', event: spriteDragEndTarget): void
+    (e: 'onDragEnd', event: SpriteDragEndTarget): void
 }>()
 
 
@@ -47,20 +47,20 @@ const image = ref<HTMLImageElement>()
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
     return getRelativePosition(
-        props.sprite_config.x,
-        props.sprite_config.y
+        props.spriteConfig.x,
+        props.spriteConfig.y
     );
 })
 
 // Computed spx's sprite heading to konva's rotation by about changing sprite heading
 const spriteRotation = computed(() => {
-    return getRotation(props.sprite_config.heading);
+    return getRotation(props.spriteConfig.heading);
 })
 
-watch(() => props.costume_config.url, (new_url, old_url) => {
+watch(() => props.costumeConfig.url, (new_url, old_url) => {
     if (new_url) {
         const _image = new window.Image();
-        _image.src = props.costume_config.url;
+        _image.src = props.costumeConfig.url;
         _image.onload = () => {
             image.value = _image;
             console.log(_image.width, _image.height)
@@ -85,8 +85,8 @@ watch(() => props.costume_config.url, (new_url, old_url) => {
 const getRelativePosition = (x: number, y: number): { x: number; y: number; } => {
     // 返回计算后的位置  stage.width / 2 + x ，stage.height / 2 + y
     return {
-        x: props.map_config.width / 2 + x,
-        y: props.map_config.height / 2 - y,
+        x: props.mapConfig.width / 2 + x,
+        y: props.mapConfig.height / 2 - y,
     };
 };
 
@@ -110,8 +110,8 @@ const getRotation = (heading: number): number => {
  */
 const getSpxPostion = (x: number, y: number): { x: number; y: number; } => {
     return {
-        x: x - props.map_config.width / 2,
-        y: props.map_config.height / 2 - y,
+        x: x - props.mapConfig.width / 2,
+        y: props.mapConfig.height / 2 - y,
     }
 }
 
@@ -124,8 +124,8 @@ const getSpxPostion = (x: number, y: number): { x: number; y: number; } => {
  */
 const handleDragEnd = (event: { target: { attrs: { x: number, y: number } } }) => {
     emits('onDragEnd', {
-        sprite: props.sprite_config,
-        costume: props.costume_config,
+        sprite: props.spriteConfig,
+        costume: props.costumeConfig,
         position: getSpxPostion(event.target.attrs.x, event.target.attrs.y)
     })
 }

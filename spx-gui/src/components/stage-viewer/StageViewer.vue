@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 10:55:06
+ * @LastEditTime: 2024-02-07 12:30:20
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -14,22 +14,22 @@
             scaleX: scale,
             scaleY: scale,
         }">
-            <BackdropLayer @onSceneLoadend="onSceneLoadend" :loading="loading" :backdrop_config="props.backdrop"
-                :offset_config="{
+            <BackdropLayer @onSceneLoadend="onSceneLoadend" :loading="loading" :backdropConfig="props.backdrop"
+                :offsetConfig="{
                     offsetX: (props.width / scale - spxMapConfig.width) / 2,
                     offsetY: (props.height / scale - spxMapConfig.height) / 2,
-                }" :map_config="spxMapConfig" />
-            <SpriteLayer :loading="loading" @onSpritesDragEnd="onSpritesDragEnd" :offset_config="{
+                }" :mapConfig="spxMapConfig" />
+            <SpriteLayer :loading="loading" @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
-            }" :sprites="props.sprites" :map_config="spxMapConfig" />
+            }" :sprites="props.sprites" :mapConfig="spxMapConfig" :currentSpriteIds="props.currentSpriteIds" />
         </v-stage>
     </div>
 </template>
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults, watchEffect } from 'vue';
 import type { ComputedRef } from 'vue';
-import type { StageViewerEmits, StageViewerProps, mapConfig, spriteDragEndEvent } from './index';
+import type { StageViewerEmits, StageViewerProps, MapConfig, SpriteDragEndEvent } from './index';
 import SpriteLayer from './SpriteLayer.vue';
 import BackdropLayer from './BackdropLayer.vue';
 // ----------props & emit------------------------------------
@@ -60,7 +60,7 @@ const scale = computed(() => {
 });
 
 // get spx map size
-const spxMapConfig = ref<mapConfig>({
+const spxMapConfig = ref<MapConfig>({
     width: 400,
     height: 400
 });
@@ -94,7 +94,7 @@ const checkProps = () => {
     }
 }
 
-const onSpritesDragEnd = (e: spriteDragEndEvent) => {
+const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
     emits("onSpritesDragEnd", e)
 }
 

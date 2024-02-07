@@ -2,40 +2,44 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 09:41:12
+ * @LastEditTime: 2024-02-07 12:31:21
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
 <template>
     <v-layer :config="{
-        x: offset_config.offsetX,
-        y: offset_config.offsetY
+        x: props.offsetConfig.offsetX,
+        y: props.offsetConfig.offsetY
     }">
-        <template v-if="!loading">
+        <template v-if="!props.loading">
             <template v-for="sprite in props.sprites">
-                <Sprite @on-drag-end="onSpriteDragEnd" v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id"
-                    :sprite_config="sprite" />
+                <Sprite @onDragEnd="onSpriteDragEnd" v-if="isVisibleInStage(sprite.id)" :mapConfig="props.mapConfig"
+                    :key="sprite.id" :spriteConfig="sprite" />
             </template>
         </template>
     </v-layer>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import type { StageSprite, mapConfig, spriteDragEndTarget, spriteDragEndEvent } from ".";
+import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from ".";
 import Sprite from "./Sprite.vue"
-import { ref, computed, onMounted } from "vue"
+import { computed } from "vue";
 
 const props = defineProps<{
     loading: boolean,
-    offset_config: { offsetX: number, offsetY: number },
-    map_config: mapConfig
+    offsetConfig: { offsetX: number, offsetY: number },
+    mapConfig: MapConfig
     sprites: StageSprite[]
+    currentSpriteIds: string[]
 }>()
 
+const isVisibleInStage = ((spriteId: string) => {
+    return props.currentSpriteIds.includes(spriteId)
+})
 
 // ----------methods-----------------------------------------
 const emits = defineEmits<{
-    (e: 'onSpritesDragEnd', value: spriteDragEndEvent): void
+    (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
 }>()
 
 /**
@@ -45,7 +49,7 @@ const emits = defineEmits<{
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:47:53
  */
-const onSpriteDragEnd = (e: spriteDragEndTarget) => {
+const onSpriteDragEnd = (e: SpriteDragEndTarget) => {
     emits('onSpritesDragEnd', {
         targets: [e]
     })
