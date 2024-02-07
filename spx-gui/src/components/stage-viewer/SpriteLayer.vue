@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 15:31:49
+ * @LastEditTime: 2024-02-07 16:40:01
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
@@ -30,7 +30,7 @@ const props = defineProps<{
     offsetConfig: { offsetX: number, offsetY: number },
     mapConfig: MapConfig
     sprites: StageSprite[]
-    currentSpriteNames: String[]
+    currentSpriteNames: string[]
 }>()
 
 const isVisibleInStage = (sprite: StageSprite) => {

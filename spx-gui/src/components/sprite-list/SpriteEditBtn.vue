@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 17:23:47
+ * @LastEditTime: 2024-02-07 17:43:33
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
@@ -62,8 +62,7 @@ import { useSpriteStore } from '@/store/modules/sprite'
 const spriteStore = useSpriteStore()
 
 // ----------data related -----------------------------------
-// Ref about show sprite state
-const isSpriteShow = ref<boolean>(true)
+
 
 const x = computed(() => (spriteStore.current ? spriteStore.current.config.x : 0))
 const y = computed(() => (spriteStore.current ? spriteStore.current.config.y : 0))

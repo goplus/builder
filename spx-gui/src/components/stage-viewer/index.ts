@@ -71,7 +71,7 @@ export interface StageViewerProps {
     mapConfig?: MapConfig // some spx project havent this config,the stage size will depend on the SceneSize
     sprites: StageSprite[] // sprite list
     backdrop?: StageBackdrop // backdrop 
-    currentSpriteNames: String[]
+    currentSpriteNames: string[]
 }
 
 

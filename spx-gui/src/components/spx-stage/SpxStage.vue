@@ -2,7 +2,7 @@
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 17:17:11
+ * @LastEditTime: 2024-02-07 18:02:21
  * @FilePath: /spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -35,7 +35,7 @@ const backdropStore = useBackdropStore();
 const projectStore = useProjectStore();
 const spriteStore = useSpriteStore();
 
-const currentSpriteNames = ref<String[]>([])
+const currentSpriteNames = ref<string[]>([])
 
 const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
   spriteStore.setCurrentByName(e.targets[0].sprite.name)
