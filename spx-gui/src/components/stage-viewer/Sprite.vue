@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 14:26:21
+ * @LastEditTime: 2024-02-07 10:24:34
  * @FilePath: /spx-gui/src/components/stage-viewer/Sprite.vue
  * @Description: 
 -->
@@ -26,14 +26,10 @@ const emits = defineEmits<{
     (e: 'onDragEnd', event: spriteDragEndTarget): void
 }>()
 
-
 // ----------computed properties-----------------------------
 // computed the current costume with current image
 const currentCostume: ComputedRef<StageCostume> = computed(() => {
     return props.sprite_config.costumes[props.sprite_config.costumeIndex]
-})
-
-onMounted(() => {
 })
 
 // ----------methods-----------------------------------------

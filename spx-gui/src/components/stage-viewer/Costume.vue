@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 15:00:16
+ * @LastEditTime: 2024-02-07 09:19:07
  * @FilePath: /spx-gui/src/components/stage-viewer/Costume.vue
  * @Description: 
 -->
@@ -10,9 +10,9 @@
     <v-image @dragend="handleDragEnd" :config="{
         image: image,
         draggable: true,
-        x: SpritePosition.x,
-        y: SpritePosition.y,
-        rotation: SpriteRotation,
+        x: spritePosition.x,
+        y: spritePosition.y,
+        rotation: spriteRotation,
         offsetX: props.costume_config.x,
         offsetY: props.costume_config.y,
         scaleX: props.sprite_config.size,
@@ -21,7 +21,7 @@
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted } from "vue"
+import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted, watch } from "vue"
 import type { StageCostume, StageSprite, mapConfig, spriteDragEndTarget } from "./index";
 
 
@@ -41,12 +41,11 @@ const emits = defineEmits<{
 
 
 // ----------data related -----------------------------------
-// TODO use the spx's costume image
 const image = ref<HTMLImageElement>()
 
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
-const SpritePosition = computed(() => {
+const spritePosition = computed(() => {
     return getRelativePosition(
         props.sprite_config.x,
         props.sprite_config.y
@@ -54,26 +53,25 @@ const SpritePosition = computed(() => {
 })
 
 // Computed spx's sprite heading to konva's rotation by about changing sprite heading
-const SpriteRotation = computed(() => {
+const spriteRotation = computed(() => {
     return getRotation(props.sprite_config.heading);
 })
 
-// watch the url change to change the image
-const stop = watchEffect(() => {
-
-    const _image = new window.Image();
-    _image.src = props.costume_config.url;
-    _image.onload = () => {
-        image.value = _image;
-        console.log(_image.width, _image.height)
-    };
+watch(() => props.costume_config.url, (new_url, old_url) => {
+    if (new_url) {
+        const _image = new window.Image();
+        _image.src = props.costume_config.url;
+        _image.onload = () => {
+            image.value = _image;
+            console.log(_image.width, _image.height)
+        };
+    } else {
+        image.value?.remove();
+    }
+}, {
+    immediate: true
 })
 
-// ----------lifecycle hooks---------------------------------
-onMounted(() => {
-    console.log(props)
-})
-onUnmounted(() => stop())
 
 // ----------methods-----------------------------------------
 /**

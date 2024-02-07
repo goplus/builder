@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 14:52:55
+ * @LastEditTime: 2024-02-07 09:41:12
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
@@ -11,9 +11,11 @@
         x: offset_config.offsetX,
         y: offset_config.offsetY
     }">
-        <template v-for="sprite in props.sprites">
-            <Sprite @on-drag-end="onSpriteDragEnd" v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id"
-                :sprite_config="sprite" />
+        <template v-if="!loading">
+            <template v-for="sprite in props.sprites">
+                <Sprite @on-drag-end="onSpriteDragEnd" v-if="sprite.stageVisible" :map_config="map_config" :key="sprite.id"
+                    :sprite_config="sprite" />
+            </template>
         </template>
     </v-layer>
 </template>
@@ -24,6 +26,7 @@ import Sprite from "./Sprite.vue"
 import { ref, computed, onMounted } from "vue"
 
 const props = defineProps<{
+    loading: boolean,
     offset_config: { offsetX: number, offsetY: number },
     map_config: mapConfig
     sprites: StageSprite[]

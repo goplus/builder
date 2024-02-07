@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 18:05:05
+ * @LastEditTime: 2024-02-07 10:53:32
  * @FilePath: /spx-gui/src/components/stage-viewer/BackdropLayer.vue
  * @Description
 -->
@@ -11,7 +11,6 @@
         x: offset_config.offsetX,
         y: offset_config.offsetY,
     }">
-
         <v-rect :config="{
             width: map_config.width,
             height: map_config.height,
@@ -34,10 +33,14 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, watchEffect, onMounted, onUnmounted, watch, ref } from 'vue'
-import type { mapConfig, StageBackdrop } from "./index"
+import { defineProps, watch, ref, defineEmits } from 'vue'
+import type { mapConfig, StageBackdrop} from "./index"
 
-const image = ref<HTMLImageElement>()
+const emits = defineEmits<{
+    // when ths costume dragend,emit the sprite position
+    (e: 'onSceneLoadend', event: { imageEl: HTMLImageElement }): void
+}>()
+
 
 const props = defineProps<{
     offset_config: { offsetX: number, offsetY: number },
@@ -45,20 +48,19 @@ const props = defineProps<{
     backdrop_config?: StageBackdrop
 }>()
 
-// TODO: Another way to get the stage size determined by the background to reduce redundancy
+const image = ref<HTMLImageElement>()
+
 watch(() => props.backdrop_config, (_new, _old) => {
     if (_new && _new.scenes.length != 0) {
         const _image = new window.Image();
         _image.src = _new.scenes[_new.sceneIndex].url
-        console.log(_image)
         _image.onload = () => {
             image.value = _image;
-            console.log(_image.width, _image.height)
+            emits('onSceneLoadend', { imageEl: _image })
         };
+    } else {
+        image.value?.remove();
     }
 })
-
-
-
 
 </script>

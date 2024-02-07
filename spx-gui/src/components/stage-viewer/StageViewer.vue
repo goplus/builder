@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-06 16:48:05
+ * @LastEditTime: 2024-02-07 10:55:06
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -14,11 +14,12 @@
             scaleX: scale,
             scaleY: scale,
         }">
-            <BackdropLayer :backdrop_config="props.backdrop" :offset_config="{
-                offsetX: (props.width / scale - spxMapConfig.width) / 2,
-                offsetY: (props.height / scale - spxMapConfig.height) / 2,
-            }" :map_config="spxMapConfig" />
-            <SpriteLayer @onSpritesDragEnd="onSpritesDragEnd" :offset_config="{
+            <BackdropLayer @onSceneLoadend="onSceneLoadend" :loading="loading" :backdrop_config="props.backdrop"
+                :offset_config="{
+                    offsetX: (props.width / scale - spxMapConfig.width) / 2,
+                    offsetY: (props.height / scale - spxMapConfig.height) / 2,
+                }" :map_config="spxMapConfig" />
+            <SpriteLayer :loading="loading" @onSpritesDragEnd="onSpritesDragEnd" :offset_config="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
             }" :sprites="props.sprites" :map_config="spxMapConfig" />
@@ -37,8 +38,10 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
     width: 400// container width
 });
 const emits = defineEmits<StageViewerEmits>();
+const loading = ref(true);
 
 onMounted(() => {
+    loading.value = true;
     checkProps();
 })
 
@@ -61,25 +64,29 @@ const spxMapConfig = ref<mapConfig>({
     width: 400,
     height: 400
 });
+
+
 watchEffect(() => {
+    // when the stage size is determined by mapConfig,There is no need for the background layer to complete loading
     if (props.mapConfig) {
+        console.log(props.mapConfig)
         spxMapConfig.value = props.mapConfig
-    }
-})
-watch(() => props.backdrop, (_new, _old) => {
-    console.log(_new?.scenes.length, props.backdrop)
-    if (_new?.scenes.length && props.backdrop) {
-        const _image = new window.Image();
-        _image.src = props.backdrop?.scenes[props.backdrop.sceneIndex].url
-        _image.onload = () => {
-            spxMapConfig.value = {
-                width: _image.width,
-                height: _image.height
-            }
-        };
+        loading.value = false
     }
 })
 
+
+// When config is not configured, its stage size is determined by the first loaded background image
+const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
+    if (loading.value) {
+        const { imageEl } = event;
+        spxMapConfig.value = {
+            width: imageEl.width,
+            height: imageEl.height
+        };
+        loading.value = false;
+    }
+};
 
 const checkProps = () => {
     if (!props.mapConfig && !props.backdrop) {
