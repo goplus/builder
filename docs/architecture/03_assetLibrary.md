@@ -29,7 +29,7 @@ Emits a function `handleAssetAddition(name: string, file: File[])` with the asse
 
 ## User Stories
 
-When a user interacts with the Asset Library, they can add selected assets to their respective store lists. Depending on the asset type, different actions are performed to update the state in the store.
+When a user interacts with the Asset Library, they can add selected assets to their respective store lists. 
 
 ## Example Usage
 

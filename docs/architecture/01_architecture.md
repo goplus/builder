@@ -6,8 +6,11 @@ STEM EDU is a comprehensive online platform dedicated to enhancing children's pr
 
 ## Module Boundaries
 
-- **Asset List**: Handles the display and management of assets (Sprites, Backdrops, Sounds), allowing for addition and deletion, as well as importing assets from local storage.
-- **Asset Library**: Serves as the repository for assets, from which users can import assets into their projects.
+1. **Asset Library**: 
+   - Description: Serves as the repository for assets, from which users can import assets into their projects.
+   - Interfaces: Includes user login interface (input username and password, output login result and user information), user logout interface (input user information, output logout result), etc.
+   - Behavior: Processes user login and logout requests, validates user information, maintains user login status, etc.
+
 - **Sprite PropEdit**: Enables editing of SPX sprite properties, allowing for customization and configuration.
 - **Stage Editor**: A visual editing tool for real-time modification and rendering of sprites within a stage-like environment.
 - **Code Editor**: Provides an environment for writing and editing SPX code, with syntax highlighting and error detection.
@@ -23,11 +26,16 @@ STEM EDU is a comprehensive online platform dedicated to enhancing children's pr
 
 Each module within the STEM EDU architecture is designed to interact seamlessly with one another, establishing a network of functionality that supports the platform's educational objectives.
 
-- **Asset List and Asset Library**: The Asset List module communicates with the Asset Library to retrieve and display assets, while also handling the addition of new assets imported by the user.
 - **Stage Editor and Sprite PropEdit**: The Stage Editor collaborates with Sprite PropEdit to reflect changes in sprite properties within the visual stage.
 - **Code Editor and Code Toolbox**: The Code Editor module utilizes the Code Toolbox to enhance the code writing experience with easily accessible coding constructs.
 - **FileManage and I/O**: FileManage works closely with the I/O module to handle file operations, ensuring that project data is accurately loaded, saved, and exported.
 - **Account and Global**: The Account module integrates with Global to provide a localized authentication experience for users from different linguistic backgrounds.
+
+## Architecture Design
+
+Community is a web application based on `yap`, the interaction of each module is as follows:
+
+pics
 
 ## Module List
 
