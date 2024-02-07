@@ -9,6 +9,8 @@ import (
 	"strconv"
 )
 
+const _ = true
+
 type project struct {
 	yap.App
 	p *core.Project
@@ -258,18 +260,21 @@ func (this *project) MainEntry() {
 //line cmd/project_yap.gox:220:1
 		search := ctx.FormValue("search")
 //line cmd/project_yap.gox:221:1
-		assets, _ := this.p.SearchAsset(todo, search)
+		assetType := ctx.FormValue("assetType")
 //line cmd/project_yap.gox:222:1
+		assets, _ := this.p.SearchAsset(todo, search, assetType)
+//line cmd/project_yap.gox:223:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": assets})
 	})
-//line cmd/project_yap.gox:229:1
-	conf := &core.Config{}
 //line cmd/project_yap.gox:230:1
+	conf := &core.Config{}
+//line cmd/project_yap.gox:231:1
 	this.p, _ = core.New(todo, conf)
-//line cmd/project_yap.gox:232:1
-	this.Run(":8081")
+//line cmd/project_yap.gox:233:1
+	this.Run(":8080")
 }
 func main() {
+//line cmd/project_yap.gox:233:1
 	yap.Gopt_App_Main(new(project))
 }

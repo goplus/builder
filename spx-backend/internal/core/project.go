@@ -381,12 +381,12 @@ func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.Fi
 	return asset, UpdateAsset(p, asset)
 }
 
-func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, error) {
-	query := "SELECT * FROM asset WHERE name LIKE ?"
+func (p *Project) SearchAsset(ctx context.Context, search string, assetType string) ([]*Asset, error) {
+	query := "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ?"
 	searchString := "%" + search + "%"
 
 	// 执行查询
-	rows, err := p.db.Query(query, searchString)
+	rows, err := p.db.Query(query, searchString, assetType)
 	if err != nil {
 		println(err.Error())
 		return nil, err
@@ -409,7 +409,6 @@ func (p *Project) SearchAsset(ctx context.Context, search string) ([]*Asset, err
 		assets = append(assets, &asset)
 	}
 	if len(assets) == 0 {
-		println("kkk")
 		return nil, nil
 	}
 	return assets, nil
