@@ -51,13 +51,17 @@ import Sprite from "@/class/sprite";
 const spriteStore = useSpriteStore();
 const backdropStore = useBackdropStore();
 
-const handleAssetAddition = (name: string, file?: File[]) => {
-    //if （type === 'sprite'）
-    const sprite = new Sprite(name, file);
+const handleAssetAddition = async (name: string, address: string) => {
+  if (props.type === 'sprite') {
+    const file = await urlToFile(address, name);
+    const sprite = new Sprite(name, [file]);
     spriteStore.addItem(sprite);
-    //if (type === 'backdrop')
-    backdropStore.backdrop.removeFile(file);
-    
+    message.success(`add ${name} successfully!`)
+  } else if (props.type === 'backdrop') {
+    const file = await urlToFile(address, name);
+    backdropStore.backdrop.addFile(file);
+    message.success(`add ${name} successfully!`)
+  }
 };
 </script>
 ```

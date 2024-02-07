@@ -195,7 +195,8 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 
 /**
  * @description: A function to add sprite to list store.
- * @param {*} spriteName
+ * @param {*} name - added asset name
+ * @param {*} name - added asset file url
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:47:25
  */
