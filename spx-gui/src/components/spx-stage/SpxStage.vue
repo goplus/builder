@@ -8,8 +8,8 @@
 -->
 <template>
   <div class="spx-stage">
-    <div class="stage-button">Stage</div>
-    <n-button type="success" class="stage-run-button" @click="run">Run</n-button>
+    <div class="stage-button">{{ $t('component.stage') }}</div>
+    <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
     <div class="stage-viewer-container" v-else>
       <StageViewer @onSpritesDragEnd="onSpritesDragEnd" :id="projectStore.project.title"

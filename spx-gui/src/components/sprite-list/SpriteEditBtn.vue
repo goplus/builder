@@ -9,7 +9,7 @@
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      <p>Sprite</p>
+      <p> {{ $t('stage.direction') }}</p>
       <n-input round autosize clearable :default-value="name"></n-input>
     </div>
     <div class="sprite-edit-btn">
@@ -44,7 +44,7 @@
       />
     </div>
     <div class="sprite-edit-btn">
-      <p>Show</p>
+      <p>{{ $t('stage.show') }}</p>
       <n-switch
         v-model:value="visible"
         @update:value="
@@ -55,7 +55,7 @@
       />
     </div>
     <div class="sprite-edit-btn">
-      <p>Size</p>
+      <p>{{ $t('stage.size') }}</p>
       <n-input-number
         type="number"
         :min="0"
@@ -70,7 +70,7 @@
     </div>
 
     <div class="sprite-edit-btn">
-      <p>Dir</p>
+      <p> {{ $t('stage.direction') }}</p>
       <n-input-number
         type="number"
         :min="-180"

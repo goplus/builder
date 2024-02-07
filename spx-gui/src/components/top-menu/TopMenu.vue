@@ -86,7 +86,7 @@ const settingsOptions = [
 const activeKey = ref(null)
 
 // i18n/i10n config
-const { locale } = useI18n({
+const { locale,t } = useI18n({
   inheritLocale: true,
   useScope: 'global'
 })
@@ -145,7 +145,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              'File'
+              t("top.file"),
             )
         }
       ),
@@ -169,7 +169,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              'Save'
+              t("top.save"),
             )
         }
       ),
@@ -193,7 +193,7 @@ const menuOptions = [
                 style: computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon)
               },
-              'Publish'
+              t("top.publish"),
             )
         }
       ),
@@ -204,7 +204,7 @@ const menuOptions = [
       h(
         NInput,
         {
-          placeholder: 'Untitled',
+          placeholder: t("top.untitled"),
           style: {
             'border-radius': '10px',
             'text-align': 'center',
@@ -224,7 +224,7 @@ const menuOptions = [
           style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon)
         },
-        'Code'
+        t("top.code"),
       ),
     key: 'code-btn'
   },
@@ -243,7 +243,7 @@ const menuOptions = [
           },
           renderIcon: renderIcon(TutorialIcon)
         },
-        'Tutorial'
+        t("top.tutorial"),
       ),
     key: 'tutorial-btn'
   },

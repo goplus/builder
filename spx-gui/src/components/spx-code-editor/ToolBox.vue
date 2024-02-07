@@ -13,7 +13,7 @@
         v-for="item in completionToolbox"
         :key="item.label"
         :name="item.label"
-        :tab="item.label"
+        :tab="$t(`toolbox.${item.label}`)"
       >
         <n-button
           v-for="(snippet, index) in item.completionItems"

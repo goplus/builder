@@ -8,10 +8,10 @@
 -->
 <template>
     <div class="code-editor-space">
-        <div class="code-button">Code</div>
+        <div class="code-button">{{ $t('component.code') }}</div>
         <n-button-group class="formatBtnGroup" size="small">
-            <n-button class="" @click="format">clear</n-button>
-            <n-button class="formatBtn" @click="format">format</n-button>
+            <n-button class="" @click="clear">{{ $t("editor.clear") }}</n-button>
+            <n-button class="formatBtn" @click="format">{{ $t("editor.format") }}</n-button>
         </n-button-group>
         <CodeEditor ref="code_editor" :modelValue="currentCode" @update:modelValue="onCodeChange" />
     </div>
@@ -41,6 +41,9 @@ const onCodeChange = (value: string) => {
     }
 }
 
+const clear = () => {
+    code_editor.value.clear()
+}
 
 const format = () => {
     code_editor.value.format()
@@ -72,7 +75,7 @@ store.$onAction(({
 
 
 </script>
-  
+
 <style scoped>
 #code-editor {
     height: 100%;
