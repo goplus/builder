@@ -12,7 +12,6 @@ export interface StagePosition {
  * @description: Costume of Sprite 
  */
 export interface StageCostume {
-    id: string
     name: string
     x: number
     y: number
@@ -23,7 +22,6 @@ export interface StageCostume {
  * @description: Sprite of StageViewer
  */
 export interface StageSprite extends StagePosition {
-    id: string
     name: string
     heading: number
     size: number
@@ -38,7 +36,6 @@ export interface StageSprite extends StagePosition {
  * @description: Scene of Backdrop
  */
 export interface StageScene {
-    id: string
     name: string
     url: string
 }
@@ -68,12 +65,13 @@ export interface MapConfig {
  * @Date: 2024-02-02 17:18:49
  */
 export interface StageViewerProps {
+    id: string
     height?: number // container height
     width?: number // container width
     mapConfig?: MapConfig // some spx project havent this config,the stage size will depend on the SceneSize
     sprites: StageSprite[] // sprite list
     backdrop?: StageBackdrop // backdrop 
-    currentSpriteIds: string[]
+    currentSpriteNames: String[]
 }
 
 

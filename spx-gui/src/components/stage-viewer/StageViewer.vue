@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 12:30:20
+ * @LastEditTime: 2024-02-07 16:10:12
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -22,7 +22,7 @@
             <SpriteLayer :loading="loading" @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
-            }" :sprites="props.sprites" :mapConfig="spxMapConfig" :currentSpriteIds="props.currentSpriteIds" />
+            }" :sprites="props.sprites" :mapConfig="spxMapConfig" :currentSpriteNames="props.currentSpriteNames" />
         </v-stage>
     </div>
 </template>
@@ -39,12 +39,6 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
 });
 const emits = defineEmits<StageViewerEmits>();
 const loading = ref(true);
-
-onMounted(() => {
-    loading.value = true;
-    checkProps();
-})
-
 
 // get the scale of stage viewer
 const scale = computed(() => {
@@ -65,6 +59,10 @@ const spxMapConfig = ref<MapConfig>({
     height: 400
 });
 
+watch(() => props.id, () => {
+    loading.value = true;
+    checkProps();
+})
 
 watchEffect(() => {
     // when the stage size is determined by mapConfig,There is no need for the background layer to complete loading

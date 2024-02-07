@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 12:31:21
+ * @LastEditTime: 2024-02-07 15:31:49
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
@@ -13,8 +13,8 @@
     }">
         <template v-if="!props.loading">
             <template v-for="sprite in props.sprites">
-                <Sprite @onDragEnd="onSpriteDragEnd" v-if="isVisibleInStage(sprite.id)" :mapConfig="props.mapConfig"
-                    :key="sprite.id" :spriteConfig="sprite" />
+                <Sprite @onDragEnd="onSpriteDragEnd" v-if="isVisibleInStage(sprite)" :mapConfig="props.mapConfig"
+                    :key="sprite.name" :spriteConfig="sprite" />
             </template>
         </template>
     </v-layer>
@@ -30,12 +30,12 @@ const props = defineProps<{
     offsetConfig: { offsetX: number, offsetY: number },
     mapConfig: MapConfig
     sprites: StageSprite[]
-    currentSpriteIds: string[]
+    currentSpriteNames: String[]
 }>()
 
-const isVisibleInStage = ((spriteId: string) => {
-    return props.currentSpriteIds.includes(spriteId)
-})
+const isVisibleInStage = (sprite: StageSprite) => {
+    return props.currentSpriteNames.includes(sprite.name) && sprite.visible
+}
 
 // ----------methods-----------------------------------------
 const emits = defineEmits<{
