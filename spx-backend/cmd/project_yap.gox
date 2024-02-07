@@ -218,7 +218,8 @@ post "/asset/search", ctx=>{
 	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 	search := ctx.FormValue("search")
-	assets,_ := p.SearchAsset(todo,search)
+	assetType := ctx.FormValue("assetType")
+	assets,_ := p.SearchAsset(todo,search,assetType)
 	ctx.json {
 		"code":200,
 		"msg":"ok",
@@ -229,4 +230,4 @@ post "/asset/search", ctx=>{
 conf := &core.Config{}
 p, _ = core.New(todo, conf)
 
-run ":8081"
+run ":8080"
