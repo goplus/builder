@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 21:51:11
+ * @LastEditTime: 2024-02-07 22:38:29
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
@@ -112,7 +112,7 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.config.na
   display: flex;
   margin: 2px;
   min-width: 100px;
-  p{
+  p {
     margin: 0;
     line-height: 2rem;
   }
@@ -120,13 +120,11 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.config.na
   .n-input-number,
   .n-switch {
     margin-left: 3px;
+    min-width: 70%;
+  }
+  .n-switch {
     min-width:70%;
   }
-  .n-switch{
-    height: 100%;
-    margin: auto;
-  }
-
   .n-input-number {
     max-width: 100px;
   }
