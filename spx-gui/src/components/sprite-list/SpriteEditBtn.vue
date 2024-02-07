@@ -1,53 +1,81 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 17:43:33
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-07 22:12:10
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      Sprite
+      <p>Sprite</p>
       <n-input round autosize clearable :default-value="name"></n-input>
     </div>
     <div class="sprite-edit-btn">
-      X
-      <n-input-number style="border-radius: 25px" class="edit-input" round autosize clearable type="number" :value="x"
-        :disabled="!spriteStore.current" @update:value="(val) => {
-          spriteStore.current && spriteStore.current.setSx(val as number)
-        }
-          "></n-input-number>
+      <p>X</p>
+      <n-input-number
+        style="border-radius: 25px"
+        class="edit-input"
+        round
+        autosize
+        clearable
+        type="number"
+        :value="x"
+        :disabled="!spriteStore.current"
+        @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setSx(val as number)
+          }
+        "
+      ></n-input-number>
     </div>
     <div class="sprite-edit-btn">
-      Y
-      <n-input-number type="number" :value="y" :disabled="!spriteStore.current" @update:value="(val) => {
-        spriteStore.current && spriteStore.current.setSy(val as number)
-      }
-        " />
+      <p>Y</p>
+      <n-input-number
+        type="number"
+        :value="y"
+        :disabled="!spriteStore.current"
+        @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setSy(val as number)
+          }
+        "
+      />
     </div>
     <div class="sprite-edit-btn">
-      Show
-      <n-switch v-model:value="visible" @update:value="(val) => {
-        spriteStore.current && spriteStore.current.setVisible(val)
-      }" />
+      <p>Show</p>
+      <n-switch v-model:value="visible" />
     </div>
     <div class="sprite-edit-btn">
-      Size
-      <n-input-number type="number" :min="0" :value="size * 100" :disabled="!spriteStore.current" @update:value="(val) => {
-        spriteStore.current && spriteStore.current.setSize((val as number) / 100)
-      }
-        "></n-input-number>
+      <p>Size</p>
+      <n-input-number
+        type="number"
+        :min="0"
+        :value="size * 100"
+        :disabled="!spriteStore.current"
+        @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setSize((val as number) / 100)
+          }
+        "
+      ></n-input-number>
     </div>
 
     <div class="sprite-edit-btn">
-      Dir
-      <n-input-number type="number" :min="-180" :max="180" :value="heading" :disabled="!spriteStore.current"
-        @update:value="(val) => {
-          spriteStore.current && spriteStore.current.setHeading(val as number)
-        }
-          "></n-input-number>
+      <p>Dir</p>
+      <n-input-number
+        type="number"
+        :min="-180"
+        :max="180"
+        :value="heading"
+        :disabled="!spriteStore.current"
+        @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setHeading(val as number)
+          }
+        "
+      ></n-input-number>
     </div>
   </n-flex>
 </template>
@@ -77,11 +105,20 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.config.na
   flex: 1;
   display: flex;
   margin: 2px;
-
+  min-width: 100px;
+  p{
+    margin: 0;
+    line-height: 2rem;
+  }
   .n-input,
   .n-input-number,
   .n-switch {
     margin-left: 3px;
+    min-width:70%;
+  }
+  .n-switch{
+    height: 100%;
+    margin: auto;
   }
 
   .n-input-number {
