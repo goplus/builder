@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 22:14:41
- * @FilePath: /spx-gui/src/components/sprite-list/SpriteEditBtn.vue
+ * @LastEditTime: 2024-02-07 21:51:11
+ * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
 <template>
@@ -45,7 +45,14 @@
     </div>
     <div class="sprite-edit-btn">
       <p>Show</p>
-      <n-switch v-model:value="visible" />
+      <n-switch
+        v-model:value="visible"
+        @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setVisible(val)
+          }
+        "
+      />
     </div>
     <div class="sprite-edit-btn">
       <p>Size</p>
@@ -90,7 +97,6 @@ import { useSpriteStore } from '@/store/modules/sprite'
 const spriteStore = useSpriteStore()
 
 // ----------data related -----------------------------------
-
 
 const x = computed(() => (spriteStore.current ? spriteStore.current.config.x : 0))
 const y = computed(() => (spriteStore.current ? spriteStore.current.config.y : 0))
