@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 16:13:43
+ * @LastEditTime: 2024-02-07 16:40:21
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -83,7 +83,7 @@ const projectId = computed(() => project.value.title)
 
 const currentSprite = ref<Sprite | null>(null);
 
-const currentSpriteNames = ref<String[]>([])
+const currentSpriteNames = ref<string[]>([])
 
 
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
