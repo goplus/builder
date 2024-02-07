@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 18:02:21
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-07 22:57:06
  * @FilePath: /spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -123,7 +123,6 @@ const run = async () => {
 
   .n-button {
     background: #3a8b3b;
-    width: 50px;
     position: absolute;
     right: 6px;
     top: 2px;

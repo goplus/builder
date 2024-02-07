@@ -233,6 +233,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
   .add-new {
     color: white;
     .add-new-font{
+      text-align:center;
       font-family:'Heyhoo'
     }
   }
