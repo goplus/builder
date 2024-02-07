@@ -368,7 +368,13 @@ func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.Fi
 	if err != nil {
 		return nil, err
 	}
-	_, err = UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header)
+	path, err := UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header)
+	jsonBytes, err := json.Marshal(map[string]map[string]string{"assets": {"sound": path}})
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = string(jsonBytes)
+	println(asset.Address)
 	if err != nil {
 		return nil, err
 	}
