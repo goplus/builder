@@ -35,7 +35,8 @@ export const initI18n = async (app:App) => {
                 paste: 'Paste',
                 copy: 'Copy',
                 insert: 'Insert',
-                download: 'Download'
+                download: 'Download',
+                save: 'Save'
             }
         },
         zh: {
@@ -61,7 +62,8 @@ export const initI18n = async (app:App) => {
                 paste: '粘贴',
                 copy: '复制',
                 insert: '插入',
-                download: '下载'
+                download: '下载',
+                save: '保存'
             }
         }
     };
