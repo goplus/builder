@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-02-06 17:51:24
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-08 11:03:16
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
@@ -71,6 +71,8 @@ export const initI18n = async (app:App) => {
                 choose: 'Choose',
                 add: 'Add New',
                 run: 'Run',
+                download: 'Download',
+                save: 'Save'
             },
         },
         zh: {
@@ -132,6 +134,8 @@ export const initI18n = async (app:App) => {
                 choose: '选择',
                 add: '新建',
                 run: '运行',
+                download: '下载',
+                save: '保存'
             }
         }
     };

@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 20:13:33
+ * @LastEditTime: 2024-02-08 11:25:52
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description: 
  */
@@ -49,6 +49,38 @@ export function searchAssetByName(search: string, assetType: number): Promise<Pa
     const formData = new FormData();
     formData.append('search', search);
     formData.append('assetType', assetType);
+
+    return service({
+        url: url,
+        method: 'post',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+    });
+}
+
+/**
+ * Save asset
+ *
+ * @param id
+ * @param name
+ * @param uid
+ * @param category
+ * @param isPublic
+ * @param assetType The type of the asset. See src/constant/constant.ts for details.
+ * @param file
+ */
+export async function saveAsset(id: number, name: string, uid: number, category: string, isPublic: number, assetType: number, file: File): Promise<Asset> {
+    const url = '/asset/save';
+    const formData = new FormData();
+    formData.append('id', id.toString());
+    formData.append('name', name);
+    formData.append('uid', uid.toString());
+    formData.append('category', category);
+    formData.append('isPublic', isPublic ? '1' : '0');
+    formData.append('assetType', assetType.toString());
+    formData.append('file', file);
 
     return service({
         url: url,
