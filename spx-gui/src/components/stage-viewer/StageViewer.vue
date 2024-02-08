@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 16:10:12
+ * @LastEditTime: 2024-02-07 17:15:13
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -100,8 +100,7 @@ const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
 </script>
 <style scoped>
 #stage-viewer {
-    height: v-bind("props.height");
-    width: v-bind("props.width");
-    background-color: rgb(183, 255, 2);
+    height: v-bind("props.height + 'px'");
+    width: v-bind("props.width+ 'px'");
 }
 </style>

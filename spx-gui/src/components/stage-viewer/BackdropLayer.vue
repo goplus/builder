@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 12:12:37
+ * @LastEditTime: 2024-02-07 17:18:32
  * @FilePath: /spx-gui/src/components/stage-viewer/BackdropLayer.vue
  * @Description
 -->
@@ -11,11 +11,7 @@
         x: props.offsetConfig.offsetX,
         y: props.offsetConfig.offsetY,
     }">
-        <v-rect :config="{
-            width: props.mapConfig.width,
-            height: props.mapConfig.height,
-            fill: '#eb65a9',
-        }"></v-rect>
+
         <v-line :config="{
             points: [props.mapConfig.width / 2, 0, props.mapConfig.width / 2, props.mapConfig.height],
             stroke: 'pink',
