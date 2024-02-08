@@ -1,29 +1,25 @@
 # spx-gui
 
 ## Dependency Installation
-`npm install`
 
-Dependencies are as follows:
-```node
-"axios": "^1.6.5",
-"file-saver": "^2.0.5",
-"jszip": "^3.10.1",
-"localforage": "^1.10.0",
-"pinia": "^2.1.7", 
-"vue": "^3.3.11",  
-"vue-router": "^4.2.5",  
-"pinia": "^2.1.7"
+```bash
+npm install
 ```
 
 ## Project Execution
-`vite`
+
+```bash
+npm run dev
+```
 
 ## Project DevTool
+
 `vite-plugin-vue-devtools` <https://devtools-next.vuejs.org/>  
 
 DevTool will run in `localhost:5173/__devtools__/`
 
 ## Code Architecture
+
 ```arduino
 ├── public 
 └── src 
@@ -37,17 +33,44 @@ DevTool will run in `localhost:5173/__devtools__/`
 ```
 
 ## Development Standards
-### Directory Naming Convention
-1. Use lowercase, separated by hyphens, e.g., sprite-library
+
+### Code Styles
+
+#### Naming Convention
+
+- For variables/functions/types: follow ESLint rule `@typescript-eslint/naming-convention`. For things "defining the shape" like class, interface, etc., use CamelCase. For "instances" like a regular variable, use camelCase.
+- For filenames/folders: use CamelCase for Vue component files, use kebab-case for others.
+
+#### Exports
+
+- Use default export for Vue components. Use named export for all other cases.
+
+#### Type Checks
+
+- Do not ignore TypeScript errors. Try not to use `any`.
+- Type Checks are run on PR (`vue-tsc`).
+
+#### ESLint Rules
+
+- ESLint rules can be ignored in some cases, but with Code Review.
+- ESLint is run on PR.
+
+#### Format
+
+- Install extension Prettier to format your code. Format on PR for changed files is required. You can also turn on the feature Format on Save in VSCode.
 
 ### Component Standards
+
 1. CamelCase naming
 2. The order of tags is unified as `<script>, <template>, <style>`
 3. Use the Composition API for coding
 4. defineProps should use type declaration
 5. Child components that are tightly coupled with the parent component should be prefixed with the parent component's name, e.g., SpriteList, SpriteListItem, SpriteListItemButton
 
+#### Examples
+
 Here is a complete example of a component named SpriteList:
+
 ```vue
 <template>
   <div>Display SpriteList</div>
@@ -55,21 +78,22 @@ Here is a complete example of a component named SpriteList:
 
 <script setup>
 // ----------Import required packages / components-----------
-import {computed, onMounted} from "vue";
-// import aaa;
+import { computed, onMounted } from 'vue'
 
 // ----------props & emit------------------------------------
-const props = defineProps({ spriteName: String }); // Props based on type declaration
-const emit = defineEmits(['update']);
+const props = defineProps({ spriteName: String }) // Props based on type declaration
+const emit = defineEmits(['update'])
 
 // ----------data related (reactive, ref..)------------------
-const count = ref(0);
+const count = ref(0)
 
 // ----------computed properties-----------------------------
-const doubled = computed(() => count.value * 2);
+const doubled = computed(() => count.value * 2)
 
 // ----------lifecycle hooks---------------------------------
-onMounted(() => { console.log('Component is mounted!'); });
+onMounted(() => {
+  console.log('Component is mounted!')
+})
 
 // ----------other composition functions---------------------
 // Such as useRouter, useStore..
@@ -78,159 +102,75 @@ onMounted(() => { console.log('Component is mounted!'); });
 </script>
 ```
 
-Example of component invocation:
-<!-- S Component ComponentName --> indicates the start of the component
-<!-- E Component ComponentName --> indicates the end of the component
-```vue3
-<template>
-  <!--  S Component SpriteList -->
-<SpriteList></SpriteList>
-  <!--  E Component SpriteList -->
-</template>
-
-<script setup>
-import SpriteList from "@/components/sprite-list/SpriteList.vue";
-</script>
-```
-
 ### Store Standards
-1. The returned value of `defineStore () `is named using the name of store.
+
+1. The returned value of `defineStore()`is named using the name of store.
 2. This value needs to start with `use` and end with `Store`. for example, `useAssetStore`, `useUserStore`, `useStyleStore`
 3. The first parameter is the unique ID of the Store in the application
 3. Use `Setup Store` to write Store
 4. Read-only properties in store are exposed after being wrapped with `vue.readonly`
-```javascript
-export const useUserStore = defineStore(
-    'user',
-    () => {
-        // ----------state------------------------------------
-        const token = ref("");
-        const username = ref("");
 
-        // ----------getters------------------------------------
-        const getFullToken = computed(() => "Bear " + token.value)
+```js
+export const useUserStore = defineStore('user', () => {
+  // ----------state------------------------------------
+  const token = ref('')
+  const username = ref('')
 
-        // ----------actions------------------------------------
-        const setToken = (_token) => {
-            token.value = _token
-        }
-        return {
-        //  state
-            username:readonly(username),
-            token: readonly(token),
-        //  getters
-            getFullToken,
-        //  actions
-            setToken
-        }
-    }
-)
+  // ----------getters------------------------------------
+  const getFullToken = computed(() => 'Bear ' + token.value)
 
-
+  // ----------actions------------------------------------
+  const setToken = (_token) => {
+    token.value = _token
+  }
+  return {
+    //  state
+    username: readonly(username),
+    token: readonly(token),
+    //  getters
+    getFullToken,
+    //  actions
+    setToken,
+  }
+})
 ```
-
-
-
 
 ### Route Addition
+
 Adding SpriteList as an example:
 
-1. Original content
 ```javascript
 const routes = [
-    { path: '/', redirect: '/spx/homepage' },
-    {
+  { path: '/', redirect: '/spx/homepage' },
+  {
     path: '/spx/homepage',
     name: 'SpxHomepage',
-    component: () =>
-    import("../components/SpxHomepage.vue"),
-    }
-];
-```
-
-2. Adding SpriteList
-```javascript
-const routes = [
-    { path: '/', redirect: '/spx/homepage' },
-    {
-    path: '/spx/homepage',
-    name: 'SpxHomepage',
-    component: () =>
-    import("../components/SpxHomepage.vue"),
-    },
-    {
+    component: () => import('../components/SpxHomepage.vue'),
+  },
+  {
     path: '/sprite/list',
     name: 'SpriteList',
-    component: () =>
-    import("../components/sprite-list/SpriteList.vue"),
-    },
-];
+    component: () => import('../components/sprite-list/SpriteList.vue'),
+  },
+]
 ```
 
-3. Enter `[project deployment URL]/sprite/list` in the browser address bar to access the component page
-
-### Utility Function Standards
-Encapsulating a simple ajax request as an example:
-
-1. Create the appropriate package and js file, e.g., create request.js in the api package
-2. Write utility functions with complete comments
-
-```javascript
-/**
-* @description Basic ajax request method
-*
-* @param method Request method, "POST" / "GET"
-* @param url    Request URL
-* @param dataOrParams  Request parameters/body
-* @param headers   Request headers
-* @returns {Promise<any>}
-*
-* @author yxy
-* @createDate 2024.1.10
- */
-export async function request(method, url, dataOrParams = null,headers={} ) {
-    const base_url = "http://localhost:xxxx" + url;
-    try {
-        const defaultHeaders = {
-            "Content-Type": "application/json",
-        };
-
-        const mergedHeaders = {
-            ...defaultHeaders,
-            ...headers,
-        };
-
-        const response = await axios({
-            method,
-            url: base_url,
-            data: method.toLowerCase() === "get" ? null : dataOrParams,
-            params: method.toLowerCase() === "get" ? dataOrParams : null,
-            headers: mergedHeaders,
-        });
-        console.log(`[request] ${base_url} |request successful，response:`);
-        console.log(response)
-        return response.data;
-    } catch (error) {
-        console.log(`[request] ${base_url} |request failed, dataOrParams: ${JSON.stringify(dataOrParams)}`);
-        console.log(error);
-        throw error;
-    }
-}
-
-```
+1. Enter `[project deployment URL]/sprite/list` in the browser address bar to access the component page
 
 ### Team Work Standards
+
 Use TODO for team code handover
 
-```javascript
+```vue
 <script setup>
 
 // TODO Complete xx content writing/bugfix  @xxx
-    
+
 </script>
 ```
 
 ## Complete Component Development Process Reference
+
 Taking the creation of an Audio Editing Page as an example:
 
 1. If it's a new page, create a folder, sounds-edit
@@ -238,16 +178,19 @@ Taking the creation of an Audio Editing Page as an example:
 3. Register the component in the route
 4. Complete the page development
 
-
 ## Theme File
+
 If your project includes custom CSS styles with color definitions, follow these steps to define these styles in a theme file:
 
 1. Add custom color variables in the file located at src/assets/theme.scss
+
 ```scss
 // SpxEditor  
 $spx-editor-tab-font-uncheck: black;   // Please start the name with the component name, for example, for CSS styles in SpxEditor, start with spx-editor
 ```
+
 2. Import and use these variables in SpxEditor
+
 ```scss
 <style scoped lang="scss">  
 @import "@/assets/theme.scss";  
@@ -261,26 +204,28 @@ $spx-editor-tab-font-uncheck: black;   // Please start the name with the compone
 ```
 
 ## i18n/i10n
-1. Configure languages in `src/language/index.ts`
+
+### Configure languages in `src/language/index.ts`
+
 ```typescript
-export const initI18n = async (app:App) => {
-      const messages = {
-          en: {
-                sounds: {
-                  hint: 'Sounds',
-                }
-          },
-          zh: {
-              sounds: {
-                hint: '音频'
-              }
-          }
-    };
+export const initI18n = async (app: App) => {
+  const messages = {
+    en: {
+      sounds: {
+        hint: 'Sounds',
+      },
+    },
+    zh: {
+      sounds: {
+        hint: '音频',
+      },
+    },
+  }
 }
 ```
 
-2. How to use it
+### Usage
+
 ```html
 <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
 ```
-

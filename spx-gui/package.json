@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore"
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",
@@ -33,6 +33,7 @@
     "@types/file-saver": "^2.0.7",
     "@types/golang-wasm-exec": "^1.15.2",
     "@types/node": "^20.11.10",
+    "@types/wavesurfer.js": "^6.0.12",
     "@vicons/antd": "^0.12.0",
     "@vicons/ionicons5": "^0.12.0",
     "@vicons/material": "^0.12.0",
