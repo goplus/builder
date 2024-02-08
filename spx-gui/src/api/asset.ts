@@ -4,7 +4,7 @@
  * @LastEditors: xuning 453594138@qq.com
  * @LastEditTime: 2024-02-08 11:25:52
  * @FilePath: /builder/spx-gui/src/api/asset.ts
- * @Description: 
+ * @Description:
  */
 import { service } from "@/axios";
 import type { Asset, PageData } from "@/interface/library.ts"; // Adjust the import paths as needed
@@ -91,4 +91,3 @@ export async function saveAsset(id: number, name: string, uid: number, category:
         },
     });
 }
-

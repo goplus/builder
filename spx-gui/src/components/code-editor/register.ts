@@ -4,7 +4,7 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-02-02 11:20:28
  * @FilePath: /builder/spx-gui/src/components/code-editor/register.ts
- * @Description: 
+ * @Description:
  */
 import { keywords, typeKeywords, LanguageConfig, MonarchTokensProviderConfig } from './language'
 import wasmModuleUrl from '/wasm/format.wasm?url&wasmModule';

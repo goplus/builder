@@ -73,7 +73,9 @@ export const initI18n = async (app:App) => {
                 run: 'Run',
                 download: 'Download',
                 save: 'Save'
-            },
+                download: 'Download',
+                save: 'Save'
+            }
         },
         zh: {
             language: "中文",
