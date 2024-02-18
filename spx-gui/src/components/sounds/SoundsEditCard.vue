@@ -16,7 +16,6 @@
         {{ props.asset.name }}
       </div>
       <div class="sounds-card-subtitle">
-        0.85s
       </div>
     </div>
   </div>
@@ -42,8 +41,8 @@ const props = defineProps({
 .sounds-card {
   margin-top: 10px;
 
-  width: 125px;
-  height: 125px;
+  width: 120px;
+  height: 120px;
   border-radius: 20px;
   background: linear-gradient(145deg, $sounds-edit-card-1, $sounds-edit-card-2);
   box-shadow: 0 0 5px rgb(220, 79, 35);

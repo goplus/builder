@@ -1,17 +1,17 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 13:24:58
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 20:50:40
  * @FilePath: /spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
 <template>
     <div class="code-editor-space">
-        <div class="code-button">Code</div>
+        <div class="code-button">{{ $t('component.code') }}</div>
         <n-button-group class="formatBtnGroup" size="small">
-            <n-button class="" @click="format">clear</n-button>
-            <n-button class="formatBtn" @click="format">format</n-button>
+            <n-button class="" @click="clear">{{ $t("editor.clear") }}</n-button>
+            <n-button class="formatBtn" @click="format">{{ $t("editor.format") }}</n-button>
         </n-button-group>
         <CodeEditor ref="code_editor" :modelValue="currentCode" @update:modelValue="onCodeChange" />
     </div>
@@ -41,6 +41,9 @@ const onCodeChange = (value: string) => {
     }
 }
 
+const clear = () => {
+    code_editor.value.clear()
+}
 
 const format = () => {
     code_editor.value.format()
@@ -72,7 +75,7 @@ store.$onAction(({
 
 
 </script>
-  
+
 <style scoped>
 #code-editor {
     height: 100%;
@@ -96,13 +99,9 @@ store.$onAction(({
     display: flex;
     flex-direction: column;
     height: calc(100% - 44px);
-    border: 2px solid #00142970;
     position: relative;
     background: white;
-    border-radius: 24px;
-    padding: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    padding: 4px;
 }
 
 .formatBtnGroup {
