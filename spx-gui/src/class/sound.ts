@@ -40,11 +40,11 @@ import type { SoundConfig } from '@/interface/file';
  * Sound.isInstance("hello")  // false
  *
  * // conputed path (depend on the name of the sound)
- * snd1.path  // assets/sound/1
- * snd2.path  // assets/sound/3
+ * snd1.path  // assets/sounds/1
+ * snd2.path  // assets/sounds/3
  *
  * // computed dir
- * snd2.dir  // { "assets/sound/3/index.json": { rate: 2 }, "assets/sound/3/[file1.name]": file1, "assets/sound/3/[file2.name]": file2 }
+ * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
  *
  * // config
  * snd1.config = snd1.genDefualtConfig()
@@ -52,9 +52,9 @@ import type { SoundConfig } from '@/interface/file';
 
 export class Sound extends AssetBase {
     /**
-     * The root path of the sound.
+     * The root path of the sounds.
      */
-    static ROOT_PATH = "assets/sound/"
+    static ROOT_PATH = "assets/sounds/"
 
     /**
      * The regular expression of the sound.
