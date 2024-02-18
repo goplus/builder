@@ -51,10 +51,23 @@ interface ProjectDetail {
 }
 
 class Project implements ProjectSummary, ProjectDetail {
+    constructor(id: string = "", source: ProjectSource = ProjectSource.local, title: string = "", version: number = 0, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", unidentifiedFile: RawDir = {}) {
+        this.id = id
+        this.source = source
+        this.title = title
+        this.version = version
+        this.sprite = sprite
+        this.sound = sound
+        this.backdrop = backdrop
+        this.entryCode = entryCode
+        this.unidentifiedFile = unidentifiedFile
+    }
     // Save project to Cloud.
     save(): Promise<void>;
     // Load project.
-    load(): Promise<void>;
+    load(id: string, source: ProjectSource): Promise<void>;
+    // Load project from zip file.
+    loadFromZip(file: File, title?: string);
     // Download project to computer.
     download(): Promise<void>;
     // Get local and cloud projects.
@@ -76,22 +89,21 @@ Here is the basic usage of Project Management.
 </template>
 
 <script setup lang="ts">
-import { useProjectStore } from "@/store/modules/project";
 import { Project } from "@/class/project";
     
-const projectStore = useProjectStore();
+const project = new Project();
 
 const loadFile = async (e: any) => {
-    await projectStore.loadFromZip(e.target.files[0]);  // load project by zip file
+    await project.loadFromZip(e.target.files[0]);  // load project by zip file
 }
 
 const loadProject = async () => {
     const projects = await Project.getProjects();  // [ProjectSummary{}, ProjectSummary{}]
-    await projectStore.load(projects[0].id, projects[0].source);  // load the first project
+    await project.load(projects[0].id, projects[0].source);  // load the first project
 }
 
 const download = () => {
-    projectStore.project.value.download();  // save project to computer
+    project.download();  // save project to computer
 }
 </script>
 ```
