@@ -1,4 +1,5 @@
 import StageViewer from "./StageViewer.vue"
+import { Project } from "@/store"
 export default StageViewer
 /**
  * @description:  The Stage Position,Relative to the stage center
@@ -44,7 +45,8 @@ export interface StageScene {
  */
 export interface StageBackdrop {
     scenes: StageScene[]
-    sceneIndex: number
+    costumes: StageCostume[]
+    currentCostumeIndex: number
 }
 /**
  * @description: Map Config,some spx project havent this config,the stage size will depend on the SceneSize
@@ -65,12 +67,9 @@ export interface MapConfig {
  * @Date: 2024-02-02 17:18:49
  */
 export interface StageViewerProps {
-    id: string
+    project: Project
     height?: number // container height
     width?: number // container width
-    mapConfig?: MapConfig // some spx project havent this config,the stage size will depend on the SceneSize
-    sprites: StageSprite[] // sprite list
-    backdrop?: StageBackdrop // backdrop 
     currentSpriteNames: string[]
 }
 

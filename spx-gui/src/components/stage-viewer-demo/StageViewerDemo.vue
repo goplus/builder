@@ -2,25 +2,21 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 16:40:21
+ * @LastEditTime: 2024-02-18 17:36:46
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <input type="file" @change="add" accept=".zip">
-
-
     <div style="display: flex;">
-        <div style="display: flex;flex-direction: column;">
-            <div>
-                <p>show in stage viewer</p>
-                <template v-for="sprite in sprites" :key="sprite.name">
-                    <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
-                        @click="toggleShowInStage(sprite.name)">
-                        {{ sprite.name }}
-                    </button>
-                </template>
-            </div>
+        <div>
+            <p>show in stage viewer</p>
+            <template v-for="sprite in sprites" :key="sprite.name">
+                <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
+                    @click="toggleShowInStage(sprite.name)">
+                    {{ sprite.name }}
+                </button>
+            </template>
             <div>
                 <p>active in stage</p>
                 <button v-for="sprite in project.sprite.list" :key="sprite.name" @click="currentSprite = sprite"
@@ -28,6 +24,8 @@
                     {{ sprite.name }}
                 </button>
             </div>
+        </div>
+        <div style="display: flex;flex-direction: column;">
             <p>sprite position</p>
             <n-input-number type="number" :value="x"
                 @update:value="(val) => { currentSprite && currentSprite.setSx(val as number) }"></n-input-number>
@@ -46,19 +44,17 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
             <n-switch v-model:value="visible" @update:value="(val) => { currentSprite && currentSprite.setVisible(val) }" />
         </div>
-        <div style="width:400px;height:400px;">
-            <StageViewer :id="projectId" @onSpritesDragEnd="onDragEnd" :backdrop="backdrop" :sprites="sprites"
-                :currentSpriteNames="currentSpriteNames" />
-        </div>
+        <StageViewer @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames" :project="(project as Project)" />
     </div>
 </template>
 <script setup lang="ts">
 import { NInputNumber, NSwitch } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
-
 import StageViewer from "../stage-viewer";
 import type { StageSprite, SpriteDragEndEvent, StageBackdrop } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
+import type { Project } from "@/store/modules/project";
+
 import { storeToRefs } from "pinia";
 import { ref, computed, watch } from "vue";
 import type { ComputedRef } from "vue";
@@ -67,8 +63,6 @@ const { project } = storeToRefs(projectStore);
 const add = async (e: any) => {
     await projectStore.loadProject(e.target.files[0], e.target.files[0].name.split(".")[0]);
 }
-
-
 const x = computed(() => currentSprite.value ? currentSprite.value.config.x : 0)
 const y = computed(() => currentSprite.value ? currentSprite.value.config.y : 0)
 const heading = computed(() => currentSprite.value ? currentSprite.value.config.heading : 0)
@@ -78,8 +72,13 @@ const costumeX = computed(() => currentSprite.value ? currentSprite.value.config
 const costumeY = computed(() => currentSprite.value ? currentSprite.value.config.costumes[currentSprite.value.config.costumeIndex].y : 0)
 
 
-// TODO: Temporarily use title of project as id
-const projectId = computed(() => project.value.title)
+const toggleShowInStage = (name: string) => {
+    currentSpriteNames.value =
+        currentSpriteNames.value.includes(name) ?
+            currentSpriteNames.value.filter(_name => _name !== name)
+            : [...currentSpriteNames.value, name]
+}
+
 
 const currentSprite = ref<Sprite | null>(null);
 
@@ -111,12 +110,7 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
     return list as StageSprite[];
 })
 
-const toggleShowInStage = (name: string) => {
-    currentSpriteNames.value =
-        currentSpriteNames.value.includes(name) ?
-            currentSpriteNames.value.filter(_name => _name !== name)
-            : [...currentSpriteNames.value, name]
-}
+
 
 // TODO: Temporarily use title of project as id
 watch(() => project.value.title, () => {
@@ -130,16 +124,16 @@ const onDragEnd = (e: SpriteDragEndEvent) => {
     currentSprite.value?.setSy(e.targets[0].position.y)
 }
 
-const backdrop: ComputedRef<StageBackdrop> = computed(() => {
+// const backdrop: ComputedRef<StageBackdrop> = computed(() => {
 
-    return {
-        scenes: project.value.backdrop.config.scenes.map((scene, index) => ({
-            name: scene.name as string,
-            url: project.value.backdrop.files[index].url as string
-        })),
-        sceneIndex: project.value.backdrop.currentSceneIndex
-    }
-})
+//     return {
+//         scenes: project.value.backdrop.config.scenes.map((scene, index) => ({
+//             name: scene.name as string,
+//             url: project.value.backdrop.files[index].url as string
+//         })),
+//         sceneIndex: project.value.backdrop.currentSceneIndex
+//     }
+// })
 
 
 
