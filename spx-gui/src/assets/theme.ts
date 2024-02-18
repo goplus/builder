@@ -7,9 +7,9 @@
  * @Description: 
  */
 const codeColor = "#FFF8CC";
-const fileColor = "#ffd496";
-const saveColor = "#cef5cd";
-const publishColor = "#c0e8f8";
+const fileColor = "#FFEBF1";
+const saveColor = "#FFEBF1";
+const publishColor = "#FFEBF1";
 const tutorialColor = "#00509d";
 const commonColor = "#FF81A7";
 

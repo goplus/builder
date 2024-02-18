@@ -1,8 +1,8 @@
 <!--
  * @Author: xuning
  * @Date: 2024-01-12 11:15:15
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-26 17:37:21
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 20:23:06
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
@@ -102,7 +102,7 @@ const themeOverrides = {
 
 #spx {
   height: 100%;
-  background: linear-gradient(180deg, #ffffff, $background-color);
+  background: linear-gradient(180deg, #ffffff15, $background-color);
 }
 
 body {

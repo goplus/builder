@@ -8,7 +8,7 @@
 -->
 <template>
   <div class="asset-library">
-    <div class="asset-library-edit-button">Edit</div>
+    <div class="asset-library-edit-button">{{ $t('component.edit') }}</div>
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
       <n-grid-item class="asset-library-left" span="3">
