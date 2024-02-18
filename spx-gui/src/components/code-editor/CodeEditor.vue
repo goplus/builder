@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 17:26:04
+ * @LastEditors: Hu JingJing
+ * @LastEditTime: 2024-02-06 17:17:27
  * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -141,9 +141,20 @@ const format = async () => {
     }
 }
 
+/**
+ * @description: Clear the editor
+ * @return {*}
+ * @Author: Hu JingJing
+ * @Date: 2024-02-06 17:00:00
+ */
+const clear = async () => {
+    editor.setValue('')
+}
+
 defineExpose({
     insertSnippet,
     format,
+    clear,
 })
 
 
