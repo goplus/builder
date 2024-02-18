@@ -51,7 +51,7 @@ interface ProjectDetail {
 }
 
 class Project implements ProjectSummary, ProjectDetail {
-    constructor(id: string = "", source: ProjectSource = ProjectSource.local, title: string = "", version: number = 0, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", unidentifiedFile: RawDir = {});
+    constructor();
     // Save project to Cloud.
     save(): Promise<void>;
     // Load project.
