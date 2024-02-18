@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 19:50:04
+ * @LastEditTime: 2024-02-18 17:36:42
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -42,12 +42,12 @@
             {{ category }}
           </n-button>
           <span class="sort-btn">
-            <n-button size="large" circle>
+            <n-button size="large" circle  @click="handleSortByHot">
               <template #icon>
                 <n-icon><hotIcon /></n-icon>
               </template>
             </n-button>
-            <n-button size="large" circle class="sort-btn-new">
+            <n-button size="large" circle class="sort-btn-new" @click="handleSortByTime">
               <template #icon>
                 <n-icon><newIcon /></n-icon>
               </template>
@@ -96,7 +96,7 @@ interface PropsType {
   type: string
 }
 const props = defineProps<PropsType>()
-const emits = defineEmits(['update:show', 'add-asset-to-store'])
+const emits = defineEmits(['update:show', 'add-asset'])
 
 // ----------data related -----------------------------------
 // Ref about show modal state.
@@ -168,7 +168,7 @@ const closeModalFunc = () => {
  * @Date: 2024-01-30 11:51:05
  */
 const handleAddAsset = (name: string, address: string) => {
-  emits('add-asset-to-store', name, address)
+  emits('add-asset', name, address)
 }
 
 /**
@@ -197,7 +197,6 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
-  console.log('@keypress.enter="handleSearch"', searchQuery.value)
   //TODO: link api
   if (props.type === 'backdrop') {
     let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
@@ -207,6 +206,14 @@ const handleSearch = async () => {
     assetInfos.value = res.data.data
     console.log(assetInfos.value,res,res.data,'assetInfos.value')
   }
+}
+
+const handleSortByHot = async () => {
+  let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
+}
+
+const handleSortByTime = async () => {
+  let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
 }
 </script>
 

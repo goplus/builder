@@ -77,7 +77,7 @@
   <LibraryModal
     v-model:show="showModal"
     :type="props.type"
-    @add-asset-to-store="handleAssetAddition"
+    @add-asset="handleAssetAddition"
   />
   <!-- E Modal Library -->
 
