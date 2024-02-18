@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 17:18:32
+ * @LastEditTime: 2024-02-18 15:58:57
  * @FilePath: /spx-gui/src/components/stage-viewer/BackdropLayer.vue
  * @Description
 -->
@@ -41,20 +41,33 @@ const emits = defineEmits<{
 const props = defineProps<{
     offsetConfig: { offsetX: number, offsetY: number },
     mapConfig: MapConfig,
-    backdropConfig?: StageBackdrop
+    backdropConfig: StageBackdrop | null
 }>()
 
 const image = ref<HTMLImageElement>()
 
-watch(() => props.backdropConfig, (_new, _old) => {
-    if (_new && _new.scenes.length != 0) {
-        const _image = new window.Image();
-        _image.src = _new.scenes[_new.sceneIndex].url
-        _image.onload = () => {
-            image.value = _image;
-            emits('onSceneLoadend', { imageEl: _image })
-        };
-    } else {
+watch(() => props.backdropConfig, (new_config, old_config) => {
+    if (new_config) {
+        // In the scene config‘s project, you only need to get the first scene as the backdrop
+        if (new_config.scenes.length != 0) {
+            const _image = new window.Image();
+            _image.src = new_config.scenes[0].url
+            _image.onload = () => {
+                image.value = _image;
+                emits('onSceneLoadend', { imageEl: _image })
+            };
+        } else if (new_config.costumes.length != 0) {
+            console.log(new_config)
+            const _image = new window.Image();
+            _image.src = new_config.costumes[new_config.currentCostumeIndex].url
+            console.log(_image)
+            _image.onload = () => {
+                image.value = _image;
+                emits('onSceneLoadend', { imageEl: _image })
+            };
+        }
+    }
+    else {
         image.value?.remove();
     }
 })
