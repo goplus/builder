@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-18 17:36:42
+ * @LastEditTime: 2024-02-18 18:31:39
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -208,12 +208,21 @@ const handleSearch = async () => {
   }
 }
 
+/**
+ * @description: A function to handle sort by hot.
+ * @return {*}
+ */
 const handleSortByHot = async () => {
-  let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
+  //TODO
+  
 }
 
+/**
+ * @description: A function to handle sort by time.
+ * @return {*}
+ */
 const handleSortByTime = async () => {
-  let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
+  //TODO
 }
 </script>
 
