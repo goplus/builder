@@ -2,13 +2,18 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:28:15
  * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-01-12 17:28:15
- * @FilePath: src/components/sounds/SoundsEditCard.vue
+ * @LastEditTime: 2024-02-18 14:11:19
+ * @FilePath: src/components/sound/SoundsEditCard.vue
  * @Description: Sounds Card
 -->
 <template>
   <div class="sounds-card">
-    <div class="close-button">×</div>
+    <div
+      class="delete-button"
+      @click.stop="onDeleteClick"
+    >
+      ×
+    </div>
     <div class="sounds-card-waveform">
     </div>
     <div class="sounds-card-content">
@@ -23,15 +28,21 @@
 
 <script setup lang="ts">
 
-import { type Asset } from "@/interface/library";
 import { defineProps } from "vue";
+import { Sound } from '@/class/sound'
 
 const props = defineProps({
   asset: {
-    type: Object as () => Asset,
+    type: Object as () => Sound,
     required: true,
   },
 });
+
+const emits = defineEmits(['delete-sound'])
+
+const onDeleteClick = () => {
+  emits('delete-sound', props.asset?.name);
+}
 
 </script>
 
@@ -57,7 +68,7 @@ const props = defineProps({
 
   transition: transform 0.3s ease;
   &:hover {
-    transform: scale(1.08);
+    transform: scale(1.04);
   }
 }
 
@@ -90,7 +101,7 @@ const props = defineProps({
   text-align: center;
 }
 
-.close-button {
+.delete-button {
   position: absolute;
   top: -5px;
   right: -10px;
@@ -106,6 +117,12 @@ const props = defineProps({
   font-size: 40px;
   color: $sounds-edit-card-close-button-x;
   border: 2px solid $sounds-edit-card-close-button-border;
+}
+
+.delete-button:hover {
+  transform: scale(1.1);
+  background-color: #f8f2f2;
+  color: $sounds-edit-card-close-button-border;
 }
 
 </style>

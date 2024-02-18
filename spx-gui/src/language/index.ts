@@ -17,11 +17,11 @@ export const initI18n = async (app:App) => {
             language: "English",
             tab: {
                 code: 'Code',
-                sound: 'Sounds',
+                sound: 'Sound',
                 costume:'Costume',
             },
             sounds: {
-                hint: '🎵 Sounds Edit',
+                hint: '🎵 Sound Edit',
                 undo: 'Undo',
                 reUndo: 'ReUndo',
                 delete: 'Delete',

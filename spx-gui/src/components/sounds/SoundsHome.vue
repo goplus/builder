@@ -1,30 +1,36 @@
 <!--
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-12 17:27:57
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-04 13:42:12
- * @FilePath: /builder/spx-gui/src/components/sounds/SoundsHome.vue
+ * @LastEditors: Yao xinyue
+ * @LastEditTime: 2024-02-19 16:12:54
+ * @FilePath: /builder/spx-gui/src/components/sound/SoundsHome.vue
  * @Description: Sounds Homepage, includes Edit Part And Card List
 -->
 <template>
   <n-layout has-sider style="height: calc(100vh - 60px - 54px - 12px)">
     <n-layout-sider
       :native-scrollbar="false"
-      content-style="paddingLeft: 130px;"
+      content-style="paddingLeft: 120px;"
       style="width: 175px"
     >
+      <SpriteAddBtn
+        :style="{ 'margin-bottom': '26px' }"
+        :type="'sound'"
+      />
       <SoundsEditCard
         v-for="asset in assets"
-        :key="asset.id"
+        :key="asset.name"
         :asset="asset"
         :style="{ 'margin-bottom': '26px' }"
         @click="handleSelect(asset)"
+        @delete-sound="handleDeleteSound"
       />
     </n-layout-sider>
     <n-layout-content>
       <SoundsEdit
         :key="componentKey"
-        :asset="selectedAsset"
+        :asset="selectedSound"
+        @update-sound-file="handleSoundFileUpdate"
         style="margin-left: 10px"
       />
     </n-layout-content>
@@ -33,45 +39,40 @@
 
 <script lang="ts" setup>
 import SoundsEditCard from "@/components/sounds/SoundsEditCard.vue";
-import { NLayout, NLayoutContent, NLayoutSider } from "naive-ui";
+import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
 import SoundsEdit from "@/components/sounds/SoundsEdit.vue";
-import type { Asset } from "@/interface/library";
-import { onMounted, ref } from "vue";
-import { getAssetList } from "@/api/asset";
-import { AssetType } from "@/constant/constant";
+import { computed, type ComputedRef, ref } from 'vue'
+import type { Sound } from '@/class/sound'
+import { useSoundStore } from 'store/modules/sound'
+import SpriteAddBtn from 'comps/sprite-list/SpriteAddBtn.vue'
 
-const assets = ref<Asset[]>([]);
-const selectedAsset = ref<Asset | null>(null);
+const message: MessageApi = useMessage();
+const soundStore = useSoundStore();
+const assets: ComputedRef<Sound[]> = computed(
+  () => soundStore.list as Sound[],
+);
+const selectedSound = ref<Sound | null>(null);
 const componentKey = ref(0);
 
-onMounted(async () => {
-  try {
-    assets.value = await fetchAssets(AssetType.Sounds);
-    if (assets.value.length > 0) {
-      selectedAsset.value = assets.value[0];
-    }
-  } catch (error) {
-    console.error("Error fetching assets:", error);
-  }
-});
+const handleSelect = (asset: Sound) => {
+  selectedSound.value = asset;
+  componentKey.value++; // Increment the key to force re-creation of SoundsEdit
+};
 
-const fetchAssets = async (assetType: number, category?: string) => {
-  try {
-    const pageIndex = 1;
-    const pageSize = 20;
-    const response = await getAssetList(pageIndex, pageSize, assetType, category);
-    if (response.data.data.data == null)
-      return [];
-    return response.data.data.data;
-  } catch (error) {
-    console.error("Error fetching assets:", error);
-    return [];
+const handleSoundFileUpdate = (newFile: File) => {
+  if (selectedSound.value) {
+    selectedSound.value.files[0] = newFile;
+    message.success(
+      'save successfully!',
+      { duration: 1000 }
+    );
   }
 };
 
-const handleSelect = (asset: Asset) => {
-  selectedAsset.value = asset;
-  componentKey.value++; // Increment the key to force re-creation of SoundsEdit
+const handleDeleteSound = (soundName : string) => {
+  if (soundName) {
+    soundStore.removeItemByName(soundName);
+  }
 };
 
 </script>

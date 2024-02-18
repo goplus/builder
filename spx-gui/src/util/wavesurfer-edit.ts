@@ -1,3 +1,5 @@
+import { AudioDataService } from '@/util/wavesurfer-edit-data'
+
 interface WavesurferEditParams {
     buffer: AudioBuffer;
     maxCount?: number;
@@ -14,9 +16,8 @@ interface OperationResult {
     curIndex: number;
     maxIndex: number;
     copyData: AudioBuffer | null;
-    copyLength?: number;
+    copyDuration?: number;
 }
-
 
 class WavesurferEdit {
     private ac: AudioContext;
@@ -39,8 +40,8 @@ class WavesurferEdit {
         this.operationRecord = [this.currentBuffer];
         this.operationIndex = 0;
         this.currentRegion = null;
-        this.copyData = null;
-        this.copyDuration = null;
+        this.copyData = AudioDataService.getCopyData().data;
+        this.copyDuration = AudioDataService.getCopyData().duration;
     }
 
     copy(region: Region, buffer: AudioBuffer = this.currentBuffer, isCopy: boolean = true): OperationResult {
@@ -50,7 +51,7 @@ class WavesurferEdit {
                 buffer: this.currentBuffer,
                 curIndex: this.operationIndex,
                 maxIndex: this.operationRecord.length,
-                copyData: this.copyData,
+                copyData: null,
             };
         }
 
@@ -66,31 +67,31 @@ class WavesurferEdit {
         }
 
         if (isCopy) {
-            this.copyData = newBuffer;
-            this.copyDuration = end - start;
+            AudioDataService.setCopyData(newBuffer, end - start);
         }
 
         return {
             buffer: this.currentBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
-            copyLength: newBuffer.length,
+            copyData: AudioDataService.getCopyData().data,
+            copyDuration: AudioDataService.getCopyData().duration,
         };
     }
 
     paste(currentTime: number, buffer: AudioBuffer = this.currentBuffer): OperationResult {
-        if (!this.copyData) {
+        const copyData = AudioDataService.getCopyData();
+        if (!copyData.data) {
             return {
                 buffer: this.currentBuffer,
                 curIndex: this.operationIndex,
                 maxIndex: this.operationRecord.length,
-                copyData: this.copyData,
+                copyData: null,
             };
         }
 
         const copyToStart = Math.round(currentTime * this.rate);
-        const copyToEnd = copyToStart + this.copyData.length;
+        const copyToEnd = copyToStart + copyData.data.length;
         const frameCount = Math.max(copyToEnd, buffer.length);
         const newBuffer = this.ac.createBuffer(this.channels, frameCount, this.rate);
 
@@ -98,7 +99,7 @@ class WavesurferEdit {
             const channelData = buffer.getChannelData(i);
             const newChannelData = newBuffer.getChannelData(i);
             newChannelData.set(channelData.subarray(0, copyToStart), 0);
-            newChannelData.set(this.copyData.getChannelData(i), copyToStart);
+            newChannelData.set(copyData.data.getChannelData(i), copyToStart);
             if (buffer.length > copyToEnd) {
                 newChannelData.set(channelData.subarray(copyToEnd), copyToEnd);
             }
@@ -110,30 +111,31 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
+            copyData: copyData.data,
         };
     }
 
     insert(currentTime: number, buffer: AudioBuffer = this.currentBuffer): OperationResult {
-        if (!this.copyData) {
+        const copyData = AudioDataService.getCopyData();
+        if (!copyData.data) {
             return {
                 buffer: this.currentBuffer,
                 curIndex: this.operationIndex,
                 maxIndex: this.operationRecord.length,
-                copyData: this.copyData,
+                copyData: null,
             };
         }
 
         const insertPoint = Math.round(currentTime * this.rate);
-        const frameCount = buffer.length + this.copyData.length;
+        const frameCount = buffer.length + copyData.data.length;
         const newBuffer = this.ac.createBuffer(this.channels, frameCount, this.rate);
 
         for (let i = 0; i < this.channels; i++) {
             const channelData = buffer.getChannelData(i);
             const newChannelData = newBuffer.getChannelData(i);
             newChannelData.set(channelData.subarray(0, insertPoint), 0);
-            newChannelData.set(this.copyData.getChannelData(i), insertPoint);
-            newChannelData.set(channelData.subarray(insertPoint), insertPoint + this.copyData.length);
+            newChannelData.set(copyData.data.getChannelData(i), insertPoint);
+            newChannelData.set(channelData.subarray(insertPoint), insertPoint + copyData.data.length);
         }
 
         this.pushRecord(newBuffer);
@@ -142,7 +144,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
+            copyData: copyData.data,
         };
     }
 
@@ -171,7 +173,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
+            copyData: copyResult.copyData,
         };
     }
 
@@ -191,7 +193,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
+            copyData: AudioDataService.getCopyData().data,
         };
     }
 
@@ -207,7 +209,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: this.copyData,
+            copyData: AudioDataService.getCopyData().data,
         };
     }
 

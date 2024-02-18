@@ -41,7 +41,7 @@
         <div class="sound-icon-text">{{ $t('sounds.download') }}</div>
       </div>
       <div class="sound-icon-container">
-        <button @click="saveSound()">
+        <button @click="updateSound()">
           <img class="sound-icon-with-text" src="@/assets/icon/sound/save.svg"/>
         </button>
         <div class="sound-icon-text">{{ $t('sounds.save') }}</div>
@@ -147,20 +147,21 @@ import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.js';
 import CursorPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.cursor.js';
-import { ref, onMounted, type Ref, computed, watch } from 'vue'
+import { ref, onMounted, type Ref } from 'vue'
 import { nextTick } from "vue";
 import { WavesurferEdit } from "@/util/wavesurfer-edit";
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
-import type { Asset } from "@/interface/library";
-import { saveAsset } from '@/api/asset'
-import { AssetType } from '@/constant/constant'
+import type { Sound } from '@/class/sound'
+import { AudioDataService } from '@/util/wavesurfer-edit-data'
 
 const props = defineProps({
   asset: {
-    type: Object as () => Asset,
+    type: Object as () => Sound,
     required: true,
   }
 })
+
+const emits = defineEmits(['update-sound-file'])
 
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer = ref(null);
@@ -184,6 +185,7 @@ const isOperateDisabled: Ref<{ [key: string]: boolean }> = ref({
 
 onMounted(() => {
   initWaveSurfer();
+  isRegionOptionDisabled();
 });
 
 /* init WaveSurfer */
@@ -254,15 +256,14 @@ const initWaveSurfer = () => {
         })
       ],
     });
-    // load music TODO replace with real url
-    // wavesurfer.load("/audio.mp3");
 
-    console.log(props.asset?.address)
-    const addressObj = JSON.parse(props.asset?.address);
-    const assets = addressObj.assets;
-    const url = assets[Object.keys(assets)[0]]
-
-    wavesurfer.load(url);
+    // load sound
+    if (props.asset) {
+      console.log(props.asset?.files[0])
+      wavesurfer.loadBlob(props.asset?.files[0]);
+    } else {
+      return
+    }
 
     wavesurfer.on('ready', () => {
       buffer = wavesurfer.backend.buffer!;
@@ -303,8 +304,6 @@ function handleOperate(e: string) : void {
   let res = soundEditor[e](val);
   if (!res) return;
   showMessage(e);
-  isOperateDisabled.value.paste = !res.copyData;
-  isOperateDisabled.value.insert = !res.copyData;
   isOperateDisabled.value.backout = res.curIndex <= 0;
   isOperateDisabled.value.renewal = res.curIndex >= res.maxIndex - 1;
   if (e !== 'copy') {
@@ -342,6 +341,8 @@ function isRegionOptionDisabled(): void {
   isOperateDisabled.value.copy = !currentRegion;
   isOperateDisabled.value.cut = !currentRegion;
   isOperateDisabled.value.remove = !currentRegion;
+  isOperateDisabled.value.paste = !AudioDataService.getCopyData().data;
+  isOperateDisabled.value.insert = !AudioDataService.getCopyData().data;
 }
 
 /* Render wavesurfer */
@@ -412,12 +413,11 @@ function backward(): void {
   wavesurfer.skip(-5)
 }
 
-/* Save sound */
-async function saveSound(): void {
+/* Update sound */
+async function updateSound(): Promise<void> {
   const wavBlob = audioBufferToWavBlob(wavesurfer.backend.buffer);
-  const wavFile = wavBlobToFile(wavBlob, "example.wav");
-  await saveAsset(props.asset?.id, props.asset?.name, props.asset?.id, "sound", 1, AssetType.Sounds, wavFile);
-  console.log("Save successfully")
+  const wavFile = wavBlobToFile(wavBlob, props.asset?.name + ".wav");
+  emits('update-sound-file', wavFile);
 }
 
 /* Convert WAV Blob to File */

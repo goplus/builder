@@ -13,15 +13,25 @@
     <!-- E Component Add Button type first step -->
     <!-- S Component Add Button type second step -->
     <div v-else class="add-buttons" >
+      <!-- Background Upload Component -->
       <n-upload
-        v-if="props.type == 'backdrop'"
+        v-if="props.type === 'backdrop'"
         :action="uploadActionUrl"
         @before-upload="beforeBackdropUpload"
       >
-        <n-button color="#fff" quaternary size="tiny" text-color="#fff">
-          Upload
-        </n-button>
+        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> Upload </n-button>
       </n-upload>
+
+      <!-- Sound Upload Component -->
+      <n-upload
+        v-else-if="props.type === 'sound'"
+        :action="uploadActionUrl"
+        @before-upload="beforeSoundUpload"
+      >
+        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+      </n-upload>
+
+      <!-- Sprite Upload Component -->
       <n-upload
         v-else
         :action="uploadActionUrl"
@@ -73,6 +83,8 @@ import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 import { Sprite } from "@/class/sprite";
 import FileWithUrl from "@/class/file-with-url";
+import { useSoundStore } from 'store/modules/sound'
+import { Sound } from '@/class/sound'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -82,6 +94,7 @@ const props = defineProps<PropType>();
 const message = useMessage();
 const spriteStore = useSpriteStore();
 const backdropStore = useBackdropStore();
+const soundStore = useSoundStore();
 
 // ----------data related -----------------------------------
 // TODO: change uploadActionUrl to real backend url.
@@ -95,9 +108,16 @@ const showUploadButtons = ref<boolean>(false);
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
-const addBtnClassName = computed(() =>
-  props.type === "backdrop" ? "backdrop-add-div" : "sprite-add-div"
-);
+const addBtnClassName = computed(() => {
+  if (props.type === "backdrop") {
+    return "backdrop-add-div";
+  } else if (props.type === "sprite") {
+    return "sprite-add-div";
+  } else {
+    return "sound-add-div";
+  }
+});
+
 
 // ----------methods-----------------------------------------
 /**
@@ -120,13 +140,12 @@ const openLibraryFunc = () => {
 };
 
 /**
- * @description: A Function about checking the file before it upload.
- * @param {*} data
- * @param {*} isBg
- * @Author: Xu Ning
- * @Date: 2024-01-24 11:47:18
+ * Function to check the file before upload.
+ * @param {Object} data - Contains the file and fileList.
+ * @param {string} fileType - Type of the file being uploaded: 'background', 'sprite', or 'sound'.
+ * @returns {boolean} - True if the file is valid and processed for upload, false otherwise.
  */
-const beforeUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];},isBg: boolean) => {
+const beforeUpload = (data: {file: UploadFileInfo; fileList: UploadFileInfo[];}, fileType: 'backdrop' | 'sprite' | 'sound') => {
   let uploadFile = data.file;
   if (uploadFile.file) {
     let fileURL = URL.createObjectURL(uploadFile.file);
@@ -138,13 +157,25 @@ const beforeUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];},i
       0,
       fileName.lastIndexOf(".")
     );
-    if (isBg) {
-      let backdrop = backdropStore.backdrop;
-      backdrop.addFile(...fileArray)
-    } else {
-      let sprite = new Sprite(fileNameWithoutExtension, [uploadFile.file]);
-      // const sprite = new Sprite(fileNameWithoutExtension, fileArray);uploadFile.file
-      spriteStore.addItem(sprite);
+    switch (fileType) {
+      case 'backdrop': {
+        let backdrop = backdropStore.backdrop;
+        backdrop.addFile(...fileArray);
+        break;
+      }
+      case 'sprite': {
+        let sprite = new Sprite(fileNameWithoutExtension, [uploadFile.file]);
+        spriteStore.addItem(sprite);
+        break;
+      }
+      case 'sound': {
+        let sound = new Sound(fileNameWithoutExtension, [uploadFile.file]);
+        soundStore.addItem(sound);
+        break;
+      }
+      default:
+        message.error("Unsupported file type");
+        return false;
     }
   } else {
     message.error("Invalid or non-existent uploaded files");
@@ -160,7 +191,7 @@ const beforeUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];},i
  * @Date: 2024-01-24 11:47:59
  */
 const beforeBackdropUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];}) => {
-  beforeUpload(data, true);
+  beforeUpload(data, "backdrop");
 };
 
 /**
@@ -173,7 +204,17 @@ const beforeSpriteUpload = (data: {
   file: UploadFileInfo;
   fileList: UploadFileInfo[];
 }) => {
-  beforeUpload(data, false);
+  beforeUpload(data, "sprite");
+};
+
+/**
+ * @description: A Function before uploading Sound.
+ * @param {*} data
+ * @Author: Yao xinyue
+ * @Date: 2024-02-19 12:27:59
+ */
+const beforeSoundUpload = (data: {file: UploadFileInfo;fileList: UploadFileInfo[];}) => {
+  beforeUpload(data, "sound");
 };
 
 /**
@@ -204,12 +245,15 @@ async function urlToFile(url: string, filename: string): Promise<File> {
     const file = await urlToFile(address, name);
     const sprite = new Sprite(name, [file]);
     spriteStore.addItem(sprite);
-    message.success(`add ${name} successfully!`)
   } else if (props.type === 'backdrop') {
     const file = await urlToFile(address, name);
     backdropStore.backdrop.addFile(file);
-    message.success(`add ${name} successfully!`)
+  } else if (props.type === 'sounds' ) {
+    const file = await urlToFile(address, name);
+    const sound = new Sound(name, [file]);
+    soundStore.addItem(sound);
   }
+  message.success(`add ${name} successfully!`)
 };
 
 </script>
@@ -268,4 +312,24 @@ async function urlToFile(url: string, filename: string): Promise<File> {
     width: 65px;
   }
 }
+
+.sound-add-div {
+  @include addDivBase;
+  margin-top: 10px;
+  margin-left: 0;
+  margin-bottom: 26px;
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+
+  .add-buttons .n-button {
+    margin-top: 10px;
+  }
+  .n-icon svg {
+    height: 65px;
+    width: 65px;
+  }
+}
+
+
 </style>
