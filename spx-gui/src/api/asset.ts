@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 13:43:02
+ * @LastEditTime: 2024-02-18 11:39:51
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -44,6 +44,21 @@ export function getAsset(id: number, assetType: number): Promise<Asset> {
     });
 }
 
+export function searchAssetByName(search: string, assetType: number): Promise<PageData<Asset[]>> {
+    const url = `/asset/search`;
+    const formData = new FormData();
+    formData.append('search', search);
+    formData.append('assetType', assetType);
+
+    return service({
+        url: url,
+        method: 'post',
+        data: formData,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+    });
+}
 
 /**
  * Save asset

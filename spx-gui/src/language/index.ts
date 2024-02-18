@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-04 11:23:12
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-18 11:40:30
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
@@ -37,7 +37,44 @@ export const initI18n = async (app:App) => {
                 insert: 'Insert',
                 download: 'Download',
                 save: 'Save'
-            }
+            },
+            toolbox: {
+                event: 'Event',
+                look: 'Look',
+                sound: 'Sound',
+                motion: 'Motion',
+                control: 'Control',
+            },
+            top: {
+                file: 'File',
+                save: 'Save',
+                publish: 'Publish',
+                untitled: 'Untitled',
+                code: 'Code',
+                tutorial: 'Tutorial',
+            },
+            editor: {
+                clear: 'clear',
+                format: 'format',
+            },
+            component: {
+                code: 'Code',
+                stage: 'Stage',
+                edit: 'Editor',
+            },
+            stage: {
+                stage: 'Stage',
+                sprite: 'Sprite',
+                show: 'Show',
+                size: 'Size',
+                direction: 'Dir',
+                upload: 'Upload',
+                choose: 'Choose',
+                add: 'Add New',
+                run: 'Run',
+                download: 'Download',
+                save: 'Save'
+            },
         },
         zh: {
             language: "中文",
@@ -62,6 +99,42 @@ export const initI18n = async (app:App) => {
                 paste: '粘贴',
                 copy: '复制',
                 insert: '插入',
+                download: '下载'
+            },
+            toolbox: {
+                event: '事件',
+                look: '外观',
+                sound: '声音',
+                motion: '运动',
+                control: '控制',
+            },
+            top: {
+                file: '文件',
+                save: '保存',
+                publish: '发布',
+                untitled: '未命名',
+                code: '代码',
+                tutorial: '教程',
+            },
+            editor: {
+                clear: '清空',
+                format: '格式化',
+            },
+            component: {
+                code: '编程',
+                stage: '舞台',
+                edit: '编辑',
+            },
+            stage: {
+                stage: '舞台',
+                sprite: '角色',
+                show: '显示',
+                size: '尺寸',
+                direction: '方向',
+                upload: '上传',
+                choose: '选择',
+                add: '新建',
+                run: '运行',
                 download: '下载',
                 save: '保存'
             }

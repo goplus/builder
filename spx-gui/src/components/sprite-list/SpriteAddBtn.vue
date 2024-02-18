@@ -7,31 +7,31 @@
         <AddIcon />
       </n-icon>
       <div v-if="addBtnClassName == 'sprite-add-div'" class="add-new-font">
-        ADD NEW
+        {{ $t("stage.add") }}
       </div>
     </div>
     <!-- E Component Add Button type first step -->
     <!-- S Component Add Button type second step -->
     <div v-else class="add-buttons" >
-      <!-- Background Upload Component -->
+      <!-- Background Upload -->
       <n-upload
-        v-if="props.type === 'backdrop'"
+        v-if="props.type == 'backdrop'"
         :action="uploadActionUrl"
         @before-upload="beforeBackdropUpload"
       >
-        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> Upload </n-button>
+        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> {{ $t("stage.upload") }} </n-button>
       </n-upload>
 
-      <!-- Sound Upload Component -->
+      <!-- Sound Upload -->
       <n-upload
         v-else-if="props.type === 'sound'"
         :action="uploadActionUrl"
         @before-upload="beforeSoundUpload"
       >
-        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+        <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
       </n-upload>
 
-      <!-- Sprite Upload Component -->
+      <!-- Sprite Upload -->
       <n-upload
         v-else
         :action="uploadActionUrl"
@@ -48,7 +48,7 @@
         text-color="#fff"
         @click="openLibraryFunc()"
       >
-        Choose
+        {{ $t("stage.choose") }}
       </n-button>
       <n-button
         v-else
@@ -56,7 +56,7 @@
         :text-color="commonColor"
         @click="openLibraryFunc()"
       >
-        Choose
+      {{ $t("stage.choose") }}
       </n-button>
       <!-- E Component Add Button second step -->
     </div>
@@ -83,8 +83,6 @@ import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 import { Sprite } from "@/class/sprite";
 import FileWithUrl from "@/class/file-with-url";
-import { useSoundStore } from 'store/modules/sound'
-import { Sound } from '@/class/sound'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -94,7 +92,6 @@ const props = defineProps<PropType>();
 const message = useMessage();
 const spriteStore = useSpriteStore();
 const backdropStore = useBackdropStore();
-const soundStore = useSoundStore();
 
 // ----------data related -----------------------------------
 // TODO: change uploadActionUrl to real backend url.
@@ -236,7 +233,8 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 
 /**
  * @description: A function to add sprite to list store.
- * @param {*} spriteName
+ * @param {*} name - added asset name
+ * @param {*} address - added asset file url
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:47:25
  */
@@ -277,6 +275,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
   .add-new {
     color: white;
     .add-new-font{
+      text-align:center;
       font-family:'Heyhoo'
     }
   }
