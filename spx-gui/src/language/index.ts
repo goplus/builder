@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-18 11:00:13
+ * @LastEditTime: 2024-02-18 18:28:30
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
@@ -35,7 +35,8 @@ export const initI18n = async (app:App) => {
                 paste: 'Paste',
                 copy: 'Copy',
                 insert: 'Insert',
-                download: 'Download'
+                download: 'Download',
+                save: 'Save'
             },
             toolbox: {
                 event: 'Event',
