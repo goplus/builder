@@ -51,21 +51,11 @@ interface ProjectDetail {
 }
 
 class Project implements ProjectSummary, ProjectDetail {
-    constructor(id: string = "", source: ProjectSource = ProjectSource.local, title: string = "", version: number = 0, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", unidentifiedFile: RawDir = {}) {
-        this.id = id
-        this.source = source
-        this.title = title
-        this.version = version
-        this.sprite = sprite
-        this.sound = sound
-        this.backdrop = backdrop
-        this.entryCode = entryCode
-        this.unidentifiedFile = unidentifiedFile
-    }
+    constructor(id: string = "", source: ProjectSource = ProjectSource.local, title: string = "", version: number = 0, sprite: SpriteList = new SpriteList(), sound: SoundList = new SoundList(), backdrop: Backdrop = new Backdrop(), entryCode: string = "", unidentifiedFile: RawDir = {});
     // Save project to Cloud.
     save(): Promise<void>;
     // Load project.
-    load(id: string, source: ProjectSource): Promise<void>;
+    load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void>;
     // Load project from zip file.
     loadFromZip(file: File, title?: string);
     // Download project to computer.
