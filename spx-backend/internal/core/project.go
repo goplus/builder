@@ -34,16 +34,17 @@ type Config struct {
 }
 
 type Asset struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	AuthorId  string    `json:"authorId"`
-	Category  string    `json:"category"`
-	IsPublic  int       `json:"isPublic"`
-	Address   string    `json:"address"`
-	AssetType string    `json:"assetType"`
-	Status    int       `json:"status"`
-	CTime     time.Time `json:"cTime"`
-	UTime     time.Time `json:"uTime"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	AuthorId   string    `json:"authorId"`
+	Category   string    `json:"category"`
+	IsPublic   int       `json:"isPublic"`
+	Address    string    `json:"address"`
+	AssetType  string    `json:"assetType"`
+	ClickCount string    `json:"clickCount"`
+	Status     int       `json:"status"`
+	CTime      time.Time `json:"cTime"`
+	UTime      time.Time `json:"uTime"`
 }
 
 type CodeFile struct {
@@ -268,14 +269,21 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 }
 
 // AssetList list assets
-func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string) (*common.Pagination[Asset], error) {
+func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
+	var orders []common.OrderByCondition
 	if category != "" {
 		wheres = append(wheres, common.FilterCondition{Column: "category", Operation: "=", Value: category})
 	}
-	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres)
+	if isOrderByTime != "" {
+		orders = append(orders, common.OrderByCondition{Column: "c_time", Direction: "desc"})
+	}
+	if isOrderByHot != "" {
+		orders = append(orders, common.OrderByCondition{Column: "click_count", Direction: "desc"})
+	}
+	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := p.modifyAddress(asset.Address)
 		if err != nil {
@@ -287,6 +295,16 @@ func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize stri
 		return nil, err
 	}
 	return pagination, nil
+}
+
+// IncrementAssetClickCount increments the click count for an asset.
+func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, assetType string) error {
+	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ? and asset_type = ?"
+	_, err := p.db.ExecContext(ctx, query, id, assetType)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // modifyAddress transfers relative path to download url
@@ -317,7 +335,7 @@ func (p *Project) PubProjectList(ctx context.Context, pageIndex string, pageSize
 	wheres := []common.FilterCondition{
 		{Column: "is_public", Operation: "=", Value: 1},
 	}
-	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres)
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +347,7 @@ func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSiz
 	wheres := []common.FilterCondition{
 		{Column: "author_id", Operation: "=", Value: uid},
 	}
-	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres)
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
 		return nil, err
 	}

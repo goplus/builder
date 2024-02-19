@@ -170,11 +170,26 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     pageSize := ctx.param("pageSize")
     assetType := ctx.param("assetType")
     category := ctx.param("category")
-    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category)
+    isOrderByTime := ctx.param("isOrderByTime")
+    isOrderByHot := ctx.param("isOrderByHot")
+    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
     ctx.json {
             "code":200,
             "msg":"ok",
             "data": result,
+    }
+}
+
+get "/clickCount/asset/:id/:assetType", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+    ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    id := ctx.param("id")
+    assetType := ctx.param("assetType")
+    p.IncrementAssetClickCount(todo, id, assetType)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": "",
     }
 }
 
