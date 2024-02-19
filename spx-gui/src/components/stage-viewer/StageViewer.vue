@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-18 17:37:59
+ * @LastEditTime: 2024-02-19 17:10:29
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -14,11 +14,11 @@
             scaleX: scale,
             scaleY: scale,
         }">
-            <BackdropLayer @onSceneLoadend="onSceneLoadend" :loading="loading" :backdropConfig="backdrop" :offsetConfig="{
+            <BackdropLayer @onSceneLoadend="onSceneLoadend" :backdropConfig="backdrop" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2,
             }" :mapConfig="spxMapConfig" />
-            <SpriteLayer :loading="loading" @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
+            <SpriteLayer  @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
             }" :sprites="sprites" :mapConfig="spxMapConfig" :currentSpriteNames="props.currentSpriteNames" />
@@ -37,7 +37,6 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
     width: 400// container width
 });
 const emits = defineEmits<StageViewerEmits>();
-const loading = ref(true);
 
 // get the scale of stage viewer
 const scale = computed(() => {
@@ -58,23 +57,18 @@ const spxMapConfig = ref<MapConfig>({
     height: 400
 });
 
-
-
 watch(() => props.project, (new_project, old_project) => {
     console.log(new_project, old_project)
     // TODO: temperary use project's title to determine whether to reload
     if (new_project.title !== old_project.title) {
-        loading.value = true;
         // witch project have map config,this will confirm the stage size
         // When there is no map, it does not end the loading and waits for the background layer to send new loaded content
         if (new_project.backdrop.config.map) {
             spxMapConfig.value = new_project.backdrop.config.map;
-            loading.value = false
         }
         // If there is no map, but there is a backdrop scene or backdrop costume, it will end the loading and wait for the sprite layer to send new loaded content 
         else if ((!new_project.backdrop.config.scenes || new_project.backdrop.config.scenes.length === 0) && (!new_project.backdrop.config.costumes || new_project.backdrop.config.costumes.length === 0)) {
             console.error("Project missing backdrop configuration or map size configuration");
-            loading.value = false
         }
     }
 }, {
@@ -122,19 +116,18 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
             costumeIndex: sprite.config.costumeIndex,
         }
     })
-    console.log(list)
     return list as StageSprite[];
 })
 
 // When config is not configured, its stage size is determined by the first loaded background image
 const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
-    if (loading.value) {
+    if (!props.project.backdrop.config.map) {
         const { imageEl } = event;
         spxMapConfig.value = {
             width: imageEl.width,
             height: imageEl.height
         };
-        loading.value = false;
+        // loading.value = false;
     }
 };
 

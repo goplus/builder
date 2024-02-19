@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-18 17:36:46
+ * @LastEditTime: 2024-02-19 14:53:44
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -11,7 +11,7 @@
         <div>
             <input type="file" @change="add" accept=".zip">
             <p>show in stage viewer</p>
-            <template v-for="sprite in sprites" :key="sprite.name">
+            <template v-for="sprite in project.sprite.list" :key="sprite.name">
                 <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
                     @click="toggleShowInStage(sprite.name)">
                     {{ sprite.name }}
@@ -19,10 +19,41 @@
             </template>
             <div>
                 <p>active in stage</p>
-                <button v-for="sprite in project.sprite.list" :key="sprite.name" @click="currentSprite = sprite"
-                    :style="currentSprite?.name === sprite.name ? { color: 'yellow' } : {}">
-                    {{ sprite.name }}
-                </button>
+                <div style="display: flex;">
+                    <div style="display: flex;flex-direction: column;justify-content: flex-end;"
+                        v-for="sprite in project.sprite.list" :key="sprite.name">
+                        <template v-if="currentSprite?.name === sprite.name">
+                            <button v-for="(costume, costumeIndex) in sprite.config.costumes" :key="costume.name"
+                                :style="sprite.config.costumeIndex === costumeIndex ? { color: 'red' } : {}"
+                                @click="() => sprite.config.costumeIndex = costumeIndex">{{ costume.name }} </button>
+                        </template>
+                        <button @click="currentSprite = sprite"
+                            :style="currentSprite?.name === sprite.name ? { color: 'red' } : {}">
+                            {{ sprite.name }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4>backdrop</h4>
+                <div v-if="backdropConfig.scenes.length > 0">
+                    <p>scene</p>
+                    <!-- in the scene config,the first scene determine the stage size -->
+                    <button v-for="(scene, index) in backdropConfig.scenes" :key="scene.name"
+                        :style="index === 0 ? { color: 'blue' } : {}" @click="() => moveToTopScene(index)">
+                        {{ scene.name }}
+                    </button>
+                </div>
+                <div v-if="backdropConfig.costumes.length > 0">
+                    <p>costume</p>
+                    <button v-for="(costume, index) in backdropConfig.costumes" :key="costume.name"
+                        :style="index === backdropConfig.currentCostumeIndex ? { color: 'blue' } : {}"
+                        @click="() => backdropConfig.currentCostumeIndex = index">
+                        {{ costume.name }}
+                    </button>
+
+                </div>
+
             </div>
         </div>
         <div style="display: flex;flex-direction: column;">
@@ -55,6 +86,7 @@ import StageViewer from "../stage-viewer";
 import type { StageSprite, SpriteDragEndEvent, StageBackdrop } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import type { Project } from "@/store/modules/project";
+import type { Scene } from "@/interface/file"
 
 import { storeToRefs } from "pinia";
 import { ref, computed, watch } from "vue";
@@ -80,44 +112,14 @@ const toggleShowInStage = (name: string) => {
             : [...currentSpriteNames.value, name]
 }
 
-
 const currentSprite = ref<Sprite | null>(null);
 
 const currentSpriteNames = ref<string[]>([])
 
-
-const sprites: ComputedRef<StageSprite[]> = computed(() => {
-    const list = project.value.sprite.list.map(sprite => {
-        console.log(sprite)
-        return {
-            name: sprite.name,
-            x: sprite.config.x,
-            y: sprite.config.y,
-            heading: sprite.config.heading,
-            size: sprite.config.size,
-            visible: sprite.config.visible, // Visible at run time
-            zorder: 1,
-            costumes: sprite.config.costumes.map((costume, index) => {
-                return {
-                    name: costume.name as string,
-                    url: sprite.files[index].url as string,
-                    x: costume.x,
-                    y: costume.y,
-                }
-            }),
-            costumeIndex: sprite.config.costumeIndex,
-        }
-    })
-    return list as StageSprite[];
-})
-
-
-
 // TODO: Temporarily use title of project as id
 watch(() => project.value.title, () => {
-    currentSpriteNames.value = sprites.value.map(sprite => sprite.name)
+    currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
 })
-
 
 const onDragEnd = (e: SpriteDragEndEvent) => {
     currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
@@ -125,16 +127,32 @@ const onDragEnd = (e: SpriteDragEndEvent) => {
     currentSprite.value?.setSy(e.targets[0].position.y)
 }
 
-// const backdrop: ComputedRef<StageBackdrop> = computed(() => {
+const backdropConfig = computed(() => {
+    return {
+        scenes: project.value.backdrop.config?.scenes || [],
+        costumes: project.value.backdrop.config.costumes || [],
+        currentCostumeIndex: project.value.backdrop.config.currentCostumeIndex
+    }
+})
+console.log(backdropConfig)
 
-//     return {
-//         scenes: project.value.backdrop.config.scenes.map((scene, index) => ({
-//             name: scene.name as string,
-//             url: project.value.backdrop.files[index].url as string
-//         })),
-//         sceneIndex: project.value.backdrop.currentSceneIndex
-//     }
-// })
+// set scene to top
+const moveToTopScene = (index: number) => {
+    if (project.value.backdrop.config.scenes) {
+        const scenes = [...project.value.backdrop.config.scenes]
+        const item = scenes.splice(index, 1)[0]
+        scenes.unshift(item)
+        project.value.backdrop.config.scenes = scenes
+
+        const files = project.value.backdrop.files
+        if (files) {
+            const items = [...files]
+            const item = items.splice(index, 1)[0]
+            items.unshift(item)
+            project.value.backdrop.files = items
+        }
+    }
+}
 
 
 

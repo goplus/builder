@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-18 15:58:57
+ * @LastEditTime: 2024-02-19 17:06:05
  * @FilePath: /spx-gui/src/components/stage-viewer/BackdropLayer.vue
  * @Description
 -->
@@ -11,7 +11,14 @@
         x: props.offsetConfig.offsetX,
         y: props.offsetConfig.offsetY,
     }">
+        <v-rect :config="{
+            width: props.mapConfig.width,
+            height: props.mapConfig.height,
+            stroke: 'pink',
+            strokeWidth: 1,
+        }">
 
+        </v-rect>
         <v-line :config="{
             points: [props.mapConfig.width / 2, 0, props.mapConfig.width / 2, props.mapConfig.height],
             stroke: 'pink',
@@ -49,23 +56,16 @@ const image = ref<HTMLImageElement>()
 watch(() => props.backdropConfig, (new_config, old_config) => {
     if (new_config) {
         // In the scene config‘s project, you only need to get the first scene as the backdrop
+        const _image = new window.Image();
         if (new_config.scenes.length != 0) {
-            const _image = new window.Image();
             _image.src = new_config.scenes[0].url
-            _image.onload = () => {
-                image.value = _image;
-                emits('onSceneLoadend', { imageEl: _image })
-            };
         } else if (new_config.costumes.length != 0) {
-            console.log(new_config)
-            const _image = new window.Image();
             _image.src = new_config.costumes[new_config.currentCostumeIndex].url
-            console.log(_image)
-            _image.onload = () => {
-                image.value = _image;
-                emits('onSceneLoadend', { imageEl: _image })
-            };
         }
+        _image.onload = () => {
+            image.value = _image;
+            emits('onSceneLoadend', { imageEl: _image })
+        };
     }
     else {
         image.value?.remove();
