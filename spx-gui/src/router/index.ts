@@ -2,13 +2,12 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 09:16:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-26 19:12:30
+ * @LastEditTime: 2024-02-05 16:42:18
  * @FilePath: /spx-gui/src/router/index.ts
  * @Description:
  */
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor/homepage' },
   {
@@ -25,6 +24,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/code/editor',
     name: 'codeeditor',
     component: () => import('../components/code-editor-demo/CodeEditorDemo.vue')
+  },
+  {
+    path: '/stage/viewer',
+    name: 'StageViewer',
+    component: () => import('../components/stage-viewer-demo/StageViewerDemo.vue')
   },
   {
     path: '/editor/homepage',

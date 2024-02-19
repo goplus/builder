@@ -7,7 +7,7 @@
         <AddIcon />
       </n-icon>
       <div v-if="addBtnClassName == 'sprite-add-div'" class="add-new-font">
-        ADD NEW
+        {{ $t("stage.add") }}
       </div>
     </div>
     <!-- E Component Add Button type first step -->
@@ -19,7 +19,7 @@
         @before-upload="beforeBackdropUpload"
       >
         <n-button color="#fff" quaternary size="tiny" text-color="#fff">
-          Upload
+          {{ $t("stage.upload") }}
         </n-button>
       </n-upload>
       <n-upload
@@ -27,7 +27,7 @@
         :action="uploadActionUrl"
         @before-upload="beforeSpriteUpload"
       >
-        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+        <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
       </n-upload>
 
       <n-button
@@ -38,7 +38,7 @@
         text-color="#fff"
         @click="openLibraryFunc()"
       >
-        Choose
+        {{ $t("stage.choose") }}
       </n-button>
       <n-button
         v-else
@@ -46,7 +46,7 @@
         :text-color="commonColor"
         @click="openLibraryFunc()"
       >
-        Choose
+      {{ $t("stage.choose") }}
       </n-button>
       <!-- E Component Add Button second step -->
     </div>
@@ -195,7 +195,8 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 
 /**
  * @description: A function to add sprite to list store.
- * @param {*} spriteName
+ * @param {*} name - added asset name
+ * @param {*} name - added asset file url
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:47:25
  */
@@ -233,6 +234,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
   .add-new {
     color: white;
     .add-new-font{
+      text-align:center;
       font-family:'Heyhoo'
     }
   }

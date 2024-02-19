@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-05 13:23:09
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-07 13:49:27
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -15,18 +15,21 @@ import { h, ref } from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
-import Logo from '@/assets/logo.png'
 import {
   ComputerTwotone as CodeIcon,
   FilePresentTwotone as FileIcon,
   SaveTwotone as SaveIcon,
   PublishTwotone as PublishIcon
 } from '@vicons/material'
-import { Book as TutorialIcon } from '@vicons/ionicons5'
-import { tutorialColor, publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
+import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
+import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store/modules/project'
-const projectStore = useProjectStore()
+import { ThemeStyleType } from '@/constant/constant'
+import UserAvatar from './UserAvatar.vue'
 
+const projectStore = useProjectStore()
+const themeStyle = ref<number>(ThemeStyleType.Pink)
+const themeMap = ['Pink', 'Yellow', 'Blue']
 /**
  * @description: dropdown options of import/save/export
  * @Author: Xu Ning
@@ -50,11 +53,11 @@ const importOptions = [
 const saveOptions = [
   {
     label: 'Local',
-    key: 'Local'
+    key: 'SaveLocal'
   },
   {
     label: 'Cloud',
-    key: 'Cloud'
+    key: 'SaveCloud'
   }
 ]
 
@@ -69,22 +72,26 @@ const exportOptions = [
   }
 ]
 
+const settingsOptions = [
+  {
+    label: '中文/En',
+    key: 'Global'
+  },
+  {
+    label: 'Theme',
+    key: 'ThemeColor'
+  }
+]
+
 // active key for route
 const activeKey = ref(null)
 
 // i18n/i10n config
-const { locale } = useI18n({
+const { locale, t } = useI18n({
   inheritLocale: true,
   useScope: 'global'
 })
 const languageStore = useLanguageStore()
-
-// theme style config
-import { ThemeStyleType } from '@/constant/constant'
-import UserAvatar from './UserAvatar.vue'
-
-const themeStyle = ref<number>(ThemeStyleType.Pink)
-const themeMap = ['Pink', 'Yellow', 'Blue']
 
 // default button style for menu
 const buttonStyle = {
@@ -137,7 +144,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              'File'
+              t('top.file')
             )
         }
       ),
@@ -161,7 +168,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              'Save'
+              t('top.save')
             )
         }
       ),
@@ -185,7 +192,7 @@ const menuOptions = [
                 style: computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon)
               },
-              'Publish'
+              t('top.publish')
             )
         }
       ),
@@ -196,7 +203,7 @@ const menuOptions = [
       h(
         NInput,
         {
-          placeholder: 'Untitled',
+          placeholder: t('top.untitled'),
           style: {
             'border-radius': '10px',
             'text-align': 'center',
@@ -216,7 +223,7 @@ const menuOptions = [
           style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon)
         },
-        'Code'
+        t('top.code')
       ),
     key: 'code-btn'
   },
@@ -235,43 +242,44 @@ const menuOptions = [
           },
           renderIcon: renderIcon(TutorialIcon)
         },
-        'Tutorial'
+        t('top.tutorial')
       ),
     key: 'tutorial-btn'
   },
   {
+    label: () =>
+      h(
+        NDropdown,
+        {
+          trigger: 'hover',
+          options: settingsOptions,
+          onSelect: handleSelectSettings,
+          style: dropdownStyle
+        },
+        {
+          default: () =>
+            h(
+              NButton,
+              {
+                style: {
+                  'background-color': '#3a8b3b',
+                  color: '#FFF',
+                  'border-radius': '20px',
+                  border: '2px solid #001429',
+                  'box-shadow': '-1px 2px #001429',
+                  cursor: 'pointer'
+                },
+                renderIcon: renderIcon(SettingsIcon)
+              },
+              'Settings'
+            )
+        }
+      ),
+    key: 'setting-btn'
+  },
+  {
     label: () => h(UserAvatar),
-    key: 'logo'
-  },
-  {
-    label: () =>
-      h(
-        'span',
-        {
-          onClick: toggleLanguage,
-          style: {
-            cursor: 'pointer',
-            padding: '0 16px',
-            color: 'white'
-          }
-        },
-        'En/中文'
-      )
-  },
-  {
-    label: () =>
-      h(
-        'span',
-        {
-          onClick: toggleThemeStyle,
-          style: {
-            cursor: 'pointer',
-            padding: '0 16px',
-            color: 'white'
-          }
-        },
-        { default: () => themeMap[themeStyle.value] }
-      )
+    key: 'user-avatar'
   }
 ]
 
@@ -308,6 +316,14 @@ const handleSelectImport = (key: string | number) => {
       projectStore.loadProject(e.target.files[0], e.target.files[0].name.split('.')[0])
       window.project_path = projectStore.project.title
     }
+  }
+}
+
+const handleSelectSettings = (key: string | number) => {
+  if (key === 'Global') {
+    toggleLanguage()
+  } else if (key === 'ThemeColor') {
+    toggleThemeStyle()
   }
 }
 

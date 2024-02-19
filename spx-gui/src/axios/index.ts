@@ -1,8 +1,8 @@
 /*
  * @Author: Yao Xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:12:12
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-06 20:18:02
  * @FilePath: /builder/spx-gui/src/axios/index.ts
  * @Description:
  */
@@ -10,7 +10,7 @@ import { createDiscreteApi } from 'naive-ui'
 import axios, { type AxiosResponse } from 'axios'
 import { useTokenStore } from '@/store'
 
-const baseURL = 'http://116.62.66.126:8081'
+const baseURL = 'http://116.62.66.126:8080'
 
 const service = axios.create({
   baseURL: baseURL,
