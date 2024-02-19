@@ -1,41 +1,40 @@
 <template>
   <div>
     <n-dropdown
-      v-if="userStore.loggedIn"
+      v-if="tokenStore.hasLoggedIn()"
       trigger="hover"
       :options="avatarDropdownOptions"
       @select="handleAvatarDropdownClick"
     >
-      <n-avatar round :src="userStore.avatarUrl" class="user-avatar" />
+      <n-avatar round :src="profile?.avatar" class="user-avatar" />
     </n-dropdown>
-    <n-button v-else @click="showLoginModal = true">Login</n-button>
-    <n-modal v-model:show="showLoginModal" title="Login" preset="card" style="width: 600px">
-      <LoginModalContent />
-    </n-modal>
+    <n-button v-else @click="login()">Login</n-button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NAvatar, NButton, NDropdown, useMessage, NModal } from 'naive-ui'
-import LoginModalContent from './LoginModalContent.vue'
-import { useUserStore } from '@/store/modules/user'
+import { NAvatar, NButton, NDropdown } from 'naive-ui'
+import { useTokenStore } from '@/store/modules/user'
+import { casdoorSdk } from '@/util/casdoor'
+import { useProfile } from '@/util/use-profile'
 
-const avatarDropdownOptions = [{ label: 'Settings' }, { label: 'Logout', key: 'logout' }]
-function handleAvatarDropdownClick(key: string) {
-  if (key === 'logout') {
-    logout()
-  }
+const avatarDropdownOptions = [
+  { label: 'Settings', key: 'settings' },
+  { label: 'Logout', key: 'logout' }
+]
+
+const tokenStore = useTokenStore()
+
+const { data: profile } = useProfile()
+
+function login() {
+  casdoorSdk.signinWithRedirection()
 }
 
-const showLoginModal = ref(false)
-
-const message = useMessage()
-const userStore = useUserStore()
-
-function logout() {
-  message.success('Logout successfully')
-  userStore.loggedIn = false
+function handleAvatarDropdownClick(key: string) {
+  if (key === 'logout') {
+    tokenStore.logout()
+  }
 }
 </script>
 

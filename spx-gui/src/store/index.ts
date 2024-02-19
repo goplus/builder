@@ -10,7 +10,7 @@ import { createPinia } from 'pinia'
 import { type App } from 'vue'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
-export const initStore = async (app: App) => {
+export const initStore = (app: App) => {
   const store = createPinia()
   store.use(piniaPluginPersistedstate)
   app.use(store)
