@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-18 18:31:39
+ * @LastEditTime: 2024-02-19 10:54:05
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -42,7 +42,7 @@
             {{ category }}
           </n-button>
           <span class="sort-btn">
-            <n-button size="large" circle  @click="handleSortByHot">
+            <n-button size="large" circle @click="handleSortByHot">
               <template #icon>
                 <n-icon><hotIcon /></n-icon>
               </template>
@@ -88,7 +88,13 @@ import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
 import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
-import { getAssetList, searchAssetByName } from '@/api/asset'
+import {
+  getAssetList,
+  searchAssetByName,
+  getAssetListByHot,
+  getAssetListByTime,
+  addAssetClickCount
+} from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -107,6 +113,8 @@ const searchQuery = ref('')
 const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 // Ref about sprite/backdrop information.
 const assetInfos = ref<Asset[]>([])
+// Ref about asset category
+const category = ref('')
 
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
@@ -167,7 +175,12 @@ const closeModalFunc = () => {
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:51:05
  */
-const handleAddAsset = (name: string, address: string) => {
+const handleAddAsset = async (id: number, name: string, address: string) => {
+  // TODO add a api to check the click times
+  let res =
+    props.type === 'backdrop'
+      ? await addAssetClickCount(id, AssetType.Backdrop)
+      : await addAssetClickCount(id, AssetType.Sprite)
   emits('add-asset', name, address)
 }
 
@@ -179,6 +192,7 @@ const handleAddAsset = (name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
+  category.value = category
   if (category === 'ALL') {
     category = ''
   }
@@ -204,25 +218,50 @@ const handleSearch = async () => {
   } else if (props.type === 'sprite') {
     let res = await searchAssetByName(searchQuery.value, AssetType.Sprite)
     assetInfos.value = res.data.data
-    console.log(assetInfos.value,res,res.data,'assetInfos.value')
+    console.log(assetInfos.value, res, res.data, 'assetInfos.value')
   }
 }
 
 /**
  * @description: A function to handle sort by hot.
  * @return {*}
+ * @Author: Xu Ning
+ * @Date: 2024-02-19 9:09:05
  */
 const handleSortByHot = async () => {
   //TODO
-  
+  let pageIndex = 1
+  let pageSize = 100
+  let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
+  let res = await getAssetList({
+    pageIndex: pageIndex,
+    pageSize: pageSize,
+    assetType: assetType,
+    category: category.value,
+    isOrderByHot: true
+  })
+  assetInfos.value = res.data.data.data
 }
 
 /**
  * @description: A function to handle sort by time.
  * @return {*}
+ * @Author: Xu Ning
+ * @Date: 2024-02-19 9:19:01
  */
 const handleSortByTime = async () => {
   //TODO
+  let pageIndex = 1
+  let pageSize = 100
+  let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
+  let res = await getAssetList({
+    pageIndex: pageIndex,
+    pageSize: pageSize,
+    assetType: assetType,
+    category: category.value,
+    isOrderByTime: true
+  })
+  assetInfos.value = res.data.data.data
 }
 </script>
 

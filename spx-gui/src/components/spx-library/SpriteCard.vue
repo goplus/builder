@@ -8,7 +8,7 @@
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.name, assetImageUrl)">
+  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)">
     <n-image
       preview-disabled
       width="100"
@@ -58,8 +58,8 @@ const assetImageUrl = computed(() => {
  * @Date: 2024-01-24 12:18:12
  */
 // TODO: change one address as a obj
-const addAssetToListFunc = (name: string, address: string|undefined) =>{
-  emits('add-asset', name, address);
+const addAssetToListFunc = (id:number, name: string, address: string|undefined) =>{
+  emits('add-asset', id, name, address);
 }
 
 </script>
