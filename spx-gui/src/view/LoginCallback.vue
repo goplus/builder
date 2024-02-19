@@ -9,11 +9,12 @@ import { casdoorSdk } from '@/util/casdoor'
 
 const userStore = useTokenStore()
 
-const tokenResp = await casdoorSdk.exchangeForAccessToken()
-console.log('tokenResp', tokenResp)
-userStore.setToken(tokenResp)
-
-// window.location.replace('/')
+try {
+  const tokenResp = await casdoorSdk.exchangeForAccessToken()
+  userStore.setToken(tokenResp)
+} finally {
+  window.location.replace('/')
+}
 </script>
 <style scoped lang="scss">
 // Center the text
