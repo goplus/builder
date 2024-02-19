@@ -88,8 +88,10 @@ const run = async () => {
   show.value = false;
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
   backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
-  window.project_path = projectStore.project.title;
-  show.value = true;
+  projectStore.project.run()
+  setTimeout(() => {
+    show.value = true
+  }, 300)
 };
 
 </script>

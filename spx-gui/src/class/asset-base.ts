@@ -41,7 +41,7 @@ export abstract class AssetBase implements AssetBaseInterface {
      * @param file File
      */
     addFile(...file: FileWithUrl[]): void {
-        let exist = [];
+        const exist = [];
         for (const f of file) {
             if (this._files.find(file => file.name === f.name)) {
                 exist.push(f);
@@ -71,11 +71,13 @@ export abstract class AssetBase implements AssetBaseInterface {
      */
     loadFileFromURL(url: string) {
         // TODO
+        console.log('loadFileFromURL', url)
     }
 
     /**
      * Get the name of the asset.
      */
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     static NAME = "asset";
 
     /**
