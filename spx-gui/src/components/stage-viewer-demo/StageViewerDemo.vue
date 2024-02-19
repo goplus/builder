@@ -7,9 +7,9 @@
  * @Description:
 -->
 <template>
-    <input type="file" @change="add" accept=".zip">
     <div style="display: flex;">
         <div>
+            <input type="file" @change="add" accept=".zip">
             <p>show in stage viewer</p>
             <template v-for="sprite in sprites" :key="sprite.name">
                 <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
@@ -44,7 +44,8 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
             <n-switch v-model:value="visible" @update:value="(val) => { currentSprite && currentSprite.setVisible(val) }" />
         </div>
-        <StageViewer @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames" :project="(project as Project)" />
+        <StageViewer @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames"
+            :project="(project as Project)" />
     </div>
 </template>
 <script setup lang="ts">
