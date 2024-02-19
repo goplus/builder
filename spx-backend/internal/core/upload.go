@@ -44,15 +44,14 @@ func Encrypt(salt, password string) string {
 	return fmt.Sprintf("%x", string(dk))
 }
 
-func AddProject(p *Project, c *CodeFile) (string, error) {
-	sqlStr := "insert into codefile (name,author_id , address,is_public,status, c_time,u_time) values (?, ?,?, ?,?, ?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
+func AddProject(p *Project, c *CodeFile) error {
+	sqlStr := "insert into codefile (id,name,author_id ,address,is_public,status,c_time,u_time) values (?,?,?,?,?,?,?,?)"
+	_, err := p.db.Exec(sqlStr, c.ID, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
-		return "", err
+		return err
 	}
-	idInt, err := res.LastInsertId()
-	return strconv.Itoa(int(idInt)), err
+	return nil
 }
 
 func AddAsset(p *Project, c *Asset) (string, error) {
@@ -87,24 +86,14 @@ func UpdateAsset(p *Project, c *Asset) error {
 	return err
 }
 
-func GetProjectAddress(id string, p *Project) string {
-	var address string
-	query := "SELECT address FROM codefile WHERE id = ?"
-	err := p.db.QueryRow(query, id).Scan(&address)
-	if err != nil {
-		return ""
-	}
-	return address
-}
-
 func UpdateProject(p *Project, c *CodeFile) error {
-	stmt, err := p.db.Prepare("UPDATE codefile SET name = ?, address = ? WHERE id = ?")
+	stmt, err := p.db.Prepare("UPDATE codefile SET name = ?, address = ?,version = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(c.Name, c.Address, c.ID)
+	_, err = stmt.Exec(c.Name, c.Address, c.Version, c.ID)
 	return err
 }
 func UpdateProjectIsPublic(p *Project, id string) error {
@@ -114,10 +103,4 @@ func UpdateProjectIsPublic(p *Project, id string) error {
 		return err.Err()
 	}
 	return nil
-}
-
-func (p *Project) UploadFile(ctx context.Context, relativePath string, file multipart.File) (err error) {
-	defer file.Close()
-	err = p.fileStorage.SaveFile(relativePath, file)
-	return
 }

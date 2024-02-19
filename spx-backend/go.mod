@@ -14,10 +14,14 @@ require (
 )
 
 require (
+	github.com/google/uuid v1.6.0
+	github.com/qiniu/go-sdk/v7 v7.18.0
+)
+
+require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
-	github.com/qiniu/go-sdk/v7 v7.18.0 // indirect
 	github.com/qiniu/x v1.13.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
