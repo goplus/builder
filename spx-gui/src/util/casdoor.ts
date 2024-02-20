@@ -28,7 +28,6 @@ const config: SdkConfig = {
 
 import PKCE from 'js-pkce'
 import type IObject from 'js-pkce/dist/IObject'
-import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
 
 interface SdkConfig {
   serverUrl: string // your Casdoor server URL, e.g., "https://door.casbin.com" for the official demo site
@@ -140,10 +139,6 @@ class Sdk {
 
   public async signinWithRedirection(additionalParams?: IObject): Promise<void> {
     window.location.assign(this.pkce.authorizeUrl(additionalParams))
-  }
-
-  public async exchangeForAccessToken(additionalParams?: IObject): Promise<ITokenResponse> {
-    return this.pkce.exchangeForAccessToken(window.location.href, additionalParams)
   }
 
   // TODO: move to axios service

@@ -13,8 +13,8 @@ export const useTokenStore = defineStore('spx-user-token', {
   }),
   actions: {
     async getFreshAccessToken(): Promise<string | null> {
-      if (!this.accessTokenValid) {
-        if (!this.refreshTokenValid) {
+      if (!this.accessTokenValid()) {
+        if (!this.refreshTokenValid()) {
           this.logout()
           return null
         }
@@ -50,23 +50,24 @@ export const useTokenStore = defineStore('spx-user-token', {
       this.refreshTokenExpiresAt = null
     },
     hasLoggedIn() {
-      return this.accessTokenValid || this.refreshTokenValid
-    }
-  },
-  getters: {
-    accessTokenValid: (state) => {
+      return this.accessTokenValid() || this.refreshTokenValid()
+    },
+    accessTokenValid() {
       const delta = 60 * 1000 // 1 minute
-      return (
-        state.accessToken &&
-        (state.accessTokenExpiresAt === null || state.accessTokenExpiresAt - delta > Date.now())
+      return !!(
+        this.accessToken &&
+        (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - delta > Date.now())
       )
     },
-    refreshTokenValid: (state) => {
+    refreshTokenValid() {
       const delta = 60 * 1000 // 1 minute
-      return (
-        state.refreshToken &&
-        (state.refreshTokenExpiresAt === null || state.refreshTokenExpiresAt - delta > Date.now())
+      return !!(
+        this.refreshToken &&
+        (this.refreshTokenExpiresAt === null || this.refreshTokenExpiresAt - delta > Date.now())
       )
+    },
+    loginWithCurrentUrl() {
+      casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
     }
   },
   persist: true
