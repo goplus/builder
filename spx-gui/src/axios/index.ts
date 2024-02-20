@@ -6,17 +6,17 @@
  * @FilePath: /builder/spx-gui/src/axios/index.ts
  * @Description:
  */
-import { createDiscreteApi } from "naive-ui";
-import axios, { type AxiosResponse } from "axios";
+import { createDiscreteApi } from 'naive-ui'
+import axios, { type AxiosResponse } from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE;
+const baseURL = import.meta.env.VITE_API_BASE
 
 const service = axios.create({
   baseURL: baseURL,
-  timeout: 15000,
-});
+  timeout: 15000
+})
 
-const { message } = createDiscreteApi(["message"]);
+const { message } = createDiscreteApi(['message'])
 
 export interface ResponseData<T> {
   code: number;
@@ -27,17 +27,17 @@ export interface ResponseData<T> {
 //  response interceptor
 service.interceptors.response.use(
   (response: AxiosResponse<ResponseData<unknown>>) => {
-    console.log(response.data);
+    console.log(response.data)
     if (response.data.code === 200) {
-      return response;
+      return response
     } else {
-      message.error(response.data.msg);
-      return Promise.reject(new Error(response.data.msg || "Error"));
+      message.error(response.data.msg)
+      return Promise.reject(new Error(response.data.msg || 'Error'))
     }
   },
   (error) => {
-    message.error(error.message);
-    return Promise.reject(error);
-  },
-);
-export { service, baseURL };
+    message.error(error.message)
+    return Promise.reject(error)
+  }
+)
+export { service, baseURL }
