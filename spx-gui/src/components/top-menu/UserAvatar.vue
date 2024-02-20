@@ -1,13 +1,13 @@
 <template>
   <div>
-    <n-button v-if="profile === null" @click="signin()">Sign in</n-button>
+    <n-button v-if="!userStore.userInfo" @click="signin()">Sign in</n-button>
     <n-dropdown
       v-else
       trigger="hover"
       :options="avatarDropdownOptions"
       @select="handleAvatarDropdownClick"
     >
-      <n-avatar round :src="profile?.avatar" class="user-avatar" />
+      <n-avatar round :src="userStore.userInfo?.avatar" class="user-avatar" />
     </n-dropdown>
   </div>
 </template>
@@ -15,7 +15,6 @@
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useUserStore } from '@/store/modules/user'
-import { useProfile } from '@/util/use-profile'
 
 const avatarDropdownOptions = [
   { label: 'Settings', key: 'settings' },
@@ -23,8 +22,6 @@ const avatarDropdownOptions = [
 ]
 
 const userStore = useUserStore()
-
-const { data: profile } = useProfile()
 
 function signin() {
   userStore.signInWithRedirection()

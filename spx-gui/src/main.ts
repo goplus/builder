@@ -15,7 +15,6 @@ import { initI18n } from '@/language'
 
 import { addFileUrl } from './util/file'
 import VueKonva from 'vue-konva'
-import { VueQueryPlugin } from '@tanstack/vue-query'
 import { initStore } from './store'
 
 async function initApp() {
@@ -36,7 +35,6 @@ async function initApp() {
   await initI18n(app)
 
   app.use(VueKonva)
-  app.use(VueQueryPlugin)
 
   app.mount('#app')
 }
