@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h4>Loggin in...</h4>
+    <h4>Logging in...</h4>
   </div>
 </template>
 <script setup lang="ts">
