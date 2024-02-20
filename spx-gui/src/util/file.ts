@@ -73,13 +73,13 @@ export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string
  * @returns the array buffer
  */
 export const content2ArrayBuffer = async (content: any, type: string): Promise<ArrayBuffer> => {
+    const reader = new FileReader()
     switch (type) {
         case 'application/json':
             return new TextEncoder().encode(JSON.stringify(content))
         case 'text/plain':
             return new TextEncoder().encode(content)
         default:
-            const reader = new FileReader()
             reader.readAsArrayBuffer(content)
             await new Promise(resolve => reader.onload = resolve)
             return reader.result as ArrayBuffer
@@ -92,7 +92,7 @@ export const content2ArrayBuffer = async (content: any, type: string): Promise<A
  * @returns the prefix of the directory
  */
 export function getPrefix(dir: Record<string, any>) {
-    let keys = Object.keys(dir);
+    const keys = Object.keys(dir);
     let prefix = keys[0];
     for (let i = 1; i < keys.length; i++) {
         while (!keys[i].startsWith(prefix)) {
@@ -103,7 +103,7 @@ export function getPrefix(dir: Record<string, any>) {
     return prefix.endsWith('/') ? prefix : prefix + '/';
 }
 
-import { Project } from "@/store/modules/project"
+import { Project } from "@/class/project"
 import { Backdrop } from "@/class/backdrop"
 import { Sound } from "@/class/sound"
 import { Sprite } from "@/class/sprite"
@@ -166,15 +166,14 @@ export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
  *         ├─ 5.png
  *         └─ index.json
  */
-export async function getDirPathFromZip(zipFile: File, title?: string): Promise<DirPath> {
+export async function getDirPathFromZip(zipFile: File): Promise<DirPath> {
     const zip = await JSZip.loadAsync(zipFile);
-    const projectName = title || zipFile.name.split('.')[0] || 'project';
     const dir: DirPath = {};
     const prefix = getPrefix(zip.files)
-    for (let [relativePath, zipEntry] of Object.entries(zip.files)) {
-        if (zipEntry.dir) continue
+    for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+        if (zipEntry.dir || relativePath.split('/').pop()?.startsWith(".")) continue
+        const path = relativePath.replace(prefix, '')
         const content = await zipEntry.async('arraybuffer')
-        const path = projectName + '/' + relativePath.replace(prefix, '')
         const type = getMimeFromExt(relativePath.split('.').pop()!)
         const size = content.byteLength
         const modifyTime = zipEntry.date || new Date();
@@ -188,8 +187,6 @@ export async function getDirPathFromZip(zipFile: File, title?: string): Promise<
     }
     return dir
 }
-
-const UNTITLED_NAME = 'untitled';
 
 /**
  * Parse directory to project.
@@ -217,11 +214,13 @@ export function convertDirPathToProject(dir: DirPath): Project {
         return item;
     }
 
-    const proj: Project = new Project(Object.keys(dir).pop()?.split('/').shift() || UNTITLED_NAME)
+    const proj: Project = new Project()
+    const prefix = getPrefix(dir)
 
+    // eslint-disable-next-line prefer-const
     for (let [path, file] of Object.entries(dir)) {
         const filename = file.path.split('/').pop()!;
-        path = path.replace(proj.title + '/', '')
+        path = path.replace(prefix, '')
         if (Sprite.REG_EXP.test(path)) {
             const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
             const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
@@ -244,7 +243,7 @@ export function convertDirPathToProject(dir: DirPath): Project {
             handleFile(file, filename, proj.backdrop);
         }
         else {
-            proj.UnidentifiedFile[path] = arrayBuffer2Content(file.content, file.type, filename)
+            proj.unidentifiedFile[path] = arrayBuffer2Content(file.content, file.type, filename)
         }
     }
     return proj
@@ -267,6 +266,7 @@ export async function convertRawDirToZip(dir: RawDir): Promise<Blob> {
     const zip = new JSZip();
 
     const prefix = getPrefix(dir)
+    // eslint-disable-next-line prefer-const
     for (let [path, value] of Object.entries(dir)) {
         prefix && (path = path.replace(prefix + '/', ''));
         zip.file(...zipFileValue(path, value));

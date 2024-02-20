@@ -312,10 +312,9 @@ const handleSelectImport = (key: string | number) => {
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
-      const file = e.target.files[0]
-      projectStore.loadProject(e.target.files[0], e.target.files[0].name.split('.')[0])
-      window.project_path = projectStore.project.title
-    }
+      const file = e.target.files[0];
+      projectStore.loadFromZip(file);
+    };
   }
 }
 

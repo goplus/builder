@@ -20,6 +20,7 @@
     "konva": "^9.3.1",
     "localforage": "^1.10.0",
     "monaco-editor": "^0.45.0",
+    "nanoid": "^5.0.5",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
     "vicons": "^0.0.1",
