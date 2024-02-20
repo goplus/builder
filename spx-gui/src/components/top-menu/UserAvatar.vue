@@ -15,7 +15,6 @@
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useUserStore } from '@/store/modules/user'
-import { casdoorSdk } from '@/util/casdoor'
 import { useProfile } from '@/util/use-profile'
 
 const avatarDropdownOptions = [
@@ -28,7 +27,7 @@ const userStore = useUserStore()
 const { data: profile } = useProfile()
 
 function login() {
-  casdoorSdk.signinWithRedirection()
+  userStore.loginWithCurrentUrl()
 }
 
 function handleAvatarDropdownClick(key: string) {
