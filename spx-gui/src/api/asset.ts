@@ -42,11 +42,11 @@ export function getAssetList({
   if (category) {
     params.append('category', category)
   }
-  if (isOrderByTime !== undefined) {
-    params.append('isOrderByTime', isOrderByTime ? '1' : '0')
+  if (isOrderByTime) {
+    params.append('isOrderByTime', '1')
   }
-  if (isOrderByHot !== undefined) {
-    params.append('isOrderByHot', isOrderByHot ? '1' : '0')
+  if (isOrderByHot) {
+    params.append('isOrderByHot', '1')
   }
   if (Array.from(params).length > 0) {
     url += `?${params.toString()}`
@@ -133,7 +133,7 @@ export function addAssetClickCount(
   id: number,
   assetType: number
 ): Promise<AxiosResponse<ResponseData<string>>> {
-  const url = `/asset/clickCount/${id}/${assetType}`
+  const url = `/clickCount/asset/${id}/${assetType}`
   return service({
     url: url,
     method: 'get'
