@@ -9,7 +9,7 @@ import { useUserStore } from '@/store'
 const userStore = useUserStore()
 
 try {
-  await userStore.loginWithCurrentUrl()
+  await userStore.consumeCurrentUrl()
 } finally {
   window.location.replace('/')
 }

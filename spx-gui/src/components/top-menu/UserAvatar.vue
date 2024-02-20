@@ -1,6 +1,6 @@
 <template>
   <div>
-    <n-button v-if="profile === null" @click="login()">Login</n-button>
+    <n-button v-if="profile === null" @click="signin()">Sign in</n-button>
     <n-dropdown
       v-else
       trigger="hover"
@@ -26,13 +26,13 @@ const userStore = useUserStore()
 
 const { data: profile } = useProfile()
 
-function login() {
-  userStore.loginWithCurrentUrl()
+function signin() {
+  userStore.signInWithRedirection()
 }
 
 function handleAvatarDropdownClick(key: string) {
   if (key === 'logout') {
-    userStore.logout()
+    userStore.signOut()
   }
 }
 </script>

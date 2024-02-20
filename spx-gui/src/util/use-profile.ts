@@ -4,13 +4,17 @@ import { useUserStore } from '@/store'
 import { casdoorSdk, type CasdoorAccount } from './casdoor'
 import { service } from '@/axios'
 
+/**
+ * Custom hook for fetching user profile data.
+ * @returns An object containing the user profile data or null if the user is not signed in.
+ */
 export const useProfile: () => UseQueryReturnType<CasdoorAccount | null, Error> = () =>
   useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       const userStore = useUserStore()
 
-      if (!userStore.hasLoggedIn()) {
+      if (!userStore.hasSignedIn()) {
         return null
       }
       const accessToken = await userStore.getFreshAccessToken()
