@@ -1,14 +1,14 @@
 <template>
   <div>
+    <n-button v-if="profile === null" @click="login()">Login</n-button>
     <n-dropdown
-      v-if="userStore.hasLoggedIn()"
+      v-else
       trigger="hover"
       :options="avatarDropdownOptions"
       @select="handleAvatarDropdownClick"
     >
       <n-avatar round :src="profile?.avatar" class="user-avatar" />
     </n-dropdown>
-    <n-button v-else @click="login()">Login</n-button>
   </div>
 </template>
 
