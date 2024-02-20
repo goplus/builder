@@ -40,4 +40,4 @@ tsconfig.tsbuildinfo
 !.yarn/sdks
 !.yarn/versions
 
-.env
+.env.local
