@@ -1,7 +1,7 @@
 <template>
   <div>
     <n-dropdown
-      v-if="tokenStore.hasLoggedIn()"
+      v-if="userStore.hasLoggedIn()"
       trigger="hover"
       :options="avatarDropdownOptions"
       @select="handleAvatarDropdownClick"
@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
-import { useTokenStore } from '@/store/modules/user'
+import { useUserStore } from '@/store/modules/user'
 import { casdoorSdk } from '@/util/casdoor'
 import { useProfile } from '@/util/use-profile'
 
@@ -23,7 +23,7 @@ const avatarDropdownOptions = [
   { label: 'Logout', key: 'logout' }
 ]
 
-const tokenStore = useTokenStore()
+const userStore = useUserStore()
 
 const { data: profile } = useProfile()
 
@@ -33,7 +33,7 @@ function login() {
 
 function handleAvatarDropdownClick(key: string) {
   if (key === 'logout') {
-    tokenStore.logout()
+    userStore.logout()
   }
 }
 </script>

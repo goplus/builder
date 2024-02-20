@@ -4,14 +4,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useTokenStore } from '@/store'
-import { casdoorSdk } from '@/util/casdoor'
+import { useUserStore } from '@/store'
 
-const userStore = useTokenStore()
+const userStore = useUserStore()
 
 try {
-  const tokenResp = await casdoorSdk.exchangeForAccessToken()
-  userStore.setToken(tokenResp)
+  await userStore.loginWithCurrentUrl()
 } finally {
   window.location.replace('/')
 }

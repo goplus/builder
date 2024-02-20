@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { useQuery, type UseQueryReturnType } from '@tanstack/vue-query'
-import { useTokenStore } from '@/store'
+import { useUserStore } from '@/store'
 import { casdoorSdk, type CasdoorAccount } from './casdoor'
 import { service } from '@/axios'
 
@@ -8,7 +8,7 @@ export const useProfile: () => UseQueryReturnType<CasdoorAccount | null, Error> 
   useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      const userStore = useTokenStore()
+      const userStore = useUserStore()
 
       if (!userStore.hasLoggedIn()) {
         return null

@@ -8,7 +8,7 @@
  */
 import { createDiscreteApi } from 'naive-ui'
 import axios, { type AxiosResponse } from 'axios'
-import { useTokenStore } from '@/store'
+import { useUserStore } from '@/store'
 
 const baseURL = 'http://116.62.66.126:8080'
 
@@ -27,9 +27,9 @@ export interface ResponseData<T> {
 
 service.interceptors.request.use(
   async (config) => {
-    const tokenStore = useTokenStore()
+    const userStore = useUserStore()
 
-    const token = await tokenStore.getFreshAccessToken()
+    const token = await userStore.getFreshAccessToken()
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }

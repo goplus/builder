@@ -2,7 +2,7 @@ import { casdoorSdk } from '@/util/casdoor'
 import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
 import { defineStore } from 'pinia'
 
-export const useTokenStore = defineStore('spx-user-token', {
+export const useUserStore = defineStore('spx-user', {
   state: () => ({
     accessToken: null as string | null,
     refreshToken: null as string | null,
@@ -66,8 +66,8 @@ export const useTokenStore = defineStore('spx-user-token', {
         (this.refreshTokenExpiresAt === null || this.refreshTokenExpiresAt - delta > Date.now())
       )
     },
-    loginWithCurrentUrl() {
-      casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
+    async loginWithCurrentUrl() {
+      await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
     }
   },
   persist: true
