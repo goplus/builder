@@ -11,6 +11,9 @@ const config: SdkConfig = {
 // we need to modify some of the code.
 // Original source:
 // https://github.com/casdoor/casdoor-js-sdk/blob/master/src/sdk.ts
+// The original source is a relatively simple SDK that wraps around
+// the js-pkce package. We need to modify the code to expose the
+// PKCE object, so that we can use it to refresh the access token.
 
 // Copyright 2021 The casbin Authors. All Rights Reserved.
 //
