@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 22:57:06
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-20 16:31:55
  * @FilePath: /spx-gui/src/components/spx-stage/SpxStage.vue
  * @Description: 
 -->
@@ -12,8 +12,8 @@
     <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
     <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
     <div class="stage-viewer-container" v-else>
-      <StageViewer @onSpritesDragEnd="onSpritesDragEnd" :id="projectStore.project.title"
-        :currentSpriteNames="currentSpriteNames" :backdrop="backdrop" :sprites="sprites"></StageViewer>
+      <StageViewer @onZorderChange="onZorderChange" :project="(projectStore.project as Project)"
+        @onSpritesDragEnd="onSpritesDragEnd" :currentSpriteNames="currentSpriteNames"></StageViewer>
     </div>
   </div>
 </template>
@@ -26,8 +26,8 @@ import { useProjectStore } from "@/store/modules/project";
 import { useSpriteStore } from "@/store";
 import { useBackdropStore } from "@/store/modules/backdrop";
 import StageViewer from "@/components/stage-viewer";
-import type { StageSprite, StageBackdrop, SpriteDragEndEvent } from "@/components/stage-viewer"
-import { Sprite } from "@/class/sprite";
+import type { StageSprite, StageBackdrop, SpriteDragEndEvent, ZorderChangeEvent } from "@/components/stage-viewer"
+import { Project } from "@/class/project";
 
 let show = ref(false);
 const backdropStore = useBackdropStore();
@@ -37,50 +37,19 @@ const spriteStore = useSpriteStore();
 
 const currentSpriteNames = ref<string[]>([])
 
+watch(() => projectStore.project.id, () => {
+  currentSpriteNames.value = spriteStore.list.map(sprite => sprite.name)
+})
+
 const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
   spriteStore.setCurrentByName(e.targets[0].sprite.name)
   spriteStore.current?.setSx(e.targets[0].position.x)
   spriteStore.current?.setSy(e.targets[0].position.y)
 }
 
-
-// TODO: Temporarily use title of project as id
-watch(() => projectStore.project.title, () => {
-  currentSpriteNames.value = sprites.value.map(sprite => sprite.name)
-})
-const sprites: ComputedRef<StageSprite[]> = computed(() => {
-  const list = spriteStore.list.map(sprite => {
-    console.log(sprite)
-    return {
-      name: sprite.name,
-      x: sprite.config.x,
-      y: sprite.config.y,
-      heading: sprite.config.heading,
-      size: sprite.config.size,
-      visible: sprite.config.visible, // Visible at run time
-      zorder: 1,
-      costumes: sprite.config.costumes.map((costume, index) => {
-        return {
-          name: costume.name as string,
-          url: sprite.files[index].url as string,
-          x: costume.x,
-          y: costume.y,
-        }
-      }),
-      costumeIndex: sprite.config.costumeIndex,
-    }
-  })
-  return list as StageSprite[];
-})
-const backdrop: ComputedRef<StageBackdrop> = computed(() => {
-  return {
-    scenes: backdropStore.backdrop.config.scenes.map((scene, index) => ({
-      name: scene.name as string,
-      url: backdropStore.backdrop.files[index].url as string
-    })),
-    sceneIndex: backdropStore.backdrop.currentSceneIndex
-  }
-})
+const onZorderChange = (e: ZorderChangeEvent) => {
+  backdropStore.setZOrder(e.zorder)
+}
 
 
 const run = async () => {
@@ -144,7 +113,8 @@ const run = async () => {
     align-items: center;
     justify-content: center;
   }
-  .stage-viewer-container{
+
+  .stage-viewer-container {
     display: flex;
     justify-content: center;
   }

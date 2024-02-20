@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 15:27:08
+ * @LastEditTime: 2024-02-20 16:07:46
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
@@ -32,13 +32,12 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, withDefaults, watchEffect } from 'vue';
+import { computed, ref, watch, withDefaults } from 'vue';
 import type { ComputedRef } from 'vue';
 import type { StageViewerEmits, StageViewerProps, MapConfig, SpriteDragEndEvent, StageBackdrop, StageSprite } from './index';
 import SpriteLayer from './SpriteLayer.vue';
 import BackdropLayer from './BackdropLayer.vue';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
-// import type MouseEvent
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
     height: 400, // container height
@@ -46,9 +45,12 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
 });
 const emits = defineEmits<StageViewerEmits>();
 
-const currentSprite = ref<Node | null>();
+// instance of konva's stage & menu 
 const stage = ref();
 const menu = ref();
+
+// Which sprite is selected
+const selectedSprite = ref<Node | null>();
 
 // get spx map size
 const spxMapConfig = ref<MapConfig>({
@@ -65,16 +67,13 @@ const scale = computed(() => {
         console.log(Math.min(widthScale, heightScale, 1))
         return Math.min(widthScale, heightScale, 1);
     }
-
     return 1;
 });
-
-
 
 watch(() => props.project, (new_project, old_project) => {
     console.log(new_project, old_project)
     // TODO: temperary use project's title to determine whether to reload
-    if (new_project.title !== old_project.title) {
+    if (new_project.id !== old_project.id) {
         // witch project have map config,this will confirm the stage size
         // When there is no map, it does not end the loading and waits for the background layer to send new loaded content
         if (new_project.backdrop.config.map) {
@@ -164,10 +163,10 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
     // only the sprite need contextmenu
     if (e.target === stageInstance || e.target.parent!.attrs.name !== 'sprite') {
         menu.value.style.display = 'none';
-        currentSprite.value = null
+        selectedSprite.value = null
         return;
     }
-    currentSprite.value = e.target;
+    selectedSprite.value = e.target;
     menu.value.style.display = 'block';
     menu.value.style.top =
         stageInstance.getPointerPosition().y + 4 + 'px';
@@ -175,26 +174,31 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
         stageInstance.getPointerPosition().x + 4 + 'px';
 }
 
+// hide stage menu
 const onStageMenuMouseLeave = (e: MouseEvent) => {
     menu.value.style.display = 'none';
-    currentSprite.value = null
+    selectedSprite.value = null
 }
 
 // move sprite to up or down & emit  the new zorder list
 const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
-    if (!currentSprite.value) return;
+    if (!selectedSprite.value) return;
 
-    const spriteName = currentSprite.value.getAttr('spriteName');
+    const spriteName = selectedSprite.value.getAttr('spriteName');
     const currentIndex = zorderList.value.indexOf(spriteName);
     let newIndex: number;
     if (direction === 'up') {
         newIndex = currentIndex + 1;
+        selectedSprite.value.moveUp();
     } else if (direction === 'down') {
         newIndex = currentIndex - 1;
+        selectedSprite.value.moveDown();
     } else if (direction === 'top') {
         newIndex = zorderList.value.length - 1;
+        selectedSprite.value.moveToTop();
     } else if (direction === 'bottom') {
         newIndex = 0;
+        selectedSprite.value.moveToBottom();
     } else {
         return;
     }
@@ -209,9 +213,7 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
     menu.value.style.display = 'none';
 };
 
-
-
-
+// drag sprite
 const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
     emits("onSpritesDragEnd", e)
 }

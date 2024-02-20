@@ -2,14 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 14:41:02
+ * @LastEditTime: 2024-02-20 16:27:48
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <div style="display: flex;">
         <div>
-            <input type="file" @change="add" accept=".zip">
+            <input type="file" @change="importFile" accept=".zip">
             <p>show in stage viewer</p>
             <template v-for="sprite in project.sprite.list" :key="sprite.name">
                 <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
@@ -38,7 +38,7 @@
                 <p>order in stage</p>
                 <div>
                     <button v-for="(spriteName, index) in zorderList" :key="spriteName"
-                        :disabled="index == zorderList.length - 1" @click="() => upLayer(index)">
+                        :disabled="index == zorderList.length - 1" @click="() => spriteToTop(index)">
                         {{ spriteName }}
                     </button>
                 </div>
@@ -49,7 +49,7 @@
                     <p>scene</p>
                     <!-- in the scene config,the first scene determine the stage size -->
                     <button v-for="(scene, index) in backdropConfig.scenes" :key="scene.name"
-                        :style="index === 0 ? { color: 'blue' } : {}" @click="() => moveToTopScene(index)">
+                        :style="index === 0 ? { color: 'blue' } : {}" @click="() => chooseBackdropScene(index)">
                         {{ scene.name }}
                     </button>
                 </div>
@@ -57,7 +57,7 @@
                     <p>costume</p>
                     <button v-for="(costume, index) in backdropConfig.costumes" :key="costume.name"
                         :style="index === backdropConfig.currentCostumeIndex ? { color: 'blue' } : {}"
-                        @click="() => backdropConfig.currentCostumeIndex = index">
+                        @click="() => chooseBackdropCostume(index)">
                         {{ costume.name }}
                     </button>
 
@@ -95,65 +95,26 @@ import StageViewer from "../stage-viewer";
 import type { StageSprite, SpriteDragEndEvent, StageBackdrop, ZorderChangeEvent } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import type { Project } from "@/class/project";
-import type { Scene } from "@/interface/file"
-
 import { storeToRefs } from "pinia";
 import { ref, computed, watch } from "vue";
-import type { ComputedRef } from "vue";
+
 const projectStore = useProjectStore();
 const { project } = storeToRefs(projectStore);
-const add = async (e: any) => {
-    const file = e.target.files[0];
-    projectStore.loadFromZip(file);
-}
+
+const currentSprite = ref<Sprite | null>(null);
+const currentSpriteNames = ref<string[]>([])
+
+// current sprite config
 const x = computed(() => currentSprite.value ? currentSprite.value.config.x : 0)
 const y = computed(() => currentSprite.value ? currentSprite.value.config.y : 0)
 const heading = computed(() => currentSprite.value ? currentSprite.value.config.heading : 0)
 const size = computed(() => currentSprite.value ? currentSprite.value.config.size * 100 : 0)
 const visible = computed(() => currentSprite.value ? currentSprite.value.config.visible : false)
+// current sprite's current costume config
 const costumeX = computed(() => currentSprite.value ? currentSprite.value.config.costumes[currentSprite.value.config.costumeIndex].x : 0)
 const costumeY = computed(() => currentSprite.value ? currentSprite.value.config.costumes[currentSprite.value.config.costumeIndex].y : 0)
 
-
-const toggleShowInStage = (name: string) => {
-    currentSpriteNames.value =
-        currentSpriteNames.value.includes(name) ?
-            currentSpriteNames.value.filter(_name => _name !== name)
-            : [...currentSpriteNames.value, name]
-}
-
-const currentSprite = ref<Sprite | null>(null);
-
-const currentSpriteNames = ref<string[]>([])
-
-// TODO: Temporarily use title of project as id
-watch(() => project.value.title, () => {
-    currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
-})
-
-const onDragEnd = (e: SpriteDragEndEvent) => {
-    currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
-    currentSprite.value?.setSx(e.targets[0].position.x)
-    currentSprite.value?.setSy(e.targets[0].position.y)
-}
-
-const zorderList = computed(() => {
-    return project.value.backdrop.config.zorder
-})
-
-// Accept the new zorder configuration
-const onZorderChange = (e: ZorderChangeEvent) => {
-    project.value.backdrop.config.zorder = e.zorder
-}
-
-// set zorder list
-const upLayer = (index: number) => {
-    const spriteToMove = zorderList.value[index];
-    zorderList.value.splice(index, 1);
-    zorderList.value.push(spriteToMove);
-}
-
-
+// get the config of backdrop
 const backdropConfig = computed(() => {
     return {
         scenes: project.value.backdrop.config?.scenes || [],
@@ -161,24 +122,71 @@ const backdropConfig = computed(() => {
         currentCostumeIndex: project.value.backdrop.config.currentCostumeIndex
     }
 })
-console.log(backdropConfig)
 
-// set scene to top
-const moveToTopScene = (index: number) => {
+// get the zorder list
+const zorderList = computed(() => {
+    return project.value.backdrop.config.zorder
+})
+
+watch(() => project.value.id, () => {
+    currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
+})
+
+// accept the new sprite position config when dragend from stage viewer
+const onDragEnd = (e: SpriteDragEndEvent) => {
+    currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
+    currentSprite.value?.setSx(e.targets[0].position.x)
+    currentSprite.value?.setSy(e.targets[0].position.y)
+}
+
+// accept the new zorder configuration from stage viewer
+const onZorderChange = (e: ZorderChangeEvent) => {
+    project.value.backdrop.config.zorder = e.zorder
+}
+
+// import file
+const importFile = async (e: any) => {
+    const file = e.target.files[0];
+    projectStore.loadFromZip(file);
+}
+
+// set sprite to top
+const spriteToTop = (index: number) => {
+    const spriteToMove = zorderList.value[index];
+    zorderList.value.splice(index, 1);
+    zorderList.value.push(spriteToMove);
+}
+
+// choose the sprite to show in stage
+const toggleShowInStage = (name: string) => {
+    currentSpriteNames.value =
+        currentSpriteNames.value.includes(name) ?
+            currentSpriteNames.value.filter(_name => _name !== name)
+            : [...currentSpriteNames.value, name]
+}
+
+// choose the scene to show in stage
+// in spx project the first scene will be shown in stage
+const chooseBackdropScene = (index: number) => {
     if (project.value.backdrop.config.scenes) {
         const scenes = [...project.value.backdrop.config.scenes]
-        const item = scenes.splice(index, 1)[0]
-        scenes.unshift(item)
+        const [sceneItem] = scenes.splice(index, 1)
+        scenes.unshift(sceneItem)
         project.value.backdrop.config.scenes = scenes
 
         const files = project.value.backdrop.files
         if (files) {
             const items = [...files]
-            const item = items.splice(index, 1)[0]
-            items.unshift(item)
+            const [fileItem] = items.splice(index, 1)
+            items.unshift(fileItem)
             project.value.backdrop.files = items
         }
     }
+}
+
+// choose backdrop's current costume
+const chooseBackdropCostume = (index: number) => {
+    project.value.backdrop.config.currentCostumeIndex = index
 }
 
 
