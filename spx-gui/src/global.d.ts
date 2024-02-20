@@ -6,23 +6,39 @@
  * @FilePath: /spx-gui/src/global.d.ts
  * @Description: The global declaration.
  */
-import { FormatResponse } from "./components/code-editor";
-/**
- * Add global declaration for File with url property.
- */
+import { FormatResponse } from './components/code-editor'
+
 declare global {
-    interface File {
-        url: string;
-    }
-    
+  interface File {
+    url: string
+  }
+
+  /**
+   * @description: format spx code power by gopfmt's wasm
+   * @param {string} spx-code
+   * @return {*}
+   * @Author: Zhang Zhi Yang
+   * @Date: 2024-02-02 14:54:14
+   */
+  function formatSPX(input: string): FormatResponse
+
+  class Go {
+    argv: string[]
+    env: { [envKey: string]: string }
+    exit: (code: number) => void
+    importObject: WebAssembly.Imports
+    exited: boolean
+    mem: DataView
+    run(instance: WebAssembly.Instance): Promise<void>
+  }
+
+  interface Window {
     /**
-     * @description: format spx code power by gopfmt's wasm
-     * @param {string} spx-code
-     * @return {*}
-     * @Author: Zhang Zhi Yang
-     * @Date: 2024-02-02 14:54:14
+     * Required to communicate with Go WASM instance.
      */
-    function formatSPX(input: string): FormatResponse;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    project_path: string
+  }
 }
 
 export { File, formatSPX }

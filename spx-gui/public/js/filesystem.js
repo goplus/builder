@@ -1,7 +1,7 @@
 // configuration of IndexedDB
-const dbName = 'project';
+const dbName = 'spx-gui';
 const dbVersion = 2;
-const storeName = 'dir';
+const storeName = 'project';
 
 let db;
 let request = indexedDB.open(dbName, dbVersion);

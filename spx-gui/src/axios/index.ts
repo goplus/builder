@@ -8,6 +8,7 @@
  */
 import { createDiscreteApi } from 'naive-ui'
 import axios, { type AxiosResponse } from 'axios'
+import { useUserStore } from '@/store'
 
 const baseURL = import.meta.env.VITE_API_BASE
 
@@ -19,16 +20,31 @@ const service = axios.create({
 const { message } = createDiscreteApi(['message'])
 
 export interface ResponseData<T> {
-  code: number;
-  data: T;
-  msg: string;
+  code: number
+  data: T
+  msg: string
 }
+
+service.interceptors.request.use(
+  async (config) => {
+    const userStore = useUserStore()
+
+    const token = await userStore.getFreshAccessToken()
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    message.error(error.message)
+    return Promise.reject(error)
+  }
+)
 
 //  response interceptor
 service.interceptors.response.use(
   (response: AxiosResponse<ResponseData<unknown>>) => {
-    console.log(response.data)
-    if (response.data.code === 200) {
+    if (response.data.code >= 200 && response.data.code < 300) {
       return response
     } else {
       message.error(response.data.msg)

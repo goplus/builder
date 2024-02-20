@@ -12,10 +12,9 @@
 
 <script setup lang="ts">
 import { h, ref } from 'vue'
-import { NMenu, NButton, NInput, NAvatar, NIcon, NDropdown } from 'naive-ui'
+import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
-import Logo from '@/assets/logo.png'
 import {
   ComputerTwotone as CodeIcon,
   FilePresentTwotone as FileIcon,
@@ -23,9 +22,11 @@ import {
   PublishTwotone as PublishIcon
 } from '@vicons/material'
 import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
-import { tutorialColor, publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
+import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
+import UserAvatar from './UserAvatar.vue'
+
 const projectStore = useProjectStore()
 const themeStyle = ref<number>(ThemeStyleType.Pink)
 const themeMap = ['Pink', 'Yellow', 'Blue']
@@ -74,25 +75,23 @@ const exportOptions = [
 const settingsOptions = [
   {
     label: '中文/En',
-    key: 'Global',
+    key: 'Global'
   },
   {
     label: 'Theme',
-    key: 'ThemeColor',
-  },
+    key: 'ThemeColor'
+  }
 ]
 
 // active key for route
 const activeKey = ref(null)
 
 // i18n/i10n config
-const { locale,t } = useI18n({
+const { locale, t } = useI18n({
   inheritLocale: true,
   useScope: 'global'
 })
 const languageStore = useLanguageStore()
-
-
 
 // default button style for menu
 const buttonStyle = {
@@ -145,7 +144,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              t("top.file"),
+              t('top.file')
             )
         }
       ),
@@ -169,7 +168,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              t("top.save"),
+              t('top.save')
             )
         }
       ),
@@ -193,7 +192,7 @@ const menuOptions = [
                 style: computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon)
               },
-              t("top.publish"),
+              t('top.publish')
             )
         }
       ),
@@ -204,7 +203,7 @@ const menuOptions = [
       h(
         NInput,
         {
-          placeholder: t("top.untitled"),
+          placeholder: t('top.untitled'),
           style: {
             'border-radius': '10px',
             'text-align': 'center',
@@ -224,7 +223,7 @@ const menuOptions = [
           style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon)
         },
-        t("top.code"),
+        t('top.code')
       ),
     key: 'code-btn'
   },
@@ -243,7 +242,7 @@ const menuOptions = [
           },
           renderIcon: renderIcon(TutorialIcon)
         },
-        t("top.tutorial"),
+        t('top.tutorial')
       ),
     key: 'tutorial-btn'
   },
@@ -279,17 +278,8 @@ const menuOptions = [
     key: 'setting-btn'
   },
   {
-    label: () =>
-      h(NAvatar, {
-        round: true,
-        size: 'large',
-        src: Logo,
-        style: {
-          height: '34px',
-          width: '34px'
-        }
-      }),
-    key: 'logo'
+    label: () => h(UserAvatar),
+    key: 'user-avatar'
   }
 ]
 
@@ -322,18 +312,16 @@ const handleSelectImport = (key: string | number) => {
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
-      const file = e.target.files[0]
-      projectStore.loadProject(e.target.files[0], e.target.files[0].name.split('.')[0])
-      window.project_path = projectStore.project.title
-    }
+      const file = e.target.files[0];
+      projectStore.loadFromZip(file);
+    };
   }
 }
 
-const handleSelectSettings = (key: string | number) =>{
-  if(key === 'Global'){
+const handleSelectSettings = (key: string | number) => {
+  if (key === 'Global') {
     toggleLanguage()
-  }
-  else if (key === 'ThemeColor'){
+  } else if (key === 'ThemeColor') {
     toggleThemeStyle()
   }
 }
