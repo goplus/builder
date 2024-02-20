@@ -4,17 +4,16 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-01-18 08:53:10
  * @FilePath: /builder/spx-gui/src/store/index.ts
- * @Description: 
+ * @Description:
  */
-import { createPinia, defineStore } from "pinia"
-import { type App } from "vue";
-import piniaPluginPersist from "pinia-plugin-persist";
+import { createPinia } from 'pinia'
+import { type App } from 'vue'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
-export const initStore = async (app: App)=> {
-    const store = createPinia();
-    store.use(piniaPluginPersist)
-    app.use(store);
+export const initStore = (app: App) => {
+  const store = createPinia()
+  store.use(piniaPluginPersistedstate)
+  app.use(store)
 }
 
-export * from './modules';
-
+export * from './modules'
