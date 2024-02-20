@@ -204,83 +204,103 @@ func (this *project) MainEntry() {
 //line cmd/project_yap.gox:193:1
 		category := ctx.Param("category")
 //line cmd/project_yap.gox:194:1
-		result, _ := this.p.AssetList(todo, pageIndex, pageSize, assetType, category)
+		isOrderByTime := ctx.Param("isOrderByTime")
 //line cmd/project_yap.gox:195:1
+		isOrderByHot := ctx.Param("isOrderByHot")
+//line cmd/project_yap.gox:196:1
+		result, _ := this.p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
+//line cmd/project_yap.gox:197:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": result})
 	})
-//line cmd/project_yap.gox:202:1
-	this.Get("/list/pubProject/:pageIndex/:pageSize", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:203:1
-		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:204:1
-		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	this.Get("/clickCount/asset/:id/:assetType", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:205:1
-		pageIndex := ctx.Param("pageIndex")
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:206:1
-		pageSize := ctx.Param("pageSize")
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 //line cmd/project_yap.gox:207:1
-		result, _ := this.p.PubProjectList(todo, pageIndex, pageSize)
+		id := ctx.Param("id")
 //line cmd/project_yap.gox:208:1
-		ctx.Json__1(map[string]interface {
-		}{"code": 200, "msg": "ok", "data": result})
-	})
-//line cmd/project_yap.gox:214:1
-	this.Get("/list/userProject/:uid/:pageIndex/:pageSize", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:215:1
-		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-//line cmd/project_yap.gox:216:1
-		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-//line cmd/project_yap.gox:217:1
-		pageIndex := ctx.Param("pageIndex")
-//line cmd/project_yap.gox:218:1
-		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:219:1
-		uid := ctx.Param("uid")
-//line cmd/project_yap.gox:220:1
-		result, _ := this.p.UserProjectList(todo, pageIndex, pageSize, uid)
-//line cmd/project_yap.gox:221:1
-		ctx.Json__1(map[string]interface {
-		}{"code": 200, "msg": "ok", "data": result})
-	})
-//line cmd/project_yap.gox:227:1
-	this.Post("/project/updateIsPublic", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:228:1
-		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-//line cmd/project_yap.gox:229:1
-		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-//line cmd/project_yap.gox:230:1
-		id := ctx.FormValue("id")
-//line cmd/project_yap.gox:231:1
-		_ = this.p.UpdatePublic(todo, id)
-//line cmd/project_yap.gox:232:1
+		assetType := ctx.Param("assetType")
+//line cmd/project_yap.gox:209:1
+		this.p.IncrementAssetClickCount(todo, id, assetType)
+//line cmd/project_yap.gox:210:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": ""})
 	})
-//line cmd/project_yap.gox:238:1
-	this.Post("/asset/search", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:239:1
+//line cmd/project_yap.gox:217:1
+	this.Get("/list/pubProject/:pageIndex/:pageSize", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:218:1
 		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-//line cmd/project_yap.gox:240:1
+//line cmd/project_yap.gox:219:1
 		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-//line cmd/project_yap.gox:241:1
-		search := ctx.FormValue("search")
+//line cmd/project_yap.gox:220:1
+		pageIndex := ctx.Param("pageIndex")
+//line cmd/project_yap.gox:221:1
+		pageSize := ctx.Param("pageSize")
+//line cmd/project_yap.gox:222:1
+		result, _ := this.p.PubProjectList(todo, pageIndex, pageSize)
+//line cmd/project_yap.gox:223:1
+		ctx.Json__1(map[string]interface {
+		}{"code": 200, "msg": "ok", "data": result})
+	})
+//line cmd/project_yap.gox:229:1
+	this.Get("/list/userProject/:uid/:pageIndex/:pageSize", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:230:1
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+//line cmd/project_yap.gox:231:1
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//line cmd/project_yap.gox:232:1
+		pageIndex := ctx.Param("pageIndex")
+//line cmd/project_yap.gox:233:1
+		pageSize := ctx.Param("pageSize")
+//line cmd/project_yap.gox:234:1
+		uid := ctx.Param("uid")
+//line cmd/project_yap.gox:235:1
+		result, _ := this.p.UserProjectList(todo, pageIndex, pageSize, uid)
+//line cmd/project_yap.gox:236:1
+		ctx.Json__1(map[string]interface {
+		}{"code": 200, "msg": "ok", "data": result})
+	})
 //line cmd/project_yap.gox:242:1
-		assetType := ctx.FormValue("assetType")
+	this.Post("/project/updateIsPublic", func(ctx *yap.Context) {
 //line cmd/project_yap.gox:243:1
-		assets, _ := this.p.SearchAsset(todo, search, assetType)
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 //line cmd/project_yap.gox:244:1
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//line cmd/project_yap.gox:245:1
+		id := ctx.FormValue("id")
+//line cmd/project_yap.gox:246:1
+		_ = this.p.UpdatePublic(todo, id)
+//line cmd/project_yap.gox:247:1
+		ctx.Json__1(map[string]interface {
+		}{"code": 200, "msg": "ok", "data": ""})
+	})
+//line cmd/project_yap.gox:253:1
+	this.Post("/asset/search", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:254:1
+		ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+//line cmd/project_yap.gox:255:1
+		ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//line cmd/project_yap.gox:256:1
+		search := ctx.FormValue("search")
+//line cmd/project_yap.gox:257:1
+		assetType := ctx.FormValue("assetType")
+//line cmd/project_yap.gox:258:1
+		assets, _ := this.p.SearchAsset(todo, search, assetType)
+//line cmd/project_yap.gox:259:1
 		ctx.Json__1(map[string]interface {
 		}{"code": 200, "msg": "ok", "data": assets})
 	})
-//line cmd/project_yap.gox:251:1
+//line cmd/project_yap.gox:266:1
 	conf := &core.Config{}
-//line cmd/project_yap.gox:252:1
+//line cmd/project_yap.gox:267:1
 	this.p, _ = core.New(todo, conf)
-//line cmd/project_yap.gox:254:1
+//line cmd/project_yap.gox:269:1
 	this.Run(":8080")
 }
 func main() {
-//line cmd/project_yap.gox:254:1
+//line cmd/project_yap.gox:269:1
 	yap.Gopt_App_Main(new(project))
 }
