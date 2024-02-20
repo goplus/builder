@@ -156,6 +156,25 @@ post "/asset/upload", ctx => {
         		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
         	}
 }
+post "/spirits/upload", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+        ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+        files:=ctx.MultipartForm.File["files"]
+        path,err := p.UploadSpirits(todo,"",files)
+        if (err != nil) {
+                ctx.json({
+                    "code": 400,
+                    "msg": "Failed to read request body",
+                })
+                return
+            }
+        ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data":path,
+        }
+}
 
 post "/asset/save", ctx => {
         ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
