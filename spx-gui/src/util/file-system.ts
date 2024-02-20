@@ -10,8 +10,8 @@ import type { FileType } from '@/types/file';
 import localforage from 'localforage';
 
 const storage = localforage.createInstance({
-    name: 'project',
-    storeName: 'dir'
+    name: 'spx-gui',
+    storeName: 'project'
 })
 
 async function performAsyncOperation(operation: Promise<any>, callback?: (err: any, data: any) => void) {

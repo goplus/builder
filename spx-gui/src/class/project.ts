@@ -61,7 +61,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     return project
   }
 
-  static async getLocalProjects(): Promise<ProjectSummary[]> {
+  private static async getLocalProjects(): Promise<ProjectSummary[]> {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
@@ -72,7 +72,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects
   }
 
-  static async getCloudProjects(): Promise<ProjectSummary[]> {
+  private static async getCloudProjects(): Promise<ProjectSummary[]> {
     // TODO
     return []
   }

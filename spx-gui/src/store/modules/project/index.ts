@@ -18,6 +18,8 @@ export const useProjectStore = defineStore('project', () => {
    */
   const project = ref(new Project())
 
+  // TODO: Consider moving the autosave behaviour into the class project in the future, when non-spx-gui scenarios like widgets are supported.
+
   /**
    * Remove original project and save the project to storage.
    */

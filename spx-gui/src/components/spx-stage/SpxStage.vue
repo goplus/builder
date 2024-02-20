@@ -89,6 +89,7 @@ const run = async () => {
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
   backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
   projectStore.project.run()
+  // If you assign show to `true` directly in a block of code, it will result in the page view not being updated and the iframe will not be remounted, hence the 300ms delay!
   setTimeout(() => {
     show.value = true
   }, 300)
