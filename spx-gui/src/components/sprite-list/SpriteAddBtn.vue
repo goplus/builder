@@ -13,13 +13,14 @@
     <!-- E Component Add Button type first step -->
     <!-- S Component Add Button type second step -->
     <div v-else class="add-buttons" >
+
       <!-- Background Upload -->
       <n-upload
-        v-if="props.type == 'backdrop'"
+        v-if="props.type === 'backdrop'"
         :action="uploadActionUrl"
         @before-upload="beforeBackdropUpload"
       >
-        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> {{ $t("stage.upload") }} </n-button>
+        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> Upload </n-button>
       </n-upload>
 
       <!-- Sound Upload -->
@@ -28,7 +29,7 @@
         :action="uploadActionUrl"
         @before-upload="beforeSoundUpload"
       >
-        <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
+        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
       </n-upload>
 
       <!-- Sprite Upload -->
@@ -48,16 +49,26 @@
         text-color="#fff"
         @click="openLibraryFunc()"
       >
-        {{ $t("stage.choose") }}
+        Choose
       </n-button>
       <n-button
-        v-else
+        v-else-if="props.type == 'sprite'"
         color="#fff"
         :text-color="commonColor"
         @click="openLibraryFunc()"
       >
-      {{ $t("stage.choose") }}
+        Choose
       </n-button>
+
+      <n-button
+        v-if="props.type == 'sound'"
+        color="#fff"
+        :text-color="commonColor"
+        @click="openRecorderFunc()"
+      >
+        Record
+      </n-button>
+
       <!-- E Component Add Button second step -->
     </div>
   </div>
@@ -69,6 +80,12 @@
     @add-asset-to-store="handleAssetAddition"
   />
   <!-- E Modal Library -->
+
+  <!-- S Sound Recorder -->
+  <SoundRecorder
+    v-model:show="showRecorder"
+  />
+  <!-- E Sound Recorder -->
 </template>
 
 <script setup lang="ts">
@@ -83,6 +100,9 @@ import { useBackdropStore } from "@/store/modules/backdrop";
 import LibraryModal from "@/components/spx-library/LibraryModal.vue";
 import { Sprite } from "@/class/sprite";
 import FileWithUrl from "@/class/file-with-url";
+import { useSoundStore } from 'store/modules/sound'
+import { Sound } from '@/class/sound'
+import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -92,6 +112,7 @@ const props = defineProps<PropType>();
 const message = useMessage();
 const spriteStore = useSpriteStore();
 const backdropStore = useBackdropStore();
+const soundStore = useSoundStore();
 
 // ----------data related -----------------------------------
 // TODO: change uploadActionUrl to real backend url.
@@ -102,6 +123,9 @@ const showModal = ref<boolean>(false);
 
 // Ref about showing upload buttons or not.
 const showUploadButtons = ref<boolean>(false);
+
+// Ref about show sound recorder or not.
+const showRecorder = ref<boolean>(false);
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -134,6 +158,15 @@ const handleAddButtonClick = () => {
  */
 const openLibraryFunc = () => {
   showModal.value = true;
+};
+
+/**
+ * @description: A Function about opening recorder.
+ * @Author: Yao xinyue
+ * @Date: 2024-02-20 13:51:22
+ */
+const openRecorderFunc = () => {
+  showRecorder.value = true;
 };
 
 /**

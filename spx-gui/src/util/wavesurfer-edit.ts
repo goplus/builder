@@ -1,5 +1,11 @@
 import { AudioDataService } from '@/util/wavesurfer-edit-data'
 
+export interface SimpleWavesurferBackend {
+    buffer?: AudioBuffer;
+    ac?: AudioContext;
+}
+
+
 interface WavesurferEditParams {
     buffer: AudioBuffer;
     maxCount?: number;

@@ -144,19 +144,19 @@
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js';
-import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.js';
-import CursorPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.cursor.js';
+import TimelinePlugin from 'wavesurfer.js/src/plugin/timeline';
+import RegionsPlugin from 'wavesurfer.js/src/plugin/regions';
+import CursorPlugin from 'wavesurfer.js/src/plugin/cursor';
 import { ref, onMounted, type Ref } from 'vue'
 import { nextTick } from "vue";
-import { WavesurferEdit } from "@/util/wavesurfer-edit";
+import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-edit'
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
-import type { Sound } from '@/class/sound'
+import { Sound } from '@/class/sound'
 import { AudioDataService } from '@/util/wavesurfer-edit-data'
 
 const props = defineProps({
   asset: {
-    type: Object as () => Sound,
+    type: Sound,
     required: true,
   }
 })
@@ -164,7 +164,7 @@ const props = defineProps({
 const emits = defineEmits(['update-sound-file'])
 
 const message: MessageApi = useMessage();
-let wavesurfer: WaveSurfer = ref(null);
+let wavesurfer: WaveSurfer;
 let isPlaying: Ref<boolean> = ref(false);
 let currentSpeedIndex: number = 1;
 const playbackSpeeds: number[] = [0.5, 1.0, 1.25, 1.5, 2.0, 4.0];
@@ -220,7 +220,7 @@ const initWaveSurfer = () => {
           primaryFontColor: '#ffffff',
           secondaryFontColor: '#f79e9e',
           labelInterval: 10,
-          timeInterval: 10,
+          timeInterval: () => 10,
           formatTimeCallback: function(seconds: number) {
             return new Date(seconds * 1000).toISOString().substr(14, 5);
           }
@@ -243,7 +243,7 @@ const initWaveSurfer = () => {
         }),
         CursorPlugin.create({
           showTime: true,
-          opacity: 1,
+          opacity: "1",
           customShowTimeStyle: {
             borderRadius: '5px',
             background: '#fff',
@@ -266,12 +266,14 @@ const initWaveSurfer = () => {
     }
 
     wavesurfer.on('ready', () => {
-      buffer = wavesurfer.backend.buffer!;
-      soundEditor = new WavesurferEdit({
-        buffer,
-        ac: wavesurfer.backend.ac,
-        maxCount: 20,
-      });
+      const backend = wavesurfer.backend as SimpleWavesurferBackend;
+      if (backend.buffer && backend.ac) {
+        soundEditor = new WavesurferEdit({
+          buffer: backend.buffer,
+          ac: backend.ac,
+          maxCount: 20,
+        });
+      }
     });
     wavesurfer.on('play', () => {
       isPlaying.value = true;
@@ -279,17 +281,16 @@ const initWaveSurfer = () => {
     wavesurfer.on('pause', () => {
       isPlaying.value = false;
     });
-
     wavesurfer.on('region-click', (region: any, e: Event) => {
       region.play();
       e.stopPropagation();
       currentRegion = region;
     });
-    wavesurfer.on('region-updated', (region: any, e: Event) => {
+    wavesurfer.on('region-updated', (region: any) => {
       currentRegion = region;
       removeRegion(region);
     });
-    wavesurfer.on('region-update-end', (region: any, e: Event) => {
+    wavesurfer.on('region-update-end', (region: any) => {
       currentRegion = region;
       isRegionOptionDisabled();
     });
@@ -299,9 +300,9 @@ const initWaveSurfer = () => {
 function handleOperate(e: string) : void {
   let val = null;
   let timeArr = ['paste', 'insert'];
-  if (timeArr.includes(e)) val = wavesurfer.getCurrentTime();
+  if (timeArr.includes(e)) val = wavesurfer!.getCurrentTime();
   else val = currentRegion;
-  let res = soundEditor[e](val);
+  let res = (soundEditor as any)[e](val);
   if (!res) return;
   showMessage(e);
   isOperateDisabled.value.backout = res.curIndex <= 0;
@@ -328,7 +329,7 @@ function showMessage(e: string):void {
 /* Purpose: only Retain one region */
 function removeRegion(region: any = {}): void {
   if (!Object.keys(region).length) currentRegion = null;
-  let regions = wavesurfer.regions.list;
+  let regions = wavesurfer!.regions.list;
   for (const key in regions) {
     if (region.id === regions[key].id) continue;
     regions[key].remove();
@@ -347,8 +348,8 @@ function isRegionOptionDisabled(): void {
 
 /* Render wavesurfer */
 function renderWavesurfer(): void {
-  wavesurfer.backend.load(buffer);
-  wavesurfer.drawBuffer();
+  (wavesurfer!.backend as any).load(buffer);
+  wavesurfer!.drawBuffer();
 }
 
 /* Toggle play and pause */
@@ -370,9 +371,9 @@ function togglePlaybackSpeed(): void {
 
 /* Increase volume 10% */
 function increaseVolume(): void {
-  var currentVolume = wavesurfer.getVolume();
+  const currentVolume = wavesurfer.getVolume()
   if (currentVolume < 1) {
-    var newVolume = currentVolume + 0.1;
+    let newVolume = currentVolume + 0.1
     if (newVolume > 1) newVolume = 1;
     wavesurfer.setVolume(newVolume);
   }
@@ -380,9 +381,9 @@ function increaseVolume(): void {
 
 /* Decrease volume 10% */
 function decreaseVolume(): void {
-  var currentVolume = wavesurfer.getVolume();
+  const currentVolume = wavesurfer.getVolume()
   if (currentVolume > 0) {
-    var newVolume = currentVolume - 0.1;
+    let newVolume = currentVolume - 0.1
     if (newVolume < 0) newVolume = 0;
     wavesurfer.setVolume(newVolume);
   }
@@ -415,9 +416,12 @@ function backward(): void {
 
 /* Update sound */
 async function updateSound(): Promise<void> {
-  const wavBlob = audioBufferToWavBlob(wavesurfer.backend.buffer);
-  const wavFile = wavBlobToFile(wavBlob, props.asset?.name + ".wav");
-  emits('update-sound-file', wavFile);
+  const backend = wavesurfer.backend as SimpleWavesurferBackend;
+  if (backend && backend.buffer) {
+    const wavBlob = audioBufferToWavBlob(backend.buffer);
+    const wavFile = wavBlobToFile(wavBlob, props.asset?.name + ".wav");
+    emits('update-sound-file', wavFile);
+  }
 }
 
 /* Convert WAV Blob to File */
@@ -427,9 +431,11 @@ function wavBlobToFile(wavBlob: Blob, fileName: string): File {
 
 /* Download sound file */
 function downloadSound(): void {
-  downloadAudioBuffer(wavesurfer.backend.buffer, props.asset.name + ".wav");
+  const backend = wavesurfer.backend as SimpleWavesurferBackend;
+  if (backend && backend.buffer) {
+    downloadAudioBuffer(backend.buffer, props.asset.name + ".wav");
+  }
 }
-
 
 /* Transfer AudioBuffer to WAV Blob */
 function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
@@ -497,7 +503,6 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   document.body.removeChild(a);
 }
 
-
 </script>
 
 <style scoped>
@@ -554,6 +559,8 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
 }
 
 .waveform-content {
+  position: relative;
+  z-index: 0;
   margin-top: 30px;
   margin-bottom: 30px;
 }

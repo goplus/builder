@@ -3,7 +3,7 @@
  * @Date: 2024-01-12 17:27:57
  * @LastEditors: Yao xinyue
  * @LastEditTime: 2024-02-19 16:12:54
- * @FilePath: /builder/spx-gui/src/components/sound/SoundsHome.vue
+ * @FilePath: /builder/spx-gui/src/components/sound/SoundHome.vue
  * @Description: Sounds Homepage, includes Edit Part And Card List
 -->
 <template>
@@ -11,9 +11,9 @@
     <n-layout-sider
       :native-scrollbar="false"
       content-style="paddingLeft: 120px;"
-      style="width: 175px"
+      style="width: 175px; background-image: linear-gradient(to bottom, #FEFBFB, #FBE8EB);"
     >
-      <SpriteAddBtn
+    <SpriteAddBtn
         :style="{ 'margin-bottom': '26px' }"
         :type="'sound'"
       />
@@ -30,19 +30,19 @@
       <SoundsEdit
         :key="componentKey"
         :asset="selectedSound"
-        @update-sound-file="handleSoundFileUpdate"
         style="margin-left: 10px"
+        @update-sound-file="handleSoundFileUpdate"
       />
     </n-layout-content>
   </n-layout>
 </template>
 
 <script lang="ts" setup>
-import SoundsEditCard from "@/components/sounds/SoundsEditCard.vue";
+import SoundsEditCard from "comps/sounds/SoundEditCard.vue";
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
-import SoundsEdit from "@/components/sounds/SoundsEdit.vue";
+import SoundsEdit from "comps/sounds/SoundEdit.vue";
 import { computed, type ComputedRef, ref } from 'vue'
-import type { Sound } from '@/class/sound'
+import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
 import SpriteAddBtn from 'comps/sprite-list/SpriteAddBtn.vue'
 

@@ -4,7 +4,7 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-02-07 17:53:50
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
- * @Description: 
+ * @Description:
 -->
 <template>
   <div class="asset-library">
@@ -114,7 +114,7 @@ watchEffect(() => {
     font-size: 18px;
     border: 2px solid #00142970;
     border-radius: 0 0 10px 10px;
-    z-index: 2;
+    z-index: 0;
   }
 
   .asset-library-right {

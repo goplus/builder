@@ -3,7 +3,7 @@
  * @Date: 2024-01-12 17:28:15
  * @LastEditors: Yao xinyue
  * @LastEditTime: 2024-02-18 14:11:19
- * @FilePath: src/components/sound/SoundsEditCard.vue
+ * @FilePath: src/components/sound/SoundEditCard.vue
  * @Description: Sounds Card
 -->
 <template>
