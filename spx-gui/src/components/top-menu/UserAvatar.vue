@@ -7,7 +7,7 @@
       :options="avatarDropdownOptions"
       @select="handleAvatarDropdownClick"
     >
-      <n-avatar round :src="userStore.userInfo?.avatar" class="user-avatar" />
+      <n-avatar round :src="userStore.userInfo.avatar" class="user-avatar" />
     </n-dropdown>
   </div>
 </template>
