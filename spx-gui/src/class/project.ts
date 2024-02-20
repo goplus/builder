@@ -2,7 +2,6 @@ import type { DirPath, RawDir } from '@/types/file'
 import * as fs from '@/util/file-system'
 import { nanoid } from 'nanoid'
 import {
-  arrayBuffer2Content,
   convertDirPathToProject,
   convertRawDirToDirPath,
   convertRawDirToZip,
@@ -65,9 +64,8 @@ export class Project implements ProjectDetail, ProjectSummary {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.readFile(path)
-      const project = arrayBuffer2Content(content.content, 'application/json') as ProjectSummary
-      projects.push(project)
+      const content = await fs.readFile(path) as ProjectSummary
+      projects.push(content)
     }
     return projects
   }
@@ -120,9 +118,8 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
       this._load(dirPath)
 
-      const summary = await fs.readFile("summary/" + id)
-      const project = arrayBuffer2Content(summary.content, 'application/json') as ProjectSummary
-      Object.assign(this, project)
+      const summary = await fs.readFile("summary/" + id) as ProjectSummary
+      Object.assign(this, summary)
     } else {
       // TODO: load from cloud
     }
@@ -171,6 +168,13 @@ export class Project implements ProjectDetail, ProjectSummary {
     for (const [key, value] of Object.entries(dirPath)) {
       await fs.writeFile(key, value)
     }
+    const summary: ProjectSummary = {
+      id: this.id,
+      title: this.title,
+      version: this.version,
+      source: this.source
+    }
+    fs.writeFile(this.summaryPath, summary)
   }
 
   /**
@@ -192,9 +196,8 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Download project to computer.
    */
   async download() {
-    const content = await convertRawDirToZip(this.rawDir)
-    const title = this.title
-    saveAs(content, `${title}.zip`)
+    const content = await this.zip
+    saveAs(content, `${this.title}.zip`)
   }
 
   run() {
@@ -227,16 +230,17 @@ export class Project implements ProjectDetail, ProjectSummary {
       const fullPath = this.path + path
       dir[fullPath] = value
     }
-    dir[this.summaryPath] = JSON.stringify({
-      id: this.id,
-      title: this.title,
-      version: this.version,
-      source: this.source
-    })
     return dir
   }
 
   get dirPath(): Promise<DirPath> {
     return convertRawDirToDirPath(this.rawDir)
+  }
+
+  get zip(): Promise<File> {
+    return (async () => {
+      const blob = await convertRawDirToZip(this.rawDir)
+      return new File([blob], `${this.title}.zip`, { type: blob.type })
+    })()
   }
 }

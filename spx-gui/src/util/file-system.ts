@@ -6,7 +6,6 @@
  * @FilePath: /spx-gui/src/util/FileSystem.ts
  * @Description: 
  */
-import type { FileType } from '@/types/file';
 import localforage from 'localforage';
 
 const storage = localforage.createInstance({
@@ -25,7 +24,7 @@ async function performAsyncOperation(operation: Promise<any>, callback?: (err: a
     }
 }
 
-export function writeFile(filename: string, data: FileType, callback?: (err: any, data: any) => void): Promise<FileType> {
+export function writeFile<T>(filename: string, data: T, callback?: (err: any, data: T) => void): Promise<T> {
     return performAsyncOperation(storage.setItem(filename, data), callback);
 }
 
@@ -33,8 +32,8 @@ export function unlink(filename: string, callback?: (err: any, data: any) => voi
     return performAsyncOperation(storage.removeItem(filename), callback);
 }
 
-export function readFile(filename: string, callback?: (err: any, data: any) => void): Promise<FileType> {
-    return performAsyncOperation(storage.getItem(filename) as Promise<FileType>, callback);
+export function readFile(filename: string, callback?: (err: any, data: any) => void) {
+    return performAsyncOperation(storage.getItem(filename), callback);
 }
 
 export function readdir(dirname: string, callback?: (err: any, data: any) => void): Promise<string[]> {

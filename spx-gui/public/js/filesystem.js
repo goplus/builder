@@ -79,7 +79,7 @@ function getFilesStartingWith(dirname) {
         request.onsuccess = function (event) {
             const allFiles = event.target.result;
             allFiles.forEach(file => {
-                if (file.path.startsWith(dirname)) {
+                if (file.path?.startsWith(dirname)) {
                     files.push(file.path);
                 }
             });
