@@ -35,7 +35,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'EditorHomepage',
     component: () => import('../view/EditorHomepage.vue')
   },
-  { path: '/callback', name: 'Login Callback', component: () => import('@/view/LoginCallback.vue') }
+  {
+    path: '/callback',
+    name: 'Signin Callback',
+    component: () => import('@/view/SigninCallback.vue')
+  }
 ]
 
 const router = createRouter({
