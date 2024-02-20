@@ -1,8 +1,11 @@
 import (
 	"context"
 	"os"
+	"io"
 	"strconv"
 	"encoding/json"
+
+	"github.com/goplus/builder/spx-backend/internal/common"
 	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
@@ -12,78 +15,96 @@ var (
 
 todo := context.TODO()
 
-get "/project/:id", ctx => {
-	id := ctx.param("id")
-	res, _ := p.FileInfo(todo, id)
-	ctx.json {
-		"code":200,
-		"msg":"OK",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
-	}
-}
-
-post "/project/save", ctx=>{
-	id := ctx.FormValue("id")
-	uid := ctx.FormValue("uid")
-	name:=ctx.FormValue("name")
-	isPublic:=ctx.FormValue("isPublic")
-	ip, _ := strconv.Atoi(isPublic)
-	file,header,_:=ctx.FormFile("file")
-	codeFile:=&core.CodeFile{
-		ID:id,
-		Name:name,
-		AuthorId :uid,
-		IsPublic:ip,
-		Status:1,
-	}
-	res,_ := p.SaveProject(todo,codeFile,file,header)
-	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
-	}
-}
-
-post "/project/check-update",ctx=>{
-    var fileInfoWrapper core.FileInfoWrapper
-    err := json.NewDecoder(ctx.Body).Decode(&fileInfoWrapper)
+get("/project/detail/:id", ctx => {
+    id := ctx.param("id")
+    res, err := p.GetProjectDetail(todo, id)
     if err != nil {
-        ctx.json {
-            "code":500,
-            "msg":"err",
-        }
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to get project detail",
+        })
+        return
     }
-    res,_:= p.CheckUpdate(todo,fileInfoWrapper.FileInfo)
-    ctx.json {
-        "code":200,
-        "msg":"ok",
-        "data":res,
+    var files map[string]string
+    err = json.Unmarshal([]byte(res.Address), &files)
+    if err != nil {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to parse project files",
+        })
+        return
     }
-}
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": {
+            "id": res.ID,
+            "name": res.Name,
+            "authorId": res.AuthorId,
+            "files": files,
+            "version": res.Version,
+            "isPublic": res.IsPublic,
+            "status": res.Status,
+            "createdAt": res.Ctime,
+            "updatedAt": res.Utime,
+        },
+    })
+})
 
-post "/project/upload", ctx=>{
-    err:=ctx.ParseMultipartForm(10 << 20)
-    if err != nil {
-        ctx.json {
-            "code":500,
-            "msg":"err",
-        }
+post("/project/save", ctx => {
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    var req core.SaveProjectRequest
+    body, err := io.ReadAll(ctx.Request.Body)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to read request body",
+        })
+        return
     }
-    relativePath := ctx.FormValue("relativePath")
-    file,_,_:=ctx.FormFile("file")
-    err= p.UploadFile(todo,relativePath,file)
-    if err != nil {
-        ctx.json {
-            "code":500,
-            "msg":err,
-        }
-    }else{
-        ctx.json {
-            "code":200,
-            "msg":"ok",
-        }
+    err = json.Unmarshal(body, &req)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": err.Error(),
+        })
+        return
     }
-}
+    res, err := p.SaveProject(todo, req)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to save project:"+err.Error(),
+        })
+        return
+    }
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": {
+            "id": res.ID,
+            "name": res.Name,
+            "authorId": res.AuthorId,
+            "files": req.Files,
+            "version": res.Version,
+            "isPublic": res.IsPublic,
+            "status": res.Status,
+            "createdAt": res.Ctime,
+            "updatedAt": res.Utime,
+        },
+    })
+})
+
+get("/project/upload-token", ctx => {
+    token, _ := common.GenerateUploadToken()
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": token,
+    })
+})
+
 
 post "/project/fmt", ctx=>{
 	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
