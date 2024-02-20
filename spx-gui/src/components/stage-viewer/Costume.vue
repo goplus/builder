@@ -3,7 +3,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 09:19:07
+ * @LastEditTime: 2024-02-20 11:21:32
  * @FilePath: /spx-gui/src/components/stage-viewer/Costume.vue
  * @Description: 
 -->
@@ -59,6 +59,7 @@ const spriteRotation = computed(() => {
 })
 
 watch(() => props.costumeConfig.url, (new_url, old_url) => {
+    console.log(new_url, old_url)
     if (new_url) {
         const _image = new window.Image();
         _image.src = props.costumeConfig.url;

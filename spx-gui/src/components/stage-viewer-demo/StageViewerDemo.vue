@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 14:53:44
+ * @LastEditTime: 2024-02-19 18:28:25
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -32,6 +32,15 @@
                             {{ sprite.name }}
                         </button>
                     </div>
+                </div>
+            </div>
+            <div>
+                <p>order in stage</p>
+                <div>
+                    <button v-for="(spriteName, index) in zorderList" :key="spriteName"
+                        :disabled="index == zorderList.length - 1" @click="() => upLayer(index)">
+                        {{ spriteName }}
+                    </button>
                 </div>
             </div>
             <div>
@@ -127,6 +136,17 @@ const onDragEnd = (e: SpriteDragEndEvent) => {
     currentSprite.value?.setSy(e.targets[0].position.y)
 }
 
+const zorderList = computed(() => {
+    return project.value.backdrop.config.zorder
+})
+// set zorder list
+const upLayer = (index: number) => {
+    const spriteToMove =  zorderList.value[index]; 
+    zorderList.value.splice(index, 1); 
+    zorderList.value.push(spriteToMove); 
+}
+
+
 const backdropConfig = computed(() => {
     return {
         scenes: project.value.backdrop.config?.scenes || [],
@@ -153,6 +173,7 @@ const moveToTopScene = (index: number) => {
         }
     }
 }
+
 
 
 

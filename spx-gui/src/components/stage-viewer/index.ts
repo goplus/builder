@@ -28,8 +28,7 @@ export interface StageSprite extends StagePosition {
     size: number
     costumes: StageCostume[]
     costumeIndex: number
-    visible: boolean // Visible at run time
-    zorder: number
+    visible: boolean 
 }
 
 

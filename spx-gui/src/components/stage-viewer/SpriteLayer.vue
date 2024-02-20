@@ -2,16 +2,17 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 17:09:00
+ * @LastEditTime: 2024-02-20 10:39:18
  * @FilePath: /spx-gui/src/components/stage-viewer/SpriteLayer.vue
  * @Description: 
 -->
 <template>
     <v-layer :config="{
+        name: 'sprite',
         x: props.offsetConfig.offsetX,
         y: props.offsetConfig.offsetY
     }">
-        <template >
+        <template>
             <template v-for="sprite in props.sprites">
                 <Sprite @onDragEnd="onSpriteDragEnd" v-if="isVisibleInStage(sprite)" :mapConfig="props.mapConfig"
                     :key="sprite.name" :spriteConfig="sprite" />

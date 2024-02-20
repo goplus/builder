@@ -2,12 +2,13 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 17:06:05
+ * @LastEditTime: 2024-02-20 11:21:02
  * @FilePath: /spx-gui/src/components/stage-viewer/BackdropLayer.vue
  * @Description
 -->
 <template>
     <v-layer :config="{
+        name: 'backdrop',
         x: props.offsetConfig.offsetX,
         y: props.offsetConfig.offsetY,
     }">

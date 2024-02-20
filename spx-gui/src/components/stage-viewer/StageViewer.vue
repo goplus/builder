@@ -2,13 +2,17 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 17:10:29
+ * @LastEditTime: 2024-02-20 11:24:18
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
 <template>
     <div id="stage-viewer">
-        <v-stage :config="{
+        <div id="menu" ref="menu">
+            <div @click="onSpriteMoveUp">up</div>
+            <div @click="onSpriteMoveDown">down</div>
+        </div>
+        <v-stage ref="stage" @contextmenu="onStageMenu" :config="{
             width: props.width,
             height: props.height,
             scaleX: scale,
@@ -18,7 +22,7 @@
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2,
             }" :mapConfig="spxMapConfig" />
-            <SpriteLayer  @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
+            <SpriteLayer @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
             }" :sprites="sprites" :mapConfig="spxMapConfig" :currentSpriteNames="props.currentSpriteNames" />
@@ -31,12 +35,24 @@ import type { ComputedRef } from 'vue';
 import type { StageViewerEmits, StageViewerProps, MapConfig, SpriteDragEndEvent, StageBackdrop, StageSprite } from './index';
 import SpriteLayer from './SpriteLayer.vue';
 import BackdropLayer from './BackdropLayer.vue';
+import type { KonvaEventObject, Node } from 'konva/lib/Node';
+// import type MouseEvent
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
     height: 400, // container height
     width: 400// container width
 });
 const emits = defineEmits<StageViewerEmits>();
+
+const currentSprite = ref<Node | null>();
+const stage = ref();
+const menu = ref();
+
+// get spx map size
+const spxMapConfig = ref<MapConfig>({
+    width: 400,
+    height: 400
+});
 
 // get the scale of stage viewer
 const scale = computed(() => {
@@ -51,11 +67,7 @@ const scale = computed(() => {
     return 1;
 });
 
-// get spx map size
-const spxMapConfig = ref<MapConfig>({
-    width: 400,
-    height: 400
-});
+
 
 watch(() => props.project, (new_project, old_project) => {
     console.log(new_project, old_project)
@@ -93,33 +105,42 @@ const backdrop = computed(() => {
     } as StageBackdrop
 })
 
-const sprites: ComputedRef<StageSprite[]> = computed(() => {
-    const list = props.project.sprite.list.map(sprite => {
+// get backdrop's zorder
+const zorderList = computed(() => props.project.backdrop.config.zorder)
 
-        return {
+
+const sprites: ComputedRef<StageSprite[]> = computed(() => {
+    const spriteMap = new Map<string, StageSprite>();
+    props.project.sprite.list.forEach(sprite => {
+        const stageSprite: StageSprite = {
             name: sprite.name,
             x: sprite.config.x,
             y: sprite.config.y,
             heading: sprite.config.heading,
             size: sprite.config.size,
-            visible: sprite.config.visible, // Visible at run time
-            zorder: 1,
+            visible: sprite.config.visible,
             costumes: sprite.config.costumes.map((costume, index) => {
-                console.log(costume)
                 return {
                     name: costume.name as string,
                     url: sprite.files[index].url as string,
                     x: costume.x,
                     y: costume.y,
-                }
+                };
             }),
             costumeIndex: sprite.config.costumeIndex,
+        };
+        spriteMap.set(sprite.name, stageSprite); 
+    });
+    const list: StageSprite[] = []
+    zorderList.value.forEach(name => {
+        if (spriteMap.has(name)) {
+            list.push(spriteMap.get(name) as StageSprite);
         }
     })
-    return list as StageSprite[];
+    return list;
 })
 
-// When config is not configured, its stage size is determined by the first loaded background image
+// When config is not configured, its stage size is determined by the background image 
 const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
     if (!props.project.backdrop.config.map) {
         const { imageEl } = event;
@@ -131,6 +152,45 @@ const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
     }
 };
 
+// show stage menu
+const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
+    e.evt.preventDefault();
+
+    const stageInstance = stage.value.getStage();
+    console.log(e.target, stageInstance)
+
+    // only the sprite need contextmenu
+    if (e.target === stageInstance || e.target.parent!.attrs.name !== 'sprite') {
+        menu.value.style.display = 'none';
+        currentSprite.value = null
+        return;
+    }
+    currentSprite.value = e.target;
+    menu.value.style.display = 'block';
+    menu.value.style.top =
+        stageInstance.getPointerPosition().y + 4 + 'px';
+    menu.value.style.left =
+        stageInstance.getPointerPosition().x + 4 + 'px';
+}
+// spirte move down
+const onSpriteMoveDown = () => {
+    console.log(currentSprite.value?.moveDown)
+    if (currentSprite.value) {
+        currentSprite.value.moveDown()
+        menu.value.style.display = "none"
+    }
+}
+
+// sprite move up
+const onSpriteMoveUp = () => {
+    if (currentSprite.value) {
+        currentSprite.value.moveUp()
+        menu.value.style.display = "none"
+    }
+}
+
+
+
 const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
     emits("onSpritesDragEnd", e)
 }
@@ -139,7 +199,30 @@ const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
 </script>
 <style scoped>
 #stage-viewer {
+    position: relative;
     height: v-bind("props.height + 'px'");
     width: v-bind("props.width + 'px'");
+}
+
+#menu {
+    z-index: 999;
+    display: none;
+    position: absolute;
+    width: 60px;
+    background-color: white;
+    box-shadow: 0 0 5px grey;
+    border-radius: 3px;
+}
+
+#menu>div {
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#menu>div:hover {
+    display: flex;
+    justify-content: center;
+    background-color: #f0f0f0;
 }
 </style>
