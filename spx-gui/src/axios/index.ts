@@ -10,7 +10,7 @@ import { createDiscreteApi } from 'naive-ui'
 import axios, { type AxiosResponse } from 'axios'
 import { useUserStore } from '@/store'
 
-const baseURL = 'http://116.62.66.126:8080'
+const baseURL = import.meta.env.VITE_API_BASE;
 
 const service = axios.create({
   baseURL: baseURL,
