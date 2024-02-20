@@ -1,5 +1,6 @@
 import StageViewer from "./StageViewer.vue"
-import { Project } from "@/store"
+import type { Project } from "@/class/project";
+
 export default StageViewer
 /**
  * @description:  The Stage Position,Relative to the stage center
@@ -28,7 +29,7 @@ export interface StageSprite extends StagePosition {
     size: number
     costumes: StageCostume[]
     costumeIndex: number
-    visible: boolean 
+    visible: boolean
 }
 
 
@@ -95,6 +96,11 @@ export interface SpriteDragEndEvent {
     targets: SpriteDragEndTarget[]
 }
 
+export interface ZorderChangeEvent {
+    zorder: string[]
+}
+
 export interface StageViewerEmits {
     (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
+    (e: 'onZorderChange', value: ZorderChangeEvent): void
 }

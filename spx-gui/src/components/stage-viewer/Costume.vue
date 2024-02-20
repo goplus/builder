@@ -3,12 +3,13 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 11:21:32
+ * @LastEditTime: 2024-02-20 14:17:43
  * @FilePath: /spx-gui/src/components/stage-viewer/Costume.vue
  * @Description: 
 -->
 <template>
     <v-image @dragend="handleDragEnd" :config="{
+        spriteName:props.spriteConfig.name,
         image: image,
         draggable: true,
         x: spritePosition.x,

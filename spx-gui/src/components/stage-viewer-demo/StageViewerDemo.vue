@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 18:28:25
+ * @LastEditTime: 2024-02-20 14:41:02
  * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
@@ -84,7 +84,7 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
             <n-switch v-model:value="visible" @update:value="(val) => { currentSprite && currentSprite.setVisible(val) }" />
         </div>
-        <StageViewer @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames"
+        <StageViewer @onZorderChange="onZorderChange" @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames"
             :project="(project as Project)" />
     </div>
 </template>
@@ -92,9 +92,9 @@
 import { NInputNumber, NSwitch } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
 import StageViewer from "../stage-viewer";
-import type { StageSprite, SpriteDragEndEvent, StageBackdrop } from "../stage-viewer"
+import type { StageSprite, SpriteDragEndEvent, StageBackdrop, ZorderChangeEvent } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
-import type { Project } from "@/store/modules/project";
+import type { Project } from "@/class/project";
 import type { Scene } from "@/interface/file"
 
 import { storeToRefs } from "pinia";
@@ -103,7 +103,8 @@ import type { ComputedRef } from "vue";
 const projectStore = useProjectStore();
 const { project } = storeToRefs(projectStore);
 const add = async (e: any) => {
-    await projectStore.loadProject(e.target.files[0], e.target.files[0].name.split(".")[0]);
+    const file = e.target.files[0];
+    projectStore.loadFromZip(file);
 }
 const x = computed(() => currentSprite.value ? currentSprite.value.config.x : 0)
 const y = computed(() => currentSprite.value ? currentSprite.value.config.y : 0)
@@ -139,11 +140,17 @@ const onDragEnd = (e: SpriteDragEndEvent) => {
 const zorderList = computed(() => {
     return project.value.backdrop.config.zorder
 })
+
+// Accept the new zorder configuration
+const onZorderChange = (e: ZorderChangeEvent) => {
+    project.value.backdrop.config.zorder = e.zorder
+}
+
 // set zorder list
 const upLayer = (index: number) => {
-    const spriteToMove =  zorderList.value[index]; 
-    zorderList.value.splice(index, 1); 
-    zorderList.value.push(spriteToMove); 
+    const spriteToMove = zorderList.value[index];
+    zorderList.value.splice(index, 1);
+    zorderList.value.push(spriteToMove);
 }
 
 

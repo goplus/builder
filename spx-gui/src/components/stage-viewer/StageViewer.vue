@@ -2,15 +2,17 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 11:24:18
+ * @LastEditTime: 2024-02-20 15:27:08
  * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
 <template>
     <div id="stage-viewer">
-        <div id="menu" ref="menu">
-            <div @click="onSpriteMoveUp">up</div>
-            <div @click="onSpriteMoveDown">down</div>
+        <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
+            <div @click="moveSprite('up')">up</div>
+            <div @click="moveSprite('down')">down</div>
+            <div @click="moveSprite('top')">top</div>
+            <div @click="moveSprite('bottom')">bottom</div>
         </div>
         <v-stage ref="stage" @contextmenu="onStageMenu" :config="{
             width: props.width,
@@ -108,7 +110,7 @@ const backdrop = computed(() => {
 // get backdrop's zorder
 const zorderList = computed(() => props.project.backdrop.config.zorder)
 
-
+// get sprites for stage sort by zorder
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
     const spriteMap = new Map<string, StageSprite>();
     props.project.sprite.list.forEach(sprite => {
@@ -129,7 +131,7 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
             }),
             costumeIndex: sprite.config.costumeIndex,
         };
-        spriteMap.set(sprite.name, stageSprite); 
+        spriteMap.set(sprite.name, stageSprite);
     });
     const list: StageSprite[] = []
     zorderList.value.forEach(name => {
@@ -172,22 +174,41 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
     menu.value.style.left =
         stageInstance.getPointerPosition().x + 4 + 'px';
 }
-// spirte move down
-const onSpriteMoveDown = () => {
-    console.log(currentSprite.value?.moveDown)
-    if (currentSprite.value) {
-        currentSprite.value.moveDown()
-        menu.value.style.display = "none"
-    }
+
+const onStageMenuMouseLeave = (e: MouseEvent) => {
+    menu.value.style.display = 'none';
+    currentSprite.value = null
 }
 
-// sprite move up
-const onSpriteMoveUp = () => {
-    if (currentSprite.value) {
-        currentSprite.value.moveUp()
-        menu.value.style.display = "none"
+// move sprite to up or down & emit  the new zorder list
+const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
+    if (!currentSprite.value) return;
+
+    const spriteName = currentSprite.value.getAttr('spriteName');
+    const currentIndex = zorderList.value.indexOf(spriteName);
+    let newIndex: number;
+    if (direction === 'up') {
+        newIndex = currentIndex + 1;
+    } else if (direction === 'down') {
+        newIndex = currentIndex - 1;
+    } else if (direction === 'top') {
+        newIndex = zorderList.value.length - 1;
+    } else if (direction === 'bottom') {
+        newIndex = 0;
+    } else {
+        return;
     }
-}
+
+    if (currentIndex >= 0 && newIndex >= 0 && newIndex < zorderList.value.length) {
+        const newZorderList = [...zorderList.value];
+        const [movedSprite] = newZorderList.splice(currentIndex, 1);
+        newZorderList.splice(newIndex, 0, movedSprite);
+        emits('onZorderChange', { zorder: newZorderList });
+    }
+
+    menu.value.style.display = 'none';
+};
+
 
 
 
@@ -218,6 +239,7 @@ const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
     display: flex;
     justify-content: center;
     cursor: pointer;
+    padding: 4px;
 }
 
 #menu>div:hover {
