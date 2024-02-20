@@ -2,6 +2,22 @@ import { casdoorSdk } from '@/util/casdoor'
 import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
 import { defineStore } from 'pinia'
 
+// https://stackoverflow.com/questions/38552003/how-to-decode-jwt-token-in-javascript-without-using-a-library
+const parseJwt = (token: string) => {
+  const base64Url = token.split('.')[1]
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      })
+      .join('')
+  )
+
+  return JSON.parse(jsonPayload)
+}
+
 export const useUserStore = defineStore('spx-user', {
   state: () => ({
     accessToken: null as string | null,
@@ -15,7 +31,7 @@ export const useUserStore = defineStore('spx-user', {
     async getFreshAccessToken(): Promise<string | null> {
       if (!this.accessTokenValid()) {
         if (!this.refreshTokenValid()) {
-          this.logout()
+          this.signOut()
           return null
         }
 
@@ -25,7 +41,7 @@ export const useUserStore = defineStore('spx-user', {
         } catch (error) {
           // TODO: not to clear storage for network error
           console.error('Failed to refresh access token', error)
-          this.logout()
+          this.signOut()
           throw error
         }
       }
@@ -43,13 +59,13 @@ export const useUserStore = defineStore('spx-user', {
       this.accessTokenExpiresAt = accessTokenExpiresAt
       this.refreshTokenExpiresAt = refreshTokenExpiresAt
     },
-    logout() {
+    signOut() {
       this.accessToken = null
       this.refreshToken = null
       this.accessTokenExpiresAt = null
       this.refreshTokenExpiresAt = null
     },
-    hasLoggedIn() {
+    hasSignedIn() {
       return this.accessTokenValid() || this.refreshTokenValid()
     },
     accessTokenValid() {
@@ -66,8 +82,21 @@ export const useUserStore = defineStore('spx-user', {
         (this.refreshTokenExpiresAt === null || this.refreshTokenExpiresAt - delta > Date.now())
       )
     },
-    async loginWithCurrentUrl() {
-      await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
+    async consumeCurrentUrl() {
+      const tokenResp = await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
+      this.setToken(tokenResp)
+    },
+    signInWithRedirection() {
+      casdoorSdk.signinWithRedirection()
+    }
+  },
+  getters: {
+    userInfo: (state) => {
+      if (!state.accessToken) return null
+      return parseJwt(state.accessToken) as {
+        displayName: string
+        avatar: string
+      }
     }
   },
   persist: true
