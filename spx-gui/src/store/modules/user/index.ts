@@ -1,45 +1,74 @@
-/*
- * @Author: Zhang Zhi Yang
- * @Date: 2024-01-15 09:16:18
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 10:18:11
- * @FilePath: /builder/spx-gui/src/store/modules/user/index.ts
- * @Description: 
- */
-import { defineStore } from "pinia"
-import { ref, computed, readonly } from "vue"
-// The returned value of `defineStore () `is named using the name of store 
-// This value needs to start with `use` and end with `Store`.
-// (for example, `useAssetStore`, `useUserStore`, `useStyleStore`)
+import { casdoorSdk } from '@/util/casdoor'
+import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
+import { defineStore } from 'pinia'
 
-// The first parameter is the unique ID of the Store in the application
-export const useUserStore = defineStore(
-    'user',
-    () => {
-        // ----------state------------------------------------
-        const token = ref("");
-        const username = ref("");
+export const useUserStore = defineStore('spx-user', {
+  state: () => ({
+    accessToken: null as string | null,
+    refreshToken: null as string | null,
 
-        // ----------getters------------------------------------
-        const getFullToken = computed(() => "Bear " + token.value)
-
-        // ----------actions------------------------------------
-        const setToken = (_token: string) => {
-            token.value = _token
+    // timestamp in milliseconds, null if never expires
+    accessTokenExpiresAt: null as number | null,
+    refreshTokenExpiresAt: null as number | null
+  }),
+  actions: {
+    async getFreshAccessToken(): Promise<string | null> {
+      if (!this.accessTokenValid()) {
+        if (!this.refreshTokenValid()) {
+          this.logout()
+          return null
         }
-        return {
-            //  state
-            username: readonly(username),
-            token: readonly(token),
-            //  getters
-            getFullToken,
-            //  actions
-            setToken
+
+        try {
+          const tokenResp = await casdoorSdk.pkce.refreshAccessToken(this.refreshToken!)
+          this.setToken(tokenResp)
+        } catch (error) {
+          // TODO: not to clear storage for network error
+          console.error('Failed to refresh access token', error)
+          this.logout()
+          throw error
         }
-    }, {
-    persist: {
-        enabled: true,
+      }
+      return this.accessToken
+    },
+    setToken(tokenResp: ITokenResponse) {
+      const accessTokenExpiresAt = tokenResp.expires_in
+        ? Date.now() + tokenResp.expires_in * 1000
+        : null
+      const refreshTokenExpiresAt = tokenResp.refresh_expires_in
+        ? Date.now() + tokenResp.refresh_expires_in * 1000
+        : null
+      this.accessToken = tokenResp.access_token
+      this.refreshToken = tokenResp.refresh_token
+      this.accessTokenExpiresAt = accessTokenExpiresAt
+      this.refreshTokenExpiresAt = refreshTokenExpiresAt
+    },
+    logout() {
+      this.accessToken = null
+      this.refreshToken = null
+      this.accessTokenExpiresAt = null
+      this.refreshTokenExpiresAt = null
+    },
+    hasLoggedIn() {
+      return this.accessTokenValid() || this.refreshTokenValid()
+    },
+    accessTokenValid() {
+      const delta = 60 * 1000 // 1 minute
+      return !!(
+        this.accessToken &&
+        (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - delta > Date.now())
+      )
+    },
+    refreshTokenValid() {
+      const delta = 60 * 1000 // 1 minute
+      return !!(
+        this.refreshToken &&
+        (this.refreshTokenExpiresAt === null || this.refreshTokenExpiresAt - delta > Date.now())
+      )
+    },
+    async loginWithCurrentUrl() {
+      await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
     }
-}
-)
-
+  },
+  persist: true
+})
