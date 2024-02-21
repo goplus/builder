@@ -14,6 +14,5 @@ module.exports = {
   },
   rules: {
     'no-useless-escape': 'warn',
-    '@typescript-eslint/naming-convention': 'warn'
   }
 }
