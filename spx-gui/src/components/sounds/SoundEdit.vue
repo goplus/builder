@@ -157,7 +157,7 @@ import { AudioDataService } from '@/util/wavesurfer-edit-data'
 const props = defineProps({
   asset: {
     type: Sound,
-    required: true,
+    required: false,
   }
 })
 

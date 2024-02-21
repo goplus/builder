@@ -51,7 +51,7 @@ const soundStore = useSoundStore();
 const assets: ComputedRef<Sound[]> = computed(
   () => soundStore.list as Sound[],
 );
-const selectedSound = ref<Sound | null>(null);
+const selectedSound = ref<Sound>();
 const componentKey = ref(0);
 
 const handleSelect = (asset: Sound) => {
