@@ -15,7 +15,9 @@
       <button @click="toggleReadOnly">
         {{ editorOptions.readOnly ? 'disable' : 'enable' }} readonly
       </button>
-      <div v-for="(item, index) in codeArray" @click="codeIndex = index">code: {{ index }}</div>
+      <div v-for="(item, index) in codeArray" :key="index" @click="codeIndex = index">
+        code: {{ index }}
+      </div>
     </div>
 
     <CodeEditor
