@@ -207,6 +207,7 @@ const initSoundEdit = () => {
 
 /* init WaveSurfer */
 const initWaveSurfer = () => {
+  // nextTick : Make sure waveform dom is loaded
   nextTick(() => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
