@@ -1,8 +1,8 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 20:50:40
+ * @LastEditors: Hu JingJing
+ * @LastEditTime: 2024-02-19 23:34:37
  * @FilePath: /spx-gui/src/components/spx-code-editor/SpxCodeEditor.vue
  * @Description: 
 -->
@@ -19,14 +19,17 @@
   
 <script setup lang="ts">
 import CodeEditor, { monaco } from "@/components/code-editor"
-import { onBeforeUnmount, onMounted, ref, watch, computed } from 'vue';
+import { ref,  computed } from 'vue';
 import { useEditorStore } from "@/store"
 import { useSpriteStore } from '@/store/modules/sprite';
-import { storeToRefs } from 'pinia'
-import { NButton } from "naive-ui"
+import { Sprite } from "@/class/sprite";
+import { NButton } from "naive-ui";
+
 const spriteStore = useSpriteStore()
+const { setCurrentByName } = spriteStore;
 const store = useEditorStore();
 const code_editor = ref();
+const undef = "Undefined*";
 
 
 // watch the current sprite and set it's code to editor
@@ -35,10 +38,40 @@ const currentCode = computed(() => {
 })
 
 // Listen for editor value change, sync to sprite store
-const onCodeChange = (value: string) => {
+const onCodeChange = async (value: string) => {
+    console.log(spriteStore.current)
     if (spriteStore.current) {
         spriteStore.current.code = value
+    }else {
+        const tmpFile = await getImageAsFile("/img/logo.png", "logo.png") as File
+        const sprite = new Sprite(undef, [tmpFile], value);
+        spriteStore.addItem(sprite);
+        setCurrentByName(sprite.name)
+        console.log(spriteStore.current)
     }
+}
+
+async function fetchImage(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Get File Error');
+  }
+  return response.blob();
+}
+
+function blobToFile(blob: Blob, name: string) {
+  return new File([blob], name);
+}
+
+const getImageAsFile = async (imagePath: string, fileName: string) => {
+  try {
+    const blob = await fetchImage(imagePath);
+    return new Promise<File>((resolve) => {
+      resolve(blobToFile(blob, fileName));
+    });
+  } catch (error) {
+    console.error("Error fetching image:", error);
+  }
 }
 
 const clear = () => {
