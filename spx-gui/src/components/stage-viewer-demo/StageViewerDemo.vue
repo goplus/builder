@@ -2,21 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 16:27:48
- * @FilePath: /spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
+ * @LastEditTime: 2024-02-21 18:11:56
+ * @FilePath: /builder/spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
  * @Description:
 -->
 <template>
     <div style="display: flex;">
         <div>
             <input type="file" @change="importFile" accept=".zip">
-            <p>show in stage viewer</p>
-            <template v-for="sprite in project.sprite.list" :key="sprite.name">
-                <button :style="currentSpriteNames.includes(sprite.name) ? { color: 'blue' } : {}"
-                    @click="toggleShowInStage(sprite.name)">
-                    {{ sprite.name }}
-                </button>
-            </template>
             <div>
                 <p>active in stage</p>
                 <div style="display: flex;">
@@ -27,7 +20,7 @@
                                 :style="sprite.config.costumeIndex === costumeIndex ? { color: 'red' } : {}"
                                 @click="() => sprite.config.costumeIndex = costumeIndex">{{ costume.name }} </button>
                         </template>
-                        <button @click="currentSprite = sprite"
+                        <button @click="() => { currentSprite = sprite; selectedSpriteNames = [sprite.name] }"
                             :style="currentSprite?.name === sprite.name ? { color: 'red' } : {}">
                             {{ sprite.name }}
                         </button>
@@ -84,7 +77,7 @@
                 @update:value="(val) => { currentSprite && currentSprite.setCy(val as number) }"></n-input-number>
             <n-switch v-model:value="visible" @update:value="(val) => { currentSprite && currentSprite.setVisible(val) }" />
         </div>
-        <StageViewer @onZorderChange="onZorderChange" @onSpritesDragEnd="onDragEnd" :currentSpriteNames="currentSpriteNames"
+        <StageViewer @onSelectedSpriteChange="onSelectedSpriteChange" :selectedSpriteNames="selectedSpriteNames"
             :project="(project as Project)" />
     </div>
 </template>
@@ -92,7 +85,7 @@
 import { NInputNumber, NSwitch } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
 import StageViewer from "../stage-viewer";
-import type { StageSprite, SpriteDragEndEvent, StageBackdrop, ZorderChangeEvent } from "../stage-viewer"
+import type { StageSprite, SpriteDragEndEvent, StageBackdrop, ZorderChangeEvent, SelectedSpriteChangeEvent } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import type { Project } from "@/class/project";
 import { storeToRefs } from "pinia";
@@ -102,7 +95,7 @@ const projectStore = useProjectStore();
 const { project } = storeToRefs(projectStore);
 
 const currentSprite = ref<Sprite | null>(null);
-const currentSpriteNames = ref<string[]>([])
+const selectedSpriteNames = ref<string[]>([])
 
 // current sprite config
 const x = computed(() => currentSprite.value ? currentSprite.value.config.x : 0)
@@ -128,20 +121,26 @@ const zorderList = computed(() => {
     return project.value.backdrop.config.zorder
 })
 
-watch(() => project.value.id, () => {
-    currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
-})
+// watch(() => project.value.id, () => {
+//     currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
+// })
 
 // accept the new sprite position config when dragend from stage viewer
-const onDragEnd = (e: SpriteDragEndEvent) => {
-    currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
-    currentSprite.value?.setSx(e.targets[0].position.x)
-    currentSprite.value?.setSy(e.targets[0].position.y)
-}
+// const onDragEnd = (e: SpriteDragEndEvent) => {
+//     currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
+//     currentSprite.value?.setSx(e.targets[0].position.x)
+//     currentSprite.value?.setSy(e.targets[0].position.y)
+// }
 
-// accept the new zorder configuration from stage viewer
-const onZorderChange = (e: ZorderChangeEvent) => {
-    project.value.backdrop.config.zorder = e.zorder
+// // accept the new zorder configuration from stage viewer
+// const onZorderChange = (e: ZorderChangeEvent) => {
+//     project.value.backdrop.config.zorder = e.zorder
+// }
+
+const onSelectedSpriteChange = (e: SelectedSpriteChangeEvent) => {
+    selectedSpriteNames.value = e.names
+    console.log(e.names)
+    currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.names[0]) as Sprite
 }
 
 // import file
@@ -157,13 +156,7 @@ const spriteToTop = (index: number) => {
     zorderList.value.push(spriteToMove);
 }
 
-// choose the sprite to show in stage
-const toggleShowInStage = (name: string) => {
-    currentSpriteNames.value =
-        currentSpriteNames.value.includes(name) ?
-            currentSpriteNames.value.filter(_name => _name !== name)
-            : [...currentSpriteNames.value, name]
-}
+
 
 // choose the scene to show in stage
 // in spx project the first scene will be shown in stage

@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-20 16:07:46
- * @FilePath: /spx-gui/src/components/stage-viewer/StageViewer.vue
+ * @LastEditTime: 2024-02-21 18:57:30
+ * @FilePath: /builder/spx-gui/src/components/stage-viewer/StageViewer.vue
  * @Description: 
 -->
 <template>
@@ -14,7 +14,7 @@
             <div @click="moveSprite('top')">top</div>
             <div @click="moveSprite('bottom')">bottom</div>
         </div>
-        <v-stage ref="stage" @contextmenu="onStageMenu" :config="{
+        <v-stage ref="stage" @mousedown="onStageClick" @contextmenu="onStageMenu" :config="{
             width: props.width,
             height: props.height,
             scaleX: scale,
@@ -27,7 +27,12 @@
             <SpriteLayer @onSpritesDragEnd="onSpritesDragEnd" :offsetConfig="{
                 offsetX: (props.width / scale - spxMapConfig.width) / 2,
                 offsetY: (props.height / scale - spxMapConfig.height) / 2
-            }" :sprites="sprites" :mapConfig="spxMapConfig" :currentSpriteNames="props.currentSpriteNames" />
+            }" :spriteList="props.project.sprite.list" :zorder="props.project.backdrop.config.zorder"
+                :mapConfig="spxMapConfig" />
+            <v-layer>
+                <v-transformer ref="transformer" />
+            </v-layer>
+
         </v-stage>
     </div>
 </template>
@@ -38,6 +43,8 @@ import type { StageViewerEmits, StageViewerProps, MapConfig, SpriteDragEndEvent,
 import SpriteLayer from './SpriteLayer.vue';
 import BackdropLayer from './BackdropLayer.vue';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
+import type { SpriteList } from '@/class/asset-list';
+import type { Sprite as SpriteConfig } from "@/class/sprite"
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
     height: 400, // container height
@@ -47,6 +54,7 @@ const emits = defineEmits<StageViewerEmits>();
 
 // instance of konva's stage & menu 
 const stage = ref();
+const transformer = ref()
 const menu = ref();
 
 // Which sprite is selected
@@ -106,40 +114,9 @@ const backdrop = computed(() => {
     } as StageBackdrop
 })
 
-// get backdrop's zorder
-const zorderList = computed(() => props.project.backdrop.config.zorder)
 
-// get sprites for stage sort by zorder
-const sprites: ComputedRef<StageSprite[]> = computed(() => {
-    const spriteMap = new Map<string, StageSprite>();
-    props.project.sprite.list.forEach(sprite => {
-        const stageSprite: StageSprite = {
-            name: sprite.name,
-            x: sprite.config.x,
-            y: sprite.config.y,
-            heading: sprite.config.heading,
-            size: sprite.config.size,
-            visible: sprite.config.visible,
-            costumes: sprite.config.costumes.map((costume, index) => {
-                return {
-                    name: costume.name as string,
-                    url: sprite.files[index].url as string,
-                    x: costume.x,
-                    y: costume.y,
-                };
-            }),
-            costumeIndex: sprite.config.costumeIndex,
-        };
-        spriteMap.set(sprite.name, stageSprite);
-    });
-    const list: StageSprite[] = []
-    zorderList.value.forEach(name => {
-        if (spriteMap.has(name)) {
-            list.push(spriteMap.get(name) as StageSprite);
-        }
-    })
-    return list;
-})
+
+
 
 // When config is not configured, its stage size is determined by the background image 
 const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
@@ -180,12 +157,31 @@ const onStageMenuMouseLeave = (e: MouseEvent) => {
     selectedSprite.value = null
 }
 
+const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (e.target.parent!.attrs.name !== 'sprite') {
+        console.log('click stage')
+        selectedSprites.value = []
+    }
+    const name = e.target!.attrs.spriteName
+    console.log(name)
+    const transformerNode = transformer.value.getNode();
+    const stage = transformerNode.getStage();
+
+    if (name) {
+        // attach to another node
+        transformerNode.nodes([ e.target]);
+    } else {
+        // remove transformer
+        transformerNode.nodes([]);
+    }
+}
+
 // move sprite to up or down & emit  the new zorder list
 const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
     if (!selectedSprite.value) return;
-
+    const zorderList = props.project.backdrop.config.zorder
     const spriteName = selectedSprite.value.getAttr('spriteName');
-    const currentIndex = zorderList.value.indexOf(spriteName);
+    const currentIndex = zorderList.indexOf(spriteName);
     let newIndex: number;
     if (direction === 'up') {
         newIndex = currentIndex + 1;
@@ -194,7 +190,7 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
         newIndex = currentIndex - 1;
         selectedSprite.value.moveDown();
     } else if (direction === 'top') {
-        newIndex = zorderList.value.length - 1;
+        newIndex = zorderList.length - 1;
         selectedSprite.value.moveToTop();
     } else if (direction === 'bottom') {
         newIndex = 0;
@@ -203,20 +199,29 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
         return;
     }
 
-    if (currentIndex >= 0 && newIndex >= 0 && newIndex < zorderList.value.length) {
-        const newZorderList = [...zorderList.value];
+    if (currentIndex >= 0 && newIndex >= 0 && newIndex < zorderList.length) {
+        const newZorderList = [...zorderList];
         const [movedSprite] = newZorderList.splice(currentIndex, 1);
         newZorderList.splice(newIndex, 0, movedSprite);
-        emits('onZorderChange', { zorder: newZorderList });
+        props.project.backdrop.config.zorder = newZorderList;
+        // emits('onZorderChange', { zorder: newZorderList });
     }
 
     menu.value.style.display = 'none';
 };
 
+
+const selectedSprites = ref<string[]>([]);
+watch(() => props.selectedSpriteNames, (newValue, oldValue) => {
+    selectedSprites.value = newValue
+})
+
 // drag sprite
-const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
-    emits("onSpritesDragEnd", e)
+const onSpritesDragEnd = (e: { spriteList: SpriteConfig[] }) => {
+    emits("onSelectedSpriteChange", { names: e.spriteList.map(s => s.name) })
 }
+
+
 
 
 </script>

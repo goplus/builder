@@ -1,5 +1,6 @@
 import StageViewer from "./StageViewer.vue"
 import type { Project } from "@/class/project";
+import type { Sprite } from "@/class/sprite";
 
 export default StageViewer
 /**
@@ -68,9 +69,16 @@ export interface MapConfig {
  */
 export interface StageViewerProps {
     project: Project
-    height?: number // container height
-    width?: number // container width
-    currentSpriteNames: string[]
+    height?: number
+    width?: number
+    selectedSpriteNames: string[]
+}
+
+export interface SelectedSpriteChangeEvent {
+    names: string[]
+}
+export interface StageViewerEmits {
+    (e: 'onSelectedSpriteChange', value: SelectedSpriteChangeEvent): void
 }
 
 
@@ -100,7 +108,6 @@ export interface ZorderChangeEvent {
     zorder: string[]
 }
 
-export interface StageViewerEmits {
-    (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
-    (e: 'onZorderChange', value: ZorderChangeEvent): void
-}
+
+
+
