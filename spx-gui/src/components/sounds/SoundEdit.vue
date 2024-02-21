@@ -433,7 +433,7 @@ function wavBlobToFile(wavBlob: Blob, fileName: string): File {
 function downloadSound(): void {
   const backend = wavesurfer.backend as SimpleWavesurferBackend;
   if (backend && backend.buffer) {
-    downloadAudioBuffer(backend.buffer, props.asset.name + ".wav");
+    downloadAudioBuffer(backend.buffer, props.asset!.name + ".wav");
   }
 }
 
