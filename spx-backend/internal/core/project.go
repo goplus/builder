@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/gif"
+	_ "image/png"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
@@ -431,7 +434,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 	// 遍历结果集
 	for rows.Next() {
 		var asset Asset
-		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.Status, &asset.CTime, &asset.UTime)
+		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.ClickCount, &asset.Status, &asset.CTime, &asset.UTime)
 		if err != nil {
 			println(err.Error())
 			return nil, err
@@ -445,4 +448,41 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 	}
 	return assets, nil
 
+}
+
+func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader) (string, error) {
+	var images []*image.Paletted
+	var delays []int
+	for _, fileHeader := range files {
+		// 打开文件
+		img, err := common.LoadImage(fileHeader)
+		if err != nil {
+			fmt.Printf("failed to load image %s: %v", fileHeader.Filename, err)
+			return "", err
+		}
+		images = append(images, img)
+		delays = append(delays, 0) // 每帧之间的延迟，100 = 1秒
+	}
+	outGif := &gif.GIF{
+		Image:     images,
+		Delay:     delays,
+		LoopCount: 0, // 循环次数，0表示无限循环
+	}
+
+	// 保存GIF文件
+	f, err := os.Create("output.gif")
+	if err != nil {
+		fmt.Printf("failed to create GIF file: %v", err)
+		return "", err
+	}
+	defer f.Close()
+	if err := gif.EncodeAll(f, outGif); err != nil {
+		fmt.Printf("failed to encode GIF: %v", err)
+		return "", err
+	}
+	path, err := UploadFile2(ctx, p, os.Getenv("GIF_PATH"), f, "output.gif")
+	if err != nil {
+		return "", err
+	}
+	return os.Getenv("QINIU_PATH") + "/" + path, err
 }
