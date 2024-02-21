@@ -84,7 +84,7 @@ type SaveProjectRequest struct {
 	Name     string            `json:"name"`
 	AuthorId string            `json:"uid"`
 	Files    map[string]string `json:"files"`
-	IsPublic int               `json:"isPublic"`
+	isPublic int               `json:"isPublic"`
 }
 
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
@@ -146,7 +146,7 @@ func (p *Project) SaveProject(ctx context.Context, req SaveProjectRequest) (*Cod
 			ID:       uuid.New().String(),
 			Name:     req.Name,
 			AuthorId: req.AuthorId,
-			IsPublic: req.IsPublic,
+			IsPublic: req.isPublic,
 			Address:  files,
 			Status:   1,
 			Ctime:    time.Now(),
