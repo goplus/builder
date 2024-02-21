@@ -268,7 +268,7 @@ export async function convertRawDirToZip(dir: RawDir): Promise<Blob> {
     const prefix = getPrefix(dir)
     // eslint-disable-next-line prefer-const
     for (let [path, value] of Object.entries(dir)) {
-        prefix && (path = path.replace(prefix + '/', ''));
+        prefix && (path = path.replace(prefix, ''));
         zip.file(...zipFileValue(path, value));
     }
 

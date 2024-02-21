@@ -48,7 +48,7 @@ export function searchAssetByName(search: string, assetType: number): Promise<Pa
     const url = `/asset/search`;
     const formData = new FormData();
     formData.append('search', search);
-    formData.append('assetType', assetType);
+    formData.append('assetType', assetType.toString());
 
     return service({
         url: url,
