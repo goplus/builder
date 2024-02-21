@@ -33,13 +33,18 @@
       </n-upload>
 
       <!-- Sprite Upload -->
-      <n-upload
+      <!-- <n-upload
         v-else
         :action="uploadActionUrl"
         @before-upload="beforeSpriteUpload"
       >
         <n-button color="#fff" :text-color="commonColor">  {{ $t("stage.upload") }} </n-button>
-      </n-upload>
+      </n-upload> -->
+      <div v-else>
+          <n-button color="#fff" :text-color="commonColor" @click="showUploadModal = true">
+            {{ $t('stage.upload') }}
+          </n-button>
+        </div>
 
       <n-button
         v-if="props.type == 'backdrop'"
@@ -86,13 +91,55 @@
     v-model:show="showRecorder"
   />
   <!-- E Sound Recorder -->
+
+      <!-- S Modal Sprite Multi Costume Upload -->
+      <n-modal
+      v-model:show="showUploadModal"
+      preset="card"
+      :style="bodyStyle"
+      header-style="padding:11px 24px 11px 30%;"
+      content-style="margin:10px;"
+    >
+      <div
+        style="display: flex; align-items: center; justify-content: start; width: 100%; padding: 10px"
+      >
+        <p style="margin: 0; flex-shrink: 0">{{ $t('list.name') }}:</p>
+        <n-input round placeholder="Input sprite name" style="flex-grow: 1; margin: 0 8px; max-width:300px;"/>
+      </div>
+      <div
+        style="display: flex; align-items: center; justify-content: start; width: 100%; padding: 10px"
+      >
+        <p style="margin: 0; flex-shrink: 0">{{ $t('list.costumes') }}:</p>
+        <n-upload
+          style="flex-grow: 1; margin: 0 8px"
+          list-type="image-card"
+          multiple
+          @before-upload="beforeSpriteUpload"
+          @remove="removeUploadCostume"
+        />
+        <!-- <n-upload
+          style="flex-grow: 1; margin: 0 8px"
+          :action="uploadActionUrl"
+          @before-upload="beforeSpriteUpload"
+          list-type="image-card"
+          multiple
+        /> -->
+      </div>
+      <div style="width:100%; text-align: center">
+        <n-button @click="handleSubmitSprite()">
+        {{ $t('list.submit') }}
+      </n-button>
+    </div>
+      
+    </n-modal>
+    <!-- E Modal Sprite Multi Costume Upload -->
 </template>
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { ref, defineProps, computed } from "vue";
 import type { UploadFileInfo } from "naive-ui";
-import { NIcon, NUpload, NButton, useMessage } from "naive-ui";
+import { NIcon, NUpload, NButton, useMessage, NModal, NInput } from "naive-ui";
 import { Add as AddIcon } from "@vicons/ionicons5";
 import { commonColor } from "@/assets/theme";
 import { useSpriteStore } from "@/store/modules/sprite";
@@ -118,14 +165,20 @@ const soundStore = useSoundStore();
 // TODO: change uploadActionUrl to real backend url.
 const uploadActionUrl = "https://www.mocky.io/v2/5e4bafc63100007100d8b70f";
 
-// Ref about showing modal or not.
+// Ref about show modal or not.
 const showModal = ref<boolean>(false);
 
-// Ref about showing upload buttons or not.
+// Ref about show upload buttons or not.
 const showUploadButtons = ref<boolean>(false);
 
 // Ref about show sound recorder or not.
 const showRecorder = ref<boolean>(false);
+
+  // Style about upload modal body.
+  const bodyStyle = { width: '600px', margin: 'auto' }
+
+  // Ref about show upload modal or not.
+  const showUploadModal = ref<boolean>(false)
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -152,7 +205,6 @@ const handleAddButtonClick = () => {
 
 /**
  * @description: A Function about opening library modal.
- * @param {*} isBg
  * @Author: Xu Ning
  * @Date: 2024-01-16 11:53:40
  */
@@ -224,19 +276,31 @@ const beforeBackdropUpload = (data: {file: UploadFileInfo;fileList: UploadFileIn
   beforeUpload(data, "backdrop");
 };
 
-/**
- * @description: A Function before uploading Sprite.
- * @param {*} data
- * @Author: Xu Ning
- * @Date: 2024-01-24 11:48:33
- */
-const beforeSpriteUpload = (data: {
-  file: UploadFileInfo;
-  fileList: UploadFileInfo[];
-}) => {
-  beforeUpload(data, "sprite");
-};
-
+  /**
+   * @description: A Function before uploading Sprite.
+   * @param {*} data
+   * @Author: Xu Ning
+   * @Date: 2024-01-24 11:48:33
+   */
+   const a:any = ref([])
+   const beforeSpriteUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
+      //更新一个数组，保持a.value 是 data.fileList 并且加上data.file，作为一个数组
+    // 当点击submit的时候，执行spritebeforeUpload，遍历a.value，获取各个对象的.file，并且把他们变成fileArray, 推入到sprite中，请帮我做？
+    
+    a.value = [...data.fileList];
+  
+    console.log('beforeSpriteUpload',a.value, data,data.file,data.fileList)
+    // beforeUpload(data, false)
+  }
+  const handleSubmitSprite = () =>{
+    console.log('a.value', a.value)
+  }
+  
+  const removeUploadCostume = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
+    a.value = [...data.fileList]
+    console.log('removeUploadCostume',a.value, data,data.file,data.fileList)
+  
+  }
 /**
  * @description: A Function before uploading Sound.
  * @param {*} data
