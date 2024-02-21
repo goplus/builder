@@ -148,6 +148,7 @@ import FileWithUrl from '@/class/file-with-url'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
+import { generateGifByCostumes } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -291,13 +292,15 @@ const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileIn
  * @Author: Xu Ning
  * @Date: 2024-02-21 17:48:33
  */
-const handleSubmitSprite = () => {
+const handleSubmitSprite = async () => {
   let uploadFilesArr: File[] = [];
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
     }
   })
+  let gif = await generateGifByCostumes(uploadFilesArr)
+  console.log(gif,'gif')
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
 }
