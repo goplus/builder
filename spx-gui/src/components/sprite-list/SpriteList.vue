@@ -21,8 +21,14 @@
             <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
-            <ImageCardCom v-for="asset in spriteAssets" :key="asset.name" :type="'sprite'" :asset="asset"
-              :style="getImageCardStyle(asset.name)" @click="toggleCodeById(asset.name)" />
+            <ImageCardCom
+              v-for="asset in spriteAssets"
+              :key="asset.name"
+              :type="'sprite'"
+              :asset="asset"
+              :style="getImageCardStyle(asset.name)"
+              @click="toggleCodeById(asset.name)"
+            />
             <!-- E Component ImageCardCom -->
           </n-flex>
         </div>
@@ -39,26 +45,24 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { type ComputedRef, computed, ref, watch } from "vue";
-import { NGrid, NGridItem, NFlex } from "naive-ui";
-import { useSpriteStore } from '@/store/modules/sprite';
-import BackdropList from "@/components/sprite-list/BackdropList.vue";
-import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
-import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
-import AssetAddBtn from "@/components/sprite-list/AssetAddBtn.vue";
-import { Sprite } from "@/class/sprite";
-import { watchEffect } from "vue";
+import { type ComputedRef, computed, ref } from 'vue'
+import { NGrid, NGridItem, NFlex } from 'naive-ui'
+import { useSpriteStore } from '@/store/modules/sprite'
+import BackdropList from '@/components/sprite-list/BackdropList.vue'
+import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
+import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
+import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
+import { Sprite } from '@/class/sprite'
+import { watchEffect } from 'vue'
 
 // ----------props & emit------------------------------------
-const currentActiveName = ref('');
-const spriteStore = useSpriteStore();
-const { setCurrentByName } = spriteStore;
+const currentActiveName = ref('')
+const spriteStore = useSpriteStore()
+const { setCurrentByName } = spriteStore
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
-const spriteAssets: ComputedRef<Sprite[]> = computed(
-  () => spriteStore.list as Sprite[],
-);
+const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list as Sprite[])
 
 // ----------methods-----------------------------------------
 /**
@@ -69,27 +73,27 @@ const spriteAssets: ComputedRef<Sprite[]> = computed(
  */
 const toggleCodeById = (name: string) => {
   console.log('name', name)
-  currentActiveName.value = name;
-  setCurrentByName(name);
-};
+  currentActiveName.value = name
+  setCurrentByName(name)
+}
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
-    : { marginBottom: '26px' };
-};
+    : { marginBottom: '26px' }
+}
 
 watchEffect(() => {
   if (spriteStore.current) {
-    currentActiveName.value = spriteStore.current.name;
+    currentActiveName.value = spriteStore.current.name
   } else {
-    currentActiveName.value = '';
+    currentActiveName.value = ''
   }
 })
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 .asset-library {
   // TODO: Delete the background, it is just for check the position.
@@ -132,7 +136,7 @@ watchEffect(() => {
 </style>
 
 <style lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 // ! no scoped, it will change global style
 .n-card {

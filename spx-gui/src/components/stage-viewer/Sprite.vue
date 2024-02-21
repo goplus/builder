@@ -7,29 +7,34 @@
  * @Description: 
 -->
 <template>
-    <Costume @onDragEnd="onDragEnd" :spriteConfig="spriteConfig" :costumeConfig="currentCostume" :mapConfig="mapConfig">
-    </Costume>
+  <Costume
+    :sprite-config="spriteConfig"
+    :costume-config="currentCostume"
+    :map-config="mapConfig"
+    @on-drag-end="onDragEnd"
+  >
+  </Costume>
 </template>
 <script lang="ts" setup>
-import Costume from "./Costume.vue"
-import { defineProps, computed, defineEmits, type ComputedRef } from "vue"
-import type { StageSprite, StageCostume, MapConfig, SpriteDragEndTarget } from ".";
+import Costume from './Costume.vue'
+import { defineProps, computed, defineEmits, type ComputedRef } from 'vue'
+import type { StageSprite, StageCostume, MapConfig, SpriteDragEndTarget } from '.'
 
 // ----------props & emit------------------------------------
 const props = defineProps<{
-    spriteConfig: StageSprite
-    mapConfig: MapConfig
-}>();
+  spriteConfig: StageSprite
+  mapConfig: MapConfig
+}>()
 
 // when ths costume dragend,emit the sprite position
 const emits = defineEmits<{
-    (e: 'onDragEnd', event: SpriteDragEndTarget): void
+  (e: 'onDragEnd', event: SpriteDragEndTarget): void
 }>()
 
 // ----------computed properties-----------------------------
 // computed the current costume with current image
 const currentCostume: ComputedRef<StageCostume> = computed(() => {
-    return props.spriteConfig.costumes[props.spriteConfig.costumeIndex]
+  return props.spriteConfig.costumes[props.spriteConfig.costumeIndex]
 })
 
 // ----------methods-----------------------------------------
@@ -43,6 +48,6 @@ const currentCostume: ComputedRef<StageCostume> = computed(() => {
  * @Date: 2024-01-25 15:39:27
  */
 const onDragEnd = (e: SpriteDragEndTarget) => {
-    emits("onDragEnd", e)
+  emits('onDragEnd', e)
 }
 </script>

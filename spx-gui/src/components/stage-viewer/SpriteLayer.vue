@@ -7,39 +7,45 @@
  * @Description: 
 -->
 <template>
-    <v-layer :config="{
-        x: props.offsetConfig.offsetX,
-        y: props.offsetConfig.offsetY
-    }">
-        <template v-if="!props.loading">
-            <template v-for="sprite in props.sprites">
-                <Sprite @onDragEnd="onSpriteDragEnd" v-if="isVisibleInStage(sprite)" :mapConfig="props.mapConfig"
-                    :key="sprite.name" :spriteConfig="sprite" />
-            </template>
-        </template>
-    </v-layer>
+  <v-layer
+    :config="{
+      x: props.offsetConfig.offsetX,
+      y: props.offsetConfig.offsetY
+    }"
+  >
+    <template v-if="!props.loading">
+      <template v-for="sprite in props.sprites">
+        <Sprite
+          v-if="isVisibleInStage(sprite)"
+          :key="sprite.name"
+          :map-config="props.mapConfig"
+          :sprite-config="sprite"
+          @on-drag-end="onSpriteDragEnd"
+        />
+      </template>
+    </template>
+  </v-layer>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from ".";
-import Sprite from "./Sprite.vue"
-import { computed } from "vue";
+import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from '.'
+import Sprite from './Sprite.vue'
 
 const props = defineProps<{
-    loading: boolean,
-    offsetConfig: { offsetX: number, offsetY: number },
-    mapConfig: MapConfig
-    sprites: StageSprite[]
-    currentSpriteNames: string[]
+  loading: boolean
+  offsetConfig: { offsetX: number; offsetY: number }
+  mapConfig: MapConfig
+  sprites: StageSprite[]
+  currentSpriteNames: string[]
 }>()
 
 const isVisibleInStage = (sprite: StageSprite) => {
-    return props.currentSpriteNames.includes(sprite.name) && sprite.visible
+  return props.currentSpriteNames.includes(sprite.name) && sprite.visible
 }
 
 // ----------methods-----------------------------------------
 const emits = defineEmits<{
-    (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
+  (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
 }>()
 
 /**
@@ -50,8 +56,8 @@ const emits = defineEmits<{
  * @Date: 2024-01-25 15:47:53
  */
 const onSpriteDragEnd = (e: SpriteDragEndTarget) => {
-    emits('onSpritesDragEnd', {
-        targets: [e]
-    })
+  emits('onSpritesDragEnd', {
+    targets: [e]
+  })
 }
 </script>
