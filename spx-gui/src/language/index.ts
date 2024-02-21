@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-18 11:40:30
+ * @LastEditTime: 2024-02-18 18:28:30
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
 */
@@ -17,11 +17,11 @@ export const initI18n = async (app:App) => {
             language: "English",
             tab: {
                 code: 'Code',
-                sound: 'Sounds',
-                costume: 'Costume',
+                sound: 'Sound',
+                costume:'Costume',
             },
             sounds: {
-                hint: '🎵 Sounds Edit',
+                hint: '🎵 Sound Edit',
                 undo: 'Undo',
                 reUndo: 'ReUndo',
                 delete: 'Delete',

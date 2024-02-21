@@ -1,7 +1,7 @@
 // configuration of IndexedDB
-const dbName = 'project';
+const dbName = 'spx-gui';
 const dbVersion = 2;
-const storeName = 'dir';
+const storeName = 'project';
 
 let db;
 let request = indexedDB.open(dbName, dbVersion);
@@ -79,7 +79,7 @@ function getFilesStartingWith(dirname) {
         request.onsuccess = function (event) {
             const allFiles = event.target.result;
             allFiles.forEach(file => {
-                if (file.path.startsWith(dirname)) {
+                if (file.path?.startsWith(dirname)) {
                     files.push(file.path);
                 }
             });

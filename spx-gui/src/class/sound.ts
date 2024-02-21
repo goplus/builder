@@ -13,10 +13,10 @@ import type { SoundConfig } from '@/interface/file';
 
 /**
  * @class Sound
- * 
+ *
  * @author tgb
  * @createDate 2024-01-11
- * 
+ *
  * @example
  * // create a sound just with name
  * const snd1 = new Sound("1")
@@ -24,28 +24,28 @@ import type { SoundConfig } from '@/interface/file';
  * const snd2 = new Sound("2", [file1, file2], { rate: 1 })
  * // create a sound from raw data
  * const snd3 = Sound.fromRawData({ name: "3", _files: [file1, file2], config: { rate: 2 } })
- * 
+ *
  * // change any params
  * snd2.name = "3"
  * snd2.config.rate = 2
- * 
+ *
  * // provide addFile and removeFile method
  * const file = fileDom.target.files[0]   // typeof file ==> File
  * snd1.addFile(file)
  * snd1.removeFile(file)
- * 
+ *
  * // check if an obj is an instance of a sound
  * Sound.isInstance(snd1)  // true
  * Sound.isInstance([snd1, snd2])  // true
  * Sound.isInstance("hello")  // false
- * 
+ *
  * // conputed path (depend on the name of the sound)
  * snd1.path  // assets/sounds/1
  * snd2.path  // assets/sounds/3
- * 
+ *
  * // computed dir
  * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
- * 
+ *
  * // config
  * snd1.config = snd1.genDefualtConfig()
  */
