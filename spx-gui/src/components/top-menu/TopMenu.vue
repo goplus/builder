@@ -316,6 +316,9 @@ const handleSelectImport = (key: string | number) => {
       projectStore.loadFromZip(file);
     };
   }
+  else if (key === 'SaveLocal') {
+    projectStore.project.download();
+  }
 }
 
 const handleSelectSettings = (key: string | number) => {

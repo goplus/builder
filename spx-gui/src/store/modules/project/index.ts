@@ -52,7 +52,7 @@ export const useProjectStore = defineStore('project', () => {
    */
   const loadFromZip = async (file: File, title?: string) => {
     const newProject = new Project()
-    await newProject.loadFromZip(file, title || file.name)
+    await newProject.loadFromZip(file, title || file.name.slice(0, file.name.lastIndexOf('.')))
     project.value = newProject
   }
 
