@@ -45,6 +45,20 @@ onMounted(() => {
     ...editorOptions,
     ...prop.editorOptions
   })
+
+  // register format action
+  editor.addAction({
+    id: 'format',
+    label: 'Format Code',
+
+    keybindings: [
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL,
+    ],
+    contextMenuGroupId: "navigation",
+    run: format
+  })
+
+  // register change event
   editor.onDidChangeModelContent(onEditorValueChange)
 })
 // destroy editor

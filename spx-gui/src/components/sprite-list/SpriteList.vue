@@ -84,7 +84,7 @@ const negativeSpriteName = ref("");
 const toggleCodeById = (name: string) => {
     negativeSpriteName.value = name;
     console.log('name',name)
-    if (spriteStore.current.name == undef && name != undef) {
+    if (spriteStore.current && spriteStore.current.name == undef && name != undef) {
         showModal.value = true;
         return;
     }
@@ -102,7 +102,7 @@ const beforeUpload = (data: {
         const fileURL = URL.createObjectURL(uploadFile.file);
         const fileWithUrl = new FileWithUrl(uploadFile.file, fileURL);
         // create undefined sprite
-        const sprite = new Sprite(fileName.value, [fileWithUrl], spriteStore.current?.code);
+        const sprite = new Sprite(fileName.value, [fileWithUrl as File], spriteStore.current?.code);
         spriteStore.addItem(sprite);
         spriteStore.removeItemByName(undef);
     } else {
