@@ -13,7 +13,7 @@
       content-style="paddingLeft: 120px;"
       style="width: 175px; background-image: linear-gradient(to bottom, #FEFBFB, #FBE8EB);"
     >
-    <SpriteAddBtn
+    <AssetAddBtn
         :style="{ 'margin-bottom': '26px' }"
         :type="'sound'"
       />
@@ -43,7 +43,7 @@ import SoundsEdit from "comps/sounds/SoundEdit.vue";
 import { computed, type ComputedRef, ref } from 'vue'
 import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
-import SpriteAddBtn from 'comps/sprite-list/SpriteAddBtn.vue'
+import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 
 const message: MessageApi = useMessage();
 const soundStore = useSoundStore();

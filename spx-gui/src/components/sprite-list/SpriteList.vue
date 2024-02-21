@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 17:53:50
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-21 15:31:17
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description:
 -->
@@ -18,7 +18,7 @@
         <div class="sprite-list-card">
           <n-flex>
             <!-- S Component Add Button -->
-            <SpriteAddBtn :type="'sprite'" />
+            <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
             <ImageCardCom v-for="asset in spriteAssets" :key="asset.name" :type="'sprite'" :asset="asset"
@@ -45,7 +45,7 @@ import { useSpriteStore } from '@/store/modules/sprite';
 import BackdropList from "@/components/sprite-list/BackdropList.vue";
 import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
 import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
-import SpriteAddBtn from "@/components/sprite-list/SpriteAddBtn.vue";
+import AssetAddBtn from "@/components/sprite-list/AssetAddBtn.vue";
 import { Sprite } from "@/class/sprite";
 import { watchEffect } from "vue";
 
