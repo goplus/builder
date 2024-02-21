@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-19 10:54:05
+ * @LastEditTime: 2024-02-21 13:10:15
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -36,8 +36,8 @@
           <n-button
             v-for="category in categories"
             :key="category"
-            @click="handleCategoryClick(category)"
             size="large"
+            @click="handleCategoryClick(category)"
           >
             {{ category }}
           </n-button>
@@ -58,7 +58,7 @@
       <!-- E Library Sub Header -->
       <!-- S Library Content -->
       <div class="asset-library-content">
-        <n-grid v-if="assetInfos.length != 0" cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
+        <n-grid v-if="assetInfos != null && assetInfos.length != 0" cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
           <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
@@ -88,13 +88,7 @@ import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
 import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
-import {
-  getAssetList,
-  searchAssetByName,
-  getAssetListByHot,
-  getAssetListByTime,
-  addAssetClickCount
-} from '@/api/asset'
+import { getAssetList, searchAssetByName, addAssetClickCount } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -112,9 +106,9 @@ const searchQuery = ref('')
 // Const variable about sprite categories.
 const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 // Ref about sprite/backdrop information.
-const assetInfos = ref<Asset[]>([])
-// Ref about asset category
-const category = ref('')
+const assetInfos = ref<Asset[]|null>()
+// Ref about now asset category
+const nowCategory = ref<string>('')
 
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
@@ -137,7 +131,13 @@ const fetchAssets = async (assetType: number, category?: string) => {
   try {
     const pageIndex = 1
     const pageSize = 20
-    const response = await getAssetList(pageIndex, pageSize, assetType, category)
+    const response = await getAssetList({
+      pageIndex: pageIndex,
+      pageSize: pageSize,
+      assetType: assetType,
+      category: category
+    })
+    console.log(response, 'response')
     if (response.data.data.data == null) return []
     return response.data.data.data
   } catch (error) {
@@ -181,6 +181,7 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
     props.type === 'backdrop'
       ? await addAssetClickCount(id, AssetType.Backdrop)
       : await addAssetClickCount(id, AssetType.Sprite)
+  console.log(res,'handleAddAsset')
   emits('add-asset', name, address)
 }
 
@@ -192,7 +193,7 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
-  category.value = category
+  nowCategory.value = category
   if (category === 'ALL') {
     category = ''
   }
@@ -211,13 +212,21 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
-  //TODO: link api
   if (props.type === 'backdrop') {
     let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
-    assetInfos.value = res.data.data
+    console.log('res', res, res.data.data, res.data.data == null)
+    if (res.data.data == null) {
+      assetInfos.value = []
+    } else {
+      assetInfos.value = res.data.data
+    }
   } else if (props.type === 'sprite') {
     let res = await searchAssetByName(searchQuery.value, AssetType.Sprite)
-    assetInfos.value = res.data.data
+    if (res.data.data == null) {
+      assetInfos.value = []
+    } else {
+      assetInfos.value = res.data.data
+    }
     console.log(assetInfos.value, res, res.data, 'assetInfos.value')
   }
 }
@@ -237,7 +246,7 @@ const handleSortByHot = async () => {
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
-    category: category.value,
+    category: nowCategory.value,
     isOrderByHot: true
   })
   assetInfos.value = res.data.data.data
@@ -258,7 +267,7 @@ const handleSortByTime = async () => {
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
-    category: category.value,
+    category: nowCategory.value,
     isOrderByTime: true
   })
   assetInfos.value = res.data.data.data
