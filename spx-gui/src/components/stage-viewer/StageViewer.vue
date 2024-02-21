@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-21 18:57:30
- * @FilePath: /builder/spx-gui/src/components/stage-viewer/StageViewer.vue
+ * @LastEditTime: 2024-02-21 21:46:10
+ * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
 <template>
@@ -30,9 +30,8 @@
             }" :spriteList="props.project.sprite.list" :zorder="props.project.backdrop.config.zorder"
                 :mapConfig="spxMapConfig" />
             <v-layer>
-                <v-transformer ref="transformer" />
+                <v-transformer ref="transformer" :enabledAnchors="[]" :rotateEnabled="false" />
             </v-layer>
-
         </v-stage>
     </div>
 </template>
@@ -43,8 +42,10 @@ import type { StageViewerEmits, StageViewerProps, MapConfig, SpriteDragEndEvent,
 import SpriteLayer from './SpriteLayer.vue';
 import BackdropLayer from './BackdropLayer.vue';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
+import type { Stage } from 'konva/lib/Stage';
 import type { SpriteList } from '@/class/asset-list';
 import type { Sprite as SpriteConfig } from "@/class/sprite"
+
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
     height: 400, // container height
@@ -53,7 +54,7 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
 const emits = defineEmits<StageViewerEmits>();
 
 // instance of konva's stage & menu 
-const stage = ref();
+const stage = ref<Stage>();
 const transformer = ref()
 const menu = ref();
 
@@ -80,7 +81,6 @@ const scale = computed(() => {
 
 watch(() => props.project, (new_project, old_project) => {
     console.log(new_project, old_project)
-    // TODO: temperary use project's title to determine whether to reload
     if (new_project.id !== old_project.id) {
         // witch project have map config,this will confirm the stage size
         // When there is no map, it does not end the loading and waits for the background layer to send new loaded content
@@ -94,6 +94,12 @@ watch(() => props.project, (new_project, old_project) => {
     }
 }, {
     deep: true
+})
+
+watch(() => props.selectedSpriteNames, (spriteNames) => {
+    if (stage.value) {
+        showSelectedTranformer()
+    }
 })
 
 const backdrop = computed(() => {
@@ -133,22 +139,18 @@ const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
 // show stage menu
 const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
     e.evt.preventDefault();
-
-    const stageInstance = stage.value.getStage();
-    console.log(e.target, stageInstance)
-
+    if (!stage.value) return;
     // only the sprite need contextmenu
-    if (e.target === stageInstance || e.target.parent!.attrs.name !== 'sprite') {
+    if (e.target === stage.value || e.target.parent!.attrs.name !== 'sprite') {
         menu.value.style.display = 'none';
         selectedSprite.value = null
         return;
     }
     selectedSprite.value = e.target;
     menu.value.style.display = 'block';
-    menu.value.style.top =
-        stageInstance.getPointerPosition().y + 4 + 'px';
-    menu.value.style.left =
-        stageInstance.getPointerPosition().x + 4 + 'px';
+    menu.value.style.top = stage.value.getPointerPosition()!.y + 4 + 'px';
+    menu.value.style.left = stage.value.getPointerPosition()!.x + 4 + 'px';
+
 }
 
 // hide stage menu
@@ -160,18 +162,15 @@ const onStageMenuMouseLeave = (e: MouseEvent) => {
 const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.target.parent!.attrs.name !== 'sprite') {
         console.log('click stage')
-        selectedSprites.value = []
+        emits('onSelectedSpriteChange', { names: [] })
     }
     const name = e.target!.attrs.spriteName
     console.log(name)
     const transformerNode = transformer.value.getNode();
-    const stage = transformerNode.getStage();
 
     if (name) {
-        // attach to another node
-        transformerNode.nodes([ e.target]);
+        transformerNode.nodes([e.target]);
     } else {
-        // remove transformer
         transformerNode.nodes([]);
     }
 }
@@ -210,11 +209,20 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
     menu.value.style.display = 'none';
 };
 
+const showSelectedTranformer = () => {
+    if (!stage.value) return
+    const spriteNames = props.selectedSpriteNames;
+    const nodes = stage.value.getStage().find((node: Node) => {
+        if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
 
-const selectedSprites = ref<string[]>([]);
-watch(() => props.selectedSpriteNames, (newValue, oldValue) => {
-    selectedSprites.value = newValue
-})
+            return true
+        } else {
+            return false
+        }
+    })
+    const transformerNode = transformer.value.getNode();
+    transformerNode.nodes(nodes);
+}
 
 // drag sprite
 const onSpritesDragEnd = (e: { spriteList: SpriteConfig[] }) => {
