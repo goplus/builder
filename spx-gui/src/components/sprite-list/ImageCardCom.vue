@@ -4,11 +4,11 @@
  * @LastEditors: xuning 453594138@qq.com
  * @LastEditTime: 2024-02-06 12:54:20
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
- * @Description: 
+ * @Description:
 -->
 <template>
   <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName" >
-    <div class="close-button" @click="deleteSprite(props.asset.name)">×</div>
+    <div class="delete-button" @click="deleteSprite(props.asset.name)">×</div>
     <n-image
       preview-disabled
       :width="computedProperties.imageWidth"
@@ -24,7 +24,7 @@
     :key="index"
     :class="computedProperties.cardClassName"
   >
-    <div class="close-button" @click="deleteBackdrop(file)">×</div>
+    <div class="delete-button" @click="deleteBackdrop(file)">×</div>
     <n-image
       preview-disabled
       :width="computedProperties.imageWidth"
@@ -51,8 +51,8 @@ interface PropType {
   asset: AssetBase | Backdrop;
 }
 const props = defineProps<PropType>();
-const spriteStore = useSpriteStore(); 
-const backdropStore = useBackdropStore(); 
+const spriteStore = useSpriteStore();
+const backdropStore = useBackdropStore();
 
 // ----------computed properties-----------------------------
 // Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
@@ -106,7 +106,7 @@ const deleteBackdrop = (file: FileWithUrl) => {
   overflow: visible; // show x button
   cursor: pointer;
 
-  .close-button {
+  .delete-button {
     position: absolute;
     top: -5px;
     right: -10px;
@@ -128,7 +128,7 @@ const deleteBackdrop = (file: FileWithUrl) => {
   width: 60px;
   height: 60px;
 
-  .close-button {
+  .delete-button {
     width: 15px;
     height: 15px;
     font-size: 20px;
@@ -140,7 +140,7 @@ const deleteBackdrop = (file: FileWithUrl) => {
   width: 110px;
   height: 110px;
 
-  .close-button {
+  .delete-button {
     width: 30px;
     height: 30px;
     font-size: 40px;

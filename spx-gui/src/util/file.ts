@@ -138,11 +138,11 @@ export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
  * Get directory from zip file.
  * @param {File} zipFile the zip file
  * @returns {Promise<DirPath>} the directory of the zip
- * 
+ *
  * @example
  * const dir = await getDirPathFromZip(zipFile)
  * loadProject(dir)
- * 
+ *
  * // Your directory structure of zipFile should be organized this way, otherwise you may fail to read resources in `convertDirPathToProject` (which is a step in `loadProject`) and resources that fail to read will be saved in `project.defaultDir`.
  * └─ ProjectName
  *     ├─ main.spx
