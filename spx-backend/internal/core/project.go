@@ -434,7 +434,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 	// 遍历结果集
 	for rows.Next() {
 		var asset Asset
-		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.Status, &asset.CTime, &asset.UTime)
+		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.ClickCount, &asset.Status, &asset.CTime, &asset.UTime)
 		if err != nil {
 			println(err.Error())
 			return nil, err
@@ -484,11 +484,5 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 	if err != nil {
 		return "", err
 	}
-	//err = os.Remove("output.gif")
-	//if err != nil {
-	//	// 如果删除过程中出错，打印错误信息
-	//	fmt.Println("Error deleting file:", err)
-	//	return "", err
-	//}
 	return os.Getenv("QINIU_PATH") + "/" + path, err
 }
