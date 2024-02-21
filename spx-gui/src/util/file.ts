@@ -156,7 +156,7 @@ export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
  *         │   └─ spriteName2
  *         │       ├─ 2.png
  *         │       └─ index.json
- *         ├─ sound
+ *         ├─ sounds
  *         │   ├─ soundName1
  *         │   │   ├─ 3.wav
  *         │   │   └─ index.json

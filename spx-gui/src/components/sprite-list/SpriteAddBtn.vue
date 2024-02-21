@@ -20,7 +20,7 @@
         :action="uploadActionUrl"
         @before-upload="beforeBackdropUpload"
       >
-        <n-button color="#fff" quaternary size="tiny" text-color="#fff"> Upload </n-button>
+        <n-button color="#fff" quaternary size="tiny" text-color="#fff">  {{ $t("stage.upload") }} </n-button>
       </n-upload>
 
       <!-- Sound Upload -->
@@ -29,7 +29,7 @@
         :action="uploadActionUrl"
         @before-upload="beforeSoundUpload"
       >
-        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+        <n-button color="#fff" :text-color="commonColor">  {{ $t("stage.upload") }} </n-button>
       </n-upload>
 
       <!-- Sprite Upload -->
@@ -38,7 +38,7 @@
         :action="uploadActionUrl"
         @before-upload="beforeSpriteUpload"
       >
-        <n-button color="#fff" :text-color="commonColor"> Upload </n-button>
+        <n-button color="#fff" :text-color="commonColor">  {{ $t("stage.upload") }} </n-button>
       </n-upload>
 
       <n-button
@@ -49,7 +49,7 @@
         text-color="#fff"
         @click="openLibraryFunc()"
       >
-        Choose
+        {{ $t("stage.choose") }}
       </n-button>
       <n-button
         v-else-if="props.type == 'sprite'"
@@ -57,7 +57,7 @@
         :text-color="commonColor"
         @click="openLibraryFunc()"
       >
-        Choose
+        {{ $t("stage.choose") }}
       </n-button>
 
       <n-button

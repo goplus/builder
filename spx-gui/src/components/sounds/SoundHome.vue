@@ -28,7 +28,6 @@
     </n-layout-sider>
     <n-layout-content>
       <SoundsEdit
-        :key="componentKey"
         :asset="selectedSound"
         style="margin-left: 10px"
         @update-sound-file="handleSoundFileUpdate"
@@ -52,11 +51,9 @@ const assets: ComputedRef<Sound[]> = computed(
   () => soundStore.list as Sound[],
 );
 const selectedSound = ref<Sound>();
-const componentKey = ref(0);
 
 const handleSelect = (asset: Sound) => {
   selectedSound.value = asset;
-  componentKey.value++; // Increment the key to force re-creation of SoundsEdit
 };
 
 const handleSoundFileUpdate = (newFile: File) => {

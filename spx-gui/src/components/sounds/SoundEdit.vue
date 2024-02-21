@@ -147,7 +147,7 @@ import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/src/plugin/timeline';
 import RegionsPlugin from 'wavesurfer.js/src/plugin/regions';
 import CursorPlugin from 'wavesurfer.js/src/plugin/cursor';
-import { ref, onMounted, type Ref } from 'vue'
+import { ref, onMounted, type Ref, watch } from 'vue'
 import { nextTick } from "vue";
 import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-edit'
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
@@ -163,6 +163,10 @@ const props = defineProps({
 
 const emits = defineEmits(['update-sound-file'])
 
+interface WaveSurferInstance {
+  destroy(): void;
+}
+const waveSurfer = ref<WaveSurferInstance | null>(null);
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer;
 let isPlaying: Ref<boolean> = ref(false);
@@ -184,9 +188,22 @@ const isOperateDisabled: Ref<{ [key: string]: boolean }> = ref({
 });
 
 onMounted(() => {
+  initSoundEdit();
+});
+
+const initSoundEdit = () => {
+  // Make sure that wavesurfer does not stack after each update
+  if (waveSurfer.value) {
+    waveSurfer.value.destroy();
+    waveSurfer.value = null;
+  }
+  const waveformContainer = document.querySelector('#waveform');
+  if (waveformContainer) {
+    waveformContainer.innerHTML = '';
+  }
   initWaveSurfer();
   isRegionOptionDisabled();
-});
+}
 
 /* init WaveSurfer */
 const initWaveSurfer = () => {
@@ -502,6 +519,10 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+watch(() => props.asset, () => {
+  initSoundEdit();
+});
 
 </script>
 
