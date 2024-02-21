@@ -1,4 +1,4 @@
-import { AudioDataService } from '@/util/wavesurfer-edit-data'
+import { audioDataService } from '@/util/wavesurfer-edit-data'
 
 export interface SimpleWavesurferBackend {
     buffer?: AudioBuffer;
@@ -46,8 +46,8 @@ class WavesurferEdit {
         this.operationRecord = [this.currentBuffer];
         this.operationIndex = 0;
         this.currentRegion = null;
-        this.copyData = AudioDataService.getCopyData().data;
-        this.copyDuration = AudioDataService.getCopyData().duration;
+        this.copyData = audioDataService.getCopyData().data;
+        this.copyDuration = audioDataService.getCopyData().duration;
     }
 
     copy(region: Region, buffer: AudioBuffer = this.currentBuffer, isCopy: boolean = true): OperationResult {
@@ -73,20 +73,20 @@ class WavesurferEdit {
         }
 
         if (isCopy) {
-            AudioDataService.setCopyData(newBuffer, end - start);
+            audioDataService.setCopyData(newBuffer, end - start);
         }
 
         return {
             buffer: this.currentBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: AudioDataService.getCopyData().data,
-            copyDuration: AudioDataService.getCopyData().duration,
+            copyData: audioDataService.getCopyData().data,
+            copyDuration: audioDataService.getCopyData().duration,
         };
     }
 
     paste(currentTime: number, buffer: AudioBuffer = this.currentBuffer): OperationResult {
-        const copyData = AudioDataService.getCopyData();
+        const copyData = audioDataService.getCopyData();
         if (!copyData.data) {
             return {
                 buffer: this.currentBuffer,
@@ -122,7 +122,7 @@ class WavesurferEdit {
     }
 
     insert(currentTime: number, buffer: AudioBuffer = this.currentBuffer): OperationResult {
-        const copyData = AudioDataService.getCopyData();
+        const copyData = audioDataService.getCopyData();
         if (!copyData.data) {
             return {
                 buffer: this.currentBuffer,
@@ -199,7 +199,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: AudioDataService.getCopyData().data,
+            copyData: audioDataService.getCopyData().data,
         };
     }
 
@@ -215,7 +215,7 @@ class WavesurferEdit {
             buffer: newBuffer,
             curIndex: this.operationIndex,
             maxIndex: this.operationRecord.length,
-            copyData: AudioDataService.getCopyData().data,
+            copyData: audioDataService.getCopyData().data,
         };
     }
 

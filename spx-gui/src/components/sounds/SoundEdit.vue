@@ -152,7 +152,7 @@ import { nextTick } from "vue";
 import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-edit'
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
 import { Sound } from '@/class/sound'
-import { AudioDataService } from '@/util/wavesurfer-edit-data'
+import { audioDataService } from '@/util/wavesurfer-edit-data'
 
 const props = defineProps({
   asset: {
@@ -360,8 +360,8 @@ function isRegionOptionDisabled(): void {
   isOperateDisabled.value.copy = !currentRegion;
   isOperateDisabled.value.cut = !currentRegion;
   isOperateDisabled.value.remove = !currentRegion;
-  isOperateDisabled.value.paste = !AudioDataService.getCopyData().data;
-  isOperateDisabled.value.insert = !AudioDataService.getCopyData().data;
+  isOperateDisabled.value.paste = !audioDataService.getCopyData().data;
+  isOperateDisabled.value.insert = !audioDataService.getCopyData().data;
 }
 
 /* Render wavesurfer */

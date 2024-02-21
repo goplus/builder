@@ -1,21 +1,16 @@
-export class AudioDataService {
+export const audioDataService = {
+  copyData: null as AudioBuffer | null,
+  copyDuration: 0,
 
-  private static copyData: AudioBuffer | null = null;
-  private static copyDuration: number = 0;
+  setCopyData(data: AudioBuffer, duration: number) {
+    this.copyData = data;
+    this.copyDuration = duration;
+  },
 
-  static {
-    console.log('AudioDataService is loaded');
-  }
-
-  public static setCopyData(data: AudioBuffer, duration: number) {
-    AudioDataService.copyData = data;
-    AudioDataService.copyDuration = duration;
-  }
-
-  public static getCopyData(): { data: AudioBuffer | null; duration: number } {
+  getCopyData(): { data: AudioBuffer | null; duration: number } {
     return {
-      data: AudioDataService.copyData,
-      duration: AudioDataService.copyDuration,
+      data: this.copyData,
+      duration: this.copyDuration,
     };
   }
 
