@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 18:05:38
+ * @LastEditTime: 2024-02-21 21:01:22
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -162,7 +162,7 @@ export function generateGifByCostumes(files: File[]): Promise<string> {
   const url = `/spirits/upload`
   const formData = new FormData()
   files.forEach((file) => {
-    formData.append('file', file);
+    formData.append('files', file);
   });
 
   return service({

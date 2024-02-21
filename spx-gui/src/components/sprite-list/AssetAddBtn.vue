@@ -303,6 +303,7 @@ const handleSubmitSprite = async () => {
   console.log(gif,'gif')
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
+  uploadSpriteName.value = ''
 }
 
 /**
