@@ -10,7 +10,7 @@
   <div class="stage-list">
     {{ $t('stage.stage') }}
     <div class="stage-list-space">
-      <SpriteAddBtn :type="'backdrop'" />
+      <AssetAddBtn :type="'backdrop'" />
       <ImageCardCom :type="'bg'" :asset="backdrop" :style="{ 'margin-bottom': '26px' }" />
     </div>
   </div>
@@ -20,7 +20,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
-import SpriteAddBtn from '@/components/sprite-list/SpriteAddBtn.vue'
+import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Backdrop } from '@/class/backdrop'
 
 // ----------props & emit------------------------------------
