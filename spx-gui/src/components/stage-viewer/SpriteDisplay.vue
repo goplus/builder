@@ -16,7 +16,7 @@
   </Costume>
 </template>
 <script lang="ts" setup>
-import Costume from './Costume.vue'
+import Costume from './CostumeDisplay.vue'
 import { defineProps, computed, defineEmits, type ComputedRef } from 'vue'
 import type { StageSprite, StageCostume, MapConfig, SpriteDragEndTarget } from '.'
 

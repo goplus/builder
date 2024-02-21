@@ -29,7 +29,6 @@ import UserAvatar from './UserAvatar.vue'
 
 const projectStore = useProjectStore()
 const themeStyle = ref<number>(ThemeStyleType.Pink)
-const themeMap = ['Pink', 'Yellow', 'Blue']
 /**
  * @description: dropdown options of import/save/export
  * @Author: Xu Ning
