@@ -5,7 +5,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/qiniu/go-sdk/v7/auth"
+	"github.com/qiniu/go-sdk/v7/auth/qbox"
 	"github.com/qiniu/go-sdk/v7/storage"
 )
 
@@ -23,10 +23,11 @@ func GenerateUploadToken() (string, error) {
 	secretKey := matches[2]
 	bucket := matches[3]
 	putPolicy := storage.PutPolicy{
-		Scope: bucket,
+		Scope:   bucket,
+		SaveKey: "$(etag)$(ext)",
 	}
 	putPolicy.Expires = 1800
-	mac := auth.New(accessKey, secretKey)
+	mac := qbox.NewMac(accessKey, secretKey)
 	upToken := putPolicy.UploadToken(mac)
 	return upToken, nil
 }
