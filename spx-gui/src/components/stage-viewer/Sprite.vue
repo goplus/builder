@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
