@@ -161,7 +161,8 @@ post "/spirits/upload", ctx => {
      	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
         ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
         files:=ctx.MultipartForm.File["files"]
-        path,err := p.UploadSpirits(todo,"",files)
+        name:=ctx.FormValue("name")
+        path,err := p.UploadSpirits(todo,name,files)
         if (err != nil) {
                 ctx.json({
                     "code": 400,

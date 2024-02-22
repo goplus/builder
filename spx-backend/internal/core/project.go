@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,12 @@ type Config struct {
 	Driver string // database driver. default is `mysql`.
 	DSN    string // database data source name
 	BlobUS string // blob URL scheme
+}
+type Data struct {
+	Assets    map[string]string `json:"assets"`
+	IndexJson string            `json:"indexJson"`
+	Type      string            `json:"type"`
+	Url       string            `json:"url"`
 }
 
 type Asset struct {
@@ -329,16 +336,21 @@ func (p *Project) modifyAddress(address string) (string, error) {
 	var data struct {
 		Assets    map[string]string `json:"assets"`
 		IndexJson string            `json:"indexJson"`
+		Type      string            `json:"type"`
+		Url       string            `json:"url"`
 	}
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
 		return "", err
 	}
 	qiniuPath := os.Getenv("QINIU_PATH")
 	for key, value := range data.Assets {
-		data.Assets[key] = qiniuPath + value
+		data.Assets[key] = qiniuPath + "/" + value
 	}
 	if data.IndexJson != "" {
-		data.IndexJson = qiniuPath + data.IndexJson
+		data.IndexJson = qiniuPath + "/" + data.IndexJson
+	}
+	if data.Url != "" {
+		data.Url = qiniuPath + "/" + data.Url
 	}
 	modifiedAddress, err := json.Marshal(data)
 	if err != nil {
@@ -453,13 +465,25 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader) (string, error) {
 	var images []*image.Paletted
 	var delays []int
-	for _, fileHeader := range files {
+	data := &Data{}
+	data.IndexJson = "index.json"
+	data.Type = "gif"
+	data.Assets = make(map[string]string)
+	for i, fileHeader := range files {
 		// 打开文件
 		img, err := common.LoadImage(fileHeader)
 		if err != nil {
 			fmt.Printf("failed to load image %s: %v", fileHeader.Filename, err)
 			return "", err
 		}
+		file, _ := fileHeader.Open()
+		path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, fileHeader)
+		if err != nil {
+			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
+			return "", err
+		}
+		index := "image" + strconv.Itoa(i)
+		data.Assets[index] = path
 		images = append(images, img)
 		delays = append(delays, 0) // 每帧之间的延迟，100 = 1秒
 	}
@@ -484,5 +508,24 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 	if err != nil {
 		return "", err
 	}
+	data.Url = path
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("failed to jsonMarshal: %v", err)
+		return "", err
+	}
+
+	_, err = AddAsset(p, &Asset{
+		Name:       name,
+		AuthorId:   "1",
+		Category:   "1",
+		IsPublic:   1,
+		Address:    string(jsonData),
+		AssetType:  "0",
+		ClickCount: "0",
+		Status:     1,
+		CTime:      time.Now(),
+		UTime:      time.Now(),
+	})
 	return os.Getenv("QINIU_PATH") + "/" + path, err
 }
