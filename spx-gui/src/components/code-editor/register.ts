@@ -35,14 +35,14 @@ function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRa
 
 const completionItemProvider: monaco.languages.CompletionItemProvider = {
     provideCompletionItems: (model, position) => {
-        var word = model.getWordUntilPosition(position);
-        var range = {
+        const word = model.getWordUntilPosition(position);
+        const range = {
             startLineNumber: position.lineNumber,
             endLineNumber: position.lineNumber,
             startColumn: word.startColumn,
             endColumn: word.endColumn,
         };
-        let suggestions: monaco.languages.CompletionItem[] = completionItem(range)
+        const suggestions: monaco.languages.CompletionItem[] = completionItem(range)
         return { suggestions }
     }
 }

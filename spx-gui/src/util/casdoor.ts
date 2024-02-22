@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 const config: SdkConfig = {
   serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT,
   clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID,
