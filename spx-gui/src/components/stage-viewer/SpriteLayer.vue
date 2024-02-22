@@ -29,7 +29,7 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from '.'
-import Sprite from './Sprite.vue'
+import Sprite from './SpriteDisplay.vue'
 
 const props = defineProps<{
   loading: boolean
