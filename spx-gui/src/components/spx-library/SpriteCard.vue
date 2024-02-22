@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 17:06:23
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-22 15:16:34
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -10,11 +10,23 @@
   <!-- S Component Sprite Card -->
   <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)">
     <n-image
+      v-show="!shouldShowGif"
       preview-disabled
       width="100"
       height="100"
       :src="assetImageUrl"
       fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
+      @mouseenter="isHovering = true"
+      @mouseleave="isHovering = false"
+    />
+    <n-image
+      v-if="assetImageGifUrl !== ''"
+      v-show="isHovering"
+      width="100"
+      height="100"
+      :src="assetImageGifUrl"
+      @mouseenter="isHovering = true"
+      @mouseleave="isHovering = false"
     />
     {{ props.assetInfo.name }}
   </div>
@@ -24,7 +36,7 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { NImage } from "naive-ui";
-import { defineProps, defineEmits, computed } from "vue";
+import { defineProps, defineEmits, computed, ref } from "vue";
 import type { Asset } from "@/interface/library";
 
 // ----------props & emit------------------------------------
@@ -33,7 +45,7 @@ interface PropsType {
 }
 const props = defineProps<PropsType>();
 const emits = defineEmits(['add-asset']);
-
+const isHovering = ref<boolean>(false);
 // ----------computed properties-----------------------------
 // Compute the asset images' url
 const assetImageUrl = computed(() => {
@@ -41,13 +53,29 @@ const assetImageUrl = computed(() => {
     const addressObj = JSON.parse(props.assetInfo.address);
     const assets = addressObj.assets;
     const firstKey = Object.keys(assets)[0];
-    console.log('addressObj',addressObj,firstKey)
     return assets[firstKey];
   } catch (error) {
     console.error('Failed to parse address:', error);
-    return ''; // 返回一个空字符串或者默认图像URL
+    return ''; 
   }
 });
+
+// Compute the asset gif url if it has
+const assetImageGifUrl = computed(() => {
+  try {
+    const addressObj = JSON.parse(props.assetInfo.address);
+    if(addressObj.type != 'gif'){
+      return ''
+    }
+    return addressObj.url
+  } catch (error) {
+    console.error('Failed to parse address:', error);
+    return ''; 
+  }
+});
+
+// Compute show gif or not (record to the imageUrl and hovering state).
+const shouldShowGif = computed(()=> isHovering.value && assetImageGifUrl.value !== '')
 
 // ----------methods-----------------------------------------
 /**

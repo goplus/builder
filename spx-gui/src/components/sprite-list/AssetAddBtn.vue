@@ -299,7 +299,7 @@ const handleSubmitSprite = async () => {
       uploadFilesArr.push(fileItem.file)
     }
   })
-  let gif = await generateGifByCostumes(uploadFilesArr)
+  let gif = await generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
   console.log(gif,'gif')
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)

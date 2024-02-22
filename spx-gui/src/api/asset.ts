@@ -158,9 +158,10 @@ export function addAssetClickCount(
  * @param {number} assetType
  * @return { SearchAssetResponse }
  */
-export function generateGifByCostumes(files: File[]): Promise<string> {
+export function generateGifByCostumes(name:string, files: File[]): Promise<string> {
   const url = `/spirits/upload`
   const formData = new FormData()
+  formData.append('name',name)
   files.forEach((file) => {
     formData.append('files', file);
   });
