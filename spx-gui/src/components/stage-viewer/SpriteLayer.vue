@@ -21,9 +21,8 @@
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from ".";
-import Sprite from "./Sprite.vue"
-import { computed } from "vue";
+import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from '.'
+import Sprite from './Sprite.vue'
 
 const props = defineProps<{
     loading: boolean,

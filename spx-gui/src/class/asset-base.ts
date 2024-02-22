@@ -77,7 +77,6 @@ export abstract class AssetBase implements AssetBaseInterface {
     /**
      * Get the name of the asset.
      */
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     static NAME = "asset";
 
     /**

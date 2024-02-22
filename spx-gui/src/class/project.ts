@@ -51,7 +51,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   unidentifiedFile: RawDir
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   static ENTRY_FILE_NAME = 'index.gmx'
 
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
