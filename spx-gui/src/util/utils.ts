@@ -1,5 +1,5 @@
 import * as qiniu from 'qiniu-js'
-import { service } from '@/axios'
+import {service} from '@/axios'
 
 async function getUploadToken() {
     try {
@@ -35,4 +35,4 @@ async function uploadFile(file: File) {
     })
 }
 
-export { uploadFile }
+export {uploadFile}
