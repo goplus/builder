@@ -69,7 +69,6 @@ export class Sound extends AssetBase {
     /**
      * The config of the sound.
      */
-    public config: SoundConfig;
 
     /**
      * Get the store name for the sound.
@@ -94,8 +93,7 @@ export class Sound extends AssetBase {
      * @param {SoundConfig} config the config of the sound using json to generate `index.json`
      */
     constructor(name: string, files: File[] = [], config?: SoundConfig) {
-        super(name, files)
-        this.config = this.genConfig(config)
+        super(name, files, config)
     }
 
     /**
@@ -129,9 +127,9 @@ export class Sound extends AssetBase {
      */
     get dir() {
         const dir: RawDir = {}
-        dir[`${this.path}/index.json`] = this.config
+        dir[`${this.path}/index.json`] = { url: this.configUrl, content: this.config }
         for (const file of this.files) {
-            dir[`${this.path}/${file.name}`] = file
+            dir[`${this.path}/${file.name}`] = { url: file.assetUrl ?? "", content: file }
         }
         return dir
     }

@@ -22,7 +22,7 @@ import type { RawDir } from "@/types/file";
  * // create a sprite just with name
  * const spt1 = new Sprite("monkey")
  * // create a sprite with all params
- * const spt2 = new Sprite("banana", [file1, file2], "onStart => {}", { x: 12, y: 21 })
+ * const spt2 = new Sprite("banana", [file1, file2], { x: 12, y: 21 }, "onStart => {}")
  * // create a sprite from raw data
  * const spt3 = Sprite.fromRawData({ name: "banana", _files: [file1, file2], code: "onStart => {}", config: { x: 12, y: 21 } })
  * 
@@ -71,12 +71,8 @@ export class Sprite extends AssetBase {
     /**
      * The code of the sprite.
      */
-    code: string;
-
-    /**
-     * The config of the sprite.
-     */
-    public config: SpriteConfig;
+    _code: string;
+    codeUrl: string = "";
 
     /**
      * The name of the sprite.
@@ -106,10 +102,9 @@ export class Sprite extends AssetBase {
      * @param {string} code the code of the sprite
      * @param {SpriteConfig} config the config of the sprite using json to generate `index.json`
      */
-    constructor(name: string, files: File[] = [], code: string = "\r\n", config?: SpriteConfig) {
-        super(name, files)
-        this.code = code
-        this.config = this.genConfig(config)
+    constructor(name: string, files: File[] = [], config?: SpriteConfig, code: string = "\r\n") {
+        super(name, files, config)
+        this._code = code
     }
 
     /**
@@ -118,7 +113,7 @@ export class Sprite extends AssetBase {
      * @returns the sprite instance
      */
     static fromRawData(data: any): Sprite {
-        return new Sprite(data.name, data._files, data.code, data.config)
+        return new Sprite(data.name, data._files, data.config, data.code)
     }
 
     /**
@@ -264,11 +259,11 @@ export class Sprite extends AssetBase {
      */
     get dir() {
         const dir: RawDir = {}
-        dir[`${this.path}/index.json`] = this.config
+        dir[`${this.path}/index.json`] = { url: this.configUrl, content: this.config }
         for (const file of this.files) {
-            dir[`${this.path}/${file.name}`] = file
+            dir[`${this.path}/${file.name}`] = { url: file.assetUrl ?? "", content: file }
         }
-        dir[`${this.name}.spx`] = this.code
+        dir[`${this.name}.spx`] = { url: this.codeUrl, content: this.code }
         return dir
     }
 
@@ -284,5 +279,15 @@ export class Sprite extends AssetBase {
      */
     static isInstance(obj: any): boolean {
         return isInstance(obj, Sprite);
+    }
+
+    get code() {
+        return this._code
+    }
+
+    set code(value: string) {
+        console.log(this.name + " code change!")
+        this.codeUrl = ""
+        this._code = value
     }
 }

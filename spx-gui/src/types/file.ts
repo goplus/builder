@@ -14,14 +14,20 @@ export interface FileType {
     path: string,
     type: string,
     size: number,
-    modifyTime: Date
+    modifyTime: Date,
+    url: string
 }
 
 export interface DirPath {
     [path: string]: FileType
 }
 
-export type RawFile = string | File | Config
+export type BaseFileType = string | File | Config
+
+export interface RawFile {
+    url: string
+    content: BaseFileType
+}
 
 export interface RawDir {
     [path: string]: RawFile

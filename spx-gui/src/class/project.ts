@@ -5,11 +5,13 @@ import {
   convertDirPathToProject,
   convertRawDirToDirPath,
   convertRawDirToZip,
-  getDirPathFromZip
+  getDirPathFromZip,
+  getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
+import { uploadFile } from '@/util/utils'
 
 export enum ProjectSource {
   local,
@@ -51,6 +53,9 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   unidentifiedFile: RawDir
 
+  entryCodeUrl: string = ""
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   static ENTRY_FILE_NAME = 'index.gmx'
 
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
@@ -106,7 +111,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
-    this.id = id
+    await this.setId(id)
     this.source = source
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
@@ -189,6 +194,24 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async save() {
     // TODO: save to cloud
+    const data = await this.uploadFile()
+    // TODO: send data to server
+    console.log(data)
+  }
+
+  /**
+   * Upload files to server if file is not exist.
+   * @returns The path of the project
+   */
+  private async uploadFile() {
+    const dir = await this.dirPath
+    const prefix = getPrefix(dir)
+    const data: Record<string, string> = {}
+    for (const [key, value] of Object.entries(dir)) {
+      const k = key.replace(prefix, '')
+      data[k] = value.url ? value.url : await uploadFile(new File([value.content], k)) as string
+    }
+    return data
   }
 
   /**
@@ -224,7 +247,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.unidentifiedFile,
       ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map((item) => item.dir)
     )
-    files[Project.ENTRY_FILE_NAME] = this.entryCode
+    files[Project.ENTRY_FILE_NAME] = { url: this.entryCodeUrl, content: this.entryCode }
     for (const [path, value] of Object.entries(files)) {
       const fullPath = this.path + path
       dir[fullPath] = value

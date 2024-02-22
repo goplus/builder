@@ -11,6 +11,7 @@ import { FormatResponse } from './components/code-editor'
 declare global {
   interface File {
     url: string
+    assetUrl: string
   }
 
   /**

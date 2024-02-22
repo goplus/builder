@@ -319,6 +319,9 @@ const handleSelectImport = (key: string | number) => {
   else if (key === 'SaveLocal') {
     projectStore.project.download();
   }
+  else if(key === 'SaveCloud') {
+    projectStore.project.save();
+  }
 }
 
 const handleSelectSettings = (key: string | number) => {

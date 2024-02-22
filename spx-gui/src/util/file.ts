@@ -55,7 +55,7 @@ export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'text/plain'
  * @param name the file name
  * @returns the content
  */
-export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): RawFile => {
+export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): BaseFileType => {
     switch (type) {
         case 'application/json':
             return JSON.parse(new TextDecoder().decode(arr))
@@ -108,7 +108,7 @@ import { Backdrop } from "@/class/backdrop"
 import { Sound } from "@/class/sound"
 import { Sprite } from "@/class/sprite"
 import type { Config } from "@/interface/file"
-import type { FileType, DirPath, RawDir, RawFile } from "@/types/file"
+import type { FileType, DirPath, RawDir, BaseFileType } from "@/types/file"
 import JSZip from "jszip"
 
 /**
@@ -122,13 +122,14 @@ export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
     const directory: DirPath = {}
     for (const [path, value] of Object.entries(dir)) {
         const ext = path.split('.').pop()!
-        const content = await content2ArrayBuffer(value, getMimeFromExt(ext))
+        const content = await content2ArrayBuffer(value.content, getMimeFromExt(ext))
         directory[path] = {
             content,
             path,
             type: getMimeFromExt(ext),
             size: content.byteLength,
-            modifyTime: (value instanceof File) ? new Date(value.lastModified) : new Date()
+            modifyTime: (value.content instanceof File) ? new Date(value.content.lastModified) : new Date(),
+            url: value.url
         }
     }
     return directory
@@ -182,7 +183,8 @@ export async function getDirPathFromZip(zipFile: File): Promise<DirPath> {
             path,
             type,
             size,
-            modifyTime
+            modifyTime,
+            url: ""
         }
     }
     return dir
@@ -195,12 +197,15 @@ export async function getDirPathFromZip(zipFile: File): Promise<DirPath> {
  */
 export function convertDirPathToProject(dir: DirPath): Project {
     function handleFile(file: FileType, filename: string, item: any) {
+        const content = arrayBuffer2Content(file.content, file.type, filename);
         switch (file.type) {
             case 'application/json':
-                item.config = arrayBuffer2Content(file.content, file.type) as Config;
+                item.config = content as Config;
+                item.configUrl = file.url;
                 break;
             default:
-                item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
+                (content as File).assetUrl = file.url;
+                item.files.push(content);
                 break;
         }
     }
@@ -228,11 +233,13 @@ export function convertDirPathToProject(dir: DirPath): Project {
         }
         else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
             proj.entryCode = arrayBuffer2Content(file.content, file.type, filename) as string
+            proj.entryCodeUrl = file.url
         }
         else if (/^.+\.spx$/.test(path)) {
             const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
             const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
             sprite.code = arrayBuffer2Content(file.content, file.type) as string;
+            sprite.codeUrl = file.url;
         }
         else if (Sound.REG_EXP.test(path)) {
             const soundName = path.match(Sound.REG_EXP)?.[1] || '';
@@ -243,13 +250,13 @@ export function convertDirPathToProject(dir: DirPath): Project {
             handleFile(file, filename, proj.backdrop);
         }
         else {
-            proj.unidentifiedFile[path] = arrayBuffer2Content(file.content, file.type, filename)
+            proj.unidentifiedFile[path] = { url: file.url, content: arrayBuffer2Content(file.content, file.type, filename) }
         }
     }
     return proj
 }
 
-const zipFileValue = (key: string, value: RawFile): [string, string | File] => {
+const zipFileValue = (key: string, value: BaseFileType): [string, string | File] => {
     if (typeof value === 'string' || value instanceof File) {
         return [key, value]
     } else {
@@ -269,7 +276,7 @@ export async function convertRawDirToZip(dir: RawDir): Promise<Blob> {
     // eslint-disable-next-line prefer-const
     for (let [path, value] of Object.entries(dir)) {
         prefix && (path = path.replace(prefix, ''));
-        zip.file(...zipFileValue(path, value));
+        zip.file(...zipFileValue(path, value.content));
     }
 
     const content = await zip.generateAsync({ type: 'blob' })

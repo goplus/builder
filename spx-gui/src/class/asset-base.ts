@@ -11,6 +11,8 @@ import { getStorage } from "@/util/class";
 import FileWithUrl from "@/class/file-with-url";
 import { isObjectEmpty } from "@/util/global";
 import type { Config } from '@/interface/file';
+import type { Ref } from "vue";
+import { ref, watch } from "vue";
 
 /**
  * @abstract
@@ -22,11 +24,27 @@ import type { Config } from '@/interface/file';
 export abstract class AssetBase implements AssetBaseInterface {
     protected _files: FileWithUrl[];
     public name: string;
-    public abstract config: Config;
+    public configUrl: string = "";
 
-    constructor(name: string, files: FileWithUrl[] = []) {
+    public _config: Ref<Config>;
+
+    get config(): Config {
+        return this._config.value ?? this._config
+    }
+
+    set config(config: Config) {
+        this._config.value = config
+    }
+
+    constructor(name: string, files: FileWithUrl[] = [], config: Config = {}) {
         this.name = name
         this._files = files
+        this._config = ref(this.genConfig(config))
+
+        watch(() => this.config, () => {
+            this.configUrl = ""
+            console.log(this.name + " config change!")
+        }, { deep: true, immediate: true })
     }
 
     /**

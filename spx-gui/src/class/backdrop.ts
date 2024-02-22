@@ -64,11 +64,6 @@ export class Backdrop extends AssetBase {
     static NAME = "backdrop";
 
     /**
-     * The config of the backdrop.
-     */
-    public config: BackdropConfig;
-
-    /**
      * Get the store name for the backdrop.
      * @returns the name of the store
      */
@@ -91,8 +86,7 @@ export class Backdrop extends AssetBase {
      * @param {BackdropConfig} config the config of the backdrop using json to generate `index.json`
      */
     constructor(name: string = Backdrop.NAME, files: File[] = [], config?: BackdropConfig) {
-        super(name, files)
-        this.config = this.genConfig(config)
+        super(name, files, config)
     }
 
     /**
@@ -130,9 +124,9 @@ export class Backdrop extends AssetBase {
      */
     get dir() {
         const dir: RawDir = {}
-        dir[`${this.path}index.json`] = this.config
+        dir[`${this.path}index.json`] = { url: this.configUrl, content: this.config }
         for (const file of this.files) {
-            dir[`${this.path}${file.name}`] = file
+            dir[`${this.path}${file.name}`] = { url: file.assetUrl ?? "", content: file }
         }
         return dir
     }
