@@ -2,12 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-22 13:44:51
+ * @LastEditTime: 2024-02-22 23:14:42
  * @FilePath: \spx-gui\src\components\stage-viewer\SpriteLayer.vue
  * @Description: 
 -->
 <template>
   <v-layer
+    @mousedown="show"
+    ref="layer"
     :config="{
       name: 'sprite',
       x: props.offsetConfig.offsetX,
@@ -15,12 +17,7 @@
     }"
   >
     <template v-for="sprite in sortedSprites" :key="sprite.name">
-      <Sprite
-        v-if="sprite.config.visible"
-        :mapConfig="props.mapConfig"
-        :spriteConfig="sprite"
-        :selected="selectedSpriteNames.includes(sprite.name)"
-      />
+      <Costume :selected="selectedSpriteNames.includes(sprite.name)" v-if="sprite.config.visible" :spriteConfig="sprite" :mapConfig="props.mapConfig"> </Costume>
     </template>
   </v-layer>
 </template>
@@ -28,8 +25,9 @@
 // ----------Import required packages / components-----------
 import type { StageSprite, MapConfig, SpriteDragEndTarget, SpriteDragEndEvent } from '.'
 import Sprite from './Sprite.vue'
+import Costume from './Costume.vue'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 
 const props = defineProps<{
@@ -39,6 +37,11 @@ const props = defineProps<{
   zorder: string[]
   selectedSpriteNames: string[]
 }>()
+
+const layer = ref()
+const show = () => {
+  console.log(layer.value)
+}
 
 const sortedSprites = computed(() => {
   const spriteMap = new Map<string, SpriteConfig>()

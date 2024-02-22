@@ -3,12 +3,13 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-22 11:56:46
+ * @LastEditTime: 2024-02-22 23:15:10
  * @FilePath: \spx-gui\src\components\stage-viewer\Costume.vue
  * @Description: 
 -->
 <template>
   <v-image
+    ref="costume"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
     :config="{
@@ -24,27 +25,6 @@
       scaleY: props.spriteConfig.config.size
     }"
   />
-  <v-rect
-    v-if="props.selected"
-    ref="transformer"
-    @dragend="handleDragEnd"
-    :config="{
-      spriteName: props.spriteConfig.name,
-      width: image?.width,
-      height: image?.height,
-      fill: 'rgba(0,0,0,0)',
-      strokeWidth: 4,
-      draggable: true,
-      x: spritePosition.x,
-      y: spritePosition.y,
-      rotation: spriteRotation,
-      offsetX: currentCostume.x,
-      offsetY: currentCostume.y,
-      scaleX: props.spriteConfig.config.size,
-      scaleY: props.spriteConfig.config.size
-    }"
-  >
-  </v-rect>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
@@ -53,8 +33,13 @@ import type { ComputedRef } from 'vue'
 import type { StageCostume, MapConfig, SpriteDragEndTarget } from './index'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Shape } from 'konva/lib/Shape'
+import type { Stage } from 'konva/lib/Stage'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
+
 import type { Costume as CostumeConfig } from '@/interface/file'
+import { Image } from 'konva/lib/shapes/Image'
+import type { Rect } from 'konva/lib/shapes/Rect'
+import { nextTick } from 'vue'
 // ----------props & emit------------------------------------
 const props = defineProps<{
   spriteConfig: SpriteConfig
@@ -64,7 +49,7 @@ const props = defineProps<{
 // define the emits
 const emits = defineEmits<{
   // when ths costume dragend,emit the sprite position
-  (e: 'onDragEnd', event: { sprite: SpriteConfig }): void
+  (e: 'onDragMove', event: { sprite: SpriteConfig }): void
 }>()
 
 // ----------computed properties-----------------------------
@@ -77,7 +62,7 @@ const currentCostume: ComputedRef<CostumeConfig> = computed(() => {
 
 // ----------data related -----------------------------------
 const image = ref<HTMLImageElement>()
-const transformer = ref<Rect>()
+const costume = ref<Image>()
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
@@ -149,14 +134,58 @@ const getSpxPostion = (x: number, y: number): { x: number; y: number } => {
     y: props.mapConfig.height / 2 - y
   }
 }
-
-const handleDragMove = (event) => {
-  if (transformer.value) {
-    transformer.value.getNode().setPosition({
-      x: event.target.attrs.x,
-      y: event.target.attrs.y
-    })
+const controller = ref<Rect | null>()
+watch(
+  () => props.selected,
+  () => {
+    if (props.selected) {
+      showControllerRect()
+    }
   }
+)
+const showControllerRect = () => {
+  nextTick(() => {
+    if (costume.value) {
+      const stage = costume.value!.getStage().parent!.parent as Stage
+      controller.value = stage.findOne((node) => {
+        if (node.getAttr('controller') && node.attrs.spriteName === props.spriteConfig.name) {
+          return true
+        } else {
+          return false
+        }
+      }) as Rect
+      controller.value.rotation(spriteRotation.value)
+      controller.value.offsetX(costume.value.getNode().attrs.offsetX)
+      controller.value.offsetY(costume.value.getNode().attrs.offsetY)
+      controller.value.scaleX(costume.value.getNode().attrs.scaleX)
+      controller.value.scaleY(costume.value.getNode().attrs.scaleY)
+      controller.value.setSize({
+        width: costume.value?.getNode().attrs.image.width,
+        height: costume.value?.getNode().attrs.image.height
+      })
+      console.log(currentCostume.value.x)
+      controller.value?.setPosition({
+        x: costume.value.getNode().attrs.x,
+        y: costume.value.getNode().attrs.y
+      })
+    }
+  })
+}
+const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
+  controller.value?.setPosition({
+    x: event.target.attrs.x,
+    y: event.target.attrs.y
+  })
+  // }
+
+  // console.log(controller.value.attrs, event.target.attrs)
+
+  // if (transformer.value) {
+  //   transformer.value.getNode().setPosition({
+  //     x: event.target.attrs.x,
+  //     y: event.target.attrs.y
+  //   })
+  // }
 }
 
 /**
@@ -170,8 +199,9 @@ const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) =
   const position = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
   props.spriteConfig.config.x = position.x
   props.spriteConfig.config.y = position.y
-  emits('onDragEnd', {
-    sprite: props.spriteConfig
-  })
+  controller.value = null
+  // emits('onDragEnd', {
+  //   sprite: props.spriteConfig
+  // })
 }
 </script>

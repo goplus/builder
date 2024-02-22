@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-22 11:38:17
+ * @LastEditTime: 2024-02-22 23:14:28
  * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
@@ -44,7 +44,13 @@
         :selectedSpriteNames="stageSelectSpritesName"
         :mapConfig="spxMapConfig"
       />
-      <v-layer>
+      <v-layer
+        :config="{
+          name: 'controller',
+          x: (props.width / scale - spxMapConfig.width) / 2,
+          y: (props.height / scale - spxMapConfig.height) / 2
+        }"
+      >
         <v-transformer
           ref="transformer"
           :enabledAnchors="[]"
@@ -52,7 +58,19 @@
           :config="{
             borderDash: [6, 6]
           }"
+          :draggable="true"
         />
+        <template v-for="spritename in selectedSpriteNames" :key="spritename">
+          <v-rect
+            :config="{
+              controller: true,
+              spriteName: spritename,
+              fill: 'rgba(0,0,0,0)',
+              draggable: true
+            }"
+          >
+          </v-rect>
+        </template>
       </v-layer>
     </v-stage>
   </div>
@@ -74,6 +92,8 @@ import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import type { SpriteList } from '@/class/asset-list'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
+import { Rect } from 'konva/lib/shapes/Rect.js'
+import type { Layer } from 'konva/lib/Layer'
 
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
@@ -197,7 +217,7 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
   e.evt.preventDefault()
   if (!stage.value) return
   // only the sprite need contextmenu
-  if (e.target === stage.value || e.target.parent!.attrs.name !== 'sprite') {
+  if (e.target.parent!.attrs.name !== 'sprite' && e.target.parent!.attrs.name !== 'controller') {
     menu.value.style.display = 'none'
     stageSelectSpritesName.value = []
     return
@@ -218,7 +238,8 @@ const onStageMenuMouseLeave = (e: MouseEvent) => {
 
 const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
   // clear choose sprite
-  if (e.target.parent!.attrs.name !== 'sprite') {
+  console.log(e.target.parent!.attrs.name)
+  if (e.target.parent!.attrs.name !== 'sprite' || e.target.parent!.attrs.name !== 'controller') {
     stageSelectSpritesName.value = []
   }
   const name = e.target!.attrs.spriteName
@@ -277,17 +298,19 @@ const showSelectedTranformer = () => {
     const spriteNames = stageSelectSpritesName.value
     const nodes = stage.value.getStage().find((node: Node) => {
       if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
-        node.clone
         return true
       } else {
         return false
       }
     })
 
+    // choosed nodes
     const transformerNode = transformer.value.getNode()
+    const layer = stage.value.getStage().findOne('.sprite') as Layer
+    console.log(layer)
+
     if (nodes.length) {
-      console.log(nodes)
-      transformerNode.nodes(nodes)
+      transformerNode.nodes([...nodes])
     } else {
       transformerNode.nodes([])
     }
