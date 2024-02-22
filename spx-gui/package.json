@@ -21,6 +21,7 @@
     "monaco-editor": "^0.45.0",
     "nanoid": "^5.0.5",
     "pinia": "^2.1.7",
+    "qiniu-js": "^3.4.2",
     "pinia-plugin-persistedstate": "^3.2.1",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",

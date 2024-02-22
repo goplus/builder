@@ -1,7 +1,12 @@
 import (
 	"context"
 	"os"
-	"github.com/goplus/builder/internal/core"
+	"io"
+	"strconv"
+	"encoding/json"
+
+	"github.com/goplus/builder/spx-backend/internal/common"
+	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
 var (
@@ -10,33 +15,95 @@ var (
 
 todo := context.TODO()
 
-get "/project/:id", ctx => {
-	id := ctx.param("id")
-	res, _ := p.FileInfo(todo, id)
-	ctx.json {
-		"code":200,
-		"msg":"OK",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
-	}
-}
+get("/project/detail/:id", ctx => {
+    id := ctx.param("id")
+    res, err := p.GetProjectDetail(todo, id)
+    if err != nil {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to get project detail",
+        })
+        return
+    }
+    var files map[string]string
+    err = json.Unmarshal([]byte(res.Address), &files)
+    if err != nil {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to parse project files",
+        })
+        return
+    }
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": {
+            "id": res.ID,
+            "name": res.Name,
+            "authorId": res.AuthorId,
+            "files": files,
+            "version": res.Version,
+            "isPublic": res.IsPublic,
+            "status": res.Status,
+            "createdAt": res.Ctime,
+            "updatedAt": res.Utime,
+        },
+    })
+})
 
-post "/project/save", ctx=>{
-	id := ctx.FormValue("id")
-	uid := ctx.FormValue("uid")
-	name:=ctx.FormValue("name") 
-	file,header,_:=ctx.FormFile("file")
-	codeFile:=&core.CodeFile{
-		ID:id,
-		Name:name,
-		AuthorId :uid,
-	}
-	res,_ := p.SaveProject(todo,codeFile,file,header)
-	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
-	}
-}
+post("/project/save", ctx => {
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    var req core.SaveProjectRequest
+    body, err := io.ReadAll(ctx.Request.Body)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to read request body",
+        })
+        return
+    }
+    err = json.Unmarshal(body, &req)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": err.Error(),
+        })
+        return
+    }
+    res, err := p.SaveProject(todo, req)
+    if (err != nil) {
+        ctx.json({
+            "code": 400,
+            "msg": "Failed to save project:"+err.Error(),
+        })
+        return
+    }
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": {
+            "id": res.ID,
+            "name": res.Name,
+            "authorId": res.AuthorId,
+            "files": req.Files,
+            "version": res.Version,
+            "isPublic": res.IsPublic,
+            "status": res.Status,
+            "createdAt": res.Ctime,
+            "updatedAt": res.Utime,
+        },
+    })
+})
+
+get("/project/upload-token", ctx => {
+    token, _ := common.GenerateUploadToken()
+    ctx.json({
+        "code": 200,
+        "msg": "ok",
+        "data": token,
+    })
+})
 
 
 post "/project/fmt", ctx=>{
@@ -64,18 +131,155 @@ get "/asset/:id", ctx => {
     }
 }
 
+post "/asset/upload", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+        uid := ctx.FormValue("uid")
+        name:=ctx.FormValue("name")
+        category:=ctx.FormValue("category")
+        isPublic:=ctx.FormValue("isPublic")
+        assetType := ctx.FormValue("assetType")
+        ip, _ := strconv.Atoi(isPublic)
+        file,header,_:=ctx.FormFile("file")
+        	asset:=&core.Asset{
+        		 Name:name,
+                 AuthorId:uid,
+                 Category:category,
+                 IsPublic:ip,
+                 AssetType:assetType,
+                 Status:1,
+        	}
+        	res,_ := p.UploadAsset(todo,asset,file,header)
+        	ctx.json {
+        		"code":200,
+        		"msg":"ok",
+        		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
+        	}
+}
+post "/spirits/upload", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+        ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+        files:=ctx.MultipartForm.File["files"]
+        path,err := p.UploadSpirits(todo,"",files)
+        if (err != nil) {
+                ctx.json({
+                    "code": 400,
+                    "msg": "Failed to read request body",
+                })
+                return
+            }
+        ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data":path,
+        }
+}
+
+post "/asset/save", ctx => {
+        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+     	id := ctx.FormValue("id")
+        uid := ctx.FormValue("uid")
+        name:=ctx.FormValue("name")
+        category:=ctx.FormValue("category")
+        isPublic:=ctx.FormValue("isPublic")
+        assetType := ctx.FormValue("assetType")
+        ip, _ := strconv.Atoi(isPublic)
+        file,header,_:=ctx.FormFile("file")
+        	asset:=&core.Asset{
+        	     ID:id,
+        		 Name:name,
+                 AuthorId:uid,
+                 Category:category,
+                 IsPublic:ip,
+                 AssetType:assetType,
+                 Status:1,
+        	}
+        	_, _ = p.SaveAsset(todo,asset,file,header)
+        	ctx.json {
+        		"code":200,
+        		"msg":"ok",
+        		"data":"",
+        	}
+}
+
 get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
     assetType := ctx.param("assetType")
-    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType)
+    category := ctx.param("category")
+    isOrderByTime := ctx.param("isOrderByTime")
+    isOrderByHot := ctx.param("isOrderByHot")
+    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
     ctx.json {
             "code":200,
             "msg":"ok",
             "data": result,
     }
+}
+
+get "/clickCount/asset/:id/:assetType", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+    ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    id := ctx.param("id")
+    assetType := ctx.param("assetType")
+    p.IncrementAssetClickCount(todo, id, assetType)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": "",
+    }
+}
+
+get "/list/pubProject/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    result, _ := p.PubProjectList(todo, pageIndex, pageSize)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
+    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    uid := ctx.param("uid")
+    result, _ := p.UserProjectList(todo, pageIndex, pageSize,uid)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+post "/project/updateIsPublic", ctx=>{
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	id := ctx.FormValue("id")
+	_ = p.UpdatePublic(todo,id)
+	ctx.json {
+		"code":200,
+		"msg":"ok",
+		"data":"",
+	}
+}
+post "/asset/search", ctx=>{
+	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+	search := ctx.FormValue("search")
+	assetType := ctx.FormValue("assetType")
+	assets,_ := p.SearchAsset(todo,search,assetType)
+	ctx.json {
+		"code":200,
+		"msg":"ok",
+		"data":assets,
+	}
 }
 
 conf := &core.Config{}

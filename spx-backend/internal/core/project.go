@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/goplus/builder/internal/common"
+	"image"
+	"image/gif"
+	_ "image/png"
 	"io/ioutil"
 	"mime/multipart"
 	"os"
@@ -16,7 +18,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goplus/builder/spx-backend/internal/common"
+
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	"gocloud.dev/blob"
@@ -34,23 +39,27 @@ type Config struct {
 }
 
 type Asset struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	AuthorId  string    `json:"authorId"`
-	Category  string    `json:"category"`
-	IsPublic  int       `json:"isPublic"`
-	Address   string    `json:"address"`
-	AssetType string    `json:"assetType"`
-	Status    int       `json:"status"`
-	CTime     time.Time `json:"cTime"`
-	UTime     time.Time `json:"uTime"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	AuthorId   string    `json:"authorId"`
+	Category   string    `json:"category"`
+	IsPublic   int       `json:"isPublic"`
+	Address    string    `json:"address"`
+	AssetType  string    `json:"assetType"`
+	ClickCount string    `json:"clickCount"`
+	Status     int       `json:"status"`
+	CTime      time.Time `json:"cTime"`
+	UTime      time.Time `json:"uTime"`
 }
 
 type CodeFile struct {
-	ID       string
-	Name     string
+	ID       string `json:"id"`
+	Name     string `json:"name"`
 	AuthorId string
 	Address  string
+	IsPublic int
+	Status   int
+	Version  int
 	Ctime    time.Time
 	Utime    time.Time
 }
@@ -70,8 +79,20 @@ type FormatResponse struct {
 	Error FormatError
 }
 
+type SaveProjectRequest struct {
+	ID       string            `json:"id,omitempty"`
+	Name     string            `json:"name"`
+	AuthorId string            `json:"uid"`
+	Files    map[string]string `json:"files"`
+	IsPublic int               `json:"isPublic"`
+}
+
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
-	_ = godotenv.Load("../.env")
+	err = godotenv.Load("../.env")
+	if err != nil {
+		println(err.Error())
+		return
+	}
 	if conf == nil {
 		conf = new(Config)
 	}
@@ -87,6 +108,8 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	if bus == "" {
 		bus = os.Getenv("GOP_SPX_BLOBUS")
 	}
+	println(bus)
+	println(dsn)
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
 		println(err.Error())
@@ -101,44 +124,49 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	return &Project{bucket, db}, nil
 }
 
-// Find file address from db
-func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
+func (p *Project) GetProjectDetail(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
-		var address string
-		query := "SELECT address FROM project WHERE id = ?"
-		err := p.db.QueryRow(query, id).Scan(&address)
-		if err != nil {
-			return nil, err
+		codeFile, _ := common.QueryById[CodeFile](p.db, id)
+		if codeFile == nil {
+			return nil, ErrNotExist
 		}
-		cloudFile := &CodeFile{
-			ID:      id,
-			Address: address,
-		}
-		return cloudFile, nil
+		return codeFile, nil
 	}
 	return nil, ErrNotExist
 }
 
-func (p *Project) SaveProject(ctx context.Context, codeFile *CodeFile, file multipart.File, header *multipart.FileHeader) (*CodeFile, error) {
-	if codeFile.ID == "" {
-		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
+func (p *Project) SaveProject(ctx context.Context, req SaveProjectRequest) (*CodeFile, error) {
+	filesJson, err := json.Marshal(req.Files)
+	if err != nil {
+		return nil, err
+	}
+	files := string(filesJson)
+	if req.ID == "" {
+		codeFile := &CodeFile{
+			ID:       uuid.New().String(),
+			Name:     req.Name,
+			AuthorId: req.AuthorId,
+			IsPublic: req.IsPublic,
+			Address:  files,
+			Status:   1,
+			Ctime:    time.Now(),
+			Utime:    time.Now(),
+		}
+		err := AddProject(p, codeFile)
 		if err != nil {
 			return nil, err
 		}
-		codeFile.Address = path
-		codeFile.ID, err = AddProject(p, codeFile)
-		return codeFile, err
+		codeFile.Version = 1
+		return codeFile, nil
 	} else {
-		address := GetProjectAddress(codeFile.ID, p)
-		err := p.bucket.Delete(ctx, address)
+		codeFile, err := p.GetProjectDetail(ctx, req.ID)
 		if err != nil {
 			return nil, err
 		}
-		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
-		if err != nil {
-			return nil, err
-		}
-		codeFile.Address = path
+		codeFile.Name = req.Name
+		codeFile.Address = files
+		codeFile.Version++
+		codeFile.Utime = time.Now()
 		return codeFile, UpdateProject(p, codeFile)
 	}
 }
@@ -258,11 +286,21 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 }
 
 // AssetList list assets
-func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string) (*common.Pagination[Asset], error) {
+func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
-	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres)
+	var orders []common.OrderByCondition
+	if category != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "category", Operation: "=", Value: category})
+	}
+	if isOrderByTime != "" {
+		orders = append(orders, common.OrderByCondition{Column: "c_time", Direction: "desc"})
+	}
+	if isOrderByHot != "" {
+		orders = append(orders, common.OrderByCondition{Column: "click_count", Direction: "desc"})
+	}
+	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := p.modifyAddress(asset.Address)
 		if err != nil {
@@ -276,6 +314,16 @@ func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize stri
 	return pagination, nil
 }
 
+// IncrementAssetClickCount increments the click count for an asset.
+func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, assetType string) error {
+	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ? and asset_type = ?"
+	_, err := p.db.ExecContext(ctx, query, id, assetType)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // modifyAddress transfers relative path to download url
 func (p *Project) modifyAddress(address string) (string, error) {
 	var data struct {
@@ -285,7 +333,7 @@ func (p *Project) modifyAddress(address string) (string, error) {
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
 		return "", err
 	}
-	qiniuPath := os.Getenv("QINIU_PATH") // TODO: Replace with real URL prefix
+	qiniuPath := os.Getenv("QINIU_PATH")
 	for key, value := range data.Assets {
 		data.Assets[key] = qiniuPath + value
 	}
@@ -297,4 +345,144 @@ func (p *Project) modifyAddress(address string) (string, error) {
 		return "", err
 	}
 	return string(modifiedAddress), nil
+}
+
+// PubProjectList Public project list
+func (p *Project) PubProjectList(ctx context.Context, pageIndex string, pageSize string) (*common.Pagination[CodeFile], error) {
+	wheres := []common.FilterCondition{
+		{Column: "is_public", Operation: "=", Value: 1},
+	}
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres, nil)
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// UserProjectList user project list
+func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSize string, uid string) (*common.Pagination[CodeFile], error) {
+	wheres := []common.FilterCondition{
+		{Column: "author_id", Operation: "=", Value: uid},
+	}
+	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres, nil)
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+
+// UpdatePublic user project list
+func (p *Project) UpdatePublic(ctx context.Context, id string) error {
+	return UpdateProjectIsPublic(p, id)
+}
+
+func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
+	path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, header)
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = path
+	asset.ID, err = AddAsset(p, asset)
+	return asset, err
+}
+
+func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
+	address := GetAssetAddress(asset.ID, p)
+	var data struct {
+		Assets    map[string]string `json:"assets"`
+		IndexJson string            `json:"indexJson"`
+	}
+	if err := json.Unmarshal([]byte(address), &data); err != nil {
+		return nil, err
+	}
+	for _, value := range data.Assets {
+		address = value // find /sounds/sound.wav
+		break
+	}
+	err := p.bucket.Delete(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	path, err := UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header)
+	jsonBytes, err := json.Marshal(map[string]map[string]string{"assets": {"sound": path}})
+	if err != nil {
+		return nil, err
+	}
+	asset.Address = string(jsonBytes)
+	println(asset.Address)
+	if err != nil {
+		return nil, err
+	}
+	return asset, UpdateAsset(p, asset)
+}
+
+func (p *Project) SearchAsset(ctx context.Context, search string, assetType string) ([]*Asset, error) {
+	query := "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ?"
+	searchString := "%" + search + "%"
+
+	// 执行查询
+	rows, err := p.db.Query(query, searchString, assetType)
+	if err != nil {
+		println(err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 创建指向 Asset 结构体切片的指针
+	var assets []*Asset
+
+	// 遍历结果集
+	for rows.Next() {
+		var asset Asset
+		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.AssetType, &asset.ClickCount, &asset.Status, &asset.CTime, &asset.UTime)
+		if err != nil {
+			println(err.Error())
+			return nil, err
+		}
+		asset.Address, _ = p.modifyAddress(asset.Address)
+		// 将每行数据追加到切片中
+		assets = append(assets, &asset)
+	}
+	if len(assets) == 0 {
+		return nil, nil
+	}
+	return assets, nil
+
+}
+
+func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader) (string, error) {
+	var images []*image.Paletted
+	var delays []int
+	for _, fileHeader := range files {
+		// 打开文件
+		img, err := common.LoadImage(fileHeader)
+		if err != nil {
+			fmt.Printf("failed to load image %s: %v", fileHeader.Filename, err)
+			return "", err
+		}
+		images = append(images, img)
+		delays = append(delays, 0) // 每帧之间的延迟，100 = 1秒
+	}
+	outGif := &gif.GIF{
+		Image:     images,
+		Delay:     delays,
+		LoopCount: 0, // 循环次数，0表示无限循环
+	}
+
+	// 保存GIF文件
+	f, err := os.Create("output.gif")
+	if err != nil {
+		fmt.Printf("failed to create GIF file: %v", err)
+		return "", err
+	}
+	defer f.Close()
+	if err := gif.EncodeAll(f, outGif); err != nil {
+		fmt.Printf("failed to encode GIF: %v", err)
+		return "", err
+	}
+	path, err := UploadFile2(ctx, p, os.Getenv("GIF_PATH"), f, "output.gif")
+	if err != nil {
+		return "", err
+	}
+	return os.Getenv("QINIU_PATH") + "/" + path, err
 }
