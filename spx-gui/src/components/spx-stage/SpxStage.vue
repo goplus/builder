@@ -10,34 +10,30 @@
   <div class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
-    <iframe v-if="show" src="/main.html" frameborder="0" class="show"></iframe>
-    <div v-else class="stage-viewer-container">
-      <StageViewer
-        :id="projectStore.project.title"
-        :current-sprite-names="currentSpriteNames"
-        :backdrop="backdrop"
-        :sprites="sprites"
-        @on-sprites-drag-end="onSpritesDragEnd"
-      ></StageViewer>
+    <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
+    <div class="stage-viewer-container" v-else>
+      <StageViewer @onSpritesDragEnd="onSpritesDragEnd" :id="projectStore.project.title"
+        :currentSpriteNames="currentSpriteNames" :backdrop="backdrop" :sprites="sprites"></StageViewer>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
-import type { ComputedRef } from 'vue'
-import { NButton } from 'naive-ui'
-import { useProjectStore } from '@/store/modules/project'
-import { useSpriteStore } from '@/store'
-import { useBackdropStore } from '@/store/modules/backdrop'
-import StageViewer from '@/components/stage-viewer'
-import type { StageSprite, StageBackdrop, SpriteDragEndEvent } from '@/components/stage-viewer'
+import { defineProps, ref, computed, watch } from "vue";
+import type { ComputedRef } from "vue"
+import { NButton } from "naive-ui";
+import { useProjectStore } from "@/store/modules/project";
+import { useSpriteStore } from "@/store";
+import { useBackdropStore } from "@/store/modules/backdrop";
+import StageViewer from "@/components/stage-viewer";
+import type { StageSprite, StageBackdrop, SpriteDragEndEvent } from "@/components/stage-viewer"
+import { Sprite } from "@/class/sprite";
 
-let show = ref(false)
-const backdropStore = useBackdropStore()
+let show = ref(false);
+const backdropStore = useBackdropStore();
 
-const projectStore = useProjectStore()
-const spriteStore = useSpriteStore()
+const projectStore = useProjectStore();
+const spriteStore = useSpriteStore();
 
 const currentSpriteNames = ref<string[]>([])
 
@@ -47,15 +43,13 @@ const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
   spriteStore.current?.setSy(e.targets[0].position.y)
 }
 
+
 // TODO: Temporarily use title of project as id
-watch(
-  () => projectStore.project.title,
-  () => {
-    currentSpriteNames.value = sprites.value.map((sprite) => sprite.name)
-  }
-)
+watch(() => projectStore.project.title, () => {
+  currentSpriteNames.value = sprites.value.map(sprite => sprite.name)
+})
 const sprites: ComputedRef<StageSprite[]> = computed(() => {
-  const list = spriteStore.list.map((sprite) => {
+  const list = spriteStore.list.map(sprite => {
     console.log(sprite)
     return {
       name: sprite.name,
@@ -70,13 +64,13 @@ const sprites: ComputedRef<StageSprite[]> = computed(() => {
           name: costume.name as string,
           url: sprite.files[index].url as string,
           x: costume.x,
-          y: costume.y
+          y: costume.y,
         }
       }),
-      costumeIndex: sprite.config.costumeIndex
+      costumeIndex: sprite.config.costumeIndex,
     }
   })
-  return list as StageSprite[]
+  return list as StageSprite[];
 })
 const backdrop: ComputedRef<StageBackdrop> = computed(() => {
   return {
@@ -88,17 +82,19 @@ const backdrop: ComputedRef<StageBackdrop> = computed(() => {
   }
 })
 
+
 const run = async () => {
   console.log('run')
-  show.value = false
+  show.value = false;
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
-  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
   projectStore.project.run()
   // If you assign show to `true` directly in a block of code, it will result in the page view not being updated and the iframe will not be remounted, hence the 300ms delay!
   setTimeout(() => {
     show.value = true
   }, 300)
-}
+};
+
 </script>
 
 <style scoped lang="scss">
@@ -148,7 +144,7 @@ const run = async () => {
     align-items: center;
     justify-content: center;
   }
-  .stage-viewer-container {
+  .stage-viewer-container{
     display: flex;
     justify-content: center;
   }

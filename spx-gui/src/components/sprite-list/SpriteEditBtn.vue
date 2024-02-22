@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 
