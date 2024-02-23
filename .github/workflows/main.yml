@@ -5,6 +5,9 @@ on:
     branches:
       - dev
       - ci-cd
+    paths:
+      - spx-gui/**
+      - '!**/*.md'
 
 env:
   DOCKER_HUB_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/builder-spx-gui:latest
