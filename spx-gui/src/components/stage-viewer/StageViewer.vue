@@ -2,10 +2,10 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 16:58:41
+ * @LastEditTime: 2024-02-23 19:52:56
  * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
--->
+-->  
 <template>
   <div id="stage-viewer" ref="stageViewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
@@ -309,7 +309,6 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
     const [movedSprite] = newZorderList.splice(currentIndex, 1)
     newZorderList.splice(newIndex, 0, movedSprite)
 
-    // eslint-disable-next-line
     props.project.backdrop.config.zorder = newZorderList
   }
 

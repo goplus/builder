@@ -3,7 +3,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:33:03
+ * @LastEditTime: 2024-02-23 20:01:39
  * @FilePath: \spx-gui\src\components\stage-viewer\Costume.vue
  * @Description: 
 -->
@@ -146,9 +146,7 @@ const onDragMove = (event: KonvaEventObject<MouseEvent>) => {
  */
 const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
   const position = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
-  // eslint-disable-next-line
   props.spriteConfig.config.x = position.x
-  // eslint-disable-next-line
   props.spriteConfig.config.y = position.y
   controller.value = null
 }
