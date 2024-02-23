@@ -42,6 +42,9 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
+      - name: Load additional environment variables
+        run: echo '${{ secrets.DOTENV_FILE }}' > spx-gui/.env.local
+
       - name: Install modules
         working-directory: spx-gui
         run: npm install
