@@ -1,8 +1,8 @@
-import type {ProjectDetail, ProjectInfo, SaveProjectParams} from "@/interface/library";
-import type {ResponseData} from "@/axios";
-import {service} from "@/axios"
-import type {FormatResponse} from "@/components/code-editor";
-import type {AxiosResponse} from "axios";
+import type { ProjectDetail, ProjectInfo, SaveProjectParams } from "@/interface/library";
+import type { ResponseData } from "@/axios";
+import { service } from "@/axios"
+import type { FormatResponse } from "@/components/code-editor";
+import type { AxiosResponse } from "axios";
 import qiniu from 'qiniu-js'
 
 /**
