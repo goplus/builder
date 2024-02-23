@@ -101,5 +101,35 @@ interface SearchDataResponse {
   msg: string;
 }
 
+interface ProjectInfo {
+  id: string
+  name: string
+  version: number
+}
 
-export type { PageData, SpriteInfoType, Asset, Project, PageAssetResponse, SearchAssetResponse };
+interface ProjectFiles {
+  [key: string]: string
+}
+
+interface ProjectDetail {
+  authorId: string
+  createdAt: string
+  files: ProjectFiles
+  id: string;
+  isPublic: number
+  name: string
+  status: number
+  updatedAt: string
+  version: number
+}
+
+interface SaveProjectParams {
+  id?: string
+  name: string
+  uid: string
+  isPublic: number
+  files: ProjectFiles;
+}
+
+
+export type { PageData, SpriteInfoType, Asset, Project, PageAssetResponse, SearchAssetResponse, ProjectInfo, ProjectFiles, ProjectDetail, SaveProjectParams }
