@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-22 14:55:22
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 12:03:27
- * @FilePath: \spx-gui\src\components\stage-viewer\index.ts
+ * @LastEditTime: 2024-02-23 16:15:09
+ * @FilePath: \builder\spx-gui\src\components\stage-viewer\index.ts
  * @Description: 
  */
 import StageViewer from "./StageViewer.vue"
@@ -23,11 +23,11 @@ export interface StageViewerProps {
     selectedSpriteNames: string[]
 }
 
-export interface SelectedSpriteChangeEvent {
+export interface SelectedSpritesChangeEvent {
     names: string[]
 }
 export interface StageViewerEmits {
-    (e: 'onSelectedSpriteChange', value: SelectedSpriteChangeEvent): void
+    (e: 'onSelectedSpritesChange', value: SelectedSpritesChangeEvent): void
 }
 
 

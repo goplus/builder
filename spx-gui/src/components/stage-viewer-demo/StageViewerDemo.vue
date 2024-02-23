@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:34:44
+ * @LastEditTime: 2024-02-23 18:31:46
  * @FilePath: \spx-gui\src\components\stage-viewer-demo\StageViewerDemo.vue
  * @Description:
 -->
@@ -153,7 +153,7 @@
     <StageViewer
       :selected-sprite-names="selectedSpriteNames"
       :project="project as Project"
-      @on-selected-sprite-change="onSelectedSpriteChange"
+      @on-selected-sprites-change="onSelectedSpritesChange"
     />
   </div>
 </template>
@@ -161,9 +161,9 @@
 import { NInputNumber, NSwitch } from 'naive-ui'
 import type { Sprite } from '@/class/sprite'
 import StageViewer from '../stage-viewer'
-import type { SelectedSpriteChangeEvent } from '../stage-viewer'
-import { useProjectStore } from '@/store/modules/project'
+import type { SelectedSpritesChangeEvent } from '../stage-viewer'
 import type { Project } from '@/class/project'
+import { useProjectStore } from '@/store/modules/project'
 import { storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
 
@@ -205,7 +205,7 @@ const zorderList = computed(() => {
   return project.value.backdrop.config.zorder
 })
 
-const onSelectedSpriteChange = (e: SelectedSpriteChangeEvent) => {
+const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
   console.log(e.names)
   currentSprite.value = project.value.sprite.list.find(

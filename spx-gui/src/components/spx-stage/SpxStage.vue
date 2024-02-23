@@ -15,7 +15,7 @@
       <StageViewer
         :selected-sprite-names="selectedSpriteNames"
         :project="projectStore.project as Project"
-        @on-selected-sprite-change="onSelectedSpriteChange"
+        @on-selected-sprite-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
   </div>
@@ -28,7 +28,7 @@ import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from '@/store'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import StageViewer from '@/components/stage-viewer'
-import type { SelectedSpriteChangeEvent } from '@/components/stage-viewer'
+import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
 
@@ -40,7 +40,7 @@ const spriteStore = useSpriteStore()
 
 const selectedSpriteNames = ref<string[]>([])
 
-const onSelectedSpriteChange = (e: SelectedSpriteChangeEvent) => {
+const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
   spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }

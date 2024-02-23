@@ -3,7 +3,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:31:21
+ * @LastEditTime: 2024-02-23 16:08:46
  * @FilePath: \spx-gui\src\components\stage-viewer\Sprite.vue
  * @Description: 
 -->
@@ -29,7 +29,7 @@ const props = defineProps<{
 }>()
 
 const emits = defineEmits<{
-  // when ths costume dragend,emit the sprite position
+  // when ths costume dragmove,emit the sprite position
   (e: 'onDragMove', event: SpriteDragMoveEvent): void
 }>()
 

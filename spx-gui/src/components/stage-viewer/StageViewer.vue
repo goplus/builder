@@ -2,12 +2,12 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:30:37
+ * @LastEditTime: 2024-02-23 16:58:41
  * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
 <template>
-  <div id="stage-viewer">
+  <div id="stage-viewer" ref="stageViewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
       <div @click="moveSprite('up')">up</div>
       <div @click="moveSprite('down')">down</div>
@@ -110,6 +110,7 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
 })
 const emits = defineEmits<StageViewerEmits>()
 
+const stageViewer = ref()
 // instance of konva's stage & menu
 const stage = ref<Stage>()
 const transformer = ref()
@@ -128,10 +129,9 @@ const spxMapConfig = ref<MapConfig>({
 
 // get the scale of stage viewer
 const scale = computed(() => {
-  const el = document.getElementById('stage-viewer')
-  if (spxMapConfig.value && el) {
-    const widthScale = el.clientWidth / spxMapConfig.value.width
-    const heightScale = el.clientHeight / spxMapConfig.value.height
+  if (spxMapConfig.value && stageViewer.value) {
+    const widthScale = stageViewer.value.clientWidth / spxMapConfig.value.width
+    const heightScale = stageViewer.value.clientHeight / spxMapConfig.value.height
     console.log(Math.min(widthScale, heightScale, 1))
     return Math.min(widthScale, heightScale, 1)
   }
@@ -188,7 +188,7 @@ watch(
         (name, index) => name === stageSelectSpritesName.value[index]
       )
     ) {
-      emits('onSelectedSpriteChange', { names: stageSelectSpritesName.value })
+      emits('onSelectedSpritesChange', { names: stageSelectSpritesName.value })
     }
     showSelectedTranformer()
   }
@@ -248,6 +248,8 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
   if (e.target.getAttr('spriteName')) {
     stageSelectSpritesName.value = [e.target.getAttr('spriteName')]
     menu.value.style.display = 'block'
+    // after entering the menu element, the menu will disappear after leaving the menu.
+    // The problem of entering the menu immediately after clicking is avoided by offsetting the menu by 4 pixels to the bottom and right
     menu.value.style.top = stage.value.getStage().getPointerPosition()!.y + 4 + 'px'
     menu.value.style.left = stage.value.getStage().getPointerPosition()!.x + 4 + 'px'
   }
