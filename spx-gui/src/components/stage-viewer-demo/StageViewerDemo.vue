@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-21 18:11:56
- * @FilePath: /builder/spx-gui/src/components/stage-viewer-demo/StageViewerDemo.vue
+ * @LastEditTime: 2024-02-23 13:54:02
+ * @FilePath: \spx-gui\src\components\stage-viewer-demo\StageViewerDemo.vue
  * @Description:
 -->
 <template>
@@ -85,7 +85,7 @@
 import { NInputNumber, NSwitch } from "naive-ui";
 import type { Sprite } from "@/class/sprite";
 import StageViewer from "../stage-viewer";
-import type { StageSprite, SpriteDragEndEvent, StageBackdrop, ZorderChangeEvent, SelectedSpriteChangeEvent } from "../stage-viewer"
+import type { SelectedSpriteChangeEvent } from "../stage-viewer"
 import { useProjectStore } from "@/store/modules/project";
 import type { Project } from "@/class/project";
 import { storeToRefs } from "pinia";
@@ -121,22 +121,6 @@ const zorderList = computed(() => {
     return project.value.backdrop.config.zorder
 })
 
-// watch(() => project.value.id, () => {
-//     currentSpriteNames.value = project.value.sprite.list.map(sprite => sprite.name)
-// })
-
-// accept the new sprite position config when dragend from stage viewer
-// const onDragEnd = (e: SpriteDragEndEvent) => {
-//     currentSprite.value = project.value.sprite.list.find(sprite => sprite.name === e.targets[0].sprite.name) as Sprite
-//     currentSprite.value?.setSx(e.targets[0].position.x)
-//     currentSprite.value?.setSy(e.targets[0].position.y)
-// }
-
-// // accept the new zorder configuration from stage viewer
-// const onZorderChange = (e: ZorderChangeEvent) => {
-//     project.value.backdrop.config.zorder = e.zorder
-// }
-
 const onSelectedSpriteChange = (e: SelectedSpriteChangeEvent) => {
     selectedSpriteNames.value = e.names
     console.log(e.names)
@@ -155,8 +139,6 @@ const spriteToTop = (index: number) => {
     zorderList.value.splice(index, 1);
     zorderList.value.push(spriteToMove);
 }
-
-
 
 // choose the scene to show in stage
 // in spx project the first scene will be shown in stage

@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-22 23:14:28
+ * @LastEditTime: 2024-02-23 12:06:33
  * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
@@ -27,7 +27,7 @@
     >
       <BackdropLayer
         @onSceneLoadend="onSceneLoadend"
-        :backdropConfig="backdrop"
+        :backdropConfig="props.project.backdrop"
         :offsetConfig="{
           offsetX: (props.width / scale - spxMapConfig.width) / 2,
           offsetY: (props.height / scale - spxMapConfig.height) / 2
@@ -35,6 +35,7 @@
         :mapConfig="spxMapConfig"
       />
       <SpriteLayer
+        @onSpriteDragMove="onSpriteDragMove"
         :offsetConfig="{
           offsetX: (props.width / scale - spxMapConfig.width) / 2,
           offsetY: (props.height / scale - spxMapConfig.height) / 2
@@ -60,13 +61,23 @@
           }"
           :draggable="true"
         />
-        <template v-for="spritename in selectedSpriteNames" :key="spritename">
+        <!-- The top layer's controller of the selected sprite,and the controller's and the controllable size is consistent with the sprite. -->
+        <template v-for="[spritename, selectSprite] of selectedControllerMap" :key="spritename">
           <v-rect
             :config="{
               controller: true,
               spriteName: spritename,
               fill: 'rgba(0,0,0,0)',
-              draggable: true
+              draggable: true,
+              width: selectSprite.rect.width,
+              height: selectSprite.rect.height,
+              x: selectSprite.rect.x,
+              y: selectSprite.rect.y,
+              offsetX: selectSprite.rect.offsetX,
+              offsetY: selectSprite.rect.offsetY,
+              scaleX: selectSprite.rect.scaleX,
+              scaleY: selectSprite.rect.scaleY,
+              rotation: selectSprite.rect.rotation
             }"
           >
           </v-rect>
@@ -76,24 +87,21 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch, withDefaults } from 'vue'
-import type { ComputedRef } from 'vue'
-import type {
-  StageViewerEmits,
-  StageViewerProps,
-  MapConfig,
-  SpriteDragEndEvent,
-  StageBackdrop,
-  StageSprite
-} from './index'
 import SpriteLayer from './SpriteLayer.vue'
 import BackdropLayer from './BackdropLayer.vue'
+import { computed, ref, watch, withDefaults } from 'vue'
+import type { StageViewerEmits, StageViewerProps } from './index'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
-import type { SpriteList } from '@/class/asset-list'
-import type { Sprite as SpriteConfig } from '@/class/sprite'
-import { Rect } from 'konva/lib/shapes/Rect.js'
+import type { RectConfig } from 'konva/lib/shapes/Rect.js'
 import type { Layer } from 'konva/lib/Layer'
+import type { SpriteDragMoveEvent, MapConfig } from './common'
+
+// the controller which is top layer,store the corresponding node information and the information of its control node
+interface Controller {
+  node: Node
+  rect: RectConfig
+}
 
 // ----------props & emit------------------------------------
 const props = withDefaults(defineProps<StageViewerProps>(), {
@@ -106,6 +114,11 @@ const emits = defineEmits<StageViewerEmits>()
 const stage = ref<Stage>()
 const transformer = ref()
 const menu = ref()
+
+//  which sprite are selected
+const stageSelectSpritesName = ref<string[]>([])
+//  Control node‘s information corresponding to stageSelectSpritesName
+const selectedControllerMap = ref<Map<String, Controller>>(new Map())
 
 // get spx map size
 const spxMapConfig = ref<MapConfig>({
@@ -124,6 +137,8 @@ const scale = computed(() => {
   }
   return 1
 })
+
+
 
 watch(
   () => props.project,
@@ -149,19 +164,22 @@ watch(
   }
 )
 
-//  which are selected
-const stageSelectSpritesName = ref<string[]>([])
+// sync the selected sprite name of prop to stageSelectSpritesName
 watch(
   () => props.selectedSpriteNames,
   (spriteNames) => {
     if (spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])) {
       return
     }
+    if (spriteNames.length === 0 || !spriteNames) {
+      stageSelectSpritesName.value = []
+      return
+    }
     stageSelectSpritesName.value = spriteNames
   }
 )
 
-// selected sprite change tigger transformer show or hide
+//stageSelectSpritesName change tigger the transformer show or hide
 watch(
   () => stageSelectSpritesName.value,
   (spritesName) => {
@@ -178,27 +196,34 @@ watch(
   }
 )
 
-const backdrop = computed(() => {
-  const { files, config } = props.project.backdrop
-  console.log(files, config)
-  return props.project.backdrop.config.map
-    ? null
-    : ({
-        scenes:
-          config.scenes?.map((scene, index) => ({
-            name: scene.name as string,
-            url: files[index].url as string
-          })) || [],
-        costumes:
-          config.costumes?.map((costume, index) => ({
-            name: costume.name as string,
-            url: files[index].url as string,
-            x: costume.x || 0,
-            y: costume.y || 0
-          })) || [],
-        currentCostumeIndex: config.currentCostumeIndex || 0
-      } as StageBackdrop)
-})
+// when the stageSelectSpritesName change,update the info of the controller
+watch(
+  () => stageSelectSpritesName.value,
+  () => {
+    const map = new Map<String, { node: Node; rect: RectConfig }>()
+    stageSelectSpritesName.value.forEach((name) => {
+      const node = stage.value?.getStage().findOne((node: Node) => {
+        return node.getAttr('spriteName') === name
+      })
+      if (!node) return
+      map.set(name, {
+        node: node,
+        rect: {
+          width: node.attrs.image.width,
+          height: node.attrs.image.height,
+          x: node.attrs.x,
+          y: node.attrs.y,
+          scaleX: node.attrs.scaleX,
+          scaleY: node.attrs.scaleY,
+          offsetX: node.attrs.offsetX,
+          offsetY: node.attrs.offsetY,
+          rotation: node.attrs.rotation
+        }
+      })
+    })
+    selectedControllerMap.value = map
+  }
+)
 
 // When config is not configured, its stage size is determined by the background image
 const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
@@ -212,7 +237,7 @@ const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
   }
 }
 
-// show stage menu
+// show stage menu,when click a sprite
 const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
   e.evt.preventDefault()
   if (!stage.value) return
@@ -238,7 +263,6 @@ const onStageMenuMouseLeave = (e: MouseEvent) => {
 
 const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
   // clear choose sprite
-  console.log(e.target.parent!.attrs.name)
   if (e.target.parent!.attrs.name !== 'sprite' || e.target.parent!.attrs.name !== 'controller') {
     stageSelectSpritesName.value = []
   }
@@ -292,35 +316,35 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
 }
 
 const showSelectedTranformer = () => {
-  setTimeout(() => {
-    if (!stage.value) return
-    console.log(stageSelectSpritesName.value)
-    const spriteNames = stageSelectSpritesName.value
-    const nodes = stage.value.getStage().find((node: Node) => {
-      if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
-        return true
-      } else {
-        return false
-      }
-    })
-
-    // choosed nodes
-    const transformerNode = transformer.value.getNode()
-    const layer = stage.value.getStage().findOne('.sprite') as Layer
-    console.log(layer)
-
-    if (nodes.length) {
-      transformerNode.nodes([...nodes])
+  if (!stage.value) return
+  console.log(stageSelectSpritesName.value)
+  const spriteNames = stageSelectSpritesName.value
+  const nodes = stage.value.getStage().find((node: Node) => {
+    if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
+      return true
     } else {
-      transformerNode.nodes([])
+      return false
     }
-  }, 1)
+  })
+  // choosed nodes in tranformer
+  const transformerNode = transformer.value.getNode()
+  const layer = stage.value.getStage().findOne('.sprite') as Layer
+  console.log(layer)
+
+  if (nodes.length) {
+    transformerNode.nodes([...nodes])
+  } else {
+    transformerNode.nodes([])
+  }
 }
 
-// drag sprite
-// const onSpritesDragEnd = (e: { spriteList: SpriteConfig[] }) => {
-//     emits("onSelectedSpriteChange", { names: e.spriteList.map(s => s.name) })
-// }
+// update the controller position
+const onSpriteDragMove = (e: SpriteDragMoveEvent) => {
+  const controller = selectedControllerMap.value.get(e.sprite.name)
+  if (!controller) return
+  controller.rect.x = e.event.target.attrs.x
+  controller.rect.y = e.event.target.attrs.y
+}
 </script>
 <style scoped>
 #stage-viewer {
