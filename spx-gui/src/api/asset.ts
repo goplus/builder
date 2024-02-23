@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 13:11:54
+ * @LastEditTime: 2024-02-21 21:01:22
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -149,5 +149,29 @@ export function addAssetClickCount(
   return service({
     url: url,
     method: 'get'
+  })
+}
+
+/**
+ * @description: Post multi costumes to generate sprite gif.
+ * @param {string} files
+ * @param {number} assetType
+ * @return { SearchAssetResponse }
+ */
+export function generateGifByCostumes(name:string, files: File[]): Promise<string> {
+  const url = `/spirits/upload`
+  const formData = new FormData()
+  formData.append('name',name)
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  return service({
+    url: url,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }

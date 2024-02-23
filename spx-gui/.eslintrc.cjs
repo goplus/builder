@@ -12,6 +12,9 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    'no-useless-escape': 'warn'
+    'no-useless-escape': 'warn',
+    "vue/no-mutating-props": ["error", {
+      "shallowOnly": true
+    }]
   }
 }

@@ -10,7 +10,7 @@ import { createDiscreteApi } from 'naive-ui'
 import axios, { type AxiosResponse } from 'axios'
 import { useUserStore } from '@/store'
 
-const baseURL = import.meta.env.VITE_API_BASE
+const baseURL = import.meta.env.VITE_API_BASE_URL
 
 const service = axios.create({
   baseURL: baseURL,

@@ -1,9 +1,9 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-24 21:42:28
- * @LastEditors: TuGitee tgb@std.uestc.edu.cn
- * @LastEditTime: 2024-01-25 14:32:14
- * @FilePath: \builder\spx-gui\src\interface\file.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-19 09:05:07
+ * @FilePath: /spx-gui/src/interface/file.ts
  * @Description: The interface of file.
  */
 
@@ -164,7 +164,7 @@ export interface BackdropConfig extends Config {
     /**
      * The image of the backdrop.
      */
-    scenes: Scene[];
+    scenes?: Scene[];
 
     /**
      * The sprite zorder in the stage, the later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
@@ -172,7 +172,13 @@ export interface BackdropConfig extends Config {
     zorder: string[];
 
     /**
-     * The index of the current scene.
+     * The costume of the backdrop
      */
-    sceneIndex?: number;
+    costumes?: Costume[];
+
+    /**
+     * The index of the current costume.
+     */
+    currentCostumeIndex?: number;
+
 }
