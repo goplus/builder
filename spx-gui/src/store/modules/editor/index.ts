@@ -17,6 +17,7 @@ export const useEditorStore = defineStore('editor', () => {
      * @return {*}
      * @author Zhang zhi yang
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const insertSnippet = (snippet: monaco.languages.CompletionItem) => {
         // This function is notify code-editor component's insert Function
     }

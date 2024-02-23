@@ -27,7 +27,7 @@ const emit = defineEmits<CodeEditorEmits>()
 // ----------data related -----------------------------------
 // register editor worker
 self.MonacoEnvironment = {
-  getWorker(_: string, label: string) {
+  getWorker() {
     return new EditorWorker()
   }
 }
@@ -83,7 +83,7 @@ watch(
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-31 13:45:55
  */
-const onEditorValueChange = (e: monaco.editor.IModelContentChangedEvent) => {
+const onEditorValueChange = () => {
   emit('change', editor.getValue())
   emit('update:modelValue', editor.getValue())
 }
@@ -109,13 +109,9 @@ const insertSnippet = (snippet: monaco.languages.CompletionItem, position?: mona
 
 const formatCode = async () => {
   return new Promise<FormatResponse>((resolve) => {
-    if (false) {
-      resolve(formatSPX(editor.getValue()))
-    } else {
-      onlineFormatSpxCode(editor.getValue()).then((res) => {
-        resolve(res.data.data)
-      })
-    }
+    onlineFormatSpxCode(editor.getValue()).then((res) => {
+      resolve(res.data.data)
+    })
   })
 }
 

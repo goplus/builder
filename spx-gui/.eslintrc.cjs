@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-env node */
 require('@rushstack/eslint-patch/modern-module-resolution')
 
@@ -13,7 +12,6 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    'no-useless-escape': 'warn',
-    '@typescript-eslint/naming-convention': 'warn'
+    'no-useless-escape': 'warn'
   }
 }
