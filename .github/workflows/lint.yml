@@ -3,9 +3,16 @@ on:
   push:
     branches:
       - '**'
+    paths:
+      - 'spx-gui/**'
+      - '!**/*.md'
   pull_request:
     branches:
       - '**'
+    paths:
+      - 'spx-gui/**'
+      - '!**/*.md'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
