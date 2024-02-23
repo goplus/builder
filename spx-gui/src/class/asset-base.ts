@@ -1,9 +1,9 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 10:28:03
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 12:53:58
- * @FilePath: \builder\spx-gui\src\class\asset-base.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-19 11:58:52
+ * @FilePath: /spx-gui/src/class/asset-base.ts
  * @Description: The abstract class of an asset.
  */
 import type { AssetBaseInterface } from "@/interface/file";
@@ -34,6 +34,10 @@ export abstract class AssetBase implements AssetBaseInterface {
      */
     get files(): FileWithUrl[] {
         return this._files
+    }
+    
+    set files(files: FileWithUrl[]){
+        this._files = files;
     }
 
     /**

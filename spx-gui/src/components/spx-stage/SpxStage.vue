@@ -1,100 +1,71 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 22:57:06
- * @FilePath: /spx-gui/src/components/spx-stage/SpxStage.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-23 14:34:08
+ * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description: 
 -->
 <template>
   <div class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
-    <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div class="stage-viewer-container" v-else>
-      <StageViewer @onSpritesDragEnd="onSpritesDragEnd" :id="projectStore.project.title"
-        :currentSpriteNames="currentSpriteNames" :backdrop="backdrop" :sprites="sprites"></StageViewer>
+    <iframe v-if="show" src="/main.html" frameborder="0" class="show"></iframe>
+    <div v-else class="stage-viewer-container">
+      <StageViewer
+        :selected-sprite-names="selectedSpriteNames"
+        :project="projectStore.project as Project"
+        @on-selected-sprite-change="onSelectedSpritesChange"
+      ></StageViewer>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, ref, computed, watch } from "vue";
-import type { ComputedRef } from "vue"
-import { NButton } from "naive-ui";
-import { useProjectStore } from "@/store/modules/project";
-import { useSpriteStore } from "@/store";
-import { useBackdropStore } from "@/store/modules/backdrop";
-import StageViewer from "@/components/stage-viewer";
-import type { StageSprite, StageBackdrop, SpriteDragEndEvent } from "@/components/stage-viewer"
-import { Sprite } from "@/class/sprite";
+import { ref, watch } from 'vue'
+import { NButton } from 'naive-ui'
+import { useProjectStore } from '@/store/modules/project'
+import { useSpriteStore } from '@/store'
+import { useBackdropStore } from '@/store/modules/backdrop'
+import StageViewer from '@/components/stage-viewer'
+import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
+import { Project } from '@/class/project'
+import type { Sprite } from '@/class/sprite'
 
-let show = ref(false);
-const backdropStore = useBackdropStore();
+let show = ref(false)
+const backdropStore = useBackdropStore()
 
-const projectStore = useProjectStore();
-const spriteStore = useSpriteStore();
+const projectStore = useProjectStore()
+const spriteStore = useSpriteStore()
 
-const currentSpriteNames = ref<string[]>([])
+const selectedSpriteNames = ref<string[]>([])
 
-const onSpritesDragEnd = (e: SpriteDragEndEvent) => {
-  spriteStore.setCurrentByName(e.targets[0].sprite.name)
-  spriteStore.current?.setSx(e.targets[0].position.x)
-  spriteStore.current?.setSy(e.targets[0].position.y)
+const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
+  selectedSpriteNames.value = e.names
+  spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }
-
-
-// TODO: Temporarily use title of project as id
-watch(() => projectStore.project.title, () => {
-  currentSpriteNames.value = sprites.value.map(sprite => sprite.name)
-})
-const sprites: ComputedRef<StageSprite[]> = computed(() => {
-  const list = spriteStore.list.map(sprite => {
-    console.log(sprite)
-    return {
-      name: sprite.name,
-      x: sprite.config.x,
-      y: sprite.config.y,
-      heading: sprite.config.heading,
-      size: sprite.config.size,
-      visible: sprite.config.visible, // Visible at run time
-      zorder: 1,
-      costumes: sprite.config.costumes.map((costume, index) => {
-        return {
-          name: costume.name as string,
-          url: sprite.files[index].url as string,
-          x: costume.x,
-          y: costume.y,
-        }
-      }),
-      costumeIndex: sprite.config.costumeIndex,
+watch(
+  () => spriteStore.current,
+  () => {
+    if (spriteStore.current) {
+      selectedSpriteNames.value = [spriteStore.current.name]
+    } else {
+      selectedSpriteNames.value = []
     }
-  })
-  return list as StageSprite[];
-})
-const backdrop: ComputedRef<StageBackdrop> = computed(() => {
-  return {
-    scenes: backdropStore.backdrop.config.scenes.map((scene, index) => ({
-      name: scene.name as string,
-      url: backdropStore.backdrop.files[index].url as string
-    })),
-    sceneIndex: backdropStore.backdrop.currentSceneIndex
   }
-})
-
+)
 
 const run = async () => {
   console.log('run')
-  show.value = false;
+  show.value = false
   // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
-  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig;
+  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
   projectStore.project.run()
   // If you assign show to `true` directly in a block of code, it will result in the page view not being updated and the iframe will not be remounted, hence the 300ms delay!
   setTimeout(() => {
     show.value = true
   }, 300)
-};
-
+}
 </script>
 
 <style scoped lang="scss">
@@ -144,7 +115,8 @@ const run = async () => {
     align-items: center;
     justify-content: center;
   }
-  .stage-viewer-container{
+
+  .stage-viewer-container {
     display: flex;
     justify-content: center;
   }

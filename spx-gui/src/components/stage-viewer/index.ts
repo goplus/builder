@@ -1,102 +1,40 @@
+/*
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-02-22 14:55:22
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-23 18:47:30
+ * @FilePath: \spx-gui\src\components\stage-viewer\index.ts
+ * @Description: 
+ */
 import StageViewer from "./StageViewer.vue"
+import type { Project } from "@/class/project";
 export default StageViewer
-/**
- * @description:  The Stage Position,Relative to the stage center
- */
-export interface StagePosition {
-    x: number
-    y: number
-}
 
-/**
- * @description: Costume of Sprite 
- */
-export interface StageCostume {
-    name: string
-    x: number
-    y: number
-    url: string
-}
-
-/**
- * @description: Sprite of StageViewer
- */
-export interface StageSprite extends StagePosition {
-    name: string
-    heading: number
-    size: number
-    costumes: StageCostume[]
-    costumeIndex: number
-    visible: boolean // Visible at run time
-    zorder: number
-}
-
-
-/**
- * @description: Scene of Backdrop
- */
-export interface StageScene {
-    name: string
-    url: string
-}
-/**
- * @description: Backdrop 
- */
-export interface StageBackdrop {
-    scenes: StageScene[]
-    sceneIndex: number
-}
-/**
- * @description: Map Config,some spx project havent this config,the stage size will depend on the SceneSize
- */
-export interface MapConfig {
-    width: number
-    height: number
-}
-
-
-
-
-
-/**
- * @description: Prop of StageViewer
- * @return {*}
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-02 17:18:49
- */
+ 
+// Props of StageViewer
 export interface StageViewerProps {
-    id: string
-    height?: number // container height
-    width?: number // container width
-    mapConfig?: MapConfig // some spx project havent this config,the stage size will depend on the SceneSize
-    sprites: StageSprite[] // sprite list
-    backdrop?: StageBackdrop // backdrop 
-    currentSpriteNames: string[]
+    // Instance of spx project
+    project: Project
+    // Container height of stage viewer
+    height?: number
+    // Container width of stage viewer
+    width?: number
+    // Sprites's name that selected on the stage
+    selectedSpriteNames: string[]
 }
 
-
-/**
- * @description: Info of dragend target
- * @return {*}
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-04 17:20:49
- */
-export interface SpriteDragEndTarget {
-    sprite: StageSprite // Sprite  witch is changed
-    costume: StageCostume // costume witch is changed
-    position: StagePosition // end position witch is changed
+//  The selected sprites name change event
+export interface SelectedSpritesChangeEvent {
+    // sprites name
+    names: string[]
 }
 
-/**
- * @description: sprite dragend event
- * @return {*}
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-04 17:28:04
- */
-export interface SpriteDragEndEvent {
-    targets: SpriteDragEndTarget[]
-}
-
+// Emits of StageViewer
 export interface StageViewerEmits {
-    (e: 'onSpritesDragEnd', value: SpriteDragEndEvent): void
+    // selected sprites name change event
+    (e: 'onSelectedSpritesChange', value: SelectedSpritesChangeEvent): void
 }
+
+
+
+
