@@ -2,7 +2,7 @@
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:10:06
+ * @LastEditTime: 2024-02-23 14:34:08
  * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description: 
 -->
@@ -10,20 +10,19 @@
   <div class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
-    <iframe src="/main.html" frameborder="0" v-if="show" class="show"></iframe>
-    <div class="stage-viewer-container" v-else>
+    <iframe v-if="show" src="/main.html" frameborder="0" class="show"></iframe>
+    <div v-else class="stage-viewer-container">
       <StageViewer
-        :selectedSpriteNames="selectedSpriteNames"
+        :selected-sprite-names="selectedSpriteNames"
         :project="projectStore.project as Project"
-        @onSelectedSpriteChange="onSelectedSpriteChange"
+        @on-selected-sprite-change="onSelectedSpriteChange"
       ></StageViewer>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, ref, computed, watch } from 'vue'
-import type { ComputedRef } from 'vue'
+import { ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from '@/store'

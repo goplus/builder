@@ -3,15 +3,13 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 11:55:38
+ * @LastEditTime: 2024-02-23 14:33:03
  * @FilePath: \spx-gui\src\components\stage-viewer\Costume.vue
  * @Description: 
 -->
 <template>
   <v-image
     ref="costume"
-    @dragmove="onDragMove"
-    @dragend="handleDragEnd"
     :config="{
       spriteName: props.spriteConfig.name,
       image: image,
@@ -24,6 +22,8 @@
       scaleX: props.spriteConfig.config.size,
       scaleY: props.spriteConfig.config.size
     }"
+    @dragmove="onDragMove"
+    @dragend="handleDragEnd"
   />
 </template>
 <script setup lang="ts">
@@ -146,7 +146,9 @@ const onDragMove = (event: KonvaEventObject<MouseEvent>) => {
  */
 const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
   const position = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
+  // eslint-disable-next-line
   props.spriteConfig.config.x = position.x
+  // eslint-disable-next-line
   props.spriteConfig.config.y = position.y
   controller.value = null
 }

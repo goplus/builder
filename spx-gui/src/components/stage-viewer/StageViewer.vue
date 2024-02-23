@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 12:06:33
+ * @LastEditTime: 2024-02-23 14:30:37
  * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
@@ -16,34 +16,34 @@
     </div>
     <v-stage
       ref="stage"
-      @mousedown="onStageClick"
-      @contextmenu="onStageMenu"
       :config="{
         width: props.width,
         height: props.height,
         scaleX: scale,
         scaleY: scale
       }"
+      @mousedown="onStageClick"
+      @contextmenu="onStageMenu"
     >
       <BackdropLayer
-        @onSceneLoadend="onSceneLoadend"
-        :backdropConfig="props.project.backdrop"
-        :offsetConfig="{
+        :backdrop-config="props.project.backdrop"
+        :offset-config="{
           offsetX: (props.width / scale - spxMapConfig.width) / 2,
           offsetY: (props.height / scale - spxMapConfig.height) / 2
         }"
-        :mapConfig="spxMapConfig"
+        :map-config="spxMapConfig"
+        @on-scene-loadend="onSceneLoadend"
       />
       <SpriteLayer
-        @onSpriteDragMove="onSpriteDragMove"
-        :offsetConfig="{
+        :offset-config="{
           offsetX: (props.width / scale - spxMapConfig.width) / 2,
           offsetY: (props.height / scale - spxMapConfig.height) / 2
         }"
-        :spriteList="props.project.sprite.list"
+        :sprite-list="props.project.sprite.list"
         :zorder="props.project.backdrop.config.zorder"
-        :selectedSpriteNames="stageSelectSpritesName"
-        :mapConfig="spxMapConfig"
+        :selected-sprite-names="stageSelectSpritesName"
+        :map-config="spxMapConfig"
+        @on-sprite-drag-move="onSpriteDragMove"
       />
       <v-layer
         :config="{
@@ -54,12 +54,12 @@
       >
         <v-transformer
           ref="transformer"
-          :enabledAnchors="[]"
-          :rotateEnabled="false"
           :config="{
-            borderDash: [6, 6]
+            enabledAnchors: [],
+            borderDash: [6, 6],
+            rotateEnabled: false,
+            draggable: true
           }"
-          :draggable="true"
         />
         <!-- The top layer's controller of the selected sprite,and the controller's and the controllable size is consistent with the sprite. -->
         <template v-for="[spritename, selectSprite] of selectedControllerMap" :key="spritename">
@@ -137,8 +137,6 @@ const scale = computed(() => {
   }
   return 1
 })
-
-
 
 watch(
   () => props.project,
@@ -256,7 +254,7 @@ const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
 }
 
 // hide stage menu
-const onStageMenuMouseLeave = (e: MouseEvent) => {
+const onStageMenuMouseLeave = () => {
   menu.value.style.display = 'none'
   stageSelectSpritesName.value = []
 }
@@ -308,8 +306,9 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
     const newZorderList = [...zorderList]
     const [movedSprite] = newZorderList.splice(currentIndex, 1)
     newZorderList.splice(newIndex, 0, movedSprite)
+
+    // eslint-disable-next-line
     props.project.backdrop.config.zorder = newZorderList
-    // emits('onZorderChange', { zorder: newZorderList });
   }
 
   menu.value.style.display = 'none'

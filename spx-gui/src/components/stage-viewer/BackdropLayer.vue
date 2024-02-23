@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 12:16:47
+ * @LastEditTime: 2024-02-23 14:33:34
  * @FilePath: \spx-gui\src\components\stage-viewer\BackdropLayer.vue
  * @Description
 -->
@@ -86,7 +86,7 @@ const backdrop = computed(() => {
 
 watch(
   () => backdrop.value,
-  (new_config, old_config) => {
+  (new_config) => {
     if (new_config) {
       // In the scene config‘s project, you only need to get the first scene as the backdrop
       const _image = new window.Image()

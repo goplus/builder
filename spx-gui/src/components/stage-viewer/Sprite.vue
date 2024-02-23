@@ -3,22 +3,22 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-24 15:48:38
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 12:07:13
+ * @LastEditTime: 2024-02-23 14:31:21
  * @FilePath: \spx-gui\src\components\stage-viewer\Sprite.vue
  * @Description: 
 -->
 <template>
   <Costume
-    @onDragMove="onDragMove"
-    :spriteConfig="props.spriteConfig"
+    :sprite-config="props.spriteConfig"
     :selected="props.selected"
-    :mapConfig="props.mapConfig"
+    :map-config="props.mapConfig"
+    @on-drag-move="onDragMove"
   >
   </Costume>
 </template>
 <script lang="ts" setup>
 import Costume from './Costume.vue'
-import { defineProps, computed, defineEmits } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
 import type { SpriteDragMoveEvent, MapConfig } from './common'
 // ----------props & emit------------------------------------

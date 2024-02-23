@@ -18,10 +18,10 @@
     <template v-for="sprite in sortedSprites" :key="sprite.name">
       <Sprite
         v-if="sprite.config.visible"
-        @onDragMove="onSpriteDragMove"
-        :spriteConfig="sprite"
-        :mapConfig="props.mapConfig"
+        :sprite-config="sprite"
+        :map-config="props.mapConfig"
         :selected="selectedSpriteNames.includes(sprite.name)"
+        @on-drag-move="onSpriteDragMove"
       >
       </Sprite>
     </template>
