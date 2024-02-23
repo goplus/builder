@@ -8,22 +8,37 @@ Through the StageViewer module, users can configure the project's sprite, backdr
 
 ## Module Scope
 This module passes the spx project, the width and height of the container,and the list of sprite names that currently need to be selected on the stage. 
-When the user select new sprite, which sends the onSelectedSpriteChange event, allowing the user to get the selected sprite in the component.
+When the user select new sprite, which sends the onSelectedSpritesChange event, allowing the user to get the selected sprite in the component.
 
-### Inputs
 
-| Parameter | Required | Type    | Description                                                  |
-| --------- | -------- | ------- | ------------------------------------------------------------ |
-| `project`     | Yes      | `Project`  | Instance of spx project |
-| `height`      | No      | `string` | Container height of stage viewer    |
-| `width`      | No      | `string` | Container width of stage viewer   |
-| `selectedSpriteNames` | Yes | `string[]` |  Sprites's name that selected on the stage |
+## Module Interface
 
-### Events
+```ts
+// Props of StageViewer
+export interface StageViewerProps {
+    // Instance of spx project
+    project: Project
+    // Container height of stage viewer
+    height?: number
+    // Container width of stage viewer
+    width?: number
+    // Sprites's name that selected on the stage
+    selectedSpriteNames: string[]
+}
 
-| Event Name | Event Data Type | Description |
-| --------- | -------- | ------- | 
-| `onSelectedSpriteChange` | `{ names: string[] }` | The selected sprite name change|
+//  The selected sprites name change event
+export interface SelectedSpritesChangeEvent {
+    // sprites name
+    names: string[]
+}
+
+// Events of StageViewer
+export interface StageViewerEmits {
+    // selected sprites name change event
+    (e: 'onSelectedSpritesChange', value: SelectedSpritesChangeEvent): void
+}
+```
+
 
 ## Base Usage
 In the following example, we pass the project  into the stage viewer, and you can see that the sprite and backdrop in the project and the corresponding stage size are rendered in stage viewer. 
