@@ -6,12 +6,16 @@ import {
   convertRawDirToDirPath,
   convertRawDirToZip,
   getDirPathFromZip,
+  getMimeFromExt,
   getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-import { uploadFile } from '@/util/utils'
+import { uploadFile, getProjectList, saveProject, loadProject } from '@/api/project'
+import type { ProjectFiles } from '@/interface/library'
+import { useUserStore } from '@/store'
+import { computed } from 'vue'
 
 export enum ProjectSource {
   local,
@@ -21,8 +25,8 @@ export enum ProjectSource {
 interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
-  // Project title
-  title: string
+  // Project name
+  name: string
   // version number
   version: number
   // Project source
@@ -42,11 +46,13 @@ interface ProjectDetail {
   unidentifiedFile: RawDir
 }
 
+const uid = computed(() => useUserStore().userInfo?.id || '')
+
 export class Project implements ProjectDetail, ProjectSummary {
   id: string
   version: number
   source: ProjectSource
-  title: string
+  name: string
   sprite: SpriteList
   sound: SoundList
   backdrop: Backdrop
@@ -65,18 +71,18 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   private static async getLocalProjects(): Promise<ProjectSummary[]> {
-    const paths = await fs.readdir('summary/')
+    const paths = await fs.getWithPrefix('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.readFile(path) as ProjectSummary
+      const content = await fs.get(path) as ProjectSummary
       projects.push(content)
     }
     return projects
   }
 
   private static async getCloudProjects(): Promise<ProjectSummary[]> {
-    // TODO
-    return []
+    const paths = await getProjectList(uid.value)
+    return paths.map(data => ({ ...data, source: ProjectSource.cloud })) || []
   }
 
   /**
@@ -99,7 +105,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   constructor() {
-    this.title = ''
+    this.name = ''
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
@@ -113,20 +119,32 @@ export class Project implements ProjectDetail, ProjectSummary {
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
     await this.setId(id)
     this.source = source
+    const dirPath: DirPath = {}
     if (source === ProjectSource.local) {
-      const paths = (await fs.readdir(id)) as string[]
-      const dirPath: DirPath = {}
+      const paths = await fs.getWithPrefix(id)
       for (const path of paths) {
-        const content = await fs.readFile(path)
+        const content = await fs.get(path)
         dirPath[path] = content
       }
-      this._load(dirPath)
-
-      const summary = await fs.readFile("summary/" + id) as ProjectSummary
+      const summary = await fs.get("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
-      // TODO: load from cloud
+      const project = await loadProject(this.id)
+      const dirPath: DirPath = {}
+      for (const [path, url] of Object.entries(project.files)) {
+        const content = await fetch(url).then(res => res.arrayBuffer())
+        dirPath[path] = {
+          content,
+          url,
+          modifyTime: new Date(project.updatedAt),
+          size: content.byteLength,
+          path: this.path + path,
+          type: getMimeFromExt(path.split('.').pop()!)
+        }
+      }
+      Object.assign(this, project)
     }
+    this._load(dirPath)
   }
 
   /**
@@ -146,7 +164,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.id = arg.id
       this.version = arg.version
       this.source = arg.source
-      this.title = arg.title
+      this.name = arg.name
       this.sprite = arg.sprite
       this.sound = arg.sound
       this.backdrop = arg.backdrop
@@ -158,10 +176,10 @@ export class Project implements ProjectDetail, ProjectSummary {
     }
   }
 
-  async loadFromZip(file: File, title?: string) {
+  async loadFromZip(file: File, name?: string) {
     const dirPath = await getDirPathFromZip(file)
     this._load(dirPath)
-    this.title = title || file.name.split('.')[0] || this.title
+    this.name = name || file.name.split('.')[0] || this.name
   }
 
   /**
@@ -170,33 +188,38 @@ export class Project implements ProjectDetail, ProjectSummary {
   async saveLocal() {
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
-      await fs.writeFile(key, value)
+      await fs.set(key, value)
     }
     const summary: ProjectSummary = {
       id: this.id,
-      title: this.title,
+      name: this.name,
       version: this.version,
       source: this.source
     }
-    fs.writeFile(this.summaryPath, summary)
+    fs.set(this.summaryPath, summary)
   }
 
   /**
    * Remove project from storage.
    */
   async removeLocal() {
-    await fs.rmdir(this.path)
-    await fs.unlink(this.summaryPath)
+    await fs.removeWithPrefix(this.path)
+    await fs.remove(this.summaryPath)
   }
 
   /**
    * Save project to Cloud.
    */
-  async save() {
-    // TODO: save to cloud
-    const data = await this.uploadFile()
-    // TODO: send data to server
-    console.log(data)
+  async save(isPublic: number = 0) {
+    const files = await this.uploadFile()
+    const project = await saveProject({
+      name: this.name,
+      uid: uid.value,
+      isPublic,
+      files
+    })
+    await this.setId(project.id)
+    return project
   }
 
   /**
@@ -206,12 +229,12 @@ export class Project implements ProjectDetail, ProjectSummary {
   private async uploadFile() {
     const dir = await this.dirPath
     const prefix = getPrefix(dir)
-    const data: Record<string, string> = {}
+    const files: ProjectFiles = {}
     for (const [key, value] of Object.entries(dir)) {
       const k = key.replace(prefix, '')
-      data[k] = value.url ? value.url : await uploadFile(new File([value.content], k)) as string
+      files[k] = value.url ? value.url : await uploadFile(new File([value.content], k)) as string
     }
-    return data
+    return files
   }
 
   /**
@@ -219,7 +242,7 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async download() {
     const content = await this.zip
-    saveAs(content, `${this.title}.zip`)
+    saveAs(content, `${this.name}.zip`)
   }
 
   run() {
@@ -262,7 +285,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   get zip(): Promise<File> {
     return (async () => {
       const blob = await convertRawDirToZip(this.rawDir)
-      return new File([blob], `${this.title}.zip`, { type: blob.type })
+      return new File([blob], `${this.name}.zip`, { type: blob.type })
     })()
   }
 }

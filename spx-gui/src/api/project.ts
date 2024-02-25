@@ -3,7 +3,7 @@ import type { ResponseData } from "@/axios";
 import { service } from "@/axios"
 import type { FormatResponse } from "@/components/code-editor";
 import type { AxiosResponse } from "axios";
-import qiniu from 'qiniu-js'
+import * as qiniu from 'qiniu-js'
 
 /**
  * Format spx code

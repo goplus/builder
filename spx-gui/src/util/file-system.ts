@@ -24,24 +24,24 @@ async function performAsyncOperation(operation: Promise<any>, callback?: (err: a
     }
 }
 
-export function writeFile<T>(filename: string, data: T, callback?: (err: any, data: T) => void): Promise<T> {
-    return performAsyncOperation(storage.setItem(filename, data), callback);
+export function set<T>(key: string, data: T, callback?: (err: any, data: T) => void): Promise<T> {
+    return performAsyncOperation(storage.setItem(key, data), callback);
 }
 
-export function unlink(filename: string, callback?: (err: any, data: any) => void) {
-    return performAsyncOperation(storage.removeItem(filename), callback);
+export function remove(key: string, callback?: (err: any, data: any) => void) {
+    return performAsyncOperation(storage.removeItem(key), callback);
 }
 
-export function readFile(filename: string, callback?: (err: any, data: any) => void) {
-    return performAsyncOperation(storage.getItem(filename), callback);
+export function get(key: string, callback?: (err: any, data: any) => void) {
+    return performAsyncOperation(storage.getItem(key), callback);
 }
 
-export function readdir(dirname: string, callback?: (err: any, data: any) => void): Promise<string[]> {
-    const operation = storage.keys().then(keys => keys.filter(key => key.startsWith(dirname)));
+export function getWithPrefix(prefix: string, callback?: (err: any, data: any) => void): Promise<string[]> {
+    const operation = storage.keys().then(keys => keys.filter(key => key.startsWith(prefix)));
     return performAsyncOperation(operation, callback);
 }
 
-export function rmdir(dirname: string, callback?: (err: any, data: any) => void) {
-    const operation = storage.keys().then(keys => keys.filter(key => key.startsWith(dirname)).map(key => storage.removeItem(key)));
+export function removeWithPrefix(prefix: string, callback?: (err: any, data: any) => void) {
+    const operation = storage.keys().then(keys => keys.filter(key => key.startsWith(prefix)).map(key => storage.removeItem(key)));
     return performAsyncOperation(operation, callback);
 }
