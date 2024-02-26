@@ -1,5 +1,5 @@
 import type { DirPath, RawDir } from '@/types/file'
-import * as fs from '@/util/file-system'
+import * as storage from '@/util/storage'
 import { nanoid } from 'nanoid'
 import {
   convertDirPathToProject,
@@ -71,10 +71,10 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   private static async getLocalProjects(): Promise<ProjectSummary[]> {
-    const paths = await fs.getWithPrefix('summary/')
+    const paths = await storage.getWithPrefix('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.get(path) as ProjectSummary
+      const content = await storage.get(path) as ProjectSummary
       projects.push(content)
     }
     return projects
@@ -121,12 +121,12 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.source = source
     const dirPath: DirPath = {}
     if (source === ProjectSource.local) {
-      const paths = await fs.getWithPrefix(id)
+      const paths = await storage.getWithPrefix(id)
       for (const path of paths) {
-        const content = await fs.get(path)
+        const content = await storage.get(path)
         dirPath[path] = content
       }
-      const summary = await fs.get("summary/" + id) as ProjectSummary
+      const summary = await storage.get("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
       const project = await loadProject(this.id)
@@ -188,7 +188,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   async saveLocal() {
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
-      await fs.set(key, value)
+      await storage.set(key, value)
     }
     const summary: ProjectSummary = {
       id: this.id,
@@ -196,15 +196,15 @@ export class Project implements ProjectDetail, ProjectSummary {
       version: this.version,
       source: this.source
     }
-    fs.set(this.summaryPath, summary)
+    storage.set(this.summaryPath, summary)
   }
 
   /**
    * Remove project from storage.
    */
   async removeLocal() {
-    await fs.removeWithPrefix(this.path)
-    await fs.remove(this.summaryPath)
+    await storage.removeWithPrefix(this.path)
+    await storage.remove(this.summaryPath)
   }
 
   /**
