@@ -65,6 +65,7 @@
         </div>
       </template>
       <!-- TODO Costume Editor Part   -->
+      <LoadFromScratch/>
     </n-tab-pane>
   </n-tabs>
 </template>
@@ -76,6 +77,7 @@ import { HighlightOutlined as CostumeIcon } from "@vicons/antd";
 import { CodeSlash as CodeIcon, MusicalNotes as MusicIcon } from "@vicons/ionicons5"
 import SoundsEditHome from "comps/sounds/SoundHome.vue";
 import SpxEditorHome from "@/components/spx-code-editor/CodeEditorHome.vue";
+import LoadFromScratch from 'comps/spx-library/LoadFromScratchDemo.vue'
 
 const currentTab = ref("code");
 </script>
