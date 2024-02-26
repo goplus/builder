@@ -34,13 +34,6 @@
       </n-upload>
 
       <!-- Sprite Upload -->
-      <!-- <n-upload
-        v-else
-        :action="uploadActionUrl"
-        @before-upload="beforeSpriteUpload"
-      >
-        <n-button color="#fff" :text-color="commonColor">  {{ $t("stage.upload") }} </n-button>
-      </n-upload> -->
       <div v-else>
         <n-button color="#fff" :text-color="commonColor" @click="showUploadModal = true">
           {{ $t('stage.upload') }}

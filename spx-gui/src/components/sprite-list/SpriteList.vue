@@ -2,13 +2,19 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 15:31:17
+ * @LastEditTime: 2024-02-26 17:13:57
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description:
 -->
 <template>
   <div class="asset-library">
-    <div class="asset-library-edit-button">{{ $t('component.edit') }}</div>
+    <div class="asset-library-edit-button">
+      {{ $t('component.edit') }}
+    </div>
+    <n-button type="primary" secondary style="position: absolute; left: 108px; height:24px;top:3px;" @click="showImportModal = true;">
+      import assets
+    </n-button>
+
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
       <n-grid-item class="asset-library-left" span="3">
@@ -21,8 +27,14 @@
             <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
-            <ImageCardCom v-for="asset in spriteAssets" :key="asset.name" :type="'sprite'" :asset="asset"
-              :style="getImageCardStyle(asset.name)" @click="toggleCodeById(asset.name)" />
+            <ImageCardCom
+              v-for="asset in spriteAssets"
+              :key="asset.name"
+              :type="'sprite'"
+              :asset="asset"
+              :style="getImageCardStyle(asset.name)"
+              @click="toggleCodeById(asset.name)"
+            />
             <!-- E Component ImageCardCom -->
           </n-flex>
         </div>
@@ -34,31 +46,48 @@
       </n-grid-item>
       <!-- E Layout Stage List -->
     </n-grid>
+    <!-- S Modal Sprite Multi Costume Upload -->
+  <n-modal
+    v-model:show="showImportModal"
+    preset="card"
+    :style="bodyStyle"
+    header-style="padding:11px 24px 11px 30%;"
+    content-style="max-height:70vh;overflow:scroll;"  >
+  <LoadFromScratch/>
+  </n-modal>
+  <!-- E Modal Sprite Multi Costume Upload -->
   </div>
 </template>
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { type ComputedRef, computed, ref, watch } from "vue";
-import { NGrid, NGridItem, NFlex } from "naive-ui";
-import { useSpriteStore } from '@/store/modules/sprite';
-import BackdropList from "@/components/sprite-list/BackdropList.vue";
-import SpriteEditBtn from "@/components/sprite-list/SpriteEditBtn.vue";
-import ImageCardCom from "@/components/sprite-list/ImageCardCom.vue";
-import AssetAddBtn from "@/components/sprite-list/AssetAddBtn.vue";
-import { Sprite } from "@/class/sprite";
-import { watchEffect } from "vue";
+import { type ComputedRef, computed, ref } from 'vue'
+import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
+import { useSpriteStore } from '@/store/modules/sprite'
+import BackdropList from '@/components/sprite-list/BackdropList.vue'
+import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
+import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
+import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
+import { Sprite } from '@/class/sprite'
+import { watchEffect } from 'vue'
+import LoadFromScratch from 'comps/spx-library/LoadFromScratchDemo.vue'
+
 
 // ----------props & emit------------------------------------
-const currentActiveName = ref('');
-const spriteStore = useSpriteStore();
-const { setCurrentByName } = spriteStore;
+const currentActiveName = ref('')
+const spriteStore = useSpriteStore()
+const { setCurrentByName } = spriteStore
+
+// ----------data related -----------------------------------
+// Style about import modal body.
+const bodyStyle = { margin: 'auto' }
+
+// Ref about show import asset modal or not.
+const showImportModal = ref<boolean>(false)
 
 // ----------computed properties-----------------------------
 // Computed spriteAssets from spriteStore.
-const spriteAssets: ComputedRef<Sprite[]> = computed(
-  () => spriteStore.list as Sprite[],
-);
+const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list as Sprite[])
 
 // ----------methods-----------------------------------------
 /**
@@ -69,27 +98,27 @@ const spriteAssets: ComputedRef<Sprite[]> = computed(
  */
 const toggleCodeById = (name: string) => {
   console.log('name', name)
-  currentActiveName.value = name;
-  setCurrentByName(name);
-};
+  currentActiveName.value = name
+  setCurrentByName(name)
+}
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
-    : { marginBottom: '26px' };
-};
+    : { marginBottom: '26px' }
+}
 
 watchEffect(() => {
   if (spriteStore.current) {
-    currentActiveName.value = spriteStore.current.name;
+    currentActiveName.value = spriteStore.current.name
   } else {
-    currentActiveName.value = '';
+    currentActiveName.value = ''
   }
 })
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 .asset-library {
   // TODO: Delete the background, it is just for check the position.
@@ -132,7 +161,7 @@ watchEffect(() => {
 </style>
 
 <style lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 // ! no scoped, it will change global style
 .n-card {
