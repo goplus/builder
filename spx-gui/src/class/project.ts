@@ -23,7 +23,7 @@ export enum ProjectSource {
   cloud
 }
 
-interface ProjectSummary {
+export interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
   // Project name

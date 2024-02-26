@@ -8,6 +8,7 @@
 -->
 <template>
   <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
+  <ProjectList :show="showModal" @update:show="showModal = false" />
 </template>
 
 <script setup lang="ts">
@@ -26,8 +27,10 @@ import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
+import ProjectList from '@/components/project-list/ProjectList.vue'
 
 const projectStore = useProjectStore()
+const showModal = ref<boolean>(false)
 const themeStyle = ref<number>(ThemeStyleType.Pink)
 const themeMap = ['Pink', 'Yellow', 'Blue']
 /**
@@ -319,6 +322,9 @@ const handleSelectImport = (key: string | number) => {
       const file = e.target.files[0];
       projectStore.loadFromZip(file);
     };
+  }
+  else if (key === 'Cloud') {
+    showModal.value = true
   }
   else if (key === 'SaveLocal') {
     projectStore.project.download();
