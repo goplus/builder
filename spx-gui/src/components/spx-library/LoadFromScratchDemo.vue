@@ -274,8 +274,7 @@ const showImportSuccessMessage = () => {
   text-align: center;
   padding: 4px;
   .custom-upload-btn {
-    /* 自定义按钮样式 */
-    font-size: 16px; /* 字体大小 */
+    font-size: 16px; 
     color: rgb(0, 0, 0);
     border-radius: 20px;
     border: 2px solid rgb(0, 20, 41);
@@ -285,7 +284,7 @@ const showImportSuccessMessage = () => {
   }
 
   .custom-upload-btn:hover {
-    background-color: rgb(255, 234, 204); /* 鼠标悬停时的背景颜色 */
+    background-color: rgb(255, 234, 204); 
   }
 }
 </style>
