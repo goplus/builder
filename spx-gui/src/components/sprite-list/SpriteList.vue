@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-26 17:13:57
+ * @LastEditTime: 2024-02-26 20:22:26
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description:
 -->
@@ -11,7 +11,7 @@
     <div class="asset-library-edit-button">
       {{ $t('component.edit') }}
     </div>
-    <n-button type="primary" secondary style="position: absolute; left: 108px; height:24px;top:3px;" @click="showImportModal = true;">
+    <n-button class="import-assets-btn" @click="showImportModal = true">
       import assets
     </n-button>
 
@@ -47,15 +47,16 @@
       <!-- E Layout Stage List -->
     </n-grid>
     <!-- S Modal Sprite Multi Costume Upload -->
-  <n-modal
-    v-model:show="showImportModal"
-    preset="card"
-    :style="bodyStyle"
-    header-style="padding:11px 24px 11px 30%;"
-    content-style="max-height:70vh;overflow:scroll;"  >
-  <LoadFromScratch/>
-  </n-modal>
-  <!-- E Modal Sprite Multi Costume Upload -->
+    <n-modal
+      v-model:show="showImportModal"
+      preset="card"
+      :style="bodyStyle"
+      header-style="padding:11px 24px 11px 30%;"
+      content-style="max-height:70vh;overflow:scroll;"
+    >
+      <LoadFromScratch />
+    </n-modal>
+    <!-- E Modal Sprite Multi Costume Upload -->
   </div>
 </template>
 
@@ -71,7 +72,6 @@ import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratchDemo.vue'
-
 
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
@@ -157,6 +157,24 @@ watchEffect(() => {
     overflow: scroll;
     padding: 10px;
   }
+}
+.import-assets-btn {
+  position: absolute;
+  left: 108px;
+  height: 24px;
+  top: 3px;
+  font-size: 16px;
+  color: #333333;
+  border-radius: 20px;
+  border: 2px solid rgb(0, 20, 41);
+  box-shadow: rgb(0, 20, 41) -1px 2px;
+  cursor: pointer;
+  background-color: rgb(255, 248, 204);
+}
+
+.import-assets-btn:hover{
+  background-color: rgb(255, 234, 204); 
+  color:#333333;
 }
 </style>
 

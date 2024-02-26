@@ -109,13 +109,6 @@
         multiple
         @change="hanleWatchFileList"
       />
-      <!-- <n-upload
-          style="flex-grow: 1; margin: 0 8px"
-          :action="uploadActionUrl"
-          @before-upload="beforeSpriteUpload"
-          list-type="image-card"
-          multiple
-        /> -->
     </div>
     <div style="width: 100%; text-align: center">
       <n-button @click="handleSubmitSprite()">
@@ -285,15 +278,14 @@ const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileIn
  * @Author: Xu Ning
  * @Date: 2024-02-21 17:48:33
  */
-const handleSubmitSprite = async () => {
+const handleSubmitSprite = () => {
   let uploadFilesArr: File[] = [];
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
     }
   })
-  let gif = await generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
-  console.log(gif,'gif')
+  let gif = generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
   uploadSpriteName.value = ''
