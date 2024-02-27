@@ -213,13 +213,15 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
     category := ctx.param("category")
     isOrderByTime := ctx.param("isOrderByTime")
     isOrderByHot := ctx.param("isOrderByHot")
-    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
+    uid := ctx.param("uid")
+    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot,uid)
     ctx.json {
             "code":200,
             "msg":"ok",
             "data": result,
     }
 }
+
 
 get "/clickCount/asset/:id/:assetType", ctx => {
     ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")

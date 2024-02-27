@@ -293,9 +293,14 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 }
 
 // AssetList list assets
-func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string) (*common.Pagination[Asset], error) {
+func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, uid string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
+	}
+	if uid != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: uid})
+	} else {
+		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: "1"})
 	}
 	var orders []common.OrderByCondition
 	if category != "" {
@@ -307,6 +312,30 @@ func (p *Project) AssetList(ctx context.Context, pageIndex string, pageSize stri
 	if isOrderByHot != "" {
 		orders = append(orders, common.OrderByCondition{Column: "click_count", Direction: "desc"})
 	}
+	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
+	for i, asset := range pagination.Data {
+		modifiedAddress, err := p.modifyAddress(asset.Address)
+		if err != nil {
+			return nil, err
+		}
+		pagination.Data[i].Address = modifiedAddress
+	}
+	if err != nil {
+		return nil, err
+	}
+	return pagination, nil
+}
+func (p *Project) UserAssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, uid string) (*common.Pagination[Asset], error) {
+	wheres := []common.FilterCondition{
+		{Column: "asset_type", Operation: "=", Value: assetType},
+	}
+	var orders []common.OrderByCondition
+	if category != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "category", Operation: "=", Value: category})
+	}
+	wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: uid})
+	orders = append(orders, common.OrderByCondition{Column: "c_time", Direction: "desc"})
+
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := p.modifyAddress(asset.Address)
@@ -485,7 +514,7 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 		index := "image" + strconv.Itoa(i)
 		data.Assets[index] = path
 		images = append(images, img)
-		delays = append(delays, 0) // 每帧之间的延迟，100 = 1秒
+		delays = append(delays, 10) // 每帧之间的延迟，100 = 1秒
 	}
 	outGif := &gif.GIF{
 		Image:     images,
