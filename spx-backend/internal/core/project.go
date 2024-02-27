@@ -22,7 +22,6 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/common"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	"gocloud.dev/blob"
@@ -86,14 +85,6 @@ type FormatResponse struct {
 	Error FormatError
 }
 
-type SaveProjectRequest struct {
-	ID       string            `json:"id,omitempty"`
-	Name     string            `json:"name"`
-	AuthorId string            `json:"uid"`
-	Files    map[string]string `json:"files"`
-	IsPublic int               `json:"isPublic"`
-}
-
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	err = godotenv.Load("../.env")
 	if err != nil {
@@ -142,42 +133,47 @@ func (p *Project) GetProjectDetail(ctx context.Context, id string) (*CodeFile, e
 	return nil, ErrNotExist
 }
 
-func (p *Project) SaveProject(ctx context.Context, req SaveProjectRequest) (*CodeFile, error) {
-	filesJson, err := json.Marshal(req.Files)
-	if err != nil {
-		return nil, err
+// Find file address from db
+func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
+	if id != "" {
+		var address string
+		query := "SELECT address FROM codefile WHERE id = ?"
+		err := p.db.QueryRow(query, id).Scan(&address)
+		if err != nil {
+			return nil, err
+		}
+		cloudFile := &CodeFile{
+			ID:      id,
+			Address: address,
+		}
+		return cloudFile, nil
 	}
-	files := string(filesJson)
-	if req.ID == "" {
-		codeFile := &CodeFile{
-			ID:       uuid.New().String(),
-			Name:     req.Name,
-			AuthorId: req.AuthorId,
-			IsPublic: req.IsPublic,
-			Address:  files,
-			Status:   1,
-			Ctime:    time.Now(),
-			Utime:    time.Now(),
-		}
-		err := AddProject(p, codeFile)
+	return nil, ErrNotExist
+}
+
+func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file multipart.File, header *multipart.FileHeader) (*CodeFile, error) {
+	if codeFile.ID == "" {
+		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
 		if err != nil {
 			return nil, err
 		}
-		codeFile.Version = 1
-		return codeFile, nil
+		codeFile.Address = path
+		codeFile.ID, err = AddProject(p, codeFile)
+		return codeFile, err
 	} else {
-		codeFile, err := p.GetProjectDetail(ctx, req.ID)
+		address := GetProjectAddress(codeFile.ID, p)
+		err := p.bucket.Delete(ctx, address)
 		if err != nil {
 			return nil, err
 		}
-		codeFile.Name = req.Name
-		codeFile.Address = files
-		codeFile.Version++
-		codeFile.Utime = time.Now()
+		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
+		if err != nil {
+			return nil, err
+		}
+		codeFile.Address = path
 		return codeFile, UpdateProject(p, codeFile)
 	}
 }
-
 func (p *Project) CodeFmt(ctx context.Context, body, fiximport string) (res *FormatResponse) {
 
 	fs, err := splitFiles([]byte(body))
@@ -491,7 +487,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 
 }
 
-func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader) (string, error) {
+func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, uid string) (string, error) {
 	var images []*image.Paletted
 	var delays []int
 	data := &Data{}
@@ -546,7 +542,7 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 
 	_, err = AddAsset(p, &Asset{
 		Name:       name,
-		AuthorId:   "1",
+		AuthorId:   uid,
 		Category:   "1",
 		IsPublic:   1,
 		Address:    string(jsonData),

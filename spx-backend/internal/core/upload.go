@@ -70,16 +70,6 @@ func Encrypt(salt, password string) string {
 	return fmt.Sprintf("%x", string(dk))
 }
 
-func AddProject(p *Project, c *CodeFile) error {
-	sqlStr := "insert into codefile (id,name,author_id ,address,is_public,status,c_time,u_time) values (?,?,?,?,?,?,?,?)"
-	_, err := p.db.Exec(sqlStr, c.ID, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
-	if err != nil {
-		println(err.Error())
-		return err
-	}
-	return nil
-}
-
 func AddAsset(p *Project, c *Asset) (string, error) {
 	sqlStr := "insert into asset (name,author_id , address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
 	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
@@ -129,4 +119,24 @@ func UpdateProjectIsPublic(p *Project, id string) error {
 		return err.Err()
 	}
 	return nil
+}
+func AddProject(p *Project, c *CodeFile) (string, error) {
+	sqlStr := "insert into codefile (name,author_id , address, status,c_time,u_time) values (?, ?, ?, ?,?, ?)"
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, "1", time.Now(), time.Now())
+	if err != nil {
+		println(err.Error())
+		return "", err
+	}
+	idInt, err := res.LastInsertId()
+	return strconv.Itoa(int(idInt)), err
+}
+
+func GetProjectAddress(id string, p *Project) string {
+	var address string
+	query := "SELECT address FROM codefile WHERE id = ?"
+	err := p.db.QueryRow(query, id).Scan(&address)
+	if err != nil {
+		return ""
+	}
+	return address
 }
