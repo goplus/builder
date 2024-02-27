@@ -2,12 +2,12 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:03:36
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-27 17:08:54
+ * @LastEditTime: 2024-02-27 18:11:53
  * @FilePath: \builder\spx-gui\src\widgets\spx-runner\index.ts
  * @Description: 
  */
 import { defineCustomElement } from "vue";
-import runnerWidgetVue from "./runnerWidget.vue";
-export const RunnerWidget = defineCustomElement(runnerWidgetVue)
+import spxRunner from "./spx-runner.vue";
+export const spxRunnerWidget = defineCustomElement(spxRunner)
 
-customElements.define("runner-widget", RunnerWidget)
+customElements.define("spx-runner", spxRunnerWidget)

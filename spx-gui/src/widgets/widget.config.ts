@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-27 17:17:10
+ * @LastEditTime: 2024-02-27 18:03:23
  * @FilePath: \builder\spx-gui\src\widgets\widget.config.ts
  * @Description: 
  */
@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
         define: { 'process.env.NODE_ENV': '"production"' },
         build: {
             target: 'esnext',
+            outDir:'spx-widgets',
             minify: 'terser',
             lib: {
                 entry: 'src/widgets/spx-runner/index.ts',
