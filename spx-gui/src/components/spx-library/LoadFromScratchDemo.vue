@@ -11,6 +11,7 @@
       style="display: none"
       @change="handleScratchFileUpload"
     />
+    <button v-if="selectedAsset" class="custom-import-btn" @click="importFile">Import to spx project</button>
   </div>
   <div class="download-links">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
@@ -59,7 +60,7 @@
   <div v-if="selectedAsset" class="rename-section">
     <n-input v-model="newAssetName" type="text" placeholder="Enter new asset name" />
     <n-button @click="renameFile">Save</n-button>
-    <n-button @click="importFile">Import to spx project</n-button>
+    
   </div>
 </template>
 
@@ -242,7 +243,7 @@ const showImportSuccessMessage = () => {
   .file-row {
     margin: auto;
     margin-top: 10px;
-    width: 150px;
+    width:80%;
     height: 150px;
     border-radius: 20px;
     border: 3px solid $asset-library-card-title-1;
@@ -273,7 +274,7 @@ const showImportSuccessMessage = () => {
 .file-upload-container {
   text-align: center;
   padding: 4px;
-  .custom-upload-btn {
+  .custom-upload-btn, .custom-import-btn {
     font-size: 16px; 
     color: rgb(0, 0, 0);
     border-radius: 20px;
@@ -281,9 +282,11 @@ const showImportSuccessMessage = () => {
     box-shadow: rgb(0, 20, 41) -1px 2px;
     cursor: pointer;
     background-color: rgb(255, 248, 204);
+    margin-left:5px;
+    font-family: ChauPhilomeneOne;
   }
 
-  .custom-upload-btn:hover {
+  .custom-upload-btn:hover, .custom-import-btn:hover {
     background-color: rgb(255, 234, 204); 
   }
 }
