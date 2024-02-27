@@ -1,11 +1,14 @@
 <template>
     <n-badge :value="project.source ? 'Cloud' : 'Local'" :offset="['-50%', '75%']">
-        <n-card hoverable :title="project.title">
+        <n-card hoverable>
             <div class="project-card-description">
             </div>
+            <template #header>
+                <p class="title">{{ project.title || project.id }}</p>
+            </template>
             <template #footer>
-                <p>ID: {{ project.id }}</p>
-                <p>version: {{ project.version }}</p>
+                <p class="id">ID: {{ project.id }}</p>
+                <p class="version">version: {{ project.version }}</p>
             </template>
             <template #action>
                 <n-button @click="load">Load</n-button>
@@ -28,34 +31,51 @@ const load = () => {
 </script>
 
 <style lang="scss" scoped>
-::v-deep .n-badge-sup {
-    height: 36px;
-    background: transparent;
+.n-badge {
+    width: 100%;
 
-    .n-base-slot-machine {
-        line-height: 1;
-        height: unset;
-        font-size: 36px;
-        font-weight: bolder;
-        color: transparent;
-        background: linear-gradient(90deg, #fff0 0%, #ffff 50%, #ffff 100%);
-        background-clip: text;
-    }
-}
+    ::v-deep .n-badge-sup {
+        height: 36px;
+        background: transparent;
 
-.n-card {
-    width: unset !important;
-
-    p {
-        margin: 0;
+        .n-base-slot-machine {
+            line-height: 1;
+            height: unset;
+            font-size: 36px;
+            font-weight: bolder;
+            color: transparent;
+            background: linear-gradient(90deg, #fff0 0%, #ffff 50%, #ffff 100%);
+            background-clip: text;
+        }
     }
 
-    ::v-deep .n-card__footer {
-        padding-top: 20px;
-    }
-
-    .n-button {
+    .n-card {
         width: 100%;
+
+        p {
+            margin: 0;
+
+            &.title {
+                font-size: 18px;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+
+            &.id {
+                font-size: 12px;
+                color: #a4a4a3;
+                margin-bottom: 10px;
+            }
+        }
+
+        ::v-deep .n-card__footer {
+            padding-top: 10px;
+        }
+
+        .n-button {
+            width: 100%;
+        }
     }
 }
 </style>

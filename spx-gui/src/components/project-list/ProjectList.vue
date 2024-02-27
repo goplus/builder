@@ -1,6 +1,6 @@
 <template>
   <n-modal v-model:show="showModal" preset="card" to="body" header-style="padding:11px 24px 11px 30%;"
-    content-style="max-height:70vh;overflow:scroll;" :on-after-leave="closeModalFunc">
+    content-style="max-height:70vh;overflow-y:scroll;" :on-after-leave="closeModalFunc">
     <template #header>
       <div style="width: 30vw">
         <n-input v-model:value="searchQuery" size="large" placeholder="Search" round clearable
