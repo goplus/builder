@@ -17,7 +17,7 @@
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
       <n-grid-item v-for="link in downloadLinks" :key="link.name" class="file-row" :style="{border: selectedAssets.includes(link) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
 
-        {{link.name}} {{ selectedAssets.includes(link)}}
+        {{link.name}}
         <n-image
           v-if="isImage(link.name)"
           style="position: absolute; top: 25px; left: 15px; border-radius: 20px"
@@ -235,7 +235,6 @@ const importFile = () => {
   if (fileExtension === 'wav') {
     importWavToProject(fileName, file)
   } else if (fileExtension === 'svg') {
-    console.log('333333',asset,fileName,fileExtension,file,newAssetName.value)
     importSvgToProject(fileName, file)
   }
   showImportSuccessMessage()
@@ -252,7 +251,6 @@ const importWavToProject = (name: string, file: File) => {
 const importSvgToProject = (name: string, file: File) => {
   const sprite = new Sprite(name, [file])
   spriteStore.addItem(sprite)
-  console.log(spriteStore)
 }
 
 /* Get file from AssetFileDetail*/
