@@ -122,17 +122,6 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	return &Project{bucket, db}, nil
 }
 
-func (p *Project) GetProjectDetail(ctx context.Context, id string) (*CodeFile, error) {
-	if id != "" {
-		codeFile, _ := common.QueryById[CodeFile](p.db, id)
-		if codeFile == nil {
-			return nil, ErrNotExist
-		}
-		return codeFile, nil
-	}
-	return nil, ErrNotExist
-}
-
 // Find file address from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
@@ -489,7 +478,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 
 }
 
-func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, uid string) (string, error) {
+func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, uid string, flag string, tag string) (string, error) {
 	var images []*image.Paletted
 	var delays []int
 	data := &Data{}
@@ -541,18 +530,21 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 		fmt.Printf("failed to jsonMarshal: %v", err)
 		return "", err
 	}
+	if flag != "0" {
+		isPublic, _ := strconv.Atoi(flag)
+		_, err = AddAsset(p, &Asset{
+			Name:       name,
+			AuthorId:   uid,
+			Category:   tag,
+			IsPublic:   isPublic - 1,
+			Address:    string(jsonData),
+			AssetType:  "0",
+			ClickCount: "0",
+			Status:     1,
+			CTime:      time.Now(),
+			UTime:      time.Now(),
+		})
+	}
 
-	_, err = AddAsset(p, &Asset{
-		Name:       name,
-		AuthorId:   uid,
-		Category:   "1",
-		IsPublic:   1,
-		Address:    string(jsonData),
-		AssetType:  "0",
-		ClickCount: "0",
-		Status:     1,
-		CTime:      time.Now(),
-		UTime:      time.Now(),
-	})
 	return os.Getenv("QINIU_PATH") + "/" + path, err
 }

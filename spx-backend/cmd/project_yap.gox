@@ -18,7 +18,15 @@ todo := context.TODO()
 
 get "/project", ctx => {
 	id := ctx.param("id")
-	res, _ := p.FileInfo(todo, id)
+	res, err := p.FileInfo(todo, id)
+	if err!=nil{
+	    ctx.json {
+        		"code":200,
+        		"msg":"not exist",
+        		"data":"",
+        }
+        return
+	}
 	ctx.json {
 		"code":200,
 		"msg":"OK",
@@ -142,7 +150,9 @@ post "/spirits/upload", ctx => {
 
         files:=ctx.MultipartForm.File["files"]
         name:=ctx.FormValue("name")
-        path,err := p.UploadSpirits(todo,name,files,userId)
+        flag:=ctx.FormValue("flag")
+        category:=ctx.FormValue("category")
+        path,err := p.UploadSpirits(todo,name,files,userId,flag,category)
         if (err != nil) {
                 ctx.json({
                     "code": 400,
@@ -198,7 +208,7 @@ post "/asset/save", ctx => {
         	}
 }
 
-get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
+get "/list/asset", ctx => {
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
     assetType := ctx.param("assetType")
@@ -212,7 +222,8 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
             "data": result,
     }
 }
-get "/list/userasset/:pageIndex/:pageSize/:assetType", ctx => {
+
+get "/list/userasset", ctx => {
     userId := ""
     token := core.GetToken(ctx)
     if token==""{
