@@ -7,14 +7,34 @@
 -->
 <template>
   <div class="project-runner">
-    <iframe class="runner" src="/main.html" frameborder="0"/>
+    <iframe ref="iframe" src="/main.html" class="runner" frameborder="0" @load="handleIframeLoad"/>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { Project } from "@/class/project";
+import { ref } from "vue";
+
+interface CustomWindow extends Window {
+  loadWasm: () => Promise<void>;
+  loadData: (view: ArrayBuffer) => void;
+}
 
 const props = defineProps<{ project: Project }>()
+
+const zipResp = fetch('/test.zip')
+
+const iframe = ref<HTMLIFrameElement | null>(null);
+const handleIframeLoad = async () => {
+  console.log('iframe loaded');
+  const runner_window = iframe.value?.contentWindow as CustomWindow
+  console.log(runner_window)
+
+  await runner_window?.loadWasm()
+  const r = await zipResp
+  const buf = await r.arrayBuffer();
+  runner_window?.loadData(buf);
+};
 
 const run = async () => {
   props.project.run();
