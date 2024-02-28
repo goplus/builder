@@ -90,6 +90,7 @@ const deleteSprite = (name: string) => {
  * @Date: 2024-01-24 12:11:38
  */
 const deleteBackdrop = (file: FileWithUrl) => {
+  // TODO: sync to scene config of backdrop
   backdropStore.backdrop.removeFile(file)
 }
 

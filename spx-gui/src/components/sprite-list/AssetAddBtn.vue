@@ -93,8 +93,8 @@
     >
       <p style="margin: 0; flex-shrink: 0">{{ $t('list.name') }}:</p>
       <n-input
-        round
         v-model:value="uploadSpriteName"
+        round
         placeholder="Input sprite name"
         style="flex-grow: 1; margin: 0 8px; max-width: 300px"
       />
@@ -231,6 +231,7 @@ const beforeUpload = (
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
     switch (fileType) {
       case 'backdrop': {
+        // TODO: need sync to backdrop's scene config
         let backdrop = backdropStore.backdrop
         backdrop.addFile(...fileArray)
         break

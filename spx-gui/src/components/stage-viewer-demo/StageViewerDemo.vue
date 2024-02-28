@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 15:25:10
+ * @LastEditTime: 2024-02-28 18:31:44
  * @FilePath: \spx-gui\src\components\stage-viewer-demo\StageViewerDemo.vue
  * @Description:
 -->
@@ -162,10 +162,11 @@ import { NInputNumber, NSwitch } from 'naive-ui'
 import type { Sprite } from '@/class/sprite'
 import StageViewer from '../stage-viewer'
 import type { SelectedSpritesChangeEvent } from '../stage-viewer'
-import type { Project } from '@/class/project'
+import { Project } from '@/class/project'
 import { useProjectStore } from '@/store/modules/project'
 import { storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
+import FileWithUrl from '@/class/file-with-url'
 
 const projectStore = useProjectStore()
 const { project } = storeToRefs(projectStore)
@@ -202,7 +203,9 @@ const backdropConfig = computed(() => {
 
 // get the zorder list of sprite
 const zorderList = computed<Array<string>>(() => {
-  return project.value.backdrop.config.zorder.filter((item) => typeof item === 'string') as Array<string>
+  return project.value.backdrop.config.zorder.filter(
+    (item) => typeof item === 'string'
+  ) as Array<string>
 })
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
@@ -249,4 +252,6 @@ const chooseBackdropScene = (index: number) => {
 const chooseBackdropCostume = (index: number) => {
   project.value.backdrop.config.currentCostumeIndex = index
 }
+
+
 </script>
