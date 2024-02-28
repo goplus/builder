@@ -2,8 +2,8 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-24 21:42:28
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 09:05:07
- * @FilePath: /spx-gui/src/interface/file.ts
+ * @LastEditTime: 2024-02-28 14:40:11
+ * @FilePath: \spx-gui\src\interface\file.ts
  * @Description: The interface of file.
  */
 
@@ -167,9 +167,13 @@ export interface BackdropConfig extends Config {
     scenes?: Scene[];
 
     /**
-     * The sprite zorder in the stage, the later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
+     * This configuration specifies the order in which the specified objects are rendered on the stage
+     * The later Sprite will be above the previous Sprite, which means that the later Sprite will override the previous Sprite.
+     * The string item specifies the corresponding Sprite name
+     * The Object item specifies the coresponding like 'stageMonitor' 
+     * TODO: add the type of the like 'stageMonitor' 
      */
-    zorder: string[];
+    zorder: Array<string|Object>;
 
     /**
      * The costume of the backdrop
