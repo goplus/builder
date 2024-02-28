@@ -6,7 +6,7 @@
  * @Description: 
 -->
 <template>
-  <div id="project-runner">
+  <div class="project-runner">
     <iframe class="runner" id="runner" frameborder="0" />
   </div>
 </template>
@@ -58,7 +58,7 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-#project-runner {
+.project-runner {
   flex: 1;
   text-align: center;
 }

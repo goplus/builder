@@ -6,28 +6,36 @@
  * @Description: 
 -->
 <template>
-  <div id="project-runner">
-    <iframe class="runner" src="/main.html" frameborder="0" />
+  <div class="project-runner">
+    <iframe class="runner" src="/main.html" frameborder="0"/>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { Project } from "@/class/project";
 
-const props = defineProps<{ project: Project }>();
+const props = defineProps<{ project: Project }>()
 
 const run = async () => {
   props.project.run();
-  console.log('project run success');
+  console.log('project run success')
 };
 
+const stop = async () => {
+  let iframe = document.getElementById('runner') as HTMLIFrameElement
+  if (iframe) {
+    iframe.src = ''
+  }
+}
+
 defineExpose({
-  run
+  run,
+  stop
 })
 </script>
 
 <style lang="scss" scoped>
-#project-runner {
+.project-runner {
   flex: 1;
   text-align: center;
 }
