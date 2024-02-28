@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 14:51:13
+ * @LastEditTime: 2024-02-28 16:52:14
  * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
@@ -25,6 +25,7 @@ export const useSpriteStore = defineStore('sprite', () => {
 
   function addItem(item: Sprite) {
     project.value.sprite.add(item)
+    // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
     project.value.backdrop.config.zorder.push(item.name)
   }
 
@@ -41,6 +42,7 @@ export const useSpriteStore = defineStore('sprite', () => {
         current.value = list.value[0] || null
       }
       project.value.sprite.remove(sprite)
+      // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
       project.value.backdrop.config.zorder.splice(project.value.backdrop.config.zorder.indexOf(sprite.name), 1)
     }
   }
