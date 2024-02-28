@@ -35,10 +35,15 @@ export const useSpriteStore = defineStore("sprite", () => {
         }
     }
 
+    function existsByName(name: string): boolean {
+        return map.value.has(name);
+    }
+
     return {
         list, current,
         addItem,
         setCurrentByName,
-        removeItemByName
+        removeItemByName,
+        existsByName
     }
 })

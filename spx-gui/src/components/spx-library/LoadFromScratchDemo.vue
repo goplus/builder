@@ -1,5 +1,4 @@
 <template>
-
   <div class="file-upload-container">
     <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
       Upload .sb3 File
@@ -13,18 +12,28 @@
     />
     <button v-if="selectedAssets.length != 0" class="custom-import-btn" @click="importFile">Import to spx project</button>
   </div>
-  <div class="download-links">
+  <div class="asset-detail-info">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="link in downloadLinks" :key="link.name" class="file-row" :style="{border: selectedAssets.includes(link) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
-
-        {{link.name}}
+      <n-grid-item v-for="assetFileDetail in assetFileDetails" :key="assetFileDetail.url" class="file-row" :style="{border: selectedAssets.includes(assetFileDetail) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
+        <n-input
+          v-model:value="assetFileDetail.name"
+          placeholder="assetFileDetail.name"
+          size="tiny"
+        >
+        <template #suffix>
+          .
+          <span style="color: #aa9b9b">
+            {{assetFileDetail.extension}}
+          </span>
+        </template>
+        </n-input>
         <n-image
-          v-if="isImage(link.name)"
+          v-if="isImage(assetFileDetail)"
           style="position: absolute; top: 25px; left: 15px; border-radius: 20px"
           preview-disabled
           width="110"
           height="110"
-          :src="link.url"
+          :src="assetFileDetail.url"
           fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
         />
         <n-image
@@ -35,34 +44,29 @@
           height="80"
           :src="SoundsImport"
           fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
-          @click="playAudio(link.url)"
+          @click="playAudio(assetFileDetail.url)"
         />
         <div class="file-btn">
           <n-button
             type="primary"
             secondary
             style="height: 24px; padding: 6px;"
-            @click="chooseAsset(link)"
-            :class="{'selected-btn': selectedAssets.includes(link)}"
+            @click="chooseAsset(assetFileDetail)"
+            :class="{'selected-btn': selectedAssets.includes(assetFileDetail)}"
           >
-          {{ selectedAssets.includes(link) ? 'Cancel' : 'Choose'}}
+          {{ selectedAssets.includes(assetFileDetail) ? 'Cancel' : 'Choose'}}
           </n-button>
           <n-button
             type="primary"
             secondary
             style="height: 24px; padding: 6px"
-            @click="downloadAsset(link)"
+            @click="downloadAsset(assetFileDetail)"
           >
             Download
           </n-button>
         </div>
       </n-grid-item>
     </n-grid>
-  </div>
-  <div v-if="selectedAssets.length != 0" class="rename-section">
-    <n-input v-model="newAssetName" type="text" placeholder="Enter new asset name" />
-    <n-button @click="renameFiles">Save</n-button>
-    
   </div>
 </template>
 
@@ -80,19 +84,21 @@ import { commonColor } from '@/assets/theme'
 
 interface AssetFileDetail {
   name: string
+  extension: string
   url: string
   blob: Blob
 }
 
 const soundStore = useSoundStore()
 const spriteStore = useSpriteStore()
-const downloadLinks = ref<AssetFileDetail[]>([])
+const assetFileDetails = ref<AssetFileDetail[]>([])
 const selectedAssets = ref<AssetFileDetail[]>([])
-const newAssetName = ref('')
 const fileUploadInput = ref(null)
 const message: MessageApi = useMessage()
-const isImage = (url: string) => {
-  return /\.(svg|jpeg|jpg|png)$/.test(url)
+
+/* Return true if asset is an image */
+const isImage = (assetDetail: AssetFileDetail) => {
+  return ['svg', 'jpeg', 'jpg', 'png'].includes(assetDetail.extension.toLowerCase());
 }
 
 function triggerFileUpload() {
@@ -101,7 +107,7 @@ function triggerFileUpload() {
   }
 }
 
-/* Handle Scratch File Upload. Only.sb3 files are supported*/
+/* Handle Scratch File Upload. Only.sb3 files are supported */
 const handleScratchFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
   if (!input.files || input.files.length === 0) {
@@ -133,7 +139,9 @@ const handleScratchFileUpload = async (event: Event) => {
       const mimeType = getMimeType(extensionMatch[1]) // Use a function to determine MIME type
       const blob = new Blob([fileData], { type: mimeType })
       const url = URL.createObjectURL(blob)
-      downloadLinks.value.push({ name: originalName, url, blob })
+      const name = originalName.split('.').slice(0, -1).join('.');
+      const extension = originalName.split('.').pop() || '';
+      assetFileDetails.value.push({ name: name, extension: extension, url, blob })
     }
   }
 }
@@ -157,21 +165,18 @@ function getMimeType(extension: string): string {
   }
 }
 
-// Add a method for playing audio directly in the browser
+/* Get the full asset name like "meow.wav" */
+const getFullAssetName = (asset: AssetFileDetail): string => {
+  return asset.name + "." + asset.extension;
+};
+
+/* Add a method for playing audio directly in the browser */
 const playAudio = (audioUrl: string) => {
   const audio = new Audio(audioUrl)
   audio.play()
 }
 
 /* Choose one asset */
-// const chooseAsset = (asset: AssetFileDetail) => {
-//   selectedAsset.value = asset
-//   newAssetName.value = selectedAsset.value.name.substring(
-//     0,
-//     selectedAsset.value.name.lastIndexOf('.')
-//   ) // get name
-// }
-// 更新选择逻辑以支持多选
 const chooseAsset = (asset: AssetFileDetail) => {
   if(selectedAssets.value){
     const index = selectedAssets.value.findIndex(a => a.name === asset.name);
@@ -181,100 +186,85 @@ const chooseAsset = (asset: AssetFileDetail) => {
     selectedAssets.value.push(asset);
   }
   }
-
 };
 
 /* Download asset file */
 const downloadAsset = (asset: AssetFileDetail) => {
   const a = document.createElement('a')
   a.href = asset.url
-  a.download = asset.name
+  a.download = getFullAssetName(asset)
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
 }
 
-/* Change the selected asset name */
-// const renameFile = () => {
-//   if (selectedAsset.value && newAssetName.value) {
-//     const originalNameParts = selectedAsset.value.name.split('.')
-//     const extension = originalNameParts.pop()
-//     const newNameWithExtension = `${newAssetName.value}.${extension}`
-//     const newBlob = new Blob([selectedAsset.value.blob], { type: 'application/octet-stream' })
-//     const newUrl = URL.createObjectURL(newBlob)
-//     selectedAsset.value.name = newNameWithExtension
-//     selectedAsset.value.url = newUrl
-//     newAssetName.value = ''
-//     selectedAsset.value = null
-//   }
-// }
-
-// 示例：批量重命名 TODO
-const renameFiles = () => {
-  selectedAssets.value.forEach(asset => {
-    const originalNameParts = asset.name.split('.');
-    const extension = originalNameParts.pop();
-    const newNameWithExtension = `${newAssetName.value}.${extension}`;
-    const newBlob = new Blob([asset.blob], { type: 'application/octet-stream' });
-    const newUrl = URL.createObjectURL(newBlob);
-    asset.name = newNameWithExtension;
-    asset.url = newUrl;
-  });
-  newAssetName.value = '';
-  selectedAssets.value = []; // 清空选中列表
-};
-
-
 /* Import the selected asset to project */
 const importFile = () => {
-  if (!selectedAssets.value) return
+  if (!selectedAssets.value) return;
   selectedAssets.value.forEach(asset => {
-  const fileName = asset.name
-  const fileExtension = fileName.slice(((fileName.lastIndexOf('.') - 1) >>> 0) + 2)
-  const file = getFileFromAssetFileDetail(asset)
-  if (fileExtension === 'wav') {
-    importWavToProject(fileName, file)
-  } else if (fileExtension === 'svg') {
-    importSvgToProject(fileName, file)
-  }
-  showImportSuccessMessage()
-})
+    const file = getFileFromAssetFileDetail(asset);
+    if (isImage(asset)) {
+      importSpriteToProject(asset, file)
+    } else {
+      importSoundToProject(asset, file)
+    }
+    showImportSuccessMessage()
+  })
 }
 
-/* Import wav file to current project */
-const importWavToProject = (name: string, file: File) => {
-  const sound = new Sound(name, [file])
-  soundStore.addItem(sound)
-}
+/* Import sound file to current project */
+const importSoundToProject = (asset: AssetFileDetail, file: File) => {
+  const sound = new Sound(getNewNameIfNameExists(asset, soundStore), [file]);
+  soundStore.addItem(sound);
+};
 
-/* Import svg file to current project */
-const importSvgToProject = (name: string, file: File) => {
-  const sprite = new Sprite(name, [file])
+/* Import sprite file to current project */
+const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
+  const sprite = new Sprite(getNewNameIfNameExists(asset, spriteStore), [file])
   spriteStore.addItem(sprite)
 }
 
+/* If sound.wav exists, return sound(1).wav, sound(2).wav ..... */
+const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
+  let baseName = asset.name;
+  const extension = asset.extension;
+  let counter = 0;
+  let newName = baseName;
+  const existsByName = (name: string, store: any): boolean => {
+    return store.existsByName(name);
+  }
+  while (existsByName(`${newName}.${extension}`, store)) {
+    counter++;
+    newName = `${baseName}(${counter})`;
+  }
+  return `${newName}.${extension}`;
+}
+
 /* Get file from AssetFileDetail*/
-function getFileFromAssetFileDetail(asset: AssetFileDetail): File {
-  return new File([asset.blob], asset.name, { type: asset.blob.type })
+const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
+  return new File([asset.blob], getFullAssetName(asset), { type: asset.blob.type })
 }
 
 /* Show 'import successfully' message*/
 const showImportSuccessMessage = () => {
   message.success('import successfully!', { duration: 1000 })
 }
+
 </script>
 
 <style lang="scss" scoped>
 @import '@/assets/theme.scss';
+
 .download-infos {
   text-align: center;
 }
-.download-links {
+
+.asset-detail-info {
   display: block;
   margin: 5px;
   min-height: 50vh;
   .selected-border {
-    border: 3px solid $asset-library-card-title-1; 
+    border: 3px solid $asset-library-card-title-1;
   }
 
   .selected-btn{
@@ -317,7 +307,7 @@ const showImportSuccessMessage = () => {
   text-align: center;
   padding: 4px;
   .custom-upload-btn, .custom-import-btn {
-    font-size: 16px; 
+    font-size: 16px;
     color: rgb(0, 0, 0);
     border-radius: 20px;
     border: 2px solid rgb(0, 20, 41);
@@ -329,7 +319,11 @@ const showImportSuccessMessage = () => {
   }
 
   .custom-upload-btn:hover, .custom-import-btn:hover {
-    background-color: rgb(255, 234, 204); 
+    background-color: rgb(255, 234, 204);
   }
 }
+
+
+
+
 </style>
