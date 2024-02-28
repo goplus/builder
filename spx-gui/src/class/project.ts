@@ -48,8 +48,31 @@ export class Project implements ProjectDetail, ProjectSummary {
   sprite: SpriteList
   sound: SoundList
   backdrop: Backdrop
-  entryCode: string
   unidentifiedFile: RawDir
+
+  _entryCode: string
+
+  get defaultEntryCode() {
+    let str = ""
+    str += "var (\n"
+    for (const sprite of this.sprite.list) {
+      str += `\t${sprite.name} ${sprite.name}\n`
+    }
+    for (const sound of this.sound.list) {
+      str += `\t${sound.name} Sound\n`
+    }
+    str += ")\n"
+    str += `run "assets", {Title: "${this.title}"}\n`
+    return str
+  }
+
+  get entryCode() {
+    return this._entryCode ? this._entryCode : this.defaultEntryCode
+  }
+
+  set entryCode(code: string) {
+    this._entryCode = code
+  }
 
   static ENTRY_FILE_NAME = 'index.gmx'
 
@@ -98,7 +121,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
-    this.entryCode = ''
+    this._entryCode = ''
     this.unidentifiedFile = {}
     this.id = nanoid()
     this.version = 1

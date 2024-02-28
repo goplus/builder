@@ -330,7 +330,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
     throw new Error(`HTTP error! status: ${response.status}`)
   }
   const data = await response.blob()
-  return new File([data], filename, { type: data.type })
+  return new File([data], filename + url.slice(url.lastIndexOf('.')), { type: data.type })
 }
 
 /**
