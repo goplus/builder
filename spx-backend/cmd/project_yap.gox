@@ -15,13 +15,6 @@ var (
 
 todo := context.TODO()
 
-options("/",ctx=>{
-    common.SetHeaders(ctx)
-    ctx.json({
-        "code": 200,
-        "msg": "ok",
-    })
-})
 
 get "/project", ctx => {
 	id := ctx.param("id")
@@ -35,13 +28,17 @@ get "/project", ctx => {
 
 
 post "/project/allsave", ctx=>{
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
-    ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 	id := ctx.FormValue("id")
 	userId := ""
     token := core.GetToken(ctx)
+    if token==""{
+        ctx.json {
+        		"code":200,
+        		"msg":"please login",
+        		"data":"",
+        }
+        return
+    }
     user, err := p.GetUser(token)
     if err != nil {
         printf("get user error:", err)
@@ -65,8 +62,6 @@ post "/project/allsave", ctx=>{
 
 
 post "/project/fmt", ctx=>{
-	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
 	res := p.CodeFmt(todo,body,imports)
@@ -78,8 +73,7 @@ post "/project/fmt", ctx=>{
 }
 
 get "/asset/:id", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+
     id := ctx.param("id")
     asset, _ := p.Asset(todo, id)
     ctx.json {
@@ -90,9 +84,22 @@ get "/asset/:id", ctx => {
 }
 
 post "/asset/upload", ctx => {
-        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-     	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-        uid := ctx.FormValue("uid")
+        userId := ""
+        token := core.GetToken(ctx)
+        if token==""{
+            ctx.json {
+                    "code":200,
+                    "msg":"please login",
+                    "data":"",
+            }
+            return
+        }
+        user, err := p.GetUser(token)
+        if err != nil {
+            printf("get user error:", err)
+        } else {
+            userId = user.Id
+        }
         name:=ctx.FormValue("name")
         category:=ctx.FormValue("category")
         isPublic:=ctx.FormValue("isPublic")
@@ -101,7 +108,7 @@ post "/asset/upload", ctx => {
         file,header,_:=ctx.FormFile("file")
         	asset:=&core.Asset{
         		 Name:name,
-                 AuthorId:uid,
+                 AuthorId:userId,
                  Category:category,
                  IsPublic:ip,
                  AssetType:assetType,
@@ -115,17 +122,17 @@ post "/asset/upload", ctx => {
         	}
 }
 post "/spirits/upload", ctx => {
-        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-        ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Methods", "*")
-        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "*")
-        if ctx.Request.Method == "OPTIONS" {
-            ctx.ResponseWriter.WriteHeader(200)
-            return
-        }
         ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
         userId := ""
         token := core.GetToken(ctx)
+        if token==""{
+            ctx.json {
+                    "code":200,
+                    "msg":"please login",
+                    "data":"",
+            }
+            return
+        }
         user, err := p.GetUser(token)
         if err != nil {
             printf("get user error:", err)
@@ -151,9 +158,23 @@ post "/spirits/upload", ctx => {
 }
 
 post "/asset/save", ctx => {
-        ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
      	id := ctx.FormValue("id")
-        uid := ctx.FormValue("uid")
+        userId := ""
+        token := core.GetToken(ctx)
+        if token==""{
+            ctx.json {
+                    "code":200,
+                    "msg":"please login",
+                    "data":"",
+            }
+            return
+        }
+        user, err := p.GetUser(token)
+        if err != nil {
+            printf("get user error:", err)
+        } else {
+            userId = user.Id
+        }
         name:=ctx.FormValue("name")
         category:=ctx.FormValue("category")
         isPublic:=ctx.FormValue("isPublic")
@@ -163,7 +184,7 @@ post "/asset/save", ctx => {
         	asset:=&core.Asset{
         	     ID:id,
         		 Name:name,
-                 AuthorId:uid,
+                 AuthorId:userId,
                  Category:category,
                  IsPublic:ip,
                  AssetType:assetType,
@@ -178,16 +199,43 @@ post "/asset/save", ctx => {
 }
 
 get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
     assetType := ctx.param("assetType")
     category := ctx.param("category")
     isOrderByTime := ctx.param("isOrderByTime")
     isOrderByHot := ctx.param("isOrderByHot")
-    uid := ctx.param("uid")
-    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot,uid)
+    result, _ := p.AssetPubList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
+    ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data": result,
+    }
+}
+get "/list/userasset/:pageIndex/:pageSize/:assetType", ctx => {
+    userId := ""
+    token := core.GetToken(ctx)
+    if token==""{
+        ctx.json {
+                "code":200,
+                "msg":"please login",
+                "data":"",
+        }
+        return
+    }
+    user, err := p.GetUser(token)
+    if err != nil {
+        printf("get user error:", err)
+    } else {
+        userId = user.Id
+    }
+    pageIndex := ctx.param("pageIndex")
+    pageSize := ctx.param("pageSize")
+    assetType := ctx.param("assetType")
+    category := ctx.param("category")
+    isOrderByTime := ctx.param("isOrderByTime")
+    isOrderByHot := ctx.param("isOrderByHot")
+    result, _ := p.UserAssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot,userId)
     ctx.json {
             "code":200,
             "msg":"ok",
@@ -197,8 +245,6 @@ get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
 
 
 get "/clickCount/asset/:id/:assetType", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-    ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     id := ctx.param("id")
     assetType := ctx.param("assetType")
     p.IncrementAssetClickCount(todo, id, assetType)
@@ -210,8 +256,6 @@ get "/clickCount/asset/:id/:assetType", ctx => {
 }
 
 get "/list/pubProject/:pageIndex/:pageSize", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
     result, _ := p.PubProjectList(todo, pageIndex, pageSize)
@@ -222,8 +266,6 @@ get "/list/pubProject/:pageIndex/:pageSize", ctx => {
     }
 }
 get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
     uid := ctx.param("uid")
@@ -235,8 +277,7 @@ get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
     }
 }
 post "/project/updateIsPublic", ctx=>{
-	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+
 	id := ctx.FormValue("id")
 	_ = p.UpdatePublic(todo,id)
 	ctx.json {
@@ -246,8 +287,6 @@ post "/project/updateIsPublic", ctx=>{
 	}
 }
 post "/asset/search", ctx=>{
-	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
 	search := ctx.FormValue("search")
 	assetType := ctx.FormValue("assetType")
 	assets,_ := p.SearchAsset(todo,search,assetType)
@@ -262,4 +301,4 @@ conf := &core.Config{}
 p, _ = core.New(todo, conf)
 core.CasdoorConfigInit()
 
-run ":8080"
+run ":8080",common.CorsMiddleware
