@@ -71,7 +71,7 @@ import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
-import LoadFromScratch from 'comps/spx-library/LoadFromScratcho.vue'
+import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
