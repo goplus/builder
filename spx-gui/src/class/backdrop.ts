@@ -121,7 +121,7 @@ export class Backdrop extends AssetBase {
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": useProjectStore().project?.sprite.list.map(sprite => sprite.name) || [],
+            "zorder": [],
         }
     }
 
