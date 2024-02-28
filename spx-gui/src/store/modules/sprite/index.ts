@@ -46,6 +46,10 @@ export const useSpriteStore = defineStore('sprite', () => {
       project.value.backdrop.config.zorder.splice(project.value.backdrop.config.zorder.indexOf(sprite.name), 1)
     }
   }
+  
+  function existsByName(name: string): boolean {
+    return map.value.has(name);
+  }
 
     return {
         list, current,
