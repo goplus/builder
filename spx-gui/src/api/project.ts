@@ -87,16 +87,16 @@ export async function updateProjectIsPublic(id: string): Promise<string> {
  * @returns string
  */
 export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<FormatResponse>>> {
-    const url = '/project/fmt';
-    const formData = new FormData();
-    formData.append('body', body);
+  const url = '/project/fmt'
+  const formData = new FormData()
+  formData.append('body', body)
 
-    return service({
-        url: url,
-        method: 'post',
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        },
-    });
+  return service({
+    url: url,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }

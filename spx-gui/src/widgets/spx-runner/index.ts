@@ -7,7 +7,7 @@
  * @Description: 
  */
 import { defineCustomElement } from "vue";
-import spxRunner from "./spx-runner.vue";
+import spxRunner from "./SpxRunner.vue";
 export const spxRunnerWidget = defineCustomElement(spxRunner)
 
 customElements.define("spx-runner", spxRunnerWidget)
