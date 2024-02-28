@@ -14,11 +14,13 @@
   </div>
   <div class="asset-detail-info">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="assetFileDetail in assetFileDetails" :key="assetFileDetail.url" class="file-row" :style="{border: selectedAssets.includes(assetFileDetail) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
+      <n-grid-item v-for="assetFileDetail in assetFileDetails" :key="assetFileDetail.url" class="file-row" @click="chooseAsset(assetFileDetail)" :style="{border: selectedAssets.includes(assetFileDetail) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
         <n-input
           v-model:value="assetFileDetail.name"
           placeholder="assetFileDetail.name"
           size="tiny"
+          style="width:80%; margin-top:2px;"
+          @click.stop="() => {}"
         >
         <template #suffix>
           .
@@ -29,38 +31,29 @@
         </n-input>
         <n-image
           v-if="isImage(assetFileDetail)"
-          style="position: absolute; top: 25px; left: 15px; border-radius: 20px"
+          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
           preview-disabled
-          width="110"
-          height="110"
+          width="80"
+          height="80"
           :src="assetFileDetail.url"
           fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
         />
         <n-image
           v-else
           preview-disabled
-          style="position: absolute; top: 30px; left: 35px; border-radius: 20px"
+          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
           width="80"
           height="80"
           :src="SoundsImport"
-          fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
-          @click="playAudio(assetFileDetail.url)"
+          :fallback-src="error"
+          @click.stop="playAudio(assetFileDetail.url)"
         />
         <div class="file-btn">
           <n-button
             type="primary"
             secondary
-            style="height: 24px; padding: 6px;"
-            @click="chooseAsset(assetFileDetail)"
-            :class="{'selected-btn': selectedAssets.includes(assetFileDetail)}"
-          >
-          {{ selectedAssets.includes(assetFileDetail) ? 'Cancel' : 'Choose'}}
-          </n-button>
-          <n-button
-            type="primary"
-            secondary
             style="height: 24px; padding: 6px"
-            @click="downloadAsset(assetFileDetail)"
+            @click.stop="downloadAsset(assetFileDetail)"
           >
             Download
           </n-button>
@@ -81,7 +74,7 @@ import { useSpriteStore } from '@/store'
 import { NButton, NInput, NImage, NGrid, NGridItem } from 'naive-ui'
 import SoundsImport from "@/assets/image/sounds/sounds-import.svg"
 import { commonColor } from '@/assets/theme'
-
+import error from '@/assets/image/library/error.svg'
 interface AssetFileDetail {
   name: string
   extension: string

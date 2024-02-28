@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 21:01:22
+ * @LastEditTime: 2024-02-28 14:51:10
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -36,7 +36,7 @@ export function getAssetList({
   isOrderByTime?: boolean
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
-  let url = `/list/asset/${pageIndex}/${pageSize}/${assetType}`
+  let url = `/list/asset?pageIndex=${pageIndex}&pageSize=${pageSize}&assetType=${assetType}`
   const params = new URLSearchParams()
 
   if (category) {
@@ -49,7 +49,7 @@ export function getAssetList({
     params.append('isOrderByHot', '1')
   }
   if (Array.from(params).length > 0) {
-    url += `?${params.toString()}`
+    url += `&${params.toString()}`
   }
 
   return service({
