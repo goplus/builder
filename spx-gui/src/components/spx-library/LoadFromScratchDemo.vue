@@ -10,7 +10,7 @@
       style="display: none"
       @change="handleScratchFileUpload"
     />
-    <button v-if="selectedAssets.length != 0" class="custom-import-btn" @click="importFile">Import to spx project</button>
+    <button v-if="selectedAssets.length != 0" class="custom-import-btn" @click="importSelectedAssetToProject">Import to spx project</button>
   </div>
   <div class="asset-detail-info">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
@@ -176,7 +176,7 @@ const playAudio = (audioUrl: string) => {
   audio.play()
 }
 
-/* Choose one asset */
+/* Choose one asset  */
 const chooseAsset = (asset: AssetFileDetail) => {
   if(selectedAssets.value){
     const index = selectedAssets.value.findIndex(a => a.name === asset.name);
@@ -199,17 +199,17 @@ const downloadAsset = (asset: AssetFileDetail) => {
 }
 
 /* Import the selected asset to project */
-const importFile = () => {
+const importSelectedAssetToProject = () => {
   if (!selectedAssets.value) return;
   selectedAssets.value.forEach(asset => {
     const file = getFileFromAssetFileDetail(asset);
     if (isImage(asset)) {
-      importSpriteToProject(asset, file)
+      importSpriteToProject(asset, file);
     } else {
-      importSoundToProject(asset, file)
+      importSoundToProject(asset, file);
     }
-    showImportSuccessMessage()
   })
+  showImportSuccessMessage();
 }
 
 /* Import sound file to current project */
@@ -240,12 +240,12 @@ const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
   return `${newName}.${extension}`;
 }
 
-/* Get file from AssetFileDetail*/
+/* Get file from AssetFileDetail */
 const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
   return new File([asset.blob], getFullAssetName(asset), { type: asset.blob.type })
 }
 
-/* Show 'import successfully' message*/
+/* Show 'import successfully' message */
 const showImportSuccessMessage = () => {
   message.success('import successfully!', { duration: 1000 })
 }
