@@ -1,8 +1,8 @@
 <!--
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-02 11:07:26
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-28 17:57:07
  * @FilePath: /builder/spx-gui/src/components/spx-editor/SpxEditor.vue
  * @Description:
 -->
@@ -65,7 +65,6 @@
         </div>
       </template>
       <!-- TODO Costume Editor Part   -->
-      <LoadFromScratch/>
     </n-tab-pane>
   </n-tabs>
 </template>
