@@ -271,7 +271,7 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 	if asset == nil {
 		return nil, err
 	}
-	modifiedAddress, err := p.modifyAddress(asset.Address)
+	modifiedAddress, err := p.ModifyAddress(asset.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func (p *Project) AssetPubList(ctx context.Context, pageIndex string, pageSize s
 	}
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := p.modifyAddress(asset.Address)
+		modifiedAddress, err := p.ModifyAddress(asset.Address)
 		if err != nil {
 			return nil, err
 		}
@@ -328,7 +328,7 @@ func (p *Project) UserAssetList(ctx context.Context, pageIndex string, pageSize 
 
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := p.modifyAddress(asset.Address)
+		modifiedAddress, err := p.ModifyAddress(asset.Address)
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, asset
 }
 
 // modifyAddress transfers relative path to download url
-func (p *Project) modifyAddress(address string) (string, error) {
+func (p *Project) ModifyAddress(address string) (string, error) {
 	var data struct {
 		Assets    map[string]string `json:"assets"`
 		IndexJson string            `json:"indexJson"`
@@ -413,16 +413,6 @@ func (p *Project) UpdatePublic(ctx context.Context, id string) error {
 	return UpdateProjectIsPublic(p, id)
 }
 
-func (p *Project) UploadAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
-	path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, header)
-	if err != nil {
-		return nil, err
-	}
-	asset.Address = path
-	asset.ID, err = AddAsset(p, asset)
-	return asset, err
-}
-
 func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.File, header *multipart.FileHeader) (*Asset, error) {
 	address := GetAssetAddress(asset.ID, p)
 	var data struct {
@@ -476,7 +466,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 			println(err.Error())
 			return nil, err
 		}
-		asset.Address, _ = p.modifyAddress(asset.Address)
+		asset.Address, _ = p.ModifyAddress(asset.Address)
 		// 将每行数据追加到切片中
 		assets = append(assets, &asset)
 	}

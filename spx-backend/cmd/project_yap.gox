@@ -90,45 +90,6 @@ get "/asset/:id", ctx => {
     		"data":{"asset": asset},
     }
 }
-
-post "/asset/upload", ctx => {
-        userId := ""
-        token := core.GetToken(ctx)
-        if token==""{
-            ctx.json {
-                    "code":200,
-                    "msg":"please login",
-                    "data":"",
-            }
-            return
-        }
-        user, err := p.GetUser(token)
-        if err != nil {
-            printf("get user error:", err)
-        } else {
-            userId = user.Id
-        }
-        name:=ctx.FormValue("name")
-        category:=ctx.FormValue("category")
-        isPublic:=ctx.FormValue("isPublic")
-        assetType := ctx.FormValue("assetType")
-        ip, _ := strconv.Atoi(isPublic)
-        file,header,_:=ctx.FormFile("file")
-        	asset:=&core.Asset{
-        		 Name:name,
-                 AuthorId:userId,
-                 Category:category,
-                 IsPublic:ip,
-                 AssetType:assetType,
-                 Status:1,
-        	}
-        	res,_ := p.UploadAsset(todo,asset,file,header)
-        	ctx.json {
-        		"code":200,
-        		"msg":"ok",
-        		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
-        	}
-}
 post "/spirits/upload", ctx => {
         ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
         userId := ""
