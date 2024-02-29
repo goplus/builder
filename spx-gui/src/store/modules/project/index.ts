@@ -1,9 +1,9 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 11:26:18
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-02-05 17:32:55
- * @FilePath: /spx-gui/src/store/modules/project/index.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-28 13:54:41
+ * @FilePath: \spx-gui\src\store\modules\project\index.ts
  * @Description: The store of project.
  */
 

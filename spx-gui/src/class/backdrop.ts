@@ -1,8 +1,8 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 12:52:11
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-19 09:10:03
  * @FilePath: /spx-gui/src/class/backdrop.ts
  * @Description: The class of a backdrop.
  */
@@ -121,45 +121,8 @@ export class Backdrop extends AssetBase {
                 "name": file.name.split(".")[0],
                 "path": file.name
             })),
-            "zorder": useProjectStore().project?.sprite.list.map(sprite => sprite.name) || [],
-            "sceneIndex": 0
+            "zorder": [],
         }
-    }
-
-    /**
-     * Get the current scene index.
-     */
-    get currentSceneIndex(): number {
-        return this.config.sceneIndex ?? 0
-    }
-
-    /**
-     * Set the current scene index.
-     */
-    set currentSceneIndex(index: number) {
-        if (!this.config.scenes[index]) {
-            throw new Error(`Scene ${index} does not exist.`)
-        }
-        this.config.sceneIndex = index
-    }
-
-    /**
-     * Get the current scene.
-     */
-    get currentScene() {
-        return this.config.scenes[this.currentSceneIndex]
-    }
-
-    /**
-     * Get the current scene with config.
-     */
-    get currentSceneConfig(): Scene {
-        const scene = this.currentScene
-        return Object.assign({}, scene, {
-            index: this.currentSceneIndex,
-            file: this.files[this.currentSceneIndex],
-            url: this.files[this.currentSceneIndex].url
-        })
     }
 
     /**

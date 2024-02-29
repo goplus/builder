@@ -107,8 +107,8 @@ onMounted(() => {
 1. The returned value of `defineStore()`is named using the name of store.
 2. This value needs to start with `use` and end with `Store`. for example, `useAssetStore`, `useUserStore`, `useStyleStore`
 3. The first parameter is the unique ID of the Store in the application
-3. Use `Setup Store` to write Store
-4. Read-only properties in store are exposed after being wrapped with `vue.readonly`
+4. Use `Setup Store` to write Store
+5. Read-only properties in store are exposed after being wrapped with `vue.readonly`
 
 ```js
 export const useUserStore = defineStore('user', () => {

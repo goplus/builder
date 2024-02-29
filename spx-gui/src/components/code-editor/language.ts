@@ -133,7 +133,7 @@ export const MonarchTokensProviderConfig:
     operators,
     functions: function_completions.map((e) => e.label),
     brackets,
-    symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    symbols: /[=><!~?:&|+\-*/^%]+/,
     escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
     // digits
     digits: /\d+(_+\d+)*/,
@@ -160,7 +160,7 @@ export const MonarchTokensProviderConfig:
             { include: '@whitespace' },
 
             // delimiters and operators
-            [/[{}()\[\]]/, '@brackets'],
+            [/[{}()[\]]/, '@brackets'],
             [/[<>](?!@symbols)/, '@brackets'],
             [/@symbols/, {
                 cases: {
@@ -170,8 +170,8 @@ export const MonarchTokensProviderConfig:
             }],
 
             // numbers
-            [/(@digits)[eE]([\-+]?(@digits))?/, 'number.float'],
-            [/(@digits)\.(@digits)([eE][\-+]?(@digits))?/, 'number.float'],
+            [/(@digits)[eE]([-+]?(@digits))?/, 'number.float'],
+            [/(@digits)\.(@digits)([eE][-+]?(@digits))?/, 'number.float'],
             [/0[xX](@hexdigits)/, 'number.hex'],
             [/0[oO]?(@octaldigits)/, 'number.octal'],
             [/0[bB](@binarydigits)/, 'number.binary'],
@@ -192,10 +192,10 @@ export const MonarchTokensProviderConfig:
 
         ],
         comment: [
-            [/[^\/*]+/, 'comment'],
+            [/[^/*]+/, 'comment'],
             [/\/\*/, 'comment', '@push'],
             ["\\*/", 'comment', '@pop'],
-            [/[\/*]/, 'comment']
+            [/[/*]/, 'comment']
         ],
 
         string: [
