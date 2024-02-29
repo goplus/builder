@@ -46,7 +46,7 @@ const ext2mime: Record<string, string> = {
  * @param ext the file extension
  * @returns the mime type
  */
-export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'text/plain'
+export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'unknown'
 
 /**
  * Convert array buffer to content.
@@ -103,12 +103,7 @@ export function getPrefix(dir: Record<string, any>) {
     return prefix.endsWith('/') ? prefix : prefix + '/';
 }
 
-import { Project } from "@/class/project"
-import { Backdrop } from "@/class/backdrop"
-import { Sound } from "@/class/sound"
-import { Sprite } from "@/class/sprite"
-import type { Config } from "@/interface/file"
-import type { FileType, DirPath, RawDir, RawFile } from "@/types/file"
+import type { DirPath, RawDir, RawFile } from "@/types/file"
 import JSZip from "jszip"
 
 /**
@@ -121,12 +116,12 @@ export function genFile(content: string, type: string, name: string) {
 export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
     const directory: DirPath = {}
     for (const [path, value] of Object.entries(dir)) {
-        const ext = path.split('.').pop()!
-        const content = await content2ArrayBuffer(value, getMimeFromExt(ext))
+        const type = typeof value === 'string' ? 'text/plain' : typeof value === 'object' && value instanceof File ? value.type : 'application/json'
+        const content = await content2ArrayBuffer(value, type)
         directory[path] = {
             content,
             path,
-            type: getMimeFromExt(ext),
+            type,
             size: content.byteLength,
             modifyTime: (value instanceof File) ? new Date(value.lastModified) : new Date()
         }
@@ -186,67 +181,6 @@ export async function getDirPathFromZip(zipFile: File): Promise<DirPath> {
         }
     }
     return dir
-}
-
-/**
- * Parse directory to project.
- * @param {DirPath} dir
- * @returns project
- */
-export function convertDirPathToProject(dir: DirPath): Project {
-    function handleFile(file: FileType, filename: string, item: any) {
-        switch (file.type) {
-            case 'application/json':
-                item.config = arrayBuffer2Content(file.content, file.type) as Config;
-                break;
-            default:
-                item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
-                break;
-        }
-    }
-
-    function findOrCreateItem(name: string, collection: any[], constructor: typeof Sprite | typeof Sound) {
-        let item = collection.find(item => item.name === name);
-        if (!item) {
-            item = new constructor(name);
-            collection.push(item);
-        }
-        return item;
-    }
-
-    const proj: Project = new Project()
-    const prefix = getPrefix(dir)
-
-    // eslint-disable-next-line prefer-const
-    for (let [path, file] of Object.entries(dir)) {
-        const filename = file.path.split('/').pop()!;
-        path = path.replace(prefix, '')
-        if (Sprite.REG_EXP.test(path)) {
-            const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
-            const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
-            handleFile(file, filename, sprite);
-        }
-        else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
-            proj.entryCode = arrayBuffer2Content(file.content, file.type, filename) as string
-        }
-        else if (/^.+\.spx$/.test(path)) {
-            const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
-            const sprite: Sprite = findOrCreateItem(spriteName, proj.sprite.list, Sprite);
-            sprite.code = arrayBuffer2Content(file.content, file.type) as string;
-        }
-        else if (Sound.REG_EXP.test(path)) {
-            const soundName = path.match(Sound.REG_EXP)?.[1] || '';
-            const sound: Sound = findOrCreateItem(soundName, proj.sound.list, Sound);
-            handleFile(file, filename, sound);
-        }
-        else if (Backdrop.REG_EXP.test(path)) {
-            handleFile(file, filename, proj.backdrop);
-        }
-        else {
-            proj.unidentifiedFile[path] = arrayBuffer2Content(file.content, file.type, filename)
-        }
-    }
-    return proj
 }
 
 const zipFileValue = (key: string, value: RawFile): [string, string | File] => {

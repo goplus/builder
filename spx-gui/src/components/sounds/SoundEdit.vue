@@ -158,6 +158,7 @@ const props = defineProps({
   asset: {
     type: Sound,
     required: false,
+    default: null
   }
 })
 

@@ -1,77 +1,92 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-07 09:19:07
- * @FilePath: /spx-gui/src/components/stage-viewer/Costume.vue
+ * @LastEditTime: 2024-02-23 20:01:39
+ * @FilePath: \spx-gui\src\components\stage-viewer\Costume.vue
  * @Description: 
 -->
 <template>
-    <v-image @dragend="handleDragEnd" :config="{
-        image: image,
-        draggable: true,
-        x: spritePosition.x,
-        y: spritePosition.y,
-        rotation: spriteRotation,
-        offsetX: props.costumeConfig.x,
-        offsetY: props.costumeConfig.y,
-        scaleX: props.spriteConfig.size,
-        scaleY: props.spriteConfig.size
-    }" />
+  <v-image
+    ref="costume"
+    :config="{
+      spriteName: props.spriteConfig.name,
+      image: image,
+      draggable: true,
+      x: spritePosition.x,
+      y: spritePosition.y,
+      rotation: spriteRotation,
+      offsetX: currentCostume.x,
+      offsetY: currentCostume.y,
+      scaleX: props.spriteConfig.config.size,
+      scaleY: props.spriteConfig.config.size
+    }"
+    @dragmove="onDragMove"
+    @dragend="handleDragEnd"
+  />
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, onMounted, ref, computed, watchEffect, onUnmounted, watch } from "vue"
-import type { StageCostume, StageSprite, MapConfig, SpriteDragEndTarget } from "./index";
-
-
+import { defineProps, ref, computed, watch } from 'vue'
+import type { ComputedRef } from 'vue'
+import type { MapConfig } from './common'
+import type { KonvaEventObject } from 'konva/lib/Node'
+import type { Sprite as SpriteConfig } from '@/class/sprite'
+import type { SpriteDragMoveEvent } from './common'
+import type { Costume as CostumeConfig } from '@/interface/file'
+import { Image } from 'konva/lib/shapes/Image'
+import type { Rect } from 'konva/lib/shapes/Rect'
 // ----------props & emit------------------------------------
 const props = defineProps<{
-    spriteConfig: StageSprite,
-    costumeConfig: StageCostume,
-    mapConfig: MapConfig
+  spriteConfig: SpriteConfig
+  mapConfig: MapConfig
+  selected: boolean
 }>()
 // define the emits
 const emits = defineEmits<{
-    // when ths costume dragend,emit the sprite position
-    (e: 'onDragEnd', event: SpriteDragEndTarget): void
+  // when ths costume dragend,emit the sprite position
+  (e: 'onDragMove', event: SpriteDragMoveEvent): void
 }>()
 
-
-
+// ----------computed properties-----------------------------
+// computed the current costume with current image
+const currentCostume: ComputedRef<CostumeConfig> = computed(() => {
+  return props.spriteConfig.config.costumes[props.spriteConfig.config.costumeIndex]
+})
 
 // ----------data related -----------------------------------
 const image = ref<HTMLImageElement>()
-
+const costume = ref<Image>()
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
-    return getRelativePosition(
-        props.spriteConfig.x,
-        props.spriteConfig.y
-    );
+  return getRelativePosition(props.spriteConfig.config.x, props.spriteConfig.config.y)
 })
 
 // Computed spx's sprite heading to konva's rotation by about changing sprite heading
 const spriteRotation = computed(() => {
-    return getRotation(props.spriteConfig.heading);
+  return getRotation(props.spriteConfig.config.heading)
 })
 
-watch(() => props.costumeConfig.url, (new_url, old_url) => {
-    if (new_url) {
-        const _image = new window.Image();
-        _image.src = props.costumeConfig.url;
-        _image.onload = () => {
-            image.value = _image;
-            console.log(_image.width, _image.height)
-        };
+watch(
+  () => currentCostume.value,
+  (new_costume, old_costume) => {
+    console.log(new_costume, old_costume)
+    if (new_costume != null) {
+      const _image = new window.Image()
+      _image.src = props.spriteConfig.files[props.spriteConfig.config.costumeIndex].url as string
+      _image.onload = () => {
+        image.value = _image
+      }
     } else {
-        image.value?.remove();
+      image.value?.remove()
     }
-}, {
+  },
+  {
     immediate: true
-})
-
+  }
+)
 
 // ----------methods-----------------------------------------
 /**
@@ -82,13 +97,13 @@ watch(() => props.costumeConfig.url, (new_url, old_url) => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:52:50
  */
-const getRelativePosition = (x: number, y: number): { x: number; y: number; } => {
-    // 返回计算后的位置  stage.width / 2 + x ，stage.height / 2 + y
-    return {
-        x: props.mapConfig.width / 2 + x,
-        y: props.mapConfig.height / 2 - y,
-    };
-};
+const getRelativePosition = (x: number, y: number): { x: number; y: number } => {
+  // 返回计算后的位置  stage.width / 2 + x ，stage.height / 2 + y
+  return {
+    x: props.mapConfig.width / 2 + x,
+    y: props.mapConfig.height / 2 - y
+  }
+}
 
 /**
  * @description: map spx's sprite heading to konva's rotation
@@ -96,9 +111,8 @@ const getRelativePosition = (x: number, y: number): { x: number; y: number; } =>
  * @return {*}
  */
 const getRotation = (heading: number): number => {
-    return heading - 90
-};
-
+  return heading - 90
+}
 
 /**
  * @description: map konva's relative postion to spx's position
@@ -108,26 +122,32 @@ const getRotation = (heading: number): number => {
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:28:36
  */
-const getSpxPostion = (x: number, y: number): { x: number; y: number; } => {
-    return {
-        x: x - props.mapConfig.width / 2,
-        y: props.mapConfig.height / 2 - y,
-    }
+const getSpxPostion = (x: number, y: number): { x: number; y: number } => {
+  return {
+    x: x - props.mapConfig.width / 2,
+    y: props.mapConfig.height / 2 - y
+  }
+}
+const controller = ref<Rect | null>()
+
+const onDragMove = (event: KonvaEventObject<MouseEvent>) => {
+  emits('onDragMove', {
+    event,
+    sprite: props.spriteConfig
+  })
 }
 
 /**
- * @description: when ths costume dragend,map and emit the sprite position
+ * @description: when ths costume dragend,map and set the sprite position
  * @param {*} event
  * @return {*}
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 15:44:18
  */
-const handleDragEnd = (event: { target: { attrs: { x: number, y: number } } }) => {
-    emits('onDragEnd', {
-        sprite: props.spriteConfig,
-        costume: props.costumeConfig,
-        position: getSpxPostion(event.target.attrs.x, event.target.attrs.y)
-    })
+const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
+  const position = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
+  props.spriteConfig.config.x = position.x
+  props.spriteConfig.config.y = position.y
+  controller.value = null
 }
-
 </script>

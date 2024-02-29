@@ -7,14 +7,18 @@
  * @Description: 
 -->
 <template>
-    <div class="demo">
-        <pre>{{ editorContent }}</pre>
-        <div>
-            <button @click="format">format</button>
-            <button @click="insertSnippet">start snippet</button>
-            <button @click="toggleReadOnly">{{ editorOptions.readOnly ? 'disable' : 'enable' }} readonly</button>
-            <div v-for="(item, index) in codeArray" @click="codeIndex = index"> code: {{ index }} </div>
-        </div>
+  <div class="demo">
+    <pre>{{ editorContent }}</pre>
+    <div>
+      <button @click="format">format</button>
+      <button @click="insertSnippet">start snippet</button>
+      <button @click="toggleReadOnly">
+        {{ editorOptions.readOnly ? 'disable' : 'enable' }} readonly
+      </button>
+      <div v-for="(item, index) in codeArray" :key="index" @click="codeIndex = index">
+        code: {{ index }}
+      </div>
+    </div>
 
         <CodeEditor width="500px" height="500px" ref="codeEditor" :editor-options="editorOptions"
             :model-value="editorContent" @update:model-value="onCodeChange" />

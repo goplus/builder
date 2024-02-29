@@ -36,7 +36,6 @@ declare global {
     /**
      * Required to communicate with Go WASM instance.
      */
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     project_path: string
   }
 }

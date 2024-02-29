@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 13:10:15
+ * @LastEditTime: 2024-02-22 14:42:01
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description: 
 -->
@@ -214,7 +214,6 @@ const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
   if (props.type === 'backdrop') {
     let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
-    console.log('res', res, res.data.data, res.data.data == null)
     if (res.data.data == null) {
       assetInfos.value = []
     } else {
@@ -227,7 +226,6 @@ const handleSearch = async () => {
     } else {
       assetInfos.value = res.data.data
     }
-    console.log(assetInfos.value, res, res.data, 'assetInfos.value')
   }
 }
 
@@ -238,7 +236,6 @@ const handleSearch = async () => {
  * @Date: 2024-02-19 9:09:05
  */
 const handleSortByHot = async () => {
-  //TODO
   let pageIndex = 1
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
@@ -259,7 +256,6 @@ const handleSortByHot = async () => {
  * @Date: 2024-02-19 9:19:01
  */
 const handleSortByTime = async () => {
-  //TODO
   let pageIndex = 1
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
