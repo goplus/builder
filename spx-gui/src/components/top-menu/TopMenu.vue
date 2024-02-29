@@ -320,11 +320,11 @@ const handleSelectImport = (key: string | number) => {
     projectStore.project.download();
   }
   else if (key === 'SaveCloud') {
+    const { message } = createDiscreteApi(['message'])
     projectStore.project.save().then((res) => {
-      const { message } = createDiscreteApi(['message'])
-      message.create(res.data.msg, {
-        type: res.data.code >= 200 && res.data.code < 300 ? "success" : "error"
-      })
+      message.success(res)
+    }).catch((err) => {
+      message.error(err)
     })
   }
 }

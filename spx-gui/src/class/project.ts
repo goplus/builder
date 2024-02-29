@@ -50,7 +50,6 @@ interface ProjectDetail {
 }
 
 export class Project implements ProjectDetail, ProjectSummary {
-  id: string
   version: number
   source: ProjectSource
   name: string
@@ -61,6 +60,16 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   cTime: string
   uTime: string
+
+  /** Cloud Id */
+  _id: string | null = null
+  /** Temporary id when not uploaded to cloud */
+  _temporaryId: string | null = null
+
+  /** Project id */
+  get id() {
+    return (this._id || this._temporaryId)!
+  }
 
   get defaultEntryCode() {
     let str = ""
@@ -96,9 +105,9 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 20, isUser: boolean = true): Promise<ProjectSummary[]> {
+  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
-    const projects = res.data.data.data
+    const projects = res.data
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
   }
 
@@ -128,20 +137,20 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.backdrop = new Backdrop()
     this.entryCode = ''
     this.unidentifiedFile = {}
-    // temporary id start with 'spx__'
-    this.id = Project.TEMPORARY_ID_PREFIX + nanoid()
+    this._temporaryId = Project.TEMPORARY_ID_PREFIX + nanoid()
     this.version = 1
     this.source = ProjectSource.local
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
   }
 
-  get isTemporary() {
-    return this.id.startsWith(Project.TEMPORARY_ID_PREFIX)
-  }
-
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
     this.source = source
+    if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
+      this._temporaryId = id
+    } else {
+      this._id = id
+    }
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
       const dirPath: DirPath = {}
@@ -154,8 +163,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       const summary = await fs.readFile("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
-      const res = await getProject(id)
-      const { address, name, version, cTime, uTime } = res.data.data
+      const { address, name, version, cTime, uTime } = await getProject(id)
       this.version = version
       this.cTime = cTime
       this.uTime = uTime
@@ -163,7 +171,6 @@ export class Project implements ProjectDetail, ProjectSummary {
       const zipFile = new File([zip], name)
       this.loadFromZip(zipFile)
     }
-    await this.setId(id)
   }
 
   /**
@@ -236,7 +243,6 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to storage.
    */
   async saveLocal() {
-    await this.removeLocal()
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
       await fs.writeFile(key, value)
@@ -256,19 +262,29 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Remove project from storage.
    */
   async removeLocal() {
-    await fs.rmdir(this.path)
-    await fs.unlink(this.summaryPath)
+    if (this._temporaryId !== null) {
+      await fs.rmdir(this._temporaryId)
+      await fs.unlink("summary/" + this._temporaryId)
+    }
+    if (this._id !== null) {
+      await fs.rmdir(this._id)
+      await fs.unlink("summary/" + this._id)
+    }
   }
 
   /**
    * Save project to Cloud.
    */
   async save() {
-    const id = this.isTemporary ? void 0 : this.id
+    const id = this._id ?? void 0
     return saveProject(this.name, await this.zip, id).then(async res => {
-      await this.setId(res.data.data.id)
-      this.version = res.data.data.version
-      return res
+      this._id = res.id
+      this.version = res.version
+      this.cTime = res.cTime
+      this.uTime = res.uTime
+      return Promise.resolve("Save success!")
+    }).catch(err => {
+      return Promise.reject(err)
     })
   }
 
@@ -282,11 +298,6 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   run() {
     window.project_path = this.id
-  }
-
-  async setId(id: string) {
-    this.id = id
-    await this.saveLocal()
   }
 
   get path() {

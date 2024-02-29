@@ -12,21 +12,26 @@ import type { AxiosResponse } from "axios";
  * @param file The code file(zip) to be uploaded.
  * @returns Project
  */
-export function saveProject(name: string, file: File, id?: string): Promise<AxiosResponse<ResponseData<Project>>> {
+export async function saveProject(name: string, file: File, id?: string): Promise<Project> {
     const url = '/project/allsave';
     const formData = new FormData();
     formData.append('name', name);
     formData.append('file', file);
     id && formData.append('id', id);
 
-    return service({
+    const res: AxiosResponse<ResponseData<Project>> = await service({
         url: url,
         method: 'post',
         data: formData,
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-    });
+    })
+    if (res.data.code >= 200 && res.data.code < 300) {
+        return Promise.resolve(res.data.data)
+    } else {
+        return Promise.reject(res.data.msg)
+    }
 }
 
 /**
@@ -36,9 +41,9 @@ export function saveProject(name: string, file: File, id?: string): Promise<Axio
  * @param isPublic Whether the project is public
  * @returns Project[]
  */
-export function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<AxiosResponse<ResponseData<PageData<Project[]>>>> {
+export async function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<PageData<Project[]>> {
     const url = isUser ? `/list/userProject/${pageIndex}/${pageSize}` : `/list/pubProject/${pageIndex}/${pageSize}`;
-    return service({ url: url, method: 'get' });
+    return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
 /**
@@ -46,9 +51,9 @@ export function getProjects(pageIndex: number, pageSize: number, isUser: boolean
  * @param id The id of the project
  * @returns Project
  */
-export function getProject(id: string): Promise<AxiosResponse<ResponseData<Project>>> {
+export async function getProject(id: string): Promise<Project> {
     const url = `/project?id=${id}`;
-    return service({ url: url, method: 'get' });
+    return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
 /**
