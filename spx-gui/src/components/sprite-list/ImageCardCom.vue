@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-28 16:17:25
+ * @LastEditTime: 2024-02-29 14:15:39
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description:
 -->
@@ -24,7 +24,7 @@
     :key="index"
     :class="computedProperties.cardClassName"
     :style="index == 0 ? firstBackdropStyle : ''"
-    @click="getBackdropIndex(file, index)"
+    @click="setTopFileIndex(file, index)"
   >
     <div class="delete-button" @click="deleteBackdrop(file)">×</div>
     <n-image
@@ -99,10 +99,9 @@ const deleteBackdrop = (file: FileWithUrl) => {
  * @param {*} index
  * @return {*}
  */
-const getBackdropIndex = (file: FileWithUrl, index: number) => {
+const setTopFileIndex = (file: FileWithUrl, index: number) => {
   if (index != 0) {
-    computedProperties.value.backdropFiles.splice(index, 1)
-    computedProperties.value.backdropFiles.unshift(file)
+    backdropStore.backdrop.setTopFileIndex(file, index)
   }
 }
 </script>

@@ -74,6 +74,7 @@ import { useSpriteStore } from '@/store'
 import { NButton, NInput, NImage, NGrid, NGridItem } from 'naive-ui'
 import SoundsImport from "@/assets/image/sounds/sounds-import.svg"
 import { commonColor } from '@/assets/theme'
+import { getMimeFromExt } from '@/util/file'
 import error from '@/assets/image/library/error.svg'
 
 // ----------props & emit------------------------------------
@@ -148,36 +149,13 @@ const handleScratchFileUpload = async (event: Event) => {
       let originalName = assetNameMap.get(filename)
       if (!originalName) continue
       let fileData = await zip.file(filename)!.async('blob')
-      let mimeType = getMimeType(extensionMatch[1]) // Use a function to determine MIME type
+      let mimeType = getMimeFromExt(extensionMatch[1]) // Use a function to determine MIME type
       let blob = new Blob([fileData], { type: mimeType })
       let url = URL.createObjectURL(blob)
       let name = originalName.split('.').slice(0, -1).join('.');
       let extension = originalName.split('.').pop() || '';
       assetFileDetails.value.push({ name: name, extension: extension, url, blob })
     }
-  }
-}
-
-/**
- * @description: Function to determine the MIME type based on the file extension
- * @param {*} extension
- * @return {*}
- */
-function getMimeType(extension: string): string {
-  switch (extension) {
-    case 'svg':
-      return 'image/svg+xml'
-    case 'jpeg':
-    case 'jpg':
-      return 'image/jpeg'
-    case 'png':
-      return 'image/png'
-    case 'wav':
-      return 'audio/wav'
-    case 'mp3':
-      return 'audio/mpeg'
-    default:
-      return 'application/octet-stream'
   }
 }
 

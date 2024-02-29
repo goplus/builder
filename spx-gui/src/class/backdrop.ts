@@ -1,8 +1,8 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-19 09:10:03
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-29 14:14:20
  * @FilePath: /spx-gui/src/class/backdrop.ts
  * @Description: The class of a backdrop.
  */
@@ -11,6 +11,7 @@ import { AssetBase } from "@/class/asset-base";
 import { isInstance, getAllFromLocal } from "@/util/class";
 import type { RawDir } from "@/types/file";
 import { useProjectStore } from "@/store/modules/project";
+import FileWithUrl from "@/class/file-with-url";
 
 /**
  * @class Backdrop
@@ -82,6 +83,11 @@ export class Backdrop extends AssetBase {
      */
     static async getAllFromLocal() {
         return await getAllFromLocal(Backdrop);
+    }
+
+    setTopFileIndex (file: FileWithUrl, index: number){
+        this.files.splice(index, 1)
+        this.files.unshift(file)
     }
 
     /**
