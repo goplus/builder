@@ -242,7 +242,7 @@ const beforeUpload = (
     switch (fileType) {
       case 'backdrop': {
         let backdrop = backdropStore.backdrop
-        backdrop.addFile(...fileArray)
+        backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
       case 'sound': {

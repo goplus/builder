@@ -14,7 +14,8 @@ import { Backdrop } from '@/class/backdrop'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
-
+import FileWithUrl from '@/class/file-with-url'
+import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local,
   cloud
@@ -207,6 +208,16 @@ export class Project implements ProjectDetail, ProjectSummary {
     this._load(dirPath)
     this.title = title || file.name.split('.')[0] || this.title
   }
+
+  async loadBlankProject() {
+    const response = await fetch(defaultScene)
+    const blob = await response.blob()
+    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    this.backdrop.addScene([
+      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+    ])
+  }
+  
 
   /**
    * Save project to storage.
