@@ -58,36 +58,6 @@ func (p *Project) ParseJwtToken(token string) (userId string, err error) {
 	return claim.Id, nil
 }
 
-// GetUserById get user by uid
-func (p *Project) GetUserById(uid string) (user *User, err error) {
-	claim, err := casdoorsdk.GetUserByUserId(uid)
-	if err != nil {
-		fmt.Println(err.Error())
-		return &User{}, ErrNotExist
-	}
-	if claim == nil {
-		user = &User{
-			Name:   "unknown",
-			Avatar: "",
-			Id:     "",
-		}
-	} else {
-		user = &User{
-			Name:   claim.Name,
-			Avatar: claim.Avatar,
-			Id:     claim.Id,
-		}
-	}
-
-	return
-}
-
-// UpdateUserById update user by uid
-func (p *Project) UpdateUserById(uid string, user *UserInfo) (res bool, err error) {
-	res, err = casdoorsdk.UpdateUserById(uid, (*casdoorsdk.User)(user))
-	return
-}
-
 func GetToken(ctx *yap.Context) string {
 	tokenCookie := ctx.Request.Header.Get("Authorization")
 	// 删除 token 字符串中的 "Bearer " 前缀
