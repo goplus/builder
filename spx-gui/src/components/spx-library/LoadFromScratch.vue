@@ -88,18 +88,12 @@ import { Sprite } from '@/class/sprite'
 import { useSpriteStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
-import { getMimeFromExt } from '@/util/file'
 import error from '@/assets/image/library/error.svg'
+import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
-import JSZip from 'jszip'
 
 // ----------props & emit------------------------------------
-interface AssetFileDetail {
-  name: string
-  extension: string
-  url: string
-  blob: Blob
-}
+
 const soundStore = useSoundStore()
 const spriteStore = useSpriteStore()
 const message: MessageApi = useMessage()
@@ -142,41 +136,11 @@ const handleScratchFileUpload = async (event: Event) => {
   if (!input.files || input.files.length === 0) {
     return
   }
-  let file = input.files[0]
-  let zip = await JSZip.loadAsync(file)
-
-  // Parses and restores the filename
-  let projectJson = await zip.file('project.json')?.async('string')
-  let projectData = JSON.parse(projectJson || '{}')
-  let assetNameMap = new Map<string, string>()
-  projectData.targets.forEach((target: any) => {
-    target.costumes.forEach((costume: any) => {
-      assetNameMap.set(costume.md5ext, costume.name + '.' + costume.dataFormat)
-    })
-    target.sounds.forEach((sound: any) => {
-      assetNameMap.set(sound.md5ext, sound.name + '.' + sound.dataFormat)
-    })
-  })
-
-  // Modify the loop that processes files to handle different types of images and audio files.
-  for (const filename of Object.keys(zip.files)) {
-    let extensionMatch = filename.match(/\.(svg|jpeg|jpg|png|wav|mp3)$/)
-    if (extensionMatch) {
-      let originalName = assetNameMap.get(filename)
-      if (!originalName) continue
-      let fileData = await zip.file(filename)!.async('blob')
-      let mimeType = getMimeFromExt(extensionMatch[1]) // Use a function to determine MIME type
-      let blob = new Blob([fileData], { type: mimeType })
-      let url = URL.createObjectURL(blob)
-      let name = originalName.split('.').slice(0, -1).join('.')
-      let extension = originalName.split('.').pop() || ''
-      assetFileDetails.value.push({ name: name, extension: extension, url, blob })
-    }
-  }
+  assetFileDetails.value = await parseScratchFile(input.files[0])
 }
 
-/** Get the full asset name like "meow.wav"
- * @description:
+/**
+ * @description: Get the full asset name like "meow.wav"
  * @param {*} asset
  * @return {*}
  */
