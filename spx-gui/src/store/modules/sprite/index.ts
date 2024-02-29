@@ -1,8 +1,8 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 16:52:14
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-28 17:33:55
  * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
@@ -47,11 +47,15 @@ export const useSpriteStore = defineStore('sprite', () => {
     }
   }
 
+  function existsByName(name: string): boolean {
+    return map.value.has(name);
+  }
+
   return {
-    list,
-    current,
-    addItem,
-    setCurrentByName,
-    removeItemByName
+      list, current,
+      addItem,
+      setCurrentByName,
+      removeItemByName,
+      existsByName
   }
 })
