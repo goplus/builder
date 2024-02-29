@@ -25,7 +25,6 @@ export const useProjectStore = defineStore('project', () => {
    */
   const saveLocal = debounce(async () => {
     console.log('project changed', project.value)
-    await project.value.removeLocal()
     await project.value.saveLocal()
   })
 

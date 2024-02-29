@@ -141,7 +141,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
-    await this.setId(id)
     this.source = source
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
@@ -164,6 +163,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       const zipFile = new File([zip], name)
       this.loadFromZip(zipFile)
     }
+    await this.setId(id)
   }
 
   /**
@@ -236,6 +236,7 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to storage.
    */
   async saveLocal() {
+    await this.removeLocal()
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
       await fs.writeFile(key, value)
@@ -284,7 +285,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   async setId(id: string) {
-    await this.removeLocal()
     this.id = id
     await this.saveLocal()
   }
