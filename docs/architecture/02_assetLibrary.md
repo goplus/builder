@@ -39,7 +39,7 @@ vueCopy code
     <LibraryModal
         v-model:show="showModal"
         :type="sprite"
-        @add-asset-to-store="handleAssetAddition"
+        @add-asset="handleAssetAddition"
      />
 </template>
 

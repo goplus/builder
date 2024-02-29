@@ -2,11 +2,10 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-01 15:44:27
- * @FilePath: /builder/spx-gui/vite.config.ts
+ * @LastEditTime: 2024-02-29 12:16:13
+ * @FilePath: \spx-gui\vite.config.ts
  * @Description:
  */
-import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -33,7 +32,8 @@ export default defineConfig({
       utils: resolve('src/utils'),
       routes: resolve('src/routes'),
       styles: resolve('src/styles'),
-      store: resolve('src/store')
+      store: resolve('src/store'),
+      assets:resolve('/src/assets')
     }
   },
   optimizeDeps: {

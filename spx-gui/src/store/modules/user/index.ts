@@ -18,6 +18,16 @@ const parseJwt = (token: string) => {
   return JSON.parse(jsonPayload)
 }
 
+export interface JwtPayload {
+  name: string
+  id: string
+  displayName: string
+  avatar: string
+  email: string
+  emailVerified: boolean
+  phone: string
+}
+
 export const useUserStore = defineStore('spx-user', {
   state: () => ({
     accessToken: null as string | null,
@@ -93,10 +103,7 @@ export const useUserStore = defineStore('spx-user', {
   getters: {
     userInfo: (state) => {
       if (!state.accessToken) return null
-      return parseJwt(state.accessToken) as {
-        displayName: string
-        avatar: string
-      }
+      return parseJwt(state.accessToken) as JwtPayload
     }
   },
   persist: true
