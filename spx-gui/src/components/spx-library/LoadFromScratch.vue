@@ -65,17 +65,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import JSZip from 'jszip'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
-import { type MessageApi, useMessage } from 'naive-ui'
+import { type MessageApi, NButton, NGrid, NGridItem, NImage, NInput, useMessage } from 'naive-ui'
 import { Sprite } from '@/class/sprite'
 import { useSpriteStore } from '@/store'
-import { NButton, NInput, NImage, NGrid, NGridItem } from 'naive-ui'
-import SoundsImport from "@/assets/image/sounds/sounds-import.svg"
+import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
 import { getMimeFromExt } from '@/util/file'
 import error from '@/assets/image/library/error.svg'
+import saveAs from 'file-saver'
+import JSZip from 'jszip';
 
 // ----------props & emit------------------------------------
 interface AssetFileDetail {
@@ -122,9 +122,9 @@ function triggerFileUpload() {
  * @return {*}
  */
 const handleScratchFileUpload = async (event: Event) => {
-  let input = event.target as HTMLInputElement
+  let input = event.target as HTMLInputElement;
   if (!input.files || input.files.length === 0) {
-    return
+    return;
   }
   let file = input.files[0]
   let zip = await JSZip.loadAsync(file)
@@ -168,8 +168,8 @@ const getFullAssetName = (asset: AssetFileDetail): string => {
   return asset.name + "." + asset.extension;
 };
 
-/** Add a method for playing audio directly in the browser
- * @description: 
+/**
+ * @description:Add a method for playing audio directly in the browser
  * @param {*} audioUrl
  * @return {*}
  */
@@ -184,13 +184,13 @@ const playAudio = (audioUrl: string) => {
  * @return {*}
  */
 const chooseAssets = (asset: AssetFileDetail) => {
-  if(selectedAssets.value){
+  if (selectedAssets.value) {
     let index = selectedAssets.value.findIndex(a => a.name === asset.name);
-  if (index !== -1) {
-    selectedAssets.value.splice(index, 1);
-  } else {
-    selectedAssets.value.push(asset);
-  }
+    if (index !== -1) {
+      selectedAssets.value.splice(index, 1);
+    } else {
+      selectedAssets.value.push(asset);
+    }
   }
 };
 
@@ -200,12 +200,7 @@ const chooseAssets = (asset: AssetFileDetail) => {
  * @return {*}
  */
 const downloadAsset = (asset: AssetFileDetail) => {
-  let a = document.createElement('a')
-  a.href = asset.url
-  a.download = getFullAssetName(asset)
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  saveAs(asset.blob, getFullAssetName(asset));
 }
 
 /**
@@ -248,7 +243,7 @@ const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
 }
 
 /**
- * @description: If sound.wav exists, return sound(1).wav, sound(2).wav 
+ * @description: If sound.wav exists, return sound(1).wav, sound(2).wav
  * @param {*} asset
  * @param {*} store
  * @return {*}

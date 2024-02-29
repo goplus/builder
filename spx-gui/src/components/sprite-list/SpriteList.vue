@@ -173,7 +173,7 @@ watchEffect(() => {
 }
 
 .import-assets-btn:hover{
-  background-color: rgb(255, 234, 204); 
+  background-color: rgb(255, 234, 204);
   color:#333333;
 }
 </style>
