@@ -1,9 +1,9 @@
 /*
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-19 21:53:50
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 14:14:20
- * @FilePath: /spx-gui/src/class/backdrop.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-02-29 18:00:18
+ * @FilePath: \spx-gui\src\class\backdrop.ts
  * @Description: The class of a backdrop.
  */
 import type { BackdropConfig, Scene } from '@/interface/file'
@@ -77,18 +77,14 @@ export class Backdrop extends AssetBase {
     return Backdrop.NAME
   }
 
-    /**
-     * Get all items in the storage.
-     * @returns all items in the storage
-     */
-    static async getAllFromLocal() {
-        return await getAllFromLocal(Backdrop);
-    }
+  /**
+   * Get all items in the storage.
+   * @returns all items in the storage
+   */
+  static async getAllFromLocal() {
+    return await getAllFromLocal(Backdrop)
+  }
 
-    setTopFileIndex (file: FileWithUrl, index: number){
-        this.files.splice(index, 1)
-        this.files.unshift(file)
-    }
 
   /**
    * @constructor create a new backdrop
@@ -177,11 +173,24 @@ export class Backdrop extends AssetBase {
    * remove scene by name of the backdrop
    */
   removeScene(name: string) {
-    // this.removeFile()
     if (this.config.scenes) {
       const index = this.config.scenes.findIndex((scene) => scene.name === name)
       this.removeFile(this.files[index])
       this.config.scenes.splice(index, 1)
+    }
+  }
+  /**
+   * When using scene as the background config
+   * The first item of scenes is the backdrop of the project
+   */
+  setSceneToTop(name: string) {
+    console.log(name)
+    if (this.config.scenes) {
+      const index = this.config.scenes.findIndex((scene) => scene.name === name)
+      const [sceneItem] = this.config.scenes.splice(index, 1)
+      const [fileItem] = this.files.splice(index, 1)
+      this.config.scenes.unshift(sceneItem)
+      this.files.unshift(fileItem)
     }
   }
 }

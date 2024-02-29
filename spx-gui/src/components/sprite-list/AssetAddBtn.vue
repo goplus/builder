@@ -166,10 +166,10 @@ const bodyStyle = { width: '600px', margin: 'auto' }
 const showUploadModal = ref<boolean>(false)
 
 // Ref about watch upload file list.
-const uploadFileList = ref<UploadFileInfo[]>([]);
+const uploadFileList = ref<UploadFileInfo[]>([])
 
 // Ref about upload sprite's name.
-const uploadSpriteName = ref('');
+const uploadSpriteName = ref('')
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -231,9 +231,8 @@ const beforeUpload = (
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
     switch (fileType) {
       case 'backdrop': {
-        // TODO: need sync to backdrop's scene config
         let backdrop = backdropStore.backdrop
-        backdrop.addFile(...fileArray)
+        backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
       case 'sound': {
@@ -269,7 +268,11 @@ const beforeBackdropUpload = (data: { file: UploadFileInfo; fileList: UploadFile
  * @Date: 2024-01-24 11:48:33
  */
 
-const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileInfo[]; event?: Event }) => {
+const hanleWatchFileList = (data: {
+  file: UploadFileInfo
+  fileList: UploadFileInfo[]
+  event?: Event
+}) => {
   uploadFileList.value = [...data.fileList]
 }
 
@@ -280,7 +283,7 @@ const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileIn
  * @Date: 2024-02-21 17:48:33
  */
 const handleSubmitSprite = () => {
-  let uploadFilesArr: File[] = [];
+  let uploadFilesArr: File[] = []
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
