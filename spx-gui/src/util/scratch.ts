@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-02-29 12:00:04
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 15:30:34
+ * @LastEditTime: 2024-02-29 15:38:04
  * @FilePath: src/util/scratch.ts
  * @Description: The util of scratch
 */
@@ -74,19 +74,3 @@ export const parseScratchFile = async (file: File): Promise<AssetFileDetail[]> =
   return assetFileDetails;
 };
 
-/**
- * @description: Function to determine the MIME type based on the file extension
- * @param {*} extension
- * @return {*}
- */
-const getMimeType = (extension: string): string => {
-  switch (extension) {
-    case 'svg': return 'image/svg+xml';
-    case 'jpeg':
-    case 'jpg': return 'image/jpeg';
-    case 'png': return 'image/png';
-    case 'wav': return 'audio/wav';
-    case 'mp3': return 'audio/mpeg';
-    default: return 'application/octet-stream';
-  }
-};
