@@ -14,22 +14,14 @@
     <!-- S Component Add Button type second step -->
     <div v-else class="add-buttons">
       <!-- Background Upload -->
-      <n-upload
-        v-if="props.type === 'backdrop'"
-        :action="uploadActionUrl"
-        @before-upload="beforeBackdropUpload"
-      >
+      <n-upload v-if="props.type === 'backdrop'" @before-upload="beforeBackdropUpload">
         <n-button color="#fff" quaternary size="tiny" text-color="#fff">
           {{ $t('stage.upload') }}
         </n-button>
       </n-upload>
 
       <!-- Sound Upload -->
-      <n-upload
-        v-else-if="props.type === 'sound'"
-        :action="uploadActionUrl"
-        @before-upload="beforeSoundUpload"
-      >
+      <n-upload v-else-if="props.type === 'sound'" @before-upload="beforeSoundUpload">
         <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
       </n-upload>
 
@@ -88,26 +80,40 @@
     header-style="padding:11px 24px 11px 30%;"
     content-style="margin:10px;"
   >
-    <div
-      style="display: flex; align-items: center; justify-content: start; width: 100%; padding: 10px"
-    >
-      <p style="margin: 0; flex-shrink: 0">{{ $t('list.name') }}:</p>
+    <div class="modal-items">
+      <p class="modal-items-p">{{ $t('list.name') }}:</p>
       <n-input
-        round
         v-model:value="uploadSpriteName"
+        round
         placeholder="Input sprite name"
-        style="flex-grow: 1; margin: 0 8px; max-width: 300px"
+        class="modal-items-content"
+        style="max-width: 300px"
       />
     </div>
-    <div
-      style="display: flex; align-items: center; justify-content: start; width: 100%; padding: 10px"
-    >
-      <p style="margin: 0; flex-shrink: 0">{{ $t('list.costumes') }}:</p>
+    <div class="modal-items">
+      <p class="modal-items-p">{{ $t('list.costumes') }}:</p>
       <n-upload
-        style="flex-grow: 1; margin: 0 8px"
+        class="modal-items-content"
         list-type="image-card"
         multiple
         @change="hanleWatchFileList"
+      />
+    </div>
+    <div class="modal-items">
+      <p class="modal-items-p">{{ $t('list.category') }}:</p>
+      <n-select
+        v-model:value="categoryValue"
+        class="modal-items-content"
+        :options="categoryOptions"
+      />
+    </div>
+    <div class="modal-items">
+      <p class="modal-items-p">{{ $t('list.public') }}:{{ publicValue }}</p>
+      <n-select
+        v-model:value="publicValue"
+        default-value="not public"
+        class="modal-items-content"
+        :options="publicOptions"
       />
     </div>
     <div style="width: 100%; text-align: center">
@@ -123,7 +129,7 @@
 // ----------Import required packages / components-----------
 import { ref, defineProps, computed } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
-import { NIcon, NUpload, NButton, useMessage, NModal, NInput } from 'naive-ui'
+import { NIcon, NUpload, NButton, useMessage, NModal, NInput, NSelect } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
 import { useSpriteStore } from '@/store/modules/sprite'
@@ -135,6 +141,7 @@ import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes } from '@/api/asset'
+import { categoryOptions, publicOptions } from '@/constant/constant'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -147,8 +154,11 @@ const backdropStore = useBackdropStore()
 const soundStore = useSoundStore()
 
 // ----------data related -----------------------------------
-// TODO: change uploadActionUrl to real backend url.
-const uploadActionUrl = 'https://www.mocky.io/v2/5e4bafc63100007100d8b70f'
+// Ref about category of upload sprite.
+const categoryValue = ref<string>()
+
+// Ref about publish upload sprite or not.
+const publicValue = ref<number>(0);
 
 // Ref about show modal or not.
 const showModal = ref<boolean>(false)
@@ -166,10 +176,10 @@ const bodyStyle = { width: '600px', margin: 'auto' }
 const showUploadModal = ref<boolean>(false)
 
 // Ref about watch upload file list.
-const uploadFileList = ref<UploadFileInfo[]>([]);
+const uploadFileList = ref<UploadFileInfo[]>([])
 
 // Ref about upload sprite's name.
-const uploadSpriteName = ref('');
+const uploadSpriteName = ref('')
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -268,7 +278,11 @@ const beforeBackdropUpload = (data: { file: UploadFileInfo; fileList: UploadFile
  * @Date: 2024-01-24 11:48:33
  */
 
-const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileInfo[]; event?: Event }) => {
+const hanleWatchFileList = (data: {
+  file: UploadFileInfo
+  fileList: UploadFileInfo[]
+  event?: Event
+}) => {
   uploadFileList.value = [...data.fileList]
 }
 
@@ -279,13 +293,37 @@ const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileIn
  * @Date: 2024-02-21 17:48:33
  */
 const handleSubmitSprite = () => {
-  let uploadFilesArr: File[] = [];
+  let uploadFilesArr: File[] = []
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
     }
   })
-  let gif = generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
+  const callGenerateGifByCostumes = (publicValueParam: number) => {
+    if (categoryValue.value) {
+      generateGifByCostumes(
+        uploadSpriteName.value,
+        uploadFilesArr,
+        categoryValue.value,
+        publicValueParam
+      )
+    } else {
+      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr, undefined, publicValueParam)
+    }
+  }
+
+  if ([0, 1, 2].includes(publicValue.value)) {
+    callGenerateGifByCostumes(publicValue.value)
+  } else if (publicValue.value == 3) {
+    callGenerateGifByCostumes(1)
+    callGenerateGifByCostumes(2)
+  } else {
+    if (categoryValue.value) {
+      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr, categoryValue.value)
+    } else {
+      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
+    }
+  }
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
   uploadSpriteName.value = ''
@@ -344,6 +382,22 @@ const handleAssetAddition = async (name: string, address: string) => {
 
 <style scoped lang="scss">
 @import '@/assets/theme.scss';
+
+.modal-items {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  width: 100%;
+  padding: 10px;
+  .modal-items-p {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .modal-items-content {
+    flex-grow: 1;
+    margin: 0 8px;
+  }
+}
 
 @mixin addDivBase {
   margin: 10px auto;

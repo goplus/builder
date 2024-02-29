@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 15:55:00
+ * @LastEditTime: 2024-02-29 16:31:29
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
  */
@@ -51,7 +51,8 @@ export const initI18n = async (app: App) => {
         publish: 'Publish',
         untitled: 'Untitled',
         code: 'Code',
-        tutorial: 'Tutorial'
+        tutorial: 'Tutorial',
+        settings: 'Settings'
       },
       editor: {
         clear: 'clear',
@@ -78,7 +79,9 @@ export const initI18n = async (app: App) => {
       list: {
         name: 'Name',
         costumes: 'Costumes',
-        submit: 'Submit'
+        submit: 'Submit',
+        category:'Category',
+        public:'IsPublic'
       },
       scratch: {
         import: 'Import Assets from Scratch',
@@ -125,7 +128,8 @@ export const initI18n = async (app: App) => {
         publish: '发布',
         untitled: '未命名',
         code: '代码',
-        tutorial: '教程'
+        tutorial: '教程',
+        settings: '设置'
       },
       editor: {
         clear: '清空',
@@ -152,7 +156,9 @@ export const initI18n = async (app: App) => {
       list: {
         name: '精灵名称',
         costumes: '上传造型',
-        submit: '提交'
+        submit: '提交',
+        category:'精灵类别',
+        public:'是否公开'
       },
       scratch: {
         import: '导入Scratch素材',

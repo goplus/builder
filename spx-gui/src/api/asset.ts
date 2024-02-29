@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 15:14:19
+ * @LastEditTime: 2024-02-29 17:26:15
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -160,13 +160,19 @@ export function addAssetClickCount(
  * @param {number} assetType
  * @return { SearchAssetResponse }
  */
-export function generateGifByCostumes(name: string, files: File[]): Promise<string> {
+export function generateGifByCostumes(name: string, files: File[], category?:string|undefined, flag?:number): Promise<string> {
   const url = `/spirits/upload`
   const formData = new FormData()
   formData.append('name', name)
   files.forEach((file) => {
     formData.append('files', file)
   })
+  if(category){
+    formData.append('category', category.toString())
+  }
+  if(flag){
+    formData.append('flag', flag.toString())
+  }
 
   return service({
     url: url,
