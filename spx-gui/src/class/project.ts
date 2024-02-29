@@ -168,7 +168,10 @@ export class Project implements ProjectDetail, ProjectSummary {
       this._load(dirPath)
 
       const summary = await fs.readFile("summary/" + id) as ProjectSummary
-      Object.assign(this, summary)
+      this.name = summary.name
+      this.version = summary.version
+      this.cTime = summary.cTime || this.cTime
+      this.uTime = summary.uTime || this.uTime
     } else {
       const { address, name, version, cTime, uTime } = await getProject(id)
       this.version = version
