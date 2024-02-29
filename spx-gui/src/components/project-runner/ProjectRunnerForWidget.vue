@@ -7,13 +7,13 @@
 -->
 <template>
   <div class="project-runner">
-    <iframe class="runner" id="runner" frameborder="0" />
+    <iframe id="runner" class="runner" frameborder="0" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import {Project} from "@/class/project";
-import { onMounted, ref} from "vue";
+import { Project } from "@/class/project";
+import { onMounted } from "vue";
 
 const props = defineProps<{
   project: Project,

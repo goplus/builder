@@ -17,7 +17,7 @@ import { ref } from "vue";
 
 interface CustomWindow extends Window {
   loadWasm: () => Promise<void>;
-  loadData: (view: ArrayBuffer) => void;
+  loadData: (view: ArrayBuffer) => Promise<void>;
 }
 
 const props = defineProps<{ project: Project }>()
@@ -30,10 +30,10 @@ const handleIframeLoad = async () => {
   const runner_window = iframe.value?.contentWindow as CustomWindow
   console.log(runner_window)
 
-  await runner_window?.loadWasm()
+  await runner_window.loadWasm()
   const r = await zipResp
   const buf = await r.arrayBuffer();
-  runner_window?.loadData(buf);
+  await runner_window.loadData(buf);
 };
 
 const run = async () => {
@@ -42,9 +42,8 @@ const run = async () => {
 };
 
 const stop = async () => {
-  let iframe = document.getElementById('runner') as HTMLIFrameElement
-  if (iframe) {
-    iframe.src = ''
+  if (iframe.value) {
+    iframe.value.src = ''
   }
 }
 
