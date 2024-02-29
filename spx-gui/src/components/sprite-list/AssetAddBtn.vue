@@ -326,7 +326,9 @@ const handleSubmitSprite = () => {
   }
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
+  message.success(`add ${uploadSpriteName.value} successfully!`)
   uploadSpriteName.value = ''
+  showUploadModal.value = false
 }
 
 /**

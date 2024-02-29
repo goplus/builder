@@ -11,7 +11,6 @@ export enum ThemeStyleType {
 }
 
 export const categoryOptions = [
-  { label: 'ALL', value: 'ALL' },
   { label: 'Animals', value: 'Animals' },
   { label: 'People', value: 'People' },
   { label: 'Sports', value: 'Sports' },
