@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 16:17:42
+ * @LastEditTime: 2024-02-29 15:55:00
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
  */
@@ -79,6 +79,12 @@ export const initI18n = async (app: App) => {
         name: 'Name',
         costumes: 'Costumes',
         submit: 'Submit'
+      },
+      scratch: {
+        import: 'Import Assets from Scratch',
+        upload: 'Upload .sb3 Project',
+        importToSpx:'Import to My Project',
+        download:'Download'
       }
     },
     zh: {
@@ -147,6 +153,12 @@ export const initI18n = async (app: App) => {
         name: '精灵名称',
         costumes: '上传造型',
         submit: '提交'
+      },
+      scratch: {
+        import: '导入Scratch素材',
+        upload: '上传.sb3项目',
+        importToSpx:'导入至项目',
+        download:'下载'
       }
     }
   }
