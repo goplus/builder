@@ -78,7 +78,7 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static ENTRY_FILE_NAME = 'index.gmx'
 
-  static TEMPORARY_ID_PREFIX = 'spx__'
+  static TEMPORARY_ID_PREFIX = 'temp__'
 
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
     const project = new Project()
