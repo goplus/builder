@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { h, ref } from 'vue'
-import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
+import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
 import {
@@ -318,6 +318,14 @@ const handleSelectImport = (key: string | number) => {
   }
   else if (key === 'SaveLocal') {
     projectStore.project.download();
+  }
+  else if (key === 'SaveCloud') {
+    projectStore.project.save().then((res) => {
+      const { message } = createDiscreteApi(['message'])
+      message.create(res.data.msg, {
+        type: res.data.code >= 200 && res.data.code < 300 ? "success" : "error"
+      })
+    })
   }
 }
 
