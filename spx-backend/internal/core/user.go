@@ -58,17 +58,6 @@ func (p *Project) ParseJwtToken(token string) (userId string, err error) {
 	return claim.Id, nil
 }
 
-// GetUserClaim get user（full） by token
-func (p *Project) GetUserClaim(uid string) (claim *casdoorsdk.User, err error) {
-	claim, err = casdoorsdk.GetUserByUserId(uid)
-	if err != nil {
-		fmt.Println(err.Error())
-		return &casdoorsdk.User{}, ErrNotExist
-	}
-	// claim.Properties["oauth_Wechat_extra"] = ""
-	return
-}
-
 // GetUserById get user by uid
 func (p *Project) GetUserById(uid string) (user *User, err error) {
 	claim, err := casdoorsdk.GetUserByUserId(uid)

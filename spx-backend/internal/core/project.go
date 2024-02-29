@@ -125,17 +125,16 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 // Find file address from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
-		var address string
-		query := "SELECT address FROM codefile WHERE id = ?"
-		err := p.db.QueryRow(query, id).Scan(&address)
+		pro, err := common.QueryById[CodeFile](p.db, id)
 		if err != nil {
 			return nil, err
 		}
-		cloudFile := &CodeFile{
-			ID:      id,
-			Address: address,
+		if pro == nil {
+			return nil, err
 		}
-		return cloudFile, nil
+		pro.Address = os.Getenv("QINIU_PATH") + "/" + pro.Address
+
+		return pro, nil
 	}
 	return nil, ErrNotExist
 }

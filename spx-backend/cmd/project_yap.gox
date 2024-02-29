@@ -30,7 +30,7 @@ get "/project", ctx => {
 	ctx.json {
 		"code":200,
 		"msg":"OK",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+"/"+res.Address,},
+		"data":res,
 	}
 }
 

@@ -37,7 +37,7 @@ func (this *project) MainEntry() {
 		}
 //line cmd/project_yap.gox:30:1
 		ctx.Json__1(map[string]interface {
-		}{"code": 200, "msg": "OK", "data": map[string]string{"id": res.ID, "address": os.Getenv("QINIU_PATH") + "/" + res.Address}})
+		}{"code": 200, "msg": "OK", "data": res})
 	})
 //line cmd/project_yap.gox:38:1
 	this.Post("/project/allsave", func(ctx *yap.Context) {
