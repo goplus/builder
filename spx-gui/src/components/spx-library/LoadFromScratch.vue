@@ -65,24 +65,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import JSZip from 'jszip'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
-import { type MessageApi, useMessage } from 'naive-ui'
+import { type MessageApi, NButton, NGrid, NGridItem, NImage, NInput, useMessage } from 'naive-ui'
 import { Sprite } from '@/class/sprite'
 import { useSpriteStore } from '@/store'
-import { NButton, NInput, NImage, NGrid, NGridItem } from 'naive-ui'
-import SoundsImport from "@/assets/image/sounds/sounds-import.svg"
+import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
+import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
+import saveAs from 'file-saver'
 
 // ----------props & emit------------------------------------
-interface AssetFileDetail {
-  name: string
-  extension: string
-  url: string
-  blob: Blob
-}
 const soundStore = useSoundStore()
 const spriteStore = useSpriteStore()
 const message: MessageApi = useMessage()
@@ -121,68 +115,15 @@ function triggerFileUpload() {
  * @return {*}
  */
 const handleScratchFileUpload = async (event: Event) => {
-  let input = event.target as HTMLInputElement
+  let input = event.target as HTMLInputElement;
   if (!input.files || input.files.length === 0) {
-    return
+    return;
   }
-  let file = input.files[0]
-  let zip = await JSZip.loadAsync(file)
-
-  // Parses and restores the filename
-  let projectJson = await zip.file('project.json')?.async('string')
-  let projectData = JSON.parse(projectJson || '{}')
-  let assetNameMap = new Map<string, string>()
-  projectData.targets.forEach((target: any) => {
-    target.costumes.forEach((costume: any) => {
-      assetNameMap.set(costume.md5ext, costume.name + '.' + costume.dataFormat)
-    })
-    target.sounds.forEach((sound: any) => {
-      assetNameMap.set(sound.md5ext, sound.name + '.' + sound.dataFormat)
-    })
-  })
-
-  // Modify the loop that processes files to handle different types of images and audio files.
-  for (const filename of Object.keys(zip.files)) {
-    let extensionMatch = filename.match(/\.(svg|jpeg|jpg|png|wav|mp3)$/)
-    if (extensionMatch) {
-      let originalName = assetNameMap.get(filename)
-      if (!originalName) continue
-      let fileData = await zip.file(filename)!.async('blob')
-      let mimeType = getMimeType(extensionMatch[1]) // Use a function to determine MIME type
-      let blob = new Blob([fileData], { type: mimeType })
-      let url = URL.createObjectURL(blob)
-      let name = originalName.split('.').slice(0, -1).join('.');
-      let extension = originalName.split('.').pop() || '';
-      assetFileDetails.value.push({ name: name, extension: extension, url, blob })
-    }
-  }
-}
+  assetFileDetails.value = await parseScratchFile(input.files[0]);
+};
 
 /**
- * @description: Function to determine the MIME type based on the file extension
- * @param {*} extension
- * @return {*}
- */
-function getMimeType(extension: string): string {
-  switch (extension) {
-    case 'svg':
-      return 'image/svg+xml'
-    case 'jpeg':
-    case 'jpg':
-      return 'image/jpeg'
-    case 'png':
-      return 'image/png'
-    case 'wav':
-      return 'audio/wav'
-    case 'mp3':
-      return 'audio/mpeg'
-    default:
-      return 'application/octet-stream'
-  }
-}
-
-/** Get the full asset name like "meow.wav"
- * @description: 
+ * @description: Get the full asset name like "meow.wav"
  * @param {*} asset
  * @return {*}
  */
@@ -190,8 +131,8 @@ const getFullAssetName = (asset: AssetFileDetail): string => {
   return asset.name + "." + asset.extension;
 };
 
-/** Add a method for playing audio directly in the browser
- * @description: 
+/**
+ * @description:Add a method for playing audio directly in the browser
  * @param {*} audioUrl
  * @return {*}
  */
@@ -206,13 +147,13 @@ const playAudio = (audioUrl: string) => {
  * @return {*}
  */
 const chooseAssets = (asset: AssetFileDetail) => {
-  if(selectedAssets.value){
+  if (selectedAssets.value) {
     let index = selectedAssets.value.findIndex(a => a.name === asset.name);
-  if (index !== -1) {
-    selectedAssets.value.splice(index, 1);
-  } else {
-    selectedAssets.value.push(asset);
-  }
+    if (index !== -1) {
+      selectedAssets.value.splice(index, 1);
+    } else {
+      selectedAssets.value.push(asset);
+    }
   }
 };
 
@@ -222,12 +163,7 @@ const chooseAssets = (asset: AssetFileDetail) => {
  * @return {*}
  */
 const downloadAsset = (asset: AssetFileDetail) => {
-  let a = document.createElement('a')
-  a.href = asset.url
-  a.download = getFullAssetName(asset)
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  saveAs(asset.blob, getFullAssetName(asset));
 }
 
 /**
@@ -270,7 +206,7 @@ const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
 }
 
 /**
- * @description: If sound.wav exists, return sound(1).wav, sound(2).wav 
+ * @description: If sound.wav exists, return sound(1).wav, sound(2).wav
  * @param {*} asset
  * @param {*} store
  * @return {*}
