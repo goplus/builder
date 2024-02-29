@@ -1,4 +1,4 @@
-import type { Project } from "@/interface/library";
+import type { PageData, Project } from "@/interface/library";
 import { service } from "@/axios"
 import type { ResponseData } from "@/axios";
 import type { FormatResponse } from "@/components/code-editor";
@@ -12,21 +12,48 @@ import type { AxiosResponse } from "axios";
  * @param file The code file(zip) to be uploaded.
  * @returns Project
  */
-export function saveProject(name: string, uid: number, file: File): Promise<Project> {
-    const url = '/project/save';
+export async function saveProject(name: string, file: File, id?: string): Promise<Project> {
+    const url = '/project/allsave';
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('uid', uid.toString());
     formData.append('file', file);
+    id && formData.append('id', id);
 
-    return service({
+    const res: AxiosResponse<ResponseData<Project>> = await service({
         url: url,
         method: 'post',
         data: formData,
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-    });
+    })
+    if (res.data.code >= 200 && res.data.code < 300) {
+        return Promise.resolve(res.data.data)
+    } else {
+        return Promise.reject(res.data.msg)
+    }
+}
+
+/**
+ * Fetches a list of projects.
+ * @param pageIndex The index of the page to retrieve in a paginated list.
+ * @param pageSize The number of projects to retrieve per page.
+ * @param isPublic Whether the project is public
+ * @returns Project[]
+ */
+export async function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<PageData<Project[]>> {
+    const url = isUser ? `/list/userProject/${pageIndex}/${pageSize}` : `/list/pubProject/${pageIndex}/${pageSize}`;
+    return service({ url: url, method: 'get' }).then((res) => res.data.data);
+}
+
+/**
+ * Fetches a single project.
+ * @param id The id of the project
+ * @returns Project
+ */
+export async function getProject(id: string): Promise<Project> {
+    const url = `/project?id=${id}`;
+    return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
 /**
