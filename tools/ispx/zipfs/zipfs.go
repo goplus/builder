@@ -55,6 +55,14 @@ func (zf *ZipFs) Chroot(root string) {
 	zf.root = root
 }
 
+// Implement gop/parser/fsx.FileSystem:
+//
+//	type FileSystem interface {
+//		ReadDir(dirname string) ([]fs.DirEntry, error)
+//		ReadFile(filename string) ([]byte, error)
+//		Join(elem ...string) string
+//	}
+
 func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
 	log.Println("ReadDir", dirname)
 	dirname = path.Clean(path.Join(zf.root, dirname))
@@ -104,18 +112,12 @@ func (zf *ZipFs) ReadFile(filename string) ([]byte, error) {
 	return io.ReadAll(rc)
 }
 
-// Implement gop/parser/fsx.FileSystem:
-// type FileSystem interface {
-// 	ReadDir(dirname string) ([]fs.DirEntry, error)
-// 	ReadFile(filename string) ([]byte, error)
-// 	Join(elem ...string) string
-// }
-
 func (z *ZipFs) Join(elem ...string) string {
 	return path.Join(elem...)
 }
 
 // Implement spx/fs.Dir:
+//
 // type Dir interface {
 // 	Open(file string) (io.ReadCloser, error)
 // 	Close() error
