@@ -1,15 +1,19 @@
-import type { DirPath, RawDir } from '@/types/file'
+import type { DirPath, FileType, RawDir } from '@/types/file'
 import * as fs from '@/util/file-system'
 import { nanoid } from 'nanoid'
 import {
-  convertDirPathToProject,
+  arrayBuffer2Content,
   convertRawDirToDirPath,
   convertRawDirToZip,
-  getDirPathFromZip
+  getDirPathFromZip,
+  getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
+import { Sprite } from './sprite'
+import { Sound } from './sound'
+import type { Config } from '@/interface/file'
 
 export enum ProjectSource {
   local,
@@ -48,8 +52,22 @@ export class Project implements ProjectDetail, ProjectSummary {
   sprite: SpriteList
   sound: SoundList
   backdrop: Backdrop
-  entryCode: string
   unidentifiedFile: RawDir
+  entryCode: string
+
+  get defaultEntryCode() {
+    let str = ""
+    str += "var (\n"
+    for (const sprite of this.sprite.list) {
+      str += `\t${sprite.name} ${sprite.name}\n`
+    }
+    for (const sound of this.sound.list) {
+      str += `\t${sound.name} Sound\n`
+    }
+    str += ")\n"
+    str += `run "assets", {Title: "${this.title}"}\n`
+    return str
+  }
 
   static ENTRY_FILE_NAME = 'index.gmx'
 
@@ -128,29 +146,60 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Load project from directory.
    * @param DirPath The directory
    */
-  private _load(dirPath: DirPath): void
-
-  /**
-   * Load project.
-   * @param proj The project
-   */
-  private _load(proj: Project): void
-
-  private _load(arg: DirPath | Project): void {
-    if (typeof arg === 'object' && arg instanceof Project) {
-      this.id = arg.id
-      this.version = arg.version
-      this.source = arg.source
-      this.title = arg.title
-      this.sprite = arg.sprite
-      this.sound = arg.sound
-      this.backdrop = arg.backdrop
-      this.entryCode = arg.entryCode
-      this.unidentifiedFile = arg.unidentifiedFile
-    } else {
-      const proj = convertDirPathToProject(arg)
-      this._load(proj)
+  private _load(dir: DirPath): void {
+    const handleFile = (file: FileType, filename: string, item: any) => {
+      switch (file.type) {
+        case 'application/json':
+          item.config = arrayBuffer2Content(file.content, file.type) as Config;
+          break;
+        default:
+          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
+          break;
+      }
     }
+
+    const findOrCreateItem = (name: string, collection: any[], constructor: typeof Sprite | typeof Sound) => {
+      let item = collection.find(item => item.name === name);
+      if (!item) {
+        item = new constructor(name);
+        collection.push(item);
+      }
+      return item;
+    }
+
+    const prefix = getPrefix(dir)
+
+    // eslint-disable-next-line prefer-const
+    for (let [path, file] of Object.entries(dir)) {
+      const filename = file.path.split('/').pop()!;
+      const content = arrayBuffer2Content(file.content, file.type, filename)
+      path = path.replace(prefix, '')
+      if (Sprite.REG_EXP.test(path)) {
+        const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        handleFile(file, filename, sprite);
+      }
+      else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+        this.entryCode = content as string
+      }
+      else if (/^.+\.spx$/.test(path)) {
+        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        sprite.code = content as string;
+      }
+      else if (Sound.REG_EXP.test(path)) {
+        const soundName = path.match(Sound.REG_EXP)?.[1] || '';
+        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound);
+        handleFile(file, filename, sound);
+      }
+      else if (Backdrop.REG_EXP.test(path)) {
+        handleFile(file, filename, this.backdrop);
+      }
+      else {
+        this.unidentifiedFile[path] = content
+      }
+    }
+
   }
 
   async loadFromZip(file: File, title?: string) {
@@ -224,7 +273,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.unidentifiedFile,
       ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map((item) => item.dir)
     )
-    files[Project.ENTRY_FILE_NAME] = this.entryCode
+    files[Project.ENTRY_FILE_NAME] = this.entryCode || this.defaultEntryCode
     for (const [path, value] of Object.entries(files)) {
       const fullPath = this.path + path
       dir[fullPath] = value

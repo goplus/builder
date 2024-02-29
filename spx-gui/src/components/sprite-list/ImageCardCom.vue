@@ -2,19 +2,19 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 12:54:20
+ * @LastEditTime: 2024-02-28 16:17:25
  * @FilePath: /builder/spx-gui/src/components/sprite-list/ImageCardCom.vue
  * @Description:
 -->
 <template>
-  <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName" >
+  <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName">
     <div class="delete-button" @click="deleteSprite(props.asset.name)">×</div>
     <n-image
       preview-disabled
       :width="computedProperties.imageWidth"
       :height="computedProperties.imageHeight"
       :src="computedProperties.spriteUrl"
-      fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
+      :fallback-src="error"
     />
     {{ props.asset.name }}
   </div>
@@ -23,6 +23,8 @@
     v-else
     :key="index"
     :class="computedProperties.cardClassName"
+    :style="index == 0 ? firstBackdropStyle : ''"
+    @click="getBackdropIndex(file, index)"
   >
     <div class="delete-button" @click="deleteBackdrop(file)">×</div>
     <n-image
@@ -30,43 +32,45 @@
       :width="computedProperties.imageWidth"
       :height="computedProperties.imageHeight"
       :src="file.url"
-      fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
+      :fallback-src="error"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, computed } from "vue";
-import { NImage } from "naive-ui";
-import { useSpriteStore } from '@/store/modules/sprite';
-import { useBackdropStore } from '@/store/modules/backdrop';
-import { AssetBase } from "@/class/asset-base";
-import { Backdrop } from "@/class/backdrop";
-import FileWithUrl from "@/class/file-with-url";
+import { defineProps, computed } from 'vue'
+import { NImage } from 'naive-ui'
+import { useSpriteStore } from '@/store/modules/sprite'
+import { useBackdropStore } from '@/store/modules/backdrop'
+import { AssetBase } from '@/class/asset-base'
+import { Backdrop } from '@/class/backdrop'
+import FileWithUrl from '@/class/file-with-url'
+import error from '@/assets/image/library/error.svg'
 
 // ----------props & emit------------------------------------
 interface PropType {
-  type?: string;
-  asset: AssetBase | Backdrop;
+  type?: string
+  asset: AssetBase | Backdrop
 }
-const props = defineProps<PropType>();
-const spriteStore = useSpriteStore();
-const backdropStore = useBackdropStore();
+const props = defineProps<PropType>()
+const spriteStore = useSpriteStore()
+const backdropStore = useBackdropStore()
+const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 
 // ----------computed properties-----------------------------
 // Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
 const computedProperties = computed(() => {
-  const isBg = props.type === "bg";
-  const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0;
+  const isBg = props.type === 'bg'
+  const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0
   return {
-    cardClassName: isBg ? "bg-list-card" : "sprite-list-card",
+    cardClassName: isBg ? 'bg-list-card' : 'sprite-list-card',
     imageWidth: isBg ? 40 : 75,
     imageHeight: isBg ? 40 : 75,
-    spriteUrl: !isBg && hasFiles ? props.asset.files[0].url : "",
+    spriteUrl: !isBg && hasFiles ? props.asset.files[0].url : '',
     backdropFiles: isBg && hasFiles ? props.asset.files : []
-  };
-});
+  }
+})
 
 // ----------methods-----------------------------------------
 /**
@@ -77,7 +81,7 @@ const computedProperties = computed(() => {
  */
 const deleteSprite = (name: string) => {
   spriteStore.removeItemByName(name)
-};
+}
 
 /**
  * @description: A Function about deleting backdrop's file.
@@ -87,14 +91,27 @@ const deleteSprite = (name: string) => {
  */
 const deleteBackdrop = (file: FileWithUrl) => {
   backdropStore.backdrop.removeFile(file)
-};
+}
+
+/**
+ * @description: A Function about change backdrop' file index to top.
+ * @param {*} file
+ * @param {*} index
+ * @return {*}
+ */
+const getBackdropIndex = (file: FileWithUrl, index: number) => {
+  if (index != 0) {
+    computedProperties.value.backdropFiles.splice(index, 1)
+    computedProperties.value.backdropFiles.unshift(file)
+  }
+}
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 @mixin listCardBase {
-  font-family:'Heyhoo';
+  font-family: 'Heyhoo';
   margin: 10px auto;
   border-radius: 20px;
   box-shadow: 0 0 5px $sprite-list-card-box-shadow;

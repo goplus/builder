@@ -71,7 +71,7 @@ import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
-import LoadFromScratch from 'comps/spx-library/LoadFromScratchDemo.vue'
+import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
@@ -173,7 +173,7 @@ watchEffect(() => {
 }
 
 .import-assets-btn:hover{
-  background-color: rgb(255, 234, 204); 
+  background-color: rgb(255, 234, 204);
   color:#333333;
 }
 </style>

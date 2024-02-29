@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:18:34
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 18:31:46
+ * @LastEditTime: 2024-02-28 15:25:10
  * @FilePath: \spx-gui\src\components\stage-viewer-demo\StageViewerDemo.vue
  * @Description:
 -->
@@ -200,9 +200,9 @@ const backdropConfig = computed(() => {
   }
 })
 
-// get the zorder list
-const zorderList = computed(() => {
-  return project.value.backdrop.config.zorder
+// get the zorder list of sprite
+const zorderList = computed<Array<string>>(() => {
+  return project.value.backdrop.config.zorder.filter((item) => typeof item === 'string') as Array<string>
 })
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {

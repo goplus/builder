@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 12:05:48
+ * @LastEditTime: 2024-02-28 15:27:06
  * @FilePath: \spx-gui\src\components\stage-viewer\SpriteLayer.vue
  * @Description: 
 -->
@@ -38,7 +38,7 @@ const props = defineProps<{
   offsetConfig: { offsetX: number; offsetY: number }
   mapConfig: MapConfig
   spriteList: SpriteConfig[]
-  zorder: string[]
+  zorder: Array<string | Object>
   selectedSpriteNames: string[]
 }>()
 const emits = defineEmits<{
@@ -52,9 +52,10 @@ const sortedSprites = computed(() => {
     spriteMap.set(sprite.name, sprite)
   })
   const list: SpriteConfig[] = []
-  props.zorder.forEach((name) => {
-    if (spriteMap.has(name)) {
-      list.push(spriteMap.get(name) as SpriteConfig)
+  // temporarily only sprite item  can be rendered on stage
+  props.zorder.forEach((item) => {
+    if (typeof item === 'string' && spriteMap.has(item)) {
+      list.push(spriteMap.get(item) as SpriteConfig)
     }
   })
   console.log(props.zorder)
