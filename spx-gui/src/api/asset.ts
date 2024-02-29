@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 14:05:50
+ * @LastEditTime: 2024-02-29 15:14:19
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -36,23 +36,23 @@ export function getAssetList({
   isOrderByTime?: boolean
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams()
 
-  params.append('pageIndex', pageIndex.toString());
-  params.append('pageSize', pageSize.toString());
-  params.append('assetType', assetType.toString());
+  params.append('pageIndex', pageIndex.toString())
+  params.append('pageSize', pageSize.toString())
+  params.append('assetType', assetType.toString())
 
   if (category) {
-    params.append('category', category);
+    params.append('category', category)
   }
   if (isOrderByTime) {
-    params.append('isOrderByTime', '1');
+    params.append('isOrderByTime', '1')
   }
   if (isOrderByHot) {
-    params.append('isOrderByHot', '1');
+    params.append('isOrderByHot', '1')
   }
 
-  const url = `/list/asset?${params.toString()}`;
+  const url = `/list/asset?${params.toString()}`
 
   return service({
     url: url,
@@ -160,13 +160,13 @@ export function addAssetClickCount(
  * @param {number} assetType
  * @return { SearchAssetResponse }
  */
-export function generateGifByCostumes(name:string, files: File[]): Promise<string> {
+export function generateGifByCostumes(name: string, files: File[]): Promise<string> {
   const url = `/spirits/upload`
   const formData = new FormData()
-  formData.append('name',name)
+  formData.append('name', name)
   files.forEach((file) => {
-    formData.append('files', file);
-  });
+    formData.append('files', file)
+  })
 
   return service({
     url: url,

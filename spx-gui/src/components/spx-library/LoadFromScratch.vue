@@ -10,24 +10,40 @@
       style="display: none"
       @change="handleScratchFileUpload"
     />
-    <button v-if="selectedAssets.length != 0" class="custom-import-btn" @click="importSelectedAssetsToProject">Import to spx project</button>
+    <button
+      v-if="selectedAssets.length != 0"
+      class="custom-import-btn"
+      @click="importSelectedAssetsToProject"
+    >
+      Import to spx project
+    </button>
   </div>
   <div class="asset-detail-info">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="assetFileDetail in assetFileDetails" :key="assetFileDetail.url" class="file-row" @click="chooseAssets(assetFileDetail)" :style="{border: selectedAssets.includes(assetFileDetail) ? `3px solid ${commonColor}` : '3px solid #eeeeee'}">
+      <n-grid-item
+        v-for="assetFileDetail in assetFileDetails"
+        :key="assetFileDetail.url"
+        class="file-row"
+        @click="chooseAssets(assetFileDetail)"
+        :style="{
+          border: selectedAssets.includes(assetFileDetail)
+            ? `3px solid ${commonColor}`
+            : '3px solid #eeeeee'
+        }"
+      >
         <n-input
           v-model:value="assetFileDetail.name"
           placeholder="assetFileDetail.name"
           size="tiny"
-          style="width:80%; margin-top:2px;"
+          style="width: 80%; margin-top: 2px"
           @click.stop="() => {}"
         >
-        <template #suffix>
-          .
-          <span style="color: #aa9b9b">
-            {{assetFileDetail.extension}}
-          </span>
-        </template>
+          <template #suffix>
+            .
+            <span style="color: #aa9b9b">
+              {{ assetFileDetail.extension }}
+            </span>
+          </template>
         </n-input>
         <n-image
           v-if="isImage(assetFileDetail)"
@@ -75,7 +91,7 @@ import { commonColor } from '@/assets/theme'
 import { getMimeFromExt } from '@/util/file'
 import error from '@/assets/image/library/error.svg'
 import saveAs from 'file-saver'
-import JSZip from 'jszip';
+import JSZip from 'jszip'
 
 // ----------props & emit------------------------------------
 interface AssetFileDetail {
@@ -103,7 +119,7 @@ const fileUploadInput = ref(null)
  * @return {*}
  */
 const isImage = (assetDetail: AssetFileDetail) => {
-  return ['svg', 'jpeg', 'jpg', 'png'].includes(assetDetail.extension.toLowerCase());
+  return ['svg', 'jpeg', 'jpg', 'png'].includes(assetDetail.extension.toLowerCase())
 }
 
 /**
@@ -111,8 +127,8 @@ const isImage = (assetDetail: AssetFileDetail) => {
  * @return {*}
  */
 function triggerFileUpload() {
-  if(fileUploadInput.value){
-    (fileUploadInput.value as HTMLInputElement).click()
+  if (fileUploadInput.value) {
+    ;(fileUploadInput.value as HTMLInputElement).click()
   }
 }
 
@@ -122,9 +138,9 @@ function triggerFileUpload() {
  * @return {*}
  */
 const handleScratchFileUpload = async (event: Event) => {
-  let input = event.target as HTMLInputElement;
+  let input = event.target as HTMLInputElement
   if (!input.files || input.files.length === 0) {
-    return;
+    return
   }
   let file = input.files[0]
   let zip = await JSZip.loadAsync(file)
@@ -152,21 +168,21 @@ const handleScratchFileUpload = async (event: Event) => {
       let mimeType = getMimeFromExt(extensionMatch[1]) // Use a function to determine MIME type
       let blob = new Blob([fileData], { type: mimeType })
       let url = URL.createObjectURL(blob)
-      let name = originalName.split('.').slice(0, -1).join('.');
-      let extension = originalName.split('.').pop() || '';
+      let name = originalName.split('.').slice(0, -1).join('.')
+      let extension = originalName.split('.').pop() || ''
       assetFileDetails.value.push({ name: name, extension: extension, url, blob })
     }
   }
 }
 
 /** Get the full asset name like "meow.wav"
- * @description: 
+ * @description:
  * @param {*} asset
  * @return {*}
  */
 const getFullAssetName = (asset: AssetFileDetail): string => {
-  return asset.name + "." + asset.extension;
-};
+  return asset.name + '.' + asset.extension
+}
 
 /**
  * @description:Add a method for playing audio directly in the browser
@@ -185,14 +201,14 @@ const playAudio = (audioUrl: string) => {
  */
 const chooseAssets = (asset: AssetFileDetail) => {
   if (selectedAssets.value) {
-    let index = selectedAssets.value.findIndex(a => a.name === asset.name);
+    let index = selectedAssets.value.findIndex((a) => a.name === asset.name)
     if (index !== -1) {
-      selectedAssets.value.splice(index, 1);
+      selectedAssets.value.splice(index, 1)
     } else {
-      selectedAssets.value.push(asset);
+      selectedAssets.value.push(asset)
     }
   }
-};
+}
 
 /**
  * @description: Download one asset file
@@ -200,7 +216,7 @@ const chooseAssets = (asset: AssetFileDetail) => {
  * @return {*}
  */
 const downloadAsset = (asset: AssetFileDetail) => {
-  saveAs(asset.blob, getFullAssetName(asset));
+  saveAs(asset.blob, getFullAssetName(asset))
 }
 
 /**
@@ -208,16 +224,16 @@ const downloadAsset = (asset: AssetFileDetail) => {
  * @return {*}
  */
 const importSelectedAssetsToProject = () => {
-  if (!selectedAssets.value) return;
-  selectedAssets.value.forEach(asset => {
-    let file = getFileFromAssetFileDetail(asset);
+  if (!selectedAssets.value) return
+  selectedAssets.value.forEach((asset) => {
+    let file = getFileFromAssetFileDetail(asset)
     if (isImage(asset)) {
-      importSpriteToProject(asset, file);
+      importSpriteToProject(asset, file)
     } else {
-      importSoundToProject(asset, file);
+      importSoundToProject(asset, file)
     }
   })
-  showImportSuccessMessage();
+  showImportSuccessMessage()
 }
 
 /**
@@ -227,9 +243,9 @@ const importSelectedAssetsToProject = () => {
  * @return {*}
  */
 const importSoundToProject = (asset: AssetFileDetail, file: File) => {
-  let sound = new Sound(getNewNameIfNameExists(asset, soundStore), [file]);
-  soundStore.addItem(sound);
-};
+  let sound = new Sound(getNewNameIfNameExists(asset, soundStore), [file])
+  soundStore.addItem(sound)
+}
 
 /**
  * @description: Import sprite file to current project
@@ -249,18 +265,18 @@ const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
  * @return {*}
  */
 const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
-  let baseName = asset.name;
-  let extension = asset.extension;
-  let counter = 0;
-  let newName = baseName;
+  let baseName = asset.name
+  let extension = asset.extension
+  let counter = 0
+  let newName = baseName
   let existsByName = (name: string, store: any): boolean => {
-    return store.existsByName(name);
+    return store.existsByName(name)
   }
   while (existsByName(`${newName}.${extension}`, store)) {
-    counter++;
-    newName = `${baseName}(${counter})`;
+    counter++
+    newName = `${baseName}(${counter})`
   }
-  return `${newName}.${extension}`;
+  return `${newName}.${extension}`
 }
 
 /**
@@ -279,7 +295,6 @@ const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
 const showImportSuccessMessage = () => {
   message.success('import successfully!', { duration: 1000 })
 }
-
 </script>
 
 <style lang="scss" scoped>
@@ -297,14 +312,14 @@ const showImportSuccessMessage = () => {
     border: 3px solid $asset-library-card-title-1;
   }
 
-  .selected-btn{
-    background:#a6a6a680;
-    color:white;
+  .selected-btn {
+    background: #a6a6a680;
+    color: white;
   }
   .file-row {
     margin: auto;
     margin-top: 10px;
-    width:80%;
+    width: 80%;
     height: 150px;
     border-radius: 20px;
     // border: 3px solid $asset-library-card-title-1;
@@ -336,7 +351,8 @@ const showImportSuccessMessage = () => {
 .file-upload-container {
   text-align: center;
   padding: 4px;
-  .custom-upload-btn, .custom-import-btn {
+  .custom-upload-btn,
+  .custom-import-btn {
     font-size: 16px;
     color: rgb(0, 0, 0);
     border-radius: 20px;
@@ -344,16 +360,13 @@ const showImportSuccessMessage = () => {
     box-shadow: rgb(0, 20, 41) -1px 2px;
     cursor: pointer;
     background-color: rgb(255, 248, 204);
-    margin-left:5px;
+    margin-left: 5px;
     font-family: ChauPhilomeneOne;
   }
 
-  .custom-upload-btn:hover, .custom-import-btn:hover {
+  .custom-upload-btn:hover,
+  .custom-import-btn:hover {
     background-color: rgb(255, 234, 204);
   }
 }
-
-
-
-
 </style>
