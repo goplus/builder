@@ -103,13 +103,13 @@ func UpdateAsset(p *Project, c *Asset) error {
 }
 
 func UpdateProject(p *Project, c *CodeFile) error {
-	stmt, err := p.db.Prepare("UPDATE codefile SET name = ?, address = ?,version = ? WHERE id = ?")
+	stmt, err := p.db.Prepare("UPDATE codefile SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?;")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(c.Name, c.Address, c.Version, c.ID)
+	_, err = stmt.Exec(c.Version, c.Name, c.Address, time.Now(), c.ID)
 	return err
 }
 func UpdateProjectIsPublic(p *Project, id string) error {
@@ -121,8 +121,8 @@ func UpdateProjectIsPublic(p *Project, id string) error {
 	return nil
 }
 func AddProject(p *Project, c *CodeFile) (string, error) {
-	sqlStr := "insert into codefile (name,author_id , address, status,c_time,u_time) values (?, ?, ?, ?,?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, "1", time.Now(), time.Now())
+	sqlStr := "insert into codefile (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, 0, "1", time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err
@@ -139,4 +139,13 @@ func GetProjectAddress(id string, p *Project) string {
 		return ""
 	}
 	return address
+}
+func GetProjectVersion(id string, p *Project) int {
+	var version int
+	query := "SELECT version FROM codefile WHERE id = ?"
+	err := p.db.QueryRow(query, id).Scan(&version)
+	if err != nil {
+		return -1
+	}
+	return version
 }

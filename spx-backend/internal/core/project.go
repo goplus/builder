@@ -59,15 +59,15 @@ type Asset struct {
 }
 
 type CodeFile struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	AuthorId string
-	Address  string
-	IsPublic int
-	Status   int
-	Version  int
-	Ctime    time.Time
-	Utime    time.Time
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	AuthorId string    `json:"authorId"`
+	Address  string    `json:"address"`
+	IsPublic int       `json:"isPublic"`
+	Status   int       `json:"status"`
+	Version  int       `json:"version"`
+	Ctime    time.Time `json:"cTime"`
+	Utime    time.Time `json:"uTime"`
 }
 
 type Project struct {
@@ -147,10 +147,12 @@ func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file m
 			return nil, err
 		}
 		codeFile.Address = path
+		codeFile.Version = 1
 		codeFile.ID, err = AddProject(p, codeFile)
 		return codeFile, err
 	} else {
 		address := GetProjectAddress(codeFile.ID, p)
+		version := GetProjectVersion(codeFile.ID, p)
 		err := p.bucket.Delete(ctx, address)
 		if err != nil {
 			return nil, err
@@ -160,6 +162,7 @@ func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file m
 			return nil, err
 		}
 		codeFile.Address = path
+		codeFile.Version = version + 1
 		return codeFile, UpdateProject(p, codeFile)
 	}
 }
@@ -384,6 +387,9 @@ func (p *Project) PubProjectList(ctx context.Context, pageIndex string, pageSize
 	if err != nil {
 		return nil, err
 	}
+	for i := range pagination.Data {
+		pagination.Data[i].Address = os.Getenv("QINIU_PATH") + "/" + pagination.Data[i].Address
+	}
 	return pagination, nil
 }
 
@@ -395,6 +401,9 @@ func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSiz
 	pagination, err := common.QueryByPage[CodeFile](p.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
 		return nil, err
+	}
+	for i := range pagination.Data {
+		pagination.Data[i].Address = os.Getenv("QINIU_PATH") + "/" + pagination.Data[i].Address
 	}
 	return pagination, nil
 }

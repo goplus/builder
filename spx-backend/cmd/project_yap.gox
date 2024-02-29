@@ -64,7 +64,7 @@ post "/project/allsave", ctx=>{
 	ctx.json {
 		"code":200,
 		"msg":"ok",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+"/"+res.Address,},
+		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+"/"+res.Address,"version":res.Version,},
 	}
 }
 
@@ -276,11 +276,26 @@ get "/list/pubProject/:pageIndex/:pageSize", ctx => {
             "data": result,
     }
 }
-get "/list/userProject/:uid/:pageIndex/:pageSize", ctx => {
+get "/list/userProject/:pageIndex/:pageSize", ctx => {
+    userId := ""
+    token := core.GetToken(ctx)
+    if token==""{
+        ctx.json {
+                "code":200,
+                "msg":"please login",
+                "data":"",
+        }
+        return
+    }
+    user, err := p.GetUser(token)
+    if err != nil {
+        printf("get user error:", err)
+    } else {
+        userId = user.Id
+    }
     pageIndex := ctx.param("pageIndex")
     pageSize := ctx.param("pageSize")
-    uid := ctx.param("uid")
-    result, _ := p.UserProjectList(todo, pageIndex, pageSize,uid)
+    result, _ := p.UserProjectList(todo, pageIndex, pageSize,userId)
     ctx.json {
             "code":200,
             "msg":"ok",
