@@ -4,7 +4,7 @@
             <div class="project-card-description">
             </div>
             <template #header>
-                <p class="title">{{ project.title || project.id }}</p>
+                <p class="title">{{ project.name || project.id }}</p>
             </template>
             <template #footer>
                 <p class="id">ID: {{ project.id }}</p>
@@ -34,7 +34,7 @@ const load = () => {
 .n-badge {
     width: 100%;
 
-    ::v-deep .n-badge-sup {
+    :deep(.n-badge-sup) {
         height: 36px;
         background: transparent;
 
@@ -69,7 +69,7 @@ const load = () => {
             }
         }
 
-        ::v-deep .n-card__footer {
+        :deep(.n-card__footer) {
             padding-top: 10px;
         }
 

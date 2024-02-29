@@ -54,7 +54,7 @@ const closeModalFunc = () => {
   emits('update:show')
 }
 const search = () => {
-  projectList.value = projects.filter((project) => project.title.includes(searchQuery.value))
+  projectList.value = projects.filter((project) => project.name.includes(searchQuery.value))
 }
 
 </script>
