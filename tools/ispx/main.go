@@ -43,21 +43,19 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to read zip data:", err)
 	}
-	fs := zipfs.NewFromZipReader(zipReader)
+	fs := zipfs.NewZipFsFromReader(zipReader)
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
-	e, _ := fs.ReadDir("04-Bullet")
-	for _, v := range e {
-		fmt.Println(v.Name())
-	}
-	source, err := gopbuild.BuildFSDir(ctx, fs, "04-Bullet")
+	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
 	}
 	fmt.Println(string(source))
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
+		path := resource.(string)
+		fs.Chroot(path)
 		spx.Gopt_Game_Run(game, fs, gameConf...)
 	})
 

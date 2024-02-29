@@ -4,25 +4,104 @@ import (
 	"archive/zip"
 	"io"
 	"io/fs"
+	"log"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
 type ZipFs struct {
-	fileMap   map[string]*zip.File
-	zipReader *zip.Reader
+	files map[string]*zip.File
+	root  string
 }
 
-func NewFromZipReader(r *zip.Reader) *ZipFs {
-	fileMap := make(map[string]*zip.File)
-	for _, f := range r.File {
-		fileMap[f.Name] = f
+type zipDirEntry struct {
+	file *zip.File
+}
+
+func (zde *zipDirEntry) Name() string {
+	return filepath.Base(zde.file.Name)
+}
+
+func (zde *zipDirEntry) IsDir() bool {
+	return strings.HasSuffix(zde.file.Name, "/")
+}
+
+func (zde *zipDirEntry) Type() fs.FileMode {
+	if zde.IsDir() {
+		return fs.ModeDir
+	}
+	return 0
+}
+
+func (zde *zipDirEntry) Info() (fs.FileInfo, error) {
+	return zde.file.FileInfo(), nil
+}
+
+func NewZipFsFromReader(reader *zip.Reader) *ZipFs {
+	zf := &ZipFs{
+		files: make(map[string]*zip.File),
 	}
 
-	return &ZipFs{
-		zipReader: r,
-		fileMap:   fileMap,
+	for _, file := range reader.File {
+		log.Println("NewZipFsFromReader", file.Name)
+		zf.files[file.Name] = file
 	}
+
+	return zf
+}
+
+func (zf *ZipFs) Chroot(root string) {
+	zf.root = root
+}
+
+func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
+	log.Println("ReadDir", dirname)
+	dirname = path.Clean(path.Join(zf.root, dirname))
+	if !strings.HasSuffix(dirname, "/") {
+		dirname += "/"
+	}
+	if dirname == "/" {
+		dirname = "./"
+	}
+
+	var dirEntries []fs.DirEntry
+
+	for name, file := range zf.files {
+		dir := path.Dir(strings.TrimSuffix(name, "/")) + "/"
+		if dir != dirname {
+			continue
+		}
+
+		dirEntries = append(dirEntries, &zipDirEntry{file})
+	}
+
+	for i, v := range dirEntries {
+		log.Println("dir", i, v.Name())
+	}
+
+	if len(dirEntries) == 0 {
+		return nil, fs.ErrNotExist
+	}
+
+	return dirEntries, nil
+}
+
+func (zf *ZipFs) ReadFile(filename string) ([]byte, error) {
+	log.Println("ReadFile", filename)
+	filename = path.Clean(path.Join(zf.root, filename))
+	file, ok := zf.files[filename]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+
+	rc, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	return io.ReadAll(rc)
 }
 
 // Implement gop/parser/fsx.FileSystem:
@@ -36,60 +115,6 @@ func (z *ZipFs) Join(elem ...string) string {
 	return path.Join(elem...)
 }
 
-type zipDirEntry struct {
-	file *zip.File
-}
-
-func (zde zipDirEntry) Name() string {
-	return path.Base(zde.file.Name)
-}
-
-func (zde zipDirEntry) IsDir() bool {
-	return strings.HasSuffix(zde.file.Name, "/")
-}
-
-func (zde zipDirEntry) Type() fs.FileMode {
-	if zde.IsDir() {
-		return fs.ModeDir
-	}
-	return 0
-}
-
-func (zde zipDirEntry) Info() (fs.FileInfo, error) {
-	return zde.file.FileInfo(), nil
-}
-
-func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
-	var dirEntries []fs.DirEntry
-
-	for _, file := range zf.zipReader.File {
-		if path.Dir(file.Name) == dirname || (dirname == "." && !strings.Contains(file.Name, "/")) {
-			dirEntries = append(dirEntries, zipDirEntry{file: file})
-		}
-	}
-
-	if len(dirEntries) == 0 {
-		return nil, fs.ErrNotExist
-	}
-
-	return dirEntries, nil
-}
-
-func (z *ZipFs) ReadFile(filename string) ([]byte, error) {
-	f, ok := z.fileMap[filename]
-	if !ok {
-		return nil, fs.ErrNotExist
-	}
-
-	rc, err := f.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-
-	return io.ReadAll(rc)
-}
-
 // Implement spx/fs.Dir:
 // type Dir interface {
 // 	Open(file string) (io.ReadCloser, error)
@@ -99,8 +124,11 @@ func (z *ZipFs) ReadFile(filename string) ([]byte, error) {
 func (z *ZipFs) Open(file string) (
 	io.ReadCloser, error,
 ) {
-	f, ok := z.fileMap[file]
+	log.Println("Open", file)
+	file = path.Clean(path.Join(z.root, file))
+	f, ok := z.files[file]
 	if !ok {
+		log.Println("Open", file, "not found")
 		return nil, fs.ErrNotExist
 	}
 
