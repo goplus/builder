@@ -324,7 +324,8 @@ const handleSelectImport = (key: string | number) => {
     projectStore.project.save().then((res) => {
       message.success(res)
     }).catch((err) => {
-      message.error(err)
+      console.error(err)
+      message.error(err.message)
     })
   }
 }
