@@ -8,13 +8,13 @@ import {
   getDirPathFromZip,
   getPrefix
 } from '@/util/file'
-import FileWithUrl from '@/class/file-with-url'
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
+import FileWithUrl from '@/class/file-with-url'
 import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local,
@@ -57,15 +57,15 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
 
   get defaultEntryCode() {
-    let str = ''
-    str += 'var (\n'
+    let str = ""
+    str += "var (\n"
     for (const sprite of this.sprite.list) {
       str += `\t${sprite.name} ${sprite.name}\n`
     }
     for (const sound of this.sound.list) {
       str += `\t${sound.name} Sound\n`
     }
-    str += ')\n'
+    str += ")\n"
     str += `run "assets", {Title: "${this.title}"}\n`
     return str
   }
@@ -82,7 +82,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = (await fs.readFile(path)) as ProjectSummary
+      const content = await fs.readFile(path) as ProjectSummary
       projects.push(content)
     }
     return projects
@@ -136,7 +136,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
       this._load(dirPath)
 
-      const summary = (await fs.readFile('summary/' + id)) as ProjectSummary
+      const summary = await fs.readFile("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
       // TODO: load from cloud
@@ -151,54 +151,56 @@ export class Project implements ProjectDetail, ProjectSummary {
     const handleFile = (file: FileType, filename: string, item: any) => {
       switch (file.type) {
         case 'application/json':
-          item.config = arrayBuffer2Content(file.content, file.type) as Config
-          break
+          item.config = arrayBuffer2Content(file.content, file.type) as Config;
+          break;
         default:
-          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File)
-          break
+          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
+          break;
       }
     }
 
-    const findOrCreateItem = (
-      name: string,
-      collection: any[],
-      constructor: typeof Sprite | typeof Sound
-    ) => {
-      let item = collection.find((item) => item.name === name)
+    const findOrCreateItem = (name: string, collection: any[], constructor: typeof Sprite | typeof Sound) => {
+      let item = collection.find(item => item.name === name);
       if (!item) {
-        item = new constructor(name)
-        collection.push(item)
+        item = new constructor(name);
+        collection.push(item);
       }
-      return item
+      return item;
     }
 
     const prefix = getPrefix(dir)
 
     // eslint-disable-next-line prefer-const
     for (let [path, file] of Object.entries(dir)) {
-      const filename = file.path.split('/').pop()!
+      const filename = file.path.split('/').pop()!;
       const content = arrayBuffer2Content(file.content, file.type, filename)
       path = path.replace(prefix, '')
       if (Sprite.REG_EXP.test(path)) {
-        const spriteName = path.match(Sprite.REG_EXP)?.[1] || ''
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite)
-        handleFile(file, filename, sprite)
-      } else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+        const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        handleFile(file, filename, sprite);
+      }
+      else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
         this.entryCode = content as string
-      } else if (/^.+\.spx$/.test(path)) {
-        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || ''
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite)
-        sprite.code = content as string
-      } else if (Sound.REG_EXP.test(path)) {
-        const soundName = path.match(Sound.REG_EXP)?.[1] || ''
-        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound)
-        handleFile(file, filename, sound)
-      } else if (Backdrop.REG_EXP.test(path)) {
-        handleFile(file, filename, this.backdrop)
-      } else {
+      }
+      else if (/^.+\.spx$/.test(path)) {
+        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        sprite.code = content as string;
+      }
+      else if (Sound.REG_EXP.test(path)) {
+        const soundName = path.match(Sound.REG_EXP)?.[1] || '';
+        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound);
+        handleFile(file, filename, sound);
+      }
+      else if (Backdrop.REG_EXP.test(path)) {
+        handleFile(file, filename, this.backdrop);
+      }
+      else {
         this.unidentifiedFile[path] = content
       }
     }
+
   }
 
   async loadFromZip(file: File, title?: string) {
@@ -215,6 +217,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
     ])
   }
+  
 
   /**
    * Save project to storage.
