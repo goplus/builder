@@ -15,7 +15,7 @@ import { Backdrop } from '@/class/backdrop'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
-
+import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local,
   cloud
@@ -116,28 +116,12 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.title = ''
     this.sprite = new SpriteList()
     this.sound = new SoundList()
-    this.backdrop = this.initDefaultBackdrop()
+    this.backdrop = new Backdrop()
     this.entryCode = ''
     this.unidentifiedFile = {}
     this.id = nanoid()
     this.version = 1
     this.source = ProjectSource.local
-  }
-  initDefaultBackdrop() {
-    const defaultBackdrop = new Backdrop()
-    const canvas = document.createElement('canvas')
-    canvas.width = 480
-    canvas.height = 360
-    const context = canvas.getContext('2d') as CanvasRenderingContext2D
-    context.fillStyle = '#FFFFFF'
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    canvas.toBlob(function (blob) {
-      const file = new File([blob!], 'blank_scene.png', { type: 'image/png' })
-      const fileURL = URL.createObjectURL(file)
-      const fileWithUrl = new FileWithUrl(file, fileURL)
-      defaultBackdrop.addScene([{ name: 'default', file: fileWithUrl }])
-    }, 'image/png')
-    return defaultBackdrop
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
@@ -221,6 +205,15 @@ export class Project implements ProjectDetail, ProjectSummary {
     const dirPath = await getDirPathFromZip(file)
     this._load(dirPath)
     this.title = title || file.name.split('.')[0] || this.title
+  }
+
+  async loadBlankProject() {
+    const response = await fetch(defaultScene)
+    const blob = await response.blob()
+    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    this.backdrop.addScene([
+      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+    ])
   }
 
   /**

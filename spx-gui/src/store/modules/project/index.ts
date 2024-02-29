@@ -2,7 +2,7 @@
  * @Author: TuGitee tgb@std.uestc.edu.cn
  * @Date: 2024-01-22 11:26:18
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 13:54:41
+ * @LastEditTime: 2024-02-29 12:20:52
  * @FilePath: \spx-gui\src\store\modules\project\index.ts
  * @Description: The store of project.
  */
@@ -11,7 +11,7 @@ import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
 import { debounce } from '@/util/global'
-
+import { onMounted } from 'vue'
 export const useProjectStore = defineStore('project', () => {
   /**
    * The project. You can use `project.value` to get it.
@@ -56,6 +56,9 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
+  onMounted(() => {
+    project.value.loadBlankProject()
+  })
   return {
     project,
     loadProject,
