@@ -1,17 +1,13 @@
 <template>
-    <n-badge :value="project.source ? 'Cloud' : 'Local'" :offset="['-50%', '75%']">
-        <n-card hoverable>
+    <n-badge>
+        <n-card id="project-card" hoverable @click="load">
             <div class="project-card-description">
             </div>
+            <template #cover>
+              <img src="@/assets/image/project/project.png" alt="">
+            </template>
             <template #header>
                 <p class="title">{{ project.name || project.id }}</p>
-            </template>
-            <template #footer>
-                <p class="id">ID: {{ project.id }}</p>
-                <p class="version">version: {{ project.version }}</p>
-            </template>
-            <template #action>
-                <n-button @click="load">Load</n-button>
             </template>
         </n-card>
     </n-badge>
@@ -20,13 +16,18 @@
 <script lang="ts" setup>
 import type { ProjectSummary } from '@/class/project'
 import { defineProps } from 'vue'
-import { NCard, NButton, NBadge } from 'naive-ui';
+import { NCard, NBadge } from 'naive-ui';
 import { useProjectStore } from '@/store';
+
 const props = defineProps<{
     project: ProjectSummary
 }>()
-const load = () => {
-    useProjectStore().loadProject(props.project.id, props.project.source)
+const emit = defineEmits(['load-project'])
+
+const load = async () => {
+  console.log('load project', props.project.id, props.project.source)
+  await useProjectStore().loadProject(props.project.id, props.project.source)
+  emit('load-project')
 }
 </script>
 
@@ -50,10 +51,18 @@ const load = () => {
     }
 
     .n-card {
-        width: 100%;
+      width: 100%;
+      //height: 150px;
+        border-radius: 20px;
+        background-color: rgba(252, 228, 236, 0.38);
+        margin: 10px;
+        box-sizing: border-box;
+      cursor: pointer;
+      overflow: hidden;
 
         p {
             margin: 0;
+          font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
 
             &.title {
                 font-size: 18px;
@@ -75,6 +84,14 @@ const load = () => {
 
         .n-button {
             width: 100%;
+        }
+
+        ::v-deep .n-card-header {
+          height: 10px;
+          border-radius: 0 0 20px 20px;
+          background-color: rgba(252, 228, 236, 0.38);
+          //background-color: #ffffff;
+            text-align: center;
         }
     }
 }
