@@ -325,7 +325,9 @@ const handleSelectImport = (key: string | number) => {
       message.success(res)
     }).catch((err) => {
       console.error(err)
-      message.error(err.message)
+      if (err instanceof Error) {
+        message.error(err.message)
+      }
     })
   }
 }
