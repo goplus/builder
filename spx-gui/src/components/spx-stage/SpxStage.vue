@@ -2,7 +2,7 @@
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:34:08
+ * @LastEditTime: 2024-03-01 09:52:38
  * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description: 
 -->
@@ -58,8 +58,6 @@ watch(
 const run = async () => {
   console.log('run')
   show.value = false
-  // TODO: backdrop.config.zorder depend on sprites, entry code depend on sprites and other code (such as global variables).
-  backdropStore.backdrop.config = backdropStore.backdrop.defaultConfig
   projectStore.project.run()
   // If you assign show to `true` directly in a block of code, it will result in the page view not being updated and the iframe will not be remounted, hence the 300ms delay!
   setTimeout(() => {
