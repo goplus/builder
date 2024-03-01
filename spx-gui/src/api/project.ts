@@ -28,9 +28,9 @@ export async function saveProject(name: string, file: File, id?: string): Promis
         },
     })
     if (res.data.code >= 200 && res.data.code < 300) {
-        return Promise.resolve(res.data.data)
+        return res.data.data
     } else {
-        return Promise.reject(res.data.msg)
+        throw new Error(res.data.msg)
     }
 }
 
