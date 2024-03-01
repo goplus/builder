@@ -27,12 +27,13 @@ interface Asset {
 }
 
 interface Project {
-  id: number;
+  id: string;
   name: string;
-  authorId: number;
+  authorId: string;
   address: string;
-  cTime: number;
-  uTime: number;
+  version: number;
+  cTime: string;
+  uTime: string;
 }
 
 interface DataContainer {

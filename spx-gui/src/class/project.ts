@@ -1,16 +1,22 @@
-import type { DirPath, RawDir } from '@/types/file'
+import type { DirPath, FileType, RawDir } from '@/types/file'
 import * as fs from '@/util/file-system'
 import { nanoid } from 'nanoid'
 import {
-  convertDirPathToProject,
+  arrayBuffer2Content,
   convertRawDirToDirPath,
   convertRawDirToZip,
-  getDirPathFromZip
+  getDirPathFromZip,
+  getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-
+import { getProject, getProjects, saveProject } from '@/api/project'
+import { Sprite } from './sprite'
+import { Sound } from './sound'
+import type { Config } from '@/interface/file'
+import FileWithUrl from '@/class/file-with-url'
+import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local,
   cloud
@@ -19,12 +25,16 @@ export enum ProjectSource {
 interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
-  // Project title
-  title: string
+  // Project name
+  name: string
   // version number
   version: number
   // Project source
   source: ProjectSource
+  // create time
+  cTime?: string
+  // update time
+  uTime?: string
 }
 
 interface ProjectDetail {
@@ -41,17 +51,44 @@ interface ProjectDetail {
 }
 
 export class Project implements ProjectDetail, ProjectSummary {
-  id: string
   version: number
   source: ProjectSource
-  title: string
+  name: string
   sprite: SpriteList
   sound: SoundList
   backdrop: Backdrop
-  entryCode: string
   unidentifiedFile: RawDir
+  entryCode: string
+  cTime: string
+  uTime: string
+
+  /** Cloud Id */
+  _id: string | null = null
+  /** Temporary id when not uploaded to cloud */
+  _temporaryId: string | null = null
+
+  /** Project id */
+  get id() {
+    return (this._id || this._temporaryId)!
+  }
+
+  get defaultEntryCode() {
+    let str = ""
+    str += "var (\n"
+    for (const sprite of this.sprite.list) {
+      str += `\t${sprite.name} ${sprite.name}\n`
+    }
+    for (const sound of this.sound.list) {
+      str += `\t${sound.name} Sound\n`
+    }
+    str += ")\n"
+    str += `run "assets", {Title: "${this.name}"}\n`
+    return str
+  }
 
   static ENTRY_FILE_NAME = 'index.gmx'
+
+  static TEMPORARY_ID_PREFIX = 'temp__'
 
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
     const project = new Project()
@@ -59,19 +96,20 @@ export class Project implements ProjectDetail, ProjectSummary {
     return project
   }
 
-  private static async getLocalProjects(): Promise<ProjectSummary[]> {
+  static async getLocalProjects(): Promise<ProjectSummary[]> {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
       const content = await fs.readFile(path) as ProjectSummary
       projects.push(content)
     }
-    return projects
+    return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  private static async getCloudProjects(): Promise<ProjectSummary[]> {
-    // TODO
-    return []
+  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
+    const res = await getProjects(pageIndex, pageSize, isUser)
+    const projects = res.data
+    return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
   }
 
   /**
@@ -94,20 +132,26 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   constructor() {
-    this.title = ''
+    this.name = ''
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
     this.entryCode = ''
     this.unidentifiedFile = {}
-    this.id = nanoid()
+    this._temporaryId = Project.TEMPORARY_ID_PREFIX + nanoid()
     this.version = 1
     this.source = ProjectSource.local
+    this.cTime = new Date().toISOString()
+    this.uTime = this.cTime
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
-    this.id = id
     this.source = source
+    if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
+      this._temporaryId = id
+    } else {
+      this._id = id
+    }
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
       const dirPath: DirPath = {}
@@ -120,7 +164,13 @@ export class Project implements ProjectDetail, ProjectSummary {
       const summary = await fs.readFile("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
-      // TODO: load from cloud
+      const { address, name, version, cTime, uTime } = await getProject(id)
+      this.version = version
+      this.cTime = cTime
+      this.uTime = uTime
+      const zip = await fetch(address).then(res => res.blob())
+      const zipFile = new File([zip], name)
+      this.loadFromZip(zipFile)
     }
   }
 
@@ -128,36 +178,77 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Load project from directory.
    * @param DirPath The directory
    */
-  private _load(dirPath: DirPath): void
-
-  /**
-   * Load project.
-   * @param proj The project
-   */
-  private _load(proj: Project): void
-
-  private _load(arg: DirPath | Project): void {
-    if (typeof arg === 'object' && arg instanceof Project) {
-      this.id = arg.id
-      this.version = arg.version
-      this.source = arg.source
-      this.title = arg.title
-      this.sprite = arg.sprite
-      this.sound = arg.sound
-      this.backdrop = arg.backdrop
-      this.entryCode = arg.entryCode
-      this.unidentifiedFile = arg.unidentifiedFile
-    } else {
-      const proj = convertDirPathToProject(arg)
-      this._load(proj)
+  private _load(dir: DirPath): void {
+    const handleFile = (file: FileType, filename: string, item: any) => {
+      switch (file.type) {
+        case 'application/json':
+          item.config = arrayBuffer2Content(file.content, file.type) as Config;
+          break;
+        default:
+          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
+          break;
+      }
     }
+
+    const findOrCreateItem = (name: string, collection: any[], constructor: typeof Sprite | typeof Sound) => {
+      let item = collection.find(item => item.name === name);
+      if (!item) {
+        item = new constructor(name);
+        collection.push(item);
+      }
+      return item;
+    }
+
+    const prefix = getPrefix(dir)
+
+    // eslint-disable-next-line prefer-const
+    for (let [path, file] of Object.entries(dir)) {
+      const filename = file.path.split('/').pop()!;
+      const content = arrayBuffer2Content(file.content, file.type, filename)
+      path = path.replace(prefix, '')
+      if (Sprite.REG_EXP.test(path)) {
+        const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        handleFile(file, filename, sprite);
+      }
+      else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+        this.entryCode = content as string
+      }
+      else if (/^.+\.spx$/.test(path)) {
+        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        sprite.code = content as string;
+      }
+      else if (Sound.REG_EXP.test(path)) {
+        const soundName = path.match(Sound.REG_EXP)?.[1] || '';
+        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound);
+        handleFile(file, filename, sound);
+      }
+      else if (Backdrop.REG_EXP.test(path)) {
+        handleFile(file, filename, this.backdrop);
+      }
+      else {
+        this.unidentifiedFile[path] = content
+      }
+    }
+
   }
 
-  async loadFromZip(file: File, title?: string) {
+  async loadFromZip(file: File, name?: string) {
     const dirPath = await getDirPathFromZip(file)
     this._load(dirPath)
-    this.title = title || file.name.split('.')[0] || this.title
+    this.name = name || file.name.split('.')[0] || this.name
   }
+
+  async loadBlankProject() {
+    const response = await fetch(defaultScene)
+    const blob = await response.blob()
+    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    this.backdrop.addScene([
+      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+    ])
+  }
+  
 
   /**
    * Save project to storage.
@@ -169,9 +260,11 @@ export class Project implements ProjectDetail, ProjectSummary {
     }
     const summary: ProjectSummary = {
       id: this.id,
-      title: this.title,
+      name: this.name,
       version: this.version,
-      source: this.source
+      source: this.source,
+      cTime: this.cTime,
+      uTime: new Date().toISOString()
     }
     fs.writeFile(this.summaryPath, summary)
   }
@@ -180,15 +273,28 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Remove project from storage.
    */
   async removeLocal() {
-    await fs.rmdir(this.path)
-    await fs.unlink(this.summaryPath)
+    if (this._temporaryId !== null) {
+      await fs.rmdir(this._temporaryId)
+      await fs.unlink("summary/" + this._temporaryId)
+    }
+    if (this._id !== null) {
+      await fs.rmdir(this._id)
+      await fs.unlink("summary/" + this._id)
+    }
   }
 
   /**
    * Save project to Cloud.
    */
   async save() {
-    // TODO: save to cloud
+    const id = this._id ?? void 0
+    return saveProject(this.name, await this.zip, id).then(async res => {
+      this._id = res.id
+      this.version = res.version
+      this.cTime = res.cTime
+      this.uTime = res.uTime
+      return Promise.resolve("Save success!")
+    })
   }
 
   /**
@@ -196,17 +302,11 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async download() {
     const content = await this.zip
-    saveAs(content, `${this.title}.zip`)
+    saveAs(content, `${this.name}.zip`)
   }
 
   run() {
     window.project_path = this.id
-  }
-
-  async setId(id: string) {
-    await this.removeLocal()
-    this.id = id
-    await this.saveLocal()
   }
 
   get path() {
@@ -224,7 +324,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.unidentifiedFile,
       ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map((item) => item.dir)
     )
-    files[Project.ENTRY_FILE_NAME] = this.entryCode
+    files[Project.ENTRY_FILE_NAME] = this.entryCode || this.defaultEntryCode
     for (const [path, value] of Object.entries(files)) {
       const fullPath = this.path + path
       dir[fullPath] = value
@@ -239,7 +339,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   get zip(): Promise<File> {
     return (async () => {
       const blob = await convertRawDirToZip(this.rawDir)
-      return new File([blob], `${this.title}.zip`, { type: blob.type })
+      return new File([blob], `${this.name}.zip`, { type: blob.type })
     })()
   }
 }
