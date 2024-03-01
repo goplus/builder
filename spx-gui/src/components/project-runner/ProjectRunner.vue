@@ -7,39 +7,41 @@
 -->
 <template>
   <div class="project-runner">
-    <iframe ref="iframe" src="/main.html" class="runner" frameborder="0" @load="handleIframeLoad"/>
+    <iframe
+      ref="iframe"
+      src="/ispx/runner.html"
+      class="runner"
+      frameborder="0"
+      @load="handleIframeLoad"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { Project } from "@/class/project";
-import { ref } from "vue";
+import { Project } from '@/class/project'
+import { ref } from 'vue'
 
 interface CustomWindow extends Window {
-  loadWasm: () => Promise<void>;
-  loadData: (view: ArrayBuffer) => Promise<void>;
+  startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => Promise<void>
 }
 
 const props = defineProps<{ project: Project }>()
 
 const zipResp = fetch('/test.zip')
 
-const iframe = ref<HTMLIFrameElement | null>(null);
+const iframe = ref<HTMLIFrameElement | null>(null)
 const handleIframeLoad = async () => {
-  console.log('iframe loaded');
-  const runner_window = iframe.value?.contentWindow as CustomWindow
-  console.log(runner_window)
+  const runnerWindow = iframe.value?.contentWindow as CustomWindow
+  console.log(runnerWindow)
 
-  await runner_window.loadWasm()
-  const r = await zipResp
-  const buf = await r.arrayBuffer();
-  await runner_window.loadData(buf);
-};
+  const buf = await (await zipResp).arrayBuffer()
+  await runnerWindow.startWithZipBuffer(buf)
+}
 
 const run = async () => {
-  props.project.run();
+  props.project.run()
   console.log('project run success')
-};
+}
 
 const stop = async () => {
   if (iframe.value) {
@@ -63,5 +65,4 @@ defineExpose({
   width: 100%;
   height: 100%;
 }
-
 </style>
