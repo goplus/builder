@@ -1,26 +1,26 @@
 <template>
   <n-modal v-model:show="showModal" preset="card" to="body" header-style="padding:11px 24px 11px 30%;"
-    content-style="max-height:70vh;overflow-y:scroll;" :on-after-leave="closeModalFunc">
+    content-style="overflow-y: scroll;" :on-after-leave="closeModalFunc">
     <template #header>
       <div style="width: 30vw">
         <n-input v-model:value="searchQuery" size="large" placeholder="Search" round clearable></n-input>
       </div>
     </template>
-    <n-tabs v-model:value="currentSource" default-value="local"
-            justify-content="space-evenly" size="large" type="line">
+
+    <n-tabs v-model:value="currentSource" default-value="local" justify-content="space-evenly" size="large">
       <n-tab-pane name="local" tab="Local">
       </n-tab-pane>
       <n-tab-pane name="cloud" tab="Cloud">
       </n-tab-pane>
     </n-tabs>
 
-    <div class="layout">
-      <n-grid v-if="currentProjects.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
-        <n-grid-item v-for="project in currentProjects" :key="project.id">
-          <ProjectCard :project="project" @load-project="closeModalFunc"/>
-        </n-grid-item>
-      </n-grid>
-      <n-empty v-else description="There's nothing."></n-empty>
+    <div class="container">
+        <n-grid v-if="currentProjects.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
+          <n-grid-item v-for="project in currentProjects" :key="project.id">
+            <ProjectCard :project="project" @load-project="closeModalFunc"/>
+          </n-grid-item>
+        </n-grid>
+        <n-empty v-else description="There's nothing."></n-empty>
     </div>
   </n-modal>
 </template>
@@ -62,6 +62,7 @@ const currentProjects = computed(() => {
 
 watch(() => props.show, (newShow) => {
   showModal.value = newShow
+  if (newShow) getProjects()
 })
 
 watch(currentSource, () => {
@@ -88,13 +89,18 @@ const getProjects = async () => {
 <style lang="scss" scoped>
 @import '@/assets/theme.scss';
 
-.n-card {
+.n-modal {
   width: 80vw;
+  overflow: hidden;
 
   .n-grid {
     padding: 12px;
     width: 100px;
     box-sizing: border-box;
+  }
+
+  .container{
+    height:70vh;
   }
 }
 </style>
