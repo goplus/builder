@@ -20,7 +20,3 @@ go.work
 
 .idea/
 *.wasm
-
-# Should be copied from the Go directory on build
-# because it is different on different versions of Go
-wasm_exec.js
