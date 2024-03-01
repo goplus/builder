@@ -19,8 +19,8 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 export enum ProjectSource {
-  local,
-  cloud
+  local = 'local',
+  cloud = 'cloud'
 }
 
 export interface ProjectSummary {
@@ -117,19 +117,12 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Get the list of projects.
    * @returns The list of local projects' summary
    */
-  static async getProjects(): Promise<ProjectSummary[]> {
-    const localProjects = await Project.getLocalProjects()
-    const cloudProjects = await Project.getCloudProjects()
-
-    const mergedProjects = localProjects
-    for (const cloudProject of cloudProjects) {
-      const local = mergedProjects.find((project) => project.id === cloudProject.id)
-      if (!local || local.version !== cloudProject.version) {
-        mergedProjects.push(cloudProject)
-      }
+  static async getProjects(source: ProjectSource): Promise<ProjectSummary[]>  {
+    if (source == ProjectSource.local) {
+      return Project.getLocalProjects()
+    }else {
+      return Project.getCloudProjects()
     }
-
-    return mergedProjects
   }
 
   constructor() {
@@ -179,7 +172,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.uTime = uTime
       const zip = await fetch(address).then(res => res.blob())
       const zipFile = new File([zip], name)
-      this.loadFromZip(zipFile)
+      await this.loadFromZip(zipFile)
     }
   }
 
