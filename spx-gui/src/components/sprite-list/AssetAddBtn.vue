@@ -108,7 +108,7 @@
       />
     </div>
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.public') }}:{{ publicValue }}</p>
+      <p class="modal-items-p">{{ $t('list.public') }}</p>
       <n-select
         v-model:value="publicValue"
         default-value="not public"
