@@ -117,7 +117,7 @@
       />
     </div>
     <div style="width: 100%; text-align: center">
-      <n-button @click="handleSubmitSprite()">
+      <n-button :disabled="!spriteNameAllow" @click="handleSubmitSprite()">
         {{ $t('list.submit') }}
       </n-button>
     </div>
@@ -127,6 +127,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
+import { typeKeywords, keywords } from '../code-editor/language'
 import { ref, defineProps, computed } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
 import { NIcon, NUpload, NButton, useMessage, NModal, NInput, NSelect } from 'naive-ui'
@@ -193,7 +194,20 @@ const addBtnClassName = computed(() => {
   }
 })
 
+// Computed  spritename is legal or not
+const spriteNameAllow = computed(() => {
+  return isAllowName(uploadSpriteName.value)
+})
+
 // ----------methods-----------------------------------------
+// check if the name is legal.
+const isAllowName = (name: string) => {
+  // spx code is go+ code, and the sprite name will compiled to an identifier of go+
+  // so sprite name rules is depend on the identifier rules of go+.
+  let regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
+  return regex.test(name) && !typeKeywords.includes(name) && !keywords.includes(name)
+}
+
 /**
  * @description: A Function about clicking add button to change button style.
  * @Author: Xu Ning

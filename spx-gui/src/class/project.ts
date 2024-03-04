@@ -294,8 +294,6 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.cTime = res.cTime
       this.uTime = res.uTime
       return Promise.resolve("Save success!")
-    }).catch(err => {
-      return Promise.reject(err)
     })
   }
 
