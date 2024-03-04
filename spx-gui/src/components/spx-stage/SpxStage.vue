@@ -2,7 +2,7 @@
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 11:06:15
+ * @LastEditTime: 2024-03-04 12:06:42
  * @FilePath: \builder\spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description: 
 -->
@@ -17,7 +17,7 @@
         :height="stageViewerHeight"
         :selected-sprite-names="selectedSpriteNames"
         :project="projectStore.project as Project"
-        @on-selected-sprite-change="onSelectedSpritesChange"
+        @on-selected-sprites-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
   </div>
