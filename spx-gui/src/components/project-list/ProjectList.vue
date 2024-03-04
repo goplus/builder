@@ -12,11 +12,13 @@
       </n-tab-pane>
       <n-tab-pane name="cloud" tab="Cloud">
       </n-tab-pane>
+      <n-tab-pane name="public" tab="Public">
+      </n-tab-pane>
     </n-tabs>
 
     <div class="container">
-        <n-grid v-if="currentProjects.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
-          <n-grid-item v-for="project in currentProjects" :key="project.id">
+        <n-grid v-if="projectList.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
+          <n-grid-item v-for="project in projectList" :key="project.id">
             <ProjectCard :project="project" @load-project="closeModalFunc"/>
           </n-grid-item>
         </n-grid>
@@ -26,11 +28,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, defineEmits, defineProps, onMounted, ref} from 'vue'
-import { NModal, NGrid, NGridItem, NInput, NEmpty, NTabs, NTabPane } from 'naive-ui'
+import {defineEmits, defineProps, onMounted, ref, watch} from 'vue'
+import {NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs} from 'naive-ui'
 import {Project, ProjectSource, type ProjectSummary} from '@/class/project';
 import ProjectCard from './ProjectCard.vue'
-import { watch } from 'vue';
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -46,19 +47,7 @@ const emits = defineEmits(['update:show'])
 const showModal = ref<boolean>(false)
 const currentSource = ref<ProjectSource>(ProjectSource.local)
 const searchQuery = ref('')
-const localProjects = ref<ProjectSummary[]>([])
-const cloudProjects = ref<ProjectSummary[]>([])
-
-// Computed properties to filter projects based on search query
-const filteredLocalProjects = computed(() => {
-  return localProjects.value.filter(project => project.name?.includes(searchQuery.value))
-})
-const filteredCloudProjects = computed(() => {
-  return cloudProjects.value.filter(project => project.name?.includes(searchQuery.value))
-})
-const currentProjects = computed(() => {
-  return currentSource.value === ProjectSource.local ? filteredLocalProjects.value : filteredCloudProjects.value
-})
+const projectList = ref<ProjectSummary[]>([])
 
 watch(() => props.show, (newShow) => {
   showModal.value = newShow
@@ -68,10 +57,16 @@ watch(() => props.show, (newShow) => {
 watch(currentSource, () => {
   // Reset search query when switching sources
   searchQuery.value = ''
+  getProjects()
 })
 
-onMounted(async () => {
+watch(searchQuery, async () => {
   await getProjects()
+  projectList.value = projectList.value.filter(project => project.name?.includes(searchQuery.value))
+})
+
+onMounted( () => {
+  getProjects()
 })
 
 // ----------methods-----------------------------------------
@@ -80,8 +75,7 @@ const closeModalFunc = () => {
 }
 
 const getProjects = async () => {
-  localProjects.value = await Project.getProjects(ProjectSource.local)
-  cloudProjects.value = await Project.getProjects(ProjectSource.cloud)
+  projectList.value = await Project.getProjects(currentSource.value)
 }
 
 </script>
