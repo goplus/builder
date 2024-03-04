@@ -2,17 +2,19 @@
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-01 09:52:38
- * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
+ * @LastEditTime: 2024-03-04 11:06:15
+ * @FilePath: \builder\spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description: 
 -->
 <template>
-  <div class="spx-stage">
+  <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
     <iframe v-if="show" src="/main.html" frameborder="0" class="show"></iframe>
     <div v-else class="stage-viewer-container">
       <StageViewer
+        :width="stageViewerWidth"
+        :height="stageViewerHeight"
         :selected-sprite-names="selectedSpriteNames"
         :project="projectStore.project as Project"
         @on-selected-sprite-change="onSelectedSpritesChange"
@@ -22,7 +24,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from '@/store'
@@ -38,12 +40,27 @@ const backdropStore = useBackdropStore()
 const projectStore = useProjectStore()
 const spriteStore = useSpriteStore()
 
+const spxStage = ref<HTMLElement | null>()
+const stageViewerWidth = ref(400)
+const stageViewerHeight = ref(400)
 const selectedSpriteNames = ref<string[]>([])
+// monitor container size change
+let observer: ResizeObserver | null = null
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
   spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }
+
+// monitor container size change
+const onContainerResize = (entries: any) => {
+  for (const entry of entries) {
+    const { width, height } = entry.contentRect
+    stageViewerWidth.value = width
+    stageViewerHeight.value = height
+  }
+}
+
 watch(
   () => spriteStore.current,
   () => {
@@ -54,6 +71,18 @@ watch(
     }
   }
 )
+
+onMounted(() => {
+  if (spxStage.value) {
+    observer = new ResizeObserver(onContainerResize)
+    observer.observe(spxStage.value)
+  }
+})
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+  }
+})
 
 const run = async () => {
   console.log('run')
