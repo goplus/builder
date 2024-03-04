@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 12:06:50
+ * @LastEditTime: 2024-03-04 14:22:36
  * @FilePath: \builder\spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
@@ -24,7 +24,7 @@ export const useSpriteStore = defineStore('sprite', () => {
   const map = computed(() => new Map(list.value.map((item) => [item.name, item])))
 
   watch(
-    () => project.value.id,
+    () => project.value,
     () => {
       console.log("current clear")
       current.value = null

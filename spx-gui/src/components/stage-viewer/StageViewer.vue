@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 14:08:41
+ * @LastEditTime: 2024-03-04 14:28:08
  * @FilePath: \builder\spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
@@ -171,7 +171,10 @@ watch(
       stageSelectSpritesName.value = []
       return
     }
-    if (spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])) {
+    if (
+      spriteNames.length === stageSelectSpritesName.value.length &&
+      spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])
+    ) {
       return
     }
 
