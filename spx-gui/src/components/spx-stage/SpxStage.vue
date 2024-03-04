@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, watch, computed} from 'vue'
+import { onMounted, onUnmounted, ref, watch, computed, nextTick} from 'vue'
 import { useSize } from '@/util/dom'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
@@ -58,8 +58,10 @@ const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
 
 
 const run = async () => {
-  projectStore.project.run()
   show.value = true
+  // wait for the iframe to be mounted
+  await nextTick()
+  project_runner.value.run()
 }
 
 const stop = async () => {
