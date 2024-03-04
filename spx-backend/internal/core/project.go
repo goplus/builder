@@ -122,7 +122,7 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	return &Project{bucket, db}, nil
 }
 
-// Find file address from db
+// FileInfo Find file address from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
 		pro, err := common.QueryById[CodeFile](p.db, id)
@@ -139,6 +139,17 @@ func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	return nil, ErrNotExist
 }
 
+func (p *Project) DeleteProject(ctx context.Context, id string) error {
+	if id != "" {
+		address := GetProjectAddress(id, p)
+		err := p.bucket.Delete(ctx, address)
+		if err != nil {
+			return err
+		}
+		return DeleteProjectById(p, id)
+	}
+	return ErrNotExist
+}
 func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file multipart.File, header *multipart.FileHeader) (*CodeFile, error) {
 	if codeFile.ID == "" {
 		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)

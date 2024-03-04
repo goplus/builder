@@ -33,6 +33,23 @@ get "/project", ctx => {
 		"data":res,
 	}
 }
+post "/project/delete", ctx => {
+	id := ctx.FormValue("id")
+	err := p.DeleteProject(todo, id)
+	if err!=nil{
+	    ctx.json {
+        		"code":200,
+        		"msg":"not exist",
+        		"data":"",
+        }
+        return
+	}
+	ctx.json {
+		"code":200,
+		"msg":"OK",
+		"data":"",
+	}
+}
 
 
 post "/project/allsave", ctx=>{
@@ -54,6 +71,13 @@ post "/project/allsave", ctx=>{
         userId = user.Id
     }
 	name:=ctx.FormValue("name")
+	if name==""{
+	    ctx.json {
+    		"code":400,
+    		"msg":"name is null",
+    		"data":"",
+    	}
+	}
 	file,header,_:=ctx.FormFile("file")
 	codeFile:=&core.CodeFile{
 		ID:id,

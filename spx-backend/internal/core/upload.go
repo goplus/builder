@@ -149,3 +149,17 @@ func GetProjectVersion(id string, p *Project) int {
 	}
 	return version
 }
+func DeleteProjectById(p *Project, id string) error {
+	stmt, err := p.db.Prepare("DELETE FROM codefile WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	// 执行SQL语句
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
