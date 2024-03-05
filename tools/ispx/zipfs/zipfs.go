@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"io"
 	"io/fs"
-	"log"
 	"path"
 	"path/filepath"
 	"strings"
@@ -44,7 +43,6 @@ func NewZipFsFromReader(reader *zip.Reader) *ZipFs {
 	}
 
 	for _, file := range reader.File {
-		log.Println("NewZipFsFromReader", file.Name)
 		zf.files[file.Name] = file
 	}
 
@@ -64,7 +62,6 @@ func (zf *ZipFs) Chroot(root string) {
 //	}
 
 func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
-	log.Println("ReadDir", dirname)
 	dirname = path.Clean(path.Join(zf.root, dirname))
 	if !strings.HasSuffix(dirname, "/") {
 		dirname += "/"
@@ -84,10 +81,6 @@ func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
 		dirEntries = append(dirEntries, &zipDirEntry{file})
 	}
 
-	for i, v := range dirEntries {
-		log.Println("dir", i, v.Name())
-	}
-
 	if len(dirEntries) == 0 {
 		return nil, fs.ErrNotExist
 	}
@@ -96,7 +89,6 @@ func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
 }
 
 func (zf *ZipFs) ReadFile(filename string) ([]byte, error) {
-	log.Println("ReadFile", filename)
 	filename = path.Clean(path.Join(zf.root, filename))
 	file, ok := zf.files[filename]
 	if !ok {
@@ -126,11 +118,9 @@ func (z *ZipFs) Join(elem ...string) string {
 func (z *ZipFs) Open(file string) (
 	io.ReadCloser, error,
 ) {
-	log.Println("Open", file)
 	file = path.Clean(path.Join(z.root, file))
 	f, ok := z.files[file]
 	if !ok {
-		log.Println("Open", file, "not found")
 		return nil, fs.ErrNotExist
 	}
 
