@@ -11,7 +11,7 @@ import {
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-import { getProject, getProjects, saveProject } from '@/api/project'
+import { getProject, getProjects, saveProject, publicProject } from '@/api/project'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
@@ -20,8 +20,7 @@ import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 export enum ProjectSource {
   local = 'local',
-  cloud = 'cloud',
-  public = 'public'
+  cloud = 'cloud'
 }
 
 export interface ProjectSummary {
@@ -114,18 +113,8 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  /**
-   * Get the list of projects.
-   * @returns The list of local projects' summary
-   */
-  static async getProjects(source: ProjectSource): Promise<ProjectSummary[]>  {
-    if (source == ProjectSource.local) {
-      return Project.getLocalProjects()
-    }else if (source == ProjectSource.cloud) {
-      return Project.getCloudProjects(1, 300, true)
-    } else {
-      return Project.getCloudProjects(1, 300, false)
-    }
+  static async publicProject(id: number): Promise<void> {
+    await publicProject(id)
   }
 
   constructor() {

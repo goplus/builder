@@ -76,3 +76,13 @@ export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<
         },
     });
 }
+
+/**
+ * Update project status to public.
+ * @param id project id that will be public
+ * @returns
+ */
+export async function publicProject(id: number): Promise<void> {
+    const url =  `/project/updateIsPublic/${id}`;
+    service({ url: url, method: 'get' }).then((res) => res.data.code);
+}
