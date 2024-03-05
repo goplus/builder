@@ -16,22 +16,31 @@
 <script lang="ts" setup>
 import { removeProject, type ProjectSummary } from '@/class/project'
 import { defineProps } from 'vue'
-import { NCard } from 'naive-ui';
+import { NCard, createDiscreteApi } from 'naive-ui';
 import { useProjectStore } from '@/store';
 
 const { project } = defineProps<{
     project: ProjectSummary
 }>()
 const emit = defineEmits(['load-project', 'remove-project'])
+const { dialog } = createDiscreteApi(['dialog'])
 
 const load = async () => {
     await useProjectStore().loadProject(project.id, project.source)
     emit('load-project')
 }
 
-const remove = async () => {
-    await removeProject(project.id, project.source)
-    emit('remove-project')
+const remove = () => {
+    dialog.warning({
+        title: 'Remove Project',
+        content: 'Are you sure you want to remove this project (' + (project.name || project.id) + ')? This action cannot be undone.',
+        positiveText: 'Yes',
+        negativeText: 'No',
+        onPositiveClick: async () => {
+            await removeProject(project.id, project.source)
+            emit('remove-project')
+        }
+    })
 }
 </script>
 

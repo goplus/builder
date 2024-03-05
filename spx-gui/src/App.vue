@@ -6,6 +6,7 @@
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
+
 <template>
   <div id="spx">
     <n-config-provider :theme-overrides="themeOverrides">
@@ -124,6 +125,7 @@ body {
 .n-menu--responsive {
   --n-item-height: 38px !important;
 }
+
 .n-menu.n-menu--horizontal .n-menu-item-content {
   padding: 0;
 }
@@ -134,5 +136,11 @@ body {
   overflow: hidden;
   flex-direction: row;
   justify-content: space-around;
+}
+
+.n-dialog {
+  .n-dialog__icon {
+    line-height: 1;
+  }
 }
 </style>
