@@ -40,7 +40,6 @@ func UploadFile(ctx context.Context, p *Project, blobKey string, file multipart.
 	return blobKey, w.Close()
 }
 
-// UploadFile2 Upload file to cloud
 func UploadFile2(ctx context.Context, p *Project, blobKey string, file *os.File, originalFilename string) (string, error) {
 
 	// Extract file extension
