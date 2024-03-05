@@ -42,6 +42,10 @@ const remove = () => {
         }
     })
 }
+
+const publicProject = async (id: number) => {
+  await Project.publicProject(id)
+}
 </script>
 
 <style lang="scss" scoped>
