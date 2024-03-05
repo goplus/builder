@@ -93,7 +93,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid #77777789;
+  border: 1px solid #777;
   border-radius: 10px;
   .operation {
     display: flex;
