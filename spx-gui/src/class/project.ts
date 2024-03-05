@@ -11,10 +11,12 @@ import {
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
+import { getProject, getProjects, saveProject } from '@/api/project'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
-
+import FileWithUrl from '@/class/file-with-url'
+import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local,
   cloud
@@ -23,12 +25,16 @@ export enum ProjectSource {
 interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
-  // Project title
-  title: string
+  // Project name
+  name: string
   // version number
   version: number
   // Project source
   source: ProjectSource
+  // create time
+  cTime?: string
+  // update time
+  uTime?: string
 }
 
 interface ProjectDetail {
@@ -45,15 +51,26 @@ interface ProjectDetail {
 }
 
 export class Project implements ProjectDetail, ProjectSummary {
-  id: string
   version: number
   source: ProjectSource
-  title: string
+  name: string
   sprite: SpriteList
   sound: SoundList
   backdrop: Backdrop
   unidentifiedFile: RawDir
   entryCode: string
+  cTime: string
+  uTime: string
+
+  /** Cloud Id */
+  _id: string | null = null
+  /** Temporary id when not uploaded to cloud */
+  _temporaryId: string | null = null
+
+  /** Project id */
+  get id() {
+    return (this._id || this._temporaryId)!
+  }
 
   get defaultEntryCode() {
     let str = ""
@@ -65,11 +82,13 @@ export class Project implements ProjectDetail, ProjectSummary {
       str += `\t${sound.name} Sound\n`
     }
     str += ")\n"
-    str += `run "assets", {Title: "${this.title}"}\n`
+    str += `run "assets", {Title: "${this.name}"}\n`
     return str
   }
 
   static ENTRY_FILE_NAME = 'index.gmx'
+
+  static TEMPORARY_ID_PREFIX = 'temp__'
 
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
     const project = new Project()
@@ -77,19 +96,20 @@ export class Project implements ProjectDetail, ProjectSummary {
     return project
   }
 
-  private static async getLocalProjects(): Promise<ProjectSummary[]> {
+  static async getLocalProjects(): Promise<ProjectSummary[]> {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
       const content = await fs.readFile(path) as ProjectSummary
       projects.push(content)
     }
-    return projects
+    return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  private static async getCloudProjects(): Promise<ProjectSummary[]> {
-    // TODO
-    return []
+  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
+    const res = await getProjects(pageIndex, pageSize, isUser)
+    const projects = res.data
+    return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
   }
 
   /**
@@ -112,20 +132,26 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   constructor() {
-    this.title = ''
+    this.name = ''
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
     this.entryCode = ''
     this.unidentifiedFile = {}
-    this.id = nanoid()
+    this._temporaryId = Project.TEMPORARY_ID_PREFIX + nanoid()
     this.version = 1
     this.source = ProjectSource.local
+    this.cTime = new Date().toISOString()
+    this.uTime = this.cTime
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
-    this.id = id
     this.source = source
+    if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
+      this._temporaryId = id
+    } else {
+      this._id = id
+    }
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
       const dirPath: DirPath = {}
@@ -138,7 +164,13 @@ export class Project implements ProjectDetail, ProjectSummary {
       const summary = await fs.readFile("summary/" + id) as ProjectSummary
       Object.assign(this, summary)
     } else {
-      // TODO: load from cloud
+      const { address, name, version, cTime, uTime } = await getProject(id)
+      this.version = version
+      this.cTime = cTime
+      this.uTime = uTime
+      const zip = await fetch(address).then(res => res.blob())
+      const zipFile = new File([zip], name)
+      this.loadFromZip(zipFile)
     }
   }
 
@@ -202,11 +234,21 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   }
 
-  async loadFromZip(file: File, title?: string) {
+  async loadFromZip(file: File, name?: string) {
     const dirPath = await getDirPathFromZip(file)
     this._load(dirPath)
-    this.title = title || file.name.split('.')[0] || this.title
+    this.name = name || file.name.split('.')[0] || this.name
   }
+
+  async loadBlankProject() {
+    const response = await fetch(defaultScene)
+    const blob = await response.blob()
+    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    this.backdrop.addScene([
+      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+    ])
+  }
+  
 
   /**
    * Save project to storage.
@@ -218,9 +260,11 @@ export class Project implements ProjectDetail, ProjectSummary {
     }
     const summary: ProjectSummary = {
       id: this.id,
-      title: this.title,
+      name: this.name,
       version: this.version,
-      source: this.source
+      source: this.source,
+      cTime: this.cTime,
+      uTime: new Date().toISOString()
     }
     fs.writeFile(this.summaryPath, summary)
   }
@@ -229,15 +273,28 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Remove project from storage.
    */
   async removeLocal() {
-    await fs.rmdir(this.path)
-    await fs.unlink(this.summaryPath)
+    if (this._temporaryId !== null) {
+      await fs.rmdir(this._temporaryId)
+      await fs.unlink("summary/" + this._temporaryId)
+    }
+    if (this._id !== null) {
+      await fs.rmdir(this._id)
+      await fs.unlink("summary/" + this._id)
+    }
   }
 
   /**
    * Save project to Cloud.
    */
   async save() {
-    // TODO: save to cloud
+    const id = this._id ?? void 0
+    return saveProject(this.name, await this.zip, id).then(async res => {
+      this._id = res.id
+      this.version = res.version
+      this.cTime = res.cTime
+      this.uTime = res.uTime
+      return Promise.resolve("Save success!")
+    })
   }
 
   /**
@@ -245,17 +302,11 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async download() {
     const content = await this.zip
-    saveAs(content, `${this.title}.zip`)
+    saveAs(content, `${this.name}.zip`)
   }
 
   run() {
     window.project_path = this.id
-  }
-
-  async setId(id: string) {
-    await this.removeLocal()
-    this.id = id
-    await this.saveLocal()
   }
 
   get path() {
@@ -288,7 +339,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   get zip(): Promise<File> {
     return (async () => {
       const blob = await convertRawDirToZip(this.rawDir)
-      return new File([blob], `${this.title}.zip`, { type: blob.type })
+      return new File([blob], `${this.name}.zip`, { type: blob.type })
     })()
   }
 }

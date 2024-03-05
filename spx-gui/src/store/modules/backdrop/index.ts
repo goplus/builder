@@ -1,9 +1,9 @@
 /*
  * @Author: Xu Ning
  * @Date: 2024-02-05 17:08:23
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 14:41:33
- * @FilePath: \spx-gui\src\store\modules\backdrop\index.ts
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-02-28 17:35:56
+ * @FilePath: /spx-gui/src/store/modules/backdrop/index.ts
  * @Description:
  */
 import { defineStore, storeToRefs } from 'pinia'
@@ -14,7 +14,6 @@ export const useBackdropStore = defineStore('backdrop', () => {
   const projectStore = useProjectStore()
   const { project } = storeToRefs(projectStore)
   const backdrop = computed(() => {
-    console.log('project.value', project.value, project.value.backdrop)
     return project.value.backdrop
   })
 

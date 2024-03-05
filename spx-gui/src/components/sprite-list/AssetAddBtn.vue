@@ -34,13 +34,6 @@
       </n-upload>
 
       <!-- Sprite Upload -->
-      <!-- <n-upload
-        v-else
-        :action="uploadActionUrl"
-        @before-upload="beforeSpriteUpload"
-      >
-        <n-button color="#fff" :text-color="commonColor">  {{ $t("stage.upload") }} </n-button>
-      </n-upload> -->
       <div v-else>
         <n-button color="#fff" :text-color="commonColor" @click="showUploadModal = true">
           {{ $t('stage.upload') }}
@@ -100,8 +93,8 @@
     >
       <p style="margin: 0; flex-shrink: 0">{{ $t('list.name') }}:</p>
       <n-input
-        round
         v-model:value="uploadSpriteName"
+        round
         placeholder="Input sprite name"
         style="flex-grow: 1; margin: 0 8px; max-width: 300px"
       />
@@ -116,16 +109,9 @@
         multiple
         @change="hanleWatchFileList"
       />
-      <!-- <n-upload
-          style="flex-grow: 1; margin: 0 8px"
-          :action="uploadActionUrl"
-          @before-upload="beforeSpriteUpload"
-          list-type="image-card"
-          multiple
-        /> -->
     </div>
     <div style="width: 100%; text-align: center">
-      <n-button @click="handleSubmitSprite()">
+      <n-button :disabled="!spriteNameAllow" @click="handleSubmitSprite()">
         {{ $t('list.submit') }}
       </n-button>
     </div>
@@ -135,6 +121,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
+import { typeKeywords, keywords } from '../code-editor/language'
 import { ref, defineProps, computed } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
 import { NIcon, NUpload, NButton, useMessage, NModal, NInput } from 'naive-ui'
@@ -180,10 +167,10 @@ const bodyStyle = { width: '600px', margin: 'auto' }
 const showUploadModal = ref<boolean>(false)
 
 // Ref about watch upload file list.
-const uploadFileList = ref<UploadFileInfo[]>([]);
+const uploadFileList = ref<UploadFileInfo[]>([])
 
 // Ref about upload sprite's name.
-const uploadSpriteName = ref('');
+const uploadSpriteName = ref('')
 
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
@@ -197,7 +184,20 @@ const addBtnClassName = computed(() => {
   }
 })
 
+// Computed  spritename is legal or not
+const spriteNameAllow = computed(() => {
+  return isAllowName(uploadSpriteName.value)
+})
+
 // ----------methods-----------------------------------------
+// check if the name is legal.
+const isAllowName = (name: string) => {
+  // spx code is go+ code, and the sprite name will compiled to an identifier of go+
+  // so sprite name rules is depend on the identifier rules of go+.
+  let regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
+  return regex.test(name) && !typeKeywords.includes(name) && !keywords.includes(name)
+}
+
 /**
  * @description: A Function about clicking add button to change button style.
  * @Author: Xu Ning
@@ -246,7 +246,7 @@ const beforeUpload = (
     switch (fileType) {
       case 'backdrop': {
         let backdrop = backdropStore.backdrop
-        backdrop.addFile(...fileArray)
+        backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
       case 'sound': {
@@ -282,7 +282,11 @@ const beforeBackdropUpload = (data: { file: UploadFileInfo; fileList: UploadFile
  * @Date: 2024-01-24 11:48:33
  */
 
-const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileInfo[]; event?: Event }) => {
+const hanleWatchFileList = (data: {
+  file: UploadFileInfo
+  fileList: UploadFileInfo[]
+  event?: Event
+}) => {
   uploadFileList.value = [...data.fileList]
 }
 
@@ -292,15 +296,14 @@ const hanleWatchFileList = (data: { file: UploadFileInfo; fileList: UploadFileIn
  * @Author: Xu Ning
  * @Date: 2024-02-21 17:48:33
  */
-const handleSubmitSprite = async () => {
-  let uploadFilesArr: File[] = [];
+const handleSubmitSprite = () => {
+  let uploadFilesArr: File[] = []
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
     }
   })
-  let gif = await generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
-  console.log(gif,'gif')
+  let gif = generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
   uploadSpriteName.value = ''
