@@ -209,6 +209,10 @@ const menuOptions = [
             'text-align': 'center',
             border: '2px solid #001429',
             width: '30vw'
+          },
+          value: projectStore.project.name,
+          'onUpdate:value': (value: string) => {
+            projectStore.project.name = value
           }
         },
         'title'
