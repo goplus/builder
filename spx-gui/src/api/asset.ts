@@ -10,18 +10,21 @@ import { service } from '@/axios'
 import type { Asset, PageAssetResponse, SearchAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
+
 /**
- * Fetches a list of assets.
+ * Fetches a list of assets based on the provided URL.
  *
+ * @param baseUrl public: '/list/asset'; private:'/list/userasset';
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of assets to retrieve per page.
  * @param assetType The type of the asset. See src/constant/constant.ts for details.
  * @param category (Optional) The category of the assets to filter by.
- * @param isOrderByTime (Optional) The time of the assets to filter by.
- * @param isOrderByHot (Optional) The hot of the assets to filter by.
+ * @param isOrderByTime (Optional) Whether to order assets by time.
+ * @param isOrderByHot (Optional) Whether to order assets by popularity.
  * @returns PageAssetResponse
  */
 export function getAssetList({
+  baseAssetUrl,
   pageIndex,
   pageSize,
   assetType,
@@ -29,35 +32,36 @@ export function getAssetList({
   isOrderByTime,
   isOrderByHot
 }: {
-  pageIndex: number
-  pageSize: number
-  assetType: number
-  category?: string
-  isOrderByTime?: boolean
+  baseAssetUrl: string,
+  pageIndex: number,
+  pageSize: number,
+  assetType: number,
+  category?: string,
+  isOrderByTime?: boolean,
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
-  const params = new URLSearchParams()
+  const params = new URLSearchParams();
 
-  params.append('pageIndex', pageIndex.toString())
-  params.append('pageSize', pageSize.toString())
-  params.append('assetType', assetType.toString())
+  params.append('pageIndex', pageIndex.toString());
+  params.append('pageSize', pageSize.toString());
+  params.append('assetType', assetType.toString());
 
   if (category) {
-    params.append('category', category)
+    params.append('category', category);
   }
   if (isOrderByTime) {
-    params.append('isOrderByTime', '1')
+    params.append('isOrderByTime', '1');
   }
   if (isOrderByHot) {
-    params.append('isOrderByHot', '1')
+    params.append('isOrderByHot', '1');
   }
 
-  const url = `/list/asset?${params.toString()}`
+  const url = `${baseAssetUrl}?${params.toString()}`;
 
   return service({
     url: url,
     method: 'get'
-  })
+  });
 }
 
 /**
