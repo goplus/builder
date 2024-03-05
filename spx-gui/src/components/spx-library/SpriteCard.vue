@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-22 15:16:34
+ * @LastEditTime: 2024-02-28 16:25:05
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -15,7 +15,7 @@
       width="100"
       height="100"
       :src="assetImageUrl"
-      fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
+      :fallback-src="error"
       @mouseenter="isHovering = true"
       @mouseleave="isHovering = false"
     />
@@ -38,6 +38,7 @@
 import { NImage } from "naive-ui";
 import { defineProps, defineEmits, computed, ref } from "vue";
 import type { Asset } from "@/interface/library";
+import error from '@/assets/image/library/error.svg'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -45,7 +46,11 @@ interface PropsType {
 }
 const props = defineProps<PropsType>();
 const emits = defineEmits(['add-asset']);
+
+// ----------data related -----------------------------------
+// Ref about the hovering state to judge if should show gif.
 const isHovering = ref<boolean>(false);
+
 // ----------computed properties-----------------------------
 // Compute the asset images' url
 const assetImageUrl = computed(() => {
@@ -85,7 +90,6 @@ const shouldShowGif = computed(()=> isHovering.value && assetImageGifUrl.value !
  * @Author: Xu Ning
  * @Date: 2024-01-24 12:18:12
  */
-// TODO: change one address as a obj
 const addAssetToListFunc = (id:number, name: string, address: string|undefined) =>{
   emits('add-asset', id, name, address);
 }

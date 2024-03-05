@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 16:33:54
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 14:33:34
+ * @LastEditTime: 2024-02-29 09:10:48
  * @FilePath: \spx-gui\src\components\stage-viewer\BackdropLayer.vue
  * @Description
 -->
@@ -87,6 +87,7 @@ const backdrop = computed(() => {
 watch(
   () => backdrop.value,
   (new_config) => {
+    console.log(new_config?.scenes)
     if (new_config) {
       // In the scene config‘s project, you only need to get the first scene as the backdrop
       const _image = new window.Image()
@@ -102,6 +103,10 @@ watch(
     } else {
       image.value?.remove()
     }
+  },
+  {
+    deep: true,
+    immediate: true
   }
 )
 </script>

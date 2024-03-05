@@ -36,11 +36,16 @@ export const useSoundStore = defineStore("sound", () => {
     }
   }
 
+  function existsByName(name: string): boolean {
+    return map.value.has(name);
+  }
+
   return {
     list,
     current,
     addItem,
     setCurrentByName,
-    removeItemByName
+    removeItemByName,
+    existsByName
   }
 })
