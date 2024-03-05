@@ -14,7 +14,7 @@ import type { AxiosResponse } from 'axios'
 /**
  * Fetches a list of assets based on the provided URL.
  *
- * @param baseUrl public: '/list/asset'; private:'/list/userasset';
+ * @param assetLibraryType 'public' / 'private';
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of assets to retrieve per page.
  * @param assetType The type of the asset. See src/constant/constant.ts for details.
@@ -24,7 +24,7 @@ import type { AxiosResponse } from 'axios'
  * @returns PageAssetResponse
  */
 export function getAssetList({
-  baseAssetUrl,
+  assetLibraryType,
   pageIndex,
   pageSize,
   assetType,
@@ -32,7 +32,7 @@ export function getAssetList({
   isOrderByTime,
   isOrderByHot
 }: {
-  baseAssetUrl: string,
+  assetLibraryType: string,
   pageIndex: number,
   pageSize: number,
   assetType: number,
@@ -40,6 +40,11 @@ export function getAssetList({
   isOrderByTime?: boolean,
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
+  let baseAssetUrl = "/list/asset";
+  if (assetLibraryType === 'private') {
+    baseAssetUrl = "/list/userasset";
+  }
+
   const params = new URLSearchParams();
 
   params.append('pageIndex', pageIndex.toString());

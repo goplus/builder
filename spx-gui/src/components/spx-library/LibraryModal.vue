@@ -110,9 +110,7 @@ const emits = defineEmits(['update:show', 'add-asset'])
 
 // ----------data related -----------------------------------
 const assetLibraryOption = ref<'public' | 'private'>('public')
-const baseAssetUrl = computed(() => {
-  return assetLibraryOption.value === 'public' ? '/list/asset' : '/list/userasset';
-});
+
 // Ref about show modal state.
 const showModal = ref<boolean>(false)
 // Ref about search text.
@@ -158,7 +156,7 @@ const fetchAssetsByType = async (assetType: number, category?: string) => {
     const pageIndex = 1
     const pageSize = 20
     const response = await getAssetList({
-      baseAssetUrl: baseAssetUrl.value,
+      assetLibraryType: assetLibraryOption.value,
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
@@ -224,11 +222,7 @@ const handleCategoryClick = async (category: string) => {
   if (category === 'ALL') {
     category = ''
   }
-  if (props.type === 'backdrop') {
-    assetInfos.value = await fetchAssetsByType(AssetType.Backdrop, category)
-  } else if (props.type === 'sprite') {
-    assetInfos.value = await fetchAssetsByType(AssetType.Sprite, category)
-  }
+  await setAssets();
 }
 
 /**
@@ -267,7 +261,7 @@ const handleSortByHot = async () => {
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
   let res = await getAssetList({
-    baseAssetUrl: baseAssetUrl.value,
+    assetLibraryType: assetLibraryOption.value,
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
@@ -288,7 +282,7 @@ const handleSortByTime = async () => {
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
   let res = await getAssetList({
-    baseAssetUrl: baseAssetUrl.value,
+    assetLibraryType: assetLibraryOption.value,
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
