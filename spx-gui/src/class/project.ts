@@ -9,15 +9,30 @@ import {
   getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
+import { removeProject as removeCloudProject } from '@/api/project'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-import { getProject, getProjects, saveProject, publicProject } from '@/api/project'
+import { getProject, getProjects, saveProject, updateProjectIsPublic } from '@/api/project'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
+
+async function removeLocalProject(id: string) {
+  await fs.rmdir(id)
+  await fs.unlink("summary/" + id)
+}
+
+export async function removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
+  if (source === ProjectSource.local) {
+    await removeLocalProject(id)
+  } else {
+    await removeCloudProject(id)
+  }
+}
+
 export enum ProjectSource {
   local = 'local',
   cloud = 'cloud'
@@ -107,14 +122,14 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
+  static async getCloudProjects(isUser: boolean = true, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
     const projects = res.data || []
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  static async publicProject(id: number): Promise<void> {
-    await publicProject(id)
+  static async updateProjectIsPublic(id: string): Promise<void> {
+    await updateProjectIsPublic(id)
   }
 
   constructor() {
@@ -277,12 +292,10 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async removeLocal() {
     if (this._temporaryId !== null) {
-      await fs.rmdir(this._temporaryId)
-      await fs.unlink("summary/" + this._temporaryId)
+      await removeLocalProject(this._temporaryId)
     }
     if (this._id !== null) {
-      await fs.rmdir(this._id)
-      await fs.unlink("summary/" + this._id)
+      await removeLocalProject(this._id)
     }
   }
 

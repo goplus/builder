@@ -39,6 +39,7 @@ const ext2mime: Record<string, string> = {
     'ogg': 'audio/ogg',
     'json': 'application/json',
     'spx': 'text/plain',
+    'gmx': 'text/plain',
 }
 
 /**

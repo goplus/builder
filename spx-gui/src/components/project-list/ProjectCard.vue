@@ -1,98 +1,95 @@
 <template>
-    <n-badge>
-        <n-card id="project-card" hoverable @click="load">
-            <div class="project-card-description">
-            </div>
-            <template #cover>
-              <img src="@/assets/image/project/project.png" alt="">
-            </template>
-            <template #header>
-                <p class="title">{{ project.name || project.id }}</p>
-            </template>
-        </n-card>
-    </n-badge>
+    <n-card id="project-card" hoverable @click="load">
+        <button class="icon-delete" @click.stop="remove">
+            <i>x</i>
+        </button>
+        <template #cover>
+            <img src="@/assets/image/project/project.png" alt="">
+        </template>
+
+        <template #header>
+            <p class="title">{{ project.name || project.id }}</p>
+        </template>
+    </n-card>
 </template>
 
 <script lang="ts" setup>
-import type { ProjectSummary } from '@/class/project'
+import { removeProject, type ProjectSummary } from '@/class/project'
 import { defineProps } from 'vue'
-import { NCard, NBadge } from 'naive-ui';
+import { NCard } from 'naive-ui';
 import { useProjectStore } from '@/store';
 
-const props = defineProps<{
+const { project } = defineProps<{
     project: ProjectSummary
 }>()
-const emit = defineEmits(['load-project'])
+const emit = defineEmits(['load-project', 'remove-project'])
 
 const load = async () => {
-  console.log('load project', props.project.id, props.project.source)
-  await useProjectStore().loadProject(props.project.id, props.project.source)
-  emit('load-project')
+    await useProjectStore().loadProject(project.id, project.source)
+    emit('load-project')
+}
+
+const remove = async () => {
+    await removeProject(project.id, project.source)
+    emit('remove-project')
 }
 </script>
 
 <style lang="scss" scoped>
-.n-badge {
+@import '@/assets/theme.scss';
+
+.n-card {
     width: 100%;
+    border-radius: 20px;
+    background-color: rgba(252, 228, 236, 0.38);
+    box-sizing: border-box;
+    cursor: pointer;
+    overflow: hidden;
 
-    :deep(.n-badge-sup) {
-        height: 36px;
-        background: transparent;
+    .icon-delete {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        height: 28px;
+        width: 28px;
+        text-align: center;
+        border-radius: 50%;
+        font-weight: bolder;
+        cursor: pointer;
+        background-color: $background-color;
+        border: 1px solid $base-color;
 
-        .n-base-slot-machine {
+        &:hover {
+            filter: brightness(0.95);
+        }
+
+        &:active {
+            filter: brightness(0.9);
+        }
+
+        i {
+            color: $base-color;
+            font-size: 20px;
             line-height: 1;
-            height: unset;
-            font-size: 36px;
-            font-weight: bolder;
-            color: transparent;
-            background: linear-gradient(90deg, #fff0 0%, #ffff 50%, #ffff 100%);
-            background-clip: text;
+            user-select: none;
         }
     }
 
-    .n-card {
-      width: 100%;
-      //height: 150px;
-        border-radius: 20px;
+    p {
+        margin: 0;
+        font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
+
+        &.title {
+            font-size: 18px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+    }
+
+    :deep(.n-card-header) {
+        height: 10px;
         background-color: rgba(252, 228, 236, 0.38);
-        margin: 10px;
-        box-sizing: border-box;
-      cursor: pointer;
-      overflow: hidden;
-
-        p {
-            margin: 0;
-          font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
-
-            &.title {
-                font-size: 18px;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                overflow: hidden;
-            }
-
-            &.id {
-                font-size: 12px;
-                color: #a4a4a3;
-                margin-bottom: 10px;
-            }
-        }
-
-        :deep(.n-card__footer) {
-            padding-top: 10px;
-        }
-
-        .n-button {
-            width: 100%;
-        }
-
-        ::v-deep .n-card-header {
-          height: 10px;
-          border-radius: 0 0 20px 20px;
-          background-color: rgba(252, 228, 236, 0.38);
-          //background-color: #ffffff;
-            text-align: center;
-        }
     }
 }
 </style>

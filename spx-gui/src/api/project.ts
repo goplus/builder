@@ -57,6 +57,30 @@ export async function getProject(id: string): Promise<Project> {
 }
 
 /**
+ * Removes a project.
+ * @param id The id of the project
+ * @returns string
+ */
+export async function removeProject(id: string): Promise<string> {
+    const url = `/project/delete`;
+    const formData = new FormData();
+    formData.append('id', id);
+    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
+}
+
+/**
+ * Update project isPublic status.
+ * @param id project id that will be public
+ * @returns
+ */
+export async function updateProjectIsPublic(id: string): Promise<void> {
+    const url =  `/project/updateIsPublic`;
+    const formData = new FormData();
+    formData.append('id', id);
+    service({ url: url, method: 'post', data: formData }).then((res) => res.data.code);
+}
+
+/**
  * Format spx code
  *
  * @param body The string content to be formatted.
@@ -75,14 +99,4 @@ export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<
             'Content-Type': 'multipart/form-data'
         },
     });
-}
-
-/**
- * Update project status to public.
- * @param id project id that will be public
- * @returns
- */
-export async function publicProject(id: number): Promise<void> {
-    const url =  `/project/updateIsPublic/${id}`;
-    service({ url: url, method: 'get' }).then((res) => res.data.code);
 }
