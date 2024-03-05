@@ -7,56 +7,23 @@
 -->
 <template>
   <div class="project-runner">
-    <iframe ref="iframe" class="runner" frameborder="0" @load="handleIframeLoad"/>
+    <IframeDisplay v-if="running && zipData" :zip-data="zipData" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { Project } from '@/class/project'
-import {computed, type ComputedRef, ref} from 'vue'
-import { useMessage } from "naive-ui";
-import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
-import wasmExecUrl from '@/assets/ispx/wasm_exec.js?url'
-import wasmUrl from '@/assets/ispx/main.wasm?url'
+import { onMounted, ref } from 'vue'
+import IframeDisplay from './IframeDisplay.vue'
 
-interface CustomWindow extends Window {
-  startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => Promise<void>
-}
+const { project, running } = defineProps<{ project: Project; running: boolean }>()
 
-const message = useMessage()
-const props = defineProps<{ project: Project }>()
-const iframe = ref<HTMLIFrameElement | null>(null)
-const runnerWindow: ComputedRef<CustomWindow> = computed(() => iframe.value?.contentWindow as CustomWindow)
+const zipData = ref<ArrayBuffer | Uint8Array | null>(null)
 
-const handleIframeLoad = async () => {
-  const runnerHtml = rawRunnerHtml
-      .replace('/wasm_exec.js', wasmExecUrl)
-      .replace('main.wasm', wasmUrl)
-  console.log(runnerHtml)
-  runnerWindow.value.document.write(runnerHtml)
-  console.log('iframe mounted success')
-}
-
-const run = async () => {
-  const zipResp = props.project.zip
+onMounted(async () => {
+  const zipResp = project.zip
   const buf = await (await zipResp).arrayBuffer()
-  console.log(runnerWindow.value)
-  if (typeof runnerWindow.value.startWithZipBuffer != "function"){
-    message.warning('runner not ready')
-    return
-  }
-  await runnerWindow.value.startWithZipBuffer(buf)
-}
-
-const stop = async () => {
-  if (iframe.value) {
-    iframe.value.src = ''
-  }
-}
-
-defineExpose({
-  run,
-  stop
+  zipData.value = buf
 })
 </script>
 

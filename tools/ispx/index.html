@@ -17,13 +17,17 @@
         const zipResp = fetch('/test.zip')
 
         const iframe = document.getElementById('wasmFrame');
-        iframe.onload = async () => {
+        iframe.addEventListener('load', () => {
             const wasmWindow = iframe.contentWindow;
             window.wasmWindow = wasmWindow;
+            console.log('wasmWindow', wasmWindow);
 
-            const buffer = await (await (zipResp)).arrayBuffer();
-            wasmWindow.startWithZipBuffer(buffer)
-        };
+            wasmWindow.addEventListener('wasmLoaded', async () => {
+                const buffer = await (await (zipResp)).arrayBuffer();
+                console.log('buffer', buffer);
+                wasmWindow.startWithZipBuffer(buffer);
+            });
+        });
     </script>
 </body>
 

@@ -10,9 +10,9 @@
   <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
     <n-button v-if="show" type="error" @click="stop">Stop</n-button>
-    <n-button v-else type="success"  @click="run">{{ $t('stage.run') }}</n-button>
+    <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
     <div v-if="show" class="stage-runner">
-      <ProjectRunner ref="project_runner" :project="project as Project"/>
+      <ProjectRunner :running="show" :project="project as Project" />
     </div>
     <div v-else class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, watch, computed, nextTick} from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useSize } from '@/util/dom'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
@@ -37,10 +37,9 @@ import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
-import ProjectRunner from "@/components/project-runner/ProjectRunner.vue";
+import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 
-let show = ref(false);
-const project_runner = ref();
+let show = ref(false)
 
 const project = computed(() => projectStore.project)
 const projectStore = useProjectStore()
@@ -56,28 +55,23 @@ const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }
 
-
-const run = async () => {
+const run = () => {
   show.value = true
-  // wait for the iframe to be mounted
-  await nextTick()
-  project_runner.value.run()
 }
 
-const stop = async () => {
-  project_runner.value.stop()
+const stop = () => {
   show.value = false
 }
 
 watch(
-    () => spriteStore.current,
-    () => {
-      if (spriteStore.current) {
-        selectedSpriteNames.value = [spriteStore.current.name]
-      } else {
-        selectedSpriteNames.value = []
-      }
+  () => spriteStore.current,
+  () => {
+    if (spriteStore.current) {
+      selectedSpriteNames.value = [spriteStore.current.name]
+    } else {
+      selectedSpriteNames.value = []
     }
+  }
 )
 </script>
 
@@ -133,7 +127,7 @@ watch(
     justify-content: center;
   }
 
-  .stage-runner{
+  .stage-runner {
     display: flex;
     height: 100%;
   }
