@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-28 09:15:20
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 11:30:43
+ * @LastEditTime: 2024-03-05 22:22:01
  * @FilePath: \builder\spx-gui\src\widgets\spx-runner\spxRunnerDemo.vue
  * @Description: 
 -->
@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import SpxRunner from './SpxRunner.vue'
+import SpxRunner from './SpxRunner.ce.vue'
 const route = useRoute()
 const projectid = ref<string>()
 onMounted(() => {
