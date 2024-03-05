@@ -9,6 +9,5 @@ source build.sh
 
 cd ..
 
-cp fmt/static/main.wasm ../spx-gui/public/format.wasm
-cp ispx/main.wasm ../spx-gui/public/ispx/main.wasm
-cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ../spx-gui/public/wasm_exec.js
+cp fmt/static/main.wasm ../spx-gui/src/assets/format.wasm
+cp ispx/main.wasm ../spx-gui/src/assets/ispx/main.wasm
