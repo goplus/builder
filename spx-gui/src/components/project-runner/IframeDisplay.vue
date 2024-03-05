@@ -15,7 +15,7 @@ const { zipData } = defineProps<{ zipData: ArrayBuffer | Uint8Array }>()
 
 const iframe = ref<HTMLIFrameElement>()
 
-watchEffect(async () => {
+watchEffect(() => {
   const iframeWindow = iframe.value?.contentWindow as IframeWindow | null | undefined
   if (!iframeWindow) {
     return
