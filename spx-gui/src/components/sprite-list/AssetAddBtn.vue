@@ -81,11 +81,11 @@
     content-style="margin:10px;"
   >
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.name') }}:</p>
+      <p class="modal-items-p">{{ $t('list.name') }}</p>
       <n-input
         v-model:value="uploadSpriteName"
         round
-        placeholder="Input sprite name"
+        :placeholder="$t('list.inputName')"
         class="modal-items-content"
         style="max-width: 300px"
       />
@@ -96,13 +96,14 @@
         class="modal-items-content"
         list-type="image-card"
         multiple
-        @change="hanleWatchFileList"
+        @change="handleWatchFileList"
       />
     </div>
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.category') }}:</p>
       <n-select
         v-model:value="categoryValue"
+        :placeholder="$t('list.selectCategory')"
         class="modal-items-content"
         :options="categoryOptions"
       />
@@ -142,7 +143,7 @@ import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes } from '@/api/asset'
-import { categoryOptions, publicOptions } from '@/constant/constant'
+import { useI18n } from 'vue-i18n';
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -153,6 +154,24 @@ const message = useMessage()
 const spriteStore = useSpriteStore()
 const backdropStore = useBackdropStore()
 const soundStore = useSoundStore()
+const { t } = useI18n({
+  inheritLocale: true
+});
+const categoryOptions = [
+  { label: t('category.animals'), value: 'Animals' },
+  { label: t('category.people'), value: 'People' },
+  { label: t('category.sports'), value: 'Sports' },
+  { label: t('category.food'), value: 'Food' },
+  { label: t('category.fantasy'), value: 'Fantasy' }
+]
+
+const publicOptions = [
+  { label: t('publicState.notPublish'), value: 0 },
+  { label: t('publicState.private'), value: 1 },
+  { label: t('publicState.public'), value: 2 },
+  { label: t('publicState.both'), value: 3 },
+]
+
 
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
@@ -292,7 +311,7 @@ const beforeBackdropUpload = (data: { file: UploadFileInfo; fileList: UploadFile
  * @Date: 2024-01-24 11:48:33
  */
 
-const hanleWatchFileList = (data: {
+const handleWatchFileList = (data: {
   file: UploadFileInfo
   fileList: UploadFileInfo[]
   event?: Event

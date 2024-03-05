@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 16:31:29
+ * @LastEditTime: 2024-03-05 21:27:52
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
  */
@@ -81,13 +81,28 @@ export const initI18n = async (app: App) => {
         costumes: 'Costumes',
         submit: 'Submit',
         category:'Category',
-        public:'IsPublic'
+        public:'IsPublic',
+        inputName:'Please input sprite name',
+        selectCategory:'Please choose sprite category'
       },
       scratch: {
         import: 'Import Assets from Scratch',
-        upload: 'Upload .sb3 Project',
+        upload: 'Upload .sb3 Files',
         importToSpx:'Import to My Project',
         download:'Download'
+      },
+      category:{
+        animals:'Animals',
+        people:'People',
+        sports:'Sports',
+        food:'Food',
+        fantasy:'Fantasy'
+      },
+      publicState:{
+        notPublish:'not publish',
+        private:'publish to private asset library',
+        public:'publish to public asset library',
+        both:'publish to both'
       }
     },
     zh: {
@@ -158,13 +173,28 @@ export const initI18n = async (app: App) => {
         costumes: '上传造型',
         submit: '提交',
         category:'精灵类别',
-        public:'是否公开'
+        public:'是否公开',
+        inputName:'请输入精灵名称',
+        selectCategory:'请选择类别'
       },
       scratch: {
-        import: '导入Scratch素材',
-        upload: '上传.sb3项目',
+        import: '导入 Scratch 素材',
+        upload: '上传 .sb3 文件',
         importToSpx:'导入至项目',
         download:'下载'
+      },
+      category:{
+        animals:'动物',
+        people:'人物',
+        sports:'体育',
+        food:'食物',
+        fantasy:'幻想'
+      },
+      publicState:{
+        notPublish: '不上传',
+        private: '上传到个人素材库',
+        public: '上传到公开素材库',
+        both: '上传到私有仓库和公开仓库',
       }
     }
   }

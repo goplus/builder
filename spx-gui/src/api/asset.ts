@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 18:12:33
+ * @LastEditTime: 2024-03-05 21:01:54
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -156,9 +156,11 @@ export function addAssetClickCount(
 
 /**
  * @description: Post multi costumes to generate sprite gif.
- * @param {string} files
- * @param {number} assetType
- * @return { SearchAssetResponse }
+ * @param {string} name - sprite name named by user
+ * @param {File[]} files - costumes' files of sprite
+ * @param {string|undefined} category - the category of the sprite(used to classify in library)
+ * @param {number} flag - 0: not publish to library; 1: publish to private library; 2: publish to public library; 3: publish to both
+ * @return { string }
  */
 export function generateGifByCostumes(name: string, files: File[], category?:string|undefined, flag?:number): Promise<string> {
   const url = `/spirits/upload`
