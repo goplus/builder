@@ -16,9 +16,9 @@
           <n-space v-if="isRequesting" justify="center">
             <n-spin size="large" />
           </n-space>
-          <n-grid v-else-if="currentList.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
+          <n-grid v-else-if="currentList.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="35" y-gap="20" responsive="screen">
             <n-grid-item v-for="project in currentList" :key="project.id">
-              <ProjectCard :project="project" @load-project="closeModalFunc"
+              <ProjectCard :project="project" :tab="state.currentTab" @load-project="closeModalFunc"
                 @remove-project="removeProject(project.id)" />
             </n-grid-item>
           </n-grid>
