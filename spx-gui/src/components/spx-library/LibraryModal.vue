@@ -293,7 +293,7 @@ const handleSortByTime = async () => {
 }
 
 /**
- * @description: When public/private change, reset assets
+ * @description: Reset assets
  * @return {*}
  * @Author: Yao xinyue
  * @Date: 2024-03-05 15:01:45
