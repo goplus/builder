@@ -132,7 +132,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   constructor() {
-    this.name = ''
+    this.name = 'Untitled'
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
@@ -287,6 +287,9 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to Cloud.
    */
   async save() {
+    if (!this.name.trim()){
+      throw new Error('Project name cannot be empty!')
+    }
     const id = this._id ?? void 0
     return saveProject(this.name, await this.zip, id).then(async res => {
       this._id = res.id
