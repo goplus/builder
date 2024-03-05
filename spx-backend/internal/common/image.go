@@ -7,8 +7,9 @@ import (
 	"mime/multipart"
 )
 
+// LoadImage Convert the file to Paletted type (required for GIF)
 func LoadImage(fileHeader *multipart.FileHeader) (*image.Paletted, error) {
-	// 打开图片文件
+	// Open the image file
 	file, err := fileHeader.Open()
 
 	if err != nil {
@@ -16,13 +17,13 @@ func LoadImage(fileHeader *multipart.FileHeader) (*image.Paletted, error) {
 	}
 	defer file.Close()
 
-	// 解码图片
+	// Decode the image
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return nil, err
 	}
 
-	// 将图片转换为Paletted类型（GIF需要的类型）
+	// Convert the image to Paletted type (required for GIF)
 	bounds := img.Bounds()
 	palettedImage := image.NewPaletted(bounds, palette.Plan9)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -30,6 +31,5 @@ func LoadImage(fileHeader *multipart.FileHeader) (*image.Paletted, error) {
 			palettedImage.Set(x, y, img.At(x, y))
 		}
 	}
-
 	return palettedImage, nil
 }

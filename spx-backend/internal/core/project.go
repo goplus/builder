@@ -37,6 +37,7 @@ type Config struct {
 	DSN    string // database data source name
 	BlobUS string // blob URL scheme
 }
+
 type Data struct {
 	Assets    map[string]string `json:"assets"`
 	IndexJson string            `json:"indexJson"`
@@ -85,6 +86,7 @@ type FormatResponse struct {
 	Error FormatError
 }
 
+// New init Config
 func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	err = godotenv.Load("../.env")
 	if err != nil {
@@ -122,7 +124,7 @@ func New(ctx context.Context, conf *Config) (ret *Project, err error) {
 	return &Project{bucket, db}, nil
 }
 
-// FileInfo Find file address from db
+// FileInfo Find file from db
 func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	if id != "" {
 		pro, err := common.QueryById[CodeFile](p.db, id)
@@ -139,6 +141,7 @@ func (p *Project) FileInfo(ctx context.Context, id string) (*CodeFile, error) {
 	return nil, ErrNotExist
 }
 
+// DeleteProject Delete Project
 func (p *Project) DeleteProject(ctx context.Context, id string) error {
 	if id != "" {
 		address := GetProjectAddress(id, p)
@@ -150,6 +153,8 @@ func (p *Project) DeleteProject(ctx context.Context, id string) error {
 	}
 	return ErrNotExist
 }
+
+// SaveAllProject Save project
 func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file multipart.File, header *multipart.FileHeader) (*CodeFile, error) {
 	if codeFile.ID == "" {
 		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
@@ -176,6 +181,8 @@ func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file m
 		return codeFile, UpdateProject(p, codeFile)
 	}
 }
+
+// CodeFmt Format code
 func (p *Project) CodeFmt(ctx context.Context, body, fiximport string) (res *FormatResponse) {
 
 	fs, err := splitFiles([]byte(body))
@@ -290,7 +297,7 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 	return asset, nil
 }
 
-// AssetList list assets
+// AssetPubList list public assets
 func (p *Project) AssetPubList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
@@ -320,6 +327,8 @@ func (p *Project) AssetPubList(ctx context.Context, pageIndex string, pageSize s
 	}
 	return pagination, nil
 }
+
+// UserAssetList list personal assets
 func (p *Project) UserAssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, uid string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
@@ -335,7 +344,6 @@ func (p *Project) UserAssetList(ctx context.Context, pageIndex string, pageSize 
 	if isOrderByHot != "" {
 		orders = append(orders, common.OrderByCondition{Column: "click_count", Direction: "desc"})
 	}
-
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := p.ModifyAddress(asset.Address)
@@ -360,7 +368,7 @@ func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, asset
 	return nil
 }
 
-// modifyAddress transfers relative path to download url
+// ModifyAddress transfers relative path to download url
 func (p *Project) ModifyAddress(address string) (string, error) {
 	var data struct {
 		Assets    map[string]string `json:"assets"`
@@ -418,7 +426,7 @@ func (p *Project) UserProjectList(ctx context.Context, pageIndex string, pageSiz
 	return pagination, nil
 }
 
-// UpdatePublic user project list
+// UpdatePublic update is_public
 func (p *Project) UpdatePublic(ctx context.Context, id string) error {
 	return UpdateProjectIsPublic(p, id)
 }
@@ -453,6 +461,7 @@ func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.Fi
 	return asset, UpdateAsset(p, asset)
 }
 
+// SearchAsset Search Asset by name
 func (p *Project) SearchAsset(ctx context.Context, search string, assetType string) ([]*Asset, error) {
 	query := "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ?"
 	searchString := "%" + search + "%"
@@ -487,6 +496,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 
 }
 
+// UploadSpirits Upload imgs to gif
 func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, uid string, flag string, tag string) (string, error) {
 	var images []*image.Paletted
 	var delays []int
