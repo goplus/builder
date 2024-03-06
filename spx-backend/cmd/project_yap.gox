@@ -40,7 +40,7 @@ post "/project/delete", ctx => {
 	err := p.DeleteProject(todo, id)
 	if err!=nil{
 	    ctx.json {
-        		"code":200,
+        		"code":400,
         		"msg":"delete error",
         		"data":"",
         }
@@ -86,7 +86,15 @@ post "/project/allsave", ctx=>{
 		Name:name,
 		AuthorId :userId,
 	}
-	res,_ := p.SaveAllProject(todo,codeFile,file,header)
+	res,err := p.SaveAllProject(todo,codeFile,file,header)
+	if err!=nil{
+        ctx.json {
+                "code":400,
+                "msg":"save error",
+                "data":"",
+        }
+        return
+    }
 	ctx.json {
 		"code":200,
 		"msg":"ok",
@@ -117,6 +125,26 @@ get "/asset/:id", ctx => {
     }
 }
 
+//Spirits to gif
+post "/spirits/togif", ctx => {
+        ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+        files:=ctx.MultipartForm.File["files"]
+        path,err := p.ImagesToGif(todo,files)
+        if (err != nil) {
+                ctx.json({
+                    "code": 400,
+                    "msg": "images to gif error",
+                    "data":"",
+                })
+                return
+            }
+        ctx.json {
+            "code":200,
+            "msg":"ok",
+            "data":path,
+        }
+}
+
 //Upload spirits to gif
 post "/spirits/upload", ctx => {
         ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
@@ -136,23 +164,24 @@ post "/spirits/upload", ctx => {
         } else {
             userId = user.Id
         }
-
         files:=ctx.MultipartForm.File["files"]
         name:=ctx.FormValue("name")
-        flag:=ctx.FormValue("flag")
+        publishState:=ctx.FormValue("publishState")
+        gif:=ctx.FormValue("gif")
         category:=ctx.FormValue("category")
-        path,err := p.UploadSpirits(todo,name,files,userId,flag,category)
+        err = p.UploadSpirits(todo,name,files,gif,userId,category,publishState)
         if (err != nil) {
                 ctx.json({
                     "code": 400,
-                    "msg": "Failed to read request body",
+                    "msg": "Failed to upload gif",
+                    "data":"",
                 })
                 return
             }
         ctx.json {
             "code":200,
             "msg":"ok",
-            "data":path,
+            "data":"",
         }
 }
 
@@ -190,7 +219,15 @@ post "/asset/save", ctx => {
                  AssetType:assetType,
                  Status:1,
         	}
-        	_, _ = p.SaveAsset(todo,asset,file,header)
+        	_, err = p.SaveAsset(todo,asset,file,header)
+        	if err!=nil{
+                ctx.json {
+                    "code":400,
+                    "msg":"save error",
+                    "data":"",
+                }
+                return
+            }
         	ctx.json {
         		"code":200,
         		"msg":"ok",
@@ -302,7 +339,14 @@ get "/list/userProject/:pageIndex/:pageSize", ctx => {
 post "/project/updateIsPublic", ctx=>{
 
 	id := ctx.FormValue("id")
-	_ = p.UpdatePublic(todo,id)
+	err := p.UpdatePublic(todo,id)
+	if err!=nil{
+	    ctx.json {
+        		"code":400,
+        		"msg":"update err",
+        		"data":"",
+        	}
+	}
 	ctx.json {
 		"code":200,
 		"msg":"ok",

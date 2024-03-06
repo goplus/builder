@@ -496,29 +496,16 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 
 }
 
-// UploadSpirits Upload imgs to gif
-func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, uid string, flag string, tag string) (string, error) {
+func (p *Project) ImagesToGif(ctx context.Context, files []*multipart.FileHeader) (string, error) {
 	var images []*image.Paletted
 	var delays []int
-	data := &Data{}
-	data.IndexJson = "index.json"
-	data.Type = "gif"
-	data.Assets = make(map[string]string)
-	for i, fileHeader := range files {
+	for _, fileHeader := range files {
 		// 打开文件
 		img, err := common.LoadImage(fileHeader)
 		if err != nil {
 			fmt.Printf("failed to load image %s: %v", fileHeader.Filename, err)
 			return "", err
 		}
-		file, _ := fileHeader.Open()
-		path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, fileHeader)
-		if err != nil {
-			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
-			return "", err
-		}
-		index := "image" + strconv.Itoa(i)
-		data.Assets[index] = path
 		images = append(images, img)
 		delays = append(delays, 10) // 每帧之间的延迟，100 = 1秒
 	}
@@ -543,14 +530,34 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 	if err != nil {
 		return "", err
 	}
-	data.Url = path
+	return os.Getenv("QINIU_PATH") + "/" + path, err
+}
+
+// UploadSpirits Upload imgs to gif
+func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, gifPath string, uid string, tag string, publishState string) error {
+	data := &Data{}
+	data.IndexJson = "index.json"
+	data.Type = "gif"
+	data.Assets = make(map[string]string)
+	for i, fileHeader := range files {
+		file, _ := fileHeader.Open()
+		path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, fileHeader)
+		if err != nil {
+			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
+			return err
+		}
+		index := "image" + strconv.Itoa(i)
+		data.Assets[index] = path
+	}
+
+	data.Url = common.ExtractURLPart(gifPath)
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		fmt.Printf("failed to jsonMarshal: %v", err)
-		return "", err
+		return err
 	}
-	if flag != "0" {
-		isPublic, _ := strconv.Atoi(flag)
+	isPublic, _ := strconv.Atoi(publishState)
+	if isPublic != 0 {
 		_, err = AddAsset(p, &Asset{
 			Name:       name,
 			AuthorId:   uid,
@@ -565,5 +572,5 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 		})
 	}
 
-	return os.Getenv("QINIU_PATH") + "/" + path, err
+	return err
 }

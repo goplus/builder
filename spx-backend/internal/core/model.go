@@ -40,6 +40,7 @@ func UploadFile(ctx context.Context, p *Project, blobKey string, file multipart.
 	return blobKey, w.Close()
 }
 
+// UploadFile2 Upload file to cloud
 func UploadFile2(ctx context.Context, p *Project, blobKey string, file *os.File, originalFilename string) (string, error) {
 
 	// Extract file extension
@@ -64,7 +65,6 @@ func UploadFile2(ctx context.Context, p *Project, blobKey string, file *os.File,
 	// close writer file
 	return blobKey, w.Close()
 }
-
 func Encrypt(salt, password string) string {
 	dk, _ := scrypt.Key([]byte(password), []byte(salt), 32768, 8, 1, 32)
 	return fmt.Sprintf("%x", string(dk))
