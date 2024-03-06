@@ -45,8 +45,8 @@ const importOptions = [
     key: 'Cloud'
   },
   {
-    label: 'Github',
-    key: 'Github'
+    label: 'Blank',
+    key: 'Blank'
   }
 ]
 
@@ -329,6 +329,9 @@ const handleSelectImport = (key: string | number) => {
         message.error(err.message)
       }
     })
+  }
+  else if(key === 'Blank') {
+    projectStore.loadBlankProject()
   }
 }
 

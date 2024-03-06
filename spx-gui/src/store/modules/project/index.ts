@@ -56,9 +56,19 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
+  /**
+   * Load blank project.
+   */
+  const loadBlankProject = async () => {
+    const newProject = new Project()
+    await newProject.loadBlankProject()
+    project.value = newProject
+  }
+
   return {
     project,
     loadProject,
-    loadFromZip
+    loadFromZip,
+    loadBlankProject
   }
 })
