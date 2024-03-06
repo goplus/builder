@@ -6,16 +6,17 @@ interface IframeWindow extends Window {
   startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => void
 }
 
-import { ref, watchEffect } from 'vue'
+import { ref } from 'vue'
 import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
 import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
+import { watch } from 'vue'
 
 const { zipData } = defineProps<{ zipData: ArrayBuffer | Uint8Array }>()
 
 const iframe = ref<HTMLIFrameElement>()
 
-watchEffect(() => {
+watch(iframe, () => {
   const iframeWindow = iframe.value?.contentWindow as IframeWindow | null | undefined
   if (!iframeWindow) {
     return
