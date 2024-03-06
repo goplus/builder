@@ -1,0 +1,135 @@
+package zipfs
+
+import (
+	"archive/zip"
+	"io"
+	"io/fs"
+	"path"
+	"path/filepath"
+	"strings"
+)
+
+type ZipFs struct {
+	files map[string]*zip.File
+	root  string
+}
+
+type zipDirEntry struct {
+	file *zip.File
+}
+
+func (zde *zipDirEntry) Name() string {
+	return filepath.Base(zde.file.Name)
+}
+
+func (zde *zipDirEntry) IsDir() bool {
+	return strings.HasSuffix(zde.file.Name, "/")
+}
+
+func (zde *zipDirEntry) Type() fs.FileMode {
+	if zde.IsDir() {
+		return fs.ModeDir
+	}
+	return 0
+}
+
+func (zde *zipDirEntry) Info() (fs.FileInfo, error) {
+	return zde.file.FileInfo(), nil
+}
+
+func NewZipFsFromReader(reader *zip.Reader) *ZipFs {
+	zf := &ZipFs{
+		files: make(map[string]*zip.File),
+	}
+
+	for _, file := range reader.File {
+		zf.files[file.Name] = file
+	}
+
+	return zf
+}
+
+func (zf *ZipFs) Chrooted(root string) *ZipFs {
+	return &ZipFs{
+		files: zf.files,
+		root:  root,
+	}
+}
+
+// Implement gop/parser/fsx.FileSystem:
+//
+//	type FileSystem interface {
+//		ReadDir(dirname string) ([]fs.DirEntry, error)
+//		ReadFile(filename string) ([]byte, error)
+//		Join(elem ...string) string
+//	}
+
+func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
+	dirname = path.Clean(path.Join(zf.root, dirname))
+	if !strings.HasSuffix(dirname, "/") {
+		dirname += "/"
+	}
+	if dirname == "/" {
+		dirname = "./"
+	}
+
+	var dirEntries []fs.DirEntry
+
+	for name, file := range zf.files {
+		dir := path.Dir(strings.TrimSuffix(name, "/")) + "/"
+		if dir != dirname {
+			continue
+		}
+
+		dirEntries = append(dirEntries, &zipDirEntry{file})
+	}
+
+	if len(dirEntries) == 0 {
+		return nil, fs.ErrNotExist
+	}
+
+	return dirEntries, nil
+}
+
+func (zf *ZipFs) ReadFile(filename string) ([]byte, error) {
+	filename = path.Clean(path.Join(zf.root, filename))
+	file, ok := zf.files[filename]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+
+	rc, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	return io.ReadAll(rc)
+}
+
+func (z *ZipFs) Join(elem ...string) string {
+	return path.Join(elem...)
+}
+
+// Implement spx/fs.Dir:
+//
+// type Dir interface {
+// 	Open(file string) (io.ReadCloser, error)
+// 	Close() error
+// }
+
+func (z *ZipFs) Open(file string) (
+	io.ReadCloser, error,
+) {
+	file = path.Clean(path.Join(z.root, file))
+	f, ok := z.files[file]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+
+	return f.Open()
+}
+
+func (z *ZipFs) Close() error {
+	return nil
+}

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 13:49:27
+ * @LastEditTime: 2024-02-29 17:46:15
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -209,6 +209,10 @@ const menuOptions = [
             'text-align': 'center',
             border: '2px solid #001429',
             width: '30vw'
+          },
+          value: projectStore.project.name,
+          'onUpdate:value': (value: string) => {
+            projectStore.project.name = value
           }
         },
         'title'
@@ -271,7 +275,7 @@ const menuOptions = [
                 },
                 renderIcon: renderIcon(SettingsIcon)
               },
-              'Settings'
+              t('top.settings')
             )
         }
       ),

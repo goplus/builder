@@ -1,7 +1,7 @@
 <template>
   <div class="file-upload-container">
     <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
-      Upload .sb3 File
+      {{ $t('scratch.upload') }}
     </button>
     <input
       ref="fileUploadInput"
@@ -15,7 +15,7 @@
       class="custom-import-btn"
       @click="importSelectedAssetsToProject"
     >
-      Import to spx project
+    {{ $t('scratch.importToSpx') }}
     </button>
   </div>
   <div class="asset-detail-info">
@@ -71,7 +71,7 @@
             style="height: 24px; padding: 6px"
             @click.stop="downloadAsset(assetFileDetail)"
           >
-            Download
+            {{ $t('scratch.download') }}
           </n-button>
         </div>
       </n-grid-item>

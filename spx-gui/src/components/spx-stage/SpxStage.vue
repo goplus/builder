@@ -1,16 +1,19 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 15:06:54
- * @FilePath: \builder\spx-gui\src\components\spx-stage\SpxStage.vue
- * @Description: 
+ * @LastEditors: Hu JingJing
+ * @LastEditTime: 2024-03-01 09:52:38
+ * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
+ * @Description:
 -->
 <template>
   <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
-    <n-button type="success" class="stage-run-button" @click="run">{{ $t('stage.run') }}</n-button>
-    <iframe v-if="show" src="/main.html" frameborder="0" class="show"></iframe>
+    <n-button v-if="show" type="error" @click="stop">Stop</n-button>
+    <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
+    <div v-if="show" class="stage-runner">
+      <ProjectRunner ref="projectRunner" :project="project as Project" />
+    </div>
     <div v-else class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
@@ -25,20 +28,21 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useSize } from '@/util/dom'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
 import { useSpriteStore } from '@/store'
-import { useBackdropStore } from '@/store/modules/backdrop'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
+import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
+import { nextTick } from 'vue'
 
 let show = ref(false)
-const backdropStore = useBackdropStore()
 
+const project = computed(() => projectStore.project)
 const projectStore = useProjectStore()
 const spriteStore = useSpriteStore()
 
@@ -52,6 +56,24 @@ const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }
 
+const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
+
+const run = async () => {
+  show.value = true
+  // As we just changed show to mount the ProjectRunner,
+  // we need to wait for the next tick to ensure the ProjectRunner is mounted.
+  await nextTick()
+  if (!projectRunner.value) {
+    throw new Error('ProjectRunner is not mounted')
+  }
+  projectRunner.value.run()
+}
+
+const stop = async () => {
+  show.value = false
+  projectRunner.value?.stop()
+}
+
 watch(
   () => spriteStore.current,
   () => {
@@ -62,16 +84,6 @@ watch(
     }
   }
 )
-
-const run = async () => {
-  console.log('run')
-  show.value = false
-  projectStore.project.run()
-  // If you assign show to `true` directly in a block of code, it will result in the page view not being updated and the iframe will not be remounted, hence the 300ms delay!
-  setTimeout(() => {
-    show.value = true
-  }, 300)
-}
 </script>
 
 <style scoped lang="scss">
@@ -102,7 +114,6 @@ const run = async () => {
   }
 
   .n-button {
-    background: #3a8b3b;
     position: absolute;
     right: 6px;
     top: 2px;
@@ -125,6 +136,11 @@ const run = async () => {
   .stage-viewer-container {
     display: flex;
     justify-content: center;
+  }
+
+  .stage-runner {
+    display: flex;
+    height: 100%;
   }
 }
 </style>

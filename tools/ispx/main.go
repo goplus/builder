@@ -3,90 +3,61 @@ package main
 //go:generate qexp -outdir pkg github.com/goplus/spx
 
 import (
-	"flag"
-	"fmt"
+	"archive/zip"
+	"bytes"
+	"log"
+	"syscall/js"
+
+	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
+	"github.com/goplus/builder/ispx/zipfs"
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
 	_ "github.com/goplus/igop/pkg/fmt"
 	_ "github.com/goplus/igop/pkg/math"
-	"github.com/goplus/builder/offline_spx/ifs"
-	_ "github.com/goplus/builder/offline_spx/pkg/github.com/goplus/spx"
 	_ "github.com/goplus/reflectx/icall/icall8192"
 	"github.com/goplus/spx"
-	"log"
-	"os"
-	"syscall/js"
 )
 
-var (
-	flagDumpSrc bool
-	flagTrace   bool
-	flagDumpSSA bool
-	flagDumpPKG bool
-	flagVerbose bool
-)
+var dataChannel = make(chan []byte)
 
-func init() {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "ispc [flags] dir\n")
-		flag.PrintDefaults()
-	}
-	flag.BoolVar(&flagDumpSrc, "dumpsrc", false, "print source code")
-	flag.BoolVar(&flagDumpSSA, "dumpssa", false, "print ssa code information")
-	flag.BoolVar(&flagDumpPKG, "dumppkg", false, "print import pkgs")
-	flag.BoolVar(&flagTrace, "trace", false, "trace")
-	flag.BoolVar(&flagVerbose, "v", false, "print verbose information")
+func loadData(this js.Value, args []js.Value) interface{} {
+	inputArray := args[0]
+
+	// Convert Uint8Array to Go byte slice
+	length := inputArray.Get("length").Int()
+	goBytes := make([]byte, length)
+	js.CopyBytesToGo(goBytes, inputArray)
+
+	dataChannel <- goBytes
+	return nil
 }
 
 func main() {
-	flagVerbose = true
-	global := js.Global().Get("top")
-	path := global.Get("project_path").String()
-	if flagVerbose {
-		log.Println("load url", path)
-	}
-	var mode igop.Mode
-	if flagDumpSSA {
-		mode |= igop.EnableDumpInstr
-	}
-	if flagTrace {
-		mode |= igop.EnableTracing
-	}
-	if flagDumpPKG {
-		mode |= igop.EnableDumpImports
-	}
-	ctx := igop.NewContext(mode)
-	var (
-		data []byte
-		err  error
-	)
-	fs := ifs.NewIndexedDBFileSystem()
-	if flagVerbose {
-		log.Println("BuildDir", path)
-	}
-	data, err = gopbuild.BuildFSDir(ctx, fs, path)
+	js.Global().Set("goLoadData", js.FuncOf(loadData))
+
+	zipData := <-dataChannel
+
+	zipReader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
-		log.Panicln(err)
+		log.Fatalln("Failed to read zip data:", err)
 	}
-	log.Println("buildFSdir success")
+	fs := zipfs.NewZipFsFromReader(zipReader)
+
+	var mode igop.Mode
+	ctx := igop.NewContext(mode)
+	source, err := gopbuild.BuildFSDir(ctx, fs, "")
+	if err != nil {
+		log.Fatalln("Failed to build Go+ source:", err)
+	}
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
-		asset := path + "/" + resource.(string)
-		fs := ifs.NewIndexedDBDir(asset)
-		if err != nil {
-			log.Panicln(err)
-		}
-		spx.Gopt_Game_Run(game, fs, gameConf...)
+		path := resource.(string)
+		gameFs := fs.Chrooted(path)
+		spx.Gopt_Game_Run(game, gameFs, gameConf...)
 	})
 
-	if flagDumpSrc {
-		fmt.Println(string(data))
-	}
-
-	//log.Println("source code is: %s", string(data))
-
-	_, err = ctx.RunFile("main.go", data, nil)
+	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {
-		log.Panicln(err)
+		log.Fatalln("Failed to run Go+ source:", err, " Code:", code)
 	}
 }
