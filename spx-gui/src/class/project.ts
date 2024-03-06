@@ -132,7 +132,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   constructor() {
-    this.name = 'Untitled'
+    this.name = ''
     this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
@@ -241,6 +241,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   async loadBlankProject() {
+    this.name = 'Untitled'
     const response = await fetch(defaultScene)
     const blob = await response.blob()
     const file = new File([blob], 'default_scene.png', { type: blob.type })
