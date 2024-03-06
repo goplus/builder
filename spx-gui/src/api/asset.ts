@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 15:14:19
+ * @LastEditTime: 2024-03-06 11:33:15
  * @FilePath: /builder/spx-gui/src/api/asset.ts
  * @Description:
  */
@@ -155,15 +155,53 @@ export function addAssetClickCount(
 }
 
 /**
- * @description: Post multi costumes to generate sprite gif.
- * @param {string} files
- * @param {number} assetType
- * @return { SearchAssetResponse }
+ * @description: Publish asset to library.
+ * @param { string } name - sprite name named by user.
+ * @param { string } files - sprite costumes files, saved to show in lib.
+ * @param { string } gif - sprite gif's address, saved to show in lib when sprite is hovering.
+ * @param { string|undefined } category - the category of the sprite(used to classify in library).
+ * @param { number } publishState - 0: not publish to library; 1: publish to private library; 2: publish to public and private library;
+ * @return { string }
  */
-export function generateGifByCostumes(name: string, files: File[]): Promise<string> {
+export function publishAsset(
+  name: string,
+  files: File[],
+  gif: string,
+  category?: string | undefined,
+  publishState?: number
+): Promise<string> {
   const url = `/spirits/upload`
   const formData = new FormData()
   formData.append('name', name)
+  formData.append('gif', gif)
+  files.forEach((file) => {
+    formData.append('files', file)
+  })
+  if (category) {
+    formData.append('category', category.toString())
+  }
+  if (publishState != null) {
+    formData.append('publishState', publishState.toString())
+  }
+
+  return service({
+    url: url,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+/**
+ * @description: generate gif by costumes files
+ * @param {File} files - sprite costumes files 
+ * @return {string} get sprites gif address.
+ */
+export function generateGifByCostumes(files: File[]): Promise<AxiosResponse<ResponseData<string>>> {
+  const url = `/spirits/togif`
+  const formData = new FormData()
   files.forEach((file) => {
     formData.append('files', file)
   })

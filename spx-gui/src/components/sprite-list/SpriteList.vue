@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-26 20:22:26
+ * @LastEditTime: 2024-02-29 15:54:15
  * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
  * @Description:
 -->
@@ -12,7 +12,7 @@
       {{ $t('component.edit') }}
     </div>
     <n-button class="import-assets-btn" @click="showImportModal = true">
-      import assets
+      {{ $t('scratch.import') }}
     </n-button>
 
     <n-grid cols="4" item-responsive responsive="screen">

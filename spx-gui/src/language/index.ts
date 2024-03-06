@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 16:17:42
+ * @LastEditTime: 2024-03-06 00:16:38
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
  */
@@ -51,7 +51,8 @@ export const initI18n = async (app: App) => {
         publish: 'Publish',
         untitled: 'Untitled',
         code: 'Code',
-        tutorial: 'Tutorial'
+        tutorial: 'Tutorial',
+        settings: 'Settings'
       },
       editor: {
         clear: 'clear',
@@ -78,7 +79,29 @@ export const initI18n = async (app: App) => {
       list: {
         name: 'Name',
         costumes: 'Costumes',
-        submit: 'Submit'
+        submit: 'Submit',
+        category:'Category',
+        public:'IsPublic',
+        inputName:'Please input sprite name',
+        selectCategory:'Please choose sprite category'
+      },
+      scratch: {
+        import: 'Import Assets from Scratch',
+        upload: 'Upload .sb3 Files',
+        importToSpx:'Import to My Project',
+        download:'Download'
+      },
+      category:{
+        animals:'Animals',
+        people:'People',
+        sports:'Sports',
+        food:'Food',
+        fantasy:'Fantasy'
+      },
+      publicState:{
+        notPublish:'Not publish',
+        private:'Only publish to private asset library',
+        public:'Publish to public asset library'
       }
     },
     zh: {
@@ -119,7 +142,8 @@ export const initI18n = async (app: App) => {
         publish: '发布',
         untitled: '未命名',
         code: '代码',
-        tutorial: '教程'
+        tutorial: '教程',
+        settings: '设置'
       },
       editor: {
         clear: '清空',
@@ -146,7 +170,29 @@ export const initI18n = async (app: App) => {
       list: {
         name: '精灵名称',
         costumes: '上传造型',
-        submit: '提交'
+        submit: '提交',
+        category:'精灵类别',
+        public:'是否公开',
+        inputName:'请输入精灵名称',
+        selectCategory:'请选择类别'
+      },
+      scratch: {
+        import: '导入 Scratch 素材',
+        upload: '上传 .sb3 文件',
+        importToSpx:'导入至项目',
+        download:'下载'
+      },
+      category:{
+        animals:'动物',
+        people:'人物',
+        sports:'体育',
+        food:'食物',
+        fantasy:'幻想'
+      },
+      publicState:{
+        notPublish: '不上传',
+        private: '仅上传到个人素材库',
+        public: '上传到公开素材库',
       }
     }
   }

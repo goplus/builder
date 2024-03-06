@@ -2,7 +2,7 @@
  * @Author: xuning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-06 20:23:06
+ * @LastEditTime: 2024-02-29 17:44:56
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
@@ -61,29 +61,18 @@ const themeOverrides = {
     borderRadiusLarge: "25px",
     border: "1px solid #FF81A7",
   },
-  Select: {
-    peers: {
-      InternalSelection: {
-        textColor: "#FF0000",
-      },
-    },
-  },
   Input: {
-    // caretColor: "#F1518A",
     borderHover: "1px solid #FF81A7",
     borderRadius:"25px",
-    // border: "1px solid #FF81A7",
     borderFocus: "1px solid #FF81A7",
   },
   Dropdown: {
     color: "#fff",
     optionTextColor: "rgb(51, 54, 57)",
     dividerColor: "rgb(239, 239, 245)",
-    // optionColorHover: "#FF81A74A",
     prefixColor: "rgb(51, 54, 57)",
     suffixColor: "rgb(51, 54, 57)",
     optionColorActive: "rgba(24, 160, 88, 0.1)",
-    // optionTextColorHover: "#FF81A7FF",
     borderRadius: "15px",
     optionTextColorActive: "#18a058",
     optionTextColorChildActive: "#18a058",
