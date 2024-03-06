@@ -19,8 +19,10 @@
           <n-grid v-else-if="currentList.length" cols="1 s:2 m:3 l:3 xl:4 2xl:5" x-gap="35" y-gap="20"
             responsive="screen">
             <n-grid-item v-for="project in currentList" :key="project.id">
-              <ProjectCard :project="project" @load-project="closeModalFunc"
-                @remove-project="removeProject(project.id)" />
+              <TransitionGroup name="list">
+                <ProjectCard :project="project" @load-project="closeModalFunc"
+                  @remove-project="removeProject(project.id)" />
+              </TransitionGroup>
             </n-grid-item>
           </n-grid>
           <n-empty v-else description="There's nothing."></n-empty>
@@ -130,13 +132,28 @@ const removeProject = (id: string) => {
     }
   }
 
-  .n-grid {
-    padding: 12px 12px 24px;
-    box-sizing: border-box;
-  }
-
   .container {
     height: 70vh;
+
+    .n-grid {
+      padding: 12px 12px 24px;
+      box-sizing: border-box;
+
+      .list-move,
+      .list-enter-active,
+      .list-leave-active {
+        transition: all 0.5s ease;
+      }
+
+      .list-enter-from,
+      .list-leave-to {
+        opacity: 0;
+      }
+
+      .list-leave-active {
+        position: absolute;
+      }
+    }
   }
 }
 </style>
