@@ -529,8 +529,8 @@ func (p *Project) ImagesToGif(ctx context.Context, files []*multipart.FileHeader
 	return os.Getenv("QINIU_PATH") + "/" + path, err
 }
 
-// UploadSpirits Upload imgs to gif
-func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multipart.FileHeader, gifPath string, uid string, tag string, publishState string) error {
+// UploadSprite Upload imgs to gif
+func (p *Project) UploadSprite(ctx context.Context, name string, files []*multipart.FileHeader, gifPath string, uid string, tag string, publishState string) error {
 	data := &Data{}
 	data.IndexJson = "index.json"
 	data.Type = "gif"
