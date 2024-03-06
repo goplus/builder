@@ -1,7 +1,7 @@
 /*
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Zhang Zhi Yang	
+ * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-03-06 14:50:20
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
