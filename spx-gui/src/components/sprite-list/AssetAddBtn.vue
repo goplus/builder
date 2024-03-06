@@ -157,20 +157,19 @@ const soundStore = useSoundStore()
 const { t } = useI18n({
   inheritLocale: true
 })
-const categoryOptions = [
+const categoryOptions = computed(() => [
   { label: t('category.animals'), value: 'Animals' },
   { label: t('category.people'), value: 'People' },
   { label: t('category.sports'), value: 'Sports' },
   { label: t('category.food'), value: 'Food' },
-  { label: t('category.fantasy'), value: 'Fantasy' }
-]
+  { label: t('category.fantasy'), value: 'Fantasy' },
+]);
 
-const publicOptions = [
+const publicOptions = computed(() => [
   { label: t('publicState.notPublish'), value: 0 },
   { label: t('publicState.private'), value: 1 },
-  { label: t('publicState.public'), value: 2 }
-]
-
+  { label: t('publicState.public'), value: 2 },
+]);
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
 const categoryValue = ref<string>()
