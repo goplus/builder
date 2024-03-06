@@ -15,7 +15,7 @@ var (
 
 todo := context.TODO()
 
-//Get project information based on ID
+//Get project information by ID
 get "/project", ctx => {
 	id := ctx.param("id")
 	if core.ParseToken(p, ctx) == "" {
