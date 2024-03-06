@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:50:20
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-06 15:25:45
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
