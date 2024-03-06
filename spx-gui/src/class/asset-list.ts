@@ -1,7 +1,7 @@
 import { AssetBase } from "./asset-base";
 import { Sound } from "./sound";
 import { Sprite } from "./sprite";
-
+import type { Project } from "./project";
 export abstract class AssetList<T extends AssetBase> {
     public list: T[] = [];
 
@@ -22,6 +22,25 @@ export abstract class AssetList<T extends AssetBase> {
     }
 }
 
-export class SpriteList extends AssetList<Sprite> { }
+export class SpriteList extends AssetList<Sprite> {
+  project: Project
+  constructor(project: Project) {
+    super()
+    this.project = project
+  }
+  addSpriteToProject(sprite: Sprite): void {
+    if (sprite) {
+      this.add(sprite)
+      this.project.backdrop.config.zorder.push(sprite.name)
+    }
+  }
+  removeSpriteFromProject(sprite: Sprite): void {
+    const index = this.project.backdrop.config.zorder.indexOf(sprite.name)
+    if (index !== -1) {
+      this.remove(sprite)
+      this.project.backdrop.config.zorder.splice(index, 1)
+    }
+  }
+}
 
 export class SoundList extends AssetList<Sound> { }
