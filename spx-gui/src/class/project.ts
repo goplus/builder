@@ -50,9 +50,9 @@ export interface ProjectSummary {
   // create time
   cTime?: string
   // update time
-  uTime?: string,
+  uTime?: string
   // public status
-  isPublic?: number,
+  isPublic?: number
   // author
   authorId?: string
 }
@@ -132,8 +132,8 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  static async updateProjectIsPublic(id: string): Promise<void> {
-    await updateProjectIsPublic(id)
+  static updateProjectIsPublic(id: string): Promise<string> {
+    return updateProjectIsPublic(id)
   }
 
   constructor() {

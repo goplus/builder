@@ -73,11 +73,11 @@ export async function removeProject(id: string): Promise<string> {
  * @param id project id that will be public
  * @returns
  */
-export async function updateProjectIsPublic(id: string): Promise<void> {
+export async function updateProjectIsPublic(id: string): Promise<string> {
     const url =  `/project/updateIsPublic`;
     const formData = new FormData();
     formData.append('id', id);
-    service({ url: url, method: 'post', data: formData }).then((res) => res.data.code);
+    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
 }
 
 /**

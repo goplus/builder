@@ -1,44 +1,61 @@
 <template>
-  <n-card id="project-card" hoverable >
+  <n-card id="project-card" hoverable>
     <template #cover>
       <img src="@/assets/image/project/project.png" alt="">
     </template>
 
     <template #header>
-      <p class="title">{{ project.name || project.id }}</p>
+      <p class="title">
+        <span class="title-text">{{ project.name || project.id }}</span>
+        <n-tag round size="small" :bordered="false" type="primary">
+          <span v-if="isUserOwn">Own</span>
+          <span v-else>{{ project.authorId }}</span>
+          <template #icon>
+            <n-icon size="12">
+              <UserOutlined></UserOutlined>
+            </n-icon>
+          </template>
+        </n-tag>
+      </p>
     </template>
 
     <div class="info">
-      <p v-if="tab == 'Cloud'" class="public-status">status: {{ publicStatus ? 'public' : 'private' }}</p>
-      <p class="create-time">create: {{moment(project.cTime).format('YYYY-MM-DD HH:mm:ss')}} </p>
-      <p class="update-time">update: {{moment(project.uTime).format('YYYY-MM-DD HH:mm:ss')}} </p>
-      <p v-if="tab == 'Public'" class="author">author: {{ project.authorId }} </p>
+      <p v-if="!isLocal" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
+      <p class="create-time">create: {{ moment(project.cTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
+      <p class="update-time">update: {{ moment(project.uTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
     </div>
+
     <template #action>
       <div class="action">
-        <n-button quaternary  size="small" class="load-btn" @click="load">Load</n-button>
-        <n-button v-if="tab == 'Local' || 'Cloud'" quaternary  size="small" @click="remove">Delete</n-button>
-        <n-button v-if="tab == 'Cloud'" quaternary  size="small" class="public-btn" @click="updateProjectIsPublic">{{ publicStatus ? 'Public' : 'Private' }}</n-button>
+        <n-button quaternary size="small" class="load-btn" @click="load">Load</n-button>
+        <n-button v-if="isUserOwn" quaternary size="small" @click="remove">Delete</n-button>
+        <n-button v-if="!isLocal && isUserOwn" quaternary size="small" class="public-btn"
+          @click="updateProjectIsPublic">{{ publicStatusText(!publicStatus) }}</n-button>
       </div>
     </template>
   </n-card>
 </template>
 
 <script lang="ts" setup>
-import {removeProject, type ProjectSummary, Project} from '@/class/project'
-import {defineProps, ref} from 'vue'
-import { useProjectStore } from '@/store';
-import { NCard, NButton, createDiscreteApi, useMessage } from 'naive-ui';
-import moment from 'moment';
+import { removeProject, type ProjectSummary, Project, ProjectSource } from '@/class/project'
+import { computed, defineProps, ref } from 'vue'
+import { useProjectStore, useUserStore } from '@/store';
+import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
+import { UserOutlined } from '@vicons/antd'
+import moment from 'moment'
 
 const { project } = defineProps<{
-  project: ProjectSummary,
-  tab: string
+  project: ProjectSummary
 }>()
 const emit = defineEmits(['load-project', 'remove-project'])
-const publicStatus = ref(project.isPublic == 1)
+const userStore = useUserStore()
+const isUserOwn = computed(() => !project.authorId || userStore.userInfo?.id === project.authorId)
+const publicStatus = ref(!!project.isPublic)
+const isLocal = computed(() => project.source === ProjectSource.local)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
+
+const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
 
 const load = async () => {
   await useProjectStore().loadProject(project.id, project.source)
@@ -46,22 +63,34 @@ const load = async () => {
 }
 
 const remove = () => {
-    dialog.warning({
-        title: 'Remove Project',
-        content: 'Are you sure you want to remove this project (' + (project.name || project.id) + ')? This action cannot be undone.',
-        positiveText: 'Yes',
-        negativeText: 'No',
-        onPositiveClick: async () => {
-            await removeProject(project.id, project.source)
-            emit('remove-project')
-        }
-    })
+  dialog.warning({
+    title: 'Remove Project',
+    content: 'Are you sure you want to remove this project (' + (project.name || project.id) + ')? This action cannot be undone.',
+    positiveText: 'Yes',
+    negativeText: 'No',
+    onPositiveClick: async () => {
+      await removeProject(project.id, project.source)
+      emit('remove-project')
+    }
+  })
 }
 
 const updateProjectIsPublic = async () => {
-  await Project.updateProjectIsPublic(project.id)
-  message.success('change project status success')
-  publicStatus.value = !publicStatus.value
+  try {
+    dialog.warning({
+      title: 'Change Public Status',
+      content: 'Are you sure you want to change public status of this project (' + (project.name || project.id) + ') to ' + publicStatusText(!publicStatus.value) + '?',
+      positiveText: 'Yes',
+      negativeText: 'No',
+      onPositiveClick: async () => {
+        await Project.updateProjectIsPublic(project.id)
+        message.success('change project status success')
+        publicStatus.value = !publicStatus.value
+      }
+    })
+  } catch (e) {
+    message.error('change project status failed')
+  }
 }
 </script>
 
@@ -108,13 +137,32 @@ const updateProjectIsPublic = async () => {
     font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
     text-align: left;
 
-        &.title {
-            font-size: 18px;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
+    &.title {
+      font-size: 18px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      line-height: 1;
+      display: flex;
+      flex-wrap: nowrap;
+
+      .title-text {
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .n-tag {
+        margin-left: 12px;
+        line-height: 16px;
+        margin-right: auto;
+
+        :deep(.n-tag__icon) {
+          margin-right: 8px;
+          align-items: baseline;
         }
+      }
     }
+  }
 
   :deep(.n-card-header),
   :deep(.n-card__footer),
@@ -126,10 +174,17 @@ const updateProjectIsPublic = async () => {
   :deep(.n-card-header) {
     height: 10px;
     border-radius: 0;
+    padding-right: 10px;
+    padding-left: 20px;
   }
 
   :deep(.n-card__action) {
     padding: 10px;
+
+    .action {
+      display: flex;
+      flex-wrap: wrap;
+    }
   }
 
   .info {
