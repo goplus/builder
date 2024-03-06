@@ -146,5 +146,5 @@ In `spx-gui`, build the project with `npx vite build`, then run docker build. Yo
 
 (Include any relevant API documentation or references here.)
 
-[STEM 接口文档](https://lbul0aws0j.feishu.cn/docx/BpEQdCvwZoXw3TxBsgIc6F7Dnqh?from=from_copylink)
+[STEM EDU API DOC](https://lbul0aws0j.feishu.cn/docx/BpEQdCvwZoXw3TxBsgIc6F7Dnqh?from=from_copylink)
 
