@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { Project } from '@/class/project'
-import { ref, watchEffect } from 'vue'
+import { ref } from 'vue'
 import IframeDisplay from './IframeDisplay.vue'
 
 const { project } = defineProps<{ project: Project }>()
@@ -22,15 +22,13 @@ const running = ref(false)
 
 const zipData = ref<ArrayBuffer | Uint8Array | null>(null)
 
-watchEffect(async () => {
-  const zipResp = project.zip
-  const buf = await (await zipResp).arrayBuffer()
-  zipData.value = buf
-})
-
 defineExpose({
-  run: () => {
+  run: async () => {
     running.value = true
+
+    const zipResp = project.zip
+    const buf = await (await zipResp).arrayBuffer()
+    zipData.value = buf
   },
   stop: () => {
     running.value = false
