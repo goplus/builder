@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-05 21:27:52
+ * @LastEditTime: 2024-03-06 00:16:38
  * @FilePath: /spx-gui/src/language/index.ts
  * @Description:
  */
@@ -99,10 +99,9 @@ export const initI18n = async (app: App) => {
         fantasy:'Fantasy'
       },
       publicState:{
-        notPublish:'not publish',
-        private:'publish to private asset library',
-        public:'publish to public asset library',
-        both:'publish to both'
+        notPublish:'Not publish',
+        private:'Only publish to private asset library',
+        public:'Publish to public asset library'
       }
     },
     zh: {
@@ -192,9 +191,8 @@ export const initI18n = async (app: App) => {
       },
       publicState:{
         notPublish: '不上传',
-        private: '上传到个人素材库',
+        private: '仅上传到个人素材库',
         public: '上传到公开素材库',
-        both: '上传到私有仓库和公开仓库',
       }
     }
   }

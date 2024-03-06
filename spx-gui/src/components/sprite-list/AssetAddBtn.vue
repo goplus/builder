@@ -142,8 +142,8 @@ import FileWithUrl from '@/class/file-with-url'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
-import { generateGifByCostumes } from '@/api/asset'
-import { useI18n } from 'vue-i18n';
+import { generateGifByCostumes, publishAsset } from '@/api/asset'
+import { useI18n } from 'vue-i18n'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -156,7 +156,7 @@ const backdropStore = useBackdropStore()
 const soundStore = useSoundStore()
 const { t } = useI18n({
   inheritLocale: true
-});
+})
 const categoryOptions = [
   { label: t('category.animals'), value: 'Animals' },
   { label: t('category.people'), value: 'People' },
@@ -168,17 +168,15 @@ const categoryOptions = [
 const publicOptions = [
   { label: t('publicState.notPublish'), value: 0 },
   { label: t('publicState.private'), value: 1 },
-  { label: t('publicState.public'), value: 2 },
-  { label: t('publicState.both'), value: 3 },
+  { label: t('publicState.public'), value: 2 }
 ]
-
 
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
 const categoryValue = ref<string>()
 
 // Ref about publish upload sprite or not.
-const publicValue = ref<number>(0);
+const publicValue = ref<number>(0)
 
 // Ref about show modal or not.
 const showModal = ref<boolean>(false)
@@ -325,44 +323,36 @@ const handleWatchFileList = (data: {
  * @Author: Xu Ning
  * @Date: 2024-02-21 17:48:33
  */
-const handleSubmitSprite = () => {
-  let uploadFilesArr: File[] = []
-  uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
-    if (fileItem && fileItem.file) {
-      uploadFilesArr.push(fileItem.file)
-    }
-  })
-  const callGenerateGifByCostumes = (publicValueParam: number) => {
-    if (categoryValue.value) {
-      generateGifByCostumes(
-        uploadSpriteName.value,
-        uploadFilesArr,
-        categoryValue.value,
-        publicValueParam
-      )
-    } else {
-      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr, undefined, publicValueParam)
-    }
-  }
+const handleSubmitSprite = async () => {
+  try {
+    let uploadFilesArr: File[] = [];
+    uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
+      if (fileItem && fileItem.file) {
+        uploadFilesArr.push(fileItem.file);
+      }
+    });
 
-  if ([0, 1, 2].includes(publicValue.value)) {
-    callGenerateGifByCostumes(publicValue.value)
-  } else if (publicValue.value == 3) {
-    callGenerateGifByCostumes(1)
-    callGenerateGifByCostumes(2)
-  } else {
-    if (categoryValue.value) {
-      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr, categoryValue.value)
-    } else {
-      generateGifByCostumes(uploadSpriteName.value, uploadFilesArr)
-    }
+    const gifRes = await generateGifByCostumes(uploadFilesArr);
+    console.log(gifRes);
+
+    await publishAsset(
+      uploadSpriteName.value,
+      uploadFilesArr,
+      gifRes.data.data,
+      categoryValue.value || undefined,
+      publicValue.value
+    );
+
+    let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr);
+    spriteStore.addItem(sprite);
+    message.success(`Added ${uploadSpriteName.value} successfully!`);
+    uploadSpriteName.value = '';
+    showUploadModal.value = false;
+  } catch (err) {
+    message.error(`Failed to add ${uploadSpriteName.value}`);
   }
-  let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
-  spriteStore.addItem(sprite)
-  message.success(`add ${uploadSpriteName.value} successfully!`)
-  uploadSpriteName.value = ''
-  showUploadModal.value = false
-}
+};
+
 
 /**
  * @description: A Function before uploading Sound.
