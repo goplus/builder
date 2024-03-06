@@ -9,12 +9,11 @@
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <button class="run" :disabled="!projectid || !ready || !!errorMsg || run" @click="onRun">
+      <!-- <input type="file" @change="importFile" /> -->
+      <button v-if="!run" class="run" :disabled="!projectid || !ready || !!errorMsg" @click="onRun">
         run
       </button>
-      <button class="stop" :disabled="!projectid || !ready || !!errorMsg || !run" @click="onStop">
-        stop
-      </button>
+      <button v-else class="stop" @click="onStop">stop</button>
     </div>
     <div class="project-runner">
       <div v-if="errorMsg" class="error">
@@ -41,6 +40,7 @@ const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
 const project = ref<Project>(new Project())
+
 watch(
   () => props.projectid,
   async (projectid) => {
@@ -64,7 +64,6 @@ watch(
     immediate: true
   }
 )
-
 const onRun = () => {
   console.log('runnnn')
   run.value = true
@@ -89,34 +88,41 @@ onMounted(() => {
 </script>
 <style lang="scss">
 .spx-runner-widget {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid #777;
+  border: 1px solid #77777789;
   border-radius: 10px;
   .operation {
     display: flex;
     justify-content: end;
     padding-top: 10px;
     padding-right: 10px;
-  }
-  button {
-    width: 50px;
-    height:30px;
-    border-radius: 3px;
-    border: 1px solid #0e60b8;
-    color: #ffffff;
-    background-color: #3383da;
-    cursor: pointer;
-    text-align: center;
-    &:disabled {
-      border: 1px solid #3383da27;
-      background-color: #3384da27;
-      cursor: not-allowed;
-    }
-    &.run{
+    position: absolute;
+    width: 100%;
+    z-index: 100;
+    button {
+      border: 2px solid rgba(0, 20, 41, 0.4392156863);
+      border-radius: 16px;
+      z-index: 100;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 4px 14px;
+      color: white;
+      cursor: pointer;
       margin-right: 10px;
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      &.run {
+        background-color: #3a8b3b;
+      }
+      &.stop {
+        background-color: #d03050;
+      }
     }
   }
   .project-runner {
