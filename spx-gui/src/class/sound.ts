@@ -57,7 +57,7 @@ export class Sound extends AssetBase {
     /**
      * The regular expression of the sound.
      */
-    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`);
+    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`)
 
     /**
      * The name of the sound.
@@ -67,14 +67,14 @@ export class Sound extends AssetBase {
     /**
      * The config of the sound.
      */
-    public config: SoundConfig;
+    declare config: SoundConfig
 
     /**
      * Get the store name for the sound.
      * @returns the name of the store
      */
     _getStoreName(): string {
-        return Sound.NAME;
+        return Sound.NAME
     }
 
     /**
@@ -82,7 +82,7 @@ export class Sound extends AssetBase {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        return await getAllFromLocal(Sound);
+        return await getAllFromLocal(Sound)
     }
 
     /**
@@ -92,8 +92,7 @@ export class Sound extends AssetBase {
      * @param {SoundConfig} config the config of the sound using json to generate `index.json`
      */
     constructor(name: string, files: File[] = [], config?: SoundConfig) {
-        super(name, files)
-        this.config = this._genConfig(config)
+        super(name, files, config)
     }
 
     /**
@@ -145,6 +144,6 @@ export class Sound extends AssetBase {
      * Check if an object is an instance of a sound.
      */
     static isInstance(obj: any): boolean {
-        return isInstance(obj, Sound);
+        return isInstance(obj, Sound)
     }
 }

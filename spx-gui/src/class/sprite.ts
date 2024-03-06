@@ -64,17 +64,17 @@ export class Sprite extends AssetBase {
     /**
      * The regular expression of the sprite.
      */
-    static REG_EXP = new RegExp(`^${Sprite.ROOT_PATH}(.+)/(.+)$`);
+    static REG_EXP = new RegExp(`^${Sprite.ROOT_PATH}(.+)/(.+)$`)
 
     /**
      * The code of the sprite.
      */
-    code: string;
+    code: string
 
     /**
      * The config of the sprite.
      */
-    public config: SpriteConfig;
+    declare config: SpriteConfig
 
     /**
      * The name of the sprite.
@@ -86,7 +86,7 @@ export class Sprite extends AssetBase {
      * @returns the name of the store
      */
     _getStoreName(): string {
-        return Sprite.NAME;
+        return Sprite.NAME
     }
 
     /**
@@ -94,7 +94,7 @@ export class Sprite extends AssetBase {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        return await getAllFromLocal(Sprite);
+        return await getAllFromLocal(Sprite)
     }
 
     /**
@@ -104,10 +104,9 @@ export class Sprite extends AssetBase {
      * @param {string} code the code of the sprite
      * @param {SpriteConfig} config the config of the sprite using json to generate `index.json`
      */
-    constructor(name: string, files: File[] = [], code: string = "\r\n", config?: SpriteConfig) {
-        super(name, files)
+    constructor(name: string, files: File[] = [], config?: SpriteConfig, code: string = "\r\n") {
+        super(name, files, config)
         this.code = code
-        this.config = this._genConfig(config)
     }
 
     /**
@@ -281,6 +280,6 @@ export class Sprite extends AssetBase {
      * Check if an object is an instance of a sprite.
      */
     static isInstance(obj: any): boolean {
-        return isInstance(obj, Sprite);
+        return isInstance(obj, Sprite)
     }
 }

@@ -64,7 +64,7 @@ export class Backdrop extends AssetBase {
   /**
    * The config of the backdrop.
    */
-  public config: BackdropConfig
+  declare config: BackdropConfig
 
   /**
    * Get the store name for the backdrop.
@@ -90,8 +90,7 @@ export class Backdrop extends AssetBase {
    * @param {BackdropConfig} config the config of the backdrop using json to generate `index.json`
    */
   constructor(name: string = Backdrop.NAME, files: File[] = [], config?: BackdropConfig) {
-    super(name, files)
-    this.config = this._genConfig(config)
+    super(name, files, config)
   }
 
   /**
