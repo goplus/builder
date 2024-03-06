@@ -1,6 +1,6 @@
-module github.com/goplus/builder/offline_spx
+module github.com/goplus/builder/ispx
 
-go 1.18
+go 1.21
 
 require (
 	github.com/goplus/igop v0.21.0
