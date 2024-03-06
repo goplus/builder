@@ -1,13 +1,6 @@
-<!--
- * @Author: Hu JingJing
- * @Date: 2024-02-22 17:57:05
- * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-03-01 17:38:55
- * @Description: 
--->
 <template>
   <div class="project-runner">
-    <IframeDisplay v-if="running && zipData" :zip-data="zipData" />
+    <IframeDisplay v-if="zipData" :zip-data="zipData" />
   </div>
 </template>
 
@@ -18,20 +11,16 @@ import IframeDisplay from './IframeDisplay.vue'
 
 const { project } = defineProps<{ project: Project }>()
 
-const running = ref(false)
-
 const zipData = ref<ArrayBuffer | Uint8Array | null>(null)
 
 defineExpose({
   run: async () => {
-    running.value = true
-
     const zipResp = project.zip
     const buf = await (await zipResp).arrayBuffer()
     zipData.value = buf
   },
   stop: () => {
-    running.value = false
+    zipData.value = null
   }
 })
 </script>
