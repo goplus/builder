@@ -12,7 +12,6 @@
             go.run(instance);
 
             window.startWithZipBuffer = (buffer) => {
-                console.log('buffer', buffer);
                 // For maybe a bug in Go WASM, we need to recreate an Uint8Array
                 // in spite of the original type of `buffer` so that
                 // the function can be called from out of iframe.
@@ -20,8 +19,6 @@
                 // goLoadData is injected in the Go code
                 goLoadData(view);
             }
-
-            console.log('wasm loaded in iframe');
 
             window.dispatchEvent(new Event('wasmReady'));
         })()

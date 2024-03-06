@@ -13,17 +13,28 @@
 
 <script lang="ts" setup>
 import { Project } from '@/class/project'
-import { onMounted, ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 import IframeDisplay from './IframeDisplay.vue'
 
-const { project, running } = defineProps<{ project: Project; running: boolean }>()
+const { project } = defineProps<{ project: Project }>()
+
+const running = ref(false)
 
 const zipData = ref<ArrayBuffer | Uint8Array | null>(null)
 
-onMounted(async () => {
+watchEffect(async () => {
   const zipResp = project.zip
   const buf = await (await zipResp).arrayBuffer()
   zipData.value = buf
+})
+
+defineExpose({
+  run: () => {
+    running.value = true
+  },
+  stop: () => {
+    running.value = false
+  }
 })
 </script>
 

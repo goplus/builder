@@ -12,7 +12,7 @@
     <n-button v-if="show" type="error" @click="stop">Stop</n-button>
     <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
     <div v-if="show" class="stage-runner">
-      <ProjectRunner :running="show" :project="project as Project" />
+      <ProjectRunner ref="projectRunner" :project="project as Project" />
     </div>
     <div v-else class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
@@ -38,6 +38,7 @@ import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
+import { nextTick } from 'vue'
 
 let show = ref(false)
 
@@ -55,12 +56,22 @@ const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
 }
 
-const run = () => {
+const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
+
+const run = async () => {
   show.value = true
+  // As we just changed show to mount the ProjectRunner,
+  // we need to wait for the next tick to ensure the ProjectRunner is mounted.
+  await nextTick()
+  if (!projectRunner.value) {
+    throw new Error('ProjectRunner is not mounted')
+  }
+  projectRunner.value.run()
 }
 
-const stop = () => {
+const stop = async () => {
   show.value = false
+  projectRunner.value?.stop()
 }
 
 watch(

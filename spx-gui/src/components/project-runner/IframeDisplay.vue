@@ -8,7 +8,7 @@ interface IframeWindow extends Window {
 
 import { ref, watchEffect } from 'vue'
 import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
-import wasmExecUrl from '@/assets/ispx/wasm_exec.js?url'
+import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
 
 const { zipData } = defineProps<{ zipData: ArrayBuffer | Uint8Array }>()
@@ -27,7 +27,6 @@ watchEffect(() => {
   iframeWindow.document.write(runnerHtml) // This resets the iframe's content, including its window object
 
   iframeWindow.addEventListener('wasmReady', () => {
-    console.log('wasmReady')
     iframeWindow.startWithZipBuffer(zipData)
   })
 })
