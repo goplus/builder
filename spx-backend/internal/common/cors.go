@@ -2,13 +2,14 @@ package common
 
 import (
 	"net/http"
+	"os"
 )
 
 // CorsMiddleware Cors Middleware
 func CorsMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Requests from any source are allowed
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGIN"))
 
 		// Allow the frontend to request a carrying method
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")

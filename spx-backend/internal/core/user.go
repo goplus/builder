@@ -10,14 +10,6 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
-// Deprecated: use casdoorsdk instead
-type User struct {
-	Id       string
-	Name     string
-	Password string
-	Avatar   string
-}
-
 type UserClaim casdoorsdk.Claims
 type UserInfo casdoorsdk.User
 
@@ -34,28 +26,14 @@ func CasdoorConfigInit() {
 }
 
 // GetUser return author by token
-func (p *Project) GetUser(token string) (user *User, err error) {
-	claim, err := casdoorsdk.ParseJwtToken(token)
-	if err != nil {
-		fmt.Println(err.Error())
-		return &User{}, ErrNotExist
-	}
-	user = &User{
-		Name:   claim.Name,
-		Avatar: claim.Avatar,
-		Id:     claim.Id,
-	}
-	return
-}
-
-// ParseJwtToken return user id by token
-func (p *Project) ParseJwtToken(token string) (userId string, err error) {
+func (p *Project) GetUser(token string) (userId string, err error) {
 	claim, err := casdoorsdk.ParseJwtToken(token)
 	if err != nil {
 		fmt.Println(err.Error())
 		return "", ErrNotExist
 	}
-	return claim.Id, nil
+	userId = claim.Id
+	return
 }
 
 func GetToken(ctx *yap.Context) string {
@@ -63,4 +41,17 @@ func GetToken(ctx *yap.Context) string {
 	// 删除 token 字符串中的 "Bearer " 前缀
 	token := strings.TrimPrefix(tokenCookie, "Bearer ")
 	return token
+}
+
+func ParseToken(p *Project, ctx *yap.Context) string {
+	token := GetToken(ctx)
+	if token == "" {
+		return ""
+	}
+	userId, err := p.GetUser(token)
+	if err != nil {
+		fmt.Printf("get user error:", err)
+		return ""
+	}
+	return userId
 }

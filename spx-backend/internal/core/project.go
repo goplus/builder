@@ -157,7 +157,7 @@ func (p *Project) DeleteProject(ctx context.Context, id string) error {
 // SaveAllProject Save project
 func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file multipart.File, header *multipart.FileHeader) (*CodeFile, error) {
 	if codeFile.ID == "" {
-		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
+		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +172,7 @@ func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file m
 		if err != nil {
 			return nil, err
 		}
-		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header)
+		path, err := UploadFile(ctx, p, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
 			return nil, err
 		}
@@ -370,12 +370,7 @@ func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, asset
 
 // ModifyAddress transfers relative path to download url
 func (p *Project) ModifyAddress(address string) (string, error) {
-	var data struct {
-		Assets    map[string]string `json:"assets"`
-		IndexJson string            `json:"indexJson"`
-		Type      string            `json:"type"`
-		Url       string            `json:"url"`
-	}
+	var data Data
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
 		return "", err
 	}
@@ -448,7 +443,7 @@ func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.Fi
 	if err != nil {
 		return nil, err
 	}
-	path, err := UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header)
+	path, err := UploadFile(ctx, p, os.Getenv("SOUNDS_PATH"), file, header.Filename)
 	jsonBytes, err := json.Marshal(map[string]map[string]string{"assets": {"sound": path}})
 	if err != nil {
 		return nil, err
@@ -526,7 +521,8 @@ func (p *Project) ImagesToGif(ctx context.Context, files []*multipart.FileHeader
 		fmt.Printf("failed to encode GIF: %v", err)
 		return "", err
 	}
-	path, err := UploadFile2(ctx, p, os.Getenv("GIF_PATH"), f, "output.gif")
+	f.Seek(0, 0)
+	path, err := UploadFile(ctx, p, os.Getenv("GIF_PATH"), f, "output.gif")
 	if err != nil {
 		return "", err
 	}
@@ -541,7 +537,7 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 	data.Assets = make(map[string]string)
 	for i, fileHeader := range files {
 		file, _ := fileHeader.Open()
-		path, err := UploadFile(ctx, p, os.Getenv("SPIRIT_PATH"), file, fileHeader)
+		path, err := UploadFile(ctx, p, os.Getenv("SPRITE_PATH"), file, fileHeader.Filename)
 		if err != nil {
 			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
 			return err
@@ -550,7 +546,7 @@ func (p *Project) UploadSpirits(ctx context.Context, name string, files []*multi
 		data.Assets[index] = path
 	}
 
-	data.Url = common.ExtractURLPart(gifPath)
+	data.Url = gifPath[len(os.Getenv("QINIU_PATH")):]
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		fmt.Printf("failed to jsonMarshal: %v", err)

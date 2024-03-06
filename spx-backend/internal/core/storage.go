@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -14,9 +12,7 @@ import (
 )
 
 // UploadFile Upload file to cloud
-func UploadFile(ctx context.Context, p *Project, blobKey string, file multipart.File, header *multipart.FileHeader) (string, error) {
-	originalFilename := header.Filename
-
+func UploadFile(ctx context.Context, p *Project, blobKey string, file io.Reader, originalFilename string) (string, error) {
 	// Extract file extension
 	ext := filepath.Ext(originalFilename)
 
@@ -40,31 +36,6 @@ func UploadFile(ctx context.Context, p *Project, blobKey string, file multipart.
 	return blobKey, w.Close()
 }
 
-// UploadFile2 Upload file to cloud
-func UploadFile2(ctx context.Context, p *Project, blobKey string, file *os.File, originalFilename string) (string, error) {
-
-	// Extract file extension
-	ext := filepath.Ext(originalFilename)
-	file.Seek(0, 0)
-	//File name encryption
-	blobKey = blobKey + Encrypt(time.Now().String(), originalFilename) + ext
-
-	// create blob writer
-	w, err := p.bucket.NewWriter(ctx, blobKey, nil)
-	if err != nil {
-		return "", err
-	}
-	defer w.Close()
-
-	// copy to blob writer
-	_, err = io.Copy(w, file)
-	if err != nil {
-		return "", err
-	}
-
-	// close writer file
-	return blobKey, w.Close()
-}
 func Encrypt(salt, password string) string {
 	dk, _ := scrypt.Key([]byte(password), []byte(salt), 32768, 8, 1, 32)
 	return fmt.Sprintf("%x", string(dk))
