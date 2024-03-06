@@ -1,9 +1,9 @@
 import (
 	"context"
-	"os"
-	"io"
-	"strconv"
 	"encoding/json"
+	"io"
+	"os"
+	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/common"
 	"github.com/goplus/builder/spx-backend/internal/core"
@@ -19,18 +19,18 @@ todo := context.TODO()
 get "/project", ctx => {
 	id := ctx.param("id")
 	res, err := p.FileInfo(todo, id)
-	if err!=nil{
-	    ctx.json {
-        		"code":200,
-        		"msg":"project not exist",
-        		"data":"",
-        }
-        return
+	if err != nil {
+		ctx.json {
+			"code": 200,
+			"msg":  "project not exist",
+			"data": "",
+		}
+		return
 	}
 	ctx.json {
-		"code":200,
-		"msg":"OK",
-		"data":res,
+		"code": 200,
+		"msg":  "OK",
+		"data": res,
 	}
 }
 
@@ -38,331 +38,330 @@ get "/project", ctx => {
 post "/project/delete", ctx => {
 	id := ctx.FormValue("id")
 	err := p.DeleteProject(todo, id)
-	if err!=nil{
-	    ctx.json {
-        		"code":400,
-        		"msg":"delete error",
-        		"data":"",
-        }
-        return
+	if err != nil {
+		ctx.json {
+			"code": 400,
+			"msg":  "delete error",
+			"data": "",
+		}
+		return
 	}
 	ctx.json {
-		"code":200,
-		"msg":"OK",
-		"data":"",
+		"code": 200,
+		"msg":  "OK",
+		"data": "",
 	}
 }
 
 //Save project
-post "/project/allsave", ctx=>{
+post "/project/allsave", ctx => {
 	id := ctx.FormValue("id")
 	userId := ""
-    token := core.GetToken(ctx)
-    if token==""{
-        ctx.json {
-        		"code":200,
-        		"msg":"please login",
-        		"data":"",
-        }
-        return
-    }
-    user, err := p.GetUser(token)
-    if err != nil {
-        printf("get user error:", err)
-    } else {
-        userId = user.Id
-    }
-	name:=ctx.FormValue("name")
-	if name==""{
-	    ctx.json {
-    		"code":400,
-    		"msg":"name is null",
-    		"data":"",
-    	}
+	token := core.GetToken(ctx)
+	if token == "" {
+		ctx.json {
+			"code": 200,
+			"msg":  "please login",
+			"data": "",
+		}
+		return
 	}
-	file,header,_:=ctx.FormFile("file")
-	codeFile:=&core.CodeFile{
-		ID:id,
-		Name:name,
-		AuthorId :userId,
+	user, err := p.GetUser(token)
+	if err != nil {
+		printf("get user error:", err)
+	} else {
+		userId = user.Id
 	}
-	res,err := p.SaveAllProject(todo,codeFile,file,header)
-	if err!=nil{
-        ctx.json {
-                "code":400,
-                "msg":"save error",
-                "data":"",
-        }
-        return
-    }
+	name := ctx.FormValue("name")
+	if name == "" {
+		ctx.json {
+			"code": 400,
+			"msg":  "name is null",
+			"data": "",
+		}
+	}
+	file, header, _ := ctx.FormFile("file")
+	codeFile := &core.CodeFile{
+		ID:       id,
+		Name:     name,
+		AuthorId: userId,
+	}
+	res, err := p.SaveAllProject(todo, codeFile, file, header)
+	if err != nil {
+		ctx.json {
+			"code": 400,
+			"msg":  "save error",
+			"data": "",
+		}
+		return
+	}
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+"/"+res.Address,"version":res.Version,},
+		"code": 200,
+		"msg":  "ok",
+		"data": {"id": res.ID, "address": os.Getenv("QINIU_PATH") + "/" + res.Address, "version": res.Version},
 	}
 }
 
 //Format code
-post "/project/fmt", ctx=>{
+post "/project/fmt", ctx => {
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
-	res := p.CodeFmt(todo,body,imports)
+	res := p.CodeFmt(todo, body, imports)
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":res,
+		"code": 200,
+		"msg":  "ok",
+		"data": res,
 	}
 }
 
 //Get asset by id
 get "/asset/:id", ctx => {
-    id := ctx.param("id")
-    asset, _ := p.Asset(todo, id)
-    ctx.json {
-    		"code":200,
-    		"msg":"ok",
-    		"data":{"asset": asset},
-    }
+	id := ctx.param("id")
+	asset, _ := p.Asset(todo, id)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": {"asset": asset},
+	}
 }
 
 //Spirits to gif
 post "/spirits/togif", ctx => {
-        ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
-        files:=ctx.MultipartForm.File["files"]
-        path,err := p.ImagesToGif(todo,files)
-        if (err != nil) {
-                ctx.json({
-                    "code": 400,
-                    "msg": "images to gif error",
-                    "data":"",
-                })
-                return
-            }
-        ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data":path,
-        }
+	ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	files := ctx.MultipartForm.File["files"]
+	path, err := p.ImagesToGif(todo, files)
+	if err != nil {
+		ctx.json({
+			"code": 400,
+			"msg":  "images to gif error",
+			"data": "",
+		})
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": path,
+	}
 }
 
 //Upload spirits to gif
 post "/spirits/upload", ctx => {
-        ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
-        userId := ""
-        token := core.GetToken(ctx)
-        if token==""{
-            ctx.json {
-                    "code":200,
-                    "msg":"please login",
-                    "data":"",
-            }
-            return
-        }
-        user, err := p.GetUser(token)
-        if err != nil {
-            printf("get user error:", err)
-        } else {
-            userId = user.Id
-        }
-        files:=ctx.MultipartForm.File["files"]
-        name:=ctx.FormValue("name")
-        publishState:=ctx.FormValue("publishState")
-        gif:=ctx.FormValue("gif")
-        category:=ctx.FormValue("category")
-        err = p.UploadSpirits(todo,name,files,gif,userId,category,publishState)
-        if (err != nil) {
-                ctx.json({
-                    "code": 400,
-                    "msg": "Failed to upload gif",
-                    "data":"",
-                })
-                return
-            }
-        ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data":"",
-        }
+	ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	userId := ""
+	token := core.GetToken(ctx)
+	if token == "" {
+		ctx.json {
+			"code": 200,
+			"msg":  "please login",
+			"data": "",
+		}
+		return
+	}
+	user, err := p.GetUser(token)
+	if err != nil {
+		printf("get user error:", err)
+	} else {
+		userId = user.Id
+	}
+	files := ctx.MultipartForm.File["files"]
+	name := ctx.FormValue("name")
+	publishState := ctx.FormValue("publishState")
+	gif := ctx.FormValue("gif")
+	category := ctx.FormValue("category")
+	err = p.UploadSpirits(todo, name, files, gif, userId, category, publishState)
+	if err != nil {
+		ctx.json({
+			"code": 400,
+			"msg":  "Failed to upload gif",
+			"data": "",
+		})
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": "",
+	}
 }
 
 //Save asset
 post "/asset/save", ctx => {
-     	id := ctx.FormValue("id")
-        userId := ""
-        token := core.GetToken(ctx)
-        if token==""{
-            ctx.json {
-                    "code":200,
-                    "msg":"please login",
-                    "data":"",
-            }
-            return
-        }
-        user, err := p.GetUser(token)
-        if err != nil {
-            printf("get user error:", err)
-        } else {
-            userId = user.Id
-        }
-        name:=ctx.FormValue("name")
-        category:=ctx.FormValue("category")
-        isPublic:=ctx.FormValue("isPublic")
-        assetType := ctx.FormValue("assetType")
-        ip, _ := strconv.Atoi(isPublic)
-        file,header,_:=ctx.FormFile("file")
-        	asset:=&core.Asset{
-        	     ID:id,
-        		 Name:name,
-                 AuthorId:userId,
-                 Category:category,
-                 IsPublic:ip,
-                 AssetType:assetType,
-                 Status:1,
-        	}
-        	_, err = p.SaveAsset(todo,asset,file,header)
-        	if err!=nil{
-                ctx.json {
-                    "code":400,
-                    "msg":"save error",
-                    "data":"",
-                }
-                return
-            }
-        	ctx.json {
-        		"code":200,
-        		"msg":"ok",
-        		"data":"",
-        	}
+	id := ctx.FormValue("id")
+	userId := ""
+	token := core.GetToken(ctx)
+	if token == "" {
+		ctx.json {
+			"code": 200,
+			"msg":  "please login",
+			"data": "",
+		}
+		return
+	}
+	user, err := p.GetUser(token)
+	if err != nil {
+		printf("get user error:", err)
+	} else {
+		userId = user.Id
+	}
+	name := ctx.FormValue("name")
+	category := ctx.FormValue("category")
+	isPublic := ctx.FormValue("isPublic")
+	assetType := ctx.FormValue("assetType")
+	ip, _ := strconv.Atoi(isPublic)
+	file, header, _ := ctx.FormFile("file")
+	asset := &core.Asset{
+		ID:        id,
+		Name:      name,
+		AuthorId:  userId,
+		Category:  category,
+		IsPublic:  ip,
+		AssetType: assetType,
+		Status:    1,
+	}
+	_, err = p.SaveAsset(todo, asset, file, header)
+	if err != nil {
+		ctx.json {
+			"code": 400,
+			"msg":  "save error",
+			"data": "",
+		}
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": "",
+	}
 }
 
 //Get public assets
 get "/list/asset", ctx => {
-    pageIndex := ctx.param("pageIndex")
-    pageSize := ctx.param("pageSize")
-    assetType := ctx.param("assetType")
-    category := ctx.param("category")
-    isOrderByTime := ctx.param("isOrderByTime")
-    isOrderByHot := ctx.param("isOrderByHot")
-    result, _ := p.AssetPubList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": result,
-    }
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	assetType := ctx.param("assetType")
+	category := ctx.param("category")
+	isOrderByTime := ctx.param("isOrderByTime")
+	isOrderByHot := ctx.param("isOrderByHot")
+	result, _ := p.AssetPubList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": result,
+	}
 }
 
 //Get personal assets
 get "/list/userasset", ctx => {
-    userId := ""
-    token := core.GetToken(ctx)
-    if token==""{
-        ctx.json {
-                "code":200,
-                "msg":"please login",
-                "data":"",
-        }
-        return
-    }
-    user, err := p.GetUser(token)
-    if err != nil {
-        printf("get user error:", err)
-    } else {
-        userId = user.Id
-    }
-    pageIndex := ctx.param("pageIndex")
-    pageSize := ctx.param("pageSize")
-    assetType := ctx.param("assetType")
-    category := ctx.param("category")
-    isOrderByTime := ctx.param("isOrderByTime")
-    isOrderByHot := ctx.param("isOrderByHot")
-    result, _ := p.UserAssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot,userId)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": result,
-    }
+	userId := ""
+	token := core.GetToken(ctx)
+	if token == "" {
+		ctx.json {
+			"code": 200,
+			"msg":  "please login",
+			"data": "",
+		}
+		return
+	}
+	user, err := p.GetUser(token)
+	if err != nil {
+		printf("get user error:", err)
+	} else {
+		userId = user.Id
+	}
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	assetType := ctx.param("assetType")
+	category := ctx.param("category")
+	isOrderByTime := ctx.param("isOrderByTime")
+	isOrderByHot := ctx.param("isOrderByHot")
+	result, _ := p.UserAssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, userId)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": result,
+	}
 }
 
-
 get "/clickCount/asset/:id/:assetType", ctx => {
-    id := ctx.param("id")
-    assetType := ctx.param("assetType")
-    p.IncrementAssetClickCount(todo, id, assetType)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": "",
-    }
+	id := ctx.param("id")
+	assetType := ctx.param("assetType")
+	p.IncrementAssetClickCount(todo, id, assetType)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": "",
+	}
 }
 
 //Get public projects
 get "/list/pubProject/:pageIndex/:pageSize", ctx => {
-    pageIndex := ctx.param("pageIndex")
-    pageSize := ctx.param("pageSize")
-    result, _ := p.PubProjectList(todo, pageIndex, pageSize)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": result,
-    }
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	result, _ := p.PubProjectList(todo, pageIndex, pageSize)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": result,
+	}
 }
 
 //Get personal projects
 get "/list/userProject/:pageIndex/:pageSize", ctx => {
-    userId := ""
-    token := core.GetToken(ctx)
-    if token==""{
-        ctx.json {
-                "code":200,
-                "msg":"please login",
-                "data":"",
-        }
-        return
-    }
-    user, err := p.GetUser(token)
-    if err != nil {
-        printf("get user error:", err)
-    } else {
-        userId = user.Id
-    }
-    pageIndex := ctx.param("pageIndex")
-    pageSize := ctx.param("pageSize")
-    result, _ := p.UserProjectList(todo, pageIndex, pageSize,userId)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": result,
-    }
+	userId := ""
+	token := core.GetToken(ctx)
+	if token == "" {
+		ctx.json {
+			"code": 200,
+			"msg":  "please login",
+			"data": "",
+		}
+		return
+	}
+	user, err := p.GetUser(token)
+	if err != nil {
+		printf("get user error:", err)
+	} else {
+		userId = user.Id
+	}
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	result, _ := p.UserProjectList(todo, pageIndex, pageSize, userId)
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": result,
+	}
 }
 
 //Switch between public and private projects
-post "/project/updateIsPublic", ctx=>{
+post "/project/updateIsPublic", ctx => {
 
 	id := ctx.FormValue("id")
-	err := p.UpdatePublic(todo,id)
-	if err!=nil{
-	    ctx.json {
-        		"code":400,
-        		"msg":"update err",
-        		"data":"",
-        	}
+	err := p.UpdatePublic(todo, id)
+	if err != nil {
+		ctx.json {
+			"code": 400,
+			"msg":  "update err",
+			"data": "",
+		}
 	}
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":"",
+		"code": 200,
+		"msg":  "ok",
+		"data": "",
 	}
 }
 
 //Search assets
-post "/asset/search", ctx=>{
+post "/asset/search", ctx => {
 	search := ctx.FormValue("search")
 	assetType := ctx.FormValue("assetType")
-	assets,_ := p.SearchAsset(todo,search,assetType)
+	assets, _ := p.SearchAsset(todo, search, assetType)
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":assets,
+		"code": 200,
+		"msg":  "ok",
+		"data": assets,
 	}
 }
 
@@ -370,4 +369,4 @@ conf := &core.Config{}
 p, _ = core.New(todo, conf)
 core.CasdoorConfigInit()
 
-run ":8080",common.CorsMiddleware
+run ":8080", common.CorsMiddleware
