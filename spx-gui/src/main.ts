@@ -2,21 +2,30 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 12:23:26
+ * @LastEditTime: 2024-03-06 14:38:25
  * @FilePath: \spx-gui\src\main.ts
  * @Description:
  */
 import { createApp } from 'vue'
 import App from './App.vue'
-
 import { initAssets, initCodeEditor } from './plugins'
 import { initRouter } from '@/router/index'
 import { initI18n } from '@/language'
-
 import { addFileUrl } from './util/file'
 import VueKonva from 'vue-konva'
-import { initStore } from './store'
-import { initServive } from './util/service'
+import { initStore, useUserStore } from './store'
+import { serviceConstructor } from '@/axios'
+import { createDiscreteApi } from 'naive-ui'
+
+const { message } = createDiscreteApi(['message'])
+const initServive = async () => {
+  const userStore = useUserStore()
+  serviceConstructor.setAccessTokenFn(userStore.getFreshAccessToken)
+  serviceConstructor.setNotifyErrorFn((msg: string) => {
+    message.error(msg)
+  })
+}
+
 async function initApp() {
   // const loading = createApp(Loading);
   // loading.mount('#appLoading');
@@ -29,8 +38,6 @@ async function initApp() {
 
   initStore(app)
   initServive()
-  
-    
   await initRouter(app)
   await initCodeEditor()
 

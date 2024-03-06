@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:47:24
+ * @LastEditTime: 2024-03-06 14:50:20
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -54,7 +54,7 @@ export function getAssetList({
 
   const url = `/list/asset?${params.toString()}`
 
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'get'
   })
@@ -69,7 +69,7 @@ export function getAssetList({
  */
 export function getAsset(id: number, assetType: number): Promise<Asset> {
   const url = `/list/asset/${id}/${assetType}`
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'get'
   })
@@ -87,7 +87,7 @@ export function searchAssetByName(search: string, assetType: number): Promise<Se
   formData.append('search', search)
   formData.append('assetType', assetType.toString())
 
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'post',
     data: formData,
@@ -127,7 +127,7 @@ export async function saveAsset(
   formData.append('assetType', assetType.toString())
   formData.append('file', file)
 
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'post',
     data: formData,
@@ -148,7 +148,7 @@ export function addAssetClickCount(
   assetType: number
 ): Promise<AxiosResponse<ResponseData<string>>> {
   const url = `/clickCount/asset/${id}/${assetType}`
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'get'
   })
@@ -206,7 +206,7 @@ export function generateGifByCostumes(files: File[]): Promise<AxiosResponse<Resp
     formData.append('files', file)
   })
 
-  return service.serviceInstance({
+  return service({
     url: url,
     method: 'post',
     data: formData,
