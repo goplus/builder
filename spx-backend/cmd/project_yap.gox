@@ -21,7 +21,7 @@ get "/project", ctx => {
 	res, err := p.FileInfo(todo, id)
 	if err != nil {
 		ctx.json {
-			"code": 200,
+			"code": 400,
 			"msg":  "project not exist",
 			"data": "",
 		}
