@@ -154,6 +154,10 @@ export class Project implements ProjectDetail, ProjectSummary {
     }
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
+      if (!paths.length) {
+        throw new Error('Project not found')
+      }
+
       const dirPath: DirPath = {}
       for (const path of paths) {
         const content = await fs.readFile(path)

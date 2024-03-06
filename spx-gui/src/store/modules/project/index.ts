@@ -16,7 +16,6 @@ export const useProjectStore = defineStore('project', () => {
    * The project. You can use `project.value` to get it.
    */
   const project = ref(new Project())
-  project.value.loadBlankProject()
 
   // TODO: Consider moving the autosave behaviour into the class project in the future, when non-spx-gui scenarios like widgets are supported.
 
@@ -25,6 +24,8 @@ export const useProjectStore = defineStore('project', () => {
    */
   const saveLocal = debounce(async () => {
     console.log('project changed', project.value)
+    // Record the current modified item id for each modification.
+    localStorage.setItem('project', project.value.id)
     await project.value.removeLocal()
     await project.value.saveLocal()
   })
@@ -64,6 +65,9 @@ export const useProjectStore = defineStore('project', () => {
     await newProject.loadBlankProject()
     project.value = newProject
   }
+
+  const lastProject = localStorage.getItem('project')
+  lastProject ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject) : loadBlankProject();
 
   return {
     project,
