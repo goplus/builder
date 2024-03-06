@@ -16,7 +16,9 @@ import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
-import defaultScene from '@/assets/image/default_scene.png'
+import defaultSceneImage from '@/assets/image/default_scene.png'
+import defaultSpriteImage from '@/assets/image/default_sprite.png'
+import { nextTick } from 'vue'
 export enum ProjectSource {
   local,
   cloud
@@ -73,15 +75,15 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   get defaultEntryCode() {
-    let str = ""
-    str += "var (\n"
+    let str = ''
+    str += 'var (\n'
     for (const sprite of this.sprite.list) {
       str += `\t${sprite.name} ${sprite.name}\n`
     }
     for (const sound of this.sound.list) {
       str += `\t${sound.name} Sound\n`
     }
-    str += ")\n"
+    str += ')\n'
     str += `run "assets", {Title: "${this.name}"}\n`
     return str
   }
@@ -100,13 +102,17 @@ export class Project implements ProjectDetail, ProjectSummary {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.readFile(path) as ProjectSummary
+      const content = (await fs.readFile(path)) as ProjectSummary
       projects.push(content)
     }
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
+  static async getCloudProjects(
+    pageIndex: number = 1,
+    pageSize: number = 300,
+    isUser: boolean = true
+  ): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
     const projects = res.data
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
@@ -161,14 +167,14 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
       this._load(dirPath)
 
-      const summary = await fs.readFile("summary/" + id) as ProjectSummary
+      const summary = (await fs.readFile('summary/' + id)) as ProjectSummary
       Object.assign(this, summary)
     } else {
       const { address, name, version, cTime, uTime } = await getProject(id)
       this.version = version
       this.cTime = cTime
       this.uTime = uTime
-      const zip = await fetch(address).then(res => res.blob())
+      const zip = await fetch(address).then((res) => res.blob())
       const zipFile = new File([zip], name)
       this.loadFromZip(zipFile)
     }
@@ -182,56 +188,54 @@ export class Project implements ProjectDetail, ProjectSummary {
     const handleFile = (file: FileType, filename: string, item: any) => {
       switch (file.type) {
         case 'application/json':
-          item.config = arrayBuffer2Content(file.content, file.type) as Config;
-          break;
+          item.config = arrayBuffer2Content(file.content, file.type) as Config
+          break
         default:
-          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
-          break;
+          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File)
+          break
       }
     }
 
-    const findOrCreateItem = (name: string, collection: any[], constructor: typeof Sprite | typeof Sound) => {
-      let item = collection.find(item => item.name === name);
+    const findOrCreateItem = (
+      name: string,
+      collection: any[],
+      constructor: typeof Sprite | typeof Sound
+    ) => {
+      let item = collection.find((item) => item.name === name)
       if (!item) {
-        item = new constructor(name);
-        collection.push(item);
+        item = new constructor(name)
+        collection.push(item)
       }
-      return item;
+      return item
     }
 
     const prefix = getPrefix(dir)
 
     // eslint-disable-next-line prefer-const
     for (let [path, file] of Object.entries(dir)) {
-      const filename = file.path.split('/').pop()!;
+      const filename = file.path.split('/').pop()!
       const content = arrayBuffer2Content(file.content, file.type, filename)
       path = path.replace(prefix, '')
       if (Sprite.REG_EXP.test(path)) {
-        const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
-        handleFile(file, filename, sprite);
-      }
-      else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+        const spriteName = path.match(Sprite.REG_EXP)?.[1] || ''
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite)
+        handleFile(file, filename, sprite)
+      } else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
         this.entryCode = content as string
-      }
-      else if (/^.+\.spx$/.test(path)) {
-        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
-        sprite.code = content as string;
-      }
-      else if (Sound.REG_EXP.test(path)) {
-        const soundName = path.match(Sound.REG_EXP)?.[1] || '';
-        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound);
-        handleFile(file, filename, sound);
-      }
-      else if (Backdrop.REG_EXP.test(path)) {
-        handleFile(file, filename, this.backdrop);
-      }
-      else {
+      } else if (/^.+\.spx$/.test(path)) {
+        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || ''
+        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite)
+        sprite.code = content as string
+      } else if (Sound.REG_EXP.test(path)) {
+        const soundName = path.match(Sound.REG_EXP)?.[1] || ''
+        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound)
+        handleFile(file, filename, sound)
+      } else if (Backdrop.REG_EXP.test(path)) {
+        handleFile(file, filename, this.backdrop)
+      } else {
         this.unidentifiedFile[path] = content
       }
     }
-
   }
 
   async loadFromZip(file: File, name?: string) {
@@ -242,14 +246,21 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   async loadBlankProject() {
     this.name = 'Untitled'
-    const response = await fetch(defaultScene)
-    const blob = await response.blob()
-    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    const sceneBlob = await (await fetch(defaultSceneImage)).blob()
+    const spriteBlob = await (await fetch(defaultSpriteImage)).blob()
+    const sceneFile = new File([sceneBlob], 'default_scene.png', { type: sceneBlob.type })
+    const spriteFile = new File([spriteBlob], 'default_sprite.png', { type: spriteBlob.type })
     this.backdrop.addScene([
-      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+      { name: 'default_scene', file: new FileWithUrl(sceneFile, URL.createObjectURL(sceneFile)) }
     ])
+    // TODO: Put the operation of updating zorder when adding or sprite into the sprite list of project.
+    const defaultSprite = new Sprite('default_sprite', [spriteFile])
+    defaultSprite.config.size = 1
+    defaultSprite.config.costumes[0].x=55
+    defaultSprite.config.costumes[0].y=50
+    this.sprite.add(defaultSprite)
+    this.backdrop.config.zorder.push('default_sprite')
   }
-  
 
   /**
    * Save project to storage.
@@ -276,11 +287,11 @@ export class Project implements ProjectDetail, ProjectSummary {
   async removeLocal() {
     if (this._temporaryId !== null) {
       await fs.rmdir(this._temporaryId)
-      await fs.unlink("summary/" + this._temporaryId)
+      await fs.unlink('summary/' + this._temporaryId)
     }
     if (this._id !== null) {
       await fs.rmdir(this._id)
-      await fs.unlink("summary/" + this._id)
+      await fs.unlink('summary/' + this._id)
     }
   }
 
@@ -288,16 +299,16 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to Cloud.
    */
   async save() {
-    if (!this.name.trim()){
+    if (!this.name.trim()) {
       throw new Error('Project name cannot be empty!')
     }
     const id = this._id ?? void 0
-    return saveProject(this.name, await this.zip, id).then(async res => {
+    return saveProject(this.name, await this.zip, id).then(async (res) => {
       this._id = res.id
       this.version = res.version
       this.cTime = res.cTime
       this.uTime = res.uTime
-      return Promise.resolve("Save success!")
+      return Promise.resolve('Save success!')
     })
   }
 
