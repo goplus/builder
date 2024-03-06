@@ -6,11 +6,10 @@
  * @FilePath: \spx-gui\src\class\backdrop.ts
  * @Description: The class of a backdrop.
  */
-import type { BackdropConfig, Scene } from '@/interface/file'
+import type { BackdropConfig } from '@/interface/file'
 import { AssetBase } from '@/class/asset-base'
 import { isInstance, getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
-import { useProjectStore } from '@/store/modules/project'
 import type FileWithUrl from './file-with-url'
 
 /**
@@ -44,8 +43,6 @@ import type FileWithUrl from './file-with-url'
  * // computed dir
  * backdrop.dir  // { "assets/index.json": { height: 300 }, "assets/[file1.name]": file1, "assets/[file2.name]": file2 }
  *
- * // config
- * backdrop.config = backdrop.genDefualtConfig()
  */
 
 export class Backdrop extends AssetBase {
@@ -73,7 +70,7 @@ export class Backdrop extends AssetBase {
    * Get the store name for the backdrop.
    * @returns the name of the store
    */
-  protected getStoreName(): string {
+  _getStoreName(): string {
     return Backdrop.NAME
   }
 
@@ -94,7 +91,7 @@ export class Backdrop extends AssetBase {
    */
   constructor(name: string = Backdrop.NAME, files: File[] = [], config?: BackdropConfig) {
     super(name, files)
-    this.config = this.genConfig(config)
+    this.config = this._genConfig(config)
   }
 
   /**
@@ -110,7 +107,7 @@ export class Backdrop extends AssetBase {
    * Generate the default backdrop config.
    * @returns the default config
    */
-  genDefualtConfig(): BackdropConfig {
+  _genDefualtConfig(): BackdropConfig {
     return this.defaultConfig
   }
 

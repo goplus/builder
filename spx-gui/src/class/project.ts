@@ -178,7 +178,7 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Load project from directory.
    * @param DirPath The directory
    */
-  private _load(dir: DirPath): void {
+  _load(dir: DirPath): void {
     const handleFile = (file: FileType, filename: string, item: any) => {
       switch (file.type) {
         case 'application/json':

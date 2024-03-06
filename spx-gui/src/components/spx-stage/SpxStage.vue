@@ -17,7 +17,7 @@
         :width="containerWidth || 400"
         :height="containerHeight || 400"
         :selected-sprite-names="selectedSpriteNames"
-        :project="projectStore.project as Project"
+        :project="projectStore.project"
         @on-selected-sprites-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
@@ -33,7 +33,6 @@ import { useSpriteStore } from '@/store'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
-import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
 
 let show = ref(false)

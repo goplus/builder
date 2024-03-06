@@ -20,7 +20,7 @@ import type { Config } from '@/interface/file';
  * @createDate 2024-01-18
  */
 export abstract class AssetBase implements AssetBaseInterface {
-    protected _files: FileWithUrl[];
+    _files: FileWithUrl[];
     public name: string;
     public abstract config: Config;
 
@@ -88,7 +88,7 @@ export abstract class AssetBase implements AssetBaseInterface {
      * @param isCover Whether to overwrite the existing asset. If not, add a suffix to the name.
      */
     async save(isCover = false): Promise<void> {
-        const storage = getStorage(this.getStoreName());
+        const storage = getStorage(this._getStoreName());
         if (isCover) {
             await storage.setItem(this.name, this);
             return
@@ -107,7 +107,7 @@ export abstract class AssetBase implements AssetBaseInterface {
      * Remove the asset from local storage.
      */
     async remove(): Promise<void> {
-        const storage = getStorage(this.getStoreName());
+        const storage = getStorage(this._getStoreName());
         await storage.removeItem(this.name);
     }
 
@@ -115,7 +115,7 @@ export abstract class AssetBase implements AssetBaseInterface {
      * Get the store name for the asset.
      * This method should be overridden by subclasses.
      */
-    protected abstract getStoreName(): string;
+    abstract _getStoreName(): string;
 
     /**
      * Create a new instance from raw data.
@@ -129,14 +129,14 @@ export abstract class AssetBase implements AssetBaseInterface {
      * Generate a default config.
      * This method should be overridden by subclasses.
      */
-    protected abstract genDefualtConfig(): Config;
+    abstract _genDefualtConfig(): Config;
 
     /**
      * Generate the config of the asset.
      * @param config The config of the asset
      * @returns 
      */
-    protected genConfig<T>(config?: T) {
-        return isObjectEmpty(config) ? this.genDefualtConfig() as T : config!
+    _genConfig<T>(config?: T) {
+        return isObjectEmpty(config) ? this._genDefualtConfig() as T : config!
     }
 }

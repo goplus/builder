@@ -46,8 +46,6 @@ import type { SoundConfig } from '@/interface/file';
  * // computed dir
  * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
  *
- * // config
- * snd1.config = snd1.genDefualtConfig()
  */
 
 export class Sound extends AssetBase {
@@ -75,7 +73,7 @@ export class Sound extends AssetBase {
      * Get the store name for the sound.
      * @returns the name of the store
      */
-    protected getStoreName(): string {
+    _getStoreName(): string {
         return Sound.NAME;
     }
 
@@ -95,7 +93,7 @@ export class Sound extends AssetBase {
      */
     constructor(name: string, files: File[] = [], config?: SoundConfig) {
         super(name, files)
-        this.config = this.genConfig(config)
+        this.config = this._genConfig(config)
     }
 
     /**
@@ -111,7 +109,7 @@ export class Sound extends AssetBase {
      * Generate the default sound config.
      * @returns the default config
      */
-    genDefualtConfig(): SoundConfig {
+    _genDefualtConfig(): SoundConfig {
         return this.defaultConfig
     }
 

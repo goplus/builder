@@ -53,8 +53,6 @@ import type { RawDir } from "@/types/file";
  * spt1.currentCostume  // { x: 0, y: 0, name: 'monkey', path: 'monkey.png', ... }
  * spt1.currentCostumeConfig  // { file: File, url: 'blob://...', index: 0, x: 0, y: 0, name: 'monkey', path: 'monkey.png' ... }
  * 
- * // config
- * spt1.config = spt1.genDefualtConfig()
  */
 
 export class Sprite extends AssetBase {
@@ -87,7 +85,7 @@ export class Sprite extends AssetBase {
      * Get the store name for the sprite.
      * @returns the name of the store
      */
-    protected getStoreName(): string {
+    _getStoreName(): string {
         return Sprite.NAME;
     }
 
@@ -109,7 +107,7 @@ export class Sprite extends AssetBase {
     constructor(name: string, files: File[] = [], code: string = "\r\n", config?: SpriteConfig) {
         super(name, files)
         this.code = code
-        this.config = this.genConfig(config)
+        this.config = this._genConfig(config)
     }
 
     /**
@@ -125,7 +123,7 @@ export class Sprite extends AssetBase {
      * Generate the default sprite config.
      * @returns the default config
      */
-    genDefualtConfig(): SpriteConfig {
+    _genDefualtConfig(): SpriteConfig {
         return this.defaultConfig
     }
 
