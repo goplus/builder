@@ -9,16 +9,16 @@
     </template>
 
     <div class="info">
-      <p v-if="tab == 'Cloud'" class="public-status">status: private</p>
+      <p v-if="tab == 'Cloud'" class="public-status">status: {{ publicStatus ? 'public' : 'private' }}</p>
       <p class="create-time">create: {{moment(project.cTime).format('YYYY-MM-DD HH:mm:ss')}} </p>
       <p class="update-time">update: {{moment(project.uTime).format('YYYY-MM-DD HH:mm:ss')}} </p>
-      <p v-if="tab == 'Public'" class="author">author: {{ project.id }} </p>
+      <p v-if="tab == 'Public'" class="author">author: {{ project.authorId }} </p>
     </div>
     <template #action>
       <div class="action">
         <n-button quaternary  size="small" class="load-btn" @click="load">Load</n-button>
         <n-button v-if="tab == 'Local' || 'Cloud'" quaternary  size="small" @click="remove">Delete</n-button>
-        <n-button v-if="tab == 'Cloud'" quaternary  size="small" class="public-btn" @click="updateProjectIsPublic">Public</n-button>
+        <n-button v-if="tab == 'Cloud'" quaternary  size="small" class="public-btn" @click="updateProjectIsPublic">{{ publicStatus ? 'Public' : 'Private' }}</n-button>
       </div>
     </template>
   </n-card>
@@ -26,9 +26,9 @@
 
 <script lang="ts" setup>
 import {removeProject, type ProjectSummary, Project} from '@/class/project'
-import {defineProps} from 'vue'
+import {defineProps, ref} from 'vue'
 import { useProjectStore } from '@/store';
-import { NCard, NButton, createDiscreteApi } from 'naive-ui';
+import { NCard, NButton, createDiscreteApi, useMessage } from 'naive-ui';
 import moment from 'moment';
 
 const { project } = defineProps<{
@@ -36,7 +36,9 @@ const { project } = defineProps<{
   tab: string
 }>()
 const emit = defineEmits(['load-project', 'remove-project'])
+const publicStatus = ref(project.isPublic == 1)
 const { dialog } = createDiscreteApi(['dialog'])
+const message = useMessage()
 
 const load = async () => {
   await useProjectStore().loadProject(project.id, project.source)
@@ -56,8 +58,10 @@ const remove = () => {
     })
 }
 
-const updateProjectIsPublic = async (id: string) => {
-  await Project.updateProjectIsPublic(id)
+const updateProjectIsPublic = async () => {
+  await Project.updateProjectIsPublic(project.id)
+  message.success('change project status success')
+  publicStatus.value = !publicStatus.value
 }
 </script>
 
