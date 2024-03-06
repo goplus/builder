@@ -130,8 +130,7 @@ const removeProject = (id: string) => {
   }
 
   .n-grid {
-    padding: 12px;
-    width: 100px;
+    padding: 12px 12px 24px;
     box-sizing: border-box;
   }
 
