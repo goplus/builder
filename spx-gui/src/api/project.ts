@@ -19,7 +19,7 @@ export async function saveProject(name: string, file: File, id?: string): Promis
     formData.append('file', file);
     id && formData.append('id', id);
 
-    const res: AxiosResponse<ResponseData<Project>> = await service({
+    const res: AxiosResponse<ResponseData<Project>> = await service.serviceInstance({
         url: url,
         method: 'post',
         data: formData,
@@ -43,7 +43,7 @@ export async function saveProject(name: string, file: File, id?: string): Promis
  */
 export async function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<PageData<Project[]>> {
     const url = isUser ? `/list/userProject/${pageIndex}/${pageSize}` : `/list/pubProject/${pageIndex}/${pageSize}`;
-    return service({ url: url, method: 'get' }).then((res) => res.data.data);
+    return service.serviceInstance({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
 /**
@@ -53,7 +53,7 @@ export async function getProjects(pageIndex: number, pageSize: number, isUser: b
  */
 export async function getProject(id: string): Promise<Project> {
     const url = `/project?id=${id}`;
-    return service({ url: url, method: 'get' }).then((res) => res.data.data);
+    return service.serviceInstance({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
 /**
@@ -67,7 +67,7 @@ export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<
     const formData = new FormData();
     formData.append('body', body);
 
-    return service({
+    return service.serviceInstance({
         url: url,
         method: 'post',
         data: formData,
