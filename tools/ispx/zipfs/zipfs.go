@@ -49,8 +49,11 @@ func NewZipFsFromReader(reader *zip.Reader) *ZipFs {
 	return zf
 }
 
-func (zf *ZipFs) Chroot(root string) {
-	zf.root = root
+func (zf *ZipFs) Chrooted(root string) *ZipFs {
+	return &ZipFs{
+		files: zf.files,
+		root:  root,
+	}
 }
 
 // Implement gop/parser/fsx.FileSystem:

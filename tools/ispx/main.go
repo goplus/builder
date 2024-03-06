@@ -5,7 +5,6 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"log"
 	"syscall/js"
 
@@ -22,7 +21,6 @@ import (
 var dataChannel = make(chan []byte)
 
 func loadData(this js.Value, args []js.Value) interface{} {
-	fmt.Println("Loading data...")
 	inputArray := args[0]
 
 	// Convert Uint8Array to Go byte slice
@@ -51,12 +49,11 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
 	}
-	fmt.Println(string(source))
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
 		path := resource.(string)
-		fs.Chroot(path)
-		spx.Gopt_Game_Run(game, fs, gameConf...)
+		gameFs := fs.Chrooted(path)
+		spx.Gopt_Game_Run(game, gameFs, gameConf...)
 	})
 
 	code, err := ctx.RunFile("main.go", source, nil)
