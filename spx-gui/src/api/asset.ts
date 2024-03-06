@@ -180,7 +180,7 @@ export function publishAsset(
   if (category) {
     formData.append('category', category.toString())
   }
-  if (publishState) {
+  if (publishState != null) {
     formData.append('publishState', publishState.toString())
   }
 
