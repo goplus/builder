@@ -92,6 +92,7 @@ const operators = [
     "%=",
     "<<=",
     ">>=",
+    "=>",
 ];
 
 const brackets = [
@@ -212,8 +213,8 @@ export const MonarchTokensProviderConfig:
         ],
 
         bracketCounting: [
-            [/\{/, 'delimiter.bracket', '@bracketCounting'],
-            [/\}/, 'delimiter.bracket', '@pop'],
+            [/{/, 'delimiter.bracket', '@bracketCounting'],
+            [/}/, 'delimiter.bracket', '@pop'],
         ],
     },
 };
