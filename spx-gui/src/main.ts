@@ -14,14 +14,14 @@ import { initI18n } from '@/language'
 import { addFileUrl } from './util/file'
 import VueKonva from 'vue-konva'
 import { initStore, useUserStore } from './store'
-import { serviceConstructor } from '@/axios'
+import { serviceManager } from '@/axios'
 import { createDiscreteApi } from 'naive-ui'
 
 const { message } = createDiscreteApi(['message'])
 const initServive = async () => {
   const userStore = useUserStore()
-  serviceConstructor.setAccessTokenFn(userStore.getFreshAccessToken)
-  serviceConstructor.setNotifyErrorFn((msg: string) => {
+  serviceManager.setAccessTokenFn(userStore.getFreshAccessToken)
+  serviceManager.setNotifyErrorFn((msg: string) => {
     message.error(msg)
   })
 }
