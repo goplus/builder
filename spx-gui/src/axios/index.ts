@@ -2,7 +2,7 @@
  * @Author: Yao Xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:53:27
+ * @LastEditTime: 2024-03-06 15:26:41
  * @FilePath: \spx-gui\src\axios\index.ts
  * @Description:
  */
@@ -67,6 +67,6 @@ class Service {
     this.notifyErrorFn = notifyErrorFn
   }
 }
-const serviceConstructor = new Service()
-const service = serviceConstructor.serviceInstance
-export { service, serviceConstructor, baseURL }
+const serviceManager = new Service()
+const service = serviceManager.serviceInstance
+export { service, serviceManager, baseURL }
