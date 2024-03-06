@@ -241,6 +241,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   async loadBlankProject() {
+    this.name = 'Untitled'
     const response = await fetch(defaultScene)
     const blob = await response.blob()
     const file = new File([blob], 'default_scene.png', { type: blob.type })
@@ -287,6 +288,9 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to Cloud.
    */
   async save() {
+    if (!this.name.trim()){
+      throw new Error('Project name cannot be empty!')
+    }
     const id = this._id ?? void 0
     return saveProject(this.name, await this.zip, id).then(async res => {
       this._id = res.id
