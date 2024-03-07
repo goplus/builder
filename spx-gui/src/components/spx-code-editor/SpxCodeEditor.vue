@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 08:50:28
+ * @LastEditTime: 2024-03-07 09:23:26
  * @FilePath: \spx-gui\src\components\spx-code-editor\SpxCodeEditor.vue
  * @Description: 
 -->
@@ -10,6 +10,9 @@
   <div class="code-editor-space">
     <div class="code-button">{{ $t('component.code') }}</div>
     <n-button-group class="formatBtnGroup" size="small">
+      <button @click="toggleEditType">
+        toggle entrycode/sprite {{ editorStore.editContentType }}
+      </button>
       <n-button class="" @click="clear">{{ $t('editor.clear') }}</n-button>
       <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
     </n-button-group>
@@ -20,22 +23,36 @@
 <script setup lang="ts">
 import CodeEditor, { monaco } from '@/components/code-editor'
 import { ref, computed } from 'vue'
-import { useEditorStore } from '@/store'
+import { EditContentType, useEditorStore, useProjectStore } from '@/store'
 import { useSpriteStore } from '@/store/modules/sprite'
 import { NButton } from 'naive-ui'
+const projectStore = useProjectStore()
 const spriteStore = useSpriteStore()
-const store = useEditorStore()
+const editorStore = useEditorStore()
 const code_editor = ref()
 
 // watch the current sprite and set it's code to editor
 const currentCode = computed(() => {
-  return spriteStore.current?.code || ''
+  if (editorStore.editContentType === EditContentType.Sprite) {
+    return spriteStore.current?.code || ''
+  } else {
+    console.log(
+      projectStore.project,
+      projectStore.project.entryCode,
+      projectStore.project.defaultEntryCode
+    )
+    return projectStore.project.entryCode || projectStore.project.defaultEntryCode
+  }
 })
 
 // Listen for editor value change, sync to sprite store
 const onCodeChange = (value: string) => {
-  if (spriteStore.current) {
-    spriteStore.current.code = value
+  if (editorStore.editContentType === EditContentType.Sprite) {
+    if (spriteStore.current) {
+      spriteStore.current.code = value
+    }
+  }else{
+    projectStore.project.entryCode = value
   }
 }
 
@@ -52,8 +69,17 @@ const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
   code_editor.value.insertSnippet(snippet)
 }
 
+// TODO: temperary toggle in this component
+const toggleEditType = () => {
+  editorStore.setEditContentType(
+    editorStore.editContentType === EditContentType.Sprite
+      ? EditContentType.EntryCode
+      : EditContentType.Sprite
+  )
+}
+
 // register insertSnippet
-store.$onAction(({ name, store, args, after, onError }) => {
+editorStore.$onAction(({ name, args, after }) => {
   after(() => {
     if (name === 'insertSnippet') {
       const snippet = args[0] as monaco.languages.CompletionItem
