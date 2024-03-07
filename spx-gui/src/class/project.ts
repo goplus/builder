@@ -16,7 +16,8 @@ import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
-import defaultScene from '@/assets/image/default_scene.png'
+import defaultSceneImage from '@/assets/image/default_scene.png'
+import defaultSpriteImage from '@/assets/image/default_sprite.png'
 export enum ProjectSource {
   local,
   cloud
@@ -133,9 +134,10 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   constructor() {
     this.name = ''
-    this.sprite = new SpriteList()
     this.sound = new SoundList()
     this.backdrop = new Backdrop()
+    this.sprite = new SpriteList(this)
+    this.sound = new SoundList()
     this.entryCode = ''
     this.unidentifiedFile = {}
     this._temporaryId = Project.TEMPORARY_ID_PREFIX + nanoid()
@@ -154,6 +156,10 @@ export class Project implements ProjectDetail, ProjectSummary {
     }
     if (source === ProjectSource.local) {
       const paths = (await fs.readdir(id)) as string[]
+      if (!paths.length) {
+        throw new Error('Project not found')
+      }
+
       const dirPath: DirPath = {}
       for (const path of paths) {
         const content = await fs.readFile(path)
@@ -178,7 +184,7 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Load project from directory.
    * @param DirPath The directory
    */
-  private _load(dir: DirPath): void {
+  _load(dir: DirPath): void {
     const handleFile = (file: FileType, filename: string, item: any) => {
       switch (file.type) {
         case 'application/json':
@@ -242,12 +248,20 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   async loadBlankProject() {
     this.name = 'Untitled'
-    const response = await fetch(defaultScene)
-    const blob = await response.blob()
-    const file = new File([blob], 'default_scene.png', { type: blob.type })
+    const sceneBlob = await (await fetch(defaultSceneImage)).blob()
+    const spriteBlob = await (await fetch(defaultSpriteImage)).blob()
+    const sceneFile = new File([sceneBlob], 'default_scene.png', { type: sceneBlob.type })
+    const spriteFile = new File([spriteBlob], 'default_sprite.png', { type: spriteBlob.type })
     this.backdrop.addScene([
-      { name: 'default_scene', file: new FileWithUrl(file, URL.createObjectURL(file)) }
+      { name: 'default_scene', file: new FileWithUrl(sceneFile, URL.createObjectURL(sceneFile)) }
     ])
+    const defaultSprite = new Sprite('default_sprite', [spriteFile])
+    defaultSprite.config.size = 1
+    // The size of the costume is 110 * 100, so setting the center point of the image to half of its height and width
+    // can make the costume of sprite render at the center point of the stage.
+    defaultSprite.config.costumes[0].x=55
+    defaultSprite.config.costumes[0].y=50
+    this.sprite.add(defaultSprite)
   }
   
 
