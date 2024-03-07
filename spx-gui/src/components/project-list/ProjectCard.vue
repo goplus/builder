@@ -1,7 +1,7 @@
 <template>
   <n-card id="project-card" hoverable>
     <template #cover>
-      <img src="@/assets/image/project/project.png" alt="">
+      <img :src="defaultProjectImage" alt="">
     </template>
 
     <template #header>
@@ -21,16 +21,36 @@
 
     <div class="info">
       <p v-if="!isLocal" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="create-time">create: {{ moment(project.cTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
-      <p class="update-time">update: {{ moment(project.uTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
+      <p class="create-time">create: {{ new Date(project.cTime).toLocaleString() }} </p>
+      <p class="update-time">update: {{ new Date(project.cTime).toLocaleString() }} </p>
     </div>
 
     <template #action>
       <div class="action">
-        <n-button quaternary size="small" class="load-btn" @click="load">Load</n-button>
-        <n-button v-if="isUserOwn" quaternary size="small" @click="remove">Delete</n-button>
-        <n-button v-if="!isLocal && isUserOwn" quaternary size="small" class="public-btn"
-          @click="updateProjectIsPublic">{{ publicStatusText(!publicStatus) }}</n-button>
+        <n-button
+          quaternary
+          size="small"
+          class="load-btn"
+          @click="load"
+        >
+          Load
+        </n-button>
+        <n-button
+          v-if="isUserOwn"
+          quaternary
+          size="small"
+          @click="remove"
+        >
+          Delete
+        </n-button>
+        <n-button
+          v-if="!isLocal && isUserOwn"
+          quaternary size="small"
+          class="public-btn"
+          @click="updateProjectIsPublic"
+        >
+          {{ publicStatusText(!publicStatus) }}
+        </n-button>
       </div>
     </template>
   </n-card>
@@ -42,7 +62,7 @@ import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined } from '@vicons/antd'
-import moment from 'moment'
+import defaultProjectImage from '@/assets/image/project/project.png'
 
 const { project } = defineProps<{
   project: ProjectSummary

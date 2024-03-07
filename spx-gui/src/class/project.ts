@@ -25,6 +25,11 @@ export enum ProjectSource {
   cloud = 'cloud'
 }
 
+export enum PublicStatus {
+  private = 0,
+  public = 1
+}
+
 export interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
@@ -35,13 +40,13 @@ export interface ProjectSummary {
   // Project source
   source: ProjectSource
   // create time
-  cTime?: string
+  cTime: string
   // update time
-  uTime?: string
+  uTime: string
   // public status
-  isPublic?: number
+  isPublic?: PublicStatus
   // author
-  authorId?: string
+  authorId: string
 }
 
 interface ProjectDetail {
@@ -68,6 +73,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   cTime: string
   uTime: string
+  authorId: string
 
   /** Cloud Id */
   _id: string | null = null
@@ -149,6 +155,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.source = ProjectSource.local
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
+    this.authorId = ''
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
@@ -166,8 +173,7 @@ export class Project implements ProjectDetail, ProjectSummary {
 
       const dirPath: DirPath = {}
       for (const path of paths) {
-        const content = await fs.readFile(path)
-        dirPath[path] = content
+        dirPath[path] = await fs.readFile(path)
       }
       this._load(dirPath)
 
@@ -189,7 +195,7 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   /**
    * Load project from directory.
-   * @param DirPath The directory
+   * @param dir The directory
    */
   _load(dir: DirPath): void {
     const handleFile = (file: FileType, filename: string, item: any) => {
@@ -286,9 +292,10 @@ export class Project implements ProjectDetail, ProjectSummary {
       version: this.version,
       source: this.source,
       cTime: this.cTime,
-      uTime: new Date().toISOString()
+      uTime: new Date().toISOString(),
+      authorId: this.authorId
     }
-    fs.writeFile(this.summaryPath, summary)
+    await fs.writeFile(this.summaryPath, summary)
   }
 
   /**
