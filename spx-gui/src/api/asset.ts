@@ -179,7 +179,7 @@ export function publishAsset(
   category?: string | undefined,
   publishState?: number
 ): Promise<string> {
-  const url = `/spirits/upload`
+  const url = `/sprite/upload`
   const formData = new FormData()
   formData.append('name', name)
   formData.append('gif', gif)
@@ -205,11 +205,11 @@ export function publishAsset(
 
 /**
  * @description: generate gif by costumes files
- * @param {File} files - sprite costumes files 
+ * @param {File} files - sprite costumes files
  * @return {string} get sprites gif address.
  */
 export function generateGifByCostumes(files: File[]): Promise<AxiosResponse<ResponseData<string>>> {
-  const url = `/spirits/togif`
+  const url = `/sprite/togif`
   const formData = new FormData()
   files.forEach((file) => {
     formData.append('files', file)
