@@ -207,7 +207,7 @@ const importSelectedAssetsToProject = () => {
  * @return {*}
  */
 const importSoundToProject = (asset: AssetFileDetail, file: File) => {
-  let sound = new Sound(getNewNameIfNameExists(asset, soundStore), [file])
+  let sound = new Sound(getNewNameIfNameExists(asset), [file])
   soundStore.addItem(sound)
 }
 
@@ -218,7 +218,7 @@ const importSoundToProject = (asset: AssetFileDetail, file: File) => {
  * @return {*}
  */
 const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
-  let sprite = new Sprite(getNewNameIfNameExists(asset, spriteStore), [file])
+  let sprite = new Sprite(getNewNameIfNameExists(asset), [file])
   spriteStore.addItem(sprite)
 }
 
@@ -228,7 +228,13 @@ const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
  * @param {*} store
  * @return {*}
  */
-const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
+const getNewNameIfNameExists = (asset: AssetFileDetail): string => {
+  let store
+  if (isImage(asset)) {
+    store = spriteStore
+  } else {
+    store = soundStore
+  }
   let baseName = asset.name
   let extension = asset.extension
   let counter = 0
@@ -240,7 +246,7 @@ const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
     counter++
     newName = `${baseName}(${counter})`
   }
-  return `${newName}.${extension}`
+  return newName
 }
 
 /**

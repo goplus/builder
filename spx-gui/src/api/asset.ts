@@ -10,18 +10,21 @@ import { service } from '@/axios'
 import type { Asset, PageAssetResponse, SearchAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
+
 /**
- * Fetches a list of assets.
+ * Fetches a list of assets
  *
+ * @param assetLibraryType 'public' / 'private';
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of assets to retrieve per page.
  * @param assetType The type of the asset. See src/constant/constant.ts for details.
  * @param category (Optional) The category of the assets to filter by.
- * @param isOrderByTime (Optional) The time of the assets to filter by.
- * @param isOrderByHot (Optional) The hot of the assets to filter by.
+ * @param isOrderByTime (Optional) Whether to order assets by time.
+ * @param isOrderByHot (Optional) Whether to order assets by popularity.
  * @returns PageAssetResponse
  */
 export function getAssetList({
+  assetLibraryType,
   pageIndex,
   pageSize,
   assetType,
@@ -29,13 +32,19 @@ export function getAssetList({
   isOrderByTime,
   isOrderByHot
 }: {
-  pageIndex: number
-  pageSize: number
-  assetType: number
-  category?: string
-  isOrderByTime?: boolean
+  assetLibraryType: string,
+  pageIndex: number,
+  pageSize: number,
+  assetType: number,
+  category?: string,
+  isOrderByTime?: boolean,
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
+  let baseAssetUrl = "/list/asset"
+  if (assetLibraryType === 'private') {
+    baseAssetUrl = "/list/userasset"
+  }
+
   const params = new URLSearchParams()
 
   params.append('pageIndex', pageIndex.toString())
@@ -52,12 +61,12 @@ export function getAssetList({
     params.append('isOrderByHot', '1')
   }
 
-  const url = `/list/asset?${params.toString()}`
+  const url = `${baseAssetUrl}?${params.toString()}`
 
   return service({
     url: url,
     method: 'get'
-  })
+  });
 }
 
 /**
@@ -170,7 +179,7 @@ export function publishAsset(
   category?: string | undefined,
   publishState?: number
 ): Promise<string> {
-  const url = `/spirits/upload`
+  const url = `/sprite/upload`
   const formData = new FormData()
   formData.append('name', name)
   formData.append('gif', gif)
@@ -196,11 +205,11 @@ export function publishAsset(
 
 /**
  * @description: generate gif by costumes files
- * @param {File} files - sprite costumes files 
+ * @param {File} files - sprite costumes files
  * @return {string} get sprites gif address.
  */
 export function generateGifByCostumes(files: File[]): Promise<AxiosResponse<ResponseData<string>>> {
-  const url = `/spirits/togif`
+  const url = `/sprite/togif`
   const formData = new FormData()
   files.forEach((file) => {
     formData.append('files', file)
