@@ -535,20 +535,32 @@ func (p *Project) ImagesToGif(ctx context.Context, files []*multipart.FileHeader
 func (p *Project) UploadSprite(ctx context.Context, name string, files []*multipart.FileHeader, gifPath string, uid string, tag string, publishState string) error {
 	data := &Data{}
 	data.IndexJson = "index.json"
-	data.Type = "gif"
-	data.Assets = make(map[string]string)
-	for i, fileHeader := range files {
-		file, _ := fileHeader.Open()
-		path, err := UploadFile(ctx, p, os.Getenv("SPRITE_PATH"), file, fileHeader.Filename)
+	if len(files) == 1 {
+		data.Assets = make(map[string]string)
+		file, _ := files[0].Open()
+		path, err := UploadFile(ctx, p, os.Getenv("SPRITE_PATH"), file, files[0].Filename)
 		if err != nil {
-			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
+			fmt.Printf("failed to upload %s: %v", files[0].Filename, err)
 			return err
 		}
-		index := "image" + strconv.Itoa(i)
+		index := "image"
 		data.Assets[index] = path
+	} else {
+		data.Type = "gif"
+		data.Assets = make(map[string]string)
+		for i, fileHeader := range files {
+			file, _ := fileHeader.Open()
+			path, err := UploadFile(ctx, p, os.Getenv("SPRITE_PATH"), file, fileHeader.Filename)
+			if err != nil {
+				fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
+				return err
+			}
+			index := "image" + strconv.Itoa(i)
+			data.Assets[index] = path
+		}
+		data.Url = gifPath[len(os.Getenv("QINIU_PATH")):]
 	}
 
-	data.Url = gifPath[len(os.Getenv("QINIU_PATH")):]
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		fmt.Printf("failed to jsonMarshal: %v", err)
