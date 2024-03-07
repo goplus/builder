@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 23:14:46
+ * @LastEditTime: 2024-03-07 11:05:21
  * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
@@ -32,7 +32,7 @@ export const useSpriteStore = defineStore('sprite', () => {
   )
 
   function addItem(item: Sprite) {
-    project.value.sprite.addSpriteToProject(item)
+    project.value.sprite.add(item)
   }
 
   function setCurrentByName(name: string) {
@@ -47,7 +47,7 @@ export const useSpriteStore = defineStore('sprite', () => {
       if (current.value === sprite) {
         current.value = list.value[0] || null
       }
-      project.value.sprite.removeSpriteFromProject(sprite)
+      project.value.sprite.remove(sprite)
     }
   }
 
