@@ -218,7 +218,7 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
     let file = getFileFromAssetFileDetail(asset)
     let uploadFilesArr: File[] = [file]
     await publishAsset(
-      getNewNameIfNameExists(asset),
+      asset.name,
       uploadFilesArr,
       PublishState.PrivateLibrary,
       undefined,
@@ -236,7 +236,7 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
  * @return {*}
  */
 const importSoundToProject = (asset: AssetFileDetail, file: File) => {
-  let sound = new Sound(getNewNameIfNameExists(asset), [file])
+  let sound = new Sound(asset.name, [file])
   soundStore.addItem(sound)
 }
 
@@ -247,34 +247,8 @@ const importSoundToProject = (asset: AssetFileDetail, file: File) => {
  * @return {*}
  */
 const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
-  let sprite = new Sprite(getNewNameIfNameExists(asset), [file])
+  let sprite = new Sprite(asset.name, [file])
   spriteStore.addItem(sprite)
-}
-
-/**
- * @description: If sound.wav exists, return sound(1).wav, sound(2).wav
- * @param {*} asset
- * @param {*} store
- * @return {*}
- */
-const getNewNameIfNameExists = (asset: AssetFileDetail): string => {
-  let store
-  if (isImage(asset)) {
-    store = spriteStore
-  } else {
-    store = soundStore
-  }
-  let baseName = asset.name
-  let counter = 0
-  let newName = baseName
-  let existsByName = (name: string, store: any): boolean => {
-    return store.existsByName(name)
-  }
-  while (existsByName(newName, store)) {
-    counter++
-    newName = `${baseName}(${counter})`
-  }
-  return newName
 }
 
 /**
