@@ -115,7 +115,7 @@ const stopRecording = () => {
   mediaRecorder.onstop = () => {
     if (audioChunks.value.length > 0) {
       // AudioChunks -> AudioBuffer -> correct wav blob
-      convertAudioChunksToAudioBuffer(audioChunks.value).then(audioBuffer => {
+      convertAudioChunksToAudioBuffer(audioChunks.value, 'audio/webm' ).then(audioBuffer => {
         audioFile.value = new File([audioBufferToWavBlob(audioBuffer)], soundName.value + ".wav", {
           type: "audio/wav",
           lastModified: Date.now(),

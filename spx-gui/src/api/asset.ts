@@ -12,7 +12,7 @@ import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
 
 /**
- * Fetches a list of assets based on the provided URL.
+ * Fetches a list of assets
  *
  * @param assetLibraryType 'public' / 'private';
  * @param pageIndex The index of the page to retrieve in a paginated list.
@@ -40,28 +40,28 @@ export function getAssetList({
   isOrderByTime?: boolean,
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
-  let baseAssetUrl = "/list/asset";
+  let baseAssetUrl = "/list/asset"
   if (assetLibraryType === 'private') {
-    baseAssetUrl = "/list/userasset";
+    baseAssetUrl = "/list/userasset"
   }
 
-  const params = new URLSearchParams();
+  const params = new URLSearchParams()
 
-  params.append('pageIndex', pageIndex.toString());
-  params.append('pageSize', pageSize.toString());
-  params.append('assetType', assetType.toString());
+  params.append('pageIndex', pageIndex.toString())
+  params.append('pageSize', pageSize.toString())
+  params.append('assetType', assetType.toString())
 
   if (category) {
-    params.append('category', category);
+    params.append('category', category)
   }
   if (isOrderByTime) {
-    params.append('isOrderByTime', '1');
+    params.append('isOrderByTime', '1')
   }
   if (isOrderByHot) {
-    params.append('isOrderByHot', '1');
+    params.append('isOrderByHot', '1')
   }
 
-  const url = `${baseAssetUrl}?${params.toString()}`;
+  const url = `${baseAssetUrl}?${params.toString()}`
 
   return service({
     url: url,

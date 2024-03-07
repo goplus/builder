@@ -14,8 +14,8 @@
  * @param {Blob[]} audioChunks - An array of audio chunks, typically collected during media recording.
  * @returns {Promise<AudioBuffer>} A promise that resolves to an AudioBuffer constructed from the input audio chunks.
  */
-export const convertAudioChunksToAudioBuffer = async (audioChunks: Blob[]): Promise<AudioBuffer> => {
-  const audioBlob: Blob = new Blob(audioChunks, { type: 'audio/webm' }); // 注意：类型根据你的 MediaRecorder 设置决定
+export const convertAudioChunksToAudioBuffer = async (audioChunks: Blob[],  mimeType: string): Promise<AudioBuffer> => {
+  const audioBlob: Blob = new Blob(audioChunks, { type: mimeType });
   const arrayBuffer: ArrayBuffer = await blobToArrayBuffer(audioBlob);
   return await decodeAudioData(arrayBuffer);
 };
