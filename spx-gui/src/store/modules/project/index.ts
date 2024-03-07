@@ -66,8 +66,15 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
-  const lastProject = localStorage.getItem('project')
-  lastProject ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject) : loadBlankProject();
+  /**
+   * Initialize the project.
+   */
+  const init = () => {
+    const lastProject = localStorage.getItem('project')
+    lastProject ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject) : loadBlankProject()
+  }
+
+  init()
 
   return {
     project,
