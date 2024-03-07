@@ -253,6 +253,8 @@ export class Project implements ProjectDetail, ProjectSummary {
     ])
     const defaultSprite = new Sprite('default_sprite', [spriteFile])
     defaultSprite.config.size = 1
+    // The size of the picture is 110cm 100, so setting the center point of the shape to half of its height and width
+    // can make the costume of sprite render at the center point of the stage.
     defaultSprite.config.costumes[0].x=55
     defaultSprite.config.costumes[0].y=50
     this.sprite.addSpriteToProject(defaultSprite)
