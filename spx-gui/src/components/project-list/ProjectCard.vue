@@ -21,8 +21,8 @@
 
     <div class="info">
       <p v-if="!isLocal" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="create-time">create: {{ new Date(project.cTime).toLocaleString() }} </p>
-      <p class="update-time">update: {{ new Date(project.cTime).toLocaleString() }} </p>
+      <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
+      <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
     </div>
 
     <template #action>
@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import { type ProjectSummary, Project, ProjectSource } from '@/class/project'
+import { type ProjectSummary, Project, ProjectSource, PublicStatus } from '@/class/project'
 import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
@@ -70,7 +70,7 @@ const { project } = defineProps<{
 const emit = defineEmits(['load-project', 'remove-project'])
 const userStore = useUserStore()
 const isUserOwn = computed(() => !project.authorId || userStore.userInfo?.id === project.authorId)
-const publicStatus = ref(!!project.isPublic)
+const publicStatus = ref(project.isPublic == PublicStatus.public)
 const isLocal = computed(() => project.source === ProjectSource.local)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
@@ -111,6 +111,10 @@ const updateProjectIsPublic = async () => {
   } catch (e) {
     message.error('change project status failed')
   }
+}
+
+const formatTime = (time: string) => {
+  return new Date(time).toLocaleString()
 }
 </script>
 
