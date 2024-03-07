@@ -10,7 +10,15 @@ export abstract class AssetList<T extends AssetBase> {
     }
 
     add(...assets: T[]) {
-        this.list.push(...assets);
+        let counter = 0
+        for (const asset of assets) {
+            const name = asset.name
+            while (this.list.find(item => item.name === asset.name)) {
+                counter++
+                asset.name = `${name}_${counter}`
+            }
+            this.list.push(asset)
+        }
     }
 
     remove(name: string): T | null;
