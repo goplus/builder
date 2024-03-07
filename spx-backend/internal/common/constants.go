@@ -12,10 +12,13 @@ const (
 	ErrorDeleteProject      = 10002
 	ErrorUpdateProjectState = 10003
 	ErrorGetAsset           = 10004
+	ErrorSave               = 10005
 
 	ErrorPermissions        = 20001
 	ErrorParseMultipartForm = 20002
 	ErrorImagesToGif        = 20003
+	ErrorUpload             = 20004
+	ErrorNameNotNull        = 20005
 )
 
 var MsgFlags = map[int]string{
@@ -31,6 +34,9 @@ var MsgFlags = map[int]string{
 	ErrorPermissions:        "No Permissions",
 	ErrorParseMultipartForm: "Parse Multipart Form Error",
 	ErrorImagesToGif:        "Generate gif error",
+	ErrorUpload:             "Upload err",
+	ErrorNameNotNull:        "please fill name",
+	ErrorSave:               "save err",
 }
 
 // GetMsg 获取状态码对应信息

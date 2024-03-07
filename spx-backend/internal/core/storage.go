@@ -43,8 +43,8 @@ func Encrypt(salt, password string) string {
 }
 
 func AddAsset(db *sql.DB, c *Asset) (string, error) {
-	sqlStr := "insert into asset (name,author_id , address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
-	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
+	sqlStr := "insert into asset (name,author_id , address,preview_address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?,?, ?,?,?, ?)"
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.PreviewAddress, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err
@@ -88,6 +88,7 @@ func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
 	query := "UPDATE project SET is_public = ? WHERE id = ?"
 	err := db.QueryRow(query, isPublic, id)
 	if err != nil {
+		fmt.Println(err)
 		return err.Err()
 	}
 	return nil
