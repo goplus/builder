@@ -16,7 +16,14 @@
         {{ $t('scratch.import') }}
       </n-button>
       <!-- TODO: temporary use import-assets-btn's style   -->
-      <n-button class="import-assets-btn" style="position: relative"> entry code </n-button>
+      <n-button
+        class="import-assets-btn"
+        style="position: relative"
+        :disabled="editorStore.editContentType === EditContentType.EntryCode"
+        @click="toggleEditEntryCode"
+      >
+        entry code
+      </n-button>
     </div>
 
     <n-grid cols="4" item-responsive responsive="screen">
@@ -76,9 +83,10 @@ import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
-
+import { EditContentType, useEditorStore } from '@/store'
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
+const editorStore = useEditorStore()
 const spriteStore = useSpriteStore()
 const { setCurrentByName } = spriteStore
 
@@ -105,6 +113,11 @@ const toggleCodeById = (name: string) => {
   currentActiveName.value = name
   setCurrentByName(name)
 }
+
+const toggleEditEntryCode=() => {
+  editorStore.setEditContentType(EditContentType.EntryCode)
+}
+
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value

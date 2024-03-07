@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 09:23:26
+ * @LastEditTime: 2024-03-07 12:12:54
  * @FilePath: \spx-gui\src\components\spx-code-editor\SpxCodeEditor.vue
  * @Description: 
 -->
@@ -10,9 +10,6 @@
   <div class="code-editor-space">
     <div class="code-button">{{ $t('component.code') }}</div>
     <n-button-group class="formatBtnGroup" size="small">
-      <button @click="toggleEditType">
-        toggle entrycode/sprite {{ editorStore.editContentType }}
-      </button>
       <n-button class="" @click="clear">{{ $t('editor.clear') }}</n-button>
       <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
     </n-button-group>
@@ -36,12 +33,9 @@ const currentCode = computed(() => {
   if (editorStore.editContentType === EditContentType.Sprite) {
     return spriteStore.current?.code || ''
   } else {
-    console.log(
-      projectStore.project,
-      projectStore.project.entryCode,
-      projectStore.project.defaultEntryCode
-    )
-    return projectStore.project.entryCode || projectStore.project.defaultEntryCode
+    return projectStore.project.entryCode
+      ? projectStore.project.entryCode
+      : projectStore.project.defaultEntryCode
   }
 })
 
@@ -51,8 +45,10 @@ const onCodeChange = (value: string) => {
     if (spriteStore.current) {
       spriteStore.current.code = value
     }
-  }else{
-    projectStore.project.entryCode = value
+  } else {
+    if (projectStore.project.entryCode || (projectStore.project.defaultEntryCode !== value)) {
+      projectStore.project.entryCode = value
+    }
   }
 }
 
@@ -67,15 +63,6 @@ const format = () => {
 // Listen for insert events triggered by store, registered with store.$onAction
 const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
   code_editor.value.insertSnippet(snippet)
-}
-
-// TODO: temperary toggle in this component
-const toggleEditType = () => {
-  editorStore.setEditContentType(
-    editorStore.editContentType === EditContentType.Sprite
-      ? EditContentType.EntryCode
-      : EditContentType.Sprite
-  )
 }
 
 // register insertSnippet
