@@ -1,9 +1,9 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-06 00:16:38
- * @FilePath: /spx-gui/src/language/index.ts
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-03-07 12:17:00
+ * @FilePath: \spx-gui\src\language\index.ts
  * @Description:
  */
 import type { App } from 'vue'
@@ -55,7 +55,6 @@ export const initI18n = async (app: App) => {
         settings: 'Settings'
       },
       editor: {
-        clear: 'clear',
         format: 'format'
       },
       component: {
@@ -148,7 +147,6 @@ export const initI18n = async (app: App) => {
         settings: '设置'
       },
       editor: {
-        clear: '清空',
         format: '格式化'
       },
       component: {

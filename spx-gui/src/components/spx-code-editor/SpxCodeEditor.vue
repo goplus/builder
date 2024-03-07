@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 12:12:54
+ * @LastEditTime: 2024-03-07 12:15:54
  * @FilePath: \spx-gui\src\components\spx-code-editor\SpxCodeEditor.vue
  * @Description: 
 -->
@@ -10,7 +10,6 @@
   <div class="code-editor-space">
     <div class="code-button">{{ $t('component.code') }}</div>
     <n-button-group class="formatBtnGroup" size="small">
-      <n-button class="" @click="clear">{{ $t('editor.clear') }}</n-button>
       <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
     </n-button-group>
     <CodeEditor ref="code_editor" :model-value="currentCode" @update:model-value="onCodeChange" />
@@ -52,9 +51,7 @@ const onCodeChange = (value: string) => {
   }
 }
 
-const clear = () => {
-  code_editor.value.clear()
-}
+
 
 const format = () => {
   code_editor.value.format()
