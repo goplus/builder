@@ -33,6 +33,7 @@ import { useSpriteStore } from '@/store'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
+import { Project } from '@/class/project'
 import type { Sprite } from '@/class/sprite'
 
 let show = ref(false)
