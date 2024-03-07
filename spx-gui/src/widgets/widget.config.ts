@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 18:28:34
+ * @LastEditTime: 2024-03-07 23:48:33
  * @FilePath: \spx-gui\src\widgets\widget.config.ts
  * @Description:
  */
@@ -11,8 +11,9 @@ import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import buildLoader from './build-loader'
 const resolve = (dir: string) => path.join(__dirname, dir)
-const BASEURL = 'https://qiniu.com/'
-export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
+const BASEURL = './'
+
+export default defineConfig(() => {
   return {
     plugins: [
       vue({
@@ -24,7 +25,6 @@ export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
       }),
       {
         name: 'build',
-        // writeBundle hook can't get the baseurl
         writeBundle: (outputOptions) => buildLoader(outputOptions, BASEURL)
       }
     ],
@@ -34,8 +34,11 @@ export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
       outDir: 'spx-widgets',
       minify: 'terser',
       manifest: true,
+      
       rollupOptions: {
-        input: 'src/widgets/spx-runner/index.ts'
+        input: {
+          'spx-runner': resolve('./spx-runner/index.ts'),
+        }
       }
     },
     resolve: {

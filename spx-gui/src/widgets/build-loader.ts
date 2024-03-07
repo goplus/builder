@@ -1,35 +1,46 @@
 import fs from 'fs'
 import path from 'path'
+import type { NormalizedOutputOptions } from 'rollup'
 import { fileURLToPath } from 'url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-console.log(import.meta)
-import { resolveConfig } from 'vite'
-
-export default async function BuilderLoader(outputOptions, baseurl) {
-  console.log(outputOptions)
-  const outputDir = outputOptions.dir
+interface WidgetAssets {
+  js: string
+}
+interface WidgetManifest {
+  [key: string]: WidgetAssets
+}
+export default async function BuilderLoader(
+  outputOptions: NormalizedOutputOptions,
+  baseurl: string
+) {
+  const outputDir = outputOptions.dir as string
   const manifestPath = path.join(outputDir, '.vite/manifest.json')
-  const files = fs.readdirSync(outputDir)
   try {
     const manifestContent = fs.readFileSync(manifestPath, 'utf-8')
     const manifest = JSON.parse(manifestContent)
-    let entryItem
+    const manifetMap = {} as WidgetManifest
     for (const key in manifest) {
-      if (manifest[key].isEntry) {
-        console.log(manifest[key])
-        entryItem = manifest[key]
-        break
+      // Entry files are treated as widget
+      if (manifest[key].isEntry && manifest[key]) {
+        // TODO: config the widget name from the rollup config instead
+        const widgetNameMatch = key.match(/^src\/widgets\/([^/]+)\/index\.ts$/)
+        if (widgetNameMatch && widgetNameMatch[1]) {
+          const asset: WidgetAssets = {
+            // Stitching the actual resource address
+            js: baseurl + manifest[key].file
+          }
+          manifetMap[widgetNameMatch[1]] = asset
+        }
       }
     }
-    const css = entryItem.css[0]
-    const js = entryItem.file
-    const loaderJs = fs
-      .readFileSync(path.join(currentDir, 'loader.ts'), { encoding: 'utf8' })
-      .replace(/JSURL/g, `"${baseurl + js}"`)
-      .replace(/CSSURL/g, `"${baseurl + css}"`)
-    console.log('base', baseurl,`"${baseurl + js}"`)
 
-    const compiledFilePath = path.join(currentDir, 'compiled-loader.js')
+    const loaderJs = fs
+      .readFileSync(path.join(currentDir, '/scripts/loader-template.js'), { encoding: 'utf8' })
+      .replace(/MANIFEST/g, JSON.stringify(manifetMap))
+
+    console.log('loader', loaderJs)
+    const compiledFilePath = path.join(currentDir, '/scripts/compiled-loader.js')
+
     fs.writeFileSync(compiledFilePath, loaderJs, 'utf-8')
   } catch (error) {
     console.error(error)
