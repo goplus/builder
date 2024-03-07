@@ -46,7 +46,7 @@ export interface ProjectSummary {
   // public status
   isPublic?: PublicStatus
   // author
-  authorId: string
+  authorId?: string
 }
 
 interface ProjectDetail {
@@ -73,7 +73,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   cTime: string
   uTime: string
-  authorId: string
 
   /** Cloud Id */
   _id: string | null = null
@@ -155,7 +154,6 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.source = ProjectSource.local
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
-    this.authorId = ''
   }
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
@@ -293,7 +291,6 @@ export class Project implements ProjectDetail, ProjectSummary {
       source: this.source,
       cTime: this.cTime,
       uTime: new Date().toISOString(),
-      authorId: this.authorId
     }
     await fs.writeFile(this.summaryPath, summary)
   }
