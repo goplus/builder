@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import { removeProject, type ProjectSummary, Project, ProjectSource } from '@/class/project'
+import { type ProjectSummary, Project, ProjectSource } from '@/class/project'
 import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
@@ -69,7 +69,7 @@ const remove = () => {
     positiveText: 'Yes',
     negativeText: 'No',
     onPositiveClick: async () => {
-      await removeProject(project.id, project.source)
+      await Project.removeProject(project.id, project.source)
       emit('remove-project')
     }
   })

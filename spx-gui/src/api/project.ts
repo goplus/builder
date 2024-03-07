@@ -27,7 +27,7 @@ export async function saveProject(name: string, file: File, id?: string): Promis
             'Content-Type': 'multipart/form-data'
         },
     })
-    if (res.data.code >= 200 && res.data.code < 300 && res.data.data) {
+    if (res.data.code >= 200 && res.data.code < 300) {
         return res.data.data
     } else {
         throw new Error(res.data.msg)

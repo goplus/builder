@@ -139,6 +139,7 @@ body {
 }
 
 .n-dialog {
+  // Fix the line-height because the global 1.6x line-height causes the icon to be positioned lower.
   .n-dialog__icon {
     line-height: 1;
   }

@@ -20,19 +20,6 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 
-async function removeLocalProject(id: string) {
-  await fs.rmdir(id)
-  await fs.unlink("summary/" + id)
-}
-
-export async function removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
-  if (source === ProjectSource.local) {
-    await removeLocalProject(id)
-  } else {
-    await removeCloudProject(id)
-  }
-}
-
 export enum ProjectSource {
   local = 'local',
   cloud = 'cloud'
@@ -134,6 +121,19 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static updateProjectIsPublic(id: string): Promise<string> {
     return updateProjectIsPublic(id)
+  }
+
+  static async removeLocalProject(id: string) {
+    await fs.rmdir(id)
+    await fs.unlink("summary/" + id)
+  }
+  
+  static async removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
+    if (source === ProjectSource.local) {
+      await Project.removeLocalProject(id)
+    } else {
+      await removeCloudProject(id)
+    }
   }
 
   constructor() {
@@ -296,10 +296,10 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async removeLocal() {
     if (this._temporaryId !== null) {
-      await removeLocalProject(this._temporaryId)
+      await Project.removeLocalProject(this._temporaryId)
     }
     if (this._id !== null) {
-      await removeLocalProject(this._id)
+      await Project.removeLocalProject(this._id)
     }
   }
 
