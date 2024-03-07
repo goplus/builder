@@ -2,14 +2,15 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:53:46
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 09:02:45
+ * @LastEditTime: 2024-03-07 14:44:48
  * @FilePath: \spx-gui\src\store\modules\editor\index.ts
  * @Description:
  */
 import { defineStore } from 'pinia'
 import { monaco } from '@/components/code-editor'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useSpriteStore } from '@/store'
+import {} from 'fs'
 export enum EditContentType {
   Sprite = 1,
   EntryCode = 2
@@ -17,6 +18,16 @@ export enum EditContentType {
 export const useEditorStore = defineStore('editor', () => {
   const spriteStore = useSpriteStore()
   const editContentType = ref<EditContentType>(EditContentType.Sprite)
+
+  watch(
+    () => spriteStore.current,
+    () => {
+      if(spriteStore.current){
+        setEditContentType(EditContentType.Sprite)
+      }
+    }
+  )
+
   /**
    * @description: trigger the insertion function
    * The code editor component is subscribed the event

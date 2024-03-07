@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 12:15:54
+ * @LastEditTime: 2024-03-07 14:44:00
  * @FilePath: \spx-gui\src\components\spx-code-editor\SpxCodeEditor.vue
  * @Description: 
 -->
@@ -33,8 +33,6 @@ const currentCode = computed(() => {
     return spriteStore.current?.code || ''
   } else {
     return projectStore.project.entryCode
-      ? projectStore.project.entryCode
-      : projectStore.project.defaultEntryCode
   }
 })
 
@@ -45,13 +43,9 @@ const onCodeChange = (value: string) => {
       spriteStore.current.code = value
     }
   } else {
-    if (projectStore.project.entryCode || (projectStore.project.defaultEntryCode !== value)) {
-      projectStore.project.entryCode = value
-    }
+    projectStore.project.entryCode = value
   }
 }
-
-
 
 const format = () => {
   code_editor.value.format()

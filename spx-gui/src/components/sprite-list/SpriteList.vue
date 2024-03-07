@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 10:12:04
+ * @LastEditTime: 2024-03-07 14:46:31
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -20,7 +20,7 @@
         class="import-assets-btn"
         style="position: relative"
         :disabled="editorStore.editContentType === EditContentType.EntryCode"
-        @click="toggleEditEntryCode"
+        @click="enableEditEntryCode"
       >
         entry code
       </n-button>
@@ -114,7 +114,7 @@ const toggleCodeById = (name: string) => {
   setCurrentByName(name)
 }
 
-const toggleEditEntryCode=() => {
+const enableEditEntryCode=() => {
   editorStore.setEditContentType(EditContentType.EntryCode)
 }
 
