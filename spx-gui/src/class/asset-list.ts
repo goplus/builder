@@ -10,8 +10,8 @@ export abstract class AssetList<T extends AssetBase> {
     }
 
     add(...assets: T[]) {
-        let counter = 0
         for (const asset of assets) {
+            let counter = 1
             const name = asset.name
             while (this.list.find(item => item.name === asset.name)) {
                 counter++
