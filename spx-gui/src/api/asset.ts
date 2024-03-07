@@ -11,6 +11,12 @@ import type { Asset, PageAssetResponse, SearchAssetResponse } from '@/interface/
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
 
+export enum PublishState {
+  NotPublished = 0,
+  PrivateLibrary = 1,
+  PublicAndPrivateLibrary = 2
+}
+
 /**
  * Fetches a list of assets
  *
@@ -166,35 +172,36 @@ export function addAssetClickCount(
 /**
  * @description: Publish asset to library.
  * @param { string } name - sprite name named by user.
- * @param { string } files - sprite costumes files, saved to show in lib.
- * @param { string|undefined } gif - sprite gif's address, saved to show in lib when sprite is hovering.
+ * @param { File[] } files - sprite costumes files, saved to show in lib.
+ * @param { PublishState } publishState - The publishing state of the asset.
+ * @param { string|undefined } [gif] - Optional. The address of the sprite's GIF.
+ *                                   Only provide this parameter if there is more than one file.
+ *                                   It is used to display in the library when the sprite is hovering.
  * @param { string|undefined } category - the category of the sprite(used to classify in library).
- * @param { number } publishState - 0: not publish to library; 1: publish to private library; 2: publish to public and private library;
- * @return { string }
+ * @return { Promise<string> } - The result of the publishing operation.
  */
 export function publishAsset(
   name: string,
   files: File[],
-  gif?: string | undefined,
-  category?: string | undefined,
-  publishState?: number
+  publishState: PublishState,
+  gif?: string,
+  category?: string,
 ): Promise<string> {
-  const url = `/sprite/upload`
-  const formData = new FormData()
-  formData.append('name', name)
+  const url = `/sprite/upload`;
+  const formData = new FormData();
+  formData.append('name', name);
   files.forEach((file) => {
-    formData.append('files', file)
-  })
+    formData.append('files', file);
+  });
   if (gif) {
-    formData.append('gif', gif)
+    formData.append('gif', gif);
   }
   if (category) {
-    formData.append('category', category.toString())
+    formData.append('category', category);
   }
-  if (publishState != null) {
-    formData.append('publishState', publishState.toString())
-  }
+  formData.append('publishState', publishState.toString());
 
+  // Assume `service` is a predefined function for handling HTTP requests.
   return service({
     url: url,
     method: 'post',
@@ -202,7 +209,7 @@ export function publishAsset(
     headers: {
       'Content-Type': 'multipart/form-data'
     }
-  })
+  });
 }
 
 /**

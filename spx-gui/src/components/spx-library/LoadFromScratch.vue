@@ -98,7 +98,7 @@ import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
 import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
-import { publishAsset } from '@/api/asset'
+import { publishAsset, PublishState } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 
@@ -220,9 +220,9 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
     await publishAsset(
       getNewNameIfNameExists(asset),
       uploadFilesArr,
+      PublishState.PrivateLibrary,
       undefined,
-      undefined,
-      1
+      undefined
     );
   }
   showImportSuccessMessage()
@@ -270,7 +270,7 @@ const getNewNameIfNameExists = (asset: AssetFileDetail): string => {
   let existsByName = (name: string, store: any): boolean => {
     return store.existsByName(name)
   }
-  while (existsByName(`${newName}`, store)) {
+  while (existsByName(newName, store)) {
     counter++
     newName = `${baseName}(${counter})`
   }
