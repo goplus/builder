@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 )
 
 // UploadFile Upload file to cloud
-func UploadFile(ctx context.Context, p *Project, blobKey string, file io.Reader, originalFilename string) (string, error) {
+func UploadFile(ctx context.Context, ctrl *Controller, blobKey string, file io.Reader, originalFilename string) (string, error) {
 	// Extract file extension
 	ext := filepath.Ext(originalFilename)
 
@@ -20,7 +21,7 @@ func UploadFile(ctx context.Context, p *Project, blobKey string, file io.Reader,
 	blobKey = blobKey + Encrypt(time.Now().String(), originalFilename) + ext
 
 	// create blob writer
-	w, err := p.bucket.NewWriter(ctx, blobKey, nil)
+	w, err := ctrl.bucket.NewWriter(ctx, blobKey, nil)
 	if err != nil {
 		return "", err
 	}
@@ -41,9 +42,9 @@ func Encrypt(salt, password string) string {
 	return fmt.Sprintf("%x", string(dk))
 }
 
-func AddAsset(p *Project, c *Asset) (string, error) {
+func AddAsset(db *sql.DB, c *Asset) (string, error) {
 	sqlStr := "insert into asset (name,author_id , address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?, ?,?,?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err
@@ -52,18 +53,18 @@ func AddAsset(p *Project, c *Asset) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
-func GetAssetAddress(id string, p *Project) string {
+func GetAssetAddress(id string, db *sql.DB) string {
 	var address string
 	query := "SELECT address FROM asset WHERE id = ?"
-	err := p.db.QueryRow(query, id).Scan(&address)
+	err := db.QueryRow(query, id).Scan(&address)
 	if err != nil {
 		return ""
 	}
 	return address
 }
 
-func UpdateAsset(p *Project, c *Asset) error {
-	stmt, err := p.db.Prepare("UPDATE asset SET name = ?, address = ? WHERE id = ?")
+func UpdateAsset(db *sql.DB, c *Asset) error {
+	stmt, err := db.Prepare("UPDATE asset SET name = ?, address = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -73,8 +74,8 @@ func UpdateAsset(p *Project, c *Asset) error {
 	return err
 }
 
-func UpdateProject(p *Project, c *CodeFile) error {
-	stmt, err := p.db.Prepare("UPDATE codefile SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?;")
+func UpdateProject(db *sql.DB, c *Project) error {
+	stmt, err := db.Prepare("UPDATE project SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?;")
 	if err != nil {
 		return err
 	}
@@ -83,17 +84,17 @@ func UpdateProject(p *Project, c *CodeFile) error {
 	_, err = stmt.Exec(c.Version, c.Name, c.Address, time.Now(), c.ID)
 	return err
 }
-func UpdateProjectIsPublic(p *Project, id string) error {
-	query := "UPDATE codefile SET is_public = CASE WHEN is_public = 1 THEN 0 ELSE 1 END WHERE id = ?"
-	err := p.db.QueryRow(query, id)
+func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
+	query := "UPDATE project SET is_public = ? WHERE id = ?"
+	err := db.QueryRow(query, isPublic, id)
 	if err != nil {
 		return err.Err()
 	}
 	return nil
 }
-func AddProject(p *Project, c *CodeFile) (string, error) {
-	sqlStr := "insert into codefile (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
+func AddProject(db *sql.DB, c *Project) (string, error) {
+	sqlStr := "insert into project (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err
@@ -102,26 +103,26 @@ func AddProject(p *Project, c *CodeFile) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
-func GetProjectAddress(id string, p *Project) string {
+func GetProjectAddress(id string, db *sql.DB) string {
 	var address string
-	query := "SELECT address FROM codefile WHERE id = ?"
-	err := p.db.QueryRow(query, id).Scan(&address)
+	query := "SELECT address FROM project WHERE id = ?"
+	err := db.QueryRow(query, id).Scan(&address)
 	if err != nil {
 		return ""
 	}
 	return address
 }
-func GetProjectVersion(id string, p *Project) int {
+func GetProjectVersion(id string, db *sql.DB) int {
 	var version int
-	query := "SELECT version FROM codefile WHERE id = ?"
-	err := p.db.QueryRow(query, id).Scan(&version)
+	query := "SELECT version FROM project WHERE id = ?"
+	err := db.QueryRow(query, id).Scan(&version)
 	if err != nil {
 		return -1
 	}
 	return version
 }
-func DeleteProjectById(p *Project, id string) error {
-	stmt, err := p.db.Prepare("DELETE FROM codefile WHERE id = ?")
+func DeleteProjectById(db *sql.DB, id string) error {
+	stmt, err := db.Prepare("DELETE FROM project WHERE id = ?")
 	if err != nil {
 		return err
 	}

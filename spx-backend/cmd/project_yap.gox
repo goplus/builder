@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	p *core.Project
+	ctrl *core.Controller
 )
 
 todo := context.TODO()
@@ -18,27 +18,20 @@ todo := context.TODO()
 //Get project information by ID
 get "/project", ctx => {
 	id := ctx.param("id")
-	if core.ParseToken(p, ctx) == "" {
-		ctx.json {
-			"code": 401,
-			"msg":  "please login",
-			"data": "",
-		}
-		return
-	}
-
-	res, err := p.FileInfo(todo, id)
+	res, err := ctrl.ProjectInfo(todo, id)
 	if err != nil {
+		code := common.ErrorProjectNotFound
 		ctx.json {
-			"code": 400,
-			"msg":  "project not exist",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
 		return
 	}
+	code := common.SUCCESS
 	ctx.json {
-		"code": 200,
-		"msg":  "OK",
+		"code": code,
+		"msg":  common.GetMsg(code),
 		"data": res,
 	}
 }
@@ -46,38 +39,52 @@ get "/project", ctx => {
 //Delete project
 post "/project/delete", ctx => {
 	id := ctx.FormValue("id")
-	if core.ParseToken(p, ctx) == "" {
+	userId := core.ParseToken(ctrl, ctx)
+	if userId == "" {
+		code := common.NoLogin
 		ctx.json {
-			"code": 401,
-			"msg":  "please login",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	err := p.DeleteProject(todo, id)
+	err := ctrl.DeleteProject(todo, id, userId)
 	if err != nil {
+		if err == common.ErrPermissions {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorDeleteProject
 		ctx.json {
-			"code": 400,
-			"msg":  "delete error",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
 		return
 	}
+	code := common.SUCCESS
 	ctx.json {
-		"code": 200,
-		"msg":  "OK",
+		"code": code,
+		"msg":  common.GetMsg(code),
 		"data": "",
 	}
 }
 
 //Save project
-post "/project/allsave", ctx => {
+post "/project/save", ctx => {
 	id := ctx.FormValue("id")
-	userId := core.ParseToken(p, ctx)
+	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
+		code := common.NoLogin
 		ctx.json {
-			"code": 401,
-			"msg":  "please login",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
 		return
@@ -91,12 +98,12 @@ post "/project/allsave", ctx => {
 		}
 	}
 	file, header, _ := ctx.FormFile("file")
-	codeFile := &core.CodeFile{
+	project := &core.Project{
 		ID:       id,
 		Name:     name,
 		AuthorId: userId,
 	}
-	res, err := p.SaveAllProject(todo, codeFile, file, header)
+	res, err := ctrl.SaveProject(todo, project, file, header)
 	if err != nil {
 		ctx.json {
 			"code": 400,
@@ -116,7 +123,7 @@ post "/project/allsave", ctx => {
 post "/project/fmt", ctx => {
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
-	res := p.CodeFmt(todo, body, imports)
+	res := ctrl.CodeFmt(todo, body, imports)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -127,30 +134,51 @@ post "/project/fmt", ctx => {
 //Get asset by id
 get "/asset/:id", ctx => {
 	id := ctx.param("id")
-	asset, _ := p.Asset(todo, id)
+	asset, err := ctrl.Asset(todo, id)
+	if err != nil {
+		code := common.ErrorGetAsset
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
 	ctx.json {
-		"code": 200,
-		"msg":  "ok",
-		"data": {"asset": asset},
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": asset,
 	}
 }
 
 //Sprite to gif
 post "/sprite/togif", ctx => {
-	ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
-	files := ctx.MultipartForm.File["files"]
-	path, err := p.ImagesToGif(todo, files)
+	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
 	if err != nil {
-		ctx.json({
-			"code": 400,
-			"msg":  "images to gif error",
+		code := common.ErrorParseMultipartForm
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
-		})
+		}
 		return
 	}
+	files := ctx.MultipartForm.File["files"]
+	path, err := ctrl.ImagesToGif(todo, files)
+	if err != nil {
+		code := common.ErrorImagesToGif
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
 	ctx.json {
-		"code": 200,
-		"msg":  "ok",
+		"code": code,
+		"msg":  common.GetMsg(code),
 		"data": path,
 	}
 }
@@ -158,7 +186,7 @@ post "/sprite/togif", ctx => {
 //Upload sprite
 post "/sprite/upload", ctx => {
 	ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
-	userId := core.ParseToken(p, ctx)
+	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
 		ctx.json {
 			"code": 401,
@@ -172,7 +200,7 @@ post "/sprite/upload", ctx => {
 	publishState := ctx.FormValue("publishState")
 	gif := ctx.FormValue("gif")
 	category := ctx.FormValue("category")
-	err := p.UploadSprite(todo, name, files, gif, userId, category, publishState)
+	err := ctrl.UploadSprite(todo, name, files, gif, userId, category, publishState)
 	if err != nil {
 		ctx.json({
 			"code": 400,
@@ -191,7 +219,7 @@ post "/sprite/upload", ctx => {
 //Save asset
 post "/asset/save", ctx => {
 	id := ctx.FormValue("id")
-	userId := core.ParseToken(p, ctx)
+	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
 		ctx.json {
 			"code": 401,
@@ -215,7 +243,7 @@ post "/asset/save", ctx => {
 		AssetType: assetType,
 		Status:    1,
 	}
-	_, err := p.SaveAsset(todo, asset, file, header)
+	_, err := ctrl.SaveAsset(todo, asset, file, header)
 	if err != nil {
 		ctx.json {
 			"code": 400,
@@ -239,7 +267,7 @@ get "/list/asset", ctx => {
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, _ := p.AssetPubList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
+	result, _ := ctrl.AssetPubList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -249,7 +277,7 @@ get "/list/asset", ctx => {
 
 //Get personal assets
 get "/list/userasset", ctx => {
-	userId := core.ParseToken(p, ctx)
+	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
 		ctx.json {
 			"code": 401,
@@ -264,7 +292,7 @@ get "/list/userasset", ctx => {
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, _ := p.UserAssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, userId)
+	result, _ := ctrl.UserAssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, userId)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -275,7 +303,7 @@ get "/list/userasset", ctx => {
 get "/clickCount/asset/:id/:assetType", ctx => {
 	id := ctx.param("id")
 	assetType := ctx.param("assetType")
-	p.IncrementAssetClickCount(todo, id, assetType)
+	ctrl.IncrementAssetClickCount(todo, id, assetType)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -287,7 +315,7 @@ get "/clickCount/asset/:id/:assetType", ctx => {
 get "/list/pubProject/:pageIndex/:pageSize", ctx => {
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	result, _ := p.PubProjectList(todo, pageIndex, pageSize)
+	result, _ := ctrl.PubProjectList(todo, pageIndex, pageSize)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -297,7 +325,7 @@ get "/list/pubProject/:pageIndex/:pageSize", ctx => {
 
 //Get personal projects
 get "/list/userProject/:pageIndex/:pageSize", ctx => {
-	userId := core.ParseToken(p, ctx)
+	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
 		ctx.json {
 			"code": 401,
@@ -308,7 +336,7 @@ get "/list/userProject/:pageIndex/:pageSize", ctx => {
 	}
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	result, _ := p.UserProjectList(todo, pageIndex, pageSize, userId)
+	result, _ := ctrl.UserProjectList(todo, pageIndex, pageSize, userId)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -318,35 +346,51 @@ get "/list/userProject/:pageIndex/:pageSize", ctx => {
 
 //Switch between public and private projects
 post "/project/updateIsPublic", ctx => {
-	if core.ParseToken(p, ctx) == "" {
+	userId := core.ParseToken(ctrl, ctx)
+	if userId == "" {
+		code := common.NoLogin
 		ctx.json {
-			"code": 401,
-			"msg":  "please login",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
 		return
 	}
 	id := ctx.FormValue("id")
-	err := p.UpdatePublic(todo, id)
+	isPublic := ctx.FormValue("isPublic")
+	err := ctrl.UpdatePublic(todo, id, isPublic, userId)
 	if err != nil {
+		if err == common.ErrPermissions {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorUpdateProjectState
 		ctx.json {
-			"code": 400,
-			"msg":  "update err",
+			"code": code,
+			"msg":  common.GetMsg(code),
 			"data": "",
 		}
+		return
 	}
+	code := common.SUCCESS
 	ctx.json {
-		"code": 200,
-		"msg":  "ok",
+		"code": code,
+		"msg":  common.GetMsg(code),
 		"data": "",
 	}
 }
 
 //Search assets
 post "/asset/search", ctx => {
+userId := core.ParseToken(ctrl, ctx)
 	search := ctx.FormValue("search")
 	assetType := ctx.FormValue("assetType")
-	assets, _ := p.SearchAsset(todo, search, assetType)
+	assets, _ := ctrl.SearchAsset(todo, search, assetType,userId)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -355,7 +399,7 @@ post "/asset/search", ctx => {
 }
 
 conf := &core.Config{}
-p, _ = core.New(todo, conf)
+ctrl, _ = core.New(todo, conf)
 core.CasdoorConfigInit()
 
 run ":8080", common.CorsMiddleware

@@ -26,7 +26,7 @@ func CasdoorConfigInit() {
 }
 
 // GetUser return author by token
-func (p *Project) GetUser(token string) (userId string, err error) {
+func (ctrl *Controller) GetUser(token string) (userId string, err error) {
 	claim, err := casdoorsdk.ParseJwtToken(token)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -43,12 +43,12 @@ func GetToken(ctx *yap.Context) string {
 	return token
 }
 
-func ParseToken(p *Project, ctx *yap.Context) string {
+func ParseToken(ctrl *Controller, ctx *yap.Context) string {
 	token := GetToken(ctx)
 	if token == "" {
 		return ""
 	}
-	userId, err := p.GetUser(token)
+	userId, err := ctrl.GetUser(token)
 	if err != nil {
 		fmt.Printf("get user error:", err)
 		return ""
