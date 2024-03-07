@@ -51,7 +51,7 @@ type Asset struct {
 	AuthorId   string    `json:"authorId"`
 	Category   string    `json:"category"`
 	IsPublic   int       `json:"isPublic"`
-	Address    string    `json:"address"`
+	Address    string    `json:"address"` // The partial path of the asset's location, excluding the host. like 'sprite/xxx.svg'
 	AssetType  string    `json:"assetType"`
 	ClickCount string    `json:"clickCount"`
 	Status     int       `json:"status"`
@@ -290,7 +290,7 @@ func (p *Project) Asset(ctx context.Context, id string) (*Asset, error) {
 	if asset == nil {
 		return nil, err
 	}
-	modifiedAddress, err := p.ModifyAddress(asset.Address)
+	modifiedAddress, err := p.ModifyAssetAddress(asset.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (p *Project) AssetPubList(ctx context.Context, pageIndex string, pageSize s
 	}
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := p.ModifyAddress(asset.Address)
+		modifiedAddress, err := p.ModifyAssetAddress(asset.Address)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +348,7 @@ func (p *Project) UserAssetList(ctx context.Context, pageIndex string, pageSize 
 	}
 	pagination, err := common.QueryByPage[Asset](p.db, pageIndex, pageSize, wheres, orders)
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := p.ModifyAddress(asset.Address)
+		modifiedAddress, err := p.ModifyAssetAddress(asset.Address)
 		if err != nil {
 			return nil, err
 		}
@@ -370,8 +370,8 @@ func (p *Project) IncrementAssetClickCount(ctx context.Context, id string, asset
 	return nil
 }
 
-// ModifyAddress transfers relative path to download url
-func (p *Project) ModifyAddress(address string) (string, error) {
+// ModifyAssetAddress transfers relative path to download url
+func (p *Project) ModifyAssetAddress(address string) (string, error) {
 	var data Data
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
 		return "", err
@@ -439,7 +439,7 @@ func (p *Project) SaveAsset(ctx context.Context, asset *Asset, file multipart.Fi
 	}
 	for _, value := range data.Assets {
 		address = value // find /sounds/sound.wav
-		break
+		break           // There will only be one sound file, so find it and return
 	}
 	err := p.bucket.Delete(ctx, address)
 	if err != nil {
@@ -482,7 +482,7 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 			println(err.Error())
 			return nil, err
 		}
-		asset.Address, _ = p.ModifyAddress(asset.Address)
+		asset.Address, _ = p.ModifyAssetAddress(asset.Address)
 		// 将每行数据追加到切片中
 		assets = append(assets, &asset)
 	}
@@ -490,7 +490,6 @@ func (p *Project) SearchAsset(ctx context.Context, search string, assetType stri
 		return nil, nil
 	}
 	return assets, nil
-
 }
 
 func (p *Project) ImagesToGif(ctx context.Context, files []*multipart.FileHeader) (string, error) {
