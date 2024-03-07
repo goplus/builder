@@ -12,6 +12,7 @@
  * Converts an array of audio chunks into an AudioBuffer.
  *
  * @param {Blob[]} audioChunks - An array of audio chunks, typically collected during media recording.
+ * @param {string} mimeType - The MIME type of the audio, based on your MediaRecorder settings.
  * @returns {Promise<AudioBuffer>} A promise that resolves to an AudioBuffer constructed from the input audio chunks.
  */
 export const convertAudioChunksToAudioBuffer = async (audioChunks: Blob[],  mimeType: string): Promise<AudioBuffer> => {

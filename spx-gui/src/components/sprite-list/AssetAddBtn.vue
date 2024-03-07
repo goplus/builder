@@ -128,10 +128,10 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { typeKeywords, keywords } from '../code-editor/language'
-import { ref, defineProps, computed } from 'vue'
+import { keywords, typeKeywords } from '../code-editor/language'
+import { computed, defineProps, ref } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
-import { NIcon, NUpload, NButton, useMessage, NModal, NInput, NSelect } from 'naive-ui'
+import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
 import { useSpriteStore } from '@/store/modules/sprite'
@@ -142,7 +142,7 @@ import FileWithUrl from '@/class/file-with-url'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
-import { generateGifByCostumes, publishAsset } from '@/api/asset'
+import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 
 // ----------props & emit------------------------------------
@@ -166,16 +166,16 @@ const categoryOptions = computed(() => [
 ]);
 
 const publicOptions = computed(() => [
-  { label: t('publicState.notPublish'), value: 0 },
-  { label: t('publicState.private'), value: 1 },
-  { label: t('publicState.public'), value: 2 },
+  { label: t('publicState.notPublish'), value: PublishState.NotPublished },
+  { label: t('publicState.private'), value: PublishState.PrivateLibrary },
+  { label: t('publicState.public'), value: PublishState.PublicAndPrivateLibrary },
 ]);
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
 const categoryValue = ref<string>()
 
 // Ref about publish upload sprite or not.
-const publicValue = ref<number>(0)
+const publicValue = ref<number>(PublishState.NotPublished)
 
 // Ref about show modal or not.
 const showModal = ref<boolean>(false)
@@ -337,9 +337,9 @@ const handleSubmitSprite = async () => {
     await publishAsset(
       uploadSpriteName.value,
       uploadFilesArr,
+      publicValue.value,
       gifRes.data.data,
       categoryValue.value || undefined,
-      publicValue.value
     );
 
     let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr);
