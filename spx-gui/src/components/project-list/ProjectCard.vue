@@ -20,7 +20,7 @@
     </template>
 
     <div class="info">
-      <p v-if="!isLocal" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
+      <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
       <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
       <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
     </div>
@@ -76,6 +76,11 @@ const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
 
 const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
+const statusStyle = computed(() => {
+  return {
+    color: publicStatus.value ? '#4CAF50' : '#FF7E6C'
+  }
+})
 
 const load = async () => {
   await useProjectStore().loadProject(project.id, project.source)
