@@ -53,27 +53,6 @@ func AddAsset(db *sql.DB, c *Asset) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
-func GetAssetAddress(id string, db *sql.DB) string {
-	var address string
-	query := "SELECT address FROM asset WHERE id = ?"
-	err := db.QueryRow(query, id).Scan(&address)
-	if err != nil {
-		return ""
-	}
-	return address
-}
-
-func UpdateAsset(db *sql.DB, c *Asset) error {
-	stmt, err := db.Prepare("UPDATE asset SET name = ?, address = ? WHERE id = ?")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(c.Name, c.Address, c.ID)
-	return err
-}
-
 func UpdateProject(db *sql.DB, c *Project) error {
 	stmt, err := db.Prepare("UPDATE project SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?;")
 	if err != nil {

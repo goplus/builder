@@ -38,12 +38,6 @@ type Config struct {
 	BlobUS string // blob URL scheme
 }
 
-//	type AssetAddressData struct {
-//		Assets    map[string]string `json:"assets"`
-//		IndexJson string            `json:"indexJson"`
-//		Type      string            `json:"type"`
-//		Url       string            `json:"url"`
-//	}
 type AssetAddressData map[string]string
 
 type Asset struct {
@@ -360,7 +354,7 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 	return string(modifiedAddress), nil
 }
 
-// ProjectList Public project list
+// ProjectList project list
 func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, state string, userId string, toUid string) (*common.Pagination[Project], error) {
 	var wheres []common.FilterCondition
 	if state == "public" {
@@ -375,21 +369,6 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: toUid})
 	}
 
-	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
-	if err != nil {
-		return nil, err
-	}
-	for i := range pagination.Data {
-		pagination.Data[i].Address = os.Getenv("QINIU_PATH") + "/" + pagination.Data[i].Address
-	}
-	return pagination, nil
-}
-
-// UserProjectList user project list
-func (ctrl *Controller) UserProjectList(ctx context.Context, pageIndex string, pageSize string, uid string) (*common.Pagination[Project], error) {
-	wheres := []common.FilterCondition{
-		{Column: "author_id", Operation: "=", Value: uid},
-	}
 	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
 		return nil, err
