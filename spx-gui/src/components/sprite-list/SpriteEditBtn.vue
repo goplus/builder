@@ -2,14 +2,14 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 23:28:41
+ * @LastEditTime: 2024-03-07 21:03:54
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      <n-input round autosize clearable :value="name">
+      <n-input round autosize clearable :placeholder="$t('stage.spriteHolder')" :value="name">
         <template #prefix>
           {{ $t('stage.sprite') }}:
       </template>

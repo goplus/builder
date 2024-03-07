@@ -440,7 +440,6 @@ const handleAssetAddition = async (name: string, address: string) => {
     color: white;
     .add-new-font {
       text-align: center;
-      font-family: 'Heyhoo';
     }
   }
 
