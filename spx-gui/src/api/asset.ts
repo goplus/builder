@@ -189,7 +189,7 @@ export function publishAsset(
 ): Promise<string> {
   const url = `/sprite/upload`
   const formData = new FormData()
-  formData.append('name', name);
+  formData.append('name', name)
   files.forEach((file) => {
     formData.append('files', file)
   });
