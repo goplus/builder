@@ -22,6 +22,10 @@ import type { Config } from '@/interface/file';
 export abstract class AssetBase implements AssetBaseInterface {
     /**
      * All files.
+     * 
+     * Due to a flaw in type declarations, `private` or `protected` properties can be lost after a `ref` is created responsive. To solve this problem, all `private` or `protected` properties are identified by starting with `_`, see the link below for more details.
+     * 
+     * https://github.com/goplus/builder/pull/96#discussion_r1502353497
      */
     _files: FileWithUrl[]
 
