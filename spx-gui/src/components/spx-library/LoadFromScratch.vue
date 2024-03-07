@@ -17,6 +17,13 @@
     >
     {{ $t('scratch.importToSpx') }}
     </button>
+    <button
+      v-if="selectedAssets.length != 0"
+      class="custom-import-btn"
+      @click="uploadSelectedAssetsToPrivateLibrary"
+    >
+      {{ $t('scratch.uploadToPrivateLibrary') }}
+    </button>
   </div>
   <div class="asset-detail-info">
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
@@ -91,6 +98,7 @@ import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
 import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
+import { publishAsset } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 
@@ -201,6 +209,27 @@ const importSelectedAssetsToProject = () => {
 }
 
 /**
+ * @description: Import the selected assets to private asset library.
+ * @return {*}
+ */
+const uploadSelectedAssetsToPrivateLibrary = async () => {
+  if (!selectedAssets.value) return
+  for (const asset of selectedAssets.value) {
+    let file = getFileFromAssetFileDetail(asset)
+    let uploadFilesArr: File[] = [file]
+    await publishAsset(
+      getNewNameIfNameExists(asset),
+      uploadFilesArr,
+      undefined,
+      undefined,
+      1
+    );
+  }
+  showImportSuccessMessage()
+}
+
+
+/**
  * @description: Import sound file to current project
  * @param {*} asset
  * @param {*} file
@@ -236,13 +265,12 @@ const getNewNameIfNameExists = (asset: AssetFileDetail): string => {
     store = soundStore
   }
   let baseName = asset.name
-  let extension = asset.extension
   let counter = 0
   let newName = baseName
   let existsByName = (name: string, store: any): boolean => {
     return store.existsByName(name)
   }
-  while (existsByName(`${newName}.${extension}`, store)) {
+  while (existsByName(`${newName}`, store)) {
     counter++
     newName = `${baseName}(${counter})`
   }

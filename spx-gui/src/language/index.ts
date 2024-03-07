@@ -89,6 +89,7 @@ export const initI18n = async (app: App) => {
         import: 'Import Assets from Scratch',
         upload: 'Upload .sb3 Files',
         importToSpx:'Import to My Project',
+        uploadToPrivateLibrary: 'Upload to private library',
         download:'Download'
       },
       category:{
@@ -127,7 +128,8 @@ export const initI18n = async (app: App) => {
         paste: '粘贴',
         copy: '复制',
         insert: '插入',
-        download: '下载'
+        download: '下载',
+        save: '保存'
       },
       toolbox: {
         event: '事件',
@@ -180,6 +182,7 @@ export const initI18n = async (app: App) => {
         import: '导入 Scratch 素材',
         upload: '上传 .sb3 文件',
         importToSpx:'导入至项目',
+        uploadToPrivateLibrary: '上传到私人素材库',
         download:'下载'
       },
       category:{

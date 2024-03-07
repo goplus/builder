@@ -167,7 +167,7 @@ export function addAssetClickCount(
  * @description: Publish asset to library.
  * @param { string } name - sprite name named by user.
  * @param { string } files - sprite costumes files, saved to show in lib.
- * @param { string } gif - sprite gif's address, saved to show in lib when sprite is hovering.
+ * @param { string|undefined } gif - sprite gif's address, saved to show in lib when sprite is hovering.
  * @param { string|undefined } category - the category of the sprite(used to classify in library).
  * @param { number } publishState - 0: not publish to library; 1: publish to private library; 2: publish to public and private library;
  * @return { string }
@@ -175,17 +175,19 @@ export function addAssetClickCount(
 export function publishAsset(
   name: string,
   files: File[],
-  gif: string,
+  gif?: string | undefined,
   category?: string | undefined,
   publishState?: number
 ): Promise<string> {
   const url = `/sprite/upload`
   const formData = new FormData()
   formData.append('name', name)
-  formData.append('gif', gif)
   files.forEach((file) => {
     formData.append('files', file)
   })
+  if (gif) {
+    formData.append('gif', gif)
+  }
   if (category) {
     formData.append('category', category.toString())
   }
