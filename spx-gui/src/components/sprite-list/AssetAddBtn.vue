@@ -331,14 +331,18 @@ const handleSubmitSprite = async () => {
       }
     });
 
-    const gifRes = await generateGifByCostumes(uploadFilesArr);
-    console.log(gifRes);
+    let gifRes = undefined;
+
+    if (uploadFilesArr.length > 1) {
+      const response = await generateGifByCostumes(uploadFilesArr);
+      gifRes = response.data.data;
+    }
 
     await publishAsset(
       uploadSpriteName.value,
       uploadFilesArr,
       publicValue.value,
-      gifRes.data.data,
+      gifRes,
       categoryValue.value || undefined,
     );
 
