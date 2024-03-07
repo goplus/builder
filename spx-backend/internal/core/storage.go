@@ -93,7 +93,7 @@ func UpdateProjectIsPublic(p *Project, id string) error {
 }
 func AddProject(p *Project, c *CodeFile) (string, error) {
 	sqlStr := "insert into codefile (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
-	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, 0, "1", time.Now(), time.Now())
+	res, err := p.db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
 	if err != nil {
 		println(err.Error())
 		return "", err

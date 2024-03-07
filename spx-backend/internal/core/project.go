@@ -163,6 +163,8 @@ func (p *Project) SaveAllProject(ctx context.Context, codeFile *CodeFile, file m
 		}
 		codeFile.Address = path
 		codeFile.Version = 1
+		codeFile.Status = 1
+		codeFile.IsPublic = 0
 		codeFile.ID, err = AddProject(p, codeFile)
 		return codeFile, err
 	} else {
