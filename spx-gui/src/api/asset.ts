@@ -187,19 +187,19 @@ export function publishAsset(
   gif?: string,
   category?: string,
 ): Promise<string> {
-  const url = `/sprite/upload`;
-  const formData = new FormData();
+  const url = `/sprite/upload`
+  const formData = new FormData()
   formData.append('name', name);
   files.forEach((file) => {
-    formData.append('files', file);
+    formData.append('files', file)
   });
   if (gif) {
-    formData.append('gif', gif);
+    formData.append('gif', gif)
   }
   if (category) {
-    formData.append('category', category);
+    formData.append('category', category)
   }
-  formData.append('publishState', publishState.toString());
+  formData.append('publishState', publishState.toString())
 
   // Assume `service` is a predefined function for handling HTTP requests.
   return service({
@@ -209,7 +209,7 @@ export function publishAsset(
     headers: {
       'Content-Type': 'multipart/form-data'
     }
-  });
+  })
 }
 
 /**
