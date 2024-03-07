@@ -1,27 +1,46 @@
 <template>
-  <n-modal v-model:show="showModal" preset="card" to="body" header-style="padding:11px 24px 11px 30%;"
-    :on-after-leave="closeModalFunc">
+  <n-modal
+    v-model:show="showModal"
+    preset="card"
+    to="body"
+    header-style="padding:11px 24px 11px 30%;"
+    :on-after-leave="closeModalFunc"
+  >
     <template #header>
       <div style="width: 30vw">
         <n-input v-model:value="searchQuery" size="large" placeholder="Search" round clearable></n-input>
       </div>
     </template>
 
-    <n-tabs v-model:value="state.currentTab" animated justify-content="space-evenly" size="large"
-      @update:value="onTabChange">
+    <n-tabs
+      v-model:value="state.currentTab"
+      animated
+      justify-content="space-evenly"
+      size="large"
+      @update:value="onTabChange"
+    >
       <!-- No other tabs can be switched until the request is finished -->
-      <n-tab-pane v-for="item in state.tabs" :key="item" :name="item"
-        :disabled="isRequesting && state.currentTab !== item">
+      <n-tab-pane
+        v-for="item in state.tabs"
+        :key="item" :name="item"
+        :disabled="isRequesting && state.currentTab !== item"
+      >
         <div class="container">
           <n-space v-if="isRequesting" justify="center">
-            <n-spin size="large" />
+            <n-spin size="large"/>
           </n-space>
-          <n-grid v-else-if="currentList.length" cols="1 s:2 m:3 l:3 xl:4 2xl:5" x-gap="35" y-gap="20"
-            responsive="screen">
+          <n-grid
+            v-else-if="currentList.length"
+            cols="1 s:2 m:3 l:3 xl:4 2xl:5" x-gap="35"
+            y-gap="20"
+            responsive="screen"
+          >
             <n-grid-item v-for="project in currentList" :key="project.id">
               <TransitionGroup name="list">
-                <ProjectCard :project="project" @load-project="closeModalFunc"
-                  @remove-project="removeProject(project.id)" />
+                <ProjectCard
+                  :project="project"
+                  @load-project="closeModalFunc"
+                  @remove-project="removeProject(project.id)"/>
               </TransitionGroup>
             </n-grid-item>
           </n-grid>

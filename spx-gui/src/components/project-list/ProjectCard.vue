@@ -1,7 +1,7 @@
 <template>
   <n-card id="project-card" hoverable>
     <template #cover>
-      <img src="@/assets/image/project/project.png" alt="">
+      <img :src="defaultProjectImage" alt="">
     </template>
 
     <template #header>
@@ -20,29 +20,49 @@
     </template>
 
     <div class="info">
-      <p v-if="!isLocal" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="create-time">create: {{ moment(project.cTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
-      <p class="update-time">update: {{ moment(project.uTime).format('YYYY-MM-DD HH:mm:ss') }} </p>
+      <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
+      <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
+      <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
     </div>
 
     <template #action>
       <div class="action">
-        <n-button quaternary size="small" class="load-btn" @click="load">Load</n-button>
-        <n-button v-if="isUserOwn" quaternary size="small" @click="remove">Delete</n-button>
-        <n-button v-if="!isLocal && isUserOwn" quaternary size="small" class="public-btn"
-          @click="updateProjectIsPublic">{{ publicStatusText(!publicStatus) }}</n-button>
+        <n-button
+          quaternary
+          size="small"
+          class="load-btn"
+          @click="load"
+        >
+          Load
+        </n-button>
+        <n-button
+          v-if="isUserOwn"
+          quaternary
+          size="small"
+          @click="remove"
+        >
+          Delete
+        </n-button>
+        <n-button
+          v-if="!isLocal && isUserOwn"
+          quaternary size="small"
+          class="public-btn"
+          @click="updateProjectIsPublic"
+        >
+          {{ publicStatusText(!publicStatus) }}
+        </n-button>
       </div>
     </template>
   </n-card>
 </template>
 
 <script lang="ts" setup>
-import { type ProjectSummary, Project, ProjectSource } from '@/class/project'
+import { type ProjectSummary, Project, ProjectSource, PublicStatus } from '@/class/project'
 import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined } from '@vicons/antd'
-import moment from 'moment'
+import defaultProjectImage from '@/assets/image/project/project.png'
 
 const { project } = defineProps<{
   project: ProjectSummary
@@ -50,12 +70,17 @@ const { project } = defineProps<{
 const emit = defineEmits(['load-project', 'remove-project'])
 const userStore = useUserStore()
 const isUserOwn = computed(() => !project.authorId || userStore.userInfo?.id === project.authorId)
-const publicStatus = ref(!!project.isPublic)
+const publicStatus = ref(project.isPublic == PublicStatus.public)
 const isLocal = computed(() => project.source === ProjectSource.local)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
 
 const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
+const statusStyle = computed(() => {
+  return {
+    color: publicStatus.value ? '#4CAF50' : '#FF7E6C'
+  }
+})
 
 const load = async () => {
   await useProjectStore().loadProject(project.id, project.source)
@@ -91,6 +116,10 @@ const updateProjectIsPublic = async () => {
   } catch (e) {
     message.error('change project status failed')
   }
+}
+
+const formatTime = (time: string) => {
+  return new Date(time).toLocaleString()
 }
 </script>
 
