@@ -26,11 +26,12 @@
 </template>
 
 <script lang="ts" setup>
-import WaveSurfer from 'wavesurfer.js';
-import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone';
-import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
+import WaveSurfer from 'wavesurfer.js'
+import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
+import { defineEmits, defineProps, nextTick, onMounted, type Ref, ref, watch } from 'vue'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
+import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
 
 interface PropsType {
   show: boolean;
@@ -39,7 +40,7 @@ const props = defineProps<PropsType>();
 const emits = defineEmits(["update:show"]);
 
 const showRecorder = ref<boolean>(false);
-const soundName = ref('Record');
+const soundName = ref('record');
 const audioUrl = ref('');
 const audioKey = ref(0);
 let mediaRecorder : MediaRecorder;
@@ -55,6 +56,7 @@ onMounted(() => {
     initWaveSurfer();
   });
 });
+
 
 const initWaveSurfer = () => {
   nextTick(() => {
@@ -91,7 +93,7 @@ const initWaveSurfer = () => {
   })
 }
 
-
+/* Start recording*/
 const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -106,28 +108,27 @@ const startRecording = async () => {
   }
 };
 
-
+/* Stop recording*/
 const stopRecording = () => {
   mediaRecorder.stop();
   wavesurfer.microphone.stop();
-
   mediaRecorder.onstop = () => {
     if (audioChunks.value.length > 0) {
-      const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' });
-      audioFile.value = new File([audioBlob], "recording.wav", {
-        type: "audio/wav",
-        lastModified: Date.now(),
+      // AudioChunks -> AudioBuffer -> correct wav blob
+      convertAudioChunksToAudioBuffer(audioChunks.value, 'audio/webm' ).then(audioBuffer => {
+        audioFile.value = new File([audioBufferToWavBlob(audioBuffer)], soundName.value + ".wav", {
+          type: "audio/wav",
+          lastModified: Date.now(),
+        });
       });
-      if (audioFile.value) {
-        audioUrl.value = URL.createObjectURL(audioFile.value);
-      }
     } else {
       console.error('No audio chunks available to create audio file.');
     }
-
     audioChunks.value = [];
   };
 };
+
+/* Save audioFile to file manager */
 const saveRecording = () => {
   if (audioFile.value && soundName.value) {
     let sound = new Sound(soundName.value, [audioFile.value]);

@@ -2,12 +2,13 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 13:49:27
+ * @LastEditTime: 2024-02-29 17:46:15
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
 <template>
   <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
+  <ProjectList :show="showModal" @update:show="showModal = false" />
 </template>
 
 <script setup lang="ts">
@@ -26,8 +27,10 @@ import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
+import ProjectList from '@/components/project-list/ProjectList.vue'
 
 const projectStore = useProjectStore()
+const showModal = ref<boolean>(false)
 const themeStyle = ref<number>(ThemeStyleType.Pink)
 const themeMap = ['Pink', 'Yellow', 'Blue']
 /**
@@ -37,16 +40,16 @@ const themeMap = ['Pink', 'Yellow', 'Blue']
  */
 const importOptions = [
   {
-    label: 'Local',
-    key: 'Local'
+    label: 'Upload',
+    key: 'Upload'
   },
   {
-    label: 'Cloud',
-    key: 'Cloud'
+    label: 'Load',
+    key: 'Load'
   },
   {
-    label: 'Github',
-    key: 'Github'
+    label: 'Blank',
+    key: 'Blank'
   }
 ]
 
@@ -209,6 +212,10 @@ const menuOptions = [
             'text-align': 'center',
             border: '2px solid #001429',
             width: '30vw'
+          },
+          value: projectStore.project.name,
+          'onUpdate:value': (value: string) => {
+            projectStore.project.name = value
           }
         },
         'title'
@@ -271,7 +278,7 @@ const menuOptions = [
                 },
                 renderIcon: renderIcon(SettingsIcon)
               },
-              'Settings'
+              t('top.settings')
             )
         }
       ),
@@ -304,17 +311,19 @@ const computedButtonStyle = (color1: string) => {
  * @Date: 2024-01-17 17:55:13
  */
 const handleSelectImport = (key: string | number) => {
-  console.log('key', key)
   // TODO: use for test
-  if (key === 'Local') {
+  if (key === 'Upload') {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
-      projectStore.loadFromZip(file);
+      await projectStore.loadFromZip(file);
     };
+  }
+  else if (key === 'Load') {
+    showModal.value = true
   }
   else if (key === 'SaveLocal') {
     projectStore.project.download();
@@ -329,6 +338,9 @@ const handleSelectImport = (key: string | number) => {
         message.error(err.message)
       }
     })
+  }
+  else if(key === 'Blank') {
+    projectStore.loadBlankProject()
   }
 }
 

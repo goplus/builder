@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-28 16:25:05
+ * @LastEditTime: 2024-02-29 22:31:04
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -22,6 +22,7 @@
     <n-image
       v-if="assetImageGifUrl !== ''"
       v-show="isHovering"
+      preview-disabled
       width="100"
       height="100"
       :src="assetImageGifUrl"

@@ -4,7 +4,7 @@
  * @LastEditors: xuning 453594138@qq.com
  * @LastEditTime: 2024-02-22 14:42:01
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
- * @Description: 
+ * @Description:
 -->
 <template>
   <n-modal
@@ -16,7 +16,17 @@
   >
     <!-- S Library Header -->
     <template #header>
-      <div style="width: 30vw">
+      <div style="width: 30vw;">
+        <div style="margin-bottom: 1vw;">
+          <n-radio-group v-model:value="assetLibraryOption">
+            <n-radio-button value="public">
+              Public
+            </n-radio-button>
+            <n-radio-button value="private">
+              Private
+            </n-radio-button>
+          </n-radio-group>
+        </div>
         <n-input
           v-model:value="searchQuery"
           size="large"
@@ -81,14 +91,14 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps, ref, watch, onMounted } from 'vue'
-import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon, NEmpty } from 'naive-ui'
+import { defineEmits, defineProps, ref, watch, onMounted, computed } from 'vue'
+import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon, NEmpty, NRadioGroup, NRadioButton } from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
 import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
-import { getAssetList, searchAssetByName, addAssetClickCount } from '@/api/asset'
+import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -99,6 +109,8 @@ const props = defineProps<PropsType>()
 const emits = defineEmits(['update:show', 'add-asset'])
 
 // ----------data related -----------------------------------
+const assetLibraryOption = ref<'public' | 'private'>('public')
+
 // Ref about show modal state.
 const showModal = ref<boolean>(false)
 // Ref about search text.
@@ -113,25 +125,38 @@ const nowCategory = ref<string>('')
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
-  if (props.type === 'backdrop') {
-    assetInfos.value = await fetchAssets(AssetType.Backdrop)
-  } else if (props.type === 'sprite') {
-    assetInfos.value = await fetchAssets(AssetType.Sprite)
-  }
+  await setAssets();
 })
 
 // ----------methods-----------------------------------------
+
+/**
+ * @description: A function to set asset from backend by props.type.
+ * @param {*} assetType
+ * @Author: Yao xinyue
+ * @Date: 2024-03-05 15:10:45
+ */
+const setAssets = async() => {
+  if (props.type === 'backdrop') {
+    assetInfos.value = await fetchAssetsByType(AssetType.Backdrop)
+  } else if (props.type === 'sprite') {
+    assetInfos.value = await fetchAssetsByType(AssetType.Sprite)
+  }
+}
+
+
 /**
  * @description: A function to fetch asset from backend by getAssetList.
  * @param {*} assetType
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssets = async (assetType: number, category?: string) => {
+const fetchAssetsByType = async (assetType: number, category?: string) => {
   try {
     const pageIndex = 1
     const pageSize = 20
     const response = await getAssetList({
+      assetLibraryType: assetLibraryOption.value,
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
@@ -197,11 +222,7 @@ const handleCategoryClick = async (category: string) => {
   if (category === 'ALL') {
     category = ''
   }
-  if (props.type === 'backdrop') {
-    assetInfos.value = await fetchAssets(AssetType.Backdrop, category)
-  } else if (props.type === 'sprite') {
-    assetInfos.value = await fetchAssets(AssetType.Sprite, category)
-  }
+  await setAssets();
 }
 
 /**
@@ -240,6 +261,7 @@ const handleSortByHot = async () => {
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
   let res = await getAssetList({
+    assetLibraryType: assetLibraryOption.value,
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
@@ -260,6 +282,7 @@ const handleSortByTime = async () => {
   let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
   let res = await getAssetList({
+    assetLibraryType: assetLibraryOption.value,
     pageIndex: pageIndex,
     pageSize: pageSize,
     assetType: assetType,
@@ -268,6 +291,17 @@ const handleSortByTime = async () => {
   })
   assetInfos.value = res.data.data.data
 }
+
+/**
+ * @description: Reset assets
+ * @return {*}
+ * @Author: Yao xinyue
+ * @Date: 2024-03-05 15:01:45
+ */
+watch(assetLibraryOption, async () => {
+  await setAssets();
+});
+
 </script>
 
 <style lang="scss">

@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 14:22:36
- * @FilePath: \builder\spx-gui\src\store\modules\sprite\index.ts
+ * @LastEditTime: 2024-03-07 11:05:21
+ * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
 import { defineStore, storeToRefs } from 'pinia'
@@ -26,14 +26,13 @@ export const useSpriteStore = defineStore('sprite', () => {
   watch(
     () => project.value,
     () => {
-      console.log("current clear")
+      console.log('current clear')
       current.value = null
     }
   )
+
   function addItem(item: Sprite) {
     project.value.sprite.add(item)
-    // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
-    project.value.backdrop.config.zorder.push(item.name)
   }
 
   function setCurrentByName(name: string) {
@@ -49,11 +48,6 @@ export const useSpriteStore = defineStore('sprite', () => {
         current.value = list.value[0] || null
       }
       project.value.sprite.remove(sprite)
-      // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
-      project.value.backdrop.config.zorder.splice(
-        project.value.backdrop.config.zorder.indexOf(sprite.name),
-        1
-      )
     }
   }
 
