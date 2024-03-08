@@ -283,10 +283,10 @@ get "/assets/list", ctx => {
 	}
 }
 
-get "/clickCount/asset", ctx => {
+//Add asset clickCount
+post "/asset/:id/click-count", ctx => {
 	id := ctx.param("id")
-	assetType := ctx.param("assetType")
-	ctrl.IncrementAssetClickCount(todo, id, assetType)
+	ctrl.IncrementAssetClickCount(todo, id)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",

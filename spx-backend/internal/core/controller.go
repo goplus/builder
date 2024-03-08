@@ -328,9 +328,9 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 }
 
 // IncrementAssetClickCount increments the click count for an asset.
-func (ctrl *Controller) IncrementAssetClickCount(ctx context.Context, id string, assetType string) error {
-	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ? and asset_type = ?"
-	_, err := ctrl.db.ExecContext(ctx, query, id, assetType)
+func (ctrl *Controller) IncrementAssetClickCount(ctx context.Context, id string) error {
+	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ?"
+	_, err := ctrl.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
