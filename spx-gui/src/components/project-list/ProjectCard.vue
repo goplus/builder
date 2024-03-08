@@ -1,5 +1,5 @@
 <template>
-  <n-card id="project-card" hoverable>
+  <n-card id="project-card" hoverable :class="{'current': isCurrent}">
     <template #cover>
       <img :src="defaultProjectImage" alt="">
     </template>
@@ -20,7 +20,26 @@
     </template>
 
     <div class="info">
+      <p v-if="isLocal">
+        <n-tag v-if="isTemporary" round size="small" :bordered="false" type="primary">
+          <span>Local Project</span>
+          <template #icon>
+            <n-icon size="12">
+              <HomeOutlined></HomeOutlined>
+            </n-icon>
+          </template>
+        </n-tag>
+        <n-tag v-else round size="small" :bordered="false" type="primary">
+          <span>Cloud Project in Local</span>
+          <template #icon>
+            <n-icon size="12">
+              <CloudOutlined></CloudOutlined>
+            </n-icon>
+          </template>
+        </n-tag>
+      </p>
       <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
+      <p class="create-time">version: {{ project.version }} </p>
       <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
       <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
     </div>
@@ -45,7 +64,8 @@
         </n-button>
         <n-button
           v-if="!isLocal && isUserOwn"
-          quaternary size="small"
+          size="small"
+          quaternary
           class="public-btn"
           @click="updateProjectIsPublic"
         >
@@ -61,7 +81,7 @@ import { type ProjectSummary, Project, ProjectSource, PublicStatus } from '@/cla
 import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
-import { UserOutlined } from '@vicons/antd'
+import { UserOutlined, CloudOutlined, HomeOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
 
 const { project } = defineProps<{
@@ -72,6 +92,8 @@ const userStore = useUserStore()
 const isUserOwn = computed(() => !project.authorId || userStore.userInfo?.id === project.authorId)
 const publicStatus = ref(project.isPublic == PublicStatus.public)
 const isLocal = computed(() => project.source === ProjectSource.local)
+const isTemporary = computed(() => project.id.startsWith(Project.TEMPORARY_ID_PREFIX))
+const isCurrent = computed(() => project.id === useProjectStore().project.id)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
 
@@ -90,12 +112,21 @@ const load = async () => {
 const remove = () => {
   dialog.warning({
     title: 'Remove Project',
-    content: 'Are you sure you want to remove this project (' + (project.name || project.id) + ')? This action cannot be undone.',
+    content: `Are you sure you want to remove this project (${project.name || project.id}) from ${isLocal.value ? 'local' : 'cloud'}? This action cannot be undone.` + (!isLocal.value ? ' (This project will be deleted from local if it is existed as well)' : ' (Deleting local projects does not affect cloud projects)'),
     positiveText: 'Yes',
     negativeText: 'No',
     onPositiveClick: async () => {
       await Project.removeProject(project.id, project.source)
       emit('remove-project')
+      // If the project is from cloud, remove it from local
+      if (!isLocal.value) {
+        await Project.removeProject(project.id, ProjectSource.local)
+      }
+      // If the project is the current project, load a blank project
+      if (isCurrent.value) {
+        message.success('Delete the current project and reload a blank project.')
+        useProjectStore().loadBlankProject()
+      }
     }
   })
 }
@@ -108,7 +139,7 @@ const updateProjectIsPublic = async () => {
       positiveText: 'Yes',
       negativeText: 'No',
       onPositiveClick: async () => {
-        await Project.updateProjectIsPublic(project.id)
+        await Project.updateProjectIsPublic(project.id, publicStatus.value ? PublicStatus.private : PublicStatus.public)
         message.success('change project status success')
         publicStatus.value = !publicStatus.value
       }
@@ -131,6 +162,10 @@ const formatTime = (time: string) => {
   border-radius: 20px;
   box-sizing: border-box;
   overflow: hidden;
+
+  &.current {
+    border: 5px solid $base-color;
+  }
 
   .icon-delete {
     position: absolute;
@@ -178,18 +213,17 @@ const formatTime = (time: string) => {
       .title-text {
         text-overflow: ellipsis;
         overflow: hidden;
+        margin-right: 12px;
       }
+    }
+  }
 
-      .n-tag {
-        margin-left: 12px;
-        line-height: 16px;
-        margin-right: auto;
+  .n-tag {
+    line-height: 16px;
 
-        :deep(.n-tag__icon) {
-          margin-right: 8px;
-          align-items: baseline;
-        }
-      }
+    :deep(.n-tag__icon) {
+      margin-right: 8px;
+      align-items: baseline;
     }
   }
 

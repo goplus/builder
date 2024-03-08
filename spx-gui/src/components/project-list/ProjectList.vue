@@ -56,7 +56,6 @@ import { computed, type ComputedRef, defineEmits, defineProps, onMounted, reacti
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
 import { Project, type ProjectSummary } from '@/class/project';
 import ProjectCard from './ProjectCard.vue'
-import { AxiosError } from 'axios';
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -79,7 +78,7 @@ const searchQuery = ref('')
 const isRequesting = ref<boolean>(false)
 const projectList = ref<ProjectSummary[]>([])
 const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
-  return projectList.value.filter(project => project.name?.includes(searchQuery.value) || project.id.includes(searchQuery.value))
+  return projectList.value.filter(project => project.name?.includes(searchQuery.value) || project.id.includes(searchQuery.value)).sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
 })
 
 const state = reactive({
@@ -123,7 +122,7 @@ const getProjects = async () => {
     }
     isRequesting.value = false
   } catch (e) {
-    if (e instanceof AxiosError) {
+    if (e instanceof Error) {
       console.error(e)
       isRequesting.value = false
     }
