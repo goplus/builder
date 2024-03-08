@@ -18,8 +18,8 @@ todo := context.TODO()
 //Save project
 post "/project", ctx => {
 	id := ctx.FormValue("id")
-	authorId := core.ParseToken(ctrl, ctx)
-	if authorId == "" {
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -42,7 +42,7 @@ post "/project", ctx => {
 	project := &core.Project{
 		ID:       id,
 		Name:     name,
-		AuthorId: authorId,
+		AuthorId: currentUid,
 	}
 	res, err := ctrl.SaveProject(todo, project, file, header)
 	if err != nil {
@@ -65,8 +65,8 @@ post "/project", ctx => {
 //Get project information by ID
 get "/project/:id", ctx => {
 	id := ctx.param("id")
-	authorId := core.ParseToken(ctrl, ctx)
-	res, err := ctrl.ProjectInfo(todo, id, authorId)
+	currentUid := core.ParseToken(ctrl, ctx)
+	res, err := ctrl.ProjectInfo(todo, id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
 			code := common.ErrorProjectNotFound
@@ -98,8 +98,8 @@ get "/project/:id", ctx => {
 //Delete project
 delete "/project/:id", ctx => {
 	id := ctx.param("id")
-	authorId := core.ParseToken(ctrl, ctx)
-	if authorId == "" {
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -108,7 +108,7 @@ delete "/project/:id", ctx => {
 		}
 		return
 	}
-	err := ctrl.DeleteProject(todo, id, authorId)
+	err := ctrl.DeleteProject(todo, id, currentUid)
 	if err != nil {
 		if err == common.ErrPermissions {
 			code := common.ErrorPermissions
@@ -137,8 +137,8 @@ delete "/project/:id", ctx => {
 
 //update project isPublic
 put "/project/:id/is-public", ctx => {
-	authorId := core.ParseToken(ctrl, ctx)
-	if authorId == "" {
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -149,7 +149,7 @@ put "/project/:id/is-public", ctx => {
 	}
 	id := ctx.param("id")
 	isPublic := ctx.param("isPublic")
-	err := ctrl.UpdatePublic(todo, id, isPublic, authorId)
+	err := ctrl.UpdatePublic(todo, id, isPublic, currentUid)
 	if err != nil {
 		if err == common.ErrPermissions {
 			code := common.ErrorPermissions
@@ -232,8 +232,8 @@ post "/asset", ctx => {
 		}
 		return
 	}
-	authorId := core.ParseToken(ctrl, ctx)
-	if authorId == "" {
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -248,7 +248,7 @@ post "/asset", ctx => {
 	previewAddress := ctx.FormValue("previewAddress")
 	category := ctx.FormValue("category")
 	assetType := ctx.FormValue("assetType")
-	err = ctrl.UploadAsset(todo, name, files, previewAddress, authorId, category, publishState, assetType)
+	err = ctrl.UploadAsset(todo, name, files, previewAddress, currentUid, category, publishState, assetType)
 	if err != nil {
 		code := common.ErrorUpload
 		ctx.json {
@@ -268,9 +268,9 @@ post "/asset", ctx => {
 
 //Get asset by id
 get "/asset/:id", ctx => {
-	authorId := core.ParseToken(ctrl, ctx)
+	currentUid := core.ParseToken(ctrl, ctx)
 	id := ctx.param("id")
-	asset, err := ctrl.Asset(todo, id, authorId)
+	asset, err := ctrl.Asset(todo, id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
 			code := common.ErrorProjectNotFound
@@ -369,12 +369,12 @@ post "/asset/:id/click-count", ctx => {
 
 //Search assets
 get "/assets/search", ctx => {
-	authorId := core.ParseToken(ctrl, ctx)
+	currentUid := core.ParseToken(ctrl, ctx)
 	search := ctx.param("search")
 	assetType := ctx.param("assetType")
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	assets, err := ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, authorId)
+	assets, err := ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, currentUid)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
