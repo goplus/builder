@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 14:28:42
+ * @LastEditTime: 2024-03-08 14:36:53
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -58,6 +58,7 @@ import { NImage } from 'naive-ui'
 import { defineProps, defineEmits, computed, ref, onMounted } from 'vue'
 import type { Asset } from '@/interface/library'
 import error from '@/assets/image/library/error.svg'
+import { fetchSvgContent } from '@/util/utils'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -108,7 +109,11 @@ const shouldShowGif = computed(() => isHovering.value && assetImageGifUrl.value 
 // Client-side fetching of SVG content using fetchAPI and converting to Base64.
 onMounted(() => {
   if (isSvg.value) {
-    fetchSvgContent()
+    fetchSvgContent(assetImageUrl.value).then((dataUri) => {
+      if (dataUri) {
+        svgDataUri.value = dataUri;
+      }
+    });
   }
 })
 
@@ -123,16 +128,6 @@ const addAssetToListFunc = (id: number, name: string, address: string | undefine
   emits('add-asset', id, name, address)
 }
 
-const fetchSvgContent = async () => {
-  try {
-    const response = await fetch(assetImageUrl.value)
-    const svgContent = await response.text()
-    const base64Svg = btoa(unescape(encodeURIComponent(svgContent)))
-    svgDataUri.value = `data:image/svg+xml;base64,${base64Svg}`
-  } catch (error) {
-    console.error('Error fetching SVG:', error)
-  }
-}
 </script>
 
 <style scoped lang="scss">
