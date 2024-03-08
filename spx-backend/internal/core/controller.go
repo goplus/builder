@@ -177,7 +177,6 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 		if p.Address == "" {
 			return nil, common.ErrProjectNotExist
 		}
-
 		err = ctrl.bucket.Delete(ctx, p.Address)
 		if err != nil {
 			return nil, err
@@ -186,11 +185,12 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 		if err != nil {
 			return nil, err
 		}
-		project.Address = path
-		project.Version = p.Version + 1
-		err = UpdateProject(ctrl.db, project)
-		project.Address = os.Getenv("QINIU_PATH") + "/" + path
-		return project, err
+		p.Address = path
+		p.Version = p.Version + 1
+		p.Name = project.Name
+		err = UpdateProject(ctrl.db, p)
+		p.Address = os.Getenv("QINIU_PATH") + "/" + path
+		return p, err
 	}
 }
 
