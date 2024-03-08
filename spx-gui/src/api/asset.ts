@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 11:58:26
+ * @LastEditTime: 2024-03-08 12:15:02
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -164,7 +164,7 @@ export function addAssetClickCount(
   const url = `/asset/${id}/click-count`
   return service({
     url: url,
-    method: 'get'
+    method: 'post'
   })
 }
 
