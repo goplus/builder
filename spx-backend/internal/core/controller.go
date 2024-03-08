@@ -314,12 +314,12 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, authorId string) (
 }
 
 // AssetList list  assets
-func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string) (*common.Pagination[Asset], error) {
+func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string, author string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
 	if isPublic == strconv.Itoa(common.PUBLIC) {
-		if authorId != "" {
+		if author != "" {
 			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
 		}
 		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
@@ -378,10 +378,10 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 }
 
 // ProjectList project list
-func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, authorId string) (*common.Pagination[Project], error) {
+func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, author string, authorId string) (*common.Pagination[Project], error) {
 	var wheres []common.FilterCondition
 	if isPublic == strconv.Itoa(common.PUBLIC) {
-		if authorId != "" {
+		if author != "" {
 			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
 		}
 		//public projects

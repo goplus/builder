@@ -191,7 +191,8 @@ get "/projects/list", ctx => {
 	}
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
+	author := ctx.param("author")
+	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, author,authorId)
 	if err != nil {
 		code := common.ErrorGetProjects
 		ctx.json {
@@ -298,13 +299,14 @@ get "/assets/list", ctx => {
 		}
 		return
 	}
+	author := ctx.param("author")
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	assetType := ctx.param("assetType")
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
+	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic,author)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
