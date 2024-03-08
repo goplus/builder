@@ -58,20 +58,32 @@ post "/project", ctx => {
 	ctx.json {
 		"code": code,
 		"msg":  common.GetMsg(code),
-		"data": {"id": res.ID, "address": os.Getenv("QINIU_PATH") + "/" + res.Address, "version": res.Version},
+		"data": res,
 	}
 }
 
 //Get project information by ID
 get "/project/:id", ctx => {
 	id := ctx.param("id")
-	res, err := ctrl.ProjectInfo(todo, id)
+	userId := core.ParseToken(ctrl, ctx)
+	res, err := ctrl.ProjectInfo(todo, id, userId)
 	if err != nil {
-		code := common.ErrorProjectNotFound
-		ctx.json {
-			"code": code,
-			"msg":  common.GetMsg(code),
-			"data": "",
+		if err == os.ErrNotExist {
+			code := common.ErrorProjectNotFound
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+
+		} else {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+
 		}
 		return
 	}
@@ -167,8 +179,8 @@ put "/project/:id/is-public", ctx => {
 //Get projects
 get "/projects/list", ctx => {
 	userId := core.ParseToken(ctrl, ctx)
-	state := ctx.param("state")
-	if state == "own" && userId == "" {
+	isPublic := ctx.param("isPublic")
+	if isPublic == strconv.Itoa(common.PERSONAL) && userId == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -180,7 +192,16 @@ get "/projects/list", ctx => {
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	toUid := ctx.param("toUid")
-	result, _ := ctrl.ProjectList(todo, pageIndex, pageSize, state, userId, toUid)
+	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, userId, toUid)
+	if err != nil {
+		code := common.ErrorGetProjects
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -190,7 +211,16 @@ get "/projects/list", ctx => {
 
 //Upload asset
 post "/asset", ctx => {
-	ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	if err != nil {
+		code := common.ErrorParseMultipartForm
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
 	userId := core.ParseToken(ctrl, ctx)
 	if userId == "" {
 		code := common.NoLogin
@@ -204,10 +234,10 @@ post "/asset", ctx => {
 	files := ctx.MultipartForm.File["files"]
 	name := ctx.FormValue("name")
 	publishState := ctx.FormValue("publishState")
-	gif := ctx.FormValue("gif")
+	previewAddress := ctx.FormValue("previewAddress")
 	category := ctx.FormValue("category")
 	assetType := ctx.FormValue("assetType")
-	err := ctrl.UploadAsset(todo, name, files, gif, userId, category, publishState, assetType)
+	err = ctrl.UploadAsset(todo, name, files, previewAddress, userId, category, publishState, assetType)
 	if err != nil {
 		code := common.ErrorUpload
 		ctx.json {
@@ -227,9 +257,19 @@ post "/asset", ctx => {
 
 //Get asset by id
 get "/asset/:id", ctx => {
+	userId := core.ParseToken(ctrl, ctx)
 	id := ctx.param("id")
-	asset, err := ctrl.Asset(todo, id)
+	asset, err := ctrl.Asset(todo, id, userId)
 	if err != nil {
+		if err == os.ErrNotExist {
+			code := common.ErrorProjectNotFound
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
 		code := common.ErrorGetAsset
 		ctx.json {
 			"code": code,
@@ -249,8 +289,8 @@ get "/asset/:id", ctx => {
 //Get assets
 get "/assets/list", ctx => {
 	userId := core.ParseToken(ctrl, ctx)
-	state := ctx.param("state")
-	if state == "own" && userId == "" {
+	isPublic := ctx.param("isPublic")
+	if isPublic == strconv.Itoa(common.PERSONAL) && userId == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -265,7 +305,7 @@ get "/assets/list", ctx => {
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, userId, state)
+	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, userId, isPublic)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
@@ -286,7 +326,16 @@ get "/assets/list", ctx => {
 //Add asset clickCount
 post "/asset/:id/click-count", ctx => {
 	id := ctx.param("id")
-	ctrl.IncrementAssetClickCount(todo, id)
+	err := ctrl.IncrementAssetClickCount(todo, id)
+	if err != nil {
+    		code := common.ErrClick
+    		ctx.json {
+    			"code": code,
+    			"msg":  common.GetMsg(code),
+    			"data": "",
+    		}
+    		return
+    	}
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",

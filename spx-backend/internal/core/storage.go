@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"gocloud.dev/blob"
 	"io"
 	"path/filepath"
 	"strconv"
@@ -13,7 +14,7 @@ import (
 )
 
 // UploadFile Upload file to cloud
-func UploadFile(ctx context.Context, ctrl *Controller, blobKey string, file io.Reader, originalFilename string) (string, error) {
+func UploadFile(ctx context.Context, bucket *blob.Bucket, blobKey string, file io.Reader, originalFilename string) (string, error) {
 	// Extract file extension
 	ext := filepath.Ext(originalFilename)
 
@@ -21,7 +22,7 @@ func UploadFile(ctx context.Context, ctrl *Controller, blobKey string, file io.R
 	blobKey = blobKey + Encrypt(time.Now().String(), originalFilename) + ext
 
 	// create blob writer
-	w, err := ctrl.bucket.NewWriter(ctx, blobKey, nil)
+	w, err := bucket.NewWriter(ctx, blobKey, nil)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +75,7 @@ func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
 }
 func AddProject(db *sql.DB, c *Project) (string, error) {
 	sqlStr := "insert into project (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
-	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, time.Now(), time.Now())
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.Ctime, c.Utime)
 	if err != nil {
 		println(err.Error())
 		return "", err
