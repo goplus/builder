@@ -6,42 +6,10 @@ set -ex
 
 echo "WORKSPACE: ${PWD}"
 
-# TODO: Include the logic to build the backend once the PR is merged
-
-cd spx-gui
-
-cat > Dockerfile << EOF
-FROM node:latest as builder
-
-# Create app directory
-WORKDIR /app
-
-COPY . .
-
-RUN npm install
-RUN npm run build
-
-FROM nginx:stable
-
-# Copy static assets from GitHub Actions runner
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Compress WASM files
-RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;
-
-# Copy custom NGINX configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start NGINX
-CMD ["nginx", "-g", "daemon off;"]
-EOF
+# TODO: Include the logic to also build the backend once the PR is merged
 
 export CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
 docker build -t ${CONTAINER_IMAGE} -f ./Dockerfile . --builder="kube" --push
-
 
 # generate kubernetes yaml with unique flag for PR
 cat > builder.yaml << EOF
