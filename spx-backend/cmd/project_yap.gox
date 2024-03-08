@@ -192,7 +192,7 @@ get "/projects/list", ctx => {
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	author := ctx.param("author")
-	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, author,authorId)
+	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, author, authorId)
 	if err != nil {
 		code := common.ErrorGetProjects
 		ctx.json {
@@ -300,13 +300,14 @@ get "/assets/list", ctx => {
 		return
 	}
 	author := ctx.param("author")
+
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	assetType := ctx.param("assetType")
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic,author)
+	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic, author)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
@@ -329,14 +330,14 @@ post "/asset/:id/click-count", ctx => {
 	id := ctx.param("id")
 	err := ctrl.IncrementAssetClickCount(todo, id)
 	if err != nil {
-    		code := common.ErrClick
-    		ctx.json {
-    			"code": code,
-    			"msg":  common.GetMsg(code),
-    			"data": "",
-    		}
-    		return
-    	}
+		code := common.ErrClick
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
