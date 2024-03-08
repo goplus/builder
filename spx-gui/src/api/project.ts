@@ -42,12 +42,13 @@ export async function saveProject(name: string, file: File, id?: string): Promis
  * @param isPublic Public projects or user projects.
  * @returns Project[]
  */
-export async function getProjects(pageIndex: number, pageSize: number, isPublic: boolean): Promise<PageData<Project[]>> {
+export async function getProjects(pageIndex: number, pageSize: number, isPublic?: boolean, author?: string): Promise<PageData<Project[]>> {
     const baseUrl = `/projects/list`
     const params = new URLSearchParams()
     params.append('pageIndex', String(pageIndex))
     params.append('pageSize', String(pageSize))
-    params.append('isPublic', String(isPublic ? PublicStatus.private : PublicStatus.public))
+    isPublic && params.append('isPublic', String(isPublic ? PublicStatus.private : PublicStatus.public))
+    author && params.append('author', author)
     const url = `${baseUrl}?${params.toString()}`
     return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }

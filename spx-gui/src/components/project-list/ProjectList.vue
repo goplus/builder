@@ -118,7 +118,7 @@ const getProjects = async () => {
     } else if (type === TabEnum.cloud) {
       projectList.value = await Project.getCloudProjects()
     } else {
-      projectList.value = await Project.getCloudProjects(false)
+      projectList.value = await Project.getCloudProjects('*')
     }
     isRequesting.value = false
   } catch (e) {

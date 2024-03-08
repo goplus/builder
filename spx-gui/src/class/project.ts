@@ -119,8 +119,8 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(isUser: boolean = true, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
-    const res = await getProjects(pageIndex, pageSize, isUser)
+  static async getCloudProjects(author?: string, isPublic?: boolean, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
+    const res = await getProjects(pageIndex, pageSize, isPublic, author)
     const projects = res.data || []
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
