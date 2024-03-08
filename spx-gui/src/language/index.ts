@@ -45,14 +45,22 @@ export const initI18n = async (app: App) => {
         motion: 'Motion',
         control: 'Control'
       },
-      top: {
+      topMenu: {
         file: 'File',
         save: 'Save',
         publish: 'Publish',
         untitled: 'Untitled',
         code: 'Code',
         tutorial: 'Tutorial',
-        settings: 'Settings'
+        settings: 'Settings',
+        theme: 'Theme',
+        upload: 'Upload',
+        load: 'Load',
+        local: 'Local',
+        cloud: 'Cloud',
+        blank: 'Blank',
+        video: 'Video',
+        app: 'App',
       },
       editor: {
         format: 'format'
@@ -102,7 +110,29 @@ export const initI18n = async (app: App) => {
         notPublish:'Not publish',
         private:'Only publish to private asset library',
         public:'Publish to public asset library'
-      }
+      },
+      project: {
+        local: 'Local',
+        cloud: 'Cloud',
+        own: 'Own',
+        load: 'Load',
+        delete: 'Delete',
+        public: 'Public',
+        search: 'Search',
+        nothing: 'There\'s nothing.',
+        publicStatus: 'status: Public',
+        privateStatus: 'status: Private',
+        create: 'create',
+        update: 'update',
+        removeTitle: 'Remove Project',
+        removeContent: 'Are you sure to remove this project ({name})? This action cannot be undone.',
+        changeStatusTitle: 'Change Project Status',
+        changeStatusContent: 'Are you sure to change the status of this project ({name})?',
+        successMessage: 'change project status success',
+        errMessage: 'change project status failed',
+        yes: 'Yes',
+        no: 'No',
+      },
     },
     zh: {
       language: '中文',
@@ -137,14 +167,22 @@ export const initI18n = async (app: App) => {
         motion: '运动',
         control: '控制'
       },
-      top: {
+      topMenu: {
         file: '文件',
         save: '保存',
         publish: '发布',
         untitled: '未命名',
         code: '代码',
         tutorial: '教程',
-        settings: '设置'
+        settings: '设置',
+        theme: '主题',
+        upload: '上传',
+        load: '加载',
+        blank: '空项目',
+        local: '本地',
+        cloud: '云端',
+        video: '视频',
+        app: '应用',
       },
       editor: {
         format: '格式化'
@@ -194,6 +232,30 @@ export const initI18n = async (app: App) => {
         notPublish: '不上传',
         private: '仅上传到个人素材库',
         public: '上传到公开素材库',
+      },
+      project: {
+        local: '本地',
+        cloud: '云端',
+        own: '个人',
+        status: '状态',
+        load: '加载',
+        public: '公开',
+        private: '私有',
+        delete: '删除',
+        search: '搜索',
+        nothing: '这里空空如也',
+        publicStatus: '状态: 公开',
+        privateStatus: '状态: 私有',
+        create: '创建时间',
+        update: '更新时间',
+        removeTitle: '移除项目',
+        removeContent: '您确定要移除这个项目（{name}）吗？此操作无法撤销。',
+        changeStatusTitle: '更改项目状态',
+        changeStatusContent: '您确定要更改此项目（{name}）的状态吗？',
+        successMessage: '项目状态更改成功',
+        errMessage: '项目状态更改失败',
+        yes: '是',
+        no: '否'
       }
     }
   }
