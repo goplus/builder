@@ -47,7 +47,7 @@ type Asset struct {
 	Category       string    `json:"category"`
 	IsPublic       int       `json:"isPublic"` // 1:Public state 0: Personal state
 	Address        string    `json:"address"`  // The partial path of the asset's location, excluding the host. like 'sprite/xxx.svg'
-	PreviewAddress string    `json:"preview_address"`
+	PreviewAddress string    `json:"previewAddress"`
 	AssetType      string    `json:"assetType"` // 0：sprite，1：background，2：sound
 	ClickCount     string    `json:"clickCount"`
 	Status         int       `json:"status"` // 1:Normal state 0:Deleted status
@@ -121,7 +121,7 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 }
 
 // ProjectInfo Find project from db
-func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, userId string) (*Project, error) {
+func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, authorId string) (*Project, error) {
 	pro, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, userId strin
 		return nil, ErrNotExist
 	}
 	pro.Address = os.Getenv("QINIU_PATH") + "/" + pro.Address
-	if pro.IsPublic == common.PUBLIC || userId == pro.AuthorId {
+	if pro.IsPublic == common.PUBLIC || authorId == pro.AuthorId {
 		return pro, nil
 	}
 
@@ -138,10 +138,10 @@ func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, userId strin
 }
 
 // DeleteProject Delete Project
-func (ctrl *Controller) DeleteProject(ctx context.Context, id string, userId string) error {
+func (ctrl *Controller) DeleteProject(ctx context.Context, id string, authorId string) error {
 
 	project, err := common.QueryById[Project](ctrl.db, id)
-	if project.AuthorId != userId {
+	if project.AuthorId != authorId {
 		return common.ErrPermissions
 	}
 	err = ctrl.bucket.Delete(ctx, project.Address)
@@ -292,7 +292,7 @@ func (ctrl *Controller) CodeFmt(ctx context.Context, body, fiximport string) (re
 }
 
 // Asset returns an Asset.
-func (ctrl *Controller) Asset(ctx context.Context, id string, userId string) (*Asset, error) {
+func (ctrl *Controller) Asset(ctx context.Context, id string, authorId string) (*Asset, error) {
 	asset, err := common.QueryById[Asset](ctrl.db, id)
 	if err != nil {
 		return nil, err
@@ -306,7 +306,7 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, userId string) (*A
 	}
 	asset.Address = modifiedAddress
 
-	if asset.IsPublic == common.PUBLIC || userId == asset.AuthorId {
+	if asset.IsPublic == common.PUBLIC || authorId == asset.AuthorId {
 		return asset, nil
 	}
 
@@ -314,14 +314,14 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, userId string) (*A
 }
 
 // AssetList list  assets
-func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, uid string, isPublic string) (*common.Pagination[Asset], error) {
+func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
 	if isPublic == strconv.Itoa(common.PUBLIC) {
 		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
 	} else {
-		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: uid})
+		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
 	}
 	var orders []common.OrderByCondition
 	if category != "" {
@@ -375,18 +375,17 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 }
 
 // ProjectList project list
-func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, userId string, toUid string) (*common.Pagination[Project], error) {
+func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, authorId string) (*common.Pagination[Project], error) {
 	var wheres []common.FilterCondition
 	if isPublic == strconv.Itoa(common.PUBLIC) {
+		if authorId != "" {
+			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
+		}
 		//public projects
 		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
 	} else if isPublic == strconv.Itoa(common.PERSONAL) {
 		//my projects
-		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: userId})
-	} else {
-		//others project
-		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
-		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: toUid})
+		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
 	}
 
 	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
@@ -400,29 +399,29 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 }
 
 // UpdatePublic update is_public
-func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic string, userId string) error {
+func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic string, authorId string) error {
 	project, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
 		return err
 	}
-	if project.AuthorId != userId {
+	if project.AuthorId != authorId {
 		return common.ErrPermissions
 	}
 	return UpdateProjectIsPublic(ctrl.db, id, isPublic)
 }
 
 // SearchAsset Search Asset by name
-func (ctrl *Controller) SearchAsset(ctx context.Context, search string, assetType string, userId string) ([]*Asset, error) {
+func (ctrl *Controller) SearchAsset(ctx context.Context, search string, assetType string, authorId string) ([]*Asset, error) {
 	var query string
 	var args []interface{}
 	searchString := "%" + search + "%"
 
-	if userId == "" {
+	if authorId == "" {
 		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND is_public = 1"
 		args = []interface{}{searchString, assetType}
 	} else {
 		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND (is_public = 1 OR author_id = ?)"
-		args = []interface{}{searchString, assetType, userId}
+		args = []interface{}{searchString, assetType, authorId}
 	}
 
 	// 执行查询
@@ -493,7 +492,7 @@ func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.File
 }
 
 // UploadAsset Upload asset
-func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*multipart.FileHeader, previewAddress string, uid string, tag string, publishState string, assetType string) error {
+func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*multipart.FileHeader, previewAddress string, authorId string, tag string, publishState string, assetType string) error {
 	data := make(AssetAddressData)
 	for _, fileHeader := range files {
 		file, _ := fileHeader.Open()
@@ -525,7 +524,7 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 	}
 	_, err = AddAsset(ctrl.db, &Asset{
 		Name:           name,
-		AuthorId:       uid,
+		AuthorId:       authorId,
 		Category:       tag,
 		IsPublic:       isPublic,
 		Address:        string(jsonData),
