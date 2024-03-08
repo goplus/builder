@@ -1,3 +1,4 @@
+// Client-side fetching of SVG content using fetchAPI and converting to Base64.
 export const fetchSvgContent = async (assetImageUrl: string) => {
     try {
       const response = await fetch(assetImageUrl)

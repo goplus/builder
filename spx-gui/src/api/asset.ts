@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 12:15:02
+ * @LastEditTime: 2024-03-08 16:11:21
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -47,13 +47,14 @@ export function getAssetList({
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
   const baseAssetUrl = '/assets/list'
+  let state = ''
   if (assetLibraryType == 'public') {
-    assetLibraryType = '1'
+    state = PublishState.PublicAndPrivateLibrary.toString()
   } else if (assetLibraryType == 'private') {
-    assetLibraryType = '0'
+    state = PublishState.PrivateLibrary.toString()
   }
   const params = new URLSearchParams()
-  params.append('state', assetLibraryType.toString())
+  params.append('state', state)
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())

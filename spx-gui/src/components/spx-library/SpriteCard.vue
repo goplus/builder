@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 16:03:31
+ * @LastEditTime: 2024-03-08 16:17:39
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -10,7 +10,7 @@
   <!-- S Component Sprite Card -->
   <div
     class="sprite-card"
-    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl, svgDataUri)"
+    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl, svgDataUrl)"
   >
     <!-- S Component First Static Costume Card -->
     <n-image
@@ -28,7 +28,7 @@
       preview-disabled
       width="100"
       height="100"
-      :src="svgDataUri"
+      :src="svgDataUrl"
       :fallback-src="error"
       @mouseenter="isHovering = true"
       @mouseleave="isHovering = false"
@@ -71,7 +71,7 @@ const emits = defineEmits(['add-asset'])
 // Ref about the hovering state to judge if should show gif.
 const isHovering = ref<boolean>(false)
 // Used to store converted Base64 data URIs
-const svgDataUri = ref<string>('')
+const svgDataUrl = ref<string>('')
 
 // ----------computed properties-----------------------------
 // Determine if it's an svg image based on the suffix name
@@ -111,7 +111,7 @@ onMounted(() => {
   if (isSvg.value) {
     fetchSvgContent(assetImageUrl.value).then((dataUri) => {
       if (dataUri) {
-        svgDataUri.value = dataUri
+        svgDataUrl.value = dataUri
       }
     })
   }
@@ -128,10 +128,10 @@ const addAssetToListFunc = (
   id: number,
   name: string,
   address: string | undefined,
-  svgDataUri: string | undefined
+  svgDataUrl: string | undefined
 ) => {
   if (isSvg.value) {
-    emits('add-asset', id, name, svgDataUri)
+    emits('add-asset', id, name, svgDataUrl)
   } else {
     emits('add-asset', id, name, address)
   }
