@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-07 22:37:39
+ * @LastEditTime: 2024-03-08 11:44:55
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -193,7 +193,6 @@ const fetchAssetsByType = async (assetType: number, category?: string) => {
       assetType: assetType,
       category: category
     })
-    console.log(response, 'response')
     if (response.data.data.data == null) return []
     return response.data.data.data
   } catch (error) {
@@ -212,6 +211,7 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
+      setAssets()
     }
   }
 )
@@ -232,11 +232,12 @@ const closeModalFunc = () => {
  * @Date: 2024-01-30 11:51:05
  */
 const handleAddAsset = async (id: number, name: string, address: string) => {
-  // TODO add a api to check the click times
-  let res =
-    props.type === 'backdrop'
-      ? await addAssetClickCount(id, AssetType.Backdrop)
-      : await addAssetClickCount(id, AssetType.Sprite)
+  // TODO check the type is necessary?
+  // let res =
+  //   props.type === 'backdrop'
+  //     ? await addAssetClickCount(id, AssetType.Backdrop)
+  //     : await addAssetClickCount(id, AssetType.Sprite)
+  let res = await addAssetClickCount(id)
   console.log(res, 'handleAddAsset')
   emits('add-asset', name, address)
 }

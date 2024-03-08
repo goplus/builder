@@ -9,7 +9,12 @@
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      <n-input round autosize clearable :placeholder="$t('stage.spriteHolder')" :value="name">
+      <n-input round autosize clearable :placeholder="$t('stage.spriteHolder')" :value="name" 
+      @update:value="
+          (val) => {
+            spriteStore.current && spriteStore.current.setName(val as string)
+          }
+        ">
         <template #prefix>
           {{ $t('stage.sprite') }}:
       </template>

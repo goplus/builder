@@ -99,6 +99,7 @@ import error from '@/assets/image/library/error.svg'
 import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
 import { publishAsset, PublishState } from '@/api/asset'
+import { AssetType } from '@/constant/constant'
 
 // ----------props & emit------------------------------------
 
@@ -220,6 +221,7 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
     await publishAsset(
       asset.name,
       uploadFilesArr,
+      AssetType.Sprite,
       PublishState.PrivateLibrary,
       undefined,
       undefined

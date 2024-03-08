@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:50:20
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-08 11:58:26
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -12,9 +12,9 @@ import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
 
 export enum PublishState {
-  NotPublished = 0,
-  PrivateLibrary = 1,
-  PublicAndPrivateLibrary = 2
+  NotPublished = -1,
+  PrivateLibrary = 0,
+  PublicAndPrivateLibrary = 1
 }
 
 /**
@@ -38,21 +38,22 @@ export function getAssetList({
   isOrderByTime,
   isOrderByHot
 }: {
-  assetLibraryType: string,
-  pageIndex: number,
-  pageSize: number,
-  assetType: number,
-  category?: string,
-  isOrderByTime?: boolean,
+  assetLibraryType: string
+  pageIndex: number
+  pageSize: number
+  assetType: number
+  category?: string
+  isOrderByTime?: boolean
   isOrderByHot?: boolean
 }): Promise<PageAssetResponse> {
-  let baseAssetUrl = "/list/asset"
-  if (assetLibraryType === 'private') {
-    baseAssetUrl = "/list/userasset"
+  const baseAssetUrl = '/assets/list'
+  if (assetLibraryType == 'public') {
+    assetLibraryType = '1'
+  } else if (assetLibraryType == 'private') {
+    assetLibraryType = '0'
   }
-
   const params = new URLSearchParams()
-
+  params.append('state', assetLibraryType.toString())
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
@@ -72,18 +73,17 @@ export function getAssetList({
   return service({
     url: url,
     method: 'get'
-  });
+  })
 }
 
 /**
  * Fetches a single asset
  *
  * @param id
- * @param assetType The type of the asset. See src/constant/constant.ts for details.
  * @returns Asset
  */
-export function getAsset(id: number, assetType: number): Promise<Asset> {
-  const url = `/list/asset/${id}/${assetType}`
+export function getAsset(id: number): Promise<Asset> {
+  const url = `/asset/${id}`
   return service({
     url: url,
     method: 'get'
@@ -97,7 +97,7 @@ export function getAsset(id: number, assetType: number): Promise<Asset> {
  * @return { SearchAssetResponse }
  */
 export function searchAssetByName(search: string, assetType: number): Promise<SearchAssetResponse> {
-  const url = `/asset/search`
+  const url = `/assets/search`
   const formData = new FormData()
   formData.append('search', search)
   formData.append('assetType', assetType.toString())
@@ -159,10 +159,9 @@ export async function saveAsset(
  * @return {Promise<AxiosResponse<ResponseData<string>>>}
  */
 export function addAssetClickCount(
-  id: number,
-  assetType: number
+  id: number
 ): Promise<AxiosResponse<ResponseData<string>>> {
-  const url = `/clickCount/asset/${id}/${assetType}`
+  const url = `/asset/${id}/click-count`
   return service({
     url: url,
     method: 'get'
@@ -173,7 +172,8 @@ export function addAssetClickCount(
  * @description: Publish asset to library.
  * @param { string } name - sprite name named by user.
  * @param { File[] } files - sprite costumes files, saved to show in lib.
- * @param { PublishState } publishState - The publishing state of the asset.
+ * @param { string } assetType - sprite assetType, 0: sprite, 1: backdrop, 2: sound
+ * @param { PublishState } publishState - The publishing state of the asset. -1: not publish, 0: private lib, 1: public lib.
  * @param { string|undefined } [gif] - Optional. The address of the sprite's GIF.
  *                                   Only provide this parameter if there is more than one file.
  *                                   It is used to display in the library when the sprite is hovering.
@@ -183,16 +183,18 @@ export function addAssetClickCount(
 export function publishAsset(
   name: string,
   files: File[],
+  assetType: number,
   publishState: PublishState,
   gif?: string,
-  category?: string,
+  category?: string
 ): Promise<string> {
-  const url = `/sprite/upload`
+  const url = `/asset`
   const formData = new FormData()
   formData.append('name', name)
+  formData.append('assetType', assetType.toString())
   files.forEach((file) => {
     formData.append('files', file)
-  });
+  })
   if (gif) {
     formData.append('gif', gif)
   }
@@ -218,7 +220,7 @@ export function publishAsset(
  * @return {string} get sprites gif address.
  */
 export function generateGifByCostumes(files: File[]): Promise<AxiosResponse<ResponseData<string>>> {
-  const url = `/sprite/togif`
+  const url = `/util/to-gif`
   const formData = new FormData()
   files.forEach((file) => {
     formData.append('files', file)
