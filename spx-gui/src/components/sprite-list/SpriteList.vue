@@ -1,9 +1,9 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-26 20:22:26
- * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-03-07 14:46:31
+ * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
 <template>
@@ -11,9 +11,20 @@
     <div class="asset-library-edit-button">
       {{ $t('component.edit') }}
     </div>
-    <n-button class="import-assets-btn" @click="showImportModal = true">
-      import assets
-    </n-button>
+    <div class="asset-btn-group">
+      <n-button class="import-assets-btn" @click="showImportModal = true">
+        {{ $t('scratch.import') }}
+      </n-button>
+      <!-- TODO: temporary use import-assets-btn's style   -->
+      <n-button
+        class="import-assets-btn"
+        style="position: relative"
+        :disabled="editorStore.editContentType === EditContentType.EntryCode"
+        @click="enableEditEntryCode"
+      >
+        entry code
+      </n-button>
+    </div>
 
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
@@ -72,9 +83,10 @@ import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
-
+import { EditContentType, useEditorStore } from '@/store'
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
+const editorStore = useEditorStore()
 const spriteStore = useSpriteStore()
 const { setCurrentByName } = spriteStore
 
@@ -101,6 +113,11 @@ const toggleCodeById = (name: string) => {
   currentActiveName.value = name
   setCurrentByName(name)
 }
+
+const enableEditEntryCode=() => {
+  editorStore.setEditContentType(EditContentType.EntryCode)
+}
+
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
@@ -158,23 +175,25 @@ watchEffect(() => {
     padding: 10px;
   }
 }
-.import-assets-btn {
+.asset-btn-group {
   position: absolute;
   left: 108px;
-  height: 24px;
   top: 3px;
-  font-size: 16px;
-  color: #333333;
-  border-radius: 20px;
-  border: 2px solid rgb(0, 20, 41);
-  box-shadow: rgb(0, 20, 41) -1px 2px;
-  cursor: pointer;
-  background-color: rgb(255, 248, 204);
-}
 
-.import-assets-btn:hover{
-  background-color: rgb(255, 234, 204);
-  color:#333333;
+  .import-assets-btn {
+    height: 24px;
+    font-size: 16px;
+    color: #333333;
+    border-radius: 20px;
+    border: 2px solid rgb(0, 20, 41);
+    box-shadow: rgb(0, 20, 41) -1px 2px;
+    cursor: pointer;
+    background-color: rgb(255, 248, 204);
+    &:hover {
+      background-color: rgb(255, 234, 204);
+      color: #333333;
+    }
+  }
 }
 </style>
 

@@ -7,7 +7,7 @@
  * @Description:
  */
 import { keywords, typeKeywords, LanguageConfig, MonarchTokensProviderConfig } from './language'
-import wasmModuleUrl from '/wasm/format.wasm?url';
+import wasmModuleUrl from '@/assets/format.wasm?url';
 import function_completions from './snippet';
 import { monaco } from '.';
 function completionItem(range: monaco.IRange | monaco.languages.CompletionItemRanges): monaco.languages.CompletionItem[] {

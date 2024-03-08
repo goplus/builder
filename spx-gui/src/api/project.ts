@@ -8,8 +8,8 @@ import type { AxiosResponse } from "axios";
  * Saves a project.
  *
  * @param name The name of the project.
- * @param uid The user ID of the author.
  * @param file The code file(zip) to be uploaded.
+ * @param id
  * @returns Project
  */
 export async function saveProject(name: string, file: File, id?: string): Promise<Project> {
@@ -38,7 +38,7 @@ export async function saveProject(name: string, file: File, id?: string): Promis
  * Fetches a list of projects.
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of projects to retrieve per page.
- * @param isPublic Whether the project is public
+ * @param isUser Whether the project is current user's project.
  * @returns Project[]
  */
 export async function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<PageData<Project[]>> {
@@ -54,6 +54,30 @@ export async function getProjects(pageIndex: number, pageSize: number, isUser: b
 export async function getProject(id: string): Promise<Project> {
     const url = `/project?id=${id}`;
     return service({ url: url, method: 'get' }).then((res) => res.data.data);
+}
+
+/**
+ * Removes a project.
+ * @param id The id of the project
+ * @returns string
+ */
+export async function removeProject(id: string): Promise<string> {
+    const url = `/project/delete`;
+    const formData = new FormData();
+    formData.append('id', id);
+    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
+}
+
+/**
+ * Update project isPublic status.
+ * @param id project id that will be public
+ * @returns
+ */
+export async function updateProjectIsPublic(id: string): Promise<string> {
+    const url =  `/project/updateIsPublic`;
+    const formData = new FormData();
+    formData.append('id', id);
+    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
 }
 
 /**
