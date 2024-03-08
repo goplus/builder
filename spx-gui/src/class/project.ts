@@ -9,21 +9,28 @@ import {
   getPrefix
 } from '@/util/file'
 import saveAs from 'file-saver'
+import { removeProject as removeCloudProject } from '@/api/project'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-import { getProject, getProjects, saveProject } from '@/api/project'
+import { getProject, getProjects, saveProject, updateProjectIsPublic } from '@/api/project'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
+
 export enum ProjectSource {
-  local,
-  cloud
+  local = 'local',
+  cloud = 'cloud'
 }
 
-interface ProjectSummary {
+export enum PublicStatus {
+  private = 0,
+  public = 1
+}
+
+export interface ProjectSummary {
   // Temporary id when not uploaded to cloud, replace with real id after uploaded
   id: string
   // Project name
@@ -33,9 +40,13 @@ interface ProjectSummary {
   // Project source
   source: ProjectSource
   // create time
-  cTime?: string
+  cTime: string
   // update time
-  uTime?: string
+  uTime: string
+  // public status
+  isPublic?: PublicStatus
+  // author
+  authorId?: string
 }
 
 interface ProjectDetail {
@@ -107,29 +118,27 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
+  static async getCloudProjects(isUser: boolean = true, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
-    const projects = res.data
-    return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
+    const projects = res.data || []
+    return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  /**
-   * Get the list of projects.
-   * @returns The list of local projects' summary
-   */
-  static async getProjects(): Promise<ProjectSummary[]> {
-    const localProjects = await Project.getLocalProjects()
-    const cloudProjects = await Project.getCloudProjects()
+  static updateProjectIsPublic(id: string): Promise<string> {
+    return updateProjectIsPublic(id)
+  }
 
-    const mergedProjects = localProjects
-    for (const cloudProject of cloudProjects) {
-      const local = mergedProjects.find((project) => project.id === cloudProject.id)
-      if (!local || local.version !== cloudProject.version) {
-        mergedProjects.push(cloudProject)
-      }
+  static async removeLocalProject(id: string) {
+    await fs.rmdir(id)
+    await fs.unlink("summary/" + id)
+  }
+  
+  static async removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
+    if (source === ProjectSource.local) {
+      await Project.removeLocalProject(id)
+    } else {
+      await removeCloudProject(id)
     }
-
-    return mergedProjects
   }
 
   constructor() {
@@ -162,13 +171,15 @@ export class Project implements ProjectDetail, ProjectSummary {
 
       const dirPath: DirPath = {}
       for (const path of paths) {
-        const content = await fs.readFile(path)
-        dirPath[path] = content
+        dirPath[path] = await fs.readFile(path)
       }
       this._load(dirPath)
 
       const summary = await fs.readFile("summary/" + id) as ProjectSummary
-      Object.assign(this, summary)
+      this.name = summary.name
+      this.version = summary.version
+      this.cTime = summary.cTime || this.cTime
+      this.uTime = summary.uTime || this.uTime
     } else {
       const { address, name, version, cTime, uTime } = await getProject(id)
       this.version = version
@@ -176,13 +187,13 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.uTime = uTime
       const zip = await fetch(address).then(res => res.blob())
       const zipFile = new File([zip], name)
-      this.loadFromZip(zipFile)
+      await this.loadFromZip(zipFile)
     }
   }
 
   /**
    * Load project from directory.
-   * @param DirPath The directory
+   * @param dir The directory
    */
   _load(dir: DirPath): void {
     const handleFile = (file: FileType, filename: string, item: any) => {
@@ -279,9 +290,9 @@ export class Project implements ProjectDetail, ProjectSummary {
       version: this.version,
       source: this.source,
       cTime: this.cTime,
-      uTime: new Date().toISOString()
+      uTime: new Date().toISOString(),
     }
-    fs.writeFile(this.summaryPath, summary)
+    await fs.writeFile(this.summaryPath, summary)
   }
 
   /**
@@ -289,12 +300,10 @@ export class Project implements ProjectDetail, ProjectSummary {
    */
   async removeLocal() {
     if (this._temporaryId !== null) {
-      await fs.rmdir(this._temporaryId)
-      await fs.unlink("summary/" + this._temporaryId)
+      await Project.removeLocalProject(this._temporaryId)
     }
     if (this._id !== null) {
-      await fs.rmdir(this._id)
-      await fs.unlink("summary/" + this._id)
+      await Project.removeLocalProject(this._id)
     }
   }
 
