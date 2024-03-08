@@ -1,14 +1,23 @@
+/*
+ * @Author: Zhang Zhi Yang
+ * @Date: 2024-03-08 12:18:48
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-03-08 16:12:35
+ * @FilePath: /spx-gui/src/widgets/scripts/build-loader-plugin.ts
+ * @Description:
+ */
 import fs from 'fs'
 import path from 'path'
 import type { NormalizedOutputOptions } from 'rollup'
 import { fileURLToPath } from 'url'
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
 interface WidgetAssets {
   js: string
 }
 interface WidgetManifest {
   [key: string]: WidgetAssets
 }
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export default async function BuilderLoader(
   outputOptions: NormalizedOutputOptions,
   baseurl: string
@@ -22,7 +31,7 @@ export default async function BuilderLoader(
     for (const key in manifest) {
       // Entry files are treated as widget
       if (manifest[key].isEntry && manifest[key]) {
-        // TODO: config the widget name from the rollup config instead
+        // TODO:  get widget name from the rollup config instead
         const widgetNameMatch = key.match(/^src\/widgets\/([^/]+)\/index\.ts$/)
         if (widgetNameMatch && widgetNameMatch[1]) {
           const asset: WidgetAssets = {
@@ -33,14 +42,11 @@ export default async function BuilderLoader(
         }
       }
     }
-
+    // read the loader-template.js and inject manifest
     const loaderJs = fs
-      .readFileSync(path.join(currentDir, '/scripts/loader-template.js'), { encoding: 'utf8' })
+      .readFileSync(path.join(currentDir, '/loader-template.js'), { encoding: 'utf8' })
       .replace(/MANIFEST/g, JSON.stringify(manifetMap))
-
-    console.log('loader', loaderJs)
-    const compiledFilePath = path.join(currentDir, '/scripts/compiled-loader.js')
-
+    const compiledFilePath = path.join(outputDir, '/assets/loader.js')
     fs.writeFileSync(compiledFilePath, loaderJs, 'utf-8')
   } catch (error) {
     console.error(error)

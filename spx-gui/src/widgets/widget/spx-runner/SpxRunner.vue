@@ -31,7 +31,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import ProjectRunner from '../../components/project-runner/ProjectRunner.vue'
+import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch, onMounted } from 'vue'
 import { Project } from '@/class/project'
 const props = defineProps<{ projectid?: string }>()

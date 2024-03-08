@@ -9,8 +9,8 @@
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <!-- <input type="file" @change="importFile" /> -->
-      <button v-if="!run" class="run" :disabled="!projectid || !ready || !!errorMsg" @click="onRun">
+      <input type="file" @change="importFile" />
+      <button v-if="!run" class="run"  @click="onRun">
         run
       </button>
       <button v-else class="stop" @click="onStop">stop</button>
@@ -31,7 +31,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import ProjectRunner from '../../components/project-runner/ProjectRunner.vue'
+import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch, onMounted } from 'vue'
 import { Project } from '@/class/project'
 const props = defineProps<{ projectid?: string }>()
@@ -40,7 +40,7 @@ const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
 const project = ref<Project>(new Project())
-
+/**
 watch(
   () => props.projectid,
   async (projectid) => {
@@ -64,6 +64,8 @@ watch(
     immediate: true
   }
 )
+*/
+
 const onRun = () => {
   console.log('runnnn')
   run.value = true

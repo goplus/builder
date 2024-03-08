@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 15:43:36
+ * @LastEditTime: 2024-03-08 16:17:20
  * @FilePath: /spx-gui/src/widgets/widget.config.ts
  * @Description:
  */
@@ -10,7 +10,7 @@ import { defineConfig , loadEnv} from 'vite'
 
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
-import buildLoader from './build-loader'
+import buildLoader from './scripts/build-loader-plugin'
 const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({mode}) => {
   // get the project root's env
@@ -40,7 +40,7 @@ export default defineConfig(({mode}) => {
       emptyOutDir:false,
       rollupOptions: {
         input: {
-          'spx-runner': resolve('./spx-runner/index.ts'),
+          'spx-runner': resolve('./widget/spx-runner/index.ts'),
         }
       }
     },
