@@ -84,35 +84,12 @@ func AddProject(db *sql.DB, c *Project) (string, error) {
 	return strconv.Itoa(int(idInt)), err
 }
 
-func GetProjectAddress(id string, db *sql.DB) string {
-	var address string
-	query := "SELECT address FROM project WHERE id = ?"
-	err := db.QueryRow(query, id).Scan(&address)
-	if err != nil {
-		return ""
-	}
-	return address
-}
-func GetProjectVersion(id string, db *sql.DB) int {
-	var version int
-	query := "SELECT version FROM project WHERE id = ?"
-	err := db.QueryRow(query, id).Scan(&version)
-	if err != nil {
-		return -1
-	}
-	return version
-}
 func DeleteProjectById(db *sql.DB, id string) error {
-	stmt, err := db.Prepare("DELETE FROM project WHERE id = ?")
+	query := "UPDATE project SET status = ? WHERE id = ?"
+	err := db.QueryRow(query, 0, id)
 	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	// 执行SQL语句
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
+		fmt.Println(err)
+		return err.Err()
 	}
 	return nil
 }
