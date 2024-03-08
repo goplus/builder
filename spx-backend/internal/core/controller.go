@@ -319,6 +319,9 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
 	if isPublic == strconv.Itoa(common.PUBLIC) {
+		if authorId != "" {
+			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
+		}
 		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
 	} else {
 		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
