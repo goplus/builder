@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 14:36:53
+ * @LastEditTime: 2024-03-08 16:03:31
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -10,7 +10,7 @@
   <!-- S Component Sprite Card -->
   <div
     class="sprite-card"
-    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)"
+    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl, svgDataUri)"
   >
     <!-- S Component First Static Costume Card -->
     <n-image
@@ -36,7 +36,7 @@
     <!-- E Component First Static Costume Card -->
     <!-- S Component Gif Costume Card -->
     <n-image
-      v-if="assetImageGifUrl !== ''"
+      v-if="assetImageGifUrl !== '' "
       v-show="isHovering"
       preview-disabled
       width="100"
@@ -99,7 +99,7 @@ const assetImageUrl = computed(() => {
 
 // Compute the asset gif url if it has
 const assetImageGifUrl = computed(() => {
-  return props.assetInfo.preview_address
+  return props.assetInfo.previewAddress
 })
 
 // Compute show gif or not (record to the imageUrl and hovering state).
@@ -111,9 +111,9 @@ onMounted(() => {
   if (isSvg.value) {
     fetchSvgContent(assetImageUrl.value).then((dataUri) => {
       if (dataUri) {
-        svgDataUri.value = dataUri;
+        svgDataUri.value = dataUri
       }
-    });
+    })
   }
 })
 
@@ -124,10 +124,18 @@ onMounted(() => {
  * @Author: Xu Ning
  * @Date: 2024-01-24 12:18:12
  */
-const addAssetToListFunc = (id: number, name: string, address: string | undefined) => {
-  emits('add-asset', id, name, address)
+const addAssetToListFunc = (
+  id: number,
+  name: string,
+  address: string | undefined,
+  svgDataUri: string | undefined
+) => {
+  if (isSvg.value) {
+    emits('add-asset', id, name, svgDataUri)
+  } else {
+    emits('add-asset', id, name, address)
+  }
 }
-
 </script>
 
 <style scoped lang="scss">

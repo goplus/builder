@@ -23,7 +23,7 @@ interface Asset {
   status?: number
   cTime?: number
   uTime?: number
-  preview_address?: string
+  previewAddress?: string
 }
 
 interface Project {
