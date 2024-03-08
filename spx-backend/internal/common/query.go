@@ -188,3 +188,48 @@ func buildOrderByClause(orders []OrderByCondition) string {
 func getTableName[T any]() string {
 	return strings.ToLower(reflect.TypeOf((*T)(nil)).Elem().Name())
 }
+
+// QueryPageBySQL
+func QueryPageBySQL[T any](db *sql.DB, sqlQuery string, pageIndexParam string, pageSizeParam string, args []interface{}) (*Pagination[T], error) {
+	pageIndex, err := strconv.Atoi(pageIndexParam)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := strconv.Atoi(pageSizeParam)
+	if err != nil {
+		return nil, err
+	}
+	// Calculate total count for pagination
+	var totalCount int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS count_table", sqlQuery)
+	argsForCount := append([]interface{}{}, args...)
+	err = db.QueryRow(countQuery, argsForCount...).Scan(&totalCount)
+	if err != nil {
+		return nil, err
+	}
+	totalPage := (totalCount + pageSize - 1) / pageSize
+	// Execute the paginated query
+	offset := (pageIndex - 1) * pageSize
+	paginatedQuery := fmt.Sprintf("%s LIMIT ? OFFSET ?", sqlQuery)
+	argsForQuery := append(args, pageSize, offset)
+	rows, err := db.Query(paginatedQuery, argsForQuery...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// Scan rows into the struct T
+	var data []T
+	scan := tScan[T]()
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, item)
+	}
+	return &Pagination[T]{
+		TotalCount: totalCount,
+		TotalPage:  totalPage,
+		Data:       data,
+	}, nil
+}

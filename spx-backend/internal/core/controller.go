@@ -314,17 +314,15 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, authorId string) (
 }
 
 // AssetList list  assets
-func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string, author string) (*common.Pagination[Asset], error) {
+func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string) (*common.Pagination[Asset], error) {
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
-	if isPublic == strconv.Itoa(common.PUBLIC) {
-		if author != "" {
-			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
-		}
-		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
-	} else {
+	if authorId != "" {
 		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
+	}
+	if isPublic != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: isPublic})
 	}
 	var orders []common.OrderByCondition
 	if category != "" {
@@ -378,17 +376,13 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 }
 
 // ProjectList project list
-func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, author string, authorId string) (*common.Pagination[Project], error) {
+func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, authorId string) (*common.Pagination[Project], error) {
 	var wheres []common.FilterCondition
-	if isPublic == strconv.Itoa(common.PUBLIC) {
-		if author != "" {
-			wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
-		}
-		//public projects
-		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: common.PUBLIC})
-	} else if isPublic == strconv.Itoa(common.PERSONAL) {
-		//my projects
+	if authorId != "" {
 		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
+	}
+	if isPublic != "" {
+		wheres = append(wheres, common.FilterCondition{Column: "is_public", Operation: "=", Value: isPublic})
 	}
 
 	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
@@ -414,7 +408,8 @@ func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic st
 }
 
 // SearchAsset Search Asset by name
-func (ctrl *Controller) SearchAsset(ctx context.Context, search string, assetType string, authorId string) ([]*Asset, error) {
+func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageIndex string, pageSize string, assetType string, authorId string) (*common.Pagination[Asset], error) {
+
 	var query string
 	var args []interface{}
 	searchString := "%" + search + "%"
@@ -426,34 +421,19 @@ func (ctrl *Controller) SearchAsset(ctx context.Context, search string, assetTyp
 		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND (is_public = 1 OR author_id = ?)"
 		args = []interface{}{searchString, assetType, authorId}
 	}
-
-	// 执行查询
-	rows, err := ctrl.db.Query(query, args...)
-	if err != nil {
-		println(err.Error())
-		return nil, err
-	}
-	defer rows.Close()
-
-	// 创建指向 Asset 结构体切片的指针
-	var assets []*Asset
-
-	// 遍历结果集
-	for rows.Next() {
-		var asset Asset
-		err := rows.Scan(&asset.ID, &asset.Name, &asset.AuthorId, &asset.Category, &asset.IsPublic, &asset.Address, &asset.PreviewAddress, &asset.AssetType, &asset.ClickCount, &asset.Status, &asset.CTime, &asset.UTime)
+	pagination, err := common.QueryPageBySQL[Asset](ctrl.db, query, pageIndex, pageSize, args)
+	for i, asset := range pagination.Data {
+		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
 		if err != nil {
-			println(err.Error())
 			return nil, err
 		}
-		asset.Address, _ = ctrl.ModifyAssetAddress(asset.Address)
-		// 将每行数据追加到切片中
-		assets = append(assets, &asset)
+		pagination.Data[i].Address = modifiedAddress
 	}
-	if len(assets) == 0 {
-		return nil, nil
+	if err != nil {
+		return nil, err
 	}
-	return assets, nil
+	return pagination, nil
+
 }
 
 func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.FileHeader) (string, error) {

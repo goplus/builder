@@ -178,9 +178,9 @@ put "/project/:id/is-public", ctx => {
 
 //Get projects
 get "/projects/list", ctx => {
-	authorId := core.ParseToken(ctrl, ctx)
+	currentUid := core.ParseToken(ctrl, ctx)
 	isPublic := ctx.param("isPublic")
-	if isPublic == strconv.Itoa(common.PERSONAL) && authorId == "" {
+	if isPublic == strconv.Itoa(common.PERSONAL) && currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -192,7 +192,18 @@ get "/projects/list", ctx => {
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	author := ctx.param("author")
-	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, author, authorId)
+	authorId := ""
+	if author == "" {
+		authorId = currentUid
+	} else if author == "*" {
+		authorId = ""
+	} else {
+		authorId = author
+	}
+	if authorId != currentUid {
+		isPublic = strconv.Itoa(common.PUBLIC)
+	}
+	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
 	if err != nil {
 		code := common.ErrorGetProjects
 		ctx.json {
@@ -288,9 +299,9 @@ get "/asset/:id", ctx => {
 
 //Get assets
 get "/assets/list", ctx => {
-	authorId := core.ParseToken(ctrl, ctx)
+	currentUid := core.ParseToken(ctrl, ctx)
 	isPublic := ctx.param("isPublic")
-	if isPublic == strconv.Itoa(common.PERSONAL) && authorId == "" {
+	if isPublic == strconv.Itoa(common.PERSONAL) && currentUid == "" {
 		code := common.NoLogin
 		ctx.json {
 			"code": code,
@@ -307,7 +318,18 @@ get "/assets/list", ctx => {
 	category := ctx.param("category")
 	isOrderByTime := ctx.param("isOrderByTime")
 	isOrderByHot := ctx.param("isOrderByHot")
-	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic, author)
+	authorId := ""
+	if author == "" {
+		authorId = currentUid
+	} else if author == "*" {
+		authorId = ""
+	} else {
+		authorId = author
+	}
+	if authorId != currentUid {
+		isPublic = strconv.Itoa(common.PUBLIC)
+	}
+	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
@@ -346,11 +368,13 @@ post "/asset/:id/click-count", ctx => {
 }
 
 //Search assets
-post "/assets/search", ctx => {
+get "/assets/search", ctx => {
 	authorId := core.ParseToken(ctrl, ctx)
-	search := ctx.FormValue("search")
-	assetType := ctx.FormValue("assetType")
-	assets, err := ctrl.SearchAsset(todo, search, assetType, authorId)
+	search := ctx.param("search")
+	assetType := ctx.param("assetType")
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	assets, err := ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, authorId)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
