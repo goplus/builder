@@ -84,7 +84,7 @@ type FormatResponse struct {
 
 // New init Config
 func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
-	err = godotenv.Load("../.env")
+	err = godotenv.Load()
 	if err != nil {
 		println(err.Error())
 		return
