@@ -10,7 +10,6 @@ lerna-debug.log*
 node_modules
 .DS_Store
 dist
-spx-widgets
 dist-ssr
 *.local
 .eslintcache

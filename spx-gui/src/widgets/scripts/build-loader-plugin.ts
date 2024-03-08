@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-03-08 12:18:48
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 16:12:35
+ * @LastEditTime: 2024-03-08 16:35:49
  * @FilePath: /spx-gui/src/widgets/scripts/build-loader-plugin.ts
  * @Description:
  */
@@ -32,7 +32,7 @@ export default async function BuilderLoader(
       // Entry files are treated as widget
       if (manifest[key].isEntry && manifest[key]) {
         // TODO:  get widget name from the rollup config instead
-        const widgetNameMatch = key.match(/^src\/widgets\/([^/]+)\/index\.ts$/)
+        const widgetNameMatch = key.match(/^src\/widgets\/widget\/([^/]+)\/index\.ts$/)
         if (widgetNameMatch && widgetNameMatch[1]) {
           const asset: WidgetAssets = {
             // Stitching the actual resource address

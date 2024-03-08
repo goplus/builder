@@ -1,15 +1,14 @@
-<!-- <!--
+<!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-26 17:49:39
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-02 23:18:56
- * @FilePath: \spx-gui\src\widgets\spx-runner\SpxRunner.vue
+ * @LastEditTime: 2024-03-08 17:07:59
+ * @FilePath: /spx-gui/src/widgets/widget/spx-runner/SpxRunner.ce.vue
  * @Description: 
 -->
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <input type="file" @change="importFile" />
       <button v-if="!run" class="run"  @click="onRun">
         run
       </button>
@@ -24,6 +23,8 @@
       </div>
       <div v-if="ready && !errorMsg" class="ready">
         <p>project ready</p>
+        <p>{{ project.name }}</p>
+
       </div>
 
       <ProjectRunner ref="runner" :project="project as Project" />
@@ -40,7 +41,6 @@ const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
 const project = ref<Project>(new Project())
-/**
 watch(
   () => props.projectid,
   async (projectid) => {
@@ -64,7 +64,6 @@ watch(
     immediate: true
   }
 )
-*/
 
 const onRun = () => {
   console.log('runnnn')
@@ -76,14 +75,6 @@ const onStop = () => {
   runner.value.stop()
 }
 
-const importFile = async (e: any) => {
-  const file = e.target.files[0]
-  const temp = new Project()
-  temp.loadFromZip(file, 'temp')
-  project.value = temp
-  ready.value = true
-  errorMsg.value = ''
-}
 onMounted(() => {
   console.log()
 })

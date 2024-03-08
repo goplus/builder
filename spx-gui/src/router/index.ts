@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 09:16:35
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 14:08:00
- * @FilePath: \spx-gui\src\router\index.ts
+ * @LastEditTime: 2024-03-08 16:32:12
+ * @FilePath: /spx-gui/src/router/index.ts
  * @Description:
  */
 import type { App } from 'vue'
@@ -33,7 +33,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/runner/widget/:id',
     name: 'StageViewer',
-    component: () => import('../widgets/spx-runner/SpxRunnerDemo.vue')
+    component: () => import('../widgets/widget/spx-runner/SpxRunnerDemo.vue')
   },
   {
     path: '/editor/homepage',

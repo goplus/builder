@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --build --force && vite build",
-    "build-widget":"vite build --config ./src/widgets/widget.config.ts",
+    "build-widget": "tsc ./src/widgets/scripts/loader-template.ts && vite build --config ./src/widgets/widget.config.ts && rm ./src/widgets/scripts/loader-template.js",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore"
