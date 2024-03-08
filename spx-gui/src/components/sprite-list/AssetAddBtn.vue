@@ -267,7 +267,6 @@ const beforeUpload = (
     let fileURL = URL.createObjectURL(uploadFile.file)
     let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL)
 
-    let fileArray: FileWithUrl[] = [fileWithUrl]
     let fileName = uploadFile.name
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
     switch (fileType) {
