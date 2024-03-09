@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 16:17:20
- * @FilePath: /spx-gui/src/widgets/widget.config.ts
+ * @LastEditTime: 2024-03-09 14:34:12
+ * @FilePath: \builder\spx-gui\src\widgets\widget.config.ts
  * @Description:
  */
 import { defineConfig , loadEnv} from 'vite'
@@ -17,13 +17,11 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, resolve("../../"), '')
   return {
     plugins: [
-      vue({
-        template: {
-          compilerOptions: {
-            isCustomElement: (tag) => tag.includes('-')
-          }
+      vue(
+        {
+          customElement:true
         }
-      }),
+      ),
       {
         name: 'build',
         writeBundle: (outputOptions) => buildLoader(outputOptions, env.VITE_PUBLISH_BASE_URL)

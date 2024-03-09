@@ -2,14 +2,14 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-26 17:49:39
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 17:07:59
- * @FilePath: /spx-gui/src/widgets/widget/spx-runner/SpxRunner.ce.vue
+ * @LastEditTime: 2024-03-09 14:46:03
+ * @FilePath: \builder\spx-gui\src\widgets\widget\spx-runner\SpxRunner.ce.vue
  * @Description: 
 -->
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <button v-if="!run" class="run"  @click="onRun">
+      <button v-if="!run" :disabled="!projectid || !ready || !!errorMsg" class="run" @click="onRun">
         run
       </button>
       <button v-else class="stop" @click="onStop">stop</button>
@@ -24,7 +24,6 @@
       <div v-if="ready && !errorMsg" class="ready">
         <p>project ready</p>
         <p>{{ project.name }}</p>
-
       </div>
 
       <ProjectRunner ref="runner" :project="project as Project" />
@@ -123,7 +122,10 @@ onMounted(() => {
     width: 100%;
     flex: 1;
     height: 100%;
-
+    iframe {
+      width: 100%;
+      height: 100%;
+    }
     .loading,
     .ready,
     .error {

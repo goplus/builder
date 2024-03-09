@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 15:50:56
- * @FilePath: /spx-gui/vite.config.ts
+ * @LastEditTime: 2024-03-09 15:04:39
+ * @FilePath: \builder\spx-gui\vite.config.ts
  * @Description:
  */
 
@@ -13,11 +13,14 @@ import VueDevTools from 'vite-plugin-vue-devtools'
 import path from 'path'
 // https://vitejs.dev/config/
 const resolve = (dir: string) => path.join(__dirname, dir)
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [
-      vue(),
+      vue({
+        // Ensure that at devlop mode, widget is not treated as a custom element
+        customElement: false
+      }),
       VueDevTools()
     ],
     base: env.VITE_PUBLISH_BASE_URL,
