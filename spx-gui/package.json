@@ -12,7 +12,6 @@
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore"
   },
   "dependencies": {
-    "@rollup/pluginutils": "^5.1.0",
     "axios": "^1.6.5",
     "file-saver": "^2.0.5",
     "js-pkce": "^1.4.0",
@@ -23,7 +22,6 @@
     "nanoid": "^5.0.5",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
-    "terser": "^5.28.1",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
     "vue-i18n": "^9.9.0",
@@ -57,7 +55,6 @@
     "typescript": "^5.3.3",
     "vfonts": "^0.0.3",
     "vite": "^5.0.10",
-    "vite-plugin-define": "^1.0.6",
     "vite-plugin-top-level-await": "^1.4.1",
     "vite-plugin-vue-devtools": "^7.0.7",
     "vite-plugin-wasm": "^3.3.0",

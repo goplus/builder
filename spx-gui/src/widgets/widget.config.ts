@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-09 14:34:12
- * @FilePath: \builder\spx-gui\src\widgets\widget.config.ts
+ * @LastEditTime: 2024-03-10 20:46:23
+ * @FilePath: \spx-gui\src\widgets\widget.config.ts
  * @Description:
  */
 import { defineConfig , loadEnv} from 'vite'
@@ -28,11 +28,10 @@ export default defineConfig(({mode}) => {
       }
     ],
     base:env.VITE_PUBLISH_BASE_URL,
-    define: { 'process.env.NODE_ENV': '"production"' },
+    // define: { 'process.env.NODE_ENV': '"production"' },
     build: {
       target: 'esnext',
       outDir: 'dist',
-      minify: 'terser',
       manifest: true,
       // Do not empty the spx-gui content that has been built
       emptyOutDir:false,

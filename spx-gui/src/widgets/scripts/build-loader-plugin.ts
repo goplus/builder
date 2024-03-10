@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-03-08 12:18:48
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-08 16:35:49
- * @FilePath: /spx-gui/src/widgets/scripts/build-loader-plugin.ts
+ * @LastEditTime: 2024-03-10 21:17:40
+ * @FilePath: \spx-gui\src\widgets\scripts\build-loader-plugin.ts
  * @Description:
  */
 import fs from 'fs'
@@ -46,7 +46,12 @@ export default async function BuilderLoader(
     const loaderJs = fs
       .readFileSync(path.join(currentDir, '/loader-template.js'), { encoding: 'utf8' })
       .replace(/MANIFEST/g, JSON.stringify(manifetMap))
-    const compiledFilePath = path.join(outputDir, '/assets/loader.js')
+
+    const widgetOutputDir = path.join(outputDir, '/widgets')
+    if (!fs.existsSync(widgetOutputDir)) {
+      fs.mkdirSync(widgetOutputDir)
+    }
+    const compiledFilePath = path.join(widgetOutputDir, '/loader.js')
     fs.writeFileSync(compiledFilePath, loaderJs, 'utf-8')
   } catch (error) {
     console.error(error)
