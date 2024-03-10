@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-09 15:04:39
- * @FilePath: \builder\spx-gui\vite.config.ts
+ * @LastEditTime: 2024-03-10 22:31:18
+ * @FilePath: \spx-gui\vite.config.ts
  * @Description:
  */
 
@@ -14,7 +14,7 @@ import path from 'path'
 // https://vitejs.dev/config/
 const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, process.cwd())
   return {
     plugins: [
       vue({

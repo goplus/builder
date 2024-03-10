@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-10 20:46:23
- * @FilePath: \spx-gui\src\widgets\widget.config.ts
+ * @LastEditTime: 2024-03-11 00:17:32
+ * @FilePath: \spx-gui\src\widgets\vite.config.ts
  * @Description:
  */
 import { defineConfig , loadEnv} from 'vite'
@@ -14,7 +14,7 @@ import buildLoader from './scripts/build-loader-plugin'
 const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({mode}) => {
   // get the project root's env
-  const env = loadEnv(mode, resolve("../../"), '')
+  const env = loadEnv(mode, process.cwd())
   return {
     plugins: [
       vue(
@@ -28,9 +28,7 @@ export default defineConfig(({mode}) => {
       }
     ],
     base:env.VITE_PUBLISH_BASE_URL,
-    // define: { 'process.env.NODE_ENV': '"production"' },
     build: {
-      target: 'esnext',
       outDir: 'dist',
       manifest: true,
       // Do not empty the spx-gui content that has been built
