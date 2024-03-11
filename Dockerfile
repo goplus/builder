@@ -50,8 +50,8 @@ RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;
 
 EXPOSE 80
 
-COPY --from=go-builder /app/spx-backend/cmd/spx-backend /usr/local/bin/spx-backend
-
 WORKDIR /app
 
-CMD spx-backend & nginx -g "daemon off;" & wait
+COPY --from=go-builder /app/spx-backend/cmd/spx-backend /app/spx-backend
+
+CMD ./spx-backend & nginx -g "daemon off;" & wait
