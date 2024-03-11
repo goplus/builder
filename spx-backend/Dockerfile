@@ -23,13 +23,13 @@ COPY . .
 
 # Build the application
 WORKDIR /app/cmd
-RUN gop build -o myapp .
+RUN gop build -o spx-backend .
 
 # Use a new lightweight image
 FROM ubuntu:22.04
 
 # Copy the built application to the new image
-COPY --from=builder /app/cmd/myapp /app/myapp
+COPY --from=builder /app/cmd/spx-backend /app/spx-backend
 
 # Set the working directory
 WORKDIR /app
@@ -38,4 +38,4 @@ WORKDIR /app
 EXPOSE 8080
 
 # Set the container startup command
-CMD ["./myapp"]
+CMD ["./spx-backend"]
