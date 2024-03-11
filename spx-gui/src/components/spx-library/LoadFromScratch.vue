@@ -216,12 +216,16 @@ const importSelectedAssetsToProject = () => {
 const uploadSelectedAssetsToPrivateLibrary = async () => {
   if (!selectedAssets.value) return
   for (const asset of selectedAssets.value) {
+    let assetType = AssetType.Sounds
+    if (isImage(asset)) {
+      assetType = AssetType.Sprite
+    }
     let file = getFileFromAssetFileDetail(asset)
     let uploadFilesArr: File[] = [file]
     await publishAsset(
       asset.name,
       uploadFilesArr,
-      AssetType.Sprite,
+      assetType,
       PublishState.PrivateLibrary,
       undefined,
       undefined
