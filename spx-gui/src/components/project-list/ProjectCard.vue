@@ -6,7 +6,9 @@
 
     <template #header>
       <p class="title">
-        <span class="title-text">{{ project.name || project.id }}</span>
+        <span class="title-text">
+          {{ project.name || project.id }}
+        </span>
         <n-tag
           round size="small"
           :bordered="false"
@@ -25,8 +27,13 @@
 
     <div class="info">
       <p v-if="isLocal">
-        <n-tag v-if="isTemporary" round size="small" :bordered="false" type="primary">
-          <span>Local Project</span>
+        <n-tag
+          v-if="isTemporary"
+          round size="small"
+          :bordered="false"
+          type="primary"
+        >
+          <span>{{ $t('project.localProject') }}</span>
           <template #icon>
             <n-icon size="12">
               <HomeOutlined></HomeOutlined>
@@ -34,7 +41,7 @@
           </template>
         </n-tag>
         <n-tag v-else round size="small" :bordered="false" type="primary">
-          <span>Cloud Project in Local</span>
+          <span>{{ $t('project.cloudProjectInLocal') }}</span>
           <template #icon>
             <n-icon size="12">
               <CloudOutlined></CloudOutlined>
@@ -47,7 +54,7 @@
           :style="statusStyle"
           class="public-status"
       >
-        {{ publicStatus ? $t('project.public') : $t('project.private') }}
+        {{ publicStatus ? $t('project.publicStatus') : $t('project.privateStatus') }}
       </p>
       <p class="create-time">{{ $t('project.create') }}: {{ formatTime(project.cTime) }} </p>
       <p class="update-time">{{ $t('project.update') }}: {{ formatTime(project.uTime) }} </p>
@@ -78,7 +85,7 @@
           class="public-btn"
           @click="updateProjectIsPublic"
         >
-          {{ $t(`project.${publicStatusText(!publicStatus)}`) }}
+          {{ $t(`project.${!publicStatus ? 'public' : 'private'}`) }}
         </n-button>
       </div>
     </template>
@@ -112,7 +119,6 @@ const { t } = useI18n({
   useScope: 'global'
 })
 
-const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
 const statusStyle = computed(() => {
   return {
     color: publicStatus.value ? '#4CAF50' : '#FF7E6C'
@@ -127,7 +133,7 @@ const load = async () => {
 const remove = () => {
   dialog.warning({
     title: t('project.removeTitle'),
-    content: t('project.removeContent', { name: project.name || project.id }),
+    content: t(isLocal.value ? 'project.removeLocalContent' : 'project.removeCloudContent', { name: project.name || project.id }),
     positiveText: t('project.yes'),
     negativeText: t('project.no'),
     onPositiveClick: async () => {
@@ -139,7 +145,7 @@ const remove = () => {
       }
       // If the project is the current project, load a blank project
       if (isCurrent.value) {
-        message.success('Delete the current project and reload a blank project.')
+        message.success(t('project.removeMessage'))
         useProjectStore().loadBlankProject()
       }
     }
@@ -149,18 +155,18 @@ const remove = () => {
 const updateProjectIsPublic = async () => {
   try {
     dialog.warning({
-      title: t('project.changePublicStatusTitle'),
-      content: t('project.changePublicStatusContent', { name: project.name || project.id }),
+      title: t('project.changeStatusTitle'),
+      content: t('project.changeStatusContent', { name: project.name || project.id }),
       positiveText: t('project.yes'),
       negativeText: t('project.no'),
       onPositiveClick: async () => {
         await Project.updateProjectIsPublic(project.id, publicStatus.value ? PublicStatus.private : PublicStatus.public)
-        message.success(t('project.changePublicStatusSuccess'))
+        message.success(t('project.successMessage'))
         publicStatus.value = !publicStatus.value
       }
     })
   } catch (e) {
-    message.error(t('project.changePublicStatusFailed'))
+    message.error(t('project.errMessage'))
   }
 }
 
@@ -179,7 +185,7 @@ const formatTime = (time: string) => {
   overflow: hidden;
 
   &.current {
-    border: 5px solid $base-color;
+    border: 3px solid $base-color;
   }
 
   .icon-delete {
