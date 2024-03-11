@@ -1,5 +1,4 @@
 # All-in-one Dockerfile for building the SPX GUI
-# TODO: build backend.
 
 FROM golang:1.21 as go-builder
 
