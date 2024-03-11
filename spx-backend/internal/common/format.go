@@ -1,6 +1,8 @@
 package common
 
-import "golang.org/x/mod/modfile"
+import (
+	"golang.org/x/mod/modfile"
+)
 
 func FormatGoMod(file string, data []byte) ([]byte, error) {
 	f, err := modfile.Parse(file, data, nil)

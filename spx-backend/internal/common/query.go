@@ -15,28 +15,36 @@ type FilterCondition struct {
 	Value     interface{} // value
 }
 
+type OrderByCondition struct {
+	Column    string // column name
+	Direction string // ASC or DESC
+}
+
 type Pagination[T any] struct {
 	TotalCount int `json:"totalCount"`
 	TotalPage  int `json:"totalPage"`
 	Data       []T `json:"data"`
 }
 
-// QueryByPage common query page method
-func QueryByPage[T any](db *sql.DB, pageIndexParam string, pageSizeParam string, filters []FilterCondition) (*Pagination[T], error) {
+// QueryByPage retrieves a paginated list of items from the database according to the provided filters and order conditions.
+func QueryByPage[T any](db *sql.DB, pageIndexParam string, pageSizeParam string, filters []FilterCondition, orderBy []OrderByCondition) (*Pagination[T], error) {
 	pageIndex, err := strconv.Atoi(pageIndexParam)
 	if err != nil {
 		return nil, err
 	}
+
 	pageSize, err := strconv.Atoi(pageSizeParam)
 	if err != nil {
 		return nil, err
 	}
+
 	tableName := getTableName[T]()
 	scan := tScan[T]()
 	whereClause, args := buildWhereClause(filters)
+	orderByClause := buildOrderByClause(orderBy)
 
 	var totalCount int
-	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM %s%s`, tableName, whereClause)
+	countQuery := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, tableName, whereClause)
 	argsForCount := append([]interface{}{}, args...)
 	err = db.QueryRow(countQuery, argsForCount...).Scan(&totalCount)
 	if err != nil {
@@ -45,13 +53,15 @@ func QueryByPage[T any](db *sql.DB, pageIndexParam string, pageSizeParam string,
 	totalPage := (totalCount + pageSize - 1) / pageSize
 
 	offset := (pageIndex - 1) * pageSize
-	query := fmt.Sprintf("SELECT * FROM %s%s LIMIT ?, ?", tableName, whereClause)
-	argsForQuery := append(args, offset, pageSize) // 添加 LIMIT 参数
+	query := fmt.Sprintf("SELECT * FROM %s %s %s LIMIT ?, ?", tableName, whereClause, orderByClause)
+
+	argsForQuery := append(args, offset, pageSize)
 	rows, err := db.Query(query, argsForQuery...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	var data []T
 	for rows.Next() {
 		item, err := scan(rows)
@@ -76,31 +86,6 @@ func QueryById[T any](db *sql.DB, id string) (*T, error) {
 		return nil, err
 	}
 	return &results[0], nil
-}
-
-// QuerySelect common select query, can customize the wheres
-func QuerySelect[T any](db *sql.DB, filters []FilterCondition) ([]T, error) {
-	tableName := getTableName[T]()
-	scan := tScan[T]()
-	whereClause, args := buildWhereClause(filters)
-
-	query := fmt.Sprintf("SELECT * FROM %s%s", tableName, whereClause)
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var results []T
-	for rows.Next() {
-		item, err := scan(rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, item)
-	}
-
-	return results, nil
 }
 
 // tScan Creates and returns a scan that applies to any struct
@@ -138,6 +123,31 @@ func tScan[T any]() func(rows *sql.Rows) (T, error) {
 	}
 }
 
+// QuerySelect common select query, can customize the wheres
+func QuerySelect[T any](db *sql.DB, filters []FilterCondition) ([]T, error) {
+	tableName := getTableName[T]()
+	scan := tScan[T]()
+	whereClause, args := buildWhereClause(filters)
+
+	query := fmt.Sprintf("SELECT * FROM %s%s", tableName, whereClause)
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []T
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, item)
+	}
+
+	return results, nil
+}
+
 // buildWhereClause Build a WHERE clause based on FilterCondition
 func buildWhereClause(conditions []FilterCondition) (string, []interface{}) {
 	var whereClauses []string
@@ -154,13 +164,72 @@ func buildWhereClause(conditions []FilterCondition) (string, []interface{}) {
 
 	whereClause := ""
 	if len(whereClauses) > 0 {
-		whereClause = " WHERE " + strings.Join(whereClauses, " AND ") // TODO 支持OR操作
+		whereClause = " WHERE " + strings.Join(whereClauses, " AND ") // TODO support "or"
 	}
 
 	return whereClause, args
 }
 
+// buildOrderByClause builds an ORDER BY clause based on OrderByCondition
+func buildOrderByClause(orders []OrderByCondition) string {
+	if len(orders) == 0 {
+		return ""
+	}
+
+	var orderClauses []string
+	for _, order := range orders {
+		orderClauses = append(orderClauses, fmt.Sprintf("%s %s", order.Column, order.Direction))
+	}
+
+	return " ORDER BY " + strings.Join(orderClauses, ", ")
+}
+
 // getTableName Get the table name based on reflection
 func getTableName[T any]() string {
 	return strings.ToLower(reflect.TypeOf((*T)(nil)).Elem().Name())
+}
+
+// QueryPageBySQL
+func QueryPageBySQL[T any](db *sql.DB, sqlQuery string, pageIndexParam string, pageSizeParam string, args []interface{}) (*Pagination[T], error) {
+	pageIndex, err := strconv.Atoi(pageIndexParam)
+	if err != nil {
+		return nil, err
+	}
+	pageSize, err := strconv.Atoi(pageSizeParam)
+	if err != nil {
+		return nil, err
+	}
+	// Calculate total count for pagination
+	var totalCount int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS count_table", sqlQuery)
+	argsForCount := append([]interface{}{}, args...)
+	err = db.QueryRow(countQuery, argsForCount...).Scan(&totalCount)
+	if err != nil {
+		return nil, err
+	}
+	totalPage := (totalCount + pageSize - 1) / pageSize
+	// Execute the paginated query
+	offset := (pageIndex - 1) * pageSize
+	paginatedQuery := fmt.Sprintf("%s LIMIT ? OFFSET ?", sqlQuery)
+	argsForQuery := append(args, pageSize, offset)
+	rows, err := db.Query(paginatedQuery, argsForQuery...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// Scan rows into the struct T
+	var data []T
+	scan := tScan[T]()
+	for rows.Next() {
+		item, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, item)
+	}
+	return &Pagination[T]{
+		TotalCount: totalCount,
+		TotalPage:  totalPage,
+		Data:       data,
+	}, nil
 }
