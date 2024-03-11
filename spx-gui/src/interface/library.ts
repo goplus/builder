@@ -24,6 +24,7 @@ interface Asset {
   status?: number;
   cTime?: number;
   uTime?: number;
+  previewAddress?: string;
 }
 
 interface Project {
