@@ -40,12 +40,25 @@ export const useSoundStore = defineStore("sound", () => {
     return map.value.has(name);
   }
 
+  function updateItemName(oldName: string, newName: string) {
+    const sound = map.value.get(oldName);
+    if (sound && !map.value.has(newName)) {
+      project.value.sound.remove(sound);
+      sound.name = newName;
+      project.value.sound.add(sound);
+      if (current.value === sound) {
+        current.value = sound;
+      }
+    }
+  }
+
   return {
     list,
     current,
     addItem,
     setCurrentByName,
     removeItemByName,
-    existsByName
+    existsByName,
+    updateItemName
   }
 })

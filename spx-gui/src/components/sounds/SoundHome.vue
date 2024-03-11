@@ -31,6 +31,7 @@
         :asset="selectedSound"
         style="margin-left: 10px"
         @update-sound-file="handleSoundFileUpdate"
+        @update-sound-name="handleSoundFileNameUpdate"
       />
     </n-layout-content>
   </n-layout>
@@ -63,6 +64,15 @@ const handleSoundFileUpdate = (newFile: File) => {
       'save successfully!',
       { duration: 1000 }
     );
+  }
+};
+
+const handleSoundFileNameUpdate = (newName: string) => {
+  if (selectedSound.value && newName.trim() !== '') {
+    const oldName = selectedSound.value.name;
+    selectedSound.value.name = newName;
+    console.log(selectedSound.value.name)
+    soundStore.updateItemName(oldName, newName);
   }
 };
 
