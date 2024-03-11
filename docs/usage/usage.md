@@ -1,11 +1,13 @@
 ## Overview
-In out platform, the top section is the toolbar, the left section is the code and sound editing area for the project, and the right section is the stage viewer along with the sprite and background editing area.
+In out platform, the top section is the toolbar, the left section is the code and sound editing area for the project, and the right section is the stage viewer along with the sprite and backdrop editing area.
 
 Upon entering the editor, you will see our default project, which consists of a white backdrop and a small cow.
 
 ![](../static/usage/overview.png)
 
 ## Edit
+
+### Assets Import
 We can import new sprite by the "ADD NEW" area in the sprite list.
 
 If we want to upload local images as sprite.We can choose to click the upload button of the "ADD NEW" area, and name the sprite, and upload its costume image from local. We can also select the category for the sprite and choose whether to upload it to the asset library.
@@ -24,6 +26,7 @@ Of course, we also have a way to import sprites. We can choose to import scratch
 
 ![](../static/usage/scrach-file.png)
 
+### Stage viewer & Assets list
 After importing the sprite, You can see the sprite on the sprite list and in the stage viewer. 
 
 We can click to select the sprite to see its corresponding properties. We can adjust its properties through the property editing bar above the sprite list, which can edit the sprite's coordinates, size, heading, and whether to display it. 
@@ -34,6 +37,8 @@ We can also import the backdrop in the same way as the import sprite.
 
 ![](../static/usage/stageviewer.png)
 
+### Code editor
+
 At this point, we hope to edit the behavior of the sprite. After selecting the sprite, we can go to the editing area on the left. 
 
 For example, we hope that after clicking on the sprite, the sprite will say "hello world". Then we can enter the code in the code editor. The code editor is configured with syntax prompts, which can quickly input spx statements. Users can directly click on the toolbox on the side to quickly insert the corresponding spx code.
@@ -41,6 +46,7 @@ And We can click "format" button to format the code. If there is a format error,
 
 ![](../static/usage/code-editor.png)
 
+### Sound editor
 At this point, we want to edit and use the sound we just imported.Click the sound button to switch to the sound editing area, where you can preview, replay, edit volume, crop and replace audio, record audio and import to current project.
 
 Then We can switch to the code editing area and add the code `play Meow, true` in the click event code to let the sprite play the sound after being clicked.
@@ -51,6 +57,22 @@ Click on our sprite, the sprite will display the Hello World and play the sound,
 
 ![](../static/usage/sound.png)
 
+### Entrycode
+If we want to do another function at this time: there are two sprites on the stage, and each sprite clicks will output the number of times all the sprite have been clicked.
+
+Then we can upload another sprite using the method we just did. 
+And since both sprites need to be able to modify and output the number of clicks on all sprites when clicked, we need to declare a global variable.
+
+We can choose to click the entryCode button to enter the editing area and declare a count variable to record the number of clicks.
+
+And in the click events of the two sprites, both write the logic of modifying and outputting the number of clicks, click run, and you can view the corresponding effect.
+```
+onClick => {
+    count++
+    say count
+}
+```
+![](../static/usage/entrycode.png)
 
 ## Sign in
 > If you want to save the project to the cloud and import the project from the cloud in the following steps, please sign in first
@@ -68,6 +90,5 @@ We can import the project in a variety of ways by clicking the File button in th
 1. Upload projects in zip format locally
 2. Import a project from a local save history
 3. Import projects from the cloud
-
 
 ![](../static/usage/project-list.png)
