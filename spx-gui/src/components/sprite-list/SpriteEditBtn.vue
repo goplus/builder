@@ -2,26 +2,29 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:09:35
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-07 21:03:54
+ * @LastEditTime: 2024-03-11 18:48:45
  * @FilePath: /builder/spx-gui/src/components/sprite-list/SpriteEditBtn.vue
  * @Description: 
 -->
 <template>
   <n-flex justify="space-around">
     <div class="sprite-edit-btn">
-      <n-input round autosize clearable :placeholder="$t('stage.spriteHolder')" :value="name" 
-      @update:value="
+      <n-input
+        round
+        autosize
+        clearable
+        :placeholder="$t('stage.spriteHolder')"
+        :value="name"
+        @update:value="
           (val) => {
             spriteStore.current && spriteStore.current.setName(val as string)
           }
-        ">
-        <template #prefix>
-          {{ $t('stage.sprite') }}:
-      </template>
-    </n-input>
+        "
+      >
+        <template #prefix> {{ $t('stage.sprite') }}: </template>
+      </n-input>
     </div>
     <div class="sprite-edit-btn">
-      
       <n-input-number
         style="border-radius: 25px"
         class="edit-input"
@@ -37,9 +40,7 @@
           }
         "
       >
-      <template #prefix>
-        X:
-      </template>
+        <template #prefix> X: </template>
       </n-input-number>
     </div>
     <div class="sprite-edit-btn">
@@ -53,10 +54,8 @@
           }
         "
       >
-      <template #prefix>
-        Y:
-      </template>
-    </n-input-number>
+        <template #prefix> Y: </template>
+      </n-input-number>
     </div>
     <div class="sprite-edit-btn edit-switch-btn">
       <p>{{ $t('stage.show') }}:</p>
@@ -82,9 +81,7 @@
           }
         "
       >
-      <template #prefix>
-        {{ $t('stage.size') }}:
-      </template>
+        <template #prefix> {{ $t('stage.size') }}: </template>
       </n-input-number>
     </div>
 
@@ -101,9 +98,7 @@
           }
         "
       >
-      <template #prefix>
-        {{ $t('stage.direction') }}:
-      </template>
+        <template #prefix> {{ $t('stage.direction') }}: </template>
       </n-input-number>
     </div>
   </n-flex>
@@ -111,7 +106,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 
@@ -133,7 +128,7 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.name : ''
   display: flex;
   margin: 2px;
   min-width: 105px;
-  line-height:2rem;
+  line-height: 2rem;
   p {
     margin: 0;
   }
@@ -141,9 +136,8 @@ const name = computed(() => (spriteStore.current ? spriteStore.current.name : ''
   .n-input-number {
     min-width: 100%;
   }
-  
 }
-.edit-switch-btn{
+.edit-switch-btn {
   align-items: center;
   justify-content: center;
 }

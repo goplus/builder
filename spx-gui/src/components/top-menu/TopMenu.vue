@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 17:46:15
+ * @LastEditTime: 2024-03-11 18:49:37
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -32,7 +32,6 @@ import ProjectList from '@/components/project-list/ProjectList.vue'
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
 const themeStyle = ref<number>(ThemeStyleType.Pink)
-const themeMap = ['Pink', 'Yellow', 'Blue']
 
 // active key for route
 const activeKey = ref(null)

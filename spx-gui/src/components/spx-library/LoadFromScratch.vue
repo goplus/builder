@@ -31,12 +31,12 @@
         v-for="assetFileDetail in assetFileDetails"
         :key="assetFileDetail.url"
         class="file-row"
-        @click="chooseAssets(assetFileDetail)"
         :style="{
           border: selectedAssets.includes(assetFileDetail)
             ? `3px solid ${commonColor}`
             : '3px solid #eeeeee'
         }"
+        @click="chooseAssets(assetFileDetail)"
       >
         <n-input
           v-model:value="assetFileDetail.name"
