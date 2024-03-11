@@ -19,6 +19,7 @@ import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
+import { useUserStore } from '@/store'
 
 export enum ProjectSource {
   local = 'local',
@@ -102,6 +103,8 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static TEMPORARY_ID_PREFIX = 'temp__'
 
+  static ALL_USER = '*'
+
   static fromRawData(data: ProjectDetail & ProjectSummary): Project {
     const project = new Project()
     Object.assign(project, data)
@@ -118,14 +121,14 @@ export class Project implements ProjectDetail, ProjectSummary {
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(isUser: boolean = true, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
-    const res = await getProjects(pageIndex, pageSize, isUser)
+  static async getCloudProjects(author?: string, isPublic?: PublicStatus, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
+    const res = await getProjects(pageIndex, pageSize, isPublic, author)
     const projects = res.data || []
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  static updateProjectIsPublic(id: string): Promise<string> {
-    return updateProjectIsPublic(id)
+  static updateProjectIsPublic(id: string, status: PublicStatus): Promise<string> {
+    return updateProjectIsPublic(id, status)
   }
 
   static async removeLocalProject(id: string) {
@@ -158,12 +161,12 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
     this.source = source
-    if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
-      this._temporaryId = id
-    } else {
-      this._id = id
-    }
     if (source === ProjectSource.local) {
+      if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
+        this._temporaryId = id
+      } else {
+        this._id = id
+      }
       const paths = (await fs.readdir(id)) as string[]
       if (!paths.length) {
         throw new Error('Project not found')
@@ -181,7 +184,10 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.cTime = summary.cTime || this.cTime
       this.uTime = summary.uTime || this.uTime
     } else {
-      const { address, name, version, cTime, uTime } = await getProject(id)
+      const { address, name, version, cTime, uTime, authorId } = await getProject(id)
+      if (useUserStore().userInfo?.id === authorId) {
+        this._id = id
+      }
       this.version = version
       this.cTime = cTime
       this.uTime = uTime
