@@ -39,7 +39,6 @@
         </n-tag>
       </p>
       <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="version">version: {{ project.version }} </p>
       <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
       <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
     </div>
