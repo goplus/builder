@@ -18,11 +18,19 @@ func UploadFile(ctx context.Context, bucket *blob.Bucket, blobKey string, file i
 	// Extract file extension
 	ext := filepath.Ext(originalFilename)
 
+	var contentType string
+	if ext == ".svg" {
+		contentType = "image/svg+xml"
+	}
+	// Create blob writer with content type
+	wOpts := &blob.WriterOptions{
+		ContentType: contentType,
+	}
 	//File name encryption
 	blobKey = blobKey + Encrypt(time.Now().String(), originalFilename) + ext
 
 	// create blob writer
-	w, err := bucket.NewWriter(ctx, blobKey, nil)
+	w, err := bucket.NewWriter(ctx, blobKey, wOpts)
 	if err != nil {
 		return "", err
 	}
