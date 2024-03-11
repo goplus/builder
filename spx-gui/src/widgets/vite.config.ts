@@ -2,15 +2,15 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-27 17:11:17
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-11 00:17:32
- * @FilePath: \spx-gui\src\widgets\vite.config.ts
+ * @LastEditTime: 2024-03-11 09:18:59
+ * @FilePath: /spx-gui/src/widgets/vite.config.ts
  * @Description:
  */
 import { defineConfig , loadEnv} from 'vite'
 
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
-import buildLoader from './scripts/build-loader-plugin'
+import buildLoader from './scripts/build-loader'
 const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({mode}) => {
   // get the project root's env
