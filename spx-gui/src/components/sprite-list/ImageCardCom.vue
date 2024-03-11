@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 15:55:04
+ * @LastEditTime: 2024-03-11 17:30:22
  * @FilePath: \spx-gui\src\components\sprite-list\ImageCardCom.vue
  * @Description:
 -->
@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, computed, onMounted, ref } from 'vue'
+import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 import { useBackdropStore } from '@/store/modules/backdrop'
@@ -53,7 +53,6 @@ import { Backdrop } from '@/class/backdrop'
 import FileWithUrl from '@/class/file-with-url'
 import error from '@/assets/image/library/error.svg'
 import type { Scene } from '@/interface/file'
-import { fetchSvgContent } from '@/util/utils'
 
 // ----------props & emit------------------------------------
 interface PropType {

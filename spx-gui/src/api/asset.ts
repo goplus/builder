@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 16:11:21
+ * @LastEditTime: 2024-03-11 17:06:16
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -36,7 +36,8 @@ export function getAssetList({
   assetType,
   category,
   isOrderByTime,
-  isOrderByHot
+  isOrderByHot,
+  author
 }: {
   assetLibraryType: string
   pageIndex: number
@@ -45,16 +46,17 @@ export function getAssetList({
   category?: string
   isOrderByTime?: boolean
   isOrderByHot?: boolean
+  author?: string
 }): Promise<PageAssetResponse> {
   const baseAssetUrl = '/assets/list'
-  let state = ''
+  let isPublic = ''
   if (assetLibraryType == 'public') {
-    state = PublishState.PublicAndPrivateLibrary.toString()
+    isPublic = PublishState.PublicAndPrivateLibrary.toString()
   } else if (assetLibraryType == 'private') {
-    state = PublishState.PrivateLibrary.toString()
+    isPublic = PublishState.PrivateLibrary.toString()
   }
   const params = new URLSearchParams()
-  params.append('state', state)
+  params.append('isPublic', isPublic)
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
@@ -67,6 +69,9 @@ export function getAssetList({
   }
   if (isOrderByHot) {
     params.append('isOrderByHot', '1')
+  }
+  if (author) {
+    params.append('author', author)
   }
 
   const url = `${baseAssetUrl}?${params.toString()}`
@@ -186,7 +191,7 @@ export function publishAsset(
   files: File[],
   assetType: number,
   publishState: PublishState,
-  gif?: string,
+  previewAddress?: string,
   category?: string
 ): Promise<string> {
   const url = `/asset`
@@ -196,8 +201,8 @@ export function publishAsset(
   files.forEach((file) => {
     formData.append('files', file)
   })
-  if (gif) {
-    formData.append('gif', gif)
+  if (previewAddress) {
+    formData.append('previewAddress', previewAddress)
   }
   if (category) {
     formData.append('category', category)

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 16:16:18
+ * @LastEditTime: 2024-03-11 17:23:46
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -60,9 +60,9 @@
         <n-switch
           checked-value="private"
           unchecked-value="public"
-          @update:value="handleAssetLibraryOption"
-          :rail-style="railStyle"
           style="width: 130px; float: right; margin: 10px 0 0 0"
+          :rail-style="railStyle"
+          @update:value="handleAssetLibraryOption"
         >
           <template #unchecked> Public </template>
           <template #checked> Private </template>
@@ -94,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps, ref, watch, onMounted, computed } from 'vue'
+import { defineEmits, defineProps, ref, watch, onMounted } from 'vue'
 import type { CSSProperties } from 'vue'
 import {
   NModal,
@@ -105,8 +105,6 @@ import {
   NInput,
   NIcon,
   NEmpty,
-  NRadioGroup,
-  NRadioButton,
   NSwitch
 } from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
@@ -181,16 +179,23 @@ const setAssets = async () => {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (assetType: number, category?: string) => {
+const fetchAssetsByType = async (assetType: number, category?: string, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
   try {
+    // todo: change pagesize 
     const pageIndex = 1
-    const pageSize = 20
+    const pageSize = 50
+    if(assetLibraryOption.value == "public"){
+      author = "*"
+    }
     const response = await getAssetList({
       assetLibraryType: assetLibraryOption.value,
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
-      category: category
+      category: category,
+      isOrderByTime: isOrderByTime,
+      isOrderByHot: isOrderByHot,
+      author: author
     })
     if (response.data.data.data == null) return []
     return response.data.data.data
@@ -231,7 +236,7 @@ const closeModalFunc = () => {
  * @Date: 2024-01-30 11:51:05
  */
 const handleAddAsset = async (id: number, name: string, address: string) => {
-  let res = await addAssetClickCount(id)
+  await addAssetClickCount(id)
   emits('add-asset', name, address)
 }
 
@@ -282,18 +287,8 @@ const handleSearch = async () => {
  * @Date: 2024-02-19 9:09:05
  */
 const handleSortByHot = async () => {
-  let pageIndex = 1
-  let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  let res = await getAssetList({
-    assetLibraryType: assetLibraryOption.value,
-    pageIndex: pageIndex,
-    pageSize: pageSize,
-    assetType: assetType,
-    category: nowCategory.value,
-    isOrderByHot: true
-  })
-  assetInfos.value = res.data.data.data
+  fetchAssetsByType(assetType,undefined,undefined,true)
 }
 
 /**
@@ -303,18 +298,8 @@ const handleSortByHot = async () => {
  * @Date: 2024-02-19 9:19:01
  */
 const handleSortByTime = async () => {
-  let pageIndex = 1
-  let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  let res = await getAssetList({
-    assetLibraryType: assetLibraryOption.value,
-    pageIndex: pageIndex,
-    pageSize: pageSize,
-    assetType: assetType,
-    category: nowCategory.value,
-    isOrderByTime: true
-  })
-  assetInfos.value = res.data.data.data
+  fetchAssetsByType(assetType,undefined,true)
 }
 
 const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {

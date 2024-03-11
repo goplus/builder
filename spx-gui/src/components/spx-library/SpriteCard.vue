@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-08 16:17:39
+ * @LastEditTime: 2024-03-11 17:33:24
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -10,25 +10,15 @@
   <!-- S Component Sprite Card -->
   <div
     class="sprite-card"
-    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl, svgDataUrl)"
+    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)"
   >
     <!-- S Component First Static Costume Card -->
     <n-image
-      v-if="!isSvg && !shouldShowGif"
+      v-if="!shouldShowGif"
       preview-disabled
       width="100"
       height="100"
       :src="assetImageUrl"
-      :fallback-src="error"
-      @mouseenter="isHovering = true"
-      @mouseleave="isHovering = false"
-    />
-    <n-image
-      v-if="isSvg"
-      preview-disabled
-      width="100"
-      height="100"
-      :src="svgDataUrl"
       :fallback-src="error"
       @mouseenter="isHovering = true"
       @mouseleave="isHovering = false"
@@ -46,7 +36,6 @@
       @mouseleave="isHovering = false"
     />
     <!-- E Component Gif Costume Card -->
-
     {{ props.assetInfo.name }}
   </div>
   <!-- E Component Sprite Card -->
@@ -55,10 +44,9 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { NImage } from 'naive-ui'
-import { defineProps, defineEmits, computed, ref, onMounted } from 'vue'
+import { defineProps, defineEmits, computed, ref } from 'vue'
 import type { Asset } from '@/interface/library'
 import error from '@/assets/image/library/error.svg'
-import { fetchSvgContent } from '@/util/utils'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -70,15 +58,8 @@ const emits = defineEmits(['add-asset'])
 // ----------data related -----------------------------------
 // Ref about the hovering state to judge if should show gif.
 const isHovering = ref<boolean>(false)
-// Used to store converted Base64 data URIs
-const svgDataUrl = ref<string>('')
 
 // ----------computed properties-----------------------------
-// Determine if it's an svg image based on the suffix name
-const isSvg = computed(() => {
-  return assetImageUrl.value.endsWith('.svg')
-})
-
 // Compute the asset images' url
 const assetImageUrl = computed(() => {
   try {
@@ -106,16 +87,6 @@ const assetImageGifUrl = computed(() => {
 const shouldShowGif = computed(() => isHovering.value && assetImageGifUrl.value !== '')
 
 // ----------methods-----------------------------------------
-// Client-side fetching of SVG content using fetchAPI and converting to Base64.
-onMounted(() => {
-  if (isSvg.value) {
-    fetchSvgContent(assetImageUrl.value).then((dataUri) => {
-      if (dataUri) {
-        svgDataUrl.value = dataUri
-      }
-    })
-  }
-})
 
 /**
  * @description: A function to add sprite to list
@@ -127,14 +98,9 @@ onMounted(() => {
 const addAssetToListFunc = (
   id: number,
   name: string,
-  address: string | undefined,
-  svgDataUrl: string | undefined
+  address: string | undefined
 ) => {
-  if (isSvg.value) {
-    emits('add-asset', id, name, svgDataUrl)
-  } else {
     emits('add-asset', id, name, address)
-  }
 }
 </script>
 
