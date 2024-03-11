@@ -27,5 +27,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/builder-spx-gui:latest
