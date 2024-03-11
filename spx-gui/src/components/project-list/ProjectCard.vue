@@ -1,14 +1,20 @@
 <template>
-  <n-card id="project-card" hoverable>
+  <n-card id="project-card" hoverable :class="{'current': isCurrent}">
     <template #cover>
       <img :src="defaultProjectImage" alt="">
     </template>
 
     <template #header>
       <p class="title">
-        <span class="title-text">{{ project.name || project.id }}</span>
-        <n-tag round size="small" :bordered="false" type="primary">
-          <span v-if="isUserOwn">Own</span>
+        <span class="title-text">
+          {{ project.name || project.id }}
+        </span>
+        <n-tag
+          round size="small"
+          :bordered="false"
+          type="primary"
+        >
+          <span v-if="isUserOwn">{{ $t('project.own') }}</span>
           <span v-else>{{ project.authorId }}</span>
           <template #icon>
             <n-icon size="12">
@@ -20,9 +26,38 @@
     </template>
 
     <div class="info">
-      <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
-      <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
+      <p v-if="isLocal">
+        <n-tag
+          v-if="isTemporary"
+          round size="small"
+          :bordered="false"
+          type="primary"
+        >
+          <span>{{ $t('project.localProject') }}</span>
+          <template #icon>
+            <n-icon size="12">
+              <HomeOutlined></HomeOutlined>
+            </n-icon>
+          </template>
+        </n-tag>
+        <n-tag v-else round size="small" :bordered="false" type="primary">
+          <span>{{ $t('project.cloudProjectInLocal') }}</span>
+          <template #icon>
+            <n-icon size="12">
+              <CloudOutlined></CloudOutlined>
+            </n-icon>
+          </template>
+        </n-tag>
+      </p>
+      <p
+          v-if="!isLocal"
+          :style="statusStyle"
+          class="public-status"
+      >
+        {{ publicStatus ? $t('project.publicStatus') : $t('project.privateStatus') }}
+      </p>
+      <p class="create-time">{{ $t('project.create') }}: {{ formatTime(project.cTime) }} </p>
+      <p class="update-time">{{ $t('project.update') }}: {{ formatTime(project.uTime) }} </p>
     </div>
 
     <template #action>
@@ -33,7 +68,7 @@
           class="load-btn"
           @click="load"
         >
-          Load
+          {{ $t('project.load') }}
         </n-button>
         <n-button
           v-if="isUserOwn"
@@ -41,15 +76,16 @@
           size="small"
           @click="remove"
         >
-          Delete
+          {{ $t('project.delete') }}
         </n-button>
         <n-button
           v-if="!isLocal && isUserOwn"
-          quaternary size="small"
+          size="small"
+          quaternary
           class="public-btn"
           @click="updateProjectIsPublic"
         >
-          {{ publicStatusText(!publicStatus) }}
+          {{ $t(`project.${!publicStatus ? 'public' : 'private'}`) }}
         </n-button>
       </div>
     </template>
@@ -61,8 +97,9 @@ import { type ProjectSummary, Project, ProjectSource, PublicStatus } from '@/cla
 import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
-import { UserOutlined } from '@vicons/antd'
+import { UserOutlined, CloudOutlined, HomeOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
+import { useI18n } from "vue-i18n";
 
 const { project } = defineProps<{
   project: ProjectSummary
@@ -72,10 +109,16 @@ const userStore = useUserStore()
 const isUserOwn = computed(() => !project.authorId || userStore.userInfo?.id === project.authorId)
 const publicStatus = ref(project.isPublic == PublicStatus.public)
 const isLocal = computed(() => project.source === ProjectSource.local)
+const isTemporary = computed(() => project.id.startsWith(Project.TEMPORARY_ID_PREFIX))
+const isCurrent = computed(() => project.id === useProjectStore().project.id)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
+// i18n/i10n config
+const { t } = useI18n({
+  inheritLocale: true,
+  useScope: 'global'
+})
 
-const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
 const statusStyle = computed(() => {
   return {
     color: publicStatus.value ? '#4CAF50' : '#FF7E6C'
@@ -89,13 +132,22 @@ const load = async () => {
 
 const remove = () => {
   dialog.warning({
-    title: 'Remove Project',
-    content: 'Are you sure you want to remove this project (' + (project.name || project.id) + ')? This action cannot be undone.',
-    positiveText: 'Yes',
-    negativeText: 'No',
+    title: t('project.removeTitle'),
+    content: t(isLocal.value ? 'project.removeLocalContent' : 'project.removeCloudContent', { name: project.name || project.id }),
+    positiveText: t('project.yes'),
+    negativeText: t('project.no'),
     onPositiveClick: async () => {
       await Project.removeProject(project.id, project.source)
       emit('remove-project')
+      // If the project is from cloud, remove it from local
+      if (!isLocal.value) {
+        await Project.removeProject(project.id, ProjectSource.local)
+      }
+      // If the project is the current project, load a blank project
+      if (isCurrent.value) {
+        message.success(t('project.removeMessage'))
+        useProjectStore().loadBlankProject()
+      }
     }
   })
 }
@@ -103,18 +155,18 @@ const remove = () => {
 const updateProjectIsPublic = async () => {
   try {
     dialog.warning({
-      title: 'Change Public Status',
-      content: 'Are you sure you want to change public status of this project (' + (project.name || project.id) + ') to ' + publicStatusText(!publicStatus.value) + '?',
-      positiveText: 'Yes',
-      negativeText: 'No',
+      title: t('project.changeStatusTitle'),
+      content: t('project.changeStatusContent', { name: project.name || project.id }),
+      positiveText: t('project.yes'),
+      negativeText: t('project.no'),
       onPositiveClick: async () => {
-        await Project.updateProjectIsPublic(project.id)
-        message.success('change project status success')
+        await Project.updateProjectIsPublic(project.id, publicStatus.value ? PublicStatus.private : PublicStatus.public)
+        message.success(t('project.successMessage'))
         publicStatus.value = !publicStatus.value
       }
     })
   } catch (e) {
-    message.error('change project status failed')
+    message.error(t('project.errMessage'))
   }
 }
 
@@ -131,6 +183,10 @@ const formatTime = (time: string) => {
   border-radius: 20px;
   box-sizing: border-box;
   overflow: hidden;
+
+  &.current {
+    border: 3px solid $base-color;
+  }
 
   .icon-delete {
     position: absolute;
@@ -178,18 +234,17 @@ const formatTime = (time: string) => {
       .title-text {
         text-overflow: ellipsis;
         overflow: hidden;
+        margin-right: 12px;
       }
+    }
+  }
 
-      .n-tag {
-        margin-left: 12px;
-        line-height: 16px;
-        margin-right: auto;
+  .n-tag {
+    line-height: 16px;
 
-        :deep(.n-tag__icon) {
-          margin-right: 8px;
-          align-items: baseline;
-        }
-      }
+    :deep(.n-tag__icon) {
+      margin-right: 8px;
+      align-items: baseline;
     }
   }
 

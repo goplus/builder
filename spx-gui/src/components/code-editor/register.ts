@@ -64,14 +64,14 @@ export const register = () => {
         base: "vs",
         inherit: true,
         rules: [
-            { token: 'comment', foreground: '#ffbdb398', fontStyle: 'italic' },
-            { token: 'string', foreground: '#F96B6B' },
-            { token: 'operator', foreground: '#FF8C00' },
+            { token: 'comment', foreground: '#F8BBD0', fontStyle: 'italic' },
+            { token: 'string', foreground: '#9CCC65' },
+            { token: 'operator', foreground: '#7FDAFF' },
             { token: 'number', foreground: '#3AA6D4' },
-            { token: 'keyword', foreground: '#fa81a899' },
-            { token: 'typeKeywords', foreground: '#fa81a899' },
-            { token: 'functions', foreground: '#000000' },
-            { token: 'brackets', foreground: '#000000' },
+            { token: 'keyword', foreground: '#E4564A' },
+            { token: 'typeKeywords', foreground: '#BA68C8' },
+            { token: 'functions', foreground: '#FF80AB' },
+            { token: 'brackets', foreground: '#00ACC1' },
         ],
         colors: {
             "editor.background": "#FFFFFF", // 透明背景
