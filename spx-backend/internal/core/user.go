@@ -50,7 +50,7 @@ func ParseToken(ctrl *Controller, ctx *yap.Context) string {
 	}
 	userId, err := ctrl.GetUser(token)
 	if err != nil {
-		fmt.Printf("get user error:", err)
+		fmt.Printf("get user error:%v", err)
 		return ""
 	}
 	return userId
