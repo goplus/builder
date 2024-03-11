@@ -46,7 +46,7 @@ export class SpriteList extends AssetList<Sprite> {
   remove(sprite: Sprite | string): Sprite | null {
     const removeSprite = typeof sprite === 'string' ? super.remove(sprite) : super.remove(sprite)
     if (removeSprite) {
-      const index = this.project.backdrop.config.zorder.indexOf(removeSprite)
+      const index = this.project.backdrop.config.zorder.indexOf(removeSprite.name)
       if (index !== -1) {
         this.project.backdrop.config.zorder.splice(index, 1)
       }

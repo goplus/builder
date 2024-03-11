@@ -8,7 +8,7 @@
   >
     <template #header>
       <div style="width: 30vw">
-        <n-input v-model:value="searchQuery" size="large" placeholder="Search" round clearable></n-input>
+        <n-input v-model:value="searchQuery" size="large" :placeholder="$t('project.search')" round clearable></n-input>
       </div>
     </template>
 
@@ -22,7 +22,9 @@
       <!-- No other tabs can be switched until the request is finished -->
       <n-tab-pane
         v-for="item in state.tabs"
-        :key="item" :name="item"
+        :key="item"
+        :name="item"
+        :label="$t(`project.${item.toLowerCase()}`)"
         :disabled="isRequesting && state.currentTab !== item"
       >
         <div class="container">
@@ -44,7 +46,7 @@
               </TransitionGroup>
             </n-grid-item>
           </n-grid>
-          <n-empty v-else description="There's nothing."></n-empty>
+          <n-empty v-else :description="$t('project.nothing')"></n-empty>
         </div>
       </n-tab-pane>
     </n-tabs>
@@ -56,7 +58,6 @@ import { computed, type ComputedRef, defineEmits, defineProps, onMounted, reacti
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
 import { Project, type ProjectSummary } from '@/class/project';
 import ProjectCard from './ProjectCard.vue'
-import { AxiosError } from 'axios';
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -79,7 +80,7 @@ const searchQuery = ref('')
 const isRequesting = ref<boolean>(false)
 const projectList = ref<ProjectSummary[]>([])
 const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
-  return projectList.value.filter(project => project.name?.includes(searchQuery.value) || project.id.includes(searchQuery.value))
+  return projectList.value.filter(project => project.name?.includes(searchQuery.value) || project.id.includes(searchQuery.value)).sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
 })
 
 const state = reactive({
@@ -119,11 +120,11 @@ const getProjects = async () => {
     } else if (type === TabEnum.cloud) {
       projectList.value = await Project.getCloudProjects()
     } else {
-      projectList.value = await Project.getCloudProjects(false)
+      projectList.value = await Project.getCloudProjects(Project.ALL_USER)
     }
     isRequesting.value = false
   } catch (e) {
-    if (e instanceof AxiosError) {
+    if (e instanceof Error) {
       console.error(e)
       isRequesting.value = false
     }
