@@ -6,8 +6,6 @@ set -ex
 
 echo "WORKSPACE: ${PWD}"
 
-# TODO: Include the logic to also build the backend once the PR is merged
-
 export CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
 docker build -t ${CONTAINER_IMAGE} -f ./Dockerfile . --builder="kube" --push
 
