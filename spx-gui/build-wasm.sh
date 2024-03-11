@@ -2,10 +2,10 @@
 echo Run this script from 'spx-gui' directory
 
 cd ../tools/fmt
-source build.sh
+source ./build.sh
 
 cd ../ispx
-source build.sh
+source ./build.sh
 
 cd ..
 
