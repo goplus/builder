@@ -174,7 +174,7 @@ const waveSurfer = ref<WaveSurferInstance | null>(null);
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer;
 let isPlaying: Ref<boolean> = ref(false);
-let currentSpeedIndex: number = 1
+let currentSpeedIndex: number = 1;
 const playbackSpeeds: number[] = [0.5, 1.0, 1.25, 1.5, 2.0, 4.0];
 let currentSpeed: Ref<number> = ref(1.0);
 let buffer: AudioBuffer | null = null;

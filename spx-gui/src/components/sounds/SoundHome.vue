@@ -71,7 +71,6 @@ const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     const oldName = selectedSound.value.name;
     selectedSound.value.name = newName;
-    console.log(selectedSound.value.name)
     soundStore.updateItemName(oldName, newName);
   }
 };
