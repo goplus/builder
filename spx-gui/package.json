@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build",
+    "build": "vue-tsc --build --force && vite build && npm run build-widget",
     "build-widget": "tsc ./src/widgets/scripts/loader-template.ts && vite build --config ./src/widgets/vite.config.ts && rm ./src/widgets/scripts/loader-template.js",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
