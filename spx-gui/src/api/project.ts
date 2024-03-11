@@ -3,6 +3,7 @@ import { service } from "@/axios"
 import type { ResponseData } from "@/axios";
 import type { FormatResponse } from "@/components/code-editor";
 import type { AxiosResponse } from "axios";
+import { PublicStatus } from "@/class/project";
 
 /**
  * Saves a project.
@@ -13,7 +14,7 @@ import type { AxiosResponse } from "axios";
  * @returns Project
  */
 export async function saveProject(name: string, file: File, id?: string): Promise<Project> {
-    const url = '/project/allsave';
+    const url = '/project';
     const formData = new FormData();
     formData.append('name', name);
     formData.append('file', file);
@@ -38,11 +39,17 @@ export async function saveProject(name: string, file: File, id?: string): Promis
  * Fetches a list of projects.
  * @param pageIndex The index of the page to retrieve in a paginated list.
  * @param pageSize The number of projects to retrieve per page.
- * @param isUser Whether the project is current user's project.
+ * @param isPublic Public projects or user projects.
  * @returns Project[]
  */
-export async function getProjects(pageIndex: number, pageSize: number, isUser: boolean): Promise<PageData<Project[]>> {
-    const url = isUser ? `/list/userProject/${pageIndex}/${pageSize}` : `/list/pubProject/${pageIndex}/${pageSize}`;
+export async function getProjects(pageIndex: number, pageSize: number, isPublic?: PublicStatus, author?: string): Promise<PageData<Project[]>> {
+    const baseUrl = `/projects/list`
+    const params = new URLSearchParams()
+    params.append('pageIndex', String(pageIndex))
+    params.append('pageSize', String(pageSize))
+    isPublic !== undefined && params.append('isPublic', String(isPublic))
+    author && params.append('author', author)
+    const url = `${baseUrl}?${params.toString()}`
     return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
@@ -52,7 +59,7 @@ export async function getProjects(pageIndex: number, pageSize: number, isUser: b
  * @returns Project
  */
 export async function getProject(id: string): Promise<Project> {
-    const url = `/project?id=${id}`;
+    const url = `/project/${id}`;
     return service({ url: url, method: 'get' }).then((res) => res.data.data);
 }
 
@@ -62,10 +69,8 @@ export async function getProject(id: string): Promise<Project> {
  * @returns string
  */
 export async function removeProject(id: string): Promise<string> {
-    const url = `/project/delete`;
-    const formData = new FormData();
-    formData.append('id', id);
-    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
+    const url = `/project/${id}`;
+    return service({ url: url, method: 'delete' }).then((res) => res.data.data);
 }
 
 /**
@@ -73,11 +78,9 @@ export async function removeProject(id: string): Promise<string> {
  * @param id project id that will be public
  * @returns
  */
-export async function updateProjectIsPublic(id: string): Promise<string> {
-    const url =  `/project/updateIsPublic`;
-    const formData = new FormData();
-    formData.append('id', id);
-    return service({ url: url, method: 'post', data: formData }).then((res) => res.data.data);
+export async function updateProjectIsPublic(id: string, status: PublicStatus): Promise<string> {
+    const url =  `/project/${id}/is-public?isPublic=${status}`;
+    return service({ url: url, method: 'put' }).then((res) => res.data.data);
 }
 
 /**
@@ -87,16 +90,16 @@ export async function updateProjectIsPublic(id: string): Promise<string> {
  * @returns string
  */
 export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<FormatResponse>>> {
-    const url = '/project/fmt';
-    const formData = new FormData();
-    formData.append('body', body);
+  const url = '/project/fmt'
+  const formData = new FormData()
+  formData.append('body', body)
 
-    return service({
-        url: url,
-        method: 'post',
-        data: formData,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        },
-    });
+  return service({
+    url: url,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }
