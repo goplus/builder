@@ -2,12 +2,12 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 17:06:16
+ * @LastEditTime: 2024-03-11 18:34:52
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
 import { service } from '@/axios'
-import type { Asset, PageAssetResponse, SearchAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
+import type { Asset, PageAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
 
@@ -102,19 +102,20 @@ export function getAsset(id: number): Promise<Asset> {
  * @param {number} assetType
  * @return { SearchAssetResponse }
  */
-export function searchAssetByName(search: string, assetType: number): Promise<SearchAssetResponse> {
-  const url = `/assets/search`
-  const formData = new FormData()
-  formData.append('search', search)
-  formData.append('assetType', assetType.toString())
+export function searchAssetByName(pageIndex: number, pageSize: number,search: string, assetType: number): Promise<PageAssetResponse> {
+  const baseAssetUrl = `/assets/search`
+  
+  const params = new URLSearchParams()
+  params.append('pageIndex', pageIndex.toString())
+  params.append('pageSize', pageSize.toString())
+  params.append('search', search)
+  params.append('assetType', assetType.toString())
 
+  const url = `${baseAssetUrl}?${params.toString()}`
+  
   return service({
     url: url,
-    method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+    method: 'get',
   })
 }
 

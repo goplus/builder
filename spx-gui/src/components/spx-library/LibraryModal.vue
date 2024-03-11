@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 17:23:46
+ * @LastEditTime: 2024-03-11 18:37:00
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -179,7 +179,7 @@ const setAssets = async () => {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (assetType: number, category?: string, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
+const fetchAssetsByType = async (assetType: number, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
   try {
     // todo: change pagesize 
     const pageIndex = 1
@@ -192,7 +192,7 @@ const fetchAssetsByType = async (assetType: number, category?: string, isOrderBy
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
-      category: category,
+      category: nowCategory.value,
       isOrderByTime: isOrderByTime,
       isOrderByHot: isOrderByHot,
       author: author
@@ -248,10 +248,11 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
-  nowCategory.value = category
-  if (category === 'ALL') {
+  if(category == 'ALL'){
     category = ''
   }
+  nowCategory.value = category
+  
   await setAssets()
 }
 
@@ -263,19 +264,21 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
+  let pageIndex = 1
+  let pageSize = 50
   if (props.type === 'backdrop') {
-    let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
+    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Backdrop)
     if (res.data.data == null) {
       assetInfos.value = []
     } else {
-      assetInfos.value = res.data.data
+      assetInfos.value = res.data.data.data
     }
   } else if (props.type === 'sprite') {
-    let res = await searchAssetByName(searchQuery.value, AssetType.Sprite)
-    if (res.data.data == null) {
+    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Sprite)
+    if (res.data.data.data == null) {
       assetInfos.value = []
     } else {
-      assetInfos.value = res.data.data
+      assetInfos.value = res.data.data.data
     }
   }
 }
@@ -288,7 +291,7 @@ const handleSearch = async () => {
  */
 const handleSortByHot = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,undefined,undefined,true)
+  fetchAssetsByType(assetType,undefined,true)
 }
 
 /**
@@ -299,11 +302,12 @@ const handleSortByHot = async () => {
  */
 const handleSortByTime = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,undefined,true)
+  fetchAssetsByType(assetType,true)
 }
 
 const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
   assetLibraryOption.value = assetOption
+  searchQuery.value = ''
 }
 
 /**
