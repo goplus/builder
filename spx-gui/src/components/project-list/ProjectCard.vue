@@ -6,9 +6,15 @@
 
     <template #header>
       <p class="title">
-        <span class="title-text">{{ project.name || project.id }}</span>
-        <n-tag round size="small" :bordered="false" type="primary">
-          <span v-if="isUserOwn">Own</span>
+        <span class="title-text">
+          {{ project.name || project.id }}
+        </span>
+        <n-tag
+          round size="small"
+          :bordered="false"
+          type="primary"
+        >
+          <span v-if="isUserOwn">{{ $t('project.own') }}</span>
           <span v-else>{{ project.authorId }}</span>
           <template #icon>
             <n-icon size="12">
@@ -21,8 +27,13 @@
 
     <div class="info">
       <p v-if="isLocal">
-        <n-tag v-if="isTemporary" round size="small" :bordered="false" type="primary">
-          <span>Local Project</span>
+        <n-tag
+          v-if="isTemporary"
+          round size="small"
+          :bordered="false"
+          type="primary"
+        >
+          <span>{{ $t('project.localProject') }}</span>
           <template #icon>
             <n-icon size="12">
               <HomeOutlined></HomeOutlined>
@@ -30,7 +41,7 @@
           </template>
         </n-tag>
         <n-tag v-else round size="small" :bordered="false" type="primary">
-          <span>Cloud Project in Local</span>
+          <span>{{ $t('project.cloudProjectInLocal') }}</span>
           <template #icon>
             <n-icon size="12">
               <CloudOutlined></CloudOutlined>
@@ -38,9 +49,15 @@
           </template>
         </n-tag>
       </p>
-      <p v-if="!isLocal" :style="statusStyle" class="public-status">status: {{ publicStatusText(publicStatus) }}</p>
-      <p class="create-time">create: {{ formatTime(project.cTime) }} </p>
-      <p class="update-time">update: {{ formatTime(project.uTime) }} </p>
+      <p
+          v-if="!isLocal"
+          :style="statusStyle"
+          class="public-status"
+      >
+        {{ publicStatus ? $t('project.publicStatus') : $t('project.privateStatus') }}
+      </p>
+      <p class="create-time">{{ $t('project.create') }}: {{ formatTime(project.cTime) }} </p>
+      <p class="update-time">{{ $t('project.update') }}: {{ formatTime(project.uTime) }} </p>
     </div>
 
     <template #action>
@@ -51,7 +68,7 @@
           class="load-btn"
           @click="load"
         >
-          Load
+          {{ $t('project.load') }}
         </n-button>
         <n-button
           v-if="isUserOwn"
@@ -59,7 +76,7 @@
           size="small"
           @click="remove"
         >
-          Delete
+          {{ $t('project.delete') }}
         </n-button>
         <n-button
           v-if="!isLocal && isUserOwn"
@@ -68,7 +85,7 @@
           class="public-btn"
           @click="updateProjectIsPublic"
         >
-          {{ publicStatusText(!publicStatus) }}
+          {{ $t(`project.${!publicStatus ? 'public' : 'private'}`) }}
         </n-button>
       </div>
     </template>
@@ -82,6 +99,7 @@ import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined, CloudOutlined, HomeOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
+import { useI18n } from "vue-i18n";
 
 const { project } = defineProps<{
   project: ProjectSummary
@@ -95,8 +113,12 @@ const isTemporary = computed(() => project.id.startsWith(Project.TEMPORARY_ID_PR
 const isCurrent = computed(() => project.id === useProjectStore().project.id)
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()
+// i18n/i10n config
+const { t } = useI18n({
+  inheritLocale: true,
+  useScope: 'global'
+})
 
-const publicStatusText = (status: boolean) => status ? 'Public' : 'Private'
 const statusStyle = computed(() => {
   return {
     color: publicStatus.value ? '#4CAF50' : '#FF7E6C'
@@ -110,10 +132,10 @@ const load = async () => {
 
 const remove = () => {
   dialog.warning({
-    title: 'Remove Project',
-    content: `Are you sure you want to remove this project (${project.name || project.id}) from ${isLocal.value ? 'local' : 'cloud'}? This action cannot be undone.` + (!isLocal.value ? ' (This project will be deleted from local if it is existed as well)' : ' (Deleting local projects does not affect cloud projects)'),
-    positiveText: 'Yes',
-    negativeText: 'No',
+    title: t('project.removeTitle'),
+    content: t(isLocal.value ? 'project.removeLocalContent' : 'project.removeCloudContent', { name: project.name || project.id }),
+    positiveText: t('project.yes'),
+    negativeText: t('project.no'),
     onPositiveClick: async () => {
       await Project.removeProject(project.id, project.source)
       emit('remove-project')
@@ -123,7 +145,7 @@ const remove = () => {
       }
       // If the project is the current project, load a blank project
       if (isCurrent.value) {
-        message.success('Delete the current project and reload a blank project.')
+        message.success(t('project.removeMessage'))
         useProjectStore().loadBlankProject()
       }
     }
@@ -133,18 +155,18 @@ const remove = () => {
 const updateProjectIsPublic = async () => {
   try {
     dialog.warning({
-      title: 'Change Public Status',
-      content: 'Are you sure you want to change public status of this project (' + (project.name || project.id) + ') to ' + publicStatusText(!publicStatus.value) + '?',
-      positiveText: 'Yes',
-      negativeText: 'No',
+      title: t('project.changeStatusTitle'),
+      content: t('project.changeStatusContent', { name: project.name || project.id }),
+      positiveText: t('project.yes'),
+      negativeText: t('project.no'),
       onPositiveClick: async () => {
         await Project.updateProjectIsPublic(project.id, publicStatus.value ? PublicStatus.private : PublicStatus.public)
-        message.success('change project status success')
+        message.success(t('project.successMessage'))
         publicStatus.value = !publicStatus.value
       }
     })
   } catch (e) {
-    message.error('change project status failed')
+    message.error(t('project.errMessage'))
   }
 }
 
@@ -163,7 +185,7 @@ const formatTime = (time: string) => {
   overflow: hidden;
 
   &.current {
-    border: 5px solid $base-color;
+    border: 3px solid $base-color;
   }
 
   .icon-delete {
