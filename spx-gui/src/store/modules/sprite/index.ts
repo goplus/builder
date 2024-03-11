@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 11:05:21
+ * @LastEditTime: 2024-03-11 15:50:24
  * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
@@ -26,8 +26,14 @@ export const useSpriteStore = defineStore('sprite', () => {
   watch(
     () => project.value,
     () => {
-      console.log('current clear')
-      current.value = null
+      if (project.value) {
+        current.value = list.value[0] || null
+      } else {
+        current.value = null
+      }
+    },
+    {
+      immediate: true
     }
   )
 
