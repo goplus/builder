@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 14:46:31
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-07 21:06:18
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -14,15 +14,6 @@
     <div class="asset-btn-group">
       <n-button class="import-assets-btn" @click="showImportModal = true">
         {{ $t('scratch.import') }}
-      </n-button>
-      <!-- TODO: temporary use import-assets-btn's style   -->
-      <n-button
-        class="import-assets-btn"
-        style="position: relative"
-        :disabled="editorStore.editContentType === EditContentType.EntryCode"
-        @click="enableEditEntryCode"
-      >
-        entry code
       </n-button>
     </div>
 
@@ -37,6 +28,13 @@
             <!-- S Component Add Button -->
             <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
+            <n-button
+              class="entry-code-btn"
+              :disabled="editorStore.editContentType === EditContentType.EntryCode"
+              @click="enableEditEntryCode"
+            >
+              Entry Code
+            </n-button>
             <!-- S Component ImageCardCom -->
             <ImageCardCom
               v-for="asset in spriteAssets"
@@ -114,10 +112,9 @@ const toggleCodeById = (name: string) => {
   setCurrentByName(name)
 }
 
-const enableEditEntryCode=() => {
+const enableEditEntryCode = () => {
   editorStore.setEditContentType(EditContentType.EntryCode)
 }
-
 
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
@@ -175,6 +172,23 @@ watchEffect(() => {
     padding: 10px;
   }
 }
+.entry-code-btn {
+  width: 110px;
+  height: 110px;
+  margin: 10px auto;
+  border-radius: 20px;
+  border: none;
+  background: #ffffff;
+  color: #333333;
+  box-shadow: 0 0 5px $sprite-list-card-box-shadow;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: visible; // show x button
+  cursor: pointer;
+}
 .asset-btn-group {
   position: absolute;
   left: 108px;
@@ -185,8 +199,8 @@ watchEffect(() => {
     font-size: 16px;
     color: #333333;
     border-radius: 20px;
-    border: 2px solid rgb(0, 20, 41);
-    box-shadow: rgb(0, 20, 41) -1px 2px;
+    // border: 2px solid rgb(0, 20, 41);
+    // box-shadow: rgb(0, 20, 41) -1px 2px;
     cursor: pointer;
     background-color: rgb(255, 248, 204);
     &:hover {

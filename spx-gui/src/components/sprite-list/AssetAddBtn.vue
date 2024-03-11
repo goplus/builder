@@ -144,6 +144,7 @@ import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
+import { AssetType } from '@/constant/constant'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -162,14 +163,14 @@ const categoryOptions = computed(() => [
   { label: t('category.people'), value: 'People' },
   { label: t('category.sports'), value: 'Sports' },
   { label: t('category.food'), value: 'Food' },
-  { label: t('category.fantasy'), value: 'Fantasy' },
-]);
+  { label: t('category.fantasy'), value: 'Fantasy' }
+])
 
 const publicOptions = computed(() => [
   { label: t('publicState.notPublish'), value: PublishState.NotPublished },
   { label: t('publicState.private'), value: PublishState.PrivateLibrary },
-  { label: t('publicState.public'), value: PublishState.PublicAndPrivateLibrary },
-]);
+  { label: t('publicState.public'), value: PublishState.PublicAndPrivateLibrary }
+])
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
 const categoryValue = ref<string>()
@@ -266,7 +267,6 @@ const beforeUpload = (
     let fileURL = URL.createObjectURL(uploadFile.file)
     let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL)
 
-    let fileArray: FileWithUrl[] = [fileWithUrl]
     let fileName = uploadFile.name
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
     switch (fileType) {
@@ -323,35 +323,38 @@ const handleWatchFileList = (data: {
  * @Date: 2024-02-21 17:48:33
  */
 const handleSubmitSprite = async () => {
-  try {
-    let uploadFilesArr: File[] = [];
-    uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
-      if (fileItem && fileItem.file) {
-        uploadFilesArr.push(fileItem.file);
-      }
-    });
+  let uploadFilesArr: File[] = []
+  uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
+    if (fileItem && fileItem.file) {
+      uploadFilesArr.push(fileItem.file)
+    }
+  })
+  let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
+  spriteStore.addItem(sprite)
+  message.success(`Added ${uploadSpriteName.value} to list successfully!`)
 
-    const gifRes = await generateGifByCostumes(uploadFilesArr);
-    console.log(gifRes);
+  try {
+    let gifRes = undefined
+
+    if (uploadFilesArr.length > 1) {
+      const response = await generateGifByCostumes(uploadFilesArr)
+      gifRes = response.data.data
+    }
 
     await publishAsset(
       uploadSpriteName.value,
       uploadFilesArr,
+      AssetType.Sprite,
       publicValue.value,
-      gifRes.data.data,
-      categoryValue.value || undefined,
-    );
-
-    let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr);
-    spriteStore.addItem(sprite);
-    message.success(`Added ${uploadSpriteName.value} successfully!`);
-    uploadSpriteName.value = '';
-    showUploadModal.value = false;
+      gifRes,
+      categoryValue.value || undefined
+    )
   } catch (err) {
-    message.error(`Failed to add ${uploadSpriteName.value}`);
+    message.error(`Failed to upload ${uploadSpriteName.value}`)
   }
-};
-
+  uploadSpriteName.value = ''
+  showUploadModal.value = false
+}
 
 /**
  * @description: A Function before uploading Sound.
@@ -440,7 +443,6 @@ const handleAssetAddition = async (name: string, address: string) => {
     color: white;
     .add-new-font {
       text-align: center;
-      font-family: 'Heyhoo';
     }
   }
 

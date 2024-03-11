@@ -31,12 +31,12 @@
         v-for="assetFileDetail in assetFileDetails"
         :key="assetFileDetail.url"
         class="file-row"
-        @click="chooseAssets(assetFileDetail)"
         :style="{
           border: selectedAssets.includes(assetFileDetail)
             ? `3px solid ${commonColor}`
             : '3px solid #eeeeee'
         }"
+        @click="chooseAssets(assetFileDetail)"
       >
         <n-input
           v-model:value="assetFileDetail.name"
@@ -99,6 +99,7 @@ import error from '@/assets/image/library/error.svg'
 import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
 import { publishAsset, PublishState } from '@/api/asset'
+import { AssetType } from '@/constant/constant'
 
 // ----------props & emit------------------------------------
 
@@ -220,6 +221,7 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
     await publishAsset(
       asset.name,
       uploadFilesArr,
+      AssetType.Sprite,
       PublishState.PrivateLibrary,
       undefined,
       undefined

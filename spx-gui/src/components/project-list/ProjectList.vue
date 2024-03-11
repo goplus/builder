@@ -8,7 +8,7 @@
   >
     <template #header>
       <div style="width: 30vw">
-        <n-input v-model:value="searchQuery" size="large" placeholder="Search" round clearable></n-input>
+        <n-input v-model:value="searchQuery" size="large" :placeholder="$t('project.search')" round clearable></n-input>
       </div>
     </template>
 
@@ -22,7 +22,9 @@
       <!-- No other tabs can be switched until the request is finished -->
       <n-tab-pane
         v-for="item in state.tabs"
-        :key="item" :name="item"
+        :key="item"
+        :name="item"
+        :label="$t(`project.${item.toLowerCase()}`)"
         :disabled="isRequesting && state.currentTab !== item"
       >
         <div class="container">
@@ -44,7 +46,7 @@
               </TransitionGroup>
             </n-grid-item>
           </n-grid>
-          <n-empty v-else description="There's nothing."></n-empty>
+          <n-empty v-else :description="$t('project.nothing')"></n-empty>
         </div>
       </n-tab-pane>
     </n-tabs>
