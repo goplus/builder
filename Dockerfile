@@ -10,10 +10,10 @@ COPY tools ./tools
 COPY spx-backend ./spx-backend
 
 WORKDIR /app/tools/fmt
-RUN ./build.sh && ls .
+RUN ./build.sh
 
 WORKDIR /app/tools/ispx
-RUN ./build.sh && ls .
+RUN ./build.sh
 
 # Install Go+
 RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt/sources.list.d/goplus.list' \
