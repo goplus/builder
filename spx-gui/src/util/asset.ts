@@ -1,6 +1,6 @@
-import type { AssetBase } from "@/class/asset-base"
 import type { Project } from "@/class/project"
 import { keywords, typeKeywords } from "@/components/code-editor/language"
+import { useProjectStore } from "@/store"
 
 interface checkInfo {
     name: string
@@ -15,29 +15,25 @@ export const isValidAssetName = (name: string) => {
     return regex.test(name) && !typeKeywords.includes(name) && !keywords.includes(name)
 }
 
-export function checkUpdatedName<T extends AssetBase>(obj: T, name: string, project: Project): checkInfo {
+export function checkUpdatedName(originalName: string, name: string, project: Project = useProjectStore().project): checkInfo {
     if (!isValidAssetName(name)) throw new Error('Cannot update asset name. Name is invalid! ')
-    const originName = obj.name
-    if (originName === name) return {
-        name,
-        isChanged: false,
-        msg: null
-    }
-    const assetList = [...project.sprite.list, ...project.sound.list]
+
+    const assetList = [...project.sprite.list, ...project.sound.list];
+    const assetSet = new Set(assetList.map(item => item.name));
     let counter = 1
     let changedName = name
-    while (assetList.find(item => item.name === changedName)) {
+
+    while (assetSet.has(changedName) && changedName !== originalName) {
         counter++
         changedName = `${name}_${counter}`
     }
-    if (changedName !== name) return {
-        name: changedName,
-        isChanged: true,
-        msg: `Name must be unique! ${name} already exist. It will be renamed to ${changedName}.`
-    }
+
+    const isChanged = changedName !== name;
+    const msg = isChanged ? `Name must be unique! ${name} already exist. It will be renamed to ${changedName}.` : null;
+
     return {
         name: changedName,
-        isChanged: true,
-        msg: null
+        isChanged,
+        msg
     }
 }

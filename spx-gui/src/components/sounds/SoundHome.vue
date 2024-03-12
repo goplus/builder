@@ -46,7 +46,6 @@ import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from "@/util/asset";
-import { useProjectStore } from "@/store";
 
 const message: MessageApi = useMessage();
 const soundStore = useSoundStore();
@@ -72,11 +71,9 @@ const handleSoundFileUpdate = (newFile: File) => {
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
-      const checkInfo = checkUpdatedName(selectedSound.value, newName, useProjectStore().project)
-      if (checkInfo.isChanged) {
-        selectedSound.value.name = checkInfo.name;
-        message.success('update name successfully!')
-      }
+      const checkInfo = checkUpdatedName(selectedSound.value.name, newName);
+      selectedSound.value.name = checkInfo.name;
+      message.success('update name successfully!');
       if (checkInfo.msg) message.warning(checkInfo.msg);
     } catch(e) {
       if (e instanceof Error)
