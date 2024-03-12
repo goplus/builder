@@ -8,6 +8,7 @@
        </n-gradient-text>
     </span>
       <n-input
+          v-model:value="soundName"
           size="small"
           round
           :placeholder="props.asset?.name || ''"
@@ -163,11 +164,12 @@ const props = defineProps({
   }
 })
 
-const emits = defineEmits(['update-sound-file'])
+const emits = defineEmits(['update-sound-file', 'update-sound-name']);
 
 interface WaveSurferInstance {
   destroy(): void;
 }
+const soundName = ref(props.asset?.name || '');
 const waveSurfer = ref<WaveSurferInstance | null>(null);
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer;
@@ -470,6 +472,15 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+watch(() => props.asset, (newAsset) => {
+  soundName.value = newAsset?.name || '';
+});
+
+watch(soundName, (newName) => {
+  emits('update-sound-name', newName);
+});
+
 
 watch(() => props.asset, () => {
   initSoundEdit();
