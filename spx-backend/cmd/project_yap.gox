@@ -180,27 +180,27 @@ put "/project/:id/is-public", ctx => {
 get "/projects/list", ctx => {
 	currentUid := core.ParseToken(ctrl, ctx)
 	isPublic := ctx.param("isPublic")
-	if isPublic == strconv.Itoa(common.PERSONAL) && currentUid == "" {
-		code := common.NoLogin
-		ctx.json {
-			"code": code,
-			"msg":  common.GetMsg(code),
-			"data": "",
-		}
-		return
-	}
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
 	author := ctx.param("author")
 	authorId := ""
 	if author == "" {
+		if currentUid == "" {
+			code := common.NoLogin
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
 		authorId = currentUid
 	} else if author == "*" {
 		authorId = ""
 	} else {
 		authorId = author
 	}
-	if authorId != currentUid {
+	if authorId != currentUid || currentUid == "" {
 		isPublic = strconv.Itoa(common.PUBLIC)
 	}
 	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
@@ -301,15 +301,6 @@ get "/asset/:id", ctx => {
 get "/assets/list", ctx => {
 	currentUid := core.ParseToken(ctrl, ctx)
 	isPublic := ctx.param("isPublic")
-	if isPublic == strconv.Itoa(common.PERSONAL) && currentUid == "" {
-		code := common.NoLogin
-		ctx.json {
-			"code": code,
-			"msg":  common.GetMsg(code),
-			"data": "",
-		}
-		return
-	}
 	author := ctx.param("author")
 
 	pageIndex := ctx.param("pageIndex")
@@ -320,13 +311,22 @@ get "/assets/list", ctx => {
 	isOrderByHot := ctx.param("isOrderByHot")
 	authorId := ""
 	if author == "" {
+		if currentUid == "" {
+			code := common.NoLogin
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
 		authorId = currentUid
 	} else if author == "*" {
 		authorId = ""
 	} else {
 		authorId = author
 	}
-	if authorId != currentUid {
+	if authorId != currentUid || currentUid == "" {
 		isPublic = strconv.Itoa(common.PUBLIC)
 	}
 	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
