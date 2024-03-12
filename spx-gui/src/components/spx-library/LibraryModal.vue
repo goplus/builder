@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-12 18:40:25
+ * @LastEditTime: 2024-03-12 23:34:11
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -19,7 +19,7 @@
         <n-input
           v-model:value="searchQuery"
           size="large"
-          placeholder="Search"
+          :placeholder="$t('library.search')"
           clearable
           round
           @keypress.enter="handleSearch"
@@ -65,8 +65,8 @@
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
         >
-          <template #checked> Public </template>
-          <template #unchecked> Private </template>
+          <template #checked> {{$t('library.public')}} </template>
+          <template #unchecked> {{$t('library.private')}} </template>
         </n-switch>
         <div v-if="assetInfos != null && assetInfos.length != 0">
           <n-grid

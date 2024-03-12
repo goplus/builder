@@ -147,6 +147,11 @@ export const initI18n = async (app: App) => {
         localProject: 'Local Project',
         cloudProjectInLocal: 'Cloud Project In Local',
       },
+      library:{
+        search: 'Search',
+        public: 'public',
+        private: 'private'
+      }
     },
     zh: {
       language: '中文',
@@ -280,6 +285,11 @@ export const initI18n = async (app: App) => {
         no: '否',
         localProject: '本地项目',
         cloudProjectInLocal: '本地的云端项目',
+      },
+      library:{
+        search: '搜索',
+        public: '公开',
+        private: '私有'
       }
     }
   }
