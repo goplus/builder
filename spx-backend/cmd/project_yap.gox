@@ -15,9 +15,28 @@ var (
 
 todo := context.TODO()
 
+//Get upload token
+get "/upload-token", ctx => {
+    token,err := common.GenerateUploadToken()
+    if err != nil {
+        code := common.ErrorBLOBUSInvalid
+        ctx.json({
+            "code": code,
+            "msg": common.GetMsg(code),
+            "data": "",
+        })
+        return
+    }
+    code := common.SUCCESS
+    ctx.json({
+        "code": code,
+        "msg": common.GetMsg(code),
+        "data": token,
+    })
+}
+
 //Save project
 post "/project", ctx => {
-	id := ctx.FormValue("id")
 	currentUid := core.ParseToken(ctrl, ctx)
 	if currentUid == "" {
 		code := common.NoLogin
@@ -28,23 +47,29 @@ post "/project", ctx => {
 		}
 		return
 	}
-	name := ctx.FormValue("name")
-	if name == "" {
-		code := common.ErrorNameNotNull
-		ctx.json {
-			"code": code,
-			"msg":  common.GetMsg(code),
-			"data": "",
-		}
-		return
-	}
-	file, header, _ := ctx.FormFile("file")
-	project := &core.Project{
-		ID:       id,
-		Name:     name,
-		AuthorId: currentUid,
-	}
-	res, err := ctrl.SaveProject(todo, project, file, header)
+	var req core.SaveProjectRequest
+    body, err := io.ReadAll(ctx.Request.Body)
+    if err != nil {
+        code := common.ErrorReadRequestBody
+        ctx.json({
+            "code": code,
+            "msg": common.GetMsg(code),
+            "data": "",
+        })
+        return
+    }
+    err = json.Unmarshal(body, &req)
+    if err != nil {
+        code := common.ErrorUnmarshal
+        ctx.json({
+            "code": code,
+            "msg": common.GetMsg(code),
+            "data": "",
+        })
+        return
+    }
+    req.AuthorId = currentUid
+	res, err := ctrl.SaveProject(todo, req)
 	if err != nil {
 		code := common.ErrorSave
 		ctx.json {
@@ -76,7 +101,14 @@ get "/project/:id", ctx => {
 				"data": "",
 			}
 
-		} else {
+		} else if err == common.ErrUnmarshal {
+            code := common.ErrorUnmarshal
+            ctx.json {
+                "code": code,
+                "msg":  common.GetMsg(code),
+                "data": "",
+            }
+        } else {
 			code := common.ErrorPermissions
 			ctx.json {
 				"code": code,

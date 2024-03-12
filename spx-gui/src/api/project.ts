@@ -1,4 +1,4 @@
-import type { ProjectDetail, ProjectInfo, SaveProjectParams } from "@/interface/library";
+import type { ProjectDetail, SaveProjectParams } from "@/interface/library";
 import type { ResponseData } from "@/axios";
 import { service } from "@/axios"
 import type { FormatResponse } from "@/components/code-editor";
@@ -76,8 +76,8 @@ export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<
 }
 
 async function getUploadToken() {
-    const response = await service.get('/project/upload-token')
-    return response.data.data
+    const url = '/upload-token'
+    return service({ url: url, method: 'get' }).then((res) => res.data.data)
 }
 
 export async function uploadFile(file: File) {
@@ -104,17 +104,7 @@ export async function uploadFile(file: File) {
     })
 }
 
-export async function getProjectList(uid: string): Promise<ProjectInfo[]> {
-    const response = await service.get(`/project/list/${uid}`)
-    return response.data.data
-}
-
-export async function loadProject(id: string): Promise<ProjectDetail> {
-    const response = await service.get(`/project/detail/${id}`)
-    return response.data.data
-}
-
 export async function saveProject(params: SaveProjectParams): Promise<ProjectDetail> {
-    const response = await service.post('/project/save', params)
-    return response.data.data
+    const url = '/project'
+    return service({ url: url, method: 'post', data: params }).then((res) => res.data.data)
 }

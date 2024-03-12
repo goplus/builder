@@ -25,6 +25,10 @@ const (
 	ErrorImagesToGif        = 20003
 	ErrorUpload             = 20004
 	ErrorNameNotNull        = 20005
+	ErrorBLOBUSInvalid      = 20006
+	ErrorMarshal            = 20007
+	ErrorUnmarshal          = 20008
+	ErrorReadRequestBody    = 20009
 )
 
 var MsgFlags = map[int]string{
@@ -45,6 +49,10 @@ var MsgFlags = map[int]string{
 	ErrorUpload:             "Upload err",
 	ErrorNameNotNull:        "please fill name",
 	ErrorSave:               "save err",
+	ErrorBLOBUSInvalid:      "BLOBUS is invalid",
+	ErrorMarshal:            "Marshal error",
+	ErrorUnmarshal:          "Unmarshal error",
+	ErrorReadRequestBody:    "Read Request Body Error",
 }
 
 // GetMsg 获取状态码对应信息

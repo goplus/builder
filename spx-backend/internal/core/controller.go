@@ -56,15 +56,15 @@ type Asset struct {
 }
 
 type Project struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	AuthorId string    `json:"authorId"`
-	Address  string    `json:"address"`
-	IsPublic int       `json:"isPublic"`
-	Status   int       `json:"status"`
-	Version  int       `json:"version"`
-	Ctime    time.Time `json:"cTime"`
-	Utime    time.Time `json:"uTime"`
+	ID       string      `json:"id"`
+	Name     string      `json:"name"`
+	AuthorId string      `json:"authorId"`
+	Address  interface{} `json:"address"`
+	IsPublic int         `json:"isPublic"`
+	Status   int         `json:"status"`
+	Version  int         `json:"version"`
+	Ctime    time.Time   `json:"cTime"`
+	Utime    time.Time   `json:"uTime"`
 }
 
 type Controller struct {
@@ -80,6 +80,13 @@ type FormatError struct {
 type FormatResponse struct {
 	Body  string
 	Error FormatError
+}
+
+type SaveProjectRequest struct {
+	ID       string            `json:"id,omitempty"`
+	Name     string            `json:"name"`
+	Address  map[string]string `json:"address"`
+	AuthorId string            `json:"authorId"`
 }
 
 // New init Config
@@ -128,7 +135,12 @@ func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, currentUid s
 	if pro == nil {
 		return nil, ErrNotExist
 	}
-	pro.Address = os.Getenv("QINIU_PATH") + "/" + pro.Address
+	var address map[string]string
+	err = json.Unmarshal(pro.Address.([]uint8), &address)
+	if err != nil {
+		return nil, common.ErrUnmarshal
+	}
+	pro.Address = address
 	if pro.IsPublic == common.PUBLIC || currentUid == pro.AuthorId {
 		return pro, nil
 	}
@@ -143,7 +155,6 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid
 	if project.AuthorId != currentUid {
 		return common.ErrPermissions
 	}
-	err = ctrl.bucket.Delete(ctx, project.Address)
 	if err != nil {
 		return err
 	}
@@ -152,44 +163,47 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid
 }
 
 // SaveProject Save project
-func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file multipart.File, header *multipart.FileHeader) (*Project, error) {
-	if project.ID == "" {
-		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
+func (ctrl *Controller) SaveProject(ctx context.Context, req SaveProjectRequest) (*Project, error) {
+	var address string
+	addressByte, err := json.Marshal(req.Address)
+	if err != nil {
+		return nil, common.ErrMarshal
+	}
+	address = string(addressByte)
+	if req.ID == "" {
+		project := &Project{
+			Address:  address,
+			AuthorId: req.AuthorId,
+			Name:     req.Name,
+			Version:  1,
+			Status:   1,
+			IsPublic: common.PERSONAL,
+			Ctime:    time.Now(),
+			Utime:    time.Now(),
+		}
+		project.ID, err = AddProject(ctrl.db, project)
 		if err != nil {
 			return nil, err
 		}
-		project.Address = path
-		project.Version = 1
-		project.Status = 1
-		project.IsPublic = common.PERSONAL
-		project.Ctime = time.Now()
-		project.Utime = time.Now()
-		project.ID, err = AddProject(ctrl.db, project)
-		project.Address = os.Getenv("QINIU_PATH") + "/" + path
-		return project, err
+		project.Address = req.Address
+		return project, nil
 	} else {
-
-		p, err := common.QueryById[Project](ctrl.db, project.ID)
+		p, err := common.QueryById[Project](ctrl.db, req.ID)
 		if err != nil {
 			return nil, err
 		}
 		if p.Address == "" {
 			return nil, common.ErrProjectNotExist
 		}
-		err = ctrl.bucket.Delete(ctx, p.Address)
-		if err != nil {
-			return nil, err
-		}
-		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
-		if err != nil {
-			return nil, err
-		}
-		p.Address = path
+		p.Address = address
 		p.Version = p.Version + 1
-		p.Name = project.Name
+		p.Name = req.Name
 		err = UpdateProject(ctrl.db, p)
-		p.Address = os.Getenv("QINIU_PATH") + "/" + path
-		return p, err
+		if err != nil {
+			return nil, err
+		}
+		p.Address = req.Address
+		return p, nil
 	}
 }
 
@@ -389,7 +403,12 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 		return nil, err
 	}
 	for i := range pagination.Data {
-		pagination.Data[i].Address = os.Getenv("QINIU_PATH") + "/" + pagination.Data[i].Address
+		var address map[string]string
+		err = json.Unmarshal(pagination.Data[i].Address.([]uint8), &address)
+		if err != nil {
+			return nil, common.ErrUnmarshal
+		}
+		pagination.Data[i].Address = address
 	}
 	return pagination, nil
 }
