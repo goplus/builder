@@ -475,7 +475,7 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
 
 watch(() => props.asset, (newAsset) => {
   soundName.value = newAsset?.name || '';
-}, { deep: true });
+});
 
 watch(soundName, (newName) => {
   emits('update-sound-name', newName);
