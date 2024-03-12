@@ -144,7 +144,7 @@ import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 import { AssetType } from '@/constant/constant'
-import { isAllowName } from '@/util/utils'
+import { isValidAssetName } from '@/util/asset'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -213,7 +213,7 @@ const addBtnClassName = computed(() => {
 
 // Computed  spritename is legal or not
 const spriteNameAllow = computed(() => {
-  return isAllowName(uploadSpriteName.value)
+  return isValidAssetName(uploadSpriteName.value)
 })
 
 // ----------methods-----------------------------------------

@@ -11,11 +11,6 @@ import { getStorage } from "@/util/class";
 import FileWithUrl from "@/class/file-with-url";
 import { isObjectEmpty } from "@/util/global";
 import type { Config } from '@/interface/file';
-import { SpriteList, type AssetList } from "./asset-list";
-import { createDiscreteApi } from "naive-ui";
-import { isAllowName } from "@/util/utils";
-
-const { message } = createDiscreteApi(["message"]);
 
 /**
  * @abstract
@@ -37,54 +32,17 @@ export abstract class AssetBase implements AssetBaseInterface {
     /**
      * The name of the asset.
      */
-    _name: string
+    name: string
 
     /**
      * The config of the asset.
      */
     public config: Config
 
-    /**
-     * The list that the asset belongs to. The list only has a value if the asset is inserted into a list.
-     */
-    belongedList: AssetList<AssetBase> | null
-
     constructor(name: string, files: FileWithUrl[] = [], config: Config = {}) {
-        this._name = name
+        this.name = name
         this._files = files
         this.config = this._genConfig(config)
-        this.belongedList = null
-    }
-
-    get name(): string {
-        return this._name
-    }
-
-    set name(name: string) {
-        if (!isAllowName(name)) {
-            message.error('Name is invalid')
-            throw new Error('Name is invalid')
-        }
-        const originName = this._name
-        if (originName === name) return
-        if (this.belongedList) {
-            let counter = 1
-            const changeName = name
-            while (this.belongedList.list.find(item => item.name === name)) {
-                counter++
-                name = `${changeName}_${counter}`
-            }
-            if (name !== changeName) {
-                message.error(`Name must be unique! ${changeName} already exist. It will be renamed to ${name}.`)
-            }
-            // If the asset is in a sprite list, then update the zorder of the sprite.
-            if (this.belongedList instanceof SpriteList) {
-                const zorder = this.belongedList.project.backdrop.config.zorder
-                zorder.push(name)
-                this.belongedList.project.backdrop.config.zorder = zorder.filter(item => item !== originName)
-            }
-        }
-        this._name = name
     }
 
     /**
