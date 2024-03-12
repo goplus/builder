@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:34:52
+ * @LastEditTime: 2024-03-12 16:25:04
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -52,15 +52,14 @@ export function getAssetList({
   let isPublic = ''
   if (assetLibraryType == 'public') {
     isPublic = PublishState.PublicAndPrivateLibrary.toString()
-  } else if (assetLibraryType == 'private') {
-    isPublic = PublishState.PrivateLibrary.toString()
   }
   const params = new URLSearchParams()
-  params.append('isPublic', isPublic)
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
-
+  if(isPublic != ''){
+    params.append('isPublic', isPublic)
+  }
   if (category) {
     params.append('category', category)
   }
