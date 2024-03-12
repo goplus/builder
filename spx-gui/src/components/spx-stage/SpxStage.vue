@@ -1,15 +1,15 @@
 <!--
  * @Author: Zhang zhiyang
  * @Date: 2024-01-15 14:56:59
- * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-03-01 09:52:38
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-11 18:41:30
  * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
  * @Description:
 -->
 <template>
   <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
-    <n-button v-if="show" type="error" @click="stop">Stop</n-button>
+    <n-button v-if="show" type="error" @click="stop">{{ $t('stage.stop') }}</n-button>
     <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
     <div v-if="show" class="stage-runner">
       <ProjectRunner ref="projectRunner" :project="project as Project" />

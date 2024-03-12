@@ -104,8 +104,7 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 	if bus == "" {
 		bus = os.Getenv("GOP_SPX_BLOBUS")
 	}
-	println(bus)
-	println(dsn)
+
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
 		println(err.Error())

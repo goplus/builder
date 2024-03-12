@@ -1,8 +1,8 @@
 /*
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 12:17:00
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-07 20:42:28
  * @FilePath: \spx-gui\src\language\index.ts
  * @Description:
  */
@@ -71,8 +71,10 @@ export const initI18n = async (app: App) => {
         edit: 'Editor'
       },
       stage: {
-        stage: 'Stage',
+        stage: 'Backdrop',
+        stop:'Stop',
         sprite: 'Sprite',
+        spriteHolder: 'Please Input Name',
         show: 'Show',
         size: 'Size',
         direction: 'Dir',
@@ -200,8 +202,10 @@ export const initI18n = async (app: App) => {
         edit: '编辑'
       },
       stage: {
-        stage: '舞台',
+        stage: '背景',
+        stop:'停止',
         sprite: '角色',
+        spriteHolder: '请输入名字',
         show: '显示',
         size: '尺寸',
         direction: '方向',

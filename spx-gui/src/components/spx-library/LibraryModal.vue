@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-22 14:42:01
+ * @LastEditTime: 2024-03-11 18:37:00
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -10,23 +10,12 @@
   <n-modal
     v-model:show="showModal"
     preset="card"
-    header-style="padding:11px 24px 11px 30%;"
     content-style="max-height:70vh;overflow:scroll;"
     :on-after-leave="closeModalFunc"
   >
     <!-- S Library Header -->
     <template #header>
-      <div style="width: 30vw;">
-        <div style="margin-bottom: 1vw;">
-          <n-radio-group v-model:value="assetLibraryOption">
-            <n-radio-button value="public">
-              Public
-            </n-radio-button>
-            <n-radio-button value="private">
-              Private
-            </n-radio-button>
-          </n-radio-group>
-        </div>
+      <div class="header-container">
         <n-input
           v-model:value="searchQuery"
           size="large"
@@ -68,7 +57,21 @@
       <!-- E Library Sub Header -->
       <!-- S Library Content -->
       <div class="asset-library-content">
-        <n-grid v-if="assetInfos != null && assetInfos.length != 0" cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
+        <n-switch
+          checked-value="private"
+          unchecked-value="public"
+          style="width: 130px; float: right; margin: 10px 0 0 0"
+          :rail-style="railStyle"
+          @update:value="handleAssetLibraryOption"
+        >
+          <template #unchecked> Public </template>
+          <template #checked> Private </template>
+        </n-switch>
+        <n-grid
+          v-if="assetInfos != null && assetInfos.length != 0"
+          cols="3 s:4 m:5 l:6 xl:7 2xl:8"
+          responsive="screen"
+        >
           <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
             <div class="asset-library-sprite-item">
               <!-- S Component Sprite Card -->
@@ -91,8 +94,19 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps, ref, watch, onMounted, computed } from 'vue'
-import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon, NEmpty, NRadioGroup, NRadioButton } from 'naive-ui'
+import { defineEmits, defineProps, ref, watch, onMounted } from 'vue'
+import type { CSSProperties } from 'vue'
+import {
+  NModal,
+  NButton,
+  NFlex,
+  NGrid,
+  NGridItem,
+  NInput,
+  NIcon,
+  NEmpty,
+  NSwitch
+} from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
@@ -111,6 +125,21 @@ const emits = defineEmits(['update:show', 'add-asset'])
 // ----------data related -----------------------------------
 const assetLibraryOption = ref<'public' | 'private'>('public')
 
+const railStyle = ({ focused, checked }: { focused: boolean; checked: boolean }) => {
+  const style: CSSProperties = {}
+  if (checked) {
+    style.background = '#d03050'
+    if (focused) {
+      style.boxShadow = '0 0 0 2px #d0305040'
+    }
+  } else {
+    style.background = '#2080f0'
+    if (focused) {
+      style.boxShadow = '0 0 0 2px #2080f040'
+    }
+  }
+  return style
+}
 // Ref about show modal state.
 const showModal = ref<boolean>(false)
 // Ref about search text.
@@ -118,14 +147,14 @@ const searchQuery = ref('')
 // Const variable about sprite categories.
 const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 // Ref about sprite/backdrop information.
-const assetInfos = ref<Asset[]|null>()
+const assetInfos = ref<Asset[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
 
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
-  await setAssets();
+  await setAssets()
 })
 
 // ----------methods-----------------------------------------
@@ -136,7 +165,7 @@ onMounted(async () => {
  * @Author: Yao xinyue
  * @Date: 2024-03-05 15:10:45
  */
-const setAssets = async() => {
+const setAssets = async () => {
   if (props.type === 'backdrop') {
     assetInfos.value = await fetchAssetsByType(AssetType.Backdrop)
   } else if (props.type === 'sprite') {
@@ -144,25 +173,30 @@ const setAssets = async() => {
   }
 }
 
-
 /**
  * @description: A function to fetch asset from backend by getAssetList.
  * @param {*} assetType
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (assetType: number, category?: string) => {
+const fetchAssetsByType = async (assetType: number, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
   try {
+    // todo: change pagesize 
     const pageIndex = 1
-    const pageSize = 20
+    const pageSize = 50
+    if(assetLibraryOption.value == "public"){
+      author = "*"
+    }
     const response = await getAssetList({
       assetLibraryType: assetLibraryOption.value,
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
-      category: category
+      category: nowCategory.value,
+      isOrderByTime: isOrderByTime,
+      isOrderByHot: isOrderByHot,
+      author: author
     })
-    console.log(response, 'response')
     if (response.data.data.data == null) return []
     return response.data.data.data
   } catch (error) {
@@ -181,6 +215,7 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
+      setAssets()
     }
   }
 )
@@ -201,12 +236,7 @@ const closeModalFunc = () => {
  * @Date: 2024-01-30 11:51:05
  */
 const handleAddAsset = async (id: number, name: string, address: string) => {
-  // TODO add a api to check the click times
-  let res =
-    props.type === 'backdrop'
-      ? await addAssetClickCount(id, AssetType.Backdrop)
-      : await addAssetClickCount(id, AssetType.Sprite)
-  console.log(res,'handleAddAsset')
+  await addAssetClickCount(id)
   emits('add-asset', name, address)
 }
 
@@ -218,11 +248,12 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
-  nowCategory.value = category
-  if (category === 'ALL') {
+  if(category == 'ALL'){
     category = ''
   }
-  await setAssets();
+  nowCategory.value = category
+  
+  await setAssets()
 }
 
 /**
@@ -233,19 +264,21 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
+  let pageIndex = 1
+  let pageSize = 50
   if (props.type === 'backdrop') {
-    let res = await searchAssetByName(searchQuery.value, AssetType.Backdrop)
+    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Backdrop)
     if (res.data.data == null) {
       assetInfos.value = []
     } else {
-      assetInfos.value = res.data.data
+      assetInfos.value = res.data.data.data
     }
   } else if (props.type === 'sprite') {
-    let res = await searchAssetByName(searchQuery.value, AssetType.Sprite)
-    if (res.data.data == null) {
+    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Sprite)
+    if (res.data.data.data == null) {
       assetInfos.value = []
     } else {
-      assetInfos.value = res.data.data
+      assetInfos.value = res.data.data.data
     }
   }
 }
@@ -257,18 +290,8 @@ const handleSearch = async () => {
  * @Date: 2024-02-19 9:09:05
  */
 const handleSortByHot = async () => {
-  let pageIndex = 1
-  let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  let res = await getAssetList({
-    assetLibraryType: assetLibraryOption.value,
-    pageIndex: pageIndex,
-    pageSize: pageSize,
-    assetType: assetType,
-    category: nowCategory.value,
-    isOrderByHot: true
-  })
-  assetInfos.value = res.data.data.data
+  fetchAssetsByType(assetType,undefined,true)
 }
 
 /**
@@ -278,18 +301,13 @@ const handleSortByHot = async () => {
  * @Date: 2024-02-19 9:19:01
  */
 const handleSortByTime = async () => {
-  let pageIndex = 1
-  let pageSize = 100
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  let res = await getAssetList({
-    assetLibraryType: assetLibraryOption.value,
-    pageIndex: pageIndex,
-    pageSize: pageSize,
-    assetType: assetType,
-    category: nowCategory.value,
-    isOrderByTime: true
-  })
-  assetInfos.value = res.data.data.data
+  fetchAssetsByType(assetType,true)
+}
+
+const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
+  assetLibraryOption.value = assetOption
+  searchQuery.value = ''
 }
 
 /**
@@ -299,9 +317,8 @@ const handleSortByTime = async () => {
  * @Date: 2024-03-05 15:01:45
  */
 watch(assetLibraryOption, async () => {
-  await setAssets();
-});
-
+  await setAssets()
+})
 </script>
 
 <style lang="scss">
@@ -336,5 +353,16 @@ watch(assetLibraryOption, async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  width: 50%;
+  margin: auto;
+  flex-direction: row;
+  .search-input {
+    width: 50%;
+  }
 }
 </style>

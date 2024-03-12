@@ -437,5 +437,8 @@ post "/util/to-gif", ctx => {
 conf := &core.Config{}
 ctrl, _ = core.New(todo, conf)
 core.CasdoorConfigInit()
-
-run ":8080", common.CorsMiddleware
+port := os.Getenv("PORT")
+if port == "" {
+	port = ":8080"
+}
+run port, common.CorsMiddleware
