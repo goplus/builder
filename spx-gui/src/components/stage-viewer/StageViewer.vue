@@ -2,10 +2,10 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 19:52:56
- * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
+ * @LastEditTime: 2024-03-04 14:28:08
+ * @FilePath: \builder\spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
--->  
+-->
 <template>
   <div id="stage-viewer" ref="stageViewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
@@ -128,10 +128,11 @@ const spxMapConfig = ref<MapConfig>({
 })
 
 // get the scale of stage viewer
+// container size or stage size changes will recalculate the actual size
 const scale = computed(() => {
   if (spxMapConfig.value && stageViewer.value) {
-    const widthScale = stageViewer.value.clientWidth / spxMapConfig.value.width
-    const heightScale = stageViewer.value.clientHeight / spxMapConfig.value.height
+    const widthScale = props.width / spxMapConfig.value.width
+    const heightScale = props.height / spxMapConfig.value.height
     console.log(Math.min(widthScale, heightScale, 1))
     return Math.min(widthScale, heightScale, 1)
   }
@@ -166,13 +167,17 @@ watch(
 watch(
   () => props.selectedSpriteNames,
   (spriteNames) => {
-    if (spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])) {
-      return
-    }
     if (spriteNames.length === 0 || !spriteNames) {
       stageSelectSpritesName.value = []
       return
     }
+    if (
+      spriteNames.length === stageSelectSpritesName.value.length &&
+      spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])
+    ) {
+      return
+    }
+
     stageSelectSpritesName.value = spriteNames
   }
 )

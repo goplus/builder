@@ -2,16 +2,17 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-07 13:49:27
+ * @LastEditTime: 2024-03-11 18:49:37
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
 <template>
   <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
+  <ProjectList :show="showModal" @update:show="showModal = false" />
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
+import {computed, h, ref} from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
@@ -26,62 +27,11 @@ import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
+import ProjectList from '@/components/project-list/ProjectList.vue'
 
 const projectStore = useProjectStore()
+const showModal = ref<boolean>(false)
 const themeStyle = ref<number>(ThemeStyleType.Pink)
-const themeMap = ['Pink', 'Yellow', 'Blue']
-/**
- * @description: dropdown options of import/save/export
- * @Author: Xu Ning
- * @Date: 2024-01-17 17:54:27
- */
-const importOptions = [
-  {
-    label: 'Local',
-    key: 'Local'
-  },
-  {
-    label: 'Cloud',
-    key: 'Cloud'
-  },
-  {
-    label: 'Github',
-    key: 'Github'
-  }
-]
-
-const saveOptions = [
-  {
-    label: 'Local',
-    key: 'SaveLocal'
-  },
-  {
-    label: 'Cloud',
-    key: 'SaveCloud'
-  }
-]
-
-const exportOptions = [
-  {
-    label: 'Video',
-    key: 'Video'
-  },
-  {
-    label: 'App',
-    key: 'App'
-  }
-]
-
-const settingsOptions = [
-  {
-    label: '中文/En',
-    key: 'Global'
-  },
-  {
-    label: 'Theme',
-    key: 'ThemeColor'
-  }
-]
 
 // active key for route
 const activeKey = ref(null)
@@ -92,6 +42,59 @@ const { locale, t } = useI18n({
   useScope: 'global'
 })
 const languageStore = useLanguageStore()
+
+/**
+ * @description: dropdown options of import/save/export
+ * @Author: Xu Ning
+ * @Date: 2024-01-17 17:54:27
+ */
+const importOptions = computed(() => [
+  {
+    label: t('topMenu.upload'),
+    key: 'Upload'
+  },
+  {
+    label: t('topMenu.load'),
+    key: 'Load'
+  },
+  {
+    label: t('topMenu.blank'),
+    key: 'Blank'
+  }
+])
+
+const saveOptions = computed(() =>[
+  {
+    label: t('topMenu.local'),
+    key: 'SaveLocal'
+  },
+  {
+    label: t('topMenu.cloud'),
+    key: 'SaveCloud'
+  }
+])
+
+const exportOptions = computed(() => [
+  {
+    label: t('topMenu.video'),
+    key: 'Video'
+  },
+  {
+    label: t('topMenu.app'),
+    key: 'App'
+  }
+])
+
+const settingsOptions = computed(() => [
+  {
+    label: '中文/En',
+    key: 'Global'
+  },
+  {
+    label: t('topMenu.theme'),
+    key: 'ThemeColor'
+  }
+])
 
 // default button style for menu
 const buttonStyle = {
@@ -132,7 +135,7 @@ const menuOptions = [
         NDropdown,
         {
           trigger: 'hover',
-          options: importOptions,
+          options: importOptions.value,
           onSelect: handleSelectImport,
           style: dropdownStyle
         },
@@ -144,7 +147,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              t('top.file')
+              t('topMenu.file')
             )
         }
       ),
@@ -156,7 +159,7 @@ const menuOptions = [
         NDropdown,
         {
           trigger: 'hover',
-          options: saveOptions,
+          options: saveOptions.value,
           onSelect: handleSelectImport,
           style: dropdownStyle
         },
@@ -168,7 +171,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              t('top.save')
+              t('topMenu.save')
             )
         }
       ),
@@ -180,7 +183,7 @@ const menuOptions = [
         NDropdown,
         {
           trigger: 'hover',
-          options: exportOptions,
+          options: exportOptions.value,
           onSelect: handleSelectImport,
           style: dropdownStyle
         },
@@ -192,7 +195,7 @@ const menuOptions = [
                 style: computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon)
               },
-              t('top.publish')
+              t('topMenu.publish')
             )
         }
       ),
@@ -203,12 +206,16 @@ const menuOptions = [
       h(
         NInput,
         {
-          placeholder: t('top.untitled'),
+          placeholder: t('topMenu.untitled'),
           style: {
             'border-radius': '10px',
             'text-align': 'center',
             border: '2px solid #001429',
             width: '30vw'
+          },
+          value: projectStore.project.name,
+          'onUpdate:value': (value: string) => {
+            projectStore.project.name = value
           }
         },
         'title'
@@ -223,7 +230,7 @@ const menuOptions = [
           style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon)
         },
-        t('top.code')
+        t('topMenu.code')
       ),
     key: 'code-btn'
   },
@@ -242,7 +249,7 @@ const menuOptions = [
           },
           renderIcon: renderIcon(TutorialIcon)
         },
-        t('top.tutorial')
+        t('topMenu.tutorial')
       ),
     key: 'tutorial-btn'
   },
@@ -252,7 +259,7 @@ const menuOptions = [
         NDropdown,
         {
           trigger: 'hover',
-          options: settingsOptions,
+          options: settingsOptions.value,
           onSelect: handleSelectSettings,
           style: dropdownStyle
         },
@@ -271,7 +278,7 @@ const menuOptions = [
                 },
                 renderIcon: renderIcon(SettingsIcon)
               },
-              'Settings'
+              t('topMenu.settings')
             )
         }
       ),
@@ -286,7 +293,6 @@ const menuOptions = [
 /**
  * @description: generate default button style for menu
  * @param {*} color1 gradient color 1
- * @param {*} color2 gradient color 2
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:56:06
  */
@@ -304,17 +310,19 @@ const computedButtonStyle = (color1: string) => {
  * @Date: 2024-01-17 17:55:13
  */
 const handleSelectImport = (key: string | number) => {
-  console.log('key', key)
   // TODO: use for test
-  if (key === 'Local') {
+  if (key === 'Upload') {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
-      projectStore.loadFromZip(file);
+      await projectStore.loadFromZip(file);
     };
+  }
+  else if (key === 'Load') {
+    showModal.value = true
   }
   else if (key === 'SaveLocal') {
     projectStore.project.download();
@@ -329,6 +337,9 @@ const handleSelectImport = (key: string | number) => {
         message.error(err.message)
       }
     })
+  }
+  else if(key === 'Blank') {
+    projectStore.loadBlankProject()
   }
 }
 

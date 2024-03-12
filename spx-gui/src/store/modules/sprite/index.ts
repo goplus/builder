@@ -1,14 +1,14 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-07 21:43:44
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-28 17:33:55
+ * @LastEditors: Zhang Zhi Yang
+ * @LastEditTime: 2024-03-11 15:50:24
  * @FilePath: \spx-gui\src\store\modules\sprite\index.ts
  * @Description:
  */
 import { defineStore, storeToRefs } from 'pinia'
 import { Sprite } from '@/class/sprite'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useProjectStore } from '../index'
 export const useSpriteStore = defineStore('sprite', () => {
@@ -23,10 +23,22 @@ export const useSpriteStore = defineStore('sprite', () => {
 
   const map = computed(() => new Map(list.value.map((item) => [item.name, item])))
 
+  watch(
+    () => project.value,
+    () => {
+      if (project.value) {
+        current.value = list.value[0] || null
+      } else {
+        current.value = null
+      }
+    },
+    {
+      immediate: true
+    }
+  )
+
   function addItem(item: Sprite) {
     project.value.sprite.add(item)
-    // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
-    project.value.backdrop.config.zorder.push(item.name)
   }
 
   function setCurrentByName(name: string) {
@@ -42,20 +54,19 @@ export const useSpriteStore = defineStore('sprite', () => {
         current.value = list.value[0] || null
       }
       project.value.sprite.remove(sprite)
-      // TODO: consider the zorder update  dependent on the addition and removal of sprite in project instance instead operate in sprite store's add/remove function
-      project.value.backdrop.config.zorder.splice(project.value.backdrop.config.zorder.indexOf(sprite.name), 1)
     }
   }
 
   function existsByName(name: string): boolean {
-    return map.value.has(name);
+    return map.value.has(name)
   }
 
   return {
-      list, current,
-      addItem,
-      setCurrentByName,
-      removeItemByName,
-      existsByName
+    list,
+    current,
+    addItem,
+    setCurrentByName,
+    removeItemByName,
+    existsByName
   }
 })

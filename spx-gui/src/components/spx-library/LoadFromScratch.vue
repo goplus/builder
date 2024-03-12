@@ -1,7 +1,7 @@
 <template>
   <div class="file-upload-container">
     <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
-      Upload .sb3 File
+      {{ $t('scratch.upload') }}
     </button>
     <input
       ref="fileUploadInput"
@@ -15,7 +15,14 @@
       class="custom-import-btn"
       @click="importSelectedAssetsToProject"
     >
-      Import to spx project
+    {{ $t('scratch.importToSpx') }}
+    </button>
+    <button
+      v-if="selectedAssets.length != 0"
+      class="custom-import-btn"
+      @click="uploadSelectedAssetsToPrivateLibrary"
+    >
+      {{ $t('scratch.uploadToPrivateLibrary') }}
     </button>
   </div>
   <div class="asset-detail-info">
@@ -24,12 +31,12 @@
         v-for="assetFileDetail in assetFileDetails"
         :key="assetFileDetail.url"
         class="file-row"
-        @click="chooseAssets(assetFileDetail)"
         :style="{
           border: selectedAssets.includes(assetFileDetail)
             ? `3px solid ${commonColor}`
             : '3px solid #eeeeee'
         }"
+        @click="chooseAssets(assetFileDetail)"
       >
         <n-input
           v-model:value="assetFileDetail.name"
@@ -71,7 +78,7 @@
             style="height: 24px; padding: 6px"
             @click.stop="downloadAsset(assetFileDetail)"
           >
-            Download
+            {{ $t('scratch.download') }}
           </n-button>
         </div>
       </n-grid-item>
@@ -91,6 +98,8 @@ import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
 import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
+import { publishAsset, PublishState } from '@/api/asset'
+import { AssetType } from '@/constant/constant'
 
 // ----------props & emit------------------------------------
 
@@ -201,13 +210,39 @@ const importSelectedAssetsToProject = () => {
 }
 
 /**
+ * @description: Import the selected assets to private asset library.
+ * @return {*}
+ */
+const uploadSelectedAssetsToPrivateLibrary = async () => {
+  if (!selectedAssets.value) return
+  for (const asset of selectedAssets.value) {
+    let assetType = AssetType.Sounds
+    if (isImage(asset)) {
+      assetType = AssetType.Sprite
+    }
+    let file = getFileFromAssetFileDetail(asset)
+    let uploadFilesArr: File[] = [file]
+    await publishAsset(
+      asset.name,
+      uploadFilesArr,
+      assetType,
+      PublishState.PrivateLibrary,
+      undefined,
+      undefined
+    );
+  }
+  showImportSuccessMessage()
+}
+
+
+/**
  * @description: Import sound file to current project
  * @param {*} asset
  * @param {*} file
  * @return {*}
  */
 const importSoundToProject = (asset: AssetFileDetail, file: File) => {
-  let sound = new Sound(getNewNameIfNameExists(asset, soundStore), [file])
+  let sound = new Sound(asset.name, [file])
   soundStore.addItem(sound)
 }
 
@@ -218,29 +253,8 @@ const importSoundToProject = (asset: AssetFileDetail, file: File) => {
  * @return {*}
  */
 const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
-  let sprite = new Sprite(getNewNameIfNameExists(asset, spriteStore), [file])
+  let sprite = new Sprite(asset.name, [file])
   spriteStore.addItem(sprite)
-}
-
-/**
- * @description: If sound.wav exists, return sound(1).wav, sound(2).wav
- * @param {*} asset
- * @param {*} store
- * @return {*}
- */
-const getNewNameIfNameExists = (asset: AssetFileDetail, store: any): string => {
-  let baseName = asset.name
-  let extension = asset.extension
-  let counter = 0
-  let newName = baseName
-  let existsByName = (name: string, store: any): boolean => {
-    return store.existsByName(name)
-  }
-  while (existsByName(`${newName}.${extension}`, store)) {
-    counter++
-    newName = `${baseName}(${counter})`
-  }
-  return `${newName}.${extension}`
 }
 
 /**

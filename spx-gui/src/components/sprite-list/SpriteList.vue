@@ -2,8 +2,8 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-26 20:22:26
- * @FilePath: /spx-gui/src/components/sprite-list/SpriteList.vue
+ * @LastEditTime: 2024-03-07 21:06:18
+ * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
 <template>
@@ -11,9 +11,11 @@
     <div class="asset-library-edit-button">
       {{ $t('component.edit') }}
     </div>
-    <n-button class="import-assets-btn" @click="showImportModal = true">
-      import assets
-    </n-button>
+    <div class="asset-btn-group">
+      <n-button class="import-assets-btn" @click="showImportModal = true">
+        {{ $t('scratch.import') }}
+      </n-button>
+    </div>
 
     <n-grid cols="4" item-responsive responsive="screen">
       <!-- S Layout Sprite List -->
@@ -26,6 +28,13 @@
             <!-- S Component Add Button -->
             <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
+            <n-button
+              class="entry-code-btn"
+              :disabled="editorStore.editContentType === EditContentType.EntryCode"
+              @click="enableEditEntryCode"
+            >
+              Entry Code
+            </n-button>
             <!-- S Component ImageCardCom -->
             <ImageCardCom
               v-for="asset in spriteAssets"
@@ -72,9 +81,10 @@ import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import { watchEffect } from 'vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
-
+import { EditContentType, useEditorStore } from '@/store'
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
+const editorStore = useEditorStore()
 const spriteStore = useSpriteStore()
 const { setCurrentByName } = spriteStore
 
@@ -100,6 +110,10 @@ const toggleCodeById = (name: string) => {
   console.log('name', name)
   currentActiveName.value = name
   setCurrentByName(name)
+}
+
+const enableEditEntryCode = () => {
+  editorStore.setEditContentType(EditContentType.EntryCode)
 }
 
 const getImageCardStyle = (name: string) => {
@@ -158,23 +172,42 @@ watchEffect(() => {
     padding: 10px;
   }
 }
-.import-assets-btn {
+.entry-code-btn {
+  width: 110px;
+  height: 110px;
+  margin: 10px auto;
+  border-radius: 20px;
+  border: none;
+  background: #ffffff;
+  color: #333333;
+  box-shadow: 0 0 5px $sprite-list-card-box-shadow;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: visible; // show x button
+  cursor: pointer;
+}
+.asset-btn-group {
   position: absolute;
   left: 108px;
-  height: 24px;
   top: 3px;
-  font-size: 16px;
-  color: #333333;
-  border-radius: 20px;
-  border: 2px solid rgb(0, 20, 41);
-  box-shadow: rgb(0, 20, 41) -1px 2px;
-  cursor: pointer;
-  background-color: rgb(255, 248, 204);
-}
 
-.import-assets-btn:hover{
-  background-color: rgb(255, 234, 204);
-  color:#333333;
+  .import-assets-btn {
+    height: 24px;
+    font-size: 16px;
+    color: #333333;
+    border-radius: 20px;
+    // border: 2px solid rgb(0, 20, 41);
+    // box-shadow: rgb(0, 20, 41) -1px 2px;
+    cursor: pointer;
+    background-color: rgb(255, 248, 204);
+    &:hover {
+      background-color: rgb(255, 234, 204);
+      color: #333333;
+    }
+  }
 }
 </style>
 

@@ -46,8 +46,6 @@ import type { SoundConfig } from '@/interface/file';
  * // computed dir
  * snd2.dir  // { "assets/sounds/3/index.json": { rate: 2 }, "assets/sounds/3/[file1.name]": file1, "assets/sounds/3/[file2.name]": file2 }
  *
- * // config
- * snd1.config = snd1.genDefualtConfig()
  */
 
 export class Sound extends AssetBase {
@@ -59,7 +57,7 @@ export class Sound extends AssetBase {
     /**
      * The regular expression of the sound.
      */
-    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`);
+    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`)
 
     /**
      * The name of the sound.
@@ -69,14 +67,14 @@ export class Sound extends AssetBase {
     /**
      * The config of the sound.
      */
-    public config: SoundConfig;
+    declare config: SoundConfig
 
     /**
      * Get the store name for the sound.
      * @returns the name of the store
      */
-    protected getStoreName(): string {
-        return Sound.NAME;
+    _getStoreName(): string {
+        return Sound.NAME
     }
 
     /**
@@ -84,7 +82,7 @@ export class Sound extends AssetBase {
      * @returns all items in the storage
      */
     static async getAllFromLocal() {
-        return await getAllFromLocal(Sound);
+        return await getAllFromLocal(Sound)
     }
 
     /**
@@ -94,8 +92,7 @@ export class Sound extends AssetBase {
      * @param {SoundConfig} config the config of the sound using json to generate `index.json`
      */
     constructor(name: string, files: File[] = [], config?: SoundConfig) {
-        super(name, files)
-        this.config = this.genConfig(config)
+        super(name, files, config)
     }
 
     /**
@@ -111,7 +108,7 @@ export class Sound extends AssetBase {
      * Generate the default sound config.
      * @returns the default config
      */
-    genDefualtConfig(): SoundConfig {
+    _genDefualtConfig(): SoundConfig {
         return this.defaultConfig
     }
 
@@ -147,6 +144,6 @@ export class Sound extends AssetBase {
      * Check if an object is an instance of a sound.
      */
     static isInstance(obj: any): boolean {
-        return isInstance(obj, Sound);
+        return isInstance(obj, Sound)
     }
 }

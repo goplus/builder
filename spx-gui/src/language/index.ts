@@ -2,8 +2,8 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-21 16:17:42
- * @FilePath: /spx-gui/src/language/index.ts
+ * @LastEditTime: 2024-03-07 20:42:28
+ * @FilePath: \spx-gui\src\language\index.ts
  * @Description:
  */
 import type { App } from 'vue'
@@ -45,16 +45,24 @@ export const initI18n = async (app: App) => {
         motion: 'Motion',
         control: 'Control'
       },
-      top: {
+      topMenu: {
         file: 'File',
         save: 'Save',
         publish: 'Publish',
         untitled: 'Untitled',
         code: 'Code',
-        tutorial: 'Tutorial'
+        tutorial: 'Tutorial',
+        settings: 'Settings',
+        theme: 'Theme',
+        upload: 'Upload',
+        load: 'Load',
+        local: 'Local',
+        cloud: 'Cloud',
+        blank: 'Blank',
+        video: 'Video',
+        app: 'App',
       },
       editor: {
-        clear: 'clear',
         format: 'format'
       },
       component: {
@@ -63,8 +71,10 @@ export const initI18n = async (app: App) => {
         edit: 'Editor'
       },
       stage: {
-        stage: 'Stage',
+        stage: 'Backdrop',
+        stop:'Stop',
         sprite: 'Sprite',
+        spriteHolder: 'Please Input Name',
         show: 'Show',
         size: 'Size',
         direction: 'Dir',
@@ -78,8 +88,60 @@ export const initI18n = async (app: App) => {
       list: {
         name: 'Name',
         costumes: 'Costumes',
-        submit: 'Submit'
-      }
+        submit: 'Submit',
+        category:'Category',
+        public:'IsPublic',
+        inputName:'Please input sprite name',
+        selectCategory:'Please choose sprite category'
+      },
+      scratch: {
+        import: 'Import Assets from Scratch',
+        upload: 'Upload .sb3 Files',
+        importToSpx:'Import to My Project',
+        uploadToPrivateLibrary: 'Upload to private library',
+        download:'Download'
+      },
+      category:{
+        animals:'Animals',
+        people:'People',
+        sports:'Sports',
+        food:'Food',
+        fantasy:'Fantasy'
+      },
+      publicState:{
+        notPublish:'Not publish',
+        private:'Only publish to private asset library',
+        public:'Publish to public asset library'
+      },
+      project: {
+        local: 'Local',
+        cloud: 'Cloud',
+        own: 'Own',
+        load: 'Load',
+        public: 'Public',
+        private: 'Private',
+        delete: 'Delete',
+        search: 'Search',
+        nothing: 'There\'s nothing.',
+        publicStatus: 'status: Public',
+        privateStatus: 'status: Private',
+        create: 'create',
+        update: 'update',
+        removeTitle: 'Remove Project',
+        removeCloudContent: 'Are you sure you want to remove this project ({name}) from cloud? ' +
+            'This action cannot be undone.(This project will be deleted from local if it is existed as well)',
+        removeLocalContent: 'Are you sure you want to remove this project ({name}) from local? ' +
+            'This action cannot be undone.(Deleting local projects does not affect cloud projects)',
+        removeMessage: 'Delete the current project and reload a blank project.',
+        changeStatusTitle: 'Change Project Status',
+        changeStatusContent: 'Are you sure to change the status of this project ({name})?',
+        successMessage: 'change project status success',
+        errMessage: 'change project status failed',
+        yes: 'Yes',
+        no: 'No',
+        localProject: 'Local Project',
+        cloudProjectInLocal: 'Cloud Project In Local',
+      },
     },
     zh: {
       language: '中文',
@@ -104,7 +166,8 @@ export const initI18n = async (app: App) => {
         paste: '粘贴',
         copy: '复制',
         insert: '插入',
-        download: '下载'
+        download: '下载',
+        save: '保存'
       },
       toolbox: {
         event: '事件',
@@ -113,16 +176,24 @@ export const initI18n = async (app: App) => {
         motion: '运动',
         control: '控制'
       },
-      top: {
+      topMenu: {
         file: '文件',
         save: '保存',
         publish: '发布',
         untitled: '未命名',
         code: '代码',
-        tutorial: '教程'
+        tutorial: '教程',
+        settings: '设置',
+        theme: '主题',
+        upload: '上传',
+        load: '加载',
+        blank: '空项目',
+        local: '本地',
+        cloud: '云端',
+        video: '视频',
+        app: '应用',
       },
       editor: {
-        clear: '清空',
         format: '格式化'
       },
       component: {
@@ -131,8 +202,10 @@ export const initI18n = async (app: App) => {
         edit: '编辑'
       },
       stage: {
-        stage: '舞台',
+        stage: '背景',
+        stop:'停止',
         sprite: '角色',
+        spriteHolder: '请输入名字',
         show: '显示',
         size: '尺寸',
         direction: '方向',
@@ -146,7 +219,57 @@ export const initI18n = async (app: App) => {
       list: {
         name: '精灵名称',
         costumes: '上传造型',
-        submit: '提交'
+        submit: '提交',
+        category:'精灵类别',
+        public:'是否公开',
+        inputName:'请输入精灵名称',
+        selectCategory:'请选择类别'
+      },
+      scratch: {
+        import: '导入 Scratch 素材',
+        upload: '上传 .sb3 文件',
+        importToSpx:'导入至项目',
+        uploadToPrivateLibrary: '上传到私人素材库',
+        download:'下载'
+      },
+      category:{
+        animals:'动物',
+        people:'人物',
+        sports:'体育',
+        food:'食物',
+        fantasy:'幻想'
+      },
+      publicState:{
+        notPublish: '不上传',
+        private: '仅上传到个人素材库',
+        public: '上传到公开素材库',
+      },
+      project: {
+        local: '本地',
+        cloud: '云端',
+        own: '个人',
+        load: '加载',
+        public: '公开',
+        private: '私有',
+        delete: '删除',
+        search: '搜索',
+        nothing: '这里空空如也',
+        publicStatus: '状态: 公开',
+        privateStatus: '状态: 私有',
+        create: '创建时间',
+        update: '更新时间',
+        removeTitle: '移除项目',
+        removeCloudContent: '您确定要从云端移除这个项目（{name}）吗？此操作无法撤销。（如果此项目也存在于本地，则本地项目也将删除）',
+        removeLocalContent: '您确定要从本地移除这个项目（{name}）吗？此操作无法撤销。（删除本地项目不会影响云端项目）',
+        removeMessage: '删除当前项目并重新加载一个空项目',
+        changeStatusTitle: '更改项目状态',
+        changeStatusContent: '您确定要更改此项目（{name}）的状态吗？',
+        successMessage: '项目状态更改成功',
+        errMessage: '项目状态更改失败',
+        yes: '是',
+        no: '否',
+        localProject: '本地项目',
+        cloudProjectInLocal: '本地的云端项目',
       }
     }
   }

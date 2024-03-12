@@ -1,84 +1,444 @@
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"os"
-	"github.com/goplus/builder/internal/core"
+	"strconv"
+
+	"github.com/goplus/builder/spx-backend/internal/common"
+	"github.com/goplus/builder/spx-backend/internal/core"
 )
 
 var (
-	p *core.Project
+	ctrl *core.Controller
 )
 
 todo := context.TODO()
 
+//Save project
+post "/project", ctx => {
+	id := ctx.FormValue("id")
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
+		code := common.NoLogin
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	name := ctx.FormValue("name")
+	if name == "" {
+		code := common.ErrorNameNotNull
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	file, header, _ := ctx.FormFile("file")
+	project := &core.Project{
+		ID:       id,
+		Name:     name,
+		AuthorId: currentUid,
+	}
+	res, err := ctrl.SaveProject(todo, project, file, header)
+	if err != nil {
+		code := common.ErrorSave
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": res,
+	}
+}
+
+//Get project information by ID
 get "/project/:id", ctx => {
 	id := ctx.param("id")
-	res, _ := p.FileInfo(todo, id)
+	currentUid := core.ParseToken(ctrl, ctx)
+	res, err := ctrl.ProjectInfo(todo, id, currentUid)
+	if err != nil {
+		if err == os.ErrNotExist {
+			code := common.ErrorProjectNotFound
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+
+		} else {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+
+		}
+		return
+	}
+	code := common.SUCCESS
 	ctx.json {
-		"code":200,
-		"msg":"OK",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": res,
 	}
 }
 
-post "/project/save", ctx=>{
-	id := ctx.FormValue("id")
-	uid := ctx.FormValue("uid")
-	name:=ctx.FormValue("name") 
-	file,header,_:=ctx.FormFile("file")
-	codeFile:=&core.CodeFile{
-		ID:id,
-		Name:name,
-		AuthorId :uid,
+//Delete project
+delete "/project/:id", ctx => {
+	id := ctx.param("id")
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
+		code := common.NoLogin
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
 	}
-	res,_ := p.SaveProject(todo,codeFile,file,header)
+	err := ctrl.DeleteProject(todo, id, currentUid)
+	if err != nil {
+		if err == common.ErrPermissions {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorDeleteProject
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":{"id":res.ID,"address":os.Getenv("QINIU_PATH")+res.Address,},
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": "",
 	}
 }
 
+//update project isPublic
+put "/project/:id/is-public", ctx => {
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
+		code := common.NoLogin
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	id := ctx.param("id")
+	isPublic := ctx.param("isPublic")
+	err := ctrl.UpdatePublic(todo, id, isPublic, currentUid)
+	if err != nil {
+		if err == common.ErrPermissions {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorUpdateProjectState
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": "",
+	}
+}
 
-post "/project/fmt", ctx=>{
-	ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
+//Get projects
+get "/projects/list", ctx => {
+	currentUid := core.ParseToken(ctrl, ctx)
+	isPublic := ctx.param("isPublic")
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	author := ctx.param("author")
+	authorId := ""
+	if author == "" {
+		if currentUid == "" {
+			code := common.NoLogin
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		authorId = currentUid
+	} else if author == "*" {
+		authorId = ""
+	} else {
+		authorId = author
+	}
+	if authorId != currentUid || currentUid == "" {
+		isPublic = strconv.Itoa(common.PUBLIC)
+	}
+	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
+	if err != nil {
+		code := common.ErrorGetProjects
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": result,
+	}
+}
+
+//Upload asset
+post "/asset", ctx => {
+	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	if err != nil {
+		code := common.ErrorParseMultipartForm
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
+		code := common.NoLogin
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	files := ctx.MultipartForm.File["files"]
+	name := ctx.FormValue("name")
+	publishState := ctx.FormValue("publishState")
+	previewAddress := ctx.FormValue("previewAddress")
+	category := ctx.FormValue("category")
+	assetType := ctx.FormValue("assetType")
+	err = ctrl.UploadAsset(todo, name, files, previewAddress, currentUid, category, publishState, assetType)
+	if err != nil {
+		code := common.ErrorUpload
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": "",
+	}
+}
+
+//Get asset by id
+get "/asset/:id", ctx => {
+	currentUid := core.ParseToken(ctrl, ctx)
+	id := ctx.param("id")
+	asset, err := ctrl.Asset(todo, id, currentUid)
+	if err != nil {
+		if err == os.ErrNotExist {
+			code := common.ErrorProjectNotFound
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorGetAsset
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": asset,
+	}
+}
+
+//Get assets
+get "/assets/list", ctx => {
+	currentUid := core.ParseToken(ctrl, ctx)
+	isPublic := ctx.param("isPublic")
+	author := ctx.param("author")
+
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	assetType := ctx.param("assetType")
+	category := ctx.param("category")
+	isOrderByTime := ctx.param("isOrderByTime")
+	isOrderByHot := ctx.param("isOrderByHot")
+	authorId := ""
+	if author == "" {
+		if currentUid == "" {
+			code := common.NoLogin
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		authorId = currentUid
+	} else if author == "*" {
+		authorId = ""
+	} else {
+		authorId = author
+	}
+	if authorId != currentUid || currentUid == "" {
+		isPublic = strconv.Itoa(common.PUBLIC)
+	}
+	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
+	if err != nil {
+		code := common.ErrorGetAsset
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": result,
+	}
+}
+
+//Add asset clickCount
+post "/asset/:id/click-count", ctx => {
+	id := ctx.param("id")
+	err := ctrl.IncrementAssetClickCount(todo, id)
+	if err != nil {
+		code := common.ErrClick
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": "",
+	}
+}
+
+//Search assets
+get "/assets/search", ctx => {
+	currentUid := core.ParseToken(ctrl, ctx)
+	search := ctx.param("search")
+	assetType := ctx.param("assetType")
+	pageIndex := ctx.param("pageIndex")
+	pageSize := ctx.param("pageSize")
+	assets, err := ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, currentUid)
+	if err != nil {
+		code := common.ErrorGetAsset
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	ctx.json {
+		"code": 200,
+		"msg":  "ok",
+		"data": assets,
+	}
+}
+
+//Format code
+post "/util/fmt", ctx => {
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
-	res := p.CodeFmt(todo,body,imports)
+	res := ctrl.CodeFmt(todo, body, imports)
 	ctx.json {
-		"code":200,
-		"msg":"ok",
-		"data":res,
+		"code": 200,
+		"msg":  "ok",
+		"data": res,
 	}
 }
 
-get "/asset/:id", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-    id := ctx.param("id")
-    asset, _ := p.Asset(todo, id)
-    ctx.json {
-    		"code":200,
-    		"msg":"ok",
-    		"data":{"asset": asset},
-    }
-}
-
-get "/list/asset/:pageIndex/:pageSize/:assetType", ctx => {
-    ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	ctx.ResponseWriter.Header().Set("Content-Type", "application/json")
-    pageIndex := ctx.param("pageIndex")
-    pageSize := ctx.param("pageSize")
-    assetType := ctx.param("assetType")
-    result, _ := p.AssetList(todo, pageIndex, pageSize, assetType)
-    ctx.json {
-            "code":200,
-            "msg":"ok",
-            "data": result,
-    }
+//Sprite to gif
+post "/util/to-gif", ctx => {
+	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
+	if err != nil {
+		code := common.ErrorParseMultipartForm
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	files := ctx.MultipartForm.File["files"]
+	path, err := ctrl.ImagesToGif(todo, files)
+	if err != nil {
+		code := common.ErrorImagesToGif
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": path,
+	}
 }
 
 conf := &core.Config{}
-p, _ = core.New(todo, conf)
-
-run ":8080"
+ctrl, _ = core.New(todo, conf)
+core.CasdoorConfigInit()
+port := os.Getenv("PORT")
+if port == "" {
+	port = ":8080"
+}
+run port, common.CorsMiddleware

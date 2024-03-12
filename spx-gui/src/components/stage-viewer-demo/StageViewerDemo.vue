@@ -152,7 +152,7 @@
     </div>
     <StageViewer
       :selected-sprite-names="selectedSpriteNames"
-      :project="project as Project"
+      :project="project"
       @on-selected-sprites-change="onSelectedSpritesChange"
     />
   </div>
@@ -162,7 +162,6 @@ import { NInputNumber, NSwitch } from 'naive-ui'
 import type { Sprite } from '@/class/sprite'
 import StageViewer from '../stage-viewer'
 import type { SelectedSpritesChangeEvent } from '../stage-viewer'
-import { Project } from '@/class/project'
 import { useProjectStore } from '@/store/modules/project'
 import { storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'

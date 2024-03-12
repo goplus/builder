@@ -2,15 +2,19 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-28 16:25:05
+ * @LastEditTime: 2024-03-11 18:36:02
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div class="sprite-card" @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)">
+  <div
+    class="sprite-card"
+    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)"
+  >
+    <!-- S Component First Static Costume Card -->
     <n-image
-      v-show="!shouldShowGif"
+      v-if="!shouldShowGif"
       preview-disabled
       width="100"
       height="100"
@@ -19,15 +23,19 @@
       @mouseenter="isHovering = true"
       @mouseleave="isHovering = false"
     />
+    <!-- E Component First Static Costume Card -->
+    <!-- S Component Gif Costume Card -->
     <n-image
-      v-if="assetImageGifUrl !== ''"
+      v-if="assetImageGifUrl !== '' "
       v-show="isHovering"
+      preview-disabled
       width="100"
       height="100"
       :src="assetImageGifUrl"
       @mouseenter="isHovering = true"
       @mouseleave="isHovering = false"
     />
+    <!-- E Component Gif Costume Card -->
     {{ props.assetInfo.name }}
   </div>
   <!-- E Component Sprite Card -->
@@ -35,54 +43,51 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { NImage } from "naive-ui";
-import { defineProps, defineEmits, computed, ref } from "vue";
-import type { Asset } from "@/interface/library";
+import { NImage } from 'naive-ui'
+import { defineProps, defineEmits, computed, ref } from 'vue'
+import type { Asset } from '@/interface/library'
 import error from '@/assets/image/library/error.svg'
 
 // ----------props & emit------------------------------------
 interface PropsType {
-  assetInfo: Asset;
+  assetInfo: Asset
 }
-const props = defineProps<PropsType>();
-const emits = defineEmits(['add-asset']);
+const props = defineProps<PropsType>()
+const emits = defineEmits(['add-asset'])
 
 // ----------data related -----------------------------------
 // Ref about the hovering state to judge if should show gif.
-const isHovering = ref<boolean>(false);
+const isHovering = ref<boolean>(false)
 
 // ----------computed properties-----------------------------
 // Compute the asset images' url
 const assetImageUrl = computed(() => {
   try {
-    const addressObj = JSON.parse(props.assetInfo.address);
-    const assets = addressObj.assets;
-    const firstKey = Object.keys(assets)[0];
-    return assets[firstKey];
+    let firstKeyValue = ''
+    if (props.assetInfo.address != null) {
+      const addressObj = JSON.parse(props.assetInfo.address)
+      const keys = Object.keys(addressObj)
+      if (keys.length > 0) {
+        firstKeyValue = addressObj[keys[0]]
+      }
+    }
+    return firstKeyValue
   } catch (error) {
-    console.error('Failed to parse address:', error);
-    return ''; 
+    console.error('Failed to parse address:', error)
+    return ''
   }
-});
+})
 
 // Compute the asset gif url if it has
 const assetImageGifUrl = computed(() => {
-  try {
-    const addressObj = JSON.parse(props.assetInfo.address);
-    if(addressObj.type != 'gif'){
-      return ''
-    }
-    return addressObj.url
-  } catch (error) {
-    console.error('Failed to parse address:', error);
-    return ''; 
-  }
-});
+  return props.assetInfo.previewAddress
+})
 
 // Compute show gif or not (record to the imageUrl and hovering state).
-const shouldShowGif = computed(()=> isHovering.value && assetImageGifUrl.value !== '')
+const shouldShowGif = computed(() => isHovering.value && assetImageGifUrl.value !== '')
 
 // ----------methods-----------------------------------------
+
 /**
  * @description: A function to add sprite to list
  * @param {*} name
@@ -90,14 +95,17 @@ const shouldShowGif = computed(()=> isHovering.value && assetImageGifUrl.value !
  * @Author: Xu Ning
  * @Date: 2024-01-24 12:18:12
  */
-const addAssetToListFunc = (id:number, name: string, address: string|undefined) =>{
-  emits('add-asset', id, name, address);
+const addAssetToListFunc = (
+  id: number,
+  name: string,
+  address: string | undefined
+) => {
+    emits('add-asset', id, name, address)
 }
-
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 .sprite-card {
   margin-top: 10px;

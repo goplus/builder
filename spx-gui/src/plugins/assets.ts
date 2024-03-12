@@ -4,12 +4,11 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-01-18 15:45:03
  * @FilePath: /builder/spx-gui/src/plugins/assets.ts
- * @Description: 
+ * @Description:
  */
 // Import static resources here
-import "vfonts/Lato.css";
-import "vfonts/FiraCode.css";
-import "../../public/js/wasm_exec.js"
+import 'vfonts/Lato.css'
+import 'vfonts/FiraCode.css'
 export default function initAssets() {
-    //
+  //
 }

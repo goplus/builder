@@ -1,13 +1,14 @@
 /*
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-30 17:12:58
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-31 09:04:00
+ * @LastEditors: Hu JingJing
+ * @LastEditTime: 2024-03-06 21:31:47
  * @FilePath: /builder/spx-gui/src/components/code-editor/Language.ts
  * @Description: 
  */
 import { monaco } from "."
 import function_completions from "./snippet";
+
 const keywords = [
     "func",
     "main",
@@ -92,6 +93,7 @@ const operators = [
     "%=",
     "<<=",
     ">>=",
+    "=>",
 ];
 
 const brackets = [
@@ -103,7 +105,6 @@ const brackets = [
 // editor options
 export const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
     language: "spx", // define the language mode
-    // theme: "vs", // choose vs, hc-black, or vs-dark
     minimap: { enabled: true },
     selectOnLineNumbers: true, // select the line number's of the code
     roundedSelection: true, // rounded selection
@@ -115,7 +116,6 @@ export const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions =
     renderControlCharacters: false, // render control characters
     fontSize: 16, // font size
     quickSuggestionsDelay: 100, // quick suggestions
-    wordWrap: "on", // word wrap
     wordWrapColumn: 40,
     tabSize: 4, // tab size
     folding: true, // code folding
@@ -212,8 +212,8 @@ export const MonarchTokensProviderConfig:
         ],
 
         bracketCounting: [
-            [/\{/, 'delimiter.bracket', '@bracketCounting'],
-            [/\}/, 'delimiter.bracket', '@pop'],
+            [/{/, 'delimiter.bracket', '@bracketCounting'],
+            [/}/, 'delimiter.bracket', '@pop'],
         ],
     },
 };

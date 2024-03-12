@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build",
+    "build": "vue-tsc --build --force && vite build && npm run build-widget",
+    "build-widget": "tsc ./src/widgets/scripts/loader-template.ts && vite build --config ./src/widgets/vite.config.ts && rm ./src/widgets/scripts/loader-template.js",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore"
   },
   "dependencies": {
-    "@rollup/pluginutils": "^5.1.0",
     "axios": "^1.6.5",
     "file-saver": "^2.0.5",
     "js-pkce": "^1.4.0",

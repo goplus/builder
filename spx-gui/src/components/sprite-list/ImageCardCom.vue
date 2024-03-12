@@ -1,8 +1,8 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-29 18:05:31
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-11 17:30:22
  * @FilePath: \spx-gui\src\components\sprite-list\ImageCardCom.vue
  * @Description:
 -->
@@ -119,7 +119,6 @@ const setSceneToTop = (name: string) => {
 @import '@/assets/theme.scss';
 
 @mixin listCardBase {
-  font-family: 'Heyhoo';
   margin: 10px auto;
   border-radius: 20px;
   box-shadow: 0 0 5px $sprite-list-card-box-shadow;

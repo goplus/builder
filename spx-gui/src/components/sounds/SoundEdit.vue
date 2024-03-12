@@ -8,6 +8,7 @@
        </n-gradient-text>
     </span>
       <n-input
+          v-model:value="soundName"
           size="small"
           round
           :placeholder="props.asset?.name || ''"
@@ -153,6 +154,7 @@ import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-
 import { NGradientText, NInput, useMessage, type MessageApi } from "naive-ui";
 import { Sound } from '@/class/sound'
 import { audioDataService } from '@/util/wavesurfer-edit-data'
+import { audioBufferToWavBlob } from '@/util/audio'
 
 const props = defineProps({
   asset: {
@@ -162,11 +164,12 @@ const props = defineProps({
   }
 })
 
-const emits = defineEmits(['update-sound-file'])
+const emits = defineEmits(['update-sound-file', 'update-sound-name']);
 
 interface WaveSurferInstance {
   destroy(): void;
 }
+const soundName = ref(props.asset?.name || '');
 const waveSurfer = ref<WaveSurferInstance | null>(null);
 const message: MessageApi = useMessage();
 let wavesurfer: WaveSurfer;
@@ -456,58 +459,6 @@ function downloadSound(): void {
   }
 }
 
-/* Transfer AudioBuffer to WAV Blob */
-function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
-  const numOfChan = audioBuffer.numberOfChannels;
-  const length = audioBuffer.length * numOfChan * 2 + 44;
-  const buffer = new ArrayBuffer(length);
-  const view = new DataView(buffer);
-  const channels = [];
-  let i;
-  let sample;
-  let offset = 0;
-  let pos = 0;
-
-  setUint32(0x46464952);
-  setUint32(length - 8);
-  setUint32(0x45564157);
-
-  setUint32(0x20746d66);
-  setUint32(16);
-  setUint16(1);
-  setUint16(numOfChan);
-  setUint32(audioBuffer.sampleRate);
-  setUint32(audioBuffer.sampleRate * 2 * numOfChan);
-  setUint16(numOfChan * 2);
-  setUint16(16);
-
-  setUint32(0x61746164);
-  setUint32(length - pos - 4);
-
-  for (i = 0; i < audioBuffer.numberOfChannels; i++) {
-    channels.push(audioBuffer.getChannelData(i));
-  }
-
-  while (pos < length) {
-    for (i = 0; i < numOfChan; i++) {
-      sample = Math.max(-1, Math.min(1, channels[i][offset]));
-      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
-      view.setInt16(pos, sample, true);
-      pos += 2;
-    }
-    offset++;
-  }
-  function setUint16(data: any) {
-    view.setUint16(pos, data, true);
-    pos += 2;
-  }
-  function setUint32(data: any) {
-    view.setUint32(pos, data, true);
-    pos += 4;
-  }
-  return new Blob([view], { type: 'audio/wav' });
-}
-
 /* Download WAV type sound file */
 function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   const blob = audioBufferToWavBlob(audioBuffer);
@@ -521,6 +472,15 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+watch(() => props.asset, (newAsset) => {
+  soundName.value = newAsset?.name || '';
+});
+
+watch(soundName, (newName) => {
+  emits('update-sound-name', newName);
+});
+
 
 watch(() => props.asset, () => {
   initSoundEdit();
