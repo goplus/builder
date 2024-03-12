@@ -68,7 +68,8 @@
           <template #checked> Public </template>
           <template #unchecked> Private </template>
         </n-switch>
-        <n-grid
+        <div v-if="assetInfos != null && assetInfos.length != 0">
+          <n-grid
           v-if="assetInfos != null && assetInfos.length != 0"
           cols="3 s:4 m:5 l:6 xl:7 2xl:8"
           responsive="screen"
@@ -81,13 +82,6 @@
             </div>
           </n-grid-item>
         </n-grid>
-        <n-empty
-          v-else
-          class="n-empty-style"
-          :show-icon="false"
-          size="large"
-          description="There's nothing."
-        />
         <div style="text-align: center; margin-top: 16px;">
           <n-pagination
             v-model:page="pageIndex"
@@ -96,6 +90,16 @@
             style="width: 160px; margin: auto"
           />
         </div>
+       </div>
+       
+        <n-empty
+          v-else
+          class="n-empty-style"
+          :show-icon="false"
+          size="large"
+          description="There's nothing."
+        />
+       
       </div>
       <!-- E Library Content -->
     </template>
