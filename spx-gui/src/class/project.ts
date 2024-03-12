@@ -19,7 +19,6 @@ import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
-import { useUserStore } from '@/store'
 import type { AssetBase } from './asset-base'
 
 export enum ProjectSource {

@@ -26,9 +26,7 @@ export abstract class AssetList<T extends AssetBase> {
 
     remove(item: string | T): T | null {
         const index = this.list.findIndex(i => typeof item === 'string' ? i.name === item : i === item);
-        if (index === -1) return null
-        const t = this.list.splice(index, 1)[0]
-        return t
+        return index > -1 ? this.list.splice(index, 1)[0] : null;
     }
 }
 
