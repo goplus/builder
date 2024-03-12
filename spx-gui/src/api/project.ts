@@ -90,7 +90,7 @@ export async function updateProjectIsPublic(id: string, status: PublicStatus): P
  * @returns string
  */
 export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<FormatResponse>>> {
-  const url = '/project/fmt'
+  const url = '/util/fmt'
   const formData = new FormData()
   formData.append('body', body)
 
