@@ -41,7 +41,7 @@
 import SoundsEditCard from "comps/sounds/SoundEditCard.vue";
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
 import SoundsEdit from "comps/sounds/SoundEdit.vue";
-import { computed, type ComputedRef, ref } from 'vue'
+import { computed, type ComputedRef, ref, nextTick } from 'vue'
 import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
@@ -71,9 +71,11 @@ const handleSoundFileUpdate = (newFile: File) => {
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
-      const checkInfo = checkUpdatedName(selectedSound.value.name, newName);
-      selectedSound.value.name = checkInfo.name;
-      message.success('update name successfully!');
+      const checkInfo = checkUpdatedName(newName, selectedSound.value.name);
+      // If the name is the same as before, the watch will not hear the change, so manually change the name so that other components can sense the name change.
+      if (checkInfo.isSame) selectedSound.value.name = '';
+      nextTick(()=> selectedSound.value!.name = checkInfo.name);
+      !checkInfo.isSame && message.success('update name successfully!');
       if (checkInfo.msg) message.warning(checkInfo.msg);
     } catch(e) {
       if (e instanceof Error)

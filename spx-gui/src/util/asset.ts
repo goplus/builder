@@ -3,8 +3,13 @@ import { keywords, typeKeywords } from "@/components/code-editor/language"
 import { useProjectStore } from "@/store"
 
 interface checkInfo {
+    /** the updated name if there are assets with the same name */
     name: string
+    /** whether the name is changed */
     isChanged: boolean
+    /** whether the name is same as the original */
+    isSame: boolean
+    /** the warning message */
     msg: string | null
 }
 
@@ -15,7 +20,14 @@ export const isValidAssetName = (name: string) => {
     return regex.test(name) && !typeKeywords.includes(name) && !keywords.includes(name)
 }
 
-export function checkUpdatedName(originalName: string, name: string, project: Project = useProjectStore().project): checkInfo {
+/**
+ * Check if the name is unique and return the updated name and other information.
+ * @param name the name of the asset
+ * @param originalName If originalName is null, then he will get the name that should be held in the project; otherwise, he will find the name that should be held in the project excluding originalName.
+ * @param project the project
+ * @returns the check info
+ */
+export function checkUpdatedName(name: string, originalName: string | null = null, project: Project = useProjectStore().project): checkInfo {
     if (!isValidAssetName(name)) throw new Error('Cannot update asset name. Name is invalid! ')
 
     const assetList = [...project.sprite.list, ...project.sound.list];
@@ -23,17 +35,21 @@ export function checkUpdatedName(originalName: string, name: string, project: Pr
     let counter = 1
     let changedName = name
 
+    // if assetSet has the same name, add a suffix to the name.
+    // if the changed name is same as the original name, break the loop.
     while (assetSet.has(changedName) && changedName !== originalName) {
         counter++
         changedName = `${name}_${counter}`
     }
 
     const isChanged = changedName !== name;
+    const isSame = changedName === originalName;
     const msg = isChanged ? `Name must be unique! ${name} already exist. It will be renamed to ${changedName}.` : null;
 
     return {
         name: changedName,
         isChanged,
+        isSame,
         msg
     }
 }
