@@ -94,3 +94,21 @@ We can import the project in a variety of ways by clicking the File button in th
 3. Import projects from the cloud
 
 ![](../static/usage/project-list.png)
+
+## Runner Widget
+
+If you want to show the project published on our platform on your website, you can choose to embed our running widget in the website.
+
+1. Import widget loader
+
+```html
+<script src="https://goplus-builder.qiniu.io/widgets/loader.js"></script>
+```
+
+2. Embedded widget element  
+
+You can load a specified project by passing projectid , then you will see the project running on your website.
+
+```html
+<spx-runner projectid="1"></spx-runner>
+```
