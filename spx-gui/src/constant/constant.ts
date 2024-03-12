@@ -9,3 +9,5 @@ export enum ThemeStyleType {
   Yellow = 1,
   Blue = 2
 }
+
+export const Library_Public = true;

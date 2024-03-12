@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:37:00
+ * @LastEditTime: 2024-03-12 18:19:35
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -58,14 +58,15 @@
       <!-- S Library Content -->
       <div class="asset-library-content">
         <n-switch
-          checked-value="private"
-          unchecked-value="public"
+          v-model:value="isPublicSwitch"
+          :checked-value="true"
+          :unchecked-value="false"
           style="width: 130px; float: right; margin: 10px 0 0 0"
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
         >
-          <template #unchecked> Public </template>
-          <template #checked> Private </template>
+          <template #checked> Public </template>
+          <template #unchecked> Private </template>
         </n-switch>
         <n-grid
           v-if="assetInfos != null && assetInfos.length != 0"
@@ -96,21 +97,11 @@
 <script lang="ts" setup>
 import { defineEmits, defineProps, ref, watch, onMounted } from 'vue'
 import type { CSSProperties } from 'vue'
-import {
-  NModal,
-  NButton,
-  NFlex,
-  NGrid,
-  NGridItem,
-  NInput,
-  NIcon,
-  NEmpty,
-  NSwitch
-} from 'naive-ui'
+import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon, NEmpty, NSwitch } from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
-import { AssetType } from '@/constant/constant'
+import { AssetType, Library_Public } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
 
@@ -123,8 +114,6 @@ const props = defineProps<PropsType>()
 const emits = defineEmits(['update:show', 'add-asset'])
 
 // ----------data related -----------------------------------
-const assetLibraryOption = ref<'public' | 'private'>('public')
-
 const railStyle = ({ focused, checked }: { focused: boolean; checked: boolean }) => {
   const style: CSSProperties = {}
   if (checked) {
@@ -150,6 +139,7 @@ const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 const assetInfos = ref<Asset[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
+const isPublicSwitch = ref<boolean>(true)
 
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
@@ -179,16 +169,22 @@ const setAssets = async () => {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (assetType: number, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
+const fetchAssetsByType = async (
+  assetType: number,
+  isOrderByTime?: boolean,
+  isOrderByHot?: boolean,
+  author?: string
+) => {
   try {
-    // todo: change pagesize 
+    // todo: change pagesize
     const pageIndex = 1
-    const pageSize = 50
-    if(assetLibraryOption.value == "public"){
-      author = "*"
+    const pageSize = 20
+    if (isPublicSwitch.value == Library_Public) {
+      author = '*'
     }
+    console.log('isPublicSwitch', isPublicSwitch.value)
     const response = await getAssetList({
-      assetLibraryType: assetLibraryOption.value,
+      isPublic: isPublicSwitch.value,
       pageIndex: pageIndex,
       pageSize: pageSize,
       assetType: assetType,
@@ -215,7 +211,9 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
-      setAssets()
+      // setAssets()
+    } else {
+      isPublicSwitch.value = true
     }
   }
 )
@@ -248,11 +246,11 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
-  if(category == 'ALL'){
+  if (category == 'ALL') {
     category = ''
   }
   nowCategory.value = category
-  
+
   await setAssets()
 }
 
@@ -291,7 +289,7 @@ const handleSearch = async () => {
  */
 const handleSortByHot = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,undefined,true)
+  fetchAssetsByType(assetType, undefined, true)
 }
 
 /**
@@ -302,11 +300,10 @@ const handleSortByHot = async () => {
  */
 const handleSortByTime = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,true)
+  fetchAssetsByType(assetType, true)
 }
 
-const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
-  assetLibraryOption.value = assetOption
+const handleAssetLibraryOption = () => {
   searchQuery.value = ''
 }
 
@@ -316,7 +313,7 @@ const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
  * @Author: Yao xinyue
  * @Date: 2024-03-05 15:01:45
  */
-watch(assetLibraryOption, async () => {
+watch(isPublicSwitch, async () => {
   await setAssets()
 })
 </script>
