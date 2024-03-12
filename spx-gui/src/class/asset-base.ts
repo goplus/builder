@@ -32,7 +32,7 @@ export abstract class AssetBase implements AssetBaseInterface {
     /**
      * The name of the asset.
      */
-    name: string
+    public name: string
 
     /**
      * The config of the asset.
@@ -51,8 +51,8 @@ export abstract class AssetBase implements AssetBaseInterface {
     get files(): FileWithUrl[] {
         return this._files
     }
-
-    set files(files: FileWithUrl[]) {
+    
+    set files(files: FileWithUrl[]){
         this._files = files
     }
 
