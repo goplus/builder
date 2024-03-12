@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-03-08 12:18:48
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-10 21:17:40
- * @FilePath: \spx-gui\src\widgets\scripts\build-loader-plugin.ts
+ * @LastEditTime: 2024-03-12 18:01:08
+ * @FilePath: \spx-gui\src\widgets\scripts\build-loader.ts
  * @Description:
  */
 import fs from 'fs'
@@ -36,7 +36,7 @@ export default async function BuilderLoader(
         if (widgetNameMatch && widgetNameMatch[1]) {
           const asset: WidgetAssets = {
             // Stitching the actual resource address
-            js: baseurl + manifest[key].file
+            js: new URL(manifest[key].file, baseurl).href
           }
           manifetMap[widgetNameMatch[1]] = asset
         }
