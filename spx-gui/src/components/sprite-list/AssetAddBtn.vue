@@ -128,7 +128,6 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { keywords, typeKeywords } from '../code-editor/language'
 import { computed, defineProps, ref } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
 import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
@@ -145,6 +144,7 @@ import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 import { AssetType } from '@/constant/constant'
+import { isValidAssetName } from '@/util/asset'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -213,17 +213,10 @@ const addBtnClassName = computed(() => {
 
 // Computed  spritename is legal or not
 const spriteNameAllow = computed(() => {
-  return isAllowName(uploadSpriteName.value)
+  return isValidAssetName(uploadSpriteName.value)
 })
 
 // ----------methods-----------------------------------------
-// check if the name is legal.
-const isAllowName = (name: string) => {
-  // spx code is go+ code, and the sprite name will compiled to an identifier of go+
-  // so sprite name rules is depend on the identifier rules of go+.
-  let regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
-  return regex.test(name) && !typeKeywords.includes(name) && !keywords.includes(name)
-}
 
 /**
  * @description: A Function about clicking add button to change button style.

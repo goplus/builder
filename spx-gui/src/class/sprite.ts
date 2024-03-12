@@ -29,7 +29,6 @@ import type { RawDir } from "@/types/file";
  * // change any params
  * spt2.setCx(23)
  * spt2.setSy(21)
- * spt2.setName("banana~~")
  * 
  * // provide addFile and removeFile method
  * const file = fileDom.target.files[0]   // typeof file ==> File
@@ -190,14 +189,6 @@ export class Sprite extends AssetBase {
             cx: costume.x as number,
             cy: costume.y
         })
-    }
-
-    /**
-     * Set the name of the sprite
-     * @param name the name of the sprite
-     */
-    setName(name: string) {
-        this.name = name
     }
 
     /**
