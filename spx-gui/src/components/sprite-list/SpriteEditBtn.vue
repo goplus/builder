@@ -15,9 +15,10 @@
         clearable
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
+        @blur="() => spriteStore.current && (spriteStore.current.name = name)"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setName(val as string)
+            spriteStore.current && (name = val)
           }
         "
       >
@@ -106,7 +107,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 
@@ -119,7 +120,10 @@ const y = computed(() => (spriteStore.current ? spriteStore.current.config.y : 0
 const heading = computed(() => (spriteStore.current ? spriteStore.current.config.heading : 0))
 const size = computed(() => (spriteStore.current ? spriteStore.current.config.size : 0))
 const visible = computed(() => (spriteStore.current ? spriteStore.current.config.visible : false))
-const name = computed(() => (spriteStore.current ? spriteStore.current.name : ''))
+const name = ref(spriteStore.current ? spriteStore.current.name : '')
+watch(() => spriteStore.current?.name, (newName) => {
+  name.value = newName || ''
+})
 </script>
 
 <style scoped lang="scss">

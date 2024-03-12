@@ -13,6 +13,7 @@
           round
           :placeholder="props.asset?.name || ''"
           class="sound-edit-content-top-input-sound-name"
+          @blur="() => emits('update-sound-name', soundName)"
       />
       <!--   Speed Change   -->
       <div class="speed-change-container" @click="togglePlaybackSpeed()">
@@ -473,14 +474,9 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   document.body.removeChild(a);
 }
 
-watch(() => props.asset, (newAsset) => {
-  soundName.value = newAsset?.name || '';
-});
-
-watch(soundName, (newName) => {
-  emits('update-sound-name', newName);
-});
-
+watch(() => props.asset?.name, () => {
+    soundName.value = props.asset?.name || '';
+})
 
 watch(() => props.asset, () => {
   initSoundEdit();
