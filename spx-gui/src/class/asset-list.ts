@@ -18,6 +18,7 @@ export abstract class AssetList<T extends AssetBase> {
                 asset.name = `${name}_${counter}`
             }
             this.list.push(asset)
+            asset.belongedList = this
         }
     }
 
@@ -26,7 +27,10 @@ export abstract class AssetList<T extends AssetBase> {
 
     remove(item: string | T): T | null {
         const index = this.list.findIndex(i => typeof item === 'string' ? i.name === item : i === item);
-        return index > -1 ? this.list.splice(index, 1)[0] : null;
+        if (index === -1) return null
+        const t = this.list.splice(index, 1)[0]
+        t.belongedList = null
+        return t
     }
 }
 
