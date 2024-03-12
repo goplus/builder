@@ -334,15 +334,15 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 		orders = append(orders, common.OrderByCondition{Column: "click_count", Direction: "desc"})
 	}
 	pagination, err := common.QueryByPage[Asset](ctrl.db, pageIndex, pageSize, wheres, orders)
+	if err != nil {
+		return nil, err
+	}
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
 		if err != nil {
 			return nil, err
 		}
 		pagination.Data[i].Address = modifiedAddress
-	}
-	if err != nil {
-		return nil, err
 	}
 	return pagination, nil
 }
