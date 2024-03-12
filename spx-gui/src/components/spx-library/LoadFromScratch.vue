@@ -1,4 +1,5 @@
 <template>
+  <n-spin :show="showAssetInfos">
   <div class="file-upload-container">
     <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
       {{ $t('scratch.upload') }}
@@ -84,13 +85,14 @@
       </n-grid-item>
     </n-grid>
   </div>
+</n-spin>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
-import { type MessageApi, NButton, NGrid, NGridItem, NImage, NInput, useMessage } from 'naive-ui'
+import { type MessageApi, NButton, NGrid, NGridItem, NImage, NInput, useMessage, NSpin } from 'naive-ui'
 import { Sprite } from '@/class/sprite'
 import { useSpriteStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
@@ -114,6 +116,8 @@ const assetFileDetails = ref<AssetFileDetail[]>([])
 const selectedAssets = ref<AssetFileDetail[]>([])
 // Ref about file upload input component.
 const fileUploadInput = ref(null)
+// loading state
+const showAssetInfos = ref<boolean>(false)
 
 // ----------methods-----------------------------------------
 /**
@@ -197,7 +201,10 @@ const downloadAsset = (asset: AssetFileDetail) => {
  * @return {*}
  */
 const importSelectedAssetsToProject = () => {
-  if (!selectedAssets.value) return
+  if (!selectedAssets.value) {
+    showAssetInfos.value = false
+    return
+  }
   selectedAssets.value.forEach((asset) => {
     let file = getFileFromAssetFileDetail(asset)
     if (isImage(asset)) {
@@ -214,7 +221,11 @@ const importSelectedAssetsToProject = () => {
  * @return {*}
  */
 const uploadSelectedAssetsToPrivateLibrary = async () => {
-  if (!selectedAssets.value) return
+  showAssetInfos.value = true
+  if (!selectedAssets.value) {
+    showAssetInfos.value = false
+    return
+  }
   for (const asset of selectedAssets.value) {
     let assetType = AssetType.Sounds
     if (isImage(asset)) {
@@ -271,6 +282,7 @@ const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
  * @return {*}
  */
 const showImportSuccessMessage = () => {
+  showAssetInfos.value = false
   message.success('import successfully!', { duration: 1000 })
 }
 </script>
