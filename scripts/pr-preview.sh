@@ -6,6 +6,9 @@ set -ex
 
 echo "WORKSPACE: ${PWD}"
 
+PREVIEW_URL=http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local
+
+echo VITE_PUBLISH_BASE_URL=${PREVIEW_URL}/ > spx-gui/.env.local
 export CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
 docker build -t ${CONTAINER_IMAGE} -f ./Dockerfile . --builder="kube" --push
 
@@ -50,7 +53,6 @@ kubectl -n goplus-pr-review apply -f builder.yaml
 kubectl -n goplus-pr-review get pods
 
 # comment on the PR
-PREVIEW_URL=http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local
 message=$'The PR environment is ready, please check the [PR environment]('${PREVIEW_URL}')
 
 [Attention]: This environment will be automatically cleaned up after 6 hours, please make sure to test it in time. If you have any questions, please contact the author of the PR or the SPX Builder team. 
