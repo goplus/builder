@@ -12,13 +12,14 @@ CREATE TABLE `asset`  (
                           `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
                           `is_public` tinyint NULL DEFAULT NULL,
                           `address` json NULL,
+                          `preview_address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
                           `asset_type` int NULL DEFAULT NULL,
                           `click_count` int NULL DEFAULT 0,
                           `status` int NULL DEFAULT NULL,
                           `c_time` datetime NULL DEFAULT NULL,
                           `u_time` datetime NULL DEFAULT NULL,
                           PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '资源表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '资源表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for project
@@ -35,6 +36,6 @@ CREATE TABLE `project`  (
                             `c_time` datetime NULL DEFAULT NULL,
                             `u_time` datetime NULL DEFAULT NULL,
                             PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 54 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;
