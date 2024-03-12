@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-12 18:19:35
+ * @LastEditTime: 2024-03-12 18:40:25
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -88,6 +88,14 @@
           size="large"
           description="There's nothing."
         />
+        <div style="text-align: center; margin-top: 16px;">
+          <n-pagination
+            v-model:page="pageIndex"
+            :page-count="totalPage"
+            simple
+            style="width: 160px; margin: auto"
+          />
+        </div>
       </div>
       <!-- E Library Content -->
     </template>
@@ -97,7 +105,18 @@
 <script lang="ts" setup>
 import { defineEmits, defineProps, ref, watch, onMounted } from 'vue'
 import type { CSSProperties } from 'vue'
-import { NModal, NButton, NFlex, NGrid, NGridItem, NInput, NIcon, NEmpty, NSwitch } from 'naive-ui'
+import {
+  NModal,
+  NButton,
+  NFlex,
+  NGrid,
+  NGridItem,
+  NInput,
+  NIcon,
+  NEmpty,
+  NSwitch,
+  NPagination
+} from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
@@ -139,8 +158,12 @@ const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 const assetInfos = ref<Asset[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
+// asset states (public or not)
 const isPublicSwitch = ref<boolean>(true)
-
+// constant pageSize
+const pageSize = 20
+const pageIndex = ref<number>(1)
+const totalPage = ref<number>(0)
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
@@ -177,15 +200,13 @@ const fetchAssetsByType = async (
 ) => {
   try {
     // todo: change pagesize
-    const pageIndex = 1
-    const pageSize = 20
     if (isPublicSwitch.value == Library_Public) {
       author = '*'
     }
     console.log('isPublicSwitch', isPublicSwitch.value)
     const response = await getAssetList({
       isPublic: isPublicSwitch.value,
-      pageIndex: pageIndex,
+      pageIndex: pageIndex.value,
       pageSize: pageSize,
       assetType: assetType,
       category: nowCategory.value,
@@ -194,7 +215,10 @@ const fetchAssetsByType = async (
       author: author
     })
     if (response.data.data.data == null) return []
-    return response.data.data.data
+    else {
+      totalPage.value = response.data.data.totalPage as number
+      return response.data.data.data
+    }
   } catch (error) {
     console.error('Error fetching assets:', error)
     return []
@@ -211,7 +235,6 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
-      // setAssets()
     } else {
       isPublicSwitch.value = true
     }
@@ -250,7 +273,6 @@ const handleCategoryClick = async (category: string) => {
     category = ''
   }
   nowCategory.value = category
-
   await setAssets()
 }
 
@@ -303,8 +325,10 @@ const handleSortByTime = async () => {
   fetchAssetsByType(assetType, true)
 }
 
+// clean search content and pageIndex state
 const handleAssetLibraryOption = () => {
   searchQuery.value = ''
+  pageIndex.value = 1
 }
 
 /**
@@ -314,6 +338,11 @@ const handleAssetLibraryOption = () => {
  * @Date: 2024-03-05 15:01:45
  */
 watch(isPublicSwitch, async () => {
+  pageIndex.value = 1
+  await setAssets()
+})
+
+watch(pageIndex, async () => {
   await setAssets()
 })
 </script>

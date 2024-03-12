@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-12 18:17:16
+ * @LastEditTime: 2024-03-12 18:35:22
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -60,6 +60,7 @@ export function getAssetList({
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
+  
   if (isPublicStr != null) {
     params.append('isPublic', isPublicStr.toString())
   }
