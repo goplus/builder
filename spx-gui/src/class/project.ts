@@ -160,7 +160,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.uTime = this.cTime
   }
 
-  async load(id: string, source: ProjectSource = ProjectSource.cloud): Promise<void> {
+  async load(id: string, source: ProjectSource = ProjectSource.cloud,userId?:string): Promise<void> {
     this.source = source
     if (source === ProjectSource.local) {
       if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
@@ -186,7 +186,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.uTime = summary.uTime || this.uTime
     } else {
       const { address, name, version, cTime, uTime, authorId } = await getProject(id)
-      if (useUserStore().userInfo?.id === authorId) {
+      if (userId && userId === authorId) {
         this._id = id
       }
       this.version = version

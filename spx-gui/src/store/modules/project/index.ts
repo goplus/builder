@@ -11,6 +11,8 @@ import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
 import { debounce } from '@/util/global'
+import { useUserStore } from '@/store'
+
 export const useProjectStore = defineStore('project', () => {
   /**
    * The project. You can use `project.value` to get it.
@@ -42,7 +44,7 @@ export const useProjectStore = defineStore('project', () => {
    */
   const loadProject = async (id: string, source: ProjectSource = ProjectSource.cloud) => {
     const newProject = new Project()
-    await newProject.load(id, source)
+    await newProject.load(id, source, useUserStore().userInfo?.id)
     project.value = newProject
   }
 
@@ -71,7 +73,9 @@ export const useProjectStore = defineStore('project', () => {
    */
   const init = () => {
     const lastProject = localStorage.getItem('project')
-    lastProject ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject) : loadBlankProject()
+    lastProject
+      ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject)
+      : loadBlankProject()
   }
 
   init()
