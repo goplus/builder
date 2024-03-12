@@ -89,7 +89,7 @@ const currentTab = ref('code')
   justify-content: center;
   align-items: center;
   .n-icon {
-    margin: 0 2px 5px 0;
+    margin: 0 5px 0 0;
   }
 }
 

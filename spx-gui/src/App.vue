@@ -101,12 +101,10 @@ body {
 
 :lang(en) {
   font-size: 15.8px;
-  line-height: 1.6;
 }
 
 :lang(zh) {
   font-size: 16px;
-  line-height: 1.6;
 }
 
 .n-layout-header {
