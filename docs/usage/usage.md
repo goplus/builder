@@ -107,8 +107,10 @@ If you want to show the project published on our platform on your website, you c
 
 2. Embedded widget element  
 
-You can load a specified project by passing projectid , then you will see the project running on your website.
+Widget will fill the parent element. And you can load a specified project by passing projectid , then you will see the project running on your website.
 
 ```html
-<spx-runner projectid="1"></spx-runner>
+<div style="width:400px;height:400px;">
+    <spx-runner projectid="1"></spx-runner>
+</div>
 ```
