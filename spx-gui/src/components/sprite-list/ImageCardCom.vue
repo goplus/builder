@@ -143,7 +143,6 @@ const setSceneToTop = (name: string) => {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     color: $sprite-list-card-close-button-x;
     border: 2px solid $sprite-list-card-close-button-border;
-    z-index: 10;
   }
 }
 
