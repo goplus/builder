@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:49:37
+ * @LastEditTime: 2024-03-13 13:15:57
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import {computed, h, ref} from 'vue'
-import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
+import { computed, h, ref } from 'vue'
+import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi, NAvatar } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
 import {
@@ -29,6 +29,7 @@ import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetworkStore } from "@/store/modules/network";
+import Logo from "@/assets/logo.png"
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -65,7 +66,7 @@ const importOptions = computed(() => [
   }
 ])
 
-const saveOptions = computed(() =>[
+const saveOptions = computed(() => [
   {
     label: t('topMenu.local'),
     key: 'SaveLocal'
@@ -124,13 +125,17 @@ const menuOptions = [
   {
     label: () =>
       h(
-        'div',
+        NAvatar,
         {
+          round: true,
+          size: 'small',
+          src: Logo,
           style: {
-            color: 'white'
+            color: 'white',
+            height: '38px',
+            width: '38px'
           }
         },
-        'SPX+'
       ),
     key: 'logo'
   },
@@ -322,28 +327,27 @@ const handleSelectImport = (key: string | number) => {
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
-      const file = e.target.files[0];
-      await projectStore.loadFromZip(file);
-    };
-  }
-  else if (key === 'Load') {
+      const file = e.target.files[0]
+      await projectStore.loadFromZip(file)
+    }
+  } else if (key === 'Load') {
     showModal.value = true
-  }
-  else if (key === 'SaveLocal') {
-    projectStore.project.download();
-  }
-  else if (key === 'SaveCloud') {
+  } else if (key === 'SaveLocal') {
+    projectStore.project.download()
+  } else if (key === 'SaveCloud') {
     const { message } = createDiscreteApi(['message'])
-    projectStore.project.save().then((res) => {
-      message.success(res)
-    }).catch((err) => {
-      console.error(err)
-      if (err instanceof Error) {
-        message.error(err.message)
-      }
-    })
-  }
-  else if(key === 'Blank') {
+    projectStore.project
+      .save()
+      .then((res) => {
+        message.success(res)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (err instanceof Error) {
+          message.error(err.message)
+        }
+      })
+  } else if (key === 'Blank') {
     projectStore.loadBlankProject()
   }
 }
