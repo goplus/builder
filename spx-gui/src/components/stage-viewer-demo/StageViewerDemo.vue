@@ -165,7 +165,6 @@ import type { SelectedSpritesChangeEvent } from '../stage-viewer'
 import { useProjectStore } from '@/store/modules/project'
 import { storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
-import FileWithUrl from '@/class/file-with-url'
 
 const projectStore = useProjectStore()
 const { project } = storeToRefs(projectStore)
@@ -251,6 +250,4 @@ const chooseBackdropScene = (index: number) => {
 const chooseBackdropCostume = (index: number) => {
   project.value.backdrop.config.currentCostumeIndex = index
 }
-
-
 </script>
