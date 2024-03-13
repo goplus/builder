@@ -57,7 +57,7 @@
         :text-color="commonColor"
         @click="openRecorderFunc()"
       >
-        Record
+        {{ $t('sounds.record') }}
       </n-button>
 
       <!-- E Component Add Button second step -->

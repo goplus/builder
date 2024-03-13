@@ -1,6 +1,6 @@
 <template>
   <div>
-    <n-button v-if="!userStore.userInfo" :disabled="networkStore.offline()" @click="signin()">Sign in</n-button>
+    <n-button v-if="!userStore.userInfo" :disabled="networkStore.offline()" @click="signin()">{{ $t('tab.signIn') }}</n-button>
     <n-dropdown
       v-else
       trigger="hover"
