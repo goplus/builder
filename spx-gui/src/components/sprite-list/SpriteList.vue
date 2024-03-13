@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 14:42:48
+ * @LastEditTime: 2024-03-13 15:43:24
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -44,7 +44,7 @@
       <!-- E Layout Sprite List -->
       <!-- S Layout Stage List -->
       <n-grid-item
-        :class="isEntryCodeActive ? 'asset-library-right-click' : 'asset-library-right'"
+        class="asset-library-right"
         span="1"
       >
       <StageEdit />
@@ -81,7 +81,6 @@ import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 const currentActiveName = ref('')
 const spriteStore = useSpriteStore()
 const { setCurrentByName } = spriteStore
-const isEntryCodeActive = ref<boolean>(false)
 // ----------data related -----------------------------------
 // Style about import modal body.
 const bodyStyle = { margin: 'auto' }
