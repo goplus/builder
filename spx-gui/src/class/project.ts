@@ -10,7 +10,7 @@ import {
 } from '@/util/file'
 import saveAs from 'file-saver'
 import { removeProject as removeCloudProject } from '@/api/project'
-import { SoundList, SpriteList } from '@/class/asset-list'
+import { AssetList, SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
 import { getProject, getProjects, saveProject, updateProjectIsPublic } from '@/api/project'
 import { Sprite } from './sprite'
@@ -19,6 +19,7 @@ import type { Config } from '@/interface/file'
 import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
+import type { AssetBase } from './asset-base'
 
 export enum ProjectSource {
   local = 'local',
@@ -212,11 +213,11 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
     }
 
-    const findOrCreateItem = (name: string, collection: any[], constructor: typeof Sprite | typeof Sound) => {
-      let item = collection.find(item => item.name === name);
+    function findOrCreateItem<T extends AssetBase>(name: string, collection: AssetList<T>, constructor: new (name: string) => T) {
+      let item = collection.list.find(item => item.name === name);
       if (!item) {
         item = new constructor(name);
-        collection.push(item);
+        collection.add(item);
       }
       return item;
     }
@@ -230,7 +231,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       path = path.replace(prefix, '')
       if (Sprite.REG_EXP.test(path)) {
         const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite);
         handleFile(file, filename, sprite);
       }
       else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
@@ -238,12 +239,12 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
       else if (/^.+\.spx$/.test(path)) {
         const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem(spriteName, this.sprite.list, Sprite);
+        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite);
         sprite.code = content as string;
       }
       else if (Sound.REG_EXP.test(path)) {
         const soundName = path.match(Sound.REG_EXP)?.[1] || '';
-        const sound: Sound = findOrCreateItem(soundName, this.sound.list, Sound);
+        const sound: Sound = findOrCreateItem<Sound>(soundName, this.sound, Sound);
         handleFile(file, filename, sound);
       }
       else if (Backdrop.REG_EXP.test(path)) {

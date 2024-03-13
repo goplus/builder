@@ -28,6 +28,7 @@ import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
+import { useNetworkStore } from "@/store/modules/network";
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -42,6 +43,7 @@ const { locale, t } = useI18n({
   useScope: 'global'
 })
 const languageStore = useLanguageStore()
+const networkStore = useNetworkStore()
 
 /**
  * @description: dropdown options of import/save/export
@@ -70,18 +72,21 @@ const saveOptions = computed(() =>[
   },
   {
     label: t('topMenu.cloud'),
-    key: 'SaveCloud'
+    key: 'SaveCloud',
+    disabled: networkStore.offline()
   }
 ])
 
 const exportOptions = computed(() => [
   {
     label: t('topMenu.video'),
-    key: 'Video'
+    key: 'Video',
+    disabled: networkStore.offline()
   },
   {
     label: t('topMenu.app'),
-    key: 'App'
+    key: 'App',
+    disabled: networkStore.offline()
   }
 ])
 
@@ -161,7 +166,7 @@ const menuOptions = [
           trigger: 'hover',
           options: saveOptions.value,
           onSelect: handleSelectImport,
-          style: dropdownStyle
+          style: dropdownStyle,
         },
         {
           default: () =>

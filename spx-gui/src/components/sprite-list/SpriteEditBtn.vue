@@ -13,13 +13,11 @@
         round
         autosize
         clearable
+        :disabled="!spriteStore.current"
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
-        @update:value="
-          (val) => {
-            spriteStore.current && spriteStore.current.setName(val as string)
-          }
-        "
+        @blur="handleUpdateSpriteName"
+        @update:value="(val) => name = val"
       >
         <template #prefix> {{ $t('stage.sprite') }}: </template>
       </n-input>
@@ -106,9 +104,11 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { computed } from 'vue'
-import { NInput, NInputNumber, NFlex, NSwitch } from 'naive-ui'
+import { computed, ref, watch } from 'vue'
+import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
+import { checkUpdatedName } from '@/util/asset';
+import { useProjectStore } from '@/store';
 
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore()
@@ -119,7 +119,31 @@ const y = computed(() => (spriteStore.current ? spriteStore.current.config.y : 0
 const heading = computed(() => (spriteStore.current ? spriteStore.current.config.heading : 0))
 const size = computed(() => (spriteStore.current ? spriteStore.current.config.size : 0))
 const visible = computed(() => (spriteStore.current ? spriteStore.current.config.visible : false))
-const name = computed(() => (spriteStore.current ? spriteStore.current.name : ''))
+const name = ref(spriteStore.current ? spriteStore.current.name : '')
+watch(() => spriteStore.current?.name, (newName) => {
+  name.value = newName || ''
+})
+
+const { message } = createDiscreteApi(['message'])
+function handleUpdateSpriteName(){
+  if (!spriteStore.current) return
+  try {
+    const project = useProjectStore().project
+    const checkInfo = checkUpdatedName(spriteStore.current, name.value, project)
+    console.log('zorder1',checkInfo.name, name.value, project.backdrop.config.zorder);
+    if (checkInfo.isChanged) {
+      const zorder = project.backdrop.config.zorder
+      zorder.push(checkInfo.name)
+      project.backdrop.config.zorder = zorder.filter(item => item !== spriteStore.current?.name)
+      spriteStore.current.name = checkInfo.name
+      message.success('update name successfully!')
+    }
+    if (checkInfo.msg) message.warning(checkInfo.msg);
+  } catch(e) {
+    if (e instanceof Error)
+      message.error(e.message)
+  }
+}
 </script>
 
 <style scoped lang="scss">
