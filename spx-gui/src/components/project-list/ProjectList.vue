@@ -81,7 +81,7 @@ const searchQuery = ref('')
 const isRequesting = ref<boolean>(false)
 const projectList = ref<ProjectSummary[]>([])
 const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
-  return projectList.value.filter(project => project.name?.includes(searchQuery.value) || project.id.includes(searchQuery.value)).sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
+  return projectList.value.filter(project => project.name?.toLocaleLowerCase().includes(searchQuery.value.toLocaleLowerCase())).sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
 })
 const networkStore = useNetworkStore()
 
