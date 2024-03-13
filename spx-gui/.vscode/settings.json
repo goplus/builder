@@ -1,0 +1,6 @@
+{
+    "i18n-ally.localesPaths": [
+        "src/language",
+        "src/store/modules/language"
+    ]
+}
