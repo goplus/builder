@@ -20,7 +20,7 @@ After clicking submit, the sprite will be imported into the current project.
 
 Of course, we can also import sprite from the assets library. We can click the choose button of the "ADD NEW" area to select and import sprite from online public or private asset library.
 
-TODO: assets library
+![](../static/usage/assest-library.png) 
 
 Of course, we also have a way to import sprites. We can choose to import scratch files and select sounds and sprites to import.
 
@@ -62,7 +62,7 @@ If we want to do another function at this time: there are two sprites on the sta
 Then we can upload another sprite using the method we just did. 
 And since both sprites need to be able to modify and output the number of clicks on all sprites when clicked, we need to declare a global variable.
 
-We can choose to click the entryCode button to enter the editing area and declare a count variable to record the number of clicks.
+We can choose to click the stage area on the right to enter the entryCode editing area and declare a count variable to record the number of clicks.
 
 And in the click events of the two sprites, both write the logic of modifying and outputting the number of clicks, click run, and you can view the corresponding effect.
 ```
@@ -94,3 +94,22 @@ We can import the project in a variety of ways by clicking the File button in th
 3. Import projects from the cloud
 
 ![](../static/usage/project-list.png)
+## Runner Widget
+
+If you want to show the project published on our platform on your website, you can choose to embed our running widget in the website.
+
+1. Import widget loader
+
+```html
+<script src="https://builder.goplus.org/widgets/loader.js"></script>
+```
+
+2. Embedded widget element  
+
+Widget will fill the parent element. And you can load a specified project by passing projectid , then you will see the project running on your website.
+
+```html
+<div style="width:400px;height:400px;">
+    <spx-runner projectid="1"></spx-runner>
+</div>
+```
