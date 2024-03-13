@@ -148,22 +148,13 @@ watchEffect(() => {
   }
   @mixin libraryRightBase {
     max-height: calc(60vh - 60px - 24px);
-    overflow-y: auto;
-  }
-  .asset-library-right {
-    @include libraryRightBase;
-    background: white;
-    border-left:2px dashed #8f98a1
-  }
-  .asset-library-right-click {
-    @include libraryRightBase;
-    background: #f7f7f7;
+    overflow: scroll;
   }
 
   .asset-library-left {
     margin-top: 30px;
     max-height: calc(60vh - 60px - 24px - 40px);
-    overflow: scroll;
+    overflow: auto;
     padding: 10px;
   }
 }
