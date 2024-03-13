@@ -97,7 +97,7 @@
           class="n-empty-style"
           :show-icon="false"
           size="large"
-          description="There's nothing."
+          :description="$t('library.empty')"
         />
        
       </div>

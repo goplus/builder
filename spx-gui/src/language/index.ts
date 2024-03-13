@@ -151,7 +151,8 @@ export const initI18n = async (app: App) => {
       library:{
         search: 'Search',
         public: 'public',
-        private: 'private'
+        private: 'private',
+        empty:'There\'s nothing'
       }
     },
     zh: {
@@ -291,7 +292,8 @@ export const initI18n = async (app: App) => {
       library:{
         search: '搜索',
         public: '公开',
-        private: '私有'
+        private: '私有',
+        empty: '空空如也'
       }
     }
   }
