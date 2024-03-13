@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-12 18:35:22
+ * @LastEditTime: 2024-03-13 11:40:47
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -10,6 +10,7 @@ import { service } from '@/axios'
 import type { Asset, PageAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
+import { PublicStatus } from "@/class/project";
 
 export enum PublishState {
   NotPublished = -1,
@@ -39,7 +40,7 @@ export function getAssetList({
   isOrderByHot,
   author
 }: {
-  isPublic: boolean
+  isPublic: number
   pageIndex: number
   pageSize: number
   assetType: number
@@ -50,9 +51,9 @@ export function getAssetList({
 }): Promise<PageAssetResponse> {
   const baseAssetUrl = '/assets/list'
   let isPublicStr
-  if (isPublic == true) {
+  if (isPublic == PublicStatus.public) {
     isPublicStr = PublishState.PublicAndPrivateLibrary
-  } else if (isPublic == false) {
+  } else if (isPublic == PublicStatus.private) {
     isPublicStr = PublishState.PrivateLibrary
   }
   console.log('isPublic', isPublic, 'isPublicStr', isPublicStr)

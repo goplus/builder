@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-12 23:34:11
+ * @LastEditTime: 2024-03-13 11:36:49
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -59,8 +59,8 @@
       <div class="asset-library-content">
         <n-switch
           v-model:value="isPublicSwitch"
-          :checked-value="true"
-          :unchecked-value="false"
+          :checked-value="PublicStatus.public"
+          :unchecked-value="PublicStatus.private"
           style="width: 130px; float: right; margin: 10px 0 0 0"
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
@@ -127,6 +127,7 @@ import type { Asset } from '@/interface/library'
 import { AssetType, Library_Public } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
+import { PublicStatus } from "@/class/project";
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -163,7 +164,7 @@ const assetInfos = ref<Asset[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
 // asset states (public or not)
-const isPublicSwitch = ref<boolean>(true)
+const isPublicSwitch = ref<number>(0)
 // constant pageSize
 const pageSize = 20
 const pageIndex = ref<number>(1)
@@ -204,7 +205,7 @@ const fetchAssetsByType = async (
 ) => {
   try {
     // todo: change pagesize
-    if (isPublicSwitch.value == Library_Public) {
+    if (isPublicSwitch.value == PublicStatus.public) {
       author = '*'
     }
     console.log('isPublicSwitch', isPublicSwitch.value)
@@ -240,7 +241,7 @@ watch(
     if (newShow) {
       showModal.value = newShow
     } else {
-      isPublicSwitch.value = true
+      isPublicSwitch.value = PublicStatus.public
     }
   }
 )
