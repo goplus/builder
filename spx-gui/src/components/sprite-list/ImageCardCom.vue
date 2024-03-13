@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:11:19
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 17:30:22
+ * @LastEditTime: 2024-03-13 12:21:45
  * @FilePath: \spx-gui\src\components\sprite-list\ImageCardCom.vue
  * @Description:
 -->
@@ -24,11 +24,11 @@
     :key="index"
     :class="computedProperties.cardClassName"
     :style="index == 0 ? firstBackdropStyle : ''"
-    @click="() => index === 0 || (scene.scene.name && setSceneToTop(scene.scene.name))"
+    @click.stop="() => index === 0 || (scene.scene.name && setSceneToTop(scene.scene.name))"
   >
     <div
       class="delete-button"
-      @click="() => scene.scene.name && deleteBackdropScene(scene.scene.name)"
+      @click.stop="() => scene.scene.name && deleteBackdropScene(scene.scene.name)"
     >
       ×
     </div>
@@ -143,7 +143,6 @@ const setSceneToTop = (name: string) => {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     color: $sprite-list-card-close-button-x;
     border: 2px solid $sprite-list-card-close-button-border;
-    z-index: 10;
   }
 }
 

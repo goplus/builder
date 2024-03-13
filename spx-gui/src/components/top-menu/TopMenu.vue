@@ -130,7 +130,7 @@ const menuOptions = [
             color: 'white'
           }
         },
-        'SPX+'
+        'Go+ Builder'
       ),
     key: 'logo'
   },
