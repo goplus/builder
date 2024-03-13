@@ -474,9 +474,9 @@ function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
   document.body.removeChild(a);
 }
 
-watch(() => props.asset, (newAsset) => {
-  soundName.value = newAsset?.name || '';
-});
+watch(() => props.asset?.name, () => {
+  soundName.value = props.asset?.name || '';
+})
 
 watch(() => props.asset, () => {
   initSoundEdit();
