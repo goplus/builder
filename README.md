@@ -1,10 +1,10 @@
-# 💐GO+ FOR STEM EDU
+# 💐GO+ Builder
 
-STEM EDU is an innovative online educational platform designed specifically for children's programming. With a focus on STEM (Science, Technology, Engineering, and Mathematics) education, our platform provides an interactive and engaging learning experience that encourages creativity and problem-solving through coding.
+GO+ Builder is an innovative online educational platform designed specifically for children's programming. With a focus on STEM (Science, Technology, Engineering, and Mathematics) education, our platform provides an interactive and engaging learning experience that encourages creativity and problem-solving through coding.
 
 ## 📖Features
 
-GO+ FOR STEM EDU offers a wide range of features designed to support both offline and online learning environments:
+GO+ Builder offers a wide range of features designed to support both offline and online learning environments:
 
 ### Offline Features:
 
@@ -39,7 +39,7 @@ Embed SPX online programming and game animations directly into your projects. De
 
 Access the online platform at [GO+ Builder Homepage](https://goplus-builder.qiniu.io/editor/homepage) for an engaging coding experience. 
 
-For a guide on how to get started with GO+ FOR STEM EDU, please refer to our [usage guide](https://github.com/goplus/builder/blob/dev/docs/usage/usage.md). 
+For a guide on how to get started with GO+ Builder, please refer to our [usage guide](https://github.com/goplus/builder/blob/dev/docs/usage/usage.md). 
 
 ## ✨How to Install (For Developers)
 
@@ -47,6 +47,6 @@ Developers looking to contribute or customize the platform can find detailed ins
 
 ## 📦Contribution
 
-We welcome contributions! For guidelines on how to contribute to GO+ FOR STEM EDU, please check out our [contribution guide](https://github.com/goplus/builder/blob/dev/docs/contribution/contribution.md).
+We welcome contributions! For guidelines on how to contribute to GO+ Builder, please check out our [contribution guide](https://github.com/goplus/builder/blob/dev/docs/contribution/contribution.md).
 
-Join us in making STEM education more accessible and enjoyable for children around the world. Let's code, create, and learn together with GO+ FOR STEM EDU!
+Join us in making GO+ Builder more accessible and enjoyable for children around the world. Let's code, create, and learn together with GO+ Builder!
