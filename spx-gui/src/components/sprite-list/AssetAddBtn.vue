@@ -334,8 +334,8 @@ const handleSubmitSprite = async () => {
   let uploadFilesArr: File[] = []
   for (const fileItem of uploadFileList.value) {
     if (!isImage(fileItem.name)) {
-      message.error('Unsupported image type');
-      return; 
+      message.error('Unsupported image type')
+      return
     }
   }
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
