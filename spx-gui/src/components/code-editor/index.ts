@@ -4,50 +4,44 @@
  * @LastEditors: Zhang Zhi Yang
  * @LastEditTime: 2024-02-04 13:15:49
  * @FilePath: /spx-gui/src/components/code-editor/index.ts
- * @Description: 
+ * @Description:
  */
 import * as monaco from 'monaco-editor'
-import CodeEditor from "./CodeEditor.vue"
+import CodeEditor from './CodeEditor.vue'
 
-import { register } from './register';
-import { editorOptions } from "./language"
-export default CodeEditor;
+import { register } from './register'
+import { editorOptions } from './editor'
+export default CodeEditor
 
-export interface Snippet extends monaco.languages.CompletionItem {
-}
+export interface Snippet extends monaco.languages.CompletionItem {}
 
 export interface FormatError {
-    Column: number;
-    Line: number;
-    Msg: string;
-};
+  Column: number
+  Line: number
+  Msg: string
+}
 export interface FormatResponse {
-    Body: string;
-    Error: FormatError;
-};
-
+  Body: string
+  Error: FormatError
+}
 
 export interface EditorOptions {
-    minimap?: {
-        enabled: boolean
-    }
-    readOnly?: boolean
-    cursorStyle?: "line" // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
+  minimap?: {
+    enabled: boolean
+  }
+  readOnly?: boolean
+  cursorStyle?: 'line' // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
 }
 
 export interface CodeEditorProps {
-    modelValue: string
-    height?: string
-    width?: string
-    editorOptions?: EditorOptions 
+  modelValue: string
+  height?: string
+  width?: string
+  editorOptions?: EditorOptions
 }
 export interface CodeEditorEmits {
-    (e: 'change', value: string): void
-    (e: 'update:modelValue', value: string): void
+  (e: 'change', value: string): void
+  (e: 'update:modelValue', value: string): void
 }
-export * from "./snippet"
-export {
-    monaco,
-    register,
-    editorOptions,
-}
+export * from './snippet'
+export { monaco, register, editorOptions }
