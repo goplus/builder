@@ -28,7 +28,6 @@ const backdropStore = useBackdropStore()
 // ----------computed properties-----------------------------
 // Computed backdrop from backdropStore.
 const backdrop: ComputedRef<Backdrop> = computed(() => {
-  console.log('backdropStore.backdrop', backdropStore.backdrop, backdropStore.backdrop.files)
   return backdropStore.backdrop as Backdrop
 })
 </script>

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 13:19:47
+ * @LastEditTime: 2024-03-13 18:17:40
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -204,11 +204,9 @@ const fetchAssetsByType = async (
   author?: string
 ) => {
   try {
-    // todo: change pagesize
     if (isPublicSwitch.value == PublicStatus.public) {
       author = '*'
     }
-    console.log('isPublicSwitch', isPublicSwitch.value)
     const response = await getAssetList({
       isPublic: isPublicSwitch.value,
       pageIndex: pageIndex.value,

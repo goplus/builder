@@ -69,7 +69,6 @@ const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 const computedProperties = computed(() => {
   const isBg = props.type === 'bg'
   const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0
-  console.log(props.asset.config.scenes)
   return {
     cardClassName: isBg ? 'bg-list-card' : 'sprite-list-card',
     imageWidth: isBg ? 40 : 75,
