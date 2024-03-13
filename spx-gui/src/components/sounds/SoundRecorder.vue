@@ -8,18 +8,18 @@
         <div ref="waveformContainer" class="recorder-waveform"></div>
       </div>
       <div class="name-input-container">
-        <span class="name-input-hint">Sound Name </span>
+        <span class="name-input-hint"> {{ $t('sounds.soundName') }} </span>
         <input
           v-model="soundName"
           type="text"
           class="sound-name-input"
         />
       </div>
-      <audio :key="audioKey" :src="audioUrl" controls></audio>
+      <audio :src="audioUrl" controls></audio>
       <div class="button-container">
-        <button class="recorder-button" @click="startRecording">Start Recording</button>
-        <button class="recorder-button" @click="stopRecording">Stop Recording</button>
-        <button class="recorder-button" @click="saveRecording">Save</button>
+        <button class="recorder-button" @click="startRecording">{{ $t('sounds.startRecording') }}</button>
+        <button class="recorder-button" @click="stopRecording">{{ $t('sounds.stopRecording') }}</button>
+        <button class="recorder-button" @click="saveRecording">{{ $t('sounds.save') }}</button>
       </div>
     </div>
   </div>
@@ -42,7 +42,6 @@ const emits = defineEmits(["update:show"]);
 const showRecorder = ref<boolean>(false);
 const soundName = ref('record');
 const audioUrl = ref('');
-const audioKey = ref(0);
 let mediaRecorder : MediaRecorder;
 const audioChunks = ref<Blob[]>([]);
 const audioFile = ref<File | null>(null);
@@ -120,6 +119,7 @@ const stopRecording = () => {
           type: "audio/wav",
           lastModified: Date.now(),
         });
+        audioUrl.value = URL.createObjectURL(audioFile.value);
       });
     } else {
       console.error('No audio chunks available to create audio file.');
@@ -133,7 +133,6 @@ const saveRecording = () => {
   if (audioFile.value && soundName.value) {
     let sound = new Sound(soundName.value, [audioFile.value]);
     soundStore.addItem(sound);
-    audioKey.value++;
     closeRecorder();
   } else {
     console.error('No recording or name provided');

@@ -18,7 +18,8 @@ export const initI18n = async (app: App) => {
       tab: {
         code: 'Code',
         sound: 'Sound',
-        costume: 'Costume'
+        costume: 'Costume',
+        signIn: 'Sign in'
       },
       sounds: {
         hint: '🎵 Sound Edit',
@@ -36,7 +37,11 @@ export const initI18n = async (app: App) => {
         copy: 'Copy',
         insert: 'Insert',
         download: 'Download',
-        save: 'Save'
+        save: 'Save',
+        record: 'Record',
+        soundName: 'Sound Name',
+        startRecording: 'Start Recording',
+        stopRecording: 'Stop Recording'
       },
       toolbox: {
         event: 'Event',
@@ -148,7 +153,8 @@ export const initI18n = async (app: App) => {
       tab: {
         code: '编程',
         sound: '音频',
-        costume: '造型'
+        costume: '造型',
+        signIn: '登陆'
       },
       sounds: {
         hint: '🎵 音频编辑',
@@ -167,7 +173,11 @@ export const initI18n = async (app: App) => {
         copy: '复制',
         insert: '插入',
         download: '下载',
-        save: '保存'
+        save: '保存',
+        record: '录音',
+        soundName: '音频名称',
+        startRecording: '开始录音',
+        stopRecording: '停止录音'
       },
       toolbox: {
         event: '事件',

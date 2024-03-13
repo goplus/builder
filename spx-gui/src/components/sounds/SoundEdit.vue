@@ -478,11 +478,6 @@ watch(() => props.asset, (newAsset) => {
   soundName.value = newAsset?.name || '';
 });
 
-watch(soundName, (newName) => {
-  emits('update-sound-name', newName);
-});
-
-
 watch(() => props.asset, () => {
   initSoundEdit();
 });
