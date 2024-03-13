@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 15:43:24
+ * @LastEditTime: 2024-03-13 18:16:35
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -100,7 +100,6 @@ const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list as S
  * @Date: 2024-02-01 10:51:23
  */
 const toggleCodeById = (name: string) => {
-  console.log('name', name)
   currentActiveName.value = name
   setCurrentByName(name)
 }
