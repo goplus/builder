@@ -129,7 +129,7 @@ function handleUpdateSpriteName(){
   if (!spriteStore.current) return
   try {
     const project = useProjectStore().project
-    const checkInfo = checkUpdatedName(name.value, spriteStore.current.name)
+    const checkInfo = checkUpdatedName(name.value, useProjectStore().project, spriteStore.current.name)
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
       // update zorder

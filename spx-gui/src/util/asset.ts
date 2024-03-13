@@ -1,6 +1,5 @@
 import type { Project } from "@/class/project"
 import { keywords, typeKeywords } from "@/components/code-editor/language"
-import { useProjectStore } from "@/store"
 
 interface checkInfo {
     /** the updated name if there are assets with the same name */
@@ -23,11 +22,11 @@ export const isValidAssetName = (name: string) => {
 /**
  * Check if the name is unique and return the updated name and other information.
  * @param name the name of the asset
- * @param originalName If originalName is null, then he will get the name that should be held in the project; otherwise, he will find the name that should be held in the project excluding originalName.
  * @param project the project
+ * @param originalName If originalName is null, then he will get the name that should be held in the project; otherwise, he will find the name that should be held in the project excluding originalName.
  * @returns the check info
  */
-export function checkUpdatedName(name: string, originalName: string | null = null, project: Project = useProjectStore().project): checkInfo {
+export function checkUpdatedName(name: string, project: Project, originalName: string | null = null): checkInfo {
     if (!isValidAssetName(name)) throw new Error('Cannot update asset name. Name is invalid! ')
 
     const assetList = [...project.sprite.list, ...project.sound.list];
