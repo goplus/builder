@@ -322,7 +322,7 @@ const handleSearch = async () => {
  */
 const handleSortByHot = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType, undefined, true)
+  assetInfos.value = await fetchAssetsByType(assetType, undefined, true)
 }
 
 /**
@@ -333,7 +333,7 @@ const handleSortByHot = async () => {
  */
 const handleSortByTime = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType, true)
+  assetInfos.value = await fetchAssetsByType(assetType, true)
 }
 
 // clean search content and pageIndex state
