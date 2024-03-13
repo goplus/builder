@@ -2,22 +2,26 @@ import { AssetBase } from "./asset-base";
 import { Sound } from "./sound";
 import { Sprite } from "./sprite";
 import type { Project } from "./project";
+import { checkUpdatedName } from "@/util/asset";
+
 export abstract class AssetList<T extends AssetBase> {
     public list: T[] = [];
+    project: Project;
 
-    constructor(list: T[] = []) {
+    constructor(project: Project, list: T[] = []) {
+        this.project = project;
         this.list = list;
     }
 
     add(...assets: T[]) {
         for (const asset of assets) {
-            let counter = 1
-            const name = asset.name
-            while (this.list.find(item => item.name === asset.name)) {
-                counter++
-                asset.name = `${name}_${counter}`
+            try {
+                const checkInfo = checkUpdatedName(asset.name, this.project)
+                asset.name = checkInfo.name
+                this.list.push(asset)
+            } catch (e) {
+                console.error(e)
             }
-            this.list.push(asset)
         }
     }
 
@@ -31,25 +35,18 @@ export abstract class AssetList<T extends AssetBase> {
 }
 
 export class SpriteList extends AssetList<Sprite> {
-  project: Project
-
-  constructor(project: Project) {
-    super()
-    this.project = project
-  }
   add(...sprites: Sprite[]): void {
     super.add(...sprites)
     sprites.forEach((sprite) => {
-      this.project.backdrop.config.zorder.push(sprite.name)
+      if (!this.project.backdrop.config.zorder.includes(sprite.name))
+        this.project.backdrop.config.zorder.push(sprite.name)
     })
   }
+
   remove(sprite: Sprite | string): Sprite | null {
     const removeSprite = typeof sprite === 'string' ? super.remove(sprite) : super.remove(sprite)
     if (removeSprite) {
-      const index = this.project.backdrop.config.zorder.indexOf(removeSprite.name)
-      if (index !== -1) {
-        this.project.backdrop.config.zorder.splice(index, 1)
-      }
+      this.project.backdrop.config.zorder = this.project.backdrop.config.zorder.filter((name) => name !== removeSprite.name)
     }
     return removeSprite
   }

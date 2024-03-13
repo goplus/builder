@@ -146,10 +146,9 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   constructor() {
     this.name = ''
-    this.sound = new SoundList()
     this.backdrop = new Backdrop()
     this.sprite = new SpriteList(this)
-    this.sound = new SoundList()
+    this.sound = new SoundList(this)
     this.entryCode = ''
     this.unidentifiedFile = {}
     this._temporaryId = Project.TEMPORARY_ID_PREFIX + nanoid()
