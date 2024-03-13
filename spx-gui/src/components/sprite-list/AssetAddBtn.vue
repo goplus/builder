@@ -273,7 +273,7 @@ const beforeUpload = (
       case 'backdrop': {
         if (!isImage(fileName)) {
           message.error('Unsupported image type')
-          break
+          return false
         }
         let backdrop = backdropStore.backdrop
         backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
@@ -282,7 +282,7 @@ const beforeUpload = (
       case 'sound': {
         if (!isSound(fileName)) {
           message.error('Unsupported sound type')
-          break
+          return false
         }
         let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
         soundStore.addItem(sound)
