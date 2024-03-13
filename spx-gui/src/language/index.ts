@@ -154,7 +154,7 @@ export const initI18n = async (app: App) => {
         code: '编程',
         sound: '音频',
         costume: '造型',
-        signIn: '登陆'
+        signIn: '登录'
       },
       sounds: {
         hint: '🎵 音频编辑',
