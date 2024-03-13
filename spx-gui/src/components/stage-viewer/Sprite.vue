@@ -9,7 +9,6 @@
 -->
 <template>
   <Costume
-    ref="costume"
     :sprite-config="props.spriteConfig"
     :selected="props.selected"
     :map-config="props.mapConfig"
@@ -20,11 +19,10 @@
 </template>
 <script lang="ts" setup>
 import Costume from './Costume.vue'
-import { defineProps, defineEmits, ref } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
 // ----------props & emit------------------------------------
-const costume = ref()
 
 const props = defineProps<{
   spriteConfig: SpriteConfig
