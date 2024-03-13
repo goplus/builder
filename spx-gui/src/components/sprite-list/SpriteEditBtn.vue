@@ -104,7 +104,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 import { checkUpdatedName } from '@/util/asset';
@@ -136,11 +136,10 @@ function handleUpdateSpriteName(){
     project.backdrop.config.zorder = zorder.filter(item => item !== spriteStore.current?.name)
     project.backdrop.config.zorder.push(checkInfo.name)
 
-    // If the name is the same as before, the watch will not hear the change, so manually change the name so that other components can sense the name change.
-    if (checkInfo.isSame) spriteStore.current.name = '';
-    nextTick(()=> spriteStore.current!.name = checkInfo.name);
-    
-    !checkInfo.isSame && message.success('update name successfully!')
+    if (!checkInfo.isSame && !checkInfo.isChanged) {
+      spriteStore.current.name = checkInfo.name
+      message.success('update name successfully!')
+    }
     if (checkInfo.msg) message.warning(checkInfo.msg)
   } catch(e) {
     if (e instanceof Error)

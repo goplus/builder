@@ -44,7 +44,7 @@ export function checkUpdatedName(name: string, originalName: string | null = nul
 
     const isChanged = changedName !== name;
     const isSame = changedName === originalName;
-    const msg = isChanged ? `Name must be unique! ${name} already exist. It will be renamed to ${changedName}.` : null;
+    const msg = isChanged ? `Name must be unique! ${name} already exist. You can rename it to ${changedName}.` : null;
 
     return {
         name: changedName,
