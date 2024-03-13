@@ -20,56 +20,60 @@
       </div>
     </div>
 
-        <CodeEditor width="500px" height="500px" ref="codeEditor" :editor-options="editorOptions"
-            :model-value="editorContent" @update:model-value="onCodeChange" />
-    </div>
+    <CodeEditor
+      ref="codeEditor"
+      width="500px"
+      height="500px"
+      :editor-options="editorOptions"
+      :model-value="editorContent"
+      @update:model-value="onCodeChange"
+    />
+  </div>
 </template>
 <script setup lang="ts">
-import CodeEditor, { onStartSnippet } from "../code-editor"
-import { ref, computed } from "vue"
-let codeEditor = ref();
+import CodeEditor, { onStartSnippet } from '../code-editor'
+import { ref, computed } from 'vue'
+let codeEditor = ref()
 const editorOptions = ref({
-    minimap: {
-        enabled: false
-    },
-    readOnly: false
+  minimap: {
+    enabled: false
+  },
+  readOnly: false
 })
 const editorContent = computed(() => {
-    return codeArray.value[codeIndex.value].code;
+  return codeArray.value[codeIndex.value].code
 })
-const codeIndex = ref(0);
-const codeArray = ref([{
-    code: "onStart => { }",
-}, {
-    code: "onClone => { }",
-}])
+const codeIndex = ref(0)
+const codeArray = ref([
+  {
+    code: 'onStart => { }'
+  },
+  {
+    code: 'onClone => { }'
+  }
+])
 
 const insertSnippet = () => {
-    codeEditor.value.insertSnippet(
-        onStartSnippet
-    );
+  codeEditor.value.insertSnippet(onStartSnippet)
 }
 
 const onCodeChange = (e: string) => {
-    codeArray.value[codeIndex.value].code = e;
+  codeArray.value[codeIndex.value].code = e
 }
 
 const toggleReadOnly = () => {
-    editorOptions.value.readOnly = !editorOptions.value.readOnly;
+  editorOptions.value.readOnly = !editorOptions.value.readOnly
 }
 
 const format = () => {
-    codeEditor.value.format();
+  codeEditor.value.format()
 }
-
-
-
 </script>
 <style lang="scss">
 .demo {
-    height: 700px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
+  height: 700px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 </style>

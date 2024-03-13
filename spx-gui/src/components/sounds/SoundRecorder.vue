@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 import WaveSurfer from 'wavesurfer.js'
 import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
-import { defineEmits, defineProps, nextTick, onMounted, type Ref, ref, watch } from 'vue'
+import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
