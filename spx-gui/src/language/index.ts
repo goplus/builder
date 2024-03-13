@@ -160,6 +160,19 @@ export const initI18n = async (app: App) => {
         down: 'down',
         top: 'top',
         bottom: 'bottom'
+      },
+      message: {
+        image: 'Unsupported image type',
+        sound: 'Unsupported sound type',
+        fileType: 'Unsupported file type',
+        other: 'Invalid or non-existent uploaded files',
+        success: 'Added {uploadSpriteName} to list successfully!',
+        fail: 'Failed to upload {uploadSpriteName}',
+        addSuccess: 'add ${name} successfully!',
+        update: 'update name successfully!',
+        save: 'save successfully!',
+        import: 'import successfully!',
+        updateNameError: 'Cannot update asset name. Name is invalid! ',
       }
     },
     zh: {
@@ -308,6 +321,19 @@ export const initI18n = async (app: App) => {
         down: '下移',
         top: '置顶',
         bottom: '置底'
+      },
+      message: {
+        image: '不支持的图片类型',
+        sound: '不支持的音频类型',
+        fileType: '不支持的文件类型',
+        other: '上传的文件无效或不存在',
+        success: '成功将 {uploadSpriteName} 添加到列表！',
+        fail: '上传 {uploadSpriteName} 失败',
+        addSuccess: '成功添加 ${name}！',
+        update: '名称更新成功！',
+        save: '保存成功！',
+        import: '导入成功！',
+        updateNameError: '无法更新资源名称。名称无效！',
       }
     }
   }

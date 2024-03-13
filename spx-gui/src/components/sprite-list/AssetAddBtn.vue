@@ -272,7 +272,7 @@ const beforeUpload = (
     switch (fileType) {
       case 'backdrop': {
         if (!isImage(fileName)) {
-          message.error('Unsupported image type')
+          message.error(t('message.image'))
           return false
         }
         let backdrop = backdropStore.backdrop
@@ -281,7 +281,7 @@ const beforeUpload = (
       }
       case 'sound': {
         if (!isSound(fileName)) {
-          message.error('Unsupported sound type')
+          message.error(t('message.sound'))
           return false
         }
         let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
@@ -289,11 +289,11 @@ const beforeUpload = (
         break
       }
       default:
-        message.error('Unsupported file type')
+        message.error(t('message.fileType'))
         return false
     }
   } else {
-    message.error('Invalid or non-existent uploaded files')
+    message.error(t('message.other'))
     return false
   }
   return true
@@ -330,11 +330,11 @@ const handleWatchFileList = (data: {
  * @Author: Xu Ning
  * @Date: 2024-02-21 17:48:33
  */
-const handleSubmitSprite = async () => {
+const handleSubmitSprite = async (): Promise<void> => {
   let uploadFilesArr: File[] = []
   for (const fileItem of uploadFileList.value) {
     if (!isImage(fileItem.name)) {
-      message.error('Unsupported image type')
+      message.error(t('message.image'))
       return
     }
   }
@@ -345,7 +345,7 @@ const handleSubmitSprite = async () => {
   })
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
-  message.success(`Added ${uploadSpriteName.value} to list successfully!`)
+  message.success(t('message.success', {uploadSpriteName: uploadSpriteName.value}))
 
   try {
     let gifRes = undefined
@@ -364,7 +364,7 @@ const handleSubmitSprite = async () => {
       categoryValue.value || undefined
     )
   } catch (err) {
-    message.error(`Failed to upload ${uploadSpriteName.value}`)
+    message.error(t('message.fail', {uploadSpriteName: uploadSpriteName.value}))
   }
   uploadSpriteName.value = ''
   showUploadModal.value = false
@@ -422,7 +422,7 @@ const handleAssetAddition = async (name: string, address: string) => {
     const sound = new Sound(name, [file])
     soundStore.addItem(sound)
   }
-  message.success(`add ${name} successfully!`)
+  message.success(t('message.addSuccess', {name: name}))
 }
 </script>
 
