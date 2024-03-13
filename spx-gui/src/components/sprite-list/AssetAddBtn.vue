@@ -1,6 +1,6 @@
 <template>
   <!-- S Component Add Button -->
-  <div :class="addBtnClassName" @click="handleAddButtonClick">
+  <div :class="addBtnClassName" @click.stop="handleAddButtonClick">
     <!-- S Component Add Button type first step -->
     <div v-if="!showUploadButtons" class="add-new">
       <n-icon style="padding-bottom: 15px">
@@ -99,7 +99,7 @@
         list-type="image-card"
         multiple
         @change="handleWatchFileList"
-      />
+      >{{ $t('list.uploadLimited') }}</n-upload>
     </div>
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.category') }}:</p>

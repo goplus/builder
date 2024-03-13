@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 12:23:31
+ * @LastEditTime: 2024-03-13 13:35:24
  * @FilePath: \spx-gui\src\language\index.ts
  * @Description:
  */
@@ -97,7 +97,8 @@ export const initI18n = async (app: App) => {
         category:'Category',
         public:'IsPublic',
         inputName:'Please input sprite name',
-        selectCategory:'Please choose sprite category'
+        selectCategory:'Please choose sprite category',
+        uploadLimited:'A single image less than 2MB'
       },
       scratch: {
         import: 'Import Assets from Scratch',
@@ -238,7 +239,8 @@ export const initI18n = async (app: App) => {
         category:'精灵类别',
         public:'是否公开',
         inputName:'请输入精灵名称',
-        selectCategory:'请选择类别'
+        selectCategory:'请选择类别',
+        uploadLimited:'单张图片小于2MB'
       },
       scratch: {
         import: '导入 Scratch 素材',
