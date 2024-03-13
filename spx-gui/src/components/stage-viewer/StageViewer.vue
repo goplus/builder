@@ -9,10 +9,10 @@
 <template>
   <div id="stage-viewer" ref="stageViewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
-      <div @click="moveSprite('up')">up</div>
-      <div @click="moveSprite('down')">down</div>
-      <div @click="moveSprite('top')">top</div>
-      <div @click="moveSprite('bottom')">bottom</div>
+      <div @click="moveSprite('up')">{{ $t('layer.up') }}</div>
+      <div @click="moveSprite('down')">{{ $t('layer.down') }}</div>
+      <div @click="moveSprite('top')">{{ $t('layer.top') }}</div>
+      <div @click="moveSprite('bottom')">{{ $t('layer.bottom') }}</div>
     </div>
     <v-stage
       ref="stage"

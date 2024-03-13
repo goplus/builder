@@ -19,7 +19,8 @@ export const initI18n = async (app: App) => {
         code: 'Code',
         sound: 'Sound',
         costume: 'Costume',
-        signIn: 'Sign in'
+        signIn: 'Sign in',
+        logOut: 'Logout'
       },
       sounds: {
         hint: '🎵 Sound Edit',
@@ -152,7 +153,13 @@ export const initI18n = async (app: App) => {
         search: 'Search',
         public: 'public',
         private: 'private',
-        empty:'There\'s nothing'
+        empty:'There\'s nothing',
+      },
+      layer: {
+        up: 'up',
+        down: 'down',
+        top: 'top',
+        bottom: 'bottom'
       }
     },
     zh: {
@@ -161,7 +168,8 @@ export const initI18n = async (app: App) => {
         code: '编程',
         sound: '音频',
         costume: '造型',
-        signIn: '登录'
+        signIn: '登录',
+        logOut: '登出'
       },
       sounds: {
         hint: '🎵 音频编辑',
@@ -293,7 +301,13 @@ export const initI18n = async (app: App) => {
         search: '搜索',
         public: '公开',
         private: '私有',
-        empty: '空空如也'
+        empty: '空空如也',
+      },
+      layer: {
+        up: '上移',
+        down: '下移',
+        top: '置顶',
+        bottom: '置底'
       }
     }
   }
