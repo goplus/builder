@@ -1,5 +1,5 @@
 <template>
-  <n-spin :show="showAssetInfos">
+  <n-spin :show="isAssetInfosLoading">
   <div class="file-upload-container">
     <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
       {{ $t('scratch.upload') }}
@@ -117,7 +117,7 @@ const selectedAssets = ref<AssetFileDetail[]>([])
 // Ref about file upload input component.
 const fileUploadInput = ref(null)
 // loading state
-const showAssetInfos = ref<boolean>(false)
+const isAssetInfosLoading = ref<boolean>(false)
 
 // ----------methods-----------------------------------------
 /**
@@ -202,7 +202,7 @@ const downloadAsset = (asset: AssetFileDetail) => {
  */
 const importSelectedAssetsToProject = () => {
   if (!selectedAssets.value) {
-    showAssetInfos.value = false
+    isAssetInfosLoading.value = false
     return
   }
   selectedAssets.value.forEach((asset) => {
@@ -221,9 +221,9 @@ const importSelectedAssetsToProject = () => {
  * @return {*}
  */
 const uploadSelectedAssetsToPrivateLibrary = async () => {
-  showAssetInfos.value = true
+  isAssetInfosLoading.value = true
   if (!selectedAssets.value) {
-    showAssetInfos.value = false
+    isAssetInfosLoading.value = false
     return
   }
   for (const asset of selectedAssets.value) {
@@ -282,7 +282,7 @@ const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
  * @return {*}
  */
 const showImportSuccessMessage = () => {
-  showAssetInfos.value = false
+  isAssetInfosLoading.value = false
   message.success('import successfully!', { duration: 1000 })
 }
 </script>

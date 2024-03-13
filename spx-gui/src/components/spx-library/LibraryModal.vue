@@ -124,7 +124,7 @@ import {
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
-import { AssetType, Library_Public } from '@/constant/constant'
+import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
 import { PublicStatus } from "@/class/project";
