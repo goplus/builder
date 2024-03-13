@@ -13,6 +13,7 @@
           round
           :placeholder="props.asset?.name || ''"
           class="sound-edit-content-top-input-sound-name"
+          @blur="() => emits('update-sound-name', soundName)"
       />
       <!--   Speed Change   -->
       <div class="speed-change-container" @click="togglePlaybackSpeed()">

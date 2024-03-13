@@ -45,6 +45,8 @@ import { computed, type ComputedRef, ref } from 'vue'
 import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
+import { checkUpdatedName } from "@/util/asset";
+import { useProjectStore } from "@/store";
 
 const message: MessageApi = useMessage();
 const soundStore = useSoundStore();
@@ -69,7 +71,17 @@ const handleSoundFileUpdate = (newFile: File) => {
 
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
-    selectedSound.value.name = newName;
+    try {
+      const checkInfo = checkUpdatedName(selectedSound.value, newName, useProjectStore().project)
+      if (checkInfo.isChanged) {
+        selectedSound.value.name = checkInfo.name;
+        message.success('update name successfully!')
+      }
+      if (checkInfo.msg) message.warning(checkInfo.msg);
+    } catch(e) {
+      if (e instanceof Error)
+        message.error(e.message);
+    }
   }
 };
 
