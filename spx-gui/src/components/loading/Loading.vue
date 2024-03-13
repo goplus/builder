@@ -2,8 +2,8 @@
 <!--
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 09:16:18
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-18 11:19:56
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-13 15:20:13
  * @FilePath: /builder/spx-gui/src/components/loading/Loading.vue
  * @Description: 
 -->
@@ -16,7 +16,7 @@
     </div>
 </template>
 <script lang="ts" setup>
-import Logo from "@/assets/logo.png"
+import Logo from "@/assets/logo.jpg"
 </script>
 <style scoped>
 .loading {
