@@ -53,10 +53,7 @@ export function getAssetList({
   let isPublicStr
   if (isPublic == PublicStatus.public) {
     isPublicStr = PublishState.PublicAndPrivateLibrary
-  } else if (isPublic == PublicStatus.private) {
-    isPublicStr = PublishState.PrivateLibrary
   }
-  console.log('isPublic', isPublic, 'isPublicStr', isPublicStr)
   const params = new URLSearchParams()
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())

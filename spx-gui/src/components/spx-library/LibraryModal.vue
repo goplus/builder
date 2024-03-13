@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 18:17:40
+ * @LastEditTime: 2024-03-14 00:29:46
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -65,33 +65,33 @@
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
         >
-          <template #checked> {{$t('library.public')}} </template>
-          <template #unchecked> {{$t('library.private')}} </template>
+          <template #checked> {{ $t('library.public') }} </template>
+          <template #unchecked> {{ $t('library.private') }} </template>
         </n-switch>
         <div v-if="assetInfos != null && assetInfos.length != 0">
           <n-grid
-          v-if="assetInfos != null && assetInfos.length != 0"
-          cols="3 s:4 m:5 l:6 xl:7 2xl:8"
-          responsive="screen"
-        >
-          <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
-            <div class="asset-library-sprite-item">
-              <!-- S Component Sprite Card -->
-              <SpriteCard :asset-info="assetInfo" @add-asset="handleAddAsset" />
-              <!-- S Component Sprite Card -->
-            </div>
-          </n-grid-item>
-        </n-grid>
-        <div style="text-align: center; margin-top: 16px;">
-          <n-pagination
-            v-model:page="pageIndex"
-            :page-count="totalPage"
-            simple
-            style="width: 160px; margin: auto"
-          />
+            v-if="assetInfos != null && assetInfos.length != 0"
+            cols="3 s:4 m:5 l:6 xl:7 2xl:8"
+            responsive="screen"
+          >
+            <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
+              <div class="asset-library-sprite-item">
+                <!-- S Component Sprite Card -->
+                <SpriteCard :asset-info="assetInfo" @add-asset="handleAddAsset" />
+                <!-- S Component Sprite Card -->
+              </div>
+            </n-grid-item>
+          </n-grid>
+          <div style="text-align: center; margin-top: 16px">
+            <n-pagination
+              v-model:page="pageIndex"
+              :page-count="totalPage"
+              simple
+              style="width: 160px; margin: auto"
+            />
+          </div>
         </div>
-       </div>
-       
+
         <n-empty
           v-else
           class="n-empty-style"
@@ -99,7 +99,6 @@
           size="large"
           :description="$t('library.empty')"
         />
-       
       </div>
       <!-- E Library Content -->
     </template>
@@ -127,7 +126,7 @@ import type { Asset } from '@/interface/library'
 import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
-import { PublicStatus } from "@/class/project";
+import { PublicStatus } from '@/class/project'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -166,7 +165,7 @@ const nowCategory = ref<string>('')
 // asset states (public or not)
 const isPublicSwitch = ref<number>(0)
 // constant pageSize
-const pageSize = 20
+const pageSize = 1
 const pageIndex = ref<number>(1)
 const totalPage = ref<number>(0)
 // ----------lifecycle hooks---------------------------------
@@ -287,20 +286,29 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
-  let pageIndex = 1
-  let pageSize = 50
   if (props.type === 'backdrop') {
-    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Backdrop)
+    let res = await searchAssetByName(
+      pageIndex.value,
+      pageSize,
+      searchQuery.value,
+      AssetType.Backdrop
+    )
     if (res.data.data == null) {
       assetInfos.value = []
     } else {
       assetInfos.value = res.data.data.data
     }
   } else if (props.type === 'sprite') {
-    let res = await searchAssetByName(pageIndex, pageSize, searchQuery.value, AssetType.Sprite)
+    let res = await searchAssetByName(
+      pageIndex.value,
+      pageSize,
+      searchQuery.value,
+      AssetType.Sprite
+    )
     if (res.data.data.data == null) {
       assetInfos.value = []
     } else {
+      totalPage.value = res.data.data.totalPage as number
       assetInfos.value = res.data.data.data
     }
   }
@@ -345,8 +353,14 @@ watch(isPublicSwitch, async () => {
   await setAssets()
 })
 
+// Distinguish between page turning after search or normal page turning.
 watch(pageIndex, async () => {
-  await setAssets()
+  searchQuery.value == '' ? await setAssets() : handleSearch()
+})
+
+// Used to restore material display when the search value is deleted to empty.
+watch(searchQuery, async () => {
+  if (searchQuery.value == '') setAssets()
 })
 </script>
 
