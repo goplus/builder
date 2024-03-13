@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-02-06 17:17:27
+ * @LastEditTime: 2024-03-14 00:40:57
  * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -11,11 +11,13 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue'
+import {computed, type ComputedRef, onBeforeUnmount, onMounted, ref, watch, withDefaults} from 'vue'
 import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse } from './index'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
+import { useSpriteStore } from "@/store";
+
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
   modelValue: '',
@@ -35,6 +37,7 @@ self.MonacoEnvironment = {
 const code_editor = ref<HTMLElement | null>(null)
 //  editor instance
 let editor: monaco.editor.IStandaloneCodeEditor
+const hasCurrentSprite: ComputedRef<boolean> = computed(() => useSpriteStore().current != null)
 
 // ----------hooks-----------------------------------------
 // init editor and register change event
@@ -43,7 +46,7 @@ onMounted(() => {
     value: prop.modelValue, // set the initial value of the editor
     theme: 'myTransparentTheme',
     ...editorOptions,
-    ...prop.editorOptions
+    ...prop.editorOptions,
   })
 
   // register format action
@@ -74,6 +77,12 @@ watch(
   },
   { deep: true }
 )
+
+watch(hasCurrentSprite, () => {
+  // disable editor when current sprite is null
+  editor.updateOptions({readOnly: !hasCurrentSprite.value})
+  console.log("editor readOnly: ", hasCurrentSprite.value)
+})
 
 watch(
   () => prop.modelValue,
