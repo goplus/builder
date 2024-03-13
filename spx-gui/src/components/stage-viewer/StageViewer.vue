@@ -2,8 +2,8 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-02-05 14:09:40
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-04 14:28:08
- * @FilePath: \builder\spx-gui\src\components\stage-viewer\StageViewer.vue
+ * @LastEditTime: 2024-03-13 15:09:57
+ * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
  * @Description: 
 -->
 <template>
@@ -44,6 +44,7 @@
         :selected-sprite-names="stageSelectSpritesName"
         :map-config="spxMapConfig"
         @on-sprite-drag-move="onSpriteDragMove"
+        @on-sprite-apperance-change="onSpriteApperanceChange"
       />
       <v-layer
         :config="{
@@ -95,7 +96,7 @@ import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import type { RectConfig } from 'konva/lib/shapes/Rect.js'
 import type { Layer } from 'konva/lib/Layer'
-import type { SpriteDragMoveEvent, MapConfig } from './common'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
 
 // the controller which is top layer,store the corresponding node information and the information of its control node
 interface Controller {
@@ -343,12 +344,28 @@ const showSelectedTranformer = () => {
   }
 }
 
-// update the controller position
 const onSpriteDragMove = (e: SpriteDragMoveEvent) => {
   const controller = selectedControllerMap.value.get(e.sprite.name)
-  if (!controller) return
-  controller.rect.x = e.event.target.attrs.x
-  controller.rect.y = e.event.target.attrs.y
+  if (controller) {
+    updateController(controller as Controller, e.event.target.attrs)
+  }
+}
+
+const onSpriteApperanceChange = (e: SpriteApperanceChangeEvent) => {
+  const controller = selectedControllerMap.value.get(e.sprite.name)
+  if (controller) {
+    updateController(controller as Controller, e.node.attrs)
+  }
+}
+
+const updateController = (controller: Controller, attrs: any) => {
+  controller.rect.x = attrs.x
+  controller.rect.y = attrs.y
+  controller.rect.scaleX = attrs.scaleX
+  controller.rect.scaleY = attrs.scaleY
+  controller.rect.rotation = attrs.rotation
+  controller.rect.offsetX = attrs.offsetX
+  controller.rect.offsetY = attrs.offsetY
 }
 </script>
 <style scoped>

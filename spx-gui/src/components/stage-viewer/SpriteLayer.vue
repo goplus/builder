@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 16:13:37
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-28 15:27:06
+ * @LastEditTime: 2024-03-13 14:32:19
  * @FilePath: \spx-gui\src\components\stage-viewer\SpriteLayer.vue
  * @Description: 
 -->
@@ -16,12 +16,13 @@
     }"
   >
     <template v-for="sprite in sortedSprites" :key="sprite.name">
+      <!-- v-if="sprite.config.visible" -->
       <Sprite
-        v-if="sprite.config.visible"
         :sprite-config="sprite"
         :map-config="props.mapConfig"
         :selected="selectedSpriteNames.includes(sprite.name)"
         @on-drag-move="onSpriteDragMove"
+        @on-sprite-apperance-change="onSpriteApperanceChange"
       >
       </Sprite>
     </template>
@@ -31,7 +32,7 @@
 // ----------Import required packages / components-----------
 import Sprite from './Sprite.vue'
 import { computed } from 'vue'
-import type { SpriteDragMoveEvent, MapConfig } from './common'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
 
 const props = defineProps<{
@@ -43,6 +44,7 @@ const props = defineProps<{
 }>()
 const emits = defineEmits<{
   (e: 'onSpriteDragMove', event: SpriteDragMoveEvent): void
+  (e: 'onSpriteApperanceChange', event: SpriteApperanceChangeEvent): void
 }>()
 
 // spritelist sort by zorder config
@@ -64,5 +66,9 @@ const sortedSprites = computed(() => {
 
 const onSpriteDragMove = (e: SpriteDragMoveEvent) => {
   emits('onSpriteDragMove', e)
+}
+
+const onSpriteApperanceChange = (e: SpriteApperanceChangeEvent): void => {
+  emits('onSpriteApperanceChange', e)
 }
 </script>
