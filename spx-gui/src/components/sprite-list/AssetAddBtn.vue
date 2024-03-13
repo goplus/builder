@@ -99,7 +99,8 @@
         list-type="image-card"
         multiple
         @change="handleWatchFileList"
-      >{{ $t('list.uploadLimited') }}</n-upload>
+        >{{ $t('list.uploadLimited') }}</n-upload
+      >
     </div>
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.category') }}:</p>
@@ -148,6 +149,7 @@ import { useI18n } from 'vue-i18n'
 import { AssetType } from '@/constant/constant'
 import { isValidAssetName } from '@/util/asset'
 import { useNetworkStore } from '@/store/modules/network'
+import { isImage, isSound } from '@/util/utils'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -264,16 +266,24 @@ const beforeUpload = (
   if (uploadFile.file) {
     let fileURL = URL.createObjectURL(uploadFile.file)
     let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL)
-
     let fileName = uploadFile.name
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
+
     switch (fileType) {
       case 'backdrop': {
+        if (!isImage(fileName)) {
+          message.error('Unsupported image type')
+          break
+        }
         let backdrop = backdropStore.backdrop
         backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
       case 'sound': {
+        if (!isSound(fileName)) {
+          message.error('Unsupported sound type')
+          break
+        }
         let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
         soundStore.addItem(sound)
         break
@@ -322,6 +332,12 @@ const handleWatchFileList = (data: {
  */
 const handleSubmitSprite = async () => {
   let uploadFilesArr: File[] = []
+  for (const fileItem of uploadFileList.value) {
+    if (!isImage(fileItem.name)) {
+      message.error('Unsupported image type');
+      return; 
+    }
+  }
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)
