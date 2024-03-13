@@ -99,8 +99,8 @@
         list-type="image-card"
         multiple
         @change="handleWatchFileList"
-        >{{ $t('list.uploadLimited') }}</n-upload
-      >
+        >{{ $t('list.uploadLimited') }}
+      </n-upload>
     </div>
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.category') }}:</p>
