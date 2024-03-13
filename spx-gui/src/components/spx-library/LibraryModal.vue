@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-14 00:29:46
+ * @LastEditTime: 2024-03-14 00:40:00
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -165,7 +165,7 @@ const nowCategory = ref<string>('')
 // asset states (public or not)
 const isPublicSwitch = ref<number>(0)
 // constant pageSize
-const pageSize = 1
+const pageSize = 40
 const pageIndex = ref<number>(1)
 const totalPage = ref<number>(0)
 // ----------lifecycle hooks---------------------------------
@@ -339,6 +339,7 @@ const handleSortByTime = async () => {
 // clean search content and pageIndex state
 const handleAssetLibraryOption = () => {
   searchQuery.value = ''
+  nowCategory.value = ''
   pageIndex.value = 1
 }
 
