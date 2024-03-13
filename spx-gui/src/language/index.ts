@@ -2,7 +2,7 @@
  * @Author: Yao xinyue kother@qq.com
  * @Date: 2024-01-18 01:56:51
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-07 20:42:28
+ * @LastEditTime: 2024-03-13 15:25:17
  * @FilePath: \spx-gui\src\language\index.ts
  * @Description:
  */
@@ -76,7 +76,7 @@ export const initI18n = async (app: App) => {
         edit: 'Editor'
       },
       stage: {
-        stage: 'Backdrop',
+        stage: 'Stage',
         stop:'Stop',
         sprite: 'Sprite',
         spriteHolder: 'Please Input Name',
@@ -97,7 +97,8 @@ export const initI18n = async (app: App) => {
         category:'Category',
         public:'IsPublic',
         inputName:'Please input sprite name',
-        selectCategory:'Please choose sprite category'
+        selectCategory:'Please choose sprite category',
+        uploadLimited:'A single image less than 2 MB'
       },
       scratch: {
         import: 'Import Assets from Scratch',
@@ -147,6 +148,11 @@ export const initI18n = async (app: App) => {
         localProject: 'Local Project',
         cloudProjectInLocal: 'Cloud Project In Local',
       },
+      library:{
+        search: 'Search',
+        public: 'public',
+        private: 'private'
+      }
     },
     zh: {
       language: '中文',
@@ -212,7 +218,7 @@ export const initI18n = async (app: App) => {
         edit: '编辑'
       },
       stage: {
-        stage: '背景',
+        stage: '舞台',
         stop:'停止',
         sprite: '角色',
         spriteHolder: '请输入名字',
@@ -233,7 +239,8 @@ export const initI18n = async (app: App) => {
         category:'精灵类别',
         public:'是否公开',
         inputName:'请输入精灵名称',
-        selectCategory:'请选择类别'
+        selectCategory:'请选择类别',
+        uploadLimited:'单张图片小于 2 MB'
       },
       scratch: {
         import: '导入 Scratch 素材',
@@ -280,6 +287,11 @@ export const initI18n = async (app: App) => {
         no: '否',
         localProject: '本地项目',
         cloudProjectInLocal: '本地的云端项目',
+      },
+      library:{
+        search: '搜索',
+        public: '公开',
+        private: '私有'
       }
     }
   }

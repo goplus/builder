@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:37:00
+ * @LastEditTime: 2024-03-13 18:17:40
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -19,7 +19,7 @@
         <n-input
           v-model:value="searchQuery"
           size="large"
-          placeholder="Search"
+          :placeholder="$t('library.search')"
           clearable
           round
           @keypress.enter="handleSearch"
@@ -58,16 +58,18 @@
       <!-- S Library Content -->
       <div class="asset-library-content">
         <n-switch
-          checked-value="private"
-          unchecked-value="public"
+          v-model:value="isPublicSwitch"
+          :checked-value="PublicStatus.public"
+          :unchecked-value="PublicStatus.private"
           style="width: 130px; float: right; margin: 10px 0 0 0"
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
         >
-          <template #unchecked> Public </template>
-          <template #checked> Private </template>
+          <template #checked> {{$t('library.public')}} </template>
+          <template #unchecked> {{$t('library.private')}} </template>
         </n-switch>
-        <n-grid
+        <div v-if="assetInfos != null && assetInfos.length != 0">
+          <n-grid
           v-if="assetInfos != null && assetInfos.length != 0"
           cols="3 s:4 m:5 l:6 xl:7 2xl:8"
           responsive="screen"
@@ -80,6 +82,16 @@
             </div>
           </n-grid-item>
         </n-grid>
+        <div style="text-align: center; margin-top: 16px;">
+          <n-pagination
+            v-model:page="pageIndex"
+            :page-count="totalPage"
+            simple
+            style="width: 160px; margin: auto"
+          />
+        </div>
+       </div>
+       
         <n-empty
           v-else
           class="n-empty-style"
@@ -87,6 +99,7 @@
           size="large"
           description="There's nothing."
         />
+       
       </div>
       <!-- E Library Content -->
     </template>
@@ -105,7 +118,8 @@ import {
   NInput,
   NIcon,
   NEmpty,
-  NSwitch
+  NSwitch,
+  NPagination
 } from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
@@ -113,6 +127,7 @@ import type { Asset } from '@/interface/library'
 import { AssetType } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
+import { PublicStatus } from "@/class/project";
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -123,8 +138,6 @@ const props = defineProps<PropsType>()
 const emits = defineEmits(['update:show', 'add-asset'])
 
 // ----------data related -----------------------------------
-const assetLibraryOption = ref<'public' | 'private'>('public')
-
 const railStyle = ({ focused, checked }: { focused: boolean; checked: boolean }) => {
   const style: CSSProperties = {}
   if (checked) {
@@ -150,7 +163,12 @@ const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 const assetInfos = ref<Asset[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
-
+// asset states (public or not)
+const isPublicSwitch = ref<number>(0)
+// constant pageSize
+const pageSize = 20
+const pageIndex = ref<number>(1)
+const totalPage = ref<number>(0)
 // ----------lifecycle hooks---------------------------------
 // onMounted hook.
 onMounted(async () => {
@@ -179,17 +197,19 @@ const setAssets = async () => {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (assetType: number, isOrderByTime?: boolean, isOrderByHot?: boolean, author?: string) => {
+const fetchAssetsByType = async (
+  assetType: number,
+  isOrderByTime?: boolean,
+  isOrderByHot?: boolean,
+  author?: string
+) => {
   try {
-    // todo: change pagesize 
-    const pageIndex = 1
-    const pageSize = 50
-    if(assetLibraryOption.value == "public"){
-      author = "*"
+    if (isPublicSwitch.value == PublicStatus.public) {
+      author = '*'
     }
     const response = await getAssetList({
-      assetLibraryType: assetLibraryOption.value,
-      pageIndex: pageIndex,
+      isPublic: isPublicSwitch.value,
+      pageIndex: pageIndex.value,
       pageSize: pageSize,
       assetType: assetType,
       category: nowCategory.value,
@@ -198,7 +218,10 @@ const fetchAssetsByType = async (assetType: number, isOrderByTime?: boolean, isO
       author: author
     })
     if (response.data.data.data == null) return []
-    return response.data.data.data
+    else {
+      totalPage.value = response.data.data.totalPage as number
+      return response.data.data.data
+    }
   } catch (error) {
     console.error('Error fetching assets:', error)
     return []
@@ -215,7 +238,8 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
-      setAssets()
+    } else {
+      isPublicSwitch.value = PublicStatus.public
     }
   }
 )
@@ -248,11 +272,10 @@ const handleAddAsset = async (id: number, name: string, address: string) => {
  * @Date: 2024-02-06 13:47:05
  */
 const handleCategoryClick = async (category: string) => {
-  if(category == 'ALL'){
+  if (category == 'ALL') {
     category = ''
   }
   nowCategory.value = category
-  
   await setAssets()
 }
 
@@ -291,7 +314,7 @@ const handleSearch = async () => {
  */
 const handleSortByHot = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,undefined,true)
+  fetchAssetsByType(assetType, undefined, true)
 }
 
 /**
@@ -302,12 +325,13 @@ const handleSortByHot = async () => {
  */
 const handleSortByTime = async () => {
   let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  fetchAssetsByType(assetType,true)
+  fetchAssetsByType(assetType, true)
 }
 
-const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
-  assetLibraryOption.value = assetOption
+// clean search content and pageIndex state
+const handleAssetLibraryOption = () => {
   searchQuery.value = ''
+  pageIndex.value = 1
 }
 
 /**
@@ -316,7 +340,12 @@ const handleAssetLibraryOption = (assetOption: 'public' | 'private') => {
  * @Author: Yao xinyue
  * @Date: 2024-03-05 15:01:45
  */
-watch(assetLibraryOption, async () => {
+watch(isPublicSwitch, async () => {
+  pageIndex.value = 1
+  await setAssets()
+})
+
+watch(pageIndex, async () => {
   await setAssets()
 })
 </script>

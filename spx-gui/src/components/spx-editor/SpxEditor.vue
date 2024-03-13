@@ -7,7 +7,7 @@
  * @Description:
 -->
 <template>
-  <n-tabs type="card" v-model:value="currentTab" animated>
+  <n-tabs v-model:value="currentTab" type="card" animated>
     <!--Tab Code Part-->
     <n-tab-pane name="code">
       <template #tab>
@@ -15,13 +15,13 @@
           <n-icon>
             <CodeIcon />
           </n-icon>
-          <div class="tab-font-check">{{ $t("tab.code") }}</div>
+          <div class="tab-font-check">{{ $t('tab.code') }}</div>
         </div>
         <div v-else class="tab-container">
           <n-icon>
             <CodeIcon />
           </n-icon>
-          <div class="tab-font-uncheck">{{ $t("tab.code") }}</div>
+          <div class="tab-font-uncheck">{{ $t('tab.code') }}</div>
         </div>
       </template>
       <!-- TODO Code Editor Part   -->
@@ -34,13 +34,13 @@
           <n-icon>
             <MusicIcon />
           </n-icon>
-          <div class="tab-font-check">{{ $t("tab.sound") }}</div>
+          <div class="tab-font-check">{{ $t('tab.sound') }}</div>
         </div>
         <div v-else class="tab-container">
           <n-icon>
             <MusicIcon />
           </n-icon>
-          <div class="tab-font-uncheck">{{ $t("tab.sound") }}</div>
+          <div class="tab-font-uncheck">{{ $t('tab.sound') }}</div>
         </div>
       </template>
       <!--  S Component SoundsEditHome-->
@@ -55,13 +55,13 @@
           <n-icon>
             <CostumeIcon />
           </n-icon>
-          <div class="tab-font-check">{{ $t("tab.costume") }}</div>
+          <div class="tab-font-check">{{ $t('tab.costume') }}</div>
         </div>
         <div v-else class="tab-container">
           <n-icon>
             <CostumeIcon />
           </n-icon>
-          <div class="tab-font-uncheck">{{ $t("tab.costume") }}</div>
+          <div class="tab-font-uncheck">{{ $t('tab.costume') }}</div>
         </div>
       </template>
       <!-- TODO Costume Editor Part   -->
@@ -70,18 +70,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { NTabs, NTabPane, NIcon } from "naive-ui";
-import { HighlightOutlined as CostumeIcon } from "@vicons/antd";
-import { CodeSlash as CodeIcon, MusicalNotes as MusicIcon } from "@vicons/ionicons5"
-import SoundsEditHome from "comps/sounds/SoundHome.vue";
-import SpxEditorHome from "@/components/spx-code-editor/CodeEditorHome.vue";
+import { ref } from 'vue'
+import { NTabs, NTabPane, NIcon } from 'naive-ui'
+import { HighlightOutlined as CostumeIcon } from '@vicons/antd'
+import { CodeSlash as CodeIcon, MusicalNotes as MusicIcon } from '@vicons/ionicons5'
+import SoundsEditHome from 'comps/sounds/SoundHome.vue'
+import SpxEditorHome from '@/components/spx-code-editor/CodeEditorHome.vue'
 
-const currentTab = ref("code");
+const currentTab = ref('code')
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 .tab-container {
   display: flex;
@@ -89,7 +89,7 @@ const currentTab = ref("code");
   justify-content: center;
   align-items: center;
   .n-icon {
-    margin: 0 2px 5px 0;
+    margin: 0 5px 0 0;
   }
 }
 

@@ -3,7 +3,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-25 14:19:57
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-23 20:01:39
+ * @LastEditTime: 2024-03-13 15:08:38
  * @FilePath: \spx-gui\src\components\stage-viewer\Costume.vue
  * @Description: 
 -->
@@ -20,9 +20,10 @@
       offsetX: currentCostume.x,
       offsetY: currentCostume.y,
       scaleX: props.spriteConfig.config.size,
-      scaleY: props.spriteConfig.config.size
+      scaleY: props.spriteConfig.config.size,
+      visible: props.spriteConfig.config.visible
     }"
-    @dragmove="onDragMove"
+    @dragmove="handleDragMove"
     @dragend="handleDragEnd"
   />
 </template>
@@ -31,11 +32,10 @@
 import { defineProps, ref, computed, watch } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { MapConfig } from './common'
-import type { KonvaEventObject } from 'konva/lib/Node'
+import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Sprite as SpriteConfig } from '@/class/sprite'
-import type { SpriteDragMoveEvent } from './common'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 import type { Costume as CostumeConfig } from '@/interface/file'
-import { Image } from 'konva/lib/shapes/Image'
 import type { Rect } from 'konva/lib/shapes/Rect'
 // ----------props & emit------------------------------------
 const props = defineProps<{
@@ -47,6 +47,7 @@ const props = defineProps<{
 const emits = defineEmits<{
   // when ths costume dragend,emit the sprite position
   (e: 'onDragMove', event: SpriteDragMoveEvent): void
+  (e: 'onApperanceChange', event: SpriteApperanceChangeEvent): void
 }>()
 
 // ----------computed properties-----------------------------
@@ -57,7 +58,7 @@ const currentCostume: ComputedRef<CostumeConfig> = computed(() => {
 
 // ----------data related -----------------------------------
 const image = ref<HTMLImageElement>()
-const costume = ref<Image>()
+const costume = ref()
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
@@ -69,10 +70,24 @@ const spriteRotation = computed(() => {
   return getRotation(props.spriteConfig.config.heading)
 })
 
+// When the config update,emits the apperance change event
+// TODO: Move to stageviewer to listen for config changes
+watch(
+  () => props.spriteConfig.config,
+  () => {
+    emits('onApperanceChange', {
+      sprite: props.spriteConfig,
+      node: costume.value.getNode() as Node
+    })
+  },
+  {
+    deep: true
+  }
+)
+
 watch(
   () => currentCostume.value,
-  (new_costume, old_costume) => {
-    console.log(new_costume, old_costume)
+  (new_costume) => {
     if (new_costume != null) {
       const _image = new window.Image()
       _image.src = props.spriteConfig.files[props.spriteConfig.config.costumeIndex].url as string
@@ -130,7 +145,9 @@ const getSpxPostion = (x: number, y: number): { x: number; y: number } => {
 }
 const controller = ref<Rect | null>()
 
-const onDragMove = (event: KonvaEventObject<MouseEvent>) => {
+// This function is only used to design communication, 
+// and the actual work of modifying the doms value is placed in the dragend event
+const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
   emits('onDragMove', {
     event,
     sprite: props.spriteConfig
@@ -150,4 +167,6 @@ const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) =
   props.spriteConfig.config.y = position.y
   controller.value = null
 }
+
+
 </script>

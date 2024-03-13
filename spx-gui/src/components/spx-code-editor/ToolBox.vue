@@ -18,8 +18,8 @@
         <n-button
           v-for="(snippet, index) in item.completionItems"
           :key="index"
-          @click="insertCode(toRaw(snippet))"
           style="margin-top: 24px"
+          @click="insertCode(toRaw(snippet))"
         >
           {{ snippet.label }}
         </n-button>

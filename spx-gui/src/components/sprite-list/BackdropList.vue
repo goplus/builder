@@ -1,14 +1,13 @@
 <!--
  * @Author: Xu Ning
  * @Date: 2024-01-18 17:08:16
- * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-02-06 17:58:24
+ * @LastEditors: xuning 453594138@qq.com
+ * @LastEditTime: 2024-03-13 14:46:09
  * @FilePath: /builder/spx-gui/src/components/sprite-list/BackdropList.vue
  * @Description: 
 -->
 <template>
   <div class="stage-list">
-    {{ $t('stage.stage') }}
     <div class="stage-list-space">
       <AssetAddBtn :type="'backdrop'" />
       <ImageCardCom :type="'bg'" :asset="backdrop" :style="{ 'margin-bottom': '26px' }" />
@@ -29,7 +28,6 @@ const backdropStore = useBackdropStore()
 // ----------computed properties-----------------------------
 // Computed backdrop from backdropStore.
 const backdrop: ComputedRef<Backdrop> = computed(() => {
-  console.log('backdropStore.backdrop', backdropStore.backdrop,backdropStore.backdrop.files)
   return backdropStore.backdrop as Backdrop
 })
 </script>
@@ -41,8 +39,7 @@ const backdrop: ComputedRef<Backdrop> = computed(() => {
   padding: 10px;
   .stage-list-space {
     margin: 0 10px;
-    height: calc(100% - 40px);
-    overflow: scroll;
+    overflow-y: auto;
   }
 }
 </style>

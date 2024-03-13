@@ -35,6 +35,7 @@
       <n-button
         v-if="props.type == 'backdrop'"
         color="#fff"
+        :disabled="networkStore.offline()"
         quaternary
         size="tiny"
         text-color="#fff"
@@ -44,6 +45,7 @@
       </n-button>
       <n-button
         v-else-if="props.type == 'sprite'"
+        :disabled="networkStore.offline()"
         color="#fff"
         :text-color="commonColor"
         @click="openLibraryFunc()"
@@ -97,7 +99,8 @@
         list-type="image-card"
         multiple
         @change="handleWatchFileList"
-      />
+        >{{ $t('list.uploadLimited') }}
+      </n-upload>
     </div>
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.category') }}:</p>
@@ -145,6 +148,8 @@ import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 import { AssetType } from '@/constant/constant'
 import { isValidAssetName } from '@/util/asset'
+import { useNetworkStore } from '@/store/modules/network'
+import { isImage, isSound } from '@/util/utils'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -155,6 +160,8 @@ const message = useMessage()
 const spriteStore = useSpriteStore()
 const backdropStore = useBackdropStore()
 const soundStore = useSoundStore()
+const networkStore = useNetworkStore()
+
 const { t } = useI18n({
   inheritLocale: true
 })
@@ -259,16 +266,24 @@ const beforeUpload = (
   if (uploadFile.file) {
     let fileURL = URL.createObjectURL(uploadFile.file)
     let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL)
-
     let fileName = uploadFile.name
     let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
+
     switch (fileType) {
       case 'backdrop': {
+        if (!isImage(fileName)) {
+          message.error('Unsupported image type')
+          return false
+        }
         let backdrop = backdropStore.backdrop
         backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
       case 'sound': {
+        if (!isSound(fileName)) {
+          message.error('Unsupported sound type')
+          return false
+        }
         let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
         soundStore.addItem(sound)
         break
@@ -317,6 +332,12 @@ const handleWatchFileList = (data: {
  */
 const handleSubmitSprite = async () => {
   let uploadFilesArr: File[] = []
+  for (const fileItem of uploadFileList.value) {
+    if (!isImage(fileItem.name)) {
+      message.error('Unsupported image type')
+      return
+    }
+  }
   uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
     if (fileItem && fileItem.file) {
       uploadFilesArr.push(fileItem.file)

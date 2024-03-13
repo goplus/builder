@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 16:52:20
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:49:37
+ * @LastEditTime: 2024-03-13 18:18:02
  * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
  * @Description:
 -->
@@ -130,7 +130,7 @@ const menuOptions = [
             color: 'white'
           }
         },
-        'SPX+'
+        'Go+ Builder'
       ),
     key: 'logo'
   },
@@ -315,7 +315,6 @@ const computedButtonStyle = (color1: string) => {
  * @Date: 2024-01-17 17:55:13
  */
 const handleSelectImport = (key: string | number) => {
-  // TODO: use for test
   if (key === 'Upload') {
     const input = document.createElement('input')
     input.type = 'file'
