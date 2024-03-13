@@ -148,11 +148,6 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid
 	if project.AuthorId != currentUid {
 		return common.ErrPermissions
 	}
-	err = ctrl.bucket.Delete(ctx, project.Address)
-	if err != nil {
-		fmt.Printf("failed to delete kodo File %v : %v", project.Address, err)
-		return err
-	}
 	return DeleteProjectById(ctrl.db, id)
 
 }
@@ -433,10 +428,10 @@ func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageInde
 	searchString := "%" + search + "%"
 
 	if currentUid == "" {
-		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND is_public = 1"
+		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND status = 1 AND is_public = 1"
 		args = []interface{}{searchString, assetType}
 	} else {
-		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND (is_public = 1 OR author_id = ?)"
+		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND status = 1 AND (is_public = 1 OR author_id = ?)"
 		args = []interface{}{searchString, assetType, currentUid}
 	}
 	pagination, err := common.QueryPageBySQL[Asset](ctrl.db, query, pageIndex, pageSize, args)
@@ -541,4 +536,19 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 	})
 
 	return err
+}
+
+// DeleteAsset Delete Asset
+func (ctrl *Controller) DeleteAsset(ctx context.Context, id string, currentUid string) error {
+
+	asset, err := common.QueryById[Asset](ctrl.db, id)
+	if err != nil {
+		fmt.Printf("failed to query asset id= %v : %v", id, err)
+		return err
+	}
+	if asset.AuthorId != currentUid {
+		return common.ErrPermissions
+	}
+	return DeleteAssetById(ctrl.db, id)
+
 }

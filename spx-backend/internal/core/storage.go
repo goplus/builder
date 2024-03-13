@@ -76,10 +76,10 @@ func UpdateProject(db *sql.DB, c *Project) error {
 }
 func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
 	query := "UPDATE project SET is_public = ? WHERE id = ?"
-	err := db.QueryRow(query, isPublic, id)
+	_, err := db.Exec(query, isPublic, id)
 	if err != nil {
 		fmt.Printf("failed to exec update ispublic : %v", err)
-		return err.Err()
+		return err
 	}
 	return nil
 }
@@ -96,10 +96,19 @@ func AddProject(db *sql.DB, c *Project) (string, error) {
 
 func DeleteProjectById(db *sql.DB, id string) error {
 	query := "UPDATE project SET status = ? WHERE id = ?"
-	err := db.QueryRow(query, 0, id)
+	_, err := db.Exec(query, 0, id)
 	if err != nil {
 		fmt.Printf("failed to exec delete project id = %v : %v", id, err)
-		return err.Err()
+		return err
+	}
+	return nil
+}
+func DeleteAssetById(db *sql.DB, id string) error {
+	query := "UPDATE asset SET status = ? WHERE id = ?"
+	_, err := db.Exec(query, 0, id)
+	if err != nil {
+		fmt.Printf("failed to exec delete asset id = %v : %v", id, err)
+		return err
 	}
 	return nil
 }
