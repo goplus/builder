@@ -1,6 +1,6 @@
 <template>
   <!-- S Component Add Button -->
-  <div :class="addBtnClassName" @click.stop="handleAddButtonClick">
+  <div :class="addBtnClassName" @click="handleAddButtonClick">
     <!-- S Component Add Button type first step -->
     <div v-if="!showUploadButtons" class="add-new">
       <n-icon style="padding-bottom: 15px">

@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 13:01:31
+ * @LastEditTime: 2024-03-13 14:42:48
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -47,7 +47,7 @@
         :class="isEntryCodeActive ? 'asset-library-right-click' : 'asset-library-right'"
         span="1"
       >
-        <BackdropList @entry-code-active-state="handleEntryCodeActive" />
+      <StageEdit />
       </n-grid-item>
       <!-- E Layout Stage List -->
     </n-grid>
@@ -70,12 +70,13 @@
 import { type ComputedRef, computed, ref, watchEffect } from 'vue'
 import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
-import BackdropList from '@/components/sprite-list/BackdropList.vue'
+import StageEdit from '@/components/sprite-list/StageEdit.vue'
 import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
+
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
 const spriteStore = useSpriteStore()
@@ -109,10 +110,6 @@ const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
-}
-
-const handleEntryCodeActive = (isEntryCode: boolean) => {
-  isEntryCodeActive.value = isEntryCode
 }
 
 watchEffect(() => {
@@ -157,6 +154,7 @@ watchEffect(() => {
   .asset-library-right {
     @include libraryRightBase;
     background: white;
+    border-left:2px dashed #8f98a1
   }
   .asset-library-right-click {
     @include libraryRightBase;
