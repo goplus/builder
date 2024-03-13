@@ -86,7 +86,7 @@ type FormatResponse struct {
 func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 	err = godotenv.Load()
 	if err != nil {
-		println(err.Error())
+		fmt.Printf("failed to read env : %v", err)
 		return
 	}
 	if conf == nil {
@@ -107,13 +107,13 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
-		println(err.Error())
+		fmt.Printf("failed to connect kodo : %v", err)
 		return
 	}
 
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
-		println(err.Error())
+		fmt.Printf("failed to connect sql : %v", err)
 		return
 	}
 	return &Controller{bucket, db}, nil
@@ -123,6 +123,7 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, currentUid string) (*Project, error) {
 	pro, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
+		fmt.Printf("failed to query project id= %v : %v", id, err)
 		return nil, err
 	}
 	if pro == nil {
@@ -140,12 +141,12 @@ func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, currentUid s
 func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid string) error {
 
 	project, err := common.QueryById[Project](ctrl.db, id)
+	if err != nil {
+		fmt.Printf("failed to query project id= %v : %v", id, err)
+		return err
+	}
 	if project.AuthorId != currentUid {
 		return common.ErrPermissions
-	}
-	err = ctrl.bucket.Delete(ctx, project.Address)
-	if err != nil {
-		return err
 	}
 	return DeleteProjectById(ctrl.db, id)
 
@@ -156,6 +157,7 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 	if project.ID == "" {
 		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
+			fmt.Printf("failed to UploadFile %v : %v", header.Filename, err)
 			return nil, err
 		}
 		project.Address = path
@@ -171,6 +173,7 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 
 		p, err := common.QueryById[Project](ctrl.db, project.ID)
 		if err != nil {
+			fmt.Printf("failed to query project id= %v : %v", project.ID, err)
 			return nil, err
 		}
 		if p.Address == "" {
@@ -178,10 +181,12 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 		}
 		err = ctrl.bucket.Delete(ctx, p.Address)
 		if err != nil {
+			fmt.Printf("failed to delete kodo File %v : %v", p.Address, err)
 			return nil, err
 		}
 		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
+			fmt.Printf("failed to UploadFile %v : %v", header.Filename, err)
 			return nil, err
 		}
 		p.Address = path
@@ -294,6 +299,7 @@ func (ctrl *Controller) CodeFmt(ctx context.Context, body, fiximport string) (re
 func (ctrl *Controller) Asset(ctx context.Context, id string, currentUid string) (*Asset, error) {
 	asset, err := common.QueryById[Asset](ctrl.db, id)
 	if err != nil {
+		fmt.Printf("failed to query assets : %v", err)
 		return nil, err
 	}
 	if asset == nil {
@@ -301,6 +307,7 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, currentUid string)
 	}
 	modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
 	if err != nil {
+		fmt.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
 		return nil, err
 	}
 	asset.Address = modifiedAddress
@@ -335,11 +342,13 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 	}
 	pagination, err := common.QueryByPage[Asset](ctrl.db, pageIndex, pageSize, wheres, orders)
 	if err != nil {
+		fmt.Printf("failed to query assets : %v", err)
 		return nil, err
 	}
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
 		if err != nil {
+			fmt.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
 			return nil, err
 		}
 		pagination.Data[i].Address = modifiedAddress
@@ -352,6 +361,7 @@ func (ctrl *Controller) IncrementAssetClickCount(ctx context.Context, id string)
 	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ?"
 	_, err := ctrl.db.ExecContext(ctx, query, id)
 	if err != nil {
+		fmt.Printf("failed to Incre Asset Click Count : %v", err)
 		return err
 	}
 	return nil
@@ -361,6 +371,7 @@ func (ctrl *Controller) IncrementAssetClickCount(ctx context.Context, id string)
 func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 	data := make(AssetAddressData)
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
+		fmt.Printf("failed to json.Unmarshal %v: %v", address, err)
 		return "", err
 	}
 	qiniuPath := os.Getenv("QINIU_PATH")
@@ -369,6 +380,7 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 	}
 	modifiedAddress, err := json.Marshal(data)
 	if err != nil {
+		fmt.Printf("failed to json.Marshal %v: %v", data, err)
 		return "", err
 	}
 	return string(modifiedAddress), nil
@@ -386,6 +398,7 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 
 	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
+		fmt.Printf("failed to query search project : %v", err)
 		return nil, err
 	}
 	for i := range pagination.Data {
@@ -398,6 +411,7 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic string, currentUid string) error {
 	project, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
+		fmt.Printf("failed to query asset : %v", err)
 		return err
 	}
 	if project.AuthorId != currentUid {
@@ -414,22 +428,24 @@ func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageInde
 	searchString := "%" + search + "%"
 
 	if currentUid == "" {
-		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND is_public = 1"
+		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND status = 1 AND is_public = 1"
 		args = []interface{}{searchString, assetType}
 	} else {
-		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND (is_public = 1 OR author_id = ?)"
+		query = "SELECT * FROM asset WHERE name LIKE ? AND asset_type = ? AND status = 1 AND (is_public = 1 OR author_id = ?)"
 		args = []interface{}{searchString, assetType, currentUid}
 	}
 	pagination, err := common.QueryPageBySQL[Asset](ctrl.db, query, pageIndex, pageSize, args)
+	if err != nil {
+		fmt.Printf("failed to query search asset : %v", err)
+		return nil, err
+	}
 	for i, asset := range pagination.Data {
 		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
 		if err != nil {
+			fmt.Printf("failed to ModifyAssetAddress: %v", err)
 			return nil, err
 		}
 		pagination.Data[i].Address = modifiedAddress
-	}
-	if err != nil {
-		return nil, err
 	}
 	return pagination, nil
 
@@ -468,6 +484,7 @@ func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.File
 	f.Seek(0, 0)
 	path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("GIF_PATH"), f, "output.gif")
 	if err != nil {
+		fmt.Printf("failed to UploadFile: %v", err)
 		return "", err
 	}
 	return os.Getenv("QINIU_PATH") + "/" + path, err
@@ -519,4 +536,19 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 	})
 
 	return err
+}
+
+// DeleteAsset Delete Asset
+func (ctrl *Controller) DeleteAsset(ctx context.Context, id string, currentUid string) error {
+
+	asset, err := common.QueryById[Asset](ctrl.db, id)
+	if err != nil {
+		fmt.Printf("failed to query asset id= %v : %v", id, err)
+		return err
+	}
+	if asset.AuthorId != currentUid {
+		return common.ErrPermissions
+	}
+	return DeleteAssetById(ctrl.db, id)
+
 }

@@ -119,7 +119,7 @@ delete "/project/:id", ctx => {
 			}
 			return
 		}
-		code := common.ErrorDeleteProject
+		code := common.ErrorDelete
 		ctx.json {
 			"code": code,
 			"msg":  common.GetMsg(code),
@@ -160,7 +160,7 @@ put "/project/:id/is-public", ctx => {
 			}
 			return
 		}
-		code := common.ErrorUpdateProjectState
+		code := common.ErrorUpdateState
 		ctx.json {
 			"code": code,
 			"msg":  common.GetMsg(code),
@@ -388,6 +388,46 @@ get "/assets/search", ctx => {
 		"code": 200,
 		"msg":  "ok",
 		"data": assets,
+	}
+}
+
+//Delete asset
+delete "/asset/:id", ctx => {
+	id := ctx.param("id")
+	currentUid := core.ParseToken(ctrl, ctx)
+	if currentUid == "" {
+		code := common.NoLogin
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	err := ctrl.DeleteAsset(todo, id, currentUid)
+	if err != nil {
+		if err == common.ErrPermissions {
+			code := common.ErrorPermissions
+			ctx.json {
+				"code": code,
+				"msg":  common.GetMsg(code),
+				"data": "",
+			}
+			return
+		}
+		code := common.ErrorDelete
+		ctx.json {
+			"code": code,
+			"msg":  common.GetMsg(code),
+			"data": "",
+		}
+		return
+	}
+	code := common.SUCCESS
+	ctx.json {
+		"code": code,
+		"msg":  common.GetMsg(code),
+		"data": "",
 	}
 }
 

@@ -32,6 +32,7 @@ func UploadFile(ctx context.Context, bucket *blob.Bucket, blobKey string, file i
 	// create blob writer
 	w, err := bucket.NewWriter(ctx, blobKey, wOpts)
 	if err != nil {
+		fmt.Printf("failed to create blob writer : %v", err)
 		return "", err
 	}
 	defer w.Close()
@@ -39,6 +40,7 @@ func UploadFile(ctx context.Context, bucket *blob.Bucket, blobKey string, file i
 	// copy to blob writer
 	_, err = io.Copy(w, file)
 	if err != nil {
+		fmt.Printf("failed to copy to blob writer : %v", err)
 		return "", err
 	}
 
@@ -55,7 +57,7 @@ func AddAsset(db *sql.DB, c *Asset) (string, error) {
 	sqlStr := "insert into asset (name,author_id , address,preview_address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?,?, ?,?,?, ?)"
 	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.PreviewAddress, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
 	if err != nil {
-		println(err.Error())
+		fmt.Printf("failed to add Asset : %v", err)
 		return "", err
 	}
 	idInt, err := res.LastInsertId()
@@ -74,10 +76,10 @@ func UpdateProject(db *sql.DB, c *Project) error {
 }
 func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
 	query := "UPDATE project SET is_public = ? WHERE id = ?"
-	err := db.QueryRow(query, isPublic, id)
+	_, err := db.Exec(query, isPublic, id)
 	if err != nil {
-		fmt.Println(err)
-		return err.Err()
+		fmt.Printf("failed to exec update ispublic : %v", err)
+		return err
 	}
 	return nil
 }
@@ -85,7 +87,7 @@ func AddProject(db *sql.DB, c *Project) (string, error) {
 	sqlStr := "insert into project (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
 	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.Ctime, c.Utime)
 	if err != nil {
-		println(err.Error())
+		fmt.Printf("failed to exec add project : %v", err)
 		return "", err
 	}
 	idInt, err := res.LastInsertId()
@@ -94,10 +96,19 @@ func AddProject(db *sql.DB, c *Project) (string, error) {
 
 func DeleteProjectById(db *sql.DB, id string) error {
 	query := "UPDATE project SET status = ? WHERE id = ?"
-	err := db.QueryRow(query, 0, id)
+	_, err := db.Exec(query, 0, id)
 	if err != nil {
-		fmt.Println(err)
-		return err.Err()
+		fmt.Printf("failed to exec delete project id = %v : %v", id, err)
+		return err
+	}
+	return nil
+}
+func DeleteAssetById(db *sql.DB, id string) error {
+	query := "UPDATE asset SET status = ? WHERE id = ?"
+	_, err := db.Exec(query, 0, id)
+	if err != nil {
+		fmt.Printf("failed to exec delete asset id = %v : %v", id, err)
+		return err
 	}
 	return nil
 }
