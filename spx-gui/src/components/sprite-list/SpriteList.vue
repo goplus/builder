@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 18:11:17
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-07 21:06:18
+ * @LastEditTime: 2024-03-13 13:01:31
  * @FilePath: \spx-gui\src\components\sprite-list\SpriteList.vue
  * @Description:
 -->
@@ -17,7 +17,7 @@
       </n-button>
     </div>
 
-    <n-grid cols="4" item-responsive responsive="screen">
+    <n-grid cols="4" item-responsive responsive="screen" style="height: 100%">
       <!-- S Layout Sprite List -->
       <n-grid-item class="asset-library-left" span="3">
         <!-- S Component SpriteEditBtn -->
@@ -28,13 +28,6 @@
             <!-- S Component Add Button -->
             <AssetAddBtn :type="'sprite'" />
             <!-- E Component Add Button type second step -->
-            <n-button
-              class="entry-code-btn"
-              :disabled="editorStore.editContentType === EditContentType.EntryCode"
-              @click="enableEditEntryCode"
-            >
-              Entry Code
-            </n-button>
             <!-- S Component ImageCardCom -->
             <ImageCardCom
               v-for="asset in spriteAssets"
@@ -50,8 +43,11 @@
       </n-grid-item>
       <!-- E Layout Sprite List -->
       <!-- S Layout Stage List -->
-      <n-grid-item class="asset-library-right" span="1">
-        <BackdropList />
+      <n-grid-item
+        :class="isEntryCodeActive ? 'asset-library-right-click' : 'asset-library-right'"
+        span="1"
+      >
+        <BackdropList @entry-code-active-state="handleEntryCodeActive" />
       </n-grid-item>
       <!-- E Layout Stage List -->
     </n-grid>
@@ -71,7 +67,7 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { type ComputedRef, computed, ref } from 'vue'
+import { type ComputedRef, computed, ref, watchEffect } from 'vue'
 import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
 import BackdropList from '@/components/sprite-list/BackdropList.vue'
@@ -79,15 +75,12 @@ import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { Sprite } from '@/class/sprite'
-import { watchEffect } from 'vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
-import { EditContentType, useEditorStore } from '@/store'
 // ----------props & emit------------------------------------
 const currentActiveName = ref('')
-const editorStore = useEditorStore()
 const spriteStore = useSpriteStore()
 const { setCurrentByName } = spriteStore
-
+const isEntryCodeActive = ref<boolean>(false)
 // ----------data related -----------------------------------
 // Style about import modal body.
 const bodyStyle = { margin: 'auto' }
@@ -112,14 +105,14 @@ const toggleCodeById = (name: string) => {
   setCurrentByName(name)
 }
 
-const enableEditEntryCode = () => {
-  editorStore.setEditContentType(EditContentType.EntryCode)
-}
-
 const getImageCardStyle = (name: string) => {
   return name === currentActiveName.value
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
+}
+
+const handleEntryCodeActive = (isEntryCode: boolean) => {
+  isEntryCodeActive.value = isEntryCode
 }
 
 watchEffect(() => {
@@ -135,8 +128,6 @@ watchEffect(() => {
 @import '@/assets/theme.scss';
 
 .asset-library {
-  // TODO: Delete the background, it is just for check the position.
-  // background:#f0f0f0;
   height: calc(60vh - 60px - 24px - 24px);
   border: 2px solid #00142970;
   position: relative;
@@ -159,10 +150,17 @@ watchEffect(() => {
     border-radius: 0 0 10px 10px;
     z-index: 0;
   }
-
-  .asset-library-right {
+  @mixin libraryRightBase {
     max-height: calc(60vh - 60px - 24px);
-    overflow: scroll;
+    overflow-y: auto;
+  }
+  .asset-library-right {
+    @include libraryRightBase;
+    background: white;
+  }
+  .asset-library-right-click {
+    @include libraryRightBase;
+    background: #f7f7f7;
   }
 
   .asset-library-left {
