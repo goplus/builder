@@ -1,6 +1,6 @@
 <template>
   <div>
-    <n-button v-if="!userStore.userInfo" @click="signin()">Sign in</n-button>
+    <n-button v-if="!userStore.userInfo" :disabled="networkStore.offline()" @click="signin()">Sign in</n-button>
     <n-dropdown
       v-else
       trigger="hover"
@@ -15,6 +15,7 @@
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useUserStore } from '@/store/modules/user'
+import { useNetworkStore } from "@/store/modules/network";
 
 const avatarDropdownOptions = [
   { label: 'Settings', key: 'settings' },
@@ -22,6 +23,7 @@ const avatarDropdownOptions = [
 ]
 
 const userStore = useUserStore()
+const networkStore = useNetworkStore()
 
 function signin() {
   userStore.signInWithRedirection()
