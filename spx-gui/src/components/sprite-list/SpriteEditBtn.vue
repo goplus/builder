@@ -131,12 +131,12 @@ function handleUpdateSpriteName(){
     const project = useProjectStore().project
     const checkInfo = checkUpdatedName(name.value, spriteStore.current.name)
 
-    // update zorder
-    const zorder = project.backdrop.config.zorder
-    project.backdrop.config.zorder = zorder.filter(item => item !== spriteStore.current?.name)
-    project.backdrop.config.zorder.push(checkInfo.name)
-
     if (!checkInfo.isSame && !checkInfo.isChanged) {
+      // update zorder
+      const zorder = project.backdrop.config.zorder
+      project.backdrop.config.zorder = zorder.filter(item => item !== spriteStore.current?.name)
+      project.backdrop.config.zorder.push(checkInfo.name)
+
       spriteStore.current.name = checkInfo.name
       message.success('update name successfully!')
     }
