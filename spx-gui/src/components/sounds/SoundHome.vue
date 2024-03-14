@@ -47,7 +47,7 @@ import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from "@/util/asset";
 import { useProjectStore } from "@/store/modules/project"
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 const message: MessageApi = useMessage();
 const soundStore = useSoundStore();

@@ -102,7 +102,7 @@ import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
 import { publishAsset, PublishState } from '@/api/asset'
 import { AssetType } from '@/constant/constant'
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 // ----------props & emit------------------------------------
 

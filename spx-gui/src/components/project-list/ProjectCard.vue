@@ -99,7 +99,7 @@ import { useProjectStore, useUserStore } from '@/store';
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined, CloudOutlined, HomeOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 const { project } = defineProps<{
   project: ProjectSummary

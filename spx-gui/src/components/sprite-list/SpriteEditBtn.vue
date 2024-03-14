@@ -109,7 +109,7 @@ import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-u
 import { useSpriteStore } from '@/store/modules/sprite'
 import { checkUpdatedName } from '@/util/asset';
 import { useProjectStore } from '@/store';
-import { useI18n } from "vue-i18n";
+import { useI18n } from "vue-i18n"
 
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore()
