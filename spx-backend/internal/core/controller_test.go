@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime/multipart"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/stretchr/testify/mock"
 	"gocloud.dev/blob"
 )
 
@@ -26,21 +27,46 @@ func (cf customFile) Close() error {
 }
 
 type MockBucket struct {
-	mock.Mock
+	files map[string]bool
+}
+
+func NewMockBucket() *MockBucket {
+	return &MockBucket{
+		files: make(map[string]bool),
+	}
 }
 
 func (m *MockBucket) NewWriter(ctx context.Context, key string, opts *blob.WriterOptions) (io.WriteCloser, error) {
-	f, err := os.Create(key)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
+	m.files[key] = true
+	return &MockWriter{}, nil
 }
 
 func (m *MockBucket) Delete(ctx context.Context, key string) error {
-	err := os.Remove(key)
-	return err
+	if _, exists := m.files[key]; !exists {
+		return errors.New("file not found")
+	}
+	delete(m.files, key)
+	return nil
+}
 
+func (m *MockBucket) Reader(ctx context.Context, key string) (io.Reader, error) {
+	if _, exists := m.files[key]; !exists {
+		return nil, errors.New("file not found")
+	}
+	return nil, nil
+}
+
+type MockWriter struct {
+}
+
+func (w *MockWriter) Write(p []byte) (n int, err error) {
+	// Since map value is bool, we ignore the write content.
+	return len(p), nil
+}
+
+func (w *MockWriter) Close() error {
+	// Nothing to do since content is not stored.
+	return nil
 }
 
 // mockTime is a helper function for mocking the ctime and utime in tests.
@@ -58,7 +84,7 @@ func mockTime(t *testing.T) (ctime, utime time.Time) {
 
 func TestProjectInfo(t *testing.T) {
 	//Create a simulated database connection
-	db, mock, err := sqlmock.New()
+	db, mockSQL, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
@@ -72,7 +98,7 @@ func TestProjectInfo(t *testing.T) {
 	ctime, utime := mockTime(t)
 	rows := sqlmock.NewRows([]string{"id", "name", "author_id", "address", "is_public", "status", "version", "c_time", "u_time"}).
 		AddRow("1", "testProject", "testUser", "testAddress", 1, 1, 1, ctime, utime)
-	mock.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?").WithArgs("1", 0).WillReturnRows(rows)
+	mockSQL.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?").WithArgs("1", 0).WillReturnRows(rows)
 
 	// Call the ProjectInfo method
 	project, err := ctrl.ProjectInfo(context.Background(), "1", "testUser")
@@ -89,13 +115,13 @@ func TestProjectInfo(t *testing.T) {
 	}
 
 	// Make sure that all expected database queries have been made
-	if err := mock.ExpectationsWereMet(); err != nil {
+	if err := mockSQL.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %v", err)
 	}
 }
 
 func TestDeleteProject(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	db, mockSQL, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
@@ -104,12 +130,12 @@ func TestDeleteProject(t *testing.T) {
 	ctrl := &Controller{db: db}
 	ctime, utime := mockTime(t)
 
-	mock.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?$").
+	mockSQL.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?$").
 		WithArgs("1", 0).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "author_id", "address", "is_public", "status", "version", "c_time", "u_time"}).
 			AddRow("1", "testProject", "testUser", "testAddress", 1, 1, 1, ctime, utime))
 
-	mock.ExpectExec("^UPDATE project SET status = \\? WHERE id = \\?$").
+	mockSQL.ExpectExec("^UPDATE project SET status = \\? WHERE id = \\?$").
 		WithArgs(0, "1").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -118,7 +144,7 @@ func TestDeleteProject(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	if err := mock.ExpectationsWereMet(); err != nil {
+	if err := mockSQL.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %v", err)
 	}
 }
@@ -130,14 +156,13 @@ func TestSaveProject(t *testing.T) {
 	}
 	defer db.Close()
 
-	mockBucket := new(MockBucket)
-	mockBucket.On("NewWriter", mock.Anything, mock.Anything, mock.Anything).Return(mock.Anything, nil)
+	mockBucket := NewMockBucket()
 	ctrl := &Controller{
 		db:     db,
 		bucket: mockBucket,
 	}
 	os.Setenv("QINIU_PATH", "https://qiniu.com")
-	os.Setenv("PROJECT_PATH", "")
+	os.Setenv("PROJECT_PATH", "project/")
 
 	fileContent := []byte("file content")
 	file := customFile{Reader: bytes.NewReader(fileContent)}
@@ -156,7 +181,7 @@ func TestSaveProject(t *testing.T) {
 			WithArgs(project.Name, project.AuthorId, sqlmock.AnyArg(), 0, 1, sqlmock.AnyArg(), sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		_, err = ctrl.SaveProject(context.Background(), project, file, fileHeader)
+		project, err = ctrl.SaveProject(context.Background(), project, file, fileHeader)
 		if err != nil {
 			t.Fatalf("failed to save project: %v", err)
 		}
@@ -164,46 +189,48 @@ func TestSaveProject(t *testing.T) {
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}
+		_, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(project.Address, os.Getenv("QINIU_PATH")+"/"))
+		if err != nil {
+			t.Error("file upload failed")
+		}
 	})
 
 	t.Run("update existing project", func(t *testing.T) {
-		project := &Project{
+		p1 := &Project{
 			ID:       "1",
 			Name:     "testProject",
 			AuthorId: "testUser",
-			Address:  "test.png",
+			Address:  "project/5a08ffe2dd57b84f371d9a9031f1ff.png",
 		}
-		data, err := io.ReadAll(file)
-		if err != nil {
-			panic(err)
-		}
-
-		err = os.WriteFile(project.Address, data, 0644)
-		if err != nil {
-			panic(err)
-		}
-
-		println("File created successfully:", fileHeader.Filename)
+		_, _ = mockBucket.NewWriter(context.Background(), "project/5a08ffe2dd57b84f371d9a9031f1ff.png", nil)
 		mockSQL.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?$").
-			WithArgs(project.ID, 0).
+			WithArgs(p1.ID, 0).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "author_id", "address", "is_public", "status", "version", "c_time", "u_time"}).
-				AddRow(project.ID, project.Name, project.AuthorId, project.Address, 1, 1, 1, time.Now(), time.Now()))
+				AddRow(p1.ID, p1.Name, p1.AuthorId, p1.Address, 1, 1, 1, time.Now(), time.Now()))
 
 		// First, expect a call to Prepare with the specific SQL query.
 		mockSQL.ExpectPrepare("^UPDATE project SET version =\\?, name = \\?,address = \\? ,u_time = \\? WHERE id = \\?$")
 
 		// Then, after preparing, expect an Exec call with specific arguments and results.
 		mockSQL.ExpectExec("^UPDATE project SET version =\\?, name = \\?,address = \\? ,u_time = \\? WHERE id = \\?$").
-			WithArgs(2, project.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), project.ID).
+			WithArgs(2, p1.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), p1.ID).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		_, err = ctrl.SaveProject(context.Background(), project, file, fileHeader)
+		p2, err := ctrl.SaveProject(context.Background(), p1, file, fileHeader)
 		if err != nil {
 			t.Fatalf("failed to save project: %v", err)
 		}
 
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
+		}
+		_, err = mockBucket.Reader(context.Background(), p1.Address)
+		if err == nil {
+			t.Error("file delete failed")
+		}
+		_, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(p2.Address, os.Getenv("QINIU_PATH")+"/"))
+		if err != nil {
+			t.Error("file upload failed")
 		}
 	})
 }
@@ -483,13 +510,12 @@ func TestSearchAsset(t *testing.T) {
 }
 
 func TestImagesToGif(t *testing.T) {
-	mockBucket := new(MockBucket)
-	mockBucket.On("NewWriter", mock.Anything, mock.Anything, mock.Anything).Return(mock.Anything, nil)
+	mockBucket := NewMockBucket()
 	ctrl := &Controller{
 		bucket: mockBucket,
 	}
 	os.Setenv("QINIU_PATH", "https://qiniu.com")
-	os.Setenv("GIF_PATH", "")
+	os.Setenv("GIF_PATH", "gif/")
 
 	// Define a minimal valid PNG image data
 	pngData := []byte{
@@ -557,8 +583,8 @@ func TestImagesToGif(t *testing.T) {
 		t.Fatalf("failed to create GIF: %v", err)
 	}
 
-	if gifPath == "" {
-		t.Errorf("gifPath should not be empty")
+	if _, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(gifPath, os.Getenv("QINIU_PATH")+"/")); err != nil {
+		t.Error("file upload failed")
 	}
 }
 
@@ -568,15 +594,14 @@ func TestUploadAsset(t *testing.T) {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
 	defer db.Close()
-	mockBucket := new(MockBucket)
-	mockBucket.On("NewWriter", mock.Anything, mock.Anything, mock.Anything).Return(mock.Anything, nil)
+	mockBucket := NewMockBucket()
 	ctrl := &Controller{
 		db:     db,
 		bucket: mockBucket,
 	}
-	os.Setenv("SPRITE_PATH", "")
-	os.Setenv("BACKGROUND_PATH", "")
-	os.Setenv("SOUNDS_PATH", "")
+	os.Setenv("SPRITE_PATH", "sprite/")
+	os.Setenv("BACKGROUND_PATH", "background/")
+	os.Setenv("SOUNDS_PATH", "sounds/")
 
 	// Create a temporary file
 	tmpfile, err := os.CreateTemp("", "testFile-*.png")
@@ -641,6 +666,10 @@ func TestUploadAsset(t *testing.T) {
 	if err := mockSQL.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %v", err)
 	}
+	if len(mockBucket.files) == 0 {
+		t.Errorf("file upload failed")
+	}
+
 }
 
 func TestDeleteAsset(t *testing.T) {
