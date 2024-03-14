@@ -85,20 +85,6 @@ export class Project implements ProjectDetail, ProjectSummary {
     return (this._id || this._temporaryId)!
   }
 
-  get defaultEntryCode() {
-    let str = ""
-    str += "var (\n"
-    for (const sprite of this.sprite.list) {
-      str += `\t${sprite.name} ${sprite.name}\n`
-    }
-    for (const sound of this.sound.list) {
-      str += `\t${sound.name} Sound\n`
-    }
-    str += ")\n"
-    str += `run "assets", {Title: "${this.name}"}\n`
-    return str
-  }
-
   static ENTRY_FILE_NAME = 'index.gmx'
 
   static TEMPORARY_ID_PREFIX = 'temp__'
@@ -356,7 +342,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.unidentifiedFile,
       ...[this.backdrop, ...this.sprite.list, ...this.sound.list].map((item) => item.dir)
     )
-    files[Project.ENTRY_FILE_NAME] = this.entryCode || this.defaultEntryCode
+    files[Project.ENTRY_FILE_NAME] = this.entryCode
     for (const [path, value] of Object.entries(files)) {
       const fullPath = this.path + path
       dir[fullPath] = value

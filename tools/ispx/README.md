@@ -1,54 +1,28 @@
-# Offline SPX Project
+# ispx for Go+ Builder
 
 ## Introduction
 
-This project allows users to compile SPX projects offline by uploading folders and then run and view them on the Web.
-Users can upload the entire project folder, view the file structure and content, and run the project directly in the
-browser.
+This package (ispx) is forked from [goplus/ispx](https://github.com/goplus/ispx) with some modification for fs, so that we can run a project packed in a zip file.
 
-index.html is as follows:
-
-![index](./image/index.png)
-
-## Features
-
-- Folder Upload: Users can upload the entire SPX project folder.
-- File Structure Viewing: After uploading, users can browse the tree structure of the folder.
-- File Content Viewing: Users can view the content of each file uploaded.
-- Online Execution: Users can run the SPX project in the web browser and view the results.
-
-## How to Use
-
-### Folder Upload
-
-![folder_upload](./image/folder_upload.png)
-
-- Click the "Select Folder" button.
-- Choose your SPX project folder and upload it.
-
-### View File Structure and Content
-
-- After a successful upload, the file structure will be displayed on the page in a tree format.
-
-  ![show_file_structure](./image/show_file_structure.png)
-- Enter the file's project path (starting with the project name) to view the content in the respective area.
-
-  ![file_content](./image/file_content.png)
-
-### Run Project Online
-
-![online_game](./image/online_game.png)
-
-- Ensure that your project files include all necessary files for execution.
-- Input the project name
-- Click the "play project" button to start the project in the browser.
-- The execution results will be displayed in the designated output area.
-
-## Installation and Running
+## Prepare
 
 ```sh
 ./build.sh
 cp $GOROOT/misc/wasm/wasm_exec.js ./
 ```
 
-run http server
+Then put zip file of the project you want to test under directory `ispx/`, with name `test.zip`.
+
+## Run
+
+Serve directory `ispx/` with any HTTP server & open `index.html`
+
+## Upgrade deps
+
+If we want to upgrade deps like [spx](https://github.com/goplus/spx). First Modify `go.mod` to upgrade dependencies, then do
+
+```sh
+go mod tidy
+go install github.com/goplus/igop/cmd/qexp@latest # `qexp` is required to do `go generate`
+go generate # `qexp` will update `pkg/github.com/goplus/spx/export.go`, see detail in `main.go` (`//go:generate qexp ...`)
+```

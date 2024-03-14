@@ -62,6 +62,15 @@ func (zf *ZipFs) Chrooted(root string) *ZipFs {
 //		ReadDir(dirname string) ([]fs.DirEntry, error)
 //		ReadFile(filename string) ([]byte, error)
 //		Join(elem ...string) string
+
+//		// Base returns the last element of path.
+//		// Trailing path separators are removed before extracting the last element.
+//		// If the path is empty, Base returns ".".
+//		// If the path consists entirely of separators, Base returns a single separator.
+//		Base(filename string) string
+
+//		// Abs returns an absolute representation of path.
+//		Abs(path string) (string, error)
 //	}
 
 func (zf *ZipFs) ReadDir(dirname string) ([]fs.DirEntry, error) {
@@ -109,6 +118,19 @@ func (zf *ZipFs) ReadFile(filename string) ([]byte, error) {
 
 func (z *ZipFs) Join(elem ...string) string {
 	return path.Join(elem...)
+}
+
+// Base returns the last element of path.
+// Trailing path separators are removed before extracting the last element.
+// If the path is empty, Base returns ".".
+// If the path consists entirely of separators, Base returns a single separator.
+func (z *ZipFs) Base(filename string) string {
+	return filepath.Base(filename)
+}
+
+// Abs returns an absolute representation of path.
+func (z *ZipFs) Abs(path string) (string, error) {
+	return filepath.Abs(path)
 }
 
 // Implement spx/fs.Dir:
