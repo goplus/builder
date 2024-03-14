@@ -15,7 +15,6 @@ dist-ssr
 .eslintcache
 report.html
 
-yarn.lock
 npm-debug.log*
 .pnpm-error.log*
 .pnpm-debug.log
@@ -31,3 +30,14 @@ tests/**/coverage/
 *.njsproj
 *.sln
 tsconfig.tsbuildinfo
+
+# https://yarnpkg.com/getting-started/qa
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+.env.local

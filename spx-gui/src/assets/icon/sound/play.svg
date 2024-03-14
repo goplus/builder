@@ -1,0 +1,15 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<circle cx="20" cy="20" r="20" fill="url(#paint0_radial_225_2143)"/>
+<circle cx="20" cy="20" r="15" fill="#FF81A7"/>
+<rect x="14" y="12" width="15" height="15" fill="url(#pattern0)"/>
+<defs>
+<pattern id="pattern0" patternContentUnits="objectBoundingBox" width="1" height="1">
+<use xlink:href="#image0_225_2143" transform="scale(0.0333333)"/>
+</pattern>
+<radialGradient id="paint0_radial_225_2143" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(20 20) rotate(90) scale(20)">
+<stop stop-color="#FF81A7"/>
+<stop offset="1" stop-color="#FF81A7" stop-opacity="0.51"/>
+</radialGradient>
+<image id="image0_225_2143" width="30" height="30" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAu0lEQVR4nO3WMWpCQRCA4QeCmCZ2aS1M7wU8QRpv4RXSpvQKXsHW0ioEsQ68G1hGbMQmkHwiOGBn45tN0O8CPyyzu1NVdyVhiU+MssPnVhiWCIc5nkuEj74xxVN2OOzwhofscFhjjFZ2ONR4KREOCwxKhI9+MEMvOxz2mKCbHQ4bvKKdHQ7vNxP+yj7qGK7Hi8H/fJ0W2Q9Inf1krrM/ie1pUjtXCYa/tAj8nia130gwlFz2Poqst3dVAw7eod7DBH1B9AAAAABJRU5ErkJggg=="/>
+</defs>
+</svg>

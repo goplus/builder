@@ -2,29 +2,49 @@
  * @Author: Xu Ning
  * @Date: 2024-01-12 11:15:15
  * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-01-15 10:22:42
- * @FilePath: /builder/spx-gui/src/main.ts
+ * @LastEditTime: 2024-03-06 14:38:25
+ * @FilePath: \spx-gui\src\main.ts
  * @Description:
  */
-import { createApp } from "vue";
-import App from "./App.vue";
+import { createApp } from 'vue'
+import App from './App.vue'
+import { initAssets, initCodeEditor } from './plugins'
+import { initRouter } from '@/router/index'
+import { initI18n } from '@/language'
+import { addFileUrl } from './util/file'
+import VueKonva from 'vue-konva'
+import { initStore, useUserStore } from './store'
+import { serviceManager } from '@/axios'
+import { createDiscreteApi } from 'naive-ui'
 
-import Loading from "@/components/loading/Loading.vue"
-import { initAssets } from './plugins';
-import { initRouter } from "@/router/index.ts";
-import { initStore } from "./store";
+const { message } = createDiscreteApi(['message'])
+const initServive = async () => {
+  const userStore = useUserStore()
+  serviceManager.setAccessTokenFn(userStore.getFreshAccessToken)
+  serviceManager.setNotifyErrorFn((msg: string) => {
+    message.error(msg)
+  })
+}
+
 async function initApp() {
-    // Give priority to loading css,js resources
-    initAssets()
+  // const loading = createApp(Loading);
+  // loading.mount('#appLoading');
 
-    const loading = createApp(Loading);
-    loading.mount('#appLoading');
+  // Give priority to loading css,js resources
+  initAssets()
+  addFileUrl()
 
-    const app = createApp(App);
-    initStore(app);
-    await initRouter(app);
+  const app = createApp(App)
 
-    loading.unmount()
-    app.mount('#app')
+  initStore(app)
+  initServive()
+  await initRouter(app)
+  await initCodeEditor()
+
+  await initI18n(app)
+
+  app.use(VueKonva)
+
+  app.mount('#app')
 }
 initApp()
