@@ -2,7 +2,7 @@
  * @Author: Yao xinyue
  * @Date: 2024-01-22 11:17:08
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 11:40:47
+ * @LastEditTime: 2024-03-14 10:38:59
  * @FilePath: \spx-gui\src\api\asset.ts
  * @Description:
  */
@@ -40,27 +40,23 @@ export function getAssetList({
   isOrderByHot,
   author
 }: {
-  isPublic: number
   pageIndex: number
   pageSize: number
   assetType: number
   category?: string
   isOrderByTime?: boolean
   isOrderByHot?: boolean
+  isPublic?: number
   author?: string
 }): Promise<PageAssetResponse> {
   const baseAssetUrl = '/assets/list'
-  let isPublicStr
-  if (isPublic == PublicStatus.public) {
-    isPublicStr = PublishState.PublicAndPrivateLibrary
-  }
   const params = new URLSearchParams()
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
   
-  if (isPublicStr != null) {
-    params.append('isPublic', isPublicStr.toString())
+  if (isPublic) {
+    params.append('isPublic', isPublic.toString())
   }
   if (category) {
     params.append('category', category)

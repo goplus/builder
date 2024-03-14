@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-14 09:34:14
+ * @LastEditTime: 2024-03-14 10:50:52
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -165,7 +165,7 @@ const nowCategory = ref<string>('')
 // asset states (public or not)
 const isPublicSwitch = ref<number>(0)
 // constant pageSize
-const pageSize = 40
+const pageSize = 35
 const pageIndex = ref<number>(1)
 const totalPage = ref<number>(0)
 // ----------lifecycle hooks---------------------------------
@@ -203,11 +203,20 @@ const fetchAssetsByType = async (
   author?: string
 ) => {
   try {
+    // isPublic = undefined means the isPublic attribute of the asset is not filtered.
+    let isPublic = undefined
     if (isPublicSwitch.value == PublicStatus.public) {
+      // Filter only assets with an isPublic attribute value of 1 (public)
+      isPublic = 1
+      // Pass * means author is everyone
       author = '*'
+    }else if (isPublicSwitch.value == PublicStatus.private){
+      // author is the current user (self)
+      author = undefined
     }
+    
     const response = await getAssetList({
-      isPublic: isPublicSwitch.value,
+      isPublic: isPublic,
       pageIndex: pageIndex.value,
       pageSize: pageSize,
       assetType: assetType,
