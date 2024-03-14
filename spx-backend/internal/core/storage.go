@@ -14,7 +14,7 @@ import (
 )
 
 // UploadFile Upload file to cloud
-func UploadFile(ctx context.Context, bucket *blob.Bucket, blobKey string, file io.Reader, originalFilename string) (string, error) {
+func UploadFile(ctx context.Context, bucket Bucket, blobKey string, file io.Reader, originalFilename string) (string, error) {
 	// Extract file extension
 	ext := filepath.Ext(originalFilename)
 
@@ -65,7 +65,7 @@ func AddAsset(db *sql.DB, c *Asset) (string, error) {
 }
 
 func UpdateProject(db *sql.DB, c *Project) error {
-	stmt, err := db.Prepare("UPDATE project SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?;")
+	stmt, err := db.Prepare("UPDATE project SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}

@@ -68,7 +68,7 @@ type Project struct {
 }
 
 type Controller struct {
-	bucket *blob.Bucket
+	bucket Bucket
 	db     *sql.DB
 }
 
@@ -110,13 +110,13 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 		fmt.Printf("failed to connect kodo : %v", err)
 		return
 	}
-
+	blobBucket := &BlobBucket{b: bucket}
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		fmt.Printf("failed to connect sql : %v", err)
 		return
 	}
-	return &Controller{bucket, db}, nil
+	return &Controller{blobBucket, db}, nil
 }
 
 // ProjectInfo Find project from db
