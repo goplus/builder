@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-17 22:51:52
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-14 00:40:00
+ * @LastEditTime: 2024-03-14 09:34:14
  * @FilePath: /builder/spx-gui/src/components/spx-library/LibraryModal.vue
  * @Description:
 -->
@@ -356,7 +356,7 @@ watch(isPublicSwitch, async () => {
 
 // Distinguish between page turning after search or normal page turning.
 watch(pageIndex, async () => {
-  searchQuery.value == '' ? await setAssets() : handleSearch()
+  searchQuery.value == '' ? await setAssets() : await handleSearch()
 })
 
 // Used to restore material display when the search value is deleted to empty.
