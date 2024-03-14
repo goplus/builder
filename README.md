@@ -33,20 +33,20 @@ GO+ Builder offers a wide range of features designed to support both offline and
 
 ### **Widget Integration:** 
 
-Embed SPX online programming and game animations directly into your projects. Detail shown in 
+Embed SPX online programming and game animations directly into your projects.
 
 ## ✨How to Use (For Users)
 
-Access the online platform at [GO+ Builder Homepage](https://goplus-builder.qiniu.io/editor/homepage) for an engaging coding experience. 
+Access the online platform at [GO+ Builder Homepage](https://builder.goplus.org) for an engaging coding experience.
 
-For a guide on how to get started with GO+ Builder, please refer to our [usage guide](https://github.com/goplus/builder/blob/dev/docs/usage/usage.md). 
+For a guide on how to get started with GO+ Builder, please refer to our [usage guide](./docs/usage/usage.md).
 
 ## ✨How to Install (For Developers)
 
-Developers looking to contribute or customize the platform can find detailed installation instructions on our [installation guide](https://github.com/goplus/builder/blob/dev/docs/installation/installation.md). 
+Developers looking to contribute or customize the platform can find detailed installation instructions on our [installation guide](./docs/installation/installation.md). 
 
 ## 📦Contribution
 
-We welcome contributions! For guidelines on how to contribute to GO+ Builder, please check out our [contribution guide](https://github.com/goplus/builder/blob/dev/docs/contribution/contribution.md).
+We welcome contributions! For guidelines on how to contribute to GO+ Builder, please check out our [contribution guide](./docs/contribution/contribution.md).
 
 Join us in making GO+ Builder more accessible and enjoyable for children around the world. Let's code, create, and learn together with GO+ Builder!
