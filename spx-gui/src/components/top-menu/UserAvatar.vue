@@ -18,7 +18,10 @@ import { useUserStore } from '@/store/modules/user'
 import { useNetworkStore } from "@/store/modules/network";
 
 const avatarDropdownOptions = [
-  { label: 'Logout', key: 'logout' }
+  {
+    label: 'Logout',
+    key: 'logout'
+  }
 ]
 
 const userStore = useUserStore()

@@ -102,6 +102,7 @@ import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
 import { publishAsset, PublishState } from '@/api/asset'
 import { AssetType } from '@/constant/constant'
+import { useI18n } from "vue-i18n";
 
 // ----------props & emit------------------------------------
 
@@ -118,6 +119,9 @@ const selectedAssets = ref<AssetFileDetail[]>([])
 const fileUploadInput = ref(null)
 // loading state
 const isAssetInfosLoading = ref<boolean>(false)
+const { t } = useI18n({
+  inheritLocale: true
+})
 
 // ----------methods-----------------------------------------
 /**
@@ -283,7 +287,7 @@ const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
  */
 const showImportSuccessMessage = () => {
   isAssetInfosLoading.value = false
-  message.success('import successfully!', { duration: 1000 })
+  message.success(t('message.import'), { duration: 1000 })
 }
 </script>
 

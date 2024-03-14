@@ -2,7 +2,7 @@
  * @Author: Zhang Zhi Yang
  * @Date: 2024-01-15 15:30:26
  * @LastEditors: Hu JingJing
- * @LastEditTime: 2024-02-06 17:17:27
+ * @LastEditTime: 2024-03-14 00:40:57
  * @FilePath: /spx-gui/src/components/code-editor/CodeEditor.vue
  * @Description: 
 -->
@@ -16,6 +16,8 @@ import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
+import { useEditorStore } from "@/store";
+
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
   modelValue: '',
@@ -36,6 +38,8 @@ const code_editor = ref<HTMLElement | null>(null)
 //  editor instance
 let editor: monaco.editor.IStandaloneCodeEditor
 
+const editorStore = useEditorStore()
+
 // ----------hooks-----------------------------------------
 // init editor and register change event
 onMounted(() => {
@@ -43,7 +47,7 @@ onMounted(() => {
     value: prop.modelValue, // set the initial value of the editor
     theme: 'myTransparentTheme',
     ...editorOptions,
-    ...prop.editorOptions
+    ...prop.editorOptions,
   })
 
   // register format action
@@ -73,6 +77,16 @@ watch(
     }
   },
   { deep: true }
+)
+
+watch(
+  () => editorStore.readOnly,
+  () => {
+    editor.updateOptions({
+      readOnly: editorStore.readOnly
+    })
+    console.log('readOnly status', editorStore.readOnly)
+  }
 )
 
 watch(
