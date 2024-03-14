@@ -343,9 +343,10 @@ const handleSubmitSprite = async (): Promise<void> => {
       uploadFilesArr.push(fileItem.file)
     }
   })
+  console.log('uploadFilesArr', uploadFilesArr)
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
   spriteStore.addItem(sprite)
-  message.success(t('message.success', {uploadSpriteName: uploadSpriteName.value}))
+  message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
   try {
     let gifRes = undefined
@@ -364,7 +365,7 @@ const handleSubmitSprite = async (): Promise<void> => {
       categoryValue.value || undefined
     )
   } catch (err) {
-    message.error(t('message.fail', {uploadSpriteName: uploadSpriteName.value}))
+    message.error(t('message.fail', { uploadSpriteName: uploadSpriteName.value }))
   }
   uploadSpriteName.value = ''
   showUploadModal.value = false
@@ -400,17 +401,21 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 /**
  * @description: A function to add sprite to list store.
  * @param {*} name - added asset name
- * @param {*} address - added asset file url
+ * @param {*} assetMultiCostumeObj - added asset file obj(name - url)
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:47:25
  */
-const handleAssetAddition = async (name: string, address: string) => {
+const handleAssetAddition = async (name: string, assetMultiCostumeObj: { [key: string]: string }) => {
+  let fileArr: File[] = []
+  for (const [key, value] of Object.entries(assetMultiCostumeObj)) {
+    const file = await urlToFile(value, key)
+    fileArr.push(file)
+  }
   if (props.type === 'sprite') {
-    const file = await urlToFile(address, name)
-    const sprite = new Sprite(name, [file])
+    const sprite = new Sprite(name, fileArr)
     spriteStore.addItem(sprite)
   } else if (props.type === 'backdrop') {
-    const file = await urlToFile(address, name)
+    const file = fileArr[0]
     let fileURL = URL.createObjectURL(file)
     let fileWithUrl = new FileWithUrl(file, fileURL)
     let fileNameWithoutExtension = name.substring(0, name.lastIndexOf('.'))
@@ -418,11 +423,11 @@ const handleAssetAddition = async (name: string, address: string) => {
     backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
     // backdropStore.backdrop.addFile(file)
   } else if (props.type === 'sounds') {
-    const file = await urlToFile(address, name)
+    const file = fileArr[0]
     const sound = new Sound(name, [file])
     soundStore.addItem(sound)
   }
-  message.success(t('message.addSuccess', {name: name}))
+  message.success(t('message.addSuccess', { name: name }))
 }
 </script>
 
