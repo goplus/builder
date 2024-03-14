@@ -6,85 +6,67 @@ STEM EDU is an online educational platform for children's programming, designed 
 
 ## How to Run
 
-### 1. Installation
+### Docker
+
+````bash
+# Build the all-in-one image
+docker build -t spx .
+# Assuming you have a .env file in pwd,
+# which contains the environment variables for backend
+docker run -v $(pwd)/.env:/app/.env spx
+````
+
+### Step by Step
+
+#### Frontend
 
 Before you begin, ensure that you have both **Go** and **Node.js** environments set up on your local machine.
 
-#### Frontend Setup
+##### Frontend Setup
 
-a. Clone the repository to your local machine:
+Clone the repository and install.
 
 ```bash
 git clone https://github.com/goplus/builder.git
 cd spx-gui
-```
-
-b. Inside the `spx-gui` directory, install the project dependencies using npm:
-
-```bash
 npm install
 ```
 
-### 2. Offline SPX Config
+#####  Offline SPX Config
 
 In this stage, we build the two WASM components required by the web app and copy them into the app's assets folder.
 
-Inside the `spx-gui` directory，execute the script:
-
-```
+```bash
+## in spx-gui folder
 ./build-wasm.sh
 ```
 
-### 3. Getting Started
-
-#### Running the Frontend
-
-Once all dependencies are installed, you can run the project locally:
-
-i) Open a Command Prompt or Terminal in the `spx-gui` directory.
-
-ii) Start the development server:
+##### Build/Running the project
 
 ```bash
 ## in spx-gui folder
+# Build the project
+npm run build
+
+# Or, run the project in development mode
 npm run dev
 ```
 
-iii) Access the application at [http://localhost:5173/](http://localhost:5173/).
-
-#### Backend Setup and Launch
-
-i) Navigate to the backend directory:
+#### Backend 
 
 ```bash
-cd spx-backend
-cd cmd
-```
+cd spx-backend/cmd
+# Assuming you have Go & Go+ installed
+gop build -o spx-backend .
 
-ii) Run the Go scripts:
-
-```bash
-go mod tidy
-gop run .
+# Run the server, assuming you have a .env file in pwd
+./spx-backend
 ```
 
 ### 4. Quick Play
 
 Import the zip(04-Bullet.zip in builder/tools/04-Bullet.zip)in the top button 'Import - upload', and click the run button in the stage, then wait for a few seconds.
 
-## Deploy
+## API Documentation
 
-### Frontend
-
-In `spx-gui`, build the project with `npx vite build`, then run docker build. You will get a nginx docker image with the built project files. Run the nginx image and it will listen on port 80.
-
-### Backend
-
-TODO .
-
-## **API Documentation**
-
-(Include any relevant API documentation or references here.)
-
-[STEM EDU API DOC](https://lbul0aws0j.feishu.cn/docx/BpEQdCvwZoXw3TxBsgIc6F7Dnqh?from=from_copylink)
-
+[api doc](../api-doc/api-document.md).
