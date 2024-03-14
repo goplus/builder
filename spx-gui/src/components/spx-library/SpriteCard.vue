@@ -2,7 +2,7 @@
  * @Author: Xu Ning
  * @Date: 2024-01-15 17:18:15
  * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:36:02
+ * @LastEditTime: 2024-03-14 15:42:10
  * @FilePath: /builder/spx-gui/src/components/spx-library/SpriteCard.vue
  * @Description: sprite Card
 -->
@@ -10,7 +10,7 @@
   <!-- S Component Sprite Card -->
   <div
     class="sprite-card"
-    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetImageUrl)"
+    @click="addAssetToListFunc(props.assetInfo.id, props.assetInfo.name, assetMultiCostumeObj)"
   >
     <!-- S Component First Static Costume Card -->
     <n-image
@@ -78,6 +78,15 @@ const assetImageUrl = computed(() => {
   }
 })
 
+// get multi costume obj to emit
+const assetMultiCostumeObj = computed(()=>{
+  let addressObj = {}
+  if (props.assetInfo.address != null) {
+      addressObj = JSON.parse(props.assetInfo.address)
+  }
+  return addressObj
+})
+
 // Compute the asset gif url if it has
 const assetImageGifUrl = computed(() => {
   return props.assetInfo.previewAddress
@@ -90,17 +99,18 @@ const shouldShowGif = computed(() => isHovering.value && assetImageGifUrl.value 
 
 /**
  * @description: A function to add sprite to list
+ * @param {*} id
  * @param {*} name
- * @param {*} file
+ * @param {*} assetMultiCostumeObj
  * @Author: Xu Ning
  * @Date: 2024-01-24 12:18:12
  */
 const addAssetToListFunc = (
   id: number,
   name: string,
-  address: string | undefined
+  assetMultiCostumeObj: {[key: string]: string}
 ) => {
-    emits('add-asset', id, name, address)
+    emits('add-asset', id, name, assetMultiCostumeObj)
 }
 </script>
 

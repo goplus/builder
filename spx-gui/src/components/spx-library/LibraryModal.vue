@@ -263,12 +263,13 @@ const closeModalFunc = () => {
 /**
  * @description: A function to emit add object.
  * @param {*} name
+ * @param {*} assetMultiCostumeObj
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:51:05
  */
-const handleAddAsset = async (id: number, name: string, address: string) => {
+const handleAddAsset = async (id: number, name: string, assetMultiCostumeObj: {[key: string]: string}) => {
   await addAssetClickCount(id)
-  emits('add-asset', name, address)
+  emits('add-asset', name, assetMultiCostumeObj)
 }
 
 /**
