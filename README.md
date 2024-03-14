@@ -15,7 +15,7 @@ GO+ Builder offers a wide range of features designed to support both offline and
 - **Sprite:** Add, modify, and delete sprites. Features include uploading from local storage or importing Scratch project assets, adjusting object names, coordinates, visibility, size, and direction.
 - **Project Import:** Upload projects from your device or create new blank projects. Supports public and private projects, as well as creating new blank projects.
 - **Project Storage:** Save projects to browser cache for easy access on subsequent visits.
-- **Project download **: Save the project zip package locally.
+- **Project download:** Save the project zip package locally.
 - **Real-Time Display:** Dynamically display animations on stage.
 - **Execution and Pause display:** Run and pause display with ease.
 - **File Management:** Switching the selected sprite switches the code file.
