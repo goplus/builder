@@ -59,8 +59,8 @@
       <div class="asset-library-content">
         <n-switch
           v-model:value="isPublicSwitch"
-          :checked-value="PublicStatus.public"
-          :unchecked-value="PublicStatus.private"
+          :checked-value="UIPublic.public"
+          :unchecked-value="UIPublic.private"
           style="width: 130px; float: right; margin: 10px 0 0 0"
           :rail-style="railStyle"
           @update:value="handleAssetLibraryOption"
@@ -123,10 +123,9 @@ import {
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import type { Asset } from '@/interface/library'
-import { AssetType } from '@/constant/constant'
+import { AssetType, UIPublic } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
 import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
-import { PublicStatus } from '@/class/project'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -205,12 +204,12 @@ const fetchAssetsByType = async (
   try {
     // isPublic = undefined means the isPublic attribute of the asset is not filtered.
     let isPublic = undefined
-    if (isPublicSwitch.value == PublicStatus.public) {
+    if (isPublicSwitch.value == UIPublic.public) {
       // Filter only assets with an isPublic attribute value of 1 (public)
       isPublic = 1
       // Pass * means author is everyone
       author = '*'
-    }else if (isPublicSwitch.value == PublicStatus.private){
+    }else if (isPublicSwitch.value == UIPublic.private){
       // author is the current user (self)
       author = undefined
     }
@@ -247,7 +246,7 @@ watch(
     if (newShow) {
       showModal.value = newShow
     } else {
-      isPublicSwitch.value = PublicStatus.public
+      isPublicSwitch.value = UIPublic.public
     }
   }
 )
