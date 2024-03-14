@@ -11,12 +11,12 @@
 </template>
 
 <script setup lang="ts">
-import {computed, type ComputedRef, onBeforeUnmount, onMounted, ref, watch, withDefaults} from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue'
 import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse } from './index'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
-import { useSpriteStore } from "@/store";
+import { useEditorStore } from "@/store";
 
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -37,7 +37,8 @@ self.MonacoEnvironment = {
 const code_editor = ref<HTMLElement | null>(null)
 //  editor instance
 let editor: monaco.editor.IStandaloneCodeEditor
-const hasCurrentSprite: ComputedRef<boolean> = computed(() => useSpriteStore().current != null)
+
+const editorStore = useEditorStore()
 
 // ----------hooks-----------------------------------------
 // init editor and register change event
@@ -78,11 +79,15 @@ watch(
   { deep: true }
 )
 
-watch(hasCurrentSprite, () => {
-  // disable editor when current sprite is null
-  editor.updateOptions({readOnly: !hasCurrentSprite.value})
-  console.log("editor readOnly: ", hasCurrentSprite.value)
-})
+watch(
+  () => editorStore.readOnly,
+  () => {
+    editor.updateOptions({
+      readOnly: editorStore.readOnly
+    })
+    console.log('readOnly status', editorStore.readOnly)
+  }
+)
 
 watch(
   () => prop.modelValue,
