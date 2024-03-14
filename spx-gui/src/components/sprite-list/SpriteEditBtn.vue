@@ -109,6 +109,7 @@ import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-u
 import { useSpriteStore } from '@/store/modules/sprite'
 import { checkUpdatedName } from '@/util/asset';
 import { useProjectStore } from '@/store';
+import { useI18n } from "vue-i18n"
 
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore()
@@ -120,6 +121,9 @@ const heading = computed(() => (spriteStore.current ? spriteStore.current.config
 const size = computed(() => (spriteStore.current ? spriteStore.current.config.size : 0))
 const visible = computed(() => (spriteStore.current ? spriteStore.current.config.visible : false))
 const name = ref(spriteStore.current ? spriteStore.current.name : '')
+const { t } = useI18n({
+  inheritLocale: true
+})
 watch(() => spriteStore.current?.name, (newName) => {
   name.value = newName || ''
 })
@@ -138,7 +142,7 @@ function handleUpdateSpriteName(){
       project.backdrop.config.zorder.push(checkInfo.name)
 
       spriteStore.current.name = checkInfo.name
-      message.success('update name successfully!')
+      message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)
   } catch(e) {

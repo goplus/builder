@@ -22,7 +22,7 @@
             window.wasmWindow = wasmWindow;
             console.log('wasmWindow', wasmWindow);
 
-            wasmWindow.addEventListener('wasmLoaded', async () => {
+            wasmWindow.addEventListener('wasmReady', async () => {
                 const buffer = await (await (zipResp)).arrayBuffer();
                 console.log('buffer', buffer);
                 wasmWindow.startWithZipBuffer(buffer);

@@ -8,7 +8,7 @@
  */
 import { defineStore } from 'pinia'
 import { monaco } from '@/components/code-editor'
-import { ref, watch } from 'vue'
+import {computed, ref, watch} from 'vue'
 import { useSpriteStore } from '@/store'
 import {} from 'fs'
 export enum EditContentType {
@@ -18,6 +18,7 @@ export enum EditContentType {
 export const useEditorStore = defineStore('editor', () => {
   const spriteStore = useSpriteStore()
   const editContentType = ref<EditContentType>(EditContentType.Sprite)
+  const readOnly = computed(() => spriteStore.current == null && editContentType.value != EditContentType.EntryCode)
 
   watch(
     () => spriteStore.current,
@@ -52,6 +53,7 @@ export const useEditorStore = defineStore('editor', () => {
   return {
     editContentType,
     setEditContentType,
-    insertSnippet
+    insertSnippet,
+    readOnly
   }
 })
