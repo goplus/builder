@@ -411,7 +411,12 @@ const handleAssetAddition = async (name: string, address: string) => {
     spriteStore.addItem(sprite)
   } else if (props.type === 'backdrop') {
     const file = await urlToFile(address, name)
-    backdropStore.backdrop.addFile(file)
+    let fileURL = URL.createObjectURL(file)
+    let fileWithUrl = new FileWithUrl(file, fileURL)
+    let fileNameWithoutExtension = name.substring(0, name.lastIndexOf('.'))
+    let backdrop = backdropStore.backdrop
+    backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
+    // backdropStore.backdrop.addFile(file)
   } else if (props.type === 'sounds') {
     const file = await urlToFile(address, name)
     const sound = new Sound(name, [file])

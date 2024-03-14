@@ -62,6 +62,7 @@ const handleSelect = (asset: Sound) => {
 const handleSoundFileUpdate = (newFile: File) => {
   if (selectedSound.value) {
     selectedSound.value.files[0] = newFile;
+    selectedSound.value.config.path = newFile.name;
     message.success(
       'save successfully!',
       { duration: 1000 }
