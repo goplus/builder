@@ -15,14 +15,20 @@
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useUserStore } from '@/store/modules/user'
-import { useNetworkStore } from "@/store/modules/network";
+import { useNetworkStore } from "@/store/modules/network"
+import { useI18n } from "vue-i18n"
+import { computed } from "vue"
 
-const avatarDropdownOptions = [
+const { t } = useI18n({
+  inheritLocale: true
+})
+
+const avatarDropdownOptions = computed(() => [
   {
-    label: 'Logout',
+    label: t('tab.logOut'),
     key: 'logout'
   }
-]
+])
 
 const userStore = useUserStore()
 const networkStore = useNetworkStore()
