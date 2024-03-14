@@ -130,7 +130,7 @@ func (z *ZipFs) Base(filename string) string {
 
 // Abs returns an absolute representation of path.
 func (z *ZipFs) Abs(path string) (string, error) {
-	return path, nil
+	return filepath.Abs(path)
 }
 
 // Implement spx/fs.Dir:
