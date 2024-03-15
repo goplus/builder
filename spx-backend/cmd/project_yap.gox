@@ -1,19 +1,17 @@
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"os"
 	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/common"
 	"github.com/goplus/builder/spx-backend/internal/core"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/yaputil"
 )
 
 var (
 	ctrl *core.Controller
 )
-
-todo := context.TODO()
 
 //Save project
 post "/project", ctx => {
@@ -44,7 +42,7 @@ post "/project", ctx => {
 		Name:     name,
 		AuthorId: currentUid,
 	}
-	res, err := ctrl.SaveProject(todo, project, file, header)
+	res, err := ctrl.SaveProject(yaputil.getCtx(ctx), project, file, header)
 	if err != nil {
 		code := common.ErrorSave
 		ctx.json {
@@ -66,7 +64,7 @@ post "/project", ctx => {
 get "/project/:id", ctx => {
 	id := ctx.param("id")
 	currentUid := core.ParseToken(ctrl, ctx)
-	res, err := ctrl.ProjectInfo(todo, id, currentUid)
+	res, err := ctrl.ProjectInfo(yaputil.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
 			code := common.ErrorProjectNotFound
@@ -108,7 +106,7 @@ delete "/project/:id", ctx => {
 		}
 		return
 	}
-	err := ctrl.DeleteProject(todo, id, currentUid)
+	err := ctrl.DeleteProject(yaputil.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == common.ErrPermissions {
 			code := common.ErrorPermissions
@@ -149,7 +147,7 @@ put "/project/:id/is-public", ctx => {
 	}
 	id := ctx.param("id")
 	isPublic := ctx.param("isPublic")
-	err := ctrl.UpdatePublic(todo, id, isPublic, currentUid)
+	err := ctrl.UpdatePublic(yaputil.getCtx(ctx), id, isPublic, currentUid)
 	if err != nil {
 		if err == common.ErrPermissions {
 			code := common.ErrorPermissions
@@ -203,7 +201,7 @@ get "/projects/list", ctx => {
 	if authorId != currentUid || currentUid == "" {
 		isPublic = strconv.Itoa(common.PUBLIC)
 	}
-	result, err := ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
+	result, err := ctrl.ProjectList(yaputil.getCtx(ctx), pageIndex, pageSize, isPublic, authorId)
 	if err != nil {
 		code := common.ErrorGetProjects
 		ctx.json {
@@ -248,7 +246,7 @@ post "/asset", ctx => {
 	previewAddress := ctx.FormValue("previewAddress")
 	category := ctx.FormValue("category")
 	assetType := ctx.FormValue("assetType")
-	err = ctrl.UploadAsset(todo, name, files, previewAddress, currentUid, category, publishState, assetType)
+	err = ctrl.UploadAsset(yaputil.getCtx(ctx), name, files, previewAddress, currentUid, category, publishState, assetType)
 	if err != nil {
 		code := common.ErrorUpload
 		ctx.json {
@@ -270,7 +268,7 @@ post "/asset", ctx => {
 get "/asset/:id", ctx => {
 	currentUid := core.ParseToken(ctrl, ctx)
 	id := ctx.param("id")
-	asset, err := ctrl.Asset(todo, id, currentUid)
+	asset, err := ctrl.Asset(yaputil.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
 			code := common.ErrorProjectNotFound
@@ -329,7 +327,7 @@ get "/assets/list", ctx => {
 	if authorId != currentUid || currentUid == "" {
 		isPublic = strconv.Itoa(common.PUBLIC)
 	}
-	result, err := ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
+	result, err := ctrl.AssetList(yaputil.getCtx(ctx), pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
@@ -350,7 +348,7 @@ get "/assets/list", ctx => {
 //Add asset clickCount
 post "/asset/:id/click-count", ctx => {
 	id := ctx.param("id")
-	err := ctrl.IncrementAssetClickCount(todo, id)
+	err := ctrl.IncrementAssetClickCount(yaputil.getCtx(ctx), id)
 	if err != nil {
 		code := common.ErrClick
 		ctx.json {
@@ -374,7 +372,7 @@ get "/assets/search", ctx => {
 	assetType := ctx.param("assetType")
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	assets, err := ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, currentUid)
+	assets, err := ctrl.SearchAsset(yaputil.getCtx(ctx), search, pageIndex, pageSize, assetType, currentUid)
 	if err != nil {
 		code := common.ErrorGetAsset
 		ctx.json {
@@ -404,7 +402,7 @@ delete "/asset/:id", ctx => {
 		}
 		return
 	}
-	err := ctrl.DeleteAsset(todo, id, currentUid)
+	err := ctrl.DeleteAsset(yaputil.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == common.ErrPermissions {
 			code := common.ErrorPermissions
@@ -435,7 +433,7 @@ delete "/asset/:id", ctx => {
 post "/util/fmt", ctx => {
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
-	res := ctrl.CodeFmt(todo, body, imports)
+	res := ctrl.CodeFmt(yaputil.getCtx(ctx), body, imports)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -456,7 +454,7 @@ post "/util/to-gif", ctx => {
 		return
 	}
 	files := ctx.MultipartForm.File["files"]
-	path, err := ctrl.ImagesToGif(todo, files)
+	path, err := ctrl.ImagesToGif(yaputil.getCtx(ctx), files)
 	if err != nil {
 		code := common.ErrorImagesToGif
 		ctx.json {
@@ -475,10 +473,13 @@ post "/util/to-gif", ctx => {
 }
 
 conf := &core.Config{}
-ctrl, _ = core.New(todo, conf)
+ctx := context.Background()
+logger := log.GetLogger()
+ctrl, _ = core.New(ctx, conf)
 core.CasdoorConfigInit()
 port := os.Getenv("PORT")
 if port == "" {
 	port = ":8080"
 }
-run port, common.CorsMiddleware
+logger.Printf("Listening to %s", port)
+run port, common.CorsMiddleware, common.ReqIDMiddleware

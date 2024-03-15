@@ -1,16 +1,15 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"image"
 	"image/gif"
 	_ "image/png"
-	"io/ioutil"
 	"mime/multipart"
 	"os"
 	"os/exec"
@@ -21,6 +20,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/common"
+	"github.com/goplus/builder/spx-backend/internal/log"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -85,9 +85,10 @@ type FormatResponse struct {
 
 // New init Config
 func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
+	logger := log.GetLogger()
 	err = godotenv.Load()
 	if err != nil {
-		fmt.Printf("failed to read env : %v", err)
+		logger.Printf("failed to read env : %v", err)
 		return
 	}
 	if conf == nil {
@@ -108,13 +109,13 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 
 	bucket, err := blob.OpenBucket(ctx, bus)
 	if err != nil {
-		fmt.Printf("failed to connect kodo : %v", err)
+		logger.Printf("failed to connect kodo : %v", err)
 		return
 	}
 	blobBucket := &BlobBucket{b: bucket}
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
-		fmt.Printf("failed to connect sql : %v", err)
+		logger.Printf("failed to connect sql : %v", err)
 		return
 	}
 	return &Controller{blobBucket, db}, nil
@@ -122,9 +123,10 @@ func New(ctx context.Context, conf *Config) (ret *Controller, err error) {
 
 // ProjectInfo Find project from db
 func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, currentUid string) (*Project, error) {
+	logger := log.GetReqLogger(ctx)
 	pro, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
-		fmt.Printf("failed to query project id= %v : %v", id, err)
+		logger.Printf("failed to query project id= %v : %v", id, err)
 		return nil, err
 	}
 	if pro == nil {
@@ -140,10 +142,10 @@ func (ctrl *Controller) ProjectInfo(ctx context.Context, id string, currentUid s
 
 // DeleteProject Delete Project
 func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid string) error {
-
+	logger := log.GetReqLogger(ctx)
 	project, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
-		fmt.Printf("failed to query project id= %v : %v", id, err)
+		logger.Printf("failed to query project id= %v : %v", id, err)
 		return err
 	}
 	if project.AuthorId != currentUid {
@@ -155,10 +157,11 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, id string, currentUid
 
 // SaveProject Save project
 func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file multipart.File, header *multipart.FileHeader) (*Project, error) {
+	logger := log.GetReqLogger(ctx)
 	if project.ID == "" {
 		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
-			fmt.Printf("failed to UploadFile %v : %v", header.Filename, err)
+			logger.Printf("failed to UploadFile %v : %v", header.Filename, err)
 			return nil, err
 		}
 		project.Address = path
@@ -174,7 +177,7 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 
 		p, err := common.QueryById[Project](ctrl.db, project.ID)
 		if err != nil {
-			fmt.Printf("failed to query project id= %v : %v", project.ID, err)
+			logger.Printf("failed to query project id= %v : %v", project.ID, err)
 			return nil, err
 		}
 		if p.Address == "" {
@@ -182,12 +185,12 @@ func (ctrl *Controller) SaveProject(ctx context.Context, project *Project, file 
 		}
 		err = ctrl.bucket.Delete(ctx, p.Address)
 		if err != nil {
-			fmt.Printf("failed to delete kodo File %v : %v", p.Address, err)
+			logger.Printf("failed to delete kodo File %v : %v", p.Address, err)
 			return nil, err
 		}
 		path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("PROJECT_PATH"), file, header.Filename)
 		if err != nil {
-			fmt.Printf("failed to UploadFile %v : %v", header.Filename, err)
+			logger.Printf("failed to UploadFile %v : %v", header.Filename, err)
 			return nil, err
 		}
 		p.Address = path
@@ -256,7 +259,7 @@ func (ctrl *Controller) CodeFmt(ctx context.Context, body, fiximport string) (re
 					}
 					return
 				}
-				out, err = ioutil.ReadFile(tmpGopFile)
+				out, err = os.ReadFile(tmpGopFile)
 				if err != nil {
 					err = errors.New("interval error when formatting gop code")
 				}
@@ -298,17 +301,18 @@ func (ctrl *Controller) CodeFmt(ctx context.Context, body, fiximport string) (re
 
 // Asset returns an Asset.
 func (ctrl *Controller) Asset(ctx context.Context, id string, currentUid string) (*Asset, error) {
+	logger := log.GetReqLogger(ctx)
 	asset, err := common.QueryById[Asset](ctrl.db, id)
 	if err != nil {
-		fmt.Printf("failed to query assets : %v", err)
+		logger.Printf("failed to query assets : %v", err)
 		return nil, err
 	}
 	if asset == nil {
 		return nil, ErrNotExist
 	}
-	modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
+	modifiedAddress, err := ctrl.ModifyAssetAddress(ctx, asset.Address)
 	if err != nil {
-		fmt.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
+		logger.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
 		return nil, err
 	}
 	asset.Address = modifiedAddress
@@ -322,6 +326,7 @@ func (ctrl *Controller) Asset(ctx context.Context, id string, currentUid string)
 
 // AssetList list  assets
 func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSize string, assetType string, category string, isOrderByTime string, isOrderByHot string, authorId string, isPublic string) (*common.Pagination[Asset], error) {
+	logger := log.GetReqLogger(ctx)
 	wheres := []common.FilterCondition{
 		{Column: "asset_type", Operation: "=", Value: assetType},
 	}
@@ -343,13 +348,13 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 	}
 	pagination, err := common.QueryByPage[Asset](ctrl.db, pageIndex, pageSize, wheres, orders)
 	if err != nil {
-		fmt.Printf("failed to query assets : %v", err)
+		logger.Printf("failed to query assets : %v", err)
 		return nil, err
 	}
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
+		modifiedAddress, err := ctrl.ModifyAssetAddress(ctx, asset.Address)
 		if err != nil {
-			fmt.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
+			logger.Printf("failed to ModifyAssetAddress %v : %v", asset.Address, err)
 			return nil, err
 		}
 		pagination.Data[i].Address = modifiedAddress
@@ -359,20 +364,22 @@ func (ctrl *Controller) AssetList(ctx context.Context, pageIndex string, pageSiz
 
 // IncrementAssetClickCount increments the click count for an asset.
 func (ctrl *Controller) IncrementAssetClickCount(ctx context.Context, id string) error {
+	logger := log.GetReqLogger(ctx)
 	query := "UPDATE asset SET click_count = click_count + 1 WHERE id = ?"
 	_, err := ctrl.db.ExecContext(ctx, query, id)
 	if err != nil {
-		fmt.Printf("failed to Incre Asset Click Count : %v", err)
+		logger.Printf("failed to Incre Asset Click Count : %v", err)
 		return err
 	}
 	return nil
 }
 
 // ModifyAssetAddress transfers relative path to download url
-func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
+func (ctrl *Controller) ModifyAssetAddress(ctx context.Context, address string) (string, error) {
+	logger := log.GetReqLogger(ctx)
 	data := make(AssetAddressData)
 	if err := json.Unmarshal([]byte(address), &data); err != nil {
-		fmt.Printf("failed to json.Unmarshal %v: %v", address, err)
+		logger.Printf("failed to json.Unmarshal %v: %v", address, err)
 		return "", err
 	}
 	qiniuPath := os.Getenv("QINIU_PATH")
@@ -381,7 +388,7 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 	}
 	modifiedAddress, err := json.Marshal(data)
 	if err != nil {
-		fmt.Printf("failed to json.Marshal %v: %v", data, err)
+		logger.Printf("failed to json.Marshal %v: %v", data, err)
 		return "", err
 	}
 	return string(modifiedAddress), nil
@@ -389,6 +396,7 @@ func (ctrl *Controller) ModifyAssetAddress(address string) (string, error) {
 
 // ProjectList project list
 func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageSize string, isPublic string, authorId string) (*common.Pagination[Project], error) {
+	logger := log.GetReqLogger(ctx)
 	var wheres []common.FilterCondition
 	if authorId != "" {
 		wheres = append(wheres, common.FilterCondition{Column: "author_id", Operation: "=", Value: authorId})
@@ -399,7 +407,7 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 
 	pagination, err := common.QueryByPage[Project](ctrl.db, pageIndex, pageSize, wheres, nil)
 	if err != nil {
-		fmt.Printf("failed to query search project : %v", err)
+		logger.Printf("failed to query search project : %v", err)
 		return nil, err
 	}
 	for i := range pagination.Data {
@@ -410,9 +418,10 @@ func (ctrl *Controller) ProjectList(ctx context.Context, pageIndex string, pageS
 
 // UpdatePublic update is_public
 func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic string, currentUid string) error {
+	logger := log.GetReqLogger(ctx)
 	project, err := common.QueryById[Project](ctrl.db, id)
 	if err != nil {
-		fmt.Printf("failed to query asset : %v", err)
+		logger.Printf("failed to query asset : %v", err)
 		return err
 	}
 	if project.AuthorId != currentUid {
@@ -423,7 +432,7 @@ func (ctrl *Controller) UpdatePublic(ctx context.Context, id string, isPublic st
 
 // SearchAsset Search Asset by name
 func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageIndex string, pageSize string, assetType string, currentUid string) (*common.Pagination[Asset], error) {
-
+	logger := log.GetReqLogger(ctx)
 	var query string
 	var args []interface{}
 	searchString := "%" + search + "%"
@@ -437,13 +446,13 @@ func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageInde
 	}
 	pagination, err := common.QueryPageBySQL[Asset](ctrl.db, query, pageIndex, pageSize, args)
 	if err != nil {
-		fmt.Printf("failed to query search asset : %v", err)
+		logger.Printf("failed to query search asset : %v", err)
 		return nil, err
 	}
 	for i, asset := range pagination.Data {
-		modifiedAddress, err := ctrl.ModifyAssetAddress(asset.Address)
+		modifiedAddress, err := ctrl.ModifyAssetAddress(ctx, asset.Address)
 		if err != nil {
-			fmt.Printf("failed to ModifyAssetAddress: %v", err)
+			logger.Printf("failed to ModifyAssetAddress: %v", err)
 			return nil, err
 		}
 		pagination.Data[i].Address = modifiedAddress
@@ -453,13 +462,14 @@ func (ctrl *Controller) SearchAsset(ctx context.Context, search string, pageInde
 }
 
 func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.FileHeader) (string, error) {
+	logger := log.GetReqLogger(ctx)
 	var images []*image.Paletted
 	var delays []int
 	for _, fileHeader := range files {
 		// 打开文件
 		img, err := common.LoadImage(fileHeader)
 		if err != nil {
-			fmt.Printf("failed to load image %s: %v", fileHeader.Filename, err)
+			logger.Printf("failed to load image %s: %v", fileHeader.Filename, err)
 			return "", err
 		}
 		images = append(images, img)
@@ -471,14 +481,20 @@ func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.File
 		LoopCount: 0, // 循环次数，0表示无限循环
 	}
 
-	var gifData bytes.Buffer
-	if err := gif.EncodeAll(&gifData, outGif); err != nil {
-		fmt.Printf("failed to encode GIF: %v", err)
+	// 保存GIF文件
+	f, err := os.Create("output.gif")
+	if err != nil {
+		logger.Printf("failed to create GIF file: %v", err)
+		return "", err
+	}
+	defer f.Close()
+	if err := gif.EncodeAll(f, outGif); err != nil {
+		logger.Printf("failed to encode GIF: %v", err)
 		return "", err
 	}
 	path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("GIF_PATH"), &gifData, "output.gif")
 	if err != nil {
-		fmt.Printf("failed to UploadFile: %v", err)
+		logger.Printf("failed to UploadFile: %v", err)
 		return "", err
 	}
 	return os.Getenv("QINIU_PATH") + "/" + path, err
@@ -486,6 +502,7 @@ func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.File
 
 // UploadAsset Upload asset
 func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*multipart.FileHeader, previewAddress string, currentUid string, tag string, publishState string, assetType string) error {
+	logger := log.GetReqLogger(ctx)
 	data := make(AssetAddressData)
 	for _, fileHeader := range files {
 		file, _ := fileHeader.Open()
@@ -500,7 +517,7 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 		}
 		path, err := UploadFile(ctx, ctrl.bucket, typePath, file, fileHeader.Filename)
 		if err != nil {
-			fmt.Printf("failed to upload %s: %v", fileHeader.Filename, err)
+			logger.Printf("failed to upload %s: %v", fileHeader.Filename, err)
 			return err
 		}
 
@@ -508,7 +525,7 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		fmt.Printf("failed to jsonMarshal: %v", err)
+		logger.Printf("failed to jsonMarshal: %v", err)
 		return err
 	}
 	isPublic, _ := strconv.Atoi(publishState)
@@ -534,10 +551,10 @@ func (ctrl *Controller) UploadAsset(ctx context.Context, name string, files []*m
 
 // DeleteAsset Delete Asset
 func (ctrl *Controller) DeleteAsset(ctx context.Context, id string, currentUid string) error {
-
+	logger := log.GetReqLogger(ctx)
 	asset, err := common.QueryById[Asset](ctrl.db, id)
 	if err != nil {
-		fmt.Printf("failed to query asset id= %v : %v", id, err)
+		logger.Printf("failed to query asset id= %v : %v", id, err)
 		return err
 	}
 	if asset.AuthorId != currentUid {

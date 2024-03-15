@@ -6,6 +6,8 @@ import (
 	"context"
 	"github.com/goplus/builder/spx-backend/internal/common"
 	"github.com/goplus/builder/spx-backend/internal/core"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/yaputil"
 	"github.com/goplus/yap"
 	"os"
 	"strconv"
@@ -18,500 +20,503 @@ type project struct {
 	ctrl *core.Controller
 }
 //line cmd/project_yap.gox:16
+//Save project
 func (this *project) MainEntry() {
-//line cmd/project_yap.gox:16:1
-	todo := context.TODO()
-//line cmd/project_yap.gox:19:1
+//line cmd/project_yap.gox:17:1
 	this.Post("/project", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:20:1
+//line cmd/project_yap.gox:18:1
 		id := ctx.FormValue("id")
-//line cmd/project_yap.gox:21:1
+//line cmd/project_yap.gox:19:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:22:1
+//line cmd/project_yap.gox:20:1
 		if currentUid == "" {
-//line cmd/project_yap.gox:23:1
+//line cmd/project_yap.gox:21:1
 			code := common.NoLogin
-//line cmd/project_yap.gox:24:1
+//line cmd/project_yap.gox:22:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:27:1
+			return
+		}
 //line cmd/project_yap.gox:29:1
-			return
-		}
-//line cmd/project_yap.gox:31:1
 		name := ctx.FormValue("name")
-//line cmd/project_yap.gox:32:1
+//line cmd/project_yap.gox:30:1
 		if name == "" {
-//line cmd/project_yap.gox:33:1
+//line cmd/project_yap.gox:31:1
 			code := common.ErrorNameNotNull
-//line cmd/project_yap.gox:34:1
+//line cmd/project_yap.gox:32:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:37:1
+			return
+		}
 //line cmd/project_yap.gox:39:1
-			return
-		}
-//line cmd/project_yap.gox:41:1
 		file, header, _ := ctx.FormFile("file")
-//line cmd/project_yap.gox:42:1
+//line cmd/project_yap.gox:40:1
 		project := &core.Project{ID: id, Name: name, AuthorId: currentUid}
-//line cmd/project_yap.gox:47:1
-		res, err := this.ctrl.SaveProject(todo, project, file, header)
-//line cmd/project_yap.gox:48:1
+//line cmd/project_yap.gox:45:1
+		res, err := this.ctrl.SaveProject(yaputil.GetCtx(ctx), project, file, header)
+//line cmd/project_yap.gox:46:1
 		if err != nil {
-//line cmd/project_yap.gox:49:1
+//line cmd/project_yap.gox:47:1
 			code := common.ErrorSave
-//line cmd/project_yap.gox:50:1
+//line cmd/project_yap.gox:48:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:55:1
+//line cmd/project_yap.gox:53:1
 			return
 		}
-//line cmd/project_yap.gox:57:1
+//line cmd/project_yap.gox:55:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:58:1
+//line cmd/project_yap.gox:56:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": res})
 	})
-//line cmd/project_yap.gox:66:1
+//line cmd/project_yap.gox:64:1
 	this.Get("/project/:id", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:67:1
+//line cmd/project_yap.gox:65:1
 		id := ctx.Param("id")
-//line cmd/project_yap.gox:68:1
+//line cmd/project_yap.gox:66:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:69:1
-		res, err := this.ctrl.ProjectInfo(todo, id, currentUid)
-//line cmd/project_yap.gox:70:1
+//line cmd/project_yap.gox:67:1
+		res, err := this.ctrl.ProjectInfo(yaputil.GetCtx(ctx), id, currentUid)
+//line cmd/project_yap.gox:68:1
 		if err != nil {
-//line cmd/project_yap.gox:71:1
+//line cmd/project_yap.gox:69:1
 			if err == os.ErrNotExist {
-//line cmd/project_yap.gox:72:1
+//line cmd/project_yap.gox:70:1
 				code := common.ErrorProjectNotFound
-//line cmd/project_yap.gox:73:1
+//line cmd/project_yap.gox:71:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 			} else {
-//line cmd/project_yap.gox:80:1
+//line cmd/project_yap.gox:78:1
 				code := common.ErrorPermissions
-//line cmd/project_yap.gox:81:1
+//line cmd/project_yap.gox:79:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 			}
-//line cmd/project_yap.gox:88:1
+//line cmd/project_yap.gox:86:1
 			return
 		}
-//line cmd/project_yap.gox:90:1
+//line cmd/project_yap.gox:88:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:91:1
+//line cmd/project_yap.gox:89:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": res})
 	})
-//line cmd/project_yap.gox:99:1
+//line cmd/project_yap.gox:97:1
 	this.Delete("/project/:id", func(ctx *yap.Context) {
+//line cmd/project_yap.gox:98:1
+		id := ctx.Param("id")
+//line cmd/project_yap.gox:99:1
+		currentUid := core.ParseToken(this.ctrl, ctx)
 //line cmd/project_yap.gox:100:1
-		id := ctx.Param("id")
+		if currentUid == "" {
 //line cmd/project_yap.gox:101:1
-		currentUid := core.ParseToken(this.ctrl, ctx)
+			code := common.NoLogin
 //line cmd/project_yap.gox:102:1
-		if currentUid == "" {
-//line cmd/project_yap.gox:103:1
-			code := common.NoLogin
-//line cmd/project_yap.gox:104:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:107:1
+			return
+		}
 //line cmd/project_yap.gox:109:1
-			return
-		}
+		err := this.ctrl.DeleteProject(yaputil.GetCtx(ctx), id, currentUid)
+//line cmd/project_yap.gox:110:1
+		if err != nil {
 //line cmd/project_yap.gox:111:1
-		err := this.ctrl.DeleteProject(todo, id, currentUid)
+			if err == common.ErrPermissions {
 //line cmd/project_yap.gox:112:1
-		if err != nil {
+				code := common.ErrorPermissions
 //line cmd/project_yap.gox:113:1
-			if err == common.ErrPermissions {
-//line cmd/project_yap.gox:114:1
-				code := common.ErrorPermissions
-//line cmd/project_yap.gox:115:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:118:1
+				return
+			}
 //line cmd/project_yap.gox:120:1
-				return
-			}
-//line cmd/project_yap.gox:122:1
 			code := common.ErrorDelete
-//line cmd/project_yap.gox:123:1
+//line cmd/project_yap.gox:121:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:126:1
+			return
+		}
 //line cmd/project_yap.gox:128:1
-			return
-		}
-//line cmd/project_yap.gox:130:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:131:1
+//line cmd/project_yap.gox:129:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 	})
-//line cmd/project_yap.gox:139:1
+//line cmd/project_yap.gox:137:1
 	this.Put("/project/:id/is-public", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:140:1
+//line cmd/project_yap.gox:138:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:141:1
+//line cmd/project_yap.gox:139:1
 		if currentUid == "" {
-//line cmd/project_yap.gox:142:1
+//line cmd/project_yap.gox:140:1
 			code := common.NoLogin
-//line cmd/project_yap.gox:143:1
+//line cmd/project_yap.gox:141:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:148:1
+//line cmd/project_yap.gox:146:1
 			return
 		}
-//line cmd/project_yap.gox:150:1
+//line cmd/project_yap.gox:148:1
 		id := ctx.Param("id")
-//line cmd/project_yap.gox:151:1
+//line cmd/project_yap.gox:149:1
 		isPublic := ctx.Param("isPublic")
-//line cmd/project_yap.gox:152:1
-		err := this.ctrl.UpdatePublic(todo, id, isPublic, currentUid)
-//line cmd/project_yap.gox:153:1
+//line cmd/project_yap.gox:150:1
+		err := this.ctrl.UpdatePublic(yaputil.GetCtx(ctx), id, isPublic, currentUid)
+//line cmd/project_yap.gox:151:1
 		if err != nil {
-//line cmd/project_yap.gox:154:1
+//line cmd/project_yap.gox:152:1
 			if err == common.ErrPermissions {
-//line cmd/project_yap.gox:155:1
+//line cmd/project_yap.gox:153:1
 				code := common.ErrorPermissions
-//line cmd/project_yap.gox:156:1
+//line cmd/project_yap.gox:154:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:161:1
+//line cmd/project_yap.gox:159:1
 				return
 			}
-//line cmd/project_yap.gox:163:1
+//line cmd/project_yap.gox:161:1
 			code := common.ErrorUpdateState
-//line cmd/project_yap.gox:164:1
+//line cmd/project_yap.gox:162:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:169:1
+//line cmd/project_yap.gox:167:1
 			return
 		}
-//line cmd/project_yap.gox:171:1
+//line cmd/project_yap.gox:169:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:172:1
+//line cmd/project_yap.gox:170:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 	})
-//line cmd/project_yap.gox:180:1
+//line cmd/project_yap.gox:178:1
 	this.Get("/projects/list", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:181:1
+//line cmd/project_yap.gox:179:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:182:1
+//line cmd/project_yap.gox:180:1
 		isPublic := ctx.Param("isPublic")
-//line cmd/project_yap.gox:183:1
+//line cmd/project_yap.gox:181:1
 		pageIndex := ctx.Param("pageIndex")
-//line cmd/project_yap.gox:184:1
+//line cmd/project_yap.gox:182:1
 		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:185:1
+//line cmd/project_yap.gox:183:1
 		author := ctx.Param("author")
-//line cmd/project_yap.gox:186:1
+//line cmd/project_yap.gox:184:1
 		authorId := ""
-//line cmd/project_yap.gox:187:1
+//line cmd/project_yap.gox:185:1
 		if author == "" {
-//line cmd/project_yap.gox:188:1
+//line cmd/project_yap.gox:186:1
 			if currentUid == "" {
-//line cmd/project_yap.gox:189:1
+//line cmd/project_yap.gox:187:1
 				code := common.NoLogin
-//line cmd/project_yap.gox:190:1
+//line cmd/project_yap.gox:188:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:195:1
+//line cmd/project_yap.gox:193:1
 				return
 			}
-//line cmd/project_yap.gox:197:1
+//line cmd/project_yap.gox:195:1
 			authorId = currentUid
 		} else
-//line cmd/project_yap.gox:198:1
+//line cmd/project_yap.gox:196:1
 		if author == "*" {
-//line cmd/project_yap.gox:199:1
+//line cmd/project_yap.gox:197:1
 			authorId = ""
 		} else {
-//line cmd/project_yap.gox:201:1
+//line cmd/project_yap.gox:199:1
 			authorId = author
 		}
-//line cmd/project_yap.gox:203:1
+//line cmd/project_yap.gox:201:1
 		if authorId != currentUid || currentUid == "" {
-//line cmd/project_yap.gox:204:1
+//line cmd/project_yap.gox:202:1
 			isPublic = strconv.Itoa(common.PUBLIC)
 		}
-//line cmd/project_yap.gox:206:1
-		result, err := this.ctrl.ProjectList(todo, pageIndex, pageSize, isPublic, authorId)
-//line cmd/project_yap.gox:207:1
+//line cmd/project_yap.gox:204:1
+		result, err := this.ctrl.ProjectList(yaputil.GetCtx(ctx), pageIndex, pageSize, isPublic, authorId)
+//line cmd/project_yap.gox:205:1
 		if err != nil {
-//line cmd/project_yap.gox:208:1
+//line cmd/project_yap.gox:206:1
 			code := common.ErrorGetProjects
-//line cmd/project_yap.gox:209:1
+//line cmd/project_yap.gox:207:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:214:1
+//line cmd/project_yap.gox:212:1
 			return
 		}
-//line cmd/project_yap.gox:216:1
+//line cmd/project_yap.gox:214:1
 		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": result})
 	})
-//line cmd/project_yap.gox:224:1
+//line cmd/project_yap.gox:222:1
 	this.Post("/asset", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:225:1
+//line cmd/project_yap.gox:223:1
 		err := ctx.ParseMultipartForm(10 << 20)
-//line cmd/project_yap.gox:226:1
+//line cmd/project_yap.gox:224:1
 		if err != nil {
-//line cmd/project_yap.gox:227:1
+//line cmd/project_yap.gox:225:1
 			code := common.ErrorParseMultipartForm
-//line cmd/project_yap.gox:228:1
+//line cmd/project_yap.gox:226:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:231:1
+			return
+		}
 //line cmd/project_yap.gox:233:1
-			return
-		}
-//line cmd/project_yap.gox:235:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:236:1
+//line cmd/project_yap.gox:234:1
 		if currentUid == "" {
-//line cmd/project_yap.gox:237:1
+//line cmd/project_yap.gox:235:1
 			code := common.NoLogin
-//line cmd/project_yap.gox:238:1
+//line cmd/project_yap.gox:236:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:241:1
+			return
+		}
 //line cmd/project_yap.gox:243:1
-			return
-		}
-//line cmd/project_yap.gox:245:1
 		files := ctx.MultipartForm.File["files"]
-//line cmd/project_yap.gox:246:1
+//line cmd/project_yap.gox:244:1
 		name := ctx.FormValue("name")
-//line cmd/project_yap.gox:247:1
+//line cmd/project_yap.gox:245:1
 		publishState := ctx.FormValue("publishState")
-//line cmd/project_yap.gox:248:1
+//line cmd/project_yap.gox:246:1
 		previewAddress := ctx.FormValue("previewAddress")
-//line cmd/project_yap.gox:249:1
+//line cmd/project_yap.gox:247:1
 		category := ctx.FormValue("category")
-//line cmd/project_yap.gox:250:1
+//line cmd/project_yap.gox:248:1
 		assetType := ctx.FormValue("assetType")
-//line cmd/project_yap.gox:251:1
-		err = this.ctrl.UploadAsset(todo, name, files, previewAddress, currentUid, category, publishState, assetType)
-//line cmd/project_yap.gox:252:1
+//line cmd/project_yap.gox:249:1
+		err = this.ctrl.UploadAsset(yaputil.GetCtx(ctx), name, files, previewAddress, currentUid, category, publishState, assetType)
+//line cmd/project_yap.gox:250:1
 		if err != nil {
-//line cmd/project_yap.gox:253:1
+//line cmd/project_yap.gox:251:1
 			code := common.ErrorUpload
-//line cmd/project_yap.gox:254:1
+//line cmd/project_yap.gox:252:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:259:1
+//line cmd/project_yap.gox:257:1
 			return
 		}
-//line cmd/project_yap.gox:261:1
+//line cmd/project_yap.gox:259:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:262:1
+//line cmd/project_yap.gox:260:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 	})
-//line cmd/project_yap.gox:270:1
+//line cmd/project_yap.gox:268:1
 	this.Get("/asset/:id", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:271:1
+//line cmd/project_yap.gox:269:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:272:1
+//line cmd/project_yap.gox:270:1
 		id := ctx.Param("id")
-//line cmd/project_yap.gox:273:1
-		asset, err := this.ctrl.Asset(todo, id, currentUid)
-//line cmd/project_yap.gox:274:1
+//line cmd/project_yap.gox:271:1
+		asset, err := this.ctrl.Asset(yaputil.GetCtx(ctx), id, currentUid)
+//line cmd/project_yap.gox:272:1
 		if err != nil {
-//line cmd/project_yap.gox:275:1
+//line cmd/project_yap.gox:273:1
 			if err == os.ErrNotExist {
-//line cmd/project_yap.gox:276:1
+//line cmd/project_yap.gox:274:1
 				code := common.ErrorProjectNotFound
-//line cmd/project_yap.gox:277:1
+//line cmd/project_yap.gox:275:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:282:1
+//line cmd/project_yap.gox:280:1
 				return
 			}
-//line cmd/project_yap.gox:284:1
+//line cmd/project_yap.gox:282:1
 			code := common.ErrorGetAsset
-//line cmd/project_yap.gox:285:1
+//line cmd/project_yap.gox:283:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:290:1
+//line cmd/project_yap.gox:288:1
 			return
 		}
-//line cmd/project_yap.gox:292:1
+//line cmd/project_yap.gox:290:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:293:1
+//line cmd/project_yap.gox:291:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": asset})
 	})
-//line cmd/project_yap.gox:301:1
+//line cmd/project_yap.gox:299:1
 	this.Get("/assets/list", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:302:1
+//line cmd/project_yap.gox:300:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:303:1
+//line cmd/project_yap.gox:301:1
 		isPublic := ctx.Param("isPublic")
-//line cmd/project_yap.gox:304:1
+//line cmd/project_yap.gox:302:1
 		author := ctx.Param("author")
-//line cmd/project_yap.gox:306:1
+//line cmd/project_yap.gox:304:1
 		pageIndex := ctx.Param("pageIndex")
-//line cmd/project_yap.gox:307:1
+//line cmd/project_yap.gox:305:1
 		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:308:1
+//line cmd/project_yap.gox:306:1
 		assetType := ctx.Param("assetType")
-//line cmd/project_yap.gox:309:1
+//line cmd/project_yap.gox:307:1
 		category := ctx.Param("category")
-//line cmd/project_yap.gox:310:1
+//line cmd/project_yap.gox:308:1
 		isOrderByTime := ctx.Param("isOrderByTime")
-//line cmd/project_yap.gox:311:1
+//line cmd/project_yap.gox:309:1
 		isOrderByHot := ctx.Param("isOrderByHot")
-//line cmd/project_yap.gox:312:1
+//line cmd/project_yap.gox:310:1
 		authorId := ""
-//line cmd/project_yap.gox:313:1
+//line cmd/project_yap.gox:311:1
 		if author == "" {
-//line cmd/project_yap.gox:314:1
+//line cmd/project_yap.gox:312:1
 			if currentUid == "" {
-//line cmd/project_yap.gox:315:1
+//line cmd/project_yap.gox:313:1
 				code := common.NoLogin
-//line cmd/project_yap.gox:316:1
+//line cmd/project_yap.gox:314:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:321:1
+//line cmd/project_yap.gox:319:1
 				return
 			}
-//line cmd/project_yap.gox:323:1
+//line cmd/project_yap.gox:321:1
 			authorId = currentUid
 		} else
-//line cmd/project_yap.gox:324:1
+//line cmd/project_yap.gox:322:1
 		if author == "*" {
-//line cmd/project_yap.gox:325:1
+//line cmd/project_yap.gox:323:1
 			authorId = ""
 		} else {
-//line cmd/project_yap.gox:327:1
+//line cmd/project_yap.gox:325:1
 			authorId = author
 		}
-//line cmd/project_yap.gox:329:1
+//line cmd/project_yap.gox:327:1
 		if authorId != currentUid || currentUid == "" {
-//line cmd/project_yap.gox:330:1
+//line cmd/project_yap.gox:328:1
 			isPublic = strconv.Itoa(common.PUBLIC)
 		}
-//line cmd/project_yap.gox:332:1
-		result, err := this.ctrl.AssetList(todo, pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
-//line cmd/project_yap.gox:333:1
+//line cmd/project_yap.gox:330:1
+		result, err := this.ctrl.AssetList(yaputil.GetCtx(ctx), pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
+//line cmd/project_yap.gox:331:1
 		if err != nil {
-//line cmd/project_yap.gox:334:1
+//line cmd/project_yap.gox:332:1
 			code := common.ErrorGetAsset
-//line cmd/project_yap.gox:335:1
+//line cmd/project_yap.gox:333:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:340:1
+//line cmd/project_yap.gox:338:1
 			return
 		}
-//line cmd/project_yap.gox:342:1
+//line cmd/project_yap.gox:340:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:343:1
+//line cmd/project_yap.gox:341:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": result})
 	})
-//line cmd/project_yap.gox:351:1
+//line cmd/project_yap.gox:349:1
 	this.Post("/asset/:id/click-count", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:352:1
+//line cmd/project_yap.gox:350:1
 		id := ctx.Param("id")
-//line cmd/project_yap.gox:353:1
-		err := this.ctrl.IncrementAssetClickCount(todo, id)
-//line cmd/project_yap.gox:354:1
+//line cmd/project_yap.gox:351:1
+		err := this.ctrl.IncrementAssetClickCount(yaputil.GetCtx(ctx), id)
+//line cmd/project_yap.gox:352:1
 		if err != nil {
-//line cmd/project_yap.gox:355:1
+//line cmd/project_yap.gox:353:1
 			code := common.ErrClick
-//line cmd/project_yap.gox:356:1
+//line cmd/project_yap.gox:354:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:361:1
+//line cmd/project_yap.gox:359:1
 			return
 		}
-//line cmd/project_yap.gox:363:1
+//line cmd/project_yap.gox:361:1
 		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": ""})
 	})
-//line cmd/project_yap.gox:371:1
+//line cmd/project_yap.gox:369:1
 	this.Get("/assets/search", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:372:1
+//line cmd/project_yap.gox:370:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:373:1
+//line cmd/project_yap.gox:371:1
 		search := ctx.Param("search")
-//line cmd/project_yap.gox:374:1
+//line cmd/project_yap.gox:372:1
 		assetType := ctx.Param("assetType")
-//line cmd/project_yap.gox:375:1
+//line cmd/project_yap.gox:373:1
 		pageIndex := ctx.Param("pageIndex")
-//line cmd/project_yap.gox:376:1
+//line cmd/project_yap.gox:374:1
 		pageSize := ctx.Param("pageSize")
-//line cmd/project_yap.gox:377:1
-		assets, err := this.ctrl.SearchAsset(todo, search, pageIndex, pageSize, assetType, currentUid)
-//line cmd/project_yap.gox:378:1
+//line cmd/project_yap.gox:375:1
+		assets, err := this.ctrl.SearchAsset(yaputil.GetCtx(ctx), search, pageIndex, pageSize, assetType, currentUid)
+//line cmd/project_yap.gox:376:1
 		if err != nil {
-//line cmd/project_yap.gox:379:1
+//line cmd/project_yap.gox:377:1
 			code := common.ErrorGetAsset
-//line cmd/project_yap.gox:380:1
+//line cmd/project_yap.gox:378:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:385:1
+//line cmd/project_yap.gox:383:1
 			return
 		}
-//line cmd/project_yap.gox:387:1
+//line cmd/project_yap.gox:385:1
 		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": assets})
 	})
-//line cmd/project_yap.gox:395:1
+//line cmd/project_yap.gox:393:1
 	this.Delete("/asset/:id", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:396:1
+//line cmd/project_yap.gox:394:1
 		id := ctx.Param("id")
-//line cmd/project_yap.gox:397:1
+//line cmd/project_yap.gox:395:1
 		currentUid := core.ParseToken(this.ctrl, ctx)
-//line cmd/project_yap.gox:398:1
+//line cmd/project_yap.gox:396:1
 		if currentUid == "" {
-//line cmd/project_yap.gox:399:1
+//line cmd/project_yap.gox:397:1
 			code := common.NoLogin
-//line cmd/project_yap.gox:400:1
+//line cmd/project_yap.gox:398:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:405:1
+//line cmd/project_yap.gox:403:1
 			return
 		}
-//line cmd/project_yap.gox:407:1
-		err := this.ctrl.DeleteAsset(todo, id, currentUid)
-//line cmd/project_yap.gox:408:1
+//line cmd/project_yap.gox:405:1
+		err := this.ctrl.DeleteAsset(yaputil.GetCtx(ctx), id, currentUid)
+//line cmd/project_yap.gox:406:1
 		if err != nil {
-//line cmd/project_yap.gox:409:1
+//line cmd/project_yap.gox:407:1
 			if err == common.ErrPermissions {
-//line cmd/project_yap.gox:410:1
+//line cmd/project_yap.gox:408:1
 				code := common.ErrorPermissions
-//line cmd/project_yap.gox:411:1
+//line cmd/project_yap.gox:409:1
 				ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:416:1
+//line cmd/project_yap.gox:414:1
 				return
 			}
-//line cmd/project_yap.gox:418:1
+//line cmd/project_yap.gox:416:1
 			code := common.ErrorDelete
-//line cmd/project_yap.gox:419:1
+//line cmd/project_yap.gox:417:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:424:1
+//line cmd/project_yap.gox:422:1
 			return
 		}
-//line cmd/project_yap.gox:426:1
+//line cmd/project_yap.gox:424:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:427:1
+//line cmd/project_yap.gox:425:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
 	})
-//line cmd/project_yap.gox:435:1
+//line cmd/project_yap.gox:433:1
 	this.Post("/util/fmt", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:436:1
+//line cmd/project_yap.gox:434:1
 		body := ctx.FormValue("body")
-//line cmd/project_yap.gox:437:1
+//line cmd/project_yap.gox:435:1
 		imports := ctx.FormValue("import")
-//line cmd/project_yap.gox:438:1
-		res := this.ctrl.CodeFmt(todo, body, imports)
-//line cmd/project_yap.gox:439:1
+//line cmd/project_yap.gox:436:1
+		res := this.ctrl.CodeFmt(yaputil.GetCtx(ctx), body, imports)
+//line cmd/project_yap.gox:437:1
 		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": res})
 	})
-//line cmd/project_yap.gox:447:1
+//line cmd/project_yap.gox:445:1
 	this.Post("/util/to-gif", func(ctx *yap.Context) {
-//line cmd/project_yap.gox:448:1
+//line cmd/project_yap.gox:446:1
 		err := ctx.ParseMultipartForm(10 << 20)
-//line cmd/project_yap.gox:449:1
+//line cmd/project_yap.gox:447:1
 		if err != nil {
-//line cmd/project_yap.gox:450:1
+//line cmd/project_yap.gox:448:1
 			code := common.ErrorParseMultipartForm
-//line cmd/project_yap.gox:451:1
+//line cmd/project_yap.gox:449:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
+//line cmd/project_yap.gox:454:1
+			return
+		}
 //line cmd/project_yap.gox:456:1
-			return
-		}
-//line cmd/project_yap.gox:458:1
 		files := ctx.MultipartForm.File["files"]
-//line cmd/project_yap.gox:459:1
-		path, err := this.ctrl.ImagesToGif(todo, files)
-//line cmd/project_yap.gox:460:1
+//line cmd/project_yap.gox:457:1
+		path, err := this.ctrl.ImagesToGif(yaputil.GetCtx(ctx), files)
+//line cmd/project_yap.gox:458:1
 		if err != nil {
-//line cmd/project_yap.gox:461:1
+//line cmd/project_yap.gox:459:1
 			code := common.ErrorImagesToGif
-//line cmd/project_yap.gox:462:1
+//line cmd/project_yap.gox:460:1
 			ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": ""})
-//line cmd/project_yap.gox:467:1
+//line cmd/project_yap.gox:465:1
 			return
 		}
-//line cmd/project_yap.gox:469:1
+//line cmd/project_yap.gox:467:1
 		code := common.SUCCESS
-//line cmd/project_yap.gox:470:1
+//line cmd/project_yap.gox:468:1
 		ctx.Json__1(map[string]interface{}{"code": code, "msg": common.GetMsg(code), "data": path})
 	})
-//line cmd/project_yap.gox:477:1
+//line cmd/project_yap.gox:475:1
 	conf := &core.Config{}
+//line cmd/project_yap.gox:476:1
+	ctx := context.Background()
+//line cmd/project_yap.gox:477:1
+	logger := log.GetLogger()
 //line cmd/project_yap.gox:478:1
-	this.ctrl, _ = core.New(todo, conf)
+	this.ctrl, _ = core.New(ctx, conf)
 //line cmd/project_yap.gox:479:1
 	core.CasdoorConfigInit()
 //line cmd/project_yap.gox:480:1
@@ -522,7 +527,9 @@ func (this *project) MainEntry() {
 		port = ":8080"
 	}
 //line cmd/project_yap.gox:484:1
-	this.Run(port, common.CorsMiddleware)
+	logger.Printf("Listening to %s", port)
+//line cmd/project_yap.gox:485:1
+	this.Run(port, common.CorsMiddleware, common.ReqIDMiddleware)
 }
 func (this *project) Main() {
 	yap.Gopt_App_Main(this)
