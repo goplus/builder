@@ -6,7 +6,7 @@ on:
       - dev
       - ci-cd
     paths-ignore:
-      - '**/*.md'
+      - 'docs/**'
 
 jobs:
   build-and-deploy:
