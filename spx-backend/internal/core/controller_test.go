@@ -49,7 +49,7 @@ func (m *MockBucket) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *MockBucket) Reader(ctx context.Context, key string) (io.Reader, error) {
+func (m *MockBucket) exists(ctx context.Context, key string) (io.Reader, error) {
 	if _, exists := m.files[key]; !exists {
 		return nil, errors.New("file not found")
 	}
@@ -189,7 +189,7 @@ func TestSaveProject(t *testing.T) {
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}
-		_, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(project.Address, os.Getenv("QINIU_PATH")+"/"))
+		_, err = mockBucket.exists(context.Background(), strings.TrimPrefix(project.Address, os.Getenv("QINIU_PATH")+"/"))
 		if err != nil {
 			t.Error("file upload failed")
 		}
@@ -200,9 +200,9 @@ func TestSaveProject(t *testing.T) {
 			ID:       "1",
 			Name:     "testProject",
 			AuthorId: "testUser",
-			Address:  "project/5a08ffe2dd57b84f371d9a9031f1ff.png",
+			Address:  "project/5a08ffe2dd57b84f371d9a9031f1ff.zip",
 		}
-		_, _ = mockBucket.NewWriter(context.Background(), "project/5a08ffe2dd57b84f371d9a9031f1ff.png", nil)
+		_, _ = mockBucket.NewWriter(context.Background(), p1.Address, nil)
 		mockSQL.ExpectQuery("^SELECT \\* FROM project WHERE id = \\? AND status != \\?$").
 			WithArgs(p1.ID, 0).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "author_id", "address", "is_public", "status", "version", "c_time", "u_time"}).
@@ -224,11 +224,11 @@ func TestSaveProject(t *testing.T) {
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}
-		_, err = mockBucket.Reader(context.Background(), p1.Address)
+		_, err = mockBucket.exists(context.Background(), p1.Address)
 		if err == nil {
 			t.Error("file delete failed")
 		}
-		_, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(p2.Address, os.Getenv("QINIU_PATH")+"/"))
+		_, err = mockBucket.exists(context.Background(), strings.TrimPrefix(p2.Address, os.Getenv("QINIU_PATH")+"/"))
 		if err != nil {
 			t.Error("file upload failed")
 		}
@@ -583,7 +583,7 @@ func TestImagesToGif(t *testing.T) {
 		t.Fatalf("failed to create GIF: %v", err)
 	}
 
-	if _, err = mockBucket.Reader(context.Background(), strings.TrimPrefix(gifPath, os.Getenv("QINIU_PATH")+"/")); err != nil {
+	if _, err = mockBucket.exists(context.Background(), strings.TrimPrefix(gifPath, os.Getenv("QINIU_PATH")+"/")); err != nil {
 		t.Error("file upload failed")
 	}
 }
