@@ -1,8 +1,10 @@
-package common
+package main
 
 import (
 	"net/http"
 	"os"
+
+	"github.com/qiniu/x/reqid"
 )
 
 // CorsMiddleware Cors Middleware
@@ -25,5 +27,14 @@ func CorsMiddleware(h http.Handler) http.Handler {
 
 		// Invoke the next middleware or final handler
 		h.ServeHTTP(w, r)
+	})
+}
+
+// ReqIDMiddleware Cors Middleware
+func ReqIDMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		newContext := reqid.NewContextWith(r.Context(), w, r)
+		newRequest := r.WithContext(newContext)
+		h.ServeHTTP(w, newRequest)
 	})
 }

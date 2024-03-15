@@ -1,9 +1,10 @@
-package core
+package storage
 
 import (
 	"context"
-	"gocloud.dev/blob"
 	"io"
+
+	"gocloud.dev/blob"
 )
 
 type Bucket interface {
@@ -13,6 +14,10 @@ type Bucket interface {
 
 type BlobBucket struct {
 	b *blob.Bucket
+}
+
+func NewBlobBucket(b *blob.Bucket) *BlobBucket {
+	return &BlobBucket{b}
 }
 
 func (b *BlobBucket) NewWriter(ctx context.Context, key string, opts *blob.WriterOptions) (io.WriteCloser, error) {

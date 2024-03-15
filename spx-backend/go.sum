@@ -145,8 +145,8 @@ github.com/qiniu/go-cdk-driver v0.1.0/go.mod h1:oY7MEV4MZs9TLAiX0kgOTKM+BEDHZDlE
 github.com/qiniu/go-sdk/v7 v7.18.0 h1:rw4DMSQkK6NRa6IeuX32/POv/go0tRviPTVCJSiBNlk=
 github.com/qiniu/go-sdk/v7 v7.18.0/go.mod h1:nqoYCNo53ZlGA521RvRethvxUDvXKt4gtYXOwye868w=
 github.com/qiniu/x v1.10.5/go.mod h1:03Ni9tj+N2h2aKnAz+6N0Xfl8FwMEDRC2PAlxekASDs=
-github.com/qiniu/x v1.13.2 h1:mgWOfB9Rpk6AEtlBoObZVxH+b2FHSntYrxc4KX5Ta98=
-github.com/qiniu/x v1.13.2/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
+github.com/qiniu/x v1.13.8 h1:xXXD1LuTw4VaqTWxFKonm0F6XlhQNE59+vgPYP3ij8Q=
+github.com/qiniu/x v1.13.8/go.mod h1:INZ2TSWSJVWO/RuELQROERcslBwVgFG7MkTfEdaQz9E=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

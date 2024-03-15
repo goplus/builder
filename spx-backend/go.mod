@@ -9,6 +9,7 @@ require (
 	github.com/goplus/yap v0.7.2 //gop:class
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.0
+	github.com/qiniu/x v1.13.8
 	gocloud.dev v0.36.0
 	golang.org/x/crypto v0.18.0
 	golang.org/x/mod v0.14.0
@@ -26,7 +27,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/qiniu/go-sdk/v7 v7.18.0 // indirect
-	github.com/qiniu/x v1.13.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
