@@ -49,11 +49,9 @@ func (m *MockBucket) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *MockBucket) exists(ctx context.Context, key string) (io.Reader, error) {
-	if _, exists := m.files[key]; !exists {
-		return nil, errors.New("file not found")
-	}
-	return nil, nil
+func (m *MockBucket) exists(key string) bool {
+	_, exists := m.files[key]
+	return exists
 }
 
 type MockWriter struct {
@@ -189,8 +187,8 @@ func TestSaveProject(t *testing.T) {
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}
-		_, err = mockBucket.exists(context.Background(), strings.TrimPrefix(project.Address, os.Getenv("QINIU_PATH")+"/"))
-		if err != nil {
+		exists := mockBucket.exists(strings.TrimPrefix(project.Address, os.Getenv("QINIU_PATH")+"/"))
+		if !exists {
 			t.Error("file upload failed")
 		}
 	})
@@ -224,12 +222,12 @@ func TestSaveProject(t *testing.T) {
 		if err := mockSQL.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}
-		_, err = mockBucket.exists(context.Background(), p1.Address)
-		if err == nil {
+		exists := mockBucket.exists(p1.Address)
+		if exists {
 			t.Error("file delete failed")
 		}
-		_, err = mockBucket.exists(context.Background(), strings.TrimPrefix(p2.Address, os.Getenv("QINIU_PATH")+"/"))
-		if err != nil {
+		exists = mockBucket.exists(strings.TrimPrefix(p2.Address, os.Getenv("QINIU_PATH")+"/"))
+		if !exists {
 			t.Error("file upload failed")
 		}
 	})
@@ -583,7 +581,8 @@ func TestImagesToGif(t *testing.T) {
 		t.Fatalf("failed to create GIF: %v", err)
 	}
 
-	if _, err = mockBucket.exists(context.Background(), strings.TrimPrefix(gifPath, os.Getenv("QINIU_PATH")+"/")); err != nil {
+	exists := mockBucket.exists(strings.TrimPrefix(gifPath, os.Getenv("QINIU_PATH")+"/"))
+	if !exists {
 		t.Error("file upload failed")
 	}
 }
