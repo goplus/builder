@@ -1,6 +1,8 @@
 module github.com/goplus/builder/spx-backend
 
-go 1.19
+go 1.21
+
+toolchain go1.21.3
 
 require (
 	github.com/go-sql-driver/mysql v1.7.1
