@@ -1,4 +1,4 @@
-package core
+package controller
 
 import (
 	"bytes"
@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/goplus/builder/spx-backend/internal/model"
 	"gocloud.dev/blob"
 )
 
@@ -170,7 +171,7 @@ func TestSaveProject(t *testing.T) {
 	}
 
 	t.Run("create new project", func(t *testing.T) {
-		project := &Project{
+		project := &model.Project{
 			Name:     "testProject",
 			AuthorId: "testUser",
 		}
@@ -194,7 +195,7 @@ func TestSaveProject(t *testing.T) {
 	})
 
 	t.Run("update existing project", func(t *testing.T) {
-		p1 := &Project{
+		p1 := &model.Project{
 			ID:       "1",
 			Name:     "testProject",
 			AuthorId: "testUser",

@@ -3,59 +3,60 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/goplus/builder/spx-backend/internal/common"
-	"github.com/goplus/builder/spx-backend/internal/core"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/yaputil"
+	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/utils"
+	"github.com/goplus/builder/spx-backend/internal/utils/log"
+	"github.com/goplus/builder/spx-backend/internal/utils/user"
 )
 
 var (
-	ctrl *core.Controller
+	ctrl *controller.Controller
 )
 
 //Save project
 post "/project", ctx => {
 	id := ctx.FormValue("id")
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	if currentUid == "" {
-		code := common.NoLogin
+		code := NoLogin
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
 	name := ctx.FormValue("name")
 	if name == "" {
-		code := common.ErrorNameNotNull
+		code := ErrorNameNotNull
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
 	file, header, _ := ctx.FormFile("file")
-	project := &core.Project{
+	project := &model.Project{
 		ID:       id,
 		Name:     name,
 		AuthorId: currentUid,
 	}
-	res, err := ctrl.SaveProject(yaputil.getCtx(ctx), project, file, header)
+	res, err := ctrl.SaveProject(utils.getCtx(ctx), project, file, header)
 	if err != nil {
-		code := common.ErrorSave
+		code := ErrorSave
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": res,
 	}
 }
@@ -63,32 +64,32 @@ post "/project", ctx => {
 //Get project information by ID
 get "/project/:id", ctx => {
 	id := ctx.param("id")
-	currentUid := core.ParseToken(ctrl, ctx)
-	res, err := ctrl.ProjectInfo(yaputil.getCtx(ctx), id, currentUid)
+	currentUid := user.GetUid(ctx)
+	res, err := ctrl.ProjectInfo(utils.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
-			code := common.ErrorProjectNotFound
+			code := ErrorProjectNotFound
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 
 		} else {
-			code := common.ErrorPermissions
+			code := ErrorPermissions
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": res,
 	}
 }
@@ -96,87 +97,87 @@ get "/project/:id", ctx => {
 //Delete project
 delete "/project/:id", ctx => {
 	id := ctx.param("id")
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	if currentUid == "" {
-		code := common.NoLogin
+		code := NoLogin
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	err := ctrl.DeleteProject(yaputil.getCtx(ctx), id, currentUid)
+	err := ctrl.DeleteProject(utils.getCtx(ctx), id, currentUid)
 	if err != nil {
-		if err == common.ErrPermissions {
-			code := common.ErrorPermissions
+		if err == controller.ErrPermissions {
+			code := ErrorPermissions
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
 		}
-		code := common.ErrorDelete
+		code := ErrorDelete
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": "",
 	}
 }
 
 //update project isPublic
 put "/project/:id/is-public", ctx => {
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	if currentUid == "" {
-		code := common.NoLogin
+		code := NoLogin
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
 	id := ctx.param("id")
 	isPublic := ctx.param("isPublic")
-	err := ctrl.UpdatePublic(yaputil.getCtx(ctx), id, isPublic, currentUid)
+	err := ctrl.UpdatePublic(utils.getCtx(ctx), id, isPublic, currentUid)
 	if err != nil {
-		if err == common.ErrPermissions {
-			code := common.ErrorPermissions
+		if err == controller.ErrPermissions {
+			code := ErrorPermissions
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
 		}
-		code := common.ErrorUpdateState
+		code := ErrorUpdateState
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": "",
 	}
 }
 
 //Get projects
 get "/projects/list", ctx => {
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	isPublic := ctx.param("isPublic")
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
@@ -184,10 +185,10 @@ get "/projects/list", ctx => {
 	authorId := ""
 	if author == "" {
 		if currentUid == "" {
-			code := common.NoLogin
+			code := NoLogin
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
@@ -199,14 +200,14 @@ get "/projects/list", ctx => {
 		authorId = author
 	}
 	if authorId != currentUid || currentUid == "" {
-		isPublic = strconv.Itoa(common.PUBLIC)
+		isPublic = strconv.Itoa(model.PUBLIC)
 	}
-	result, err := ctrl.ProjectList(yaputil.getCtx(ctx), pageIndex, pageSize, isPublic, authorId)
+	result, err := ctrl.ProjectList(utils.getCtx(ctx), pageIndex, pageSize, isPublic, authorId)
 	if err != nil {
-		code := common.ErrorGetProjects
+		code := ErrorGetProjects
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
@@ -222,20 +223,20 @@ get "/projects/list", ctx => {
 post "/asset", ctx => {
 	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
 	if err != nil {
-		code := common.ErrorParseMultipartForm
+		code := ErrorParseMultipartForm
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	if currentUid == "" {
-		code := common.NoLogin
+		code := NoLogin
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
@@ -246,58 +247,58 @@ post "/asset", ctx => {
 	previewAddress := ctx.FormValue("previewAddress")
 	category := ctx.FormValue("category")
 	assetType := ctx.FormValue("assetType")
-	err = ctrl.UploadAsset(yaputil.getCtx(ctx), name, files, previewAddress, currentUid, category, publishState, assetType)
+	err = ctrl.UploadAsset(utils.getCtx(ctx), name, files, previewAddress, currentUid, category, publishState, assetType)
 	if err != nil {
-		code := common.ErrorUpload
+		code := ErrorUpload
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": "",
 	}
 }
 
 //Get asset by id
 get "/asset/:id", ctx => {
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	id := ctx.param("id")
-	asset, err := ctrl.Asset(yaputil.getCtx(ctx), id, currentUid)
+	asset, err := ctrl.Asset(utils.getCtx(ctx), id, currentUid)
 	if err != nil {
 		if err == os.ErrNotExist {
-			code := common.ErrorProjectNotFound
+			code := ErrorProjectNotFound
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
 		}
-		code := common.ErrorGetAsset
+		code := ErrorGetAsset
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": asset,
 	}
 }
 
 //Get assets
 get "/assets/list", ctx => {
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	isPublic := ctx.param("isPublic")
 	author := ctx.param("author")
 
@@ -310,10 +311,10 @@ get "/assets/list", ctx => {
 	authorId := ""
 	if author == "" {
 		if currentUid == "" {
-			code := common.NoLogin
+			code := NoLogin
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
@@ -325,22 +326,22 @@ get "/assets/list", ctx => {
 		authorId = author
 	}
 	if authorId != currentUid || currentUid == "" {
-		isPublic = strconv.Itoa(common.PUBLIC)
+		isPublic = strconv.Itoa(model.PUBLIC)
 	}
-	result, err := ctrl.AssetList(yaputil.getCtx(ctx), pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
+	result, err := ctrl.AssetList(utils.getCtx(ctx), pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
 	if err != nil {
-		code := common.ErrorGetAsset
+		code := ErrorGetAsset
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": result,
 	}
 }
@@ -348,12 +349,12 @@ get "/assets/list", ctx => {
 //Add asset clickCount
 post "/asset/:id/click-count", ctx => {
 	id := ctx.param("id")
-	err := ctrl.IncrementAssetClickCount(yaputil.getCtx(ctx), id)
+	err := ctrl.IncrementAssetClickCount(utils.getCtx(ctx), id)
 	if err != nil {
-		code := common.ErrClick
+		code := ErrClick
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
@@ -367,17 +368,17 @@ post "/asset/:id/click-count", ctx => {
 
 //Search assets
 get "/assets/search", ctx => {
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	search := ctx.param("search")
 	assetType := ctx.param("assetType")
 	pageIndex := ctx.param("pageIndex")
 	pageSize := ctx.param("pageSize")
-	assets, err := ctrl.SearchAsset(yaputil.getCtx(ctx), search, pageIndex, pageSize, assetType, currentUid)
+	assets, err := ctrl.SearchAsset(utils.getCtx(ctx), search, pageIndex, pageSize, assetType, currentUid)
 	if err != nil {
-		code := common.ErrorGetAsset
+		code := ErrorGetAsset
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
@@ -392,39 +393,39 @@ get "/assets/search", ctx => {
 //Delete asset
 delete "/asset/:id", ctx => {
 	id := ctx.param("id")
-	currentUid := core.ParseToken(ctrl, ctx)
+	currentUid := user.GetUid(ctx)
 	if currentUid == "" {
-		code := common.NoLogin
+		code := NoLogin
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	err := ctrl.DeleteAsset(yaputil.getCtx(ctx), id, currentUid)
+	err := ctrl.DeleteAsset(utils.getCtx(ctx), id, currentUid)
 	if err != nil {
-		if err == common.ErrPermissions {
-			code := common.ErrorPermissions
+		if err == controller.ErrPermissions {
+			code := ErrorPermissions
 			ctx.json {
 				"code": code,
-				"msg":  common.GetMsg(code),
+				"msg":  GetMsg(code),
 				"data": "",
 			}
 			return
 		}
-		code := common.ErrorDelete
+		code := ErrorDelete
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": "",
 	}
 }
@@ -433,7 +434,7 @@ delete "/asset/:id", ctx => {
 post "/util/fmt", ctx => {
 	body := ctx.FormValue("body")
 	imports := ctx.FormValue("import")
-	res := ctrl.CodeFmt(yaputil.getCtx(ctx), body, imports)
+	res := ctrl.CodeFmt(utils.getCtx(ctx), body, imports)
 	ctx.json {
 		"code": 200,
 		"msg":  "ok",
@@ -445,41 +446,44 @@ post "/util/fmt", ctx => {
 post "/util/to-gif", ctx => {
 	err := ctx.ParseMultipartForm(10 << 20) // Max 10 MB files
 	if err != nil {
-		code := common.ErrorParseMultipartForm
+		code := ErrorParseMultipartForm
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
 	files := ctx.MultipartForm.File["files"]
-	path, err := ctrl.ImagesToGif(yaputil.getCtx(ctx), files)
+	path, err := ctrl.ImagesToGif(utils.getCtx(ctx), files)
 	if err != nil {
-		code := common.ErrorImagesToGif
+		code := ErrorImagesToGif
 		ctx.json {
 			"code": code,
-			"msg":  common.GetMsg(code),
+			"msg":  GetMsg(code),
 			"data": "",
 		}
 		return
 	}
-	code := common.SUCCESS
+	code := SUCCESS
 	ctx.json {
 		"code": code,
-		"msg":  common.GetMsg(code),
+		"msg":  GetMsg(code),
 		"data": path,
 	}
 }
 
-conf := &core.Config{}
-ctx := context.Background()
+var err error
+conf := &controller.Config{}
 logger := log.GetLogger()
-ctrl, _ = core.New(ctx, conf)
-core.CasdoorConfigInit()
+ctrl, err = controller.New(context.Background(), conf)
+if err != nil {
+	logger.Fatalln("New controller failed:", err)
+}
+user.CasdoorConfigInit()
 port := os.Getenv("PORT")
 if port == "" {
 	port = ":8080"
 }
 logger.Printf("Listening to %s", port)
-run port, common.CorsMiddleware, common.ReqIDMiddleware
+run port, CorsMiddleware, ReqIDMiddleware

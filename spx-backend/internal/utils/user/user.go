@@ -1,4 +1,4 @@
-package core
+package user
 
 import (
 	"fmt"
@@ -9,6 +9,9 @@ import (
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
+
+// TODO: use better error definition
+var ErrNotExist = os.ErrNotExist
 
 type UserClaim casdoorsdk.Claims
 type UserInfo casdoorsdk.User
@@ -25,8 +28,8 @@ func CasdoorConfigInit() {
 	casdoorsdk.InitConfig(endPoint, clientID, clientSecret, certificate, organizationName, applicationName)
 }
 
-// GetUser return author by token
-func (ctrl *Controller) GetUser(token string) (userId string, err error) {
+// parseToken parses given token & returns user info
+func parseToken(token string) (userId string, err error) {
 	claim, err := casdoorsdk.ParseJwtToken(token)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -36,19 +39,19 @@ func (ctrl *Controller) GetUser(token string) (userId string, err error) {
 	return
 }
 
-func GetToken(ctx *yap.Context) string {
+func getToken(ctx *yap.Context) string {
 	tokenCookie := ctx.Request.Header.Get("Authorization")
 	// 删除 token 字符串中的 "Bearer " 前缀
 	token := strings.TrimPrefix(tokenCookie, "Bearer ")
 	return token
 }
 
-func ParseToken(ctrl *Controller, ctx *yap.Context) string {
-	token := GetToken(ctx)
+func GetUid(ctx *yap.Context) string {
+	token := getToken(ctx)
 	if token == "" {
 		return ""
 	}
-	userId, err := ctrl.GetUser(token)
+	userId, err := parseToken(token)
 	if err != nil {
 		fmt.Printf("get user error:%v", err)
 		return ""

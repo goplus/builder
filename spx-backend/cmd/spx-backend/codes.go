@@ -1,13 +1,5 @@
-package common
+package main
 
-const (
-	PERSONAL = 0
-	PUBLIC   = 1
-
-	SPRITE     = "0"
-	BACKGROUND = "1"
-	SOUND      = "2"
-)
 const (
 	SUCCESS              = 200
 	NoLogin              = 401

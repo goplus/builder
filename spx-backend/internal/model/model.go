@@ -1,4 +1,4 @@
-package common
+package model
 
 import (
 	"database/sql"
@@ -7,7 +7,46 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
+
+const (
+	PERSONAL = 0
+	PUBLIC   = 1
+
+	SPRITE     = "0"
+	BACKGROUND = "1"
+	SOUND      = "2"
+)
+
+type AssetAddressData map[string]string
+
+type Asset struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	AuthorId       string    `json:"authorId"`
+	Category       string    `json:"category"`
+	IsPublic       int       `json:"isPublic"` // 1:Public state 0: Personal state
+	Address        string    `json:"address"`  // The partial path of the asset's location, excluding the host. like 'sprite/xxx.svg'
+	PreviewAddress string    `json:"previewAddress"`
+	AssetType      string    `json:"assetType"` // 0：sprite，1：background，2：sound
+	ClickCount     string    `json:"clickCount"`
+	Status         int       `json:"status"` // 1:Normal state 0:Deleted status
+	CTime          time.Time `json:"cTime"`
+	UTime          time.Time `json:"uTime"`
+}
+
+type Project struct {
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	AuthorId string    `json:"authorId"`
+	Address  string    `json:"address"`
+	IsPublic int       `json:"isPublic"`
+	Status   int       `json:"status"`
+	Version  int       `json:"version"`
+	Ctime    time.Time `json:"cTime"`
+	Utime    time.Time `json:"uTime"`
+}
 
 type FilterCondition struct {
 	Column    string      // column name
@@ -232,4 +271,64 @@ func QueryPageBySQL[T any](db *sql.DB, sqlQuery string, pageIndexParam string, p
 		TotalPage:  totalPage,
 		Data:       data,
 	}, nil
+}
+
+func AddAsset(db *sql.DB, c *Asset) (string, error) {
+	sqlStr := "insert into asset (name,author_id , address,preview_address,is_public,status,asset_type,category, c_time,u_time) values (?, ?, ?,?,?,?, ?,?,?, ?)"
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.PreviewAddress, c.IsPublic, c.Status, c.AssetType, c.Category, time.Now(), time.Now())
+	if err != nil {
+		fmt.Printf("failed to add Asset : %v", err)
+		return "", err
+	}
+	idInt, err := res.LastInsertId()
+	return strconv.Itoa(int(idInt)), err
+}
+
+func UpdateProject(db *sql.DB, c *Project) error {
+	stmt, err := db.Prepare("UPDATE project SET version =?, name = ?,address = ? ,u_time = ? WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(c.Version, c.Name, c.Address, time.Now(), c.ID)
+	return err
+}
+func UpdateProjectIsPublic(db *sql.DB, id string, isPublic string) error {
+	query := "UPDATE project SET is_public = ? WHERE id = ?"
+	_, err := db.Exec(query, isPublic, id)
+	if err != nil {
+		fmt.Printf("failed to exec update ispublic : %v", err)
+		return err
+	}
+	return nil
+}
+func AddProject(db *sql.DB, c *Project) (string, error) {
+	sqlStr := "insert into project (name,author_id , address,is_public, status,c_time,u_time) values (?, ?,?, ?, ?,?, ?)"
+	res, err := db.Exec(sqlStr, c.Name, c.AuthorId, c.Address, c.IsPublic, c.Status, c.Ctime, c.Utime)
+	if err != nil {
+		fmt.Printf("failed to exec add project : %v", err)
+		return "", err
+	}
+	idInt, err := res.LastInsertId()
+	return strconv.Itoa(int(idInt)), err
+}
+
+func DeleteProjectById(db *sql.DB, id string) error {
+	query := "UPDATE project SET status = ? WHERE id = ?"
+	_, err := db.Exec(query, 0, id)
+	if err != nil {
+		fmt.Printf("failed to exec delete project id = %v : %v", id, err)
+		return err
+	}
+	return nil
+}
+func DeleteAssetById(db *sql.DB, id string) error {
+	query := "UPDATE asset SET status = ? WHERE id = ?"
+	_, err := db.Exec(query, 0, id)
+	if err != nil {
+		fmt.Printf("failed to exec delete asset id = %v : %v", id, err)
+		return err
+	}
+	return nil
 }
