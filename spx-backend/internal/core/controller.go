@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -470,19 +471,12 @@ func (ctrl *Controller) ImagesToGif(ctx context.Context, files []*multipart.File
 		LoopCount: 0, // 循环次数，0表示无限循环
 	}
 
-	// 保存GIF文件
-	f, err := os.Create("output.gif")
-	if err != nil {
-		fmt.Printf("failed to create GIF file: %v", err)
-		return "", err
-	}
-	defer f.Close()
-	if err := gif.EncodeAll(f, outGif); err != nil {
+	var gifData bytes.Buffer
+	if err := gif.EncodeAll(&gifData, outGif); err != nil {
 		fmt.Printf("failed to encode GIF: %v", err)
 		return "", err
 	}
-	f.Seek(0, 0)
-	path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("GIF_PATH"), f, "output.gif")
+	path, err := UploadFile(ctx, ctrl.bucket, os.Getenv("GIF_PATH"), &gifData, "output.gif")
 	if err != nil {
 		fmt.Printf("failed to UploadFile: %v", err)
 		return "", err
