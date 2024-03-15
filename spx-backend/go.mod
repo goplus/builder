@@ -13,7 +13,10 @@ require (
 	golang.org/x/tools v0.17.0
 )
 
-require github.com/casdoor/casdoor-go-sdk v0.36.0
+require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/casdoor/casdoor-go-sdk v0.36.0
+)
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
