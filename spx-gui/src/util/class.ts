@@ -11,19 +11,6 @@ import { AssetBase } from '@/class/asset-base'
 import localforage from 'localforage'
 
 /**
- * Check if an object is an instance of a class.
- * @param obj The object to check.
- * @param ctor The constructor of the class.
- * @returns True if the object is an instance of the class, false otherwise.
- */
-export function isInstance<T>(obj: any, ctor: { new (...args: any[]): T }): obj is T {
-  if (Array.isArray(obj)) {
-    return obj.every((item) => isInstance(item, ctor))
-  }
-  return obj instanceof ctor
-}
-
-/**
  * Get the storage for the asset.
  * @param storeName the name of the storage.
  * @returns the storage

@@ -9,7 +9,7 @@
 
 import type { Costume, SpriteConfig } from '@/interface/file'
 import { AssetBase } from './asset-base'
-import { isInstance, getAllFromLocal } from '@/util/class'
+import { getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
 
 /**
@@ -265,12 +265,5 @@ export class Sprite extends AssetBase {
    */
   get path() {
     return Sprite.ROOT_PATH + this.name
-  }
-
-  /**
-   * Check if an object is an instance of a sprite.
-   */
-  static isInstance(obj: any): boolean {
-    return isInstance(obj, Sprite)
   }
 }
