@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/goplus/builder/spx-backend/internal/utils/user"
 	"github.com/qiniu/x/reqid"
 )
 
@@ -37,4 +38,9 @@ func ReqIDMiddleware(h http.Handler) http.Handler {
 		newRequest := r.WithContext(newContext)
 		h.ServeHTTP(w, newRequest)
 	})
+}
+
+// UserMiddleware parse & save user info to request context
+func UserMiddleware(h http.Handler) http.Handler {
+	return user.UserMiddleware(h)
 }

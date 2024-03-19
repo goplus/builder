@@ -62,7 +62,7 @@ func formatGoMod(file string, data []byte) ([]byte, error) {
 }
 
 // FmtCode Format code
-func FmtCode(body, fiximport string) (res *FormatResponse) {
+func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 	fs, err := splitFiles([]byte(body))
 	if err != nil {
 		fmtErr := extractErrorInfo(err.Error())
@@ -72,7 +72,6 @@ func FmtCode(body, fiximport string) (res *FormatResponse) {
 		}
 		return
 	}
-	fixImports := fiximport != ""
 	for _, f := range fs.files {
 		switch {
 		case path.Ext(f) == ".go":
