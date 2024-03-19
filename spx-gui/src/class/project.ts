@@ -150,18 +150,17 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
 
-    // Without `as` TypeScript will complain about private methods.
-    const project = reactive(this) as Project
-    project.watchToSaveLocal()
+    const project = reactive(this)
+    project._watchToSaveLocal()
     return project
   }
 
-  private watchToSaveLocal() {
+  _watchToSaveLocal() {
     const saveLocal = debounce(async () => {
       // Record the current modified item id for each modification.
       localStorage.setItem('project', this.id)
-      await this.removeLocal()
-      await this.saveLocal()
+      await this._removeLocal()
+      await this._saveLocal()
     })
 
     watch(this, saveLocal, { deep: true })
@@ -170,7 +169,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   /**
    * Save project to storage.
    */
-  private async saveLocal() {
+  async _saveLocal() {
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
       await fs.writeFile(key, value)
@@ -189,7 +188,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   /**
    * Remove project from storage.
    */
-  private async removeLocal() {
+  async _removeLocal() {
     if (this._temporaryId !== null) {
       await Project.removeLocalProject(this._temporaryId)
     }
