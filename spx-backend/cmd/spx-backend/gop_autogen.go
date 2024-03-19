@@ -48,7 +48,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:28:1
 		ok, msg := project.ValidateAddProject(); !ok {
 //line cmd/spx-backend/project_yap.gox:29:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:30:1
 			return
 		}
@@ -91,7 +91,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:51:1
 		ok, msg := updates.ValidateUpdateProject(); !ok {
 //line cmd/spx-backend/project_yap.gox:52:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:53:1
 			return
 		}
@@ -163,7 +163,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:99:1
 			if err != nil {
 //line cmd/spx-backend/project_yap.gox:100:1
-				replyWithError(ctx, errorInvalidArgs)
+				replyWithCode(ctx, errorInvalidArgs)
 //line cmd/spx-backend/project_yap.gox:101:1
 				return
 			}
@@ -181,7 +181,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:109:1
 			if u == nil {
 //line cmd/spx-backend/project_yap.gox:110:1
-				replyWithError(ctx, errorUnauthorized)
+				replyWithCode(ctx, errorUnauthorized)
 //line cmd/spx-backend/project_yap.gox:111:1
 				return
 			}
@@ -205,7 +205,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:122:1
 		ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:123:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:124:1
 			return
 		}
@@ -246,7 +246,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:146:1
 		ok, msg := asset.ValidateAddAsset(); !ok {
 //line cmd/spx-backend/project_yap.gox:147:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:148:1
 			return
 		}
@@ -287,7 +287,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:168:1
 		ok, msg := updates.ValidateUpdateAsset(); !ok {
 //line cmd/spx-backend/project_yap.gox:169:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:170:1
 			return
 		}
@@ -336,7 +336,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:199:1
 			if err != nil {
 //line cmd/spx-backend/project_yap.gox:200:1
-				replyWithError(ctx, errorInvalidArgs)
+				replyWithCode(ctx, errorInvalidArgs)
 //line cmd/spx-backend/project_yap.gox:201:1
 				return
 			}
@@ -361,7 +361,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:211:1
 			if err != nil {
 //line cmd/spx-backend/project_yap.gox:212:1
-				replyWithError(ctx, errorInvalidArgs)
+				replyWithCode(ctx, errorInvalidArgs)
 //line cmd/spx-backend/project_yap.gox:213:1
 				return
 			}
@@ -379,7 +379,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:221:1
 			if u == nil {
 //line cmd/spx-backend/project_yap.gox:222:1
-				replyWithError(ctx, errorUnauthorized)
+				replyWithCode(ctx, errorUnauthorized)
 //line cmd/spx-backend/project_yap.gox:223:1
 				return
 			}
@@ -410,7 +410,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:237:1
 		ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:238:1
-			replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:239:1
 			return
 		}

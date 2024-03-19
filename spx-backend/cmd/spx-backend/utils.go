@@ -37,15 +37,15 @@ type errorPayload struct {
 	Msg  string `json:"msg"`
 }
 
-func replyWithError(ctx *yap.Context, code errorCode) {
+func replyWithCode(ctx *yap.Context, code errorCode) {
 	msg := msgs[errorUnknown]
 	if errMsg, ok := msgs[code]; ok {
 		msg = errMsg
 	}
-	replyWithErrorMsg(ctx, code, msg)
+	replyWithCodeMsg(ctx, code, msg)
 }
 
-func replyWithErrorMsg(ctx *yap.Context, code errorCode, msg string) {
+func replyWithCodeMsg(ctx *yap.Context, code errorCode, msg string) {
 	intCode := int(code)
 	httpStatus := intCode / 100
 	ctx.JSON(httpStatus, &errorPayload{
@@ -61,7 +61,7 @@ func replyWithData(ctx *yap.Context, data any) {
 func ensureUser(ctx *yap.Context) (u *user.User, ok bool) {
 	u, ok = user.GetUser(utils.GetCtx(ctx))
 	if !ok {
-		replyWithError(ctx, errorUnauthorized)
+		replyWithCode(ctx, errorUnauthorized)
 	}
 	return
 }
@@ -70,12 +70,12 @@ func parseJson(ctx *yap.Context, target any) (ok bool) {
 	b, err := io.ReadAll(ctx.Request.Body)
 	defer ctx.Request.Body.Close()
 	if err != nil {
-		replyWithError(ctx, errorUnknown) // TODO: more precise error
+		replyWithCode(ctx, errorUnknown) // TODO: more precise error
 		return false
 	}
 	err = json.Unmarshal(b, target)
 	if err != nil {
-		replyWithError(ctx, errorInvalidArgs)
+		replyWithCode(ctx, errorInvalidArgs)
 		return false
 	}
 	return true
@@ -85,16 +85,16 @@ func parseJson(ctx *yap.Context, target any) (ok bool) {
 func handlerInnerError(ctx *yap.Context, err error) {
 	switch {
 	case errors.Is(err, controller.ErrNotExist):
-		replyWithError(ctx, errorNotFound)
+		replyWithCode(ctx, errorNotFound)
 	case errors.Is(err, controller.ErrUnauthorized):
-		replyWithError(ctx, errorUnauthorized)
+		replyWithCode(ctx, errorUnauthorized)
 	case errors.Is(err, controller.ErrForbidden):
-		replyWithError(ctx, errorForbidden)
+		replyWithCode(ctx, errorForbidden)
 	case errors.Is(err, model.ErrExisted):
-		replyWithError(ctx, errorInvalidArgs)
+		replyWithCode(ctx, errorInvalidArgs)
 	case errors.Is(err, model.ErrNotExist):
-		replyWithError(ctx, errorNotFound)
+		replyWithCode(ctx, errorNotFound)
 	default:
-		replyWithError(ctx, errorUnknown)
+		replyWithCode(ctx, errorUnknown)
 	}
 }

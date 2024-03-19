@@ -26,7 +26,7 @@ post "/project", ctx => {
 	}
 	project.Owner = u.Name
 	if ok, msg := project.ValidateAddProject(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 	res, err := ctrl.AddProject(utils.getCtx(ctx), project)
@@ -49,7 +49,7 @@ put "/project/:owner/:name", ctx => {
 		return
 	}
 	if ok, msg := updates.ValidateUpdateProject(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 	res, err := ctrl.UpdateProject(utils.getCtx(ctx), owner, name, updates)
@@ -97,7 +97,7 @@ get "/projects/list", ctx => {
 	if isPublicInput := ctx.param("isPublic"); isPublicInput != "" {
 		isPublicInt, err := strconv.Atoi(isPublicInput)
 		if err != nil {
-			replyWithError(ctx, errorInvalidArgs)
+			replyWithCode(ctx, errorInvalidArgs)
 			return
 		}
 		isPublic := model.IsPublic(isPublicInt)
@@ -107,7 +107,7 @@ get "/projects/list", ctx => {
 	switch ownerInput := ctx.param("owner"); ownerInput {
 	case "":
 		if u == nil {
-			replyWithError(ctx, errorUnauthorized)
+			replyWithCode(ctx, errorUnauthorized)
 			return
 		}
 		params.Owner = &u.Name
@@ -120,7 +120,7 @@ get "/projects/list", ctx => {
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
 	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
 	if ok, msg := params.Validate(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 
@@ -144,7 +144,7 @@ post "/asset", ctx => {
 	}
 	asset.Owner = u.Name
 	if ok, msg := asset.ValidateAddAsset(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 	res, err := ctrl.AddAsset(utils.getCtx(ctx), asset)
@@ -166,7 +166,7 @@ put "/asset/:id", ctx => {
 		return
 	}
 	if ok, msg := updates.ValidateUpdateAsset(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 	res, err := ctrl.UpdateAsset(utils.getCtx(ctx), id, updates)
@@ -197,7 +197,7 @@ get "/assets/list", ctx => {
 	if assetTypeInput := ctx.param("assetType"); assetTypeInput != "" {
 		assetTypeInt, err := strconv.Atoi(assetTypeInput)
 		if err != nil {
-			replyWithError(ctx, errorInvalidArgs)
+			replyWithCode(ctx, errorInvalidArgs)
 			return
 		}
 		assetType := model.AssetType(assetTypeInt)
@@ -209,7 +209,7 @@ get "/assets/list", ctx => {
 	if isPublicInput := ctx.param("isPublic"); isPublicInput != "" {
 		isPublicInt, err := strconv.Atoi(isPublicInput)
 		if err != nil {
-			replyWithError(ctx, errorInvalidArgs)
+			replyWithCode(ctx, errorInvalidArgs)
 			return
 		}
 		isPublic := model.IsPublic(isPublicInt)
@@ -219,7 +219,7 @@ get "/assets/list", ctx => {
 	switch ownerInput := ctx.param("owner"); ownerInput {
 	case "":
 		if u == nil {
-			replyWithError(ctx, errorUnauthorized)
+			replyWithCode(ctx, errorUnauthorized)
 			return
 		}
 		params.Owner = &u.Name
@@ -235,7 +235,7 @@ get "/assets/list", ctx => {
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
 	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
 	if ok, msg := params.Validate(); !ok {
-		replyWithErrorMsg(ctx, errorInvalidArgs, msg)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
 
