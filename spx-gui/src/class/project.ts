@@ -20,6 +20,8 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 import type { AssetBase } from './asset-base'
+import { reactive, watch } from 'vue'
+import { debounce } from '@/util/global'
 
 export enum ProjectSource {
   local = 'local',
@@ -147,6 +149,53 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.source = ProjectSource.local
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
+
+    // Without `as` TypeScript will complain about private methods.
+    const project = reactive(this) as Project
+    project.watchToSaveLocal()
+    return project
+  }
+
+  private watchToSaveLocal() {
+    const saveLocal = debounce(async () => {
+      // Record the current modified item id for each modification.
+      localStorage.setItem('project', this.id)
+      await this.removeLocal()
+      await this.saveLocal()
+    })
+
+    watch(this, saveLocal, { deep: true })
+  }
+
+  /**
+   * Save project to storage.
+   */
+  private async saveLocal() {
+    const dirPath = await this.dirPath
+    for (const [key, value] of Object.entries(dirPath)) {
+      await fs.writeFile(key, value)
+    }
+    const summary: ProjectSummary = {
+      id: this.id,
+      name: this.name,
+      version: this.version,
+      source: this.source,
+      cTime: this.cTime,
+      uTime: new Date().toISOString()
+    }
+    await fs.writeFile(this.summaryPath, summary)
+  }
+
+  /**
+   * Remove project from storage.
+   */
+  private async removeLocal() {
+    if (this._temporaryId !== null) {
+      await Project.removeLocalProject(this._temporaryId)
+    }
+    if (this._id !== null) {
+      await Project.removeLocalProject(this._id)
+    }
   }
 
   async load(
@@ -271,37 +320,6 @@ export class Project implements ProjectDetail, ProjectSummary {
     defaultSprite.config.costumes[0].x = 55
     defaultSprite.config.costumes[0].y = 50
     this.sprite.add(defaultSprite)
-  }
-
-  /**
-   * Save project to storage.
-   */
-  async saveLocal() {
-    const dirPath = await this.dirPath
-    for (const [key, value] of Object.entries(dirPath)) {
-      await fs.writeFile(key, value)
-    }
-    const summary: ProjectSummary = {
-      id: this.id,
-      name: this.name,
-      version: this.version,
-      source: this.source,
-      cTime: this.cTime,
-      uTime: new Date().toISOString()
-    }
-    await fs.writeFile(this.summaryPath, summary)
-  }
-
-  /**
-   * Remove project from storage.
-   */
-  async removeLocal() {
-    if (this._temporaryId !== null) {
-      await Project.removeLocalProject(this._temporaryId)
-    }
-    if (this._id !== null) {
-      await Project.removeLocalProject(this._id)
-    }
   }
 
   /**

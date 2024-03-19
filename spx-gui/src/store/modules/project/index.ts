@@ -7,35 +7,14 @@
  * @Description: The store of project.
  */
 
-import { ref, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
-import { debounce } from '@/util/global'
 import { useUserStore } from '@/store'
 
 export const useProjectStore = defineStore('project', () => {
-  /**
-   * The project. You can use `project.value` to get it.
-   */
-  const project = ref(new Project())
-
-  // TODO: Consider moving the autosave behaviour into the class project in the future, when non-spx-gui scenarios like widgets are supported.
-
-  /**
-   * Remove original project and save the project to storage.
-   */
-  const saveLocal = debounce(async () => {
-    console.log('project changed', project.value)
-    // Record the current modified item id for each modification.
-    localStorage.setItem('project', project.value.id)
-    await project.value.removeLocal()
-    await project.value.saveLocal()
-  })
-
-  /**
-   * while project changed, save it to storage automatically.
-   */
-  watch(() => project.value, saveLocal, { deep: true })
+  // We use `shallowRef` here because `new Project()` itself is reactive.
+  const project = shallowRef(new Project())
 
   /**
    * Load project.
