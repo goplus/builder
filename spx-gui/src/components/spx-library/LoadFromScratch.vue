@@ -1,98 +1,107 @@
 <template>
   <n-spin :show="isAssetInfosLoading">
-  <div class="file-upload-container">
-    <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
-      {{ $t('scratch.upload') }}
-    </button>
-    <input
-      ref="fileUploadInput"
-      type="file"
-      accept=".sb3"
-      style="display: none"
-      @change="handleScratchFileUpload"
-    />
-    <button
-      v-if="selectedAssets.length != 0"
-      class="custom-import-btn"
-      @click="importSelectedAssetsToProject"
-    >
-    {{ $t('scratch.importToSpx') }}
-    </button>
-    <button
-      v-if="selectedAssets.length != 0"
-      class="custom-import-btn"
-      @click="uploadSelectedAssetsToPrivateLibrary"
-    >
-      {{ $t('scratch.uploadToPrivateLibrary') }}
-    </button>
-  </div>
-  <div class="asset-detail-info">
-    <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item
-        v-for="assetFileDetail in assetFileDetails"
-        :key="assetFileDetail.url"
-        class="file-row"
-        :style="{
-          border: selectedAssets.includes(assetFileDetail)
-            ? `3px solid ${commonColor}`
-            : '3px solid #eeeeee'
-        }"
-        @click="chooseAssets(assetFileDetail)"
+    <div class="file-upload-container">
+      <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
+        {{ $t('scratch.upload') }}
+      </button>
+      <input
+        ref="fileUploadInput"
+        type="file"
+        accept=".sb3"
+        style="display: none"
+        @change="handleScratchFileUpload"
+      />
+      <button
+        v-if="selectedAssets.length != 0"
+        class="custom-import-btn"
+        @click="importSelectedAssetsToProject"
       >
-        <n-input
-          v-model:value="assetFileDetail.name"
-          placeholder="assetFileDetail.name"
-          size="tiny"
-          style="width: 80%; margin-top: 2px"
-          @click.stop="() => {}"
+        {{ $t('scratch.importToSpx') }}
+      </button>
+      <button
+        v-if="selectedAssets.length != 0"
+        class="custom-import-btn"
+        @click="uploadSelectedAssetsToPrivateLibrary"
+      >
+        {{ $t('scratch.uploadToPrivateLibrary') }}
+      </button>
+    </div>
+    <div class="asset-detail-info">
+      <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
+        <n-grid-item
+          v-for="assetFileDetail in assetFileDetails"
+          :key="assetFileDetail.url"
+          class="file-row"
+          :style="{
+            border: selectedAssets.includes(assetFileDetail)
+              ? `3px solid ${commonColor}`
+              : '3px solid #eeeeee'
+          }"
+          @click="chooseAssets(assetFileDetail)"
         >
-          <template #suffix>
-            .
-            <span style="color: #aa9b9b">
-              {{ assetFileDetail.extension }}
-            </span>
-          </template>
-        </n-input>
-        <n-image
-          v-if="isImage(assetFileDetail)"
-          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
-          preview-disabled
-          width="80"
-          height="80"
-          :src="assetFileDetail.url"
-          :fallback-src="error"
-        />
-        <n-image
-          v-else
-          preview-disabled
-          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
-          width="80"
-          height="80"
-          :src="SoundsImport"
-          :fallback-src="error"
-          @click.stop="playAudio(assetFileDetail.url)"
-        />
-        <div class="file-btn">
-          <n-button
-            type="primary"
-            secondary
-            style="height: 24px; padding: 6px"
-            @click.stop="downloadAsset(assetFileDetail)"
+          <n-input
+            v-model:value="assetFileDetail.name"
+            placeholder="assetFileDetail.name"
+            size="tiny"
+            style="width: 80%; margin-top: 2px"
+            @click.stop="() => {}"
           >
-            {{ $t('scratch.download') }}
-          </n-button>
-        </div>
-      </n-grid-item>
-    </n-grid>
-  </div>
-</n-spin>
+            <template #suffix>
+              .
+              <span style="color: #aa9b9b">
+                {{ assetFileDetail.extension }}
+              </span>
+            </template>
+          </n-input>
+          <n-image
+            v-if="isImage(assetFileDetail)"
+            style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
+            preview-disabled
+            width="80"
+            height="80"
+            :src="assetFileDetail.url"
+            :fallback-src="error"
+          />
+          <n-image
+            v-else
+            preview-disabled
+            style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
+            width="80"
+            height="80"
+            :src="SoundsImport"
+            :fallback-src="error"
+            @click.stop="playAudio(assetFileDetail.url)"
+          />
+          <div class="file-btn">
+            <n-button
+              type="primary"
+              secondary
+              style="height: 24px; padding: 6px"
+              @click.stop="downloadAsset(assetFileDetail)"
+            >
+              {{ $t('scratch.download') }}
+            </n-button>
+          </div>
+        </n-grid-item>
+      </n-grid>
+    </div>
+  </n-spin>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
-import { type MessageApi, NButton, NGrid, NGridItem, NImage, NInput, useMessage, NSpin } from 'naive-ui'
+import {
+  type MessageApi,
+  NButton,
+  NGrid,
+  NGridItem,
+  NImage,
+  NInput,
+  useMessage,
+  NSpin
+} from 'naive-ui'
 import { Sprite } from '@/class/sprite'
 import { useSpriteStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
@@ -102,7 +111,7 @@ import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
 import { publishAsset, PublishState } from '@/api/asset'
 import { AssetType } from '@/constant/constant'
-import { useI18n } from "vue-i18n"
+import { useI18n } from 'vue-i18n'
 
 // ----------props & emit------------------------------------
 
@@ -244,11 +253,10 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
       PublishState.PrivateLibrary,
       undefined,
       undefined
-    );
+    )
   }
   showImportSuccessMessage()
 }
-
 
 /**
  * @description: Import sound file to current project

@@ -57,7 +57,7 @@ const initFormat = async () => {
 }
 
 export const register = () => {
-console.log("register")
+  console.log('register')
   monaco.languages.register({
     id: 'spx'
   })

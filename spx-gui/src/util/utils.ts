@@ -5,7 +5,7 @@ export const isImage = (url: string): boolean => {
 }
 
 export const isSound = (url: string): boolean => {
-    const extension = url.split('.').pop()
-    if (!extension) return false
-    return ['wav', 'mp3', 'ogg'].includes(extension)
-  }
+  const extension = url.split('.').pop()
+  if (!extension) return false
+  return ['wav', 'mp3', 'ogg'].includes(extension)
+}

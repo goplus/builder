@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, h, ref} from 'vue'
+import { computed, h, ref } from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/store/modules/language'
@@ -28,7 +28,7 @@ import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
-import { useNetworkStore } from "@/store/modules/network";
+import { useNetworkStore } from '@/store/modules/network'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -65,7 +65,7 @@ const importOptions = computed(() => [
   }
 ])
 
-const saveOptions = computed(() =>[
+const saveOptions = computed(() => [
   {
     label: t('topMenu.local'),
     key: 'SaveLocal'
@@ -166,7 +166,7 @@ const menuOptions = [
           trigger: 'hover',
           options: saveOptions.value,
           onSelect: handleSelectImport,
-          style: dropdownStyle,
+          style: dropdownStyle
         },
         {
           default: () =>
@@ -321,28 +321,27 @@ const handleSelectImport = (key: string | number) => {
     input.accept = '.zip'
     input.click()
     input.onchange = async (e: any) => {
-      const file = e.target.files[0];
-      await projectStore.loadFromZip(file);
-    };
-  }
-  else if (key === 'Load') {
+      const file = e.target.files[0]
+      await projectStore.loadFromZip(file)
+    }
+  } else if (key === 'Load') {
     showModal.value = true
-  }
-  else if (key === 'SaveLocal') {
-    projectStore.project.download();
-  }
-  else if (key === 'SaveCloud') {
+  } else if (key === 'SaveLocal') {
+    projectStore.project.download()
+  } else if (key === 'SaveCloud') {
     const { message } = createDiscreteApi(['message'])
-    projectStore.project.save().then((res) => {
-      message.success(res)
-    }).catch((err) => {
-      console.error(err)
-      if (err instanceof Error) {
-        message.error(err.message)
-      }
-    })
-  }
-  else if(key === 'Blank') {
+    projectStore.project
+      .save()
+      .then((res) => {
+        message.success(res)
+      })
+      .catch((err) => {
+        console.error(err)
+        if (err instanceof Error) {
+          message.error(err.message)
+        }
+      })
+  } else if (key === 'Blank') {
     projectStore.loadBlankProject()
   }
 }

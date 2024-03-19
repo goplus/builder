@@ -43,11 +43,8 @@
       </n-grid-item>
       <!-- E Layout Sprite List -->
       <!-- S Layout Stage List -->
-      <n-grid-item
-        class="asset-library-right"
-        span="1"
-      >
-      <StageEdit />
+      <n-grid-item class="asset-library-right" span="1">
+        <StageEdit />
       </n-grid-item>
       <!-- E Layout Stage List -->
     </n-grid>
@@ -152,7 +149,7 @@ watchEffect(() => {
   .asset-library-right {
     @include libraryRightBase;
     background: white;
-    border-left:2px dashed #8f98a1
+    border-left: 2px dashed #8f98a1;
   }
   .asset-library-right-click {
     @include libraryRightBase;

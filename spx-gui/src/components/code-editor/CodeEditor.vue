@@ -16,7 +16,7 @@ import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
-import { useEditorStore } from "@/store";
+import { useEditorStore } from '@/store'
 
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -47,17 +47,15 @@ onMounted(() => {
     value: prop.modelValue, // set the initial value of the editor
     theme: 'myTransparentTheme',
     ...editorOptions,
-    ...prop.editorOptions,
+    ...prop.editorOptions
   })
 
   // register format action
   editor.addAction({
     id: 'format',
     label: 'Format Code',
-    keybindings: [
-      monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL,
-    ],
-    contextMenuGroupId: "navigation",
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL],
+    contextMenuGroupId: 'navigation',
     run: format
   })
 

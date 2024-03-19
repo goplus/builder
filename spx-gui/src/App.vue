@@ -25,70 +25,64 @@
 </template>
 
 <script setup lang="ts">
-import {
-  NConfigProvider,
-  NMessageProvider,
-  NLayout,
-  NLayoutHeader,
-  NLayoutContent,
-} from "naive-ui";
-import TopMenu from "@/components/top-menu/TopMenu.vue";
-import "@/assets/theme";
+import { NConfigProvider, NMessageProvider, NLayout, NLayoutHeader, NLayoutContent } from 'naive-ui'
+import TopMenu from '@/components/top-menu/TopMenu.vue'
+import '@/assets/theme'
 /**
  * @description: Override spx-gui theme
  * @return {*}
  */
 const themeOverrides = {
   common: {
-    primaryColor: "#FF81A7",
-    fontWeightStrong: "600",
+    primaryColor: '#FF81A7',
+    fontWeightStrong: '600'
   },
   Button: {
-    color: "#FF81A7FF",
-    colorHover: "#FF7CB5FF",
-    colorPressed: "#F1518AFF",
-    colorFocus: "#F1518AFF",
-    colorDisabled: "#0000",
-    textColorHover: "#FFFFFFFF",
-    textColorPressed: "#FFFFFFFF",
-    textColorFocus: "#FFFFFFFF",
-    textColor: "rgba(255, 255, 255, 1)",
-    borderHover: "1px solid #FF7CB5FF",
-    borderPressed: "1px solid #F1518AFF",
-    borderFocus: "1px solid #F1518AFF",
-    borderRadiusTiny: "25px",
-    borderRadiusSmall: "25px",
-    borderRadiusMedium: "25px",
-    borderRadiusLarge: "25px",
-    border: "1px solid #FF81A7",
+    color: '#FF81A7FF',
+    colorHover: '#FF7CB5FF',
+    colorPressed: '#F1518AFF',
+    colorFocus: '#F1518AFF',
+    colorDisabled: '#0000',
+    textColorHover: '#FFFFFFFF',
+    textColorPressed: '#FFFFFFFF',
+    textColorFocus: '#FFFFFFFF',
+    textColor: 'rgba(255, 255, 255, 1)',
+    borderHover: '1px solid #FF7CB5FF',
+    borderPressed: '1px solid #F1518AFF',
+    borderFocus: '1px solid #F1518AFF',
+    borderRadiusTiny: '25px',
+    borderRadiusSmall: '25px',
+    borderRadiusMedium: '25px',
+    borderRadiusLarge: '25px',
+    border: '1px solid #FF81A7'
   },
   Input: {
-    borderHover: "1px solid #FF81A7",
-    borderRadius:"25px",
-    borderFocus: "1px solid #FF81A7",
+    borderHover: '1px solid #FF81A7',
+    borderRadius: '25px',
+    borderFocus: '1px solid #FF81A7'
   },
   Dropdown: {
-    color: "#fff",
-    optionTextColor: "rgb(51, 54, 57)",
-    dividerColor: "rgb(239, 239, 245)",
-    prefixColor: "rgb(51, 54, 57)",
-    suffixColor: "rgb(51, 54, 57)",
-    optionColorActive: "rgba(24, 160, 88, 0.1)",
-    borderRadius: "15px",
-    optionTextColorActive: "#18a058",
-    optionTextColorChildActive: "#18a058",
-    optionColorHoverInverted: "#18a058",
-    optionColorActiveInverted: "#18a058",
+    color: '#fff',
+    optionTextColor: 'rgb(51, 54, 57)',
+    dividerColor: 'rgb(239, 239, 245)',
+    prefixColor: 'rgb(51, 54, 57)',
+    suffixColor: 'rgb(51, 54, 57)',
+    optionColorActive: 'rgba(24, 160, 88, 0.1)',
+    borderRadius: '15px',
+    optionTextColorActive: '#18a058',
+    optionTextColorChildActive: '#18a058',
+    optionColorHoverInverted: '#18a058',
+    optionColorActiveInverted: '#18a058'
   },
   Switch: {
-    railColorActive: "#FF81A7",
-  },
-};
+    railColorActive: '#FF81A7'
+  }
+}
 </script>
 
 <style lang="scss">
-@import "./assets/fonts/font.css";
-@import "./assets/theme.scss";
+@import './assets/fonts/font.css';
+@import './assets/theme.scss';
 
 #spx {
   height: 100%;
@@ -96,7 +90,12 @@ const themeOverrides = {
 }
 
 body {
-  font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
+  font-family:
+    ChauPhilomeneOne,
+    AlibabaPuHuiT,
+    Cherry Bomb,
+    Heyhoo,
+    sans-serif;
 }
 
 :lang(en) {

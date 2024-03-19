@@ -66,7 +66,7 @@ export const initI18n = async (app: App) => {
         cloud: 'Cloud',
         blank: 'Blank',
         video: 'Video',
-        app: 'App',
+        app: 'App'
       },
       editor: {
         format: 'format'
@@ -78,7 +78,7 @@ export const initI18n = async (app: App) => {
       },
       stage: {
         stage: 'Stage',
-        stop:'Stop',
+        stop: 'Stop',
         sprite: 'Sprite',
         spriteHolder: 'Please Input Name',
         show: 'Show',
@@ -95,30 +95,30 @@ export const initI18n = async (app: App) => {
         name: 'Name',
         costumes: 'Costumes',
         submit: 'Submit',
-        category:'Category',
-        public:'IsPublic',
-        inputName:'Please input sprite name',
-        selectCategory:'Please choose sprite category',
-        uploadLimited:'A single image less than 2 MB'
+        category: 'Category',
+        public: 'IsPublic',
+        inputName: 'Please input sprite name',
+        selectCategory: 'Please choose sprite category',
+        uploadLimited: 'A single image less than 2 MB'
       },
       scratch: {
         import: 'Import Assets from Scratch',
         upload: 'Upload .sb3 Files',
-        importToSpx:'Import to My Project',
+        importToSpx: 'Import to My Project',
         uploadToPrivateLibrary: 'Upload to private library',
-        download:'Download'
+        download: 'Download'
       },
-      category:{
-        animals:'Animals',
-        people:'People',
-        sports:'Sports',
-        food:'Food',
-        fantasy:'Fantasy'
+      category: {
+        animals: 'Animals',
+        people: 'People',
+        sports: 'Sports',
+        food: 'Food',
+        fantasy: 'Fantasy'
       },
-      publicState:{
-        notPublish:'Not publish',
-        private:'Only publish to private asset library',
-        public:'Publish to public asset library'
+      publicState: {
+        notPublish: 'Not publish',
+        private: 'Only publish to private asset library',
+        public: 'Publish to public asset library'
       },
       project: {
         local: 'Local',
@@ -129,16 +129,18 @@ export const initI18n = async (app: App) => {
         private: 'Private',
         delete: 'Delete',
         search: 'Search',
-        nothing: 'There\'s nothing.',
+        nothing: "There's nothing.",
         publicStatus: 'status: Public',
         privateStatus: 'status: Private',
         create: 'create',
         update: 'update',
         removeTitle: 'Remove Project',
-        removeCloudContent: 'Are you sure you want to remove this project ({name}) from cloud? ' +
-            'This action cannot be undone.(This project will be deleted from local if it is existed as well)',
-        removeLocalContent: 'Are you sure you want to remove this project ({name}) from local? ' +
-            'This action cannot be undone.(Deleting local projects does not affect cloud projects)',
+        removeCloudContent:
+          'Are you sure you want to remove this project ({name}) from cloud? ' +
+          'This action cannot be undone.(This project will be deleted from local if it is existed as well)',
+        removeLocalContent:
+          'Are you sure you want to remove this project ({name}) from local? ' +
+          'This action cannot be undone.(Deleting local projects does not affect cloud projects)',
         removeMessage: 'Delete the current project and reload a blank project.',
         changeStatusTitle: 'Change Project Status',
         changeStatusContent: 'Are you sure to change the status of this project ({name})?',
@@ -147,13 +149,13 @@ export const initI18n = async (app: App) => {
         yes: 'Yes',
         no: 'No',
         localProject: 'Local Project',
-        cloudProjectInLocal: 'Cloud Project In Local',
+        cloudProjectInLocal: 'Cloud Project In Local'
       },
-      library:{
+      library: {
         search: 'Search',
         public: 'public',
         private: 'private',
-        empty:'There\'s nothing',
+        empty: "There's nothing"
       },
       layer: {
         up: 'up',
@@ -172,7 +174,7 @@ export const initI18n = async (app: App) => {
         update: 'update name successfully!',
         save: 'save successfully!',
         import: 'import successfully!',
-        updateNameError: 'Cannot update asset name. Name is invalid! ',
+        updateNameError: 'Cannot update asset name. Name is invalid! '
       }
     },
     zh: {
@@ -229,7 +231,7 @@ export const initI18n = async (app: App) => {
         local: '本地',
         cloud: '云端',
         video: '视频',
-        app: '应用',
+        app: '应用'
       },
       editor: {
         format: '格式化'
@@ -241,7 +243,7 @@ export const initI18n = async (app: App) => {
       },
       stage: {
         stage: '舞台',
-        stop:'停止',
+        stop: '停止',
         sprite: '角色',
         spriteHolder: '请输入名字',
         show: '显示',
@@ -258,30 +260,30 @@ export const initI18n = async (app: App) => {
         name: '精灵名称',
         costumes: '上传造型',
         submit: '提交',
-        category:'精灵类别',
-        public:'是否公开',
-        inputName:'请输入精灵名称',
-        selectCategory:'请选择类别',
-        uploadLimited:'单张图片小于 2 MB'
+        category: '精灵类别',
+        public: '是否公开',
+        inputName: '请输入精灵名称',
+        selectCategory: '请选择类别',
+        uploadLimited: '单张图片小于 2 MB'
       },
       scratch: {
         import: '导入 Scratch 素材',
         upload: '上传 .sb3 文件',
-        importToSpx:'导入至项目',
+        importToSpx: '导入至项目',
         uploadToPrivateLibrary: '上传到私人素材库',
-        download:'下载'
+        download: '下载'
       },
-      category:{
-        animals:'动物',
-        people:'人物',
-        sports:'体育',
-        food:'食物',
-        fantasy:'幻想'
+      category: {
+        animals: '动物',
+        people: '人物',
+        sports: '体育',
+        food: '食物',
+        fantasy: '幻想'
       },
-      publicState:{
+      publicState: {
         notPublish: '不上传',
         private: '仅上传到个人素材库',
-        public: '上传到公开素材库',
+        public: '上传到公开素材库'
       },
       project: {
         local: '本地',
@@ -298,8 +300,10 @@ export const initI18n = async (app: App) => {
         create: '创建时间',
         update: '更新时间',
         removeTitle: '移除项目',
-        removeCloudContent: '您确定要从云端移除这个项目（{name}）吗？此操作无法撤销。（如果此项目也存在于本地，则本地项目也将删除）',
-        removeLocalContent: '您确定要从本地移除这个项目（{name}）吗？此操作无法撤销。（删除本地项目不会影响云端项目）',
+        removeCloudContent:
+          '您确定要从云端移除这个项目（{name}）吗？此操作无法撤销。（如果此项目也存在于本地，则本地项目也将删除）',
+        removeLocalContent:
+          '您确定要从本地移除这个项目（{name}）吗？此操作无法撤销。（删除本地项目不会影响云端项目）',
         removeMessage: '删除当前项目并重新加载一个空项目',
         changeStatusTitle: '更改项目状态',
         changeStatusContent: '您确定要更改此项目（{name}）的状态吗？',
@@ -308,13 +312,13 @@ export const initI18n = async (app: App) => {
         yes: '是',
         no: '否',
         localProject: '本地项目',
-        cloudProjectInLocal: '本地的云端项目',
+        cloudProjectInLocal: '本地的云端项目'
       },
-      library:{
+      library: {
         search: '搜索',
         public: '公开',
         private: '私有',
-        empty: '空空如也',
+        empty: '空空如也'
       },
       layer: {
         up: '上移',
@@ -333,7 +337,7 @@ export const initI18n = async (app: App) => {
         update: '名称更新成功！',
         save: '保存成功！',
         import: '导入成功！',
-        updateNameError: '无法更新资源名称。名称无效！',
+        updateNameError: '无法更新资源名称。名称无效！'
       }
     }
   }

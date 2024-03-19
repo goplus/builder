@@ -3,15 +3,14 @@ export const audioDataService = {
   copyDuration: 0,
 
   setCopyData(data: AudioBuffer, duration: number) {
-    this.copyData = data;
-    this.copyDuration = duration;
+    this.copyData = data
+    this.copyDuration = duration
   },
 
   getCopyData(): { data: AudioBuffer | null; duration: number } {
     return {
       data: this.copyData,
-      duration: this.copyDuration,
-    };
+      duration: this.copyDuration
+    }
   }
-
 }

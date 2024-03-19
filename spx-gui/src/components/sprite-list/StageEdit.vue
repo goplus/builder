@@ -7,8 +7,11 @@
  * @Description: 
 -->
 <template>
-  <div class="stage-list" >
-    <div :class="isEntryCodeActive ? 'stage-list-title-click' : 'stage-list-title'"  @click="enableEditEntryCode">
+  <div class="stage-list">
+    <div
+      :class="isEntryCodeActive ? 'stage-list-title-click' : 'stage-list-title'"
+      @click="enableEditEntryCode"
+    >
       {{ $t('stage.stage') }}
     </div>
     <BackdropList />

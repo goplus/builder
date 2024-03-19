@@ -10,7 +10,7 @@ import { service } from '@/axios'
 import type { Asset, PageAssetResponse } from '@/interface/library.ts' // Adjust the import paths as needed
 import type { ResponseData } from '@/axios'
 import type { AxiosResponse } from 'axios'
-import { PublicStatus } from "@/class/project";
+import { PublicStatus } from '@/class/project'
 
 export enum PublishState {
   NotPublished = -1,
@@ -54,8 +54,8 @@ export function getAssetList({
   params.append('pageIndex', pageIndex.toString())
   params.append('pageSize', pageSize.toString())
   params.append('assetType', assetType.toString())
-  
-  if (isPublic!=null) {
+
+  if (isPublic != null) {
     params.append('isPublic', isPublic.toString())
   }
   if (category) {

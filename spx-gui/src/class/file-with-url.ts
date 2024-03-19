@@ -8,14 +8,14 @@
  */
 export default class FileWithUrl extends File {
   // @ts-ignore
-  url?: string;
+  url?: string
 
   constructor(file: File, url: string) {
     super([file], file.name, {
       type: file.type,
-      lastModified: file.lastModified,
-    });
+      lastModified: file.lastModified
+    })
 
-    this.url = url;
+    this.url = url
   }
 }

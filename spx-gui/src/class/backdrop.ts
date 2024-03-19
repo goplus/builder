@@ -82,7 +82,6 @@ export class Backdrop extends AssetBase {
     return await getAllFromLocal(Backdrop)
   }
 
-
   /**
    * @constructor create a new backdrop
    * @param {string} name the name of the backdrop

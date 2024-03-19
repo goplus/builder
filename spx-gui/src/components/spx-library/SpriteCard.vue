@@ -26,7 +26,7 @@
     <!-- E Component First Static Costume Card -->
     <!-- S Component Gif Costume Card -->
     <n-image
-      v-if="assetImageGifUrl !== '' "
+      v-if="assetImageGifUrl !== ''"
       v-show="isHovering"
       preview-disabled
       width="100"
@@ -79,10 +79,10 @@ const assetImageUrl = computed(() => {
 })
 
 // get multi costume obj to emit
-const assetMultiCostumeObj = computed(()=>{
+const assetMultiCostumeObj = computed(() => {
   let addressObj = {}
   if (props.assetInfo.address != null) {
-      addressObj = JSON.parse(props.assetInfo.address)
+    addressObj = JSON.parse(props.assetInfo.address)
   }
   return addressObj
 })
@@ -108,9 +108,9 @@ const shouldShowGif = computed(() => isHovering.value && assetImageGifUrl.value 
 const addAssetToListFunc = (
   id: number,
   name: string,
-  assetMultiCostumeObj: {[key: string]: string}
+  assetMultiCostumeObj: { [key: string]: string }
 ) => {
-    emits('add-asset', id, name, assetMultiCostumeObj)
+  emits('add-asset', id, name, assetMultiCostumeObj)
 }
 </script>
 

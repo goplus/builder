@@ -1,7 +1,7 @@
 <template>
-  <n-card id="project-card" hoverable :class="{'current': isCurrent}">
+  <n-card id="project-card" hoverable :class="{ current: isCurrent }">
     <template #cover>
-      <img :src="defaultProjectImage" alt="">
+      <img :src="defaultProjectImage" alt="" />
     </template>
 
     <template #header>
@@ -9,11 +9,7 @@
         <span class="title-text">
           {{ project.name || project.id }}
         </span>
-        <n-tag
-          round size="small"
-          :bordered="false"
-          type="primary"
-        >
+        <n-tag round size="small" :bordered="false" type="primary">
           <span v-if="isUserOwn">{{ $t('project.own') }}</span>
           <span v-else>{{ project.authorId }}</span>
           <template #icon>
@@ -27,12 +23,7 @@
 
     <div class="info">
       <p v-if="isLocal">
-        <n-tag
-          v-if="isTemporary"
-          round size="small"
-          :bordered="false"
-          type="primary"
-        >
+        <n-tag v-if="isTemporary" round size="small" :bordered="false" type="primary">
           <span>{{ $t('project.localProject') }}</span>
           <template #icon>
             <n-icon size="12">
@@ -49,33 +40,19 @@
           </template>
         </n-tag>
       </p>
-      <p
-          v-if="!isLocal"
-          :style="statusStyle"
-          class="public-status"
-      >
+      <p v-if="!isLocal" :style="statusStyle" class="public-status">
         {{ publicStatus ? $t('project.publicStatus') : $t('project.privateStatus') }}
       </p>
-      <p class="create-time">{{ $t('project.create') }}: {{ formatTime(project.cTime) }} </p>
-      <p class="update-time">{{ $t('project.update') }}: {{ formatTime(project.uTime) }} </p>
+      <p class="create-time">{{ $t('project.create') }}: {{ formatTime(project.cTime) }}</p>
+      <p class="update-time">{{ $t('project.update') }}: {{ formatTime(project.uTime) }}</p>
     </div>
 
     <template #action>
       <div class="action">
-        <n-button
-          quaternary
-          size="small"
-          class="load-btn"
-          @click="load"
-        >
+        <n-button quaternary size="small" class="load-btn" @click="load">
           {{ $t('project.load') }}
         </n-button>
-        <n-button
-          v-if="isUserOwn"
-          quaternary
-          size="small"
-          @click="remove"
-        >
+        <n-button v-if="isUserOwn" quaternary size="small" @click="remove">
           {{ $t('project.delete') }}
         </n-button>
         <n-button
@@ -95,11 +72,11 @@
 <script lang="ts" setup>
 import { type ProjectSummary, Project, ProjectSource, PublicStatus } from '@/class/project'
 import { computed, defineProps, ref } from 'vue'
-import { useProjectStore, useUserStore } from '@/store';
+import { useProjectStore, useUserStore } from '@/store'
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined, CloudOutlined, HomeOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
-import { useI18n } from "vue-i18n"
+import { useI18n } from 'vue-i18n'
 
 const { project } = defineProps<{
   project: ProjectSummary
@@ -133,7 +110,9 @@ const load = async () => {
 const remove = () => {
   dialog.warning({
     title: t('project.removeTitle'),
-    content: t(isLocal.value ? 'project.removeLocalContent' : 'project.removeCloudContent', { name: project.name || project.id }),
+    content: t(isLocal.value ? 'project.removeLocalContent' : 'project.removeCloudContent', {
+      name: project.name || project.id
+    }),
     positiveText: t('project.yes'),
     negativeText: t('project.no'),
     onPositiveClick: async () => {
@@ -160,7 +139,10 @@ const updateProjectIsPublic = async () => {
       positiveText: t('project.yes'),
       negativeText: t('project.no'),
       onPositiveClick: async () => {
-        await Project.updateProjectIsPublic(project.id, publicStatus.value ? PublicStatus.private : PublicStatus.public)
+        await Project.updateProjectIsPublic(
+          project.id,
+          publicStatus.value ? PublicStatus.private : PublicStatus.public
+        )
         message.success(t('project.successMessage'))
         publicStatus.value = !publicStatus.value
       }
@@ -219,7 +201,12 @@ const formatTime = (time: string) => {
 
   p {
     margin: 0;
-    font-family: ChauPhilomeneOne, AlibabaPuHuiT, Cherry Bomb, Heyhoo, sans-serif;
+    font-family:
+      ChauPhilomeneOne,
+      AlibabaPuHuiT,
+      Cherry Bomb,
+      Heyhoo,
+      sans-serif;
     text-align: left;
 
     &.title {
@@ -276,7 +263,7 @@ const formatTime = (time: string) => {
 
     p {
       font-size: 13px;
-      color: #9E9E9E;
+      color: #9e9e9e;
     }
   }
 
@@ -285,7 +272,7 @@ const formatTime = (time: string) => {
 
     .n-button {
       border-radius: 15px;
-      color: #FF4081;
+      color: #ff4081;
     }
   }
 }

@@ -12,34 +12,34 @@
  * If there is no url, it will be created.
  */
 export function addFileUrl() {
-    Object.defineProperty(File.prototype, 'url', {
-        get() {
-            if (!this._url) this._url = URL.createObjectURL(this)
-            return this._url
-        },
-        set(url) {
-            this._url = url
-        }
-    })
+  Object.defineProperty(File.prototype, 'url', {
+    get() {
+      if (!this._url) this._url = URL.createObjectURL(this)
+      return this._url
+    },
+    set(url) {
+      this._url = url
+    }
+  })
 }
 
 /**
  * Map file type to mime type.
  */
 const ext2mime: Record<string, string> = {
-    'png': 'image/png',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'gif': 'image/gif',
-    'svg': 'image/svg+xml',
-    'webp': 'image/webp',
-    'avif': 'image/avif',
-    'mp3': 'audio/mpeg',
-    'wav': 'audio/wav',
-    'ogg': 'audio/ogg',
-    'json': 'application/json',
-    'spx': 'text/plain',
-    'gmx': 'text/plain',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  svg: 'image/svg+xml',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  json: 'application/json',
+  spx: 'text/plain',
+  gmx: 'text/plain'
 }
 
 /**
@@ -56,15 +56,19 @@ export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'unknown'
  * @param name the file name
  * @returns the content
  */
-export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string = 'untitled'): RawFile => {
-    switch (type) {
-        case 'application/json':
-            return JSON.parse(new TextDecoder().decode(arr))
-        case 'text/plain':
-            return new TextDecoder().decode(arr)
-        default:
-            return new File([arr], name, { type })
-    }
+export const arrayBuffer2Content = (
+  arr: ArrayBuffer,
+  type: string,
+  name: string = 'untitled'
+): RawFile => {
+  switch (type) {
+    case 'application/json':
+      return JSON.parse(new TextDecoder().decode(arr))
+    case 'text/plain':
+      return new TextDecoder().decode(arr)
+    default:
+      return new File([arr], name, { type })
+  }
 }
 
 /**
@@ -74,17 +78,17 @@ export const arrayBuffer2Content = (arr: ArrayBuffer, type: string, name: string
  * @returns the array buffer
  */
 export const content2ArrayBuffer = async (content: any, type: string): Promise<ArrayBuffer> => {
-    const reader = new FileReader()
-    switch (type) {
-        case 'application/json':
-            return new TextEncoder().encode(JSON.stringify(content))
-        case 'text/plain':
-            return new TextEncoder().encode(content)
-        default:
-            reader.readAsArrayBuffer(content)
-            await new Promise(resolve => reader.onload = resolve)
-            return reader.result as ArrayBuffer
-    }
+  const reader = new FileReader()
+  switch (type) {
+    case 'application/json':
+      return new TextEncoder().encode(JSON.stringify(content))
+    case 'text/plain':
+      return new TextEncoder().encode(content)
+    default:
+      reader.readAsArrayBuffer(content)
+      await new Promise((resolve) => (reader.onload = resolve))
+      return reader.result as ArrayBuffer
+  }
 }
 
 /**
@@ -93,41 +97,46 @@ export const content2ArrayBuffer = async (content: any, type: string): Promise<A
  * @returns the prefix of the directory
  */
 export function getPrefix(dir: Record<string, any>) {
-    const keys = Object.keys(dir);
-    let prefix = keys[0];
-    for (let i = 1; i < keys.length; i++) {
-        while (!keys[i].startsWith(prefix)) {
-            prefix = prefix.substring(0, prefix.lastIndexOf('/'));
-        }
+  const keys = Object.keys(dir)
+  let prefix = keys[0]
+  for (let i = 1; i < keys.length; i++) {
+    while (!keys[i].startsWith(prefix)) {
+      prefix = prefix.substring(0, prefix.lastIndexOf('/'))
     }
-    if (!prefix) return '';
-    return prefix.endsWith('/') ? prefix : prefix + '/';
+  }
+  if (!prefix) return ''
+  return prefix.endsWith('/') ? prefix : prefix + '/'
 }
 
-import type { DirPath, RawDir, RawFile } from "@/types/file"
-import JSZip from "jszip"
+import type { DirPath, RawDir, RawFile } from '@/types/file'
+import JSZip from 'jszip'
 
 /**
  * Generate a file from content.
  */
 export function genFile(content: string, type: string, name: string) {
-    return new File([new Blob([content], { type })], name)
+  return new File([new Blob([content], { type })], name)
 }
 
 export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
-    const directory: DirPath = {}
-    for (const [path, value] of Object.entries(dir)) {
-        const type = typeof value === 'string' ? 'text/plain' : typeof value === 'object' && value instanceof File ? value.type : 'application/json'
-        const content = await content2ArrayBuffer(value, type)
-        directory[path] = {
-            content,
-            path,
-            type,
-            size: content.byteLength,
-            modifyTime: (value instanceof File) ? new Date(value.lastModified) : new Date()
-        }
+  const directory: DirPath = {}
+  for (const [path, value] of Object.entries(dir)) {
+    const type =
+      typeof value === 'string'
+        ? 'text/plain'
+        : typeof value === 'object' && value instanceof File
+          ? value.type
+          : 'application/json'
+    const content = await content2ArrayBuffer(value, type)
+    directory[path] = {
+      content,
+      path,
+      type,
+      size: content.byteLength,
+      modifyTime: value instanceof File ? new Date(value.lastModified) : new Date()
     }
-    return directory
+  }
+  return directory
 }
 
 /**
@@ -163,33 +172,33 @@ export async function convertRawDirToDirPath(dir: RawDir): Promise<DirPath> {
  *         └─ index.json
  */
 export async function getDirPathFromZip(zipFile: File): Promise<DirPath> {
-    const zip = await JSZip.loadAsync(zipFile);
-    const dir: DirPath = {};
-    const prefix = getPrefix(zip.files)
-    for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
-        if (zipEntry.dir || relativePath.split('/').pop()?.startsWith(".")) continue
-        const path = relativePath.replace(prefix, '')
-        const content = await zipEntry.async('arraybuffer')
-        const type = getMimeFromExt(relativePath.split('.').pop()!)
-        const size = content.byteLength
-        const modifyTime = zipEntry.date || new Date();
-        dir[path] = {
-            content,
-            path,
-            type,
-            size,
-            modifyTime
-        }
+  const zip = await JSZip.loadAsync(zipFile)
+  const dir: DirPath = {}
+  const prefix = getPrefix(zip.files)
+  for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+    if (zipEntry.dir || relativePath.split('/').pop()?.startsWith('.')) continue
+    const path = relativePath.replace(prefix, '')
+    const content = await zipEntry.async('arraybuffer')
+    const type = getMimeFromExt(relativePath.split('.').pop()!)
+    const size = content.byteLength
+    const modifyTime = zipEntry.date || new Date()
+    dir[path] = {
+      content,
+      path,
+      type,
+      size,
+      modifyTime
     }
-    return dir
+  }
+  return dir
 }
 
 const zipFileValue = (key: string, value: RawFile): [string, string | File] => {
-    if (typeof value === 'string' || value instanceof File) {
-        return [key, value]
-    } else {
-        return [key, JSON.stringify(value)]
-    }
+  if (typeof value === 'string' || value instanceof File) {
+    return [key, value]
+  } else {
+    return [key, JSON.stringify(value)]
+  }
 }
 
 /**
@@ -198,15 +207,15 @@ const zipFileValue = (key: string, value: RawFile): [string, string | File] => {
  * @returns the zip
  */
 export async function convertRawDirToZip(dir: RawDir): Promise<Blob> {
-    const zip = new JSZip();
+  const zip = new JSZip()
 
-    const prefix = getPrefix(dir)
-    // eslint-disable-next-line prefer-const
-    for (let [path, value] of Object.entries(dir)) {
-        prefix && (path = path.replace(prefix, ''));
-        zip.file(...zipFileValue(path, value));
-    }
+  const prefix = getPrefix(dir)
+  // eslint-disable-next-line prefer-const
+  for (let [path, value] of Object.entries(dir)) {
+    prefix && (path = path.replace(prefix, ''))
+    zip.file(...zipFileValue(path, value))
+  }
 
-    const content = await zip.generateAsync({ type: 'blob' })
-    return content
+  const content = await zip.generateAsync({ type: 'blob' })
+  return content
 }
