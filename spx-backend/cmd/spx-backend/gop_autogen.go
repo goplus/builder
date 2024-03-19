@@ -33,27 +33,27 @@ func (this *project) MainEntry() {
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:23:1
-		project := &model.Project{}
+		params := &controller.AddProjectParams{}
 //line cmd/spx-backend/project_yap.gox:24:1
 		if
 //line cmd/spx-backend/project_yap.gox:24:1
-		ok = parseJson(ctx, project); !ok {
+		ok = parseJson(ctx, params); !ok {
 //line cmd/spx-backend/project_yap.gox:25:1
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:27:1
-		project.Owner = u.Name
+		params.Owner = u.Name
 //line cmd/spx-backend/project_yap.gox:28:1
 		if
 //line cmd/spx-backend/project_yap.gox:28:1
-		ok, msg := project.ValidateAddProject(); !ok {
+		ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:29:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:30:1
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:32:1
-		res, err := this.ctrl.AddProject(utils.GetCtx(ctx), project)
+		res, err := this.ctrl.AddProject(utils.GetCtx(ctx), params)
 //line cmd/spx-backend/project_yap.gox:33:1
 		if err != nil {
 //line cmd/spx-backend/project_yap.gox:34:1
@@ -78,7 +78,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:46:1
 		name := ctx.Param("name")
 //line cmd/spx-backend/project_yap.gox:47:1
-		updates := &model.Project{}
+		updates := &controller.UpdateProjectParams{}
 //line cmd/spx-backend/project_yap.gox:48:1
 		if
 //line cmd/spx-backend/project_yap.gox:48:1
@@ -89,7 +89,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:51:1
 		if
 //line cmd/spx-backend/project_yap.gox:51:1
-		ok, msg := updates.ValidateUpdateProject(); !ok {
+		ok, msg := updates.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:52:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:53:1
@@ -231,27 +231,27 @@ func (this *project) MainEntry() {
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:141:1
-		asset := &model.Asset{}
+		params := &controller.AddAssetParams{}
 //line cmd/spx-backend/project_yap.gox:142:1
 		if
 //line cmd/spx-backend/project_yap.gox:142:1
-		ok = parseJson(ctx, asset); !ok {
+		ok = parseJson(ctx, params); !ok {
 //line cmd/spx-backend/project_yap.gox:143:1
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:145:1
-		asset.Owner = u.Name
+		params.Owner = u.Name
 //line cmd/spx-backend/project_yap.gox:146:1
 		if
 //line cmd/spx-backend/project_yap.gox:146:1
-		ok, msg := asset.ValidateAddAsset(); !ok {
+		ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:147:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:148:1
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:150:1
-		res, err := this.ctrl.AddAsset(utils.GetCtx(ctx), asset)
+		res, err := this.ctrl.AddAsset(utils.GetCtx(ctx), params)
 //line cmd/spx-backend/project_yap.gox:151:1
 		if err != nil {
 //line cmd/spx-backend/project_yap.gox:152:1
@@ -274,7 +274,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:163:1
 		id := ctx.Param("id")
 //line cmd/spx-backend/project_yap.gox:164:1
-		updates := &model.Asset{}
+		updates := &controller.UpdateAssetParams{}
 //line cmd/spx-backend/project_yap.gox:165:1
 		if
 //line cmd/spx-backend/project_yap.gox:165:1
@@ -285,7 +285,7 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:168:1
 		if
 //line cmd/spx-backend/project_yap.gox:168:1
-		ok, msg := updates.ValidateUpdateAsset(); !ok {
+		ok, msg := updates.Validate(); !ok {
 //line cmd/spx-backend/project_yap.gox:169:1
 			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:170:1

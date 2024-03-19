@@ -96,55 +96,6 @@ type Asset struct {
 	UTime time.Time `json:"uTime"`
 }
 
-// ValidateAddAsset validates project content, when it is used as input for adding new project
-// TODO: we should define standalone struct for inputs & implement validation on inputs' struct
-func (a *Asset) ValidateAddAsset() (ok bool, msg string) {
-	if a.ID != "" {
-		return false, "id not expected"
-	}
-	if a.DisplayName == "" {
-		// TODO: more limitations
-		return false, "displayName expected"
-	}
-	if a.Owner == "" {
-		return false, "owner expected"
-	}
-	if a.Category == "" {
-		return false, "category expected"
-	}
-	if a.IsPublic != Personal && a.IsPublic != Public {
-		return false, "invalid isPublic"
-	}
-	if a.AssetType != AssetTypeBackdrop && a.AssetType != AssetTypeSound && a.AssetType != AssetTypeSprite {
-		return false, "invalid assetType"
-	}
-	if a.ClickCount != 0 {
-		return false, "clickCount not expected"
-	}
-	return true, ""
-}
-
-// ValidateUpdateAsset validates project content, when it is used as input for updating existed project
-// TODO: we should define standalone struct for inputs & implement validation on inputs' struct
-func (a *Asset) ValidateUpdateAsset() (ok bool, msg string) {
-	if a.ID != "" {
-		return false, "id not expected"
-	}
-	if a.Owner != "" {
-		return false, "owner not expected"
-	}
-	if a.IsPublic != Personal && a.IsPublic != Public {
-		return false, "invalid isPublic"
-	}
-	if a.AssetType != AssetTypeSprite && a.AssetType != AssetTypeBackdrop && a.AssetType != AssetTypeSound {
-		return false, "invalid assetType"
-	}
-	if a.ClickCount != 0 {
-		return false, "clickCount not expected"
-	}
-	return true, ""
-}
-
 type Project struct {
 	// Globally Unique ID
 	ID string `json:"id"`
@@ -164,43 +115,6 @@ type Project struct {
 	CTime time.Time `json:"cTime"`
 	// Update Time
 	UTime time.Time `json:"uTime"`
-}
-
-// ValidateAddProject validates project content, when it is used as input for adding new project
-// TODO: we should define standalone struct for inputs & implement validation on inputs' struct
-func (p *Project) ValidateAddProject() (ok bool, msg string) {
-	if p.ID != "" {
-		return false, "id not expected"
-	}
-	if p.Name == "" {
-		// TODO: more limitations
-		return false, "name expected"
-	}
-	if p.Owner == "" {
-		return false, "owner expected"
-	}
-	if p.IsPublic != Personal && p.IsPublic != Public {
-		return false, "invalid isPublic"
-	}
-	return true, ""
-}
-
-// ValidateUpdateProject validates project content, when it is used as input for updating existed project
-// TODO: we should define standalone struct for inputs & implement validation on inputs' struct
-func (p *Project) ValidateUpdateProject() (ok bool, msg string) {
-	if p.ID != "" {
-		return false, "id not expected"
-	}
-	if p.Name != "" {
-		return false, "name not expected"
-	}
-	if p.Owner != "" {
-		return false, "owner not expected"
-	}
-	if p.IsPublic != Personal && p.IsPublic != Public {
-		return false, "invalid isPublic"
-	}
-	return true, ""
 }
 
 var (

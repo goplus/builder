@@ -115,19 +115,46 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 	return model.DeleteProjectById(ctx, ctrl.db, project.ID)
 }
 
-func (ctrl *Controller) AddProject(ctx context.Context, project *model.Project) (*model.Project, error) {
+type AddProjectParams struct {
+	Name     string               `json:"name"`
+	Owner    string               `json:"owner"`
+	Files    model.FileCollection `json:"files"`
+	IsPublic model.IsPublic       `json:"isPublic"`
+}
+
+// Validate validates project content, when it is used as input for adding new project
+func (p *AddProjectParams) Validate() (ok bool, msg string) {
+	if p.Name == "" {
+		// TODO: more limitations
+		return false, "name expected"
+	}
+	if p.Owner == "" {
+		return false, "owner expected"
+	}
+	if p.IsPublic != model.Personal && p.IsPublic != model.Public {
+		return false, "invalid isPublic"
+	}
+	return true, ""
+}
+
+func (ctrl *Controller) AddProject(ctx context.Context, params *AddProjectParams) (*model.Project, error) {
 	logger := log.GetReqLogger(ctx)
 	user, ok := user.GetUser(ctx)
 	if !ok {
 		logger.Printf("no user")
 		return nil, ErrUnauthorized
 	}
-	if user.Name != project.Owner {
+	if user.Name != params.Owner {
 		logger.Printf("user & owner not match")
 		return nil, ErrForbidden
 	}
-	project.Version = 1
-	result, err := model.AddProject(ctx, ctrl.db, project)
+	result, err := model.AddProject(ctx, ctrl.db, &model.Project{
+		Name:     params.Name,
+		Owner:    params.Owner,
+		Files:    params.Files,
+		IsPublic: params.IsPublic,
+		Version:  1,
+	})
 	if err != nil {
 		logger.Printf("add project failed: %v", err)
 		return nil, err
@@ -135,7 +162,20 @@ func (ctrl *Controller) AddProject(ctx context.Context, project *model.Project) 
 	return result, nil
 }
 
-func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, updates *model.Project) (*model.Project, error) {
+type UpdateProjectParams struct {
+	Files    model.FileCollection `json:"files"`
+	IsPublic model.IsPublic       `json:"isPublic"`
+}
+
+// ValidateUpdateProject validates project content, when it is used as input for updating existed project
+func (p *UpdateProjectParams) Validate() (ok bool, msg string) {
+	if p.IsPublic != model.Personal && p.IsPublic != model.Public {
+		return false, "invalid isPublic"
+	}
+	return true, ""
+}
+
+func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, updates *UpdateProjectParams) (*model.Project, error) {
 	logger := log.GetReqLogger(ctx)
 	user, ok := user.GetUser(ctx)
 	if !ok {
@@ -151,8 +191,11 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, u
 		logger.Printf("failed to get project %s/%s: %v", owner, name, err)
 		return nil, err
 	}
-	updates.Version = project.Version + 1
-	result, err := model.UpdateProjectById(ctx, ctrl.db, project.ID, updates)
+	result, err := model.UpdateProjectById(ctx, ctrl.db, project.ID, &model.Project{
+		Files:    updates.Files,
+		IsPublic: updates.IsPublic,
+		Version:  project.Version + 1,
+	})
 	if err != nil {
 		logger.Printf("update project by id failed: %v", err)
 		return nil, err
@@ -287,19 +330,57 @@ func (ctrl *Controller) ListAsset(ctx context.Context, params *AssetListParams) 
 	return byPage, nil
 }
 
-func (ctrl *Controller) AddAsset(ctx context.Context, asset *model.Asset) (*model.Asset, error) {
+type AddAssetParams struct {
+	DisplayName string               `json:"displayName"`
+	Owner       string               `json:"owner"`
+	Category    string               `json:"category"`
+	IsPublic    model.IsPublic       `json:"isPublic"`
+	Files       model.FileCollection `json:"files"`
+	Preview     string               `json:"preview"`
+	AssetType   model.AssetType      `json:"assetType"`
+}
+
+func (p *AddAssetParams) Validate() (ok bool, msg string) {
+	if p.DisplayName == "" {
+		// TODO: more limitations
+		return false, "displayName expected"
+	}
+	if p.Owner == "" {
+		return false, "owner expected"
+	}
+	if p.Category == "" {
+		return false, "category expected"
+	}
+	if p.IsPublic != model.Personal && p.IsPublic != model.Public {
+		return false, "invalid isPublic"
+	}
+	if p.AssetType != model.AssetTypeBackdrop && p.AssetType != model.AssetTypeSound && p.AssetType != model.AssetTypeSprite {
+		return false, "invalid assetType"
+	}
+	return true, ""
+}
+
+func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*model.Asset, error) {
 	logger := log.GetReqLogger(ctx)
 	user, ok := user.GetUser(ctx)
 	if !ok {
 		logger.Printf("no user")
 		return nil, ErrUnauthorized
 	}
-	if user.Name != asset.Owner {
+	if user.Name != params.Owner {
 		logger.Printf("user & owner not match")
 		return nil, ErrForbidden
 	}
-	asset.ClickCount = 0
-	result, err := model.AddAsset(ctx, ctrl.db, asset)
+	result, err := model.AddAsset(ctx, ctrl.db, &model.Asset{
+		DisplayName: params.DisplayName,
+		Owner:       params.Owner,
+		Category:    params.Category,
+		IsPublic:    params.IsPublic,
+		Files:       params.Files,
+		Preview:     params.Preview,
+		AssetType:   params.AssetType,
+		ClickCount:  0,
+	})
 	if err != nil {
 		logger.Printf("add asset failed: %v", err)
 		return nil, err
@@ -307,7 +388,33 @@ func (ctrl *Controller) AddAsset(ctx context.Context, asset *model.Asset) (*mode
 	return result, nil
 }
 
-func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *model.Asset) (*model.Asset, error) {
+type UpdateAssetParams struct {
+	DisplayName string               `json:"displayName"`
+	Category    string               `json:"category"`
+	IsPublic    model.IsPublic       `json:"isPublic"`
+	Files       model.FileCollection `json:"files"`
+	Preview     string               `json:"preview"`
+	AssetType   model.AssetType      `json:"assetType"`
+}
+
+func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
+	if p.DisplayName == "" {
+		// TODO: more limitations
+		return false, "displayName expected"
+	}
+	if p.Category == "" {
+		return false, "category expected"
+	}
+	if p.IsPublic != model.Personal && p.IsPublic != model.Public {
+		return false, "invalid isPublic"
+	}
+	if p.AssetType != model.AssetTypeSprite && p.AssetType != model.AssetTypeBackdrop && p.AssetType != model.AssetTypeSound {
+		return false, "invalid assetType"
+	}
+	return true, ""
+}
+
+func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *UpdateAssetParams) (*model.Asset, error) {
 	logger := log.GetReqLogger(ctx)
 	asset, err := model.GetAssetById(ctx, ctrl.db, id)
 	if err != nil {
@@ -323,8 +430,14 @@ func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *mod
 		logger.Printf("user & owner not match")
 		return nil, ErrForbidden
 	}
-	updates.ClickCount = asset.ClickCount // do not use `UpdateAsset` to update click-count, use `IncreaseAssetClickCount` instead
-	result, err := model.UpdateAssetById(ctx, ctrl.db, asset.ID, updates)
+	result, err := model.UpdateAssetById(ctx, ctrl.db, asset.ID, &model.Asset{
+		DisplayName: updates.DisplayName,
+		Category:    updates.Category,
+		IsPublic:    updates.IsPublic,
+		Files:       updates.Files,
+		Preview:     updates.Preview,
+		AssetType:   updates.AssetType,
+	})
 	if err != nil {
 		logger.Printf("update asset by id failed: %v", err)
 		return nil, err

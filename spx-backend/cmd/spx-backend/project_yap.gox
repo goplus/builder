@@ -20,16 +20,16 @@ post "/project", ctx => {
 	if !ok {
 		return
 	}
-	project := &model.Project{}
-	if ok = parseJson(ctx, project); !ok {
+	params := &controller.AddProjectParams{}
+	if ok = parseJson(ctx, params); !ok {
 		return
 	}
-	project.Owner = u.Name
-	if ok, msg := project.ValidateAddProject(); !ok {
+	params.Owner = u.Name
+	if ok, msg := params.Validate(); !ok {
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
-	res, err := ctrl.AddProject(utils.getCtx(ctx), project)
+	res, err := ctrl.AddProject(utils.getCtx(ctx), params)
 	if err != nil {
 		handlerInnerError(ctx, err)
 		return
@@ -44,11 +44,11 @@ put "/project/:owner/:name", ctx => {
 	}
 	owner := ctx.param("owner")
 	name := ctx.param("name")
-	updates := &model.Project{}
+	updates := &controller.UpdateProjectParams{}
 	if ok := parseJson(ctx, updates); !ok {
 		return
 	}
-	if ok, msg := updates.ValidateUpdateProject(); !ok {
+	if ok, msg := updates.Validate(); !ok {
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
@@ -138,16 +138,16 @@ post "/asset", ctx => {
 	if !ok {
 		return
 	}
-	asset := &model.Asset{}
-	if ok = parseJson(ctx, asset); !ok {
+	params := &controller.AddAssetParams{}
+	if ok = parseJson(ctx, params); !ok {
 		return
 	}
-	asset.Owner = u.Name
-	if ok, msg := asset.ValidateAddAsset(); !ok {
+	params.Owner = u.Name
+	if ok, msg := params.Validate(); !ok {
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
-	res, err := ctrl.AddAsset(utils.getCtx(ctx), asset)
+	res, err := ctrl.AddAsset(utils.getCtx(ctx), params)
 	if err != nil {
 		handlerInnerError(ctx, err)
 		return
@@ -161,11 +161,11 @@ put "/asset/:id", ctx => {
 		return
 	}
 	id := ctx.param("id")
-	updates := &model.Asset{}
+	updates := &controller.UpdateAssetParams{}
 	if ok := parseJson(ctx, updates); !ok {
 		return
 	}
-	if ok, msg := updates.ValidateUpdateAsset(); !ok {
+	if ok, msg := updates.Validate(); !ok {
 		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 		return
 	}
