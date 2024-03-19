@@ -405,7 +405,10 @@ async function urlToFile(url: string, filename: string): Promise<File> {
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:47:25
  */
-const handleAssetAddition = async (name: string, assetMultiCostumeObj: { [key: string]: string }) => {
+const handleAssetAddition = async (
+  name: string,
+  assetMultiCostumeObj: { [key: string]: string }
+) => {
   let fileArr: File[] = []
   for (const [key, value] of Object.entries(assetMultiCostumeObj)) {
     const file = await urlToFile(value, key)

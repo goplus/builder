@@ -7,19 +7,16 @@
  * @Description: edit page
 -->
 <template>
-    <div style="display: flex;height: 100%">
-        <!--  S Component SpriteList -->
-        <SpriteList style="width:50vw;"></SpriteList>
-        <!--  E Component SpriteList -->
-    </div>
+  <div style="display: flex; height: 100%">
+    <!--  S Component SpriteList -->
+    <SpriteList style="width: 50vw"></SpriteList>
+    <!--  E Component SpriteList -->
+  </div>
 
-    <!-- <FileManagerDemo></FileManagerDemo> -->
+  <!-- <FileManagerDemo></FileManagerDemo> -->
 </template>
-  
+
 <script setup lang="ts">
-import SpriteList from "@/components/sprite-list/SpriteList.vue";
+import SpriteList from '@/components/sprite-list/SpriteList.vue'
 // import FileManagerDemo from "@/components/file-manager-demo/FileManagerDemo.vue";
 </script>
-  
-  
-  

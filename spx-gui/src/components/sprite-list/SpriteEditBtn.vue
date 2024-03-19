@@ -17,7 +17,7 @@
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
         @blur="handleUpdateSpriteName"
-        @update:value="(val) => name = val"
+        @update:value="(val) => (name = val)"
       >
         <template #prefix> {{ $t('stage.sprite') }}: </template>
       </n-input>
@@ -107,9 +107,9 @@
 import { computed, ref, watch } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
 import { useSpriteStore } from '@/store/modules/sprite'
-import { checkUpdatedName } from '@/util/asset';
-import { useProjectStore } from '@/store';
-import { useI18n } from "vue-i18n"
+import { checkUpdatedName } from '@/util/asset'
+import { useProjectStore } from '@/store'
+import { useI18n } from 'vue-i18n'
 
 // ----------props & emit------------------------------------
 const spriteStore = useSpriteStore()
@@ -124,30 +124,36 @@ const name = ref(spriteStore.current ? spriteStore.current.name : '')
 const { t } = useI18n({
   inheritLocale: true
 })
-watch(() => spriteStore.current?.name, (newName) => {
-  name.value = newName || ''
-})
+watch(
+  () => spriteStore.current?.name,
+  (newName) => {
+    name.value = newName || ''
+  }
+)
 
 const { message } = createDiscreteApi(['message'])
-function handleUpdateSpriteName(){
+function handleUpdateSpriteName() {
   if (!spriteStore.current) return
   try {
     const project = useProjectStore().project
-    const checkInfo = checkUpdatedName(name.value, useProjectStore().project, spriteStore.current.name)
+    const checkInfo = checkUpdatedName(
+      name.value,
+      useProjectStore().project,
+      spriteStore.current.name
+    )
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
       // update zorder
       const zorder = project.backdrop.config.zorder
-      project.backdrop.config.zorder = zorder.filter(item => item !== spriteStore.current?.name)
+      project.backdrop.config.zorder = zorder.filter((item) => item !== spriteStore.current?.name)
       project.backdrop.config.zorder.push(checkInfo.name)
 
       spriteStore.current.name = checkInfo.name
       message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)
-  } catch(e) {
-    if (e instanceof Error)
-      message.error(e.message)
+  } catch (e) {
+    if (e instanceof Error) message.error(e.message)
   }
 }
 </script>

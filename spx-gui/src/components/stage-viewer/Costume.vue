@@ -145,7 +145,7 @@ const getSpxPostion = (x: number, y: number): { x: number; y: number } => {
 }
 const controller = ref<Rect | null>()
 
-// This function is only used to design communication, 
+// This function is only used to design communication,
 // and the actual work of modifying the doms value is placed in the dragend event
 const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
   emits('onDragMove', {
@@ -167,6 +167,4 @@ const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) =
   props.spriteConfig.config.y = position.y
   controller.value = null
 }
-
-
 </script>

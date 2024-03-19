@@ -101,13 +101,18 @@ export class Project implements ProjectDetail, ProjectSummary {
     const paths = await fs.readdir('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.readFile(path) as ProjectSummary
+      const content = (await fs.readFile(path)) as ProjectSummary
       projects.push(content)
     }
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
   }
 
-  static async getCloudProjects(author?: string, isPublic?: PublicStatus, pageIndex: number = 1, pageSize: number = 300): Promise<ProjectSummary[]> {
+  static async getCloudProjects(
+    author?: string,
+    isPublic?: PublicStatus,
+    pageIndex: number = 1,
+    pageSize: number = 300
+  ): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isPublic, author)
     const projects = res.data || []
     return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
@@ -119,9 +124,9 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static async removeLocalProject(id: string) {
     await fs.rmdir(id)
-    await fs.unlink("summary/" + id)
+    await fs.unlink('summary/' + id)
   }
-  
+
   static async removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
     if (source === ProjectSource.local) {
       await Project.removeLocalProject(id)
@@ -144,7 +149,11 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.uTime = this.cTime
   }
 
-  async load(id: string, source: ProjectSource = ProjectSource.cloud,userId?:string): Promise<void> {
+  async load(
+    id: string,
+    source: ProjectSource = ProjectSource.cloud,
+    userId?: string
+  ): Promise<void> {
     this.source = source
     if (source === ProjectSource.local) {
       if (id.startsWith(Project.TEMPORARY_ID_PREFIX)) {
@@ -163,7 +172,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       }
       this._load(dirPath)
 
-      const summary = await fs.readFile("summary/" + id) as ProjectSummary
+      const summary = (await fs.readFile('summary/' + id)) as ProjectSummary
       this.name = summary.name
       this.version = summary.version
       this.cTime = summary.cTime || this.cTime
@@ -176,7 +185,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       this.version = version
       this.cTime = cTime
       this.uTime = uTime
-      const zip = await fetch(address).then(res => res.blob())
+      const zip = await fetch(address).then((res) => res.blob())
       const zipFile = new File([zip], name)
       await this.loadFromZip(zipFile)
     }
@@ -190,56 +199,54 @@ export class Project implements ProjectDetail, ProjectSummary {
     const handleFile = (file: FileType, filename: string, item: any) => {
       switch (file.type) {
         case 'application/json':
-          item.config = arrayBuffer2Content(file.content, file.type) as Config;
-          break;
+          item.config = arrayBuffer2Content(file.content, file.type) as Config
+          break
         default:
-          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File);
-          break;
+          item.files.push(arrayBuffer2Content(file.content, file.type, filename) as File)
+          break
       }
     }
 
-    function findOrCreateItem<T extends AssetBase>(name: string, collection: AssetList<T>, constructor: new (name: string) => T) {
-      let item = collection.list.find(item => item.name === name);
+    function findOrCreateItem<T extends AssetBase>(
+      name: string,
+      collection: AssetList<T>,
+      constructor: new (name: string) => T
+    ) {
+      let item = collection.list.find((item) => item.name === name)
       if (!item) {
-        item = new constructor(name);
-        collection.add(item);
+        item = new constructor(name)
+        collection.add(item)
       }
-      return item;
+      return item
     }
 
     const prefix = getPrefix(dir)
 
     // eslint-disable-next-line prefer-const
     for (let [path, file] of Object.entries(dir)) {
-      const filename = file.path.split('/').pop()!;
+      const filename = file.path.split('/').pop()!
       const content = arrayBuffer2Content(file.content, file.type, filename)
       path = path.replace(prefix, '')
       if (Sprite.REG_EXP.test(path)) {
-        const spriteName = path.match(Sprite.REG_EXP)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite);
-        handleFile(file, filename, sprite);
-      }
-      else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
+        const spriteName = path.match(Sprite.REG_EXP)?.[1] || ''
+        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite)
+        handleFile(file, filename, sprite)
+      } else if (/^(main|index)\.(spx|gmx)$/.test(path)) {
         this.entryCode = content as string
-      }
-      else if (/^.+\.spx$/.test(path)) {
-        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || '';
-        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite);
-        sprite.code = content as string;
-      }
-      else if (Sound.REG_EXP.test(path)) {
-        const soundName = path.match(Sound.REG_EXP)?.[1] || '';
-        const sound: Sound = findOrCreateItem<Sound>(soundName, this.sound, Sound);
-        handleFile(file, filename, sound);
-      }
-      else if (Backdrop.REG_EXP.test(path)) {
-        handleFile(file, filename, this.backdrop);
-      }
-      else {
+      } else if (/^.+\.spx$/.test(path)) {
+        const spriteName = path.match(/^(.+)\.spx$/)?.[1] || ''
+        const sprite: Sprite = findOrCreateItem<Sprite>(spriteName, this.sprite, Sprite)
+        sprite.code = content as string
+      } else if (Sound.REG_EXP.test(path)) {
+        const soundName = path.match(Sound.REG_EXP)?.[1] || ''
+        const sound: Sound = findOrCreateItem<Sound>(soundName, this.sound, Sound)
+        handleFile(file, filename, sound)
+      } else if (Backdrop.REG_EXP.test(path)) {
+        handleFile(file, filename, this.backdrop)
+      } else {
         this.unidentifiedFile[path] = content
       }
     }
-
   }
 
   async loadFromZip(file: File, name?: string) {
@@ -261,11 +268,10 @@ export class Project implements ProjectDetail, ProjectSummary {
     defaultSprite.config.size = 1
     // The size of the costume is 110 * 100, so setting the center point of the image to half of its height and width
     // can make the costume of sprite render at the center point of the stage.
-    defaultSprite.config.costumes[0].x=55
-    defaultSprite.config.costumes[0].y=50
+    defaultSprite.config.costumes[0].x = 55
+    defaultSprite.config.costumes[0].y = 50
     this.sprite.add(defaultSprite)
   }
-  
 
   /**
    * Save project to storage.
@@ -281,7 +287,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       version: this.version,
       source: this.source,
       cTime: this.cTime,
-      uTime: new Date().toISOString(),
+      uTime: new Date().toISOString()
     }
     await fs.writeFile(this.summaryPath, summary)
   }
@@ -302,16 +308,16 @@ export class Project implements ProjectDetail, ProjectSummary {
    * Save project to Cloud.
    */
   async save() {
-    if (!this.name.trim()){
+    if (!this.name.trim()) {
       throw new Error('Project name cannot be empty!')
     }
     const id = this._id ?? void 0
-    return saveProject(this.name, await this.zip, id).then(async res => {
+    return saveProject(this.name, await this.zip, id).then(async (res) => {
       this._id = res.id
       this.version = res.version
       this.cTime = res.cTime
       this.uTime = res.uTime
-      return Promise.resolve("Save success!")
+      return Promise.resolve('Save success!')
     })
   }
 

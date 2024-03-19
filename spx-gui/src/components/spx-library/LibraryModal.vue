@@ -209,11 +209,11 @@ const fetchAssetsByType = async (
       isPublic = 1
       // Pass * means author is everyone
       author = '*'
-    }else if (isPublicSwitch.value == UIPublic.private){
+    } else if (isPublicSwitch.value == UIPublic.private) {
       // author is the current user (self)
       author = undefined
     }
-    
+
     const response = await getAssetList({
       isPublic: isPublic,
       pageIndex: pageIndex.value,
@@ -267,7 +267,11 @@ const closeModalFunc = () => {
  * @Author: Xu Ning
  * @Date: 2024-01-30 11:51:05
  */
-const handleAddAsset = async (id: number, name: string, assetMultiCostumeObj: {[key: string]: string}) => {
+const handleAddAsset = async (
+  id: number,
+  name: string,
+  assetMultiCostumeObj: { [key: string]: string }
+) => {
   await addAssetClickCount(id)
   emits('add-asset', name, assetMultiCostumeObj)
 }

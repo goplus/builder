@@ -7,22 +7,22 @@
  * @Description: The type of file.
  */
 
-import type { Config } from "@/interface/file"
+import type { Config } from '@/interface/file'
 
 export interface FileType {
-    content: ArrayBuffer,
-    path: string,
-    type: string,
-    size: number,
-    modifyTime: Date
+  content: ArrayBuffer
+  path: string
+  type: string
+  size: number
+  modifyTime: Date
 }
 
 export interface DirPath {
-    [path: string]: FileType
+  [path: string]: FileType
 }
 
 export type RawFile = string | File | Config
 
 export interface RawDir {
-    [path: string]: RawFile
+  [path: string]: RawFile
 }

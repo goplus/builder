@@ -7,8 +7,8 @@
  * @Description: The util of class.
  */
 
-import { AssetBase } from "@/class/asset-base";
-import localforage from "localforage";
+import { AssetBase } from '@/class/asset-base'
+import localforage from 'localforage'
 
 /**
  * Check if an object is an instance of a class.
@@ -16,11 +16,11 @@ import localforage from "localforage";
  * @param ctor The constructor of the class.
  * @returns True if the object is an instance of the class, false otherwise.
  */
-export function isInstance<T>(obj: any, ctor: { new(...args: any[]): T }): obj is T {
-    if (Array.isArray(obj)) {
-        return obj.every(item => isInstance(item, ctor));
-    }
-    return obj instanceof ctor;
+export function isInstance<T>(obj: any, ctor: { new (...args: any[]): T }): obj is T {
+  if (Array.isArray(obj)) {
+    return obj.every((item) => isInstance(item, ctor))
+  }
+  return obj instanceof ctor
 }
 
 /**
@@ -29,10 +29,10 @@ export function isInstance<T>(obj: any, ctor: { new(...args: any[]): T }): obj i
  * @returns the storage
  */
 export function getStorage(storeName: string) {
-    return localforage.createInstance({
-        name: "asset",
-        storeName
-    })
+  return localforage.createInstance({
+    name: 'asset',
+    storeName
+  })
 }
 
 /**
@@ -40,14 +40,16 @@ export function getStorage(storeName: string) {
  * @param storeName the name of the storage.
  * @returns all items in the storage.
  */
-export async function getAllFromLocal<T extends typeof AssetBase>(assetType: T): Promise<InstanceType<T>[]> {
-    const store = getStorage(assetType.NAME);
-    const keys = await store.keys();
-    const assets: InstanceType<T>[] = [];
-    for (const key of keys) {
-        const rawData = await store.getItem(key);
-        const asset = assetType.fromRawData(rawData);
-        assets.push(asset as InstanceType<T>);
-    }
-    return assets;
+export async function getAllFromLocal<T extends typeof AssetBase>(
+  assetType: T
+): Promise<InstanceType<T>[]> {
+  const store = getStorage(assetType.NAME)
+  const keys = await store.keys()
+  const assets: InstanceType<T>[] = []
+  for (const key of keys) {
+    const rawData = await store.getItem(key)
+    const asset = assetType.fromRawData(rawData)
+    assets.push(asset as InstanceType<T>)
+  }
+  return assets
 }

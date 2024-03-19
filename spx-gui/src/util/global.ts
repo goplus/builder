@@ -18,12 +18,12 @@ export function isObjectEmpty(obj: any) {
 }
 
 export function debounce<T extends (...args: any[]) => any>(func: T, delay: number = 300) {
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: ReturnType<typeof setTimeout>
   return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
-    const context = this;
-    clearTimeout(timeoutId);
+    const context = this
+    clearTimeout(timeoutId)
     timeoutId = setTimeout(() => {
-      func.apply(context, args);
-    }, delay);
-  };
+      func.apply(context, args)
+    }, delay)
+  }
 }

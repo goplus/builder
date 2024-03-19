@@ -4,9 +4,9 @@ import type { ComputedRef, Ref } from 'vue'
 import { useProjectStore } from '../index'
 import { Sound } from '@/class/sound'
 
-export const useSoundStore = defineStore("sound", () => {
-  const projectStore = useProjectStore();
-  const { project } = storeToRefs(projectStore);
+export const useSoundStore = defineStore('sound', () => {
+  const projectStore = useProjectStore()
+  const { project } = storeToRefs(projectStore)
 
   const current: Ref<Sound | null> = ref(null)
 
@@ -14,9 +14,9 @@ export const useSoundStore = defineStore("sound", () => {
     return project.value.sound.list as Sound[]
   })
 
-  const map = computed(() => new Map(list.value.map(item => [item.name, item])))
+  const map = computed(() => new Map(list.value.map((item) => [item.name, item])))
 
-  function addItem(item: Sound){
+  function addItem(item: Sound) {
     project.value.sound.add(item)
   }
 
@@ -37,7 +37,7 @@ export const useSoundStore = defineStore("sound", () => {
   }
 
   function existsByName(name: string): boolean {
-    return map.value.has(name);
+    return map.value.has(name)
   }
 
   return {

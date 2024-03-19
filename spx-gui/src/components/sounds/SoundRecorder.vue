@@ -9,16 +9,16 @@
       </div>
       <div class="name-input-container">
         <span class="name-input-hint"> {{ $t('sounds.soundName') }} </span>
-        <input
-          v-model="soundName"
-          type="text"
-          class="sound-name-input"
-        />
+        <input v-model="soundName" type="text" class="sound-name-input" />
       </div>
       <audio :src="audioUrl" controls></audio>
       <div class="button-container">
-        <button class="recorder-button" @click="startRecording">{{ $t('sounds.startRecording') }}</button>
-        <button class="recorder-button" @click="stopRecording">{{ $t('sounds.stopRecording') }}</button>
+        <button class="recorder-button" @click="startRecording">
+          {{ $t('sounds.startRecording') }}
+        </button>
+        <button class="recorder-button" @click="stopRecording">
+          {{ $t('sounds.stopRecording') }}
+        </button>
         <button class="recorder-button" @click="saveRecording">{{ $t('sounds.save') }}</button>
       </div>
     </div>
@@ -34,39 +34,38 @@ import { Sound } from '@/class/sound'
 import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
 
 interface PropsType {
-  show: boolean;
+  show: boolean
 }
-const props = defineProps<PropsType>();
-const emits = defineEmits(["update:show"]);
+const props = defineProps<PropsType>()
+const emits = defineEmits(['update:show'])
 
-const showRecorder = ref<boolean>(false);
-const soundName = ref('record');
-const audioUrl = ref('');
-let mediaRecorder : MediaRecorder;
-const audioChunks = ref<Blob[]>([]);
-const audioFile = ref<File | null>(null);
-let wavesurfer: WaveSurfer;
-const waveformContainer = ref(null);
+const showRecorder = ref<boolean>(false)
+const soundName = ref('record')
+const audioUrl = ref('')
+let mediaRecorder: MediaRecorder
+const audioChunks = ref<Blob[]>([])
+const audioFile = ref<File | null>(null)
+let wavesurfer: WaveSurfer
+const waveformContainer = ref(null)
 
-const soundStore = useSoundStore();
+const soundStore = useSoundStore()
 
 onMounted(() => {
   nextTick(() => {
-    initWaveSurfer();
-  });
-});
-
+    initWaveSurfer()
+  })
+})
 
 const initWaveSurfer = () => {
   nextTick(() => {
     if (waveformContainer.value) {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
       const gradient = ctx.createLinearGradient(0, 0, 0, 150)
       gradient.addColorStop(0, 'rgb(255,223,232)')
       gradient.addColorStop(1, 'rgb(255,114,142)')
 
-      wavesurfer =  WaveSurfer.create({
+      wavesurfer = WaveSurfer.create({
         container: waveformContainer.value,
         splitChannels: false,
         waveColor: gradient,
@@ -78,16 +77,14 @@ const initWaveSurfer = () => {
         barHeight: 2,
         barMinHeight: 2,
         barWidth: 4,
-        plugins: [
-          MicrophonePlugin.create({})
-        ]
-      });
+        plugins: [MicrophonePlugin.create({})]
+      })
       wavesurfer.microphone.on('deviceReady', (stream) => {
-        console.log('Device ready', stream);
-      });
+        console.log('Device ready', stream)
+      })
       wavesurfer.microphone.on('deviceError', (code) => {
-        console.warn('Device error:', code);
-      });
+        console.warn('Device error:', code)
+      })
     }
   })
 }
@@ -95,66 +92,63 @@ const initWaveSurfer = () => {
 /* Start recording*/
 const startRecording = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    mediaRecorder = new MediaRecorder(stream)
     mediaRecorder.ondataavailable = (event) => {
-      audioChunks.value.push(event.data);
-    };
-    mediaRecorder.start();
-    wavesurfer.microphone.start();
+      audioChunks.value.push(event.data)
+    }
+    mediaRecorder.start()
+    wavesurfer.microphone.start()
   } catch (err) {
-    console.error('Error accessing the microphone', err);
+    console.error('Error accessing the microphone', err)
   }
-};
+}
 
 /* Stop recording*/
 const stopRecording = () => {
-  mediaRecorder.stop();
-  wavesurfer.microphone.stop();
+  mediaRecorder.stop()
+  wavesurfer.microphone.stop()
   mediaRecorder.onstop = () => {
     if (audioChunks.value.length > 0) {
       // AudioChunks -> AudioBuffer -> correct wav blob
-      convertAudioChunksToAudioBuffer(audioChunks.value, 'audio/webm' ).then(audioBuffer => {
-        audioFile.value = new File([audioBufferToWavBlob(audioBuffer)], soundName.value + ".wav", {
-          type: "audio/wav",
-          lastModified: Date.now(),
-        });
-        audioUrl.value = URL.createObjectURL(audioFile.value);
-      });
+      convertAudioChunksToAudioBuffer(audioChunks.value, 'audio/webm').then((audioBuffer) => {
+        audioFile.value = new File([audioBufferToWavBlob(audioBuffer)], soundName.value + '.wav', {
+          type: 'audio/wav',
+          lastModified: Date.now()
+        })
+        audioUrl.value = URL.createObjectURL(audioFile.value)
+      })
     } else {
-      console.error('No audio chunks available to create audio file.');
+      console.error('No audio chunks available to create audio file.')
     }
-    audioChunks.value = [];
-  };
-};
+    audioChunks.value = []
+  }
+}
 
 /* Save audioFile to file manager */
 const saveRecording = () => {
   if (audioFile.value && soundName.value) {
-    let sound = new Sound(soundName.value, [audioFile.value]);
-    soundStore.addItem(sound);
-    closeRecorder();
+    let sound = new Sound(soundName.value, [audioFile.value])
+    soundStore.addItem(sound)
+    closeRecorder()
   } else {
-    console.error('No recording or name provided');
+    console.error('No recording or name provided')
   }
-};
-
+}
 
 watch(props, (newProps) => {
-  showRecorder.value = newProps.show;
+  showRecorder.value = newProps.show
   if (newProps.show) {
-    initWaveSurfer();
+    initWaveSurfer()
   }
-});
+})
 
 const closeRecorder = () => {
-  emits("update:show", false);
-};
-
+  emits('update:show', false)
+}
 </script>
 
-
-<style lang="scss"  scoped>
+<style lang="scss" scoped>
 .modal {
   display: flex;
   justify-content: center;
@@ -247,5 +241,4 @@ const closeRecorder = () => {
     cursor: pointer;
   }
 }
-
 </style>

@@ -11,12 +11,9 @@
     <n-layout-sider
       :native-scrollbar="false"
       content-style="paddingLeft: 120px;"
-      style="width: 175px; background-image: linear-gradient(to bottom, #FEFBFB, #FBE8EB);"
+      style="width: 175px; background-image: linear-gradient(to bottom, #fefbfb, #fbe8eb)"
     >
-    <AssetAddBtn
-        :style="{ 'margin-bottom': '26px' }"
-        :type="'sound'"
-      />
+      <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="'sound'" />
       <SoundsEditCard
         v-for="asset in assets"
         :key="asset.name"
@@ -38,65 +35,61 @@
 </template>
 
 <script lang="ts" setup>
-import SoundsEditCard from "comps/sounds/SoundEditCard.vue";
+import SoundsEditCard from 'comps/sounds/SoundEditCard.vue'
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
-import SoundsEdit from "comps/sounds/SoundEdit.vue";
+import SoundsEdit from 'comps/sounds/SoundEdit.vue'
 import { computed, type ComputedRef, ref } from 'vue'
 import { Sound } from '@/class/sound'
 import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
-import { checkUpdatedName } from "@/util/asset";
-import { useProjectStore } from "@/store/modules/project"
-import { useI18n } from "vue-i18n"
+import { checkUpdatedName } from '@/util/asset'
+import { useProjectStore } from '@/store/modules/project'
+import { useI18n } from 'vue-i18n'
 
-const message: MessageApi = useMessage();
-const soundStore = useSoundStore();
-const assets: ComputedRef<Sound[]> = computed(
-  () => soundStore.list as Sound[],
-);
-const selectedSound = ref<Sound>();
+const message: MessageApi = useMessage()
+const soundStore = useSoundStore()
+const assets: ComputedRef<Sound[]> = computed(() => soundStore.list as Sound[])
+const selectedSound = ref<Sound>()
 const { t } = useI18n({
   inheritLocale: true
 })
 
 const handleSelect = (asset: Sound) => {
-  selectedSound.value = asset;
-};
+  selectedSound.value = asset
+}
 
 const handleSoundFileUpdate = (newFile: File) => {
   if (selectedSound.value) {
-    selectedSound.value.files[0] = newFile;
-    selectedSound.value.config.path = newFile.name;
-    message.success(
-      t('message.save'),
-      { duration: 1000 }
-    );
+    selectedSound.value.files[0] = newFile
+    selectedSound.value.config.path = newFile.name
+    message.success(t('message.save'), { duration: 1000 })
   }
-};
+}
 
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
-      const checkInfo = checkUpdatedName(newName, useProjectStore().project, selectedSound.value.name);
+      const checkInfo = checkUpdatedName(
+        newName,
+        useProjectStore().project,
+        selectedSound.value.name
+      )
       if (!checkInfo.isSame && !checkInfo.isChanged) {
         selectedSound.value.name = checkInfo.name
         message.success(t('message.update'))
       }
-      if (checkInfo.msg) message.warning(checkInfo.msg);
-    } catch(e) {
-      if (e instanceof Error)
-        message.error(e.message);
+      if (checkInfo.msg) message.warning(checkInfo.msg)
+    } catch (e) {
+      if (e instanceof Error) message.error(e.message)
     }
   }
-};
+}
 
-const handleDeleteSound = (soundName : string) => {
+const handleDeleteSound = (soundName: string) => {
   if (soundName) {
-    soundStore.removeItemByName(soundName);
+    soundStore.removeItemByName(soundName)
   }
-};
-
+}
 </script>
 
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

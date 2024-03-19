@@ -8,46 +8,37 @@
 -->
 <template>
   <div class="sounds-card">
-    <div
-      class="delete-button"
-      @click.stop="onDeleteClick"
-    >
-      ×
-    </div>
-    <div class="sounds-card-waveform">
-    </div>
+    <div class="delete-button" @click.stop="onDeleteClick">×</div>
+    <div class="sounds-card-waveform"></div>
     <div class="sounds-card-content">
       <div class="sounds-card-title">
         {{ props.asset.name }}
       </div>
-      <div class="sounds-card-subtitle">
-      </div>
+      <div class="sounds-card-subtitle"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-
-import { defineProps } from "vue";
+import { defineProps } from 'vue'
 import { Sound } from '@/class/sound'
 
 const props = defineProps({
   asset: {
     type: Object as () => Sound,
-    required: true,
-  },
-});
+    required: true
+  }
+})
 
 const emits = defineEmits(['delete-sound'])
 
 const onDeleteClick = () => {
-  emits('delete-sound', props.asset?.name);
+  emits('delete-sound', props.asset?.name)
 }
-
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/theme.scss";
+@import '@/assets/theme.scss';
 
 .sounds-card {
   margin-top: 10px;
@@ -62,7 +53,7 @@ const onDeleteClick = () => {
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: visible;  // show x button
+  overflow: visible; // show x button
 
   cursor: pointer;
 
@@ -113,7 +104,7 @@ const onDeleteClick = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 40px;
   color: $sounds-edit-card-close-button-x;
   border: 2px solid $sounds-edit-card-close-button-border;
@@ -124,5 +115,4 @@ const onDeleteClick = () => {
   background-color: #f8f2f2;
   color: $sounds-edit-card-close-button-border;
 }
-
 </style>

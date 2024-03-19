@@ -6,10 +6,10 @@
  * @FilePath: \builder\spx-gui\src\class\sound.ts
  * @Description: The class of a sound.
  */
-import { AssetBase } from "./asset-base";
-import { isInstance, getAllFromLocal } from "@/util/class";
-import type { RawDir } from "@/types/file";
-import type { SoundConfig } from '@/interface/file';
+import { AssetBase } from './asset-base'
+import { isInstance, getAllFromLocal } from '@/util/class'
+import type { RawDir } from '@/types/file'
+import type { SoundConfig } from '@/interface/file'
 
 /**
  * @class Sound
@@ -49,101 +49,101 @@ import type { SoundConfig } from '@/interface/file';
  */
 
 export class Sound extends AssetBase {
-    /**
-     * The root path of the sounds.
-     */
-    static ROOT_PATH = "assets/sounds/"
+  /**
+   * The root path of the sounds.
+   */
+  static ROOT_PATH = 'assets/sounds/'
 
-    /**
-     * The regular expression of the sound.
-     */
-    static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`)
+  /**
+   * The regular expression of the sound.
+   */
+  static REG_EXP = new RegExp(`^${Sound.ROOT_PATH}(.+)/(.+)$`)
 
-    /**
-     * The name of the sound.
-     */
-    static NAME = "sound"
+  /**
+   * The name of the sound.
+   */
+  static NAME = 'sound'
 
-    /**
-     * The config of the sound.
-     */
-    declare config: SoundConfig
+  /**
+   * The config of the sound.
+   */
+  declare config: SoundConfig
 
-    /**
-     * Get the store name for the sound.
-     * @returns the name of the store
-     */
-    _getStoreName(): string {
-        return Sound.NAME
+  /**
+   * Get the store name for the sound.
+   * @returns the name of the store
+   */
+  _getStoreName(): string {
+    return Sound.NAME
+  }
+
+  /**
+   * Get all items in the storage.
+   * @returns all items in the storage
+   */
+  static async getAllFromLocal() {
+    return await getAllFromLocal(Sound)
+  }
+
+  /**
+   * @constructor create a new sound
+   * @param {string} name the name of the sound
+   * @param {File[]} files the files of the sound
+   * @param {SoundConfig} config the config of the sound using json to generate `index.json`
+   */
+  constructor(name: string, files: File[] = [], config?: SoundConfig) {
+    super(name, files, config)
+  }
+
+  /**
+   * Create a new sound from raw data.
+   * @param data the data of the sound
+   * @returns the sound instance
+   */
+  static fromRawData(data: any): Sound {
+    return new Sound(data.name, data._files, data.config)
+  }
+
+  /**
+   * Generate the default sound config.
+   * @returns the default config
+   */
+  _genDefualtConfig(): SoundConfig {
+    return this.defaultConfig
+  }
+
+  /**
+   * Generate the default sound config.
+   */
+  get defaultConfig(): SoundConfig {
+    return {
+      path: this.files[0]?.name
     }
+  }
 
-    /**
-     * Get all items in the storage.
-     * @returns all items in the storage
-     */
-    static async getAllFromLocal() {
-        return await getAllFromLocal(Sound)
+  /**
+   * Get the directory of the sound.
+   */
+  get dir() {
+    const dir: RawDir = {}
+    dir[`${this.path}/index.json`] = this.config
+    for (const file of this.files) {
+      dir[`${this.path}/${file.name}`] = file
     }
+    return dir
+  }
 
-    /**
-     * @constructor create a new sound
-     * @param {string} name the name of the sound
-     * @param {File[]} files the files of the sound
-     * @param {SoundConfig} config the config of the sound using json to generate `index.json`
-     */
-    constructor(name: string, files: File[] = [], config?: SoundConfig) {
-        super(name, files, config)
-    }
+  /**
+   * Get the path of the sound.
+   */
+  get path() {
+    return Sound.ROOT_PATH + this.name
+  }
 
-    /**
-     * Create a new sound from raw data.
-     * @param data the data of the sound
-     * @returns the sound instance
-     */
-    static fromRawData(data: any): Sound {
-        return new Sound(data.name, data._files, data.config)
-    }
-
-    /**
-     * Generate the default sound config.
-     * @returns the default config
-     */
-    _genDefualtConfig(): SoundConfig {
-        return this.defaultConfig
-    }
-
-    /**
-     * Generate the default sound config.
-     */
-    get defaultConfig(): SoundConfig {
-        return {
-            "path": this.files[0]?.name
-        }
-    }
-
-    /**
-     * Get the directory of the sound.
-     */
-    get dir() {
-        const dir: RawDir = {}
-        dir[`${this.path}/index.json`] = this.config
-        for (const file of this.files) {
-            dir[`${this.path}/${file.name}`] = file
-        }
-        return dir
-    }
-
-    /**
-     * Get the path of the sound.
-     */
-    get path() {
-        return Sound.ROOT_PATH + this.name
-    }
-
-    /**
-     * Check if an object is an instance of a sound.
-     */
-    static isInstance(obj: any): boolean {
-        return isInstance(obj, Sound)
-    }
+  /**
+   * Check if an object is an instance of a sound.
+   */
+  static isInstance(obj: any): boolean {
+    return isInstance(obj, Sound)
+  }
 }

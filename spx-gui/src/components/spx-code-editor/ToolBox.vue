@@ -8,7 +8,13 @@
 -->
 <template>
   <div class="toolbox">
-    <n-tabs type="line" add-tab-style="color:#a3a3a4" animated placement="left" style="height: 240px">
+    <n-tabs
+      type="line"
+      add-tab-style="color:#a3a3a4"
+      animated
+      placement="left"
+      style="height: 240px"
+    >
       <n-tab-pane
         v-for="item in completionToolbox"
         :key="item.label"
@@ -78,7 +84,7 @@ const insertCode = (snippet: monaco.languages.CompletionItem) => {
   margin-right: 3px;
 }
 
-.n-tabs .n-tabs-tab{
-  color:#a4a4a3;
+.n-tabs .n-tabs-tab {
+  color: #a4a4a3;
 }
 </style>

@@ -8,7 +8,7 @@
 -->
 <template>
   <n-layout has-sider>
-    <n-layout style="width: 60%; height:100%;" collapsible>
+    <n-layout style="width: 60%; height: 100%" collapsible>
       <!-- S Component SpxEditor -->
       <SpxEditor />
       <!-- E Component SpxEditor -->
@@ -27,14 +27,14 @@
 </template>
 
 <script setup lang="ts">
-import SpxEditor from "@/components/spx-editor/SpxEditor.vue";
-import SpxStage from "@/components/spx-stage/SpxStage.vue";
-import SpriteList from "@/components/sprite-list/SpriteList.vue";
-import { NLayout, NLayoutContent } from "naive-ui";
-import { storeToRefs } from "pinia";
-import { useProjectStore } from "@/store/modules/project";
-const projectStore = useProjectStore();
-const { project } = storeToRefs(projectStore);
+import SpxEditor from '@/components/spx-editor/SpxEditor.vue'
+import SpxStage from '@/components/spx-stage/SpxStage.vue'
+import SpriteList from '@/components/sprite-list/SpriteList.vue'
+import { NLayout, NLayoutContent } from 'naive-ui'
+import { storeToRefs } from 'pinia'
+import { useProjectStore } from '@/store/modules/project'
+const projectStore = useProjectStore()
+const { project } = storeToRefs(projectStore)
 </script>
 
 <style scoped></style>

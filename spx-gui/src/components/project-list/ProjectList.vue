@@ -8,7 +8,13 @@
   >
     <template #header>
       <div style="width: 30vw">
-        <n-input v-model:value="searchQuery" size="large" :placeholder="$t('project.search')" round clearable></n-input>
+        <n-input
+          v-model:value="searchQuery"
+          size="large"
+          :placeholder="$t('project.search')"
+          round
+          clearable
+        ></n-input>
       </div>
     </template>
 
@@ -25,15 +31,19 @@
         :key="item"
         :name="item"
         :label="$t(`project.${item.toLowerCase()}`)"
-        :disabled="isRequesting && state.currentTab !== item || (networkStore.offline() && item != TabEnum.local)"
+        :disabled="
+          (isRequesting && state.currentTab !== item) ||
+          (networkStore.offline() && item != TabEnum.local)
+        "
       >
         <div class="container">
           <n-space v-if="isRequesting" justify="center">
-            <n-spin size="large"/>
+            <n-spin size="large" />
           </n-space>
           <n-grid
             v-else-if="currentList.length"
-            cols="1 s:2 m:3 l:3 xl:4 2xl:5" x-gap="35"
+            cols="1 s:2 m:3 l:3 xl:4 2xl:5"
+            x-gap="35"
             y-gap="20"
             responsive="screen"
           >
@@ -42,7 +52,8 @@
                 <ProjectCard
                   :project="project"
                   @load-project="closeModalFunc"
-                  @remove-project="removeProject(project.id)"/>
+                  @remove-project="removeProject(project.id)"
+                />
               </TransitionGroup>
             </n-grid-item>
           </n-grid>
@@ -54,10 +65,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, type ComputedRef, defineEmits, defineProps, onMounted, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  type ComputedRef,
+  defineEmits,
+  defineProps,
+  onMounted,
+  reactive,
+  ref,
+  watch
+} from 'vue'
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
-import { Project, type ProjectSummary } from '@/class/project';
-import { useNetworkStore } from "@/store/modules/network";
+import { Project, type ProjectSummary } from '@/class/project'
+import { useNetworkStore } from '@/store/modules/network'
 import ProjectCard from './ProjectCard.vue'
 
 // ----------props & emit------------------------------------
@@ -81,13 +101,17 @@ const searchQuery = ref('')
 const isRequesting = ref<boolean>(false)
 const projectList = ref<ProjectSummary[]>([])
 const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
-  return projectList.value.filter(project => project.name?.toLocaleLowerCase().includes(searchQuery.value.toLocaleLowerCase())).sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
+  return projectList.value
+    .filter((project) =>
+      project.name?.toLocaleLowerCase().includes(searchQuery.value.toLocaleLowerCase())
+    )
+    .sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
 })
 const networkStore = useNetworkStore()
 
 const state = reactive({
   tabs: TabEnum,
-  currentTab: TabEnum.local,
+  currentTab: TabEnum.local
 })
 
 const onTabChange = (index: TabEnum) => {
@@ -97,10 +121,13 @@ const onTabChange = (index: TabEnum) => {
   getProjects()
 }
 
-watch(() => props.show, (newShow) => {
-  showModal.value = newShow
-  if (newShow) getProjects()
-})
+watch(
+  () => props.show,
+  (newShow) => {
+    showModal.value = newShow
+    if (newShow) getProjects()
+  }
+)
 
 onMounted(() => {
   getProjects()
@@ -134,9 +161,8 @@ const getProjects = async () => {
 }
 
 const removeProject = (id: string) => {
-  projectList.value = projectList.value.filter(project => project.id !== id)
+  projectList.value = projectList.value.filter((project) => project.id !== id)
 }
-
 </script>
 
 <style lang="scss" scoped>
