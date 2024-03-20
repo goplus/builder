@@ -15,7 +15,6 @@
 import { computed, h, ref } from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { useLanguageStore } from '@/store/modules/language'
 import {
   ComputerTwotone as CodeIcon,
   FilePresentTwotone as FileIcon,
@@ -28,7 +27,8 @@ import { useProjectStore } from '@/store/modules/project'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
-import { useNetworkStore } from '@/store/modules/network'
+import { useNetwork } from '@/util/hooks/network'
+import { LOCALSTORAGE_KEY_LANGUAGE } from '@/language'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -42,8 +42,7 @@ const { locale, t } = useI18n({
   inheritLocale: true,
   useScope: 'global'
 })
-const languageStore = useLanguageStore()
-const networkStore = useNetworkStore()
+const { isOnline } = useNetwork()
 
 /**
  * @description: dropdown options of import/save/export
@@ -73,7 +72,7 @@ const saveOptions = computed(() => [
   {
     label: t('topMenu.cloud'),
     key: 'SaveCloud',
-    disabled: networkStore.offline()
+    disabled: !isOnline.value
   }
 ])
 
@@ -81,12 +80,12 @@ const exportOptions = computed(() => [
   {
     label: t('topMenu.video'),
     key: 'Video',
-    disabled: networkStore.offline()
+    disabled: !isOnline.value
   },
   {
     label: t('topMenu.app'),
     key: 'App',
-    disabled: networkStore.offline()
+    disabled: !isOnline.value
   }
 ])
 
@@ -380,7 +379,7 @@ function renderIcon(icon: any) {
  */
 const toggleLanguage = () => {
   locale.value = locale.value === 'en' ? 'zh' : 'en'
-  languageStore.setLanguage(languageStore.language === 'en' ? 'zh' : 'en')
+  localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, locale.value)
 }
 
 /**

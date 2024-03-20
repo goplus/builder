@@ -7,8 +7,9 @@
  * @Description:
  */
 import type { App } from 'vue'
-import { useLanguageStore } from '@/store/modules/language'
 import { createI18n } from 'vue-i18n'
+
+export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
 export const initI18n = async (app: App) => {
   console.log('init i18n start')
@@ -342,14 +343,13 @@ export const initI18n = async (app: App) => {
     }
   }
 
-  if (useLanguageStore().getLanguage() === null) {
-    useLanguageStore().setLanguage('en')
-  }
+  const currentLanguage = localStorage.getItem(LOCALSTORAGE_KEY_LANGUAGE) || 'en'
+  localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, currentLanguage)
 
   const i18n = createI18n({
     legacy: false,
-    locale: useLanguageStore().getLanguage(),
-    fallbackLocale: useLanguageStore().getLanguage(),
+    locale: currentLanguage,
+    fallbackLocale: 'en',
     messages
   })
 

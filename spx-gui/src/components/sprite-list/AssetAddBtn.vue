@@ -35,7 +35,7 @@
       <n-button
         v-if="props.type == 'backdrop'"
         color="#fff"
-        :disabled="networkStore.offline()"
+        :disabled="!isOnline"
         quaternary
         size="tiny"
         text-color="#fff"
@@ -45,7 +45,7 @@
       </n-button>
       <n-button
         v-else-if="props.type == 'sprite'"
-        :disabled="networkStore.offline()"
+        :disabled="!isOnline"
         color="#fff"
         :text-color="commonColor"
         @click="openLibraryFunc()"
@@ -148,8 +148,8 @@ import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 import { AssetType } from '@/constant/constant'
 import { isValidAssetName } from '@/util/asset'
-import { useNetworkStore } from '@/store/modules/network'
 import { isImage, isSound } from '@/util/utils'
+import { useNetwork } from '@/util/hooks/network'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -160,7 +160,7 @@ const message = useMessage()
 const spriteStore = useSpriteStore()
 const backdropStore = useBackdropStore()
 const soundStore = useSoundStore()
-const networkStore = useNetworkStore()
+const { isOnline } = useNetwork()
 
 const { t } = useI18n({
   inheritLocale: true

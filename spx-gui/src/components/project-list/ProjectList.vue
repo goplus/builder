@@ -32,8 +32,7 @@
         :name="item"
         :label="$t(`project.${item.toLowerCase()}`)"
         :disabled="
-          (isRequesting && state.currentTab !== item) ||
-          (networkStore.offline() && item != TabEnum.local)
+          (isRequesting && state.currentTab !== item) || (!isOnline && item != TabEnum.local)
         "
       >
         <div class="container">
@@ -77,8 +76,8 @@ import {
 } from 'vue'
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
 import { Project, type ProjectSummary } from '@/class/project'
-import { useNetworkStore } from '@/store/modules/network'
 import ProjectCard from './ProjectCard.vue'
+import { useNetwork } from '@/util/hooks/network'
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -107,7 +106,7 @@ const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
     )
     .sort((a, b) => new Date(b.uTime).getTime() - new Date(a.uTime).getTime())
 })
-const networkStore = useNetworkStore()
+const { isOnline } = useNetwork()
 
 const state = reactive({
   tabs: TabEnum,
