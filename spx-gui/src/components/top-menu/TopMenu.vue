@@ -28,6 +28,7 @@ import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/util/hooks/network'
+import { LOCALSTORAGE_KEY_LANGUAGE } from '@/language'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -378,7 +379,7 @@ function renderIcon(icon: any) {
  */
 const toggleLanguage = () => {
   locale.value = locale.value === 'en' ? 'zh' : 'en'
-  localStorage.setItem('language', locale.value)
+  localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, locale.value)
 }
 
 /**

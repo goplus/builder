@@ -9,6 +9,8 @@
 import type { App } from 'vue'
 import { createI18n } from 'vue-i18n'
 
+export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
+
 export const initI18n = async (app: App) => {
   console.log('init i18n start')
   const messages = {
@@ -341,8 +343,8 @@ export const initI18n = async (app: App) => {
     }
   }
 
-  const currentLanguage = localStorage.getItem('language') || 'en'
-  localStorage.setItem('language', currentLanguage)
+  const currentLanguage = localStorage.getItem(LOCALSTORAGE_KEY_LANGUAGE) || 'en'
+  localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, currentLanguage)
 
   const i18n = createI18n({
     legacy: false,
