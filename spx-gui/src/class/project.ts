@@ -140,7 +140,14 @@ export class Project implements ProjectDetail, ProjectSummary {
   constructor() {
     this.name = ''
     this.backdrop = new Backdrop()
-    this.sprite = new SpriteList(this) // cyclic reference
+
+    // Here we have cyclic references. It's ok that we pass `this` instead of `reactive(this)`
+    // to the constructors but still matain the reactivity because inside the constructors we
+    // use `return reactive(this)`.
+    // "Due to deep reactivity, nested objects inside a reactive object are also proxies."
+    // Also, according to the Vue 3 documentation, we always get the same proxy for the same object.
+    // https://vuejs.org/guide/essentials/reactivity-fundamentals.html#reactive-proxy-vs-original-1
+    this.sprite = new SpriteList(this)
     this.sound = new SoundList(this)
     this.entryCode = ''
     this.unidentifiedFile = {}
@@ -150,7 +157,6 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
 
-    // "Due to deep reactivity, nested objects inside a reactive object are also proxies"
     const project = reactive(this)
     project._watchToSaveLocal()
     return project
