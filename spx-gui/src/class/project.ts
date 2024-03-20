@@ -20,6 +20,8 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 import type { AssetBase } from './asset-base'
+import { reactive, watch, type WatchStopHandle } from 'vue'
+import { debounce } from '@/util/global'
 
 export enum ProjectSource {
   local = 'local',
@@ -74,6 +76,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   cTime: string
   uTime: string
+  _unwatchSaveLocal: WatchStopHandle
 
   /** Cloud Id */
   _id: string | null = null
@@ -90,12 +93,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   static TEMPORARY_ID_PREFIX = 'temp__'
 
   static ALL_USER = '*'
-
-  static fromRawData(data: ProjectDetail & ProjectSummary): Project {
-    const project = new Project()
-    Object.assign(project, data)
-    return project
-  }
 
   static async getLocalProjects(): Promise<ProjectSummary[]> {
     const paths = await fs.readdir('summary/')
@@ -138,6 +135,13 @@ export class Project implements ProjectDetail, ProjectSummary {
   constructor() {
     this.name = ''
     this.backdrop = new Backdrop()
+
+    // Here we have cyclic references. It's ok that we pass `this` instead of `reactive(this)`
+    // to the constructors but still matain the reactivity because inside the constructors we
+    // use `return reactive(this)`.
+    // "Due to deep reactivity, nested objects inside a reactive object are also proxies."
+    // Also, according to the Vue 3 documentation, we always get the same proxy for the same object.
+    // https://vuejs.org/guide/essentials/reactivity-fundamentals.html#reactive-proxy-vs-original-1
     this.sprite = new SpriteList(this)
     this.sound = new SoundList(this)
     this.entryCode = ''
@@ -147,6 +151,56 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.source = ProjectSource.local
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
+
+    const project = reactive(this)
+    this._unwatchSaveLocal = project._watchToSaveLocal()
+    return project
+  }
+
+  _watchToSaveLocal() {
+    const saveLocal = debounce(async () => {
+      // Record the current modified item id for each modification.
+      localStorage.setItem('project', this.id)
+      await this._removeLocal()
+      await this._saveLocal()
+    })
+
+    return watch(this, saveLocal, { deep: true })
+  }
+
+  cleanup() {
+    this._unwatchSaveLocal()
+  }
+
+  /**
+   * Save project to storage.
+   */
+  async _saveLocal() {
+    const dirPath = await this.dirPath
+    for (const [key, value] of Object.entries(dirPath)) {
+      await fs.writeFile(key, value)
+    }
+    const summary: ProjectSummary = {
+      id: this.id,
+      name: this.name,
+      version: this.version,
+      source: this.source,
+      cTime: this.cTime,
+      uTime: new Date().toISOString()
+    }
+    await fs.writeFile(this.summaryPath, summary)
+  }
+
+  /**
+   * Remove project from storage.
+   */
+  async _removeLocal() {
+    if (this._temporaryId !== null) {
+      await Project.removeLocalProject(this._temporaryId)
+    }
+    if (this._id !== null) {
+      await Project.removeLocalProject(this._id)
+    }
   }
 
   async load(
@@ -271,37 +325,6 @@ export class Project implements ProjectDetail, ProjectSummary {
     defaultSprite.config.costumes[0].x = 55
     defaultSprite.config.costumes[0].y = 50
     this.sprite.add(defaultSprite)
-  }
-
-  /**
-   * Save project to storage.
-   */
-  async saveLocal() {
-    const dirPath = await this.dirPath
-    for (const [key, value] of Object.entries(dirPath)) {
-      await fs.writeFile(key, value)
-    }
-    const summary: ProjectSummary = {
-      id: this.id,
-      name: this.name,
-      version: this.version,
-      source: this.source,
-      cTime: this.cTime,
-      uTime: new Date().toISOString()
-    }
-    await fs.writeFile(this.summaryPath, summary)
-  }
-
-  /**
-   * Remove project from storage.
-   */
-  async removeLocal() {
-    if (this._temporaryId !== null) {
-      await Project.removeLocalProject(this._temporaryId)
-    }
-    if (this._id !== null) {
-      await Project.removeLocalProject(this._id)
-    }
   }
 
   /**

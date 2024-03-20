@@ -8,9 +8,10 @@
  */
 import type { BackdropConfig } from '@/interface/file'
 import { AssetBase } from '@/class/asset-base'
-import { isInstance, getAllFromLocal } from '@/util/class'
+import { getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
 import type FileWithUrl from './file-with-url'
+import { reactive } from 'vue'
 
 /**
  * @class Backdrop
@@ -90,6 +91,7 @@ export class Backdrop extends AssetBase {
    */
   constructor(name: string = Backdrop.NAME, files: File[] = [], config?: BackdropConfig) {
     super(name, files, config)
+    return reactive(this)
   }
 
   /**
@@ -139,13 +141,6 @@ export class Backdrop extends AssetBase {
    */
   get path() {
     return Backdrop.ROOT_PATH
-  }
-
-  /**
-   * Check if an object is an instance of a backdrop.
-   */
-  static isInstance(obj: any): boolean {
-    return isInstance(obj, Backdrop)
   }
 
   /**

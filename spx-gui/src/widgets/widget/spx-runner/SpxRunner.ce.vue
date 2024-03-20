@@ -49,6 +49,7 @@ watch(
       try {
         const cloudProject = new Project()
         await cloudProject.load(projectid)
+        project.value.cleanup()
         project.value = cloudProject
         ready.value = true
       } catch (err) {

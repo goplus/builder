@@ -9,8 +9,9 @@
 
 import type { Costume, SpriteConfig } from '@/interface/file'
 import { AssetBase } from './asset-base'
-import { isInstance, getAllFromLocal } from '@/util/class'
+import { getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
+import { reactive } from 'vue'
 
 /**
  * @class Sprite
@@ -106,6 +107,7 @@ export class Sprite extends AssetBase {
   constructor(name: string, files: File[] = [], config?: SpriteConfig, code: string = '\r\n') {
     super(name, files, config)
     this.code = code
+    return reactive(this)
   }
 
   /**
@@ -265,12 +267,5 @@ export class Sprite extends AssetBase {
    */
   get path() {
     return Sprite.ROOT_PATH + this.name
-  }
-
-  /**
-   * Check if an object is an instance of a sprite.
-   */
-  static isInstance(obj: any): boolean {
-    return isInstance(obj, Sprite)
   }
 }

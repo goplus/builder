@@ -7,9 +7,10 @@
  * @Description: The class of a sound.
  */
 import { AssetBase } from './asset-base'
-import { isInstance, getAllFromLocal } from '@/util/class'
+import { getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
 import type { SoundConfig } from '@/interface/file'
+import { reactive } from 'vue'
 
 /**
  * @class Sound
@@ -93,6 +94,7 @@ export class Sound extends AssetBase {
    */
   constructor(name: string, files: File[] = [], config?: SoundConfig) {
     super(name, files, config)
+    return reactive(this)
   }
 
   /**
@@ -138,12 +140,5 @@ export class Sound extends AssetBase {
    */
   get path() {
     return Sound.ROOT_PATH + this.name
-  }
-
-  /**
-   * Check if an object is an instance of a sound.
-   */
-  static isInstance(obj: any): boolean {
-    return isInstance(obj, Sound)
   }
 }
