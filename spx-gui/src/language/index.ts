@@ -7,7 +7,6 @@
  * @Description:
  */
 import type { App } from 'vue'
-import { useLanguageStore } from '@/store/modules/language'
 import { createI18n } from 'vue-i18n'
 
 export const initI18n = async (app: App) => {
@@ -342,14 +341,13 @@ export const initI18n = async (app: App) => {
     }
   }
 
-  if (useLanguageStore().getLanguage() === null) {
-    useLanguageStore().setLanguage('en')
-  }
+  const currentLanguage = localStorage.getItem('language') || 'en'
+  localStorage.setItem('language', currentLanguage)
 
   const i18n = createI18n({
     legacy: false,
-    locale: useLanguageStore().getLanguage(),
-    fallbackLocale: useLanguageStore().getLanguage(),
+    locale: currentLanguage,
+    fallbackLocale: 'en',
     messages
   })
 

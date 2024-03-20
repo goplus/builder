@@ -15,7 +15,6 @@
 import { computed, h, ref } from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { useLanguageStore } from '@/store/modules/language'
 import {
   ComputerTwotone as CodeIcon,
   FilePresentTwotone as FileIcon,
@@ -42,7 +41,6 @@ const { locale, t } = useI18n({
   inheritLocale: true,
   useScope: 'global'
 })
-const languageStore = useLanguageStore()
 const { isOnline } = useNetwork()
 
 /**
@@ -380,7 +378,7 @@ function renderIcon(icon: any) {
  */
 const toggleLanguage = () => {
   locale.value = locale.value === 'en' ? 'zh' : 'en'
-  languageStore.setLanguage(languageStore.language === 'en' ? 'zh' : 'en')
+  localStorage.setItem('language', locale.value)
 }
 
 /**
