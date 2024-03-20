@@ -12,20 +12,21 @@
     <n-button-group class="formatBtnGroup" size="small">
       <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
     </n-button-group>
-    <CodeEditor ref="code_editor" :model-value="currentCode" @update:model-value="onCodeChange" />
+    <CodeEditor ref="codeEditor" :model-value="currentCode" @update:model-value="onCodeChange" />
   </div>
 </template>
 
 <script setup lang="ts">
-import CodeEditor, { monaco } from '@/components/code-editor'
+import CodeEditor from '@/components/code-editor'
 import { ref, computed } from 'vue'
 import { EditContentType, useEditorStore, useProjectStore } from '@/store'
 import { useSpriteStore } from '@/store/modules/sprite'
 import { NButton } from 'naive-ui'
+import type { languages } from 'monaco-editor'
 const projectStore = useProjectStore()
 const spriteStore = useSpriteStore()
 const editorStore = useEditorStore()
-const code_editor = ref()
+const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
 // watch the current sprite and set it's code to editor
 const currentCode = computed(() => {
@@ -48,23 +49,14 @@ const onCodeChange = (value: string) => {
 }
 
 const format = () => {
-  code_editor.value.format()
+  codeEditor.value?.format()
 }
 
-// Listen for insert events triggered by store, registered with store.$onAction
-const triggerInsertSnippet = (snippet: monaco.languages.CompletionItem) => {
-  code_editor.value.insertSnippet(snippet)
+const insertSnippet = (snippet: languages.CompletionItem) => {
+  codeEditor.value?.insertSnippet(snippet)
 }
 
-// register insertSnippet
-editorStore.$onAction(({ name, args, after }) => {
-  after(() => {
-    if (name === 'insertSnippet') {
-      const snippet = args[0] as monaco.languages.CompletionItem
-      triggerInsertSnippet(snippet)
-    }
-  })
-})
+defineExpose({ insertSnippet })
 </script>
 
 <style scoped>

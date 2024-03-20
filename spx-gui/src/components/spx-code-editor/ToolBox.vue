@@ -25,7 +25,7 @@
           v-for="(snippet, index) in item.completionItems"
           :key="index"
           style="margin-top: 24px"
-          @click="insertCode(toRaw(snippet))"
+          @click="props.insertSnippet?.(toRaw(snippet))"
         >
           {{ snippet.label }}
         </n-button>
@@ -35,7 +35,6 @@
 </template>
 <script setup lang="ts">
 import {
-  monaco,
   motionSnippets,
   eventSnippets,
   lookSnippets,
@@ -43,10 +42,10 @@ import {
   soundSnippets
 } from '@/components/code-editor'
 import { NButton, NTabs, NTabPane } from 'naive-ui'
-import { useEditorStore } from '@/store'
 import { toRaw, ref } from 'vue'
-const store = useEditorStore()
-console.log(motionSnippets)
+import type { languages } from 'monaco-editor'
+const props = defineProps<{ insertSnippet?: (snippet: languages.CompletionItem) => void }>()
+
 let completionToolbox = ref([
   {
     label: 'event',
@@ -69,11 +68,6 @@ let completionToolbox = ref([
     completionItems: controlSnippets
   }
 ])
-// dispatch insertCode
-const insertCode = (snippet: monaco.languages.CompletionItem) => {
-  console.log(snippet)
-  store.insertSnippet(snippet)
-}
 </script>
 <style scoped lang="scss">
 .n-button {

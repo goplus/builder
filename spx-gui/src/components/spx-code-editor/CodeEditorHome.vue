@@ -17,17 +17,20 @@
       show-trigger="arrow-circle"
       style="border-right: 2px dashed #8f98a1"
     >
-      <ToolBox />
+      <ToolBox :insert-snippet="spxCodeEditor?.insertSnippet" />
     </n-layout-sider>
     <n-layout-content>
-      <SpxCodeEditor />
+      <SpxCodeEditor ref="spxCodeEditor" />
     </n-layout-content>
   </n-layout>
 </template>
 <script lang="ts" setup>
+import { ref } from 'vue'
 import { NLayout, NLayoutSider, NLayoutContent } from 'naive-ui'
 import SpxCodeEditor from './SpxCodeEditor.vue'
 import ToolBox from './ToolBox.vue'
+
+const spxCodeEditor = ref<InstanceType<typeof SpxCodeEditor>>()
 
 const layoutStyle = {
   height: 'calc(100vh - 140px)',
