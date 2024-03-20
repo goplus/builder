@@ -7,7 +7,7 @@
  * @Description: The store of project.
  */
 
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
 import { useUserStore } from '@/store'
@@ -15,6 +15,16 @@ import { useUserStore } from '@/store'
 export const useProjectStore = defineStore('project', () => {
   // We use `shallowRef` here because `new Project()` itself is reactive.
   const project = shallowRef(new Project())
+
+  watch(
+    // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
+    // According to the document, we should use `() => project.value` instead of
+    // `project` to avoid deep watching, which is not expected here.
+    () => project.value,
+    (newProject, oldProject) => {
+      oldProject.cleanup()
+    }
+  )
 
   /**
    * Load project.

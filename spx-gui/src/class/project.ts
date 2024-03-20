@@ -20,7 +20,7 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultSceneImage from '@/assets/image/default_scene.png'
 import defaultSpriteImage from '@/assets/image/default_sprite.png'
 import type { AssetBase } from './asset-base'
-import { reactive, watch } from 'vue'
+import { reactive, watch, type WatchStopHandle } from 'vue'
 import { debounce } from '@/util/global'
 
 export enum ProjectSource {
@@ -76,6 +76,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   entryCode: string
   cTime: string
   uTime: string
+  _unwatchSaveLocal: WatchStopHandle
 
   /** Cloud Id */
   _id: string | null = null
@@ -92,12 +93,6 @@ export class Project implements ProjectDetail, ProjectSummary {
   static TEMPORARY_ID_PREFIX = 'temp__'
 
   static ALL_USER = '*'
-
-  static fromRawData(data: ProjectDetail & ProjectSummary): Project {
-    const project = new Project()
-    Object.assign(project, data)
-    return project
-  }
 
   static async getLocalProjects(): Promise<ProjectSummary[]> {
     const paths = await fs.readdir('summary/')
@@ -158,7 +153,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.uTime = this.cTime
 
     const project = reactive(this)
-    project._watchToSaveLocal()
+    this._unwatchSaveLocal = project._watchToSaveLocal()
     return project
   }
 
@@ -170,7 +165,11 @@ export class Project implements ProjectDetail, ProjectSummary {
       await this._saveLocal()
     })
 
-    watch(this, saveLocal, { deep: true })
+    return watch(this, saveLocal, { deep: true })
+  }
+
+  cleanup() {
+    this._unwatchSaveLocal()
   }
 
   /**
