@@ -140,7 +140,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   constructor() {
     this.name = ''
     this.backdrop = new Backdrop()
-    this.sprite = new SpriteList(this)
+    this.sprite = new SpriteList(this) // cyclic reference
     this.sound = new SoundList(this)
     this.entryCode = ''
     this.unidentifiedFile = {}
@@ -150,6 +150,7 @@ export class Project implements ProjectDetail, ProjectSummary {
     this.cTime = new Date().toISOString()
     this.uTime = this.cTime
 
+    // "Due to deep reactivity, nested objects inside a reactive object are also proxies"
     const project = reactive(this)
     project._watchToSaveLocal()
     return project

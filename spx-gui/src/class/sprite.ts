@@ -11,6 +11,7 @@ import type { Costume, SpriteConfig } from '@/interface/file'
 import { AssetBase } from './asset-base'
 import { getAllFromLocal } from '@/util/class'
 import type { RawDir } from '@/types/file'
+import { reactive } from 'vue'
 
 /**
  * @class Sprite
@@ -106,6 +107,7 @@ export class Sprite extends AssetBase {
   constructor(name: string, files: File[] = [], config?: SpriteConfig, code: string = '\r\n') {
     super(name, files, config)
     this.code = code
+    return reactive(this)
   }
 
   /**

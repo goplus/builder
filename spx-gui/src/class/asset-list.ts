@@ -3,6 +3,7 @@ import { Sound } from './sound'
 import { Sprite } from './sprite'
 import type { Project } from './project'
 import { checkUpdatedName } from '@/util/asset'
+import { reactive } from 'vue'
 
 export abstract class AssetList<T extends AssetBase> {
   public list: T[] = []
@@ -37,6 +38,11 @@ export abstract class AssetList<T extends AssetBase> {
 }
 
 export class SpriteList extends AssetList<Sprite> {
+  constructor(project: Project, list: Sprite[] = []) {
+    super(project, list)
+    return reactive(this)
+  }
+
   add(...sprites: Sprite[]): void {
     super.add(...sprites)
     sprites.forEach((sprite) => {
@@ -56,4 +62,9 @@ export class SpriteList extends AssetList<Sprite> {
   }
 }
 
-export class SoundList extends AssetList<Sound> {}
+export class SoundList extends AssetList<Sound> {
+  constructor(project: Project, list: Sound[] = []) {
+    super(project, list)
+    return reactive(this)
+  }
+}
