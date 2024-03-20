@@ -20,7 +20,7 @@ RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt
     && apt install -y gop
 
 # Build backend
-WORKDIR /app/spx-backend/cmd
+WORKDIR /app/spx-backend/cmd/spx-backend
 RUN gop build -o spx-backend .
 
 FROM node:20.11.1 as frontend-builder
@@ -51,6 +51,6 @@ EXPOSE 80
 
 WORKDIR /app
 
-COPY --from=go-builder /app/spx-backend/cmd/spx-backend /app/spx-backend
+COPY --from=go-builder /app/spx-backend/cmd/spx-backend/spx-backend /app/spx-backend
 
 CMD ./spx-backend & nginx -g "daemon off;" & wait
