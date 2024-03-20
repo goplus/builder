@@ -8,7 +8,5 @@
  */
 export * from './user'
 export * from './editor'
-export * from './stage'
 export * from './project'
 export * from './sprite'
-export * from './network'
