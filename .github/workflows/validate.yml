@@ -25,7 +25,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.11.1
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
@@ -49,7 +49,7 @@ jobs:
       - name: Set up Go & Go+
         uses: goplus/setup-goplus@v1
         with:
-          go-version: '1.21.0'
+          go-version: '1.21.3'
           gop-version: '1.2.5'
 
       - name: Run unit test cases
