@@ -21,521 +21,485 @@ type project struct {
 	ctrl *controller.Controller
 }
 //line cmd/spx-backend/project_yap.gox:17
-//Save project
+// Add project
 func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:18:1
 	this.Post("/project", func(ctx *yap.Context) {
 //line cmd/spx-backend/project_yap.gox:19:1
-		id := ctx.FormValue("id")
+		u, ok := ensureUser(ctx)
 //line cmd/spx-backend/project_yap.gox:20:1
-		currentUid := user.GetUid(ctx)
+		if !ok {
 //line cmd/spx-backend/project_yap.gox:21:1
-		if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:22:1
-			code := NoLogin
+			return
+		}
 //line cmd/spx-backend/project_yap.gox:23:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
+		params := &controller.AddProjectParams{}
+//line cmd/spx-backend/project_yap.gox:24:1
+		if
+//line cmd/spx-backend/project_yap.gox:24:1
+		ok = parseJson(ctx, params); !ok {
+//line cmd/spx-backend/project_yap.gox:25:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:27:1
+		params.Owner = u.Name
 //line cmd/spx-backend/project_yap.gox:28:1
-			return
-		}
+		if
+//line cmd/spx-backend/project_yap.gox:28:1
+		ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:29:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/project_yap.gox:30:1
-		name := ctx.FormValue("name")
-//line cmd/spx-backend/project_yap.gox:31:1
-		if name == "" {
+			return
+		}
 //line cmd/spx-backend/project_yap.gox:32:1
-			code := ErrorNameNotNull
+		res, err := this.ctrl.AddProject(utils.GetCtx(ctx), params)
 //line cmd/spx-backend/project_yap.gox:33:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:38:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:34:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:35:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:40:1
-		file, header, _ := ctx.FormFile("file")
+//line cmd/spx-backend/project_yap.gox:37:1
+		replyWithData(ctx, res)
+	})
 //line cmd/spx-backend/project_yap.gox:41:1
-		project := &model.Project{ID: id, Name: name, AuthorId: currentUid}
+	this.Put("/project/:owner/:name", func(ctx *yap.Context) {
+//line cmd/spx-backend/project_yap.gox:42:1
+		if
+//line cmd/spx-backend/project_yap.gox:42:1
+		_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/project_yap.gox:43:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:45:1
+		owner := ctx.Param("owner")
 //line cmd/spx-backend/project_yap.gox:46:1
-		res, err := this.ctrl.SaveProject(utils.GetCtx(ctx), project, file, header)
+		name := ctx.Param("name")
 //line cmd/spx-backend/project_yap.gox:47:1
-		if err != nil {
+		updates := &controller.UpdateProjectParams{}
 //line cmd/spx-backend/project_yap.gox:48:1
-			code := ErrorSave
+		if
+//line cmd/spx-backend/project_yap.gox:48:1
+		ok := parseJson(ctx, updates); !ok {
 //line cmd/spx-backend/project_yap.gox:49:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:54:1
 			return
 		}
+//line cmd/spx-backend/project_yap.gox:51:1
+		if
+//line cmd/spx-backend/project_yap.gox:51:1
+		ok, msg := updates.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:52:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/project_yap.gox:53:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:55:1
+		res, err := this.ctrl.UpdateProject(utils.GetCtx(ctx), owner, name, updates)
 //line cmd/spx-backend/project_yap.gox:56:1
-		code := SUCCESS
+		if err != nil {
 //line cmd/spx-backend/project_yap.gox:57:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": res})
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:58:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:60:1
+		replyWithData(ctx, res)
 	})
+//line cmd/spx-backend/project_yap.gox:64:1
+	this.Get("/project/:owner/:name", func(ctx *yap.Context) {
 //line cmd/spx-backend/project_yap.gox:65:1
-	this.Get("/project/:id", func(ctx *yap.Context) {
+		owner := ctx.Param("owner")
 //line cmd/spx-backend/project_yap.gox:66:1
-		id := ctx.Param("id")
+		name := ctx.Param("name")
 //line cmd/spx-backend/project_yap.gox:67:1
-		currentUid := user.GetUid(ctx)
+		res, err := this.ctrl.GetProject(utils.GetCtx(ctx), owner, name)
 //line cmd/spx-backend/project_yap.gox:68:1
-		res, err := this.ctrl.ProjectInfo(utils.GetCtx(ctx), id, currentUid)
+		if err != nil {
 //line cmd/spx-backend/project_yap.gox:69:1
-		if err != nil {
+			handlerInnerError(ctx, err)
 //line cmd/spx-backend/project_yap.gox:70:1
-			if err == os.ErrNotExist {
-//line cmd/spx-backend/project_yap.gox:71:1
-				code := ErrorProjectNotFound
+			return
+		}
 //line cmd/spx-backend/project_yap.gox:72:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-			} else {
+		replyWithData(ctx, res)
+	})
+//line cmd/spx-backend/project_yap.gox:76:1
+	this.Delete("/project/:owner/:name", func(ctx *yap.Context) {
+//line cmd/spx-backend/project_yap.gox:77:1
+		owner := ctx.Param("owner")
+//line cmd/spx-backend/project_yap.gox:78:1
+		name := ctx.Param("name")
 //line cmd/spx-backend/project_yap.gox:79:1
-				code := ErrorPermissions
+		err := this.ctrl.DeleteProject(utils.GetCtx(ctx), owner, name)
 //line cmd/spx-backend/project_yap.gox:80:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-			}
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:81:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:82:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:84:1
+		replyWithData(ctx, nil)
+	})
 //line cmd/spx-backend/project_yap.gox:87:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:89:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:90:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": res})
-	})
-//line cmd/spx-backend/project_yap.gox:98:1
-	this.Delete("/project/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:99:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:100:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:101:1
-		if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:102:1
-			code := NoLogin
-//line cmd/spx-backend/project_yap.gox:103:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:108:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:110:1
-		err := this.ctrl.DeleteProject(utils.GetCtx(ctx), id, currentUid)
-//line cmd/spx-backend/project_yap.gox:111:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:112:1
-			if err == controller.ErrPermissions {
-//line cmd/spx-backend/project_yap.gox:113:1
-				code := ErrorPermissions
-//line cmd/spx-backend/project_yap.gox:114:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:119:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:121:1
-			code := ErrorDelete
-//line cmd/spx-backend/project_yap.gox:122:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:127:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:129:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:130:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-	})
-//line cmd/spx-backend/project_yap.gox:138:1
-	this.Put("/project/:id/is-public", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:139:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:140:1
-		if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:141:1
-			code := NoLogin
-//line cmd/spx-backend/project_yap.gox:142:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:147:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:149:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:150:1
-		isPublic := ctx.Param("isPublic")
-//line cmd/spx-backend/project_yap.gox:151:1
-		err := this.ctrl.UpdatePublic(utils.GetCtx(ctx), id, isPublic, currentUid)
-//line cmd/spx-backend/project_yap.gox:152:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:153:1
-			if err == controller.ErrPermissions {
-//line cmd/spx-backend/project_yap.gox:154:1
-				code := ErrorPermissions
-//line cmd/spx-backend/project_yap.gox:155:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:160:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:162:1
-			code := ErrorUpdateState
-//line cmd/spx-backend/project_yap.gox:163:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:168:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:170:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:171:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-	})
-//line cmd/spx-backend/project_yap.gox:179:1
+	const (
+		firstPageIndex  = 1
+		defaultPageSize = 10
+	)
+//line cmd/spx-backend/project_yap.gox:93:1
 	this.Get("/projects/list", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:180:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:181:1
-		isPublic := ctx.Param("isPublic")
-//line cmd/spx-backend/project_yap.gox:182:1
-		pageIndex := ctx.Param("pageIndex")
-//line cmd/spx-backend/project_yap.gox:183:1
-		pageSize := ctx.Param("pageSize")
-//line cmd/spx-backend/project_yap.gox:184:1
-		author := ctx.Param("author")
-//line cmd/spx-backend/project_yap.gox:185:1
-		authorId := ""
-//line cmd/spx-backend/project_yap.gox:186:1
-		if author == "" {
-//line cmd/spx-backend/project_yap.gox:187:1
-			if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:188:1
-				code := NoLogin
-//line cmd/spx-backend/project_yap.gox:189:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:194:1
+//line cmd/spx-backend/project_yap.gox:94:1
+		u, _ := user.GetUser(utils.GetCtx(ctx))
+//line cmd/spx-backend/project_yap.gox:95:1
+		params := &controller.ProjectListParams{}
+//line cmd/spx-backend/project_yap.gox:97:1
+		if
+//line cmd/spx-backend/project_yap.gox:97:1
+		isPublicInput := ctx.Param("isPublic"); isPublicInput != "" {
+//line cmd/spx-backend/project_yap.gox:98:1
+			isPublicInt, err := strconv.Atoi(isPublicInput)
+//line cmd/spx-backend/project_yap.gox:99:1
+			if err != nil {
+//line cmd/spx-backend/project_yap.gox:100:1
+				replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/project_yap.gox:101:1
 				return
 			}
-//line cmd/spx-backend/project_yap.gox:196:1
-			authorId = currentUid
-		} else
-//line cmd/spx-backend/project_yap.gox:197:1
-		if author == "*" {
-//line cmd/spx-backend/project_yap.gox:198:1
-			authorId = ""
-		} else {
-//line cmd/spx-backend/project_yap.gox:200:1
-			authorId = author
+//line cmd/spx-backend/project_yap.gox:103:1
+			isPublic := model.IsPublic(isPublicInt)
+//line cmd/spx-backend/project_yap.gox:104:1
+			params.IsPublic = &isPublic
 		}
-//line cmd/spx-backend/project_yap.gox:202:1
-		if authorId != currentUid || currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:203:1
-			isPublic = strconv.Itoa(model.PUBLIC)
+//line cmd/spx-backend/project_yap.gox:107:1
+		switch
+//line cmd/spx-backend/project_yap.gox:107:1
+		ownerInput := ctx.Param("owner"); ownerInput {
+//line cmd/spx-backend/project_yap.gox:108:1
+		case "":
+//line cmd/spx-backend/project_yap.gox:109:1
+			if u == nil {
+//line cmd/spx-backend/project_yap.gox:110:1
+				replyWithCode(ctx, errorUnauthorized)
+//line cmd/spx-backend/project_yap.gox:111:1
+				return
+			}
+//line cmd/spx-backend/project_yap.gox:113:1
+			params.Owner = &u.Name
+//line cmd/spx-backend/project_yap.gox:114:1
+		case "*":
+//line cmd/spx-backend/project_yap.gox:115:1
+			params.Owner = nil
+//line cmd/spx-backend/project_yap.gox:116:1
+		default:
+//line cmd/spx-backend/project_yap.gox:117:1
+			params.Owner = &ownerInput
 		}
-//line cmd/spx-backend/project_yap.gox:205:1
-		result, err := this.ctrl.ProjectList(utils.GetCtx(ctx), pageIndex, pageSize, isPublic, authorId)
-//line cmd/spx-backend/project_yap.gox:206:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:207:1
-			code := ErrorGetProjects
-//line cmd/spx-backend/project_yap.gox:208:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:213:1
+//line cmd/spx-backend/project_yap.gox:120:1
+		params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/project_yap.gox:121:1
+		params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/project_yap.gox:122:1
+		if
+//line cmd/spx-backend/project_yap.gox:122:1
+		ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:123:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/project_yap.gox:124:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:215:1
-		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": result})
+//line cmd/spx-backend/project_yap.gox:127:1
+		result, err := this.ctrl.ListProject(utils.GetCtx(ctx), params)
+//line cmd/spx-backend/project_yap.gox:128:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:129:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:130:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:132:1
+		replyWithData(ctx, result)
 	})
-//line cmd/spx-backend/project_yap.gox:223:1
+//line cmd/spx-backend/project_yap.gox:136:1
 	this.Post("/asset", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:224:1
-		err := ctx.ParseMultipartForm(10 << 20)
-//line cmd/spx-backend/project_yap.gox:225:1
+//line cmd/spx-backend/project_yap.gox:137:1
+		u, ok := ensureUser(ctx)
+//line cmd/spx-backend/project_yap.gox:138:1
+		if !ok {
+//line cmd/spx-backend/project_yap.gox:139:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:141:1
+		params := &controller.AddAssetParams{}
+//line cmd/spx-backend/project_yap.gox:142:1
+		if
+//line cmd/spx-backend/project_yap.gox:142:1
+		ok = parseJson(ctx, params); !ok {
+//line cmd/spx-backend/project_yap.gox:143:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:145:1
+		params.Owner = u.Name
+//line cmd/spx-backend/project_yap.gox:146:1
+		if
+//line cmd/spx-backend/project_yap.gox:146:1
+		ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:147:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/project_yap.gox:148:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:150:1
+		res, err := this.ctrl.AddAsset(utils.GetCtx(ctx), params)
+//line cmd/spx-backend/project_yap.gox:151:1
 		if err != nil {
-//line cmd/spx-backend/project_yap.gox:226:1
-			code := ErrorParseMultipartForm
-//line cmd/spx-backend/project_yap.gox:227:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:232:1
+//line cmd/spx-backend/project_yap.gox:152:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:153:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:234:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:235:1
-		if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:236:1
-			code := NoLogin
-//line cmd/spx-backend/project_yap.gox:237:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:242:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:244:1
-		files := ctx.MultipartForm.File["files"]
-//line cmd/spx-backend/project_yap.gox:245:1
-		name := ctx.FormValue("name")
-//line cmd/spx-backend/project_yap.gox:246:1
-		publishState := ctx.FormValue("publishState")
-//line cmd/spx-backend/project_yap.gox:247:1
-		previewAddress := ctx.FormValue("previewAddress")
-//line cmd/spx-backend/project_yap.gox:248:1
-		category := ctx.FormValue("category")
-//line cmd/spx-backend/project_yap.gox:249:1
-		assetType := ctx.FormValue("assetType")
-//line cmd/spx-backend/project_yap.gox:250:1
-		err = this.ctrl.UploadAsset(utils.GetCtx(ctx), name, files, previewAddress, currentUid, category, publishState, assetType)
-//line cmd/spx-backend/project_yap.gox:251:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:252:1
-			code := ErrorUpload
-//line cmd/spx-backend/project_yap.gox:253:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:258:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:260:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:261:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
+//line cmd/spx-backend/project_yap.gox:155:1
+		replyWithData(ctx, res)
 	})
-//line cmd/spx-backend/project_yap.gox:269:1
+//line cmd/spx-backend/project_yap.gox:159:1
+	this.Put("/asset/:id", func(ctx *yap.Context) {
+//line cmd/spx-backend/project_yap.gox:160:1
+		if
+//line cmd/spx-backend/project_yap.gox:160:1
+		_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/project_yap.gox:161:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:163:1
+		id := ctx.Param("id")
+//line cmd/spx-backend/project_yap.gox:164:1
+		updates := &controller.UpdateAssetParams{}
+//line cmd/spx-backend/project_yap.gox:165:1
+		if
+//line cmd/spx-backend/project_yap.gox:165:1
+		ok := parseJson(ctx, updates); !ok {
+//line cmd/spx-backend/project_yap.gox:166:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:168:1
+		if
+//line cmd/spx-backend/project_yap.gox:168:1
+		ok, msg := updates.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:169:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/project_yap.gox:170:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:172:1
+		res, err := this.ctrl.UpdateAsset(utils.GetCtx(ctx), id, updates)
+//line cmd/spx-backend/project_yap.gox:173:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:174:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:175:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:177:1
+		replyWithData(ctx, res)
+	})
+//line cmd/spx-backend/project_yap.gox:181:1
 	this.Get("/asset/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:270:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:271:1
+//line cmd/spx-backend/project_yap.gox:182:1
 		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:272:1
-		asset, err := this.ctrl.Asset(utils.GetCtx(ctx), id, currentUid)
-//line cmd/spx-backend/project_yap.gox:273:1
+//line cmd/spx-backend/project_yap.gox:183:1
+		res, err := this.ctrl.GetAsset(utils.GetCtx(ctx), id)
+//line cmd/spx-backend/project_yap.gox:184:1
 		if err != nil {
-//line cmd/spx-backend/project_yap.gox:274:1
-			if err == os.ErrNotExist {
-//line cmd/spx-backend/project_yap.gox:275:1
-				code := ErrorProjectNotFound
-//line cmd/spx-backend/project_yap.gox:276:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:281:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:283:1
-			code := ErrorGetAsset
-//line cmd/spx-backend/project_yap.gox:284:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:289:1
+//line cmd/spx-backend/project_yap.gox:185:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:186:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:291:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:292:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": asset})
+//line cmd/spx-backend/project_yap.gox:188:1
+		replyWithData(ctx, res)
 	})
-//line cmd/spx-backend/project_yap.gox:300:1
+//line cmd/spx-backend/project_yap.gox:192:1
 	this.Get("/assets/list", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:301:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:302:1
-		isPublic := ctx.Param("isPublic")
-//line cmd/spx-backend/project_yap.gox:303:1
-		author := ctx.Param("author")
-//line cmd/spx-backend/project_yap.gox:305:1
-		pageIndex := ctx.Param("pageIndex")
-//line cmd/spx-backend/project_yap.gox:306:1
-		pageSize := ctx.Param("pageSize")
-//line cmd/spx-backend/project_yap.gox:307:1
-		assetType := ctx.Param("assetType")
-//line cmd/spx-backend/project_yap.gox:308:1
-		category := ctx.Param("category")
-//line cmd/spx-backend/project_yap.gox:309:1
-		isOrderByTime := ctx.Param("isOrderByTime")
-//line cmd/spx-backend/project_yap.gox:310:1
-		isOrderByHot := ctx.Param("isOrderByHot")
-//line cmd/spx-backend/project_yap.gox:311:1
-		authorId := ""
-//line cmd/spx-backend/project_yap.gox:312:1
-		if author == "" {
-//line cmd/spx-backend/project_yap.gox:313:1
-			if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:314:1
-				code := NoLogin
-//line cmd/spx-backend/project_yap.gox:315:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:320:1
+//line cmd/spx-backend/project_yap.gox:193:1
+		u, _ := user.GetUser(utils.GetCtx(ctx))
+//line cmd/spx-backend/project_yap.gox:194:1
+		params := &controller.AssetListParams{}
+//line cmd/spx-backend/project_yap.gox:196:1
+		params.Keyword = ctx.Param("keyword")
+//line cmd/spx-backend/project_yap.gox:197:1
+		if
+//line cmd/spx-backend/project_yap.gox:197:1
+		assetTypeInput := ctx.Param("assetType"); assetTypeInput != "" {
+//line cmd/spx-backend/project_yap.gox:198:1
+			assetTypeInt, err := strconv.Atoi(assetTypeInput)
+//line cmd/spx-backend/project_yap.gox:199:1
+			if err != nil {
+//line cmd/spx-backend/project_yap.gox:200:1
+				replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/project_yap.gox:201:1
 				return
 			}
-//line cmd/spx-backend/project_yap.gox:322:1
-			authorId = currentUid
-		} else
-//line cmd/spx-backend/project_yap.gox:323:1
-		if author == "*" {
-//line cmd/spx-backend/project_yap.gox:324:1
-			authorId = ""
-		} else {
-//line cmd/spx-backend/project_yap.gox:326:1
-			authorId = author
+//line cmd/spx-backend/project_yap.gox:203:1
+			assetType := model.AssetType(assetTypeInt)
+//line cmd/spx-backend/project_yap.gox:204:1
+			params.AssetType = &assetType
 		}
-//line cmd/spx-backend/project_yap.gox:328:1
-		if authorId != currentUid || currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:329:1
-			isPublic = strconv.Itoa(model.PUBLIC)
+//line cmd/spx-backend/project_yap.gox:206:1
+		if
+//line cmd/spx-backend/project_yap.gox:206:1
+		categoryInput := ctx.Param("category"); categoryInput != "" {
+//line cmd/spx-backend/project_yap.gox:207:1
+			params.Category = &categoryInput
 		}
-//line cmd/spx-backend/project_yap.gox:331:1
-		result, err := this.ctrl.AssetList(utils.GetCtx(ctx), pageIndex, pageSize, assetType, category, isOrderByTime, isOrderByHot, authorId, isPublic)
-//line cmd/spx-backend/project_yap.gox:332:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:333:1
-			code := ErrorGetAsset
-//line cmd/spx-backend/project_yap.gox:334:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:339:1
+//line cmd/spx-backend/project_yap.gox:209:1
+		if
+//line cmd/spx-backend/project_yap.gox:209:1
+		isPublicInput := ctx.Param("isPublic"); isPublicInput != "" {
+//line cmd/spx-backend/project_yap.gox:210:1
+			isPublicInt, err := strconv.Atoi(isPublicInput)
+//line cmd/spx-backend/project_yap.gox:211:1
+			if err != nil {
+//line cmd/spx-backend/project_yap.gox:212:1
+				replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/project_yap.gox:213:1
+				return
+			}
+//line cmd/spx-backend/project_yap.gox:215:1
+			isPublic := model.IsPublic(isPublicInt)
+//line cmd/spx-backend/project_yap.gox:216:1
+			params.IsPublic = &isPublic
+		}
+//line cmd/spx-backend/project_yap.gox:219:1
+		switch
+//line cmd/spx-backend/project_yap.gox:219:1
+		ownerInput := ctx.Param("owner"); ownerInput {
+//line cmd/spx-backend/project_yap.gox:220:1
+		case "":
+//line cmd/spx-backend/project_yap.gox:221:1
+			if u == nil {
+//line cmd/spx-backend/project_yap.gox:222:1
+				replyWithCode(ctx, errorUnauthorized)
+//line cmd/spx-backend/project_yap.gox:223:1
+				return
+			}
+//line cmd/spx-backend/project_yap.gox:225:1
+			params.Owner = &u.Name
+//line cmd/spx-backend/project_yap.gox:226:1
+		case "*":
+//line cmd/spx-backend/project_yap.gox:227:1
+			params.Owner = nil
+//line cmd/spx-backend/project_yap.gox:228:1
+		default:
+//line cmd/spx-backend/project_yap.gox:229:1
+			params.Owner = &ownerInput
+		}
+//line cmd/spx-backend/project_yap.gox:232:1
+		if
+//line cmd/spx-backend/project_yap.gox:232:1
+		orderByInput := ctx.Param("orderBy"); orderByInput != "" {
+//line cmd/spx-backend/project_yap.gox:233:1
+			params.OrderBy = controller.OrderBy(orderByInput)
+		}
+//line cmd/spx-backend/project_yap.gox:235:1
+		params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/project_yap.gox:236:1
+		params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/project_yap.gox:237:1
+		if
+//line cmd/spx-backend/project_yap.gox:237:1
+		ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/project_yap.gox:238:1
+			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/project_yap.gox:239:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:341:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:342:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": result})
+//line cmd/spx-backend/project_yap.gox:242:1
+		result, err := this.ctrl.ListAsset(utils.GetCtx(ctx), params)
+//line cmd/spx-backend/project_yap.gox:243:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:244:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:245:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:247:1
+		replyWithData(ctx, result)
 	})
-//line cmd/spx-backend/project_yap.gox:350:1
-	this.Post("/asset/:id/click-count", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:351:1
+//line cmd/spx-backend/project_yap.gox:251:1
+	this.Post("/asset/:id/click", func(ctx *yap.Context) {
+//line cmd/spx-backend/project_yap.gox:252:1
 		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:352:1
-		err := this.ctrl.IncrementAssetClickCount(utils.GetCtx(ctx), id)
-//line cmd/spx-backend/project_yap.gox:353:1
+//line cmd/spx-backend/project_yap.gox:253:1
+		err := this.ctrl.IncreaseAssetClickCount(utils.GetCtx(ctx), id)
+//line cmd/spx-backend/project_yap.gox:254:1
 		if err != nil {
-//line cmd/spx-backend/project_yap.gox:354:1
-			code := ErrClick
-//line cmd/spx-backend/project_yap.gox:355:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:360:1
+//line cmd/spx-backend/project_yap.gox:255:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:256:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:362:1
-		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": ""})
+//line cmd/spx-backend/project_yap.gox:258:1
+		replyWithData(ctx, nil)
 	})
-//line cmd/spx-backend/project_yap.gox:370:1
-	this.Get("/assets/search", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:371:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:372:1
-		search := ctx.Param("search")
-//line cmd/spx-backend/project_yap.gox:373:1
-		assetType := ctx.Param("assetType")
-//line cmd/spx-backend/project_yap.gox:374:1
-		pageIndex := ctx.Param("pageIndex")
-//line cmd/spx-backend/project_yap.gox:375:1
-		pageSize := ctx.Param("pageSize")
-//line cmd/spx-backend/project_yap.gox:376:1
-		assets, err := this.ctrl.SearchAsset(utils.GetCtx(ctx), search, pageIndex, pageSize, assetType, currentUid)
-//line cmd/spx-backend/project_yap.gox:377:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:378:1
-			code := ErrorGetAsset
-//line cmd/spx-backend/project_yap.gox:379:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:384:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:386:1
-		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": assets})
-	})
-//line cmd/spx-backend/project_yap.gox:394:1
+//line cmd/spx-backend/project_yap.gox:262:1
 	this.Delete("/asset/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:395:1
+//line cmd/spx-backend/project_yap.gox:263:1
 		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:396:1
-		currentUid := user.GetUid(ctx)
-//line cmd/spx-backend/project_yap.gox:397:1
-		if currentUid == "" {
-//line cmd/spx-backend/project_yap.gox:398:1
-			code := NoLogin
-//line cmd/spx-backend/project_yap.gox:399:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:404:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:406:1
-		err := this.ctrl.DeleteAsset(utils.GetCtx(ctx), id, currentUid)
-//line cmd/spx-backend/project_yap.gox:407:1
+//line cmd/spx-backend/project_yap.gox:264:1
+		err := this.ctrl.DeleteAsset(utils.GetCtx(ctx), id)
+//line cmd/spx-backend/project_yap.gox:265:1
 		if err != nil {
-//line cmd/spx-backend/project_yap.gox:408:1
-			if err == controller.ErrPermissions {
-//line cmd/spx-backend/project_yap.gox:409:1
-				code := ErrorPermissions
-//line cmd/spx-backend/project_yap.gox:410:1
-				ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:415:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:417:1
-			code := ErrorDelete
-//line cmd/spx-backend/project_yap.gox:418:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:423:1
+//line cmd/spx-backend/project_yap.gox:266:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:267:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:425:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:426:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
+//line cmd/spx-backend/project_yap.gox:269:1
+		replyWithData(ctx, nil)
 	})
-//line cmd/spx-backend/project_yap.gox:434:1
+//line cmd/spx-backend/project_yap.gox:273:1
 	this.Post("/util/fmt", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:435:1
-		body := ctx.FormValue("body")
-//line cmd/spx-backend/project_yap.gox:436:1
-		imports := ctx.FormValue("import")
-//line cmd/spx-backend/project_yap.gox:437:1
-		res := this.ctrl.CodeFmt(utils.GetCtx(ctx), body, imports)
-//line cmd/spx-backend/project_yap.gox:438:1
-		ctx.Json__1(map[string]interface{}{"code": 200, "msg": "ok", "data": res})
-	})
-//line cmd/spx-backend/project_yap.gox:446:1
-	this.Post("/util/to-gif", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:447:1
-		err := ctx.ParseMultipartForm(10 << 20)
-//line cmd/spx-backend/project_yap.gox:448:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:449:1
-			code := ErrorParseMultipartForm
-//line cmd/spx-backend/project_yap.gox:450:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:455:1
+//line cmd/spx-backend/project_yap.gox:274:1
+		input := &controller.FmtCodeInput{}
+//line cmd/spx-backend/project_yap.gox:275:1
+		if
+//line cmd/spx-backend/project_yap.gox:275:1
+		ok := parseJson(ctx, input); !ok {
+//line cmd/spx-backend/project_yap.gox:276:1
 			return
 		}
-//line cmd/spx-backend/project_yap.gox:457:1
-		files := ctx.MultipartForm.File["files"]
-//line cmd/spx-backend/project_yap.gox:458:1
-		path, err := this.ctrl.ImagesToGif(utils.GetCtx(ctx), files)
-//line cmd/spx-backend/project_yap.gox:459:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:460:1
-			code := ErrorImagesToGif
-//line cmd/spx-backend/project_yap.gox:461:1
-			ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": ""})
-//line cmd/spx-backend/project_yap.gox:466:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:468:1
-		code := SUCCESS
-//line cmd/spx-backend/project_yap.gox:469:1
-		ctx.Json__1(map[string]interface{}{"code": code, "msg": GetMsg(code), "data": path})
+//line cmd/spx-backend/project_yap.gox:278:1
+		res := this.ctrl.FmtCode(utils.GetCtx(ctx), input)
+//line cmd/spx-backend/project_yap.gox:279:1
+		replyWithData(ctx, res)
 	})
-//line cmd/spx-backend/project_yap.gox:476:1
+//line cmd/spx-backend/project_yap.gox:282:1
 	var err error
-//line cmd/spx-backend/project_yap.gox:477:1
+//line cmd/spx-backend/project_yap.gox:283:1
 	conf := &controller.Config{}
-//line cmd/spx-backend/project_yap.gox:478:1
+//line cmd/spx-backend/project_yap.gox:284:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/project_yap.gox:479:1
-	this.ctrl, err = controller.New(context.Background(), conf)
-//line cmd/spx-backend/project_yap.gox:480:1
+//line cmd/spx-backend/project_yap.gox:285:1
+	this.ctrl, err = controller.NewController(context.Background(), conf)
+//line cmd/spx-backend/project_yap.gox:286:1
 	if err != nil {
-//line cmd/spx-backend/project_yap.gox:481:1
+//line cmd/spx-backend/project_yap.gox:287:1
 		logger.Fatalln("New controller failed:", err)
 	}
-//line cmd/spx-backend/project_yap.gox:483:1
+//line cmd/spx-backend/project_yap.gox:289:1
 	user.CasdoorConfigInit()
-//line cmd/spx-backend/project_yap.gox:484:1
+//line cmd/spx-backend/project_yap.gox:290:1
 	port := os.Getenv("PORT")
-//line cmd/spx-backend/project_yap.gox:485:1
+//line cmd/spx-backend/project_yap.gox:291:1
 	if port == "" {
-//line cmd/spx-backend/project_yap.gox:486:1
+//line cmd/spx-backend/project_yap.gox:292:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/project_yap.gox:488:1
+//line cmd/spx-backend/project_yap.gox:294:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/project_yap.gox:489:1
-	this.Run(port, CorsMiddleware, ReqIDMiddleware)
+//line cmd/spx-backend/project_yap.gox:295:1
+	this.Run(port, UserMiddleware, ReqIDMiddleware, CorsMiddleware)
 }
 func (this *project) Main() {
 	yap.Gopt_App_Main(this)
