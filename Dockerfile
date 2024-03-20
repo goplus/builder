@@ -23,7 +23,7 @@ RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt
 WORKDIR /app/spx-backend/cmd
 RUN gop build -o spx-backend .
 
-FROM node:latest as frontend-builder
+FROM node:20.11.1 as frontend-builder
 
 WORKDIR /app/spx-gui
 
