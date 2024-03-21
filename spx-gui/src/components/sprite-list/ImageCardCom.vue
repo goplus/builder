@@ -46,13 +46,13 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
-import { useSpriteStore } from '@/store/modules/sprite'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import { AssetBase } from '@/class/asset-base'
 import { Backdrop } from '@/class/backdrop'
 import FileWithUrl from '@/class/file-with-url'
 import error from '@/assets/image/library/error.svg'
 import type { Scene } from '@/interface/file'
+import { useProjectStore } from '@/store'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -60,8 +60,8 @@ interface PropType {
   asset: AssetBase | Backdrop
 }
 const props = defineProps<PropType>()
-const spriteStore = useSpriteStore()
 const backdropStore = useBackdropStore()
+const projectStore = useProjectStore()
 const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 
 // ----------computed properties-----------------------------
@@ -92,7 +92,9 @@ const computedProperties = computed(() => {
  * @Date: 2024-01-23 14:29:02
  */
 const deleteSprite = (name: string) => {
-  spriteStore.removeItemByName(name)
+  projectStore.project.sprite.list = projectStore.project.sprite.list.filter(
+    (sprite) => sprite.name !== name
+  )
 }
 
 /**

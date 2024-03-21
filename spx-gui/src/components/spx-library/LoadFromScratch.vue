@@ -102,7 +102,7 @@ import {
   NSpin
 } from 'naive-ui'
 import { Sprite } from '@/class/sprite'
-import { useProjectStore, useSpriteStore } from '@/store'
+import { useProjectStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
@@ -115,7 +115,6 @@ import { useI18n } from 'vue-i18n'
 // ----------props & emit------------------------------------
 
 const projectStore = useProjectStore()
-const spriteStore = useSpriteStore()
 const message: MessageApi = useMessage()
 
 // ----------data related -----------------------------------
@@ -276,7 +275,7 @@ const importSoundToProject = (asset: AssetFileDetail, file: File) => {
  */
 const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
   let sprite = new Sprite(asset.name, [file])
-  spriteStore.addItem(sprite)
+  projectStore.project.sprite.add(sprite)
 }
 
 /**

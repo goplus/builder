@@ -53,7 +53,9 @@ const selectedSpriteNames = ref<string[]>([])
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
-  spriteStore.current = spriteStore.list.find((sprite) => sprite.name === e.names[0]) as Sprite
+  spriteStore.current = projectStore.project.sprite.list.find(
+    (sprite) => sprite.name === e.names[0]
+  ) as Sprite
 }
 
 const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
