@@ -136,7 +136,6 @@ import type { UploadFileInfo } from 'naive-ui'
 import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
-import { useBackdropStore } from '@/store/modules/backdrop'
 import LibraryModal from '@/components/spx-library/LibraryModal.vue'
 import { Sprite } from '@/class/sprite'
 import FileWithUrl from '@/class/file-with-url'
@@ -156,7 +155,6 @@ interface PropType {
 }
 const props = defineProps<PropType>()
 const message = useMessage()
-const backdropStore = useBackdropStore()
 const projectStore = useProjectStore()
 const { isOnline } = useNetwork()
 
@@ -273,7 +271,7 @@ const beforeUpload = (
           message.error(t('message.image'))
           return false
         }
-        let backdrop = backdropStore.backdrop
+        let backdrop = projectStore.project.backdrop
         backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
         break
       }
@@ -420,7 +418,7 @@ const handleAssetAddition = async (
     let fileURL = URL.createObjectURL(file)
     let fileWithUrl = new FileWithUrl(file, fileURL)
     let fileNameWithoutExtension = name.substring(0, name.lastIndexOf('.'))
-    let backdrop = backdropStore.backdrop
+    let backdrop = projectStore.project.backdrop
     backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
   } else if (props.type === 'sounds') {
     const file = fileArr[0]

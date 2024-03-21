@@ -10,26 +10,22 @@
   <div class="stage-list">
     <div class="stage-list-space">
       <AssetAddBtn :type="'backdrop'" />
-      <ImageCardCom :type="'bg'" :asset="backdrop" :style="{ 'margin-bottom': '26px' }" />
+      <ImageCardCom
+        :type="'bg'"
+        :asset="projectStore.project.backdrop"
+        :style="{ 'margin-bottom': '26px' }"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, type ComputedRef } from 'vue'
-import { useBackdropStore } from '@/store/modules/backdrop'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
-import { Backdrop } from '@/class/backdrop'
+import { useProjectStore } from '@/store'
 
 // ----------props & emit------------------------------------
-const backdropStore = useBackdropStore()
-
-// ----------computed properties-----------------------------
-// Computed backdrop from backdropStore.
-const backdrop: ComputedRef<Backdrop> = computed(() => {
-  return backdropStore.backdrop as Backdrop
-})
+const projectStore = useProjectStore()
 </script>
 
 <style scoped lang="scss">

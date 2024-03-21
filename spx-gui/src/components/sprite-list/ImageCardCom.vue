@@ -46,7 +46,6 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
-import { useBackdropStore } from '@/store/modules/backdrop'
 import { AssetBase } from '@/class/asset-base'
 import { Backdrop } from '@/class/backdrop'
 import FileWithUrl from '@/class/file-with-url'
@@ -60,7 +59,6 @@ interface PropType {
   asset: AssetBase | Backdrop
 }
 const props = defineProps<PropType>()
-const backdropStore = useBackdropStore()
 const projectStore = useProjectStore()
 const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 
@@ -104,7 +102,7 @@ const deleteSprite = (name: string) => {
  * @Date: 2024-01-24 12:11:38
  */
 const deleteBackdropScene = (name: string) => {
-  backdropStore.backdrop.removeScene(name)
+  projectStore.project.backdrop.removeScene(name)
 }
 
 /**
@@ -112,7 +110,7 @@ const deleteBackdropScene = (name: string) => {
  * @param name string
  */
 const setSceneToTop = (name: string) => {
-  backdropStore.backdrop.setSceneToTop(name)
+  projectStore.project.backdrop.setSceneToTop(name)
 }
 </script>
 
