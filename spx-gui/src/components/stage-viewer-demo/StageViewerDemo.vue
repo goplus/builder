@@ -162,7 +162,7 @@ import { NInputNumber, NSwitch } from 'naive-ui'
 import type { Sprite } from '@/class/sprite'
 import StageViewer from '../stage-viewer'
 import type { SelectedSpritesChangeEvent } from '../stage-viewer'
-import { useProjectStore } from '@/store/modules/project'
+import { useProjectStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { ref, computed } from 'vue'
 

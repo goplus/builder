@@ -13,7 +13,7 @@
         round
         autosize
         clearable
-        :disabled="!spriteStore.current"
+        :disabled="!editorStore.currentSprite"
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
         @blur="handleUpdateSpriteName"
@@ -31,10 +31,10 @@
         clearable
         type="number"
         :value="x"
-        :disabled="!spriteStore.current"
+        :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setSx(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setSx(val as number)
           }
         "
       >
@@ -45,10 +45,10 @@
       <n-input-number
         type="number"
         :value="y"
-        :disabled="!spriteStore.current"
+        :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setSy(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setSy(val as number)
           }
         "
       >
@@ -61,7 +61,7 @@
         v-model:value="visible"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setVisible(val)
+            editorStore.currentSprite && editorStore.currentSprite.setVisible(val)
           }
         "
       >
@@ -72,10 +72,10 @@
         type="number"
         :min="0"
         :value="size * 100"
-        :disabled="!spriteStore.current"
+        :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setSize((val as number) / 100)
+            editorStore.currentSprite && editorStore.currentSprite.setSize((val as number) / 100)
           }
         "
       >
@@ -89,10 +89,10 @@
         :min="-180"
         :max="180"
         :value="heading"
-        :disabled="!spriteStore.current"
+        :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            spriteStore.current && spriteStore.current.setHeading(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setHeading(val as number)
           }
         "
       >
@@ -106,26 +106,30 @@
 // ----------Import required packages / components-----------
 import { computed, ref, watch } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
-import { useSpriteStore } from '@/store/modules/sprite'
 import { checkUpdatedName } from '@/util/asset'
 import { useProjectStore } from '@/store'
 import { useI18n } from 'vue-i18n'
+import { useEditorStore } from '@/store/editor'
 
 // ----------props & emit------------------------------------
-const spriteStore = useSpriteStore()
+const editorStore = useEditorStore()
 
 // ----------data related -----------------------------------
-const x = computed(() => (spriteStore.current ? spriteStore.current.config.x : 0))
-const y = computed(() => (spriteStore.current ? spriteStore.current.config.y : 0))
-const heading = computed(() => (spriteStore.current ? spriteStore.current.config.heading : 0))
-const size = computed(() => (spriteStore.current ? spriteStore.current.config.size : 0))
-const visible = computed(() => (spriteStore.current ? spriteStore.current.config.visible : false))
-const name = ref(spriteStore.current ? spriteStore.current.name : '')
+const x = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.x : 0))
+const y = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.y : 0))
+const heading = computed(() =>
+  editorStore.currentSprite ? editorStore.currentSprite.config.heading : 0
+)
+const size = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.size : 0))
+const visible = computed(() =>
+  editorStore.currentSprite ? editorStore.currentSprite.config.visible : false
+)
+const name = ref(editorStore.currentSprite ? editorStore.currentSprite.name : '')
 const { t } = useI18n({
   inheritLocale: true
 })
 watch(
-  () => spriteStore.current?.name,
+  () => editorStore.currentSprite?.name,
   (newName) => {
     name.value = newName || ''
   }
@@ -133,22 +137,24 @@ watch(
 
 const { message } = createDiscreteApi(['message'])
 function handleUpdateSpriteName() {
-  if (!spriteStore.current) return
+  if (!editorStore.currentSprite) return
   try {
     const project = useProjectStore().project
     const checkInfo = checkUpdatedName(
       name.value,
       useProjectStore().project,
-      spriteStore.current.name
+      editorStore.currentSprite.name
     )
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
       // update zorder
       const zorder = project.backdrop.config.zorder
-      project.backdrop.config.zorder = zorder.filter((item) => item !== spriteStore.current?.name)
+      project.backdrop.config.zorder = zorder.filter(
+        (item) => item !== editorStore.currentSprite?.name
+      )
       project.backdrop.config.zorder.push(checkInfo.name)
 
-      spriteStore.current.name = checkInfo.name
+      editorStore.currentSprite.name = checkInfo.name
       message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)

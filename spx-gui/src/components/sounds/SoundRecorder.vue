@@ -29,9 +29,9 @@
 import WaveSurfer from 'wavesurfer.js'
 import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
 import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
-import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
+import { useProjectStore } from '@/store'
 
 interface PropsType {
   show: boolean
@@ -48,7 +48,7 @@ const audioFile = ref<File | null>(null)
 let wavesurfer: WaveSurfer
 const waveformContainer = ref(null)
 
-const soundStore = useSoundStore()
+const projectStore = useProjectStore()
 
 onMounted(() => {
   nextTick(() => {
@@ -129,7 +129,7 @@ const stopRecording = () => {
 const saveRecording = () => {
   if (audioFile.value && soundName.value) {
     let sound = new Sound(soundName.value, [audioFile.value])
-    soundStore.addItem(sound)
+    projectStore.project.sound.add(sound)
     closeRecorder()
   } else {
     console.error('No recording or name provided')

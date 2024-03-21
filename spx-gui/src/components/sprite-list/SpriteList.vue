@@ -30,12 +30,12 @@
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
             <ImageCardCom
-              v-for="asset in spriteAssets"
+              v-for="asset in projectStore.project.sprite.list"
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :style="getImageCardStyle(asset.name)"
-              @click="toggleCodeById(asset.name)"
+              :style="getImageCardStyle(asset)"
+              @click="toggleCodeById(asset)"
             />
             <!-- E Component ImageCardCom -->
           </n-flex>
@@ -64,56 +64,33 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { type ComputedRef, computed, ref, watchEffect } from 'vue'
+import { ref } from 'vue'
 import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
-import { useSpriteStore } from '@/store/modules/sprite'
 import StageEdit from '@/components/sprite-list/StageEdit.vue'
 import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
-import { Sprite } from '@/class/sprite'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
+import { useProjectStore } from '@/store'
+import type { Sprite } from '@/class/sprite'
+import { useEditorStore } from '@/store/editor'
 
-// ----------props & emit------------------------------------
-const currentActiveName = ref('')
-const spriteStore = useSpriteStore()
-const { setCurrentByName } = spriteStore
-// ----------data related -----------------------------------
-// Style about import modal body.
+const projectStore = useProjectStore()
+const editorStore = useEditorStore()
 const bodyStyle = { margin: 'auto' }
 
 // Ref about show import asset modal or not.
 const showImportModal = ref<boolean>(false)
 
-// ----------computed properties-----------------------------
-// Computed spriteAssets from spriteStore.
-const spriteAssets: ComputedRef<Sprite[]> = computed(() => spriteStore.list as Sprite[])
-
-// ----------methods-----------------------------------------
-/**
- * @description: A function to toggle code.
- * @param {*} name - asset name
- * @Author: Xu Ning
- * @Date: 2024-02-01 10:51:23
- */
-const toggleCodeById = (name: string) => {
-  currentActiveName.value = name
-  setCurrentByName(name)
+const toggleCodeById = (sprite: Sprite) => {
+  editorStore.currentSpriteName = sprite.name
 }
 
-const getImageCardStyle = (name: string) => {
-  return name === currentActiveName.value
+const getImageCardStyle = (sprite: Sprite) => {
+  return sprite === editorStore.currentSprite
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
 }
-
-watchEffect(() => {
-  if (spriteStore.current) {
-    currentActiveName.value = spriteStore.current.name
-  } else {
-    currentActiveName.value = ''
-  }
-})
 </script>
 
 <style scoped lang="scss">

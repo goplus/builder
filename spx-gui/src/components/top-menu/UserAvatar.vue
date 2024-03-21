@@ -16,10 +16,10 @@
 
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
-import { useUserStore } from '@/store/modules/user'
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import { useNetwork } from '@/util/hooks/network'
+import { useUserStore } from '@/store'
 
 const { t } = useI18n({
   inheritLocale: true

@@ -19,30 +19,22 @@
 <script setup lang="ts">
 import CodeEditor from '@/components/code-editor'
 import { ref, computed } from 'vue'
-import { EditContentType, useEditorStore, useProjectStore } from '@/store'
-import { useSpriteStore } from '@/store/modules/sprite'
+import { useProjectStore } from '@/store'
 import { NButton } from 'naive-ui'
 import type { languages } from 'monaco-editor'
+import { useEditorStore } from '@/store/editor'
 const projectStore = useProjectStore()
-const spriteStore = useSpriteStore()
 const editorStore = useEditorStore()
+
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
-// watch the current sprite and set it's code to editor
-const currentCode = computed(() => {
-  if (editorStore.editContentType === EditContentType.Sprite) {
-    return spriteStore.current?.code || ''
-  } else {
-    return projectStore.project.entryCode
-  }
-})
+const currentCode = computed(() =>
+  editorStore.currentSprite ? editorStore.currentSprite.code : projectStore.project.entryCode
+)
 
-// Listen for editor value change, sync to sprite store
 const onCodeChange = (value: string) => {
-  if (editorStore.editContentType === EditContentType.Sprite) {
-    if (spriteStore.current) {
-      spriteStore.current.code = value
-    }
+  if (editorStore.currentSprite) {
+    editorStore.currentSprite.code = value
   } else {
     projectStore.project.entryCode = value
   }

@@ -33,7 +33,7 @@ const props = defineProps({
 const emits = defineEmits(['delete-sound'])
 
 const onDeleteClick = () => {
-  emits('delete-sound', props.asset?.name)
+  emits('delete-sound')
 }
 </script>
 
