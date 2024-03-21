@@ -16,7 +16,6 @@ import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
-import { useEditorStore } from '@/store'
 
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -37,8 +36,6 @@ self.MonacoEnvironment = {
 const code_editor = ref<HTMLElement | null>(null)
 //  editor instance
 let editor: monaco.editor.IStandaloneCodeEditor
-
-const editorStore = useEditorStore()
 
 // ----------hooks-----------------------------------------
 // init editor and register change event
@@ -75,16 +72,6 @@ watch(
     }
   },
   { deep: true }
-)
-
-watch(
-  () => editorStore.readOnly,
-  () => {
-    editor.updateOptions({
-      readOnly: editorStore.readOnly
-    })
-    console.log('readOnly status', editorStore.readOnly)
-  }
 )
 
 watch(

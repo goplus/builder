@@ -7,6 +7,5 @@
  * @Description:
  */
 export * from './user'
-export * from './editor'
 export * from './project'
 export * from './sprite'

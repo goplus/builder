@@ -9,7 +9,7 @@
 <template>
   <div class="stage-list">
     <div
-      :class="isEntryCodeActive ? 'stage-list-title-click' : 'stage-list-title'"
+      :class="!spriteStore.current ? 'stage-list-title-click' : 'stage-list-title'"
       @click="enableEditEntryCode"
     >
       {{ $t('stage.stage') }}
@@ -19,19 +19,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { EditContentType, useEditorStore } from '@/store'
 import BackdropList from '@/components/sprite-list/BackdropList.vue'
+import { useSpriteStore } from '@/store'
 
-// ----------props & emit------------------------------------
-const editorStore = useEditorStore()
+const spriteStore = useSpriteStore()
 
-// ----------computed properties-----------------------------
-const isEntryCodeActive = computed(() => editorStore.editContentType === EditContentType.EntryCode)
-
-// ----------methods-----------------------------------------
 const enableEditEntryCode = () => {
-  editorStore.setEditContentType(EditContentType.EntryCode)
+  spriteStore.current = null
 }
 </script>
 
