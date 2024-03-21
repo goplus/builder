@@ -32,7 +32,6 @@ import { ref, watch, computed } from 'vue'
 import { useSize } from '@/util/dom'
 import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store/modules/project'
-import { useSpriteStore } from '@/store'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
@@ -44,7 +43,6 @@ let show = ref(false)
 
 const project = computed(() => projectStore.project)
 const projectStore = useProjectStore()
-const spriteStore = useSpriteStore()
 
 const spxStage = ref<HTMLElement | null>(null)
 const { width: containerWidth, height: containerHeight } = useSize(spxStage)
@@ -53,7 +51,7 @@ const selectedSpriteNames = ref<string[]>([])
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
-  spriteStore.current = projectStore.project.sprite.list.find(
+  projectStore.currentSprite = projectStore.project.sprite.list.find(
     (sprite) => sprite.name === e.names[0]
   ) as Sprite
 }
@@ -77,10 +75,10 @@ const stop = async () => {
 }
 
 watch(
-  () => spriteStore.current,
+  () => projectStore.currentSprite,
   () => {
-    if (spriteStore.current) {
-      selectedSpriteNames.value = [spriteStore.current.name]
+    if (projectStore.currentSprite) {
+      selectedSpriteNames.value = [projectStore.currentSprite.name]
     } else {
       selectedSpriteNames.value = []
     }

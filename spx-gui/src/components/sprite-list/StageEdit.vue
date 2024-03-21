@@ -9,7 +9,7 @@
 <template>
   <div class="stage-list">
     <div
-      :class="!spriteStore.current ? 'stage-list-title-click' : 'stage-list-title'"
+      :class="!projectStore.currentSprite ? 'stage-list-title-click' : 'stage-list-title'"
       @click="enableEditEntryCode"
     >
       {{ $t('stage.stage') }}
@@ -20,12 +20,12 @@
 
 <script setup lang="ts">
 import BackdropList from '@/components/sprite-list/BackdropList.vue'
-import { useSpriteStore } from '@/store'
+import { useProjectStore } from '@/store'
 
-const spriteStore = useSpriteStore()
+const projectStore = useProjectStore()
 
 const enableEditEntryCode = () => {
-  spriteStore.current = null
+  projectStore.currentSprite = null
 }
 </script>
 

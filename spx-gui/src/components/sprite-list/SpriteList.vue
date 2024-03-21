@@ -66,7 +66,6 @@
 // ----------Import required packages / components-----------
 import { ref } from 'vue'
 import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
-import { useSpriteStore } from '@/store/modules/sprite'
 import StageEdit from '@/components/sprite-list/StageEdit.vue'
 import SpriteEditBtn from '@/components/sprite-list/SpriteEditBtn.vue'
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
@@ -75,7 +74,6 @@ import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 import { useProjectStore } from '@/store'
 import type { Sprite } from '@/class/sprite'
 
-const spriteStore = useSpriteStore()
 const projectStore = useProjectStore()
 const bodyStyle = { margin: 'auto' }
 
@@ -83,11 +81,11 @@ const bodyStyle = { margin: 'auto' }
 const showImportModal = ref<boolean>(false)
 
 const toggleCodeById = (sprite: Sprite) => {
-  spriteStore.current = sprite
+  projectStore.currentSprite = sprite
 }
 
 const getImageCardStyle = (sprite: Sprite) => {
-  return sprite === spriteStore.current
+  return sprite.name === projectStore.currentSprite?.name
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
 }

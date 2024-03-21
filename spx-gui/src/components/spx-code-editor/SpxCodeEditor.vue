@@ -20,20 +20,18 @@
 import CodeEditor from '@/components/code-editor'
 import { ref, computed } from 'vue'
 import { useProjectStore } from '@/store'
-import { useSpriteStore } from '@/store/modules/sprite'
 import { NButton } from 'naive-ui'
 import type { languages } from 'monaco-editor'
 const projectStore = useProjectStore()
-const spriteStore = useSpriteStore()
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
 const currentCode = computed(() =>
-  spriteStore.current ? spriteStore.current.code : projectStore.project.entryCode
+  projectStore.currentSprite ? projectStore.currentSprite.code : projectStore.project.entryCode
 )
 
 const onCodeChange = (value: string) => {
-  if (spriteStore.current) {
-    spriteStore.current.code = value
+  if (projectStore.currentSprite) {
+    projectStore.currentSprite.code = value
   } else {
     projectStore.project.entryCode = value
   }

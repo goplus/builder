@@ -11,10 +11,12 @@ import { shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
 import { useUserStore } from '@/store'
+import type { Sprite } from '@/class/sprite'
 
 export const useProjectStore = defineStore('project', () => {
   // We use `shallowRef` here because `new Project()` itself is reactive.
   const project = shallowRef(new Project())
+  const currentSprite = shallowRef<Sprite | null>(null)
 
   watch(
     // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
@@ -23,6 +25,7 @@ export const useProjectStore = defineStore('project', () => {
     () => project.value,
     (newProject, oldProject) => {
       oldProject.cleanup()
+      currentSprite.value = newProject.sprite.list[0] || null
     }
   )
 
@@ -71,6 +74,7 @@ export const useProjectStore = defineStore('project', () => {
 
   return {
     project,
+    currentSprite,
     loadProject,
     loadFromZip,
     loadBlankProject
