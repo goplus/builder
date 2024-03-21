@@ -10,12 +10,10 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
-import type { Sprite } from '@/class/sprite'
 import { useUserStore } from '.'
 
 export const useProjectStore = defineStore('project', () => {
   const project = ref(new Project())
-  const currentSprite = ref<Sprite | null>(null)
 
   watch(
     // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
@@ -24,7 +22,6 @@ export const useProjectStore = defineStore('project', () => {
     () => project.value,
     (newProject, oldProject) => {
       oldProject.cleanup()
-      currentSprite.value = newProject.sprite.list[0] || null
     }
   )
 
@@ -73,7 +70,6 @@ export const useProjectStore = defineStore('project', () => {
 
   return {
     project,
-    currentSprite,
     loadProject,
     loadFromZip,
     loadBlankProject

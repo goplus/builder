@@ -35,14 +35,15 @@ import { useProjectStore } from '@/store'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'
-import type { Sprite } from '@/class/sprite'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { nextTick } from 'vue'
+import { useEditorStore } from '@/store/editor'
 
 let show = ref(false)
 
 const project = computed(() => projectStore.project)
 const projectStore = useProjectStore()
+const editorStore = useEditorStore()
 
 const spxStage = ref<HTMLElement | null>(null)
 const { width: containerWidth, height: containerHeight } = useSize(spxStage)
@@ -51,9 +52,7 @@ const selectedSpriteNames = ref<string[]>([])
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
-  projectStore.currentSprite = projectStore.project.sprite.list.find(
-    (sprite) => sprite.name === e.names[0]
-  ) as Sprite
+  editorStore.currentSpriteName = e.names[0]
 }
 
 const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
@@ -75,10 +74,10 @@ const stop = async () => {
 }
 
 watch(
-  () => projectStore.currentSprite,
+  () => editorStore.currentSprite,
   () => {
-    if (projectStore.currentSprite) {
-      selectedSpriteNames.value = [projectStore.currentSprite.name]
+    if (editorStore.currentSprite) {
+      selectedSpriteNames.value = [editorStore.currentSprite.name]
     } else {
       selectedSpriteNames.value = []
     }

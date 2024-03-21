@@ -73,19 +73,21 @@ import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 import { useProjectStore } from '@/store'
 import type { Sprite } from '@/class/sprite'
+import { useEditorStore } from '@/store/editor'
 
 const projectStore = useProjectStore()
+const editorStore = useEditorStore()
 const bodyStyle = { margin: 'auto' }
 
 // Ref about show import asset modal or not.
 const showImportModal = ref<boolean>(false)
 
 const toggleCodeById = (sprite: Sprite) => {
-  projectStore.currentSprite = sprite
+  editorStore.currentSpriteName = sprite.name
 }
 
 const getImageCardStyle = (sprite: Sprite) => {
-  return sprite === projectStore.currentSprite
+  return sprite === editorStore.currentSprite
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
 }
