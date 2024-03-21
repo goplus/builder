@@ -85,8 +85,7 @@ const toggleCodeById = (sprite: Sprite) => {
 }
 
 const getImageCardStyle = (sprite: Sprite) => {
-  // Use `name` instead of direct compare as `sprite` is a reactive object.
-  return sprite.name === projectStore.currentSprite?.name
+  return sprite === projectStore.currentSprite
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
 }

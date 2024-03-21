@@ -7,16 +7,15 @@
  * @Description: The store of project.
  */
 
-import { shallowRef, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
 import { useUserStore } from '@/store'
 import type { Sprite } from '@/class/sprite'
 
 export const useProjectStore = defineStore('project', () => {
-  // We use `shallowRef` here because `new Project()` itself is reactive.
-  const project = shallowRef(new Project())
-  const currentSprite = shallowRef<Sprite | null>(null)
+  const project = ref(new Project())
+  const currentSprite = ref<Sprite | null>(null)
 
   watch(
     // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
