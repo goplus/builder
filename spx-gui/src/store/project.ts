@@ -10,8 +10,8 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Project, ProjectSource } from '@/class/project'
-import { useUserStore } from '@/store'
 import type { Sprite } from '@/class/sprite'
+import { useUserStore } from '.'
 
 export const useProjectStore = defineStore('project', () => {
   const project = ref(new Project())

@@ -31,7 +31,7 @@
 import { ref, watch, computed } from 'vue'
 import { useSize } from '@/util/dom'
 import { NButton } from 'naive-ui'
-import { useProjectStore } from '@/store/modules/project'
+import { useProjectStore } from '@/store'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
 import { Project } from '@/class/project'

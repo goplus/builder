@@ -32,7 +32,7 @@ import SpxStage from '@/components/spx-stage/SpxStage.vue'
 import SpriteList from '@/components/sprite-list/SpriteList.vue'
 import { NLayout, NLayoutContent } from 'naive-ui'
 import { storeToRefs } from 'pinia'
-import { useProjectStore } from '@/store/modules/project'
+import { useProjectStore } from '@/store'
 const projectStore = useProjectStore()
 const { project } = storeToRefs(projectStore)
 </script>

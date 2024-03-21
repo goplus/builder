@@ -23,7 +23,7 @@ import {
 } from '@vicons/material'
 import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
 import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
-import { useProjectStore } from '@/store/modules/project'
+import { useProjectStore } from '@/store'
 import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'

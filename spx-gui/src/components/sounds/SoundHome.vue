@@ -42,7 +42,7 @@ import { ref, watch } from 'vue'
 import { Sound } from '@/class/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from '@/util/asset'
-import { useProjectStore } from '@/store/modules/project'
+import { useProjectStore } from '@/store'
 import { useI18n } from 'vue-i18n'
 
 const message: MessageApi = useMessage()
