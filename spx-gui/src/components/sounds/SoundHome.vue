@@ -15,12 +15,12 @@
     >
       <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="'sound'" />
       <SoundsEditCard
-        v-for="asset in assets"
+        v-for="asset in projectStore.project.sound.list"
         :key="asset.name"
         :asset="asset"
         :style="{ 'margin-bottom': '26px' }"
         @click="handleSelect(asset)"
-        @delete-sound="handleDeleteSound"
+        @delete-sound="handleDeleteSound(asset)"
       />
     </n-layout-sider>
     <n-layout-content>
@@ -38,18 +38,24 @@
 import SoundsEditCard from 'comps/sounds/SoundEditCard.vue'
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
 import SoundsEdit from 'comps/sounds/SoundEdit.vue'
-import { computed, type ComputedRef, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Sound } from '@/class/sound'
-import { useSoundStore } from 'store/modules/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from '@/util/asset'
 import { useProjectStore } from '@/store/modules/project'
 import { useI18n } from 'vue-i18n'
 
 const message: MessageApi = useMessage()
-const soundStore = useSoundStore()
-const assets: ComputedRef<Sound[]> = computed(() => soundStore.list as Sound[])
+const projectStore = useProjectStore()
 const selectedSound = ref<Sound>()
+
+watch(
+  () => projectStore.project,
+  () => {
+    selectedSound.value = projectStore.project.sound.list[0]
+  }
+)
+
 const { t } = useI18n({
   inheritLocale: true
 })
@@ -85,10 +91,8 @@ const handleSoundFileNameUpdate = (newName: string) => {
   }
 }
 
-const handleDeleteSound = (soundName: string) => {
-  if (soundName) {
-    soundStore.removeItemByName(soundName)
-  }
+const handleDeleteSound = (sound: Sound) => {
+  projectStore.project.sound.remove(sound)
 }
 </script>
 

@@ -26,14 +26,11 @@ export abstract class AssetList<T extends AssetBase> {
     }
   }
 
-  remove(name: string): T | null
-  remove(item: T): T | null
-
-  remove(item: string | T): T | null {
-    const index = this.list.findIndex((i) =>
-      typeof item === 'string' ? i.name === item : i === item
-    )
-    return index > -1 ? this.list.splice(index, 1)[0] : null
+  remove(item: T): boolean {
+    const filtered = this.list.filter((asset) => asset !== item)
+    const removed = filtered.length !== this.list.length
+    this.list = filtered
+    return removed
   }
 }
 
@@ -51,14 +48,14 @@ export class SpriteList extends AssetList<Sprite> {
     })
   }
 
-  remove(sprite: Sprite | string): Sprite | null {
-    const removeSprite = typeof sprite === 'string' ? super.remove(sprite) : super.remove(sprite)
-    if (removeSprite) {
+  remove(sprite: Sprite) {
+    const removed = super.remove(sprite)
+    if (removed) {
       this.project.backdrop.config.zorder = this.project.backdrop.config.zorder.filter(
-        (name) => name !== removeSprite.name
+        (name) => name !== sprite.name
       )
     }
-    return removeSprite
+    return removed
   }
 }
 

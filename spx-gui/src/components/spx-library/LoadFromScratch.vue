@@ -90,7 +90,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import {
   type MessageApi,
@@ -103,7 +102,7 @@ import {
   NSpin
 } from 'naive-ui'
 import { Sprite } from '@/class/sprite'
-import { useSpriteStore } from '@/store'
+import { useProjectStore, useSpriteStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
@@ -115,7 +114,7 @@ import { useI18n } from 'vue-i18n'
 
 // ----------props & emit------------------------------------
 
-const soundStore = useSoundStore()
+const projectStore = useProjectStore()
 const spriteStore = useSpriteStore()
 const message: MessageApi = useMessage()
 
@@ -266,7 +265,7 @@ const uploadSelectedAssetsToPrivateLibrary = async () => {
  */
 const importSoundToProject = (asset: AssetFileDetail, file: File) => {
   let sound = new Sound(asset.name, [file])
-  soundStore.addItem(sound)
+  projectStore.project.sound.add(sound)
 }
 
 /**

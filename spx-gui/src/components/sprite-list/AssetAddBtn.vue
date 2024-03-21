@@ -136,12 +136,10 @@ import type { UploadFileInfo } from 'naive-ui'
 import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
-import { useSpriteStore } from '@/store/modules/sprite'
 import { useBackdropStore } from '@/store/modules/backdrop'
 import LibraryModal from '@/components/spx-library/LibraryModal.vue'
 import { Sprite } from '@/class/sprite'
 import FileWithUrl from '@/class/file-with-url'
-import { useSoundStore } from 'store/modules/sound'
 import { Sound } from '@/class/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
 import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
@@ -150,6 +148,7 @@ import { AssetType } from '@/constant/constant'
 import { isValidAssetName } from '@/util/asset'
 import { isImage, isSound } from '@/util/utils'
 import { useNetwork } from '@/util/hooks/network'
+import { useProjectStore } from '@/store'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -157,9 +156,8 @@ interface PropType {
 }
 const props = defineProps<PropType>()
 const message = useMessage()
-const spriteStore = useSpriteStore()
 const backdropStore = useBackdropStore()
-const soundStore = useSoundStore()
+const projectStore = useProjectStore()
 const { isOnline } = useNetwork()
 
 const { t } = useI18n({
@@ -285,7 +283,7 @@ const beforeUpload = (
           return false
         }
         let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
-        soundStore.addItem(sound)
+        projectStore.project.sound.add(sound)
         break
       }
       default:
@@ -345,7 +343,7 @@ const handleSubmitSprite = async (): Promise<void> => {
   })
   console.log('uploadFilesArr', uploadFilesArr)
   let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
-  spriteStore.addItem(sprite)
+  projectStore.project.sprite.add(sprite)
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
   try {
@@ -416,7 +414,7 @@ const handleAssetAddition = async (
   }
   if (props.type === 'sprite') {
     const sprite = new Sprite(name, fileArr)
-    spriteStore.addItem(sprite)
+    projectStore.project.sprite.add(sprite)
   } else if (props.type === 'backdrop') {
     const file = fileArr[0]
     let fileURL = URL.createObjectURL(file)
@@ -424,11 +422,10 @@ const handleAssetAddition = async (
     let fileNameWithoutExtension = name.substring(0, name.lastIndexOf('.'))
     let backdrop = backdropStore.backdrop
     backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
-    // backdropStore.backdrop.addFile(file)
   } else if (props.type === 'sounds') {
     const file = fileArr[0]
     const sound = new Sound(name, [file])
-    soundStore.addItem(sound)
+    projectStore.project.sound.add(sound)
   }
   message.success(t('message.addSuccess', { name: name }))
 }
