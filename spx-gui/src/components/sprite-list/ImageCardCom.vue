@@ -8,7 +8,7 @@
 -->
 <template>
   <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName">
-    <div class="delete-button" @click="deleteSprite(props.asset.name)">×</div>
+    <div class="delete-button" @click="deleteSprite(props.asset as Sprite)">×</div>
     <n-image
       preview-disabled
       :width="computedProperties.imageWidth"
@@ -46,17 +46,17 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
-import { AssetBase } from '@/class/asset-base'
 import { Backdrop } from '@/class/backdrop'
 import FileWithUrl from '@/class/file-with-url'
 import error from '@/assets/image/library/error.svg'
 import type { Scene } from '@/interface/file'
 import { useProjectStore } from '@/store'
+import type { Sprite } from '@/class/sprite'
 
 // ----------props & emit------------------------------------
 interface PropType {
   type?: string
-  asset: AssetBase | Backdrop
+  asset: Sprite | Backdrop
 }
 const props = defineProps<PropType>()
 const projectStore = useProjectStore()
@@ -89,10 +89,8 @@ const computedProperties = computed(() => {
  * @Author: Xu Ning
  * @Date: 2024-01-23 14:29:02
  */
-const deleteSprite = (name: string) => {
-  projectStore.project.sprite.list = projectStore.project.sprite.list.filter(
-    (sprite) => sprite.name !== name
-  )
+const deleteSprite = (sprite: Sprite) => {
+  projectStore.project.sprite.remove(sprite)
 }
 
 /**
