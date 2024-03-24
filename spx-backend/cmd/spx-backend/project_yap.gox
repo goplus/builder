@@ -279,6 +279,21 @@ post "/util/fmt", ctx => {
 	replyWithData(ctx, res)
 }
 
+// Get uptoken
+get "/util/uptoken", ctx => {
+	if _, ok := ensureUser(ctx); !ok {
+		return
+	}
+	token, err := ctrl.UpToken(utils.getCtx(ctx))
+	if err != nil {
+		handlerInnerError(ctx, err)
+		return
+	}
+	replyWithData(ctx, {
+		"token": token,
+	})
+}
+
 var err error
 conf := &controller.Config{}
 logger := log.GetLogger()

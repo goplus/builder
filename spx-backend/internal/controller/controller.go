@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 
 	_ "image/png"
 	"os"
@@ -18,6 +19,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
+	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
+	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
 	"gocloud.dev/blob"
 )
 
@@ -485,4 +488,28 @@ type FmtCodeInput struct {
 // FmtCode Format code
 func (ctrl *Controller) FmtCode(ctx context.Context, input *FmtCodeInput) (res *fmtcode.FormatResponse) {
 	return fmtcode.FmtCode(input.Body, input.FixImports)
+}
+
+func (ctrl *Controller) UpToken(ctx context.Context) (string, error) {
+	logger := log.GetReqLogger(ctx)
+
+	bus := os.Getenv("GOP_SPX_BLOBUS")
+	re := regexp.MustCompile(`kodo://(.+):(.+)@(.+)\?`)
+	matches := re.FindStringSubmatch(bus)
+	if len(matches) < 4 {
+		logger.Printf("invalid blobus config")
+		return "", fmt.Errorf("invalid blobus config")
+	}
+	accessKey := matches[1]
+	secretKey := matches[2]
+	bucket := matches[3]
+	putPolicy := qiniuStorage.PutPolicy{
+		Scope:        bucket,
+		ForceSaveKey: true,
+		SaveKey:      "files/$(etag)/$(fname)",
+		Expires:      1800,
+	}
+	mac := qiniuAuth.New(accessKey, secretKey)
+	upToken := putPolicy.UploadToken(mac)
+	return upToken, nil
 }
