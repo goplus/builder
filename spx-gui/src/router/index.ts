@@ -11,31 +11,6 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor/homepage' },
   {
-    path: '/spx/home',
-    name: 'SpxHome',
-    component: () => import('@/view/HomeView.vue')
-  },
-  {
-    path: '/sprite/list',
-    name: 'SpriteList',
-    component: () => import('../components/sprite-list/SpriteList.vue')
-  },
-  {
-    path: '/code/editor',
-    name: 'codeeditor',
-    component: () => import('../components/code-editor-demo/CodeEditorDemo.vue')
-  },
-  {
-    path: '/stage/viewer',
-    name: 'StageViewer',
-    component: () => import('../components/stage-viewer-demo/StageViewerDemo.vue')
-  },
-  {
-    path: '/runner/widget/:id',
-    name: 'SpxRunner',
-    component: () => import('../widgets/widget/spx-runner/SpxRunnerDemo.vue')
-  },
-  {
     path: '/editor/homepage',
     name: 'EditorHomepage',
     component: () => import('../view/EditorHomepage.vue')
