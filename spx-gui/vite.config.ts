@@ -1,11 +1,4 @@
-/*
- * @Author: Xu Ning
- * @Date: 2024-01-12 11:15:15
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-10 22:31:18
- * @FilePath: \spx-gui\vite.config.ts
- * @Description:
- */
+/// <reference types="vitest" />
 
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -40,6 +33,7 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: [`monaco-editor/esm/vs/editor/editor.worker`]
-    }
+    },
+    test: { environment: 'happy-dom' }
   }
 })
