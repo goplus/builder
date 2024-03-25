@@ -1,7 +1,8 @@
 import { reactive } from 'vue'
+
+import { extname, resolve } from '@/util/path'
 import { File, type Files } from './common/file'
 import { assign, type Size } from './common'
-import { extname, resolve } from 'path'
 
 export type CostumeConfig = {
   x: number
@@ -59,10 +60,18 @@ export class Costume {
     return reactive(this)
   }
 
-  static load({ name, path, ...config }: RawCostumeConfig, files: Files) {
+  static load(
+    { name, path, ...config }: RawCostumeConfig,
+    files: Files,
+    /**
+     * Path of directory which contains the config file
+     * TODO: remove me?
+     */
+    basePath: string
+  ) {
     if (name == null) throw new Error(`name expected for costume`)
     if (path == null) throw new Error(`path expected for costume ${name}`)
-    const file = files[path]
+    const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
     return new Costume(name, file, config)
   }

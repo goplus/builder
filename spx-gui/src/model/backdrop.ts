@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { type CostumeConfig, type RawCostumeConfig, Costume } from './costume'
 import type { File, Files } from './common/file'
+import { resolve } from '@/util/path'
 
 export type BackdropConfig = CostumeConfig
 export type RawBackdropConfig = RawCostumeConfig
@@ -22,7 +23,7 @@ export class Backdrop extends Costume {
   static load({ name, path, ...config }: RawBackdropConfig, files: Files) {
     if (name == null) throw new Error(`name expected for backdrop`)
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
-    const file = files[path]
+    const file = files[resolve(backdropAssetPath, path)]
     if (file == null) throw new Error(`file ${path} for backdrop ${name} not found`)
     return new Backdrop(name, file, config)
   }

@@ -70,7 +70,7 @@ export class Stage {
     if (idx < 0) throw new Error(`backdrop ${name} not found`)
     const [backdrop] = this.backdrops.splice(idx, 1)
     this.backdrops.unshift(backdrop)
-    // TODO: `this.backdropIndex`?
+    // TODO: relation to `this.backdropIndex`?
   }
 
   config: StageConfig
@@ -97,7 +97,10 @@ export class Stage {
 
   constructor(code: string, backdrops: Backdrop[], config: Partial<StageConfig>) {
     this.code = code
-    this.backdrops = backdrops
+    this.backdrops = []
+    for (const backdrop of backdrops) {
+      this.addBackdrop(backdrop)
+    }
     this.config = {
       backdropIndex: config.backdropIndex ?? 0,
       mapWidth: config.mapWidth,

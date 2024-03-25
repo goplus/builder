@@ -4,8 +4,8 @@
  */
 
 import { reactive, watch } from 'vue'
-import { join } from 'path'
 
+import { join } from '@/util/path'
 import { IsPublic } from '../api/project'
 import { Disposble } from './common/disposable'
 import { toConfig, type Files, fromConfig } from './common/file'
@@ -98,7 +98,6 @@ export class Project extends Disposble {
     const idx = this.sounds.findIndex(s => s.name === name)
     this.sounds.splice(idx, 1)
   }
-
   addSound(sound: Sound) {
     this.sounds.push(sound)
   }
@@ -127,13 +126,15 @@ export class Project extends Disposble {
       Sound.loadAll(files),
       Sprite.loadAll(files)
     ])
-    this.stage = stage
-    this.sprites = sprites
-    this.sounds = sounds
+    assign<Project>(this, metadata)
     this.config = {
       zorder: zorder ?? []
     }
-    assign<Project>(this, metadata)
+    this.stage = stage
+    this.sprites = []
+    sprites.forEach(s => this.addSprite(s))
+    this.sounds = []
+    sounds.forEach(s => this.addSound(s))
   }
 
   /** Export metadata & files */
@@ -150,7 +151,7 @@ export class Project extends Disposble {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const config: RawProjectConfig = { ...stageConfig, ...this.config }
-    files[projectConfigFileName] = fromConfig(projectConfigFileName, config)
+    files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map(s => s.export()))
     Object.assign(files, ...this.sounds.map(s => s.export()))

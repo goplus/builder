@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
-import { extname, join } from 'path'
+import { extname, join, resolve } from '@/util/path'
 import { assign } from './common'
 
 export type SoundConfig = {
@@ -41,11 +41,12 @@ export class Sound {
   }
 
   static async load(name: string, files: Files) {
-    const configFile = files[join(soundAssetPath, name, soundConfigFileName)]
+    const pathPrefix = join(soundAssetPath, name)
+    const configFile = files[join(pathPrefix, soundConfigFileName)]
     if (configFile == null) return null
     const { path, ...config } = await toConfig(configFile) as RawSoundConfig
     if (path == null) throw new Error(`path expected for sound ${name}`)
-    const file = files[path]
+    const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
     return new Sound(name, file, config)
   }

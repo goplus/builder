@@ -128,10 +128,6 @@ watch(
   }
 )
 
-onMounted(() => {
-  getProjects()
-})
-
 // ----------methods-----------------------------------------
 const closeModalFunc = () => {
   emits('update:show')

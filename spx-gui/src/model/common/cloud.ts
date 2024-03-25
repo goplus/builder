@@ -7,7 +7,6 @@ import { uptoken } from '@/api/util'
 import { staticBaseUrl } from '@/util/env'
 import type { Metadata } from '../project'
 
-
 export async function load(owner: string, name: string) {
   const { files: fileUrls, ...metadata } = await getProject(owner, name)
   const files = getFiles(fileUrls)

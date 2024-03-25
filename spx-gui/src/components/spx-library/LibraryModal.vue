@@ -168,11 +168,6 @@ const isPublicSwitch = ref<number>(0)
 const pageSize = 35
 const pageIndex = ref<number>(1)
 const totalPage = ref<number>(0)
-// ----------lifecycle hooks---------------------------------
-// onMounted hook.
-onMounted(async () => {
-  await setAssets()
-})
 
 // ----------methods-----------------------------------------
 
@@ -240,6 +235,7 @@ watch(
   (newShow) => {
     if (newShow) {
       showModal.value = newShow
+      setAssets()
     } else {
       isPublicSwitch.value = UIPublic.public
     }

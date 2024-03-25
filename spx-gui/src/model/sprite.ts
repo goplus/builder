@@ -90,7 +90,8 @@ export class Sprite extends Disposble {
   }
 
   static async load(name: string, files: Files) {
-    const configFile = files[join(spriteAssetPath, name, spriteConfigFileName)]
+    const pathPrefix = join(spriteAssetPath, name)
+    const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
     const { costumes: costumeConfigs, ...config } = await toConfig(configFile) as RawSpriteConfig
     let code = ''
@@ -98,7 +99,7 @@ export class Sprite extends Disposble {
     if (codeFile != null) {
       code = await toText(codeFile)
     }
-    const costumes = (costumeConfigs ?? []).map(c => Costume.load(c, files))
+    const costumes = (costumeConfigs ?? []).map(c => Costume.load(c, files, pathPrefix))
     return new Sprite(name, code, costumes, config)
   }
 

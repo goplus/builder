@@ -95,5 +95,7 @@ export const register = () => {
   monaco.languages.setMonarchTokensProvider('spx', MonarchTokensProviderConfig)
   // Code hint
   monaco.languages.registerCompletionItemProvider('spx', completionItemProvider)
-  initFormat()
+
+  // tempararily disable in-browser format
+  // initFormat()
 }
