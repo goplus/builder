@@ -25,7 +25,6 @@ import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/i
 import saveAs from 'file-saver'
 import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store'
-import { ThemeStyleType } from '@/constant/constant'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/util/hooks/network'
@@ -33,7 +32,6 @@ import { LOCALSTORAGE_KEY_LANGUAGE } from '@/language'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
-const themeStyle = ref<number>(ThemeStyleType.Pink)
 
 // active key for route
 const activeKey = ref(null)
@@ -94,10 +92,6 @@ const settingsOptions = computed(() => [
   {
     label: '中文/En',
     key: 'Global'
-  },
-  {
-    label: t('topMenu.theme'),
-    key: 'ThemeColor'
   }
 ])
 
@@ -347,8 +341,6 @@ const handleSelectImport = async (key: string | number) => {
 const handleSelectSettings = (key: string | number) => {
   if (key === 'Global') {
     toggleLanguage()
-  } else if (key === 'ThemeColor') {
-    toggleThemeStyle()
   }
 }
 
@@ -379,16 +371,6 @@ function renderIcon(icon: any) {
 const toggleLanguage = () => {
   locale.value = locale.value === 'en' ? 'zh' : 'en'
   localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, locale.value)
-}
-
-/**
- * @description:
- * @Author: Xu Ning
- * @Date: 2024-01-26 22:49:59
- */
-const toggleThemeStyle = () => {
-  themeStyle.value = ++themeStyle.value % 3
-  //TODO: change the style
 }
 </script>
 
