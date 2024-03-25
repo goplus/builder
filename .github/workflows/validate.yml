@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Vitest
         working-directory: spx-gui
-        run: npx vitest run
+        run: npm run test:run
 
   spx-backend-test:
     runs-on: ubuntu-latest
