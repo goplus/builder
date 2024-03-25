@@ -17,28 +17,29 @@
   >
     <template v-for="sprite in sortedSprites" :key="sprite.name">
       <!-- v-if="sprite.config.visible" -->
-      <Sprite
-        :sprite-config="sprite"
-        :map-config="props.mapConfig"
+      <SpriteComp
+        :sprite="sprite"
+        :map-size="props.mapSize"
         :selected="selectedSpriteNames.includes(sprite.name)"
         @on-drag-move="onSpriteDragMove"
         @on-sprite-apperance-change="onSpriteApperanceChange"
       >
-      </Sprite>
+      </SpriteComp>
     </template>
   </v-layer>
 </template>
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import Sprite from './Sprite.vue'
+import SpriteComp from './Sprite.vue'
 import { computed } from 'vue'
-import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
-import type { Sprite as SpriteConfig } from '@/class/sprite'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
+import type { Sprite } from '@/model/sprite'
+import type { Size } from '@/model/common'
 
 const props = defineProps<{
   offsetConfig: { offsetX: number; offsetY: number }
-  mapConfig: MapConfig
-  spriteList: SpriteConfig[]
+  mapSize: Size
+  spriteList: Sprite[]
   zorder: Array<string | Object>
   selectedSpriteNames: string[]
 }>()
@@ -49,15 +50,15 @@ const emits = defineEmits<{
 
 // spritelist sort by zorder config
 const sortedSprites = computed(() => {
-  const spriteMap = new Map<string, SpriteConfig>()
+  const spriteMap = new Map<string, Sprite>()
   props.spriteList.forEach((sprite) => {
     spriteMap.set(sprite.name, sprite)
   })
-  const list: SpriteConfig[] = []
+  const list: Sprite[] = []
   // temporarily only sprite item  can be rendered on stage
   props.zorder.forEach((item) => {
     if (typeof item === 'string' && spriteMap.has(item)) {
-      list.push(spriteMap.get(item) as SpriteConfig)
+      list.push(spriteMap.get(item) as Sprite)
     }
   })
   console.log(props.zorder)

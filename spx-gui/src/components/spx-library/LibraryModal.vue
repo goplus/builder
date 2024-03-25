@@ -74,7 +74,7 @@
             cols="3 s:4 m:5 l:6 xl:7 2xl:8"
             responsive="screen"
           >
-            <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.name">
+            <n-grid-item v-for="assetInfo in assetInfos" :key="assetInfo.id">
               <div class="asset-library-sprite-item">
                 <!-- S Component Sprite Card -->
                 <SpriteCard :asset-info="assetInfo" @add-asset="handleAddAsset" />
@@ -122,18 +122,19 @@ import {
 } from 'naive-ui'
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
-import type { Asset } from '@/interface/library'
-import { AssetType, UIPublic } from '@/constant/constant'
 import SpriteCard from './SpriteCard.vue'
-import { searchAssetByName, addAssetClickCount, getAssetList } from '@/api/asset'
+import { listAsset, increaseAssetClickCount, type AssetData, AssetType, IsPublic, ListAssetParamOrderBy } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropsType {
   show: boolean
-  type: string
+  type: AssetType
 }
 const props = defineProps<PropsType>()
-const emits = defineEmits(['update:show', 'add-asset'])
+const emits = defineEmits<{
+  'update:show': [boolean]
+  'add-asset': [AssetData]
+}>()
 
 // ----------data related -----------------------------------
 const railStyle = ({ focused, checked }: { focused: boolean; checked: boolean }) => {
@@ -158,7 +159,7 @@ const searchQuery = ref('')
 // Const variable about sprite categories.
 const categories = ['ALL', 'Animals', 'People', 'Sports', 'Food', 'Fantasy']
 // Ref about sprite/backdrop information.
-const assetInfos = ref<Asset[] | null>()
+const assetInfos = ref<AssetData[] | null>()
 // Ref about now asset category
 const nowCategory = ref<string>('')
 // asset states (public or not)
@@ -182,11 +183,17 @@ onMounted(async () => {
  * @Date: 2024-03-05 15:10:45
  */
 const setAssets = async () => {
-  if (props.type === 'backdrop') {
+  if (props.type === AssetType.Backdrop) {
     assetInfos.value = await fetchAssetsByType(AssetType.Backdrop)
-  } else if (props.type === 'sprite') {
+  } else if (props.type === AssetType.Sprite) {
     assetInfos.value = await fetchAssetsByType(AssetType.Sprite)
   }
+}
+
+// Control the public/private state of user interface elements
+enum UIPublic {
+  private = 0,
+  public = 1
 }
 
 /**
@@ -196,39 +203,27 @@ const setAssets = async () => {
  * @Date: 2024-01-25 23:50:45
  */
 const fetchAssetsByType = async (
-  assetType: number,
-  isOrderByTime?: boolean,
-  isOrderByHot?: boolean,
-  author?: string
+  assetType: AssetType,
+  orderBy?: ListAssetParamOrderBy
 ) => {
   try {
-    // isPublic = undefined means the isPublic attribute of the asset is not filtered.
-    let isPublic = undefined
+    let isPublic: IsPublic | undefined
+    let owner: string | undefined
     if (isPublicSwitch.value == UIPublic.public) {
-      // Filter only assets with an isPublic attribute value of 1 (public)
-      isPublic = 1
-      // Pass * means author is everyone
-      author = '*'
-    } else if (isPublicSwitch.value == UIPublic.private) {
-      // author is the current user (self)
-      author = undefined
+      isPublic = IsPublic.public
+      owner = '*'
     }
-
-    const response = await getAssetList({
+    const { total, data } = await listAsset({
       isPublic: isPublic,
       pageIndex: pageIndex.value,
       pageSize: pageSize,
       assetType: assetType,
       category: nowCategory.value,
-      isOrderByTime: isOrderByTime,
-      isOrderByHot: isOrderByHot,
-      author: author
+      orderBy,
+      owner
     })
-    if (response.data.data.data == null) return []
-    else {
-      totalPage.value = response.data.data.totalPage as number
-      return response.data.data.data
-    }
+    totalPage.value = Math.ceil(total / pageSize)
+    return data
   } catch (error) {
     console.error('Error fetching assets:', error)
     return []
@@ -260,20 +255,9 @@ const closeModalFunc = () => {
   emits('update:show', false)
 }
 
-/**
- * @description: A function to emit add object.
- * @param {*} name
- * @param {*} assetMultiCostumeObj
- * @Author: Xu Ning
- * @Date: 2024-01-30 11:51:05
- */
-const handleAddAsset = async (
-  id: number,
-  name: string,
-  assetMultiCostumeObj: { [key: string]: string }
-) => {
-  await addAssetClickCount(id)
-  emits('add-asset', name, assetMultiCostumeObj)
+const handleAddAsset = async (asset: AssetData) => {
+  await increaseAssetClickCount(asset.id)
+  emits('add-asset', asset)
 }
 
 /**
@@ -299,32 +283,14 @@ const handleCategoryClick = async (category: string) => {
  */
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) return
-  if (props.type === 'backdrop') {
-    let res = await searchAssetByName(
-      pageIndex.value,
-      pageSize,
-      searchQuery.value,
-      AssetType.Backdrop
-    )
-    if (res.data.data == null) {
-      assetInfos.value = []
-    } else {
-      assetInfos.value = res.data.data.data
-    }
-  } else if (props.type === 'sprite') {
-    let res = await searchAssetByName(
-      pageIndex.value,
-      pageSize,
-      searchQuery.value,
-      AssetType.Sprite
-    )
-    if (res.data.data.data == null) {
-      assetInfos.value = []
-    } else {
-      totalPage.value = res.data.data.totalPage as number
-      assetInfos.value = res.data.data.data
-    }
-  }
+  const { total, data } = await listAsset({
+    pageIndex: pageIndex.value,
+    pageSize,
+    assetType: props.type,
+    keyword: searchQuery.value
+  })
+  totalPage.value = Math.ceil(total / pageSize)
+  assetInfos.value = data
 }
 
 /**
@@ -334,8 +300,7 @@ const handleSearch = async () => {
  * @Date: 2024-02-19 9:09:05
  */
 const handleSortByHot = async () => {
-  let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  assetInfos.value = await fetchAssetsByType(assetType, undefined, true)
+  assetInfos.value = await fetchAssetsByType(props.type, ListAssetParamOrderBy.ClickCountDesc)
 }
 
 /**
@@ -345,8 +310,7 @@ const handleSortByHot = async () => {
  * @Date: 2024-02-19 9:19:01
  */
 const handleSortByTime = async () => {
-  let assetType = props.type === 'backdrop' ? AssetType.Backdrop : AssetType.Sprite
-  assetInfos.value = await fetchAssetsByType(assetType, true)
+  assetInfos.value = await fetchAssetsByType(props.type, ListAssetParamOrderBy.TimeDesc)
 }
 
 // clean search content and pageIndex state

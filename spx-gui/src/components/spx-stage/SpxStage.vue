@@ -12,7 +12,7 @@
     <n-button v-if="show" type="error" @click="stop">{{ $t('stage.stop') }}</n-button>
     <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
     <div v-if="show" class="stage-runner">
-      <ProjectRunner ref="projectRunner" :project="project as Project" />
+      <ProjectRunner ref="projectRunner" :project="project" />
     </div>
     <div v-else class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
@@ -20,7 +20,7 @@
         :width="containerWidth || 400"
         :height="containerHeight || 400"
         :selected-sprite-names="selectedSpriteNames"
-        :project="projectStore.project"
+        :project="project"
         @on-selected-sprites-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
@@ -34,17 +34,16 @@ import { NButton } from 'naive-ui'
 import { useProjectStore } from '@/store'
 import StageViewer from '@/components/stage-viewer'
 import type { SelectedSpritesChangeEvent } from '@/components/stage-viewer'
-import { Project } from '@/class/project'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { nextTick } from 'vue'
 import { useEditorStore } from '@/store/editor'
 
 let show = ref(false)
 
-const project = computed(() => projectStore.project)
 const projectStore = useProjectStore()
 const editorStore = useEditorStore()
 
+const project = computed(() => projectStore.project)
 const spxStage = ref<HTMLElement | null>(null)
 const { width: containerWidth, height: containerHeight } = useSize(spxStage)
 

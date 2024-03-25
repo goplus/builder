@@ -32,7 +32,7 @@
         :name="item"
         :label="$t(`project.${item.toLowerCase()}`)"
         :disabled="
-          (isRequesting && state.currentTab !== item) || (!isOnline && item != TabEnum.local)
+          (isRequesting && state.currentTab !== item) || !isOnline
         "
       >
         <div class="container">
@@ -51,7 +51,7 @@
                 <ProjectCard
                   :project="project"
                   @load-project="closeModalFunc"
-                  @remove-project="removeProject(project.id)"
+                  @remove-project="handleProjectRemoved(project.id)"
                 />
               </TransitionGroup>
             </n-grid-item>
@@ -75,9 +75,10 @@ import {
   watch
 } from 'vue'
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
-import { Project, type ProjectSummary } from '@/class/project'
+import { listProject, ownerAll, type ProjectData } from '@/api/project'
 import ProjectCard from './ProjectCard.vue'
 import { useNetwork } from '@/util/hooks/network'
+import type { PaginationParams } from '@/api/common'
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -90,7 +91,6 @@ const emits = defineEmits(['update:show'])
 
 // ----------data related -----------------------------------
 enum TabEnum {
-  local = 'Local',
   cloud = 'Cloud',
   public = 'Public'
 }
@@ -98,8 +98,8 @@ enum TabEnum {
 const showModal = ref<boolean>(false)
 const searchQuery = ref('')
 const isRequesting = ref<boolean>(false)
-const projectList = ref<ProjectSummary[]>([])
-const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
+const projectList = ref<ProjectData[]>([])
+const currentList: ComputedRef<ProjectData[]> = computed(() => {
   return projectList.value
     .filter((project) =>
       project.name?.toLocaleLowerCase().includes(searchQuery.value.toLocaleLowerCase())
@@ -110,7 +110,7 @@ const { isOnline } = useNetwork()
 
 const state = reactive({
   tabs: TabEnum,
-  currentTab: TabEnum.local
+  currentTab: TabEnum.cloud
 })
 
 const onTabChange = (index: TabEnum) => {
@@ -142,13 +142,13 @@ const getProjects = async () => {
   isRequesting.value = true
   const type = state.currentTab
   projectList.value = []
+  // list all. TODO: do pagination here
+  const pagination: PaginationParams = { pageIndex: 0, pageSize: 300 }
   try {
-    if (type === TabEnum.local) {
-      projectList.value = await Project.getLocalProjects()
-    } else if (type === TabEnum.cloud) {
-      projectList.value = await Project.getCloudProjects()
+    if (type === TabEnum.cloud) {
+      projectList.value = (await listProject(pagination)).data
     } else {
-      projectList.value = await Project.getCloudProjects(Project.ALL_USER)
+      projectList.value = (await listProject({ ...pagination, owner: ownerAll })).data
     }
     isRequesting.value = false
   } catch (e) {
@@ -159,7 +159,7 @@ const getProjects = async () => {
   }
 }
 
-const removeProject = (id: string) => {
+const handleProjectRemoved = (id: string) => {
   projectList.value = projectList.value.filter((project) => project.id !== id)
 }
 </script>

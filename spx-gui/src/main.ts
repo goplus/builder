@@ -11,19 +11,13 @@ import App from './App.vue'
 import { initAssets, initCodeEditor } from './plugins'
 import { initRouter } from '@/router/index'
 import { initI18n } from '@/language'
-import { addFileUrl } from './util/file'
 import VueKonva from 'vue-konva'
 import { initStore, useUserStore } from './store'
-import { serviceManager } from '@/axios'
-import { createDiscreteApi } from 'naive-ui'
+import { client } from './api/common'
 
-const { message } = createDiscreteApi(['message'])
 const initServive = async () => {
   const userStore = useUserStore()
-  serviceManager.setAccessTokenFn(userStore.getFreshAccessToken)
-  serviceManager.setNotifyErrorFn((msg: string) => {
-    message.error(msg)
-  })
+  client.setAuthProvider(userStore.getFreshAccessToken)
 }
 
 async function initApp() {
@@ -32,7 +26,6 @@ async function initApp() {
 
   // Give priority to loading css,js resources
   initAssets()
-  addFileUrl()
 
   const app = createApp(App)
 

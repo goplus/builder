@@ -9,9 +9,9 @@
 -->
 <template>
   <Costume
-    :sprite-config="props.spriteConfig"
+    :sprite="props.sprite"
     :selected="props.selected"
-    :map-config="props.mapConfig"
+    :map-size="props.mapSize"
     @on-drag-move="onDragMove"
     @on-apperance-change="onApperanceChange"
   >
@@ -20,13 +20,14 @@
 <script lang="ts" setup>
 import Costume from './Costume.vue'
 import { defineProps, defineEmits } from 'vue'
-import type { Sprite as SpriteConfig } from '@/class/sprite'
-import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
+import type { Sprite } from '@/model/sprite'
+import type { Size } from '@/model/common'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 // ----------props & emit------------------------------------
 
 const props = defineProps<{
-  spriteConfig: SpriteConfig
-  mapConfig: MapConfig
+  sprite: Sprite
+  mapSize: Size
   selected: boolean
 }>()
 

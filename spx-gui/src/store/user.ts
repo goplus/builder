@@ -1,4 +1,5 @@
-import { casdoorSdk } from '@/util/casdoor'
+import CasdoorSdk from '@/util/casdoor'
+import { casdoorConfig } from '@/util/env'
 import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
 import { defineStore } from 'pinia'
 
@@ -27,6 +28,11 @@ export interface JwtPayload {
   emailVerified: boolean
   phone: string
 }
+
+const casdoorSdk = new CasdoorSdk({
+  ...casdoorConfig,
+  redirectPath: '/callback'
+})
 
 export const useUserStore = defineStore('spx-user', {
   state: () => ({

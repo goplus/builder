@@ -12,10 +12,10 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch, withDefaults } from 'vue'
-import { monaco, type CodeEditorProps, type CodeEditorEmits, type FormatResponse } from './index'
+import { monaco, type CodeEditorProps, type CodeEditorEmits } from './index'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
-import { formatSpxCode as onlineFormatSpxCode } from '@/api/project'
+import { formatSpxCode as onlineFormatSpxCode } from '@/api/util'
 
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -120,11 +120,7 @@ const insertSnippet = (snippet: monaco.languages.CompletionItem, position?: mona
 }
 
 const formatCode = async () => {
-  return new Promise<FormatResponse>((resolve) => {
-    onlineFormatSpxCode(editor.getValue()).then((res) => {
-      resolve(res.data.data)
-    })
-  })
+  return onlineFormatSpxCode(editor.getValue())
 }
 
 /**

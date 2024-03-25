@@ -13,19 +13,18 @@
 </template>
 
 <script lang="ts" setup>
-import { Project } from '@/class/project'
+import { Project } from '@/model/project'
 import { ref } from 'vue'
 import IframeDisplay from './IframeDisplay.vue'
 
 const props = defineProps<{ project: Project }>()
 
-const zipData = ref<ArrayBuffer | Uint8Array | null>(null)
+const zipData = ref<ArrayBuffer | null>(null)
 
 defineExpose({
   run: async () => {
-    const zipResp = props.project.zip
-    const buf = await (await zipResp).arrayBuffer()
-    zipData.value = buf
+    const zipFile = await props.project.exportZipFile()
+    zipData.value = await zipFile.arrayBuffer()
   },
   stop: () => {
     zipData.value = null
@@ -43,4 +42,4 @@ defineExpose({
   width: 100%;
   height: 100%;
 }
-</style>
+</style>@/model

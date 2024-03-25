@@ -21,7 +21,7 @@
       <button
         v-if="selectedAssets.length != 0"
         class="custom-import-btn"
-        @click="uploadSelectedAssetsToPrivateLibrary"
+        @click="uploadSelectedAssetsToPersonalLibrary"
       >
         {{ $t('scratch.uploadToPrivateLibrary') }}
       </button>
@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sound } from '@/class/sound'
+import { Sound } from '@/model/sound'
 import {
   type MessageApi,
   NButton,
@@ -101,16 +101,18 @@ import {
   useMessage,
   NSpin
 } from 'naive-ui'
-import { Sprite } from '@/class/sprite'
+import { Sprite } from '@/model/sprite'
 import { useProjectStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
 import error from '@/assets/image/library/error.svg'
-import { type AssetFileDetail, parseScratchFile } from '@/util/scratch'
+import { type AssetFileDetail as ScratchAssetFile, parseScratchFile } from '@/util/scratch'
 import saveAs from 'file-saver'
-import { publishAsset, PublishState } from '@/api/asset'
-import { AssetType } from '@/constant/constant'
+import { addAsset, IsPublic } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
+import { Costume } from '@/model/costume'
+import { fromBlob } from '@/model/common/file'
+import { sound2Asset, sprite2Asset } from '@/model/common'
 
 // ----------props & emit------------------------------------
 
@@ -119,9 +121,9 @@ const message: MessageApi = useMessage()
 
 // ----------data related -----------------------------------
 // Ref about asset infos.
-const assetFileDetails = ref<AssetFileDetail[]>([])
+const assetFileDetails = ref<ScratchAssetFile[]>([])
 // Ref about an array of selected assets infos.
-const selectedAssets = ref<AssetFileDetail[]>([])
+const selectedAssets = ref<ScratchAssetFile[]>([])
 // Ref about file upload input component.
 const fileUploadInput = ref(null)
 // loading state
@@ -136,7 +138,7 @@ const { t } = useI18n({
  * @param {*} assetDetail
  * @return {*}
  */
-const isImage = (assetDetail: AssetFileDetail) => {
+const isImage = (assetDetail: ScratchAssetFile) => {
   return ['svg', 'jpeg', 'jpg', 'png'].includes(assetDetail.extension.toLowerCase())
 }
 
@@ -164,15 +166,6 @@ const handleScratchFileUpload = async (event: Event) => {
 }
 
 /**
- * @description: Get the full asset name like "meow.wav"
- * @param {*} asset
- * @return {*}
- */
-const getFullAssetName = (asset: AssetFileDetail): string => {
-  return asset.name + '.' + asset.extension
-}
-
-/**
  * @description:Add a method for playing audio directly in the browser
  * @param {*} audioUrl
  * @return {*}
@@ -187,7 +180,7 @@ const playAudio = (audioUrl: string) => {
  * @param {*} asset
  * @return {*}
  */
-const chooseAssets = (asset: AssetFileDetail) => {
+const chooseAssets = (asset: ScratchAssetFile) => {
   if (selectedAssets.value) {
     let index = selectedAssets.value.findIndex((a) => a.name === asset.name)
     if (index !== -1) {
@@ -203,88 +196,60 @@ const chooseAssets = (asset: AssetFileDetail) => {
  * @param {*} asset
  * @return {*}
  */
-const downloadAsset = (asset: AssetFileDetail) => {
-  saveAs(asset.blob, getFullAssetName(asset))
+const downloadAsset = (asset: ScratchAssetFile) => {
+  saveAs(asset.blob, asset.name + '.' + asset.extension)
 }
 
 /**
  * @description: Import the selected assets to project.
  * @return {*}
  */
-const importSelectedAssetsToProject = () => {
+const importSelectedAssetsToProject = async () => {
   if (!selectedAssets.value) {
     isAssetInfosLoading.value = false
     return
   }
-  selectedAssets.value.forEach((asset) => {
-    let file = getFileFromAssetFileDetail(asset)
-    if (isImage(asset)) {
-      importSpriteToProject(asset, file)
+  await Promise.all(selectedAssets.value.map(async (asset) => {
+    const spriteOrSound = await scratchAsset2Asset(asset)
+    if (spriteOrSound instanceof Sprite) {
+      projectStore.project.addSprite(spriteOrSound)
     } else {
-      importSoundToProject(asset, file)
+      projectStore.project.addSound(spriteOrSound)
     }
-  })
+  }))
   showImportSuccessMessage()
 }
 
-/**
- * @description: Import the selected assets to private asset library.
- * @return {*}
- */
-const uploadSelectedAssetsToPrivateLibrary = async () => {
+const uploadSelectedAssetsToPersonalLibrary = async () => {
   isAssetInfosLoading.value = true
   if (!selectedAssets.value) {
     isAssetInfosLoading.value = false
     return
   }
-  for (const asset of selectedAssets.value) {
-    let assetType = AssetType.Sounds
-    if (isImage(asset)) {
-      assetType = AssetType.Sprite
-    }
-    let file = getFileFromAssetFileDetail(asset)
-    let uploadFilesArr: File[] = [file]
-    await publishAsset(
-      asset.name,
-      uploadFilesArr,
-      assetType,
-      PublishState.PrivateLibrary,
-      undefined,
-      undefined
-    )
-  }
+  await Promise.all(selectedAssets.value.map(async asset => {
+    const spriteOrSound = await scratchAsset2Asset(asset)
+    const assetData = await (spriteOrSound instanceof Sprite ? sprite2Asset(spriteOrSound) : sound2Asset(spriteOrSound))
+    await addAsset({
+      ...assetData,
+      displayName: asset.name,
+      category: '',
+      isPublic: IsPublic.personal,
+      preview: 'TODO' // TODO
+    })
+  }))
   showImportSuccessMessage()
 }
 
-/**
- * @description: Import sound file to current project
- * @param {*} asset
- * @param {*} file
- * @return {*}
- */
-const importSoundToProject = (asset: AssetFileDetail, file: File) => {
-  let sound = new Sound(asset.name, [file])
-  projectStore.project.sound.add(sound)
-}
-
-/**
- * @description: Import sprite file to current project
- * @param {*} asset
- * @param {*} file
- * @return {*}
- */
-const importSpriteToProject = (asset: AssetFileDetail, file: File) => {
-  let sprite = new Sprite(asset.name, [file])
-  projectStore.project.sprite.add(sprite)
-}
-
-/**
- * @description: Get file from AssetFileDetail
- * @param {*} asset
- * @return {*}
- */
-const getFileFromAssetFileDetail = (asset: AssetFileDetail): File => {
-  return new File([asset.blob], getFullAssetName(asset), { type: asset.blob.type })
+async function scratchAsset2Asset(scratchFile: ScratchAssetFile) {
+  if (isImage(scratchFile)) {
+    const costumeName = 'default'
+    const costumeFile = await fromBlob(costumeName + '.' + scratchFile.extension, scratchFile.blob)
+    const costume = new Costume(costumeName, costumeFile, {})
+    return new Sprite(scratchFile.name, '', [costume], {})
+  } else {
+    const soundFile = await fromBlob(scratchFile.name + '.' + scratchFile.extension, scratchFile.blob)
+    return new Sound(scratchFile.name, soundFile, {})
+  }
 }
 
 /**

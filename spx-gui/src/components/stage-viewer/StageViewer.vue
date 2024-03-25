@@ -26,31 +26,30 @@
       @contextmenu="onStageMenu"
     >
       <BackdropLayer
-        :backdrop-config="props.project.backdrop"
+        :stage="props.project.stage"
         :offset-config="{
-          offsetX: (props.width / scale - spxMapConfig.width) / 2,
-          offsetY: (props.height / scale - spxMapConfig.height) / 2
+          offsetX: (props.width / scale - mapSize.width) / 2,
+          offsetY: (props.height / scale - mapSize.height) / 2
         }"
-        :map-config="spxMapConfig"
-        @on-scene-loadend="onSceneLoadend"
+        :map-size="mapSize"
       />
       <SpriteLayer
         :offset-config="{
-          offsetX: (props.width / scale - spxMapConfig.width) / 2,
-          offsetY: (props.height / scale - spxMapConfig.height) / 2
+          offsetX: (props.width / scale - mapSize.width) / 2,
+          offsetY: (props.height / scale - mapSize.height) / 2
         }"
-        :sprite-list="props.project.sprite.list"
-        :zorder="props.project.backdrop.config.zorder"
+        :sprite-list="props.project.sprites"
+        :zorder="props.project.config.zorder"
         :selected-sprite-names="stageSelectSpritesName"
-        :map-config="spxMapConfig"
+        :map-size="mapSize"
         @on-sprite-drag-move="onSpriteDragMove"
         @on-sprite-apperance-change="onSpriteApperanceChange"
       />
       <v-layer
         :config="{
           name: 'controller',
-          x: (props.width / scale - spxMapConfig.width) / 2,
-          y: (props.height / scale - spxMapConfig.height) / 2
+          x: (props.width / scale - mapSize.width) / 2,
+          y: (props.height / scale - mapSize.height) / 2
         }"
       >
         <v-transformer
@@ -90,13 +89,14 @@
 <script setup lang="ts">
 import SpriteLayer from './SpriteLayer.vue'
 import BackdropLayer from './BackdropLayer.vue'
-import { computed, ref, watch, withDefaults } from 'vue'
+import { computed, effect, ref, watch, withDefaults } from 'vue'
 import type { StageViewerEmits, StageViewerProps } from './index'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import type { RectConfig } from 'konva/lib/shapes/Rect.js'
 import type { Layer } from 'konva/lib/Layer'
-import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent, MapConfig } from './common'
+import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
+import type { Size } from '@/model/common'
 
 // the controller which is top layer,store the corresponding node information and the information of its control node
 interface Controller {
@@ -123,7 +123,7 @@ const stageSelectSpritesName = ref<string[]>([])
 const selectedControllerMap = ref<Map<String, Controller>>(new Map())
 
 // get spx map size
-const spxMapConfig = ref<MapConfig>({
+const mapSize = ref<Size>({
   width: 400,
   height: 400
 })
@@ -131,38 +131,18 @@ const spxMapConfig = ref<MapConfig>({
 // get the scale of stage viewer
 // container size or stage size changes will recalculate the actual size
 const scale = computed(() => {
-  if (spxMapConfig.value && stageViewer.value) {
-    const widthScale = props.width / spxMapConfig.value.width
-    const heightScale = props.height / spxMapConfig.value.height
+  if (mapSize.value && stageViewer.value) {
+    const widthScale = props.width / mapSize.value.width
+    const heightScale = props.height / mapSize.value.height
     console.log(Math.min(widthScale, heightScale, 1))
     return Math.min(widthScale, heightScale, 1)
   }
   return 1
 })
 
-watch(
-  () => props.project,
-  (new_project, old_project) => {
-    console.log(new_project, old_project)
-    if (new_project.id !== old_project.id) {
-      // witch project have map config,this will confirm the stage size
-      // When there is no map, it does not end the loading and waits for the background layer to send new loaded content
-      if (new_project.backdrop.config.map) {
-        spxMapConfig.value = new_project.backdrop.config.map
-      }
-      // If there is no map, but there is a backdrop scene or backdrop costume, it will end the loading and wait for the sprite layer to send new loaded content
-      else if (
-        (!new_project.backdrop.config.scenes || new_project.backdrop.config.scenes.length === 0) &&
-        (!new_project.backdrop.config.costumes || new_project.backdrop.config.costumes.length === 0)
-      ) {
-        console.error('Project missing backdrop configuration or map size configuration')
-      }
-    }
-  },
-  {
-    deep: true
-  }
-)
+effect(async () => {
+  mapSize.value = await props.project.stage.getMapSize()
+})
 
 // sync the selected sprite name of prop to stageSelectSpritesName
 watch(
@@ -229,18 +209,6 @@ watch(
   }
 )
 
-// When config is not configured, its stage size is determined by the background image
-const onSceneLoadend = (event: { imageEl: HTMLImageElement }) => {
-  if (!props.project.backdrop.config.map) {
-    const { imageEl } = event
-    spxMapConfig.value = {
-      width: imageEl.width,
-      height: imageEl.height
-    }
-    // loading.value = false;
-  }
-}
-
 // show stage menu,when click a sprite
 const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
   e.evt.preventDefault()
@@ -282,40 +250,25 @@ const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
 const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
   if (!stageSelectSpritesName.value.length) return
 
-  // move single sprite
-  const zorderList = props.project.backdrop.config.zorder
-  console.log(stageSelectSpritesName.value)
+  const project = props.project
   const spriteName = stageSelectSpritesName.value[0]
-  const currentIndex = zorderList.indexOf(spriteName)
   const node = stage.value!.getStage().findOne((node: Node) => {
-    console.log(node.getAttr('spriteName'), spriteName)
-
     return node.getAttr('spriteName') === spriteName
   }) as Node
-  console.log(node)
-  let newIndex: number
   if (direction === 'up') {
-    newIndex = currentIndex + 1
+    project.upSpriteZorder(spriteName)
     node.moveUp()
   } else if (direction === 'down') {
-    newIndex = currentIndex - 1
+    project.downSpriteZorder(spriteName)
     node.moveDown()
   } else if (direction === 'top') {
-    newIndex = zorderList.length - 1
+    project.topSpriteZorder(spriteName)
     node.moveToTop()
   } else if (direction === 'bottom') {
-    newIndex = 0
+    project.bottomSpriteZorder(spriteName)
     node.moveToBottom()
   } else {
     return
-  }
-
-  if (currentIndex >= 0 && newIndex >= 0 && newIndex < zorderList.length) {
-    const newZorderList = [...zorderList]
-    const [movedSprite] = newZorderList.splice(currentIndex, 1)
-    newZorderList.splice(newIndex, 0, movedSprite)
-
-    props.project.backdrop.config.zorder = newZorderList
   }
 
   menu.value.style.display = 'none'

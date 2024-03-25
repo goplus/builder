@@ -9,10 +9,10 @@
 <template>
   <div class="stage-list">
     <div class="stage-list-space">
-      <AssetAddBtn :type="'backdrop'" />
+      <AssetAddBtn :type="AssetType.Backdrop" />
       <ImageCardCom
         :type="'bg'"
-        :asset="projectStore.project.backdrop"
+        :asset="projectStore.project.stage"
         :style="{ 'margin-bottom': '26px' }"
       />
     </div>
@@ -23,6 +23,7 @@
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { useProjectStore } from '@/store'
+import { AssetType } from '@/api/asset';
 
 // ----------props & emit------------------------------------
 const projectStore = useProjectStore()

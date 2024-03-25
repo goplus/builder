@@ -1,4 +1,4 @@
-import type { Project } from '@/class/project'
+import type { Project } from '@/model/project'
 import { keywords, typeKeywords } from '@/components/code-editor/language'
 
 interface checkInfo {
@@ -20,7 +20,7 @@ export const isValidAssetName = (name: string) => {
 }
 
 /**
- * Check if the name is unique and return the updated name and other information.
+ * Check if the name is unique and return the updated name and other information. TODO: simplify logic here
  * @param name the name of the asset
  * @param project the project
  * @param originalName If originalName is null, then he will get the name that should be held in the project; otherwise, he will find the name that should be held in the project excluding originalName.
@@ -33,7 +33,7 @@ export function checkUpdatedName(
 ): checkInfo {
   if (!isValidAssetName(name)) throw new Error('Cannot update asset name. Name is invalid! ')
 
-  const assetList = [...project.sprite.list, ...project.sound.list]
+  const assetList = [...project.sprites, ...project.sounds]
   const assetSet = new Set(assetList.map((item) => item.name))
   let counter = 1
   let changedName = name

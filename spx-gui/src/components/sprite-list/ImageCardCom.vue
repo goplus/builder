@@ -16,19 +16,19 @@
       :src="computedProperties.spriteUrl"
       :fallback-src="error"
     />
-    {{ props.asset.name }}
+    {{ (props.asset as Sprite).name }}
   </div>
   <div
-    v-for="(scene, index) in computedProperties.backdropScenes"
+    v-for="(backdrop, index) in computedProperties.backdrops"
     v-else
     :key="index"
     :class="computedProperties.cardClassName"
     :style="index == 0 ? firstBackdropStyle : ''"
-    @click.stop="() => index === 0 || (scene.scene.name && setSceneToTop(scene.scene.name))"
+    @click.stop="() => topBackdrop(backdrop.name)"
   >
     <div
       class="delete-button"
-      @click.stop="() => scene.scene.name && deleteBackdropScene(scene.scene.name)"
+      @click.stop="() => deleteBackdrop(backdrop.name)"
     >
       ×
     </div>
@@ -36,7 +36,7 @@
       preview-disabled
       :width="computedProperties.imageWidth"
       :height="computedProperties.imageHeight"
-      :src="scene.file.url"
+      :src="backdrop.url"
       :fallback-src="error"
     />
   </div>
@@ -46,69 +46,57 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
-import { Backdrop } from '@/class/backdrop'
-import FileWithUrl from '@/class/file-with-url'
+import { Stage } from '@/model/stage'
+import type { Sprite } from '@/model/sprite'
 import error from '@/assets/image/library/error.svg'
-import type { Scene } from '@/interface/file'
 import { useProjectStore } from '@/store'
-import type { Sprite } from '@/class/sprite'
 
 // ----------props & emit------------------------------------
 interface PropType {
-  type?: string
-  asset: Sprite | Backdrop
+  type: 'sprite' | 'bg' // TODO: split the component
+  asset: Sprite | Stage
 }
 const props = defineProps<PropType>()
 const projectStore = useProjectStore()
 const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 
 // ----------computed properties-----------------------------
-// Computed card style/ image width/ image height/ spriteUrl/ backdropFiles by props.type.
 const computedProperties = computed(() => {
-  const isBg = props.type === 'bg'
-  const hasFiles = props.asset && props.asset.files && props.asset.files.length > 0
+  if (props.type === 'bg') {
+    const stage = props.asset as Stage
+    return {
+      cardClassName: 'bg-list-card',
+      imageWidth: 40,
+      imageHeight: 40,
+      spriteUrl: '',
+      // current only support backdrop witch config of scene
+      backdrops: stage.backdrops.map(backdrop => ({
+        name: backdrop.name,
+        url: backdrop.img.url()
+      }))
+    }
+  }
+  const sprite = props.asset as Sprite
   return {
-    cardClassName: isBg ? 'bg-list-card' : 'sprite-list-card',
-    imageWidth: isBg ? 40 : 75,
-    imageHeight: isBg ? 40 : 75,
-    spriteUrl: !isBg && hasFiles ? props.asset.files[0].url : '',
-    // current only support backdrop witch config of scene
-    backdropScenes: (isBg && hasFiles && props.asset.config.scenes
-      ? props.asset.config.scenes.map((scene: Scene, index: number) => ({
-          scene: scene,
-          file: props.asset.files[index]
-        }))
-      : []) as Array<{ scene: Scene; file: FileWithUrl }>
+    cardClassName: 'sprite-list-card',
+    imageWidth: 75,
+    imageHeight: 75,
+    spriteUrl: sprite.costumes[0].img.url(), // TODO: use costume index instead of the 1st costume
+    backdrops: []
   }
 })
 
 // ----------methods-----------------------------------------
-/**
- * @description: A Function about deleting sprite by name.
- * @param {*} name
- * @Author: Xu Ning
- * @Date: 2024-01-23 14:29:02
- */
 const deleteSprite = (sprite: Sprite) => {
-  projectStore.project.sprite.remove(sprite)
+  projectStore.project.removeSprite(sprite.name)
 }
 
-/**
- * @description: A Function about deleting backdrop's scene
- * @param {*} file
- * @Author: Xu Ning
- * @Date: 2024-01-24 12:11:38
- */
-const deleteBackdropScene = (name: string) => {
-  projectStore.project.backdrop.removeScene(name)
+const deleteBackdrop = (name: string) => {
+  projectStore.project.stage.removeBackdrop(name)
 }
 
-/**
- * The first item of scenes is the backdrop of the project
- * @param name string
- */
-const setSceneToTop = (name: string) => {
-  projectStore.project.backdrop.setSceneToTop(name)
+const topBackdrop = (name: string) => {
+  projectStore.project.stage.topBackdrop(name)
 }
 </script>
 

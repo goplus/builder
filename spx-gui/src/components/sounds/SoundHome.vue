@@ -13,9 +13,9 @@
       content-style="paddingLeft: 120px;"
       style="width: 175px; background-image: linear-gradient(to bottom, #fefbfb, #fbe8eb)"
     >
-      <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="'sound'" />
+      <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="AssetType.Sound" />
       <SoundsEditCard
-        v-for="asset in projectStore.project.sound.list"
+        v-for="asset in projectStore.project.sounds"
         :key="asset.name"
         :asset="asset"
         :style="{ 'margin-bottom': '26px' }"
@@ -39,11 +39,13 @@ import SoundsEditCard from 'comps/sounds/SoundEditCard.vue'
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
 import SoundsEdit from 'comps/sounds/SoundEdit.vue'
 import { ref, watch } from 'vue'
-import { Sound } from '@/class/sound'
+import { Sound } from '@/model/sound'
 import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from '@/util/asset'
 import { useProjectStore } from '@/store'
 import { useI18n } from 'vue-i18n'
+import type { File } from '@/model/common/file'
+import { AssetType } from '@/api/asset'
 
 const message: MessageApi = useMessage()
 const projectStore = useProjectStore()
@@ -52,7 +54,7 @@ const selectedSound = ref<Sound>()
 watch(
   () => projectStore.project,
   () => {
-    selectedSound.value = projectStore.project.sound.list[0]
+    selectedSound.value = projectStore.project.sounds[0]
   }
 )
 
@@ -66,8 +68,7 @@ const handleSelect = (asset: Sound) => {
 
 const handleSoundFileUpdate = (newFile: File) => {
   if (selectedSound.value) {
-    selectedSound.value.files[0] = newFile
-    selectedSound.value.config.path = newFile.name
+    selectedSound.value.setFile(newFile)
     message.success(t('message.save'), { duration: 1000 })
   }
 }
@@ -92,7 +93,7 @@ const handleSoundFileNameUpdate = (newName: string) => {
 }
 
 const handleDeleteSound = (sound: Sound) => {
-  projectStore.project.sound.remove(sound)
+  projectStore.project.removeSound(sound.name)
 }
 </script>
 

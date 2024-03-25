@@ -11,17 +11,17 @@
   <v-image
     ref="costume"
     :config="{
-      spriteName: props.spriteConfig.name,
+      spriteName: props.sprite.name,
       image: image,
       draggable: true,
       x: spritePosition.x,
       y: spritePosition.y,
       rotation: spriteRotation,
-      offsetX: currentCostume.x,
-      offsetY: currentCostume.y,
-      scaleX: props.spriteConfig.config.size,
-      scaleY: props.spriteConfig.config.size,
-      visible: props.spriteConfig.config.visible
+      offsetX: currentCostume?.config.x,
+      offsetY: currentCostume?.config.y,
+      scaleX: props.sprite.config.size,
+      scaleY: props.sprite.config.size,
+      visible: props.sprite.config.visible
     }"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
@@ -30,17 +30,15 @@
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { defineProps, ref, computed, watch } from 'vue'
-import type { ComputedRef } from 'vue'
-import type { MapConfig } from './common'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
-import type { Sprite as SpriteConfig } from '@/class/sprite'
+import type { Sprite } from '@/model/sprite'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
-import type { Costume as CostumeConfig } from '@/interface/file'
 import type { Rect } from 'konva/lib/shapes/Rect'
+import type { Size } from '@/model/common'
 // ----------props & emit------------------------------------
 const props = defineProps<{
-  spriteConfig: SpriteConfig
-  mapConfig: MapConfig
+  sprite: Sprite
+  mapSize: Size
   selected: boolean
 }>()
 // define the emits
@@ -52,9 +50,7 @@ const emits = defineEmits<{
 
 // ----------computed properties-----------------------------
 // computed the current costume with current image
-const currentCostume: ComputedRef<CostumeConfig> = computed(() => {
-  return props.spriteConfig.config.costumes[props.spriteConfig.config.costumeIndex]
-})
+const currentCostume = computed(() => props.sprite.costume)
 
 // ----------data related -----------------------------------
 const image = ref<HTMLImageElement>()
@@ -62,21 +58,23 @@ const costume = ref()
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
-  return getRelativePosition(props.spriteConfig.config.x, props.spriteConfig.config.y)
+  // TODO: check default values here
+  return getRelativePosition(props.sprite.config.x, props.sprite.config.y)
 })
 
 // Computed spx's sprite heading to konva's rotation by about changing sprite heading
 const spriteRotation = computed(() => {
-  return getRotation(props.spriteConfig.config.heading)
+  // TODO: check default values here
+  return getRotation(props.sprite.config.heading)
 })
 
 // When the config update,emits the apperance change event
 // TODO: Move to stageviewer to listen for config changes
 watch(
-  () => props.spriteConfig.config,
+  () => props.sprite,
   () => {
     emits('onApperanceChange', {
-      sprite: props.spriteConfig,
+      sprite: props.sprite,
       node: costume.value.getNode() as Node
     })
   },
@@ -90,7 +88,7 @@ watch(
   (new_costume) => {
     if (new_costume != null) {
       const _image = new window.Image()
-      _image.src = props.spriteConfig.files[props.spriteConfig.config.costumeIndex].url as string
+      _image.src = new_costume.img.url()
       _image.onload = () => {
         image.value = _image
       }
@@ -115,8 +113,8 @@ watch(
 const getRelativePosition = (x: number, y: number): { x: number; y: number } => {
   // 返回计算后的位置  stage.width / 2 + x ，stage.height / 2 + y
   return {
-    x: props.mapConfig.width / 2 + x,
-    y: props.mapConfig.height / 2 - y
+    x: props.mapSize.width / 2 + x,
+    y: props.mapSize.height / 2 - y
   }
 }
 
@@ -139,8 +137,8 @@ const getRotation = (heading: number): number => {
  */
 const getSpxPostion = (x: number, y: number): { x: number; y: number } => {
   return {
-    x: x - props.mapConfig.width / 2,
-    y: props.mapConfig.height / 2 - y
+    x: x - props.mapSize.width / 2,
+    y: props.mapSize.height / 2 - y
   }
 }
 const controller = ref<Rect | null>()
@@ -150,7 +148,7 @@ const controller = ref<Rect | null>()
 const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
   emits('onDragMove', {
     event,
-    sprite: props.spriteConfig
+    sprite: props.sprite
   })
 }
 
@@ -162,9 +160,8 @@ const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
  * @Date: 2024-01-25 15:44:18
  */
 const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
-  const position = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
-  props.spriteConfig.config.x = position.x
-  props.spriteConfig.config.y = position.y
+  const { x, y } = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
+  props.sprite.setConfig({ x, y })
   controller.value = null
 }
 </script>

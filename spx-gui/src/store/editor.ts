@@ -9,13 +9,13 @@ export const useEditorStore = defineStore('editor', () => {
   const currentSpriteName = ref<string | null>(null)
   const currentSprite = computed(() => {
     if (!currentSpriteName.value) return null
-    return projectStore.project.sprite.list.find((s) => s.name === currentSpriteName.value) || null
+    return projectStore.project.sprites.find((s) => s.name === currentSpriteName.value) || null
   })
 
   watch(
     () => projectStore.project,
     () => {
-      currentSpriteName.value = projectStore.project.sprite.list[0]?.name || null
+      currentSpriteName.value = projectStore.project.sprites[0]?.name || null
     }
   )
 

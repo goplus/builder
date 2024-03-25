@@ -29,9 +29,10 @@
 import WaveSurfer from 'wavesurfer.js'
 import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
 import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
-import { Sound } from '@/class/sound'
+import { Sound } from '@/model/sound'
 import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
 import { useProjectStore } from '@/store'
+import { fromNativeFile } from '@/model/common/file'
 
 interface PropsType {
   show: boolean
@@ -116,6 +117,7 @@ const stopRecording = () => {
           type: 'audio/wav',
           lastModified: Date.now()
         })
+        if (audioUrl.value !== '') URL.revokeObjectURL(audioUrl.value)
         audioUrl.value = URL.createObjectURL(audioFile.value)
       })
     } else {
@@ -126,10 +128,11 @@ const stopRecording = () => {
 }
 
 /* Save audioFile to file manager */
-const saveRecording = () => {
+const saveRecording = async () => {
   if (audioFile.value && soundName.value) {
-    let sound = new Sound(soundName.value, [audioFile.value])
-    projectStore.project.sound.add(sound)
+    const file = await fromNativeFile(audioFile.value)
+    let sound = new Sound(soundName.value, file, {})
+    projectStore.project.addSound(sound)
     closeRecorder()
   } else {
     console.error('No recording or name provided')

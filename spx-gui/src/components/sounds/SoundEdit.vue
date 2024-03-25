@@ -181,17 +181,12 @@ import { ref, onMounted, type Ref, watch } from 'vue'
 import { nextTick } from 'vue'
 import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-edit'
 import { NGradientText, NInput, useMessage, type MessageApi } from 'naive-ui'
-import { Sound } from '@/class/sound'
+import { Sound } from '@/model/sound'
 import { audioDataService } from '@/util/wavesurfer-edit-data'
 import { audioBufferToWavBlob } from '@/util/audio'
+import { File, toNativeFile } from '@/model/common/file'
 
-const props = defineProps({
-  asset: {
-    type: Sound,
-    required: false,
-    default: null
-  }
-})
+const props = defineProps<{ asset?: Sound }>()
 
 const emits = defineEmits(['update-sound-file', 'update-sound-name'])
 
@@ -241,7 +236,7 @@ const initSoundEdit = () => {
 /* init WaveSurfer */
 const initWaveSurfer = () => {
   // nextTick : Make sure waveform dom is loaded
-  nextTick(() => {
+  nextTick(async () => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
     const gradient = ctx.createLinearGradient(0, 0, 0, 150)
@@ -310,8 +305,8 @@ const initWaveSurfer = () => {
 
     // load sound
     if (props.asset) {
-      console.log(props.asset?.files[0])
-      wavesurfer.loadBlob(props.asset?.files[0])
+      const nativeFile = await toNativeFile(props.asset.file)
+      wavesurfer.loadBlob(nativeFile)
     } else {
       return
     }
@@ -467,14 +462,9 @@ async function updateSound(): Promise<void> {
   const backend = wavesurfer.backend as SimpleWavesurferBackend
   if (backend && backend.buffer) {
     const wavBlob = audioBufferToWavBlob(backend.buffer)
-    const wavFile = wavBlobToFile(wavBlob, props.asset?.name + '.wav')
+    const wavFile = new File((props.asset?.name ?? 'TODO') + '.wav', null, await wavBlob.arrayBuffer())
     emits('update-sound-file', wavFile)
   }
-}
-
-/* Convert WAV Blob to File */
-function wavBlobToFile(wavBlob: Blob, fileName: string): File {
-  return new File([wavBlob], fileName, { type: 'audio/wav' })
 }
 
 /* Download sound file */

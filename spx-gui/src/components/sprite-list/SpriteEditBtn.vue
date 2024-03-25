@@ -34,7 +34,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setSx(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setConfig({ x: val as number })
           }
         "
       >
@@ -48,7 +48,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setSy(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setConfig({ y: val as number })
           }
         "
       >
@@ -61,7 +61,7 @@
         v-model:value="visible"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setVisible(val)
+            editorStore.currentSprite && editorStore.currentSprite.setConfig({ visible: val })
           }
         "
       >
@@ -75,7 +75,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setSize((val as number) / 100)
+            editorStore.currentSprite && editorStore.currentSprite.setConfig({ size: (val as number) / 100 })
           }
         "
       >
@@ -92,7 +92,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setHeading(val as number)
+            editorStore.currentSprite && editorStore.currentSprite.setConfig({ heading: val as number })
           }
         "
       >
@@ -115,16 +115,17 @@ import { useEditorStore } from '@/store/editor'
 const editorStore = useEditorStore()
 
 // ----------data related -----------------------------------
-const x = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.x : 0))
-const y = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.y : 0))
+// TODO: check all default values here, they should be consistent with spx
+const x = computed(() => editorStore.currentSprite?.config.x ?? 0)
+const y = computed(() => editorStore.currentSprite?.config.y ?? 0)
 const heading = computed(() =>
   editorStore.currentSprite ? editorStore.currentSprite.config.heading : 0
 )
-const size = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.config.size : 0))
+const size = computed(() => editorStore.currentSprite?.config.size ?? 0)
 const visible = computed(() =>
   editorStore.currentSprite ? editorStore.currentSprite.config.visible : false
 )
-const name = ref(editorStore.currentSprite ? editorStore.currentSprite.name : '')
+const name = ref(editorStore.currentSprite?.name ?? '')
 const { t } = useI18n({
   inheritLocale: true
 })
@@ -139,7 +140,6 @@ const { message } = createDiscreteApi(['message'])
 function handleUpdateSpriteName() {
   if (!editorStore.currentSprite) return
   try {
-    const project = useProjectStore().project
     const checkInfo = checkUpdatedName(
       name.value,
       useProjectStore().project,
@@ -147,14 +147,7 @@ function handleUpdateSpriteName() {
     )
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
-      // update zorder
-      const zorder = project.backdrop.config.zorder
-      project.backdrop.config.zorder = zorder.filter(
-        (item) => item !== editorStore.currentSprite?.name
-      )
-      project.backdrop.config.zorder.push(checkInfo.name)
-
-      editorStore.currentSprite.name = checkInfo.name
+      editorStore.currentSprite.setName(checkInfo.name)
       message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)

@@ -1,11 +1,3 @@
-const config: SdkConfig = {
-  serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT,
-  clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID,
-  organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME,
-  appName: import.meta.env.VITE_CASDOOR_APP_NAME,
-  redirectPath: '/callback'
-}
-
 // The following content is copied from the casdoor-sdk package, as
 // we need to modify some of the code.
 // Original source:
@@ -155,4 +147,4 @@ class Sdk {
   }
 }
 
-export const casdoorSdk = new Sdk(config)
+export default Sdk

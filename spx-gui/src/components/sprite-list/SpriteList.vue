@@ -26,11 +26,11 @@
         <div class="sprite-list-card">
           <n-flex>
             <!-- S Component Add Button -->
-            <AssetAddBtn :type="'sprite'" />
+            <AssetAddBtn :type="AssetType.Sprite" />
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
             <ImageCardCom
-              v-for="asset in projectStore.project.sprite.list"
+              v-for="asset in projectStore.project.sprites"
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
@@ -72,8 +72,9 @@ import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import LoadFromScratch from 'comps/spx-library/LoadFromScratch.vue'
 import { useProjectStore } from '@/store'
-import type { Sprite } from '@/class/sprite'
+import type { Sprite } from '@/model/sprite'
 import { useEditorStore } from '@/store/editor'
+import { AssetType } from '@/api/asset'
 
 const projectStore = useProjectStore()
 const editorStore = useEditorStore()
@@ -87,7 +88,7 @@ const toggleCodeById = (sprite: Sprite) => {
 }
 
 const getImageCardStyle = (sprite: Sprite) => {
-  return sprite === editorStore.currentSprite
+  return sprite.name === editorStore.currentSpriteName
     ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
     : { marginBottom: '26px' }
 }

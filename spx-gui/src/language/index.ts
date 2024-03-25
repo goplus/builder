@@ -136,6 +136,7 @@ export const initI18n = async (app: App) => {
         create: 'create',
         update: 'update',
         removeTitle: 'Remove Project',
+        // TODO: adjust text & remove useless items
         removeCloudContent:
           'Are you sure you want to remove this project ({name}) from cloud? ' +
           'This action cannot be undone.(This project will be deleted from local if it is existed as well)',

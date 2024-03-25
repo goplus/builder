@@ -9,7 +9,7 @@
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <button v-if="!run" :disabled="!projectid || !ready || !!errorMsg" class="run" @click="onRun">
+      <button v-if="!run" :disabled="!ready || !!errorMsg" class="run" @click="onRun">
         run
       </button>
       <button v-else class="stop" @click="onStop">stop</button>
@@ -23,34 +23,34 @@
       </div>
       <div v-if="ready && !errorMsg" class="ready">
         <p>project ready</p>
-        <p>{{ project.name }}</p>
+        <p>{{ fullName(project.owner!, project.name!) }}</p>
       </div>
 
-      <ProjectRunner ref="runner" :project="project as Project" />
+      <ProjectRunner ref="runner" :project="project" />
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch, onMounted } from 'vue'
-import { Project } from '@/class/project'
-const props = defineProps<{ projectid?: string }>()
+import { Project, fullName } from '@/model/project'
+const props = defineProps<{ owner?: string, name?: string }>()
 const runner = ref()
 const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
 const project = ref<Project>(new Project())
 watch(
-  () => props.projectid,
-  async (projectid) => {
-    if (projectid) {
+  () => [props.owner, props.name],
+  async ([owner, name]) => {
+    if (owner && name) {
       ready.value = false
       errorMsg.value = ''
       try {
-        const cloudProject = new Project()
-        await cloudProject.load(projectid)
-        project.value.cleanup()
-        project.value = cloudProject
+        const newProject = new Project()
+        await newProject.loadFromCloud(owner, name)
+        project.value.dispose()
+        project.value = newProject
         ready.value = true
       } catch (err) {
         console.log(err)
@@ -145,3 +145,4 @@ onMounted(() => {
   }
 }
 </style>
+@/model

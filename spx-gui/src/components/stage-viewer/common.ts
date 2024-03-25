@@ -7,7 +7,7 @@
  * @Description:
  */
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
-import type { Sprite } from '@/class/sprite'
+import type { Sprite } from '@/model/sprite'
 
 /**
  * @description: Costume
@@ -33,13 +33,6 @@ export interface StageBackdrop {
   scenes: StageScene[]
   costumes: StageCostume[]
   currentCostumeIndex: number
-}
-/**
- * @description: Map Config,some spx project havent this config,the stage size will depend on the SceneSize
- */
-export interface MapConfig {
-  width: number
-  height: number
 }
 
 export interface SpriteEvent {

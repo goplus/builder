@@ -9,9 +9,6 @@
 import { FormatResponse } from './components/code-editor'
 
 declare global {
-  interface File {
-    url: string
-  }
 
   /**
    * @description: format spx code power by gopfmt's wasm

@@ -22,6 +22,7 @@ import {
   PublishTwotone as PublishIcon
 } from '@vicons/material'
 import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
+import saveAs from 'file-saver'
 import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store'
 import { ThemeStyleType } from '@/constant/constant'
@@ -313,7 +314,7 @@ const computedButtonStyle = (color1: string) => {
  * @Author: Xu Ning
  * @Date: 2024-01-17 17:55:13
  */
-const handleSelectImport = (key: string | number) => {
+const handleSelectImport = async (key: string | number) => {
   if (key === 'Upload') {
     const input = document.createElement('input')
     input.type = 'file'
@@ -321,27 +322,25 @@ const handleSelectImport = (key: string | number) => {
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0]
-      await projectStore.loadFromZip(file)
+      await projectStore.openProjectWithZipFile(file)
     }
   } else if (key === 'Load') {
     showModal.value = true
   } else if (key === 'SaveLocal') {
-    projectStore.project.download()
+    const zipFile = await projectStore.project.exportZipFile()
+    saveAs(zipFile, zipFile.name)
   } else if (key === 'SaveCloud') {
     const { message } = createDiscreteApi(['message'])
-    projectStore.project
-      .save()
-      .then((res) => {
-        message.success(res)
+    await projectStore.project
+      .saveToCloud()
+      .then(() => {
+        message.success('TODO')
       })
       .catch((err) => {
-        console.error(err)
-        if (err instanceof Error) {
-          message.error(err.message)
-        }
+        message.error('TODO: ' + err)
       })
   } else if (key === 'Blank') {
-    projectStore.loadBlankProject()
+    projectStore.openBlankProject('untitled-TODO')
   }
 }
 

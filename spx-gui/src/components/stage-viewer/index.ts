@@ -7,7 +7,7 @@
  * @Description:
  */
 import StageViewer from './StageViewer.vue'
-import type { Project } from '@/class/project'
+import type { Project } from '@/model/project'
 export default StageViewer
 
 // Props of StageViewer

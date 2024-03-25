@@ -21,14 +21,9 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { Sound } from '@/class/sound'
+import { Sound } from '@/model/sound'
 
-const props = defineProps({
-  asset: {
-    type: Object as () => Sound,
-    required: true
-  }
-})
+const props = defineProps<{ asset: Sound }>()
 
 const emits = defineEmits(['delete-sound'])
 

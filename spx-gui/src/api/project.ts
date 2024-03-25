@@ -1,110 +1,67 @@
-import type { PageData, Project } from '@/interface/library'
-import { service } from '@/axios'
-import type { ResponseData } from '@/axios'
-import type { FormatResponse } from '@/components/code-editor'
-import type { AxiosResponse } from 'axios'
-import { PublicStatus } from '@/class/project'
+import type { ByPage, PaginationParams, FileUrls } from './common'
+import { client, IsPublic } from './common'
 
-/**
- * Saves a project.
- *
- * @param name The name of the project.
- * @param file The code file(zip) to be uploaded.
- * @param id
- * @returns Project
- */
-export async function saveProject(name: string, file: File, id?: string): Promise<Project> {
-  const url = '/project'
-  const formData = new FormData()
-  formData.append('name', name)
-  formData.append('file', file)
-  id && formData.append('id', id)
+export { IsPublic }
 
-  const res: AxiosResponse<ResponseData<Project>> = await service({
-    url: url,
-    method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
-  if (res.data.code >= 200 && res.data.code < 300) {
-    return res.data.data
-  } else {
-    throw new Error(res.data.msg)
-  }
+export type { FileUrls as FileCollection }
+
+export enum ProjectDataType {
+  Sprite = 0,
+  Backdrop = 1,
+  Sound = 2
 }
 
-/**
- * Fetches a list of projects.
- * @param pageIndex The index of the page to retrieve in a paginated list.
- * @param pageSize The number of projects to retrieve per page.
- * @param isPublic Public projects or user projects.
- * @returns Project[]
- */
-export async function getProjects(
-  pageIndex: number,
-  pageSize: number,
-  isPublic?: PublicStatus,
-  author?: string
-): Promise<PageData<Project[]>> {
-  const baseUrl = `/projects/list`
-  const params = new URLSearchParams()
-  params.append('pageIndex', String(pageIndex))
-  params.append('pageSize', String(pageSize))
-  isPublic !== undefined && params.append('isPublic', String(isPublic))
-  author && params.append('author', author)
-  const url = `${baseUrl}?${params.toString()}`
-  return service({ url: url, method: 'get' }).then((res) => res.data.data)
+export type ProjectData = {
+  // Globally Unique ID
+	id: string
+	// Project name, unique for projects of same owner
+	name: string
+	// Name of project owner
+	owner: string
+	// Public status
+	isPublic: IsPublic
+	// Files the project contains
+	files: FileUrls
+	// Project version
+	version: number
+  // Create time
+  cTime: string
+  // Update time
+  uTime: string
 }
 
-/**
- * Fetches a single project.
- * @param id The id of the project
- * @returns Project
- */
-export async function getProject(id: string): Promise<Project> {
-  const url = `/project/${id}`
-  return service({ url: url, method: 'get' }).then((res) => res.data.data)
+export type AddProjectParams = Pick<ProjectData, 'name' | 'isPublic' | 'files'>
+
+export function addProject(params: AddProjectParams) {
+  return client.post('/project', params) as Promise<ProjectData>
 }
 
-/**
- * Removes a project.
- * @param id The id of the project
- * @returns string
- */
-export async function removeProject(id: string): Promise<string> {
-  const url = `/project/${id}`
-  return service({ url: url, method: 'delete' }).then((res) => res.data.data)
+export type UpdateProjectParams = Pick<ProjectData, 'isPublic' | 'files'>
+
+function encode(owner: string, name: string) {
+  return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }
 
-/**
- * Update project isPublic status.
- * @param id project id that will be public
- * @returns
- */
-export async function updateProjectIsPublic(id: string, status: PublicStatus): Promise<string> {
-  const url = `/project/${id}/is-public?isPublic=${status}`
-  return service({ url: url, method: 'put' }).then((res) => res.data.data)
+export function updateProject(owner: string, name: string, params: UpdateProjectParams) {
+  return client.put(`/project/${encode(owner, name)}`, params) as Promise<ProjectData>
 }
 
-/**
- * Format spx code
- *
- * @param body The string content to be formatted.
- * @returns string
- */
-export function formatSpxCode(body: string): Promise<AxiosResponse<ResponseData<FormatResponse>>> {
-  const url = '/util/fmt'
-  const formData = new FormData()
-  formData.append('body', body)
+export function deleteProject(owner: string, name: string) {
+  return client.delete(`/project/${encode(owner, name)}`) as Promise<void>
+}
 
-  return service({
-    url: url,
-    method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+export type ListProjectParams = PaginationParams & {
+  isPublic?: IsPublic
+  owner?: string
+}
+
+/** `owner: ownerAll` indicates that we want to list project of all users */
+export const ownerAll = '*'
+
+export function listProject(params?: ListProjectParams) {
+  return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
+}
+
+export function getProject(owner: string, name: string) {
+  return client.get(`/project/${encode(owner, name)}`) as Promise<ProjectData>
 }

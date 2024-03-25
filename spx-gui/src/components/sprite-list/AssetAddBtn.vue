@@ -14,14 +14,14 @@
     <!-- S Component Add Button type second step -->
     <div v-else class="add-buttons">
       <!-- Background Upload -->
-      <n-upload v-if="props.type === 'backdrop'" @before-upload="beforeBackdropUpload">
+      <n-upload v-if="props.type === AssetType.Backdrop" @before-upload="beforeBackdropUpload">
         <n-button color="#fff" quaternary size="tiny" text-color="#fff">
           {{ $t('stage.upload') }}
         </n-button>
       </n-upload>
 
       <!-- Sound Upload -->
-      <n-upload v-else-if="props.type === 'sound'" @before-upload="beforeSoundUpload">
+      <n-upload v-else-if="props.type === AssetType.Sound" @before-upload="beforeSoundUpload">
         <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
       </n-upload>
 
@@ -33,7 +33,7 @@
       </div>
 
       <n-button
-        v-if="props.type == 'backdrop'"
+        v-if="props.type == AssetType.Backdrop"
         color="#fff"
         :disabled="!isOnline"
         quaternary
@@ -44,7 +44,7 @@
         {{ $t('stage.choose') }}
       </n-button>
       <n-button
-        v-else-if="props.type == 'sprite'"
+        v-else-if="props.type == AssetType.Sprite"
         :disabled="!isOnline"
         color="#fff"
         :text-color="commonColor"
@@ -54,7 +54,7 @@
       </n-button>
 
       <n-button
-        v-if="props.type == 'sound'"
+        v-if="props.type == AssetType.Sound"
         color="#fff"
         :text-color="commonColor"
         @click="openRecorderFunc()"
@@ -114,7 +114,7 @@
     <div class="modal-items">
       <p class="modal-items-p">{{ $t('list.public') }}</p>
       <n-select
-        v-model:value="publicValue"
+        v-model:value="publishState"
         default-value="not public"
         class="modal-items-content"
         :options="publicOptions"
@@ -137,21 +137,24 @@ import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'na
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
 import LibraryModal from '@/components/spx-library/LibraryModal.vue'
-import { Sprite } from '@/class/sprite'
-import FileWithUrl from '@/class/file-with-url'
-import { Sound } from '@/class/sound'
+import { Sprite } from '@/model/sprite'
+import { fromNativeFile } from '@/model/common/file'
+import { Sound } from '@/model/sound'
 import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
-import { generateGifByCostumes, publishAsset, PublishState } from '@/api/asset'
+import { addAsset, IsPublic, AssetType, type AssetData } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
-import { AssetType } from '@/constant/constant'
 import { isValidAssetName } from '@/util/asset'
 import { isImage, isSound } from '@/util/utils'
 import { useNetwork } from '@/util/hooks/network'
 import { useProjectStore } from '@/store'
+import { stripExt } from '@/util/path'
+import { Backdrop } from '@/model/backdrop'
+import { Costume } from '@/model/costume'
+import { asset2Backdrop, asset2Sprite } from '@/model/common'
 
 // ----------props & emit------------------------------------
 interface PropType {
-  type: string
+  type: AssetType
 }
 const props = defineProps<PropType>()
 const message = useMessage()
@@ -168,18 +171,22 @@ const categoryOptions = computed(() => [
   { label: t('category.food'), value: 'Food' },
   { label: t('category.fantasy'), value: 'Fantasy' }
 ])
-
+enum PublishState {
+  noUpload,
+  uploadToPersonal,
+  uploadToPublic
+}
 const publicOptions = computed(() => [
-  { label: t('publicState.notPublish'), value: PublishState.NotPublished },
-  { label: t('publicState.private'), value: PublishState.PrivateLibrary },
-  { label: t('publicState.public'), value: PublishState.PublicAndPrivateLibrary }
+  { label: t('publicState.notPublish'), value: PublishState.noUpload },
+  { label: t('publicState.private'), value: PublishState.uploadToPersonal },
+  { label: t('publicState.public'), value: PublishState.uploadToPublic }
 ])
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
 const categoryValue = ref<string>()
 
 // Ref about publish upload sprite or not.
-const publicValue = ref<number>(PublishState.NotPublished)
+const publishState = ref<number>(PublishState.noUpload)
 
 // Ref about show modal or not.
 const showModal = ref<boolean>(false)
@@ -205,9 +212,9 @@ const uploadSpriteName = ref('')
 // ----------computed properties-----------------------------
 // Computed variable about changing css style by props.type.
 const addBtnClassName = computed(() => {
-  if (props.type === 'backdrop') {
+  if (props.type === AssetType.Backdrop) {
     return 'backdrop-add-div'
-  } else if (props.type === 'sprite') {
+  } else if (props.type === AssetType.Sprite) {
     return 'sprite-add-div'
   } else {
     return 'sound-add-div'
@@ -252,18 +259,17 @@ const openRecorderFunc = () => {
  * Function to check the file before upload.
  * @param {Object} data - Contains the file and fileList.
  * @param {string} fileType - Type of the file being uploaded: 'background', 'sprite', or 'sound'.
- * @returns {boolean} - True if the file is valid and processed for upload, false otherwise.
+ * @returns {Promise<boolean>} - True if the file is valid and processed for upload, false otherwise.
  */
-const beforeUpload = (
+const beforeUpload = async (
   data: { file: UploadFileInfo; fileList: UploadFileInfo[] },
   fileType: 'backdrop' | 'sound'
 ) => {
   let uploadFile = data.file
-  if (uploadFile.file) {
-    let fileURL = URL.createObjectURL(uploadFile.file)
-    let fileWithUrl = new FileWithUrl(uploadFile.file, fileURL)
+  if (uploadFile.file != null) {
+    const file = await fromNativeFile(uploadFile.file)
     let fileName = uploadFile.name
-    let fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'))
+    let assetName = stripExt(fileName) // TODO: naming conflict
 
     switch (fileType) {
       case 'backdrop': {
@@ -271,8 +277,7 @@ const beforeUpload = (
           message.error(t('message.image'))
           return false
         }
-        let backdrop = projectStore.project.backdrop
-        backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
+        projectStore.project.stage.addBackdrop(new Backdrop(assetName, file, {}))
         break
       }
       case 'sound': {
@@ -280,8 +285,7 @@ const beforeUpload = (
           message.error(t('message.sound'))
           return false
         }
-        let sound = new Sound(fileNameWithoutExtension, [uploadFile.file])
-        projectStore.project.sound.add(sound)
+        projectStore.project.addSound(new Sound(assetName, file, {}))
         break
       }
       default:
@@ -302,7 +306,7 @@ const beforeUpload = (
  * @Date: 2024-01-24 11:47:59
  */
 const beforeBackdropUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
-  beforeUpload(data, 'backdrop')
+  return beforeUpload(data, 'backdrop')
 }
 
 /**
@@ -327,42 +331,31 @@ const handleWatchFileList = (data: {
  * @Date: 2024-02-21 17:48:33
  */
 const handleSubmitSprite = async (): Promise<void> => {
-  let uploadFilesArr: File[] = []
   for (const fileItem of uploadFileList.value) {
     if (!isImage(fileItem.name)) {
       message.error(t('message.image'))
       return
     }
   }
-  uploadFileList.value.forEach((fileItem: UploadFileInfo) => {
-    if (fileItem && fileItem.file) {
-      uploadFilesArr.push(fileItem.file)
-    }
-  })
-  console.log('uploadFilesArr', uploadFilesArr)
-  let sprite = new Sprite(uploadSpriteName.value, uploadFilesArr)
-  projectStore.project.sprite.add(sprite)
+  const files = await Promise.all(uploadFileList.value.filter(
+    fileInfo => fileInfo.file !== null
+  ).map(fileInfo => fromNativeFile(fileInfo.file!)))
+  const costumes = files.map(f => new Costume(stripExt(f.name), f, {}))
+  const sprite = new Sprite(uploadSpriteName.value, '', costumes, {})
+  projectStore.project.addSprite(sprite)
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
-  try {
-    let gifRes = undefined
-
-    if (uploadFilesArr.length > 1) {
-      const response = await generateGifByCostumes(uploadFilesArr)
-      gifRes = response.data.data
-    }
-
-    await publishAsset(
-      uploadSpriteName.value,
-      uploadFilesArr,
-      AssetType.Sprite,
-      publicValue.value,
-      gifRes,
-      categoryValue.value || undefined
-    )
-  } catch (err) {
-    message.error(t('message.fail', { uploadSpriteName: uploadSpriteName.value }))
+  if (publishState.value !== PublishState.noUpload) {
+    await addAsset({
+      displayName: uploadSpriteName.value,
+      category: categoryValue.value || '',
+      isPublic: publishState.value === PublishState.uploadToPersonal ? IsPublic.personal : IsPublic.public,
+      files: {}, // TODO: upload & get files
+      preview: 'TODO', // TOOD: gif preview
+      assetType: AssetType.Sprite
+    })
   }
+
   uploadSpriteName.value = ''
   showUploadModal.value = false
 }
@@ -374,58 +367,29 @@ const handleSubmitSprite = async (): Promise<void> => {
  * @Date: 2024-02-19 12:27:59
  */
 const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
-  beforeUpload(data, 'sound')
+  return beforeUpload(data, 'sound')
 }
 
-/**
- * @description: Fetches data from a URL and returns it as a File object.
- * @param {*} url - The URL to fetch the data from.
- * @param {*} filename - The name of the file to create.
- * @returns {Promise<File>} A promise that resolves to a File object.
- * @Author: Xu Ning
- * @Date: 2024-01-31 22:06:32
- */
-async function urlToFile(url: string, filename: string): Promise<File> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+const handleAssetAddition = async (asset: AssetData) => {
+  // TODO: naming conflict for sprite / backdrop / sound with existed ones
+  switch (asset.assetType) {
+    case AssetType.Sprite: {
+      const sprite = await asset2Sprite(asset)
+      projectStore.project.addSprite(sprite)
+      break;
+    }
+    case AssetType.Backdrop: {
+      const backdrop = await asset2Backdrop(asset)
+      projectStore.project.stage.addBackdrop(backdrop)
+      break;
+    }
+    case AssetType.Sound: {
+      const sprite = await asset2Sprite(asset)
+      projectStore.project.addSprite(sprite)
+      break;
+    }
   }
-  const data = await response.blob()
-  return new File([data], filename, { type: data.type })
-}
-
-/**
- * @description: A function to add sprite to list store.
- * @param {*} name - added asset name
- * @param {*} assetMultiCostumeObj - added asset file obj(name - url)
- * @Author: Xu Ning
- * @Date: 2024-01-30 11:47:25
- */
-const handleAssetAddition = async (
-  name: string,
-  assetMultiCostumeObj: { [key: string]: string }
-) => {
-  let fileArr: File[] = []
-  for (const [key, value] of Object.entries(assetMultiCostumeObj)) {
-    const file = await urlToFile(value, key)
-    fileArr.push(file)
-  }
-  if (props.type === 'sprite') {
-    const sprite = new Sprite(name, fileArr)
-    projectStore.project.sprite.add(sprite)
-  } else if (props.type === 'backdrop') {
-    const file = fileArr[0]
-    let fileURL = URL.createObjectURL(file)
-    let fileWithUrl = new FileWithUrl(file, fileURL)
-    let fileNameWithoutExtension = name.substring(0, name.lastIndexOf('.'))
-    let backdrop = projectStore.project.backdrop
-    backdrop.addScene([{ name: fileNameWithoutExtension, file: fileWithUrl }])
-  } else if (props.type === 'sounds') {
-    const file = fileArr[0]
-    const sound = new Sound(name, [file])
-    projectStore.project.sound.add(sound)
-  }
-  message.success(t('message.addSuccess', { name: name }))
+  message.success(t('message.addSuccess', { name: asset.displayName }))
 }
 </script>
 

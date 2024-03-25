@@ -1,18 +1,14 @@
-/*
- * @Author: TuGitee tgb@std.uestc.edu.cn
- * @Date: 2024-01-22 11:26:18
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-02-29 17:10:19
- * @FilePath: \spx-gui\src\store\modules\project\index.ts
- * @Description: The store of project.
- */
-
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { Project, ProjectSource } from '@/class/project'
-import { useUserStore } from '.'
+import { Project } from '@/model/project'
+import { useUserStore } from './user'
+
+const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
 export const useProjectStore = defineStore('project', () => {
+
+  const userStore = useUserStore()
+
   const project = ref(new Project())
 
   watch(
@@ -20,58 +16,44 @@ export const useProjectStore = defineStore('project', () => {
     // According to the document, we should use `() => project.value` instead of
     // `project` to avoid deep watching, which is not expected here.
     () => project.value,
-    (newProject, oldProject) => {
-      oldProject.cleanup()
+    (_, oldProject) => {
+      oldProject.dispose()
     }
   )
 
-  /**
-   * Load project.
-   * @param id project id
-   * @param source project source, default is `ProjectSource.cloud`
-   */
-  const loadProject = async (id: string, source: ProjectSource = ProjectSource.cloud) => {
+  async function openProject(name: string, owner = userStore.userInfo?.name) {
+    // TODO: UI logic to handle conflicts when there are local cache
+    if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
-    await newProject.load(id, source, useUserStore().userInfo?.id)
+    await newProject.loadFromCloud(owner, name)
+    newProject.syncToLocalCache(localCacheKey)
     project.value = newProject
   }
 
-  /**
-   * Load project from zip file.
-   * @param file the zip file
-   * @param title the title, default is `file.name`
-   */
-  const loadFromZip = async (file: File, title?: string) => {
+  async function openBlankProject(name: string, owner = userStore.userInfo?.name) {
+    if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
-    await newProject.loadFromZip(file, title || file.name.slice(0, file.name.lastIndexOf('.')))
+    await newProject.load({ owner, name }, {})
+    newProject.syncToLocalCache(localCacheKey)
     project.value = newProject
   }
 
-  /**
-   * Load blank project.
-   */
-  const loadBlankProject = async () => {
+  async function openProjectWithZipFile(zipFile: File, name?: string, owner = userStore.userInfo?.name) {
+    if (owner == null) throw new Error('owner info is required')
+    // TODO: UI logic to handle conflicts when there are local cache
     const newProject = new Project()
-    await newProject.loadBlankProject()
+    await newProject.load({ owner, name }, {})
+    await newProject.loadZipFile(zipFile)
+    newProject.syncToLocalCache(localCacheKey)
     project.value = newProject
   }
 
-  /**
-   * Initialize the project.
-   */
-  const init = () => {
-    const lastProject = localStorage.getItem('project')
-    lastProject
-      ? loadProject(lastProject, ProjectSource.local).catch(loadBlankProject)
-      : loadBlankProject()
-  }
-
-  init()
+  // TODO: use params from route
 
   return {
     project,
-    loadProject,
-    loadFromZip,
-    loadBlankProject
+    openProject,
+    openBlankProject,
+    openProjectWithZipFile
   }
 })
