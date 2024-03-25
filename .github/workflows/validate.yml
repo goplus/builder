@@ -41,6 +41,10 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
+      - name: Run Vitest
+        working-directory: spx-gui
+        run: npx vitest run
+
   spx-backend-test:
     runs-on: ubuntu-latest
     steps:
