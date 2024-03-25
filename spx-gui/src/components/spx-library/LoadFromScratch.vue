@@ -90,7 +90,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Sound } from '@/model/sound'
+import { Sound } from '@/models/sound'
 import {
   type MessageApi,
   NButton,
@@ -101,7 +101,7 @@ import {
   useMessage,
   NSpin
 } from 'naive-ui'
-import { Sprite } from '@/model/sprite'
+import { Sprite } from '@/models/sprite'
 import { useProjectStore } from '@/store'
 import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
@@ -110,9 +110,9 @@ import { type AssetFileDetail as ScratchAssetFile, parseScratchFile } from '@/ut
 import saveAs from 'file-saver'
 import { addAsset, IsPublic } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
-import { Costume } from '@/model/costume'
-import { fromBlob } from '@/model/common/file'
-import { sound2Asset, sprite2Asset } from '@/model/common'
+import { Costume } from '@/models/costume'
+import { fromBlob } from '@/models/common/file'
+import { sound2Asset, sprite2Asset } from '@/models/common'
 
 // ----------props & emit------------------------------------
 

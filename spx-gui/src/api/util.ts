@@ -20,6 +20,6 @@ export function formatSpxCode(body: string) {
 }
 
 export async function uptoken() {
-  const { token } = await (client.get('/util/uptoken') as Promise<{ token: string }>)
-  return token
+  const resp = client.get('/util/uptoken') as Promise<{ token: string }>
+  return (await resp).token
 }

@@ -1,4 +1,4 @@
-import type { Project } from '@/model/project'
+import type { Project } from '@/models/project'
 import { keywords, typeKeywords } from '@/components/code-editor/language'
 
 interface checkInfo {

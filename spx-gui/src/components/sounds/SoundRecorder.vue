@@ -29,10 +29,10 @@
 import WaveSurfer from 'wavesurfer.js'
 import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
 import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
-import { Sound } from '@/model/sound'
+import { Sound } from '@/models/sound'
 import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/util/audio'
 import { useProjectStore } from '@/store'
-import { fromNativeFile } from '@/model/common/file'
+import { fromNativeFile } from '@/models/common/file'
 
 interface PropsType {
   show: boolean

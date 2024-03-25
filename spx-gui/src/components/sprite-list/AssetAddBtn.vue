@@ -137,20 +137,20 @@ import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'na
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
 import LibraryModal from '@/components/spx-library/LibraryModal.vue'
-import { Sprite } from '@/model/sprite'
-import { fromNativeFile } from '@/model/common/file'
-import { Sound } from '@/model/sound'
-import SoundRecorder from 'comps/sounds/SoundRecorder.vue'
+import { Sprite } from '@/models/sprite'
+import { fromNativeFile } from '@/models/common/file'
+import { Sound } from '@/models/sound'
+import SoundRecorder from '@/components/sounds/SoundRecorder.vue'
 import { addAsset, IsPublic, AssetType, type AssetData } from '@/api/asset'
 import { useI18n } from 'vue-i18n'
 import { isValidAssetName } from '@/util/asset'
 import { isImage, isSound } from '@/util/utils'
-import { useNetwork } from '@/util/hooks/network'
+import { useNetwork } from '@/util/network'
 import { useProjectStore } from '@/store'
 import { stripExt } from '@/util/path'
-import { Backdrop } from '@/model/backdrop'
-import { Costume } from '@/model/costume'
-import { asset2Backdrop, asset2Sprite } from '@/model/common'
+import { Backdrop } from '@/models/backdrop'
+import { Costume } from '@/models/costume'
+import { asset2Backdrop, asset2Sprite } from '@/models/common'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -482,3 +482,4 @@ const handleAssetAddition = async (asset: AssetData) => {
   }
 }
 </style>
+@/util/network

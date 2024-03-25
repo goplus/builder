@@ -1,13 +1,13 @@
 import { onMounted, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { Project } from '@/model/project'
+import { Project } from '@/models/project'
 import { useUserStore } from './user'
-import defaultBackdropImg from '@/assets/image/default_scene.png'
-import defaultSpriteImg from '@/assets/image/default_sprite.png'
-import { Sprite } from '@/model/sprite'
-import { Costume } from '@/model/costume'
-import { File } from '@/model/common/file'
-import { Backdrop } from '@/model/backdrop'
+import defaultBackdropImgUrl from '@/assets/image/default_scene.png'
+import defaultSpriteImgUrl from '@/assets/image/default_sprite.png'
+import { Sprite } from '@/models/sprite'
+import { Costume } from '@/models/costume'
+import { Backdrop } from '@/models/backdrop'
+import { createFileWithUrl } from '@/models/common/cloud'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -54,10 +54,10 @@ export const useProjectStore = defineStore('project', () => {
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.load({ owner, name }, {})
-    const costume = new Costume('default_costume', new File('default_sprite.png', defaultSpriteImg), {})
+    const costume = new Costume('default_costume', createFileWithUrl('default_sprite.png', defaultSpriteImgUrl), {})
     const sprite = new Sprite('default_sprite', '', [costume], {})
     newProject.addSprite(sprite)
-    const backdrop = new Backdrop('default_backdrop', new File('default_backdrop.png', defaultBackdropImg), {})
+    const backdrop = new Backdrop('default_backdrop', createFileWithUrl('default_backdrop.png', defaultBackdropImgUrl), {})
     newProject.stage.addBackdrop(backdrop)
     newProject.syncToLocalCache(localCacheKey)
     project.value = newProject

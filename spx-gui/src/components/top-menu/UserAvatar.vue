@@ -18,7 +18,7 @@
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
-import { useNetwork } from '@/util/hooks/network'
+import { useNetwork } from '@/util/network'
 import { useUserStore } from '@/store'
 
 const { t } = useI18n({
@@ -52,3 +52,4 @@ function handleAvatarDropdownClick(key: string) {
   height: 38px;
 }
 </style>
+@/util/network

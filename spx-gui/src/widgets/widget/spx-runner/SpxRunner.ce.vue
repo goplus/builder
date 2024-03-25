@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch, onMounted } from 'vue'
-import { Project, fullName } from '@/model/project'
+import { Project, fullName } from '@/models/project'
 const props = defineProps<{ owner?: string, name?: string }>()
 const runner = ref()
 const run = ref(false)
@@ -145,4 +145,3 @@ onMounted(() => {
   }
 }
 </style>
-@/model

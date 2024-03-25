@@ -20,8 +20,8 @@
 <script lang="ts" setup>
 import Costume from './Costume.vue'
 import { defineProps, defineEmits } from 'vue'
-import type { Sprite } from '@/model/sprite'
-import type { Size } from '@/model/common'
+import type { Sprite } from '@/models/sprite'
+import type { Size } from '@/models/common'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 // ----------props & emit------------------------------------
 

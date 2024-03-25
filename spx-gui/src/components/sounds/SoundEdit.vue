@@ -181,10 +181,10 @@ import { ref, onMounted, type Ref, watch } from 'vue'
 import { nextTick } from 'vue'
 import { type SimpleWavesurferBackend, WavesurferEdit } from '@/util/wavesurfer-edit'
 import { NGradientText, NInput, useMessage, type MessageApi } from 'naive-ui'
-import { Sound } from '@/model/sound'
+import { Sound } from '@/models/sound'
 import { audioDataService } from '@/util/wavesurfer-edit-data'
 import { audioBufferToWavBlob } from '@/util/audio'
-import { File, toNativeFile } from '@/model/common/file'
+import { fromBlob, toNativeFile } from '@/models/common/file'
 
 const props = defineProps<{ asset?: Sound }>()
 
@@ -462,7 +462,7 @@ async function updateSound(): Promise<void> {
   const backend = wavesurfer.backend as SimpleWavesurferBackend
   if (backend && backend.buffer) {
     const wavBlob = audioBufferToWavBlob(backend.buffer)
-    const wavFile = new File((props.asset?.name ?? 'TODO') + '.wav', null, await wavBlob.arrayBuffer())
+    const wavFile = fromBlob((props.asset?.name ?? 'TODO') + '.wav', wavBlob)
     emits('update-sound-file', wavFile)
   }
 }

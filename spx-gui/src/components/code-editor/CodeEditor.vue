@@ -16,6 +16,7 @@ import { monaco, type CodeEditorProps, type CodeEditorEmits } from './index'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { editorOptions } from './index'
 import { formatSpxCode as onlineFormatSpxCode } from '@/api/util'
+import { ensureRegister } from './register'
 
 // ----------props & emit------------------------------------
 const prop = withDefaults(defineProps<CodeEditorProps>(), {
@@ -40,6 +41,8 @@ let editor: monaco.editor.IStandaloneCodeEditor
 // ----------hooks-----------------------------------------
 // init editor and register change event
 onMounted(() => {
+  ensureRegister()
+
   editor = monaco.editor.create(code_editor.value as HTMLElement, {
     value: prop.modelValue, // set the initial value of the editor
     theme: 'myTransparentTheme',

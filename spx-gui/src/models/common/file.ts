@@ -1,8 +1,6 @@
 /**
  * @file class File
- * @desc File-like class, while load lazily from network
- *       Note that we do not defer loading from disk, cause disk-reading & memory-usage seem not to be the bottleneck now.
- *       If needed, we can adjust class `File` here to defer loading from disk, too.
+ * @desc File-like class, while load lazily.
  */
 
 import { getMimeFromExt } from "@/util/file"
@@ -14,48 +12,38 @@ export type Options = {
   // TODO: lastModified, endings
 }
 
-/** File-like class, while load lazily from network */
+export type Loader = () => Promise<ArrayBuffer>
+
+/** File-like class, while load lazily */
 export class File {
 
-  /** File content */
-  content: ArrayBuffer | null = null
   /** MIME type of file */
   type: string = ''
 
   constructor(
     /** File name */
     public name: string,
-    /** Public URL */
-    public publicUrl: string | null = null,
-    /** In-memory content */
-    content: ArrayBuffer | null = null,
+    /** Loader for file content */
+    public _loader: Loader,
     options?: Options
   ) {
-    if (content != null) this.content = content
     if (options != null) this.type = options.type ?? getMimeFromExt(extname(name).slice(1))
   }
 
+  _content: ArrayBuffer | null = null
   _promisedContent: Promise<ArrayBuffer> | null = null
 
-  async _load() {
-    if (this.publicUrl == null) throw new Error('file url expected')
-    const resp = await fetch(this.publicUrl)
-    const blob = await resp.blob()
-    return blob.arrayBuffer()
-  }
-
   async arrayBuffer() {
-    if (this.content != null) return this.content
+    if (this._content != null) return this._content
     if (this._promisedContent != null) return this._promisedContent
-    return this._promisedContent = this._load().then(ab => {
-      return this.content = ab
+    return this._promisedContent = this._loader().then(ab => {
+      return this._content = ab
     })
   }
 
   // TODO: remember to do URL.revokeObjectURL
-  url() {
-    if (this.publicUrl != null) return this.publicUrl
-    const ab = this.content!
+  async url() {
+    const ab = await this.arrayBuffer()
     return URL.createObjectURL(new Blob([ab]))
   }
 
@@ -78,13 +66,11 @@ function str2Ab(str: string) {
 }
 
 export async function fromBlob(name: string, blob: Blob) {
-  const ab = await blob.arrayBuffer()
-  return new File(name, null, ab, { type: blob.type })
+  return new File(name, () => blob.arrayBuffer(), { type: blob.type })
 }
 
 export async function fromNativeFile(file: globalThis.File) {
-  const ab = await file.arrayBuffer()
-  return new File(file.name, null, ab, { type: file.type })
+  return fromBlob(file.name, file)
 }
 
 export async function toNativeFile(file: File) {
@@ -95,7 +81,7 @@ export async function toNativeFile(file: File) {
 }
 
 export function fromText(name: string, text: string, options?: Options) {
-  return new File(name, null, str2Ab(text), options)
+  return new File(name, async () => str2Ab(text), options)
 }
 
 export async function toText(file: File) {

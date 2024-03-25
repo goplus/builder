@@ -32,14 +32,29 @@ export function getFiles(fileUrls: FileCollection): Files {
   const files: Files = {}
   Object.keys(fileUrls).forEach(path => {
     const url = fileUrls[path]
-    files[path] = new File(filename(path), url)
+    files[path] = createFileWithUrl(filename(path), url)
   })
   return files
 }
 
+const uploadedFiles = new WeakMap<File, string>()
+
+export function createFileWithUrl(name: string, url: string) {
+  const file = new File(name, async () => {
+    const resp = await fetch(url)
+    const blob = await resp.blob()
+    return blob.arrayBuffer()
+  })
+  uploadedFiles.set(file, url)
+  return file
+}
+
 async function uploadFile(file: File) {
-  if (file.publicUrl != null) return file.publicUrl
-  return file.publicUrl = await upload(file)
+  const uploadedUrl = uploadedFiles.get(file)
+  if (uploadedUrl != null) return uploadedUrl
+  const url = await upload(file)
+  uploadedFiles.set(file, url)
+  return url
 }
 
 type QiniuUploadRes = {

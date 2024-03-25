@@ -16,6 +16,7 @@ import * as cloudHelper from './common/cloud'
 import * as localHelper from './common/local'
 import * as zipHelper from './common/zip'
 import { assign } from './common'
+import { debounce } from '@/util/utils'
 
 export type Metadata = {
   id?: string
@@ -197,13 +198,10 @@ export class Project extends Disposble {
 
   /** Sync to local cache */
   syncToLocalCache(cacheKey: string) {
-    this.addDisposer(watch(
-      () => this.export(),
-      ([metadata, files]) => {
-        localHelper.save(cacheKey, metadata, files)
-      },
-      { immediate: true }
-    ))
+    const saveExports = debounce(([metadata, files]: [Metadata, Files]) => {
+      localHelper.save(cacheKey, metadata, files)
+    }, 1000)
+    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
   }
 
 }

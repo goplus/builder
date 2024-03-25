@@ -31,10 +31,10 @@
 // ----------Import required packages / components-----------
 import { defineProps, ref, computed, watch } from 'vue'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
-import type { Sprite } from '@/model/sprite'
+import type { Sprite } from '@/models/sprite'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 import type { Rect } from 'konva/lib/shapes/Rect'
-import type { Size } from '@/model/common'
+import type { Size } from '@/models/common'
 // ----------props & emit------------------------------------
 const props = defineProps<{
   sprite: Sprite
@@ -71,8 +71,9 @@ const spriteRotation = computed(() => {
 // When the config update,emits the apperance change event
 // TODO: Move to stageviewer to listen for config changes
 watch(
-  () => props.sprite,
-  () => {
+  () => costume.value?.getNode(),
+  (node) => {
+    if (node == null) return
     emits('onApperanceChange', {
       sprite: props.sprite,
       node: costume.value.getNode() as Node
@@ -85,10 +86,10 @@ watch(
 
 watch(
   () => currentCostume.value,
-  (new_costume) => {
+  async (new_costume) => {
     if (new_costume != null) {
       const _image = new window.Image()
-      _image.src = new_costume.img.url()
+      _image.src = await new_costume.img.url()
       _image.onload = () => {
         image.value = _image
       }

@@ -33,10 +33,11 @@ export class Costume {
     assign<CostumeConfig>(this.config, config)
   }
 
-  getSize() {
+  async getSize() {
+    const imgUrl = await this.img.url()
     return new Promise<Size>((resolve, reject) => {
       const img = new window.Image()
-      img.src = this.img.url()
+      img.src = imgUrl
       img.onload = () => {
         resolve({ width: img.width, height: img.height })
         img.remove()

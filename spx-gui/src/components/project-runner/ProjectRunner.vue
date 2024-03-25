@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Project } from '@/model/project'
+import { Project } from '@/models/project'
 import { ref } from 'vue'
 import IframeDisplay from './IframeDisplay.vue'
 
@@ -42,4 +42,4 @@ defineExpose({
   width: 100%;
   height: 100%;
 }
-</style>@/model
+</style>

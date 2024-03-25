@@ -47,8 +47,8 @@
 </template>
 <script setup lang="ts">
 import { defineProps, watch, ref } from 'vue'
-import type { Stage } from '@/model/stage'
-import type { Size } from '@/model/common'
+import type { Stage } from '@/models/stage'
+import type { Size } from '@/models/common'
 
 const props = defineProps<{
   offsetConfig: { offsetX: number; offsetY: number }
@@ -59,12 +59,12 @@ const props = defineProps<{
 const image = ref<HTMLImageElement>()
 
 watch(
-  () => props.stage.backdrop?.img.url(),
-  (backdropUrl) => {
+  () => props.stage.backdrop?.img,
+  async (backdropImg) => {
     image.value?.remove()
-    if (backdropUrl != null) {
+    if (backdropImg != null) {
       const _image = new window.Image()
-      _image.src = backdropUrl
+      _image.src = await backdropImg.url()
       image.value = _image
     }
   },

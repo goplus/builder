@@ -77,7 +77,7 @@ import {
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
 import { listProject, ownerAll, type ProjectData } from '@/api/project'
 import ProjectCard from './ProjectCard.vue'
-import { useNetwork } from '@/util/hooks/network'
+import { useNetwork } from '@/util/network'
 import type { PaginationParams } from '@/api/common'
 
 // ----------props & emit------------------------------------
@@ -200,3 +200,4 @@ const handleProjectRemoved = (id: string) => {
   }
 }
 </style>
+@/util/network

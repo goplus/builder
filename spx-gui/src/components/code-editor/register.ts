@@ -56,8 +56,7 @@ const initFormat = async () => {
   go.run(result.instance)
 }
 
-export const register = () => {
-  console.log('register')
+const register = () => {
   monaco.languages.register({
     id: 'spx'
   })
@@ -98,4 +97,12 @@ export const register = () => {
 
   // tempararily disable in-browser format
   // initFormat()
+}
+
+let registered = false
+
+export function ensureRegister() {
+  if (registered) return
+  register()
+  registered = true
 }

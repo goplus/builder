@@ -35,16 +35,16 @@
 </template>
 
 <script lang="ts" setup>
-import SoundsEditCard from 'comps/sounds/SoundEditCard.vue'
+import SoundsEditCard from '@/components/sounds/SoundEditCard.vue'
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
-import SoundsEdit from 'comps/sounds/SoundEdit.vue'
+import SoundsEdit from '@/components/sounds/SoundEdit.vue'
 import { ref, watch } from 'vue'
-import { Sound } from '@/model/sound'
-import AssetAddBtn from 'comps/sprite-list/AssetAddBtn.vue'
+import { Sound } from '@/models/sound'
+import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { checkUpdatedName } from '@/util/asset'
 import { useProjectStore } from '@/store'
 import { useI18n } from 'vue-i18n'
-import type { File } from '@/model/common/file'
+import type { File } from '@/models/common/file'
 import { AssetType } from '@/api/asset'
 
 const message: MessageApi = useMessage()

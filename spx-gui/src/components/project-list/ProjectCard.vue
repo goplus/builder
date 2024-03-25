@@ -60,7 +60,7 @@ import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naiv
 import { UserOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'
 import { useI18n } from 'vue-i18n'
-import { fullName as projectFullName } from '@/model/project'
+import { fullName as projectFullName } from '@/models/project'
 
 const { project } = defineProps<{
   project: ProjectData
@@ -254,4 +254,4 @@ const formatTime = (time: string) => {
     }
   }
 }
-</style>@/model
+</style>

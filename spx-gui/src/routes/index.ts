@@ -13,12 +13,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/editor/homepage',
     name: 'EditorHomepage',
-    component: () => import('../view/EditorHomepage.vue')
+    component: () => import('./EditorHomepage.vue')
   },
   {
     path: '/callback',
     name: 'Signin Callback',
-    component: () => import('@/view/SigninCallback.vue')
+    component: () => import('./SigninCallback.vue')
   }
 ]
 

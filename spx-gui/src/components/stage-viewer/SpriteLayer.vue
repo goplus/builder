@@ -33,8 +33,8 @@
 import SpriteComp from './Sprite.vue'
 import { computed } from 'vue'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
-import type { Sprite } from '@/model/sprite'
-import type { Size } from '@/model/common'
+import type { Sprite } from '@/models/sprite'
+import type { Size } from '@/models/common'
 
 const props = defineProps<{
   offsetConfig: { offsetX: number; offsetY: number }

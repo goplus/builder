@@ -13,13 +13,13 @@
       preview-disabled
       :width="computedProperties.imageWidth"
       :height="computedProperties.imageHeight"
-      :src="computedProperties.spriteUrl"
+      :src="spriteUrl"
       :fallback-src="error"
     />
     {{ (props.asset as Sprite).name }}
   </div>
   <div
-    v-for="(backdrop, index) in computedProperties.backdrops"
+    v-for="(backdrop, index) in backdrops"
     v-else
     :key="index"
     :class="computedProperties.cardClassName"
@@ -46,10 +46,12 @@
 // ----------Import required packages / components-----------
 import { defineProps, computed } from 'vue'
 import { NImage } from 'naive-ui'
-import { Stage } from '@/model/stage'
-import type { Sprite } from '@/model/sprite'
+import { Stage } from '@/models/stage'
+import type { Sprite } from '@/models/sprite'
 import error from '@/assets/image/library/error.svg'
 import { useProjectStore } from '@/store'
+import { ref } from 'vue'
+import { effect } from 'vue'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -63,26 +65,31 @@ const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 // ----------computed properties-----------------------------
 const computedProperties = computed(() => {
   if (props.type === 'bg') {
-    const stage = props.asset as Stage
     return {
       cardClassName: 'bg-list-card',
       imageWidth: 40,
-      imageHeight: 40,
-      spriteUrl: '',
-      // current only support backdrop witch config of scene
-      backdrops: stage.backdrops.map(backdrop => ({
-        name: backdrop.name,
-        url: backdrop.img.url()
-      }))
+      imageHeight: 40
     }
   }
-  const sprite = props.asset as Sprite
   return {
     cardClassName: 'sprite-list-card',
     imageWidth: 75,
-    imageHeight: 75,
-    spriteUrl: sprite.costumes[0].img.url(), // TODO: use costume index instead of the 1st costume
-    backdrops: []
+    imageHeight: 75
+  }
+})
+
+const spriteUrl = ref('')
+const backdrops = ref<Array<{ name: string, url: string }>>([])
+
+effect(async () => {
+  if (props.type === 'bg') {
+    backdrops.value = await Promise.all((props.asset as Stage).backdrops.map(async backdrop => {
+      const url = await backdrop.img.url()
+      return { name: backdrop.name, url }
+    }))
+  } else {
+    // TODO: use costume index instead of the 1st costume
+    spriteUrl.value = await (props.asset as Sprite).costumes[0].img.url()
   }
 })
 

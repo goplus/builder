@@ -7,7 +7,7 @@
  * @Description:
  */
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
-import type { Sprite } from '@/model/sprite'
+import type { Sprite } from '@/models/sprite'
 
 /**
  * @description: Costume

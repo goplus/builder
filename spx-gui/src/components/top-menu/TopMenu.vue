@@ -27,7 +27,7 @@ import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
 import { useProjectStore } from '@/store'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
-import { useNetwork } from '@/util/hooks/network'
+import { useNetwork } from '@/util/network'
 import { LOCALSTORAGE_KEY_LANGUAGE } from '@/language'
 
 const projectStore = useProjectStore()
@@ -375,3 +375,4 @@ const toggleLanguage = () => {
 </script>
 
 <style lang="scss" scoped></style>
+@/util/network

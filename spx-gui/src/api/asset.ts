@@ -10,23 +10,23 @@ export enum AssetType {
 }
 
 export type AssetData = {
-  // Globally unique ID
+  /** Globally unique ID */
 	id: string
-	// Name to display
+	/** Name to display */
 	displayName: string
-	// Name of asset owner
+	/** Name of asset owner */
 	owner: string
-	// Asset Category
+	/** Asset Category */
 	category: string
-	// Public status
+	/** Public status */
 	isPublic: IsPublic
-	// Files the asset contains
+	/** Files the asset contains */
 	files: FileUrls
-	// Preview URL for the asset, e.g., a gif for a sprite
+	/** Preview URL for the asset, e.g., a gif for a sprite */
 	preview: string
-	// Asset Type
+	/** Asset Type */
 	assetType: AssetType
-	// Click count of the asset
+	/** Click count of the asset */
 	clickCount: number
 }
 

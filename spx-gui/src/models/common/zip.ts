@@ -16,8 +16,7 @@ export async function load(zipFile: File) {
   const files: LazyFiles = {}
   await Promise.all(Object.keys(jszip.files).map(async path => {
     const zipEntry = jszip.files[path]
-    const content = await zipEntry.async('arraybuffer')
-    files[path] = new LazyFile(filename(path), null, content)
+    files[path] = new LazyFile(filename(path), () => zipEntry.async('arraybuffer'))
   }))
   return { metadata, files }
 }

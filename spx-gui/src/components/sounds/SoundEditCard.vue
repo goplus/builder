@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { Sound } from '@/model/sound'
+import { Sound } from '@/models/sound'
 
 const props = defineProps<{ asset: Sound }>()
 

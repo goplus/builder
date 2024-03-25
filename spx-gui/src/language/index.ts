@@ -12,7 +12,6 @@ import { createI18n } from 'vue-i18n'
 export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
 export const initI18n = async (app: App) => {
-  console.log('init i18n start')
   const messages = {
     en: {
       language: 'English',
@@ -355,5 +354,4 @@ export const initI18n = async (app: App) => {
   })
 
   app.use(i18n)
-  console.log('init i18n')
 }

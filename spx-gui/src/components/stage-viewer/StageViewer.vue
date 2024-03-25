@@ -96,7 +96,7 @@ import type { Stage } from 'konva/lib/Stage'
 import type { RectConfig } from 'konva/lib/shapes/Rect.js'
 import type { Layer } from 'konva/lib/Layer'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
-import type { Size } from '@/model/common'
+import type { Size } from '@/models/common'
 
 // the controller which is top layer,store the corresponding node information and the information of its control node
 interface Controller {
@@ -134,7 +134,6 @@ const scale = computed(() => {
   if (mapSize.value && stageViewer.value) {
     const widthScale = props.width / mapSize.value.width
     const heightScale = props.height / mapSize.value.height
-    console.log(Math.min(widthScale, heightScale, 1))
     return Math.min(widthScale, heightScale, 1)
   }
   return 1
@@ -276,7 +275,6 @@ const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
 
 const showSelectedTranformer = () => {
   if (!stage.value) return
-  console.log(stageSelectSpritesName.value)
   const spriteNames = stageSelectSpritesName.value
   const nodes = stage.value.getStage().find((node: Node) => {
     if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
@@ -287,9 +285,6 @@ const showSelectedTranformer = () => {
   })
   // choosed nodes in tranformer
   const transformerNode = transformer.value.getNode()
-  const layer = stage.value.getStage().findOne('.sprite') as Layer
-  console.log(layer)
-
   if (nodes.length) {
     transformerNode.nodes([...nodes])
   } else {

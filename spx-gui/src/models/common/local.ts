@@ -13,8 +13,7 @@ type MetadataEx = Metadata & {
 
 type RawFile = {
   name: string
-  publicUrl: string | null
-  content: ArrayBuffer | null
+  content: ArrayBuffer
 }
 
 async function getMetadataEx(key: string) {
@@ -34,18 +33,13 @@ async function removeMetadataEx(key: string) {
 async function readFile(key: string, path: string): Promise<File> {
   const rawFile = await storage.getItem(`${key}/${path}`)
   if (rawFile == null) throw new Error('file not found in storage')
-  const { name, publicUrl, content } = rawFile as RawFile
-  return new File(name, publicUrl, content)
+  const { name, content } = rawFile as RawFile
+  return new File(name, async () => content)
 }
 
 async function writeFile(key: string, path: string, file: File) {
-  const rawFile: RawFile = {
-    name: file.name,
-    publicUrl: file.publicUrl,
-    // content may not be ready (not downloaded yet), but it's ok.
-    // we dont need to ensure file content cached. URL is enough.
-    content: file.content
-  }
+  const content = await file.arrayBuffer()
+  const rawFile: RawFile = { name: file.name, content }
   await storage.setItem(`${key}/${path}`, rawFile)
 }
 

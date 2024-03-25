@@ -9,7 +9,6 @@
 import * as monaco from 'monaco-editor'
 import CodeEditor from './CodeEditor.vue'
 
-import { register } from './register'
 import { editorOptions } from './editor'
 export default CodeEditor
 
@@ -44,4 +43,4 @@ export interface CodeEditorEmits {
   (e: 'update:modelValue', value: string): void
 }
 export * from './snippet'
-export { monaco, register, editorOptions }
+export { monaco, editorOptions }
