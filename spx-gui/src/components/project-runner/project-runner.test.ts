@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
-import ProjectRunner from '../src/components/project-runner/ProjectRunner.vue'
+import ProjectRunner from './ProjectRunner.vue'
 
 test('project runner', () => {
   // TODO: need to mock `project`
