@@ -41,3 +41,5 @@ tsconfig.tsbuildinfo
 !.yarn/versions
 
 .env.local
+
+__snapshots__
