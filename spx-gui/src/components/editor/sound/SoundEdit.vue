@@ -127,33 +127,21 @@
     </div>
     <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.cut }">
       <button :disabled="isOperateDisabled.cut" @click="handleOperate('cut')">
-        <img
-          v-if="!isOperateDisabled.cut"
-          class="sound-icon-with-text"
-          src="./icons/cut.svg"
-        />
+        <img v-if="!isOperateDisabled.cut" class="sound-icon-with-text" src="./icons/cut.svg" />
         <img v-else class="sound-icon-with-text" src="./icons/cut-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.cut') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.copy }">
       <button :disabled="isOperateDisabled.copy" @click="handleOperate('copy')">
-        <img
-          v-if="!isOperateDisabled.copy"
-          class="sound-icon-with-text"
-          src="./icons/copy.svg"
-        />
+        <img v-if="!isOperateDisabled.copy" class="sound-icon-with-text" src="./icons/copy.svg" />
         <img v-else class="sound-icon-with-text" src="./icons/copy-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.copy') }}</div>
     </div>
     <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.paste }">
       <button :disabled="isOperateDisabled.paste" @click="handleOperate('paste')">
-        <img
-          v-if="!isOperateDisabled.paste"
-          class="sound-icon-with-text"
-          src="./icons/paste.svg"
-        />
+        <img v-if="!isOperateDisabled.paste" class="sound-icon-with-text" src="./icons/paste.svg" />
         <img v-else class="sound-icon-with-text" src="./icons/paste-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.paste') }}</div>
