@@ -20,15 +20,6 @@ enum ApiErrorCode {
 	errorUnknown = 50000
 }
 
-/** Map from API error code to i18n key */
-// export const apiErrorCodeKeys: Record<number, string | undefined> = {
-//   [ApiErrorCode.errorInvalidArgs]: 'errorInvalidArgs',
-// 	[ApiErrorCode.errorUnauthorized]: 'errorUnauthorized',
-// 	[ApiErrorCode.errorForbidden]: 'errorForbidden',
-// 	[ApiErrorCode.errorNotFound]: 'errorNotFound',
-// 	[ApiErrorCode.errorUnknown]: 'errorUnknown'
-// }
-
 type Message = {
   en: string
   zh: string
@@ -52,8 +43,8 @@ const rawApiErrorMessages: Record<ApiErrorCode, Message> = {
     zh: '资源不存在'
   },
   [ApiErrorCode.errorUnknown]: {
-    en: 'Unknown error',
-    zh: '未知错误'
+    en: 'Something wrong with the server',
+    zh: '服务器出问题了'
   }
 }
 
