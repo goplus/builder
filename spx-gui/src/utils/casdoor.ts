@@ -135,7 +135,7 @@ class Sdk {
     window.location.assign(this.pkce.authorizeUrl(additionalParams))
   }
 
-  // TODO: move to axios service
+  // TODO: move to apis
   public async getUserInfo(accessToken: string) {
     return fetch(`${this.config.serverUrl.trim()}/api/userinfo`, {
       method: 'GET',
