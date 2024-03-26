@@ -62,7 +62,7 @@ const onDeleteClick = () => {
   margin-top: 20px;
   height: 70%;
   width: 100%;
-  background: url('../../assets/image/sounds/audio-card-wave.png') no-repeat center center;
+  background: url('./audio-card-wave.png') no-repeat center center;
   background-size: cover;
 }
 

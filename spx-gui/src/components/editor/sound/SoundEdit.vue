@@ -25,9 +25,9 @@
           <img
             v-if="!isOperateDisabled.backout"
             class="sound-icon-with-text"
-            src="@/assets/icon/sound/undo.svg"
+            src="./icons/undo.svg"
           />
-          <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/undo-unable.svg" />
+          <img v-else class="sound-icon-with-text" src="./icons/undo-unable.svg" />
         </button>
         <div class="sound-icon-text">{{ $t('sounds.undo') }}</div>
       </div>
@@ -36,9 +36,9 @@
           <img
             v-if="!isOperateDisabled.renewal"
             class="sound-icon-with-text"
-            src="@/assets/icon/sound/reUndo.svg"
+            src="./icons/reUndo.svg"
           />
-          <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/reUndo-unable.svg" />
+          <img v-else class="sound-icon-with-text" src="./icons/reUndo-unable.svg" />
         </button>
         <div class="sound-icon-text">{{ $t('sounds.reUndo') }}</div>
       </div>
@@ -46,13 +46,13 @@
       <!--   Download And Save -->
       <div class="sound-icon-container">
         <button @click="downloadSound()">
-          <img class="sound-icon-with-text" src="@/assets/icon/sound/download.svg" />
+          <img class="sound-icon-with-text" src="./icons/download.svg" />
         </button>
         <div class="sound-icon-text">{{ $t('sounds.download') }}</div>
       </div>
       <div class="sound-icon-container">
         <button @click="updateSound()">
-          <img class="sound-icon-with-text" src="@/assets/icon/sound/save.svg" />
+          <img class="sound-icon-with-text" src="./icons/save.svg" />
         </button>
         <div class="sound-icon-text">{{ $t('sounds.save') }}</div>
       </div>
@@ -68,27 +68,27 @@
     <!--  play  -->
     <div>
       <button @click="togglePlayPause()">
-        <img v-if="!isPlaying" class="sound-icon" src="@/assets/icon/sound/play.svg" />
-        <img v-else class="sound-icon" src="@/assets/icon/sound/pause.svg" />
+        <img v-if="!isPlaying" class="sound-icon" src="./icons/play.svg" />
+        <img v-else class="sound-icon" src="./icons/pause.svg" />
       </button>
     </div>
     <div class="vertical-dashed-line-long"></div>
     <!--  play operation  -->
     <div class="sound-icon-container">
       <button @click="backward()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/backward.svg" />
+        <img class="sound-icon-with-text" src="./icons/backward.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.backward') }}</div>
     </div>
     <div class="sound-icon-container">
       <button @click="forward()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/forward.svg" />
+        <img class="sound-icon-with-text" src="./icons/forward.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.forward') }}</div>
     </div>
     <div class="sound-icon-container">
       <button @click="replay()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/replay.svg" />
+        <img class="sound-icon-with-text" src="./icons/replay.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.replay') }}</div>
     </div>
@@ -96,19 +96,19 @@
     <!--  Volume  -->
     <div class="sound-icon-container">
       <button @click="increaseVolume()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/volume-high.svg" />
+        <img class="sound-icon-with-text" src="./icons/volume-high.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.volumeHigh') }}</div>
     </div>
     <div class="sound-icon-container">
       <button @click="decreaseVolume()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/volume-low.svg" />
+        <img class="sound-icon-with-text" src="./icons/volume-low.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.volumeLow') }}</div>
     </div>
     <div class="sound-icon-container">
       <button @click="mute()">
-        <img class="sound-icon-with-text" src="@/assets/icon/sound/mute.svg" />
+        <img class="sound-icon-with-text" src="./icons/mute.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.mute') }}</div>
     </div>
@@ -119,9 +119,9 @@
         <img
           v-if="!isOperateDisabled.remove"
           class="sound-icon-with-text"
-          src="@/assets/icon/sound/delete.svg"
+          src="./icons/delete.svg"
         />
-        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/delete-unable.svg" />
+        <img v-else class="sound-icon-with-text" src="./icons/delete-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.delete') }}</div>
     </div>
@@ -130,9 +130,9 @@
         <img
           v-if="!isOperateDisabled.cut"
           class="sound-icon-with-text"
-          src="@/assets/icon/sound/cut.svg"
+          src="./icons/cut.svg"
         />
-        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/cut-unable.svg" />
+        <img v-else class="sound-icon-with-text" src="./icons/cut-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.cut') }}</div>
     </div>
@@ -141,9 +141,9 @@
         <img
           v-if="!isOperateDisabled.copy"
           class="sound-icon-with-text"
-          src="@/assets/icon/sound/copy.svg"
+          src="./icons/copy.svg"
         />
-        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/copy-unable.svg" />
+        <img v-else class="sound-icon-with-text" src="./icons/copy-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.copy') }}</div>
     </div>
@@ -152,9 +152,9 @@
         <img
           v-if="!isOperateDisabled.paste"
           class="sound-icon-with-text"
-          src="@/assets/icon/sound/paste.svg"
+          src="./icons/paste.svg"
         />
-        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/paste-unable.svg" />
+        <img v-else class="sound-icon-with-text" src="./icons/paste-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.paste') }}</div>
     </div>
@@ -163,9 +163,9 @@
         <img
           v-if="!isOperateDisabled.insert"
           class="sound-icon-with-text"
-          src="@/assets/icon/sound/insert.svg"
+          src="./icons/insert.svg"
         />
-        <img v-else class="sound-icon-with-text" src="@/assets/icon/sound/insert-unable.svg" />
+        <img v-else class="sound-icon-with-text" src="./icons/insert-unable.svg" />
       </button>
       <div class="sound-icon-text">{{ $t('sounds.insert') }}</div>
     </div>

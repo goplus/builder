@@ -39,14 +39,12 @@
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
-import { defineProps, computed } from 'vue'
+import { defineProps, computed, ref, effect } from 'vue'
 import { NImage } from 'naive-ui'
 import { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
-import error from '@/assets/image/library/error.svg'
+import error from '@/assets/error.svg'
 import { useProjectStore } from '@/stores'
-import { ref } from 'vue'
-import { effect } from 'vue'
 
 // ----------props & emit------------------------------------
 interface PropType {

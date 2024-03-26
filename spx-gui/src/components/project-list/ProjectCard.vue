@@ -58,9 +58,9 @@ import { computed, defineProps, ref } from 'vue'
 import { useProjectStore, useUserStore } from '@/stores'
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined } from '@vicons/antd'
-import defaultProjectImage from '@/assets/image/project/project.png'
 import { useI18n } from 'vue-i18n'
 import { fullName as projectFullName } from '@/models/project'
+import defaultProjectImage from './project.png'
 
 const { project } = defineProps<{
   project: ProjectData

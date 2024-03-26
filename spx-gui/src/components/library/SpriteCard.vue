@@ -43,7 +43,7 @@
 import { NImage } from 'naive-ui'
 import { defineProps, defineEmits, computed, ref } from 'vue'
 import { type AssetData } from '@/apis/asset'
-import error from '@/assets/image/library/error.svg'
+import error from '@/assets/error.svg'
 
 // ----------props & emit------------------------------------
 interface PropsType {

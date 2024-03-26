@@ -103,9 +103,8 @@ import {
 } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
 import { useProjectStore } from '@/stores'
-import SoundsImport from '@/assets/image/sounds/sounds-import.svg'
 import { commonColor } from '@/assets/theme'
-import error from '@/assets/image/library/error.svg'
+import error from '@/assets/error.svg'
 import { type AssetFileDetail as ScratchAssetFile, parseScratchFile } from '@/utils/scratch'
 import saveAs from 'file-saver'
 import { addAsset, IsPublic } from '@/apis/asset'
@@ -113,6 +112,7 @@ import { useI18n } from 'vue-i18n'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
 import { sound2Asset, sprite2Asset } from '@/models/common'
+import SoundsImport from './images/sound-import.svg'
 
 // ----------props & emit------------------------------------
 
