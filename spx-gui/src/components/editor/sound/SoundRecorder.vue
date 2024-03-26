@@ -80,9 +80,6 @@ const initWaveSurfer = () => {
         barWidth: 4,
         plugins: [MicrophonePlugin.create({})]
       })
-      wavesurfer.microphone.on('deviceReady', (stream) => {
-        console.log('Device ready', stream)
-      })
       wavesurfer.microphone.on('deviceError', (code) => {
         console.warn('Device error:', code)
       })

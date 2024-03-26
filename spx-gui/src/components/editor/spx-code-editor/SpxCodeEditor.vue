@@ -9,9 +9,9 @@
 <template>
   <div class="code-editor-space">
     <div class="code-button">{{ $t('component.code') }}</div>
-    <n-button-group class="formatBtnGroup" size="small">
+    <div class="formatBtnGroup" size="small">
       <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
-    </n-button-group>
+    </div>
     <CodeEditor ref="codeEditor" :model-value="currentCode" @update:model-value="onCodeChange" />
   </div>
 </template>

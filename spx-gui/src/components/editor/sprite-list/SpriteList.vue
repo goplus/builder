@@ -34,7 +34,7 @@
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :style="getImageCardStyle(asset)"
+              :active="asset === editorStore.currentSprite"
               @click="toggleCodeById(asset)"
             />
             <!-- E Component ImageCardCom -->
@@ -85,12 +85,6 @@ const showImportModal = ref<boolean>(false)
 
 const toggleCodeById = (sprite: Sprite) => {
   editorStore.currentSpriteName = sprite.name
-}
-
-const getImageCardStyle = (sprite: Sprite) => {
-  return sprite.name === editorStore.currentSpriteName
-    ? { marginBottom: '26px', boxShadow: '0px 0px 0px 4px #FF81A7' }
-    : { marginBottom: '26px' }
 }
 </script>
 

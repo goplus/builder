@@ -13,8 +13,12 @@ module.exports = {
   },
   rules: {
     'no-useless-escape': 'warn',
-    "vue/no-mutating-props": ["error", {
-      "shallowOnly": true
-    }]
+    'vue/no-mutating-props': [
+      'error',
+      {
+        shallowOnly: true
+      }
+    ],
+    'no-console': ['warn', { allow: ['warn', 'error'] }]
   }
 }

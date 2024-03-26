@@ -10,11 +10,7 @@
   <div class="stage-list">
     <div class="stage-list-space">
       <AssetAddBtn :type="AssetType.Backdrop" />
-      <ImageCardCom
-        :type="'bg'"
-        :asset="projectStore.project.stage"
-        :style="{ 'margin-bottom': '26px' }"
-      />
+      <ImageCardCom :type="'bg'" :asset="projectStore.project.stage" />
     </div>
   </div>
 </template>
