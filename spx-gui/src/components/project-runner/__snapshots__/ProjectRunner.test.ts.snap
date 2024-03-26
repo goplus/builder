@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`project runner 1`] = `
+"<div data-v-089cf8bf="" class="project-runner">
+  <!--v-if-->
+</div>"
+`;

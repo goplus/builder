@@ -13,7 +13,6 @@ on:
       - 'docs/**'
 
 jobs:
-
   spx-gui-lint:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +28,11 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
+      - name: Setup Go 1.21.3
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.3'
+
       - name: Install modules
         working-directory: spx-gui
         run: npm install
@@ -40,6 +44,14 @@ jobs:
       - name: Run ESLint
         working-directory: spx-gui
         run: npm run lint
+
+      - name: Build WASM
+        working-directory: spx-gui
+        run: npm run build-wasm
+
+      - name: Run Vitest
+        working-directory: spx-gui
+        run: npm run test
 
   spx-backend-test:
     runs-on: ubuntu-latest
