@@ -7,11 +7,11 @@
     "dev": "vite",
     "build": "vue-tsc --build --force && vite build && npm run build-widget",
     "build-widget": "tsc ./src/widgets/scripts/loader-template.ts && vite build --config ./src/widgets/vite.config.ts && rm ./src/widgets/scripts/loader-template.js",
+    "build-wasm": "./build-wasm.sh",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.ts --ignore-path .gitignore",
-    "test": "vitest",
-    "test:run": "./mock-wasm.sh && vitest --run"
+    "test": "vitest"
   },
   "dependencies": {
     "axios": "^1.6.5",
