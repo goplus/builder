@@ -3,6 +3,7 @@
  */
 
 import { apiBaseUrl } from '@/util/env'
+import { ApiError } from './error'
 
 export type RequestOptions = {
   method: string
@@ -21,22 +22,12 @@ function isApiErrorPayload(body: any): body is ApiErrorPayload {
   return body && (typeof body.code === 'number') && (typeof body.msg === 'string')
 }
 
-export class ApiError extends Error {
-  name = 'ApiError'
-  constructor(
-    public code: number,
-    msg: string
-  ) {
-    super(`[${code}] ${msg}`)
-  }
-}
-
 /** AuthProvider provide value for header Authorization */
-export type AuthProvider = () => string | null | Promise<string | null>
+export type AuthProvider = () => Promise<string | null>
 
 export class Client {
 
-  private getAuth: AuthProvider = () => null
+  private getAuth: AuthProvider = async () => null
 
   setAuthProvider(provider: AuthProvider) {
     this.getAuth = provider

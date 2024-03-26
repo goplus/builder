@@ -9,11 +9,14 @@
 import type { App } from 'vue'
 import { createI18n } from 'vue-i18n'
 
+import { apiErrorMessages } from '@/api/common/error'
+
 export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
 export const initI18n = async (app: App) => {
   const messages = {
     en: {
+      ...apiErrorMessages.en,
       language: 'English',
       tab: {
         code: 'Code',
@@ -179,6 +182,7 @@ export const initI18n = async (app: App) => {
       }
     },
     zh: {
+      ...apiErrorMessages.zh,
       language: '中文',
       tab: {
         code: '编程',

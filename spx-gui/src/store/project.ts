@@ -15,6 +15,10 @@ export const useProjectStore = defineStore('project', () => {
 
   const userStore = useUserStore()
 
+  // TODO: if it gets complex & coupled with different parts,
+  // we may extract the project-managing logic into some object model like `Workspace`
+  // Workspace manages projects & other states (including user info) together
+
   const project = ref(new Project())
 
   watch(
