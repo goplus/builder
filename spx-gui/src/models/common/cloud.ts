@@ -1,10 +1,10 @@
 import * as qiniu from 'qiniu-js'
-import { filename } from '@/util/path'
+import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
-import type { FileCollection } from '@/api/project'
-import { getProject, updateProject } from '@/api/project'
-import { uptoken } from '@/api/util'
-import { staticBaseUrl } from '@/util/env'
+import type { FileCollection } from '@/apis/project'
+import { getProject, updateProject } from '@/apis/project'
+import { uptoken } from '@/apis/util'
+import { staticBaseUrl } from '@/utils/env'
 import type { Metadata } from '../project'
 
 export async function load(owner: string, name: string) {

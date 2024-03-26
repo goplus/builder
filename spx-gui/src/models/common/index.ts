@@ -1,4 +1,4 @@
-import { AssetType, type AssetData } from '@/api/asset'
+import { AssetType, type AssetData } from '@/apis/asset'
 import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'

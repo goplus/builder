@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 
-import { extname, resolve } from '@/util/path'
+import { extname, resolve } from '@/utils/path'
 import { File, type Files } from './common/file'
 import { type Size } from './common'
 

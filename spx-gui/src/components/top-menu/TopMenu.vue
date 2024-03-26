@@ -24,11 +24,11 @@ import {
 import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
 import saveAs from 'file-saver'
 import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
-import { useProjectStore } from '@/store'
+import { useProjectStore } from '@/stores'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
-import { useNetwork } from '@/util/network'
-import { LOCALSTORAGE_KEY_LANGUAGE } from '@/language'
+import { useNetwork } from '@/utils/network'
+import { LOCALSTORAGE_KEY_LANGUAGE } from '@/i18n'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -375,3 +375,4 @@ const toggleLanguage = () => {
 </script>
 
 <style lang="scss" scoped></style>
+@/index

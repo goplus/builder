@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { extname, join, resolve } from '@/util/path'
+import { extname, join, resolve } from '@/utils/path'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 
 export type SoundInits = {

@@ -5,9 +5,9 @@
 
 import { reactive, watch } from 'vue'
 
-import { join } from '@/util/path'
-import { debounce } from '@/util/utils'
-import { IsPublic } from '../api/project'
+import { join } from '@/utils/path'
+import { debounce } from '@/utils/utils'
+import { IsPublic } from '@/apis/project'
 import { Disposble } from './common/disposable'
 import { toConfig, type Files, fromConfig } from './common/file'
 import { Stage, type RawStageConfig } from './stage'

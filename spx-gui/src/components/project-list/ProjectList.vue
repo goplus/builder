@@ -73,10 +73,10 @@ import {
   watch
 } from 'vue'
 import { NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs, NSpin, NSpace } from 'naive-ui'
-import { listProject, ownerAll, type ProjectData } from '@/api/project'
+import { listProject, ownerAll, type ProjectData } from '@/apis/project'
 import ProjectCard from './ProjectCard.vue'
-import { useNetwork } from '@/util/network'
-import type { PaginationParams } from '@/api/common'
+import { useNetwork } from '@/utils/network'
+import type { PaginationParams } from '@/apis/common'
 
 // ----------props & emit------------------------------------
 const props = defineProps({

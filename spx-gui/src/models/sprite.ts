@@ -6,7 +6,7 @@
 import { reactive } from 'vue'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
 import { Disposble } from './common/disposable'
-import { join } from '@/util/path'
+import { join } from '@/utils/path'
 import { type RawCostumeConfig, Costume } from './costume'
 
 export enum RotationStyle {

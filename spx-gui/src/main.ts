@@ -9,15 +9,14 @@
 import { createApp } from 'vue'
 import VueKonva from 'vue-konva'
 
-import { initI18n } from '@/language'
-
 import 'vfonts/Lato.css' // TODO: what is this for?
 import 'vfonts/FiraCode.css'
 
+import { initI18n } from './i18n'
 import App from './App.vue'
-import { initRouter } from './routes'
-import { initStore, useUserStore } from './store'
-import { client } from './api/common'
+import { initRouter } from './router'
+import { initStore, useUserStore } from './stores'
+import { client } from './apis/common'
 
 const initApiClient = async () => {
   const userStore = useUserStore()

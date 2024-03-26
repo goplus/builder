@@ -6,7 +6,7 @@
  * @FilePath: /spx-gui/src/global.d.ts
  * @Description: The global declaration.
  */
-import { FormatResponse } from './components/code-editor'
+import { FormatResponse } from './components/editor/spx-code-editor/code-editor'
 
 declare global {
   /**

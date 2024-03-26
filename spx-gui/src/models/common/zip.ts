@@ -4,7 +4,7 @@
  */
 
 import JSZip from 'jszip'
-import { filename, stripExt } from '@/util/path'
+import { filename, stripExt } from '@/utils/path'
 import { File as LazyFile, type Files as LazyFiles } from './file'
 import type { Metadata } from '../project'
 

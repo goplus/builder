@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 import type { File, Files } from './common/file'
-import { resolve } from '@/util/path'
+import { resolve } from '@/utils/path'
 
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig

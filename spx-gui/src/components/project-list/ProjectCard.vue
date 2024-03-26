@@ -52,10 +52,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { ProjectData } from '@/api/project'
-import { IsPublic, deleteProject, updateProject } from '@/api/project'
+import type { ProjectData } from '@/apis/project'
+import { IsPublic, deleteProject, updateProject } from '@/apis/project'
 import { computed, defineProps, ref } from 'vue'
-import { useProjectStore, useUserStore } from '@/store'
+import { useProjectStore, useUserStore } from '@/stores'
 import { NCard, NButton, NTag, NIcon, createDiscreteApi, useMessage } from 'naive-ui'
 import { UserOutlined } from '@vicons/antd'
 import defaultProjectImage from '@/assets/image/project/project.png'

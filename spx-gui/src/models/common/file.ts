@@ -3,8 +3,8 @@
  * @desc File-like class, while load lazily.
  */
 
-import { getMimeFromExt } from '@/util/file'
-import { extname } from '@/util/path'
+import { getMimeFromExt } from '@/utils/file'
+import { extname } from '@/utils/path'
 
 export type Options = {
   /** MIME type of file */

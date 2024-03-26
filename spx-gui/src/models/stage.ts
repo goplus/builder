@@ -4,7 +4,7 @@
  */
 
 import { reactive } from 'vue'
-import { filename } from '@/util/path'
+import { filename } from '@/utils/path'
 import { toText, type Files, fromText } from './common/file'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type Size } from './common'
