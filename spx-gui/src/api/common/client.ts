@@ -19,14 +19,13 @@ export type ApiErrorPayload = {
 }
 
 function isApiErrorPayload(body: any): body is ApiErrorPayload {
-  return body && (typeof body.code === 'number') && (typeof body.msg === 'string')
+  return body && typeof body.code === 'number' && typeof body.msg === 'string'
 }
 
 /** AuthProvider provide value for header Authorization */
 export type AuthProvider = () => Promise<string | null>
 
 export class Client {
-
   private getAuth: AuthProvider = async () => null
 
   setAuthProvider(provider: AuthProvider) {
@@ -81,7 +80,6 @@ export class Client {
     url = params == null ? url : withQueryParams(url, params)
     return this.request(url, null, { method: 'DELETE' })
   }
-
 }
 
 type QueryParams = {
@@ -90,7 +88,7 @@ type QueryParams = {
 
 function withQueryParams(url: string, params: QueryParams) {
   const usp = new URLSearchParams()
-  Object.keys(params).forEach(k => {
+  Object.keys(params).forEach((k) => {
     const v = params[k]
     if (v != null) usp.append(k, v + '')
   })

@@ -26,12 +26,7 @@
     :style="index == 0 ? firstBackdropStyle : ''"
     @click.stop="() => topBackdrop(backdrop.name)"
   >
-    <div
-      class="delete-button"
-      @click.stop="() => deleteBackdrop(backdrop.name)"
-    >
-      ×
-    </div>
+    <div class="delete-button" @click.stop="() => deleteBackdrop(backdrop.name)">×</div>
     <n-image
       preview-disabled
       :width="computedProperties.imageWidth"
@@ -79,14 +74,16 @@ const computedProperties = computed(() => {
 })
 
 const spriteUrl = ref('')
-const backdrops = ref<Array<{ name: string, url: string }>>([])
+const backdrops = ref<Array<{ name: string; url: string }>>([])
 
 effect(async () => {
   if (props.type === 'bg') {
-    backdrops.value = await Promise.all((props.asset as Stage).backdrops.map(async backdrop => {
-      const url = await backdrop.img.url()
-      return { name: backdrop.name, url }
-    }))
+    backdrops.value = await Promise.all(
+      (props.asset as Stage).backdrops.map(async (backdrop) => {
+        const url = await backdrop.img.url()
+        return { name: backdrop.name, url }
+      })
+    )
   } else {
     // TODO: use costume index instead of the 1st costume
     spriteUrl.value = await (props.asset as Sprite).costumes[0].img.url()

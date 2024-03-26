@@ -12,7 +12,6 @@ import { createFileWithUrl } from '@/models/common/cloud'
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
 export const useProjectStore = defineStore('project', () => {
-
   const userStore = useUserStore()
 
   // TODO: if it gets complex & coupled with different parts,
@@ -58,16 +57,28 @@ export const useProjectStore = defineStore('project', () => {
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.load({ owner, name }, {})
-    const costume = new Costume('default_costume', createFileWithUrl('default_sprite.png', defaultSpriteImgUrl), {})
+    const costume = new Costume(
+      'default_costume',
+      createFileWithUrl('default_sprite.png', defaultSpriteImgUrl),
+      {}
+    )
     const sprite = new Sprite('default_sprite', '', [costume], {})
     newProject.addSprite(sprite)
-    const backdrop = new Backdrop('default_backdrop', createFileWithUrl('default_backdrop.png', defaultBackdropImgUrl), {})
+    const backdrop = new Backdrop(
+      'default_backdrop',
+      createFileWithUrl('default_backdrop.png', defaultBackdropImgUrl),
+      {}
+    )
     newProject.stage.addBackdrop(backdrop)
     newProject.syncToLocalCache(localCacheKey)
     project.value = newProject
   }
 
-  async function openProjectWithZipFile(zipFile: globalThis.File, name?: string, owner = userStore.userInfo?.name) {
+  async function openProjectWithZipFile(
+    zipFile: globalThis.File,
+    name?: string,
+    owner = userStore.userInfo?.name
+  ) {
     if (owner == null) throw new Error('owner info is required')
     // TODO: UI logic to handle conflicts when there are local cache
     const newProject = new Project()

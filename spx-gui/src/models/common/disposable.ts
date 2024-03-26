@@ -6,7 +6,6 @@
 export type Disposer = () => void
 
 export abstract class Disposble {
-
   _disposers: Disposer[] = []
 
   addDisposer(disposer: Disposer) {
@@ -19,5 +18,4 @@ export abstract class Disposble {
       disposer()
     }
   }
-
 }

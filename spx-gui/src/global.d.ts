@@ -9,7 +9,6 @@
 import { FormatResponse } from './components/code-editor'
 
 declare global {
-
   /**
    * @description: format spx code power by gopfmt's wasm
    * @param {string} spx-code

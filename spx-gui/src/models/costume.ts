@@ -17,24 +17,35 @@ export type RawCostumeConfig = CostumeInits & {
 }
 
 export class Costume {
-
   name: string
-  setName(name: string) { this.name = name }
+  setName(name: string) {
+    this.name = name
+  }
 
   img: File
-  setImg(img: File) { this.img = img }
+  setImg(img: File) {
+    this.img = img
+  }
 
   x: number
-  setX(x: number) { this.x = x }
+  setX(x: number) {
+    this.x = x
+  }
 
   y: number
-  setY(y: number) { this.y = y }
+  setY(y: number) {
+    this.y = y
+  }
 
   faceRight: number
-  setFaceRight(faceRight: number) { this.faceRight = faceRight }
+  setFaceRight(faceRight: number) {
+    this.faceRight = faceRight
+  }
 
   bitmapResolution: number
-  setBitmapResolution(bitmapResolution: number) { this.bitmapResolution = bitmapResolution }
+  setBitmapResolution(bitmapResolution: number) {
+    this.bitmapResolution = bitmapResolution
+  }
 
   async getSize() {
     const imgUrl = await this.img.url()
@@ -45,13 +56,13 @@ export class Costume {
         resolve({ width: img.width, height: img.height })
         img.remove()
       }
-      img.onerror = e => {
+      img.onerror = (e) => {
         reject(new Error(`load image failed: ${e.toString()}`))
         img.remove()
       }
     })
   }
-  
+
   constructor(name: string, file: File, inits: CostumeInits) {
     this.name = name
     this.img = file

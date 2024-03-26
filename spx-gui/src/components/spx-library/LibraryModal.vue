@@ -123,7 +123,14 @@ import {
 import { FireFilled as hotIcon } from '@vicons/antd'
 import { NewReleasesFilled as newIcon } from '@vicons/material'
 import SpriteCard from './SpriteCard.vue'
-import { listAsset, increaseAssetClickCount, type AssetData, AssetType, IsPublic, ListAssetParamOrderBy } from '@/api/asset'
+import {
+  listAsset,
+  increaseAssetClickCount,
+  type AssetData,
+  AssetType,
+  IsPublic,
+  ListAssetParamOrderBy
+} from '@/api/asset'
 
 // ----------props & emit------------------------------------
 interface PropsType {
@@ -197,10 +204,7 @@ enum UIPublic {
  * @Author: Xu Ning
  * @Date: 2024-01-25 23:50:45
  */
-const fetchAssetsByType = async (
-  assetType: AssetType,
-  orderBy?: ListAssetParamOrderBy
-) => {
+const fetchAssetsByType = async (assetType: AssetType, orderBy?: ListAssetParamOrderBy) => {
   try {
     let isPublic: IsPublic | undefined
     let owner: string | undefined

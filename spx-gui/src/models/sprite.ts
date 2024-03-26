@@ -41,7 +41,6 @@ export const spriteAssetPath = 'assets/sprites'
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
-
   name: string
   setName(name: string) {
     this.name = name
@@ -61,7 +60,7 @@ export class Sprite extends Disposble {
     this.costumeIndex = costumeIndex
   }
   removeCostume(name: string) {
-    const idx = this.costumes.findIndex(s => s.name === name)
+    const idx = this.costumes.findIndex((s) => s.name === name)
     this.costumes.splice(idx, 1)
   }
   addCostume(costume: Costume) {
@@ -69,25 +68,39 @@ export class Sprite extends Disposble {
   }
 
   heading: number
-  setHeading(heading: number) { this.heading = heading }
+  setHeading(heading: number) {
+    this.heading = heading
+  }
 
   x: number
-  setX(x: number) { this.x = x }
+  setX(x: number) {
+    this.x = x
+  }
 
   y: number
-  setY(y: number) { this.y = y }
+  setY(y: number) {
+    this.y = y
+  }
 
   size: number
-  setSize(size: number) { this.size = size }
+  setSize(size: number) {
+    this.size = size
+  }
 
   rotationStyle: RotationStyle
-  setRotationStyle(rotationStyle: RotationStyle) { this.rotationStyle = rotationStyle }
+  setRotationStyle(rotationStyle: RotationStyle) {
+    this.rotationStyle = rotationStyle
+  }
 
   visible: boolean
-  setVisible(visible: boolean) { this.visible = visible }
+  setVisible(visible: boolean) {
+    this.visible = visible
+  }
 
   isDraggable: boolean
-  setIsDraggable(isDraggable: boolean) { this.isDraggable = isDraggable }
+  setIsDraggable(isDraggable: boolean) {
+    this.isDraggable = isDraggable
+  }
 
   constructor(name: string, code: string, costumes: Costume[], inits: SpriteInits) {
     super()
@@ -110,27 +123,29 @@ export class Sprite extends Disposble {
     const pathPrefix = join(spriteAssetPath, name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
-    const { costumes: costumeConfigs, ...inits } = await toConfig(configFile) as RawSpriteConfig
+    const { costumes: costumeConfigs, ...inits } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
     const codeFile = files[name + '.spx']
     if (codeFile != null) {
       code = await toText(codeFile)
     }
-    const costumes = (costumeConfigs ?? []).map(c => Costume.load(c, files, pathPrefix))
+    const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
     return new Sprite(name, code, costumes, inits)
   }
 
   static async loadAll(files: Files) {
     const spriteNames = listDirs(files, spriteAssetPath)
     const sprites: Sprite[] = []
-    await Promise.all(spriteNames.map(async spriteName => {
-      const sprite = await Sprite.load(spriteName, files)
-      if (sprite == null) {
-        console.warn('failed to load sprite:', spriteName)
-        return
-      }
-      sprites.push(sprite)
-    }))
+    await Promise.all(
+      spriteNames.map(async (spriteName) => {
+        const sprite = await Sprite.load(spriteName, files)
+        if (sprite == null) {
+          console.warn('failed to load sprite:', spriteName)
+          return
+        }
+        sprites.push(sprite)
+      })
+    )
     return sprites
   }
 

@@ -8,10 +8,7 @@
 -->
 <template>
   <!-- S Component Sprite Card -->
-  <div
-    class="sprite-card"
-    @click="addAssetToListFunc()"
-  >
+  <div class="sprite-card" @click="addAssetToListFunc()">
     <!-- S Component First Static Costume Card -->
     <n-image
       v-if="!shouldShowGif"

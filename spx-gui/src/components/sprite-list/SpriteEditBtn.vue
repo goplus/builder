@@ -118,9 +118,7 @@ const editorStore = useEditorStore()
 // TODO: check all default values here, they should be consistent with spx
 const x = computed(() => editorStore.currentSprite?.x ?? 0)
 const y = computed(() => editorStore.currentSprite?.y ?? 0)
-const heading = computed(() =>
-  editorStore.currentSprite ? editorStore.currentSprite.heading : 0
-)
+const heading = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.heading : 0))
 const size = computed(() => editorStore.currentSprite?.size ?? 0)
 const visible = computed(() =>
   editorStore.currentSprite ? editorStore.currentSprite.visible : false

@@ -38,7 +38,6 @@ type RawProjectConfig = RawStageConfig & {
 }
 
 export class Project extends Disposble {
-
   id?: string
   owner?: string
   name?: string
@@ -53,7 +52,7 @@ export class Project extends Disposble {
   zorder!: string[]
 
   removeSprite(name: string) {
-    const idx = this.sprites.findIndex(s => s.name === name)
+    const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
     sprite.dispose()
   }
@@ -64,27 +63,32 @@ export class Project extends Disposble {
       this.zorder = [...this.zorder, sprite.name]
     }
     // update zorder when sprite renaming
-    sprite.addDisposer(watch(() => sprite.name, (newName, originalName) => {
-      this.zorder = this.zorder.map(v => v === originalName ? newName : v)
-    }))
+    sprite.addDisposer(
+      watch(
+        () => sprite.name,
+        (newName, originalName) => {
+          this.zorder = this.zorder.map((v) => (v === originalName ? newName : v))
+        }
+      )
+    )
     // update zorder when sprite deleted
     sprite.addDisposer(() => {
-      this.zorder = this.zorder.filter(v => v !== sprite.name)
+      this.zorder = this.zorder.filter((v) => v !== sprite.name)
     })
   }
   setSpriteZorderIdx(name: string, newIdx: number | ((idx: number, length: number) => number)) {
-    const idx = this.zorder.findIndex(v => v === name)
+    const idx = this.zorder.findIndex((v) => v === name)
     if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
-    const newZorder = this.zorder.filter(v => v !== name)
+    const newZorder = this.zorder.filter((v) => v !== name)
     newZorder.splice(newIdxVal, 0, name)
     this.zorder = newZorder
   }
   upSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, i => i+1)
+    this.setSpriteZorderIdx(name, (i) => i + 1)
   }
   downSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, i => i-1)
+    this.setSpriteZorderIdx(name, (i) => i - 1)
   }
   topSpriteZorder(name: string) {
     this.setSpriteZorderIdx(name, (_, len) => len - 1)
@@ -94,7 +98,7 @@ export class Project extends Disposble {
   }
 
   removeSound(name: string) {
-    const idx = this.sounds.findIndex(s => s.name === name)
+    const idx = this.sounds.findIndex((s) => s.name === name)
     this.sounds.splice(idx, 1)
   }
   addSound(sound: Sound) {
@@ -129,9 +133,9 @@ export class Project extends Disposble {
     this.zorder = zorder ?? []
     this.stage = stage
     this.sprites = []
-    sprites.forEach(s => this.addSprite(s))
+    sprites.forEach((s) => this.addSprite(s))
     this.sounds = []
-    sounds.forEach(s => this.addSound(s))
+    sounds.forEach((s) => this.addSound(s))
   }
 
   /** Export metadata & files */
@@ -150,18 +154,21 @@ export class Project extends Disposble {
     const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
-    Object.assign(files, ...this.sprites.map(s => s.export()))
-    Object.assign(files, ...this.sounds.map(s => s.export()))
+    Object.assign(files, ...this.sprites.map((s) => s.export()))
+    Object.assign(files, ...this.sounds.map((s) => s.export()))
     return [metadata, files]
   }
 
   /** Load from a zip file */
   async loadZipFile(zipFile: globalThis.File) {
     const { metadata, files } = await zipHelper.load(zipFile)
-    this.load({
-      // name is the only metadata we need when load from file
-      name: this.name ?? metadata.name
-    }, files)
+    this.load(
+      {
+        // name is the only metadata we need when load from file
+        name: this.name ?? metadata.name
+      },
+      files
+    )
   }
 
   /** Export to a zip file */
@@ -199,7 +206,6 @@ export class Project extends Disposble {
     }, 1000)
     this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
   }
-
 }
 
 /** Get full name for project, which stands for a globally unique identifier for the project */

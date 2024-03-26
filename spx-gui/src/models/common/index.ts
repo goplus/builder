@@ -14,7 +14,6 @@ export function assign<T extends object>(instance: T, patches: Partial<T>) {
   Object.assign(instance, patches)
 }
 
-
 export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files'>
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
@@ -52,7 +51,7 @@ export async function asset2Backdrop(assetData: PartialAssetData) {
   const files = getFiles(assetData.files)
   const configFile = files[virtualBackdropConfigFileName]
   if (configFile == null) throw new Error('no config file found')
-  const config = await toConfig(configFile) as BackdropInits
+  const config = (await toConfig(configFile)) as BackdropInits
   return Backdrop.load(config, files)
 }
 

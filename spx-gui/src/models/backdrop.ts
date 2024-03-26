@@ -10,7 +10,6 @@ const backdropAssetPath = 'assets'
 
 // Backdrop is almost the same as Costume
 export class Backdrop extends Costume {
-
   constructor(name: string, file: File, inits: BackdropInits) {
     super(name, file, inits)
     return reactive(this)

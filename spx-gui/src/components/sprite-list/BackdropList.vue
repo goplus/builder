@@ -23,7 +23,7 @@
 import ImageCardCom from '@/components/sprite-list/ImageCardCom.vue'
 import AssetAddBtn from '@/components/sprite-list/AssetAddBtn.vue'
 import { useProjectStore } from '@/store'
-import { AssetType } from '@/api/asset';
+import { AssetType } from '@/api/asset'
 
 // ----------props & emit------------------------------------
 const projectStore = useProjectStore()

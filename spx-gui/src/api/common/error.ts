@@ -14,10 +14,10 @@ export class ApiError extends Error {
 
 enum ApiErrorCode {
   errorInvalidArgs = 40001,
-	errorUnauthorized = 40100,
-	errorForbidden = 40300,
-	errorNotFound = 40400,
-	errorUnknown = 50000
+  errorUnauthorized = 40100,
+  errorForbidden = 40300,
+  errorNotFound = 40400,
+  errorUnknown = 50000
 }
 
 type Message = {
@@ -53,10 +53,10 @@ const messageNamespace = 'apiError'
 /** i18n messages for API error */
 export const apiErrorMessages = {
   en: {
-    [messageNamespace]: mapObject(rawApiErrorMessages, m => m.en)
+    [messageNamespace]: mapObject(rawApiErrorMessages, (m) => m.en)
   },
   zh: {
-    [messageNamespace]: mapObject(rawApiErrorMessages, m => m.zh)
+    [messageNamespace]: mapObject(rawApiErrorMessages, (m) => m.zh)
   }
 }
 
@@ -64,7 +64,10 @@ export function getI18nKey(err: ApiError) {
   return `${messageNamespace}.${err.code}`
 }
 
-function mapObject<T extends object, K extends keyof T, V>(obj: T, mapper: (k: T[K]) => V): { [P in K]: V } {
+function mapObject<T extends object, K extends keyof T, V>(
+  obj: T,
+  mapper: (k: T[K]) => V
+): { [P in K]: V } {
   const result = {} as { [P in K]: V }
   Object.keys(obj).forEach((k) => {
     result[k as K] = mapper(obj[k as K])

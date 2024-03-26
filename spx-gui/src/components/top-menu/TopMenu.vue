@@ -375,4 +375,3 @@ const toggleLanguage = () => {
 </script>
 
 <style lang="scss" scoped></style>
-@/util/network

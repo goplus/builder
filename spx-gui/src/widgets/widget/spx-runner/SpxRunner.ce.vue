@@ -9,9 +9,7 @@
 <template>
   <div class="spx-runner-widget">
     <div class="operation">
-      <button v-if="!run" :disabled="!ready || !!errorMsg" class="run" @click="onRun">
-        run
-      </button>
+      <button v-if="!run" :disabled="!ready || !!errorMsg" class="run" @click="onRun">run</button>
       <button v-else class="stop" @click="onStop">stop</button>
     </div>
     <div class="project-runner">
@@ -34,7 +32,7 @@
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch, onMounted } from 'vue'
 import { Project, fullName } from '@/models/project'
-const props = defineProps<{ owner?: string, name?: string }>()
+const props = defineProps<{ owner?: string; name?: string }>()
 const runner = ref()
 const run = ref(false)
 const ready = ref(false)

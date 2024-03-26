@@ -3,8 +3,8 @@
  * @desc File-like class, while load lazily.
  */
 
-import { getMimeFromExt } from "@/util/file"
-import { extname } from "@/util/path"
+import { getMimeFromExt } from '@/util/file'
+import { extname } from '@/util/path'
 
 export type Options = {
   /** MIME type of file */
@@ -16,7 +16,6 @@ export type Loader = () => Promise<ArrayBuffer>
 
 /** File-like class, while load lazily */
 export class File {
-
   /** MIME type of file */
   type: string = ''
 
@@ -36,9 +35,9 @@ export class File {
   async arrayBuffer() {
     if (this._content != null) return this._content
     if (this._promisedContent != null) return this._promisedContent
-    return this._promisedContent = this._loader().then(ab => {
-      return this._content = ab
-    })
+    return (this._promisedContent = this._loader().then((ab) => {
+      return (this._content = ab)
+    }))
   }
 
   // TODO: remember to do URL.revokeObjectURL
@@ -46,7 +45,6 @@ export class File {
     const ab = await this.arrayBuffer()
     return URL.createObjectURL(new Blob([ab]))
   }
-
 }
 
 /**

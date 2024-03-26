@@ -20,5 +20,5 @@ export const casdoorConfig = {
   serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT as string,
   clientId: import.meta.env.VITE_CASDOOR_CLIENT_ID as string,
   organizationName: import.meta.env.VITE_CASDOOR_ORGANIZATION_NAME as string,
-  appName: import.meta.env.VITE_CASDOOR_APP_NAME as string,
+  appName: import.meta.env.VITE_CASDOOR_APP_NAME as string
 }

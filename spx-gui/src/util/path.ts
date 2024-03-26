@@ -1,4 +1,3 @@
-
 export function join(base: string, ...paths: string[]) {
   // TODO
   return [base, ...paths].join('/')

@@ -70,7 +70,9 @@ const userStore = useUserStore()
 const projectStore = useProjectStore()
 const isUserOwn = computed(() => userStore.userInfo?.name === project.owner)
 const isPublic = ref(project.isPublic == IsPublic.public)
-const isCurrent = computed(() => project.owner === projectStore.project.owner && project.name === projectStore.project.name)
+const isCurrent = computed(
+  () => project.owner === projectStore.project.owner && project.name === projectStore.project.name
+)
 const fullName = computed(() => projectFullName(project.owner, project.name))
 const { dialog } = createDiscreteApi(['dialog'])
 const message = useMessage()

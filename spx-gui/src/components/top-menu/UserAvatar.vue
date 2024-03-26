@@ -52,4 +52,3 @@ function handleAvatarDropdownClick(key: string) {
   height: 38px;
 }
 </style>
-@/util/network

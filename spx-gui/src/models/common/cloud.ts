@@ -15,22 +15,25 @@ export async function load(owner: string, name: string) {
 
 export async function save(metadata: Metadata, files: Files) {
   const { owner, name, isPublic } = metadata
-  if (owner == null || name == null || isPublic == null) throw new Error('owner, name, isPublic expected')
+  if (owner == null || name == null || isPublic == null)
+    throw new Error('owner, name, isPublic expected')
   const fileUrls = await uploadFiles(files)
   await updateProject(owner, name, { isPublic, files: fileUrls })
 }
 
 export async function uploadFiles(files: Files): Promise<FileCollection> {
   const fileUrls: FileCollection = {}
-  await Promise.all(Object.keys(files).map(async path => {
-    fileUrls[path] = await uploadFile(files[path]!)
-  }))
+  await Promise.all(
+    Object.keys(files).map(async (path) => {
+      fileUrls[path] = await uploadFile(files[path]!)
+    })
+  )
   return fileUrls
 }
 
 export function getFiles(fileUrls: FileCollection): Files {
   const files: Files = {}
-  Object.keys(fileUrls).forEach(path => {
+  Object.keys(fileUrls).forEach((path) => {
     const url = fileUrls[path]
     files[path] = createFileWithUrl(filename(path), url)
   })
@@ -65,13 +68,7 @@ type QiniuUploadRes = {
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
   const token = await uptoken()
-  const observable = qiniu.upload(
-    nativeFile,
-    null,
-    token,
-    { fname: file.name },
-    { region: 'na0' }
-  )
+  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: 'na0' })
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {

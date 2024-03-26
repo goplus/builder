@@ -209,14 +209,16 @@ const importSelectedAssetsToProject = async () => {
     isAssetInfosLoading.value = false
     return
   }
-  await Promise.all(selectedAssets.value.map(async (asset) => {
-    const spriteOrSound = await scratchAsset2Asset(asset)
-    if (spriteOrSound instanceof Sprite) {
-      projectStore.project.addSprite(spriteOrSound)
-    } else {
-      projectStore.project.addSound(spriteOrSound)
-    }
-  }))
+  await Promise.all(
+    selectedAssets.value.map(async (asset) => {
+      const spriteOrSound = await scratchAsset2Asset(asset)
+      if (spriteOrSound instanceof Sprite) {
+        projectStore.project.addSprite(spriteOrSound)
+      } else {
+        projectStore.project.addSound(spriteOrSound)
+      }
+    })
+  )
   showImportSuccessMessage()
 }
 
@@ -226,17 +228,21 @@ const uploadSelectedAssetsToPersonalLibrary = async () => {
     isAssetInfosLoading.value = false
     return
   }
-  await Promise.all(selectedAssets.value.map(async asset => {
-    const spriteOrSound = await scratchAsset2Asset(asset)
-    const assetData = await (spriteOrSound instanceof Sprite ? sprite2Asset(spriteOrSound) : sound2Asset(spriteOrSound))
-    await addAsset({
-      ...assetData,
-      displayName: asset.name,
-      category: '',
-      isPublic: IsPublic.personal,
-      preview: 'TODO' // TODO
+  await Promise.all(
+    selectedAssets.value.map(async (asset) => {
+      const spriteOrSound = await scratchAsset2Asset(asset)
+      const assetData = await (spriteOrSound instanceof Sprite
+        ? sprite2Asset(spriteOrSound)
+        : sound2Asset(spriteOrSound))
+      await addAsset({
+        ...assetData,
+        displayName: asset.name,
+        category: '',
+        isPublic: IsPublic.personal,
+        preview: 'TODO' // TODO
+      })
     })
-  }))
+  )
   showImportSuccessMessage()
 }
 
@@ -247,7 +253,10 @@ async function scratchAsset2Asset(scratchFile: ScratchAssetFile) {
     const costume = new Costume(costumeName, costumeFile, {})
     return new Sprite(scratchFile.name, '', [costume], {})
   } else {
-    const soundFile = await fromBlob(scratchFile.name + '.' + scratchFile.extension, scratchFile.blob)
+    const soundFile = await fromBlob(
+      scratchFile.name + '.' + scratchFile.extension,
+      scratchFile.blob
+    )
     return new Sound(scratchFile.name, soundFile, {})
   }
 }

@@ -337,10 +337,12 @@ const handleSubmitSprite = async (): Promise<void> => {
       return
     }
   }
-  const files = await Promise.all(uploadFileList.value.filter(
-    fileInfo => fileInfo.file !== null
-  ).map(fileInfo => fromNativeFile(fileInfo.file!)))
-  const costumes = files.map(f => new Costume(stripExt(f.name), f, {}))
+  const files = await Promise.all(
+    uploadFileList.value
+      .filter((fileInfo) => fileInfo.file !== null)
+      .map((fileInfo) => fromNativeFile(fileInfo.file!))
+  )
+  const costumes = files.map((f) => new Costume(stripExt(f.name), f, {}))
   const sprite = new Sprite(uploadSpriteName.value, '', costumes, {})
   projectStore.project.addSprite(sprite)
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
@@ -349,7 +351,8 @@ const handleSubmitSprite = async (): Promise<void> => {
     await addAsset({
       displayName: uploadSpriteName.value,
       category: categoryValue.value || '',
-      isPublic: publishState.value === PublishState.uploadToPersonal ? IsPublic.personal : IsPublic.public,
+      isPublic:
+        publishState.value === PublishState.uploadToPersonal ? IsPublic.personal : IsPublic.public,
       files: {}, // TODO: upload & get files
       preview: 'TODO', // TOOD: gif preview
       assetType: AssetType.Sprite
@@ -376,17 +379,17 @@ const handleAssetAddition = async (asset: AssetData) => {
     case AssetType.Sprite: {
       const sprite = await asset2Sprite(asset)
       projectStore.project.addSprite(sprite)
-      break;
+      break
     }
     case AssetType.Backdrop: {
       const backdrop = await asset2Backdrop(asset)
       projectStore.project.stage.addBackdrop(backdrop)
-      break;
+      break
     }
     case AssetType.Sound: {
       const sprite = await asset2Sprite(asset)
       projectStore.project.addSprite(sprite)
-      break;
+      break
     }
   }
   message.success(t('message.addSuccess', { name: asset.displayName }))
@@ -482,4 +485,3 @@ const handleAssetAddition = async (asset: AssetData) => {
   }
 }
 </style>
-@/util/network

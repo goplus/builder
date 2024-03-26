@@ -52,7 +52,7 @@ async function clear(key: string) {
   if (metadataEx == null) return
   await Promise.all([
     removeMetadataEx(key),
-    ...metadataEx.files.map(path => removeFile(key, path))
+    ...metadataEx.files.map((path) => removeFile(key, path))
   ])
 }
 
@@ -62,9 +62,11 @@ export async function load(key: string) {
   if (metadataEx == null) return null
   const { files: fileList, ...metadata } = metadataEx
   const files: Files = {}
-  await Promise.all(fileList.map(async path => {
-    files[path] = await readFile(key, path)
-  }))
+  await Promise.all(
+    fileList.map(async (path) => {
+      files[path] = await readFile(key, path)
+    })
+  )
   return { metadata, files }
 }
 
@@ -74,6 +76,6 @@ export async function save(key: string, metadata: Metadata, files: Files) {
   const metadataEx = { ...metadata, files: fileList }
   await Promise.all([
     setMetadataEx(key, metadataEx),
-    ...fileList.map(path => writeFile(key, path, files[path]!))
+    ...fileList.map((path) => writeFile(key, path, files[path]!))
   ])
 }

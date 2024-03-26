@@ -18,8 +18,8 @@ export type StageInits = {
 
 export type RawMapConfig = {
   width?: number
-	height?: number
-	mode?: string
+  height?: number
+  mode?: string
 }
 
 export type RawStageConfig = {
@@ -36,17 +36,11 @@ export type MapSize = {
   height: number
 }
 
-export const stageCodeFilePaths = [
-  'main.spx',
-  'index.spx',
-  'main.gmx',
-  'index.gmx'
-]
+export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.gmx']
 const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
 export class Stage {
-
   code: string
   setCode(code: string) {
     this.code = code
@@ -61,7 +55,7 @@ export class Stage {
     this.backdropIndex = backdropIndex
   }
   removeBackdrop(name: string) {
-    const idx = this.backdrops.findIndex(s => s.name === name)
+    const idx = this.backdrops.findIndex((s) => s.name === name)
     this.backdrops.splice(idx, 1)
     // TODO: `this.backdropIndex`?
   }
@@ -70,7 +64,7 @@ export class Stage {
     // TODO: `this.backdropIndex`?
   }
   topBackdrop(name: string) {
-    const idx = this.backdrops.findIndex(s => s.name === name)
+    const idx = this.backdrops.findIndex((s) => s.name === name)
     if (idx < 0) throw new Error(`backdrop ${name} not found`)
     const [backdrop] = this.backdrops.splice(idx, 1)
     this.backdrops.unshift(backdrop)
@@ -78,13 +72,19 @@ export class Stage {
   }
 
   mapWidth: number | undefined
-  setMapWidth(mapWidth: number) { this.mapWidth = mapWidth }
+  setMapWidth(mapWidth: number) {
+    this.mapWidth = mapWidth
+  }
 
   mapHeight: number | undefined
-  setMapHeight(mapHeight: number) { this.mapHeight = mapHeight }
+  setMapHeight(mapHeight: number) {
+    this.mapHeight = mapHeight
+  }
 
   mapMode: MapMode
-  setMapMode(mapMode: MapMode) { this.mapMode = mapMode }
+  setMapMode(mapMode: MapMode) {
+    this.mapMode = mapMode
+  }
 
   /** Dicide map size based on map config & backdrop information */
   async getMapSize(): Promise<Size> {
@@ -125,7 +125,7 @@ export class Stage {
       code = await toText(codeFile)
       break
     }
-    const backdrops = (sceneConfigs ?? []).map(c => Backdrop.load(c, files))
+    const backdrops = (sceneConfigs ?? []).map((c) => Backdrop.load(c, files))
     return new Stage(code, backdrops, {
       backdropIndex: sceneIndex,
       mapWidth: map?.width,
@@ -154,10 +154,10 @@ export class Stage {
 }
 
 export enum MapMode {
-	fill = 'fill',
-	repeat = 'repeat',
-	fillRatio = 'fillRatio',
-	fillCut = 'fillCut'
+  fill = 'fill',
+  repeat = 'repeat',
+  fillRatio = 'fillRatio',
+  fillCut = 'fillCut'
 }
 
 function getMapMode(mode?: string): MapMode {

@@ -13,17 +13,17 @@ export enum ProjectDataType {
 
 export type ProjectData = {
   /** Globally Unique ID */
-	id: string
-	/** Project name, unique for projects of same owner */
-	name: string
-	/** Name of project owner */
-	owner: string
-	/** Public status */
-	isPublic: IsPublic
-	/** Files the project contains */
-	files: FileUrls
-	/** Project version */
-	version: number
+  id: string
+  /** Project name, unique for projects of same owner */
+  name: string
+  /** Name of project owner */
+  owner: string
+  /** Public status */
+  isPublic: IsPublic
+  /** Files the project contains */
+  files: FileUrls
+  /** Project version */
+  version: number
   /** Create time */
   cTime: string
   /** Update time */

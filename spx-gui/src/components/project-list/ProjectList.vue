@@ -31,9 +31,7 @@
         :key="item"
         :name="item"
         :label="$t(`project.${item.toLowerCase()}`)"
-        :disabled="
-          (isRequesting && state.currentTab !== item) || !isOnline
-        "
+        :disabled="(isRequesting && state.currentTab !== item) || !isOnline"
       >
         <div class="container">
           <n-space v-if="isRequesting" justify="center">
