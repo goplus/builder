@@ -14,7 +14,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "axios": "^1.6.5",
     "file-saver": "^2.0.5",
     "js-pkce": "^1.4.0",
     "jszip": "^3.10.1",
@@ -24,6 +23,7 @@
     "nanoid": "^5.0.5",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
+    "qiniu-js": "^3.4.2",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
     "vue-i18n": "^9.9.0",

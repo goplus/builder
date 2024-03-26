@@ -39,15 +39,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // '@': fileURLToPath(new URL('./src', import.meta.url))
-        '@': resolve('../../src'),
-        comps: resolve('../components'),
-        apis: resolve('../apis'),
-        views: resolve('../views'),
-        utils: resolve('../utils'),
-        routes: resolve('../routes'),
-        styles: resolve('../styles'),
-        store: resolve('../store')
+        '@': resolve('../../src')
       }
     }
   }

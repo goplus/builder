@@ -19,16 +19,7 @@ export default defineConfig(({ mode }) => {
     base: env.VITE_PUBLISH_BASE_URL,
     resolve: {
       alias: {
-        // '@': fileURLToPath(new URL('./src', import.meta.url))
-        '@': resolve('src'),
-        comps: resolve('src/components'),
-        apis: resolve('src/apis'),
-        views: resolve('src/views'),
-        utils: resolve('src/utils'),
-        routes: resolve('src/routes'),
-        styles: resolve('src/styles'),
-        store: resolve('src/store'),
-        assets: resolve('/src/assets')
+        '@': resolve('src')
       }
     },
     optimizeDeps: {

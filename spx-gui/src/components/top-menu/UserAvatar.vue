@@ -18,8 +18,8 @@
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
-import { useNetwork } from '@/util/hooks/network'
-import { useUserStore } from '@/store'
+import { useNetwork } from '@/utils/network'
+import { useUserStore } from '@/stores'
 
 const { t } = useI18n({
   inheritLocale: true
