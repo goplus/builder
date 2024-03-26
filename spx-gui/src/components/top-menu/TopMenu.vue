@@ -13,34 +13,28 @@
 
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
-import { NMenu, NButton, NInput, NIcon, NDropdown, createDiscreteApi } from 'naive-ui'
-import { useI18n } from 'vue-i18n'
+import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
 import {
-  ComputerTwotone as CodeIcon,
   FilePresentTwotone as FileIcon,
-  SaveTwotone as SaveIcon,
-  PublishTwotone as PublishIcon
+  SaveTwotone as SaveIcon
 } from '@vicons/material'
-import { Book as TutorialIcon, SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
+import { SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
 import saveAs from 'file-saver'
-import { publishColor, saveColor, fileColor, codeColor } from '@/assets/theme'
+import { saveColor, fileColor } from '@/assets/theme'
 import { useProjectStore } from '@/stores'
 import UserAvatar from './UserAvatar.vue'
 import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/utils/network'
-import { LOCALSTORAGE_KEY_LANGUAGE } from '@/i18n'
+import { useToggleLanguage } from '@/i18n'
+import { useI18n } from '@/utils/i18n'
+import { useMessageHandle } from '@/utils/error'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
 
 // active key for route
 const activeKey = ref(null)
-
-// i18n/i10n config
-const { locale, t } = useI18n({
-  inheritLocale: true,
-  useScope: 'global'
-})
+const { t } = useI18n()
 const { isOnline } = useNetwork()
 
 /**
@@ -50,43 +44,31 @@ const { isOnline } = useNetwork()
  */
 const importOptions = computed(() => [
   {
-    label: t('topMenu.upload'),
+    label: t({ en: 'Upload', zh: '上传' }),
     key: 'Upload'
   },
   {
-    label: t('topMenu.load'),
+    label: t({ en: 'Load', zh: '加载' }),
     key: 'Load'
   },
   {
-    label: t('topMenu.blank'),
+    label: t({ en: 'Blank', zh: '空项目' }),
     key: 'Blank'
   }
 ])
 
 const saveOptions = computed(() => [
   {
-    label: t('topMenu.local'),
+    label: t({ en: 'Local', zh: '本地' }),
     key: 'SaveLocal'
   },
   {
-    label: t('topMenu.cloud'),
+    label: t({ en: 'Cloud', zh: '云端' }),
     key: 'SaveCloud',
     disabled: !isOnline.value
   }
 ])
 
-const exportOptions = computed(() => [
-  {
-    label: t('topMenu.video'),
-    key: 'Video',
-    disabled: !isOnline.value
-  },
-  {
-    label: t('topMenu.app'),
-    key: 'App',
-    disabled: !isOnline.value
-  }
-])
 
 const settingsOptions = computed(() => [
   {
@@ -146,7 +128,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              () => t('topMenu.file')
+              () => t({ en: 'File', zh: '文件' })
             )
         }
       ),
@@ -170,7 +152,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              () => t('topMenu.save')
+              () => t({ en: 'Save', zh: '保存' })
             )
         }
       ),
@@ -179,33 +161,9 @@ const menuOptions = [
   {
     label: () =>
       h(
-        NDropdown,
-        {
-          trigger: 'hover',
-          options: exportOptions.value,
-          onSelect: handleSelectImport,
-          style: dropdownStyle
-        },
-        {
-          default: () =>
-            h(
-              NButton,
-              {
-                style: computedButtonStyle(publishColor),
-                renderIcon: renderIcon(PublishIcon)
-              },
-              () => t('topMenu.publish')
-            )
-        }
-      ),
-    key: 'publish-btn'
-  },
-  {
-    label: () =>
-      h(
         NInput,
         {
-          placeholder: t('topMenu.untitled'),
+          placeholder: '',
           style: {
             'border-radius': '10px',
             'text-align': 'center',
@@ -220,37 +178,6 @@ const menuOptions = [
         () => 'title'
       ),
     key: 'title-btn'
-  },
-  {
-    label: () =>
-      h(
-        NButton,
-        {
-          style: computedButtonStyle(codeColor),
-          renderIcon: renderIcon(CodeIcon)
-        },
-        () => t('topMenu.code')
-      ),
-    key: 'code-btn'
-  },
-  {
-    label: () =>
-      h(
-        NButton,
-        {
-          style: {
-            'background-color': '#00509D',
-            color: '#FFF',
-            'border-radius': '20px',
-            border: '2px solid #001429',
-            'box-shadow': '-1px 2px #001429',
-            cursor: 'pointer'
-          },
-          renderIcon: renderIcon(TutorialIcon)
-        },
-        () => t('topMenu.tutorial')
-      ),
-    key: 'tutorial-btn'
   },
   {
     label: () =>
@@ -277,7 +204,7 @@ const menuOptions = [
                 },
                 renderIcon: renderIcon(SettingsIcon)
               },
-              () => t('topMenu.settings')
+              () => t({ en: 'Settings', zh: '设置' })
             )
         }
       ),
@@ -324,19 +251,17 @@ const handleSelectImport = async (key: string | number) => {
     const zipFile = await projectStore.project.exportZipFile()
     saveAs(zipFile, zipFile.name)
   } else if (key === 'SaveCloud') {
-    const { message } = createDiscreteApi(['message'])
-    await projectStore.project
-      .saveToCloud()
-      .then(() => {
-        message.success('TODO')
-      })
-      .catch((err) => {
-        message.error('TODO: ' + err)
-      })
+    await handleSaveCloud()
   } else if (key === 'Blank') {
     projectStore.openBlankProject(undefined, 'untitled-TODO')
   }
 }
+
+const handleSaveCloud = useMessageHandle(
+  () => projectStore.project.saveToCloud(),
+  { en: 'Failed to save project', zh: '项目保存失败' },
+  { en: 'Project saved', zh: '保存成功' }
+)
 
 const handleSelectSettings = (key: string | number) => {
   if (key === 'Global') {
@@ -363,15 +288,7 @@ function renderIcon(icon: any) {
     )
 }
 
-/**
- * @description: toggle language function , now for Chinese and English
- * @Author: Yao xinyue
- * @Date: 2024-01-17 17:58:26
- */
-const toggleLanguage = () => {
-  locale.value = locale.value === 'en' ? 'zh' : 'en'
-  localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, locale.value)
-}
+const toggleLanguage = useToggleLanguage()
 </script>
 
 <style lang="scss" scoped></style>

@@ -2,17 +2,24 @@
  * @desc Definition & helpers for API errors
  */
 
-export class ApiError extends Error {
+import type { RawLocaleMessage } from '@/utils/i18n'
+import { Exception } from '@/utils/error'
+
+export class ApiException extends Exception {
+
   name = 'ApiError'
+  userMessage: RawLocaleMessage | null;
+
   constructor(
     public code: number,
-    msg: string
+    message: string
   ) {
-    super(`[${code}] ${msg}`)
+    super(`[${code}] ${message}`)
+    this.userMessage = apiErrorMessages[this.code as ApiErrorCode] ?? null
   }
 }
 
-enum ApiErrorCode {
+export enum ApiErrorCode {
   errorInvalidArgs = 40001,
   errorUnauthorized = 40100,
   errorForbidden = 40300,
@@ -20,12 +27,7 @@ enum ApiErrorCode {
   errorUnknown = 50000
 }
 
-type Message = {
-  en: string
-  zh: string
-}
-
-const rawApiErrorMessages: Record<ApiErrorCode, Message> = {
+const apiErrorMessages: Record<ApiErrorCode, RawLocaleMessage> = {
   [ApiErrorCode.errorInvalidArgs]: {
     en: 'Invalid args',
     zh: '参数错误'
@@ -46,31 +48,4 @@ const rawApiErrorMessages: Record<ApiErrorCode, Message> = {
     en: 'Something wrong with the server',
     zh: '服务器出问题了'
   }
-}
-
-const messageNamespace = 'apiError'
-
-/** i18n messages for API error */
-export const apiErrorMessages = {
-  en: {
-    [messageNamespace]: mapObject(rawApiErrorMessages, (m) => m.en)
-  },
-  zh: {
-    [messageNamespace]: mapObject(rawApiErrorMessages, (m) => m.zh)
-  }
-}
-
-export function getI18nKey(err: ApiError) {
-  return `${messageNamespace}.${err.code}`
-}
-
-function mapObject<T extends object, K extends keyof T, V>(
-  obj: T,
-  mapper: (k: T[K]) => V
-): { [P in K]: V } {
-  const result = {} as { [P in K]: V }
-  Object.keys(obj).forEach((k) => {
-    result[k as K] = mapper(obj[k as K])
-  })
-  return result
 }

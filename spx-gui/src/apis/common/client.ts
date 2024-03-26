@@ -3,7 +3,7 @@
  */
 
 import { apiBaseUrl } from '@/utils/env'
-import { ApiError } from './error'
+import { ApiException } from './error'
 
 export type RequestOptions = {
   method: string
@@ -52,7 +52,7 @@ export class Client {
       if (!isApiErrorPayload(body)) {
         throw new Error('api call failed')
       }
-      throw new ApiError(body.code, body.msg)
+      throw new ApiException(body.code, body.msg)
     }
     return resp.json()
   }

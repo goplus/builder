@@ -1,7 +1,7 @@
 <template>
   <div>
     <n-button v-if="!userStore.userInfo" :disabled="!isOnline" @click="signin()">{{
-      $t('tab.signIn')
+      _t({ en: 'Sign in', zh: '登录' })
     }}</n-button>
     <n-dropdown
       v-else
@@ -16,18 +16,16 @@
 
 <script setup lang="ts">
 import { NAvatar, NButton, NDropdown } from 'naive-ui'
-import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 import { useNetwork } from '@/utils/network'
+import { useI18n } from '@/utils/i18n'
 import { useUserStore } from '@/stores'
 
-const { t } = useI18n({
-  inheritLocale: true
-})
+const { t } = useI18n()
 
 const avatarDropdownOptions = computed(() => [
   {
-    label: t('tab.logOut'),
+    label: t({ en: 'Sign out', zh: '登出' }),
     key: 'logout'
   }
 ])
