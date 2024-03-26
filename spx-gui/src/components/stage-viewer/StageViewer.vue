@@ -39,7 +39,7 @@
           offsetY: (props.height / scale - mapSize.height) / 2
         }"
         :sprite-list="props.project.sprites"
-        :zorder="props.project.config.zorder"
+        :zorder="props.project.zorder"
         :selected-sprite-names="stageSelectSpritesName"
         :map-size="mapSize"
         @on-sprite-drag-move="onSpriteDragMove"
@@ -94,7 +94,6 @@ import type { StageViewerEmits, StageViewerProps } from './index'
 import type { KonvaEventObject, Node } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import type { RectConfig } from 'konva/lib/shapes/Rect.js'
-import type { Layer } from 'konva/lib/Layer'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 import type { Size } from '@/models/common'
 

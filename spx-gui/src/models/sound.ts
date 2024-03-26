@@ -1,14 +1,13 @@
 import { reactive } from 'vue'
-import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 import { extname, join, resolve } from '@/util/path'
-import { assign } from './common'
+import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 
-export type SoundConfig = {
-  rate: number
-  sampleCount: number
+export type SoundInits = {
+  rate?: number
+  sampleCount?: number
 }
 
-export type RawSoundConfig = Partial<SoundConfig> & {
+export type RawSoundConfig = SoundInits & {
   path?: string
 }
 
@@ -20,23 +19,20 @@ export class Sound {
   name: string
 
   file: File
-  setFile(file: File) {
-    this.file = file
-  }
+  setFile(file: File) { this.file = file }
 
-  config: SoundConfig
-  setConfig(config: Partial<SoundConfig>) {
-    assign<SoundConfig>(this.config, config)
-  }
+  rate: number
+  setRate(rate: number) { this.rate = rate }
 
-  constructor(name: string, file: File, config: Partial<SoundConfig>) {
+  sampleCount: number
+  setSampleCount(sampleCount: number) { this.sampleCount = sampleCount }
+
+  constructor(name: string, file: File, inits: SoundInits) {
     this.name = name
     this.file = file
-    this.config = {
-      // TODO: confirm default values here
-      rate: config.rate ?? 0,
-      sampleCount: config.sampleCount ?? 0
-    }
+    // TODO: confirm default values here
+    this.rate = inits.rate ?? 0,
+    this.sampleCount = inits.sampleCount ?? 0
     return reactive(this)
   }
 
@@ -44,11 +40,11 @@ export class Sound {
     const pathPrefix = join(soundAssetPath, name)
     const configFile = files[join(pathPrefix, soundConfigFileName)]
     if (configFile == null) return null
-    const { path, ...config } = await toConfig(configFile) as RawSoundConfig
+    const { path, ...inits } = await toConfig(configFile) as RawSoundConfig
     if (path == null) throw new Error(`path expected for sound ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
-    return new Sound(name, file, config)
+    return new Sound(name, file, inits)
   }
 
   static async loadAll(files: Files) {
@@ -69,7 +65,8 @@ export class Sound {
   export(): Files {
     const filename = this.name + extname(this.file.name)
     const config: RawSoundConfig = {
-      ...this.config,
+      rate: this.rate,
+      sampleCount: this.sampleCount,
       path: filename
     }
     const files: Files = {}

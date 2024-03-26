@@ -2,7 +2,7 @@ import { AssetType, type AssetData } from '@/api/asset'
 import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
-import { Backdrop, type BackdropConfig } from '../backdrop'
+import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, uploadFiles } from './cloud'
 
 export type Size = {
@@ -52,7 +52,7 @@ export async function asset2Backdrop(assetData: PartialAssetData) {
   const files = getFiles(assetData.files)
   const configFile = files[virtualBackdropConfigFileName]
   if (configFile == null) throw new Error('no config file found')
-  const config = await toConfig(configFile) as BackdropConfig
+  const config = await toConfig(configFile) as BackdropInits
   return Backdrop.load(config, files)
 }
 

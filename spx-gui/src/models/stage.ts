@@ -3,13 +3,13 @@
  * @desc Object-model definition for Stage & Costume
  */
 
-import { reactive } from 'vue';
+import { reactive } from 'vue'
+import { filename } from '@/util/path'
 import { toText, type Files, fromText } from './common/file'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
-import { filename } from '@/util/path';
-import { assign, type Size } from './common';
+import { type Size } from './common'
 
-export type StageConfig = {
+export type StageInits = {
   backdropIndex: number
   mapWidth?: number
   mapHeight?: number
@@ -53,8 +53,12 @@ export class Stage {
   }
 
   backdrops: Backdrop[]
+  backdropIndex: number
   get backdrop(): Backdrop | null {
-    return this.backdrops[this.config.backdropIndex] ?? null
+    return this.backdrops[this.backdropIndex] ?? null
+  }
+  setbackdropIndex(backdropIndex: number) {
+    this.backdropIndex = backdropIndex
   }
   removeBackdrop(name: string) {
     const idx = this.backdrops.findIndex(s => s.name === name)
@@ -73,20 +77,24 @@ export class Stage {
     // TODO: relation to `this.backdropIndex`?
   }
 
-  config: StageConfig
-  setConfig(config: Partial<StageConfig>) {
-    assign<StageConfig>(this.config, config)
-  }
+  mapWidth: number | undefined
+  setMapWidth(mapWidth: number) { this.mapWidth = mapWidth }
+
+  mapHeight: number | undefined
+  setMapHeight(mapHeight: number) { this.mapHeight = mapHeight }
+
+  mapMode: MapMode
+  setMapMode(mapMode: MapMode) { this.mapMode = mapMode }
 
   /** Dicide map size based on map config & backdrop information */
   async getMapSize(): Promise<Size> {
-    const { mapWidth: width, mapHeight: height } = this.config
+    const { mapWidth: width, mapHeight: height } = this
     if (width != null && height != null) {
       return { width, height }
     }
     if (this.backdrop != null) {
       const { width, height } = await this.backdrop.getSize()
-      const bitmapResolution = this.backdrop.config.bitmapResolution
+      const bitmapResolution = this.backdrop.bitmapResolution
       return {
         width: width / bitmapResolution,
         height: height / bitmapResolution
@@ -95,18 +103,16 @@ export class Stage {
     return { width: 0, height: 0 }
   }
 
-  constructor(code: string, backdrops: Backdrop[], config: Partial<StageConfig>) {
+  constructor(code: string, backdrops: Backdrop[], inits: Partial<StageInits>) {
     this.code = code
     this.backdrops = []
     for (const backdrop of backdrops) {
       this.addBackdrop(backdrop)
     }
-    this.config = {
-      backdropIndex: config.backdropIndex ?? 0,
-      mapWidth: config.mapWidth,
-      mapHeight: config.mapHeight,
-      mapMode: getMapMode(config.mapMode)
-    }
+    this.backdropIndex = inits.backdropIndex ?? 0
+    this.mapWidth = inits.mapWidth
+    this.mapHeight = inits.mapHeight
+    this.mapMode = getMapMode(inits.mapMode)
     return reactive(this)
   }
 
@@ -137,7 +143,7 @@ export class Stage {
       backdropConfigs.push(backdropConfig)
       Object.assign(files, backdropFiles)
     }
-    const { backdropIndex, mapWidth, mapHeight, mapMode } = this.config
+    const { backdropIndex, mapWidth, mapHeight, mapMode } = this
     const config: RawStageConfig = {
       scenes: backdropConfigs,
       sceneIndex: backdropIndex,

@@ -6,6 +6,7 @@
 import { reactive, watch } from 'vue'
 
 import { join } from '@/util/path'
+import { debounce } from '@/util/utils'
 import { IsPublic } from '../api/project'
 import { Disposble } from './common/disposable'
 import { toConfig, type Files, fromConfig } from './common/file'
@@ -16,7 +17,6 @@ import * as cloudHelper from './common/cloud'
 import * as localHelper from './common/local'
 import * as zipHelper from './common/zip'
 import { assign } from './common'
-import { debounce } from '@/util/utils'
 
 export type Metadata = {
   id?: string
@@ -31,13 +31,11 @@ export type Metadata = {
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
 
-type ProjectConfig = {
+type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
-  zorder: string[]
+  zorder?: string[]
   // TODO: camera
 }
-
-type RawProjectConfig = RawStageConfig & Partial<ProjectConfig>
 
 export class Project extends Disposble {
 
@@ -52,7 +50,7 @@ export class Project extends Disposble {
   stage!: Stage
   sprites!: Sprite[]
   sounds!: Sound[]
-  config!: ProjectConfig
+  zorder!: string[]
 
   removeSprite(name: string) {
     const idx = this.sprites.findIndex(s => s.name === name)
@@ -62,25 +60,25 @@ export class Project extends Disposble {
   addSprite(sprite: Sprite) {
     this.sprites.push(sprite)
     // add to zorder
-    if (!this.config.zorder.includes(sprite.name)) {
-      this.config.zorder = [...this.config.zorder, sprite.name]
+    if (!this.zorder.includes(sprite.name)) {
+      this.zorder = [...this.zorder, sprite.name]
     }
     // update zorder when sprite renaming
     sprite.addDisposer(watch(() => sprite.name, (newName, originalName) => {
-      this.config.zorder = this.config.zorder.map(v => v === originalName ? newName : v)
+      this.zorder = this.zorder.map(v => v === originalName ? newName : v)
     }))
     // update zorder when sprite deleted
     sprite.addDisposer(() => {
-      this.config.zorder = this.config.zorder.filter(v => v !== sprite.name)
+      this.zorder = this.zorder.filter(v => v !== sprite.name)
     })
   }
   setSpriteZorderIdx(name: string, newIdx: number | ((idx: number, length: number) => number)) {
-    const idx = this.config.zorder.findIndex(v => v === name)
+    const idx = this.zorder.findIndex(v => v === name)
     if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
-    const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.config.zorder.length) : newIdx
-    const newZorder = this.config.zorder.filter(v => v !== name)
+    const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
+    const newZorder = this.zorder.filter(v => v !== name)
     newZorder.splice(newIdxVal, 0, name)
-    this.config.zorder = newZorder
+    this.zorder = newZorder
   }
   upSpriteZorder(name: string) {
     this.setSpriteZorderIdx(name, i => i+1)
@@ -128,9 +126,7 @@ export class Project extends Disposble {
       Sprite.loadAll(files)
     ])
     assign<Project>(this, metadata)
-    this.config = {
-      zorder: zorder ?? []
-    }
+    this.zorder = zorder ?? []
     this.stage = stage
     this.sprites = []
     sprites.forEach(s => this.addSprite(s))
@@ -151,7 +147,7 @@ export class Project extends Disposble {
     }
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
-    const config: RawProjectConfig = { ...stageConfig, ...this.config }
+    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map(s => s.export()))

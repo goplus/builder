@@ -34,7 +34,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setConfig({ x: val as number })
+            editorStore.currentSprite && editorStore.currentSprite.setX(val as number)
           }
         "
       >
@@ -48,7 +48,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setConfig({ y: val as number })
+            editorStore.currentSprite && editorStore.currentSprite.setY(val as number)
           }
         "
       >
@@ -61,7 +61,7 @@
         v-model:value="visible"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setConfig({ visible: val })
+            editorStore.currentSprite && editorStore.currentSprite.setVisible(val)
           }
         "
       >
@@ -75,7 +75,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setConfig({ size: (val as number) / 100 })
+            editorStore.currentSprite && editorStore.currentSprite.setSize((val as number) / 100)
           }
         "
       >
@@ -92,7 +92,7 @@
         :disabled="!editorStore.currentSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setConfig({ heading: val as number })
+            editorStore.currentSprite && editorStore.currentSprite.setHeading(val as number)
           }
         "
       >
@@ -116,14 +116,14 @@ const editorStore = useEditorStore()
 
 // ----------data related -----------------------------------
 // TODO: check all default values here, they should be consistent with spx
-const x = computed(() => editorStore.currentSprite?.config.x ?? 0)
-const y = computed(() => editorStore.currentSprite?.config.y ?? 0)
+const x = computed(() => editorStore.currentSprite?.x ?? 0)
+const y = computed(() => editorStore.currentSprite?.y ?? 0)
 const heading = computed(() =>
-  editorStore.currentSprite ? editorStore.currentSprite.config.heading : 0
+  editorStore.currentSprite ? editorStore.currentSprite.heading : 0
 )
-const size = computed(() => editorStore.currentSprite?.config.size ?? 0)
+const size = computed(() => editorStore.currentSprite?.size ?? 0)
 const visible = computed(() =>
-  editorStore.currentSprite ? editorStore.currentSprite.config.visible : false
+  editorStore.currentSprite ? editorStore.currentSprite.visible : false
 )
 const name = ref(editorStore.currentSprite?.name ?? '')
 const { t } = useI18n({

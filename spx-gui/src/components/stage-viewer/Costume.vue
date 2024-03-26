@@ -17,11 +17,11 @@
       x: spritePosition.x,
       y: spritePosition.y,
       rotation: spriteRotation,
-      offsetX: currentCostume?.config.x,
-      offsetY: currentCostume?.config.y,
-      scaleX: props.sprite.config.size,
-      scaleY: props.sprite.config.size,
-      visible: props.sprite.config.visible
+      offsetX: currentCostume?.x,
+      offsetY: currentCostume?.y,
+      scaleX: props.sprite.size,
+      scaleY: props.sprite.size,
+      visible: props.sprite.visible
     }"
     @dragmove="handleDragMove"
     @dragend="handleDragEnd"
@@ -59,13 +59,13 @@ const costume = ref()
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
 const spritePosition = computed(() => {
   // TODO: check default values here
-  return getRelativePosition(props.sprite.config.x, props.sprite.config.y)
+  return getRelativePosition(props.sprite.x, props.sprite.y)
 })
 
 // Computed spx's sprite heading to konva's rotation by about changing sprite heading
 const spriteRotation = computed(() => {
   // TODO: check default values here
-  return getRotation(props.sprite.config.heading)
+  return getRotation(props.sprite.heading)
 })
 
 // When the config update,emits the apperance change event
@@ -162,7 +162,8 @@ const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
  */
 const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
   const { x, y } = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
-  props.sprite.setConfig({ x, y })
+  props.sprite.setX(x)
+  props.sprite.setY(y)
   controller.value = null
 }
 </script>

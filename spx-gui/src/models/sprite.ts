@@ -3,12 +3,11 @@
  * @desc Object-model definition for Sprite & Costume
  */
 
-import { reactive } from 'vue';
+import { reactive } from 'vue'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
 import { Disposble } from './common/disposable'
 import { join } from '@/util/path'
 import { type RawCostumeConfig, Costume } from './costume'
-import { assign } from './common';
 
 export enum RotationStyle {
   none = 'none',
@@ -16,15 +15,15 @@ export enum RotationStyle {
   leftRight = 'left-right'
 }
 
-export type SpriteConfig = {
-  heading: number
-  x: number
-  y: number
-  size: number
-  rotationStyle: RotationStyle
-  costumeIndex: number
-  visible: boolean
-  isDraggable: boolean
+export type SpriteInits = {
+  heading?: number
+  x?: number
+  y?: number
+  size?: number
+  rotationStyle?: RotationStyle
+  costumeIndex?: number
+  visible?: boolean
+  isDraggable?: boolean
   // TODO:
   // costumeSet?: costumeSet
   // costumeMPSet?: costumeMPSet
@@ -34,7 +33,7 @@ export type SpriteConfig = {
   // tAnimations?: map
 }
 
-export type RawSpriteConfig = Partial<SpriteConfig> & {
+export type RawSpriteConfig = SpriteInits & {
   costumes?: RawCostumeConfig[]
 }
 
@@ -54,8 +53,12 @@ export class Sprite extends Disposble {
   }
 
   costumes: Costume[]
+  costumeIndex: number
   get costume(): Costume | null {
-    return this.costumes[this.config.costumeIndex] ?? null
+    return this.costumes[this.costumeIndex] ?? null
+  }
+  setCostumeIndex(costumeIndex: number) {
+    this.costumeIndex = costumeIndex
   }
   removeCostume(name: string) {
     const idx = this.costumes.findIndex(s => s.name === name)
@@ -65,27 +68,41 @@ export class Sprite extends Disposble {
     this.costumes.push(costume)
   }
 
-  config: SpriteConfig
-  setConfig(config: Partial<SpriteConfig>) {
-    assign<SpriteConfig>(this.config, config)
-  }
+  heading: number
+  setHeading(heading: number) { this.heading = heading }
 
-  constructor(name: string, code: string, costumes: Costume[], config: Partial<SpriteConfig>) {
+  x: number
+  setX(x: number) { this.x = x }
+
+  y: number
+  setY(y: number) { this.y = y }
+
+  size: number
+  setSize(size: number) { this.size = size }
+
+  rotationStyle: RotationStyle
+  setRotationStyle(rotationStyle: RotationStyle) { this.rotationStyle = rotationStyle }
+
+  visible: boolean
+  setVisible(visible: boolean) { this.visible = visible }
+
+  isDraggable: boolean
+  setIsDraggable(isDraggable: boolean) { this.isDraggable = isDraggable }
+
+  constructor(name: string, code: string, costumes: Costume[], inits: SpriteInits) {
     super()
     this.name = name
     this.code = code
     this.costumes = costumes
-    this.config = {
-      // TODO: check default values here
-      heading: config.heading ?? 0,
-      x: config.x ?? 0,
-      y: config.y ?? 0,
-      size: config.size ?? 0,
-      rotationStyle: getRotationStyle(config.rotationStyle),
-      costumeIndex: config.costumeIndex ?? 0,
-      visible: config.visible ?? false,
-      isDraggable: config.isDraggable ?? false
-    }
+    // TODO: check default values here
+    this.heading = inits.heading ?? 0
+    this.x = inits.x ?? 0
+    this.y = inits.y ?? 0
+    this.size = inits.size ?? 0
+    this.rotationStyle = getRotationStyle(inits.rotationStyle)
+    this.costumeIndex = inits.costumeIndex ?? 0
+    this.visible = inits.visible ?? false
+    this.isDraggable = inits.isDraggable ?? false
     return reactive(this)
   }
 
@@ -93,14 +110,14 @@ export class Sprite extends Disposble {
     const pathPrefix = join(spriteAssetPath, name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
-    const { costumes: costumeConfigs, ...config } = await toConfig(configFile) as RawSpriteConfig
+    const { costumes: costumeConfigs, ...inits } = await toConfig(configFile) as RawSpriteConfig
     let code = ''
     const codeFile = files[name + '.spx']
     if (codeFile != null) {
       code = await toText(codeFile)
     }
     const costumes = (costumeConfigs ?? []).map(c => Costume.load(c, files, pathPrefix))
-    return new Sprite(name, code, costumes, config)
+    return new Sprite(name, code, costumes, inits)
   }
 
   static async loadAll(files: Files) {
@@ -127,7 +144,14 @@ export class Sprite extends Disposble {
       Object.assign(files, costumeFiles)
     }
     const config: RawSpriteConfig = {
-      ...this.config,
+      heading: this.heading,
+      x: this.x,
+      y: this.y,
+      size: this.size,
+      rotationStyle: this.rotationStyle,
+      costumeIndex: this.costumeIndex,
+      visible: this.visible,
+      isDraggable: this.isDraggable,
       costumes: costumeConfigs
     }
     files[`${this.name}.spx`] = fromText(`${this.name}.spx`, this.code)

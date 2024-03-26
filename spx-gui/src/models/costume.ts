@@ -2,16 +2,16 @@ import { reactive } from 'vue'
 
 import { extname, resolve } from '@/util/path'
 import { File, type Files } from './common/file'
-import { assign, type Size } from './common'
+import { type Size } from './common'
 
-export type CostumeConfig = {
-  x: number
-  y: number
-  faceRight: number
-  bitmapResolution: number
+export type CostumeInits = {
+  x?: number
+  y?: number
+  faceRight?: number
+  bitmapResolution?: number
 }
 
-export type RawCostumeConfig = Partial<CostumeConfig> & {
+export type RawCostumeConfig = CostumeInits & {
   name?: string
   path?: string
 }
@@ -19,19 +19,22 @@ export type RawCostumeConfig = Partial<CostumeConfig> & {
 export class Costume {
 
   name: string
-  setName(name: string) {
-    this.name = name
-  }
+  setName(name: string) { this.name = name }
 
   img: File
-  setImg(img: File) {
-    this.img = img
-  }
+  setImg(img: File) { this.img = img }
 
-  config: CostumeConfig
-  setConfig(config: Partial<CostumeConfig>) {
-    assign<CostumeConfig>(this.config, config)
-  }
+  x: number
+  setX(x: number) { this.x = x }
+
+  y: number
+  setY(y: number) { this.y = y }
+
+  faceRight: number
+  setFaceRight(faceRight: number) { this.faceRight = faceRight }
+
+  bitmapResolution: number
+  setBitmapResolution(bitmapResolution: number) { this.bitmapResolution = bitmapResolution }
 
   async getSize() {
     const imgUrl = await this.img.url()
@@ -49,20 +52,18 @@ export class Costume {
     })
   }
   
-  constructor(name: string, file: File, config: Partial<CostumeConfig>) {
+  constructor(name: string, file: File, inits: CostumeInits) {
     this.name = name
     this.img = file
-    this.config = {
-      x: config.x ?? 0,
-      y: config.y ?? 0,
-      faceRight: config.faceRight ?? 0,
-      bitmapResolution: config.bitmapResolution ?? 1
-    }
+    this.x = inits.x ?? 0
+    this.y = inits.y ?? 0
+    this.faceRight = inits.faceRight ?? 0
+    this.bitmapResolution = inits.bitmapResolution ?? 1
     return reactive(this)
   }
 
   static load(
-    { name, path, ...config }: RawCostumeConfig,
+    { name, path, ...inits }: RawCostumeConfig,
     files: Files,
     /**
      * Path of directory which contains the config file
@@ -74,7 +75,7 @@ export class Costume {
     if (path == null) throw new Error(`path expected for costume ${name}`)
     const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
-    return new Costume(name, file, config)
+    return new Costume(name, file, inits)
   }
 
   export(
@@ -86,7 +87,10 @@ export class Costume {
   ): [RawCostumeConfig, Files] {
     const filename = this.name + extname(this.img.name)
     const config: RawCostumeConfig = {
-      ...this.config,
+      x: this.x,
+      y: this.y,
+      faceRight: this.faceRight,
+      bitmapResolution: this.bitmapResolution,
       name: this.name,
       path: filename
     }
