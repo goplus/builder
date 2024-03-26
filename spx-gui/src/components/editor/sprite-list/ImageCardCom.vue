@@ -7,7 +7,11 @@
  * @Description:
 -->
 <template>
-  <div v-if="props.type === 'sprite'" :class="computedProperties.cardClassName">
+  <div
+    v-if="props.type === 'sprite'"
+    :class="computedProperties.cardClassName"
+    :style="{ boxShadow: active ? '0px 0px 0px 4px #FF81A7' : undefined }"
+  >
     <div class="delete-button" @click="deleteSprite(props.asset as Sprite)">×</div>
     <n-image
       preview-disabled
@@ -50,6 +54,7 @@ import { useProjectStore } from '@/stores'
 interface PropType {
   type: 'sprite' | 'bg' // TODO: split the component
   asset: Sprite | Stage
+  active?: boolean
 }
 const props = defineProps<PropType>()
 const projectStore = useProjectStore()
