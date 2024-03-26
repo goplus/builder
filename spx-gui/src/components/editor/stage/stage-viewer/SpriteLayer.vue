@@ -61,7 +61,6 @@ const sortedSprites = computed(() => {
       list.push(spriteMap.get(item) as Sprite)
     }
   })
-  console.log(props.zorder)
   return list
 })
 

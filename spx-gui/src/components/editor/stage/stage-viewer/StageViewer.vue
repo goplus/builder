@@ -164,8 +164,7 @@ watch(
 //stageSelectSpritesName change tigger the transformer show or hide
 watch(
   () => stageSelectSpritesName.value,
-  (spritesName) => {
-    console.log(spritesName, props.selectedSpriteNames, stageSelectSpritesName.value)
+  () => {
     if (
       props.selectedSpriteNames.length !== stageSelectSpritesName.value.length ||
       !props.selectedSpriteNames.every(

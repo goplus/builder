@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
-import { ref, defineProps, watch, onMounted } from 'vue'
+import { ref, defineProps, watch } from 'vue'
 import { Project, fullName } from '@/models/project'
 const props = defineProps<{ owner?: string; name?: string }>()
 const runner = ref()
@@ -51,7 +51,6 @@ watch(
         project.value = newProject
         ready.value = true
       } catch (err) {
-        console.log(err)
         errorMsg.value = 'loading project fail'
       } finally {
         ready.value = true
@@ -64,7 +63,6 @@ watch(
 )
 
 const onRun = () => {
-  console.log('runnnn')
   run.value = true
   runner.value.run()
 }
@@ -72,10 +70,6 @@ const onStop = () => {
   run.value = false
   runner.value.stop()
 }
-
-onMounted(() => {
-  console.log()
-})
 </script>
 <style lang="scss">
 .spx-runner-widget {
