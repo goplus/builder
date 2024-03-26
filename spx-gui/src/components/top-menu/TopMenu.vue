@@ -124,7 +124,7 @@ const menuOptions = [
             color: 'white'
           }
         },
-        'Go+ Builder'
+        () => 'Go+ Builder'
       ),
     key: 'logo'
   },
@@ -146,7 +146,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              t('topMenu.file')
+              () => t('topMenu.file')
             )
         }
       ),
@@ -170,7 +170,7 @@ const menuOptions = [
                 style: computedButtonStyle(saveColor),
                 renderIcon: renderIcon(SaveIcon)
               },
-              t('topMenu.save')
+              () => t('topMenu.save')
             )
         }
       ),
@@ -194,7 +194,7 @@ const menuOptions = [
                 style: computedButtonStyle(publishColor),
                 renderIcon: renderIcon(PublishIcon)
               },
-              t('topMenu.publish')
+              () => t('topMenu.publish')
             )
         }
       ),
@@ -217,7 +217,7 @@ const menuOptions = [
             projectStore.project.name = value
           }
         },
-        'title'
+        () => 'title'
       ),
     key: 'title-btn'
   },
@@ -229,7 +229,7 @@ const menuOptions = [
           style: computedButtonStyle(codeColor),
           renderIcon: renderIcon(CodeIcon)
         },
-        t('topMenu.code')
+        () => t('topMenu.code')
       ),
     key: 'code-btn'
   },
@@ -248,7 +248,7 @@ const menuOptions = [
           },
           renderIcon: renderIcon(TutorialIcon)
         },
-        t('topMenu.tutorial')
+        () => t('topMenu.tutorial')
       ),
     key: 'tutorial-btn'
   },
@@ -277,7 +277,7 @@ const menuOptions = [
                 },
                 renderIcon: renderIcon(SettingsIcon)
               },
-              t('topMenu.settings')
+              () => t('topMenu.settings')
             )
         }
       ),
