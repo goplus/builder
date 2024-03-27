@@ -28,6 +28,8 @@ type FormatResponse struct {
 
 // extractErrorInfo Format error message
 func extractErrorInfo(errorMsg string) FormatError {
+	// Now a empty FormatError will always be returned, even if there is no error.
+	// TODO: avoid the empty error
 	var de FormatError
 	re := regexp.MustCompile(`:(\d+):(\d+): ([^(\n]+)`)
 	matches := re.FindStringSubmatch(errorMsg)

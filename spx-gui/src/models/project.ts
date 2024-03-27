@@ -188,7 +188,8 @@ export class Project extends Disposble {
   /** Save to cloud */
   async saveToCloud() {
     const [metadata, files] = this.export()
-    await cloudHelper.save(metadata, files)
+    const res = await cloudHelper.save(metadata, files)
+    await this.load(res.metadata, res.files)
   }
 
   /** Load from local cache */

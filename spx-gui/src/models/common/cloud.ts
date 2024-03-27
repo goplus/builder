@@ -1,24 +1,31 @@
 import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
-import type { FileCollection } from '@/apis/project'
-import { getProject, updateProject } from '@/apis/project'
+import type { FileCollection, ProjectData } from '@/apis/project'
+import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { uptoken } from '@/apis/util'
 import { staticBaseUrl } from '@/utils/env'
 import type { Metadata } from '../project'
 
 export async function load(owner: string, name: string) {
-  const { files: fileUrls, ...metadata } = await getProject(owner, name)
-  const files = getFiles(fileUrls)
-  return { metadata, files }
+  const projectData = await getProject(owner, name)
+  return parseProjectData(projectData)
 }
 
 export async function save(metadata: Metadata, files: Files) {
-  const { owner, name, isPublic } = metadata
-  if (owner == null || name == null || isPublic == null)
-    throw new Error('owner, name, isPublic expected')
+  const { owner, name, id } = metadata
+  if (owner == null || name == null) throw new Error('owner, name expected')
   const fileUrls = await uploadFiles(files)
-  await updateProject(owner, name, { isPublic, files: fileUrls })
+  const isPublic = metadata.isPublic ?? IsPublic.personal
+  const projectData = await (id != null
+    ? updateProject(owner, name, { isPublic, files: fileUrls })
+    : addProject({ name, isPublic, files: fileUrls }))
+  return parseProjectData(projectData)
+}
+
+function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
+  const files = getFiles(fileUrls)
+  return { metadata, files }
 }
 
 export async function uploadFiles(files: Files): Promise<FileCollection> {
@@ -40,7 +47,15 @@ export function getFiles(fileUrls: FileCollection): Files {
   return files
 }
 
-const uploadedFiles = new WeakMap<File, string>()
+// A mark to avoid unnecessary uploading for static files
+// TODO: we can apply similar strategy to json or code files
+const fileUrlKey = Symbol.for('url')
+function setUrl(file: File, url: string) {
+  ;(file as any)[fileUrlKey] = url
+}
+function getUrl(file: File): string | null {
+  return (file as any)[fileUrlKey] ?? null
+}
 
 export function createFileWithUrl(name: string, url: string) {
   const file = new File(name, async () => {
@@ -48,15 +63,15 @@ export function createFileWithUrl(name: string, url: string) {
     const blob = await resp.blob()
     return blob.arrayBuffer()
   })
-  uploadedFiles.set(file, url)
+  setUrl(file, url)
   return file
 }
 
 async function uploadFile(file: File) {
-  const uploadedUrl = uploadedFiles.get(file)
+  const uploadedUrl = getUrl(file)
   if (uploadedUrl != null) return uploadedUrl
   const url = await upload(file)
-  uploadedFiles.set(file, url)
+  setUrl(file, url)
   return url
 }
 
