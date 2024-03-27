@@ -4,7 +4,7 @@
 
 import { useMessage } from 'naive-ui'
 import { useI18n } from './i18n'
-import type { RawLocaleMessage, LocaleMessage } from './i18n'
+import type { LocaleMessage, FunctionLocaleMessage } from './i18n'
 
 export abstract class Exception extends Error {
   name = 'Exception'
@@ -12,23 +12,21 @@ export abstract class Exception extends Error {
    * Message expected to be displayed to user.
    * `userMessage: null` means it is not expected to be accessed by user.
    */
-  abstract userMessage: RawLocaleMessage | null
+  abstract userMessage: LocaleMessage | null
 }
 
 export class DefaultException extends Exception {
-  constructor(public userMessage: RawLocaleMessage) {
+  constructor(public userMessage: LocaleMessage) {
     super(userMessage.en)
   }
 }
 
-const failedMessage: LocaleMessage<string, [summary: string, reason: string | null]> = {
+const failedMessage: FunctionLocaleMessage<[summary: string, reason: string | null]> = {
   en: (summary, reason) => reason ? `${summary} (${reason})` : summary,
   zh: (summary, reason) => reason ? `${summary}（${reason}）` : summary,
 }
 
 export function useMessageHandle<F extends () => Promise<unknown>>(
-  // TODO: action description
-  // action,
   action: F,
   failureSummaryMessage: LocaleMessage,
   successMessage?: LocaleMessage

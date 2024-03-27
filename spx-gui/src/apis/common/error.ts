@@ -2,13 +2,13 @@
  * @desc Definition & helpers for API errors
  */
 
-import type { RawLocaleMessage } from '@/utils/i18n'
+import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/error'
 
 export class ApiException extends Exception {
 
   name = 'ApiError'
-  userMessage: RawLocaleMessage | null;
+  userMessage: LocaleMessage | null;
 
   constructor(
     public code: number,
@@ -27,7 +27,7 @@ export enum ApiErrorCode {
   errorUnknown = 50000
 }
 
-const apiErrorMessages: Record<ApiErrorCode, RawLocaleMessage> = {
+const apiErrorMessages: Record<ApiErrorCode, LocaleMessage> = {
   [ApiErrorCode.errorInvalidArgs]: {
     en: 'Invalid args',
     zh: '参数错误'

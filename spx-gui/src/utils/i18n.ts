@@ -2,22 +2,16 @@
  * @desc Simple i18n tool for vue
  */
 
-import { inject, type App, type InjectionKey, type ObjectPlugin, type VNode, ref, type Ref } from 'vue'
+import { inject, type App, type InjectionKey, type ObjectPlugin, ref, type Ref } from 'vue'
 
 export type Lang = 'en' | 'zh'
 
-export type LocaleMessageValue = string | VNode
+// We may also support `VNode` as translated resule in the future, if needed
+export type Translated = string
 
-export type RawLocaleMessage<T extends LocaleMessageValue = string> = Record<Lang, T>
+export type LocaleMessage = Record<Lang, Translated>
 
-export type FunctionLocaleMessage<
-  Args extends any[],
-  T extends LocaleMessageValue = string
-> = Record<Lang, ((...args: Args) => T) | undefined>
-
-export type LocaleMessage<T extends LocaleMessageValue = string, Args extends any[] = []> =
-  | RawLocaleMessage<T>
-  | FunctionLocaleMessage<Args, T>
+export type FunctionLocaleMessage<Args extends any[]> = Record<Lang, (...args: Args) => Translated>
 
 export interface I18nConfig {
   /** Initial lang */
@@ -48,11 +42,11 @@ export class I18n implements ObjectPlugin<[]> {
   }
 
   /** Translate */
-  t<T extends LocaleMessageValue>(message: RawLocaleMessage<T>): T
-  t<T extends LocaleMessageValue>(message: RawLocaleMessage<T> | null): T | null
-  t<T extends LocaleMessageValue, Args extends any[]>(message: LocaleMessage<T, Args>, ...args: Args): T
-  t<T extends LocaleMessageValue, Args extends any[]>(message: LocaleMessage<T, Args> | null, ...args: Args): T | null
-  t(message: LocaleMessage<LocaleMessageValue, unknown[]> | null, ...args: unknown[]) {
+  t(message: LocaleMessage): Translated
+  t(message: LocaleMessage | null): Translated | null
+  t<Args extends any[]>(message: FunctionLocaleMessage<Args>, ...args: Args): Translated
+  t<Args extends any[]>(message: FunctionLocaleMessage<Args> | null, ...args: Args): Translated | null
+  t(message: LocaleMessage | FunctionLocaleMessage<unknown[]> | null, ...args: unknown[]) {
     if (message == null) return null
     const val = message[this.lang.value]
     if (typeof val === 'function') {
@@ -78,16 +72,13 @@ export function useI18n() {
   return i18n
 }
 
-export function mapMessageValues<
-  Message extends LocaleMessage<LocaleMessageValue, any[]>,
-  T extends LocaleMessageValue
->(message: Message, process: (value: Message[keyof Message], lang: Lang) => T) {
+export function mapMessageValues<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(message: M, process: (value: M[keyof M], lang: Lang) => T): Record<Lang, T> {
   return keysOf(message).reduce((acc, cur) => {
     const value = message[cur]
     const lang = cur as Lang
     acc[lang] = process(value, lang)
     return acc
-  }, {} as RawLocaleMessage<T>)
+  }, {} as any)
 }
 
 function keysOf<T extends {}>(target: T): Array<keyof T> {
