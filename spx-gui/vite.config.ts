@@ -9,17 +9,27 @@ const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   return {
-    plugins: [
-      vue({
-        // Ensure that at devlop mode, widget is not treated as a custom element
-        customElement: false
-      }),
-      VueDevTools()
-    ],
+    plugins: [vue(), VueDevTools()],
     base: env.VITE_PUBLISH_BASE_URL,
     resolve: {
       alias: {
         '@': resolve('src')
+      }
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: resolve('index.html'),
+          'spx-runner': resolve('src/widgets/spx-runner/index.ts')
+        },
+        output: {
+          entryFileNames: (chunkInfo) => {
+            if (chunkInfo.name === 'main') {
+              return 'assets/[name]-[hash].js'
+            }
+            return 'widgets/[name].js'
+          }
+        }
       }
     },
     optimizeDeps: {
