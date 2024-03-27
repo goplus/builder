@@ -137,7 +137,7 @@ const getProjects = async () => {
   const type = state.currentTab
   projectList.value = []
   // list all. TODO: do pagination here
-  const pagination: PaginationParams = { pageIndex: 0, pageSize: 300 }
+  const pagination: PaginationParams = { pageIndex: 1, pageSize: 300 }
   try {
     if (type === TabEnum.cloud) {
       projectList.value = (await listProject(pagination)).data

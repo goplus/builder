@@ -8,6 +8,7 @@ import { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { Backdrop } from '@/models/backdrop'
 import { createFileWithUrl } from '@/models/common/cloud'
+import { stripExt } from '@/utils/path'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -36,7 +37,7 @@ export const useProjectStore = defineStore('project', () => {
     await openDefaultProject('default', 'TODO')
   })
 
-  async function openProject(name: string, owner = userStore.userInfo?.name) {
+  async function openProject(owner: string, name: string) {
     // TODO: UI logic to handle conflicts when there are local cache
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
@@ -45,7 +46,7 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
-  async function openBlankProject(name: string, owner = userStore.userInfo?.name) {
+  async function openBlankProject(owner = userStore.userInfo?.name, name: string) {
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.load({ owner, name }, {})
@@ -53,7 +54,7 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
-  async function openDefaultProject(name: string, owner = userStore.userInfo?.name) {
+  async function openDefaultProject(owner = userStore.userInfo?.name, name: string) {
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.load({ owner, name }, {})
@@ -75,14 +76,14 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   async function openProjectWithZipFile(
-    zipFile: globalThis.File,
-    name?: string,
-    owner = userStore.userInfo?.name
+    owner = userStore.userInfo?.name,
+    name: string | undefined,
+    zipFile: globalThis.File
   ) {
     if (owner == null) throw new Error('owner info is required')
     // TODO: UI logic to handle conflicts when there are local cache
     const newProject = new Project()
-    await newProject.load({ owner, name }, {})
+    await newProject.load({ owner, name: name ?? stripExt(zipFile.name) }, {})
     await newProject.loadZipFile(zipFile)
     newProject.syncToLocalCache(localCacheKey)
     project.value = newProject

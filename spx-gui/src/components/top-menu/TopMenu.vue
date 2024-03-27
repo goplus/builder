@@ -316,7 +316,7 @@ const handleSelectImport = async (key: string | number) => {
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0]
-      await projectStore.openProjectWithZipFile(file)
+      await projectStore.openProjectWithZipFile(undefined, undefined, file)
     }
   } else if (key === 'Load') {
     showModal.value = true
@@ -334,7 +334,7 @@ const handleSelectImport = async (key: string | number) => {
         message.error('TODO: ' + err)
       })
   } else if (key === 'Blank') {
-    projectStore.openBlankProject('untitled-TODO')
+    projectStore.openBlankProject(undefined, 'untitled-TODO')
   }
 }
 

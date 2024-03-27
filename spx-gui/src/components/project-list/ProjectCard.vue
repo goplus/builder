@@ -107,7 +107,7 @@ const remove = () => {
       // If the current opened project is deleted, load a blank project
       if (isCurrent.value) {
         message.success(t('project.removeMessage'))
-        await projectStore.openBlankProject(userStore.userInfo!.name) // TODO: the `!` should not be needed
+        await projectStore.openBlankProject(undefined, 'untitled-TODO')
       }
     }
   })
