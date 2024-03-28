@@ -19,8 +19,8 @@
       rotation: spriteRotation,
       offsetX: currentCostume?.x,
       offsetY: currentCostume?.y,
-      scaleX: props.sprite.size,
-      scaleY: props.sprite.size,
+      scaleX: displayScale,
+      scaleY: displayScale,
       visible: props.sprite.visible
     }"
     @dragmove="handleDragMove"
@@ -51,6 +51,10 @@ const emits = defineEmits<{
 // ----------computed properties-----------------------------
 // computed the current costume with current image
 const currentCostume = computed(() => props.sprite.costume)
+
+const displayScale = computed(
+  () => props.sprite.size / (props.sprite.costume?.bitmapResolution || 1)
+)
 
 // ----------data related -----------------------------------
 const image = ref<HTMLImageElement>()

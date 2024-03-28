@@ -7,7 +7,7 @@
  * @Description: 
 -->
 <template>
-  <div id="stage-viewer" ref="stageViewer">
+  <div id="stage-viewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
       <div @click="moveSprite('up')">{{ $t('layer.up') }}</div>
       <div @click="moveSprite('down')">{{ $t('layer.down') }}</div>
@@ -110,7 +110,6 @@ const props = withDefaults(defineProps<StageViewerProps>(), {
 })
 const emits = defineEmits<StageViewerEmits>()
 
-const stageViewer = ref()
 // instance of konva's stage & menu
 const stage = ref<Stage>()
 const transformer = ref()
@@ -130,12 +129,10 @@ const mapSize = ref<Size>({
 // get the scale of stage viewer
 // container size or stage size changes will recalculate the actual size
 const scale = computed(() => {
-  if (mapSize.value && stageViewer.value) {
-    const widthScale = props.width / mapSize.value.width
-    const heightScale = props.height / mapSize.value.height
-    return Math.min(widthScale, heightScale, 1)
-  }
-  return 1
+  const widthScale = props.width / mapSize.value.width
+  const heightScale = props.height / mapSize.value.height
+  const scale = Math.min(widthScale, heightScale, 1)
+  return scale
 })
 
 effect(async () => {

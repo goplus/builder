@@ -14,12 +14,20 @@
       y: props.offsetConfig.offsetY
     }"
   >
+    <v-image
+      v-if="image"
+      :config="{
+        image: image,
+        width: props.mapSize.width,
+        height: props.mapSize.height
+      }"
+    ></v-image>
     <v-rect
       :config="{
         width: props.mapSize.width,
         height: props.mapSize.height,
         stroke: 'pink',
-        strokeWidth: 1
+        strokeWidth: 2
       }"
     >
     </v-rect>
@@ -27,22 +35,16 @@
       :config="{
         points: [props.mapSize.width / 2, 0, props.mapSize.width / 2, props.mapSize.height],
         stroke: 'pink',
-        strokeWidth: 1
+        strokeWidth: 2
       }"
     ></v-line>
     <v-line
       :config="{
         points: [0, props.mapSize.height / 2, props.mapSize.width, props.mapSize.height / 2],
         stroke: 'pink',
-        strokeWidth: 1
+        strokeWidth: 2
       }"
     ></v-line>
-    <v-image
-      v-if="image"
-      :config="{
-        image: image
-      }"
-    ></v-image>
   </v-layer>
 </template>
 <script setup lang="ts">
