@@ -22,29 +22,6 @@
         height: props.mapSize.height
       }"
     ></v-image>
-    <v-rect
-      :config="{
-        width: props.mapSize.width,
-        height: props.mapSize.height,
-        stroke: 'pink',
-        strokeWidth: 2
-      }"
-    >
-    </v-rect>
-    <v-line
-      :config="{
-        points: [props.mapSize.width / 2, 0, props.mapSize.width / 2, props.mapSize.height],
-        stroke: 'pink',
-        strokeWidth: 2
-      }"
-    ></v-line>
-    <v-line
-      :config="{
-        points: [0, props.mapSize.height / 2, props.mapSize.width, props.mapSize.height / 2],
-        stroke: 'pink',
-        strokeWidth: 2
-      }"
-    ></v-line>
   </v-layer>
 </template>
 <script setup lang="ts">
