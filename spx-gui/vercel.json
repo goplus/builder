@@ -11,6 +11,12 @@
       }
     },
     {
+      "src": "/widgets/(.*)",
+      "headers": {
+        "Cache-Control": "public,max-age=300"
+      }
+    },
+    {
       "handle": "filesystem"
     },
     {
