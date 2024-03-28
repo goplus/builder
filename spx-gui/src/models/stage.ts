@@ -93,12 +93,7 @@ export class Stage {
       return { width, height }
     }
     if (this.backdrop != null) {
-      const { width, height } = await this.backdrop.getSize()
-      const bitmapResolution = this.backdrop.bitmapResolution
-      return {
-        width: width / bitmapResolution,
-        height: height / bitmapResolution
-      }
+      return await this.backdrop.getSize()
     }
     return { width: 0, height: 0 }
   }

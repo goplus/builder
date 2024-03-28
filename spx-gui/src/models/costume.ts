@@ -53,7 +53,10 @@ export class Costume {
       const img = new window.Image()
       img.src = imgUrl
       img.onload = () => {
-        resolve({ width: img.width, height: img.height })
+        resolve({
+          width: img.width / this.bitmapResolution,
+          height: img.height / this.bitmapResolution
+        })
         img.remove()
       }
       img.onerror = (e) => {
