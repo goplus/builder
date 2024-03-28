@@ -74,7 +74,7 @@ export function useI18n() {
   return i18n
 }
 
-export function mapMessageValues<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(
+export function mapMessage<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(
   message: M,
   process: (value: M[keyof M], lang: Lang) => T
 ): Record<Lang, T> {
