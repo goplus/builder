@@ -8,10 +8,6 @@
 // Base URL for spx-backend APIs, e.g. `/api`
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
 
-// Base URL for the application, e.g. `https://builder.goplus.org`
-// TODO: what about import.meta.BASE_URL
-export const publishBaseUrl = import.meta.env.VITE_PUBLISH_BASE_UR as string
-
 // Base URL for static files' uploading, e.g. `https://builder-static.goplus.org`
 export const staticBaseUrl = import.meta.env.VITE_STATIC_BASE_URL as string
 
