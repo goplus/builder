@@ -14,10 +14,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
 import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
-import {
-  FilePresentTwotone as FileIcon,
-  SaveTwotone as SaveIcon
-} from '@vicons/material'
+import { FilePresentTwotone as FileIcon, SaveTwotone as SaveIcon } from '@vicons/material'
 import { SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
 import saveAs from 'file-saver'
 import { saveColor, fileColor } from '@/assets/theme'
@@ -68,7 +65,6 @@ const saveOptions = computed(() => [
     disabled: !isOnline.value
   }
 ])
-
 
 const settingsOptions = computed(() => [
   {

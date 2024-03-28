@@ -28,8 +28,8 @@ export class DefaultException extends Exception {
 }
 
 const failedMessage: FunctionLocaleMessage<[summary: string, reason: string | null]> = {
-  en: (summary, reason) => reason ? `${summary} (${reason})` : summary,
-  zh: (summary, reason) => reason ? `${summary}（${reason}）` : summary,
+  en: (summary, reason) => (reason ? `${summary} (${reason})` : summary),
+  zh: (summary, reason) => (reason ? `${summary}（${reason}）` : summary)
 }
 
 export function useMessageHandle<F extends () => Promise<unknown>>(
@@ -37,19 +37,18 @@ export function useMessageHandle<F extends () => Promise<unknown>>(
   failureSummaryMessage: LocaleMessage,
   successMessage?: LocaleMessage
 ): F {
-
   const m = useMessage()
   const { t } = useI18n()
 
   return (() => {
     return action().then(
-      ret => {
+      (ret) => {
         if (successMessage != null) {
           m.success(() => t(successMessage))
         }
         return ret
       },
-      e => {
+      (e) => {
         let reasonMessage: LocaleMessage | null = null
         if (e instanceof Exception && e.userMessage != null) {
           reasonMessage = e.userMessage

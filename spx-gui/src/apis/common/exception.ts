@@ -6,9 +6,8 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { Exception } from '@/utils/exception'
 
 export class ApiException extends Exception {
-
   name = 'ApiError'
-  userMessage: LocaleMessage | null;
+  userMessage: LocaleMessage | null
 
   constructor(
     public code: number,

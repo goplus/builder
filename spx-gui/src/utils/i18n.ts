@@ -27,7 +27,6 @@ declare module 'vue' {
 const injectKey: InjectionKey<I18n> = Symbol('i18n')
 
 export class I18n implements ObjectPlugin<[]> {
-
   /** Current language */
   private lang: Ref<Lang>
 
@@ -45,7 +44,10 @@ export class I18n implements ObjectPlugin<[]> {
   t(message: LocaleMessage): Translated
   t(message: LocaleMessage | null): Translated | null
   t<Args extends any[]>(message: FunctionLocaleMessage<Args>, ...args: Args): Translated
-  t<Args extends any[]>(message: FunctionLocaleMessage<Args> | null, ...args: Args): Translated | null
+  t<Args extends any[]>(
+    message: FunctionLocaleMessage<Args> | null,
+    ...args: Args
+  ): Translated | null
   t(message: LocaleMessage | FunctionLocaleMessage<unknown[]> | null, ...args: unknown[]) {
     if (message == null) return null
     const val = message[this.lang.value]
@@ -72,7 +74,10 @@ export function useI18n() {
   return i18n
 }
 
-export function mapMessageValues<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(message: M, process: (value: M[keyof M], lang: Lang) => T): Record<Lang, T> {
+export function mapMessageValues<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(
+  message: M,
+  process: (value: M[keyof M], lang: Lang) => T
+): Record<Lang, T> {
   return keysOf(message).reduce((acc, cur) => {
     const value = message[cur]
     const lang = cur as Lang

@@ -356,9 +356,11 @@ export const initI18n = async (app: App) => {
 
   app.use(i18n)
 
-  app.use(createMyI18n({
-    lang: currentLanguage
-  }))
+  app.use(
+    createMyI18n({
+      lang: currentLanguage
+    })
+  )
 }
 
 export const useToggleLanguage = () => {
