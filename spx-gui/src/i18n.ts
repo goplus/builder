@@ -10,7 +10,7 @@ import type { App } from 'vue'
 import { createI18n, useI18n } from 'vue-i18n'
 import { createI18n as createMyI18n, useI18n as useMyI18n, type Lang } from './utils/i18n'
 
-export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
+const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
 export const initI18n = async (app: App) => {
   const messages = {

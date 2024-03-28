@@ -1,11 +1,17 @@
 /**
- * @desc Tools to handle errors
+ * @desc Definition for Exceptions & tools to help handle them
  */
 
 import { useMessage } from 'naive-ui'
 import { useI18n } from './i18n'
 import type { LocaleMessage, FunctionLocaleMessage } from './i18n'
 
+/**
+ * Exceptions are like errors, while slightly different:
+ * - They are expected to be thrown & caught, and they will be properly handled
+ * - They are recognizable so they are easy to be programmatically handled
+ * - They produce user-readable messages, while errors produce messages for developers
+ */
 export abstract class Exception extends Error {
   name = 'Exception'
   /**

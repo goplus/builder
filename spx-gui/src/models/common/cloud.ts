@@ -5,7 +5,7 @@ import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { uptoken } from '@/apis/util'
 import { staticBaseUrl } from '@/utils/env'
-import { DefaultException } from '@/utils/error'
+import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
 export async function load(owner: string, name: string) {
@@ -15,7 +15,7 @@ export async function load(owner: string, name: string) {
 
 export async function save(metadata: Metadata, files: Files) {
   const { owner, name, id } = metadata
-  if (owner == null) throw new Error('owner, name expected')
+  if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
   const fileUrls = await uploadFiles(files)
   const isPublic = metadata.isPublic ?? IsPublic.personal

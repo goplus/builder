@@ -27,7 +27,7 @@ import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
 import { useI18n } from '@/utils/i18n'
-import { useMessageHandle } from '@/utils/error'
+import { useMessageHandle } from '@/utils/exception'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
