@@ -1,24 +1,24 @@
 /**
- * @desc Client (& error) definition for spx-backend APIs
+ * @desc Client (& exception) definition for spx-backend APIs
  */
 
 import { apiBaseUrl } from '@/utils/env'
-import { ApiError } from './error'
+import { ApiException } from './exception'
 
 export type RequestOptions = {
   method: string
   headers?: Headers
 }
 
-/** Response body when error encountered for API calling */
-export type ApiErrorPayload = {
+/** Response body when exception encountered for API calling */
+export type ApiExceptionPayload = {
   /** Code for program comsuming */
   code: number
   /** Message for developer reading */
   msg: string
 }
 
-function isApiErrorPayload(body: any): body is ApiErrorPayload {
+function isApiExceptionPayload(body: any): body is ApiExceptionPayload {
   return body && typeof body.code === 'number' && typeof body.msg === 'string'
 }
 
@@ -49,10 +49,10 @@ export class Client {
     // TODO: timeout
     if (!resp.ok) {
       const body = await resp.json()
-      if (!isApiErrorPayload(body)) {
+      if (!isApiExceptionPayload(body)) {
         throw new Error('api call failed')
       }
-      throw new ApiError(body.code, body.msg)
+      throw new ApiException(body.code, body.msg)
     }
     return resp.json()
   }

@@ -5,6 +5,7 @@ import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { uptoken } from '@/apis/util'
 import { staticBaseUrl } from '@/utils/env'
+import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
 export async function load(owner: string, name: string) {
@@ -14,7 +15,8 @@ export async function load(owner: string, name: string) {
 
 export async function save(metadata: Metadata, files: Files) {
   const { owner, name, id } = metadata
-  if (owner == null || name == null) throw new Error('owner, name expected')
+  if (owner == null) throw new Error('owner expected')
+  if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
   const fileUrls = await uploadFiles(files)
   const isPublic = metadata.isPublic ?? IsPublic.personal
   const projectData = await (id != null
@@ -49,7 +51,7 @@ export function getFiles(fileUrls: FileCollection): Files {
 
 // A mark to avoid unnecessary uploading for static files
 // TODO: we can apply similar strategy to json or code files
-const fileUrlKey = Symbol.for('url')
+const fileUrlKey = Symbol('url')
 function setUrl(file: File, url: string) {
   ;(file as any)[fileUrlKey] = url
 }
@@ -82,6 +84,7 @@ type QiniuUploadRes = {
 
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
+  // TODO: reuse uptoken
   const token = await uptoken()
   const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: 'na0' })
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {

@@ -7,17 +7,14 @@
  * @Description:
  */
 import type { App } from 'vue'
-import { createI18n } from 'vue-i18n'
+import { createI18n, useI18n } from 'vue-i18n'
+import { createI18n as createMyI18n, useI18n as useMyI18n, type Lang } from './utils/i18n'
 
-import { apiErrorMessages } from '@/apis/common/error'
-
-export const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
+const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
 export const initI18n = async (app: App) => {
-  // TODO: messages should be defined near related UI code
   const messages = {
     en: {
-      ...apiErrorMessages.en,
       language: 'English',
       tab: {
         code: 'Code',
@@ -183,7 +180,6 @@ export const initI18n = async (app: App) => {
       }
     },
     zh: {
-      ...apiErrorMessages.zh,
       language: '中文',
       tab: {
         code: '编程',
@@ -348,7 +344,7 @@ export const initI18n = async (app: App) => {
     }
   }
 
-  const currentLanguage = localStorage.getItem(LOCALSTORAGE_KEY_LANGUAGE) || 'en'
+  const currentLanguage = (localStorage.getItem(LOCALSTORAGE_KEY_LANGUAGE) || 'en') as Lang
   localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, currentLanguage)
 
   const i18n = createI18n({
@@ -359,4 +355,24 @@ export const initI18n = async (app: App) => {
   })
 
   app.use(i18n)
+
+  app.use(
+    createMyI18n({
+      lang: currentLanguage
+    })
+  )
+}
+
+export const useToggleLanguage = () => {
+  const { locale } = useI18n({
+    inheritLocale: true,
+    useScope: 'global'
+  })
+  const myI18n = useMyI18n()
+  return () => {
+    const lang = locale.value === 'en' ? 'zh' : 'en'
+    locale.value = lang
+    myI18n.setLang(lang)
+    localStorage.setItem(LOCALSTORAGE_KEY_LANGUAGE, locale.value)
+  }
 }
