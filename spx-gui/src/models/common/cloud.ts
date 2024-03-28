@@ -4,7 +4,7 @@ import { File, toNativeFile, type Files } from './file'
 import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { uptoken } from '@/apis/util'
-import { staticBaseUrl } from '@/utils/env'
+import { staticConfig } from '@/utils/env'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
@@ -84,9 +84,8 @@ type QiniuUploadRes = {
 
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
-  // TODO: reuse uptoken
-  const token = await uptoken()
-  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: 'na0' })
+  const token = await getUptoken()
+  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: staticConfig.bucketRegion as any })
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {
@@ -97,5 +96,23 @@ async function upload(file: File) {
       }
     })
   })
-  return staticBaseUrl + '/' + key
+  return staticConfig.baseUrl + '/' + key
+}
+
+let cachedUptoken: { token: string, expiresAt: number } | null = null
+let fetchingUptoken: Promise<string> | null = null
+
+async function getUptoken() {
+  if (cachedUptoken != null && cachedUptoken.expiresAt > Date.now()) return cachedUptoken.token
+  if (fetchingUptoken != null) return fetchingUptoken
+  return fetchingUptoken = uptoken().then(
+    token => {
+      // 20min (unit `ms`). Now the API provides token which exipres after 30min
+      // TODO: update the API to return expire time together with token
+      const expires = 20 * 60 * 1000
+      cachedUptoken = { token, expiresAt: Date.now() + expires }
+      fetchingUptoken = null
+      return token
+    }
+  )
 }
