@@ -9,15 +9,17 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
-  { path: '/', redirect: '/editor/homepage' },
+  { path: '/', redirect: '/editor' },
   {
-    path: '/editor/homepage',
-    name: 'EditorHomepage',
+    path: '/editor',
+    component: () => import('@/components/editor/EditorHomepage.vue')
+  },
+  {
+    path: '/editor/:projectName',
     component: () => import('@/components/editor/EditorHomepage.vue')
   },
   {
     path: '/callback',
-    name: 'Signin Callback',
     component: () => import('@/components/SigninCallback.vue')
   }
 ]

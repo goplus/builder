@@ -1,5 +1,6 @@
 import { onMounted, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { useRoute } from 'vue-router'
 import { Project } from '@/models/project'
 import { useUserStore } from './user'
 import defaultBackdropImgUrl from '@/assets/default_scene.png'
@@ -14,12 +15,20 @@ const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
 export const useProjectStore = defineStore('project', () => {
   const userStore = useUserStore()
+  const route = useRoute()
 
   // TODO: if it gets complex & coupled with different parts,
   // we may extract the project-managing logic into some object model like `Workspace`
   // Workspace manages projects & other states (including user info) together
 
   const project = ref(new Project())
+
+  watch(() => route.params.projectName, (name) => {
+    if (!name) return
+    const owner = userStore.userInfo?.name
+    if (!owner) return
+    openProject(owner, name as string)
+  })
 
   watch(
     // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
