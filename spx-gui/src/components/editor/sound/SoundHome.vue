@@ -39,7 +39,7 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
 import { Sound } from '@/models/sound'
-import AssetAddBtn from '@/components/editor/sprite-list/AssetAddBtn.vue'
+import AssetAddBtn from '@/components/editor/panels/todo/AssetAddBtn.vue' // TODO: review this dependency
 import { checkUpdatedName } from '@/utils/asset'
 import { useProjectStore } from '@/stores'
 import type { File } from '@/models/common/file'

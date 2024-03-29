@@ -3,24 +3,52 @@ import { computed, ref } from 'vue'
 import { useProjectStore } from '.'
 import { watch } from 'vue'
 
+type Selected =
+  | {
+      type: 'sprite' | 'sound'
+      name: string
+    }
+  | {
+      type: 'stage'
+    }
+
 export const useEditorStore = defineStore('editor', () => {
   const projectStore = useProjectStore()
 
-  const currentSpriteName = ref<string | null>(null)
-  const currentSprite = computed(() => {
-    if (!currentSpriteName.value) return null
-    return projectStore.project.sprites.find((s) => s.name === currentSpriteName.value) || null
+  const selectedRef = ref<Selected | null>(null)
+
+  function select(selected: null): void
+  function select(type: 'stage'): void
+  function select(type: 'sprite' | 'sound', name: string): void
+  function select(type: any, name?: string) {
+    selectedRef.value = type == null ? type : { type, name }
+  }
+
+  const selectedSpriteName = computed(() => {
+    const selected = selectedRef.value
+    return selected?.type === 'sprite' ? selected.name : null
+  })
+
+  const selectedSprite = computed(() => {
+    if (!selectedSpriteName.value) return null
+    return projectStore.project.sprites.find((s) => s.name === selectedSpriteName.value) || null
   })
 
   watch(
     () => projectStore.project,
-    () => {
-      currentSpriteName.value = projectStore.project.sprites[0]?.name || null
+    (project) => {
+      if (project.sprites.length > 0) {
+        select('sprite', project.sprites[0].name)
+      } else {
+        select(null)
+      }
     }
   )
 
   return {
-    currentSpriteName,
-    currentSprite
+    selected: selectedRef,
+    select,
+    selectedSpriteName,
+    selectedSprite
   }
 })

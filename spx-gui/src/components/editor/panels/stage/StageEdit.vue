@@ -9,7 +9,7 @@
 <template>
   <div class="stage-list">
     <div
-      :class="!editorStore.currentSprite ? 'stage-list-title-click' : 'stage-list-title'"
+      :class="!editorStore.selectedSprite ? 'stage-list-title-click' : 'stage-list-title'"
       @click="enableEditEntryCode"
     >
       {{ $t('stage.stage') }}
@@ -25,7 +25,7 @@ import { useEditorStore } from '@/stores/editor'
 const editorStore = useEditorStore()
 
 const enableEditEntryCode = () => {
-  editorStore.currentSpriteName = null
+  editorStore.select('stage')
 }
 </script>
 
