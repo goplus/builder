@@ -16,8 +16,8 @@
 </template>
 
 <script setup lang="ts">
-import ImageCardCom from '@/components/editor/sprite-list/ImageCardCom.vue'
-import AssetAddBtn from '@/components/editor/sprite-list/AssetAddBtn.vue'
+import ImageCardCom from '../todo/ImageCardCom.vue'
+import AssetAddBtn from '../todo/AssetAddBtn.vue'
 import { useProjectStore } from '@/stores'
 import { AssetType } from '@/apis/asset'
 

@@ -9,8 +9,9 @@
 <template>
   <div class="asset-library">
     <div class="asset-library-edit-button">
-      {{ $t('component.edit') }}
+      {{ _t({ en: 'Sprites', zh: '精灵' }) }}
     </div>
+
     <div class="asset-btn-group">
       <n-button class="import-assets-btn" @click="showImportModal = true">
         {{ $t('scratch.import') }}
@@ -34,17 +35,12 @@
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :active="asset === editorStore.currentSprite"
+              :active="asset === editorStore.selectedSprite"
               @click="toggleCodeById(asset)"
             />
             <!-- E Component ImageCardCom -->
           </n-flex>
         </div>
-      </n-grid-item>
-      <!-- E Layout Sprite List -->
-      <!-- S Layout Stage List -->
-      <n-grid-item class="asset-library-right" span="1">
-        <StageEdit />
       </n-grid-item>
       <!-- E Layout Stage List -->
     </n-grid>
@@ -71,10 +67,9 @@ import { useProjectStore } from '@/stores'
 import type { Sprite } from '@/models/sprite'
 import { useEditorStore } from '@/stores/editor'
 import { AssetType } from '@/apis/asset'
-import StageEdit from './StageEdit.vue'
-import SpriteEditBtn from './SpriteEditBtn.vue'
-import ImageCardCom from './ImageCardCom.vue'
-import AssetAddBtn from './AssetAddBtn.vue'
+import SpriteEditBtn from '../todo/SpriteEditBtn.vue'
+import ImageCardCom from '../todo/ImageCardCom.vue'
+import AssetAddBtn from '../todo/AssetAddBtn.vue'
 
 const projectStore = useProjectStore()
 const editorStore = useEditorStore()
@@ -84,7 +79,7 @@ const bodyStyle = { margin: 'auto' }
 const showImportModal = ref<boolean>(false)
 
 const toggleCodeById = (sprite: Sprite) => {
-  editorStore.currentSpriteName = sprite.name
+  editorStore.select('sprite', sprite.name)
 }
 </script>
 

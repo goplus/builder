@@ -13,7 +13,7 @@
         round
         autosize
         clearable
-        :disabled="!editorStore.currentSprite"
+        :disabled="!editorStore.selectedSprite"
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
         @blur="handleUpdateSpriteName"
@@ -31,10 +31,10 @@
         clearable
         type="number"
         :value="x"
-        :disabled="!editorStore.currentSprite"
+        :disabled="!editorStore.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setX(val as number)
+            editorStore.selectedSprite && editorStore.selectedSprite.setX(val as number)
           }
         "
       >
@@ -45,10 +45,10 @@
       <n-input-number
         type="number"
         :value="y"
-        :disabled="!editorStore.currentSprite"
+        :disabled="!editorStore.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setY(val as number)
+            editorStore.selectedSprite && editorStore.selectedSprite.setY(val as number)
           }
         "
       >
@@ -61,7 +61,7 @@
         v-model:value="visible"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setVisible(val)
+            editorStore.selectedSprite && editorStore.selectedSprite.setVisible(val)
           }
         "
       >
@@ -72,10 +72,10 @@
         type="number"
         :min="0"
         :value="size * 100"
-        :disabled="!editorStore.currentSprite"
+        :disabled="!editorStore.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setSize((val as number) / 100)
+            editorStore.selectedSprite && editorStore.selectedSprite.setSize((val as number) / 100)
           }
         "
       >
@@ -89,10 +89,10 @@
         :min="-180"
         :max="180"
         :value="heading"
-        :disabled="!editorStore.currentSprite"
+        :disabled="!editorStore.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.currentSprite && editorStore.currentSprite.setHeading(val as number)
+            editorStore.selectedSprite && editorStore.selectedSprite.setHeading(val as number)
           }
         "
       >
@@ -116,19 +116,21 @@ const editorStore = useEditorStore()
 
 // ----------data related -----------------------------------
 // TODO: check all default values here, they should be consistent with spx
-const x = computed(() => editorStore.currentSprite?.x ?? 0)
-const y = computed(() => editorStore.currentSprite?.y ?? 0)
-const heading = computed(() => (editorStore.currentSprite ? editorStore.currentSprite.heading : 0))
-const size = computed(() => editorStore.currentSprite?.size ?? 0)
-const visible = computed(() =>
-  editorStore.currentSprite ? editorStore.currentSprite.visible : false
+const x = computed(() => editorStore.selectedSprite?.x ?? 0)
+const y = computed(() => editorStore.selectedSprite?.y ?? 0)
+const heading = computed(() =>
+  editorStore.selectedSprite ? editorStore.selectedSprite.heading : 0
 )
-const name = ref(editorStore.currentSprite?.name ?? '')
+const size = computed(() => editorStore.selectedSprite?.size ?? 0)
+const visible = computed(() =>
+  editorStore.selectedSprite ? editorStore.selectedSprite.visible : false
+)
+const name = ref(editorStore.selectedSprite?.name ?? '')
 const { t } = useI18n({
   inheritLocale: true
 })
 watch(
-  () => editorStore.currentSprite?.name,
+  () => editorStore.selectedSprite?.name,
   (newName) => {
     name.value = newName || ''
   }
@@ -136,16 +138,16 @@ watch(
 
 const { message } = createDiscreteApi(['message'])
 function handleUpdateSpriteName() {
-  if (!editorStore.currentSprite) return
+  if (!editorStore.selectedSprite) return
   try {
     const checkInfo = checkUpdatedName(
       name.value,
       useProjectStore().project,
-      editorStore.currentSprite.name
+      editorStore.selectedSprite.name
     )
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
-      editorStore.currentSprite.setName(checkInfo.name)
+      editorStore.selectedSprite.setName(checkInfo.name)
       message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)

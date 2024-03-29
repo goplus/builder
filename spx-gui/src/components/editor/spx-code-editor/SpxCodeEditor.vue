@@ -29,12 +29,12 @@ const editorStore = useEditorStore()
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
 const currentCode = computed(() =>
-  editorStore.currentSprite ? editorStore.currentSprite.code : projectStore.project.stage.code
+  editorStore.selectedSprite ? editorStore.selectedSprite.code : projectStore.project.stage.code
 )
 
 const onCodeChange = (value: string) => {
-  if (editorStore.currentSprite) {
-    editorStore.currentSprite.setCode(value)
+  if (editorStore.selectedSprite) {
+    editorStore.selectedSprite.setCode(value)
   } else {
     projectStore.project.stage.setCode(value)
   }

@@ -51,7 +51,7 @@ const selectedSpriteNames = ref<string[]>([])
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
-  editorStore.currentSpriteName = e.names[0]
+  editorStore.select('sprite', e.names[0])
 }
 
 const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
@@ -73,10 +73,10 @@ const stop = async () => {
 }
 
 watch(
-  () => editorStore.currentSprite,
+  () => editorStore.selectedSprite,
   () => {
-    if (editorStore.currentSprite) {
-      selectedSpriteNames.value = [editorStore.currentSprite.name]
+    if (editorStore.selectedSprite) {
+      selectedSpriteNames.value = [editorStore.selectedSprite.name]
     } else {
       selectedSpriteNames.value = []
     }
