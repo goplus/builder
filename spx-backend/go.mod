@@ -10,8 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.0
 	github.com/qiniu/x v1.13.8
-	gocloud.dev v0.36.0
-	golang.org/x/crypto v0.18.0
+	gocloud.dev v0.36.0 // indirect
 	golang.org/x/mod v0.14.0
 	golang.org/x/tools v0.17.0
 )

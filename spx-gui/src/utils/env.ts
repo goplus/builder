@@ -8,16 +8,6 @@
 // Base URL for spx-backend APIs, e.g. `/api`
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
 
-export const staticConfig = {
-  /** Base URL for static files' uploading, e.g. `https://builder-static.goplus.org` */
-  baseUrl: import.meta.env.VITE_STATIC_BASE_URL as string,
-  /**
-   * Region for Kodo bucket, e.g. `na0`, see details in https://developer.qiniu.com/kodo/1671/region-endpoint-fq.
-   * Specify region so the js-sdk can skip querying before uploading
-   */
-  bucketRegion: import.meta.env.VITE_STATIC_BUCKET_REGION as string || undefined
-}
-
 // Casdoor configurations
 export const casdoorConfig = {
   serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT as string,

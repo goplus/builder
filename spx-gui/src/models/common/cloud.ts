@@ -3,8 +3,7 @@ import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
 import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
-import { uptoken } from '@/apis/util'
-import { staticConfig } from '@/utils/env'
+import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
@@ -84,8 +83,8 @@ type QiniuUploadRes = {
 
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
-  const token = await getUptoken()
-  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: staticConfig.bucketRegion as any })
+  const { token, baseUrl, region } = await getUpInfo()
+  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: region as any })
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {
@@ -96,23 +95,27 @@ async function upload(file: File) {
       }
     })
   })
-  return staticConfig.baseUrl + '/' + key
+  return baseUrl + '/' + key
 }
 
-let cachedUptoken: { token: string, expiresAt: number } | null = null
-let fetchingUptoken: Promise<string> | null = null
+type UpInfo = Omit<RawUpInfo, 'expires'> & {
+  /** Expire timestamp (ms) */
+	expiresAt: number
+}
 
-async function getUptoken() {
-  if (cachedUptoken != null && cachedUptoken.expiresAt > Date.now()) return cachedUptoken.token
-  if (fetchingUptoken != null) return fetchingUptoken
-  return fetchingUptoken = uptoken().then(
-    token => {
-      // 20min (unit `ms`). Now the API provides token which exipres after 30min
-      // TODO: update the API to return expire time together with token
-      const expires = 20 * 60 * 1000
-      cachedUptoken = { token, expiresAt: Date.now() + expires }
-      fetchingUptoken = null
-      return token
+let upInfo: UpInfo | null = null
+let fetchingUpInfo: Promise<UpInfo> | null = null
+
+async function getUpInfo() {
+  if (upInfo != null && upInfo.expiresAt > Date.now()) return upInfo
+  if (fetchingUpInfo != null) return fetchingUpInfo
+  return fetchingUpInfo = getRawUpInfo().then(
+    ({ expires, ...others }) => {
+      const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
+      const expiresAt = Date.now() + (expires * 1000) - bufferTime
+      upInfo = { ...others, expiresAt: expiresAt }
+      fetchingUpInfo = null
+      return upInfo
     }
   )
 }

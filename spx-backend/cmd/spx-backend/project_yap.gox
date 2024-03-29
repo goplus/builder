@@ -279,25 +279,22 @@ post "/util/fmt", ctx => {
 	replyWithData(ctx, res)
 }
 
-// Get uptoken
-get "/util/uptoken", ctx => {
+// Get info for uploading
+get "/util/upinfo", ctx => {
 	if _, ok := ensureUser(ctx); !ok {
 		return
 	}
-	token, err := ctrl.UpToken(utils.getCtx(ctx))
+	upInfo, err := ctrl.GetUpInfo(utils.getCtx(ctx))
 	if err != nil {
 		handlerInnerError(ctx, err)
 		return
 	}
-	replyWithData(ctx, {
-		"token": token,
-	})
+	replyWithData(ctx, upInfo)
 }
 
 var err error
-conf := &controller.Config{}
 logger := log.GetLogger()
-ctrl, err = controller.NewController(context.Background(), conf)
+ctrl, err = controller.NewController(context.Background())
 if err != nil {
 	logger.Fatalln("New controller failed:", err)
 }

@@ -5,13 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"regexp"
 
 	_ "image/png"
 	"os"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
-	"github.com/goplus/builder/spx-backend/internal/storage"
 	"github.com/goplus/builder/spx-backend/internal/utils/fmtcode"
 	"github.com/goplus/builder/spx-backend/internal/utils/log"
 	"github.com/goplus/builder/spx-backend/internal/utils/user"
@@ -21,7 +19,7 @@ import (
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
 	qiniuStorage "github.com/qiniu/go-sdk/v7/storage"
-	"gocloud.dev/blob"
+	qiniuLog "github.com/qiniu/x/log"
 )
 
 var (
@@ -30,54 +28,52 @@ var (
 	ErrForbidden    = errors.New("forbidden")
 )
 
-type Config struct {
-	Driver string // database driver. default is `mysql`.
-	DSN    string // database data source name
-	BlobUS string // blob URL scheme
+type Controller struct {
+	db   *sql.DB
+	kodo *kodoConfig
 }
 
-type Controller struct {
-	bucket storage.Bucket
-	db     *sql.DB
+type kodoConfig struct {
+	ak           string
+	sk           string
+	bucket       string
+	bucketRegion string
+	baseUrl      string
+}
+
+func mustEnv(logger *qiniuLog.Logger, key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		logger.Fatalf("Env %s is required", key)
+	}
+	return value
 }
 
 // NewController init Config
-func NewController(ctx context.Context, conf *Config) (ret *Controller, err error) {
+func NewController(ctx context.Context) (ret *Controller, err error) {
 	logger := log.GetLogger()
 	err = godotenv.Load()
 	if err != nil {
 		logger.Printf("failed to read env : %v", err)
 		return
 	}
-	if conf == nil {
-		conf = new(Config)
-	}
-	driver := conf.Driver
-	dsn := conf.DSN
-	bus := conf.BlobUS
-	if driver == "" {
-		driver = "mysql"
-	}
-	if dsn == "" {
-		dsn = os.Getenv("GOP_SPX_DSN")
-	}
-	if bus == "" {
-		bus = os.Getenv("GOP_SPX_BLOBUS")
-	}
 
-	bucket, err := blob.OpenBucket(ctx, bus)
-	if err != nil {
-		logger.Printf("failed to connect kodo : %v", err)
-		return
+	kc := &kodoConfig{
+		ak:           mustEnv(logger, "KODO_AK"),
+		sk:           mustEnv(logger, "KODO_SK"),
+		bucket:       mustEnv(logger, "KODO_BUCKET"),
+		bucketRegion: mustEnv(logger, "KODO_BUCKET_REGION"),
+		baseUrl:      mustEnv(logger, "KODO_BASE_URL"),
 	}
-	blobBucket := storage.NewBlobBucket(bucket)
+	dsn := mustEnv(logger, "GOP_SPX_DSN")
 	// TODO: Configure connection pool and timeouts
-	db, err := sql.Open(driver, dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		logger.Printf("failed to connect sql : %v", err)
 		return
 	}
-	return &Controller{blobBucket, db}, nil
+
+	return &Controller{db, kc}, nil
 }
 
 func (ctrl *Controller) GetProject(ctx context.Context, owner, name string) (*model.Project, error) {
@@ -490,26 +486,31 @@ func (ctrl *Controller) FmtCode(ctx context.Context, input *FmtCodeInput) (res *
 	return fmtcode.FmtCode(input.Body, input.FixImports)
 }
 
-func (ctrl *Controller) UpToken(ctx context.Context) (string, error) {
-	logger := log.GetReqLogger(ctx)
+type UpInfo struct {
+	// Uptoken
+	Token string `json:"token"`
+	// Valid time for uptoken, unit: second
+	Expires uint64 `json:"expires"`
+	// Bucket Region
+	Region string `json:"region"`
+	// Base URL to fetch file
+	BaseUrl string `json:"baseUrl"`
+}
 
-	bus := os.Getenv("GOP_SPX_BLOBUS")
-	re := regexp.MustCompile(`kodo://(.+):(.+)@(.+)\?`)
-	matches := re.FindStringSubmatch(bus)
-	if len(matches) < 4 {
-		logger.Printf("invalid blobus config")
-		return "", fmt.Errorf("invalid blobus config")
-	}
-	accessKey := matches[1]
-	secretKey := matches[2]
-	bucket := matches[3]
+func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
+	var expires uint64 = 1800 // second
 	putPolicy := qiniuStorage.PutPolicy{
-		Scope:        bucket,
+		Scope:        ctrl.kodo.bucket,
 		ForceSaveKey: true,
 		SaveKey:      "files/$(etag)/$(fname)",
-		Expires:      1800,
+		Expires:      expires,
 	}
-	mac := qiniuAuth.New(accessKey, secretKey)
+	mac := qiniuAuth.New(ctrl.kodo.ak, ctrl.kodo.sk)
 	upToken := putPolicy.UploadToken(mac)
-	return upToken, nil
+	return &UpInfo{
+		Token:   upToken,
+		Expires: expires,
+		Region:  ctrl.kodo.bucketRegion,
+		BaseUrl: ctrl.kodo.baseUrl,
+	}, nil
 }
