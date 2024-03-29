@@ -151,6 +151,7 @@ import { stripExt } from '@/utils/path'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { asset2Backdrop, asset2Sprite } from '@/models/common'
+import { sprite2Asset } from '@/models/common'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -348,14 +349,14 @@ const handleSubmitSprite = async (): Promise<void> => {
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
   if (publishState.value !== PublishState.noUpload) {
+    const assetData = await sprite2Asset(sprite)
     await addAsset({
+      ...assetData,
       displayName: uploadSpriteName.value,
       category: categoryValue.value || '',
       isPublic:
         publishState.value === PublishState.uploadToPersonal ? IsPublic.personal : IsPublic.public,
-      files: {}, // TODO: upload & get files
-      preview: 'TODO', // TOOD: gif preview
-      assetType: AssetType.Sprite
+      preview: 'TODO' // TODO: we should construct preview at frontend when displaying assets, so we do not need to save `preview` to DB
     })
   }
 
