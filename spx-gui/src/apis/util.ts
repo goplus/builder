@@ -21,11 +21,11 @@ export function formatSpxCode(body: string) {
 
 export type UpInfo = {
   /** Uptoken */
-	token: string
-	/** Valid time for uptoken, unit: second */
-	expires: number
-	/** Base URL to fetch file */
-	baseUrl: string
+  token: string
+  /** Valid time for uptoken, unit: second */
+  expires: number
+  /** Base URL to fetch file */
+  baseUrl: string
   /** Bucket Region */
   region: string
 }

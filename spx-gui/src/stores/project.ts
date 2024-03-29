@@ -23,12 +23,15 @@ export const useProjectStore = defineStore('project', () => {
 
   const project = ref(new Project())
 
-  watch(() => route.params.projectName, (name) => {
-    if (!name) return
-    const owner = userStore.userInfo?.name
-    if (!owner) return
-    openProject(owner, name as string)
-  })
+  watch(
+    () => route.params.projectName,
+    (name) => {
+      if (!name) return
+      const owner = userStore.userInfo?.name
+      if (!owner) return
+      openProject(owner, name as string)
+    }
+  )
 
   watch(
     // https://vuejs.org/guide/essentials/watchers.html#deep-watchers

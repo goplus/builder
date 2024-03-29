@@ -84,7 +84,13 @@ type QiniuUploadRes = {
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
   const { token, baseUrl, region } = await getUpInfo()
-  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: region as any })
+  const observable = qiniu.upload(
+    nativeFile,
+    null,
+    token,
+    { fname: file.name },
+    { region: region as any }
+  )
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {
@@ -100,7 +106,7 @@ async function upload(file: File) {
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {
   /** Expire timestamp (ms) */
-	expiresAt: number
+  expiresAt: number
 }
 
 let upInfo: UpInfo | null = null
@@ -109,13 +115,11 @@ let fetchingUpInfo: Promise<UpInfo> | null = null
 async function getUpInfo() {
   if (upInfo != null && upInfo.expiresAt > Date.now()) return upInfo
   if (fetchingUpInfo != null) return fetchingUpInfo
-  return fetchingUpInfo = getRawUpInfo().then(
-    ({ expires, ...others }) => {
-      const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
-      const expiresAt = Date.now() + (expires * 1000) - bufferTime
-      upInfo = { ...others, expiresAt: expiresAt }
-      fetchingUpInfo = null
-      return upInfo
-    }
-  )
+  return (fetchingUpInfo = getRawUpInfo().then(({ expires, ...others }) => {
+    const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
+    const expiresAt = Date.now() + expires * 1000 - bufferTime
+    upInfo = { ...others, expiresAt: expiresAt }
+    fetchingUpInfo = null
+    return upInfo
+  }))
 }
