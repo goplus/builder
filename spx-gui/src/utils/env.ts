@@ -8,9 +8,6 @@
 // Base URL for spx-backend APIs, e.g. `/api`
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string
 
-// Base URL for static files' uploading, e.g. `https://builder-static.goplus.org`
-export const staticBaseUrl = import.meta.env.VITE_STATIC_BASE_URL as string
-
 // Casdoor configurations
 export const casdoorConfig = {
   serverUrl: import.meta.env.VITE_CASDOOR_ENDPOINT as string,

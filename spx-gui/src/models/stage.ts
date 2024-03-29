@@ -132,7 +132,9 @@ export class Stage {
   export(): [RawStageConfig, Files] {
     const files: Files = {}
     const backdropConfigs: RawBackdropConfig[] = []
-    files[stageCodeFilePath] = fromText(stageCodeFileName, this.code)
+    if (this.code !== '') {
+      files[stageCodeFilePath] = fromText(stageCodeFileName, this.code)
+    }
     for (const backdrop of this.backdrops) {
       const [backdropConfig, backdropFiles] = backdrop.export()
       backdropConfigs.push(backdropConfig)

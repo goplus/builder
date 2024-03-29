@@ -19,7 +19,17 @@ export function formatSpxCode(body: string) {
   return client.post('/util/fmt', { body }) as Promise<FormatResponse>
 }
 
-export async function uptoken() {
-  const resp = client.get('/util/uptoken') as Promise<{ token: string }>
-  return (await resp).token
+export type UpInfo = {
+  /** Uptoken */
+  token: string
+  /** Valid time for uptoken, unit: second */
+  expires: number
+  /** Base URL to fetch file */
+  baseUrl: string
+  /** Bucket Region */
+  region: string
+}
+
+export function getUpInfo() {
+  return client.get('/util/upinfo') as Promise<UpInfo>
 }

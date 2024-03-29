@@ -3,8 +3,7 @@ import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
 import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
-import { uptoken } from '@/apis/util'
-import { staticBaseUrl } from '@/utils/env'
+import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
@@ -84,9 +83,14 @@ type QiniuUploadRes = {
 
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
-  // TODO: reuse uptoken
-  const token = await uptoken()
-  const observable = qiniu.upload(nativeFile, null, token, { fname: file.name }, { region: 'na0' })
+  const { token, baseUrl, region } = await getUpInfo()
+  const observable = qiniu.upload(
+    nativeFile,
+    null,
+    token,
+    { fname: file.name },
+    { region: region as any }
+  )
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {
@@ -97,5 +101,25 @@ async function upload(file: File) {
       }
     })
   })
-  return staticBaseUrl + '/' + key
+  return baseUrl + '/' + key
+}
+
+type UpInfo = Omit<RawUpInfo, 'expires'> & {
+  /** Expire timestamp (ms) */
+  expiresAt: number
+}
+
+let upInfo: UpInfo | null = null
+let fetchingUpInfo: Promise<UpInfo> | null = null
+
+async function getUpInfo() {
+  if (upInfo != null && upInfo.expiresAt > Date.now()) return upInfo
+  if (fetchingUpInfo != null) return fetchingUpInfo
+  return (fetchingUpInfo = getRawUpInfo().then(({ expires, ...others }) => {
+    const bufferTime = 5 * 60 * 1000 // refresh uptoken 5min before it expires
+    const expiresAt = Date.now() + expires * 1000 - bufferTime
+    upInfo = { ...others, expiresAt: expiresAt }
+    fetchingUpInfo = null
+    return upInfo
+  }))
 }

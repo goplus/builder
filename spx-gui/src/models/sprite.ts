@@ -169,7 +169,9 @@ export class Sprite extends Disposble {
       isDraggable: this.isDraggable,
       costumes: costumeConfigs
     }
-    files[`${this.name}.spx`] = fromText(`${this.name}.spx`, this.code)
+    if (this.code !== '') {
+      files[`${this.name}.spx`] = fromText(`${this.name}.spx`, this.code)
+    }
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
