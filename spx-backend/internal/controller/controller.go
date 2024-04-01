@@ -127,7 +127,6 @@ var projectNamePattern = regexp.MustCompile(`^[\w-]+$`)
 // Validate validates project content, when it is used as input for adding new project
 func (p *AddProjectParams) Validate() (ok bool, msg string) {
 	if p.Name == "" {
-		// TODO: more limitations
 		return false, "name expected"
 	}
 	if !projectNamePattern.Match([]byte(p.Name)) {
