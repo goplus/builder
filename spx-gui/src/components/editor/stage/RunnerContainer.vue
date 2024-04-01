@@ -25,13 +25,15 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import ProjectRunner from './ProjectRunner.vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import { NButton } from 'naive-ui'
+import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 
 defineProps<{ project: Project }>()
-const emit = defineEmits(['close'])
+const emit = defineEmits<{
+  close: []
+}>()
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
 

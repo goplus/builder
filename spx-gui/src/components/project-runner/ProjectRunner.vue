@@ -19,7 +19,9 @@ const props = defineProps<{ project: Project }>()
 
 const zipData = ref<ArrayBuffer | null>(null)
 
-const emit = defineEmits(['console'])
+const emit = defineEmits<{
+  console: [type: 'log' | 'warn', args: any[]]
+}>()
 
 const handleConsole = (type: 'log' | 'warn', args: any[]) => {
   emit('console', type, args)

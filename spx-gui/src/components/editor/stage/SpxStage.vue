@@ -9,7 +9,6 @@
 <template>
   <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
-    <!-- <n-button v-if="show" type="error" @click="stop">{{ $t('stage.stop') }}</n-button> -->
     <n-button type="success" @click="show = true">{{ $t('stage.run') }}</n-button>
     <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
@@ -35,7 +34,7 @@ import { useProjectStore } from '@/stores'
 import { useEditorStore } from '@/stores/editor'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
-import RunnerContainer from '@/components/project-runner/RunnerContainer.vue'
+import RunnerContainer from './RunnerContainer.vue'
 
 let show = ref(false)
 

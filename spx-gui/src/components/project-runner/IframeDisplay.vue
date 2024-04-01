@@ -2,7 +2,9 @@
   <iframe ref="iframe" class="runner" frameborder="0" src="about:blank" />
 </template>
 <script setup lang="ts">
-const emit = defineEmits(['console'])
+const emit = defineEmits<{
+  console: [type: 'log' | 'warn', args: any[]]
+}>()
 
 interface IframeWindow extends Window {
   startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => void
