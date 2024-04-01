@@ -54,11 +54,13 @@ export function useMessageHandle<Args extends any[], Ret>(
   const m = useMessage()
   const { t } = useI18n()
 
-  return ((...args: Args) => {
+  return (...args: Args) => {
     return action(...args).then(
       (ret) => {
         if (successMessage != null) {
-          const successText = t(typeof successMessage === 'function' ? successMessage(ret) : successMessage)
+          const successText = t(
+            typeof successMessage === 'function' ? successMessage(ret) : successMessage
+          )
           m.success(() => successText)
         }
         return ret
@@ -75,7 +77,7 @@ export function useMessageHandle<Args extends any[], Ret>(
         throw e
       }
     )
-  })
+  }
 }
 
 // TODO: helpers for in-place feedback

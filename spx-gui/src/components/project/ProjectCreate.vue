@@ -24,7 +24,7 @@ import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 
 const emit = defineEmits<{
-  created: [ProjectData],
+  created: [ProjectData]
   cancelled: []
 }>()
 
@@ -45,7 +45,7 @@ function handleCancel() {
 const addProject = useMessageHandle(
   rawAddProject,
   { en: 'Failed to create project', zh: '创建失败' },
-  project => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
+  (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
 )
 
 async function handleSubmit() {
@@ -65,29 +65,30 @@ async function validateName(name: string): Promise<ValidationResult> {
 
   if (name === '') return { en: 'The project name must not be blank', zh: '项目名不可为空' }
 
-  if (!/^[\w-]+$/.test(name)) return {
-    en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
-    zh: '项目名仅可包含字母、数字、符号 - 及 _'
-  }
+  if (!/^[\w-]+$/.test(name))
+    return {
+      en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
+      zh: '项目名仅可包含字母、数字、符号 - 及 _'
+    }
 
-  if (name.length > 100) return {
-    en: 'The project name is too long (maximum is 100 characters)',
-    zh: '项目名长度超出限制（最多 100 个字符）'
-  }
+  if (name.length > 100)
+    return {
+      en: 'The project name is too long (maximum is 100 characters)',
+      zh: '项目名长度超出限制（最多 100 个字符）'
+    }
 
   // check naming conflict
   const username = userStore.userInfo!.name // TODO: remove `!` here
-  const existedProject = await getProject(username, name).catch(e => {
+  const existedProject = await getProject(username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e
   })
-  if (existedProject != null) return {
-    en: `Project ${name} already exists`,
-    zh: `项目 ${name} 已存在`
-  }
+  if (existedProject != null)
+    return {
+      en: `Project ${name} already exists`,
+      zh: `项目 ${name} 已存在`
+    }
 }
 </script>
 
-<style scoped lang="scss">
-
-</style>
+<style scoped lang="scss"></style>

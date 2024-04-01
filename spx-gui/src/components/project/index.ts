@@ -13,16 +13,17 @@ export function useCreateProject() {
     return new Promise<ProjectData>((resolve, reject) => {
       const modal = modalCtrl.create({
         title: t({ en: 'Create a new project', zh: '创建新的项目' }),
-        content: () => h(ProjectCreate, {
-          onCreated(projectData) {
-            modal.destroy()
-            resolve(projectData)
-          },
-          onCancelled() {
-            modal.destroy()
-            reject(new Cancelled())
-          }
-        }),
+        content: () =>
+          h(ProjectCreate, {
+            onCreated(projectData) {
+              modal.destroy()
+              resolve(projectData)
+            },
+            onCancelled() {
+              modal.destroy()
+              reject(new Cancelled())
+            }
+          }),
         preset: 'dialog'
       })
     })

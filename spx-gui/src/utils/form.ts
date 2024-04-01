@@ -23,7 +23,7 @@ export function useForm(rulesInput: FormRulesInput) {
   const formRef = ref<FormInst | null>(null)
 
   const rules: FormRules = {}
-  Object.keys(rulesInput).forEach(path => {
+  Object.keys(rulesInput).forEach((path) => {
     const validator = rulesInput[path]
     rules[path] = {
       async validator(_: unknown, v: unknown) {
@@ -40,7 +40,7 @@ export function useForm(rulesInput: FormRulesInput) {
     if (formRef.value == null) throw new Error('invalid calling of validate without formRef value')
     const errs: FormValidationError[] = await formRef.value.validate().then(
       () => [],
-      e => {
+      (e) => {
         if (Array.isArray(e)) return e
         throw e
       }

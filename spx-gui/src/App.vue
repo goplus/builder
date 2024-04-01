@@ -27,7 +27,14 @@
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NMessageProvider, NModalProvider, NLayout, NLayoutHeader, NLayoutContent } from 'naive-ui'
+import {
+  NConfigProvider,
+  NMessageProvider,
+  NModalProvider,
+  NLayout,
+  NLayoutHeader,
+  NLayoutContent
+} from 'naive-ui'
 import TopMenu from '@/components/top-menu/TopMenu.vue'
 import '@/assets/theme'
 /**
