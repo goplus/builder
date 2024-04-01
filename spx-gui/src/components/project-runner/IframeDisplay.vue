@@ -2,8 +2,11 @@
   <iframe ref="iframe" class="runner" frameborder="0" src="about:blank" />
 </template>
 <script setup lang="ts">
+const emit = defineEmits(['console'])
+
 interface IframeWindow extends Window {
   startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => void
+  console: typeof console
 }
 
 import { ref } from 'vue'
@@ -30,5 +33,21 @@ watch(iframe, () => {
   iframeWindow.addEventListener('wasmReady', () => {
     iframeWindow.startWithZipBuffer(zipData)
   })
+  iframeWindow.console.log = function (...args: any[]) {
+    // eslint-disable-next-line no-console
+    console.log(...args)
+    emit('console', 'log', args)
+  }
+  iframeWindow.console.warn = function (...args: any[]) {
+    console.warn(...args)
+    emit('console', 'warn', args)
+  }
 })
 </script>
+<style scoped lang="scss">
+.runner {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+</style>

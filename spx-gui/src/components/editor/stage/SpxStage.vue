@@ -9,12 +9,12 @@
 <template>
   <div ref="spxStage" class="spx-stage">
     <div class="stage-button">{{ $t('component.stage') }}</div>
-    <n-button v-if="show" type="error" @click="stop">{{ $t('stage.stop') }}</n-button>
-    <n-button v-else type="success" @click="run">{{ $t('stage.run') }}</n-button>
-    <div v-if="show" class="stage-runner">
-      <ProjectRunner ref="projectRunner" :project="project" />
-    </div>
-    <div v-else class="stage-viewer-container">
+    <!-- <n-button v-if="show" type="error" @click="stop">{{ $t('stage.stop') }}</n-button> -->
+    <n-button type="success" @click="show = true">{{ $t('stage.run') }}</n-button>
+    <n-modal v-model:show="show" class="project-runner-modal">
+      <RunnerContainer :project="project" @close="show = false" />
+    </n-modal>
+    <div class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
         :width="containerWidth || 400"
@@ -30,13 +30,12 @@
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
 import { useSize } from '@/utils/dom'
-import { NButton } from 'naive-ui'
+import { NButton, NModal } from 'naive-ui'
 import { useProjectStore } from '@/stores'
-import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
-import { nextTick } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
+import RunnerContainer from '@/components/project-runner/RunnerContainer.vue'
 
 let show = ref(false)
 
@@ -52,24 +51,6 @@ const selectedSpriteNames = ref<string[]>([])
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
   editorStore.select('sprite', e.names[0])
-}
-
-const projectRunner = ref<InstanceType<typeof ProjectRunner> | null>(null)
-
-const run = async () => {
-  show.value = true
-  // As we just changed show to mount the ProjectRunner,
-  // we need to wait for the next tick to ensure the ProjectRunner is mounted.
-  await nextTick()
-  if (!projectRunner.value) {
-    throw new Error('ProjectRunner is not mounted')
-  }
-  projectRunner.value.run()
-}
-
-const stop = async () => {
-  show.value = false
-  projectRunner.value?.stop()
 }
 
 watch(
@@ -135,10 +116,19 @@ watch(
     display: flex;
     justify-content: center;
   }
-
-  .stage-runner {
-    display: flex;
-    height: 100%;
+}
+.project-runner-modal {
+  margin-left: 32px;
+  margin-right: 32px;
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  border-radius: 20px;
+  .n-modal-content {
+    border-radius: 20px;
   }
+  padding: 16px;
 }
 </style>

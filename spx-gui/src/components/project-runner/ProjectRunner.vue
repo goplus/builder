@@ -7,9 +7,7 @@
  * @Description: 
 -->
 <template>
-  <div class="project-runner">
-    <IframeDisplay v-if="zipData" :zip-data="zipData" />
-  </div>
+  <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" />
 </template>
 
 <script lang="ts" setup>
@@ -21,6 +19,12 @@ const props = defineProps<{ project: Project }>()
 
 const zipData = ref<ArrayBuffer | null>(null)
 
+const emit = defineEmits(['console'])
+
+const handleConsole = (type: 'log' | 'warn', args: any[]) => {
+  emit('console', type, args)
+}
+
 defineExpose({
   run: async () => {
     const zipFile = await props.project.exportZipFile()
@@ -31,15 +35,3 @@ defineExpose({
   }
 })
 </script>
-
-<style lang="scss" scoped>
-.project-runner {
-  flex: 1;
-  text-align: center;
-}
-
-.runner {
-  width: 100%;
-  height: 100%;
-}
-</style>
