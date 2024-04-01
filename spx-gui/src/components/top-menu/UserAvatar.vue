@@ -40,6 +40,7 @@ function signin() {
 function handleAvatarDropdownClick(key: string) {
   if (key === 'logout') {
     userStore.signOut()
+    location.reload()
   }
 }
 </script>
