@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 
 	_ "image/png"
 	"os"
@@ -121,11 +122,19 @@ type AddProjectParams struct {
 	IsPublic model.IsPublic       `json:"isPublic"`
 }
 
+var projectNamePattern = regexp.MustCompile(`^[\w-]+$`)
+
 // Validate validates project content, when it is used as input for adding new project
 func (p *AddProjectParams) Validate() (ok bool, msg string) {
 	if p.Name == "" {
 		// TODO: more limitations
 		return false, "name expected"
+	}
+	if !projectNamePattern.Match([]byte(p.Name)) {
+		return false, "invalid name"
+	}
+	if len(p.Name) > 100 {
+		return false, "name too long"
 	}
 	if p.Owner == "" {
 		return false, "owner expected"
