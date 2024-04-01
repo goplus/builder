@@ -20,10 +20,10 @@ const props = defineProps<{ project: Project }>()
 const zipData = ref<ArrayBuffer | null>(null)
 
 const emit = defineEmits<{
-  console: [type: 'log' | 'warn', args: any[]]
+  console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
-const handleConsole = (type: 'log' | 'warn', args: any[]) => {
+const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
   emit('console', type, args)
 }
 

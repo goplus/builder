@@ -3,7 +3,7 @@
 </template>
 <script setup lang="ts">
 const emit = defineEmits<{
-  console: [type: 'log' | 'warn', args: any[]]
+  console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
 interface IframeWindow extends Window {
@@ -35,12 +35,12 @@ watch(iframe, () => {
   iframeWindow.addEventListener('wasmReady', () => {
     iframeWindow.startWithZipBuffer(zipData)
   })
-  iframeWindow.console.log = function (...args: any[]) {
+  iframeWindow.console.log = function (...args: unknown[]) {
     // eslint-disable-next-line no-console
     console.log(...args)
     emit('console', 'log', args)
   }
-  iframeWindow.console.warn = function (...args: any[]) {
+  iframeWindow.console.warn = function (...args: unknown[]) {
     console.warn(...args)
     emit('console', 'warn', args)
   }
