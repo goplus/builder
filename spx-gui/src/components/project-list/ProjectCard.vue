@@ -104,10 +104,8 @@ const remove = () => {
     onPositiveClick: async () => {
       await deleteProject(project.owner, project.name)
       emit('remove-project')
-      // If the current opened project is deleted, load a blank project
       if (isCurrent.value) {
         message.success(t('project.removeMessage'))
-        await projectStore.openBlankProject(undefined, 'untitled-TODO')
       }
     }
   })

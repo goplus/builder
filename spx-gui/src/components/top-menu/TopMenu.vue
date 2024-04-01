@@ -25,6 +25,7 @@ import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
+import { useCreateProject } from '@/components/project'
 
 const projectStore = useProjectStore()
 const showModal = ref<boolean>(false)
@@ -225,12 +226,8 @@ const computedButtonStyle = (color1: string) => {
   }
 }
 
-/**
- * @description: import dropdown select func
- * @param {*} key
- * @Author: Xu Ning
- * @Date: 2024-01-17 17:55:13
- */
+const createProject = useCreateProject()
+
 const handleSelectImport = async (key: string | number) => {
   if (key === 'Upload') {
     const input = document.createElement('input')
@@ -249,7 +246,8 @@ const handleSelectImport = async (key: string | number) => {
   } else if (key === 'SaveCloud') {
     await handleSaveCloud()
   } else if (key === 'Blank') {
-    projectStore.openBlankProject(undefined, 'untitled-TODO')
+    const { owner, name } = await createProject()
+    await projectStore.openProject(owner, name)
   }
 }
 
@@ -288,3 +286,4 @@ const toggleLanguage = useToggleLanguage()
 </script>
 
 <style lang="scss" scoped></style>
+../project

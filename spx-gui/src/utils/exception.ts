@@ -22,9 +22,22 @@ export abstract class Exception extends Error {
 }
 
 export class DefaultException extends Exception {
+  name = 'DefaultException'
   constructor(public userMessage: LocaleMessage) {
     super(userMessage.en)
   }
+}
+
+export class Cancelled extends Exception {
+  name = 'Cancelled'
+  userMessage = null
+  constructor() {
+    super('cancelled')
+  }
+}
+
+export function cancel(): never {
+  throw new Cancelled()
 }
 
 const failedMessage: FunctionLocaleMessage<[summary: string, reason: string | null]> = {
@@ -49,6 +62,7 @@ export function useMessageHandle<F extends () => Promise<unknown>>(
         return ret
       },
       (e) => {
+        if (e instanceof Cancelled) return
         let reasonMessage: LocaleMessage | null = null
         if (e instanceof Exception && e.userMessage != null) {
           reasonMessage = e.userMessage
