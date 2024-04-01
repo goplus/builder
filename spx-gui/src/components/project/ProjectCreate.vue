@@ -4,10 +4,10 @@
       <NInput v-model:value="formValue.name" />
     </NFormItem>
     <NFormItem>
-      <NButton @click="handleCancel">
+      <NButton type="tertiary" @click="handleCancel">
         {{ _t({ en: 'Cancel', zh: '取消' }) }}
       </NButton>
-      <NButton @click="handleSubmit">
+      <NButton type="primary" @click="handleSubmit">
         {{ _t({ en: 'Create', zh: '创建' }) }}
       </NButton>
     </NFormItem>
@@ -17,9 +17,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { NForm, NFormItem, NInput, NButton, type FormInst } from 'naive-ui'
-import { type ProjectData, getProject, addProject, IsPublic } from '@/apis/project'
+import { type ProjectData, getProject, addProject as rawAddProject, IsPublic } from '@/apis/project'
 import { useFormRules, type ValidationResult } from '@/utils/form'
-import { useMessageHandle, cancel } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 
@@ -44,27 +44,29 @@ function handleCancel() {
   emit('cancelled')
 }
 
-const handleSubmit = useMessageHandle(
-  async () => {
-    if (formRef.value == null) cancel()
-    const errs = await formRef.value.validate().then( // TODO: extract such logic to utils/form
-      () => [],
-      e => {
-        if (Array.isArray(e)) return e
-        throw e
-      }
-    )
-    if (errs.length > 0) cancel()
-    const projectData = await addProject({
-      name: formValue.value.name,
-      isPublic: IsPublic.personal,
-      files: {}
-    })
-    emit('created', projectData)
-  },
-  { en: 'Failed to create project', zh: '项目创建失败' },
-  { en: 'Project created', zh: '创建成功' }
+const addProject = useMessageHandle(
+  rawAddProject,
+  { en: 'Failed to create project', zh: '创建失败' },
+  project => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
 )
+
+async function handleSubmit() {
+  if (formRef.value == null) return
+  const errs = await formRef.value.validate().then( // TODO: extract such logic to utils/form
+    () => [],
+    e => {
+      if (Array.isArray(e)) return e
+      throw e
+    }
+  )
+  if (errs.length > 0) return
+  const projectData = await addProject({
+    name: formValue.value.name,
+    isPublic: IsPublic.personal,
+    files: {}
+  })
+  emit('created', projectData)
+}
 
 async function validateName(name: string): Promise<ValidationResult> {
   name = name.trim()
@@ -72,8 +74,8 @@ async function validateName(name: string): Promise<ValidationResult> {
   if (name === '') return { en: 'The project name must not be blank', zh: '项目名不可为空' }
 
   if (!/^[\w-]+$/.test(name)) return {
-    en: 'The project name can only contain ASCII letters, digits, and the characters -, and _.',
-    zh: '项目名仅可包含字母、数字以及 - & _'
+    en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
+    zh: '项目名仅可包含字母、数字、符号 - 及 _'
   }
 
   if (name.length > 100) return {

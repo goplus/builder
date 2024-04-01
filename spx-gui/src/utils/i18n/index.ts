@@ -11,8 +11,6 @@ export type Translated = string
 
 export type LocaleMessage = Record<Lang, Translated>
 
-export type FunctionLocaleMessage<Args extends any[]> = Record<Lang, (...args: Args) => Translated>
-
 export interface I18nConfig {
   /** Initial lang */
   lang: Lang
@@ -43,17 +41,9 @@ export class I18n implements ObjectPlugin<[]> {
   /** Translate */
   t(message: LocaleMessage): Translated
   t(message: LocaleMessage | null): Translated | null
-  t<Args extends any[]>(message: FunctionLocaleMessage<Args>, ...args: Args): Translated
-  t<Args extends any[]>(
-    message: FunctionLocaleMessage<Args> | null,
-    ...args: Args
-  ): Translated | null
-  t(message: LocaleMessage | FunctionLocaleMessage<unknown[]> | null, ...args: unknown[]) {
+  t(message: LocaleMessage | null) {
     if (message == null) return null
     const val = message[this.lang.value]
-    if (typeof val === 'function') {
-      return (val as any)(...args)
-    }
     return val
   }
 
@@ -74,7 +64,7 @@ export function useI18n() {
   return i18n
 }
 
-export function mapMessage<M extends LocaleMessage | FunctionLocaleMessage<any[]>, T>(
+export function mapMessage<M extends LocaleMessage, T>(
   message: M,
   process: (value: M[keyof M], lang: Lang) => T
 ): Record<Lang, T> {

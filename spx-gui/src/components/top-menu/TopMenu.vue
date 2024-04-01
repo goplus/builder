@@ -286,4 +286,3 @@ const toggleLanguage = useToggleLanguage()
 </script>
 
 <style lang="scss" scoped></style>
-../project
