@@ -50,7 +50,3 @@ export function useForm(rulesInput: FormRulesInput) {
 
   return [formRef, rules, validate] as const
 }
-
-export function isPromiseLike(arg: any): arg is Promise<any> {
-  return arg != null && typeof arg === 'object' && typeof arg.then === 'function'
-}
