@@ -23,7 +23,13 @@ import SpxEditor from './SpxEditor.vue'
 import SpxStage from './stage/SpxStage.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 import { storeToRefs } from 'pinia'
-import { useProjectStore } from '@/stores'
+import { useProjectStore, useUserStore } from '@/stores'
+
+const userStore = useUserStore()
+if (!userStore.hasSignedIn()) {
+  userStore.signInWithRedirection()
+}
+
 const projectStore = useProjectStore()
 const { project } = storeToRefs(projectStore)
 </script>
