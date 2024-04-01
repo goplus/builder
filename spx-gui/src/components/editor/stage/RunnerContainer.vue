@@ -62,7 +62,6 @@ const handleRerun = () => {
   projectRunnerRef.value?.stop()
   projectRunnerRef.value?.run()
   consoleMessages.value = []
-  nextId.value = 0
 }
 
 const handleClose = () => {
