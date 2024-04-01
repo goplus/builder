@@ -16,9 +16,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NForm, NFormItem, NInput, NButton, type FormInst } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton } from 'naive-ui'
 import { type ProjectData, getProject, addProject as rawAddProject, IsPublic } from '@/apis/project'
-import { useFormRules, type ValidationResult } from '@/utils/form'
+import { useForm, type ValidationResult } from '@/utils/form'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
@@ -30,13 +30,11 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 
-const formRef = ref<FormInst | null>(null)
-
 const formValue = ref({
   name: ''
 })
 
-const formRules = useFormRules({
+const [formRef, formRules, validateForm] = useForm({
   name: validateName
 })
 
@@ -52,13 +50,7 @@ const addProject = useMessageHandle(
 
 async function handleSubmit() {
   if (formRef.value == null) return
-  const errs = await formRef.value.validate().then( // TODO: extract such logic to utils/form
-    () => [],
-    e => {
-      if (Array.isArray(e)) return e
-      throw e
-    }
-  )
+  const errs = await validateForm()
   if (errs.length > 0) return
   const projectData = await addProject({
     name: formValue.value.name,
