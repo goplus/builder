@@ -1,5 +1,5 @@
 <template>
-  <NForm ref="formRef" :model="formValue" :rules="formRules">
+  <NForm v-bind="formBinds" :model="formValue">
     <NFormItem :label="_t({ en: 'Project Name', zh: '项目名' })" path="name">
       <NInput v-model:value="formValue.name" />
     </NFormItem>
@@ -15,9 +15,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { NForm, NFormItem, NInput, NButton } from 'naive-ui'
-import { type ProjectData, getProject, addProject as rawAddProject, IsPublic } from '@/apis/project'
+import { type ProjectData, getProject, addProject as apiAddProject, IsPublic } from '@/apis/project'
 import { useForm, type ValidationResult } from '@/utils/form'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
@@ -30,12 +29,8 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 
-const formValue = ref({
-  name: ''
-})
-
-const [formRef, formRules, validateForm] = useForm({
-  name: validateName
+const [formBinds, formValue, validateForm] = useForm({
+  name: ['', validateName]
 })
 
 function handleCancel() {
@@ -43,13 +38,12 @@ function handleCancel() {
 }
 
 const addProject = useMessageHandle(
-  rawAddProject,
+  apiAddProject,
   { en: 'Failed to create project', zh: '创建失败' },
   (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
 )
 
 async function handleSubmit() {
-  if (formRef.value == null) return
   const errs = await validateForm()
   if (errs.length > 0) return
   const projectData = await addProject({

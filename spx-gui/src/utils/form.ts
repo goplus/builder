@@ -13,19 +13,22 @@ export type ValidatorReturned = ValidationResult | Promise<ValidationResult>
 
 export type Validator<V> = (v: V) => ValidatorReturned
 
-export type FormRulesInput = {
-  [path: string]: Validator<any>
+export type FormInput = {
+  [path: string]: [initialValue: unknown, validator: Validator<any>]
 }
 
-export function useForm(rulesInput: FormRulesInput) {
+// TODO: better type definition for better type-safety
+export function useForm(input: FormInput) {
   const { t } = useI18n()
 
   const formRef = ref<FormInst | null>(null)
 
-  const rules: FormRules = {}
-  Object.keys(rulesInput).forEach((path) => {
-    const validator = rulesInput[path]
-    rules[path] = {
+  const formValue = ref<{ [path: string]: any }>({})
+  const formRules: FormRules = {}
+  Object.keys(input).forEach((path) => {
+    const [initialValue, validator] = input[path]
+    formValue.value[path] = initialValue
+    formRules[path] = {
       async validator(_: unknown, v: unknown) {
         const result = await validator(v)
         if (result == null) return
@@ -48,5 +51,12 @@ export function useForm(rulesInput: FormRulesInput) {
     return errs
   }
 
-  return [formRef, rules, validate] as const
+  // for NForm v-bind
+  const binds = {
+    // TODO: model in binds, to avoid `:model="formValue"`
+    ref: formRef,
+    rules: formRules
+  }
+
+  return [binds, formValue, validate] as const
 }
