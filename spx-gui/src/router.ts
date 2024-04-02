@@ -7,34 +7,17 @@
  * @Description:
  */
 import type { App } from 'vue'
-import {
-  createRouter,
-  createWebHistory,
-  type NavigationGuard,
-  type RouteRecordRaw
-} from 'vue-router'
-import { useUserStore } from './stores'
-
-const signInGuard: NavigationGuard = (to, from, next) => {
-  const userStore = useUserStore()
-  if (!userStore.hasSignedIn()) {
-    userStore.signInWithRedirection()
-  } else {
-    next()
-  }
-}
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor' },
   {
     path: '/editor',
-    component: () => import('@/components/editor/EditorHomepage.vue'),
-    beforeEnter: signInGuard
+    component: () => import('@/components/editor/EditorHomepage.vue')
   },
   {
     path: '/editor/:projectName',
-    component: () => import('@/components/editor/EditorHomepage.vue'),
-    beforeEnter: signInGuard
+    component: () => import('@/components/editor/EditorHomepage.vue')
   },
   {
     path: '/callback',
