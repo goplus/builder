@@ -131,7 +131,7 @@ class Sdk {
     return `${this.config.serverUrl.trim()}/account${params}`
   }
 
-  public async signinWithRedirection(additionalParams?: IObject): Promise<void> {
+  public signinWithRedirection(additionalParams?: IObject) {
     window.location.assign(this.pkce.authorizeUrl(additionalParams))
   }
 

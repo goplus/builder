@@ -8,6 +8,7 @@
  */
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor' },
   {
