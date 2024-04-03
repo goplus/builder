@@ -50,18 +50,12 @@ export const useProjectStore = defineStore('project', () => {
   })
 
   async function openProject(owner: string, name: string) {
+    // TODO: sync name to route params, if openProject is called directly
+
     // TODO: UI logic to handle conflicts when there are local cache
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.loadFromCloud(owner, name)
-    newProject.syncToLocalCache(localCacheKey)
-    project.value = newProject
-  }
-
-  async function openBlankProject(owner = userStore.userInfo?.name, name: string) {
-    if (owner == null) throw new Error('owner info is required')
-    const newProject = new Project()
-    await newProject.load({ owner, name }, {})
     newProject.syncToLocalCache(localCacheKey)
     project.value = newProject
   }
@@ -104,7 +98,6 @@ export const useProjectStore = defineStore('project', () => {
   return {
     project,
     openProject,
-    openBlankProject,
     openProjectWithZipFile
   }
 })

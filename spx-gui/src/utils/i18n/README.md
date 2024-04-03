@@ -41,17 +41,17 @@ const { t } = useI18n()
 const signoutText = t({ en: 'Sign out', zh: '登出' })
 ```
 
-### Function Locale Message
+### Locale Message Functions
 
-Function-locale-messages are messages that extra information are needed when translating. For example:
+Locale-message-functions are functions that return locale message. It is useful when extra information is needed when constructing locale messages. For example:
 
 ```ts
-const projectSummaryMessage: FunctionLocaleMessage<[num: number]> = {
-  en: num => `You have ${num} project${num > 1 ? 's' : ''}`,
-  zh: num => `你有 ${num} 个项目`
-}
+const projectSummaryMessage = (num: number) => ({
+  en: `You have ${num} project${num > 1 ? 's' : ''}`,
+  zh: `你有 ${num} 个项目`
+})
 
-const projectSummary = t(projectSummaryMessage, 3) // "You have 3 projects" / "你有 3 个项目"
+const projectSummary = t(projectSummaryMessage(3)) // "You have 3 projects" / "你有 3 个项目"
 ```
 
 It's like [interpolations](https://vue-i18n.intlify.dev/guide/essentials/syntax.html#interpolations) in vue-i18n, but simpler & more powerful.
@@ -74,16 +74,4 @@ const helloMessage = {
 }
 const resultMessage = mapMessage(helloMessage, hello => hello + ' foo')
 console.log(t(resultMessage)) // "Hello foo" / "你好 foo"
-```
-
-We can also use `mapMessage` with function-locale-messages:
-
-```ts
-const projectSummaryMessage: FunctionLocaleMessage<[num: number]> = {
-  en: num => `You have ${num} project${num > 1 ? 's' : ''}`,
-  zh: num => `你有 ${num} 个项目`
-}
-
-const resultMessage = mapMessage(projectSummaryMessage, f => f(3))
-console.log(t(resultMessage)) // "You have 3 projects" / "你有 3 个项目"
 ```

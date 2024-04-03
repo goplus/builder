@@ -11,21 +11,30 @@
   <div id="spx">
     <n-config-provider :theme-overrides="themeOverrides">
       <n-message-provider>
-        <n-layout embedded>
-          <n-layout-header>
-            <TopMenu />
-          </n-layout-header>
-          <n-layout-content>
-            <router-view />
-          </n-layout-content>
-        </n-layout>
+        <NModalProvider>
+          <n-layout embedded>
+            <n-layout-header>
+              <TopMenu />
+            </n-layout-header>
+            <n-layout-content>
+              <router-view />
+            </n-layout-content>
+          </n-layout>
+        </NModalProvider>
       </n-message-provider>
     </n-config-provider>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NMessageProvider, NLayout, NLayoutHeader, NLayoutContent } from 'naive-ui'
+import {
+  NConfigProvider,
+  NMessageProvider,
+  NModalProvider,
+  NLayout,
+  NLayoutHeader,
+  NLayoutContent
+} from 'naive-ui'
 import TopMenu from '@/components/top-menu/TopMenu.vue'
 import '@/assets/theme'
 /**

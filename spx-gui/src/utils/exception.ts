@@ -4,7 +4,7 @@
 
 import { useMessage } from 'naive-ui'
 import { useI18n } from './i18n'
-import type { LocaleMessage, FunctionLocaleMessage } from './i18n'
+import type { LocaleMessage } from './i18n'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -22,43 +22,62 @@ export abstract class Exception extends Error {
 }
 
 export class DefaultException extends Exception {
+  name = 'DefaultException'
   constructor(public userMessage: LocaleMessage) {
     super(userMessage.en)
   }
 }
 
-const failedMessage: FunctionLocaleMessage<[summary: string, reason: string | null]> = {
-  en: (summary, reason) => (reason ? `${summary} (${reason})` : summary),
-  zh: (summary, reason) => (reason ? `${summary}（${reason}）` : summary)
+/**
+ * Cancelled is a special exception, it stands for a "cancel operation" because of user ineraction.
+ * Like other exceptions, it breaks normal flows, while it is supposed to be ignored by all user-feedback components,
+ * so the user will not be notified of cancelled exceptions.
+ */
+export class Cancelled extends Exception {
+  name = 'Cancelled'
+  userMessage = null
+  constructor() {
+    super('cancelled')
+  }
 }
 
-export function useMessageHandle<F extends () => Promise<unknown>>(
-  action: F,
+const failedMessage = (summary: string, reason: string | null) => ({
+  en: reason ? `${summary} (${reason})` : summary,
+  zh: reason ? `${summary}（${reason}）` : summary
+})
+
+export function useMessageHandle<Args extends any[], Ret>(
+  action: (...args: Args) => Promise<Ret>,
   failureSummaryMessage: LocaleMessage,
-  successMessage?: LocaleMessage
-): F {
+  successMessage?: LocaleMessage | ((ret: Ret) => LocaleMessage)
+): (...args: Args) => Promise<Ret> {
   const m = useMessage()
   const { t } = useI18n()
 
-  return (() => {
-    return action().then(
+  return (...args: Args) => {
+    return action(...args).then(
       (ret) => {
         if (successMessage != null) {
-          m.success(() => t(successMessage))
+          const successText = t(
+            typeof successMessage === 'function' ? successMessage(ret) : successMessage
+          )
+          m.success(() => successText)
         }
         return ret
       },
       (e) => {
-        let reasonMessage: LocaleMessage | null = null
-        if (e instanceof Exception && e.userMessage != null) {
-          reasonMessage = e.userMessage
+        if (!(e instanceof Cancelled)) {
+          let reasonMessage: LocaleMessage | null = null
+          if (e instanceof Exception && e.userMessage != null) {
+            reasonMessage = e.userMessage
+          }
+          const result = t(failedMessage(t(failureSummaryMessage), t(reasonMessage)))
+          m.error(() => result)
         }
-        const result = t(failedMessage, t(failureSummaryMessage), t(reasonMessage))
-        m.error(() => result)
         throw e
       }
     )
-  }) as F
+  }
 }
 
 // TODO: helpers for in-place feedback
