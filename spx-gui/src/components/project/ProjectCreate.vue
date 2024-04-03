@@ -1,7 +1,7 @@
 <template>
-  <NForm v-bind="formBinds" :model="formValue">
+  <NForm v-bind="form.binds" :model="form.value">
     <NFormItem :label="_t({ en: 'Project Name', zh: '项目名' })" path="name">
-      <NInput v-model:value="formValue.name" />
+      <NInput v-model:value="form.value.name" />
     </NFormItem>
     <NFormItem>
       <NButton type="tertiary" @click="handleCancel">
@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 
-const [formBinds, formValue, validateForm] = useForm({
+const form = useForm({
   name: ['', validateName]
 })
 
@@ -44,10 +44,10 @@ const addProject = useMessageHandle(
 )
 
 async function handleSubmit() {
-  const errs = await validateForm()
+  const errs = await form.validate()
   if (errs.length > 0) return
   const projectData = await addProject({
-    name: formValue.value.name,
+    name: form.value.name,
     isPublic: IsPublic.personal,
     files: {}
   })

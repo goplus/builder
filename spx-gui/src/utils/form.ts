@@ -3,7 +3,7 @@
  * @desc Helpers to deal with form validation
  */
 
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import type { FormRules, FormInst, FormValidationError } from 'naive-ui'
 import { useI18n, type LocaleMessage } from './i18n'
 
@@ -23,11 +23,11 @@ export function useForm(input: FormInput) {
 
   const formRef = ref<FormInst | null>(null)
 
-  const formValue = ref<{ [path: string]: any }>({})
+  const formValue = reactive<{ [path: string]: any }>({})
   const formRules: FormRules = {}
   Object.keys(input).forEach((path) => {
     const [initialValue, validator] = input[path]
-    formValue.value[path] = initialValue
+    formValue[path] = initialValue
     formRules[path] = {
       async validator(_: unknown, v: unknown) {
         const result = await validator(v)
@@ -58,5 +58,5 @@ export function useForm(input: FormInput) {
     rules: formRules
   }
 
-  return [binds, formValue, validate] as const
+  return { binds, value: formValue, validate }
 }
