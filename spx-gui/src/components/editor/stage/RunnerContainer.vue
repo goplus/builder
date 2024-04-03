@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="header">
-      <n-button>Share</n-button>
+      <n-button @click="handleShare">Share</n-button>
       <n-button type="success" @click="handleRerun"> Rerun (TODO: i18n) </n-button>
       <n-button type="error" @click="handleClose"> Close </n-button>
     </div>
@@ -27,8 +27,9 @@
 import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
-import { NButton } from 'naive-ui'
+import { NButton, useMessage } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
+import { useProjectStore } from '@/stores'
 
 defineProps<{ project: Project }>()
 const emit = defineEmits<{
@@ -36,6 +37,8 @@ const emit = defineEmits<{
 }>()
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
+const projectStore = useProjectStore()
+const nMessage = useMessage()
 
 const consoleMessages = ref<
   {
@@ -66,6 +69,17 @@ const handleRerun = () => {
 
 const handleClose = () => {
   emit('close')
+}
+
+const handleShare = async () => {
+  nMessage.loading('TODO: i18n: Saving to cloud')
+  await projectStore.project.saveToCloud()
+  // TODO: handle exception
+  console.log('TODO: share: mark as public')
+  await navigator.clipboard.writeText(
+    `${location.origin}/share/${projectStore.project.owner}/${projectStore.project.name}`
+  )
+  nMessage.success('TODO: i18n: Share link copied to clipboard')
 }
 </script>
 <style lang="scss" scoped>

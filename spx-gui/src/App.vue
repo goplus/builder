@@ -141,4 +141,8 @@ body {
     line-height: 1;
   }
 }
+
+.n-config-provider {
+  height: 100%;
+}
 </style>
