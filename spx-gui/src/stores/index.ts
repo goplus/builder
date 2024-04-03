@@ -16,5 +16,4 @@ export const initStore = (app: App) => {
   app.use(store)
 }
 
-export { useProjectStore } from './project'
 export { useUserStore } from './user'

@@ -19,7 +19,7 @@ const parseJwt = (token: string) => {
   return JSON.parse(jsonPayload)
 }
 
-export interface JwtPayload {
+export interface UserInfo {
   name: string
   id: string
   displayName: string
@@ -109,7 +109,7 @@ export const useUserStore = defineStore('spx-user', {
   getters: {
     userInfo: (state) => {
       if (!state.accessToken) return null
-      return parseJwt(state.accessToken) as JwtPayload
+      return parseJwt(state.accessToken) as UserInfo
     }
   },
   persist: true

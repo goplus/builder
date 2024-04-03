@@ -18,25 +18,24 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { NButton } from 'naive-ui'
 import type { languages } from 'monaco-editor'
-import { useEditorStore } from '@/stores/editor'
 import CodeEditor from './code-editor'
-const projectStore = useProjectStore()
-const editorStore = useEditorStore()
+
+const editorCtx = useEditorCtx()
 
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
 const currentCode = computed(() =>
-  editorStore.selectedSprite ? editorStore.selectedSprite.code : projectStore.project.stage.code
+  editorCtx.selectedSprite ? editorCtx.selectedSprite.code : editorCtx.project.stage.code
 )
 
 const onCodeChange = (value: string) => {
-  if (editorStore.selectedSprite) {
-    editorStore.selectedSprite.setCode(value)
+  if (editorCtx.selectedSprite) {
+    editorCtx.selectedSprite.setCode(value)
   } else {
-    projectStore.project.stage.setCode(value)
+    editorCtx.project.stage.setCode(value)
   }
 }
 

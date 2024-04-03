@@ -16,9 +16,11 @@ export interface I18nConfig {
   lang: Lang
 }
 
+export type TranslateFn = InstanceType<typeof I18n>['t']
+
 declare module 'vue' {
   interface ComponentCustomProperties {
-    _t: InstanceType<typeof I18n>['t']
+    _t: TranslateFn
   }
 }
 

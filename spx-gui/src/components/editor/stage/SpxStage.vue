@@ -30,18 +30,16 @@
 import { ref, watch, computed } from 'vue'
 import { useSize } from '@/utils/dom'
 import { NButton, NModal } from 'naive-ui'
-import { useProjectStore } from '@/stores'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'
 
 let show = ref(false)
 
-const projectStore = useProjectStore()
-const editorStore = useEditorStore()
+const editorCtx = useEditorCtx()
 
-const project = computed(() => projectStore.project)
+const project = computed(() => editorCtx.project)
 const spxStage = ref<HTMLElement | null>(null)
 const { width: containerWidth, height: containerHeight } = useSize(spxStage)
 
@@ -49,14 +47,14 @@ const selectedSpriteNames = ref<string[]>([])
 
 const onSelectedSpritesChange = (e: SelectedSpritesChangeEvent) => {
   selectedSpriteNames.value = e.names
-  editorStore.select('sprite', e.names[0])
+  editorCtx.select('sprite', e.names[0])
 }
 
 watch(
-  () => editorStore.selectedSprite,
+  () => editorCtx.selectedSprite,
   () => {
-    if (editorStore.selectedSprite) {
-      selectedSpriteNames.value = [editorStore.selectedSprite.name]
+    if (editorCtx.selectedSprite) {
+      selectedSpriteNames.value = [editorCtx.selectedSprite.name]
     } else {
       selectedSpriteNames.value = []
     }

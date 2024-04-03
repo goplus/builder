@@ -1,13 +1,8 @@
-/*
- * @Author: Xu Ning
- * @Date: 2024-01-15 09:16:35
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-10 14:51:46
- * @FilePath: \builder\spx-gui\src\router\index.ts
- * @Description:
- */
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+
+// TODO: type-safe route match & construct (with params)
+export const editProjectRouteName = 'edit-project'
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor' },
@@ -16,6 +11,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/components/editor/EditorHomepage.vue')
   },
   {
+    name: editProjectRouteName,
     path: '/editor/:projectName',
     component: () => import('@/components/editor/EditorHomepage.vue')
   },

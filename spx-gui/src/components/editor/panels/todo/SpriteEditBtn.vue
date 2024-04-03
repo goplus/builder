@@ -13,7 +13,7 @@
         round
         autosize
         clearable
-        :disabled="!editorStore.selectedSprite"
+        :disabled="!editorCtx.selectedSprite"
         :placeholder="$t('stage.spriteHolder')"
         :value="name"
         @blur="handleUpdateSpriteName"
@@ -31,10 +31,10 @@
         clearable
         type="number"
         :value="x"
-        :disabled="!editorStore.selectedSprite"
+        :disabled="!editorCtx.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.selectedSprite && editorStore.selectedSprite.setX(val as number)
+            editorCtx.selectedSprite && editorCtx.selectedSprite.setX(val as number)
           }
         "
       >
@@ -45,10 +45,10 @@
       <n-input-number
         type="number"
         :value="y"
-        :disabled="!editorStore.selectedSprite"
+        :disabled="!editorCtx.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.selectedSprite && editorStore.selectedSprite.setY(val as number)
+            editorCtx.selectedSprite && editorCtx.selectedSprite.setY(val as number)
           }
         "
       >
@@ -61,7 +61,7 @@
         v-model:value="visible"
         @update:value="
           (val) => {
-            editorStore.selectedSprite && editorStore.selectedSprite.setVisible(val)
+            editorCtx.selectedSprite && editorCtx.selectedSprite.setVisible(val)
           }
         "
       >
@@ -72,10 +72,10 @@
         type="number"
         :min="0"
         :value="size * 100"
-        :disabled="!editorStore.selectedSprite"
+        :disabled="!editorCtx.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.selectedSprite && editorStore.selectedSprite.setSize((val as number) / 100)
+            editorCtx.selectedSprite && editorCtx.selectedSprite.setSize((val as number) / 100)
           }
         "
       >
@@ -89,10 +89,10 @@
         :min="-180"
         :max="180"
         :value="heading"
-        :disabled="!editorStore.selectedSprite"
+        :disabled="!editorCtx.selectedSprite"
         @update:value="
           (val) => {
-            editorStore.selectedSprite && editorStore.selectedSprite.setHeading(val as number)
+            editorCtx.selectedSprite && editorCtx.selectedSprite.setHeading(val as number)
           }
         "
       >
@@ -107,30 +107,26 @@
 import { computed, ref, watch } from 'vue'
 import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
 import { checkUpdatedName } from '@/utils/asset'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { useI18n } from 'vue-i18n'
-import { useEditorStore } from '@/stores/editor'
 
-// ----------props & emit------------------------------------
-const editorStore = useEditorStore()
+const editorCtx = useEditorCtx()
 
 // ----------data related -----------------------------------
 // TODO: check all default values here, they should be consistent with spx
-const x = computed(() => editorStore.selectedSprite?.x ?? 0)
-const y = computed(() => editorStore.selectedSprite?.y ?? 0)
-const heading = computed(() =>
-  editorStore.selectedSprite ? editorStore.selectedSprite.heading : 0
-)
-const size = computed(() => editorStore.selectedSprite?.size ?? 0)
+const x = computed(() => editorCtx.selectedSprite?.x ?? 0)
+const y = computed(() => editorCtx.selectedSprite?.y ?? 0)
+const heading = computed(() => (editorCtx.selectedSprite ? editorCtx.selectedSprite.heading : 0))
+const size = computed(() => editorCtx.selectedSprite?.size ?? 0)
 const visible = computed(() =>
-  editorStore.selectedSprite ? editorStore.selectedSprite.visible : false
+  editorCtx.selectedSprite ? editorCtx.selectedSprite.visible : false
 )
-const name = ref(editorStore.selectedSprite?.name ?? '')
+const name = ref(editorCtx.selectedSprite?.name ?? '')
 const { t } = useI18n({
   inheritLocale: true
 })
 watch(
-  () => editorStore.selectedSprite?.name,
+  () => editorCtx.selectedSprite?.name,
   (newName) => {
     name.value = newName || ''
   }
@@ -138,16 +134,12 @@ watch(
 
 const { message } = createDiscreteApi(['message'])
 function handleUpdateSpriteName() {
-  if (!editorStore.selectedSprite) return
+  if (!editorCtx.selectedSprite) return
   try {
-    const checkInfo = checkUpdatedName(
-      name.value,
-      useProjectStore().project,
-      editorStore.selectedSprite.name
-    )
+    const checkInfo = checkUpdatedName(name.value, editorCtx.project, editorCtx.selectedSprite.name)
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
-      editorStore.selectedSprite.setName(checkInfo.name)
+      editorCtx.selectedSprite.setName(checkInfo.name)
       message.success(t('message.update'))
     }
     if (checkInfo.msg) message.warning(checkInfo.msg)

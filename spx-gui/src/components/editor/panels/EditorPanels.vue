@@ -20,19 +20,19 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import SoundsPanel from './sound/SoundsPanel.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
 import StagePanel from './stage/StagePanel.vue'
-import { useEditorStore } from '@/stores/editor'
 
 const activePanel = ref<'sprites' | 'sounds'>('sprites')
 function activate(panel: 'sprites' | 'sounds') {
   activePanel.value = panel
 }
 
-const editorStore = useEditorStore()
+const editorCtx = useEditorCtx()
 watch(
-  () => editorStore.selected,
+  () => editorCtx.selected,
   (selected) => {
     if (selected?.type === 'sprite' && activePanel.value !== 'sprites') activate('sprites')
     if (selected?.type === 'sound' && activePanel.value !== 'sounds') activate('sounds')

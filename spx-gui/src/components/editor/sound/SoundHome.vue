@@ -15,7 +15,7 @@
     >
       <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="AssetType.Sound" />
       <SoundsEditCard
-        v-for="asset in projectStore.project.sounds"
+        v-for="asset in editorCtx.project.sounds"
         :key="asset.name"
         :asset="asset"
         :style="{ 'margin-bottom': '26px' }"
@@ -41,20 +41,20 @@ import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } fr
 import { Sound } from '@/models/sound'
 import AssetAddBtn from '@/components/editor/panels/todo/AssetAddBtn.vue' // TODO: review this dependency
 import { checkUpdatedName } from '@/utils/asset'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import type { File } from '@/models/common/file'
 import { AssetType } from '@/apis/asset'
 import SoundsEditCard from './SoundEditCard.vue'
 import SoundsEdit from './SoundEdit.vue'
 
 const message: MessageApi = useMessage()
-const projectStore = useProjectStore()
+const editorCtx = useEditorCtx()
 const selectedSound = ref<Sound>()
 
 watch(
-  () => projectStore.project,
+  () => editorCtx.project,
   () => {
-    selectedSound.value = projectStore.project.sounds[0]
+    selectedSound.value = editorCtx.project.sounds[0]
   }
 )
 
@@ -76,11 +76,7 @@ const handleSoundFileUpdate = (newFile: File) => {
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
-      const checkInfo = checkUpdatedName(
-        newName,
-        useProjectStore().project,
-        selectedSound.value.name
-      )
+      const checkInfo = checkUpdatedName(newName, editorCtx.project, selectedSound.value.name)
       if (!checkInfo.isSame && !checkInfo.isChanged) {
         selectedSound.value.name = checkInfo.name
         message.success(t('message.update'))
@@ -93,7 +89,7 @@ const handleSoundFileNameUpdate = (newName: string) => {
 }
 
 const handleDeleteSound = (sound: Sound) => {
-  projectStore.project.removeSound(sound.name)
+  editorCtx.project.removeSound(sound.name)
 }
 </script>
 
