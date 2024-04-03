@@ -146,7 +146,7 @@ import { useI18n } from 'vue-i18n'
 import { isValidAssetName } from '@/utils/asset'
 import { isImage, isSound } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { stripExt } from '@/utils/path'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
@@ -159,7 +159,7 @@ interface PropType {
 }
 const props = defineProps<PropType>()
 const message = useMessage()
-const projectStore = useProjectStore()
+const editorCtx = useEditorCtx()
 const { isOnline } = useNetwork()
 
 const { t } = useI18n({
@@ -278,7 +278,7 @@ const beforeUpload = async (
           message.error(t('message.image'))
           return false
         }
-        projectStore.project.stage.addBackdrop(new Backdrop(assetName, file, {}))
+        editorCtx.project.stage.addBackdrop(new Backdrop(assetName, file, {}))
         break
       }
       case 'sound': {
@@ -286,7 +286,7 @@ const beforeUpload = async (
           message.error(t('message.sound'))
           return false
         }
-        projectStore.project.addSound(new Sound(assetName, file, {}))
+        editorCtx.project.addSound(new Sound(assetName, file, {}))
         break
       }
       default:
@@ -345,7 +345,7 @@ const handleSubmitSprite = async (): Promise<void> => {
   )
   const costumes = files.map((f) => new Costume(stripExt(f.name), f, {}))
   const sprite = new Sprite(uploadSpriteName.value, '', costumes, {})
-  projectStore.project.addSprite(sprite)
+  editorCtx.project.addSprite(sprite)
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
   if (publishState.value !== PublishState.noUpload) {
@@ -379,17 +379,17 @@ const handleAssetAddition = async (asset: AssetData) => {
   switch (asset.assetType) {
     case AssetType.Sprite: {
       const sprite = await asset2Sprite(asset)
-      projectStore.project.addSprite(sprite)
+      editorCtx.project.addSprite(sprite)
       break
     }
     case AssetType.Backdrop: {
       const backdrop = await asset2Backdrop(asset)
-      projectStore.project.stage.addBackdrop(backdrop)
+      editorCtx.project.stage.addBackdrop(backdrop)
       break
     }
     case AssetType.Sound: {
       const sprite = await asset2Sprite(asset)
-      projectStore.project.addSprite(sprite)
+      editorCtx.project.addSprite(sprite)
       break
     }
   }

@@ -31,11 +31,11 @@
             <!-- E Component Add Button type second step -->
             <!-- S Component ImageCardCom -->
             <ImageCardCom
-              v-for="asset in projectStore.project.sprites"
+              v-for="asset in editorCtx.project.sprites"
               :key="asset.name"
               :type="'sprite'"
               :asset="asset"
-              :active="asset === editorStore.selectedSprite"
+              :active="asset === editorCtx.selectedSprite"
               @click="toggleCodeById(asset)"
             />
             <!-- E Component ImageCardCom -->
@@ -63,23 +63,21 @@
 import { ref } from 'vue'
 import { NGrid, NGridItem, NFlex, NButton, NModal } from 'naive-ui'
 import LoadFromScratch from '@/components/library/LoadFromScratch.vue'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import type { Sprite } from '@/models/sprite'
-import { useEditorStore } from '@/stores/editor'
 import { AssetType } from '@/apis/asset'
 import SpriteEditBtn from '../todo/SpriteEditBtn.vue'
 import ImageCardCom from '../todo/ImageCardCom.vue'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 
-const projectStore = useProjectStore()
-const editorStore = useEditorStore()
+const editorCtx = useEditorCtx()
 const bodyStyle = { margin: 'auto' }
 
 // Ref about show import asset modal or not.
 const showImportModal = ref<boolean>(false)
 
 const toggleCodeById = (sprite: Sprite) => {
-  editorStore.select('sprite', sprite.name)
+  editorCtx.select('sprite', sprite.name)
 }
 </script>
 

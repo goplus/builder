@@ -102,7 +102,7 @@ import {
   NSpin
 } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { commonColor } from '@/assets/theme'
 import error from '@/assets/error.svg'
 import { type AssetFileDetail as ScratchAssetFile, parseScratchFile } from '@/utils/scratch'
@@ -114,9 +114,7 @@ import { fromBlob } from '@/models/common/file'
 import { sound2Asset, sprite2Asset } from '@/models/common'
 import SoundsImport from './images/sound-import.svg'
 
-// ----------props & emit------------------------------------
-
-const projectStore = useProjectStore()
+const editorCtx = useEditorCtx()
 const message: MessageApi = useMessage()
 
 // ----------data related -----------------------------------
@@ -213,9 +211,9 @@ const importSelectedAssetsToProject = async () => {
     selectedAssets.value.map(async (asset) => {
       const spriteOrSound = await scratchAsset2Asset(asset)
       if (spriteOrSound instanceof Sprite) {
-        projectStore.project.addSprite(spriteOrSound)
+        editorCtx.project.addSprite(spriteOrSound)
       } else {
-        projectStore.project.addSound(spriteOrSound)
+        editorCtx.project.addSound(spriteOrSound)
       }
     })
   )

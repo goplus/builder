@@ -48,7 +48,7 @@ import { NImage } from 'naive-ui'
 import { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
 import error from '@/assets/error.svg'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -57,7 +57,7 @@ interface PropType {
   active?: boolean
 }
 const props = defineProps<PropType>()
-const projectStore = useProjectStore()
+const editorCtx = useEditorCtx()
 const firstBackdropStyle = { 'box-shadow': '0px 0px 0px 4px #FF81A7' }
 
 // ----------computed properties-----------------------------
@@ -95,15 +95,15 @@ effect(async () => {
 
 // ----------methods-----------------------------------------
 const deleteSprite = (sprite: Sprite) => {
-  projectStore.project.removeSprite(sprite.name)
+  editorCtx.project.removeSprite(sprite.name)
 }
 
 const deleteBackdrop = (name: string) => {
-  projectStore.project.stage.removeBackdrop(name)
+  editorCtx.project.stage.removeBackdrop(name)
 }
 
 const topBackdrop = (name: string) => {
-  projectStore.project.stage.topBackdrop(name)
+  editorCtx.project.stage.topBackdrop(name)
 }
 </script>
 

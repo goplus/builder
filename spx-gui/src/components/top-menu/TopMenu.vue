@@ -1,39 +1,42 @@
-<!--
- * @Author: Xu Ning
- * @Date: 2024-01-12 16:52:20
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-13 18:18:02
- * @FilePath: /spx-gui/src/components/top-menu/TopMenu.vue
- * @Description:
--->
 <template>
-  <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
-  <ProjectList :show="showModal" @update:show="showModal = false" />
+  <div class="menu-container">
+    <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
+  </div>
 </template>
 
 <script setup lang="ts">
+// if this top-menu is for editor only, we should move it into editor
+// TODO: check if the same top menu is needed for pages other than editor
+
 import { computed, h, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { NMenu, NButton, NInput, NIcon, NDropdown } from 'naive-ui'
 import { FilePresentTwotone as FileIcon, SaveTwotone as SaveIcon } from '@vicons/material'
 import { SettingsOutline as SettingsIcon } from '@vicons/ionicons5'
 import saveAs from 'file-saver'
 import { saveColor, fileColor } from '@/assets/theme'
-import { useProjectStore } from '@/stores'
-import UserAvatar from './UserAvatar.vue'
-import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { useCreateProject } from '@/components/project'
+import { useCreateProject, useChooseProject } from '@/components/project'
+import type { Project } from '@/models/project'
+import { editProjectRouteName } from '@/router'
+import UserAvatar from './UserAvatar.vue'
 
-const projectStore = useProjectStore()
-const showModal = ref<boolean>(false)
+const props = defineProps<{
+  project: Project | null
+}>()
 
 // active key for route
 const activeKey = ref(null)
 const { t } = useI18n()
 const { isOnline } = useNetwork()
+const router = useRouter()
+
+function openProject(projectName: string) {
+  router.push({ name: editProjectRouteName, params: { projectName } })
+}
 
 /**
  * @description: dropdown options of import/save/export
@@ -42,16 +45,16 @@ const { isOnline } = useNetwork()
  */
 const importOptions = computed(() => [
   {
-    label: t({ en: 'Upload', zh: '上传' }),
-    key: 'Upload'
-  },
-  {
-    label: t({ en: 'Load', zh: '加载' }),
-    key: 'Load'
-  },
-  {
-    label: t({ en: 'Blank', zh: '空项目' }),
+    label: t({ en: 'New project...', zh: '创建新项目' }),
     key: 'Blank'
+  },
+  {
+    label: t({ en: 'Open project...', zh: '打开项目' }),
+    key: 'Open'
+  },
+  {
+    label: t({ en: 'Upload project', zh: '上传' }),
+    key: 'Upload'
   }
 ])
 
@@ -125,7 +128,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              () => t({ en: 'File', zh: '文件' })
+              () => t({ en: 'Project', zh: '项目' })
             )
         }
       ),
@@ -167,9 +170,9 @@ const menuOptions = [
             border: '2px solid #001429',
             width: '30vw'
           },
-          value: projectStore.project.name,
+          value: props.project?.name,
           'onUpdate:value': (value: string) => {
-            projectStore.project.name = value
+            if (props.project != null) props.project.name = value
           }
         },
         () => 'title'
@@ -227,6 +230,7 @@ const computedButtonStyle = (color1: string) => {
 }
 
 const createProject = useCreateProject()
+const chooseProject = useChooseProject()
 
 const handleSelectImport = async (key: string | number) => {
   if (key === 'Upload') {
@@ -236,23 +240,30 @@ const handleSelectImport = async (key: string | number) => {
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0]
-      await projectStore.openProjectWithZipFile(undefined, undefined, file)
+      if (props.project != null) {
+        await props.project.loadZipFile(file)
+      }
     }
-  } else if (key === 'Load') {
-    showModal.value = true
+  } else if (key === 'Open') {
+    const { name } = await chooseProject()
+    openProject(name)
   } else if (key === 'SaveLocal') {
-    const zipFile = await projectStore.project.exportZipFile()
-    saveAs(zipFile, zipFile.name)
+    if (props.project != null) {
+      const zipFile = await props.project.exportZipFile()
+      saveAs(zipFile, zipFile.name)
+    }
   } else if (key === 'SaveCloud') {
-    await handleSaveCloud()
+    if (props.project != null) {
+      await handleSaveCloud()
+    }
   } else if (key === 'Blank') {
-    const { owner, name } = await createProject()
-    await projectStore.openProject(owner, name)
+    const { name } = await createProject()
+    openProject(name)
   }
 }
 
 const handleSaveCloud = useMessageHandle(
-  () => projectStore.project.saveToCloud(),
+  () => props.project!.saveToCloud(),
   { en: 'Failed to save project', zh: '项目保存失败' },
   { en: 'Project saved', zh: '保存成功' }
 )
@@ -285,4 +296,10 @@ function renderIcon(icon: any) {
 const toggleLanguage = useToggleLanguage()
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.menu-container {
+  background: #ff81a7;
+  height: 34px;
+  padding: 13px;
+}
+</style>

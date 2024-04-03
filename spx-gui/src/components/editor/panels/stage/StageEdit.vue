@@ -9,7 +9,7 @@
 <template>
   <div class="stage-list">
     <div
-      :class="!editorStore.selectedSprite ? 'stage-list-title-click' : 'stage-list-title'"
+      :class="!editorCtx.selectedSprite ? 'stage-list-title-click' : 'stage-list-title'"
       @click="enableEditEntryCode"
     >
       {{ $t('stage.stage') }}
@@ -20,12 +20,12 @@
 
 <script setup lang="ts">
 import BackdropList from './BackdropList.vue'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 
-const editorStore = useEditorStore()
+const editorCtx = useEditorCtx()
 
 const enableEditEntryCode = () => {
-  editorStore.select('stage')
+  editorCtx.select('stage')
 }
 </script>
 

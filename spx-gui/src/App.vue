@@ -12,14 +12,7 @@
     <n-config-provider :theme-overrides="themeOverrides">
       <n-message-provider>
         <NModalProvider>
-          <n-layout embedded>
-            <n-layout-header>
-              <TopMenu />
-            </n-layout-header>
-            <n-layout-content>
-              <router-view />
-            </n-layout-content>
-          </n-layout>
+          <router-view />
         </NModalProvider>
       </n-message-provider>
     </n-config-provider>
@@ -30,12 +23,8 @@
 import {
   NConfigProvider,
   NMessageProvider,
-  NModalProvider,
-  NLayout,
-  NLayoutHeader,
-  NLayoutContent
+  NModalProvider
 } from 'naive-ui'
-import TopMenu from '@/components/top-menu/TopMenu.vue'
 import '@/assets/theme'
 /**
  * @description: Override spx-gui theme
@@ -113,17 +102,6 @@ body {
 
 :lang(zh) {
   font-size: 16px;
-}
-
-.n-layout-header {
-  background: $base-color;
-  height: 60px;
-  padding: 13px;
-}
-
-.n-layout {
-  height: 100%;
-  background: #ffffff00;
 }
 
 .n-menu,

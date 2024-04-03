@@ -10,7 +10,7 @@
   <div class="stage-list">
     <div class="stage-list-space">
       <AssetAddBtn :type="AssetType.Backdrop" />
-      <ImageCardCom :type="'bg'" :asset="projectStore.project.stage" />
+      <ImageCardCom :type="'bg'" :asset="editorCtx.project.stage" />
     </div>
   </div>
 </template>
@@ -18,11 +18,10 @@
 <script setup lang="ts">
 import ImageCardCom from '../todo/ImageCardCom.vue'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
-import { useProjectStore } from '@/stores'
+import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { AssetType } from '@/apis/asset'
 
-// ----------props & emit------------------------------------
-const projectStore = useProjectStore()
+const editorCtx = useEditorCtx()
 </script>
 
 <style scoped lang="scss">
