@@ -1,23 +1,25 @@
 <template>
   <div class="container">
     <div class="header">
-      <n-button type="primary" @click="handleRerun">Rerun</n-button>
-      <n-button>Share</n-button>
+      <n-button type="primary" @click="handleRerun">Rerun (TODO: i18n)</n-button>
+      <n-button @click="handleShare">Share</n-button>
     </div>
-    <ProjectRunner ref="projectRunnerRef" :project="projectStore.project" class="runner" />
+    <ProjectRunner v-if="project" ref="projectRunnerRef" :project="project" class="runner" />
   </div>
 </template>
 <script setup lang="ts">
-import { useProjectStore } from '@/stores'
 import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ProjectRunner from '../project-runner/ProjectRunner.vue'
 import { ref } from 'vue'
-import { NButton } from 'naive-ui'
+import { NButton, useMessage } from 'naive-ui'
+import { Project } from '@/models/project'
+import { copyShareLink } from '@/utils/share'
 
 const route = useRoute()
-const projectStore = useProjectStore()
+const project = ref<Project>()
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
+const message = useMessage()
 
 watch(
   () => {
@@ -26,9 +28,12 @@ watch(
     return { owner, name }
   },
   async ({ owner, name }) => {
-    console.log('open project', owner, name)
     if (!owner || !name) return
-    await projectStore.openProject(owner, name)
+    const newProject = new Project()
+    await newProject.loadFromCloud(owner, name)
+    project.value = newProject
+
+    projectRunnerRef.value?.stop()
     projectRunnerRef.value?.run()
   },
   { deep: true, immediate: true }
@@ -37,6 +42,11 @@ watch(
 const handleRerun = () => {
   projectRunnerRef.value?.stop()
   projectRunnerRef.value?.run()
+}
+
+const handleShare = () => {
+  if (!project.value?.owner || !project.value?.name) return
+  copyShareLink(project.value.owner, project.value.name, message)
 }
 </script>
 <style scoped lang="scss">

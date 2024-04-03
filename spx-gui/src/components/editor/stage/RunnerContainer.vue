@@ -31,6 +31,7 @@ import { NButton, useMessage } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { useProjectStore } from '@/stores'
 import { IsPublic } from '@/apis/common'
+import { copyShareLink } from '@/utils/share'
 
 defineProps<{ project: Project }>()
 const emit = defineEmits<{
@@ -76,11 +77,10 @@ const handleShare = async () => {
   nMessage.loading('TODO: i18n: Saving to cloud')
   projectStore.project.setPublic(IsPublic.public)
   await projectStore.project.saveToCloud()
-
-  await navigator.clipboard.writeText(
-    `${location.origin}/share/${projectStore.project.owner}/${projectStore.project.name}`
-  )
-  nMessage.success('TODO: i18n: Share link copied to clipboard')
+  if (!projectStore.project.owner || !projectStore.project.name) {
+    throw new Error('project.owner or project.name is empty')
+  }
+  await copyShareLink(projectStore.project.owner, projectStore.project.name, nMessage)
 }
 </script>
 <style lang="scss" scoped>
