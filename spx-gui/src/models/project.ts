@@ -105,6 +105,10 @@ export class Project extends Disposble {
     this.sounds.push(sound)
   }
 
+  setPublic(isPublic: IsPublic) {
+    this.isPublic = isPublic
+  }
+
   constructor() {
     super()
     this.load({}, {}) // ensure stage, sprites, sounds, zorder etc.

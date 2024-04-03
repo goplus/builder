@@ -30,6 +30,7 @@ import type { Project } from '@/models/project'
 import { NButton, useMessage } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { useProjectStore } from '@/stores'
+import { IsPublic } from '@/apis/common'
 
 defineProps<{ project: Project }>()
 const emit = defineEmits<{
@@ -73,9 +74,9 @@ const handleClose = () => {
 
 const handleShare = async () => {
   nMessage.loading('TODO: i18n: Saving to cloud')
+  projectStore.project.setPublic(IsPublic.public)
   await projectStore.project.saveToCloud()
-  // TODO: handle exception
-  console.log('TODO: share: mark as public')
+
   await navigator.clipboard.writeText(
     `${location.origin}/share/${projectStore.project.owner}/${projectStore.project.name}`
   )
