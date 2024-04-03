@@ -22,6 +22,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/callback',
     component: () => import('@/components/SigninCallback.vue')
+  },
+  {
+    path: '/share/:owner/:name',
+    component: () => import('@/components/share/SharePage.vue')
   }
 ]
 

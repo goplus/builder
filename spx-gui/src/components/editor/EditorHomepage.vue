@@ -1,18 +1,10 @@
-<!--
- * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-01-12 17:30:39
- * @LastEditors: Xu Ning
- * @LastEditTime: 2024-01-24 17:56:41
- * @FilePath: /builder/spx-gui/src/view/EditorHomepage.vue
- * @Description:
--->
 <template>
   <div class="editor-homepage">
     <div class="editor">
       <SpxEditor />
     </div>
     <div class="sider">
-      <SpxStage :project="project" />
+      <SpxStage :project="projectStore.project" />
       <EditorPanels />
     </div>
   </div>
@@ -22,9 +14,10 @@
 import SpxEditor from './SpxEditor.vue'
 import SpxStage from './stage/SpxStage.vue'
 import EditorPanels from './panels/EditorPanels.vue'
-import { storeToRefs } from 'pinia'
 import { useProjectStore, useUserStore } from '@/stores'
 import { watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
+import { watch } from 'vue'
 
 const userStore = useUserStore()
 watchEffect(() => {
@@ -36,7 +29,17 @@ watchEffect(() => {
 })
 
 const projectStore = useProjectStore()
-const { project } = storeToRefs(projectStore)
+const route = useRoute()
+
+watch(
+  () => route.params.projectName,
+  (name) => {
+    if (!name) return
+    const owner = userStore.userInfo?.name
+    if (!owner) return
+    projectStore.openProject(owner, name as string)
+  }
+)
 </script>
 
 <style scoped lang="scss">

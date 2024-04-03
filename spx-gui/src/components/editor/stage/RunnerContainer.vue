@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="header">
-      <n-button>Share</n-button>
+      <n-button @click="handleShare">Share</n-button>
       <n-button type="success" @click="handleRerun"> Rerun (TODO: i18n) </n-button>
       <n-button type="error" @click="handleClose"> Close </n-button>
     </div>
@@ -27,8 +27,11 @@
 import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
-import { NButton } from 'naive-ui'
+import { NButton, useMessage } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
+import { useProjectStore } from '@/stores'
+import { IsPublic } from '@/apis/common'
+import { copyShareLink } from '@/utils/share'
 
 defineProps<{ project: Project }>()
 const emit = defineEmits<{
@@ -36,6 +39,8 @@ const emit = defineEmits<{
 }>()
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
+const projectStore = useProjectStore()
+const nMessage = useMessage()
 
 const consoleMessages = ref<
   {
@@ -66,6 +71,16 @@ const handleRerun = () => {
 
 const handleClose = () => {
   emit('close')
+}
+
+const handleShare = async () => {
+  nMessage.loading('TODO: i18n: Saving to cloud')
+  projectStore.project.setPublic(IsPublic.public)
+  await projectStore.project.saveToCloud()
+  if (!projectStore.project.owner || !projectStore.project.name) {
+    throw new Error('project.owner or project.name is empty')
+  }
+  await copyShareLink(projectStore.project.owner, projectStore.project.name, nMessage)
 }
 </script>
 <style lang="scss" scoped>
