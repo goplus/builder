@@ -8,7 +8,6 @@
 -->
 <template>
   <NMenu v-model:value="activeKey" mode="horizontal" :options="menuOptions" responsive />
-  <ProjectList :show="showModal" @update:show="showModal = false" />
 </template>
 
 <script setup lang="ts">
@@ -20,15 +19,13 @@ import saveAs from 'file-saver'
 import { saveColor, fileColor } from '@/assets/theme'
 import { useProjectStore } from '@/stores'
 import UserAvatar from './UserAvatar.vue'
-import ProjectList from '@/components/project-list/ProjectList.vue'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
-import { useCreateProject } from '@/components/project'
+import { useCreateProject, useChooseProject } from '@/components/project'
 
 const projectStore = useProjectStore()
-const showModal = ref<boolean>(false)
 
 // active key for route
 const activeKey = ref(null)
@@ -42,16 +39,16 @@ const { isOnline } = useNetwork()
  */
 const importOptions = computed(() => [
   {
-    label: t({ en: 'Upload', zh: '上传' }),
-    key: 'Upload'
-  },
-  {
-    label: t({ en: 'Load', zh: '加载' }),
-    key: 'Load'
-  },
-  {
-    label: t({ en: 'Blank', zh: '空项目' }),
+    label: t({ en: 'New project...', zh: '创建新项目' }),
     key: 'Blank'
+  },
+  {
+    label: t({ en: 'Open project...', zh: '打开项目' }),
+    key: 'Open'
+  },
+  {
+    label: t({ en: 'Upload project', zh: '上传' }),
+    key: 'Upload'
   }
 ])
 
@@ -125,7 +122,7 @@ const menuOptions = [
                 style: computedButtonStyle(fileColor),
                 renderIcon: renderIcon(FileIcon)
               },
-              () => t({ en: 'File', zh: '文件' })
+              () => t({ en: 'Project', zh: '项目' })
             )
         }
       ),
@@ -227,6 +224,7 @@ const computedButtonStyle = (color1: string) => {
 }
 
 const createProject = useCreateProject()
+const chooseProject = useChooseProject()
 
 const handleSelectImport = async (key: string | number) => {
   if (key === 'Upload') {
@@ -236,18 +234,19 @@ const handleSelectImport = async (key: string | number) => {
     input.click()
     input.onchange = async (e: any) => {
       const file = e.target.files[0]
-      await projectStore.openProjectWithZipFile(undefined, undefined, file)
+      await projectStore.openProjectWithZipFile(undefined, file)
     }
-  } else if (key === 'Load') {
-    showModal.value = true
+  } else if (key === 'Open') {
+    const { name } = await chooseProject()
+    projectStore.openProject(name)
   } else if (key === 'SaveLocal') {
     const zipFile = await projectStore.project.exportZipFile()
     saveAs(zipFile, zipFile.name)
   } else if (key === 'SaveCloud') {
     await handleSaveCloud()
   } else if (key === 'Blank') {
-    const { owner, name } = await createProject()
-    await projectStore.openProject(owner, name)
+    const { name } = await createProject()
+    projectStore.openProject(name)
   }
 }
 

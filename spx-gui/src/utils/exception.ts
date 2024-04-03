@@ -5,6 +5,7 @@
 import { useMessage } from 'naive-ui'
 import { useI18n } from './i18n'
 import type { LocaleMessage } from './i18n'
+import { ref, shallowRef, watchEffect } from 'vue'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -41,46 +42,108 @@ export class Cancelled extends Exception {
   }
 }
 
-const failedMessage = (summary: string, reason: string | null) => ({
-  en: reason ? `${summary} (${reason})` : summary,
-  zh: reason ? `${summary}（${reason}）` : summary
-})
+export class ActionException extends Exception {
+  name = 'ActionException'
+  userMessage: LocaleMessage
 
-export function useMessageHandle<Args extends any[], Ret>(
-  action: (...args: Args) => Promise<Ret>,
+  constructor(
+    public cause: unknown,
+    summary: LocaleMessage
+  ) {
+    const reason = cause instanceof Exception ? cause.userMessage : null
+    const userMessage = {
+      en: reason ? `${summary.en} (${reason.en})` : summary.en,
+      zh: reason ? `${summary.zh} (${reason.zh})` : summary.zh
+    }
+    super(userMessage.en)
+    this.userMessage = userMessage
+  }
+}
+
+/** useAction transforms exceptions to ActionException instances, with proper messages */
+export function useAction<Args extends any[], T>(
+  fn: (...args: Args) => Promise<T>,
+  failureSummaryMessage: LocaleMessage
+): (...args: Args) => Promise<T> {
+  return async (...args: Args) => {
+    try {
+      return await fn(...args)
+    } catch (e) {
+      if (e instanceof Cancelled) throw e
+      throw new ActionException(e, failureSummaryMessage)
+    }
+  }
+}
+
+/**
+ * `useMessageHandle`
+ * - transforms exceptions like `useAction`
+ * - handles exceptions with naive-ui message
+ */
+export function useMessageHandle<Args extends any[], T>(
+  fn: (...args: Args) => Promise<T>,
   failureSummaryMessage: LocaleMessage,
-  successMessage?: LocaleMessage | ((ret: Ret) => LocaleMessage)
-): (...args: Args) => Promise<Ret> {
+  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
+): (...args: Args) => Promise<T> {
   const m = useMessage()
   const { t } = useI18n()
+  const action = useAction(fn, failureSummaryMessage)
 
-  return (...args: Args) => {
-    return action(...args).then(
+  return (...args: Args) =>
+    action(...args).then(
       (ret) => {
         if (successMessage != null) {
           const successText = t(
             typeof successMessage === 'function' ? successMessage(ret) : successMessage
           )
-          m.success(() => successText)
+          m.success(successText)
         }
         return ret
       },
       (e) => {
-        if (!(e instanceof Cancelled)) {
-          let reasonMessage: LocaleMessage | null = null
-          if (e instanceof Exception && e.userMessage != null) {
-            reasonMessage = e.userMessage
-          }
-          const result = t(failedMessage(t(failureSummaryMessage), t(reasonMessage)))
-          m.error(() => result)
-        }
+        if (e instanceof ActionException) m.error(t(e.userMessage))
         throw e
       }
     )
-  }
 }
 
-// TODO: helpers for in-place feedback
-// export function useAction<T>(action: () => Promise<T>): Result<T> {
-//   return { value: null }
-// }
+export type QueryRet<T> = {
+  isFetching: boolean
+  data: T | null
+  error: ActionException | null
+  refetch: () => void
+}
+
+/**
+ * `useQuery`
+ * - do query automatically
+ * - transforms exceptions like `useAction`
+ * - manage states for query result
+ *
+ * TODO: if things get more complex, we may need tools like `@tanstack/vue-query`
+ */
+export function useQuery<T>(fn: () => Promise<T>, failureSummaryMessage: LocaleMessage) {
+  const action = useAction(fn, failureSummaryMessage)
+  const isFetching = ref(false)
+  const data = shallowRef<T | null>(null)
+  const error = ref<ActionException | null>(null)
+
+  function fetch() {
+    isFetching.value = true
+    action().then(
+      (d) => {
+        isFetching.value = false
+        data.value = d
+        error.value = null
+      },
+      (e) => {
+        isFetching.value = false
+        error.value = e
+      }
+    )
+  }
+
+  watchEffect(fetch)
+
+  return { isFetching, data, error, refetch: fetch }
+}

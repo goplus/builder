@@ -1,6 +1,11 @@
-import { onMounted, ref, watch } from 'vue'
+/**
+ * @file store project
+ * @desc Manage current project for editor
+ */
+
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { Project } from '@/models/project'
 import { useUserStore } from './user'
 import defaultBackdropImgUrl from '@/assets/default_scene.png'
@@ -10,12 +15,13 @@ import { Costume } from '@/models/costume'
 import { Backdrop } from '@/models/backdrop'
 import { createFileWithUrl } from '@/models/common/cloud'
 import { stripExt } from '@/utils/path'
+import { editProjectRouteName } from '@/router'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
 export const useProjectStore = defineStore('project', () => {
   const userStore = useUserStore()
-  const route = useRoute()
+  const router = useRouter()
 
   // TODO: if it gets complex & coupled with different parts,
   // we may extract the project-managing logic into some object model like `Workspace`
@@ -24,13 +30,22 @@ export const useProjectStore = defineStore('project', () => {
   const project = ref(new Project())
 
   watch(
-    () => route.params.projectName,
-    (name) => {
-      if (!name) return
+    () => {
+      const route = router.currentRoute.value
+      if (route.name !== editProjectRouteName) return null
+      return route.params.projectName as string
+    },
+    async (projectName) => {
+      if (projectName == null) return
       const owner = userStore.userInfo?.name
-      if (!owner) return
-      openProject(owner, name as string)
-    }
+      if (owner == null) throw new Error('owner info is required')
+      // TODO: UI logic to handle conflicts when there are local cache
+      const newProject = new Project()
+      await newProject.loadFromCloud(owner, projectName)
+      newProject.syncToLocalCache(localCacheKey)
+      project.value = newProject
+    },
+    { immediate: true }
   )
 
   watch(
@@ -40,27 +55,16 @@ export const useProjectStore = defineStore('project', () => {
     () => project.value,
     (_, oldProject) => {
       oldProject.dispose()
-      ;(window as any).project = project.value // TODO: remove me
+      ;(window as any).project = project.value // for debug purpose, TODO: remove me
     }
   )
 
-  onMounted(async () => {
-    // TODO: use params from route
-    await openDefaultProject('default', 'TODO')
-  })
-
-  async function openProject(owner: string, name: string) {
-    // TODO: sync name to route params, if openProject is called directly
-
-    // TODO: UI logic to handle conflicts when there are local cache
-    if (owner == null) throw new Error('owner info is required')
-    const newProject = new Project()
-    await newProject.loadFromCloud(owner, name)
-    newProject.syncToLocalCache(localCacheKey)
-    project.value = newProject
+  function openProject(projectName: string) {
+    router.push({ name: editProjectRouteName, params: { projectName } })
   }
 
-  async function openDefaultProject(owner = userStore.userInfo?.name, name: string) {
+  async function openDefaultProject(name: string) {
+    const owner = userStore.userInfo?.name
     if (owner == null) throw new Error('owner info is required')
     const newProject = new Project()
     await newProject.load({ owner, name }, {})
@@ -81,11 +85,8 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject
   }
 
-  async function openProjectWithZipFile(
-    owner = userStore.userInfo?.name,
-    name: string | undefined,
-    zipFile: globalThis.File
-  ) {
+  async function openProjectWithZipFile(name: string | undefined, zipFile: globalThis.File) {
+    const owner = userStore.userInfo?.name
     if (owner == null) throw new Error('owner info is required')
     // TODO: UI logic to handle conflicts when there are local cache
     const newProject = new Project()
@@ -98,6 +99,7 @@ export const useProjectStore = defineStore('project', () => {
   return {
     project,
     openProject,
+    openDefaultProject,
     openProjectWithZipFile
   }
 })
