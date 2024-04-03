@@ -21,7 +21,6 @@ type Selected =
       type: 'stage'
     }
 
-// TODO: move stores/editor here
 export type EditorCtx = {
   project: Project
   userInfo: UserInfo
@@ -89,7 +88,7 @@ watch(
 
 const editorCtx = shallowReactive<EditorCtx>({ select } as any)
 watchEffect(() => {
-  // TODO: any simpler way to archieve this (like what Pinia do with store exposes)?
+  // TODO: any simpler way to achieve this (like what Pinia do with store exposes)?
   editorCtx.project = props.project
   editorCtx.userInfo = props.userInfo
   editorCtx.selected = selectedRef.value

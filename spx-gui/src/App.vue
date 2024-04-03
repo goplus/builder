@@ -20,11 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  NConfigProvider,
-  NMessageProvider,
-  NModalProvider
-} from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NModalProvider } from 'naive-ui'
 import '@/assets/theme'
 /**
  * @description: Override spx-gui theme

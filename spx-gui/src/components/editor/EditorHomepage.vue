@@ -46,7 +46,9 @@ watchEffect(() => {
 const router = useRouter()
 const createProject = useCreateProject()
 const project = ref<Project | null>(null)
-const projectName = computed(() => router.currentRoute.value.params.projectName as string | undefined)
+const projectName = computed(
+  () => router.currentRoute.value.params.projectName as string | undefined
+)
 
 watch(
   () => projectName.value,

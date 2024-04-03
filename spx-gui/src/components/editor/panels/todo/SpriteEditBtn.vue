@@ -116,9 +116,7 @@ const editorCtx = useEditorCtx()
 // TODO: check all default values here, they should be consistent with spx
 const x = computed(() => editorCtx.selectedSprite?.x ?? 0)
 const y = computed(() => editorCtx.selectedSprite?.y ?? 0)
-const heading = computed(() =>
-  editorCtx.selectedSprite ? editorCtx.selectedSprite.heading : 0
-)
+const heading = computed(() => (editorCtx.selectedSprite ? editorCtx.selectedSprite.heading : 0))
 const size = computed(() => editorCtx.selectedSprite?.size ?? 0)
 const visible = computed(() =>
   editorCtx.selectedSprite ? editorCtx.selectedSprite.visible : false
@@ -138,11 +136,7 @@ const { message } = createDiscreteApi(['message'])
 function handleUpdateSpriteName() {
   if (!editorCtx.selectedSprite) return
   try {
-    const checkInfo = checkUpdatedName(
-      name.value,
-      editorCtx.project,
-      editorCtx.selectedSprite.name
-    )
+    const checkInfo = checkUpdatedName(name.value, editorCtx.project, editorCtx.selectedSprite.name)
 
     if (!checkInfo.isSame && !checkInfo.isChanged) {
       editorCtx.selectedSprite.setName(checkInfo.name)

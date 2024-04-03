@@ -76,11 +76,7 @@ const handleSoundFileUpdate = (newFile: File) => {
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
-      const checkInfo = checkUpdatedName(
-        newName,
-        editorCtx.project,
-        selectedSound.value.name
-      )
+      const checkInfo = checkUpdatedName(newName, editorCtx.project, selectedSound.value.name)
       if (!checkInfo.isSame && !checkInfo.isChanged) {
         selectedSound.value.name = checkInfo.name
         message.success(t('message.update'))
