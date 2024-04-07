@@ -6,12 +6,6 @@
           <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
         </NGradientText>
       </span>
-      <div class="sound-icon-container">
-        <button @click="downloadSound()">
-          <img class="sound-icon-with-text" src="./icons/download.svg" />
-        </button>
-        <div class="sound-icon-text">{{ $t('sounds.download') }}</div>
-      </div>
     </div>
   </div>
   <div class="waveform-content">
@@ -106,24 +100,6 @@ const togglePlayPause = async () => {
   }
   await wavesurfer.playPause()
   isPlaying.value = wavesurfer.isPlaying()
-}
-
-const downloadSound = async () => {
-  if (!wavesurfer) {
-    return
-  }
-  if (!props.asset) {
-    return
-  }
-  const arrayBuffer = await props.asset.file.arrayBuffer()
-  const blob = new Blob([arrayBuffer], { type: nameToMime(props.asset.file.name) })
-  const url = URL.createObjectURL(blob)
-
-  const a = document.createElement('a')
-  a.href = url
-  a.download = props.asset.name
-  a.click()
-  URL.revokeObjectURL(url)
 }
 </script>
 
