@@ -1,7 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <TopMenu :project="project" />
+      <TopNav :project="project" />
     </header>
     <main v-if="userStore.userInfo != null" class="editor-main">
       <template v-if="projectName">
@@ -25,7 +25,7 @@ import { NButton, NSpin } from 'naive-ui'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { Project } from '@/models/project'
-import TopMenu from '@/components/top-menu/TopMenu.vue'
+import TopNav from '@/components/top-nav/TopNav.vue'
 import ProjectList from '@/components/project/ProjectList.vue'
 import { useCreateProject } from '@/components/project'
 import ProjectEditor from './ProjectEditor.vue'
