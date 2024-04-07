@@ -10,7 +10,6 @@
       </div>
       <div class="name-input-container">
         <span class="name-input-hint"> {{ $t('sounds.soundName') }} </span>
-        <input v-model="soundName" type="text" class="sound-name-input" />
       </div>
       <div v-if="!recording && audioBlob" @click="wavesurfer.playPause()">
         <NButton>{{ playing ? 'Pause' : 'Play' }}</NButton>
@@ -42,7 +41,6 @@ const emits = defineEmits<{
   close: []
 }>()
 
-const soundName = ref(`Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`)
 const recording = ref(false)
 const playing = ref(false)
 
@@ -125,8 +123,9 @@ const handleRecordingClick = () => {
 }
 
 const saveRecording = async () => {
-  const file = fromBlob(`${soundName.value}.webm`, audioBlob.value!)
-  const sound = new Sound(soundName.value, file, {})
+  const soundName = `Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
+  const file = fromBlob(`${soundName}.webm`, audioBlob.value!)
+  const sound = new Sound(soundName, file, {})
   editorCtx.project.addSound(sound)
   closeRecorder()
 }
@@ -199,15 +198,6 @@ const closeRecorder = () => {
 .name-input-hint {
   color: gray;
   margin-right: 5px;
-}
-
-.sound-name-input {
-  font-size: 14px;
-  height: 30px;
-  width: 100%;
-  padding-left: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
 }
 
 .button-container {

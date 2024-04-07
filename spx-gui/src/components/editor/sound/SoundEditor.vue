@@ -25,13 +25,11 @@
 import WaveSurfer from 'wavesurfer.js'
 import { ref, type Ref } from 'vue'
 import { NGradientText } from 'naive-ui'
-import { Sound } from '@/models/sound'
 import { watchEffect } from 'vue'
 import { onUnmounted } from 'vue'
+import { useEditorCtx } from '../ProjectEditor.vue'
 
-const props = defineProps<{ asset: Sound | null }>()
-
-const soundName = ref('')
+const editorCtx = useEditorCtx()
 
 const waveformContainer = ref<HTMLDivElement>()
 
@@ -65,15 +63,18 @@ watchEffect(
       interact: false
     })
 
-    if (!props.asset) {
+    if (!editorCtx.selectedSound) {
       return
     }
-    soundName.value = props.asset.name
 
-    const mime = nameToMime(props.asset.file.name)
-    const nativeFile = new File([await props.asset.file.arrayBuffer()], props.asset.name, {
-      type: mime
-    })
+    const mime = nameToMime(editorCtx.selectedSound.file.name)
+    const nativeFile = new File(
+      [await editorCtx.selectedSound.file.arrayBuffer()],
+      editorCtx.selectedSound.name,
+      {
+        type: mime
+      }
+    )
     wavesurfer.loadBlob(nativeFile)
 
     wavesurfer.on('play', () => {

@@ -11,6 +11,7 @@
 <script lang="ts">
 import { inject } from 'vue'
 import { type Sprite } from '@/models/sprite'
+import type { Sound } from '@/models/sound'
 
 type Selected =
   | {
@@ -26,6 +27,7 @@ export type EditorCtx = {
   userInfo: UserInfo
   selected: Selected | null
   selectedSprite: Sprite | null
+  selectedSound: Sound | null
 
   select(selected: null): void
   select(type: 'stage'): void
@@ -75,6 +77,16 @@ const selectedSprite = computed(() => {
   return props.project.sprites.find((s) => s.name === selectedSpriteName.value) || null
 })
 
+const selectedSoundName = computed(() => {
+  const selected = selectedRef.value
+  return selected?.type === 'sound' ? selected.name : null
+})
+
+const selectedSound = computed(() => {
+  if (!selectedSoundName.value) return null
+  return props.project.sounds.find((s) => s.name === selectedSoundName.value) || null
+})
+
 watch(
   () => props.project,
   (project) => {
@@ -93,6 +105,7 @@ watchEffect(() => {
   editorCtx.userInfo = props.userInfo
   editorCtx.selected = selectedRef.value
   editorCtx.selectedSprite = selectedSprite.value
+  editorCtx.selectedSound = selectedSound.value
 })
 
 provide(editorCtxKey, editorCtx)
