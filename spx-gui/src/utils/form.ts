@@ -14,7 +14,7 @@ export type ValidatorReturned = ValidationResult | Promise<ValidationResult>
 export type Validator<V> = (v: V) => ValidatorReturned
 
 export type FormInput = {
-  [path: string]: [initialValue: unknown, validator: Validator<any>]
+  [path: string]: [initialValue: unknown, validator?: Validator<any>]
 }
 
 // TODO: better type definition for better type-safety
@@ -30,6 +30,7 @@ export function useForm(input: FormInput) {
     formValue[path] = initialValue
     formRules[path] = {
       async validator(_: unknown, v: unknown) {
+        if (validator == null) return
         const result = await validator(v)
         if (result == null) return
         const errText = t(result)

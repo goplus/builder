@@ -99,16 +99,21 @@
         <template #prefix> {{ $t('stage.direction') }}: </template>
       </n-input-number>
     </div>
+    <div v-if="editorCtx.selectedSprite != null" class="sprite-edit-btn">
+      <NButton @click="handleAddToLibrary(editorCtx.selectedSprite)">Add to library (TODO)</NButton>
+    </div>
   </n-flex>
 </template>
 
 <script setup lang="ts">
 // ----------Import required packages / components-----------
 import { computed, ref, watch } from 'vue'
-import { NInput, NInputNumber, NFlex, NSwitch, createDiscreteApi } from 'naive-ui'
+import { NInput, NInputNumber, NFlex, NSwitch, NButton, createDiscreteApi } from 'naive-ui'
 import { checkUpdatedName } from '@/utils/asset'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { useI18n } from 'vue-i18n'
+import type { Sprite } from '@/models/sprite'
+import { useAddAssetToLibrary } from '@/components/library'
 
 const editorCtx = useEditorCtx()
 
@@ -146,6 +151,12 @@ function handleUpdateSpriteName() {
   } catch (e) {
     if (e instanceof Error) message.error(e.message)
   }
+}
+
+const addToLibrary = useAddAssetToLibrary()
+
+function handleAddToLibrary(sprite: Sprite) {
+  addToLibrary(sprite)
 }
 </script>
 

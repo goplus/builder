@@ -55,7 +55,7 @@ export class ActionException extends Exception {
       en: reason ? `${summary.en} (${reason.en})` : summary.en,
       zh: reason ? `${summary.zh} (${reason.zh})` : summary.zh
     }
-    super(userMessage.en)
+    super(`${userMessage.en}, cause: ${cause}`)
     this.userMessage = userMessage
   }
 }

@@ -28,6 +28,7 @@ export function useCreateProject() {
         preset: 'dialog',
         onHide() {
           reject(new Cancelled())
+          modal.destroy()
         }
       })
     })
@@ -52,6 +53,7 @@ export function useChooseProject() {
         preset: 'dialog',
         onHide() {
           reject(new Cancelled())
+          modal.destroy()
         }
       })
     })

@@ -39,7 +39,7 @@
         quaternary
         size="tiny"
         text-color="#fff"
-        @click="openLibraryFunc()"
+        @click="openLibrary()"
       >
         {{ $t('stage.choose') }}
       </n-button>
@@ -48,7 +48,7 @@
         :disabled="!isOnline"
         color="#fff"
         :text-color="commonColor"
-        @click="openLibraryFunc()"
+        @click="openLibrary()"
       >
         {{ $t('stage.choose') }}
       </n-button>
@@ -66,9 +66,6 @@
     </div>
   </div>
   <!-- E Component Add Button type second step -->
-  <!-- S Modal Library -->
-  <LibraryModal v-model:show="showModal" :type="props.type" @add-asset="handleAssetAddition" />
-  <!-- E Modal Library -->
 
   <!-- S Sound Recorder -->
   <SoundRecorder v-model:show="showRecorder" />
@@ -136,12 +133,11 @@ import type { UploadFileInfo } from 'naive-ui'
 import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
 import { commonColor } from '@/assets/theme'
-import LibraryModal from '@/components/library/LibraryModal.vue'
 import { Sprite } from '@/models/sprite'
 import { fromNativeFile } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import SoundRecorder from '@/components/editor/sound/SoundRecorder.vue'
-import { addAsset, IsPublic, AssetType, type AssetData } from '@/apis/asset'
+import { addAsset, IsPublic, AssetType } from '@/apis/asset'
 import { useI18n } from 'vue-i18n'
 import { isValidAssetName } from '@/utils/asset'
 import { isImage, isSound } from '@/utils/utils'
@@ -150,8 +146,8 @@ import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { stripExt } from '@/utils/path'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { asset2Backdrop, asset2Sprite } from '@/models/common'
 import { sprite2Asset } from '@/models/common'
+import { useAddAssetFromLibrary } from '@/components/library'
 
 // ----------props & emit------------------------------------
 interface PropType {
@@ -188,9 +184,6 @@ const categoryValue = ref<string>()
 
 // Ref about publish upload sprite or not.
 const publishState = ref<number>(PublishState.noUpload)
-
-// Ref about show modal or not.
-const showModal = ref<boolean>(false)
 
 // Ref about show upload buttons or not.
 const showUploadButtons = ref<boolean>(false)
@@ -238,13 +231,10 @@ const handleAddButtonClick = () => {
   showUploadButtons.value = !showUploadButtons.value
 }
 
-/**
- * @description: A Function about opening library modal.
- * @Author: Xu Ning
- * @Date: 2024-01-16 11:53:40
- */
-const openLibraryFunc = () => {
-  showModal.value = true
+const addAssetFromLibrary = useAddAssetFromLibrary()
+
+function openLibrary() {
+  addAssetFromLibrary(editorCtx.project, props.type)
 }
 
 /**
@@ -372,28 +362,6 @@ const handleSubmitSprite = async (): Promise<void> => {
  */
 const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
   return beforeUpload(data, 'sound')
-}
-
-const handleAssetAddition = async (asset: AssetData) => {
-  // TODO: naming conflict for sprite / backdrop / sound with existed ones
-  switch (asset.assetType) {
-    case AssetType.Sprite: {
-      const sprite = await asset2Sprite(asset)
-      editorCtx.project.addSprite(sprite)
-      break
-    }
-    case AssetType.Backdrop: {
-      const backdrop = await asset2Backdrop(asset)
-      editorCtx.project.stage.addBackdrop(backdrop)
-      break
-    }
-    case AssetType.Sound: {
-      const sprite = await asset2Sprite(asset)
-      editorCtx.project.addSprite(sprite)
-      break
-    }
-  }
-  message.success(t('message.addSuccess', { name: asset.displayName }))
 }
 </script>
 
