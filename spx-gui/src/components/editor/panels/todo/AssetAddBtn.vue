@@ -71,7 +71,7 @@
   <!-- E Modal Library -->
 
   <!-- S Sound Recorder -->
-  <SoundRecorder v-model:show="showRecorder" />
+  <SoundRecorder v-if="showRecorder" @close="showRecorder = false" />
   <!-- E Sound Recorder -->
 
   <!-- S Modal Sprite Multi Costume Upload -->

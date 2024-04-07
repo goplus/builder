@@ -63,11 +63,11 @@ function str2Ab(str: string) {
   return view.buffer
 }
 
-export async function fromBlob(name: string, blob: Blob) {
+export function fromBlob(name: string, blob: Blob) {
   return new File(name, () => blob.arrayBuffer(), { type: blob.type })
 }
 
-export async function fromNativeFile(file: globalThis.File) {
+export function fromNativeFile(file: globalThis.File) {
   return fromBlob(file.name, file)
 }
 

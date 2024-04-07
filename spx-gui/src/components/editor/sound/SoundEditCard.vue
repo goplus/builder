@@ -8,7 +8,7 @@
 -->
 <template>
   <div class="sounds-card">
-    <div class="delete-button" @click.stop="onDeleteClick">×</div>
+    <div class="delete-button" @click.stop="onRemove">×</div>
     <div class="sounds-card-waveform"></div>
     <div class="sounds-card-content">
       <div class="sounds-card-title">
@@ -25,10 +25,12 @@ import { Sound } from '@/models/sound'
 
 const props = defineProps<{ asset: Sound }>()
 
-const emits = defineEmits(['delete-sound'])
+const emits = defineEmits<{
+  remove: []
+}>()
 
-const onDeleteClick = () => {
-  emits('delete-sound')
+const onRemove = () => {
+  emits('remove')
 }
 </script>
 

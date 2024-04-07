@@ -1,495 +1,141 @@
 <template>
-  <!--  Title And Operations-->
   <div class="sound-edit-content">
     <div class="sound-edit-content-top">
       <span class="text-sound">
-        <n-gradient-text type="danger">
+        <NGradientText type="danger">
           <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
-        </n-gradient-text>
+        </NGradientText>
       </span>
-      <n-input
+      <NInput
         v-model:value="soundName"
         size="small"
         round
-        :placeholder="props.asset?.name || ''"
         class="sound-edit-content-top-input-sound-name"
-        @blur="() => emits('update-sound-name', soundName)"
+        @blur="emit('setName', soundName)"
       />
-      <!--   Speed Change   -->
-      <div class="speed-change-container" @click="togglePlaybackSpeed()">
-        <div class="speed-change-container-text">{{ currentSpeed }}x</div>
-      </div>
-      <!--   Undo && ReUndo   -->
-      <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.backout }">
-        <button :disabled="isOperateDisabled.backout" @click="handleOperate('backout')">
-          <img
-            v-if="!isOperateDisabled.backout"
-            class="sound-icon-with-text"
-            src="./icons/undo.svg"
-          />
-          <img v-else class="sound-icon-with-text" src="./icons/undo-unable.svg" />
-        </button>
-        <div class="sound-icon-text">{{ $t('sounds.undo') }}</div>
-      </div>
-      <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.renewal }">
-        <button :disabled="isOperateDisabled.renewal" @click="handleOperate('renewal')">
-          <img
-            v-if="!isOperateDisabled.renewal"
-            class="sound-icon-with-text"
-            src="./icons/reUndo.svg"
-          />
-          <img v-else class="sound-icon-with-text" src="./icons/reUndo-unable.svg" />
-        </button>
-        <div class="sound-icon-text">{{ $t('sounds.reUndo') }}</div>
-      </div>
-      <div class="vertical-dashed-line-short"></div>
-      <!--   Download And Save -->
       <div class="sound-icon-container">
         <button @click="downloadSound()">
           <img class="sound-icon-with-text" src="./icons/download.svg" />
         </button>
         <div class="sound-icon-text">{{ $t('sounds.download') }}</div>
       </div>
-      <div class="sound-icon-container">
-        <button @click="updateSound()">
-          <img class="sound-icon-with-text" src="./icons/save.svg" />
-        </button>
-        <div class="sound-icon-text">{{ $t('sounds.save') }}</div>
-      </div>
     </div>
   </div>
-  <!--  WaveSurfer Part  -->
   <div class="waveform-content">
-    <div id="waveform" class="waveform-container"></div>
-    <div id="wave-timeline"></div>
+    <div ref="waveformContainer" class="waveform-container"></div>
   </div>
-  <!--  Operations-->
   <div class="sound-edit-content-bottom">
-    <!--  play  -->
     <div>
       <button @click="togglePlayPause()">
         <img v-if="!isPlaying" class="sound-icon" src="./icons/play.svg" />
         <img v-else class="sound-icon" src="./icons/pause.svg" />
       </button>
     </div>
-    <div class="vertical-dashed-line-long"></div>
-    <!--  play operation  -->
-    <div class="sound-icon-container">
-      <button @click="backward()">
-        <img class="sound-icon-with-text" src="./icons/backward.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.backward') }}</div>
-    </div>
-    <div class="sound-icon-container">
-      <button @click="forward()">
-        <img class="sound-icon-with-text" src="./icons/forward.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.forward') }}</div>
-    </div>
-    <div class="sound-icon-container">
-      <button @click="replay()">
-        <img class="sound-icon-with-text" src="./icons/replay.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.replay') }}</div>
-    </div>
-    <div class="vertical-dashed-line-short"></div>
-    <!--  Volume  -->
-    <div class="sound-icon-container">
-      <button @click="increaseVolume()">
-        <img class="sound-icon-with-text" src="./icons/volume-high.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.volumeHigh') }}</div>
-    </div>
-    <div class="sound-icon-container">
-      <button @click="decreaseVolume()">
-        <img class="sound-icon-with-text" src="./icons/volume-low.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.volumeLow') }}</div>
-    </div>
-    <div class="sound-icon-container">
-      <button @click="mute()">
-        <img class="sound-icon-with-text" src="./icons/mute.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.mute') }}</div>
-    </div>
-    <div class="vertical-dashed-line-short"></div>
-    <!--  Edit  -->
-    <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.remove }">
-      <button :disabled="isOperateDisabled.remove" @click="handleOperate('remove')">
-        <img
-          v-if="!isOperateDisabled.remove"
-          class="sound-icon-with-text"
-          src="./icons/delete.svg"
-        />
-        <img v-else class="sound-icon-with-text" src="./icons/delete-unable.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.delete') }}</div>
-    </div>
-    <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.cut }">
-      <button :disabled="isOperateDisabled.cut" @click="handleOperate('cut')">
-        <img v-if="!isOperateDisabled.cut" class="sound-icon-with-text" src="./icons/cut.svg" />
-        <img v-else class="sound-icon-with-text" src="./icons/cut-unable.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.cut') }}</div>
-    </div>
-    <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.copy }">
-      <button :disabled="isOperateDisabled.copy" @click="handleOperate('copy')">
-        <img v-if="!isOperateDisabled.copy" class="sound-icon-with-text" src="./icons/copy.svg" />
-        <img v-else class="sound-icon-with-text" src="./icons/copy-unable.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.copy') }}</div>
-    </div>
-    <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.paste }">
-      <button :disabled="isOperateDisabled.paste" @click="handleOperate('paste')">
-        <img v-if="!isOperateDisabled.paste" class="sound-icon-with-text" src="./icons/paste.svg" />
-        <img v-else class="sound-icon-with-text" src="./icons/paste-unable.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.paste') }}</div>
-    </div>
-    <div class="sound-icon-container" :class="{ disabled: isOperateDisabled.insert }">
-      <button :disabled="isOperateDisabled.insert" @click="handleOperate('insert')">
-        <img
-          v-if="!isOperateDisabled.insert"
-          class="sound-icon-with-text"
-          src="./icons/insert.svg"
-        />
-        <img v-else class="sound-icon-with-text" src="./icons/insert-unable.svg" />
-      </button>
-      <div class="sound-icon-text">{{ $t('sounds.insert') }}</div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
-import TimelinePlugin from 'wavesurfer.js/src/plugin/timeline'
-import RegionsPlugin from 'wavesurfer.js/src/plugin/regions'
-import CursorPlugin from 'wavesurfer.js/src/plugin/cursor'
-import { ref, onMounted, type Ref, watch } from 'vue'
-import { nextTick } from 'vue'
-import { type SimpleWavesurferBackend, WavesurferEdit } from '@/utils/wavesurfer-edit'
-import { NGradientText, NInput, useMessage, type MessageApi } from 'naive-ui'
+import { ref, type Ref } from 'vue'
+import { NGradientText, NInput } from 'naive-ui'
 import { Sound } from '@/models/sound'
-import { audioDataService } from '@/utils/wavesurfer-edit-data'
-import { audioBufferToWavBlob } from '@/utils/audio'
-import { fromBlob, toNativeFile } from '@/models/common/file'
+import { watchEffect } from 'vue'
+import { onUnmounted } from 'vue'
 
 const props = defineProps<{ asset?: Sound }>()
 
-const emits = defineEmits(['update-sound-file', 'update-sound-name'])
+const emit = defineEmits<{
+  remove: []
+  setName: [name: string]
+}>()
 
-interface WaveSurferInstance {
-  destroy(): void
-}
-const soundName = ref(props.asset?.name || '')
-const waveSurfer = ref<WaveSurferInstance | null>(null)
-const message: MessageApi = useMessage()
-let wavesurfer: WaveSurfer
+const soundName = ref('')
+
+const waveformContainer = ref<HTMLDivElement>()
+
+let wavesurfer: WaveSurfer | null = null
 let isPlaying: Ref<boolean> = ref(false)
-let currentSpeedIndex: number = 1
-const playbackSpeeds: number[] = [0.5, 1.0, 1.25, 1.5, 2.0, 4.0]
-let currentSpeed: Ref<number> = ref(1.0)
-let buffer: AudioBuffer | null = null
-let currentRegion: any = null
-let soundEditor: WavesurferEdit | null = null
-const isOperateDisabled: Ref<{ [key: string]: boolean }> = ref({
-  copy: true,
-  paste: true,
-  insert: true,
-  cut: true,
-  remove: true,
-  backout: true,
-  renewal: true,
-  download: true
-})
 
-onMounted(() => {
-  initSoundEdit()
-})
-
-const initSoundEdit = () => {
-  // Make sure that wavesurfer does not stack after each update
-  if (waveSurfer.value) {
-    waveSurfer.value.destroy()
-    waveSurfer.value = null
+const nameToMime = (name: string) => {
+  if (name.endsWith('.webm')) {
+    return 'audio/webm'
   }
-  const waveformContainer = document.querySelector('#waveform')
-  if (waveformContainer) {
-    waveformContainer.innerHTML = ''
+  if (name.endsWith('.mp3')) {
+    return 'audio/mp3'
   }
-  initWaveSurfer()
-  isRegionOptionDisabled()
+  return 'audio/wav'
 }
 
-/* init WaveSurfer */
-const initWaveSurfer = () => {
-  // nextTick : Make sure waveform dom is loaded
-  nextTick(async () => {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
-    const gradient = ctx.createLinearGradient(0, 0, 0, 150)
-    gradient.addColorStop(0, 'rgb(255,223,232)')
-    gradient.addColorStop(1, 'rgb(255,114,142)')
-
-    wavesurfer = WaveSurfer.create({
-      container: '#waveform',
-      splitChannels: false,
-      waveColor: gradient,
-      progressColor: 'rgb(224,213,218)',
-      cursorColor: 'rgb(229,29,100)',
-      cursorWidth: 4,
-      minPxPerSec: 100,
-      barGap: 3,
-      barHeight: 1,
-      barMinHeight: 2,
-      barWidth: 4,
-      plugins: [
-        TimelinePlugin.create({
-          container: '#wave-timeline',
-          height: 10,
-          notchPercentHeight: 90,
-          labelPadding: 5,
-          primaryColor: '#ffffff',
-          secondaryColor: '#f79e9e',
-          primaryFontColor: '#ffffff',
-          secondaryFontColor: '#f79e9e',
-          labelInterval: 10,
-          timeInterval: () => 10,
-          formatTimeCallback: function (seconds: number) {
-            return new Date(seconds * 1000).toISOString().substr(14, 5)
-          }
-        }),
-        RegionsPlugin.create({
-          dragSelection: true,
-          color: 'rgba(252,161,169,0.58)',
-          handleStyle: {
-            left: {
-              borderRadius: '10px',
-              border: '2px solid rgb(233, 11, 22)',
-              backgroundColor: 'rgb(231,93,102)'
-            },
-            right: {
-              borderRadius: '10px',
-              border: '2px solid rgb(233, 11, 22)',
-              backgroundColor: 'rgb(231,93,102)'
-            }
-          }
-        }),
-        CursorPlugin.create({
-          showTime: true,
-          opacity: '1',
-          customShowTimeStyle: {
-            borderRadius: '5px',
-            background: '#fff',
-            color: '#2e2e31',
-            padding: '4px',
-            fontSize: '14px',
-            marginLeft: '5px'
-          },
-          content: 'hihi'
-        })
-      ]
-    })
-
-    // load sound
-    if (props.asset) {
-      const nativeFile = await toNativeFile(props.asset.file)
-      wavesurfer.loadBlob(nativeFile)
-    } else {
-      return
+watchEffect(
+  async () => {
+    if (wavesurfer) {
+      wavesurfer.destroy()
+    }
+    if (!waveformContainer.value) {
+      throw new Error('Waveform container is not ready')
     }
 
-    wavesurfer.on('ready', () => {
-      const backend = wavesurfer.backend as SimpleWavesurferBackend
-      if (backend.buffer && backend.ac) {
-        soundEditor = new WavesurferEdit({
-          buffer: backend.buffer,
-          ac: backend.ac,
-          maxCount: 20
-        })
-      }
+    wavesurfer = WaveSurfer.create({
+      container: waveformContainer.value,
+      waveColor: 'rgb(255,114,142)',
+      progressColor: 'rgb(224,213,218)',
+      cursorColor: 'rgb(229,29,100)'
     })
+
+    if (!props.asset) {
+      return
+    }
+    soundName.value = props.asset.name
+
+    const mime = nameToMime(props.asset.file.name)
+    const nativeFile = new File([await props.asset.file.arrayBuffer()], props.asset.name, {
+      type: mime
+    })
+    wavesurfer.loadBlob(nativeFile)
+
     wavesurfer.on('play', () => {
       isPlaying.value = true
     })
     wavesurfer.on('pause', () => {
       isPlaying.value = false
     })
-    wavesurfer.on('region-click', (region: any, e: Event) => {
-      region.play()
-      e.stopPropagation()
-      currentRegion = region
-    })
-    wavesurfer.on('region-updated', (region: any) => {
-      currentRegion = region
-      removeRegion(region)
-    })
-    wavesurfer.on('region-update-end', (region: any) => {
-      currentRegion = region
-      isRegionOptionDisabled()
-    })
-  })
-}
-
-function handleOperate(e: string): void {
-  let val = null
-  let timeArr = ['paste', 'insert']
-  if (timeArr.includes(e)) val = wavesurfer!.getCurrentTime()
-  else val = currentRegion
-  let res = (soundEditor as any)[e](val)
-  if (!res) return
-  showMessage(e)
-  isOperateDisabled.value.backout = res.curIndex <= 0
-  isOperateDisabled.value.renewal = res.curIndex >= res.maxIndex - 1
-  if (e !== 'copy') {
-    buffer = res.buffer
-    renderWavesurfer()
+  },
+  {
+    flush: 'post'
   }
-  if (e === 'cut' || e === 'remove') {
-    removeRegion()
+)
+
+onUnmounted(() => {
+  if (wavesurfer) {
+    wavesurfer.destroy()
   }
-}
+})
 
-/* Show hint message like "copy successfully!" */
-function showMessage(e: string): void {
-  if (e === 'copy') {
-    message.success(e + ' successfully!', { duration: 1000 })
+const togglePlayPause = async () => {
+  if (!wavesurfer) {
+    return
   }
-}
-
-/* Purpose: only Retain one region */
-function removeRegion(region: any = {}): void {
-  if (!Object.keys(region).length) currentRegion = null
-  let regions = wavesurfer!.regions.list
-  for (const key in regions) {
-    if (region.id === regions[key].id) continue
-    regions[key].remove()
-  }
-  isRegionOptionDisabled()
-}
-
-/* Whether the copy, cut, and delete buttons are disabled - only enabled when the region is selected  */
-function isRegionOptionDisabled(): void {
-  isOperateDisabled.value.copy = !currentRegion
-  isOperateDisabled.value.cut = !currentRegion
-  isOperateDisabled.value.remove = !currentRegion
-  isOperateDisabled.value.paste = !audioDataService.getCopyData().data
-  isOperateDisabled.value.insert = !audioDataService.getCopyData().data
-}
-
-/* Render wavesurfer */
-function renderWavesurfer(): void {
-  ;(wavesurfer!.backend as any).load(buffer)
-  wavesurfer!.drawBuffer()
-}
-
-/* Toggle play and pause */
-function togglePlayPause(): void {
-  if (wavesurfer.isPlaying()) {
-    wavesurfer['pause']()
-  } else {
-    wavesurfer['play']()
-  }
+  await wavesurfer.playPause()
   isPlaying.value = wavesurfer.isPlaying()
 }
 
-/* Toggle play speed in [0.5, 1.0, 1.25, 1.5, 2.0, 4.0] */
-function togglePlaybackSpeed(): void {
-  currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length
-  currentSpeed.value = playbackSpeeds[currentSpeedIndex]
-  wavesurfer.setPlaybackRate(currentSpeed.value)
-}
-
-/* Increase volume 10% */
-function increaseVolume(): void {
-  const currentVolume = wavesurfer.getVolume()
-  if (currentVolume < 1) {
-    let newVolume = currentVolume + 0.1
-    if (newVolume > 1) newVolume = 1
-    wavesurfer.setVolume(newVolume)
+const downloadSound = async () => {
+  if (!wavesurfer) {
+    return
   }
-}
-
-/* Decrease volume 10% */
-function decreaseVolume(): void {
-  const currentVolume = wavesurfer.getVolume()
-  if (currentVolume > 0) {
-    let newVolume = currentVolume - 0.1
-    if (newVolume < 0) newVolume = 0
-    wavesurfer.setVolume(newVolume)
+  if (!props.asset) {
+    return
   }
-}
+  const arrayBuffer = await props.asset.file.arrayBuffer()
+  const blob = new Blob([arrayBuffer], { type: nameToMime(props.asset.file.name) })
+  const url = URL.createObjectURL(blob)
 
-/* Mute the sound */
-function mute(): void {
-  if (wavesurfer.getVolume() > 0) {
-    wavesurfer.setVolume(0)
-  } else {
-    wavesurfer.setVolume(1)
-  }
-}
-
-/* Replay the sound */
-function replay(): void {
-  wavesurfer.stop()
-  wavesurfer.play()
-}
-
-/* Forward 5s */
-function forward(): void {
-  wavesurfer.skip(5)
-}
-
-/* Backward 5s */
-function backward(): void {
-  wavesurfer.skip(-5)
-}
-
-/* Update sound */
-async function updateSound(): Promise<void> {
-  const backend = wavesurfer.backend as SimpleWavesurferBackend
-  if (backend && backend.buffer) {
-    const wavBlob = audioBufferToWavBlob(backend.buffer)
-    const wavFile = fromBlob((props.asset?.name ?? 'TODO') + '.wav', wavBlob)
-    emits('update-sound-file', wavFile)
-  }
-}
-
-/* Download sound file */
-function downloadSound(): void {
-  const backend = wavesurfer.backend as SimpleWavesurferBackend
-  if (backend && backend.buffer) {
-    downloadAudioBuffer(backend.buffer, props.asset!.name + '.wav')
-  }
-}
-
-/* Download WAV type sound file */
-function downloadAudioBuffer(audioBuffer: AudioBuffer, filename: string): void {
-  const blob = audioBufferToWavBlob(audioBuffer)
-  const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
-  document.body.appendChild(a)
-  a.style.display = 'none'
   a.href = url
-  a.download = filename
+  a.download = props.asset.name
   a.click()
-  window.URL.revokeObjectURL(url)
-  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
-
-watch(
-  () => props.asset?.name,
-  () => {
-    soundName.value = props.asset?.name || ''
-  }
-)
-
-watch(
-  () => props.asset,
-  () => {
-    initSoundEdit()
-  }
-)
 </script>
 
 <style scoped>

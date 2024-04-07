@@ -13,23 +13,17 @@
       content-style="paddingLeft: 120px;"
       style="width: 175px; background-image: linear-gradient(to bottom, #fefbfb, #fbe8eb)"
     >
-      <AssetAddBtn :style="{ 'margin-bottom': '26px' }" :type="AssetType.Sound" />
+      <AssetAddBtn :type="AssetType.Sound" />
       <SoundsEditCard
         v-for="asset in editorCtx.project.sounds"
         :key="asset.name"
         :asset="asset"
-        :style="{ 'margin-bottom': '26px' }"
         @click="handleSelect(asset)"
-        @delete-sound="handleDeleteSound(asset)"
+        @remove="handleRemoveSound(asset)"
       />
     </n-layout-sider>
     <n-layout-content>
-      <SoundsEdit
-        :asset="selectedSound"
-        style="margin-left: 10px"
-        @update-sound-file="handleSoundFileUpdate"
-        @update-sound-name="handleSoundFileNameUpdate"
-      />
+      <SoundsEdit :asset="selectedSound" @set-name="handleSoundFileNameUpdate" />
     </n-layout-content>
   </n-layout>
 </template>
@@ -42,7 +36,6 @@ import { Sound } from '@/models/sound'
 import AssetAddBtn from '@/components/editor/panels/todo/AssetAddBtn.vue' // TODO: review this dependency
 import { checkUpdatedName } from '@/utils/asset'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
-import type { File } from '@/models/common/file'
 import { AssetType } from '@/apis/asset'
 import SoundsEditCard from './SoundEditCard.vue'
 import SoundsEdit from './SoundEdit.vue'
@@ -66,13 +59,6 @@ const handleSelect = (asset: Sound) => {
   selectedSound.value = asset
 }
 
-const handleSoundFileUpdate = (newFile: File) => {
-  if (selectedSound.value) {
-    selectedSound.value.setFile(newFile)
-    message.success(t('message.save'), { duration: 1000 })
-  }
-}
-
 const handleSoundFileNameUpdate = (newName: string) => {
   if (selectedSound.value && newName.trim() !== '') {
     try {
@@ -88,7 +74,7 @@ const handleSoundFileNameUpdate = (newName: string) => {
   }
 }
 
-const handleDeleteSound = (sound: Sound) => {
+const handleRemoveSound = (sound: Sound) => {
   editorCtx.project.removeSound(sound.name)
 }
 </script>
