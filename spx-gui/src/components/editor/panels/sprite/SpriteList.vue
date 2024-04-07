@@ -66,7 +66,7 @@ import LoadFromScratch from '@/components/library/LoadFromScratch.vue'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import type { Sprite } from '@/models/sprite'
 import { AssetType } from '@/apis/asset'
-import SpriteEditBtn from '../todo/SpriteEditBtn.vue'
+import SpriteEditBtn from './SpriteEditBtn.vue'
 import ImageCardCom from '../todo/ImageCardCom.vue'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 
