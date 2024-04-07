@@ -18,7 +18,11 @@ export interface I18nConfig {
 
 export type TranslateFn = InstanceType<typeof I18n>['t']
 
-declare module 'vue' {
+// Vue's [official document](https://vuejs.org/api/utility-types.html#componentcustomproperties) says we should do
+// `declare module 'vue'`. While it does not work as expected. Related issue:
+// * https://github.com/vuejs/language-tools/issues/3372
+// It does work with `vue/runtime-core` instead of `vue` (it's the way vue-router & vue-i18n do)
+declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     _t: TranslateFn
   }
