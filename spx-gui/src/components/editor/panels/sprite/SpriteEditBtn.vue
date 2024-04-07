@@ -100,7 +100,8 @@
       </n-input-number>
     </div>
     <div v-if="editorCtx.selectedSprite != null" class="sprite-edit-btn">
-      <NButton @click="handleAddToLibrary(editorCtx.selectedSprite)">Add to library (TODO)</NButton>
+      <!-- Entry for "add to library", its appearance or position may change later -->
+      <NButton @click="handleAddToLibrary(editorCtx.selectedSprite)">Add to library</NButton>
     </div>
   </n-flex>
 </template>
