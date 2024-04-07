@@ -35,7 +35,7 @@ import { Sound } from '@/models/sound'
 import { watchEffect } from 'vue'
 import { onUnmounted } from 'vue'
 
-const props = defineProps<{ asset?: Sound }>()
+const props = defineProps<{ asset: Sound | null }>()
 
 const soundName = ref('')
 

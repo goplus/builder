@@ -44,7 +44,7 @@
         </div>
       </template>
       <!--  S Component SoundsEditHome-->
-      <SoundsEditHome />
+      <SoundHome />
       <!--  E Component SoundsEditHome-->
     </n-tab-pane>
     <!-- Tab Costume Part -->
@@ -74,8 +74,8 @@ import { ref } from 'vue'
 import { NTabs, NTabPane, NIcon } from 'naive-ui'
 import { HighlightOutlined as CostumeIcon } from '@vicons/antd'
 import { CodeSlash as CodeIcon, MusicalNotes as MusicIcon } from '@vicons/ionicons5'
-import SoundsEditHome from './sound/SoundHome.vue'
 import SpxEditorHome from './spx-code-editor/CodeEditorHome.vue'
+import SoundHome from './sound/SoundHome.vue'
 
 const currentTab = ref('code')
 </script>
