@@ -14,15 +14,11 @@ export function useAddAssetFromLibrary() {
   const modalCtrl = useModal()
   const { t } = useI18n()
 
-  return function addAssetFromLibrary(
-    project: Project,
-    type: AssetType
-  ): Promise<void> {
+  return function addAssetFromLibrary(project: Project, type: AssetType): Promise<void> {
     return new Promise<void>((resolve) => {
       const modal = modalCtrl.create({
         title: t({ en: 'Asset Library', zh: '素材库' }),
-        content: () =>
-          h(AssetLibrary, { type, project }),
+        content: () => h(AssetLibrary, { type, project }),
         preset: 'dialog',
         onHide() {
           resolve()

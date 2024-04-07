@@ -10,7 +10,10 @@
         </NSpace>
       </NRadioGroup>
     </NFormItem>
-    <NFormItem :label="_t({ en: 'Publish to public assets', zh: '发布到公共素材库' })" path="isPublic">
+    <NFormItem
+      :label="_t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
+      path="isPublic"
+    >
       <NCheckbox v-model:checked="form.value.isPublic" />
     </NFormItem>
     <NFormItem>
@@ -77,7 +80,7 @@ async function handleSubmit() {
   const assetData = await addAsset({
     ...params,
     displayName: form.value.name,
-    isPublic: form.value.isPublic ? IsPublic.public: IsPublic.personal,
+    isPublic: form.value.isPublic ? IsPublic.public : IsPublic.personal,
     category: form.value.category,
     preview: 'TODO'
   })

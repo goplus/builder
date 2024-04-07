@@ -55,15 +55,7 @@
 
 <script lang="ts" setup>
 import { defineProps, ref, computed, watch, reactive } from 'vue'
-import {
-  NEmpty,
-  NInput,
-  NPagination,
-  NRadioGroup,
-  NRadio,
-  NSpace,
-  NSpin
-} from 'naive-ui'
+import { NEmpty, NInput, NPagination, NRadioGroup, NRadio, NSpace, NSpin } from 'naive-ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { categories as categoriesWithoutAll, categoryAll } from './category'
@@ -94,18 +86,22 @@ const {
   data: assets,
   error,
   refetch
-} = useQuery(() => listAsset({
-  pageSize,
-  pageIndex: pageIndex.value,
-  assetType: props.type,
-  keyword: keyword.value,
-  category: category.value === categoryAll.value ? undefined : category.value,
-  owner: ownerType.value === OwnerType.personal ? undefined : '*',
-  isPublic: ownerType.value === OwnerType.personal ? undefined : IsPublic.public
-}), {
-  en: 'Failed to list',
-  zh: '获取列表失败'
-})
+} = useQuery(
+  () =>
+    listAsset({
+      pageSize,
+      pageIndex: pageIndex.value,
+      assetType: props.type,
+      keyword: keyword.value,
+      category: category.value === categoryAll.value ? undefined : category.value,
+      owner: ownerType.value === OwnerType.personal ? undefined : '*',
+      isPublic: ownerType.value === OwnerType.personal ? undefined : IsPublic.public
+    }),
+  {
+    en: 'Failed to list',
+    zh: '获取列表失败'
+  }
+)
 
 const pageCount = computed(() => {
   const total = assets.value?.total ?? 0
