@@ -1,5 +1,6 @@
 <template>
-  <div v-if="showRecorder" class="modal">
+  <!-- TODO: Refactor modal to use Naive UI -->
+  <div class="modal">
     <div class="modal-content">
       <div class="close-button" @click="closeRecorder">
         <span class="close-button-text"> × </span>
@@ -9,17 +10,17 @@
       </div>
       <div class="name-input-container">
         <span class="name-input-hint"> {{ $t('sounds.soundName') }} </span>
-        <input v-model="soundName" type="text" class="sound-name-input" />
       </div>
-      <audio :src="audioUrl" controls></audio>
+      <div v-if="!recording && audioBlob" @click="wavesurfer.playPause()">
+        <NButton>{{ playing ? 'Pause' : 'Play' }}</NButton>
+      </div>
       <div class="button-container">
-        <button class="recorder-button" @click="startRecording">
-          {{ $t('sounds.startRecording') }}
-        </button>
-        <button class="recorder-button" @click="stopRecording">
-          {{ $t('sounds.stopRecording') }}
-        </button>
-        <button class="recorder-button" @click="saveRecording">{{ $t('sounds.save') }}</button>
+        <NButton @click="handleRecordingClick">
+          {{ recording ? $t('sounds.stopRecording') : $t('sounds.startRecording') }}
+        </NButton>
+        <NButton :disabled="!audioBlob || recording" @click="saveRecording">
+          {{ $t('sounds.save') }}
+        </NButton>
       </div>
     </div>
   </div>
@@ -27,124 +28,110 @@
 
 <script lang="ts" setup>
 import WaveSurfer from 'wavesurfer.js'
-import MicrophonePlugin from 'wavesurfer.js/src/plugin/microphone'
-import { defineEmits, defineProps, nextTick, onMounted, ref, watch } from 'vue'
-import { Sound } from '@/models/sound'
-import { audioBufferToWavBlob, convertAudioChunksToAudioBuffer } from '@/utils/audio'
+import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js'
+import { defineEmits, onMounted, ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
-import { fromNativeFile } from '@/models/common/file'
+import { onUnmounted } from 'vue'
+import { NButton } from 'naive-ui'
+import dayjs from 'dayjs'
+import { fromBlob } from '@/models/common/file'
+import { Sound } from '@/models/sound'
 
-interface PropsType {
-  show: boolean
-}
-const props = defineProps<PropsType>()
-const emits = defineEmits(['update:show'])
+const emits = defineEmits<{
+  close: []
+}>()
 
-const showRecorder = ref<boolean>(false)
-const soundName = ref('record')
-const audioUrl = ref('')
-let mediaRecorder: MediaRecorder
-const audioChunks = ref<Blob[]>([])
-const audioFile = ref<File | null>(null)
+const recording = ref(false)
+const playing = ref(false)
+
+const audioBlob = ref<Blob | null>(null)
 let wavesurfer: WaveSurfer
+let recordPlugin: RecordPlugin
 const waveformContainer = ref(null)
 
 const editorCtx = useEditorCtx()
 
 onMounted(() => {
-  nextTick(() => {
-    initWaveSurfer()
-  })
+  initWaveSurfer()
+})
+
+onUnmounted(() => {
+  if (wavesurfer) {
+    wavesurfer.destroy()
+  }
 })
 
 const initWaveSurfer = () => {
-  nextTick(() => {
-    if (waveformContainer.value) {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')!
-      const gradient = ctx.createLinearGradient(0, 0, 0, 150)
-      gradient.addColorStop(0, 'rgb(255,223,232)')
-      gradient.addColorStop(1, 'rgb(255,114,142)')
+  if (!waveformContainer.value) {
+    throw new Error('Waveform container not initialized')
+  }
+  if (wavesurfer) {
+    wavesurfer.destroy()
+  }
+  wavesurfer = WaveSurfer.create({
+    container: waveformContainer.value,
+    waveColor: 'rgb(255,114,142)',
+    progressColor: 'rgb(224,213,218)',
+    cursorColor: 'rgb(229,29,100)'
+  })
 
-      wavesurfer = WaveSurfer.create({
-        container: waveformContainer.value,
-        splitChannels: false,
-        waveColor: gradient,
-        progressColor: 'rgb(224,213,218)',
-        cursorColor: 'rgb(229,29,100)',
-        cursorWidth: 0,
-        minPxPerSec: 100,
-        barGap: 3,
-        barHeight: 2,
-        barMinHeight: 2,
-        barWidth: 4,
-        plugins: [MicrophonePlugin.create({})]
-      })
-      wavesurfer.microphone.on('deviceError', (code) => {
-        console.warn('Device error:', code)
-      })
-    }
+  recordPlugin = wavesurfer.registerPlugin(
+    RecordPlugin.create({
+      scrollingWaveform: true
+    })
+  )
+
+  wavesurfer.on('play', () => {
+    playing.value = true
+  })
+  wavesurfer.on('pause', () => {
+    playing.value = false
+  })
+
+  recordPlugin.on('record-end', (blob) => {
+    recording.value = false
+    audioBlob.value = blob
+  })
+  recordPlugin.on('record-start', () => {
+    recording.value = true
   })
 }
 
-/* Start recording*/
 const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    mediaRecorder = new MediaRecorder(stream)
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.value.push(event.data)
-    }
-    mediaRecorder.start()
-    wavesurfer.microphone.start()
-  } catch (err) {
-    console.error('Error accessing the microphone', err)
+  const devices = await RecordPlugin.getAvailableAudioDevices()
+  if (devices.length === 0) {
+    alert('No audio input devices available. TODO: i18n, use message hook?')
+    return
   }
+  const device = devices[0]
+
+  await recordPlugin.startRecording({
+    deviceId: device.deviceId
+  })
 }
 
-/* Stop recording*/
 const stopRecording = () => {
-  mediaRecorder.stop()
-  wavesurfer.microphone.stop()
-  mediaRecorder.onstop = () => {
-    if (audioChunks.value.length > 0) {
-      // AudioChunks -> AudioBuffer -> correct wav blob
-      convertAudioChunksToAudioBuffer(audioChunks.value, 'audio/webm').then((audioBuffer) => {
-        audioFile.value = new File([audioBufferToWavBlob(audioBuffer)], soundName.value + '.wav', {
-          type: 'audio/wav',
-          lastModified: Date.now()
-        })
-        if (audioUrl.value !== '') URL.revokeObjectURL(audioUrl.value)
-        audioUrl.value = URL.createObjectURL(audioFile.value)
-      })
-    } else {
-      console.error('No audio chunks available to create audio file.')
-    }
-    audioChunks.value = []
-  }
+  recordPlugin.stopRecording()
 }
 
-/* Save audioFile to file manager */
-const saveRecording = async () => {
-  if (audioFile.value && soundName.value) {
-    const file = await fromNativeFile(audioFile.value)
-    let sound = new Sound(soundName.value, file, {})
-    editorCtx.project.addSound(sound)
-    closeRecorder()
+const handleRecordingClick = () => {
+  if (recording.value) {
+    stopRecording()
   } else {
-    console.error('No recording or name provided')
+    startRecording()
   }
 }
 
-watch(props, (newProps) => {
-  showRecorder.value = newProps.show
-  if (newProps.show) {
-    initWaveSurfer()
-  }
-})
+const saveRecording = async () => {
+  const soundName = `Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
+  const file = fromBlob(`${soundName}.webm`, audioBlob.value!)
+  const sound = new Sound(soundName, file, {})
+  editorCtx.project.addSound(sound)
+  closeRecorder()
+}
 
 const closeRecorder = () => {
-  emits('update:show', false)
+  emits('close')
 }
 </script>
 
@@ -178,7 +165,6 @@ const closeRecorder = () => {
   color: #aaaaaa;
   float: right;
   position: fixed;
-  font-weight: bold;
   align-self: flex-end;
   margin-top: -30px;
 }
@@ -214,31 +200,9 @@ const closeRecorder = () => {
   margin-right: 5px;
 }
 
-.sound-name-input {
-  font-size: 14px;
-  height: 30px;
-  width: 50%;
-  padding-left: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-}
-
 .button-container {
   display: flex;
   margin-top: 20px;
-}
-
-.recorder-button {
-  border: none;
-  background-color: #eb99af;
-  color: white;
-  padding: 8px 13px;
-  border-radius: 20px;
-  margin-right: 10px;
-  font-size: 14px;
-  &:hover {
-    background-color: #e0759b;
-    cursor: pointer;
-  }
+  gap: 16px;
 }
 </style>

@@ -16,6 +16,9 @@ export const soundConfigFileName = 'index.json'
 
 export class Sound {
   name: string
+  setName(name: string) {
+    this.name = name
+  }
 
   file: File
   setFile(file: File) {

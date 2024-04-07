@@ -29,14 +29,13 @@
     "vue-i18n": "^9.9.0",
     "vue-konva": "^3.0.2",
     "vue-router": "^4.2.5",
-    "wavesurfer.js": "^6.0.4"
+    "wavesurfer.js": "^7.7.9"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.7.2",
     "@tsconfig/node20": "^20.1.2",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^20.11.10",
-    "@types/wavesurfer.js": "^6.0.12",
     "@vicons/antd": "^0.12.0",
     "@vicons/ionicons5": "^0.12.0",
     "@vicons/material": "^0.12.0",
