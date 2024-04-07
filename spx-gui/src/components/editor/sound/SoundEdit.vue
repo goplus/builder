@@ -6,13 +6,6 @@
           <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
         </NGradientText>
       </span>
-      <NInput
-        v-model:value="soundName"
-        size="small"
-        round
-        class="sound-edit-content-top-input-sound-name"
-        @blur="emit('setName', soundName)"
-      />
       <div class="sound-icon-container">
         <button @click="downloadSound()">
           <img class="sound-icon-with-text" src="./icons/download.svg" />
@@ -37,17 +30,12 @@
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
 import { ref, type Ref } from 'vue'
-import { NGradientText, NInput } from 'naive-ui'
+import { NGradientText } from 'naive-ui'
 import { Sound } from '@/models/sound'
 import { watchEffect } from 'vue'
 import { onUnmounted } from 'vue'
 
 const props = defineProps<{ asset?: Sound }>()
-
-const emit = defineEmits<{
-  remove: []
-  setName: [name: string]
-}>()
 
 const soundName = ref('')
 
@@ -79,7 +67,8 @@ watchEffect(
       container: waveformContainer.value,
       waveColor: 'rgb(255,114,142)',
       progressColor: 'rgb(224,213,218)',
-      cursorColor: 'rgb(229,29,100)'
+      cursorColor: 'rgb(229,29,100)',
+      interact: false
     })
 
     if (!props.asset) {

@@ -23,24 +23,21 @@
       />
     </n-layout-sider>
     <n-layout-content>
-      <SoundsEdit :asset="selectedSound" @set-name="handleSoundFileNameUpdate" />
+      <SoundsEdit :asset="selectedSound" />
     </n-layout-content>
   </n-layout>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { type MessageApi, NLayout, NLayoutContent, NLayoutSider, useMessage } from 'naive-ui'
+import { NLayout, NLayoutContent, NLayoutSider } from 'naive-ui'
 import { Sound } from '@/models/sound'
 import AssetAddBtn from '@/components/editor/panels/todo/AssetAddBtn.vue' // TODO: review this dependency
-import { checkUpdatedName } from '@/utils/asset'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { AssetType } from '@/apis/asset'
 import SoundsEditCard from './SoundEditCard.vue'
 import SoundsEdit from './SoundEdit.vue'
 
-const message: MessageApi = useMessage()
 const editorCtx = useEditorCtx()
 const selectedSound = ref<Sound>()
 
@@ -51,27 +48,8 @@ watch(
   }
 )
 
-const { t } = useI18n({
-  inheritLocale: true
-})
-
 const handleSelect = (asset: Sound) => {
   selectedSound.value = asset
-}
-
-const handleSoundFileNameUpdate = (newName: string) => {
-  if (selectedSound.value && newName.trim() !== '') {
-    try {
-      const checkInfo = checkUpdatedName(newName, editorCtx.project, selectedSound.value.name)
-      if (!checkInfo.isSame && !checkInfo.isChanged) {
-        selectedSound.value.name = checkInfo.name
-        message.success(t('message.update'))
-      }
-      if (checkInfo.msg) message.warning(checkInfo.msg)
-    } catch (e) {
-      if (e instanceof Error) message.error(e.message)
-    }
-  }
 }
 
 const handleRemoveSound = (sound: Sound) => {
