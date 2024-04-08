@@ -9,18 +9,20 @@
 
 <template>
   <div id="spx">
-    <n-config-provider :theme-overrides="themeOverrides">
-      <n-message-provider>
-        <NModalProvider>
-          <router-view />
-        </NModalProvider>
-      </n-message-provider>
-    </n-config-provider>
+    <NConfigProvider :theme-overrides="themeOverrides">
+      <NMessageProvider>
+        <NDialogProvider>
+          <NModalProvider>
+            <RouterView />
+          </NModalProvider>
+        </NDialogProvider>
+      </NMessageProvider>
+    </NConfigProvider>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NConfigProvider, NMessageProvider, NModalProvider } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NModalProvider, NDialogProvider } from 'naive-ui'
 import '@/assets/theme'
 /**
  * @description: Override spx-gui theme

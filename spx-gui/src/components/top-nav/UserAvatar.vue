@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="user-avatar-wrapper">
     <n-button v-if="!userStore.userInfo" :disabled="!isOnline" @click="signin()">{{
       _t({ en: 'Sign in', zh: '登录' })
     }}</n-button>
@@ -45,6 +45,9 @@ function handleAvatarDropdownClick(key: string) {
 </script>
 
 <style scoped lang="scss">
+.user-avatar-wrapper {
+  display: flex;
+}
 .user-avatar {
   width: 38px;
   height: 38px;

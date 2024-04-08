@@ -1,8 +1,13 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-// TODO: type-safe route match & construct (with params)
-export const editProjectRouteName = 'edit-project'
+export function getProjectEditorRoute(projectName: string) {
+  return `/editor/${projectName}`
+}
+
+export function getProjectShareRoute(owner: string, name: string) {
+  return `/share/${owner}/${name}`
+}
 
 const routes: Array<RouteRecordRaw> = [
   { path: '/', redirect: '/editor' },
@@ -11,7 +16,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/components/editor/EditorHomepage.vue')
   },
   {
-    name: editProjectRouteName,
     path: '/editor/:projectName',
     component: () => import('@/components/editor/EditorHomepage.vue')
   },
