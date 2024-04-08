@@ -12,14 +12,13 @@ import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ProjectRunner from '../project-runner/ProjectRunner.vue'
 import { ref } from 'vue'
-import { NButton, useMessage } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import { Project } from '@/models/project'
-import { copyShareLink } from '@/utils/share'
+import { useShareProject } from '@/components/project'
 
 const route = useRoute()
 const project = ref<Project>()
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
-const message = useMessage()
 
 watch(
   () => {
@@ -44,9 +43,11 @@ const handleRerun = () => {
   projectRunnerRef.value?.run()
 }
 
+const shareProject = useShareProject()
+
 const handleShare = () => {
-  if (!project.value?.owner || !project.value?.name) return
-  copyShareLink(project.value.owner, project.value.name, message)
+  if (project.value == null) return
+  shareProject(project.value)
 }
 </script>
 <style scoped lang="scss">

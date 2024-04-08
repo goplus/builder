@@ -29,7 +29,7 @@ import TopNav from '@/components/top-nav/TopNav.vue'
 import ProjectList from '@/components/project/ProjectList.vue'
 import { useCreateProject } from '@/components/project'
 import ProjectEditor from './ProjectEditor.vue'
-import { editProjectRouteName } from '@/router'
+import { getProjectEditorRoute } from '@/router'
 import { computed } from 'vue'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
@@ -79,7 +79,7 @@ watch(
 )
 
 function openProject(projectName: string) {
-  router.push({ name: editProjectRouteName, params: { projectName } })
+  router.push(getProjectEditorRoute(projectName))
 }
 
 function handleSelected(project: ProjectData) {

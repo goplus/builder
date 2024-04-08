@@ -27,10 +27,9 @@
 import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
-import { NButton, useMessage } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
-import { IsPublic } from '@/apis/common'
-import { copyShareLink } from '@/utils/share'
+import { useSaveAndShareProject } from '@/components/project'
 import { useEditorCtx } from '../ProjectEditor.vue'
 
 defineProps<{ project: Project }>()
@@ -40,7 +39,6 @@ const emit = defineEmits<{
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
 const editorCtx = useEditorCtx()
-const nMessage = useMessage()
 
 const consoleMessages = ref<
   {
@@ -73,15 +71,8 @@ const handleClose = () => {
   emit('close')
 }
 
-const handleShare = async () => {
-  nMessage.loading('TODO: i18n: Saving to cloud')
-  editorCtx.project.setPublic(IsPublic.public)
-  await editorCtx.project.saveToCloud()
-  if (!editorCtx.project.owner || !editorCtx.project.name) {
-    throw new Error('project.owner or project.name is empty')
-  }
-  await copyShareLink(editorCtx.project.owner, editorCtx.project.name, nMessage)
-}
+const shareProject = useSaveAndShareProject()
+const handleShare = async () => shareProject(editorCtx.project)
 </script>
 <style lang="scss" scoped>
 .container {

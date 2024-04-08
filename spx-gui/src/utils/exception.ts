@@ -79,18 +79,21 @@ export function useAction<Args extends any[], T>(
  * `useMessageHandle`
  * - transforms exceptions like `useAction`
  * - handles exceptions with naive-ui message
+ * TODO: message.loading?
  */
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
   failureSummaryMessage: LocaleMessage,
-  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
+  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage),
+  loadingMessage?: LocaleMessage
 ): (...args: Args) => Promise<T> {
   const m = useMessage()
   const { t } = useI18n()
   const action = useAction(fn, failureSummaryMessage)
 
-  return (...args: Args) =>
-    action(...args).then(
+  return (...args: Args) => {
+    if (loadingMessage != null) m.loading(t(loadingMessage))
+    return action(...args).then(
       (ret) => {
         if (successMessage != null) {
           const successText = t(
@@ -105,6 +108,7 @@ export function useMessageHandle<Args extends any[], T>(
         throw e
       }
     )
+  }
 }
 
 export type QueryRet<T> = {
