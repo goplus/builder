@@ -82,7 +82,6 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
     })
   }
 
-  console.log(assetFileDetails)
   return assetFileDetails
 }
 
