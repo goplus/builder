@@ -90,11 +90,19 @@ const projectOptions = computed(() => {
     },
     {
       key: 'exportProjectFile',
-      label: t({ en: 'Export project file...', zh: '导出项目文件' }),
+      label: t({ en: 'Export project file', zh: '导出项目文件' }),
       disabled: props.project == null,
       async handler() {
         const zipFile = await props.project!.exportZipFile()
         saveAs(zipFile, zipFile.name) // TODO: what if user cancelled download?
+      }
+    },
+    {
+      key: 'importFromScratch',
+      label: t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }),
+      disabled: props.project == null,
+      async handler() {
+        alert('TODO')
       }
     },
     {
