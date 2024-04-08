@@ -15,7 +15,7 @@
           <NModalProvider>
             <RouterView />
           </NModalProvider>
-      </NDialogProvider>
+        </NDialogProvider>
       </NMessageProvider>
     </NConfigProvider>
   </div>

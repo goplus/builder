@@ -12,7 +12,9 @@
       </NDropdown>
     </div>
     <p class="project-name">{{ props.project?.name }}</p>
-    <NButton v-if="props.project != null" class="save" @click="handleSave">{{ _t({ en: 'Save', zh: '保存' }) }}</NButton>
+    <NButton v-if="props.project != null" class="save" @click="handleSave">{{
+      _t({ en: 'Save', zh: '保存' })
+    }}</NButton>
     <UserAvatar />
   </nav>
 </template>
@@ -32,7 +34,12 @@ import { Cancelled, useMessageHandle } from '@/utils/exception'
 import { IsPublic } from '@/apis/common'
 import { getProjectEditorRoute } from '@/router'
 import type { Project } from '@/models/project'
-import { useCreateProject, useChooseProject, useSaveAndShareProject, useStopSharingProject } from '@/components/project'
+import {
+  useCreateProject,
+  useChooseProject,
+  useSaveAndShareProject,
+  useStopSharingProject
+} from '@/components/project'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps<{
@@ -188,7 +195,9 @@ const handleSave = useMessageHandle(
   margin-right: 1em;
 }
 
-.project-dropdown, .setting-dropdown, .save {
+.project-dropdown,
+.setting-dropdown,
+.save {
   margin: 0 1em;
 }
 

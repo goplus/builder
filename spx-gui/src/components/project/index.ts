@@ -74,7 +74,7 @@ export function useShareProject() {
   return useMessageHandle(
     copySharingLink,
     { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
-    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' },
+    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
   )
 }
 
@@ -95,12 +95,11 @@ export function useSaveAndShareProject() {
       await copySharingLink(project)
     },
     { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
-    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' },
+    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
   )
 
   return function saveAndShareProject(project: Project) {
     return new Promise<void>((resolve, reject) => {
-
       // TODO: the check should be unnecessary
       if (project.isPublic == null) {
         reject(new Error('isPublic required'))
@@ -127,12 +126,13 @@ export function useSaveAndShareProject() {
 }
 
 function getShareHintMessage(isPublic: IsPublic) {
-  if (isPublic === IsPublic.personal) return {
-    en: 'To share the peoject, we will save the project\'s current state to cloud & make it public',
-    zh: '分享操作会将当前项目状态保存到云端，并将项目设置为公开'
-  }
+  if (isPublic === IsPublic.personal)
+    return {
+      en: "To share the peoject, we will save the project's current state to cloud & make it public",
+      zh: '分享操作会将当前项目状态保存到云端，并将项目设置为公开'
+    }
   return {
-    en: 'To share the peoject, we will save the project\'s current state to cloud',
+    en: "To share the peoject, we will save the project's current state to cloud",
     zh: '分享操作会将当前项目状态保存到云端'
   }
 }
@@ -147,12 +147,11 @@ export function useStopSharingProject() {
       await project.saveToCloud()
     },
     { en: 'Failed to stop sharing project', zh: '未成功停止共享项目' },
-    { en: 'Project sharing is now stopped', zh: '项目已停止共享' },
+    { en: 'Project sharing is now stopped', zh: '项目已停止共享' }
   )
 
   return function stopSharingProject(project: Project) {
     return new Promise<void>((resolve, reject) => {
-
       // TODO: the check should be unnecessary
       if (project.isPublic == null) {
         reject(new Error('isPublic required'))
