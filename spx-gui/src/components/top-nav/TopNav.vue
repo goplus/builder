@@ -12,7 +12,7 @@
       </NDropdown>
     </div>
     <p class="project-name">{{ props.project?.name }}</p>
-    <NButton v-if="props.project != null" class="save" @click="handleSave">{{
+    <NButton v-if="props.project != null" :disabled="!isOnline" class="save" @click="handleSave">{{
       _t({ en: 'Save', zh: '保存' })
     }}</NButton>
     <UserAvatar />

@@ -1,9 +1,6 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
-// TODO: type-safe route match & construct (with params)
-export const editProjectRouteName = 'edit-project'
-
 export function getProjectEditorRoute(projectName: string) {
   return `/editor/${projectName}`
 }

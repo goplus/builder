@@ -78,12 +78,11 @@ export function useAction<Args extends any[], T>(
 /**
  * `useMessageHandle`
  * - transforms exceptions like `useAction`
- * - handles exceptions with naive-ui message
- * TODO: message.loading?
+ * - handles loading / success / failure with naive-ui message
  */
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
-  failureSummaryMessage: LocaleMessage,
+  failureSummaryMessage: LocaleMessage, // TODO: the messages can be simplified if the messages' format is consistent
   successMessage?: LocaleMessage | ((ret: T) => LocaleMessage),
   loadingMessage?: LocaleMessage
 ): (...args: Args) => Promise<T> {
