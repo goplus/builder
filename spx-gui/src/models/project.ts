@@ -17,6 +17,7 @@ import * as cloudHelper from './common/cloud'
 import * as localHelper from './common/local'
 import * as zipHelper from './common/zip'
 import { assign } from './common'
+import { getSoundName, getSpriteName } from './common/asset'
 
 export type Metadata = {
   id?: string
@@ -46,17 +47,24 @@ export class Project extends Disposble {
   cTime?: string
   uTime?: string
 
-  stage!: Stage
-  sprites!: Sprite[]
-  sounds!: Sound[]
-  zorder!: string[]
+  stage: Stage
+  sprites: Sprite[]
+  sounds: Sound[]
+  zorder: string[]
 
   removeSprite(name: string) {
     const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
     sprite.dispose()
   }
+  /**
+   * Add given sprite to project.
+   * Note: the sprite's name may be altered to avoid conflict
+   */
   addSprite(sprite: Sprite) {
+    const newName = getSpriteName(this, sprite.name)
+    sprite.setName(newName)
+    sprite.setProject(this)
     this.sprites.push(sprite)
     // add to zorder
     if (!this.zorder.includes(sprite.name)) {
@@ -99,9 +107,17 @@ export class Project extends Disposble {
 
   removeSound(name: string) {
     const idx = this.sounds.findIndex((s) => s.name === name)
-    this.sounds.splice(idx, 1)
+    const [sound] = this.sounds.splice(idx, 1)
+    sound.setProject(null)
   }
+  /**
+   * Add given sound to project.
+   * Note: the sound's name may be altered to avoid conflict
+   */
   addSound(sound: Sound) {
+    const newName = getSoundName(this, sound.name)
+    sound.setName(newName)
+    sound.setProject(this)
     this.sounds.push(sound)
   }
 
@@ -111,7 +127,10 @@ export class Project extends Disposble {
 
   constructor() {
     super()
-    this.load({}, {}) // ensure stage, sprites, sounds, zorder etc.
+    this.zorder = []
+    this.stage = new Stage()
+    this.sprites = []
+    this.sounds = []
     this.addDisposer(() => {
       for (const sprite of this.sprites) {
         sprite.dispose()

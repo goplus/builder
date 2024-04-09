@@ -1,4 +1,9 @@
-const keywords = [
+/**
+ * @file SPX utils
+ * @desc definition or helpers for spx language
+ */
+
+export const keywords = [
   'func',
   'main',
   'println',
@@ -33,7 +38,7 @@ const keywords = [
   'select'
 ]
 
-const typeKeywords = [
+export const typeKeywords = [
   'int',
   'string',
   'bool',
@@ -46,7 +51,7 @@ const typeKeywords = [
   'nil'
 ]
 
-const operators = [
+export const operators = [
   '=',
   '>',
   '<',
@@ -84,9 +89,9 @@ const operators = [
   '>>=',
   '=>'
 ]
-const brackets = [
+
+export const brackets = [
   { open: '{', close: '}', token: 'delimiter.curly' },
   { open: '[', close: ']', token: 'delimiter.bracket' },
   { open: '(', close: ')', token: 'delimiter.parenthesis' }
 ]
-export { keywords, typeKeywords, operators, brackets }

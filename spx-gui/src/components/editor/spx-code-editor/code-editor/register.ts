@@ -1,8 +1,9 @@
+import { keywords, typeKeywords } from '@/utils/spx'
 import { LanguageConfig, MonarchTokensProviderConfig } from './editor'
-import { keywords, typeKeywords } from './language'
 import wasmModuleUrl from '@/assets/format.wasm?url'
 import function_completions from './snippet'
 import { monaco } from '.'
+
 function completionItem(
   range: monaco.IRange | monaco.languages.CompletionItemRanges
 ): monaco.languages.CompletionItem[] {

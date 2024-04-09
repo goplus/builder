@@ -111,7 +111,7 @@ import { addAsset, IsPublic } from '@/apis/asset'
 import { useI18n } from 'vue-i18n'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
-import { sound2Asset, sprite2Asset } from '@/models/common'
+import { sound2Asset, sprite2Asset } from '@/models/common/asset'
 import SoundsImport from './images/sound-import.svg'
 
 const editorCtx = useEditorCtx()
@@ -248,14 +248,16 @@ async function scratchAsset2Asset(scratchFile: ScratchAssetFile) {
   if (isImage(scratchFile)) {
     const costumeName = 'default'
     const costumeFile = await fromBlob(costumeName + '.' + scratchFile.extension, scratchFile.blob)
-    const costume = new Costume(costumeName, costumeFile, {})
-    return new Sprite(scratchFile.name, '', [costume], {})
+    const costume = new Costume(costumeName, costumeFile)
+    const sprite = new Sprite(scratchFile.name)
+    sprite.addCostume(costume)
+    return sprite
   } else {
     const soundFile = await fromBlob(
       scratchFile.name + '.' + scratchFile.extension,
       scratchFile.blob
     )
-    return new Sound(scratchFile.name, soundFile, {})
+    return new Sound(scratchFile.name, soundFile)
   }
 }
 
