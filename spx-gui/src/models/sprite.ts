@@ -161,13 +161,15 @@ export class Sprite extends Disposble {
 
   static async loadAll(files: Files) {
     const spriteNames = listDirs(files, spriteAssetPath)
-    const sprites = (await Promise.all(
-      spriteNames.map(async (spriteName) => {
-        const sprite = await Sprite.load(spriteName, files)
-        if (sprite == null) console.warn('failed to load sprite:', spriteName)
-        return sprite
-      })
-    )).filter(s => !!s) as Sprite[]
+    const sprites = (
+      await Promise.all(
+        spriteNames.map(async (spriteName) => {
+          const sprite = await Sprite.load(spriteName, files)
+          if (sprite == null) console.warn('failed to load sprite:', spriteName)
+          return sprite
+        })
+      )
+    ).filter((s) => !!s) as Sprite[]
     return sprites
   }
 

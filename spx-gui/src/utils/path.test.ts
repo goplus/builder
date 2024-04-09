@@ -32,7 +32,9 @@ describe('stripExt', () => {
   })
   it('should work well with url', () => {
     expect(stripExt('https://test.com/abc.txt')).toBe('https://test.com/abc')
-    expect(stripExt('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('https://test.com/foo/%E4%B8%AD%E6%96%87')
+    expect(stripExt('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe(
+      'https://test.com/foo/%E4%B8%AD%E6%96%87'
+    )
   })
   it('should work well with no ext', () => {
     expect(stripExt('abc')).toBe('abc')

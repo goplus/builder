@@ -65,13 +65,15 @@ export class Sound {
 
   static async loadAll(files: Files) {
     const soundNames = listDirs(files, soundAssetPath)
-    const sounds = (await Promise.all(
-      soundNames.map(async (soundName) => {
-        const sound = await Sound.load(soundName, files)
-        if (sound == null) console.warn('failed to load sound:', soundName)
-        return sound
-      })
-    )).filter(s => !!s) as Sound[]
+    const sounds = (
+      await Promise.all(
+        soundNames.map(async (soundName) => {
+          const sound = await Sound.load(soundName, files)
+          if (sound == null) console.warn('failed to load sound:', soundName)
+          return sound
+        })
+      )
+    ).filter((s) => !!s) as Sound[]
     return sounds
   }
 

@@ -11,7 +11,11 @@
         <div v-else-if="error != null">
           {{ _t(error.userMessage) }}
         </div>
-        <EditorContextProvider v-else-if="project != null" :project="project" :user-info="userStore.userInfo">
+        <EditorContextProvider
+          v-else-if="project != null"
+          :project="project"
+          :user-info="userStore.userInfo"
+        >
           <ProjectEditor />
         </EditorContextProvider>
         <div v-else>TODO</div>
@@ -56,7 +60,11 @@ const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
-const { data: project, isFetching: isLoading, error } = useQuery(
+const {
+  data: project,
+  isFetching: isLoading,
+  error
+} = useQuery(
   async () => {
     if (userStore.userInfo == null) return null
     if (projectName.value == null) return null
