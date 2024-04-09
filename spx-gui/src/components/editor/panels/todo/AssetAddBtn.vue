@@ -259,7 +259,7 @@ const beforeUpload = async (
   if (uploadFile.file != null) {
     const file = await fromNativeFile(uploadFile.file)
     let fileName = uploadFile.name
-    let assetName = stripExt(fileName) // TODO: naming conflict
+    let assetName = stripExt(fileName)
 
     switch (fileType) {
       case 'backdrop': {

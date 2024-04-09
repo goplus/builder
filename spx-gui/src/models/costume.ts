@@ -91,10 +91,7 @@ export class Costume {
   static load(
     { name, path, ...inits }: RawCostumeConfig,
     files: Files,
-    /**
-     * Path of directory which contains the config file
-     * TODO: remove me?
-     */
+    /** Path of directory which contains the config file */
     basePath: string
   ) {
     if (name == null) throw new Error(`name expected for costume`)
@@ -105,10 +102,7 @@ export class Costume {
   }
 
   export(
-    /**
-     * Path of directory which contains the config file
-     * TODO: remove me?
-     */
+    /** Path of directory which contains the config file */
     basePath: string
   ): [RawCostumeConfig, Files] {
     const filename = this.name + extname(this.img.name)
