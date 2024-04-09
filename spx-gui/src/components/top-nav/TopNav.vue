@@ -16,8 +16,21 @@
       _t({ en: 'Save', zh: '保存' })
     }}</NButton>
     <UserAvatar />
-    <NModal title="Import from Scratch" width="80%" :show="true">
-      <LoadFromScratch :scratch-assets="exportedScratchAssets" />
+    <!-- We can not use `useModal` since the LoadFromScratch uses
+        `useEditorCtx` which is not available when create components
+        with `modal.creat()` -->
+    <NModal
+      title="Import from Scratch"
+      :show="!!exportedScratchAssets"
+      @update:show="
+        (show) => {
+          if (!show) {
+            exportedScratchAssets = null
+          }
+        }
+      "
+    >
+      <LoadFromScratch v-if="exportedScratchAssets" :scratch-assets="exportedScratchAssets" />
     </NModal>
   </nav>
 </template>
