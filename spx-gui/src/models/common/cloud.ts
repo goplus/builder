@@ -31,12 +31,12 @@ function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
 
 export async function uploadFiles(files: Files): Promise<FileCollection> {
   const fileUrls: FileCollection = {}
-  await Promise.all(
-    Object.keys(files).map(async (path) => {
-      // TODO: keep the files' order
-      fileUrls[path] = await uploadFile(files[path]!)
-    })
+  const entries = await Promise.all(
+    Object.keys(files).map(async (path) => [path, await uploadFile(files[path]!)] as const)
   )
+  for (const [path, fileUrl] of entries) {
+    fileUrls[path] = fileUrl
+  }
   return fileUrls
 }
 
