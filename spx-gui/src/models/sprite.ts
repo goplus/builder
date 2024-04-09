@@ -8,7 +8,7 @@ import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './
 import { Disposble } from './common/disposable'
 import { join } from '@/utils/path'
 import { type RawCostumeConfig, Costume } from './costume'
-import { getCostumeName, validateSpriteName } from './common/asset'
+import { getCostumeName, getSpriteName, validateSpriteName } from './common/asset'
 import type { Project } from './project'
 
 export enum RotationStyle {
@@ -119,9 +119,9 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(name: string, code = '', inits?: SpriteInits) {
+  constructor(nameBase: string, code = '', inits?: SpriteInits) {
     super()
-    this.name = name
+    this.name = getSpriteName(null, nameBase)
     this.code = code
     this.costumes = []
     // TODO: check default values here

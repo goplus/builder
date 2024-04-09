@@ -4,7 +4,7 @@ import { extname, resolve } from '@/utils/path'
 import { File, type Files } from './common/file'
 import { type Size } from './common'
 import type { Sprite } from './sprite'
-import { validateCostumeName } from './common/asset'
+import { getCostumeName, validateCostumeName } from './common/asset'
 
 export type CostumeInits = {
   x?: number
@@ -75,8 +75,8 @@ export class Costume {
     })
   }
 
-  constructor(name: string, file: File, inits?: CostumeInits) {
-    this.name = name
+  constructor(nameBase: string, file: File, inits?: CostumeInits) {
+    this.name = getCostumeName(null, nameBase)
     this.img = file
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0

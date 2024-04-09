@@ -133,22 +133,22 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
   }
 }
 
-export function getSpriteName(project: Project, base = '') {
+export function getSpriteName(project: Project | null, base = '') {
   base = normalizeName(base, 'pascal') || 'Sprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
-export function getCostumeName(sprite: Sprite, base = '') {
+export function getCostumeName(sprite: Sprite | null, base = '') {
   base = normalizeName(base, 'camel') || 'costume'
   return getValidName(base, (n) => validateCostumeName(n, sprite) == null)
 }
 
-export function getSoundName(project: Project, base = '') {
+export function getSoundName(project: Project | null, base = '') {
   base = normalizeName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
-export function getBackdropName(stage: Stage, base = '') {
+export function getBackdropName(stage: Stage | null, base = '') {
   base = normalizeName(base, 'camel') || 'backdrop'
   return getValidName(base, (n) => validateBackdropName(n, stage) == null)
 }
