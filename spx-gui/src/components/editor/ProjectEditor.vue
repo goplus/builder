@@ -63,10 +63,12 @@ function select(selected: null): void
 function select(type: 'stage'): void
 function select(type: 'sprite' | 'sound', name: string): void
 function select(type: any, name?: string) {
-  selectedRef.value = type == null ? type : { type, name }
+  selectedRef.value = name == null ? { type } : { type, name }
 }
 /* eslint-enable no-redeclare */
 
+// When sprite name changed, we lose the selected state
+// TODO: consider moving selected to model Project, so we can deal with renaming easily
 const selectedSpriteName = computed(() => {
   const selected = selectedRef.value
   return selected?.type === 'sprite' ? selected.name : null
@@ -114,10 +116,11 @@ provide(editorCtxKey, editorCtx)
 <style scoped lang="scss">
 .main {
   flex: 1 1 0;
-  overflow-x: auto;
+  min-width: 0;
 }
 .sider {
   flex: 0 0 40%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }

@@ -8,6 +8,8 @@ import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './
 import { Disposble } from './common/disposable'
 import { join } from '@/utils/path'
 import { type RawCostumeConfig, Costume } from './costume'
+import { getCostumeName, getSpriteName, validateSpriteName } from './common/asset'
+import type { Project } from './project'
 
 export enum RotationStyle {
   none = 'none',
@@ -41,8 +43,15 @@ export const spriteAssetPath = 'assets/sprites'
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
+  _project: Project | null = null
+  setProject(project: Project | null) {
+    this._project = project
+  }
+
   name: string
   setName(name: string) {
+    const err = validateSpriteName(name, this._project)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 
@@ -61,9 +70,17 @@ export class Sprite extends Disposble {
   }
   removeCostume(name: string) {
     const idx = this.costumes.findIndex((s) => s.name === name)
-    this.costumes.splice(idx, 1)
+    const [constume] = this.costumes.splice(idx, 1)
+    constume.setSprite(null)
   }
+  /**
+   * Add given costume to sprite.
+   * Note: the costume's name may be altered to avoid conflict
+   */
   addCostume(costume: Costume) {
+    const newCostumeName = getCostumeName(this, costume.name)
+    costume.setName(newCostumeName)
+    costume.setSprite(this)
     this.costumes.push(costume)
   }
 
@@ -102,20 +119,20 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(name: string, code: string, costumes: Costume[], inits: SpriteInits) {
+  constructor(nameBase: string, code = '', inits?: SpriteInits) {
     super()
-    this.name = name
+    this.name = getSpriteName(null, nameBase)
     this.code = code
-    this.costumes = costumes
+    this.costumes = []
     // TODO: check default values here
-    this.heading = inits.heading ?? 0
-    this.x = inits.x ?? 0
-    this.y = inits.y ?? 0
-    this.size = inits.size ?? 0
-    this.rotationStyle = getRotationStyle(inits.rotationStyle)
-    this.costumeIndex = inits.costumeIndex ?? 0
-    this.visible = inits.visible ?? false
-    this.isDraggable = inits.isDraggable ?? false
+    this.heading = inits?.heading ?? 0
+    this.x = inits?.x ?? 0
+    this.y = inits?.y ?? 0
+    this.size = inits?.size ?? 0
+    this.rotationStyle = getRotationStyle(inits?.rotationStyle)
+    this.costumeIndex = inits?.costumeIndex ?? 0
+    this.visible = inits?.visible ?? false
+    this.isDraggable = inits?.isDraggable ?? false
     return reactive(this)
   }
 
@@ -129,8 +146,12 @@ export class Sprite extends Disposble {
     if (codeFile != null) {
       code = await toText(codeFile)
     }
+    const sprite = new Sprite(name, code, inits)
     const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
-    return new Sprite(name, code, costumes, inits)
+    for (const costume of costumes) {
+      sprite.addCostume(costume)
+    }
+    return sprite
   }
 
   static async loadAll(files: Files) {

@@ -33,6 +33,7 @@ export async function uploadFiles(files: Files): Promise<FileCollection> {
   const fileUrls: FileCollection = {}
   await Promise.all(
     Object.keys(files).map(async (path) => {
+      // TODO: keep the files' order
       fileUrls[path] = await uploadFile(files[path]!)
     })
   )

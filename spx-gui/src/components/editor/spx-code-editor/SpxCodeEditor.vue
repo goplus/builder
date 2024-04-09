@@ -1,53 +1,57 @@
-<!--
- * @Author: Zhang Zhi Yang
- * @Date: 2024-01-15 15:30:26
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-07 14:44:00
- * @FilePath: \spx-gui\src\components\spx-code-editor\SpxCodeEditor.vue
- * @Description: 
--->
 <template>
-  <div class="code-editor-space">
-    <div class="code-button">{{ $t('component.code') }}</div>
-    <div class="formatBtnGroup" size="small">
-      <n-button class="formatBtn" @click="format">{{ $t('editor.format') }}</n-button>
-    </div>
-    <CodeEditor ref="codeEditor" :model-value="currentCode" @update:model-value="onCodeChange" />
-  </div>
+  <NLayout has-sider :style="layoutStyle">
+    <NLayoutSider
+      :native-scrollbar="false"
+      collapse-mode="width"
+      :collapsed-width="78"
+      :width="260"
+      show-trigger="arrow-circle"
+      style="border-right: 2px dashed #8f98a1"
+    >
+      <ToolBox :insert-snippet="codeEditor?.insertSnippet" />
+    </NLayoutSider>
+    <NLayoutContent>
+      <div class="code-editor-space">
+        <div class="code-button">{{ $t('component.code') }}</div>
+        <div class="formatBtnGroup" size="small">
+          <NButton class="formatBtn" @click="codeEditor?.format">{{ $t('editor.format') }}</NButton>
+        </div>
+        <CodeEditor ref="codeEditor" :model-value="value" @update:model-value="onChange" />
+      </div>
+    </NLayoutContent>
+  </NLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
-import { NButton } from 'naive-ui'
-import type { languages } from 'monaco-editor'
+import { ref } from 'vue'
+import { NButton, NLayout, NLayoutSider, NLayoutContent } from 'naive-ui'
+import ToolBox from './ToolBox.vue'
 import CodeEditor from './code-editor'
 
-const editorCtx = useEditorCtx()
+defineProps<{
+  value: string
+}>()
+const emit = defineEmits<{
+  change: [value: string]
+}>()
 
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 
-const currentCode = computed(() =>
-  editorCtx.selectedSprite ? editorCtx.selectedSprite.code : editorCtx.project.stage.code
-)
-
-const onCodeChange = (value: string) => {
-  if (editorCtx.selectedSprite) {
-    editorCtx.selectedSprite.setCode(value)
-  } else {
-    editorCtx.project.stage.setCode(value)
-  }
+const onChange = (value: string) => {
+  emit('change', value)
 }
 
-const format = () => {
-  codeEditor.value?.format()
+const layoutStyle = {
+  height: 'calc(100vh - 140px)',
+  display: 'flex',
+  flexDirection: 'column',
+  border: '2px solid #00142970',
+  position: 'relative',
+  background: 'white',
+  borderRadius: '0 24px 24px 0',
+  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+  overflow: 'hidden'
 }
-
-const insertSnippet = (snippet: languages.CompletionItem) => {
-  codeEditor.value?.insertSnippet(snippet)
-}
-
-defineExpose({ insertSnippet })
 </script>
 
 <style scoped>

@@ -125,7 +125,10 @@ const importSprite = async (asset: ExportedScratchSprite) => {
     (costume) =>
       new Costume(costume.name, new File(costume.name, async () => costume.arrayBuffer, {}), {})
   )
-  const sprite = new Sprite(asset.name, '', costumes, {})
+  const sprite = new Sprite(asset.name, '', {})
+  for (const costume of costumes) {
+    sprite.addCostume(costume)
+  }
   editorCtx.project.addSprite(sprite)
   message.success(`Imported sprite ${asset.name}`)
 }

@@ -30,7 +30,8 @@ import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
 import { useI18n } from '@/utils/i18n'
-import { Cancelled, useMessageHandle } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
+import { selectFile } from '@/utils/file'
 import { IsPublic } from '@/apis/common'
 import { getProjectEditorRoute } from '@/router'
 import type { Project } from '@/models/project'
@@ -84,7 +85,7 @@ const projectOptions = computed(() => {
       label: t({ en: 'Import project file...', zh: '导入项目文件...' }),
       disabled: props.project == null,
       async handler() {
-        const file = await selectFile()
+        const file = await selectFile({ accept: '.zip' })
         await props.project!.loadZipFile(file)
       }
     },
@@ -159,25 +160,6 @@ function handleSettingOption(key: string) {
     }
   }
   throw new Error(`unknown option key: ${key}`)
-}
-
-/** Invoke file-select for the user */
-function selectFile() {
-  return new Promise<File>((resolve, reject) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.zip'
-    input.click()
-    // TODO: dispose input?
-    input.onchange = async () => {
-      if (input.files?.[0] == null) {
-        reject(new Cancelled())
-        return
-      }
-      const file = input.files[0]
-      resolve(file)
-    }
-  })
 }
 
 const handleSave = useMessageHandle(
