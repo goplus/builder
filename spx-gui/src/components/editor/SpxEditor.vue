@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
-import { useEditorCtx } from './ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
 </script>

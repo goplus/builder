@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import ImageCardCom from '../todo/ImageCardCom.vue'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { AssetType } from '@/apis/asset'
 
 const editorCtx = useEditorCtx()

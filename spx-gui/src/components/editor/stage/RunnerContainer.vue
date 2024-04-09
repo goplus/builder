@@ -30,7 +30,7 @@ import type { Project } from '@/models/project'
 import { NButton } from 'naive-ui'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { useSaveAndShareProject } from '@/components/project'
-import { useEditorCtx } from '../ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 defineProps<{ project: Project }>()
 const emit = defineEmits<{

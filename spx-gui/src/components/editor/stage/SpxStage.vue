@@ -30,7 +30,7 @@
 import { ref, watch, computed } from 'vue'
 import { useSize } from '@/utils/dom'
 import { NButton, NModal } from 'naive-ui'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'

@@ -27,7 +27,7 @@ import { ref, type Ref } from 'vue'
 import { NGradientText } from 'naive-ui'
 import { watchEffect } from 'vue'
 import { onUnmounted } from 'vue'
-import { useEditorCtx } from '../ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
 

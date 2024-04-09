@@ -1,21 +1,25 @@
 <template>
-  <section class="editor-home">
-    <header class="editor-header">
-      <TopNav :project="project" />
-    </header>
-    <main v-if="userStore.userInfo != null" class="editor-main">
-      <template v-if="projectName">
-        <ProjectEditor v-if="project != null" :project="project" :user-info="userStore.userInfo" />
-        <div v-else class="loading-wrapper">
-          <NSpin size="large" />
-        </div>
-      </template>
-      <template v-else>
-        <ProjectList @selected="handleSelected" />
-        <NButton @click="handleCreate">+</NButton>
-      </template>
-    </main>
-  </section>
+  <EditorContextProvider
+    v-if="project && userStore.userInfo"
+    :project="project"
+    :user-info="userStore.userInfo"
+  >
+    <section class="editor-home">
+      <header class="editor-header">
+        <TopNav :project="project" />
+      </header>
+      <main v-if="userStore.userInfo != null" class="editor-main">
+        <template v-if="projectName">
+          <ProjectEditor />
+        </template>
+        <template v-else>
+          <ProjectList @selected="handleSelected" />
+          <NButton @click="handleCreate">+</NButton>
+        </template>
+      </main>
+    </section>
+  </EditorContextProvider>
+  <NSpin v-else size="large" />
 </template>
 
 <script setup lang="ts">
@@ -31,6 +35,7 @@ import { useCreateProject } from '@/components/project'
 import ProjectEditor from './ProjectEditor.vue'
 import { getProjectEditorRoute } from '@/router'
 import { computed } from 'vue'
+import EditorContextProvider from './EditorContextProvider.vue'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 

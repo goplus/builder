@@ -48,7 +48,7 @@ import { NImage } from 'naive-ui'
 import { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
 import error from '@/assets/error.svg'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 // ----------props & emit------------------------------------
 interface PropType {

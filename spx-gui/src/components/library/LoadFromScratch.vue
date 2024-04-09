@@ -58,10 +58,10 @@ import soundsImportSvg from './images/sound-import.svg'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { File as SpxFile } from '@/models/common/file'
-import { useEditorCtx } from '../editor/ProjectEditor.vue'
 import { getMimeFromExt } from '@/utils/file'
 import ArrayBufferImage from './ArrayBufferImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 defineProps<{
   scratchAssets: ExportedScratchAssets

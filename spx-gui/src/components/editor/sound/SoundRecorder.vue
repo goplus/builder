@@ -30,7 +30,7 @@
 import WaveSurfer from 'wavesurfer.js'
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js'
 import { defineEmits, onMounted, ref } from 'vue'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { onUnmounted } from 'vue'
 import { NButton } from 'naive-ui'
 import dayjs from 'dayjs'
