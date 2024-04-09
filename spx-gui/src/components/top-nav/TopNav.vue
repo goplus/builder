@@ -16,6 +16,9 @@
       _t({ en: 'Save', zh: '保存' })
     }}</NButton>
     <UserAvatar />
+    <NModal title="Import from Scratch" width="80%" :show="true">
+      <LoadFromScratch :scratch-assets="exportedScratchAssets" />
+    </NModal>
   </nav>
 </template>
 
@@ -25,7 +28,7 @@
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDropdown, NButton } from 'naive-ui'
+import { NDropdown, NButton, NModal } from 'naive-ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
@@ -42,6 +45,9 @@ import {
   useStopSharingProject
 } from '@/components/project'
 import UserAvatar from './UserAvatar.vue'
+import LoadFromScratch from '../library/LoadFromScratch.vue'
+import { ref } from 'vue'
+import { parseScratchFileAssets, type ExportedScratchAssets } from '@/utils/scratch'
 
 const props = defineProps<{
   project: Project | null
@@ -55,6 +61,8 @@ const createProject = useCreateProject()
 const chooseProject = useChooseProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
+
+const exportedScratchAssets = ref<ExportedScratchAssets | null>(null)
 
 function openProject(projectName: string) {
   router.push(getProjectEditorRoute(projectName))
@@ -103,7 +111,8 @@ const projectOptions = computed(() => {
       label: t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }),
       disabled: props.project == null,
       async handler() {
-        alert('TODO')
+        const file = await selectFile({ accept: '.sb3' })
+        exportedScratchAssets.value = await parseScratchFileAssets(file)
       }
     },
     {

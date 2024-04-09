@@ -1,18 +1,6 @@
 <template>
-  <div class="file-upload-container">
-    <button type="button" class="custom-upload-btn" @click="triggerFileUpload">
-      {{ $t('scratch.upload') }}
-    </button>
-    <input
-      ref="fileUploadInput"
-      type="file"
-      accept=".sb3"
-      style="display: none"
-      @change="handleScratchFileUpload"
-    />
-  </div>
   <div class="asset-detail-info">
-    <div>Sprites TODO: i18n / re-style / refactor as components / Also include SVG?</div>
+    <div>Sprites TODO: i18n / re-style / refactor as components / include SVG?</div>
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
       <n-grid-item v-for="asset in scratchAssets?.sprites" :key="asset.name" class="file-row">
         <div>{{ asset.name }}</div>
@@ -24,7 +12,7 @@
           :fallback-src="error"
           :array-buffer="asset.costumes[0].arrayBuffer"
         />
-        <NButton @click="importSprite(asset)">Import </NButton>
+        <NButton @click="importSprite(asset)">Import</NButton>
       </n-grid-item>
     </n-grid>
     <div>Sounds</div>
@@ -39,7 +27,7 @@
           :src="soundsImportSvg"
           @click="playAudio(asset)"
         />
-        <NButton @click="importSound(asset)">Import </NButton>
+        <NButton @click="importSound(asset)">Import</NButton>
       </n-grid-item>
     </n-grid>
     <div>Backdrops</div>
@@ -54,53 +42,34 @@
           height="80"
           :fallback-src="error"
         />
-        <NButton @click="importBackdrop(asset)">Import </NButton>
+        <NButton @click="importBackdrop(asset)">Import</NButton>
       </n-grid-item>
     </n-grid>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Sound } from '@/models/sound'
 import { NButton, NGrid, NGridItem, NImage, useMessage } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
 import error from '@/assets/error.svg'
-import {
-  parseScratchFileAssets,
-  type ExportedScratchAssets,
-  type ExportedScratchFile
-} from '@/utils/scratch'
+import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import soundsImportSvg from './images/sound-import.svg'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { File } from '@/models/common/file'
+import { File as SpxFile } from '@/models/common/file'
 import { useEditorCtx } from '../editor/ProjectEditor.vue'
 import { getMimeFromExt } from '@/utils/file'
 import ArrayBufferImage from './ArrayBufferImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 
+defineProps<{
+  scratchAssets: ExportedScratchAssets
+}>()
+
 const editorCtx = useEditorCtx()
 
-// Ref about asset infos.
-const scratchAssets = ref<ExportedScratchAssets>()
-const fileUploadInput = ref<HTMLInputElement>()
-
 const message = useMessage()
-
-function triggerFileUpload() {
-  if (fileUploadInput.value) {
-    ;(fileUploadInput.value as HTMLInputElement).click()
-  }
-}
-
-const handleScratchFileUpload = async (event: Event) => {
-  let input = event.target as HTMLInputElement
-  if (!input.files || input.files.length === 0) {
-    return
-  }
-  scratchAssets.value = await parseScratchFileAssets(input.files[0])
-}
 
 const playAudio = (asset: ExportedScratchFile) => {
   const blob = new Blob([asset.arrayBuffer], { type: getMimeFromExt(asset.extension) })
@@ -113,7 +82,7 @@ const playAudio = (asset: ExportedScratchFile) => {
 }
 
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
-  return new File(
+  return new SpxFile(
     `${scratchFile.name}.${scratchFile.extension}`,
     async () => scratchFile.arrayBuffer,
     {}
@@ -123,7 +92,7 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map(
     (costume) =>
-      new Costume(costume.name, new File(costume.name, async () => costume.arrayBuffer, {}), {})
+      new Costume(costume.name, new SpxFile(costume.name, async () => costume.arrayBuffer, {}), {})
   )
   const sprite = new Sprite(asset.name, '', {})
   for (const costume of costumes) {
@@ -196,28 +165,6 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
       align-items: flex-end;
       justify-content: space-around;
     }
-  }
-}
-
-.file-upload-container {
-  text-align: center;
-  padding: 4px;
-  .custom-upload-btn,
-  .custom-import-btn {
-    font-size: 16px;
-    color: rgb(0, 0, 0);
-    border-radius: 20px;
-    border: 2px solid rgb(0, 20, 41);
-    box-shadow: rgb(0, 20, 41) -1px 2px;
-    cursor: pointer;
-    background-color: rgb(255, 248, 204);
-    margin-left: 5px;
-    font-family: ChauPhilomeneOne;
-  }
-
-  .custom-upload-btn:hover,
-  .custom-import-btn:hover {
-    background-color: rgb(255, 234, 204);
   }
 }
 </style>
