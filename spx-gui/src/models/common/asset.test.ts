@@ -1,34 +1,34 @@
 import { describe, it, expect } from 'vitest'
-import { getSoundName, getSpriteName, normalizeName } from './asset'
+import { getSoundName, getSpriteName, normalizeAssetName } from './asset'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import { fromText } from './file'
 
-describe('normalizeName', () => {
+describe('normalizeAssetName', () => {
   it('should work well with camel case', () => {
-    expect(normalizeName('abc', 'camel')).toBe('abc')
-    expect(normalizeName('abc def---ghi__jkl.mno', 'camel')).toBe('abcDefGhiJklMno')
-    expect(normalizeName('', 'camel')).toBe('')
-    expect(normalizeName('中文', 'camel')).toBe('')
-    expect(normalizeName('中文en', 'camel')).toBe('en')
-    expect(normalizeName('中文En', 'camel')).toBe('en')
-    expect(normalizeName('abc中 文en', 'camel')).toBe('abcEn')
-    expect(normalizeName('abc中 文en', 'camel')).toBe('abcEn')
-    expect(normalizeName('123abc 456', 'camel')).toBe('abc456')
-    expect(normalizeName(repeat('a', 120), 'camel')).toBe(repeat('a', 20))
+    expect(normalizeAssetName('abc', 'camel')).toBe('abc')
+    expect(normalizeAssetName('abc def---ghi__jkl.mno', 'camel')).toBe('abcDefGhiJklMno')
+    expect(normalizeAssetName('', 'camel')).toBe('')
+    expect(normalizeAssetName('中文', 'camel')).toBe('')
+    expect(normalizeAssetName('中文en', 'camel')).toBe('en')
+    expect(normalizeAssetName('中文En', 'camel')).toBe('en')
+    expect(normalizeAssetName('abc中 文en', 'camel')).toBe('abcEn')
+    expect(normalizeAssetName('abc中 文en', 'camel')).toBe('abcEn')
+    expect(normalizeAssetName('123abc 456', 'camel')).toBe('abc456')
+    expect(normalizeAssetName(repeat('a', 120), 'camel')).toBe(repeat('a', 20))
   })
   it('should work well with pascal case', () => {
-    expect(normalizeName('abc', 'pascal')).toBe('Abc')
-    expect(normalizeName('abc def---ghi__jkl.mno', 'pascal')).toBe('AbcDefGhiJklMno')
-    expect(normalizeName('', 'pascal')).toBe('')
-    expect(normalizeName('中文', 'pascal')).toBe('')
-    expect(normalizeName('中文en', 'pascal')).toBe('En')
-    expect(normalizeName('中文En', 'pascal')).toBe('En')
-    expect(normalizeName('abc中 文en', 'pascal')).toBe('AbcEn')
-    expect(normalizeName('abc中 文en', 'pascal')).toBe('AbcEn')
-    expect(normalizeName('123abc 456', 'pascal')).toBe('Abc456')
-    expect(normalizeName(repeat('a', 120), 'pascal')).toBe('A' + repeat('a', 19))
+    expect(normalizeAssetName('abc', 'pascal')).toBe('Abc')
+    expect(normalizeAssetName('abc def---ghi__jkl.mno', 'pascal')).toBe('AbcDefGhiJklMno')
+    expect(normalizeAssetName('', 'pascal')).toBe('')
+    expect(normalizeAssetName('中文', 'pascal')).toBe('')
+    expect(normalizeAssetName('中文en', 'pascal')).toBe('En')
+    expect(normalizeAssetName('中文En', 'pascal')).toBe('En')
+    expect(normalizeAssetName('abc中 文en', 'pascal')).toBe('AbcEn')
+    expect(normalizeAssetName('abc中 文en', 'pascal')).toBe('AbcEn')
+    expect(normalizeAssetName('123abc 456', 'pascal')).toBe('Abc456')
+    expect(normalizeAssetName(repeat('a', 120), 'pascal')).toBe('A' + repeat('a', 19))
   })
 })
 

@@ -27,7 +27,7 @@ export class Costume {
   name: string
   setName(name: string) {
     const err = validateCostumeName(name, this._sprite)
-    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 

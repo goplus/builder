@@ -19,7 +19,7 @@ export class Backdrop extends Costume {
 
   setName(name: string) {
     const err = validateBackdropName(name, this._stage)
-    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 

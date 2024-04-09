@@ -108,7 +108,7 @@ function upFirst(str: string) {
 }
 
 /** Convert any string to valid asset name, empty string may be returned */
-export function normalizeName(src: string, cas: 'camel' | 'pascal') {
+export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
   src = src
     .replace(/[^a-zA-Z0-9_]+/g, '_')
     .replace(/([A-Z])/g, '_$1')
@@ -134,21 +134,21 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeName(base, 'pascal') || 'Sprite'
+  base = normalizeAssetName(base, 'pascal') || 'Sprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
 export function getCostumeName(sprite: Sprite | null, base = '') {
-  base = normalizeName(base, 'camel') || 'costume'
+  base = normalizeAssetName(base, 'camel') || 'costume'
   return getValidName(base, (n) => validateCostumeName(n, sprite) == null)
 }
 
 export function getSoundName(project: Project | null, base = '') {
-  base = normalizeName(base, 'camel') || 'sound'
+  base = normalizeAssetName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
 export function getBackdropName(stage: Stage | null, base = '') {
-  base = normalizeName(base, 'camel') || 'backdrop'
+  base = normalizeAssetName(base, 'camel') || 'backdrop'
   return getValidName(base, (n) => validateBackdropName(n, stage) == null)
 }

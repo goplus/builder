@@ -25,7 +25,7 @@ export class Sound {
   name: string
   setName(name: string) {
     const err = validateSoundName(name, this._project)
-    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
+    if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 
