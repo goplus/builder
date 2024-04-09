@@ -5,6 +5,7 @@ import { File, type Files } from './common/file'
 import { type Size } from './common'
 import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset'
+import { Disposble } from './common/disposable'
 
 export type CostumeInits = {
   x?: number
@@ -57,21 +58,23 @@ export class Costume {
   }
 
   async getSize() {
-    const imgUrl = await this.img.url()
+    const d = new Disposble()
+    const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
     return new Promise<Size>((resolve, reject) => {
       const img = new window.Image()
+      d.addDisposer(() => img.remove())
       img.src = imgUrl
       img.onload = () => {
         resolve({
           width: img.width / this.bitmapResolution,
           height: img.height / this.bitmapResolution
         })
-        img.remove()
       }
       img.onerror = (e) => {
         reject(new Error(`load image failed: ${e.toString()}`))
-        img.remove()
       }
+    }).finally(() => {
+      d.dispose()
     })
   }
 

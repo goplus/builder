@@ -35,6 +35,8 @@ import type { Sprite } from '@/models/sprite'
 import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
 import type { Rect } from 'konva/lib/shapes/Rect'
 import type { Size } from '@/models/common'
+import { useImgFile } from '@/utils/file'
+
 // ----------props & emit------------------------------------
 const props = defineProps<{
   sprite: Sprite
@@ -57,7 +59,7 @@ const displayScale = computed(
 )
 
 // ----------data related -----------------------------------
-const image = ref<HTMLImageElement>()
+const image = useImgFile(() => currentCostume.value?.img)
 const costume = ref()
 // ----------computed properties-----------------------------
 // Computed spx's sprite position to konva's relative position by about changing sprite postion
@@ -85,24 +87,6 @@ watch(
   },
   {
     deep: true
-  }
-)
-
-watch(
-  () => currentCostume.value,
-  async (new_costume) => {
-    if (new_costume != null) {
-      const _image = new window.Image()
-      _image.src = await new_costume.img.url()
-      _image.onload = () => {
-        image.value = _image
-      }
-    } else {
-      image.value?.remove()
-    }
-  },
-  {
-    immediate: true
   }
 )
 

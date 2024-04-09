@@ -25,7 +25,8 @@
   </v-layer>
 </template>
 <script setup lang="ts">
-import { defineProps, watch, ref } from 'vue'
+import { defineProps } from 'vue'
+import { useImgFile } from '@/utils/file'
 import type { Stage } from '@/models/stage'
 import type { Size } from '@/models/common'
 
@@ -35,18 +36,5 @@ const props = defineProps<{
   stage: Stage
 }>()
 
-const image = ref<HTMLImageElement>()
-
-watch(
-  () => props.stage.backdrop?.img,
-  async (backdropImg) => {
-    image.value?.remove()
-    if (backdropImg != null) {
-      const _image = new window.Image()
-      _image.src = await backdropImg.url()
-      image.value = _image
-    }
-  },
-  { immediate: true }
-)
+const image = useImgFile(() => props.stage.backdrop?.img)
 </script>

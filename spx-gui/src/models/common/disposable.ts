@@ -5,7 +5,7 @@
 
 export type Disposer = () => void
 
-export abstract class Disposble {
+export class Disposble {
   _disposers: Disposer[] = []
 
   addDisposer(disposer: Disposer) {
