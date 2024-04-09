@@ -3,11 +3,14 @@
  */
 
 import { apiBaseUrl } from '@/utils/env'
+import { Exception } from '@/utils/exception'
 import { ApiException } from './exception'
 
 export type RequestOptions = {
   method: string
   headers?: Headers
+  /** Timeout duration in milisecond, from request-sent to server-response-got */
+  timeout?: number
 }
 
 /** Response body when exception encountered for API calling */
@@ -24,6 +27,17 @@ function isApiExceptionPayload(body: any): body is ApiExceptionPayload {
 
 /** AuthProvider provide value for header Authorization */
 export type AuthProvider = () => Promise<string | null>
+
+// milisecond
+const defaultTimeout = 10 * 1000
+
+class TimeoutException extends Exception {
+  name = 'TimeoutException'
+  userMessage = { en: 'request timeout', zh: '请求超时' }
+  constructor() {
+    super('request timeout')
+  }
+}
 
 export class Client {
   private getAuth: AuthProvider = async () => null
@@ -46,7 +60,6 @@ export class Client {
   }
 
   private async handleResponse(resp: Response): Promise<unknown> {
-    // TODO: timeout
     if (!resp.ok) {
       const body = await resp.json()
       if (!isApiExceptionPayload(body)) {
@@ -59,7 +72,15 @@ export class Client {
 
   private async request(url: string, payload: unknown, options?: RequestOptions) {
     const req = await this.prepareRequest(url, payload, options)
-    const resp = await fetch(req)
+    const timeout = options?.timeout ?? defaultTimeout
+    const ctrl = new AbortController()
+    const resp = await Promise.race([
+      fetch(req, { signal: ctrl.signal }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new TimeoutException()), timeout))
+    ]).catch((e) => {
+      if (e instanceof TimeoutException) ctrl.abort()
+      throw e
+    })
     return this.handleResponse(resp)
   }
 
