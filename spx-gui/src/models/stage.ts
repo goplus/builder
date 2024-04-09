@@ -69,9 +69,12 @@ export class Stage {
     }
   }
 
-  // Currently we support at most one backdrop.
-  // So fileds like backdrops、backdropIndex and methods like _setBackdropIndex、_addBackdrop、_topBackdrop are marked private.
-  // Instead we offer setBackdrop to manipulate backdrops.
+  // Currently we support at most one backdrop, so
+  // * fields like `backdrops`、`backdropIndex`
+  // * methods like `setBackdropIndex`、`addBackdrop`、`topBackdrop`
+  // are marked private to prevent usage from outside of models.
+  // Instead, we offer `setBackdrop` to manipulate backdrops.
+
   _backdrops: Backdrop[]
   _backdropIndex: number
   _setBackdropIndex(backdropIndex: number) {
