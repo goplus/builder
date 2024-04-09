@@ -267,7 +267,7 @@ const beforeUpload = async (
           message.error(t('message.image'))
           return false
         }
-        editorCtx.project.stage.addBackdrop(new Backdrop(assetName, file))
+        editorCtx.project.stage.setBackdrop(new Backdrop(assetName, file))
         break
       }
       case 'sound': {

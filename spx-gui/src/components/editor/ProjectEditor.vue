@@ -48,7 +48,7 @@ import { provide, type InjectionKey, ref, watch, shallowReactive, computed, watc
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
 import SpxEditor from './SpxEditor.vue'
-import SpxStage from './stage/SpxStage.vue'
+import SpxStage from './preview/SpxStage.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 
 const props = defineProps<{
