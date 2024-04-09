@@ -1,98 +1,105 @@
 import JSZip from 'jszip'
-import { getMimeFromExt } from './file'
 
-/**
- * Represents the detailed information of an asset extracted from a Scratch project file.
- */
-export interface ExportedScratchAsset {
-  type: ExportedScratchAssetType
+export interface ExportedScratchFile {
   name: string
   extension: string
-  blob: Blob
-  src: string
+  filename: string
+  arrayBuffer: ArrayBuffer
 }
 
-export type ExportedScratchAssetType = 'sprite' | 'sound' | 'backdrop' | 'unknown'
+export interface ExportedScratchSprite {
+  name: string
+  costumes: ExportedScratchFile[]
+}
+
+export interface ExportedScratchAssets {
+  sprites: ExportedScratchSprite[]
+  sounds: ExportedScratchFile[]
+  backdrops: ExportedScratchFile[]
+}
 
 interface ScratchFile {
   name: string
   assetId: string
   dataFormat: string
-  format: string
-  rate: number
-  sampleCount: number
-  md5ext: string
+  md5ext?: string
 }
 
-/**
- * Describes the structure of a Scratch project
- */
+type ScratchCostume = ScratchFile & {
+  rotationCenterX: number
+  rotationCenterY: number
+  bitmapResolution: number
+}
+
+type ScratchSound = ScratchFile & {
+  rate: number
+  sampleCount: number
+}
+
 interface ScratchProject {
   targets: {
+    name: string
     isStage: boolean
-    costumes: ScratchFile[]
-    sounds: ScratchFile[]
+    costumes: ScratchCostume[]
+    sounds: ScratchSound[]
   }[]
 }
 
-export const parseScratchFileAssets = async (file: File): Promise<ExportedScratchAsset[]> => {
+const getFilename = (file: ScratchFile) =>
+  file.md5ext ? file.md5ext : `${file.assetId}.${file.dataFormat}`
+
+export const parseScratchFileAssets = async (file: File): Promise<ExportedScratchAssets> => {
   const zip = await JSZip.loadAsync(file)
   const projectJson = await zip.file('project.json')?.async('string')
   if (!projectJson) throw new Error('Project JSON not found in the uploaded file.')
 
   const projectData: ScratchProject = JSON.parse(projectJson)
-  const assetNameMap = new Map<
-    string, // filename
-    {
-      name: string
-      dataFormat: string
-      isStage: boolean
-    }
-  >()
 
-  projectData.targets.forEach((target) => {
-    const f = (asset: ScratchFile) => {
-      // A special case for the stage: md5ext is empty
-      const filename = asset.md5ext ? asset.md5ext : `${asset.assetId}.${asset.dataFormat}`
-      assetNameMap.set(filename, {
-        isStage: target.isStage,
-        name: asset.name,
-        dataFormat: asset.dataFormat
+  const scratchAssets: ExportedScratchAssets = {
+    sprites: [],
+    sounds: [],
+    backdrops: []
+  }
+
+  const convertFiles = async (scratchFiles: ScratchFile[]): Promise<ExportedScratchFile[]> => {
+    const files = []
+    for (const file of scratchFiles) {
+      const zipFilename = getFilename(file)
+      const zipFile = zip.file(zipFilename)
+      if (!zipFile) {
+        console.warn('Costume file not found in the uploaded file: ', zipFilename)
+        continue
+      }
+      const arrayBuffer = await zipFile.async('arraybuffer')
+      files.push({
+        name: file.name,
+        extension: file.dataFormat,
+        filename: `${file.name}.${file.dataFormat}`,
+        arrayBuffer
       })
     }
-    target.costumes.forEach(f)
-    target.sounds.forEach(f)
-  })
-
-  const assetFileDetails: ExportedScratchAsset[] = []
-
-  for (const [filename, zipFile] of Object.entries(zip.files)) {
-    const metadata = assetNameMap.get(filename)
-    if (!metadata) continue
-
-    const arrayBuffer = await zipFile.async('arraybuffer')
-    const blob = new Blob([arrayBuffer], { type: getMimeFromExt(metadata.dataFormat) })
-
-    assetFileDetails.push({
-      type: typeByExtension(metadata.dataFormat, metadata.isStage),
-      name: metadata.name,
-      extension: metadata.dataFormat,
-      blob,
-      src: URL.createObjectURL(blob)
-    })
+    return files
   }
 
-  return assetFileDetails
-}
+  for (const target of projectData.targets) {
+    const imageFiles = await convertFiles(
+      target.costumes.filter((costume) => costume.dataFormat !== 'svg')
+      // FIXME: SVG causes error
+    )
 
-const isAudio = (extension: string) => getMimeFromExt(extension).startsWith('audio')
-const isImage = (extension: string) => getMimeFromExt(extension).startsWith('image')
+    const soundFiles = await convertFiles(target.sounds)
+    if (imageFiles.length > 0) {
+      if (target.isStage) {
+        scratchAssets.backdrops.push(...imageFiles)
+      } else {
+        scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
+      }
+    }
 
-const typeByExtension = (extension: string, isStage: boolean): ExportedScratchAssetType => {
-  if (isAudio(extension)) return 'sound'
-  if (isImage(extension)) {
-    if (isStage) return 'backdrop'
-    return 'sprite'
+    if (soundFiles.length > 0) {
+      scratchAssets.sounds.push(...soundFiles)
+    }
   }
-  return 'unknown'
+
+  return scratchAssets
 }

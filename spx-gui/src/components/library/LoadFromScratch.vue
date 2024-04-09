@@ -12,50 +12,49 @@
     />
   </div>
   <div class="asset-detail-info">
-    <div>Sprites TODO: i18n / re-style / refactor as components</div>
+    <div>Sprites TODO: i18n / re-style / refactor as components / Also include SVG?</div>
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in sprites" :key="asset.name" class="file-row">
-        <div>{{ asset.name }}.{{ asset.extension }}</div>
-        <n-image
+      <n-grid-item v-for="asset in scratchAssets?.sprites" :key="asset.name" class="file-row">
+        <div>{{ asset.name }}</div>
+        <ArrayBufferImage
           style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
           preview-disabled
           width="80"
           height="80"
-          :src="asset.src"
           :fallback-src="error"
+          :array-buffer="asset.costumes[0].arrayBuffer"
         />
-        <NButton @click="importAssetToProject(asset)">Import </NButton>
+        <NButton @click="importSprite(asset)">Import </NButton>
       </n-grid-item>
     </n-grid>
     <div>Sounds</div>
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in sounds" :key="asset.name" class="file-row">
-        <div>{{ asset.name }}.{{ asset.extension }}</div>
+      <n-grid-item v-for="asset in scratchAssets?.sounds" :key="asset.name" class="file-row">
+        <div>{{ asset.filename }}</div>
         <n-image
           preview-disabled
           style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
           width="80"
           height="80"
           :src="soundsImportSvg"
-          :fallback-src="error"
           @click="playAudio(asset)"
         />
-        <NButton @click="importAssetToProject(asset)">Import </NButton>
+        <NButton @click="importSound(asset)">Import </NButton>
       </n-grid-item>
     </n-grid>
     <div>Backdrops</div>
     <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in backdrops" :key="asset.name" class="file-row">
-        <div>{{ asset.name }}.{{ asset.extension }}</div>
-        <n-image
+      <n-grid-item v-for="asset in scratchAssets?.backdrops" :key="asset.name" class="file-row">
+        <div>{{ asset.filename }}</div>
+        <ArrayBufferImage
+          :array-buffer="asset.arrayBuffer"
           style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
           preview-disabled
           width="80"
           height="80"
-          :src="asset.src"
           :fallback-src="error"
         />
-        <NButton @click="importAssetToProject(asset)">Import </NButton>
+        <NButton @click="importBackdrop(asset)">Import </NButton>
       </n-grid-item>
     </n-grid>
   </div>
@@ -67,23 +66,24 @@ import { Sound } from '@/models/sound'
 import { NButton, NGrid, NGridItem, NImage, useMessage } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
 import error from '@/assets/error.svg'
-import { parseScratchFileAssets, type ExportedScratchAsset } from '@/utils/scratch'
+import {
+  parseScratchFileAssets,
+  type ExportedScratchAssets,
+  type ExportedScratchFile
+} from '@/utils/scratch'
 import soundsImportSvg from './images/sound-import.svg'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { fromBlob } from '@/models/common/file'
-import { computed } from 'vue'
+import { File } from '@/models/common/file'
 import { useEditorCtx } from '../editor/ProjectEditor.vue'
+import { getMimeFromExt } from '@/utils/file'
+import ArrayBufferImage from './ArrayBufferImage.vue'
+import type { ExportedScratchSprite } from '@/utils/scratch'
 
 const editorCtx = useEditorCtx()
 
 // Ref about asset infos.
-const assetFileDetails = ref<ExportedScratchAsset[]>([])
-const sprites = computed(() => assetFileDetails.value.filter((asset) => asset.type === 'sprite'))
-const sounds = computed(() => assetFileDetails.value.filter((asset) => asset.type === 'sound'))
-const backdrops = computed(() =>
-  assetFileDetails.value.filter((asset) => asset.type === 'backdrop')
-)
+const scratchAssets = ref<ExportedScratchAssets>()
 const fileUploadInput = ref<HTMLInputElement>()
 
 const message = useMessage()
@@ -99,40 +99,49 @@ const handleScratchFileUpload = async (event: Event) => {
   if (!input.files || input.files.length === 0) {
     return
   }
-  assetFileDetails.value = await parseScratchFileAssets(input.files[0])
+  scratchAssets.value = await parseScratchFileAssets(input.files[0])
 }
 
-const playAudio = async (asset: ExportedScratchAsset) => {
-  let audio = new Audio(asset.src)
+const playAudio = (asset: ExportedScratchFile) => {
+  const blob = new Blob([asset.arrayBuffer], { type: getMimeFromExt(asset.extension) })
+  const url = URL.createObjectURL(blob)
+  let audio = new Audio(url)
   audio.play()
+  audio.onended = () => {
+    URL.revokeObjectURL(url)
+  }
 }
 
-async function importAssetToProject({ blob, name, extension, type }: ExportedScratchAsset) {
-  const filename = `${name}.${extension}`
-  switch (type) {
-    case 'sprite': {
-      const file = fromBlob(filename, blob)
-      const costume = new Costume(name, file, {})
-      const sprite = new Sprite(name, '', [costume], {})
-      editorCtx.project.addSprite(sprite)
-      break
-    }
-    case 'sound': {
-      const sound = new Sound(name, fromBlob(filename, blob), {})
-      editorCtx.project.addSound(sound)
-      break
-    }
-    case 'backdrop': {
-      const file = fromBlob(filename, blob)
-      const backdrop = new Backdrop(name, file, {})
-      editorCtx.project.stage.addBackdrop(backdrop) // TODO: replace instead of add backdrop
-      break
-    }
-    default:
-      message.error(`Unsupported asset type: ${type}`)
-      throw new Error(`Unsupported asset type: ${type}`)
-  }
-  message.success(`Imported ${name}.${extension} TODO: use \`useMessageHandle\` for i18n`)
+const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
+  return new File(
+    `${scratchFile.name}.${scratchFile.extension}`,
+    async () => scratchFile.arrayBuffer,
+    {}
+  )
+}
+
+const importSprite = async (asset: ExportedScratchSprite) => {
+  const costumes = asset.costumes.map(
+    (costume) =>
+      new Costume(costume.name, new File(costume.name, async () => costume.arrayBuffer, {}), {})
+  )
+  const sprite = new Sprite(asset.name, '', costumes, {})
+  editorCtx.project.addSprite(sprite)
+  message.success(`Imported sprite ${asset.name}`)
+}
+
+const importSound = async (asset: ExportedScratchFile) => {
+  const file = scratchToSpxFile(asset)
+  const sound = new Sound(asset.name, file, {})
+  editorCtx.project.addSound(sound)
+  message.success(`Imported sound ${file.name}`)
+}
+
+const importBackdrop = async (asset: ExportedScratchFile) => {
+  const file = scratchToSpxFile(asset)
+  const backdrop = new Backdrop(asset.name, file, {})
+  editorCtx.project.stage.addBackdrop(backdrop) // FIXME: Replace instead of add
+  message.success(`Imported backdrop ${file.name}`)
 }
 </script>
 
