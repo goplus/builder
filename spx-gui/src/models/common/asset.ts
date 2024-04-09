@@ -99,7 +99,7 @@ export function validateSoundName(name: string, project: Project | null) {
 export function validateBackdropName(name: string, stage: Stage | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (stage != null && stage.backdrops.find((b) => b.name === name))
+  if (stage != null && stage._backdrops.find((b) => b.name === name))
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
