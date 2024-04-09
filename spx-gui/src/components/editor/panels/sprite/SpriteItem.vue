@@ -7,7 +7,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, effect, computed } from 'vue'
+import { computed } from 'vue'
+import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
 
 const props = defineProps<{
@@ -19,13 +20,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const imgSrc = ref<string | null>(null)
-
-effect(async () => {
-  const img = props.sprite.costume?.img
-  imgSrc.value = img != null ? await img.url() : null // TODO: race condition
-})
-
+const imgSrc = useFileUrl(() => props.sprite.costume?.img)
 const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
 </script>
 

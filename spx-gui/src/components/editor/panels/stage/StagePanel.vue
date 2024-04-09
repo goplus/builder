@@ -18,13 +18,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, effect } from 'vue'
+import { computed } from 'vue'
 import { NDropdown, NButton } from 'naive-ui'
 import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/library'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { AssetType } from '@/apis/asset'
-import { selectImg } from '@/utils/file'
+import { selectImg, useFileUrl } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
@@ -40,15 +40,7 @@ function select() {
 }
 
 const backdrop = computed(() => editorCtx.project.stage.backdrop)
-
-// TODO: we may need a special img component for [File](src/models/common/file.ts)
-const imgSrc = ref<string | null>(null)
-
-effect(async () => {
-  const img = backdrop.value?.img
-  imgSrc.value = img != null ? await img.url() : null // TODO: race condition
-})
-
+const imgSrc = useFileUrl(() => backdrop.value?.img)
 const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
 
 const handleUpload = useMessageHandle(

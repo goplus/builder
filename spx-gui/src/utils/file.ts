@@ -1,3 +1,6 @@
+import { ref, watch, type WatchSource } from 'vue'
+import type { File } from '@/models/common/file'
+
 /**
  * Map file extension to mime type.
  */
@@ -32,7 +35,7 @@ export type FileSelectOptions = {
 }
 
 function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
-  return new Promise<File[]>((resolve) => {
+  return new Promise<globalThis.File[]>((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = accept
@@ -69,4 +72,37 @@ export function selectImg() {
 export function selectImgs() {
   const accept = imgExts.map((ext) => `.${ext}`).join(',')
   return selectFiles({ accept })
+}
+
+/** Get url for File */
+export function useFileUrl(fileSource: WatchSource<File | undefined>) {
+  const urlRef = ref<string | null>(null)
+  watch(
+    fileSource,
+    (file, _, onCleanup) => {
+      if (file == null) return
+      file.url(onCleanup).then((url) => {
+        urlRef.value = url
+      })
+    },
+    { immediate: true }
+  )
+  return urlRef
+}
+
+export function useImgFile(fileSource: WatchSource<File | undefined>) {
+  const urlRef = useFileUrl(fileSource)
+  const imgRef = ref<HTMLImageElement | null>(null)
+  watch(urlRef, (url, _, onCleanup) => {
+    onCleanup(() => {
+      imgRef.value?.remove()
+      imgRef.value = null
+    })
+    if (url != null) {
+      const img = new window.Image()
+      img.src = url
+      imgRef.value = img
+    }
+  })
+  return imgRef
 }
