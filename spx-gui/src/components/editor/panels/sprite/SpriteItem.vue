@@ -27,7 +27,6 @@ effect(async () => {
 })
 
 const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
-
 </script>
 
 <style lang="scss" scoped>
@@ -50,7 +49,6 @@ const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSr
 .img {
   width: 100%;
   height: 68px;
-  /* background-color: yellow; */
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;

@@ -61,6 +61,6 @@ export function selectFiles(options?: Omit<FileSelectOptions, 'multiple'>) {
 
 /** Let the user select multiple images */
 export function selectImgs() {
-  const accept = imgExts.map(ext => `.${ext}`).join(',')
+  const accept = imgExts.map((ext) => `.${ext}`).join(',')
   return selectFiles({ accept })
 }

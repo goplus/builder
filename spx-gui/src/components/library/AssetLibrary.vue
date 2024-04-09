@@ -165,4 +165,3 @@ function isAdded(asset: AssetData) {
   cursor: pointer;
 }
 </style>
-@/models/common/asset

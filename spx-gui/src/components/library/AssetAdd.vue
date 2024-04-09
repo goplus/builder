@@ -94,4 +94,3 @@ function validateName(name: string): ValidationResult {
 </script>
 
 <style scoped lang="scss"></style>
-@/models/common/asset@/models/common/asset

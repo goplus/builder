@@ -1,27 +1,16 @@
 <template>
   <div class="line">
-    <NInput
-      v-model:value="name"
-      @blur="handleNameUpdate"
-    >
+    <NInput v-model:value="name" @blur="handleNameUpdate">
       <template #prefix> {{ _t({ en: 'Name', zh: '名字' }) }}: </template>
     </NInput>
   </div>
   <div class="line">
-    <NInputNumber
-      type="number"
-      :value="sprite.x"
-      @update:value="(x) => sprite.setX(x ?? 0)"
-    >
+    <NInputNumber type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
       <template #prefix> X: </template>
     </NInputNumber>
   </div>
   <div class="line">
-    <NInputNumber
-      type="number"
-      :value="sprite.y"
-      @update:value="(y) => sprite.setY(y ?? 0)"
-    >
+    <NInputNumber type="number" :value="sprite.y" @update:value="(y) => sprite.setY(y ?? 0)">
       <template #prefix> Y: </template>
     </NInputNumber>
   </div>
@@ -49,7 +38,7 @@
       :min="-180"
       :max="180"
       :value="sprite.heading"
-      @update:value="h => sprite.setHeading(h ?? 0)"
+      @update:value="(h) => sprite.setHeading(h ?? 0)"
     >
       <template #prefix> {{ $t('stage.direction') }}: </template>
     </NInputNumber>
@@ -79,9 +68,12 @@ const { t } = useI18n()
 
 const name = ref(props.sprite.name)
 
-watch(() => props.sprite.name, newName => {
-  name.value = newName
-})
+watch(
+  () => props.sprite.name,
+  (newName) => {
+    name.value = newName
+  }
+)
 
 function handleNameUpdate() {
   if (name.value === props.sprite.name) return
@@ -92,42 +84,6 @@ function handleNameUpdate() {
   }
   props.sprite.setName(name.value)
 }
-
-// // ----------data related -----------------------------------
-// // TODO: check all default values here, they should be consistent with spx
-// const x = computed(() => editorCtx.selectedSprite?.x ?? 0)
-// const y = computed(() => editorCtx.selectedSprite?.y ?? 0)
-// const heading = computed(() => (editorCtx.selectedSprite ? editorCtx.selectedSprite.heading : 0))
-// const size = computed(() => editorCtx.selectedSprite?.size ?? 0)
-// const visible = computed(() =>
-//   editorCtx.selectedSprite ? editorCtx.selectedSprite.visible : false
-// )
-// const name = ref(editorCtx.selectedSprite?.name ?? '')
-// const { t } = useI18n({
-//   inheritLocale: true
-// })
-// watch(
-//   () => editorCtx.selectedSprite?.name,
-//   (newName) => {
-//     name.value = newName || ''
-//   }
-// )
-
-// const { message } = createDiscreteApi(['message'])
-// function handleUpdateSpriteName() {
-//   if (!editorCtx.selectedSprite) return
-//   try {
-//     const checkInfo = checkUpdatedName(name.value, editorCtx.project, editorCtx.selectedSprite.name)
-
-//     if (!checkInfo.isSame && !checkInfo.isChanged) {
-//       editorCtx.selectedSprite.setName(checkInfo.name)
-//       message.success(t('message.update'))
-//     }
-//     if (checkInfo.msg) message.warning(checkInfo.msg)
-//   } catch (e) {
-//     if (e instanceof Error) message.error(e.message)
-//   }
-// }
 
 const addToLibrary = useAddAssetToLibrary()
 

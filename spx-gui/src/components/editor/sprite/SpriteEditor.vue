@@ -1,6 +1,6 @@
 <template>
   <div class="sprite-editor">
-    <SpxCodeEditor :value="sprite.code" @change="v => sprite.setCode(v)"/>
+    <SpxCodeEditor :value="sprite.code" @change="(v) => sprite.setCode(v)" />
   </div>
 </template>
 
@@ -13,6 +13,4 @@ defineProps<{
 }>()
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

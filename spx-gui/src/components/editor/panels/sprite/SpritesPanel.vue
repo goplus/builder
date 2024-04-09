@@ -112,11 +112,11 @@ function handleAddOption(key: string) {
 }
 
 .header {
-  padding: .5em 1em;
+  padding: 0.5em 1em;
 }
 
 .add {
-  margin-left: .5em;
+  margin-left: 0.5em;
   padding: 0 4px;
   cursor: pointer;
 }
@@ -134,7 +134,7 @@ function handleAddOption(key: string) {
 
 .sprite-edit {
   flex: 0 0 auto;
-  padding: .5em 1em;
+  padding: 0.5em 1em;
 }
 
 .sprites-overview {

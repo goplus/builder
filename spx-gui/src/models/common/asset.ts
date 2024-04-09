@@ -8,60 +8,60 @@ import { getFiles, uploadFiles } from './cloud'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 
-export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files'>;
+export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files'>
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
-  const fileUrls = await uploadFiles(sprite.export());
+  const fileUrls = await uploadFiles(sprite.export())
   return {
     displayName: sprite.name,
     assetType: AssetType.Sprite,
     files: fileUrls
-  };
+  }
 }
 
 export async function asset2Sprite(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files);
-  const sprites = await Sprite.loadAll(files);
-  if (sprites.length === 0) throw new Error('no sprite loaded');
-  return sprites[0];
+  const files = getFiles(assetData.files)
+  const sprites = await Sprite.loadAll(files)
+  if (sprites.length === 0) throw new Error('no sprite loaded')
+  return sprites[0]
 }
 // Config for backdrop is not a standalone file in a project, but part of config for the project (`assets/index.json`).
 // To save config for backdrop in asset data, we make a virtual file which contains the backdrop's config only.
-const virtualBackdropConfigFileName = 'assets/__backdrop__.json';
+const virtualBackdropConfigFileName = 'assets/__backdrop__.json'
 
 export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetData> {
-  const [config, files] = backdrop.export();
-  files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config);
-  const fileUrls = await uploadFiles(files);
+  const [config, files] = backdrop.export()
+  files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
+  const fileUrls = await uploadFiles(files)
   return {
     displayName: backdrop.name,
     assetType: AssetType.Backdrop,
     files: fileUrls
-  };
+  }
 }
 
 export async function asset2Backdrop(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files);
-  const configFile = files[virtualBackdropConfigFileName];
-  if (configFile == null) throw new Error('no config file found');
-  const config = (await toConfig(configFile)) as BackdropInits;
-  return Backdrop.load(config, files);
+  const files = getFiles(assetData.files)
+  const configFile = files[virtualBackdropConfigFileName]
+  if (configFile == null) throw new Error('no config file found')
+  const config = (await toConfig(configFile)) as BackdropInits
+  return Backdrop.load(config, files)
 }
 
 export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
-  const fileUrls = await uploadFiles(sound.export());
+  const fileUrls = await uploadFiles(sound.export())
   return {
     displayName: sound.name,
     assetType: AssetType.Sound,
     files: fileUrls
-  };
+  }
 }
 
 export async function asset2Sound(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files);
-  const sounds = await Sound.loadAll(files);
-  if (sounds.length === 0) throw new Error('no sound loaded');
-  return sounds[0];
+  const files = getFiles(assetData.files)
+  const sounds = await Sound.loadAll(files)
+  if (sounds.length === 0) throw new Error('no sound loaded')
+  return sounds[0]
 }
 
 function validateAssetName(name: string) {
@@ -77,15 +77,18 @@ export function validateSpriteName(name: string, project: Project | null) {
   const err = validateAssetName(name)
   if (err != null) return err
   if (project != null) {
-    if (project.sprites.find(s => s.name === name)) return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
-    if (project.sounds.find(s => s.name === name)) return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
+    if (project.sprites.find((s) => s.name === name))
+      return { en: `Sprite with name ${name} already exists`, zh: '存在同名的精灵' }
+    if (project.sounds.find((s) => s.name === name))
+      return { en: `Sound with name ${name} already exists`, zh: '存在同名的声音' }
   }
 }
 
 export function validateCostumeName(name: string, sprite: Sprite | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (sprite != null && sprite.costumes.find(c => c.name === name)) return { en: `Costume with name ${name} already exists`, zh: '存在同名的造型' }
+  if (sprite != null && sprite.costumes.find((c) => c.name === name))
+    return { en: `Costume with name ${name} already exists`, zh: '存在同名的造型' }
 }
 
 export function validateSoundName(name: string, project: Project | null) {
@@ -96,7 +99,8 @@ export function validateSoundName(name: string, project: Project | null) {
 export function validateBackdropName(name: string, stage: Stage | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (stage != null && stage.backdrops.find(b => b.name === name)) return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
+  if (stage != null && stage.backdrops.find((b) => b.name === name))
+    return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
 function upFirst(str: string) {
@@ -110,7 +114,7 @@ export function normalizeName(src: string, cas: 'camel' | 'pascal') {
     .replace(/([A-Z])/g, '_$1')
     .toLowerCase()
     .replace(/^[^a-zA-Z]+/, '') // remove invalid starting such as numbers
-  const parts = src.split('_').filter(p => !!p)
+  const parts = src.split('_').filter((p) => !!p)
   if (parts.length === 0) return ''
   const [firstpart, ...otherParts] = parts
   const result = [
@@ -131,20 +135,20 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 
 export function getSpriteName(project: Project, base = '') {
   base = normalizeName(base, 'pascal') || 'Sprite'
-  return getValidName(base, n => validateSpriteName(n, project) == null)
+  return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
 export function getCostumeName(sprite: Sprite, base = '') {
   base = normalizeName(base, 'camel') || 'costume'
-  return getValidName(base, n => validateCostumeName(n, sprite) == null)
+  return getValidName(base, (n) => validateCostumeName(n, sprite) == null)
 }
 
 export function getSoundName(project: Project, base = '') {
   base = normalizeName(base, 'camel') || 'sound'
-  return getValidName(base, n => validateSoundName(n, project) == null)
+  return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
 export function getBackdropName(stage: Stage, base = '') {
   base = normalizeName(base, 'camel') || 'backdrop'
-  return getValidName(base, n => validateBackdropName(n, stage) == null)
+  return getValidName(base, (n) => validateBackdropName(n, stage) == null)
 }

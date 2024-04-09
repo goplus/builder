@@ -139,14 +139,13 @@ import { Sound } from '@/models/sound'
 import SoundRecorder from '@/components/editor/sound/SoundRecorder.vue'
 import { addAsset, IsPublic, AssetType } from '@/apis/asset'
 import { useI18n } from 'vue-i18n'
-import { isValidAssetName } from '@/utils/asset'
 import { isImage, isSound } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
 import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { stripExt } from '@/utils/path'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { sprite2Asset } from '@/models/common/asset'
+import { sprite2Asset, validateSpriteName } from '@/models/common/asset'
 import { useAddAssetFromLibrary } from '@/components/library'
 
 // ----------props & emit------------------------------------
@@ -217,7 +216,7 @@ const addBtnClassName = computed(() => {
 
 // Computed  spritename is legal or not
 const spriteNameAllow = computed(() => {
-  return isValidAssetName(uploadSpriteName.value)
+  return validateSpriteName(uploadSpriteName.value, editorCtx.project)
 })
 
 // ----------methods-----------------------------------------
@@ -457,4 +456,3 @@ const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInf
   }
 }
 </style>
-@/models/common/asset
