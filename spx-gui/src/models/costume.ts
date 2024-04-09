@@ -3,6 +3,8 @@ import { reactive } from 'vue'
 import { extname, resolve } from '@/utils/path'
 import { File, type Files } from './common/file'
 import { type Size } from './common'
+import type { Sprite } from './sprite'
+import { validateCostumeName } from './common/asset'
 
 export type CostumeInits = {
   x?: number
@@ -17,8 +19,15 @@ export type RawCostumeConfig = CostumeInits & {
 }
 
 export class Costume {
+  _sprite: Sprite | null = null
+  setSprite(sprite: Sprite | null) {
+    this._sprite = sprite
+  }
+
   name: string
   setName(name: string) {
+    const err = validateCostumeName(name, this._sprite)
+    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
     this.name = name
   }
 
@@ -66,13 +75,13 @@ export class Costume {
     })
   }
 
-  constructor(name: string, file: File, inits: CostumeInits) {
+  constructor(name: string, file: File, inits?: CostumeInits) {
     this.name = name
     this.img = file
-    this.x = inits.x ?? 0
-    this.y = inits.y ?? 0
-    this.faceRight = inits.faceRight ?? 0
-    this.bitmapResolution = inits.bitmapResolution ?? 1
+    this.x = inits?.x ?? 0
+    this.y = inits?.y ?? 0
+    this.faceRight = inits?.faceRight ?? 0
+    this.bitmapResolution = inits?.bitmapResolution ?? 1
     return reactive(this)
   }
 

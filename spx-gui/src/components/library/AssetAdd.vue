@@ -35,9 +35,9 @@ import { useMessageHandle } from '@/utils/exception'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
-import type { PartialAssetData } from '@/models/common'
+import type { PartialAssetData } from '@/models/common/asset'
 import { categories, categoryAll } from './category'
-import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common'
+import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common/asset'
 
 const props = defineProps<{
   asset: Backdrop | Sound | Sprite
@@ -94,3 +94,4 @@ function validateName(name: string): ValidationResult {
 </script>
 
 <style scoped lang="scss"></style>
+@/models/common/asset@/models/common/asset

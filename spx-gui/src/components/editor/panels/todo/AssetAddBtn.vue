@@ -146,7 +146,7 @@ import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
 import { stripExt } from '@/utils/path'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { sprite2Asset } from '@/models/common'
+import { sprite2Asset } from '@/models/common/asset'
 import { useAddAssetFromLibrary } from '@/components/library'
 
 // ----------props & emit------------------------------------
@@ -268,7 +268,7 @@ const beforeUpload = async (
           message.error(t('message.image'))
           return false
         }
-        editorCtx.project.stage.addBackdrop(new Backdrop(assetName, file, {}))
+        editorCtx.project.stage.addBackdrop(new Backdrop(assetName, file))
         break
       }
       case 'sound': {
@@ -276,7 +276,7 @@ const beforeUpload = async (
           message.error(t('message.sound'))
           return false
         }
-        editorCtx.project.addSound(new Sound(assetName, file, {}))
+        editorCtx.project.addSound(new Sound(assetName, file))
         break
       }
       default:
@@ -333,8 +333,11 @@ const handleSubmitSprite = async (): Promise<void> => {
       .filter((fileInfo) => fileInfo.file !== null)
       .map((fileInfo) => fromNativeFile(fileInfo.file!))
   )
-  const costumes = files.map((f) => new Costume(stripExt(f.name), f, {}))
-  const sprite = new Sprite(uploadSpriteName.value, '', costumes, {})
+  const sprite = new Sprite(uploadSpriteName.value)
+  const costumes = files.map((f) => new Costume(stripExt(f.name), f))
+  for (const costume of costumes) {
+    sprite.addCostume(costume)
+  }
   editorCtx.project.addSprite(sprite)
   message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
 
@@ -454,3 +457,4 @@ const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInf
   }
 }
 </style>
+@/models/common/asset

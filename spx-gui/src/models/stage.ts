@@ -8,6 +8,7 @@ import { filename } from '@/utils/path'
 import { toText, type Files, fromText } from './common/file'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type Size } from './common'
+import { getBackdropName } from './common/asset'
 
 export type StageInits = {
   backdropIndex: number
@@ -56,10 +57,18 @@ export class Stage {
   }
   removeBackdrop(name: string) {
     const idx = this.backdrops.findIndex((s) => s.name === name)
-    this.backdrops.splice(idx, 1)
+    const [backdrop] = this.backdrops.splice(idx, 1)
+    backdrop.setStage(null)
     // TODO: `this.backdropIndex`?
   }
+  /**
+   * Add given backdrop to stage.
+   * Note: the backdrop's name may be altered to avoid conflict
+   */
   addBackdrop(backdrop: Backdrop) {
+    const newName = getBackdropName(this, backdrop.name)
+    backdrop.setName(newName)
+    backdrop.setStage(this)
     this.backdrops.push(backdrop)
     // TODO: `this.backdropIndex`?
   }
@@ -98,16 +107,13 @@ export class Stage {
     return { width: 0, height: 0 }
   }
 
-  constructor(code: string, backdrops: Backdrop[], inits: Partial<StageInits>) {
+  constructor(code = '', inits?: Partial<StageInits>) {
     this.code = code
     this.backdrops = []
-    for (const backdrop of backdrops) {
-      this.addBackdrop(backdrop)
-    }
-    this.backdropIndex = inits.backdropIndex ?? 0
-    this.mapWidth = inits.mapWidth
-    this.mapHeight = inits.mapHeight
-    this.mapMode = getMapMode(inits.mapMode)
+    this.backdropIndex = inits?.backdropIndex ?? 0
+    this.mapWidth = inits?.mapWidth
+    this.mapHeight = inits?.mapHeight
+    this.mapMode = getMapMode(inits?.mapMode)
     return reactive(this)
   }
 
@@ -120,13 +126,17 @@ export class Stage {
       code = await toText(codeFile)
       break
     }
-    const backdrops = (sceneConfigs ?? []).map((c) => Backdrop.load(c, files))
-    return new Stage(code, backdrops, {
+    const stage = new Stage(code, {
       backdropIndex: sceneIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
+    const backdrops = (sceneConfigs ?? []).map((c) => Backdrop.load(c, files))
+    for (const backdrop of backdrops) {
+      stage.addBackdrop(backdrop)
+    }
+    return stage
   }
 
   export(): [RawStageConfig, Files] {

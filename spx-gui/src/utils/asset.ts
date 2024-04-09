@@ -1,5 +1,5 @@
 import type { Project } from '@/models/project'
-import { keywords, typeKeywords } from '@/components/editor/spx-code-editor/code-editor/language'
+import { keywords, typeKeywords } from '@/utils/spx'
 
 interface checkInfo {
   /** the updated name if there are assets with the same name */

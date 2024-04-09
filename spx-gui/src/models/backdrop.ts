@@ -2,6 +2,8 @@ import { reactive } from 'vue'
 import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 import type { File, Files } from './common/file'
 import { resolve } from '@/utils/path'
+import { validateBackdropName } from './common/asset'
+import type { Stage } from './stage'
 
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig
@@ -10,7 +12,18 @@ const backdropAssetPath = 'assets'
 
 // Backdrop is almost the same as Costume
 export class Backdrop extends Costume {
-  constructor(name: string, file: File, inits: BackdropInits) {
+  _stage: Stage | null = null
+  setStage(stage: Stage | null) {
+    this._stage = stage
+  }
+
+  setName(name: string) {
+    const err = validateBackdropName(name, this._stage)
+    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
+    this.name = name
+  }
+
+  constructor(name: string, file: File, inits?: BackdropInits) {
     super(name, file, inits)
     return reactive(this)
   }

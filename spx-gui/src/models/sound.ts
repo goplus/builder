@@ -1,6 +1,8 @@
 import { reactive } from 'vue'
 import { extname, join, resolve } from '@/utils/path'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
+import { validateSoundName } from './common/asset'
+import type { Project } from './project'
 
 export type SoundInits = {
   rate?: number
@@ -15,8 +17,15 @@ export const soundAssetPath = 'assets/sounds'
 export const soundConfigFileName = 'index.json'
 
 export class Sound {
+  _project: Project | null = null
+  setProject(project: Project | null) {
+    this._project = project
+  }
+
   name: string
   setName(name: string) {
+    const err = validateSoundName(name, this._project)
+    if (err != null) throw new Error(`invalid name ${name}: ${err}`)
     this.name = name
   }
 
@@ -35,11 +44,11 @@ export class Sound {
     this.sampleCount = sampleCount
   }
 
-  constructor(name: string, file: File, inits: SoundInits) {
+  constructor(name: string, file: File, inits?: SoundInits) {
     this.name = name
     this.file = file
     // TODO: confirm default values here
-    ;(this.rate = inits.rate ?? 0), (this.sampleCount = inits.sampleCount ?? 0)
+    ;(this.rate = inits?.rate ?? 0), (this.sampleCount = inits?.sampleCount ?? 0)
     return reactive(this)
   }
 

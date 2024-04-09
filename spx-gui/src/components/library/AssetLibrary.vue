@@ -60,7 +60,7 @@ import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { categories as categoriesWithoutAll, categoryAll } from './category'
 import type { Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite } from '@/models/common'
+import { asset2Backdrop, asset2Sound, asset2Sprite } from '@/models/common/asset'
 
 const categories = [categoryAll, ...categoriesWithoutAll]
 
@@ -165,3 +165,4 @@ function isAdded(asset: AssetData) {
   cursor: pointer;
 }
 </style>
+@/models/common/asset

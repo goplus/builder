@@ -1,5 +1,5 @@
 import function_completions from './snippet'
-import { keywords, brackets, typeKeywords, operators } from './language'
+import { keywords, brackets, typeKeywords, operators } from '../../../../utils/spx'
 import { monaco } from '.'
 export const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   language: 'spx', // define the language mode

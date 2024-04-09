@@ -1,5 +1,5 @@
 import { LanguageConfig, MonarchTokensProviderConfig } from './editor'
-import { keywords, typeKeywords } from './language'
+import { keywords, typeKeywords } from '../../../../utils/spx'
 import wasmModuleUrl from '@/assets/format.wasm?url'
 import function_completions from './snippet'
 import { monaco } from '.'

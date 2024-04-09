@@ -50,6 +50,7 @@ watch(
 
 .main {
   flex: 1 1 0;
+  min-width: 0;
   display: flex;
   background-color: darkgray;
 }
