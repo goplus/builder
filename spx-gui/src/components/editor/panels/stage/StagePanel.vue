@@ -28,7 +28,7 @@ import { selectImg } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
-import { useEditorCtx } from '../../ProjectEditor.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 
 const { t } = useI18n()
 const editorCtx = useEditorCtx()
