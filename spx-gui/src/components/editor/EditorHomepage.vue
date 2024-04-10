@@ -1,25 +1,21 @@
 <template>
-  <EditorContextProvider
-    v-if="project && userStore.userInfo"
-    :project="project"
-    :user-info="userStore.userInfo"
-  >
-    <section class="editor-home">
-      <header class="editor-header">
-        <TopNav :project="project" />
-      </header>
-      <main v-if="userStore.userInfo != null" class="editor-main">
-        <template v-if="projectName">
+  <section class="editor-home">
+    <header class="editor-header">
+      <TopNav :project="project" />
+    </header>
+    <main v-if="userStore.userInfo" class="editor-main">
+      <template v-if="projectName">
+        <EditorContextProvider v-if="project" :project="project" :user-info="userStore.userInfo">
           <ProjectEditor />
-        </template>
-        <template v-else>
-          <ProjectList @selected="handleSelected" />
-          <NButton @click="handleCreate">+</NButton>
-        </template>
-      </main>
-    </section>
-  </EditorContextProvider>
-  <NSpin v-else size="large" />
+        </EditorContextProvider>
+        <NSpin v-else size="large" />
+      </template>
+      <template v-else>
+        <ProjectList @selected="handleSelected" />
+        <NButton @click="handleCreate">+</NButton>
+      </template>
+    </main>
+  </section>
 </template>
 
 <script setup lang="ts">
