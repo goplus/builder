@@ -57,7 +57,7 @@ import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/sc
 import soundsImportSvg from './images/sound-import.svg'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { File as SpxFile } from '@/models/common/file'
+import { File as LazyFile } from '@/models/common/file'
 import { getMimeFromExt } from '@/utils/file'
 import ArrayBufferImage from './ArrayBufferImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
@@ -82,7 +82,7 @@ const playAudio = (asset: ExportedScratchFile) => {
 }
 
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
-  return new SpxFile(
+  return new LazyFile(
     `${scratchFile.name}.${scratchFile.extension}`,
     async () => scratchFile.arrayBuffer,
     {}
@@ -92,9 +92,9 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map(
     (costume) =>
-      new Costume(costume.name, new SpxFile(costume.name, async () => costume.arrayBuffer, {}), {})
+      new Costume(costume.name, new LazyFile(costume.name, async () => costume.arrayBuffer))
   )
-  const sprite = new Sprite(asset.name, '', {})
+  const sprite = new Sprite(asset.name, '')
   for (const costume of costumes) {
     sprite.addCostume(costume)
   }
@@ -104,14 +104,14 @@ const importSprite = async (asset: ExportedScratchSprite) => {
 
 const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const sound = new Sound(asset.name, file, {})
+  const sound = new Sound(asset.name, file)
   editorCtx.project.addSound(sound)
   message.success(`Imported sound ${file.name}`)
 }
 
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const backdrop = new Backdrop(asset.name, file, {})
+  const backdrop = new Backdrop(asset.name, file)
   editorCtx.project.stage.addBackdrop(backdrop) // FIXME: Replace instead of add
   message.success(`Imported backdrop ${file.name}`)
 }
