@@ -42,8 +42,12 @@ import { getProjectEditorRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
+import { ref } from 'vue'
+import { clear } from '@/models/common/local'
 
-const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
+const localCacheKey = 'GOPLUS_BUILDER_CACHED_PROJECT'
+
+const cacheDirty = ref(false) // TODO
 
 const userStore = useUserStore()
 watchEffect(() => {
@@ -60,6 +64,33 @@ const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
+watchEffect((onCleanup) => {
+  const f = (event: BeforeUnloadEvent) => {
+    if (cacheDirty.value) {
+      // Case 2: on close tab
+      // impossible to show a custom message
+      event.preventDefault()
+    }
+  }
+
+  window.addEventListener('beforeunload', f)
+  onCleanup(() => {
+    window.removeEventListener('beforeunload', f)
+  })
+})
+
+const askOpenNew = (cached: Project, target: Project) => {
+  return confirm(
+    `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${target.name}"?`
+  )
+}
+
+const askOpenCached = (cached: Project) => {
+  return confirm(
+    `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`
+  )
+}
+
 const {
   data: project,
   isFetching: isLoading,
@@ -67,10 +98,51 @@ const {
 } = useQuery(
   async () => {
     if (userStore.userInfo == null) return null
-    if (projectName.value == null) return null
-    // TODO: UI logic to handle conflicts when there are local cache
-    const newProject = new Project()
+
+    let localProject: Project | null
+    try {
+      localProject = new Project()
+      await localProject.loadFromLocalCache(localCacheKey)
+    } catch {
+      localProject = null
+    }
+
+    // https://github.com/goplus/builder/issues/259
+    // Local Cache Saving & Restoring
+    if (
+      localProject &&
+      localProject.owner === userStore.userInfo.name &&
+      projectName.value === undefined
+    ) {
+      if (localProject.name && askOpenCached(localProject)) {
+        // Case 3: User has a project in the cache but not opening any project:
+        // Open the saved project
+        await router.push(getProjectEditorRoute(localProject.name))
+      } else {
+        // Case 3: Clear local cache
+        clear(localCacheKey)
+      }
+      return null
+    }
+
+    if (projectName.value === undefined) return null
+    let newProject = new Project()
     await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
+    if (localProject && localProject.owner === newProject.owner) {
+      if (localProject.id !== newProject.id) {
+        if (localProject.name && !askOpenNew(localProject, newProject)) {
+          // Case 2: User has a project that is different from
+          // current opening project in the cache: Open the saved project
+          await router.push(getProjectEditorRoute(localProject.name))
+          return null
+        }
+        // Case 2: Discard local cache
+      } else if (localProject.version > newProject.version) {
+        if (askOpenCached(localProject)) {
+          newProject = localProject
+        }
+      } // else: Case 1: Discard local cache
+    } // else: Case 4: Different user: Discard local cache
     newProject.syncToLocalCache(localCacheKey)
     return newProject
   },

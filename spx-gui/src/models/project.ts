@@ -43,7 +43,7 @@ export class Project extends Disposble {
   owner?: string
   name?: string
   isPublic?: IsPublic
-  version?: number
+  version = 0
   cTime?: string
   uTime?: string
 
