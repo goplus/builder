@@ -62,7 +62,6 @@ export class Costume {
     const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
     return new Promise<Size>((resolve, reject) => {
       const img = new window.Image()
-      d.addDisposer(() => img.remove())
       img.src = imgUrl
       img.onload = () => {
         resolve({
