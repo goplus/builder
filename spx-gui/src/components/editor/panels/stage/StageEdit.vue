@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import BackdropList from './BackdropList.vue'
-import { useEditorCtx } from '@/components/editor/ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
 

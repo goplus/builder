@@ -1,75 +1,105 @@
-/*
- * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-02-29 12:00:04
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-02-29 15:38:04
- * @FilePath: src/util/scratch.ts
- * @Description: The util of scratch
- */
-
 import JSZip from 'jszip'
-import { getMimeFromExt } from '@/utils/file'
 
-/**
- * Represents the detailed information of an asset extracted from a Scratch project file.
- */
-export interface AssetFileDetail {
+export interface ExportedScratchFile {
   name: string
   extension: string
-  url: string
-  blob: Blob
+  filename: string
+  arrayBuffer: ArrayBuffer
 }
 
-/**
- * Describes the structure of a Scratch project
- */
+export interface ExportedScratchSprite {
+  name: string
+  costumes: ExportedScratchFile[]
+}
+
+export interface ExportedScratchAssets {
+  sprites: ExportedScratchSprite[]
+  sounds: ExportedScratchFile[]
+  backdrops: ExportedScratchFile[]
+}
+
+interface ScratchFile {
+  name: string
+  assetId: string
+  dataFormat: string
+  md5ext?: string
+}
+
+type ScratchCostume = ScratchFile & {
+  rotationCenterX: number
+  rotationCenterY: number
+  bitmapResolution: number
+}
+
+type ScratchSound = ScratchFile & {
+  rate: number
+  sampleCount: number
+}
+
 interface ScratchProject {
-  targets: Array<{
-    costumes: Array<{ md5ext: string; name: string; dataFormat: string }>
-    sounds: Array<{ md5ext: string; name: string; dataFormat: string }>
-  }>
+  targets: {
+    name: string
+    isStage: boolean
+    costumes: ScratchCostume[]
+    sounds: ScratchSound[]
+  }[]
 }
 
-/**
- * Parses a Scratch project file to extract and return asset details.
- *
- * @param {File} file - The Scratch project file to be parsed. (project.sb3)
- * @returns {Promise<AssetFileDetail[]>} A promise that resolves to an array of asset file details.
- */
-export const parseScratchFile = async (file: File): Promise<AssetFileDetail[]> => {
+const getFilename = (file: ScratchFile) =>
+  file.md5ext ? file.md5ext : `${file.assetId}.${file.dataFormat}`
+
+export const parseScratchFileAssets = async (file: File): Promise<ExportedScratchAssets> => {
   const zip = await JSZip.loadAsync(file)
   const projectJson = await zip.file('project.json')?.async('string')
   if (!projectJson) throw new Error('Project JSON not found in the uploaded file.')
 
   const projectData: ScratchProject = JSON.parse(projectJson)
-  const assetNameMap = new Map<string, string>()
 
-  projectData.targets.forEach((target) => {
-    target.costumes.forEach((costume) => {
-      assetNameMap.set(costume.md5ext, costume.name + '.' + costume.dataFormat)
-    })
-    target.sounds.forEach((sound) => {
-      assetNameMap.set(sound.md5ext, sound.name + '.' + sound.dataFormat)
-    })
-  })
+  const scratchAssets: ExportedScratchAssets = {
+    sprites: [],
+    sounds: [],
+    backdrops: []
+  }
 
-  const assetFileDetails: AssetFileDetail[] = []
+  const convertFiles = async (scratchFiles: ScratchFile[]): Promise<ExportedScratchFile[]> => {
+    const files = []
+    for (const file of scratchFiles) {
+      const zipFilename = getFilename(file)
+      const zipFile = zip.file(zipFilename)
+      if (!zipFile) {
+        console.warn('Costume file not found in the uploaded file: ', zipFilename)
+        continue
+      }
+      const arrayBuffer = await zipFile.async('arraybuffer')
+      files.push({
+        name: file.name,
+        extension: file.dataFormat,
+        filename: `${file.name}.${file.dataFormat}`,
+        arrayBuffer
+      })
+    }
+    return files
+  }
 
-  for (const filename of Object.keys(zip.files)) {
-    const extensionMatch = filename.match(/\.(svg|jpeg|jpg|png|wav|mp3)$/)
-    if (extensionMatch) {
-      const originalName = assetNameMap.get(filename)
-      if (!originalName) continue
-      const zipFile = zip.file(filename)
-      if (!zipFile) continue
-      const fileData = await zipFile.async('blob')
-      const mimeType = getMimeFromExt(extensionMatch[1])
-      const blob = new Blob([fileData], { type: mimeType })
-      const url = URL.createObjectURL(blob)
-      const name = originalName.split('.').slice(0, -1).join('.')
-      const extension = originalName.split('.').pop() || ''
-      assetFileDetails.push({ name, extension, url, blob })
+  for (const target of projectData.targets) {
+    const imageFiles = await convertFiles(
+      target.costumes.filter((costume) => costume.dataFormat !== 'svg')
+      // FIXME: SVG causes error
+    )
+
+    const soundFiles = await convertFiles(target.sounds)
+    if (imageFiles.length > 0) {
+      if (target.isStage) {
+        scratchAssets.backdrops.push(...imageFiles)
+      } else {
+        scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
+      }
+    }
+
+    if (soundFiles.length > 0) {
+      scratchAssets.sounds.push(...soundFiles)
     }
   }
-  return assetFileDetails
+
+  return scratchAssets
 }

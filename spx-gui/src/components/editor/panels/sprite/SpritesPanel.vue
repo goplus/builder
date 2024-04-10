@@ -35,7 +35,7 @@ import { stripExt } from '@/utils/path'
 import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary } from '@/components/library'
 import { AssetType } from '@/apis/asset'
-import { useEditorCtx } from '../../ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
 

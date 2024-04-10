@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { AssetType } from '@/apis/asset'
-import { useEditorCtx } from '../../ProjectEditor.vue'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { Sound } from '@/models/sound'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 import SoundEditCard from '@/components/editor/sound/SoundEditCard.vue'

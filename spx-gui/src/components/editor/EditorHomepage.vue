@@ -3,12 +3,12 @@
     <header class="editor-header">
       <TopNav :project="project" />
     </header>
-    <main v-if="userStore.userInfo != null" class="editor-main">
+    <main v-if="userStore.userInfo" class="editor-main">
       <template v-if="projectName">
-        <ProjectEditor v-if="project != null" :project="project" :user-info="userStore.userInfo" />
-        <div v-else class="loading-wrapper">
-          <NSpin size="large" />
-        </div>
+        <EditorContextProvider v-if="project" :project="project" :user-info="userStore.userInfo">
+          <ProjectEditor />
+        </EditorContextProvider>
+        <NSpin v-else size="large" />
       </template>
       <template v-else>
         <ProjectList @selected="handleSelected" />
@@ -31,6 +31,7 @@ import { useCreateProject } from '@/components/project'
 import ProjectEditor from './ProjectEditor.vue'
 import { getProjectEditorRoute } from '@/router'
 import { computed } from 'vue'
+import EditorContextProvider from './EditorContextProvider.vue'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 

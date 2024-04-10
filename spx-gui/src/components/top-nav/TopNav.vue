@@ -25,7 +25,7 @@
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDropdown, NButton } from 'naive-ui'
+import { NDropdown, NButton, useModal } from 'naive-ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
@@ -34,7 +34,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { selectFile } from '@/utils/file'
 import { IsPublic } from '@/apis/common'
 import { getProjectEditorRoute } from '@/router'
-import type { Project } from '@/models/project'
+import { Project } from '@/models/project'
 import {
   useCreateProject,
   useChooseProject,
@@ -42,6 +42,9 @@ import {
   useStopSharingProject
 } from '@/components/project'
 import UserAvatar from './UserAvatar.vue'
+import LoadFromScratch from '../library/LoadFromScratch.vue'
+import { parseScratchFileAssets } from '@/utils/scratch'
+import { h } from 'vue'
 
 const props = defineProps<{
   project: Project | null
@@ -55,6 +58,8 @@ const createProject = useCreateProject()
 const chooseProject = useChooseProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
+
+const importFromScratchModal = useModal()
 
 function openProject(projectName: string) {
   router.push(getProjectEditorRoute(projectName))
@@ -103,7 +108,17 @@ const projectOptions = computed(() => {
       label: t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }),
       disabled: props.project == null,
       async handler() {
-        alert('TODO')
+        const project = props.project
+        if (!project) {
+          return
+        }
+        const file = await selectFile({ accept: '.sb3' })
+        const exportedScratchAssets = await parseScratchFileAssets(file)
+        importFromScratchModal.create({
+          title: t({ en: 'Import from Scratch', zh: '从 Scratch 导入' }),
+          preset: 'dialog',
+          content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
+        })
       }
     },
     {
