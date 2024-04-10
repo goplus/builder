@@ -4,7 +4,7 @@ import type { File } from '@/models/common/file'
 /**
  * Map file extension to mime type.
  */
-const ext2mime: Record<string, string> = {
+const ext2mime: Record<string, string | undefined> = {
   png: 'image/png',
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -25,7 +25,7 @@ const ext2mime: Record<string, string> = {
  * @param ext the file extension, without dot (`.`)
  * @returns the mime type
  */
-export const getMimeFromExt = (ext: string) => ext2mime[ext] || 'unknown'
+export const getMimeFromExt = (ext: string) => ext2mime[ext]
 
 export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
 
