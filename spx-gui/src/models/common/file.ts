@@ -19,7 +19,7 @@ export type Loader = () => Promise<ArrayBuffer>
 /** File-like class, while load lazily */
 export class File {
   /** MIME type of file */
-  type: string = ''
+  type: string
 
   constructor(
     /** File name */
@@ -28,7 +28,7 @@ export class File {
     public _loader: Loader,
     options?: Options
   ) {
-    if (options != null) this.type = options.type ?? getMimeFromExt(extname(name).slice(1))
+    this.type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? ''
   }
 
   _content: ArrayBuffer | null = null

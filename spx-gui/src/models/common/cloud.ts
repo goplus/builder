@@ -89,7 +89,10 @@ async function upload(file: File) {
     nativeFile,
     null,
     token,
-    { fname: file.name },
+    {
+      fname: file.name,
+      mimeType: file.type === '' ? undefined : file.type
+    },
     { region: region as any }
   )
   const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
