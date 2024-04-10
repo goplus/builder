@@ -5,10 +5,20 @@
     </header>
     <main v-if="userStore.userInfo" class="editor-main">
       <template v-if="projectName">
-        <EditorContextProvider v-if="project" :project="project" :user-info="userStore.userInfo">
+        <div v-if="isLoading" class="loading-wrapper">
+          <NSpin size="large" />
+        </div>
+        <div v-else-if="error != null">
+          {{ _t(error.userMessage) }}
+        </div>
+        <EditorContextProvider
+          v-else-if="project != null"
+          :project="project"
+          :user-info="userStore.userInfo"
+        >
           <ProjectEditor />
         </EditorContextProvider>
-        <NSpin v-else size="large" />
+        <div v-else>TODO</div>
       </template>
       <template v-else>
         <ProjectList @selected="handleSelected" />
@@ -19,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, ref, watch } from 'vue'
+import { watchEffect, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { NButton, NSpin } from 'naive-ui'
 import type { ProjectData } from '@/apis/project'
@@ -28,10 +38,10 @@ import { Project } from '@/models/project'
 import TopNav from '@/components/top-nav/TopNav.vue'
 import ProjectList from '@/components/project/ProjectList.vue'
 import { useCreateProject } from '@/components/project'
-import ProjectEditor from './ProjectEditor.vue'
 import { getProjectEditorRoute } from '@/router'
-import { computed } from 'vue'
+import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
+import ProjectEditor from './ProjectEditor.vue'
 
 const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -46,26 +56,25 @@ watchEffect(() => {
 
 const router = useRouter()
 const createProject = useCreateProject()
-const project = ref<Project | null>(null)
 const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
-watch(
-  () => projectName.value,
-  async (projectName) => {
-    if (userStore.userInfo == null) return
-    if (projectName == null) {
-      project.value = null
-      return
-    }
+const {
+  data: project,
+  isFetching: isLoading,
+  error
+} = useQuery(
+  async () => {
+    if (userStore.userInfo == null) return null
+    if (projectName.value == null) return null
     // TODO: UI logic to handle conflicts when there are local cache
     const newProject = new Project()
-    await newProject.loadFromCloud(userStore.userInfo.name, projectName)
+    await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
     newProject.syncToLocalCache(localCacheKey)
-    project.value = newProject
+    return newProject
   },
-  { immediate: true }
+  { en: 'Load project failed', zh: '加载项目失败' }
 )
 
 watch(

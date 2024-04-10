@@ -40,6 +40,11 @@ export type RawSpriteConfig = SpriteInits & {
 }
 
 export const spriteAssetPath = 'assets/sprites'
+
+export function getSpriteAssetPath(name: string) {
+  return join(spriteAssetPath, name)
+}
+
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
@@ -137,7 +142,7 @@ export class Sprite extends Disposble {
   }
 
   static async load(name: string, files: Files) {
-    const pathPrefix = join(spriteAssetPath, name)
+    const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
     const { costumes: costumeConfigs, ...inits } = (await toConfig(configFile)) as RawSpriteConfig
@@ -156,22 +161,20 @@ export class Sprite extends Disposble {
 
   static async loadAll(files: Files) {
     const spriteNames = listDirs(files, spriteAssetPath)
-    const sprites: Sprite[] = []
-    await Promise.all(
-      spriteNames.map(async (spriteName) => {
-        const sprite = await Sprite.load(spriteName, files)
-        if (sprite == null) {
-          console.warn('failed to load sprite:', spriteName)
-          return
-        }
-        sprites.push(sprite)
-      })
-    )
+    const sprites = (
+      await Promise.all(
+        spriteNames.map(async (spriteName) => {
+          const sprite = await Sprite.load(spriteName, files)
+          if (sprite == null) console.warn('failed to load sprite:', spriteName)
+          return sprite
+        })
+      )
+    ).filter((s) => !!s) as Sprite[]
     return sprites
   }
 
   export(): Files {
-    const assetPath = join(spriteAssetPath, this.name)
+    const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const c of this.costumes) {

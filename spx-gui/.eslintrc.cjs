@@ -19,6 +19,7 @@ module.exports = {
         shallowOnly: true
       }
     ],
-    'no-console': ['warn', { allow: ['warn', 'error'] }]
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'no-redeclare': 'off'
   }
 }

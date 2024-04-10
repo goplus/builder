@@ -72,7 +72,8 @@ async function validateName(name: string): Promise<ValidationResult> {
     }
 
   // check naming conflict
-  const username = userStore.userInfo!.name // TODO: remove `!` here
+  if (userStore.userInfo == null) throw new Error('login required')
+  const username = userStore.userInfo.name
   const existedProject = await getProject(username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e

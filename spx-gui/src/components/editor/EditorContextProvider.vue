@@ -49,14 +49,12 @@ const props = defineProps<{
 
 const selectedRef = ref<Selected | null>(null)
 
-/* eslint-disable no-redeclare */ // TODO: there should be no need to configure this
 function select(selected: null): void
 function select(type: 'stage'): void
 function select(type: 'sprite' | 'sound', name: string): void
 function select(type: any, name?: string) {
   selectedRef.value = name == null ? { type } : { type, name }
 }
-/* eslint-enable no-redeclare */
 
 // When sprite name changed, we lose the selected state
 // TODO: consider moving selected to model Project, so we can deal with renaming easily

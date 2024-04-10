@@ -5,6 +5,8 @@
 
 import { getMimeFromExt } from '@/utils/file'
 import { extname } from '@/utils/path'
+import type { Disposer } from './disposable'
+import { Cancelled } from '@/utils/exception'
 
 export type Options = {
   /** MIME type of file */
@@ -40,10 +42,16 @@ export class File {
     }))
   }
 
-  // TODO: remember to do URL.revokeObjectURL
-  async url() {
+  async url(onCleanup: (disposer: Disposer) => void) {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
     const ab = await this.arrayBuffer()
-    return URL.createObjectURL(new Blob([ab]))
+    if (cancelled) throw new Cancelled()
+    const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
+    onCleanup(() => URL.revokeObjectURL(url))
+    return url
   }
 }
 
