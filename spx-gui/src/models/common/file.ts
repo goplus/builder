@@ -49,7 +49,7 @@ export class File {
     })
     const ab = await this.arrayBuffer()
     if (cancelled) throw new Cancelled()
-    const url = URL.createObjectURL(new Blob([ab]))
+    const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
     onCleanup(() => URL.revokeObjectURL(url))
     return url
   }
