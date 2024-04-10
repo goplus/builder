@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import SpxEditor from './SpxEditor.vue'
-import SpxStage from './stage/SpxStage.vue'
+import SpxStage from './preview/SpxStage.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 </script>
 

@@ -111,7 +111,7 @@ const importSound = async (asset: ExportedScratchFile) => {
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = new Backdrop(asset.name, file)
-  props.project.stage.addBackdrop(backdrop) // FIXME: Replace instead of add
+  props.project.stage.setBackdrop(backdrop)
   message.success(`Imported backdrop ${file.name}`)
 }
 </script>

@@ -132,7 +132,7 @@ const addAssetToProject = useMessageHandle(
       }
       case AssetType.Backdrop: {
         const backdrop = await asset2Backdrop(asset)
-        project.stage.addBackdrop(backdrop)
+        project.stage.setBackdrop(backdrop)
         break
       }
       case AssetType.Sound: {
