@@ -16,22 +16,6 @@
       _t({ en: 'Save', zh: '保存' })
     }}</NButton>
     <UserAvatar />
-    <!-- We can not use `useModal` since the LoadFromScratch uses
-        `useEditorCtx` which is not available when create components
-        with `modal.creat()` -->
-    <NModal
-      title="Import from Scratch"
-      :show="!!exportedScratchAssets"
-      @update:show="
-        (show) => {
-          if (!show) {
-            exportedScratchAssets = null
-          }
-        }
-      "
-    >
-      <LoadFromScratch v-if="exportedScratchAssets" :scratch-assets="exportedScratchAssets" />
-    </NModal>
   </nav>
 </template>
 
@@ -41,7 +25,7 @@
 
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDropdown, NButton, NModal } from 'naive-ui'
+import { NDropdown, NButton, useModal } from 'naive-ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
@@ -50,7 +34,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { selectFile } from '@/utils/file'
 import { IsPublic } from '@/apis/common'
 import { getProjectEditorRoute } from '@/router'
-import type { Project } from '@/models/project'
+import { Project } from '@/models/project'
 import {
   useCreateProject,
   useChooseProject,
@@ -59,8 +43,8 @@ import {
 } from '@/components/project'
 import UserAvatar from './UserAvatar.vue'
 import LoadFromScratch from '../library/LoadFromScratch.vue'
-import { ref } from 'vue'
-import { parseScratchFileAssets, type ExportedScratchAssets } from '@/utils/scratch'
+import { parseScratchFileAssets } from '@/utils/scratch'
+import { h } from 'vue'
 
 const props = defineProps<{
   project: Project | null
@@ -75,7 +59,7 @@ const chooseProject = useChooseProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
 
-const exportedScratchAssets = ref<ExportedScratchAssets | null>(null)
+const importFromScratchModal = useModal()
 
 function openProject(projectName: string) {
   router.push(getProjectEditorRoute(projectName))
@@ -124,8 +108,17 @@ const projectOptions = computed(() => {
       label: t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }),
       disabled: props.project == null,
       async handler() {
+        const project = props.project
+        if (!project) {
+          return
+        }
         const file = await selectFile({ accept: '.sb3' })
-        exportedScratchAssets.value = await parseScratchFileAssets(file)
+        const exportedScratchAssets = await parseScratchFileAssets(file)
+        importFromScratchModal.create({
+          title: t({ en: 'Import from Scratch', zh: '从 Scratch 导入' }),
+          preset: 'dialog',
+          content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
+        })
       }
     },
     {

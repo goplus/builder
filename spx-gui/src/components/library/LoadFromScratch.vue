@@ -61,13 +61,12 @@ import { File as LazyFile } from '@/models/common/file'
 import { getMimeFromExt } from '@/utils/file'
 import ArrayBufferImage from './ArrayBufferImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import type { Project } from '@/models/project'
 
-defineProps<{
+const props = defineProps<{
   scratchAssets: ExportedScratchAssets
+  project: Project
 }>()
-
-const editorCtx = useEditorCtx()
 
 const message = useMessage()
 
@@ -98,21 +97,21 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   for (const costume of costumes) {
     sprite.addCostume(costume)
   }
-  editorCtx.project.addSprite(sprite)
+  props.project.addSprite(sprite)
   message.success(`Imported sprite ${asset.name}`)
 }
 
 const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = new Sound(asset.name, file)
-  editorCtx.project.addSound(sound)
+  props.project.addSound(sound)
   message.success(`Imported sound ${file.name}`)
 }
 
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = new Backdrop(asset.name, file)
-  editorCtx.project.stage.addBackdrop(backdrop) // FIXME: Replace instead of add
+  props.project.stage.addBackdrop(backdrop) // FIXME: Replace instead of add
   message.success(`Imported backdrop ${file.name}`)
 }
 </script>
