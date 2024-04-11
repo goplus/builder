@@ -35,15 +35,13 @@ const onRemove = () => {
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/theme.scss';
-
 .sounds-card {
   margin-top: 10px;
 
   width: 120px;
   height: 120px;
   border-radius: 20px;
-  background: linear-gradient(145deg, $sounds-edit-card-1, $sounds-edit-card-2);
+  border: 1px solid #fff;
   box-shadow: 0 0 5px rgb(220, 79, 35);
   display: flex;
   flex-direction: column;
@@ -70,18 +68,15 @@ const onRemove = () => {
 
 .sounds-card-title {
   font-size: 20px;
-  color: $sounds-edit-card-title;
 }
 
 .sounds-card-subtitle {
   font-size: 14px;
-  color: $sounds-edit-card-subtitle;
   margin: 0;
 }
 
 .sounds-card-content {
   padding: 6px;
-  background: linear-gradient(145deg, $sounds-edit-card-content-1, $sounds-edit-card-content-2);
   width: 90%;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
@@ -93,7 +88,6 @@ const onRemove = () => {
   position: absolute;
   top: -5px;
   right: -10px;
-  background-color: $sounds-edit-card-close-button;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -103,13 +97,11 @@ const onRemove = () => {
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 40px;
-  color: $sounds-edit-card-close-button-x;
-  border: 2px solid $sounds-edit-card-close-button-border;
+  border: 2px solid #000;
 }
 
 .delete-button:hover {
   transform: scale(1.1);
   background-color: #f8f2f2;
-  color: $sounds-edit-card-close-button-border;
 }
 </style>

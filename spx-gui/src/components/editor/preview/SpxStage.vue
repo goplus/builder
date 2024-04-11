@@ -7,13 +7,17 @@
  * @Description:
 -->
 <template>
-  <div ref="spxStage" class="spx-stage">
-    <div class="stage-button">{{ $t('component.stage') }}</div>
-    <n-button type="success" @click="show = true">{{ $t('stage.run') }}</n-button>
+  <UIPanel class="spx-stage">
+    <div class="header">
+      <div class="stage-button">{{ $t('component.stage') }}</div>
+      <n-button class="run-button" type="success" @click="show = true">{{
+        $t('stage.run')
+      }}</n-button>
+    </div>
     <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
     </n-modal>
-    <div class="stage-viewer-container">
+    <div ref="stageViewerContainer" class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
         :width="containerWidth || 400"
@@ -23,11 +27,12 @@
         @on-selected-sprites-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
-  </div>
+  </UIPanel>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
+import { UIPanel } from '@/components/ui'
 import { useSize } from '@/utils/dom'
 import { NButton, NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -40,8 +45,8 @@ let show = ref(false)
 const editorCtx = useEditorCtx()
 
 const project = computed(() => editorCtx.project)
-const spxStage = ref<HTMLElement | null>(null)
-const { width: containerWidth, height: containerHeight } = useSize(spxStage)
+const stageViewerContainer = ref<HTMLElement | null>(null)
+const { width: containerWidth, height: containerHeight } = useSize(stageViewerContainer)
 
 const selectedSpriteNames = ref<string[]>([])
 
@@ -67,32 +72,29 @@ watch(
   height: 40vh;
   display: flex;
   flex-direction: column;
-  border: 2px solid #00142970;
   position: relative;
-  background: white;
-  border-radius: 24px;
   margin: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+
+  .header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
 
   .stage-button {
     background: rgba(90, 196, 236, 0.4);
     width: 80px;
     height: auto;
     text-align: center;
-    position: absolute;
-    top: -2px;
-    left: 8px;
     font-size: 18px;
     border: 2px solid #00142970;
     border-radius: 0 0 10px 10px;
     z-index: 2;
   }
 
-  .n-button {
-    position: absolute;
-    right: 6px;
-    top: 2px;
+  .run-button {
+    width: auto;
     border: 2px solid #00142970;
     border-radius: 16px;
     z-index: 100;

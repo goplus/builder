@@ -10,7 +10,7 @@
       @remove="handleRemoveSound(asset)"
     />
   </div>
-  <div v-show="!props.active" class="sounds-overview"></div>
+  <div v-show="!props.active" class="sounds-overview">Sounds</div>
 </template>
 
 <script setup lang="ts">
