@@ -17,7 +17,6 @@ type RawFile = {
 }
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
-const LOCAL_CACHE_CHANGED_FLAG_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT_CHANGED_FLAG'
 
 async function getMetadataEx() {
   const metadataEx = await storage.getItem(LOCAL_CACHE_KEY)
@@ -78,21 +77,4 @@ export async function save(metadata: Metadata, files: Files) {
     setMetadataEx(metadataEx),
     ...fileList.map((path) => writeFile(path, files[path]!))
   ])
-}
-
-export async function setPreviousEditingProject(projectId: string, hasUnsyncedChanges: boolean) {
-  const data = {
-    projectId,
-    hasUnsyncedChanges
-  }
-  localStorage.setItem(LOCAL_CACHE_CHANGED_FLAG_KEY, JSON.stringify(data))
-}
-
-export function previousEditingProject(): {
-  projectId: string
-  hasUnsyncedChanges: boolean
-} | null {
-  const data = localStorage.getItem(LOCAL_CACHE_CHANGED_FLAG_KEY)
-  if (data == null) return null
-  return JSON.parse(data)
 }

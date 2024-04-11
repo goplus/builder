@@ -27,6 +27,7 @@ export type Metadata = {
   version?: number
   cTime?: string
   uTime?: string
+  hasUnsyncedChanges?: boolean
 }
 
 const projectConfigFileName = 'index.json'
@@ -46,6 +47,8 @@ export class Project extends Disposble {
   version = 0
   cTime?: string
   uTime?: string
+
+  hasUnsyncedChanges?: boolean
 
   stage: Stage
   sprites: Sprite[]
@@ -162,7 +165,7 @@ export class Project extends Disposble {
   }
 
   /** Export metadata & files */
-  export(): [Metadata, Files] {
+  exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,
@@ -213,7 +216,7 @@ export class Project extends Disposble {
     const [metadata, files] = this.export()
     const res = await cloudHelper.save(metadata, files)
     await this.load(res.metadata, res.files)
-    localHelper.setPreviousEditingProject(this.id!, false)
+    this.hasUnsyncedChanges = false
   }
 
   /** Load from local cache */
@@ -224,21 +227,31 @@ export class Project extends Disposble {
     await this.load(metadata, files)
   }
 
-  /** Sync to local cache */
-  startWatchToSyncLocalCache() {
-    const saveExports = debounce(([metadata, files]: [Metadata, Files]) => {
-      localHelper.save(metadata, files)
-    }, 1000)
-    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
+  export(): [Metadata, Files] {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
+    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
+    return [metadata, files]
   }
 
+  /** Sync to local cache */
+  startWatchToSyncLocalCache() {
+    const saveExports = debounce(() => {
+      const [metadata, files] = this.export()
+      localHelper.save(metadata, files)
+    }, 1000)
+    this.addDisposer(
+      watch(() => this.exportWithoutHasUnsyncedChanges(), saveExports, { immediate: true })
+    )
+  }
+
+  /** Should be called before `startWatchToSyncLocalCache()` */
   startWatchToSetHasUnsyncedChanges() {
     this.addDisposer(
       watch(
-        () => this.export(),
+        () => this.exportWithoutHasUnsyncedChanges(),
         () => {
-          // FIXME: make ID as required?
-          localHelper.setPreviousEditingProject(this.id!, true)
+          this.hasUnsyncedChanges = true
         }
       )
     )

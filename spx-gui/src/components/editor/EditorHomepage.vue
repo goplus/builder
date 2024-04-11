@@ -42,7 +42,7 @@ import { getProjectEditorRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
-import { clear, previousEditingProject } from '@/models/common/local'
+import { clear } from '@/models/common/local'
 
 const userStore = useUserStore()
 watchEffect(() => {
@@ -85,6 +85,7 @@ const {
       await localProject.loadFromLocalCache()
     } catch {
       localProject = null
+      clear()
     }
 
     if (localProject && localProject.owner !== userStore.userInfo.name) {
@@ -95,8 +96,7 @@ const {
 
     // https://github.com/goplus/builder/issues/259
     // Local Cache Saving & Restoring
-    const prev = previousEditingProject()
-    if (localProject && prev?.hasUnsyncedChanges && prev.projectId === localProject.id) {
+    if (localProject?.hasUnsyncedChanges) {
       if (!projectName.value) {
         if (askOpenCached(localProject)) {
           // Case 3: User has a project in the cache but not opening any project:
@@ -124,7 +124,7 @@ const {
     let newProject = new Project()
     await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
 
-    if (localProject && prev?.hasUnsyncedChanges) {
+    if (localProject?.hasUnsyncedChanges) {
       if (newProject.version <= localProject.version && askOpenCached(localProject)) {
         // Case 1: User has a project in the cache and opening the same project:
         // asked to open the saved project
@@ -132,8 +132,8 @@ const {
       }
     }
 
-    newProject.startWatchToSyncLocalCache()
     newProject.startWatchToSetHasUnsyncedChanges()
+    newProject.startWatchToSyncLocalCache()
     return newProject
   },
   { en: 'Load project failed', zh: '加载项目失败' }
@@ -152,8 +152,7 @@ watch(
 
 watchEffect((onCleanup) => {
   const f = (event: BeforeUnloadEvent) => {
-    const prev = previousEditingProject()
-    if (prev?.hasUnsyncedChanges && prev.projectId === project.value?.id) {
+    if (project.value?.hasUnsyncedChanges) {
       // impossible to show a custom message
       event.preventDefault()
     }
