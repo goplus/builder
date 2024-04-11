@@ -9,6 +9,7 @@ npm install
 ## Project Execution
 
 ```bash
+cp .env.dev .env.local
 npm run dev
 ```
 

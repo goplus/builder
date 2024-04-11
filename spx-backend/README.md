@@ -13,8 +13,9 @@ go mod tidy
 
 ## Run server for development
 
-Prepare config file (`.env`) for development, and then run
+Run
 
 ```sh
+cp .env.dev .env
 gop run ./cmd/spx-backend
 ```
