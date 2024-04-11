@@ -109,6 +109,7 @@ const {
 
     // https://github.com/goplus/builder/issues/259
     // Local Cache Saving & Restoring
+    // TODO: Only to restore cache when the project is dirty
     if (
       localProject &&
       localProject.owner === userStore.userInfo.name &&
@@ -117,7 +118,9 @@ const {
       if (localProject.name && askOpenCached(localProject)) {
         // Case 3: User has a project in the cache but not opening any project:
         // Open the saved project
-        await router.push(getProjectEditorRoute(localProject.name))
+        // FIXME: Vue's router.push does not cause the useQuery hook to re-run.
+        // We have to use location.assign to force a full page reload.
+        location.assign(getProjectEditorRoute(localProject.name))
       } else {
         // Case 3: Clear local cache
         clear(localCacheKey)
@@ -133,7 +136,7 @@ const {
         if (localProject.name && !askOpenNew(localProject, newProject)) {
           // Case 2: User has a project that is different from
           // current opening project in the cache: Open the saved project
-          await router.push(getProjectEditorRoute(localProject.name))
+          location.assign(getProjectEditorRoute(localProject.name))
           return null
         }
         // Case 2: Discard local cache
@@ -141,7 +144,7 @@ const {
         if (askOpenCached(localProject)) {
           newProject = localProject
         }
-      } // else: Case 1: Discard local cache
+      } // else: Case 1: Local cached project is older: Discard local cache
     } // else: Case 4: Different user: Discard local cache
     newProject.syncToLocalCache(localCacheKey)
     return newProject
