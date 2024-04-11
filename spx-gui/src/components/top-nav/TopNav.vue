@@ -52,7 +52,6 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const { isOnline } = useNetwork()
-const router = useRouter()
 
 const createProject = useCreateProject()
 const chooseProject = useChooseProject()
@@ -62,7 +61,8 @@ const stopSharingProject = useStopSharingProject()
 const importFromScratchModal = useModal()
 
 function openProject(projectName: string) {
-  router.push(getProjectEditorRoute(projectName))
+  // FIXME
+  location.assign(getProjectEditorRoute(projectName))
 }
 
 const projectOptions = computed(() => {

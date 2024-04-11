@@ -213,22 +213,35 @@ export class Project extends Disposble {
     const [metadata, files] = this.export()
     const res = await cloudHelper.save(metadata, files)
     await this.load(res.metadata, res.files)
+    localHelper.setPreviousEditingProject(this.id!, false)
   }
 
   /** Load from local cache */
-  async loadFromLocalCache(cacheKey: string) {
-    const cached = await localHelper.load(cacheKey)
+  async loadFromLocalCache() {
+    const cached = await localHelper.load()
     if (cached == null) throw new Error('no project in local cache')
     const { metadata, files } = cached
     await this.load(metadata, files)
   }
 
   /** Sync to local cache */
-  syncToLocalCache(cacheKey: string) {
+  startWatchToSyncLocalCache() {
     const saveExports = debounce(([metadata, files]: [Metadata, Files]) => {
-      localHelper.save(cacheKey, metadata, files)
+      localHelper.save(metadata, files)
     }, 1000)
     this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
+  }
+
+  startWatchToSetHasUnsyncedChanges() {
+    this.addDisposer(
+      watch(
+        () => this.export(),
+        () => {
+          // FIXME: make ID as required?
+          localHelper.setPreviousEditingProject(this.id!, true)
+        }
+      )
+    )
   }
 }
 

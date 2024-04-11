@@ -42,12 +42,7 @@ import { getProjectEditorRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
-import { ref } from 'vue'
-import { clear } from '@/models/common/local'
-
-const localCacheKey = 'GOPLUS_BUILDER_CACHED_PROJECT'
-
-const cacheDirty = ref(false) // TODO
+import { clear, previousEditingProject } from '@/models/common/local'
 
 const userStore = useUserStore()
 watchEffect(() => {
@@ -64,24 +59,9 @@ const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
-watchEffect((onCleanup) => {
-  const f = (event: BeforeUnloadEvent) => {
-    if (cacheDirty.value) {
-      // Case 2: on close tab
-      // impossible to show a custom message
-      event.preventDefault()
-    }
-  }
-
-  window.addEventListener('beforeunload', f)
-  onCleanup(() => {
-    window.removeEventListener('beforeunload', f)
-  })
-})
-
-const askOpenNew = (cached: Project, target: Project) => {
+const askOpenNew = (cached: Project, targetName: string) => {
   return confirm(
-    `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${target.name}"?`
+    `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`
   )
 }
 
@@ -102,51 +82,58 @@ const {
     let localProject: Project | null
     try {
       localProject = new Project()
-      await localProject.loadFromLocalCache(localCacheKey)
+      await localProject.loadFromLocalCache()
     } catch {
+      localProject = null
+    }
+
+    if (localProject && localProject.owner !== userStore.userInfo.name) {
+      // Case 4: Different user: Discard local cache
+      clear()
       localProject = null
     }
 
     // https://github.com/goplus/builder/issues/259
     // Local Cache Saving & Restoring
-    // TODO: Only to restore cache when the project is dirty
-    if (
-      localProject &&
-      localProject.owner === userStore.userInfo.name &&
-      projectName.value === undefined
-    ) {
-      if (localProject.name && askOpenCached(localProject)) {
-        // Case 3: User has a project in the cache but not opening any project:
-        // Open the saved project
-        // FIXME: Vue's router.push does not cause the useQuery hook to re-run.
-        // We have to use location.assign to force a full page reload.
-        location.assign(getProjectEditorRoute(localProject.name))
-      } else {
-        // Case 3: Clear local cache
-        clear(localCacheKey)
+    const prev = previousEditingProject()
+    if (localProject && prev?.hasUnsyncedChanges && prev.projectId === localProject.id) {
+      if (!projectName.value) {
+        if (askOpenCached(localProject)) {
+          // Case 3: User has a project in the cache but not opening any project:
+          // Open the saved project
+          openProject(localProject.name!) // FIXME: name should be required?
+        } else {
+          // Case 3: Clear local cache
+          clear()
+        }
+        return null
       }
-      return null
-    }
 
-    if (projectName.value === undefined) return null
-    let newProject = new Project()
-    await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
-    if (localProject && localProject.owner === newProject.owner) {
-      if (localProject.id !== newProject.id) {
-        if (localProject.name && !askOpenNew(localProject, newProject)) {
-          // Case 2: User has a project that is different from
-          // current opening project in the cache: Open the saved project
-          location.assign(getProjectEditorRoute(localProject.name))
+      if (localProject.name !== projectName.value) {
+        if (askOpenNew(localProject, projectName.value)) {
+          // Case 2: User has a project in the cache but not opening the project in the cache:
+          // asked to open the saved project
+          openProject(localProject.name!)
           return null
         }
-        // Case 2: Discard local cache
-      } else if (localProject.version > newProject.version) {
-        if (askOpenCached(localProject)) {
-          newProject = localProject
-        }
-      } // else: Case 1: Local cached project is older: Discard local cache
-    } // else: Case 4: Different user: Discard local cache
-    newProject.syncToLocalCache(localCacheKey)
+        // Case 2 fallthrough: Let the project to be loaded from cloud
+      }
+    }
+
+    if (!projectName.value) return null
+    let newProject = new Project()
+    await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
+
+    if (localProject && prev?.hasUnsyncedChanges) {
+      if (newProject.version <= localProject.version && askOpenCached(localProject)) {
+        // Case 1: User has a project in the cache and opening the same project:
+        // asked to open the saved project
+        newProject = localProject
+      }
+    }
+
+    newProject.startWatchToSyncLocalCache()
+    newProject.startWatchToSetHasUnsyncedChanges()
     return newProject
   },
   { en: 'Load project failed', zh: '加载项目失败' }
@@ -163,8 +150,25 @@ watch(
   }
 )
 
+watchEffect((onCleanup) => {
+  const f = (event: BeforeUnloadEvent) => {
+    const prev = previousEditingProject()
+    if (prev?.hasUnsyncedChanges && prev.projectId === project.value?.id) {
+      // impossible to show a custom message
+      event.preventDefault()
+    }
+  }
+
+  window.addEventListener('beforeunload', f)
+  onCleanup(() => {
+    window.removeEventListener('beforeunload', f)
+  })
+})
+
 function openProject(projectName: string) {
-  router.push(getProjectEditorRoute(projectName))
+  // FIXME: Vue's router.push does not cause the useQuery hook to re-run.
+  // We have to use location.assign to force a full page reload.
+  location.assign(getProjectEditorRoute(projectName))
 }
 
 function handleSelected(project: ProjectData) {

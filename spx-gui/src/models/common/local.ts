@@ -16,66 +16,83 @@ type RawFile = {
   content: ArrayBuffer
 }
 
-async function getMetadataEx(key: string) {
-  const metadataEx = await storage.getItem(key)
+const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
+const LOCAL_CACHE_CHANGED_FLAG_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT_CHANGED_FLAG'
+
+async function getMetadataEx() {
+  const metadataEx = await storage.getItem(LOCAL_CACHE_KEY)
   if (metadataEx == null) return null
   return metadataEx as MetadataEx
 }
 
-async function setMetadataEx(key: string, metadataEx: MetadataEx) {
-  await storage.setItem(key, metadataEx)
+async function setMetadataEx(metadataEx: MetadataEx) {
+  await storage.setItem(LOCAL_CACHE_KEY, metadataEx)
 }
 
-async function removeMetadataEx(key: string) {
-  await storage.removeItem(key)
+async function removeMetadataEx() {
+  await storage.removeItem(LOCAL_CACHE_KEY)
 }
 
-async function readFile(key: string, path: string): Promise<File> {
-  const rawFile = await storage.getItem(`${key}/${path}`)
+async function readFile(path: string): Promise<File> {
+  const rawFile = await storage.getItem(`${LOCAL_CACHE_KEY}/${path}`)
   if (rawFile == null) throw new Error('file not found in storage')
   const { name, content } = rawFile as RawFile
   return new File(name, async () => content)
 }
 
-async function writeFile(key: string, path: string, file: File) {
+async function writeFile(path: string, file: File) {
   const content = await file.arrayBuffer()
   const rawFile: RawFile = { name: file.name, content }
-  await storage.setItem(`${key}/${path}`, rawFile)
+  await storage.setItem(`${LOCAL_CACHE_KEY}/${path}`, rawFile)
 }
 
-async function removeFile(key: string, path: string) {
-  await storage.removeItem(`${key}/${path}`)
+async function removeFile(path: string) {
+  await storage.removeItem(`${LOCAL_CACHE_KEY}/${path}`)
 }
 
-export async function clear(key: string) {
-  const metadataEx = await getMetadataEx(key)
+export async function clear() {
+  const metadataEx = await getMetadataEx()
   if (metadataEx == null) return
-  await Promise.all([
-    removeMetadataEx(key),
-    ...metadataEx.files.map((path) => removeFile(key, path))
-  ])
+  await Promise.all([removeMetadataEx(), ...metadataEx.files.map((path) => removeFile(path))])
 }
 
-export async function load(key: string) {
+export async function load() {
   // TODO: check project owner & name
-  const metadataEx = await getMetadataEx(key)
+  const metadataEx = await getMetadataEx()
   if (metadataEx == null) return null
   const { files: fileList, ...metadata } = metadataEx
   const files: Files = {}
   await Promise.all(
     fileList.map(async (path) => {
-      files[path] = await readFile(key, path)
+      files[path] = await readFile(path)
     })
   )
   return { metadata, files }
 }
 
-export async function save(key: string, metadata: Metadata, files: Files) {
-  await clear(key)
+export async function save(metadata: Metadata, files: Files) {
+  await clear()
   const fileList = Object.keys(files)
   const metadataEx = { ...metadata, files: fileList }
   await Promise.all([
-    setMetadataEx(key, metadataEx),
-    ...fileList.map((path) => writeFile(key, path, files[path]!))
+    setMetadataEx(metadataEx),
+    ...fileList.map((path) => writeFile(path, files[path]!))
   ])
+}
+
+export async function setPreviousEditingProject(projectId: string, hasUnsyncedChanges: boolean) {
+  const data = {
+    projectId,
+    hasUnsyncedChanges
+  }
+  localStorage.setItem(LOCAL_CACHE_CHANGED_FLAG_KEY, JSON.stringify(data))
+}
+
+export function previousEditingProject(): {
+  projectId: string
+  hasUnsyncedChanges: boolean
+} | null {
+  const data = localStorage.getItem(LOCAL_CACHE_CHANGED_FLAG_KEY)
+  if (data == null) return null
+  return JSON.parse(data)
 }
