@@ -191,7 +191,7 @@ const handleSave = useMessageHandle(
   flex-direction: row;
   align-items: center;
 
-  background: #ff81a7;
+  background: var(--ui-primary-color);
   height: 34px;
   padding: 13px;
 }

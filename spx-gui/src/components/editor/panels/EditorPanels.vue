@@ -1,6 +1,6 @@
 <template>
   <div class="editor-panels">
-    <div class="main">
+    <UIPanel class="main">
       <div
         :class="activePanel === 'sprites' ? 'main-panel-active' : 'main-panel-inactive'"
         @click="activate('sprites')"
@@ -13,13 +13,16 @@
       >
         <SoundsPanel :active="activePanel === 'sounds'"></SoundsPanel>
       </div>
-    </div>
-    <StagePanel class="sider"></StagePanel>
+    </UIPanel>
+    <UIPanel class="sider">
+      <StagePanel></StagePanel>
+    </UIPanel>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { UIPanel } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundsPanel from './sound/SoundsPanel.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
@@ -52,13 +55,11 @@ watch(
   flex: 1 1 0;
   min-width: 0;
   display: flex;
-  background-color: darkgray;
 }
 
 .main-panel-active,
 .main-panel-inactive {
   transition: 0.3s;
-  border: 1px solid #333;
 }
 
 .main-panel-active {

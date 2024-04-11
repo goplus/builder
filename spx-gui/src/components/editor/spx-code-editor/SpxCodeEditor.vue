@@ -45,11 +45,7 @@ const layoutStyle = {
   height: 'calc(100vh - 140px)',
   display: 'flex',
   flexDirection: 'column',
-  border: '2px solid #00142970',
   position: 'relative',
-  background: 'white',
-  borderRadius: '0 24px 24px 0',
-  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
   overflow: 'hidden'
 }
 </script>

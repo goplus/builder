@@ -1,10 +1,11 @@
 <template>
-  <div class="stage-editor">
+  <UIPanel class="stage-editor">
     <SpxCodeEditor :value="stage.code" @change="(v) => stage.setCode(v)" />
-  </div>
+  </UIPanel>
 </template>
 
 <script setup lang="ts">
+import { UIPanel } from '@/components/ui'
 import type { Stage } from '@/models/stage'
 import SpxCodeEditor from '../spx-code-editor/SpxCodeEditor.vue'
 

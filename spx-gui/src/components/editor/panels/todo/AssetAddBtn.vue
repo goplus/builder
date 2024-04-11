@@ -22,12 +22,12 @@
 
       <!-- Sound Upload -->
       <n-upload v-else-if="props.type === AssetType.Sound" @before-upload="beforeSoundUpload">
-        <n-button color="#fff" :text-color="commonColor"> {{ $t('stage.upload') }} </n-button>
+        <n-button> {{ $t('stage.upload') }} </n-button>
       </n-upload>
 
       <!-- Sprite Upload -->
       <div v-else>
-        <n-button color="#fff" :text-color="commonColor" @click="showUploadModal = true">
+        <n-button @click="showUploadModal = true">
           {{ $t('stage.upload') }}
         </n-button>
       </div>
@@ -46,19 +46,12 @@
       <n-button
         v-else-if="props.type == AssetType.Sprite"
         :disabled="!isOnline"
-        color="#fff"
-        :text-color="commonColor"
         @click="openLibrary()"
       >
         {{ $t('stage.choose') }}
       </n-button>
 
-      <n-button
-        v-if="props.type == AssetType.Sound"
-        color="#fff"
-        :text-color="commonColor"
-        @click="openRecorderFunc()"
-      >
+      <n-button v-if="props.type == AssetType.Sound" @click="openRecorderFunc()">
         {{ $t('sounds.record') }}
       </n-button>
 
@@ -132,7 +125,6 @@ import { computed, defineProps, ref } from 'vue'
 import type { UploadFileInfo } from 'naive-ui'
 import { NButton, NIcon, NInput, NModal, NSelect, NUpload, useMessage } from 'naive-ui'
 import { Add as AddIcon } from '@vicons/ionicons5'
-import { commonColor } from '@/assets/theme'
 import { Sprite } from '@/models/sprite'
 import { fromNativeFile } from '@/models/common/file'
 import { Sound } from '@/models/sound'
@@ -368,8 +360,6 @@ const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInf
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/theme.scss';
-
 .modal-items {
   display: flex;
   align-items: center;
@@ -389,8 +379,7 @@ const beforeSoundUpload = (data: { file: UploadFileInfo; fileList: UploadFileInf
 @mixin addDivBase {
   margin: 10px auto;
   border-radius: 20px;
-  background: $sprite-list-card-box-shadow;
-  box-shadow: 0 0 5px $sprite-list-card-box-shadow;
+  border: 1px solid #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;

@@ -108,6 +108,8 @@ async function handleCreate() {
   height: 100%;
   display: flex;
   flex-direction: column;
+
+  background-color: #e9fcff; // TODO: define as UI vars
 }
 
 .editor-header {

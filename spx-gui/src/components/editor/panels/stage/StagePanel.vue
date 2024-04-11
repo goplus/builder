@@ -89,7 +89,6 @@ function handleAddToLibrary() {
 
 <style scoped lang="scss">
 .stage-panel {
-  border: 1px solid #333;
 }
 
 .header {

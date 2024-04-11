@@ -117,8 +117,6 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/theme.scss';
-
 .download-infos {
   text-align: center;
 }
@@ -128,7 +126,7 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
   margin: 5px;
   min-height: 50vh;
   .selected-border {
-    border: 3px solid $asset-library-card-title-1;
+    border: 3px solid #000;
   }
 
   .selected-btn {
@@ -141,7 +139,6 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
     width: 80%;
     height: 150px;
     border-radius: 20px;
-    // border: 3px solid $asset-library-card-title-1;
     border: 3px solid #eeeeee;
     box-shadow: 0 4px 4px 0 #00000026;
     display: flex;
