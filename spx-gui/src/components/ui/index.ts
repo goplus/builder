@@ -1,4 +1,4 @@
-import UIConfigProvider from './UIConfigProvider.vue'
+import UIConfigProvider, { useUIVariables } from './UIConfigProvider.vue'
 import UIPanel from './UIPanel.vue'
 
-export { UIConfigProvider, UIPanel }
+export { UIConfigProvider, useUIVariables, UIPanel }
