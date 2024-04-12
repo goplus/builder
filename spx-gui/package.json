@@ -26,7 +26,6 @@
     "qiniu-js": "^3.4.2",
     "vicons": "^0.0.1",
     "vue": "^3.3.11",
-    "vue-i18n": "^9.9.0",
     "vue-konva": "^3.0.2",
     "vue-router": "^4.2.5",
     "wavesurfer.js": "^7.7.9"

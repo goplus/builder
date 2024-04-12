@@ -7,7 +7,7 @@
         <AddIcon />
       </n-icon>
       <div v-if="addBtnClassName == 'sprite-add-div'" class="add-new-font">
-        {{ $t('stage.add') }}
+        {{ 'stage.add' }}
       </div>
     </div>
     <!-- E Component Add Button type first step -->
@@ -16,19 +16,19 @@
       <!-- Background Upload -->
       <n-upload v-if="props.type === AssetType.Backdrop" @before-upload="beforeBackdropUpload">
         <n-button color="#fff" quaternary size="tiny" text-color="#fff">
-          {{ $t('stage.upload') }}
+          {{ 'stage.upload' }}
         </n-button>
       </n-upload>
 
       <!-- Sound Upload -->
       <n-upload v-else-if="props.type === AssetType.Sound" @before-upload="beforeSoundUpload">
-        <n-button> {{ $t('stage.upload') }} </n-button>
+        <n-button> {{ 'stage.upload' }} </n-button>
       </n-upload>
 
       <!-- Sprite Upload -->
       <div v-else>
         <n-button @click="showUploadModal = true">
-          {{ $t('stage.upload') }}
+          {{ 'stage.upload' }}
         </n-button>
       </div>
 
@@ -41,18 +41,18 @@
         text-color="#fff"
         @click="openLibrary()"
       >
-        {{ $t('stage.choose') }}
+        {{ 'stage.choose' }}
       </n-button>
       <n-button
         v-else-if="props.type == AssetType.Sprite"
         :disabled="!isOnline"
         @click="openLibrary()"
       >
-        {{ $t('stage.choose') }}
+        {{ 'stage.choose' }}
       </n-button>
 
       <n-button v-if="props.type == AssetType.Sound" @click="openRecorderFunc()">
-        {{ $t('sounds.record') }}
+        {{ 'sounds.record' }}
       </n-button>
 
       <!-- E Component Add Button second step -->
@@ -73,36 +73,36 @@
     content-style="margin:10px;"
   >
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.name') }}</p>
+      <p class="modal-items-p">{{ 'list.name' }}</p>
       <n-input
         v-model:value="uploadSpriteName"
         round
-        :placeholder="$t('list.inputName')"
+        :placeholder="'list.inputName'"
         class="modal-items-content"
         style="max-width: 300px"
       />
     </div>
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.costumes') }}:</p>
+      <p class="modal-items-p">{{ 'list.costumes' }}:</p>
       <n-upload
         class="modal-items-content"
         list-type="image-card"
         multiple
         @change="handleWatchFileList"
-        >{{ $t('list.uploadLimited') }}
+        >{{ 'list.uploadLimited' }}
       </n-upload>
     </div>
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.category') }}:</p>
+      <p class="modal-items-p">{{ 'list.category' }}:</p>
       <n-select
         v-model:value="categoryValue"
-        :placeholder="$t('list.selectCategory')"
+        :placeholder="'list.selectCategory'"
         class="modal-items-content"
         :options="categoryOptions"
       />
     </div>
     <div class="modal-items">
-      <p class="modal-items-p">{{ $t('list.public') }}</p>
+      <p class="modal-items-p">{{ 'list.public' }}</p>
       <n-select
         v-model:value="publishState"
         default-value="not public"
@@ -112,7 +112,7 @@
     </div>
     <div style="width: 100%; text-align: center">
       <n-button :disabled="!spriteNameAllow" @click="handleSubmitSprite()">
-        {{ $t('list.submit') }}
+        {{ 'list.submit' }}
       </n-button>
     </div>
   </n-modal>
@@ -130,7 +130,6 @@ import { fromNativeFile } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import SoundRecorder from '@/components/editor/sound/SoundRecorder.vue'
 import { addAsset, IsPublic, AssetType } from '@/apis/asset'
-import { useI18n } from 'vue-i18n'
 import { isImage, isSound } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
@@ -149,15 +148,12 @@ const message = useMessage()
 const editorCtx = useEditorCtx()
 const { isOnline } = useNetwork()
 
-const { t } = useI18n({
-  inheritLocale: true
-})
 const categoryOptions = computed(() => [
-  { label: t('category.animals'), value: 'Animals' },
-  { label: t('category.people'), value: 'People' },
-  { label: t('category.sports'), value: 'Sports' },
-  { label: t('category.food'), value: 'Food' },
-  { label: t('category.fantasy'), value: 'Fantasy' }
+  { label: 'category.animals', value: 'Animals' },
+  { label: 'category.people', value: 'People' },
+  { label: 'category.sports', value: 'Sports' },
+  { label: 'category.food', value: 'Food' },
+  { label: 'category.fantasy', value: 'Fantasy' }
 ])
 enum PublishState {
   noUpload,
@@ -165,9 +161,9 @@ enum PublishState {
   uploadToPublic
 }
 const publicOptions = computed(() => [
-  { label: t('publicState.notPublish'), value: PublishState.noUpload },
-  { label: t('publicState.private'), value: PublishState.uploadToPersonal },
-  { label: t('publicState.public'), value: PublishState.uploadToPublic }
+  { label: 'publicState.notPublish', value: PublishState.noUpload },
+  { label: 'publicState.private', value: PublishState.uploadToPersonal },
+  { label: 'publicState.public', value: PublishState.uploadToPublic }
 ])
 // ----------data related -----------------------------------
 // Ref about category of upload sprite.
@@ -256,7 +252,7 @@ const beforeUpload = async (
     switch (fileType) {
       case 'backdrop': {
         if (!isImage(fileName)) {
-          message.error(t('message.image'))
+          message.error('message.image')
           return false
         }
         editorCtx.project.stage.setBackdrop(new Backdrop(assetName, file))
@@ -264,18 +260,18 @@ const beforeUpload = async (
       }
       case 'sound': {
         if (!isSound(fileName)) {
-          message.error(t('message.sound'))
+          message.error('message.sound')
           return false
         }
         editorCtx.project.addSound(new Sound(assetName, file))
         break
       }
       default:
-        message.error(t('message.fileType'))
+        message.error('message.fileType')
         return false
     }
   } else {
-    message.error(t('message.other'))
+    message.error('message.other')
     return false
   }
   return true
@@ -315,7 +311,7 @@ const handleWatchFileList = (data: {
 const handleSubmitSprite = async (): Promise<void> => {
   for (const fileItem of uploadFileList.value) {
     if (!isImage(fileItem.name)) {
-      message.error(t('message.image'))
+      message.error('message.image')
       return
     }
   }
@@ -330,7 +326,7 @@ const handleSubmitSprite = async (): Promise<void> => {
     sprite.addCostume(costume)
   }
   editorCtx.project.addSprite(sprite)
-  message.success(t('message.success', { uploadSpriteName: uploadSpriteName.value }))
+  message.success('message.success' + uploadSpriteName.value)
 
   if (publishState.value !== PublishState.noUpload) {
     const assetData = await sprite2Asset(sprite)
