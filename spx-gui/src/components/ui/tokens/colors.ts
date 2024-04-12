@@ -59,16 +59,16 @@ export const green = {
 } as const
 
 export const grey = {
-  100: '#FFFFFF',
-  200: '#FBFCFD',
-  300: '#F6F8FA',
-  400: '#EAEFF3',
-  500: '#D9DFE5',
-  600: '#CBD2D8',
-  700: '#A7B1BB',
-  800: '#6E7781',
-  900: '#57606A',
-  1000: '#24292F'
+  100: '#ffffff',
+  200: '#fbfcfd',
+  300: '#f6f8fa',
+  400: '#eaeff3',
+  500: '#d9dfe5',
+  600: '#cbd2d8',
+  700: '#a7b1bb',
+  800: '#6e7781',
+  900: '#57606a',
+  1000: '#24292f'
 } as const
 
 // Semantic colors
