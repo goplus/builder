@@ -48,7 +48,7 @@ export class Project extends Disposble {
   cTime?: string
   uTime?: string
 
-  hasUnsyncedChanges?: boolean
+  hasUnsyncedChanges = false
 
   stage: Stage
   sprites: Sprite[]
@@ -164,7 +164,6 @@ export class Project extends Disposble {
     sounds.forEach((s) => this.addSound(s))
   }
 
-  /** Export metadata & files */
   private exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
@@ -182,6 +181,13 @@ export class Project extends Disposble {
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export()))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
+    return [metadata, files]
+  }
+
+  /** Export metadata & files */
+  export(): [Metadata, Files] {
+    const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
+    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
     return [metadata, files]
   }
 
@@ -227,21 +233,13 @@ export class Project extends Disposble {
     await this.load(metadata, files)
   }
 
-  export(): [Metadata, Files] {
-    const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
-    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
-    return [metadata, files]
-  }
-
   /** Sync to local cache */
   startWatchToSyncLocalCache(key: string) {
     const saveExports = debounce(() => {
       const [metadata, files] = this.export()
       localHelper.save(key, metadata, files)
     }, 1000)
-    this.addDisposer(
-      watch(() => this.exportWithoutHasUnsyncedChanges(), saveExports, { immediate: true })
-    )
+    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
   }
 
   /** Should be called before `startWatchToSyncLocalCache()` */

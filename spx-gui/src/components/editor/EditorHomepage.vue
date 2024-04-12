@@ -85,7 +85,8 @@ const {
     try {
       localProject = new Project()
       await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
-    } catch {
+    } catch (e) {
+      console.warn('Failed to load project from local cache', e)
       localProject = null
       clear(LOCAL_CACHE_KEY)
     }
