@@ -24,7 +24,6 @@
 // TODO: check if the same top nav is needed for pages other than editor
 
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { NDropdown, NButton, useModal } from 'naive-ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
