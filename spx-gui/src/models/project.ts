@@ -220,25 +220,24 @@ export class Project extends Disposble {
   }
 
   /** Load from local cache */
-  async loadFromLocalCache() {
-    const cached = await localHelper.load()
+  async loadFromLocalCache(key: string) {
+    const cached = await localHelper.load(key)
     if (cached == null) throw new Error('no project in local cache')
     const { metadata, files } = cached
     await this.load(metadata, files)
   }
 
   export(): [Metadata, Files] {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
     metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
     return [metadata, files]
   }
 
   /** Sync to local cache */
-  startWatchToSyncLocalCache() {
+  startWatchToSyncLocalCache(key: string) {
     const saveExports = debounce(() => {
       const [metadata, files] = this.export()
-      localHelper.save(metadata, files)
+      localHelper.save(key, metadata, files)
     }, 1000)
     this.addDisposer(
       watch(() => this.exportWithoutHasUnsyncedChanges(), saveExports, { immediate: true })

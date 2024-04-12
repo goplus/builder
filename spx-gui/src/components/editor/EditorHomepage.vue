@@ -44,6 +44,8 @@ import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
 
+const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
+
 const userStore = useUserStore()
 watchEffect(() => {
   // This will be called on mount and whenever userStore changes,
@@ -82,15 +84,15 @@ const {
     let localProject: Project | null
     try {
       localProject = new Project()
-      await localProject.loadFromLocalCache()
+      await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
     } catch {
       localProject = null
-      clear()
+      clear(LOCAL_CACHE_KEY)
     }
 
     if (localProject && localProject.owner !== userStore.userInfo.name) {
       // Case 4: Different user: Discard local cache
-      clear()
+      clear(LOCAL_CACHE_KEY)
       localProject = null
     }
 
@@ -104,7 +106,7 @@ const {
           openProject(localProject.name!) // FIXME: name should be required?
         } else {
           // Case 3: Clear local cache
-          clear()
+          clear(LOCAL_CACHE_KEY)
         }
         return null
       }
@@ -133,7 +135,7 @@ const {
     }
 
     newProject.startWatchToSetHasUnsyncedChanges()
-    newProject.startWatchToSyncLocalCache()
+    newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
     return newProject
   },
   { en: 'Load project failed', zh: '加载项目失败' }
