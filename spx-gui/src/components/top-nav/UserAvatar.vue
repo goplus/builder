@@ -1,7 +1,7 @@
 <template>
   <div class="user-avatar-wrapper">
     <n-button v-if="!userStore.userInfo" :disabled="!isOnline" @click="signin()">{{
-      _t({ en: 'Sign in', zh: '登录' })
+      $t({ en: 'Sign in', zh: '登录' })
     }}</n-button>
     <n-dropdown
       v-else

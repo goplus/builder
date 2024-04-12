@@ -19,7 +19,7 @@
         v-for="item in completionToolbox"
         :key="item.label"
         :name="item.label"
-        :tab="$t(`toolbox.${item.label}`)"
+        :tab="$t(toolboxTabTranslate[item.label])"
       >
         <n-button
           v-for="(snippet, index) in item.completionItems"
@@ -44,7 +44,16 @@ import {
   controlSnippets,
   soundSnippets
 } from './code-editor'
+import type { LocaleMessage } from '@/utils/i18n'
 const props = defineProps<{ insertSnippet?: (snippet: languages.CompletionItem) => void }>()
+
+const toolboxTabTranslate: Record<string, LocaleMessage> = {
+  event: { en: 'event', zh: '事件' },
+  look: { en: 'look', zh: '外观' },
+  sound: { en: 'sound', zh: '声音' },
+  motion: { en: 'motion', zh: '运动' },
+  control: { en: 'control', zh: '控制' }
+}
 
 let completionToolbox = ref([
   {

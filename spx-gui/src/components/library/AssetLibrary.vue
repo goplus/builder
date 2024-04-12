@@ -3,7 +3,7 @@
     <NInput
       v-model:value="searchInput"
       size="large"
-      :placeholder="_t({ en: 'Search', zh: '搜索' })"
+      :placeholder="$t({ en: 'Search', zh: '搜索' })"
       clearable
       round
       @keypress.enter="handleSearch"
@@ -11,15 +11,15 @@
     <div>
       <NRadioGroup v-model:value="category">
         <NSpace>
-          <NRadio v-for="c in categories" :key="c.value" :value="c.value" :label="_t(c.message)" />
+          <NRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
         </NSpace>
       </NRadioGroup>
     </div>
     <div>
       <NRadioGroup v-model:value="ownerType">
         <NSpace>
-          <NRadio :value="OwnerType.personal" :label="_t({ en: 'Personal', zh: '个人' })" />
-          <NRadio :value="OwnerType.public" :label="_t({ en: 'Public', zh: '公共' })" />
+          <NRadio :value="OwnerType.personal" :label="$t({ en: 'Personal', zh: '个人' })" />
+          <NRadio :value="OwnerType.public" :label="$t({ en: 'Public', zh: '公共' })" />
         </NSpace>
       </NRadioGroup>
     </div>
@@ -29,14 +29,14 @@
       <NSpin size="large" />
     </NSpace>
     <NSpace v-else-if="error != null" justify="center">
-      {{ _t(error.userMessage) }}
-      <button @click="refetch">{{ _t({ en: 'Refresh', zh: '刷新' }) }}</button>
+      {{ $t(error.userMessage) }}
+      <button @click="refetch">{{ $t({ en: 'Refresh', zh: '刷新' }) }}</button>
     </NSpace>
     <NEmpty
       v-else-if="assets!.data.length === 0"
       :show-icon="false"
       size="large"
-      :description="_t({ en: 'There is nothing', zh: '空空如也' })"
+      :description="$t({ en: 'There is nothing', zh: '空空如也' })"
     />
     <ul v-else class="asset-list">
       <li

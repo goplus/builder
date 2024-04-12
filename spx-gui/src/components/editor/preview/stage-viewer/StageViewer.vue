@@ -9,10 +9,38 @@
 <template>
   <div id="stage-viewer">
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
-      <div @click="moveSprite('up')">{{ $t('layer.up') }}</div>
-      <div @click="moveSprite('down')">{{ $t('layer.down') }}</div>
-      <div @click="moveSprite('top')">{{ $t('layer.top') }}</div>
-      <div @click="moveSprite('bottom')">{{ $t('layer.bottom') }}</div>
+      <div @click="moveSprite('up')">
+        {{
+          $t({
+            en: 'Move up',
+            zh: '上移'
+          })
+        }}
+      </div>
+      <div @click="moveSprite('down')">
+        {{
+          $t({
+            en: 'Move down',
+            zh: '下移'
+          })
+        }}
+      </div>
+      <div @click="moveSprite('top')">
+        {{
+          $t({
+            en: 'Move top',
+            zh: '置顶'
+          })
+        }}
+      </div>
+      <div @click="moveSprite('bottom')">
+        {{
+          $t({
+            en: 'Move bottom',
+            zh: '置底'
+          })
+        }}
+      </div>
     </div>
     <v-stage
       ref="stage"

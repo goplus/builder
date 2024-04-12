@@ -24,7 +24,7 @@ export type TranslateFn = InstanceType<typeof I18n>['t']
 // It does work with `vue/runtime-core` instead of `vue` (it's the way vue-router & vue-i18n do)
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
-    _t: TranslateFn
+    $t: TranslateFn
   }
 }
 
@@ -56,7 +56,7 @@ export class I18n implements ObjectPlugin<[]> {
   /** Hook for vue */
   install(app: App<unknown>) {
     app.provide(injectKey, this)
-    app.config.globalProperties._t = this.t
+    app.config.globalProperties.$t = this.t
   }
 }
 

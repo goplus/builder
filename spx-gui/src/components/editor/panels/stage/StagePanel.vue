@@ -1,7 +1,7 @@
 <template>
   <section class="stage-panel">
     <header class="header">
-      {{ _t({ en: 'Stage', zh: '舞台' }) }}
+      {{ $t({ en: 'Stage', zh: '舞台' }) }}
     </header>
     <main class="main">
       <NDropdown trigger="hover" :options="options" @select="handleOption">

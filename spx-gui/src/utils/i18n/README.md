@@ -25,11 +25,9 @@ i18n.setLang('zh')
 
 ```vue
 <button>
-  {{_t({ en: 'Sign in', zh: '登录' })}}
+  {{$t({ en: 'Sign in', zh: '登录' })}}
 </button>
 ```
-
-P.S. To avoid naming conflict with vue-i18n, we named the global property as `_t`. After vue-i18n removed from the project, we will rename it as `$t`.
 
 ### Do translation in setup script
 
