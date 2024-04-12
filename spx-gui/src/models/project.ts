@@ -139,7 +139,7 @@ export class Project extends Disposble {
         sprite.dispose()
       }
     })
-    return reactive(this) as Project
+    return reactive(this) as this
   }
 
   /** Load with metadata & files */
@@ -165,7 +165,7 @@ export class Project extends Disposble {
   }
 
   /** Export metadata & files */
-  exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
+  private exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,

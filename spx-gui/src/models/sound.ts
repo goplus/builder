@@ -49,7 +49,7 @@ export class Sound {
     this.file = file
     // TODO: confirm default values here
     ;(this.rate = inits?.rate ?? 0), (this.sampleCount = inits?.sampleCount ?? 0)
-    return reactive(this)
+    return reactive(this) as this
   }
 
   static async load(name: string, files: Files) {

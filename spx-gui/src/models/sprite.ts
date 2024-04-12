@@ -138,7 +138,7 @@ export class Sprite extends Disposble {
     this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
-    return reactive(this)
+    return reactive(this) as this
   }
 
   static async load(name: string, files: Files) {

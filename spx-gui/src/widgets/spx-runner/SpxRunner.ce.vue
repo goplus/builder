@@ -24,7 +24,7 @@
         <p>{{ fullName(project.owner!, project.name!) }}</p>
       </div>
 
-      <ProjectRunner ref="runner" :project="project" />
+      <ProjectRunner ref="runner" :project="project as Project" />
     </div>
   </div>
 </template>

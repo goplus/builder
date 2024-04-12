@@ -84,7 +84,7 @@ export class Costume {
     this.y = inits?.y ?? 0
     this.faceRight = inits?.faceRight ?? 0
     this.bitmapResolution = inits?.bitmapResolution ?? 1
-    return reactive(this)
+    return reactive(this) as this
   }
 
   static load(
