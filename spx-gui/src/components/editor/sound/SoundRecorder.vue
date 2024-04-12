@@ -9,17 +9,39 @@
         <div ref="waveformContainer" class="recorder-waveform"></div>
       </div>
       <div class="name-input-container">
-        <span class="name-input-hint"> {{ $t('sounds.soundName') }} </span>
+        <span class="name-input-hint">
+          {{
+            _t({
+              en: 'Name',
+              zh: '名称'
+            })
+          }}
+        </span>
       </div>
       <div v-if="!recording && audioBlob" @click="wavesurfer.playPause()">
         <NButton>{{ playing ? 'Pause' : 'Play' }}</NButton>
       </div>
       <div class="button-container">
         <NButton @click="handleRecordingClick">
-          {{ recording ? $t('sounds.stopRecording') : $t('sounds.startRecording') }}
+          {{
+            recording
+              ? _t({
+                  en: 'Stop',
+                  zh: '停止'
+                })
+              : _t({
+                  en: 'Record',
+                  zh: '录音'
+                })
+          }}
         </NButton>
         <NButton :disabled="!audioBlob || recording" @click="saveRecording">
-          {{ $t('sounds.save') }}
+          {{
+            _t({
+              en: 'Save',
+              zh: '保存'
+            })
+          }}
         </NButton>
       </div>
     </div>

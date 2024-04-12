@@ -15,7 +15,14 @@
     </NInputNumber>
   </div>
   <div class="line edit-switch-btn">
-    <p>{{ $t('stage.show') }}:</p>
+    <p>
+      {{
+        _t({
+          en: 'Show',
+          zh: '显示'
+        })
+      }}:
+    </p>
     <n-switch
       v-model:value="sprite.visible"
       @update:value="(visible) => sprite.setVisible(visible)"
@@ -28,7 +35,14 @@
       :value="sprite.size * 100"
       @update:value="(s) => sprite.setSize((s ?? 100) / 100)"
     >
-      <template #prefix> {{ $t('stage.size') }}: </template>
+      <template #prefix>
+        {{
+          _t({
+            en: 'Size',
+            zh: '大小'
+          })
+        }}:
+      </template>
     </NInputNumber>
   </div>
 
@@ -40,7 +54,14 @@
       :value="sprite.heading"
       @update:value="(h) => sprite.setHeading(h ?? 0)"
     >
-      <template #prefix> {{ $t('stage.direction') }}: </template>
+      <template #prefix>
+        {{
+          _t({
+            en: 'Heading',
+            zh: '朝向'
+          })
+        }}:
+      </template>
     </NInputNumber>
   </div>
   <div class="line">

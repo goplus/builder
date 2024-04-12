@@ -12,9 +12,21 @@
     </NLayoutSider>
     <NLayoutContent>
       <div class="code-editor-space">
-        <div class="code-button">{{ $t('component.code') }}</div>
+        <div class="code-button">
+          {{
+            _t({
+              en: 'Code',
+              zh: '代码'
+            })
+          }}
+        </div>
         <div class="formatBtnGroup" size="small">
-          <NButton class="formatBtn" @click="codeEditor?.format">{{ $t('editor.format') }}</NButton>
+          <NButton class="formatBtn" @click="codeEditor?.format">{{
+            _t({
+              en: 'Format',
+              zh: '格式化'
+            })
+          }}</NButton>
         </div>
         <CodeEditor ref="codeEditor" :model-value="value" @update:model-value="onChange" />
       </div>

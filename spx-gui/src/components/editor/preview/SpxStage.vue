@@ -9,9 +9,19 @@
 <template>
   <UIPanel class="spx-stage">
     <div class="header">
-      <div class="stage-button">{{ $t('component.stage') }}</div>
+      <div class="stage-button">
+        {{
+          _t({
+            en: 'Stage',
+            zh: '舞台'
+          })
+        }}
+      </div>
       <n-button class="run-button" type="success" @click="show = true">{{
-        $t('stage.run')
+        _t({
+          en: 'Run',
+          zh: '运行'
+        })
       }}</n-button>
     </div>
     <n-modal v-model:show="show" class="project-runner-modal">

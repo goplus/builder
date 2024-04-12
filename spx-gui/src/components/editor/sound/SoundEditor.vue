@@ -4,7 +4,14 @@
       <div class="sound-edit-content-top">
         <span class="text-sound">
           <NGradientText type="danger">
-            <div class="sounds-hint">{{ $t('sounds.hint') }}</div>
+            <div class="sounds-hint">
+              {{
+                _t({
+                  en: 'Sound',
+                  zh: '声音'
+                })
+              }}
+            </div>
           </NGradientText>
         </span>
       </div>
