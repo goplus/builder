@@ -19,7 +19,7 @@
         v-for="item in completionToolbox"
         :key="item.label"
         :name="item.label"
-        :tab="_t(toolboxTabTranslate[item.label])"
+        :tab="$t(toolboxTabTranslate[item.label])"
       >
         <n-button
           v-for="(snippet, index) in item.completionItems"

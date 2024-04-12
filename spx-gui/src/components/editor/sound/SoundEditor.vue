@@ -6,7 +6,7 @@
           <NGradientText type="danger">
             <div class="sounds-hint">
               {{
-                _t({
+                $t({
                   en: 'Sound',
                   zh: '声音'
                 })

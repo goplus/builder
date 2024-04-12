@@ -11,7 +11,7 @@
       <div class="name-input-container">
         <span class="name-input-hint">
           {{
-            _t({
+            $t({
               en: 'Name',
               zh: '名称'
             })
@@ -25,11 +25,11 @@
         <NButton @click="handleRecordingClick">
           {{
             recording
-              ? _t({
+              ? $t({
                   en: 'Stop',
                   zh: '停止'
                 })
-              : _t({
+              : $t({
                   en: 'Record',
                   zh: '录音'
                 })
@@ -37,7 +37,7 @@
         </NButton>
         <NButton :disabled="!audioBlob || recording" @click="saveRecording">
           {{
-            _t({
+            $t({
               en: 'Save',
               zh: '保存'
             })

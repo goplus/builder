@@ -14,7 +14,7 @@
       <div class="code-editor-space">
         <div class="code-button">
           {{
-            _t({
+            $t({
               en: 'Code',
               zh: '代码'
             })
@@ -22,7 +22,7 @@
         </div>
         <div class="formatBtnGroup" size="small">
           <NButton class="formatBtn" @click="codeEditor?.format">{{
-            _t({
+            $t({
               en: 'Format',
               zh: '格式化'
             })

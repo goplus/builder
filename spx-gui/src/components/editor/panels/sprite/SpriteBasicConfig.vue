@@ -1,7 +1,7 @@
 <template>
   <div class="line">
     <NInput v-model:value="name" @blur="handleNameUpdate">
-      <template #prefix> {{ _t({ en: 'Name', zh: '名字' }) }}: </template>
+      <template #prefix> {{ $t({ en: 'Name', zh: '名字' }) }}: </template>
     </NInput>
   </div>
   <div class="line">
@@ -17,7 +17,7 @@
   <div class="line edit-switch-btn">
     <p>
       {{
-        _t({
+        $t({
           en: 'Show',
           zh: '显示'
         })
@@ -37,7 +37,7 @@
     >
       <template #prefix>
         {{
-          _t({
+          $t({
             en: 'Size',
             zh: '大小'
           })
@@ -56,7 +56,7 @@
     >
       <template #prefix>
         {{
-          _t({
+          $t({
             en: 'Heading',
             zh: '朝向'
           })

@@ -3,8 +3,8 @@
     <NSpin size="large" />
   </NSpace>
   <NSpace v-else-if="error != null" justify="center">
-    {{ _t(error.userMessage) }}
-    <button @click="refetch">{{ _t({ en: 'Refresh', zh: '刷新' }) }}</button>
+    {{ $t(error.userMessage) }}
+    <button @click="refetch">{{ $t({ en: 'Refresh', zh: '刷新' }) }}</button>
   </NSpace>
   <ul v-else>
     <li

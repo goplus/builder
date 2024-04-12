@@ -11,14 +11,14 @@
     <div class="header">
       <div class="stage-button">
         {{
-          _t({
+          $t({
             en: 'Stage',
             zh: '舞台'
           })
         }}
       </div>
       <n-button class="run-button" type="success" @click="show = true">{{
-        _t({
+        $t({
           en: 'Run',
           zh: '运行'
         })

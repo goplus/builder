@@ -1,27 +1,27 @@
 <template>
   <NForm v-bind="form.binds" :model="form.value">
-    <NFormItem :label="_t({ en: 'Asset Name', zh: '素材名' })" path="name">
+    <NFormItem :label="$t({ en: 'Asset Name', zh: '素材名' })" path="name">
       <NInput v-model:value="form.value.name" />
     </NFormItem>
-    <NFormItem :label="_t({ en: 'Category', zh: '素材类别' })" path="category">
+    <NFormItem :label="$t({ en: 'Category', zh: '素材类别' })" path="category">
       <NRadioGroup v-model:value="form.value.category">
         <NSpace>
-          <NRadio v-for="c in categories" :key="c.value" :value="c.value" :label="_t(c.message)" />
+          <NRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
         </NSpace>
       </NRadioGroup>
     </NFormItem>
     <NFormItem
-      :label="_t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
+      :label="$t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
       path="isPublic"
     >
       <NCheckbox v-model:checked="form.value.isPublic" />
     </NFormItem>
     <NFormItem>
       <NButton type="tertiary" @click="handleCancel">
-        {{ _t({ en: 'Cancel', zh: '取消' }) }}
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </NButton>
       <NButton type="primary" @click="handleSubmit">
-        {{ _t({ en: 'Create', zh: '创建' }) }}
+        {{ $t({ en: 'Create', zh: '创建' }) }}
       </NButton>
     </NFormItem>
   </NForm>

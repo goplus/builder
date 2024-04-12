@@ -3,17 +3,17 @@
     <span class="logo">Go+ Builder</span>
     <div class="project-dropdown">
       <NDropdown trigger="hover" :options="projectOptions" @select="handleProjectOption">
-        {{ _t({ en: 'Project', zh: '项目' }) }}
+        {{ $t({ en: 'Project', zh: '项目' }) }}
       </NDropdown>
     </div>
     <div class="setting-dropdown">
       <NDropdown trigger="hover" :options="settingOptions" @select="handleSettingOption">
-        {{ _t({ en: 'Setting', zh: '设置' }) }}
+        {{ $t({ en: 'Setting', zh: '设置' }) }}
       </NDropdown>
     </div>
     <p class="project-name">{{ props.project?.name }}</p>
     <NButton v-if="props.project != null" :disabled="!isOnline" class="save" @click="handleSave">{{
-      _t({ en: 'Save', zh: '保存' })
+      $t({ en: 'Save', zh: '保存' })
     }}</NButton>
     <UserAvatar />
   </nav>

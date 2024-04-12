@@ -11,7 +11,7 @@
     <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
       <div @click="moveSprite('up')">
         {{
-          _t({
+          $t({
             en: 'Move up',
             zh: '上移'
           })
@@ -19,7 +19,7 @@
       </div>
       <div @click="moveSprite('down')">
         {{
-          _t({
+          $t({
             en: 'Move down',
             zh: '下移'
           })
@@ -27,7 +27,7 @@
       </div>
       <div @click="moveSprite('top')">
         {{
-          _t({
+          $t({
             en: 'Move top',
             zh: '置顶'
           })
@@ -35,7 +35,7 @@
       </div>
       <div @click="moveSprite('bottom')">
         {{
-          _t({
+          $t({
             en: 'Move bottom',
             zh: '置底'
           })

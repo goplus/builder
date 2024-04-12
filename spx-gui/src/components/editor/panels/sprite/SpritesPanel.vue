@@ -1,7 +1,7 @@
 <template>
   <section v-show="props.active" class="sprites-details">
     <header class="header">
-      {{ _t({ en: 'Sprites', zh: '精灵' }) }}
+      {{ $t({ en: 'Sprites', zh: '精灵' }) }}
       <NDropdown trigger="hover" :options="addOptions" @select="handleAddOption">
         <span class="add">+</span>
       </NDropdown>

@@ -9,7 +9,7 @@
           <NSpin size="large" />
         </div>
         <div v-else-if="error != null">
-          {{ _t(error.userMessage) }}
+          {{ $t(error.userMessage) }}
         </div>
         <EditorContextProvider
           v-else-if="project != null"

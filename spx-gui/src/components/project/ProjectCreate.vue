@@ -1,14 +1,14 @@
 <template>
   <NForm v-bind="form.binds" :model="form.value">
-    <NFormItem :label="_t({ en: 'Project Name', zh: '项目名' })" path="name">
+    <NFormItem :label="$t({ en: 'Project Name', zh: '项目名' })" path="name">
       <NInput v-model:value="form.value.name" />
     </NFormItem>
     <NFormItem>
       <NButton type="tertiary" @click="handleCancel">
-        {{ _t({ en: 'Cancel', zh: '取消' }) }}
+        {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </NButton>
       <NButton type="primary" @click="handleSubmit">
-        {{ _t({ en: 'Create', zh: '创建' }) }}
+        {{ $t({ en: 'Create', zh: '创建' }) }}
       </NButton>
     </NFormItem>
   </NForm>
