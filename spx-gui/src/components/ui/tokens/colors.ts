@@ -68,7 +68,7 @@ export const grey = {
   700: '#A7B1BB',
   800: '#6E7781',
   900: '#57606A',
-  1000: '#24292F',
+  1000: '#24292F'
 } as const
 
 // Semantic colors
@@ -100,7 +100,7 @@ export const hint = {
   /** Color for hint text, while darker */
   1: grey[800],
   /** Color for hint text, while lighter */
-  2: grey[700],
+  2: grey[700]
 } as const
 
 export const tagBorder = grey[600]
@@ -110,5 +110,5 @@ export const dividingLine = {
   /** Color for dividing line, while darker */
   1: grey[500],
   /** Color for dividing line, while lighter */
-  2: grey[400],
+  2: grey[400]
 } as const

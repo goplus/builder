@@ -1,5 +1,9 @@
 <template>
-  <NConfigProvider class="ui-config-provider" :theme-overrides="themeOverrides" :style="cssVariables">
+  <NConfigProvider
+    class="ui-config-provider"
+    :theme-overrides="themeOverrides"
+    :style="cssVariables"
+  >
     <slot></slot>
   </NConfigProvider>
 </template>
@@ -34,7 +38,7 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadow3: uiVariables.boxShadow.diffusion,
 
     borderRadiusSmall: uiVariables.borderRadius[1],
-    borderRadius: uiVariables.borderRadius[2],
+    borderRadius: uiVariables.borderRadius[2]
   },
   Button: {
     // TODO: more

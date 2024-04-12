@@ -16,23 +16,26 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup>
-            <UIMenuItem :disabled="props.project == null" @click="handleImportProjectFile">
+            <UIMenuItem :disabled="project == null" @click="handleImportProjectFile">
               {{ t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
             </UIMenuItem>
-            <UIMenuItem :disabled="props.project == null" @click="handleExportProjectFile">
+            <UIMenuItem :disabled="project == null" @click="handleExportProjectFile">
               {{ t({ en: 'Export project file', zh: '导出项目文件' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup>
-            <UIMenuItem :disabled="props.project == null" @click="handleImportFromScratch">
+            <UIMenuItem :disabled="project == null" @click="handleImportFromScratch">
               {{ t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup>
-            <UIMenuItem :disabled="props.project == null || !isOnline" @click="handleShareProject">
+            <UIMenuItem :disabled="project == null || !isOnline" @click="shareProject(project!)">
               {{ t({ en: 'Share project', zh: '分享项目' }) }}
             </UIMenuItem>
-            <UIMenuItem v-if="project?.isPublic === IsPublic.public" @click="handleStopSharingProject">
+            <UIMenuItem
+              v-if="project?.isPublic === IsPublic.public"
+              @click="stopSharingProject(project!)"
+            >
               {{ t({ en: 'Stop sharing', zh: '停止分享' }) }}
             </UIMenuItem>
           </UIMenuGroup>
@@ -44,10 +47,15 @@
         {{ $t({ en: 'Setting', zh: '设置' }) }}
       </NDropdown>
     </div>
-    <p class="project-name">{{ props.project?.name }}</p>
-    <UIButton v-if="props.project != null" type="boring" :disabled="!isOnline" class="save" @click="handleSave">{{
-      $t({ en: 'Save', zh: '保存' })
-    }}</UIButton>
+    <p class="project-name">{{ project?.name }}</p>
+    <UIButton
+      v-if="project != null"
+      type="boring"
+      :disabled="!isOnline"
+      class="save"
+      @click="handleSave"
+      >{{ $t({ en: 'Save', zh: '保存' }) }}</UIButton
+    >
     <UserAvatar />
   </nav>
 </template>
@@ -129,14 +137,6 @@ async function handleImportFromScratch() {
     preset: 'dialog',
     content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
   })
-}
-
-async function handleShareProject() {
-  await shareProject(props.project!)
-}
-
-async function handleStopSharingProject() {
-  await stopSharingProject(props.project!)
 }
 
 const toggleLanguage = useToggleLanguage()

@@ -5,11 +5,14 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  disabled?: boolean
-}>(), {
-  disabled: false
-})
+withDefaults(
+  defineProps<{
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
 </script>
 
 <style lang="scss" scoped>

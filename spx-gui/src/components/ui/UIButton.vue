@@ -7,11 +7,14 @@
 <script setup lang="ts">
 type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 
-const props = withDefaults(defineProps<{
-  type?: ButtonType
-}>(), {
-  type: 'primary'
-})
+withDefaults(
+  defineProps<{
+    type?: ButtonType
+  }>(),
+  {
+    type: 'primary'
+  }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -31,7 +34,8 @@ const props = withDefaults(defineProps<{
     border-bottom-width: 0;
   }
 
-  &:disabled, &:disabled:hover {
+  &:disabled,
+  &:disabled:hover {
     cursor: not-allowed;
     color: var(--ui-color-grey-600);
     background-color: var(--ui-color-disabled);
@@ -60,5 +64,4 @@ const props = withDefaults(defineProps<{
 }
 
 // TODO: other types
-
 </style>
