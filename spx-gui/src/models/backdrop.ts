@@ -26,7 +26,7 @@ export class Backdrop extends Costume {
   constructor(nameBase: string, file: File, inits?: BackdropInits) {
     nameBase = getBackdropName(null, nameBase)
     super(nameBase, file, inits)
-    return reactive(this)
+    return reactive(this) as this
   }
 
   static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {

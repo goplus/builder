@@ -42,8 +42,9 @@ import { getProjectEditorRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
+import { clear } from '@/models/common/local'
 
-const localCacheKey = 'TODO_GOPLUS_BUILDER_CACHED_PROJECT'
+const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 watchEffect(() => {
@@ -60,6 +61,18 @@ const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
+const askOpenNew = (cached: Project, targetName: string) => {
+  return confirm(
+    `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`
+  )
+}
+
+const askOpenCached = (cached: Project) => {
+  return confirm(
+    `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`
+  )
+}
+
 const {
   data: project,
   isFetching: isLoading,
@@ -67,11 +80,63 @@ const {
 } = useQuery(
   async () => {
     if (userStore.userInfo == null) return null
-    if (projectName.value == null) return null
-    // TODO: UI logic to handle conflicts when there are local cache
-    const newProject = new Project()
+
+    let localProject: Project | null
+    try {
+      localProject = new Project()
+      await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
+    } catch (e) {
+      console.warn('Failed to load project from local cache', e)
+      localProject = null
+      clear(LOCAL_CACHE_KEY)
+    }
+
+    if (localProject && localProject.owner !== userStore.userInfo.name) {
+      // Case 4: Different user: Discard local cache
+      clear(LOCAL_CACHE_KEY)
+      localProject = null
+    }
+
+    // https://github.com/goplus/builder/issues/259
+    // Local Cache Saving & Restoring
+    if (localProject?.hasUnsyncedChanges) {
+      if (!projectName.value) {
+        if (askOpenCached(localProject)) {
+          // Case 3: User has a project in the cache but not opening any project:
+          // Open the saved project
+          openProject(localProject.name!) // FIXME: name should be required?
+        } else {
+          // Case 3: Clear local cache
+          clear(LOCAL_CACHE_KEY)
+        }
+        return null
+      }
+
+      if (localProject.name !== projectName.value) {
+        if (askOpenNew(localProject, projectName.value)) {
+          // Case 2: User has a project in the cache but not opening the project in the cache:
+          // asked to open the saved project
+          openProject(localProject.name!)
+          return null
+        }
+        // Case 2 fallthrough: Let the project to be loaded from cloud
+      }
+    }
+
+    if (!projectName.value) return null
+    let newProject = new Project()
     await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
-    newProject.syncToLocalCache(localCacheKey)
+
+    if (localProject?.hasUnsyncedChanges) {
+      if (newProject.version <= localProject.version && askOpenCached(localProject)) {
+        // Case 1: User has a project in the cache and opening the same project:
+        // asked to open the saved project
+        newProject = localProject
+      }
+    }
+
+    newProject.startWatchToSetHasUnsyncedChanges()
+    newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
     return newProject
   },
   { en: 'Load project failed', zh: '加载项目失败' }
@@ -88,8 +153,24 @@ watch(
   }
 )
 
+watchEffect((onCleanup) => {
+  const f = (event: BeforeUnloadEvent) => {
+    if (project.value?.hasUnsyncedChanges) {
+      // impossible to show a custom message
+      event.preventDefault()
+    }
+  }
+
+  window.addEventListener('beforeunload', f)
+  onCleanup(() => {
+    window.removeEventListener('beforeunload', f)
+  })
+})
+
 function openProject(projectName: string) {
-  router.push(getProjectEditorRoute(projectName))
+  // FIXME: Vue's router.push does not cause the useQuery hook to re-run.
+  // We have to use location.assign to force a full page reload.
+  location.assign(getProjectEditorRoute(projectName))
 }
 
 function handleSelected(project: ProjectData) {

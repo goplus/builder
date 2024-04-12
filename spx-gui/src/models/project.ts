@@ -27,6 +27,7 @@ export type Metadata = {
   version?: number
   cTime?: string
   uTime?: string
+  hasUnsyncedChanges?: boolean
 }
 
 const projectConfigFileName = 'index.json'
@@ -43,9 +44,11 @@ export class Project extends Disposble {
   owner?: string
   name?: string
   isPublic?: IsPublic
-  version?: number
+  version = 0
   cTime?: string
   uTime?: string
+
+  hasUnsyncedChanges = false
 
   stage: Stage
   sprites: Sprite[]
@@ -136,7 +139,7 @@ export class Project extends Disposble {
         sprite.dispose()
       }
     })
-    return reactive(this) as Project
+    return reactive(this) as this
   }
 
   /** Load with metadata & files */
@@ -161,8 +164,7 @@ export class Project extends Disposble {
     sounds.forEach((s) => this.addSound(s))
   }
 
-  /** Export metadata & files */
-  export(): [Metadata, Files] {
+  private exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,
@@ -179,6 +181,13 @@ export class Project extends Disposble {
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export()))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
+    return [metadata, files]
+  }
+
+  /** Export metadata & files */
+  export(): [Metadata, Files] {
+    const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
+    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
     return [metadata, files]
   }
 
@@ -213,22 +222,36 @@ export class Project extends Disposble {
     const [metadata, files] = this.export()
     const res = await cloudHelper.save(metadata, files)
     await this.load(res.metadata, res.files)
+    this.hasUnsyncedChanges = false
   }
 
   /** Load from local cache */
-  async loadFromLocalCache(cacheKey: string) {
-    const cached = await localHelper.load(cacheKey)
+  async loadFromLocalCache(key: string) {
+    const cached = await localHelper.load(key)
     if (cached == null) throw new Error('no project in local cache')
     const { metadata, files } = cached
     await this.load(metadata, files)
   }
 
   /** Sync to local cache */
-  syncToLocalCache(cacheKey: string) {
-    const saveExports = debounce(([metadata, files]: [Metadata, Files]) => {
-      localHelper.save(cacheKey, metadata, files)
+  startWatchToSyncLocalCache(key: string) {
+    const saveExports = debounce(() => {
+      const [metadata, files] = this.export()
+      localHelper.save(key, metadata, files)
     }, 1000)
     this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
+  }
+
+  /** Should be called before `startWatchToSyncLocalCache()` */
+  startWatchToSetHasUnsyncedChanges() {
+    this.addDisposer(
+      watch(
+        () => this.exportWithoutHasUnsyncedChanges(),
+        () => {
+          this.hasUnsyncedChanges = true
+        }
+      )
+    )
   }
 }
 

@@ -133,7 +133,7 @@ export class Stage {
     this.mapWidth = inits?.mapWidth
     this.mapHeight = inits?.mapHeight
     this.mapMode = getMapMode(inits?.mapMode)
-    return reactive(this)
+    return reactive(this) as this
   }
 
   static async load({ scenes: sceneConfigs, sceneIndex, map }: RawStageConfig, files: Files) {

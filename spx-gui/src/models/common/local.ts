@@ -47,7 +47,7 @@ async function removeFile(key: string, path: string) {
   await storage.removeItem(`${key}/${path}`)
 }
 
-async function clear(key: string) {
+export async function clear(key: string) {
   const metadataEx = await getMetadataEx(key)
   if (metadataEx == null) return
   await Promise.all([

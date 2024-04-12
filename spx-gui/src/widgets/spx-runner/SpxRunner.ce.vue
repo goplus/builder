@@ -32,12 +32,13 @@
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { ref, defineProps, watch } from 'vue'
 import { Project, fullName } from '@/models/project'
+import { shallowRef } from 'vue'
 const props = defineProps<{ owner?: string; name?: string }>()
 const runner = ref()
 const run = ref(false)
 const ready = ref(false)
 const errorMsg = ref('')
-const project = ref<Project>(new Project())
+const project = shallowRef(new Project())
 watch(
   () => [props.owner, props.name],
   async ([owner, name]) => {
