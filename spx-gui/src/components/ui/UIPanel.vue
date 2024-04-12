@@ -6,10 +6,10 @@
 
 <script setup lang="ts"></script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .ui-panel {
   box-shadow: var(--ui-box-shadow-1);
-  border-radius: var(--ui-border-radius);
-  background-color: #fff; /** TODO: define as var */
+  border-radius: var(--ui-border-radius-3);
+  background-color: var(--ui-color-grey-100);
 }
 </style>

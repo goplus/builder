@@ -2,19 +2,60 @@
   <nav class="top-nav">
     <span class="logo">Go+ Builder</span>
     <div class="project-dropdown">
-      <NDropdown trigger="hover" :options="projectOptions" @select="handleProjectOption">
-        {{ $t({ en: 'Project', zh: '项目' }) }}
-      </NDropdown>
+      <UIDropdown>
+        <template #trigger>
+          {{ $t({ en: 'Project', zh: '项目' }) }}
+        </template>
+        <UIMenu>
+          <UIMenuGroup>
+            <UIMenuItem :disabled="!isOnline" @click="handleNewProject">
+              {{ t({ en: 'New project', zh: '新建项目' }) }}
+            </UIMenuItem>
+            <UIMenuItem :disabled="!isOnline" @click="handleOpenProject">
+              {{ t({ en: 'Open project...', zh: '打开项目...' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup>
+            <UIMenuItem :disabled="project == null" @click="handleImportProjectFile">
+              {{ t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
+            </UIMenuItem>
+            <UIMenuItem :disabled="project == null" @click="handleExportProjectFile">
+              {{ t({ en: 'Export project file', zh: '导出项目文件' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup>
+            <UIMenuItem :disabled="project == null" @click="handleImportFromScratch">
+              {{ t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup>
+            <UIMenuItem :disabled="project == null || !isOnline" @click="shareProject(project!)">
+              {{ t({ en: 'Share project', zh: '分享项目' }) }}
+            </UIMenuItem>
+            <UIMenuItem
+              v-if="project?.isPublic === IsPublic.public"
+              @click="stopSharingProject(project!)"
+            >
+              {{ t({ en: 'Stop sharing', zh: '停止分享' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+        </UIMenu>
+      </UIDropdown>
     </div>
     <div class="setting-dropdown">
       <NDropdown trigger="hover" :options="settingOptions" @select="handleSettingOption">
         {{ $t({ en: 'Setting', zh: '设置' }) }}
       </NDropdown>
     </div>
-    <p class="project-name">{{ props.project?.name }}</p>
-    <NButton v-if="props.project != null" :disabled="!isOnline" class="save" @click="handleSave">{{
-      $t({ en: 'Save', zh: '保存' })
-    }}</NButton>
+    <p class="project-name">{{ project?.name }}</p>
+    <UIButton
+      v-if="project != null"
+      type="boring"
+      :disabled="!isOnline"
+      class="save"
+      @click="handleSave"
+      >{{ $t({ en: 'Save', zh: '保存' }) }}</UIButton
+    >
     <UserAvatar />
   </nav>
 </template>
@@ -23,8 +64,9 @@
 // if this top-nav is for editor only, we should move it into editor
 // TODO: check if the same top nav is needed for pages other than editor
 
-import { computed } from 'vue'
-import { NDropdown, NButton, useModal } from 'naive-ui'
+import { h, computed } from 'vue'
+import { NDropdown, useModal } from 'naive-ui'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useToggleLanguage } from '@/i18n'
@@ -43,7 +85,6 @@ import {
 import UserAvatar from './UserAvatar.vue'
 import LoadFromScratch from '../library/LoadFromScratch.vue'
 import { parseScratchFileAssets } from '@/utils/scratch'
-import { h } from 'vue'
 
 const props = defineProps<{
   project: Project | null
@@ -64,92 +105,38 @@ function openProject(projectName: string) {
   location.assign(getProjectEditorRoute(projectName))
 }
 
-const projectOptions = computed(() => {
-  const options = [
-    {
-      key: 'newProject',
-      label: t({ en: 'New project', zh: '新建项目' }),
-      disabled: !isOnline.value,
-      async handler() {
-        const { name } = await createProject()
-        openProject(name)
-      }
-    },
-    {
-      key: 'openProject',
-      label: t({ en: 'Open project...', zh: '打开项目...' }),
-      disabled: !isOnline.value,
-      async handler() {
-        const { name } = await chooseProject()
-        openProject(name)
-      }
-    },
-    {
-      key: 'importProjectFile',
-      label: t({ en: 'Import project file...', zh: '导入项目文件...' }),
-      disabled: props.project == null,
-      async handler() {
-        const file = await selectFile({ accept: '.zip' })
-        await props.project!.loadZipFile(file)
-      }
-    },
-    {
-      key: 'exportProjectFile',
-      label: t({ en: 'Export project file', zh: '导出项目文件' }),
-      disabled: props.project == null,
-      async handler() {
-        const zipFile = await props.project!.exportZipFile()
-        saveAs(zipFile, zipFile.name) // TODO: what if user cancelled download?
-      }
-    },
-    {
-      key: 'importFromScratch',
-      label: t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }),
-      disabled: props.project == null,
-      async handler() {
-        const project = props.project
-        if (!project) {
-          return
-        }
-        const file = await selectFile({ accept: '.sb3' })
-        const exportedScratchAssets = await parseScratchFileAssets(file)
-        importFromScratchModal.create({
-          title: t({ en: 'Import from Scratch', zh: '从 Scratch 导入' }),
-          preset: 'dialog',
-          content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
-        })
-      }
-    },
-    {
-      key: 'shareProject',
-      label: t({ en: 'Share project', zh: '分享项目' }),
-      disabled: props.project == null || !isOnline.value,
-      async handler() {
-        await shareProject(props.project!)
-      }
-    }
-  ]
-  if (props.project?.isPublic === IsPublic.public) {
-    options.push({
-      key: 'stopSharingProject',
-      label: t({ en: 'Stop sharing', zh: '停止分享' }),
-      disabled: !isOnline.value,
-      async handler() {
-        await stopSharingProject(props.project!)
-      }
-    })
-  }
-  return options
-})
+async function handleNewProject() {
+  const { name } = await createProject()
+  openProject(name)
+}
 
-function handleProjectOption(key: string) {
-  for (const option of projectOptions.value) {
-    if (option.key === key) {
-      option.handler()
-      return
-    }
+async function handleOpenProject() {
+  const { name } = await chooseProject()
+  openProject(name)
+}
+
+async function handleImportProjectFile() {
+  const file = await selectFile({ accept: '.zip' })
+  await props.project!.loadZipFile(file)
+}
+
+async function handleExportProjectFile() {
+  const zipFile = await props.project!.exportZipFile()
+  saveAs(zipFile, zipFile.name) // TODO: what if user cancelled download?
+}
+
+async function handleImportFromScratch() {
+  const project = props.project
+  if (!project) {
+    return
   }
-  throw new Error(`unknown option key: ${key}`)
+  const file = await selectFile({ accept: '.sb3' })
+  const exportedScratchAssets = await parseScratchFileAssets(file)
+  importFromScratchModal.create({
+    title: t({ en: 'Import from Scratch', zh: '从 Scratch 导入' }),
+    preset: 'dialog',
+    content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
+  })
 }
 
 const toggleLanguage = useToggleLanguage()
@@ -190,7 +177,8 @@ const handleSave = useMessageHandle(
   flex-direction: row;
   align-items: center;
 
-  background: var(--ui-primary-color);
+  color: var(--ui-color-grey-100);
+  background: var(--ui-color-primary-main);
   height: 34px;
   padding: 13px;
 }
