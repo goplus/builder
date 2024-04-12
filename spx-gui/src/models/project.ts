@@ -165,7 +165,7 @@ export class Project extends Disposble {
   }
 
   /** Export metadata & files */
-  exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
+  private exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,
