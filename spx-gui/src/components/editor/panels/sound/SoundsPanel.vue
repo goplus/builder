@@ -10,7 +10,7 @@
       @remove="handleRemoveSound(asset)"
     />
   </div>
-  <div v-show="!props.active" class="sounds-overview">Sounds</div>
+  <UIPanelHeader v-show="!props.active">Sounds</UIPanelHeader>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +20,7 @@ import type { Sound } from '@/models/sound'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 import SoundEditCard from '@/components/editor/sound/SoundEditCard.vue'
 import { NInput } from 'naive-ui'
+import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
 
 const editorCtx = useEditorCtx()
 
@@ -36,10 +37,4 @@ const handleRemoveSound = (asset: Sound) => {
 }
 </script>
 
-<style scoped lang="scss">
-.sounds-details {
-}
-.sounds-overview {
-  width: 60px;
-}
-</style>
+<style scoped lang="scss"></style>

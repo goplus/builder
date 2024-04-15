@@ -1,6 +1,6 @@
 <template>
   <UIPanel class="container">
-    <div class="tab">TODO: Tab Placeholder</div>
+    <UIPanelHeader> TODO: Tab Placeholder</UIPanelHeader>
     <SoundEditor v-if="editorCtx.selected?.type === 'sound'" />
     <SpriteEditor v-else-if="editorCtx.selectedSprite != null" :sprite="editorCtx.selectedSprite" />
     <StageEditor
@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import UIPanel from '../ui/UIPanel.vue'
+import UIPanelHeader from '../ui/UIPanelHeader.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
@@ -24,10 +25,5 @@ const editorCtx = useEditorCtx()
 <style scoped lang="scss">
 .container {
   flex: 1;
-}
-
-.tab {
-  height: 40px;
-  background: #aaa;
 }
 </style>

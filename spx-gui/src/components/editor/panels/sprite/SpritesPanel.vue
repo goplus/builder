@@ -1,11 +1,13 @@
 <template>
   <section v-show="props.active" class="sprites-details">
-    <header class="header">
-      {{ $t({ en: 'Sprites', zh: '精灵' }) }}
-      <NDropdown trigger="hover" :options="addOptions" @select="handleAddOption">
-        <span class="add">+</span>
-      </NDropdown>
-    </header>
+    <UIPanelHeader>
+      <header class="header">
+        {{ $t({ en: 'Sprites', zh: '精灵' }) }}
+        <NDropdown trigger="hover" :options="addOptions" @select="handleAddOption">
+          <span class="add">+</span>
+        </NDropdown>
+      </header>
+    </UIPanelHeader>
     <ul class="sprite-list">
       <SpriteItem
         v-for="sprite in sprites"
@@ -38,6 +40,7 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
+import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
 
 const props = defineProps<{
   active: boolean
@@ -109,10 +112,6 @@ function handleAddOption(key: string) {
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.header {
-  padding: 0.5em 1em;
 }
 
 .add {

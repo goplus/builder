@@ -1,8 +1,8 @@
 <template>
   <section class="stage-panel">
-    <header class="header">
+    <UIPanelHeader>
       {{ $t({ en: 'Stage', zh: '舞台' }) }}
-    </header>
+    </UIPanelHeader>
     <main class="main">
       <NDropdown trigger="hover" :options="options" @select="handleOption">
         <div class="overview" :class="{ active: isSelected }" @click="select">
@@ -29,6 +29,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
 
 const { t } = useI18n()
 const editorCtx = useEditorCtx()
@@ -88,13 +89,6 @@ function handleAddToLibrary() {
 </script>
 
 <style scoped lang="scss">
-.stage-panel {
-}
-
-.header {
-  padding: 0.5em 1em;
-}
-
 .overview {
   display: flex;
   flex-direction: column;

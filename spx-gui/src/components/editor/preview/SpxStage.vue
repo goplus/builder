@@ -8,7 +8,7 @@
 -->
 <template>
   <UIPanel class="spx-stage">
-    <div class="header">
+    <UIPanelHeader>
       <div class="stage-button">
         {{
           $t({
@@ -17,13 +17,13 @@
           })
         }}
       </div>
-      <n-button class="run-button" type="success" @click="show = true">{{
+      <UIButton class="run-button" type="success" @click="show = true">{{
         $t({
           en: 'Run',
           zh: '运行'
         })
-      }}</n-button>
-    </div>
+      }}</UIButton>
+    </UIPanelHeader>
     <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
     </n-modal>
@@ -44,11 +44,13 @@
 import { ref, watch, computed } from 'vue'
 import { UIPanel } from '@/components/ui'
 import { useSize } from '@/utils/dom'
-import { NButton, NModal } from 'naive-ui'
+import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'
+import UIButton from '@/components/ui/UIButton.vue'
+import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
 
 let show = ref(false)
 
@@ -91,24 +93,6 @@ watch(
     justify-content: space-between;
   }
 
-  .stage-button {
-    background: rgba(90, 196, 236, 0.4);
-    width: 80px;
-    height: auto;
-    text-align: center;
-    font-size: 18px;
-    border: 2px solid #00142970;
-    border-radius: 0 0 10px 10px;
-    z-index: 2;
-  }
-
-  .run-button {
-    width: auto;
-    border: 2px solid #00142970;
-    border-radius: 16px;
-    z-index: 100;
-  }
-
   .show {
     flex: 1;
     text-align: center;
@@ -125,6 +109,11 @@ watch(
     justify-content: center;
   }
 }
+
+.stage-button {
+  flex: 1;
+}
+
 .project-runner-modal {
   margin-left: 32px;
   margin-right: 32px;
