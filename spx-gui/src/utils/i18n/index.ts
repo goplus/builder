@@ -32,7 +32,7 @@ const injectKey: InjectionKey<I18n> = Symbol('i18n')
 
 export class I18n implements ObjectPlugin<[]> {
   /** Current language */
-  private lang: Ref<Lang>
+  lang: Ref<Lang>
 
   constructor({ lang }: I18nConfig) {
     this.lang = ref(lang)
