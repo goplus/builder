@@ -29,7 +29,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
+import { UIPanelHeader } from '@/components/ui'
 
 const { t } = useI18n()
 const editorCtx = useEditorCtx()

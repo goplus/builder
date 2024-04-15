@@ -50,7 +50,7 @@ import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'
 import UIButton from '@/components/ui/UIButton.vue'
-import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
+import { UIPanelHeader } from '@/components/ui'
 
 let show = ref(false)
 

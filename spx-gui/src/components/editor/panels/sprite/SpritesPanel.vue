@@ -40,7 +40,7 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
-import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
+import { UIPanelHeader } from '@/components/ui'
 
 const props = defineProps<{
   active: boolean

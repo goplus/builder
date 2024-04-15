@@ -1,5 +1,6 @@
 export { default as UIConfigProvider, useUIVariables } from './UIConfigProvider.vue'
 export { default as UIPanel } from './UIPanel.vue'
+export { default as UIPanelHeader } from './UIPanelHeader.vue'
 export { default as UIButton } from './UIButton.vue'
 export { default as UIDropdown } from './UIDropdown.vue'
 export { UIMenu, UIMenuGroup, UIMenuItem } from './menu'

@@ -20,7 +20,7 @@ import type { Sound } from '@/models/sound'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 import SoundEditCard from '@/components/editor/sound/SoundEditCard.vue'
 import { NInput } from 'naive-ui'
-import UIPanelHeader from '@/components/ui/UIPanelHeader.vue'
+import { UIPanelHeader } from '@/components/ui'
 
 const editorCtx = useEditorCtx()
 

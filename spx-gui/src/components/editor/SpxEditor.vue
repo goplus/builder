@@ -12,8 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import UIPanel from '../ui/UIPanel.vue'
-import UIPanelHeader from '../ui/UIPanelHeader.vue'
+import { UIPanel, UIPanelHeader } from '@/components/ui'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
