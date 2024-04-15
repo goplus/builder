@@ -1,12 +1,10 @@
 <template>
-  <div class="ui-dropdown">
-    <NPopover class="ui-dropdown-content" trigger="hover" raw :to="attachTo">
-      <template #trigger>
-        <slot name="trigger"></slot>
-      </template>
-      <slot></slot>
-    </NPopover>
-  </div>
+  <NPopover class="ui-dropdown-content" trigger="hover" raw :to="attachTo" :show-arrow="false">
+    <template #trigger>
+      <slot name="trigger"></slot>
+    </template>
+    <slot></slot>
+  </NPopover>
 </template>
 
 <script setup lang="ts">
@@ -22,10 +20,7 @@ onMounted(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.ui-dropdown {
-}
-</style>
+<style lang="scss" scoped></style>
 
 <style lang="scss">
 /*
@@ -35,6 +30,6 @@ onMounted(() => {
 .ui-dropdown-content {
   border-radius: var(--ui-border-radius-1);
   background-color: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-2);
+  box-shadow: var(--ui-box-shadow-diffusion);
 }
 </style>
