@@ -1,5 +1,5 @@
 <template>
-  <UIPanel class="container">
+  <UICard class="container">
     <UIPanelHeader> TODO: Tab Placeholder</UIPanelHeader>
     <SoundEditor v-if="editorCtx.selected?.type === 'sound'" />
     <SpriteEditor v-else-if="editorCtx.selectedSprite != null" :sprite="editorCtx.selectedSprite" />
@@ -8,11 +8,11 @@
       :stage="editorCtx.project.stage"
     />
     <div v-else>TODO</div>
-  </UIPanel>
+  </UICard>
 </template>
 
 <script setup lang="ts">
-import { UIPanel, UIPanelHeader } from '@/components/ui'
+import { UICard, UIPanelHeader } from '@/components/ui'
 import { useEditorCtx } from './EditorContextProvider.vue'
 import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'

@@ -7,7 +7,7 @@
  * @Description:
 -->
 <template>
-  <UIPanel class="spx-stage">
+  <UICard class="spx-stage">
     <UIPanelHeader>
       <div class="stage-button">
         {{
@@ -37,12 +37,12 @@
         @on-selected-sprites-change="onSelectedSpritesChange"
       ></StageViewer>
     </div>
-  </UIPanel>
+  </UICard>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
-import { UIPanel } from '@/components/ui'
+import { UICard } from '@/components/ui'
 import { useSize } from '@/utils/dom'
 import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
