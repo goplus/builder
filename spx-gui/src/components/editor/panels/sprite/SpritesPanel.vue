@@ -1,13 +1,13 @@
 <template>
   <section v-show="props.active" class="sprites-details">
-    <UIPanelHeader>
+    <UICardHeader>
       <header class="header">
         {{ $t({ en: 'Sprites', zh: '精灵' }) }}
         <NDropdown trigger="hover" :options="addOptions" @select="handleAddOption">
           <span class="add">+</span>
         </NDropdown>
       </header>
-    </UIPanelHeader>
+    </UICardHeader>
     <ul class="sprite-list">
       <SpriteItem
         v-for="sprite in sprites"
@@ -40,7 +40,7 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
-import { UIPanelHeader } from '@/components/ui'
+import { UICardHeader } from '@/components/ui'
 
 const props = defineProps<{
   active: boolean

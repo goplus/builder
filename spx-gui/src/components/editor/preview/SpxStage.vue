@@ -8,7 +8,7 @@
 -->
 <template>
   <UICard class="spx-stage">
-    <UIPanelHeader>
+    <UICardHeader>
       <div class="stage-button">
         {{
           $t({
@@ -23,7 +23,7 @@
           zh: '运行'
         })
       }}</UIButton>
-    </UIPanelHeader>
+    </UICardHeader>
     <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
     </n-modal>
@@ -50,7 +50,7 @@ import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'
 import UIButton from '@/components/ui/UIButton.vue'
-import { UIPanelHeader } from '@/components/ui'
+import { UICardHeader } from '@/components/ui'
 
 let show = ref(false)
 

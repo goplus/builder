@@ -10,7 +10,7 @@
       @remove="handleRemoveSound(asset)"
     />
   </div>
-  <UIPanelHeader v-show="!props.active">Sounds</UIPanelHeader>
+  <UICardHeader v-show="!props.active">Sounds</UICardHeader>
 </template>
 
 <script setup lang="ts">
@@ -20,7 +20,7 @@ import type { Sound } from '@/models/sound'
 import AssetAddBtn from '../todo/AssetAddBtn.vue'
 import SoundEditCard from '@/components/editor/sound/SoundEditCard.vue'
 import { NInput } from 'naive-ui'
-import { UIPanelHeader } from '@/components/ui'
+import { UICardHeader } from '@/components/ui'
 
 const editorCtx = useEditorCtx()
 
