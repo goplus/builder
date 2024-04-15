@@ -3,14 +3,14 @@
     <div class="main">
       <slot></slot>
     </div>
-    <NDivider />
+    <NDivider class="divider" />
   </div>
 </template>
 <script setup lang="ts">
 import { NDivider } from 'naive-ui'
 </script>
 <style scoped lang="scss">
-.n-divider {
+.divider {
   margin: 0;
 }
 
