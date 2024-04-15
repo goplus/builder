@@ -40,6 +40,9 @@ const themeOverrides: GlobalThemeOverrides = {
     borderRadiusSmall: uiVariables.borderRadius[1],
     borderRadius: uiVariables.borderRadius[2]
   },
+  Popover: {
+    space: '8px' // TODO: some var like gap?
+  },
   Button: {
     // TODO: more
   }

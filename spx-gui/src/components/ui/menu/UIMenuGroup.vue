@@ -20,7 +20,6 @@
 }
 
 .ui-menu-group + .ui-menu-group {
-  // TODO: recheck color here
-  border-top: 1px solid var(--ui-color-dividing-line-1);
+  border-top: 1px solid var(--ui-color-dividing-line-2);
 }
 </style>

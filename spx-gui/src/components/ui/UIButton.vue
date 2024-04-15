@@ -5,6 +5,7 @@
 </template>
 
 <script setup lang="ts">
+// TODO: support different sizes
 type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 
 withDefaults(
@@ -20,7 +21,7 @@ withDefaults(
 <style lang="scss" scoped>
 .ui-button {
   display: flex;
-  height: var(--ui-line-height-1);
+  height: var(--ui-line-height-2);
   padding: 0 var(--ui-gap-middle);
   align-items: center;
 
@@ -50,6 +51,16 @@ withDefaults(
 
   &:hover:not(:active) {
     background-color: var(--ui-color-primary-400);
+  }
+}
+
+.type-secondary {
+  color: var(--ui-color-primary-main);
+  background-color: var(--ui-color-primary-200);
+  border-bottom-color: var(--ui-color-primary-300);
+
+  &:hover:not(:active) {
+    background-color: var(--ui-color-primary-100);
   }
 }
 
