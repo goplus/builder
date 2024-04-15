@@ -83,7 +83,6 @@ watch(
   display: flex;
   flex-direction: column;
   position: relative;
-  margin: 10px;
   overflow: hidden;
 
   .header {

@@ -45,10 +45,10 @@ watch(
 
 <style scoped lang="scss">
 .editor-panels {
-  margin: 10px;
   flex: 1 1 0;
   display: flex;
   flex-direction: row;
+  gap: var(--ui-gap-middle);
 }
 
 .main {
@@ -71,6 +71,5 @@ watch(
 
 .sider {
   flex: 0 0 auto;
-  margin-left: 10px;
 }
 </style>

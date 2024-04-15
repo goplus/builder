@@ -18,11 +18,13 @@ import EditorPanels from './panels/EditorPanels.vue'
 .main {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
 }
 .sider {
   flex: 0 0 40%;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--ui-gap-middle);
 }
 </style>
