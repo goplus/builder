@@ -1,0 +1,4 @@
+# Copied from go
+wasm_exec.js
+# 3rd party code
+src/components/ui/reset.css
