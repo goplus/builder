@@ -20,7 +20,9 @@ export const boxShadow = {
 } as const
 
 export const lineHeight = {
-  1: '32px'
+  1: '26px',
+  2: '32px',
+  3: '40px'
 } as const
 
 export const gap = {

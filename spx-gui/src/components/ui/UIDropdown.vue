@@ -1,5 +1,12 @@
 <template>
-  <NPopover class="ui-dropdown-content" trigger="hover" raw :to="attachTo" :show-arrow="false">
+  <NPopover
+    class="ui-dropdown-content"
+    trigger="hover"
+    raw
+    :to="attachTo"
+    :show-arrow="false"
+    :placement="placement"
+  >
     <template #trigger>
       <slot name="trigger"></slot>
     </template>
@@ -11,6 +18,8 @@
 import { ref, onMounted } from 'vue'
 import { NPopover } from 'naive-ui'
 
+export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
+
 const attachTo = ref<HTMLElement>()
 onMounted(() => {
   // TODO:
@@ -18,6 +27,15 @@ onMounted(() => {
   // 2. use some PopupContainerProvider instead of ConfigProvider to provide element
   attachTo.value = document.getElementsByClassName('ui-config-provider')[0] as HTMLElement
 })
+
+withDefaults(
+  defineProps<{
+    placement?: Placement
+  }>(),
+  {
+    placement: 'bottom'
+  }
+)
 </script>
 
 <style lang="scss" scoped></style>
