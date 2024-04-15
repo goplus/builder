@@ -70,6 +70,6 @@ const helloMessage = {
   en: 'Hello',
   zh: '你好'
 }
-const resultMessage = mapMessage(helloMessage, hello => hello + ' foo')
+const resultMessage = mapMessage(helloMessage, (hello) => hello + ' foo')
 console.log(t(resultMessage)) // "Hello foo" / "你好 foo"
 ```

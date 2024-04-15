@@ -4,8 +4,8 @@
     <UIDropdown>
       <template #trigger>
         <div class="project-dropdown">
-          <UIIcon class="icon-file" type="file"/>
-          <UIIcon class="icon-arrow" type="arrowDown"/>
+          <UIIcon class="icon-file" type="file" />
+          <UIIcon class="icon-arrow" type="arrowDown" />
         </div>
       </template>
       <UIMenu>
@@ -43,18 +43,12 @@
         </UIMenuGroup>
       </UIMenu>
     </UIDropdown>
-    <div class="language" @click="toggleLanguage">
-      中文/En
-    </div>
+    <div class="language" @click="toggleLanguage">中文/En</div>
     <p class="project-name">{{ project?.name }}</p>
     <div class="save">
-      <UIButton
-        v-if="project != null"
-        type="boring"
-        :disabled="!isOnline"
-        @click="handleSave"
-        >{{ $t({ en: 'Save', zh: '保存' }) }}</UIButton
-      >
+      <UIButton v-if="project != null" type="boring" :disabled="!isOnline" @click="handleSave">{{
+        $t({ en: 'Save', zh: '保存' })
+      }}</UIButton>
     </div>
     <UserAvatar />
   </nav>
@@ -193,14 +187,14 @@ const handleSave = useMessageHandle(
   }
 }
 
-
 .language {
   display: flex;
   align-items: center;
   cursor: pointer;
 }
 
-.project-name, .save {
+.project-name,
+.save {
   display: flex;
   align-items: center;
   justify-content: center;

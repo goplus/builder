@@ -1,7 +1,10 @@
 <template>
-  <UIButton v-if="!userStore.userInfo" :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
-    $t({ en: 'Sign in', zh: '登录' })
-  }}</UIButton>
+  <UIButton
+    v-if="!userStore.userInfo"
+    :disabled="!isOnline"
+    @click="userStore.signInWithRedirection()"
+    >{{ $t({ en: 'Sign in', zh: '登录' }) }}</UIButton
+  >
   <UIDropdown v-else>
     <template #trigger>
       <img class="user-avatar" :src="userStore.userInfo.avatar" />
