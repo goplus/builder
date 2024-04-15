@@ -43,6 +43,13 @@ const themeOverrides: GlobalThemeOverrides = {
   Popover: {
     space: '8px' // TODO: some var like gap?
   },
+  Tooltip: {
+    borderRadius: uiVariables.borderRadius[1],
+    boxShadow: uiVariables.boxShadow.small,
+    color: uiVariables.color.grey[1000],
+    textColor: uiVariables.color.grey[100],
+    padding: '7px 8px'
+  },
   Button: {
     // TODO: more
   }

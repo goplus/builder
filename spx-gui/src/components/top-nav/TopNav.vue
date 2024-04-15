@@ -50,8 +50,13 @@
         </UIMenuGroup>
       </UIMenu>
     </UIDropdown>
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <div class="lang" :title="langTitle" @click="toggleLang" v-html="langContent"></div>
+    <UITooltip placement="bottom">
+      <template #trigger>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="lang" @click="toggleLang" v-html="langContent"></div>
+      </template>
+      {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+    </UITooltip>
     <p class="project-name">{{ project?.name }}</p>
     <div class="save">
       <UIButton v-if="project != null" type="secondary" :disabled="!isOnline" @click="handleSave">{{
@@ -85,7 +90,7 @@
 
 import { computed, h } from 'vue'
 import { useModal } from 'naive-ui'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, UIIcon } from '@/components/ui'
+import { UIButton, UIDropdown, UITooltip, UIMenu, UIMenuGroup, UIMenuItem, UIIcon } from '@/components/ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useI18n } from '@/utils/i18n'
@@ -169,7 +174,6 @@ async function handleImportFromScratch() {
 }
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
-const langTitle = computed(() => (i18n.lang.value === 'en' ? 'English / 中文' : '中文 / English'))
 
 function toggleLang() {
   i18n.setLang(i18n.lang.value === 'en' ? 'zh' : 'en')
