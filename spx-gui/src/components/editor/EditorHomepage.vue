@@ -200,6 +200,8 @@ async function handleCreate() {
 .editor-main {
   flex: 1 1 0;
   display: flex;
+  gap: var(--ui-gap-middle);
+  padding: 16px;
 }
 
 .loading-wrapper {

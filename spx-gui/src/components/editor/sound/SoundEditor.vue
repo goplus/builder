@@ -1,33 +1,31 @@
 <template>
-  <UIPanel>
-    <div class="sound-edit-content">
-      <div class="sound-edit-content-top">
-        <span class="text-sound">
-          <NGradientText type="danger">
-            <div class="sounds-hint">
-              {{
-                $t({
-                  en: 'Sound',
-                  zh: '声音'
-                })
-              }}
-            </div>
-          </NGradientText>
-        </span>
-      </div>
+  <div class="sound-edit-content">
+    <div class="sound-edit-content-top">
+      <span class="text-sound">
+        <NGradientText type="danger">
+          <div class="sounds-hint">
+            {{
+              $t({
+                en: 'Sound',
+                zh: '声音'
+              })
+            }}
+          </div>
+        </NGradientText>
+      </span>
     </div>
-    <div class="waveform-content">
-      <div ref="waveformContainer" class="waveform-container"></div>
+  </div>
+  <div class="waveform-content">
+    <div ref="waveformContainer" class="waveform-container"></div>
+  </div>
+  <div class="sound-edit-content-bottom">
+    <div>
+      <button @click="togglePlayPause()">
+        <img v-if="!isPlaying" class="sound-icon" src="./icons/play.svg" />
+        <img v-else class="sound-icon" src="./icons/pause.svg" />
+      </button>
     </div>
-    <div class="sound-edit-content-bottom">
-      <div>
-        <button @click="togglePlayPause()">
-          <img v-if="!isPlaying" class="sound-icon" src="./icons/play.svg" />
-          <img v-else class="sound-icon" src="./icons/pause.svg" />
-        </button>
-      </div>
-    </div>
-  </UIPanel>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -36,7 +34,6 @@ import { ref, type Ref } from 'vue'
 import { NGradientText } from 'naive-ui'
 import { watchEffect } from 'vue'
 import { onUnmounted } from 'vue'
-import { UIPanel } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
