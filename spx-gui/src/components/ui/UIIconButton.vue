@@ -1,3 +1,5 @@
+<!-- Button that contains icon only -->
+
 <template>
   <button class="ui-icon-button" :class="`type-${type}`">
     <div class="icon">
