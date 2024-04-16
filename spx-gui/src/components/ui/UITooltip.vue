@@ -1,24 +1,22 @@
 <template>
-  <NPopover
-    class="ui-dropdown-content"
+  <NTooltip
+    class="ui-tooltip"
     trigger="hover"
-    raw
     :to="attachTo"
-    :show-arrow="false"
     :placement="placement"
   >
     <template #trigger>
       <slot name="trigger"></slot>
     </template>
     <slot></slot>
-  </NPopover>
+  </NTooltip>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { NPopover } from 'naive-ui'
+import { NTooltip } from 'naive-ui'
 
-export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
+export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
 
 const attachTo = ref<HTMLElement>()
 onMounted(() => {
@@ -33,7 +31,7 @@ withDefaults(
     placement?: Placement
   }>(),
   {
-    placement: 'bottom'
+    placement: 'top'
   }
 )
 </script>
@@ -42,12 +40,11 @@ withDefaults(
 
 <style lang="scss">
 /*
-  Now the style is broken with scoped <style>, the `data-v-xxx` is not correctly applied on `NPopover` element
+  Now the style is broken with scoped <style>, the `data-v-xxx` is not correctly applied on `NTooltip` element
   TODO: use scoped style
 */
-.ui-dropdown-content {
-  border-radius: var(--ui-border-radius-1);
-  background-color: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-big);
+.ui-tooltip {
+  font-size: 12px; // TODO: some text-size related var?
+  line-height: 1.5;
 }
 </style>
