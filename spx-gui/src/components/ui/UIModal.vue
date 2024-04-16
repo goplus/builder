@@ -13,8 +13,6 @@ import { onMounted, ref } from 'vue'
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{
   title?: string
-  showDivider?: boolean
-  showClose?: boolean
   size?: ModalSize
 }>()
 

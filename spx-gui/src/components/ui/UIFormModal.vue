@@ -28,7 +28,6 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:show': [show: boolean]
-  close: []
 }>()
 
 const handleUpdateShow = (show: boolean) => {
