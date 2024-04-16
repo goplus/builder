@@ -55,9 +55,9 @@ npm run dev
 #### Backend 
 
 ```bash
-cd spx-backend/cmd
+cd spx-backend
 # Assuming you have Go & Go+ installed
-gop build -o spx-backend .
+gop build -o spx-backend ./cmd/spx-backend
 
 # Run the server, assuming you have a .env file in pwd
 ./spx-backend
