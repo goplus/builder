@@ -1,36 +1,36 @@
 <template>
-  <NForm v-bind="form.binds" :model="form.value">
-    <NFormItem :label="$t({ en: 'Asset Name', zh: '素材名' })" path="name">
-      <NInput v-model:value="form.value.name" />
-    </NFormItem>
-    <NFormItem :label="$t({ en: 'Category', zh: '素材类别' })" path="category">
+  <UIForm :form="form" @submit="handleSubmit">
+    <UIFormItem :label="$t({ en: 'Asset Name', zh: '素材名' })" path="name">
+      <UITextInput v-model:value="form.value.name" />
+    </UIFormItem>
+    <UIFormItem :label="$t({ en: 'Category', zh: '素材类别' })" path="category">
       <NRadioGroup v-model:value="form.value.category">
         <NSpace>
           <NRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
         </NSpace>
       </NRadioGroup>
-    </NFormItem>
-    <NFormItem
+    </UIFormItem>
+    <UIFormItem
       :label="$t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
       path="isPublic"
     >
       <NCheckbox v-model:checked="form.value.isPublic" />
-    </NFormItem>
-    <NFormItem>
-      <NButton type="tertiary" @click="handleCancel">
+    </UIFormItem>
+    <UIFormItem>
+      <UIButton type="boring" @click="handleCancel">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
-      </NButton>
-      <NButton type="primary" @click="handleSubmit">
+      </UIButton>
+      <UIButton type="primary" html-type="submit">
         {{ $t({ en: 'Create', zh: '创建' }) }}
-      </NButton>
-    </NFormItem>
-  </NForm>
+      </UIButton>
+    </UIFormItem>
+  </UIForm>
 </template>
 
 <script setup lang="ts">
-import { NForm, NFormItem, NInput, NButton, NRadioGroup, NRadio, NSpace, NCheckbox } from 'naive-ui'
+import { NRadioGroup, NRadio, NSpace, NCheckbox } from 'naive-ui'
+import { UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { type AssetData, addAsset as apiAddAsset, IsPublic } from '@/apis/asset'
-import { useForm, type ValidationResult } from '@/utils/form'
 import { useMessageHandle } from '@/utils/exception'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
@@ -38,6 +38,7 @@ import { Sprite } from '@/models/sprite'
 import type { PartialAssetData } from '@/models/common/asset'
 import { categories, categoryAll } from './category'
 import { backdrop2Asset, sound2Asset, sprite2Asset } from '@/models/common/asset'
+import { useI18n } from '@/utils/i18n'
 
 const props = defineProps<{
   asset: Backdrop | Sound | Sprite
@@ -47,6 +48,8 @@ const emit = defineEmits<{
   added: [AssetData]
   cancelled: []
 }>()
+
+const { t } = useI18n()
 
 const form = useForm({
   name: [props.asset.name, validateName],
@@ -65,8 +68,6 @@ const addAsset = useMessageHandle(
 )
 
 async function handleSubmit() {
-  const errs = await form.validate()
-  if (errs.length > 0) return
   let params: PartialAssetData
   if (props.asset instanceof Backdrop) {
     params = await backdrop2Asset(props.asset)
@@ -87,9 +88,9 @@ async function handleSubmit() {
   emit('added', assetData)
 }
 
-function validateName(name: string): ValidationResult {
+function validateName(name: string) {
   name = name.trim()
-  if (name === '') return { en: 'The asset name must not be blank', zh: '名称不可为空' }
+  if (name === '') return t({ en: 'The asset name must not be blank', zh: '名称不可为空' })
 }
 </script>
 
