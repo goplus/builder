@@ -79,6 +79,7 @@ const handleShare = async () => shareProject(editorCtx.project)
   display: flex;
   flex-direction: column;
   width: 100%;
+  height: 80vh;
   gap: 8px;
 }
 .header {
