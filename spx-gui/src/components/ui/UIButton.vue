@@ -23,7 +23,7 @@ withDefaults(
     type: 'primary',
     size: 'middle',
     icon: undefined,
-    htmlType: undefined
+    htmlType: 'button'
   }
 )
 </script>
