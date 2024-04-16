@@ -1,10 +1,5 @@
 <template>
-  <NTooltip
-    class="ui-tooltip"
-    trigger="hover"
-    :to="attachTo"
-    :placement="placement"
-  >
+  <NTooltip class="ui-tooltip" trigger="hover" :to="attachTo" :placement="placement">
     <template #trigger>
       <slot name="trigger"></slot>
     </template>

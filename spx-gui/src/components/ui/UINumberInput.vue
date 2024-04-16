@@ -1,5 +1,5 @@
 <template>
-  <NInputNumber :value="value" @update:value="v => emit('update:value', v)" >
+  <NInputNumber :value="value" @update:value="(v) => emit('update:value', v)">
     <slot></slot>
   </NInputNumber>
 </template>
@@ -16,5 +16,4 @@ const emit = defineEmits<{
 }>()
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

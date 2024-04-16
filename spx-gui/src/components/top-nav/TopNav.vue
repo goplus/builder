@@ -91,7 +91,15 @@
 
 import { computed, h } from 'vue'
 import { useModal } from 'naive-ui'
-import { UIButton, UIDropdown, UITooltip, UIMenu, UIMenuGroup, UIMenuItem, UIIcon } from '@/components/ui'
+import {
+  UIButton,
+  UIDropdown,
+  UITooltip,
+  UIMenu,
+  UIMenuGroup,
+  UIMenuItem,
+  UIIcon
+} from '@/components/ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
 import { useI18n } from '@/utils/i18n'

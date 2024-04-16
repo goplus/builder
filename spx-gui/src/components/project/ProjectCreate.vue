@@ -15,7 +15,14 @@
 </template>
 
 <script setup lang="ts">
-import { UIButton, UIForm, UIFormItem, UITextInput, useForm, type FormValidationResult } from '@/components/ui'
+import {
+  UIButton,
+  UIForm,
+  UIFormItem,
+  UITextInput,
+  useForm,
+  type FormValidationResult
+} from '@/components/ui'
 import { type ProjectData, getProject, addProject as apiAddProject, IsPublic } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'

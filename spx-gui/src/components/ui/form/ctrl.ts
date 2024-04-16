@@ -20,7 +20,6 @@ export type FormCtrl<V = { [p: string]: unknown }> = {
 export function useForm<V extends { [p: string]: unknown }>(input: {
   [p in keyof V]: [initialValue: V[p], validator?: FormValidator<V[p]>]
 }): FormCtrl<V> {
-
   const formRef = ref<FormInst | null>(null)
 
   const formValue = reactive({}) as V

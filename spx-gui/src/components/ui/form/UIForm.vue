@@ -1,5 +1,10 @@
 <template>
-  <NForm :ref="form._nFormRef" :rules="form._nFormRules" :model="form.value" @submit.prevent="handleSubmit">
+  <NForm
+    :ref="form._nFormRef"
+    :rules="form._nFormRules"
+    :model="form.value"
+    @submit.prevent="handleSubmit"
+  >
     <slot></slot>
   </NForm>
 </template>
@@ -23,5 +28,4 @@ async function handleSubmit() {
 }
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

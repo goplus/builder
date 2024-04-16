@@ -15,7 +15,7 @@ Form-related UI components & helpers.
 </template>
 
 <script setup lang="ts">
-import { UIForm, UIFormItem, UITextInput, useForm, type FormValidationResult } from '@/components/ui'
+import { UIForm, UIFormItem, UITextInput, useForm } from '@/components/ui'
 
 const form = useForm({
   name: ['', validateName]
