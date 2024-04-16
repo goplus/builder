@@ -10,7 +10,7 @@ Form-related UI components & helpers.
     <UIFormItem :label="$t({ en: 'Project Name', zh: '项目名' })" path="name">
       <UITextInput v-model:value="form.value.name" />
     </UIFormItem>
-    <button>Submit</button>
+    <UIButton html-type="submit">Submit</UIButton>
   </UIForm>
 </template>
 
