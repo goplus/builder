@@ -4,10 +4,10 @@
       <UITextInput v-model:value="form.value.name" />
     </UIFormItem>
     <UIFormItem>
-      <UIButton html-type="button" type="boring" @click="handleCancel">
+      <UIButton type="boring" @click="handleCancel">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
-      <UIButton type="primary">
+      <UIButton type="primary" html-type="submit">
         {{ $t({ en: 'Create', zh: '创建' }) }}
       </UIButton>
     </UIFormItem>
