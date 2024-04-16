@@ -15,7 +15,7 @@ export const borderRadius = {
 
 export const boxShadow = {
   small: '0px 2px 8px 0px rgba(51, 51, 51, 0.08)',
-  big: '0px 4px 24px 0px rgba(51, 51, 51, 0.08)',
+  big: '0px 4px 24px 0px rgba(36, 41, 47, 0.08)',
   diffusion: '0px 4px 12px 0px #D0F2F8'
 } as const
 
@@ -26,6 +26,7 @@ export const lineHeight = {
 } as const
 
 export const gap = {
-  middle: '16px'
+  middle: '16px',
+  large: '24px'
   // TODO: other gap defs
 } as const

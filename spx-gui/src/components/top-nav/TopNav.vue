@@ -71,6 +71,7 @@
     </div>
     <UIDropdown v-else>
       <template #trigger>
+        <!-- TODO: UI details (hover area & dropdown) here will be rechecked by UI designer -->
         <div class="avatar">
           <img class="avatar-img" :src="userStore.userInfo.avatar" />
         </div>

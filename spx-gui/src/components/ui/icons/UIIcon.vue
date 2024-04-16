@@ -8,14 +8,16 @@
 import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
+import play from './play.svg?raw'
 
 const typeIconMap = {
   file,
   arrowDown,
-  arrowUp
+  arrowUp,
+  play
 }
 
-type Type = keyof typeof typeIconMap
+export type Type = keyof typeof typeIconMap
 
 defineProps<{
   type: Type
@@ -26,6 +28,7 @@ defineProps<{
 .ui-icon {
   width: 16px;
   height: 16px;
+  display: flex;
 
   :deep(svg) {
     width: 100%;

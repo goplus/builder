@@ -48,6 +48,6 @@ withDefaults(
 .ui-dropdown-content {
   border-radius: var(--ui-border-radius-1);
   background-color: var(--ui-color-grey-100);
-  box-shadow: var(--ui-box-shadow-diffusion);
+  box-shadow: var(--ui-box-shadow-big);
 }
 </style>

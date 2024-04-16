@@ -1,42 +1,41 @@
 <template>
-  <button class="ui-button" :class="[`type-${type}`, `size-${size}`]">
-    <UIIcon v-if="icon != null" class="icon" :type="icon" />
-    <slot></slot>
+  <button class="ui-icon-button" :class="`type-${type}`">
+    <div class="icon">
+      <UIIcon v-if="icon != null" class="ui-icon" :type="icon" />
+      <slot name="default"></slot>
+    </div>
   </button>
 </template>
 
 <script setup lang="ts">
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
-export type ButtonSize = 'small' | 'middle' | 'large'
 
 withDefaults(
   defineProps<{
     type?: ButtonType
-    size?: ButtonSize
-    // we may support custom icon later (by slot `icon`)
-    icon?: IconType
+    // we can use `<UIIconButton icon="play" />` or `<UIIconButton><SomeCustomIcon /></UIIconButton>`
+    icon: IconType
   }>(),
   {
     type: 'primary',
-    size: 'middle',
     icon: undefined
   }
 )
 </script>
 
 <style lang="scss" scoped>
-.ui-button {
+.ui-icon-button {
   display: flex;
-  height: var(--ui-line-height-2);
-  padding: 0 16px;
+  width: var(--ui-line-height-3);
+  height: var(--ui-line-height-3);
   align-items: center;
-  gap: 4px;
+  justify-content: center;
 
   border: none;
   border-bottom-width: 4px;
   border-bottom-style: solid;
-  border-radius: var(--ui-border-radius-2);
+  border-radius: var(--ui-line-height-3);
   cursor: pointer;
 
   &:not(:disabled):active {
@@ -52,8 +51,14 @@ withDefaults(
   }
 
   .icon {
-    width: var(--ui-font-size-text);
-    height: var(--ui-font-size-text);
+    width: 20px;
+    height: 20px;
+    display: flex;
+
+    & > :deep(*) {
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 
@@ -104,32 +109,6 @@ withDefaults(
 
   &:hover:not(:active) {
     background-color: var(--ui-color-success-100);
-  }
-}
-
-.size-large {
-  font-size: 15px;
-  line-height: 1.6;
-  height: var(--ui-line-height-3);
-  padding: 0 24px;
-  gap: 8px;
-
-  .icon {
-    width: 15px;
-    height: 15px;
-  }
-}
-
-.size-small {
-  font-size: 13px;
-  line-height: 1.5;
-  height: var(--ui-line-height-1);
-  padding: 0 12px;
-  gap: 4px;
-
-  .icon {
-    width: 13px;
-    height: 13px;
   }
 }
 </style>
