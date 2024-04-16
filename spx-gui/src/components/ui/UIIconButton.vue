@@ -47,8 +47,8 @@ withDefaults(
   &:disabled,
   &:disabled:hover {
     cursor: not-allowed;
-    color: var(--ui-color-grey-600);
-    background-color: var(--ui-color-disabled);
+    color: var(--ui-color-disabled-text);
+    background-color: var(--ui-color-disabled-bg);
     border-bottom-color: var(--ui-color-grey-500);
   }
 

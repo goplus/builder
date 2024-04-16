@@ -90,7 +90,10 @@ export const stage = {
 
 export const danger = red
 export const success = green
-export const disabled = grey[300]
+export const disabled = {
+  bg: grey[300],
+  text: grey[600]
+}
 
 export const title = grey[1000]
 export const text = grey[900]
@@ -103,8 +106,6 @@ export const hint = {
   2: grey[700]
 } as const
 
-export const tagBorder = grey[600]
-
 /** Color for dividing line */
 export const dividingLine = {
   /** Color for dividing line, while darker */
@@ -112,3 +113,5 @@ export const dividingLine = {
   /** Color for dividing line, while lighter */
   2: grey[400]
 } as const
+
+export const border = grey[600]

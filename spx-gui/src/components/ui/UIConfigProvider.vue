@@ -24,13 +24,22 @@ export function useUIVariables() {
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
-    primaryColor: uiVariables.color.primary.main,
-
     // TODO: review text color mapping
+    primaryColor: uiVariables.color.primary.main,
+    primaryColorHover: uiVariables.color.primary[400],
+    primaryColorPressed: uiVariables.color.primary.main,
     textColorBase: uiVariables.color.text,
-    textColor1: uiVariables.color.text,
+    textColor1: uiVariables.color.title,
     textColor2: uiVariables.color.text,
     textColor3: uiVariables.color.text,
+    textColorDisabled: uiVariables.color.disabled.text,
+    placeholderColor: uiVariables.color.grey[700],
+    dividerColor: uiVariables.color.dividingLine[2],
+    borderColor: uiVariables.color.border,
+    errorColor: uiVariables.color.danger.main,
+    errorColorHover: uiVariables.color.danger[100],
+    successColor: uiVariables.color.success.main,
+    successColorHover: uiVariables.color.success[100],
 
     // TODO: review boxShadow mapping
     boxShadow1: uiVariables.boxShadow.small,
@@ -38,7 +47,11 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadow3: uiVariables.boxShadow.diffusion,
 
     borderRadiusSmall: uiVariables.borderRadius[1],
-    borderRadius: uiVariables.borderRadius[2]
+    borderRadius: uiVariables.borderRadius[2],
+
+    heightSmall: uiVariables.lineHeight[1],
+    heightMedium: uiVariables.lineHeight[2],
+    heightLarge: uiVariables.lineHeight[3]
   },
   Popover: {
     space: '8px' // TODO: some var like gap?
@@ -50,8 +63,19 @@ const themeOverrides: GlobalThemeOverrides = {
     textColor: uiVariables.color.grey[100],
     padding: '7px 8px'
   },
-  Button: {
-    // TODO: more
+  Input: {
+    border: 'none',
+    borderHover: 'none',
+    borderFocus: `1px solid ${uiVariables.color.primary.main}`,
+    boxShadowFocus: 'none',
+    boxShadowFocusError: 'none',
+    suffixTextColor: uiVariables.color.grey[800]
+  },
+  Radio: {
+    boxShadowFocus: `inset 0 0 0 1px ${uiVariables.color.primary.main}`
+  },
+  Checkbox: {
+    boxShadowFocus: 'none'
   }
 }
 </script>
