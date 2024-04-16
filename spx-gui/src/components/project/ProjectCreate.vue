@@ -1,23 +1,23 @@
 <template>
-  <NForm v-bind="form.binds" :model="form.value">
-    <NFormItem :label="$t({ en: 'Project Name', zh: '项目名' })" path="name">
-      <NInput v-model:value="form.value.name" />
-    </NFormItem>
-    <NFormItem>
-      <NButton type="tertiary" @click="handleCancel">
+  <UIForm :form="form" @submit="handleSubmit">
+    <UIFormItem :label="$t({ en: 'Project Name', zh: '项目名' })" path="name">
+      <UITextInput v-model:value="form.value.name" />
+    </UIFormItem>
+    <UIFormItem>
+      <UIButton html-type="button" type="boring" @click="handleCancel">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
-      </NButton>
-      <NButton type="primary" @click="handleSubmit">
+      </UIButton>
+      <UIButton type="primary">
         {{ $t({ en: 'Create', zh: '创建' }) }}
-      </NButton>
-    </NFormItem>
-  </NForm>
+      </UIButton>
+    </UIFormItem>
+  </UIForm>
 </template>
 
 <script setup lang="ts">
-import { NForm, NFormItem, NInput, NButton } from 'naive-ui'
+import { UIButton, UIForm, UIFormItem, UITextInput, useForm, type FormValidationResult } from '@/components/ui'
 import { type ProjectData, getProject, addProject as apiAddProject, IsPublic } from '@/apis/project'
-import { useForm, type ValidationResult } from '@/utils/form'
+import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
@@ -27,6 +27,7 @@ const emit = defineEmits<{
   cancelled: []
 }>()
 
+const { t } = useI18n()
 const userStore = useUserStore()
 
 const form = useForm({
@@ -44,8 +45,6 @@ const addProject = useMessageHandle(
 )
 
 async function handleSubmit() {
-  const errs = await form.validate()
-  if (errs.length > 0) return
   const projectData = await addProject({
     name: form.value.name,
     isPublic: IsPublic.personal,
@@ -54,22 +53,22 @@ async function handleSubmit() {
   emit('created', projectData)
 }
 
-async function validateName(name: string): Promise<ValidationResult> {
+async function validateName(name: string): Promise<FormValidationResult> {
   name = name.trim()
 
-  if (name === '') return { en: 'The project name must not be blank', zh: '项目名不可为空' }
+  if (name === '') return t({ en: 'The project name must not be blank', zh: '项目名不可为空' })
 
   if (!/^[\w-]+$/.test(name))
-    return {
+    return t({
       en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
       zh: '项目名仅可包含字母、数字、符号 - 及 _'
-    }
+    })
 
   if (name.length > 100)
-    return {
+    return t({
       en: 'The project name is too long (maximum is 100 characters)',
       zh: '项目名长度超出限制（最多 100 个字符）'
-    }
+    })
 
   // check naming conflict
   if (userStore.userInfo == null) throw new Error('login required')
@@ -79,10 +78,10 @@ async function validateName(name: string): Promise<ValidationResult> {
     throw e
   })
   if (existedProject != null)
-    return {
+    return t({
       en: `Project ${name} already exists`,
       zh: `项目 ${name} 已存在`
-    }
+    })
 }
 </script>
 

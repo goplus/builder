@@ -1,5 +1,5 @@
 <template>
-  <button class="ui-button" :class="[`type-${type}`, `size-${size}`]">
+  <button class="ui-button" :class="[`type-${type}`, `size-${size}`]" :type="htmlType">
     <UIIcon v-if="icon != null" class="icon" :type="icon" />
     <slot></slot>
   </button>
@@ -9,6 +9,7 @@
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 export type ButtonSize = 'small' | 'middle' | 'large'
+export type ButtonHtmlType = 'button' | 'submit' | 'reset'
 
 withDefaults(
   defineProps<{
@@ -16,11 +17,13 @@ withDefaults(
     size?: ButtonSize
     // we may support custom icon later (by slot `icon`)
     icon?: IconType
+    htmlType?: ButtonHtmlType
   }>(),
   {
     type: 'primary',
     size: 'middle',
-    icon: undefined
+    icon: undefined,
+    htmlType: undefined
   }
 )
 </script>
