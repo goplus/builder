@@ -37,7 +37,7 @@ export class DefaultException extends Exception {
 export class Cancelled extends Exception {
   name = 'Cancelled'
   userMessage = null
-  constructor() {
+  constructor(public reason?: unknown) {
     super('cancelled')
   }
 }

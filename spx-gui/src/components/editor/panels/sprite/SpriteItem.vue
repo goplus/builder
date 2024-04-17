@@ -2,12 +2,15 @@
   <li class="sprite-item" :class="{ active: props.active }">
     <div class="img" :style="imgStyle"></div>
     <p class="name">{{ props.sprite.name }}</p>
-    <button class="remove" @click.stop="emit('remove')">X</button>
+    <div class="remove" @click.stop="emit('remove')">
+      <UIIcon class="icon" type="trash" />
+    </div>
   </li>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { UIIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
 
@@ -30,32 +33,65 @@ const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSr
   flex-direction: column;
   width: 80px;
   height: fit-content;
-  padding: 6px;
   position: relative;
   align-items: center;
-  border: 1px solid #333;
+  border-radius: var(--ui-border-radius-1);
+  border: 2px solid var(--ui-color-grey-300);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
 
   &.active {
-    border-color: yellow;
-    background-color: yellow;
+    border-color: var(--ui-color-sprite-main);
+    background-color: var(--ui-color-sprite-200);
+
+    .remove {
+      visibility: visible;
+    }
   }
 }
 
 .img {
-  width: 100%;
-  height: 68px;
+  width: 60px;
+  height: 60px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
 }
 
 .name {
-  margin: 4px 0 0;
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 1.6;
+  font-weight: 400;
+  padding: 3px 8px;
+
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  text-overflow: ellipsis;
 }
 
 .remove {
+  visibility: hidden;
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -6px;
+  right: -6px;
+
+  display: flex;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+
+  color: var(--ui-color-grey-100);
+  border-radius: 24px;
+  background: var(--ui-color-sprite-main);
+  cursor: pointer;
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
 }
 </style>

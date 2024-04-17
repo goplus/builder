@@ -1,53 +1,28 @@
 <template>
   <div class="line">
-    <NInput v-model:value="name" @blur="handleNameUpdate">
-      <template #prefix> {{ $t({ en: 'Name', zh: '名字' }) }}: </template>
-    </NInput>
+    {{ sprite.name }}
+    <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
   </div>
   <div class="line">
-    <NInputNumber type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
-      <template #prefix> X: </template>
-    </NInputNumber>
-  </div>
-  <div class="line">
-    <NInputNumber type="number" :value="sprite.y" @update:value="(y) => sprite.setY(y ?? 0)">
-      <template #prefix> Y: </template>
-    </NInputNumber>
-  </div>
-  <div class="line edit-switch-btn">
-    <p>
-      {{
-        $t({
-          en: 'Show',
-          zh: '显示'
-        })
-      }}:
-    </p>
-    <n-switch
-      v-model:value="sprite.visible"
-      @update:value="(visible) => sprite.setVisible(visible)"
-    />
-  </div>
-  <div class="line">
-    <NInputNumber
+    <UINumberInput type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
+      <template #prefix>X:</template>
+    </UINumberInput>
+    <UINumberInput type="number" :value="sprite.y" @update:value="(y) => sprite.setY(y ?? 0)">
+      <template #prefix>Y:</template>
+    </UINumberInput>
+    <UINumberInput
       type="number"
       :min="0"
       :value="sprite.size * 100"
       @update:value="(s) => sprite.setSize((s ?? 100) / 100)"
     >
       <template #prefix>
-        {{
-          $t({
-            en: 'Size',
-            zh: '大小'
-          })
-        }}:
+        {{ $t({ en: 'Size', zh: '大小' }) }}:
       </template>
-    </NInputNumber>
+    </UINumberInput>
   </div>
-
   <div class="line">
-    <NInputNumber
+    <UINumberInput
       type="number"
       :min="-180"
       :max="180"
@@ -62,48 +37,41 @@
           })
         }}:
       </template>
-    </NInputNumber>
+    </UINumberInput>
+    <p class="with-label">
+      {{ $t({ en: 'Show', zh: '显示' }) }}:
+      <VisibleInput
+        :value="sprite.visible"
+        @update:value="(visible) => sprite.setVisible(visible)"
+      />
+    </p>
   </div>
   <div class="line">
     <!-- Entry for "add to library", its appearance or position may change later -->
-    <NButton @click="handleAddToLibrary(sprite)">Add to library</NButton>
+    <UIButton @click="handleAddToLibrary(sprite)">Add to library</UIButton>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { NInput, NInputNumber, NSwitch, NButton, useMessage } from 'naive-ui'
+import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { useAddAssetToLibrary } from '@/components/library'
-import { validateSpriteName } from '@/models/common/asset'
-import { useI18n } from '@/utils/i18n'
+import VisibleInput from '../common/VisibleInput.vue'
+import SpriteRenameModal from './SpriteRenameModal.vue'
 
 const props = defineProps<{
   sprite: Sprite
   project: Project
 }>()
 
-const message = useMessage()
-const { t } = useI18n()
+const renameSprite = useModal(SpriteRenameModal)
 
-const name = ref(props.sprite.name)
-
-watch(
-  () => props.sprite.name,
-  (newName) => {
-    name.value = newName
-  }
-)
-
-function handleNameUpdate() {
-  if (name.value === props.sprite.name) return
-  const err = validateSpriteName(name.value, props.project)
-  if (err != null) {
-    message.error(t(err))
-    return
-  }
-  props.sprite.setName(name.value)
+function handleNameEdit() {
+  renameSprite({
+    sprite: props.sprite,
+    project: props.project
+  })
 }
 
 const addToLibrary = useAddAssetToLibrary()
@@ -115,21 +83,18 @@ function handleAddToLibrary(sprite: Sprite) {
 
 <style scoped lang="scss">
 .line {
-  flex: 1;
   display: flex;
-  margin: 2px;
-  min-width: 105px;
-  line-height: 2rem;
-  p {
-    margin: 0;
-  }
-  .NInput,
-  .NInputNumber {
-    min-width: 100%;
-  }
-}
-.edit-switch-btn {
+  gap: 12px;
   align-items: center;
-  justify-content: center;
+}
+
+.edit-icon {
+  cursor: pointer;
+}
+
+.with-label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 </style>

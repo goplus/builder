@@ -1,13 +1,14 @@
 <template>
   <section v-show="props.active" class="sprites-details">
-    <UICardHeader>
-      <header class="header">
-        {{ $t({ en: 'Sprites', zh: '精灵' }) }}
-        <NDropdown trigger="hover" :options="addOptions" @select="handleAddOption">
-          <span class="add">+</span>
-        </NDropdown>
-      </header>
-    </UICardHeader>
+    <PanelHeader :color="uiVariables.color.sprite" :active="editorCtx.selectedSprite != null">
+      {{ $t({ en: 'Sprites', zh: '精灵' }) }}
+      <template #add-options>
+        <UIMenu>
+          <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
+          <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+        </UIMenu>
+      </template>
+    </PanelHeader>
     <ul class="sprite-list">
       <SpriteItem
         v-for="sprite in sprites"
@@ -18,18 +19,16 @@
         @click="handleSpriteClick(sprite)"
       />
     </ul>
-    <div v-if="editorCtx.selectedSprite != null" class="sprite-edit">
+    <PanelFooter v-if="editorCtx.selectedSprite != null">
       <SpriteBasicConfig :sprite="editorCtx.selectedSprite" :project="editorCtx.project" />
-    </div>
+    </PanelFooter>
   </section>
-  <div v-show="!props.active" class="sprites-overview">Sprites overview</div>
+  <div v-show="!props.active" class="sprites-overview">TODO</div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NDropdown } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
-import { useI18n } from '@/utils/i18n'
 import { selectImgs } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Costume } from '@/models/costume'
@@ -38,15 +37,17 @@ import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary } from '@/components/library'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
 import SpriteItem from './SpriteItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
-import { UICardHeader } from '@/components/ui'
+import PanelHeader from '../common/PanelHeader.vue'
+import PanelFooter from '../common/PanelFooter.vue'
 
 const props = defineProps<{
   active: boolean
 }>()
 
-const { t } = useI18n()
+const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const sprites = computed(() => editorCtx.project.sprites)
@@ -81,37 +82,21 @@ const handleUpload = useMessageHandle(
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-const addOptions = computed(() => {
-  return [
-    {
-      key: 'upload',
-      label: t({ en: 'Upload', zh: '上传' }),
-      handler: handleUpload
-    },
-    {
-      key: 'fromLibrary',
-      label: t({ en: 'Choose from asset library', zh: '从素材库选择' }),
-      handler: () => addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
-    }
-  ]
-})
-
-function handleAddOption(key: string) {
-  for (const option of addOptions.value) {
-    if (option.key === key) {
-      option.handler()
-      return
-    }
-  }
-  throw new Error(`unknown option key: ${key}`)
+function handleChoose() {
+  addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
 }
 </script>
 
 <style scoped lang="scss">
+.sprites-details, .sprites-overview {
+  border-right: 1px solid var(--ui-color-grey-300);
+}
+
 .sprites-details {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .add {
@@ -124,16 +109,11 @@ function handleAddOption(key: string) {
   flex: 1 1 0;
   overflow-y: auto;
   margin: 0;
-  padding: 1em;
+  padding: 12px var(--ui-gap-middle);
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 1em;
-}
-
-.sprite-edit {
-  flex: 0 0 auto;
-  padding: 0.5em 1em;
+  gap: 8px;
 }
 
 .sprites-overview {

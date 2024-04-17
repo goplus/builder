@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { inject, useSlots } from 'vue'
-import { disabledKey } from './UIMenuGroup.vue'
+import { disabledKey } from './UIMenu.vue'
 
 withDefaults(
   defineProps<{

@@ -14,6 +14,11 @@ import check from './check.svg?raw'
 import microphone from './microphone.svg?raw'
 import reload from './reload.svg?raw'
 import stop from './stop.svg?raw'
+import plus from './plus.svg?raw'
+import trash from './trash.svg?raw'
+import edit from './edit.svg?raw'
+import eye from './eye.svg?raw'
+import eyeSlash from './eye-slash.svg?raw'
 
 const typeIconMap = {
   file,
@@ -24,7 +29,12 @@ const typeIconMap = {
   check,
   microphone,
   reload,
-  stop
+  stop,
+  plus,
+  trash,
+  edit,
+  eye,
+  eyeSlash
 }
 
 export type Type = keyof typeof typeIconMap
