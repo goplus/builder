@@ -1,29 +1,44 @@
 <!-- Button that contains icon only -->
 
 <template>
-  <button class="ui-icon-button" :class="`type-${type}`">
+  <button
+    class="ui-icon-button"
+    :class="[`type-${type}`, loading && 'loading']"
+    type="button"
+    :disabled="disabled"
+  >
     <div class="icon">
       <UIIcon v-if="icon != null" class="ui-icon" :type="icon" />
-      <slot name="default"></slot>
+      <slot v-else name="default"></slot>
     </div>
   </button>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     type?: ButtonType
     // we can use `<UIIconButton icon="play" />` or `<UIIconButton><SomeCustomIcon /></UIIconButton>`
     icon: IconType
+    disabled?: boolean
+    loading?: boolean
   }>(),
   {
     type: 'primary',
-    icon: undefined
+    icon: undefined,
+    disabled: false,
+    loading: false
   }
 )
+
+// TODO: loading style for Button is not designed yet.
+// We use disabled to indicate loading tempararily.
+const disabled = computed(() => props.disabled || props.loading)
+const icon = computed(() => (props.loading ? 'loading' : props.icon))
 </script>
 
 <style lang="scss" scoped>
@@ -60,6 +75,20 @@ withDefaults(
     & > :deep(*) {
       width: 100%;
       height: 100%;
+    }
+  }
+
+  &.loading .icon {
+    animation: button-icon-spin 1s linear infinite;
+    @keyframes button-icon-spin {
+      from {
+        transform-origin: 50% 50%;
+        transform: rotate(0);
+      }
+      to {
+        transform-origin: 50% 50%;
+        transform: rotate(360deg);
+      }
     }
   }
 }

@@ -59,10 +59,15 @@
     </UITooltip>
     <p class="project-name">{{ project?.name }}</p>
     <div class="save">
-      <UIButton v-if="project != null" type="secondary" :disabled="!isOnline" @click="handleSave">{{
-        // TODO: save status feedback
-        $t({ en: 'Save', zh: '保存' })
-      }}</UIButton>
+      <UIButton
+        v-if="project != null"
+        type="secondary"
+        :disabled="!isOnline"
+        :loading="handleSave.isLoading.value"
+        @click="handleSave.fn"
+      >
+        {{ $t({ en: 'Save', zh: '保存' }) }}
+      </UIButton>
     </div>
     <div v-if="!userStore.userInfo" class="sign-in">
       <UIButton :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
@@ -191,8 +196,7 @@ function toggleLang() {
 const handleSave = useMessageHandle(
   () => props.project!.saveToCloud(),
   { en: 'Failed to save project', zh: '项目保存失败' },
-  { en: 'Project saved', zh: '保存成功' },
-  { en: 'Project saving', zh: '正在保存' }
+  { en: 'Project saved', zh: '保存成功' }
 )
 </script>
 

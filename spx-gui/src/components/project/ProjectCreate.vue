@@ -49,7 +49,7 @@ const addProject = useMessageHandle(
   apiAddProject,
   { en: 'Failed to create project', zh: '创建失败' },
   (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
-)
+).fn
 
 async function handleSubmit() {
   const projectData = await addProject({

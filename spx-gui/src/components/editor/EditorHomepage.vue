@@ -75,7 +75,7 @@ const askOpenCached = (cached: Project) => {
 
 const {
   data: project,
-  isFetching: isLoading,
+  isLoading,
   error
 } = useQuery(
   async () => {

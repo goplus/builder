@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
-import { onMounted, ref } from 'vue'
+import { usePopupContainer } from './utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{
@@ -23,13 +23,7 @@ const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
 
-const attachTo = ref<HTMLElement>()
-onMounted(() => {
-  // TODO:
-  // 1. use Provide & inject to pass element
-  // 2. use some PopupContainerProvider instead of ConfigProvider to provide element
-  attachTo.value = document.getElementsByClassName('ui-config-provider')[0] as HTMLElement
-})
+const attachTo = usePopupContainer()
 </script>
 <style lang="scss" scoped>
 .container {

@@ -15,18 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { NPopover } from 'naive-ui'
+import { usePopupContainer } from './utils'
 
 export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
-
-const attachTo = ref<HTMLElement>()
-onMounted(() => {
-  // TODO:
-  // 1. use Provide & inject to pass element
-  // 2. use some PopupContainerProvider instead of ConfigProvider to provide element
-  attachTo.value = document.getElementsByClassName('ui-config-provider')[0] as HTMLElement
-})
 
 withDefaults(
   defineProps<{
@@ -36,6 +28,8 @@ withDefaults(
     placement: 'bottom'
   }
 )
+
+const attachTo = usePopupContainer()
 </script>
 
 <style lang="scss" scoped></style>

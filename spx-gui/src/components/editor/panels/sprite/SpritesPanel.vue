@@ -77,7 +77,7 @@ const handleUpload = useMessageHandle(
     project.addSprite(sprite)
   },
   { en: 'Upload failed', zh: '上传失败' }
-)
+).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 

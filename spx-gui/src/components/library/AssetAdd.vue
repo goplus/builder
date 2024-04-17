@@ -65,7 +65,7 @@ const addAsset = useMessageHandle(
   apiAddAsset,
   { en: 'Failed to create asset', zh: '创建失败' },
   (asset) => ({ en: `Asset ${asset.displayName} added`, zh: `素材 ${asset.displayName} 添加成功` })
-)
+).fn
 
 async function handleSubmit() {
   let params: PartialAssetData
