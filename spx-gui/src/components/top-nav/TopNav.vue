@@ -9,34 +9,34 @@
         </div>
       </template>
       <UIMenu>
-        <UIMenuGroup>
-          <UIMenuItem :disabled="!isOnline" @click="handleNewProject">
+        <UIMenuGroup :disabled="!isOnline">
+          <UIMenuItem @click="handleNewProject">
             <template #icon><img :src="newSvg" /></template>
             {{ $t({ en: 'New project', zh: '新建项目' }) }}
           </UIMenuItem>
-          <UIMenuItem :disabled="!isOnline" @click="handleOpenProject">
+          <UIMenuItem @click="handleOpenProject">
             <template #icon><img :src="openSvg" /></template>
             {{ $t({ en: 'Open project...', zh: '打开项目...' }) }}
           </UIMenuItem>
         </UIMenuGroup>
-        <UIMenuGroup>
-          <UIMenuItem :disabled="project == null" @click="handleImportProjectFile">
+        <UIMenuGroup :disabled="project == null">
+          <UIMenuItem @click="handleImportProjectFile">
             <template #icon><img :src="importProjectSvg" /></template>
             {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
           </UIMenuItem>
-          <UIMenuItem :disabled="project == null" @click="handleExportProjectFile">
+          <UIMenuItem @click="handleExportProjectFile">
             <template #icon><img :src="exportProjectSvg" /></template>
             {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
           </UIMenuItem>
         </UIMenuGroup>
-        <UIMenuGroup>
-          <UIMenuItem :disabled="project == null" @click="handleImportFromScratch">
+        <UIMenuGroup :disabled="project == null">
+          <UIMenuItem @click="handleImportFromScratch">
             <template #icon><img :src="importScratchSvg" /></template>
             {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
           </UIMenuItem>
         </UIMenuGroup>
-        <UIMenuGroup>
-          <UIMenuItem :disabled="project == null || !isOnline" @click="shareProject(project!)">
+        <UIMenuGroup :disabled="project == null || !isOnline">
+          <UIMenuItem @click="shareProject(project!)">
             <template #icon><img :src="shareSvg" /></template>
             {{ $t({ en: 'Share project', zh: '分享项目' }) }}
           </UIMenuItem>
@@ -74,17 +74,23 @@
         $t({ en: 'Sign in', zh: '登录' })
       }}</UIButton>
     </div>
-    <UIDropdown v-else>
+    <UIDropdown v-else placement="bottom-end">
       <template #trigger>
-        <!-- TODO: UI details (hover area & dropdown) here will be rechecked by UI designer -->
         <div class="avatar">
           <img class="avatar-img" :src="userStore.userInfo.avatar" />
         </div>
       </template>
-      <UIMenu>
-        <UIMenuItem @click="userStore.signOut()">{{
-          $t({ en: 'Sign out', zh: '登出' })
-        }}</UIMenuItem>
+      <UIMenu class="user-menu">
+        <UIMenuGroup>
+          <UIMenuItem :interactive="false">
+            {{ userStore.userInfo.displayName || userStore.userInfo.name }}
+          </UIMenuItem>
+        </UIMenuGroup>
+        <UIMenuGroup>
+          <UIMenuItem @click="userStore.signOut()">{{
+            $t({ en: 'Sign out', zh: '登出' })
+          }}</UIMenuItem>
+        </UIMenuGroup>
       </UIMenu>
     </UIDropdown>
   </nav>
@@ -269,6 +275,7 @@ const handleSave = useMessageHandle(
 }
 
 .avatar {
+  margin-right: 8px;
   padding: 0 24px;
 
   &:hover {
@@ -280,5 +287,9 @@ const handleSave = useMessageHandle(
     height: 32px;
     border-radius: 16px;
   }
+}
+
+.user-menu {
+  min-width: 120px;
 }
 </style>

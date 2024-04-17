@@ -1,21 +1,38 @@
 <template>
-  <div class="ui-menu-group">
+  <div class="ui-menu-group" :class="{ disabled: disabled }">
     <slot></slot>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script lang="ts">
+import { type InjectionKey, type ComputedRef } from 'vue'
+export const disabledKey: InjectionKey<ComputedRef<boolean>> = Symbol('disabled')
+</script>
+
+<script setup lang="ts">
+import { provide, computed } from 'vue'
+
+const props = withDefaults(
+  defineProps<{
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false
+  }
+)
+
+const disabled = computed(() => props.disabled)
+provide(disabledKey, disabled)
+</script>
 
 <style lang="scss" scoped>
 .ui-menu-group {
   padding: 8px 0px;
 
-  &:first-child {
-    padding-top: 0;
-  }
-
-  &:last-child {
-    padding-bottom: 0;
+  &.disabled {
+    // TODO: confirm color details here
+    color: var(--ui-color-grey-600);
+    background-color: var(--ui-color-disabled);
   }
 }
 

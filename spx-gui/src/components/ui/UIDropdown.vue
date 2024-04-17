@@ -40,6 +40,7 @@ const attachTo = usePopupContainer()
   TODO: use scoped style
 */
 .ui-dropdown-content {
+  overflow: hidden;
   border-radius: var(--ui-border-radius-1);
   background-color: var(--ui-color-grey-100);
   box-shadow: var(--ui-box-shadow-big);
