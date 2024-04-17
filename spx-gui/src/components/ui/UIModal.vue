@@ -1,5 +1,5 @@
 <template>
-  <NModal :to="attachTo">
+  <NModal :to="attachTo" :show="visible" @update:show="handleUpdateShow">
     <div :class="['container', `size-${size || 'medium'}`]">
       <slot></slot>
     </div>
@@ -11,9 +11,17 @@ import { onMounted, ref } from 'vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{
-  title?: string
   size?: ModalSize
+  visible?: boolean
 }>()
+
+const emit = defineEmits<{
+  'update:visible': [visible: boolean]
+}>()
+
+const handleUpdateShow = (visible: boolean) => {
+  emit('update:visible', visible)
+}
 
 const attachTo = ref<HTMLElement>()
 onMounted(() => {

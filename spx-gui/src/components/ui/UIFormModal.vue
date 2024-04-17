@@ -1,5 +1,5 @@
 <template>
-  <UIModal :show="visible" @update-show="handleUpdateShow">
+  <UIModal :visible="visible" @update:visible="handleUpdateShow">
     <div class="container">
       <div class="header">
         <div class="title">
