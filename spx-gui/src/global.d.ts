@@ -10,5 +10,6 @@ declare global {
   }
 }
 
-// If your module exports nothing, you'll need this line. Otherwise, delete it
+// This empty `export {}` is required for `declare` to work, because there's no other exports for this module.
+// See details in https://www.typescriptlang.org/docs/handbook/declaration-files/templates/global-modifying-module-d-ts.html
 export {}
