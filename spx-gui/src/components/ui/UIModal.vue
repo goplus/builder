@@ -1,13 +1,12 @@
 <template>
   <NModal :to="attachTo">
-    <UICard :class="['container', `size-${size || 'medium'}`]">
+    <div :class="['container', `size-${size || 'medium'}`]">
       <slot></slot>
-    </UICard>
+    </div>
   </NModal>
 </template>
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
-import UICard from './UICard.vue'
 import { onMounted, ref } from 'vue'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
@@ -28,6 +27,9 @@ onMounted(() => {
 .container {
   display: flex;
   flex-direction: column;
+  box-shadow: var(--ui-box-shadow-big);
+  border-radius: var(--ui-border-radius-2);
+  background-color: white;
 }
 
 .size-small {

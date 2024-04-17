@@ -1,5 +1,5 @@
 <template>
-  <UIModal :show="show" @update-show="handleUpdateShow">
+  <UIModal :show="visible" @update-show="handleUpdateShow">
     <div class="container">
       <div class="header">
         <div class="title">
@@ -23,15 +23,15 @@ import UIModal from './UIModal.vue'
 
 defineProps<{
   title: string
-  show?: boolean
+  visible?: boolean
 }>()
 
 const emit = defineEmits<{
-  'update:show': [show: boolean]
+  'update:visible': [visible: boolean]
 }>()
 
-const handleUpdateShow = (show: boolean) => {
-  emit('update:show', show)
+const handleUpdateShow = (visible: boolean) => {
+  emit('update:visible', visible)
 }
 
 const handleCloseButton = () => {
@@ -60,6 +60,7 @@ const handleCloseButton = () => {
 .close {
   cursor: pointer;
   font-size: 24px;
+  font-weight: 100;
 }
 
 .divider {
