@@ -3,14 +3,14 @@
     <SpxEditor />
   </div>
   <div class="sider">
-    <SpxStage />
+    <EditorPreview />
     <EditorPanels />
   </div>
 </template>
 
 <script setup lang="ts">
 import SpxEditor from './SpxEditor.vue'
-import SpxStage from './preview/SpxStage.vue'
+import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 </script>
 

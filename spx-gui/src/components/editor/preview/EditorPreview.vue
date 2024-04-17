@@ -1,35 +1,21 @@
-<!--
- * @Author: Zhang zhiyang
- * @Date: 2024-01-15 14:56:59
- * @LastEditors: xuning 453594138@qq.com
- * @LastEditTime: 2024-03-11 18:41:30
- * @FilePath: \spx-gui\src\components\spx-stage\SpxStage.vue
- * @Description:
--->
 <template>
-  <UICard class="spx-stage">
+  <UICard class="editor-preview">
     <UICardHeader>
-      <div class="stage-button">
-        {{
-          $t({
-            en: 'Stage',
-            zh: '舞台'
-          })
-        }}
+      <div class="header">
+        {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton class="run-button" type="success" @click="show = true">{{
-        $t({
-          en: 'Run',
-          zh: '运行'
-        })
-      }}</UIButton>
+      <UIButton class="run-button" type="primary" icon="play" @click="show = true">
+        {{ $t({ en: 'Run', zh: '运行' }) }}
+      </UIButton>
     </UICardHeader>
+
     <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
     </n-modal>
     <div ref="stageViewerContainer" class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
+        class="stage-viewer"
         :width="containerWidth || 400"
         :height="containerHeight || 400"
         :selected-sprite-names="selectedSpriteNames"
@@ -42,15 +28,13 @@
 
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
-import { UICard } from '@/components/ui'
 import { useSize } from '@/utils/dom'
 import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { UICard, UICardHeader, UIButton } from '@/components/ui'
+import RunnerContainer from './RunnerContainer.vue'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
-import RunnerContainer from './RunnerContainer.vue'
-import UIButton from '@/components/ui/UIButton.vue'
-import { UICardHeader } from '@/components/ui'
 
 let show = ref(false)
 
@@ -80,7 +64,7 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.spx-stage {
+.editor-preview {
   height: 40vh;
   display: flex;
   flex-direction: column;
@@ -88,30 +72,20 @@ watch(
   overflow: hidden;
 
   .header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .show {
     flex: 1;
-    text-align: center;
-  }
-
-  .center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .stage-viewer-container {
     display: flex;
+    overflow: hidden;
     justify-content: center;
-  }
-}
+    padding: 1em;
 
-.stage-button {
-  flex: 1;
+    .stage-viewer {
+      border-radius: var(--ui-border-radius-1);
+      background: #f0f0f0;
+    }
+  }
 }
 
 .project-runner-modal {
