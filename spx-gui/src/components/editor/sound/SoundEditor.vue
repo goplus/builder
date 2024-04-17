@@ -1,4 +1,5 @@
 <template>
+  <UICardHeader>Sound</UICardHeader>
   <div class="sound-edit-content">
     <div class="sound-edit-content-top">
       <span class="text-sound">
@@ -30,10 +31,9 @@
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
-import { ref, type Ref } from 'vue'
+import { ref, watchEffect, onUnmounted, type Ref } from 'vue'
 import { NGradientText } from 'naive-ui'
-import { watchEffect } from 'vue'
-import { onUnmounted } from 'vue'
+import { UICardHeader } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
