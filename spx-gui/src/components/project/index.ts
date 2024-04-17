@@ -75,7 +75,7 @@ export function useShareProject() {
     copySharingLink,
     { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
     { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
-  )
+  ).fn
 }
 
 /**
@@ -96,7 +96,7 @@ export function useSaveAndShareProject() {
     },
     { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
     { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
-  )
+  ).fn
 
   return function saveAndShareProject(project: Project) {
     return new Promise<void>((resolve, reject) => {
@@ -148,7 +148,7 @@ export function useStopSharingProject() {
     },
     { en: 'Failed to stop sharing project', zh: '未成功停止共享项目' },
     { en: 'Project sharing is now stopped', zh: '项目已停止共享' }
-  )
+  ).fn
 
   return function stopSharingProject(project: Project) {
     return new Promise<void>((resolve, reject) => {

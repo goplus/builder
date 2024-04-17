@@ -52,7 +52,7 @@ const handleUpload = useMessageHandle(
     editorCtx.project.stage.setBackdrop(backdrop)
   },
   { en: 'Upload failed', zh: '上传失败' }
-)
+).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 

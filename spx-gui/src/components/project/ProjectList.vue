@@ -1,5 +1,5 @@
 <template>
-  <NSpace v-if="isFetching" justify="center">
+  <NSpace v-if="isLoading" justify="center">
     <NSpin size="large" />
   </NSpace>
   <NSpace v-else-if="error != null" justify="center">
@@ -34,7 +34,7 @@ const pageSize = 20
 const pageIndex = ref(1)
 
 const {
-  isFetching,
+  isLoading,
   data: projects,
   error,
   refetch

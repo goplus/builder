@@ -1,31 +1,46 @@
 <template>
-  <button class="ui-button" :class="[`type-${type}`, `size-${size}`]" :type="htmlType">
+  <button
+    class="ui-button"
+    :class="[`type-${type}`, `size-${size}`, loading && 'loading']"
+    :disabled="disabled"
+    :type="htmlType"
+  >
     <UIIcon v-if="icon != null" class="icon" :type="icon" />
     <slot></slot>
   </button>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
 export type ButtonSize = 'small' | 'middle' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     type?: ButtonType
     size?: ButtonSize
     // we may support custom icon later (by slot `icon`)
     icon?: IconType
+    disabled?: boolean
+    loading?: boolean
     htmlType?: ButtonHtmlType
   }>(),
   {
     type: 'primary',
     size: 'middle',
     icon: undefined,
+    disabled: false,
+    loading: false,
     htmlType: 'button'
   }
 )
+
+// TODO: loading style for Button is not designed yet.
+// We use disabled + icon to indicate loading tempararily.
+const disabled = computed(() => props.disabled || props.loading)
+const icon = computed(() => (props.loading ? 'loading' : props.icon))
 </script>
 
 <style lang="scss" scoped>
@@ -46,8 +61,7 @@ withDefaults(
     border-bottom-width: 0;
   }
 
-  &:disabled,
-  &:disabled:hover {
+  &:disabled {
     cursor: not-allowed;
     color: var(--ui-color-disabled-text);
     background-color: var(--ui-color-disabled-bg);
@@ -58,6 +72,20 @@ withDefaults(
     width: var(--ui-font-size-text);
     height: var(--ui-font-size-text);
   }
+
+  &.loading .icon {
+    animation: button-icon-spin 1s linear infinite;
+    @keyframes button-icon-spin {
+      from {
+        transform-origin: 50% 50%;
+        transform: rotate(0);
+      }
+      to {
+        transform-origin: 50% 50%;
+        transform: rotate(360deg);
+      }
+    }
+  }
 }
 
 .type-primary {
@@ -65,7 +93,7 @@ withDefaults(
   background-color: var(--ui-color-primary-main);
   border-bottom-color: var(--ui-color-primary-700);
 
-  &:hover:not(:active) {
+  &:hover:not(:active, :disabled) {
     background-color: var(--ui-color-primary-400);
   }
 }
@@ -75,7 +103,7 @@ withDefaults(
   background-color: var(--ui-color-primary-200);
   border-bottom-color: var(--ui-color-primary-300);
 
-  &:hover:not(:active) {
+  &:hover:not(:active, :disabled) {
     background-color: var(--ui-color-primary-100);
   }
 }
@@ -85,7 +113,7 @@ withDefaults(
   background-color: var(--ui-color-grey-300);
   border-bottom-color: var(--ui-color-grey-600);
 
-  &:hover:not(:active) {
+  &:hover:not(:active, :disabled) {
     background-color: var(--ui-color-grey-200);
   }
 }
@@ -95,7 +123,7 @@ withDefaults(
   background-color: var(--ui-color-danger-main);
   border-bottom-color: var(--ui-color-danger-300);
 
-  &:hover:not(:active) {
+  &:hover:not(:active, :disabled) {
     background-color: var(--ui-color-danger-100);
   }
 }
@@ -105,7 +133,7 @@ withDefaults(
   background-color: var(--ui-color-success-main);
   border-bottom-color: var(--ui-color-success-300);
 
-  &:hover:not(:active) {
+  &:hover:not(:active, :disabled) {
     background-color: var(--ui-color-success-100);
   }
 }

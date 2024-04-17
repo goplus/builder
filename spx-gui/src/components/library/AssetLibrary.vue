@@ -25,7 +25,7 @@
     </div>
   </div>
   <div>
-    <NSpace v-if="isFetching" justify="center">
+    <NSpace v-if="isLoading" justify="center">
       <NSpin size="large" />
     </NSpace>
     <NSpace v-else-if="error != null" justify="center">
@@ -82,7 +82,7 @@ const category = ref(categoryAll.value)
 const ownerType = ref(OwnerType.personal)
 
 const {
-  isFetching,
+  isLoading,
   data: assets,
   error,
   refetch
@@ -147,7 +147,7 @@ const addAssetToProject = useMessageHandle(
   },
   { en: 'Failed to add asset', zh: '素材添加失败' },
   (name) => ({ en: `Asset ${name} added`, zh: `素材 ${name} 添加成功` })
-)
+).fn
 
 async function handleAdd(asset: AssetData) {
   if (isAdded(asset)) return

@@ -2,10 +2,10 @@
  * @desc Definition for Exceptions & tools to help handle them
  */
 
-import { useMessage } from 'naive-ui'
+import { useMessage } from '@/components/ui'
 import { useI18n } from './i18n'
 import type { LocaleMessage } from './i18n'
-import { ref, shallowRef, watchEffect } from 'vue'
+import { ref, shallowRef, watchEffect, type Ref, type ShallowRef } from 'vue'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -60,19 +60,29 @@ export class ActionException extends Exception {
   }
 }
 
+export type ActionRet<Args extends any[], T> = {
+  fn: (...args: Args) => Promise<T>
+  isLoading: Ref<boolean>
+}
+
 /** useAction transforms exceptions to ActionException instances, with proper messages */
 export function useAction<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
   failureSummaryMessage: LocaleMessage
-): (...args: Args) => Promise<T> {
-  return async (...args: Args) => {
+): ActionRet<Args, T> {
+  const isLoading = ref(false)
+  async function actionFn(...args: Args) {
+    isLoading.value = true
     try {
       return await fn(...args)
     } catch (e) {
       if (e instanceof Cancelled) throw e
       throw new ActionException(e, failureSummaryMessage)
+    } finally {
+      isLoading.value = false
     }
   }
+  return { fn: actionFn, isLoading }
 }
 
 /**
@@ -83,16 +93,14 @@ export function useAction<Args extends any[], T>(
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
   failureSummaryMessage: LocaleMessage, // TODO: the messages can be simplified if the messages' format is consistent
-  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage),
-  loadingMessage?: LocaleMessage
-): (...args: Args) => Promise<T> {
+  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
+) {
   const m = useMessage()
   const { t } = useI18n()
   const action = useAction(fn, failureSummaryMessage)
 
-  return (...args: Args) => {
-    if (loadingMessage != null) m.loading(t(loadingMessage))
-    return action(...args).then(
+  function messageHandleFn(...args: Args) {
+    return action.fn(...args).then(
       (ret) => {
         if (successMessage != null) {
           const successText = t(
@@ -108,12 +116,16 @@ export function useMessageHandle<Args extends any[], T>(
       }
     )
   }
+  return {
+    fn: messageHandleFn,
+    isLoading: action.isLoading
+  }
 }
 
 export type QueryRet<T> = {
-  isFetching: boolean
-  data: T | null
-  error: ActionException | null
+  isLoading: Ref<boolean>
+  data: ShallowRef<T | null>
+  error: ShallowRef<ActionException | null>
   refetch: () => void
 }
 
@@ -125,22 +137,21 @@ export type QueryRet<T> = {
  *
  * TODO: if things get more complex, we may need tools like `@tanstack/vue-query`
  */
-export function useQuery<T>(fn: () => Promise<T>, failureSummaryMessage: LocaleMessage) {
+export function useQuery<T>(
+  fn: () => Promise<T>,
+  failureSummaryMessage: LocaleMessage
+): QueryRet<T> {
   const action = useAction(fn, failureSummaryMessage)
-  const isFetching = ref(false)
   const data = shallowRef<T | null>(null)
-  const error = ref<ActionException | null>(null)
+  const error = shallowRef<ActionException | null>(null)
 
   function fetch() {
-    isFetching.value = true
-    action().then(
+    action.fn().then(
       (d) => {
-        isFetching.value = false
         data.value = d
         error.value = null
       },
       (e) => {
-        isFetching.value = false
         error.value = e
       }
     )
@@ -148,5 +159,5 @@ export function useQuery<T>(fn: () => Promise<T>, failureSummaryMessage: LocaleM
 
   watchEffect(fetch)
 
-  return { isFetching, data, error, refetch: fetch }
+  return { isLoading: action.isLoading, data, error, refetch: fetch }
 }

@@ -9,12 +9,14 @@ import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
+import loading from './loading.svg?raw'
 
 const typeIconMap = {
   file,
   arrowDown,
   arrowUp,
-  play
+  play,
+  loading
 }
 
 export type Type = keyof typeof typeIconMap
