@@ -1,5 +1,7 @@
-import { monaco } from './index'
-import type { Snippet } from './index'
+import * as monaco from 'monaco-editor'
+
+export type Snippet = monaco.languages.CompletionItem
+
 // motion snippet
 export const stepSnippet: Snippet = {
   label: 'step',
@@ -455,7 +457,8 @@ export const broadcastSnippet: Snippet = {
   kind: monaco.languages.CompletionItemKind.Function,
   range: new monaco.Range(1, 1, 1, 1)
 }
-const motionSnippets = [
+
+export const motionSnippets = [
   stepSnippet,
   moveSnippet,
   turnSnippet,
@@ -473,7 +476,8 @@ const motionSnippets = [
   changeXYposSnippet,
   bounceOffEdgeSnippet
 ]
-const lookSnippets = [
+
+export const lookSnippets = [
   saySnippet,
   thinkSnippet,
   setCostumeSnippet,
@@ -493,7 +497,8 @@ const lookSnippets = [
   gotoBackSnippet,
   goBackLayersSnippet
 ]
-const soundSnippets = [
+
+export const soundSnippets = [
   playSnippet,
   stopAllSoundsSnippet,
   changeEffectSnippet,
@@ -502,7 +507,8 @@ const soundSnippets = [
   changeVolumeSnippet,
   setVolumeSnippet
 ]
-const controlSnippets = [
+
+export const controlSnippets = [
   waitSnippet,
   forSnippet,
   forRangeSnippet,
@@ -513,7 +519,8 @@ const controlSnippets = [
   dieSnippet,
   setDyingSnippet
 ]
-const eventSnippets = [
+
+export const eventSnippets = [
   onStartSnippet,
   onAnyKeySnippet,
   onKeySnippet,
@@ -525,12 +532,11 @@ const eventSnippets = [
   onTurningSnippet,
   broadcastSnippet
 ]
-const function_completions = [
+
+export const allSnippets = [
   ...motionSnippets,
   ...eventSnippets,
   ...controlSnippets,
   ...soundSnippets,
   ...lookSnippets
 ]
-export default function_completions
-export { motionSnippets, eventSnippets, controlSnippets, soundSnippets, lookSnippets }

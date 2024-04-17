@@ -17,7 +17,7 @@ import { NDivider } from 'naive-ui'
 .main {
   display: flex;
   align-items: center;
-  height: 40px;
+  height: 43px;
   padding: 0 16px;
   font-size: 16px;
   font-weight: 500;
