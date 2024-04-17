@@ -24,9 +24,9 @@
         })
       }}</UIButton>
     </UICardHeader>
-    <UIModal v-model:show="show" size="full" class="modal">
+    <n-modal v-model:show="show" class="project-runner-modal">
       <RunnerContainer :project="project" @close="show = false" />
-    </UIModal>
+    </n-modal>
     <div ref="stageViewerContainer" class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
@@ -44,13 +44,13 @@
 import { ref, watch, computed } from 'vue'
 import { UICard } from '@/components/ui'
 import { useSize } from '@/utils/dom'
+import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
 import RunnerContainer from './RunnerContainer.vue'
 import UIButton from '@/components/ui/UIButton.vue'
 import { UICardHeader } from '@/components/ui'
-import { UIModal } from '@/components/ui'
 
 let show = ref(false)
 
@@ -112,5 +112,20 @@ watch(
 
 .stage-button {
   flex: 1;
+}
+
+.project-runner-modal {
+  margin-left: 32px;
+  margin-right: 32px;
+  height: 80vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  border-radius: 20px;
+  .n-modal-content {
+    border-radius: 20px;
+  }
+  padding: 16px;
 }
 </style>
