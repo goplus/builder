@@ -1,7 +1,10 @@
 <template>
   <div class="container">
     <div class="recorder-waveform-container">
-      <div ref="waveformContainer" class="recorder-waveform"></div>
+      <div
+        ref="waveformContainer"
+        :class="['recorder-waveform', { hidden: !recording && !audioBlob }]"
+      />
       <div v-if="!recording && !audioBlob" class="recorder-waveform-overlay">
         {{
           $t({
@@ -36,18 +39,21 @@
       </div>
       <template v-else>
         <div class="icon-button">
-          <UIIconButton icon="reload" type="boring" @click="resetRecording" />
+          <div class="icon-button-wrapper">
+            <UIIconButton icon="reload" type="secondary" @click="resetRecording" />
+          </div>
+
           <span>
             {{
               $t({
-                en: 'Reset',
-                zh: '重置'
+                en: 'Re-record',
+                zh: '重新录音'
               })
             }}
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton icon="play" type="primary" @click="wavesurfer.playPause()" />
+          <UIIconButton icon="play" type="info" size="large" @click="wavesurfer.playPause()" />
           <span>
             {{
               $t({
@@ -58,7 +64,9 @@
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton icon="check" type="success" @click="saveRecording" />
+          <div class="icon-button-wrapper">
+            <UIIconButton icon="check" type="success" @click="saveRecording" />
+          </div>
           <span>
             {{
               $t({
@@ -222,6 +230,7 @@ const saveRecording = async () => {
 
 const resetRecording = () => {
   audioBlob.value = null
+  wavesurfer.empty()
 }
 
 const closeRecorder = () => {
@@ -256,6 +265,16 @@ const closeRecorder = () => {
   height: 129px;
 }
 
+.hidden {
+  opacity: 0;
+}
+
+.icon-button-wrapper {
+  display: flex;
+  align-items: center;
+  height: 56px;
+}
+
 .button-container {
   display: flex;
   margin-top: 20px;
@@ -265,7 +284,7 @@ const closeRecorder = () => {
 
 .icon-button {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-direction: column;
   font-size: 14px;
   align-items: center;
