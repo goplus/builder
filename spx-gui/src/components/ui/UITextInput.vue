@@ -1,22 +1,24 @@
 <template>
   <NInput class="ui-text-input" :value="value" @update:value="(v) => emit('update:value', v)">
-    <template v-if="label != null" #prefix>
-      {{ label }}
+    <template v-if="!!slots.prefix" #prefix>
+      <slot name="prefix"></slot>
     </template>
   </NInput>
 </template>
 
 <script setup lang="ts">
+import { useSlots } from 'vue'
 import { NInput } from 'naive-ui'
 
 defineProps<{
   value: string
-  label?: string
 }>()
 
 const emit = defineEmits<{
   'update:value': [string]
 }>()
+
+const slots = useSlots()
 </script>
 
 <style lang="scss" scoped>

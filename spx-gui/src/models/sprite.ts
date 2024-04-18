@@ -8,7 +8,7 @@ import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './
 import { Disposble } from './common/disposable'
 import { join } from '@/utils/path'
 import { type RawCostumeConfig, Costume } from './costume'
-import { getCostumeName, getSpriteName, validateSpriteName } from './common/asset'
+import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset'
 import type { Project } from './project'
 
 export enum RotationStyle {
@@ -83,7 +83,7 @@ export class Sprite extends Disposble {
    * Note: the costume's name may be altered to avoid conflict
    */
   addCostume(costume: Costume) {
-    const newCostumeName = getCostumeName(this, costume.name)
+    const newCostumeName = ensureValidCostumeName(costume.name, this)
     costume.setName(newCostumeName)
     costume.setSprite(this)
     this.costumes.push(costume)
@@ -124,9 +124,9 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(nameBase: string, code = '', inits?: SpriteInits) {
+  constructor(name: string, code = '', inits?: SpriteInits) {
     super()
-    this.name = getSpriteName(null, nameBase)
+    this.name = name
     this.code = code
     this.costumes = []
     // TODO: check default values here
@@ -139,6 +139,21 @@ export class Sprite extends Disposble {
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
     return reactive(this) as this
+  }
+
+  /**
+   * Create instance with default inits
+   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   */
+  static create(nameBase: string, code?: string, inits?: SpriteInits) {
+    return new Sprite(getSpriteName(null, nameBase), code ?? '', {
+      heading: 0,
+      x: 0,
+      y: 0,
+      size: 100,
+      visible: true,
+      ...inits
+    })
   }
 
   static async load(name: string, files: Files) {

@@ -89,11 +89,10 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 }
 
 const importSprite = async (asset: ExportedScratchSprite) => {
-  const costumes = asset.costumes.map(
-    (costume) =>
-      new Costume(costume.name, new LazyFile(costume.name, async () => costume.arrayBuffer))
+  const costumes = asset.costumes.map((costume) =>
+    Costume.create(costume.name, new LazyFile(costume.name, async () => costume.arrayBuffer))
   )
-  const sprite = new Sprite(asset.name, '')
+  const sprite = Sprite.create(asset.name, '')
   for (const costume of costumes) {
     sprite.addCostume(costume)
   }
@@ -103,14 +102,14 @@ const importSprite = async (asset: ExportedScratchSprite) => {
 
 const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const sound = new Sound(asset.name, file)
+  const sound = Sound.create(asset.name, file)
   props.project.addSound(sound)
   message.success(`Imported sound ${file.name}`)
 }
 
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const backdrop = new Backdrop(asset.name, file)
+  const backdrop = Backdrop.create(asset.name, file)
   props.project.stage.setBackdrop(backdrop)
   message.success(`Imported backdrop ${file.name}`)
 }

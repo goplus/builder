@@ -23,10 +23,17 @@ export class Backdrop extends Costume {
     this.name = name
   }
 
-  constructor(nameBase: string, file: File, inits?: BackdropInits) {
-    nameBase = getBackdropName(null, nameBase)
-    super(nameBase, file, inits)
+  constructor(name: string, file: File, inits?: BackdropInits) {
+    super(name, file, inits)
     return reactive(this) as this
+  }
+
+  /**
+   * Create instance with default inits
+   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   */
+  static create(nameBase: string, file: File, inits?: BackdropInits) {
+    return new Backdrop(getBackdropName(null, nameBase), file, inits)
   }
 
   static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {

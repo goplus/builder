@@ -1,6 +1,6 @@
 <template>
   <UICard class="main">
-    <SoundEditor v-if="editorCtx.selected?.type === 'sound'" />
+    <SoundEditor v-if="editorCtx.selectedSound != null" :sound="editorCtx.selectedSound" />
     <SpriteEditor v-else-if="editorCtx.selectedSprite != null" :sprite="editorCtx.selectedSprite" />
     <StageEditor
       v-else-if="editorCtx.selected?.type === 'stage'"

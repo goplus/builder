@@ -17,7 +17,7 @@ import * as cloudHelper from './common/cloud'
 import * as localHelper from './common/local'
 import * as zipHelper from './common/zip'
 import { assign } from './common'
-import { getSoundName, getSpriteName } from './common/asset'
+import { ensureValidSpriteName, ensureValidSoundName } from './common/asset'
 
 export type Metadata = {
   id?: string
@@ -65,7 +65,7 @@ export class Project extends Disposble {
    * Note: the sprite's name may be altered to avoid conflict
    */
   addSprite(sprite: Sprite) {
-    const newName = getSpriteName(this, sprite.name)
+    const newName = ensureValidSpriteName(sprite.name, this)
     sprite.setName(newName)
     sprite.setProject(this)
     this.sprites.push(sprite)
@@ -118,7 +118,7 @@ export class Project extends Disposble {
    * Note: the sound's name may be altered to avoid conflict
    */
   addSound(sound: Sound) {
-    const newName = getSoundName(this, sound.name)
+    const newName = ensureValidSoundName(sound.name, this)
     sound.setName(newName)
     sound.setProject(this)
     this.sounds.push(sound)

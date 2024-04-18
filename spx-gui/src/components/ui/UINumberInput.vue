@@ -5,23 +5,25 @@
     :value="value"
     @update:value="(v) => emit('update:value', v)"
   >
-    <template v-if="label != null" #prefix>
-      {{ label }}
+    <template v-if="!!slots.prefix" #prefix>
+      <slot name="prefix"></slot>
     </template>
   </NInputNumber>
 </template>
 
 <script setup lang="ts">
+import { useSlots } from 'vue'
 import { NInputNumber } from 'naive-ui'
 
 defineProps<{
   value: number | null
-  label?: string
 }>()
 
 const emit = defineEmits<{
   'update:value': [number | null]
 }>()
+
+const slots = useSlots()
 </script>
 
 <style lang="scss" scoped>

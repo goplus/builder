@@ -73,6 +73,11 @@ function validateAssetName(name: string) {
   if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
 }
 
+export const spriteNameTip = {
+  en: 'The sprite name can only contain ASCII letters, digits, and the character _.',
+  zh: '精灵名称只能包含英文字母、数字及下划线'
+}
+
 export function validateSpriteName(name: string, project: Project | null) {
   const err = validateAssetName(name)
   if (err != null) return err
@@ -138,9 +143,19 @@ export function getSpriteName(project: Project | null, base = '') {
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
+export function ensureValidSpriteName(name: string, project: Project | null) {
+  if (validateSpriteName(name, project) == null) return name
+  return getSpriteName(project, name)
+}
+
 export function getCostumeName(sprite: Sprite | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'costume'
   return getValidName(base, (n) => validateCostumeName(n, sprite) == null)
+}
+
+export function ensureValidCostumeName(name: string, sprite: Sprite | null) {
+  if (validateCostumeName(name, sprite) == null) return name
+  return getCostumeName(sprite, name)
 }
 
 export function getSoundName(project: Project | null, base = '') {
@@ -148,7 +163,17 @@ export function getSoundName(project: Project | null, base = '') {
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
+export function ensureValidSoundName(name: string, project: Project | null) {
+  if (validateSoundName(name, project) == null) return name
+  return getSoundName(project, name)
+}
+
 export function getBackdropName(stage: Stage | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'backdrop'
   return getValidName(base, (n) => validateBackdropName(n, stage) == null)
+}
+
+export function ensureValidBackdropName(name: string, stage: Stage | null) {
+  if (validateBackdropName(name, stage) == null) return name
+  return getBackdropName(stage, name)
 }

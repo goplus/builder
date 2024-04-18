@@ -4,13 +4,9 @@
   </div>
 </template>
 
-<script lang="ts">
-import { type InjectionKey, type ComputedRef } from 'vue'
-export const disabledKey: InjectionKey<ComputedRef<boolean>> = Symbol('disabled')
-</script>
-
 <script setup lang="ts">
 import { provide, computed } from 'vue'
+import { disabledKey } from './UIMenu.vue'
 
 const props = withDefaults(
   defineProps<{

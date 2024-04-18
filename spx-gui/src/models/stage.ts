@@ -8,7 +8,7 @@ import { filename } from '@/utils/path'
 import { toText, type Files, fromText } from './common/file'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type Size } from './common'
-import { getBackdropName } from './common/asset'
+import { ensureValidBackdropName } from './common/asset'
 
 export type StageInits = {
   backdropIndex: number
@@ -85,7 +85,7 @@ export class Stage {
    * Note: the backdrop's name may be altered to avoid conflict
    */
   _addBackdrop(backdrop: Backdrop) {
-    const newName = getBackdropName(this, backdrop.name)
+    const newName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newName)
     backdrop.setStage(this)
     this._backdrops.push(backdrop)

@@ -1,5 +1,7 @@
 <template>
-  <UICardHeader>Sound</UICardHeader>
+  <EditorHeader :color="uiVariables.color.sound.main">
+    {{ sound.name }}
+  </EditorHeader>
   <div class="sound-edit-content">
     <div class="sound-edit-content-top">
       <span class="text-sound">
@@ -33,11 +35,15 @@
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted, type Ref } from 'vue'
 import { NGradientText } from 'naive-ui'
-import { UICardHeader } from '@/components/ui'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import EditorHeader from '../EditorHeader.vue'
+import { useUIVariables } from '@/components/ui'
+import type { Sound } from '@/models/sound'
 
-const editorCtx = useEditorCtx()
+const props = defineProps<{
+  sound: Sound
+}>()
 
+const uiVariables = useUIVariables()
 const waveformContainer = ref<HTMLDivElement>()
 
 let wavesurfer: WaveSurfer | null = null
@@ -70,18 +76,10 @@ watchEffect(
       interact: false
     })
 
-    if (!editorCtx.selectedSound) {
-      return
-    }
-
-    const mime = nameToMime(editorCtx.selectedSound.file.name)
-    const nativeFile = new File(
-      [await editorCtx.selectedSound.file.arrayBuffer()],
-      editorCtx.selectedSound.name,
-      {
-        type: mime
-      }
-    )
+    const mime = nameToMime(props.sound.file.name)
+    const nativeFile = new File([await props.sound.file.arrayBuffer()], props.sound.name, {
+      type: mime
+    })
     wavesurfer.loadBlob(nativeFile)
 
     wavesurfer.on('play', () => {
