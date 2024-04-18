@@ -66,10 +66,6 @@ const currentModal = shallowRef<ModalInfo | null>(null)
 const currentVisible = ref(false)
 
 function setCurrent(modal: ModalInfo | null) {
-  // if (modal == null) {
-  //   currentModal.value = null
-  //   return
-  // }
   currentModal.value = modal
   if (modal != null) currentVisible.value = true
 }

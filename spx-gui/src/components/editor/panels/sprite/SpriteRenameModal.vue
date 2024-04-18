@@ -34,7 +34,6 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-// const message = useMessage()
 const { t } = useI18n()
 
 const form = useForm({
