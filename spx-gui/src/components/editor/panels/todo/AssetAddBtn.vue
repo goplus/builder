@@ -54,17 +54,22 @@
       <n-button v-if="props.type == AssetType.Sound" @click="openRecorderFunc()">
         {{ 'sounds.record' }}
       </n-button>
-
-      <!-- E Component Add Button second step -->
     </div>
   </div>
-  <!-- E Component Add Button type second step -->
 
-  <!-- S Sound Recorder -->
-  <SoundRecorder v-if="showRecorder" @close="showRecorder = false" />
-  <!-- E Sound Recorder -->
+  <UIFormModal
+    v-model:visible="showRecorder"
+    :title="
+      $t({
+        en: 'Record Sound',
+        zh: '录制声音'
+      })
+    "
+    center-title
+  >
+    <SoundRecorder @close="showRecorder = false" />
+  </UIFormModal>
 
-  <!-- S Modal Sprite Multi Costume Upload -->
   <n-modal
     v-model:show="showUploadModal"
     preset="card"
@@ -138,6 +143,7 @@ import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { sprite2Asset, validateSpriteName } from '@/models/common/asset'
 import { useAddAssetFromLibrary } from '@/components/library'
+import { UIFormModal } from '@/components/ui'
 
 // ----------props & emit------------------------------------
 interface PropType {

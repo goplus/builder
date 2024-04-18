@@ -2,7 +2,7 @@
   <UIModal :visible="visible" @update:visible="handleUpdateShow">
     <div class="container">
       <div class="header">
-        <div class="title">
+        <div :class="['title', { center: centerTitle }]">
           {{ title }}
         </div>
         <div class="close" @click="handleCloseButton">×</div>
@@ -24,6 +24,7 @@ import UIModal from './UIModal.vue'
 defineProps<{
   title: string
   visible?: boolean
+  centerTitle?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -47,20 +48,28 @@ const handleCloseButton = () => {
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 8px 24px;
+  position: relative;
+  height: 56px;
 }
 
 .title {
   font-size: 16px;
   line-height: 26px;
+  flex: 1;
+}
+
+.center {
+  text-align: center;
 }
 
 .close {
   cursor: pointer;
   font-size: 24px;
   font-weight: 100;
+  position: absolute;
+  right: 20px;
 }
 
 .divider {

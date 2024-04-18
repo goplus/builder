@@ -1,49 +1,74 @@
 <template>
-  <!-- TODO: Refactor modal to use Naive UI -->
-  <div class="modal">
-    <div class="modal-content">
-      <div class="close-button" @click="closeRecorder">
-        <span class="close-button-text"> × </span>
+  <div class="container">
+    <div class="recorder-waveform-container">
+      <div ref="waveformContainer" class="recorder-waveform"></div>
+      <div v-if="!recording && !audioBlob" class="recorder-waveform-overlay">
+        {{
+          $t({
+            en: 'Begin recording by clicking the button below',
+            zh: '点击下方按钮开始录音'
+          })
+        }}
       </div>
-      <div class="recorder-waveform-container">
-        <div ref="waveformContainer" class="recorder-waveform"></div>
-      </div>
-      <div class="name-input-container">
-        <span class="name-input-hint">
+    </div>
+    <div class="button-container">
+      <div v-if="!recording && !audioBlob" class="icon-button">
+        <UIIconButton icon="microphone" type="danger" @click="startRecording" />
+        <span>
           {{
             $t({
-              en: 'Name',
-              zh: '名称'
+              en: 'Record',
+              zh: '录音'
             })
           }}
         </span>
       </div>
-      <div v-if="!recording && audioBlob" @click="wavesurfer.playPause()">
-        <NButton>{{ playing ? 'Pause' : 'Play' }}</NButton>
-      </div>
-      <div class="button-container">
-        <NButton @click="handleRecordingClick">
-          {{
-            recording
-              ? $t({
-                  en: 'Stop',
-                  zh: '停止'
-                })
-              : $t({
-                  en: 'Record',
-                  zh: '录音'
-                })
-          }}
-        </NButton>
-        <NButton :disabled="!audioBlob || recording" @click="saveRecording">
+      <div v-else-if="recording" class="icon-button">
+        <UIIconButton icon="stop" type="danger" @click="stopRecording" />
+        <span>
           {{
             $t({
-              en: 'Save',
-              zh: '保存'
+              en: 'Stop',
+              zh: '停止'
             })
           }}
-        </NButton>
+        </span>
       </div>
+      <template v-else>
+        <div class="icon-button">
+          <UIIconButton icon="reload" type="boring" @click="resetRecording" />
+          <span>
+            {{
+              $t({
+                en: 'Reset',
+                zh: '重置'
+              })
+            }}
+          </span>
+        </div>
+        <div class="icon-button">
+          <UIIconButton icon="play" type="primary" @click="wavesurfer.playPause()" />
+          <span>
+            {{
+              $t({
+                en: 'Play',
+                zh: '播放'
+              })
+            }}
+          </span>
+        </div>
+        <div class="icon-button">
+          <UIIconButton icon="check" type="success" @click="saveRecording" />
+          <span>
+            {{
+              $t({
+                en: 'Save',
+                zh: '保存'
+              })
+            }}
+          </span>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -54,10 +79,11 @@ import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js'
 import { defineEmits, onMounted, ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { onUnmounted } from 'vue'
-import { NButton } from 'naive-ui'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
+import { purple } from '@/components/ui/tokens/colors'
+import { UIIconButton } from '@/components/ui'
 
 const emits = defineEmits<{
   close: []
@@ -91,10 +117,60 @@ const initWaveSurfer = () => {
     wavesurfer.destroy()
   }
   wavesurfer = WaveSurfer.create({
+    interact: false,
     container: waveformContainer.value,
-    waveColor: 'rgb(255,114,142)',
-    progressColor: 'rgb(224,213,218)',
-    cursorColor: 'rgb(229,29,100)'
+    waveColor: purple[400],
+    progressColor: purple[300] + '80',
+    height: 160,
+    cursorWidth: 4,
+    normalize: true,
+    renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
+      const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
+        const { width, height } = ctx.canvas
+        const halfHeight = height / 2
+        const numPoints = Math.floor(width / 5)
+        const blockSize = Math.floor(channel.length / numPoints)
+        const smoothedData = new Float32Array(numPoints)
+
+        // Smooth the data by averaging blocks
+        for (let i = 0; i < numPoints; i++) {
+          let sum = 0
+          for (let j = 0; j < blockSize; j++) {
+            sum += Math.abs(channel[i * blockSize + j])
+          }
+          smoothedData[i] = sum / blockSize
+        }
+
+        // Draw with bezier curves
+        ctx.beginPath()
+        ctx.moveTo(0, halfHeight)
+
+        for (let i = 1; i < smoothedData.length; i++) {
+          const prevX = (i - 1) * (width / numPoints)
+          const currX = i * (width / numPoints)
+          const midX = (prevX + currX) / 2
+          const prevY = halfHeight + smoothedData[i - 1] * halfHeight * vScale
+          const currY = halfHeight + smoothedData[i] * halfHeight * vScale
+
+          // Use a quadratic bezier curve to the middle of the interval for a smoother line
+          ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + currY) / 2)
+          ctx.quadraticCurveTo(midX, (prevY + currY) / 2, currX, currY)
+        }
+
+        ctx.lineTo(width, halfHeight)
+        ctx.strokeStyle = purple[400]
+        ctx.stroke()
+        ctx.closePath()
+        ctx.fillStyle = purple[400]
+        ctx.fill()
+      }
+
+      const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
+
+      // Only one channel is assumed, render it twice (mirrored)
+      smoothAndDrawChannel(channel, 5) // Upper part
+      smoothAndDrawChannel(channel, -5) // Lower part (mirrored)
+    }
   })
 
   recordPlugin = wavesurfer.registerPlugin(
@@ -136,14 +212,6 @@ const stopRecording = () => {
   recordPlugin.stopRecording()
 }
 
-const handleRecordingClick = () => {
-  if (recording.value) {
-    stopRecording()
-  } else {
-    startRecording()
-  }
-}
-
 const saveRecording = async () => {
   const soundName = `Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
   const file = fromBlob(`${soundName}.webm`, audioBlob.value!)
@@ -152,58 +220,35 @@ const saveRecording = async () => {
   closeRecorder()
 }
 
+const resetRecording = () => {
+  audioBlob.value = null
+}
+
 const closeRecorder = () => {
   emits('close')
 }
 </script>
 
 <style lang="scss" scoped>
-.modal {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  z-index: 10001;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
+.container {
   display: flex;
   flex-direction: column;
-  background-color: #fefefe;
-  padding: 20px;
-  width: 80%;
-  max-width: 500px;
-  min-height: 300px;
-  max-height: 90vh;
-  border-radius: 15px;
-}
-
-.close-button {
-  color: #aaaaaa;
-  float: right;
-  position: fixed;
-  align-self: flex-end;
-  margin-top: -30px;
-}
-.close-button:hover,
-.close-button:focus {
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
-}
-.close-button-text {
-  font-size: 50px;
 }
 
 .recorder-waveform-container {
-  border: 1px dashed #b99696;
-  margin-top: 30px;
-  padding-top: 1px;
+  background-color: var(--ui-color-grey-300);
+  border-radius: var(--ui-border-radius-2);
+  height: 160px;
+  position: relative;
+}
+
+.recorder-waveform-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--ui-color-grey-800);
+  white-space: nowrap;
 }
 
 .recorder-waveform {
@@ -211,20 +256,18 @@ const closeRecorder = () => {
   height: 129px;
 }
 
-.name-input-container {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  width: 50%;
-}
-
-.name-input-hint {
-  color: gray;
-  margin-right: 5px;
-}
-
 .button-container {
   display: flex;
   margin-top: 20px;
-  gap: 16px;
+  gap: 40px;
+  justify-content: center;
+}
+
+.icon-button {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  font-size: 14px;
+  align-items: center;
 }
 </style>
