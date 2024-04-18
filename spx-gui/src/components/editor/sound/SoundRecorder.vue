@@ -83,7 +83,6 @@
 
 <script lang="ts" setup>
 import WaveSurfer from 'wavesurfer.js'
-import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js'
 import { defineEmits, onMounted, ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { onUnmounted } from 'vue'
@@ -92,6 +91,7 @@ import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import { purple } from '@/components/ui/tokens/colors'
 import { UIIconButton } from '@/components/ui'
+import { RecordPlugin } from '@/utils/wavesurfer-record'
 
 const emit = defineEmits<{
   saved: []
@@ -182,11 +182,7 @@ const initWaveSurfer = () => {
     }
   })
 
-  recordPlugin = wavesurfer.registerPlugin(
-    RecordPlugin.create({
-      scrollingWaveform: true
-    })
-  )
+  recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
 
   wavesurfer.on('play', () => {
     playing.value = true
