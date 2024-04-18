@@ -54,17 +54,11 @@
       <n-button v-if="props.type == AssetType.Sound" @click="openRecorderFunc()">
         {{ 'sounds.record' }}
       </n-button>
-
-      <!-- E Component Add Button second step -->
     </div>
   </div>
-  <!-- E Component Add Button type second step -->
 
-  <!-- S Sound Recorder -->
-  <SoundRecorder v-if="showRecorder" @close="showRecorder = false" />
-  <!-- E Sound Recorder -->
+  <SoundRecorderModal v-model:visible="showRecorder" />
 
-  <!-- S Modal Sprite Multi Costume Upload -->
   <n-modal
     v-model:show="showUploadModal"
     preset="card"
@@ -128,7 +122,6 @@ import { Add as AddIcon } from '@vicons/ionicons5'
 import { Sprite } from '@/models/sprite'
 import { fromNativeFile } from '@/models/common/file'
 import { Sound } from '@/models/sound'
-import SoundRecorder from '@/components/editor/sound/SoundRecorder.vue'
 import { addAsset, IsPublic, AssetType } from '@/apis/asset'
 import { isImage, isSound } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
@@ -138,6 +131,7 @@ import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { sprite2Asset, validateSpriteName } from '@/models/common/asset'
 import { useAddAssetFromLibrary } from '@/components/library'
+import SoundRecorderModal from '../../sound/SoundRecorderModal.vue'
 
 // ----------props & emit------------------------------------
 interface PropType {

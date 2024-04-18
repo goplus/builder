@@ -3,7 +3,7 @@
 <template>
   <button
     class="ui-icon-button"
-    :class="[`type-${type}`, loading && 'loading']"
+    :class="[`type-${type}`, loading && 'loading', `size-${size}`]"
     type="button"
     :disabled="disabled"
   >
@@ -17,7 +17,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
+export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success' | 'info'
+export type ButtonSize = 'medium' | 'large'
 
 const props = withDefaults(
   defineProps<{
@@ -26,12 +27,14 @@ const props = withDefaults(
     icon: IconType
     disabled?: boolean
     loading?: boolean
+    size?: ButtonSize
   }>(),
   {
     type: 'primary',
     icon: undefined,
     disabled: false,
-    loading: false
+    loading: false,
+    size: 'medium'
   }
 )
 
@@ -44,15 +47,15 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 <style lang="scss" scoped>
 .ui-icon-button {
   display: flex;
-  width: var(--ui-line-height-3);
-  height: var(--ui-line-height-3);
+  width: 42px;
+  height: 42px;
   align-items: center;
   justify-content: center;
 
   border: none;
   border-bottom-width: 4px;
   border-bottom-style: solid;
-  border-radius: var(--ui-line-height-3);
+  border-radius: 42px;
   cursor: pointer;
 
   &:not(:disabled):active {
@@ -68,8 +71,8 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   }
 
   .icon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     display: flex;
 
     & > :deep(*) {
@@ -103,13 +106,23 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   }
 }
 
+.size-large {
+  width: 56px;
+  height: 56px;
+
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
 .type-secondary {
-  color: var(--ui-color-primary-main);
-  background-color: var(--ui-color-primary-200);
-  border-bottom-color: var(--ui-color-primary-300);
+  color: var(--ui-color-grey-100);
+  background-color: var(--ui-color-blue-500);
+  border-bottom-color: var(--ui-color-blue-700);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-primary-100);
+    background-color: var(--ui-color-blue-400);
   }
 }
 
@@ -140,6 +153,16 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 
   &:hover:not(:active) {
     background-color: var(--ui-color-success-100);
+  }
+}
+
+.type-info {
+  color: var(--ui-color-grey-100);
+  background-color: var(--ui-color-purple-500);
+  border-bottom-color: var(--ui-color-purple-700);
+
+  &:hover:not(:active) {
+    background-color: var(--ui-color-purple-400);
   }
 }
 </style>

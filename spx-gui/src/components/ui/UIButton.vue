@@ -14,7 +14,7 @@
 import { computed } from 'vue'
 import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
 export type ButtonType = 'primary' | 'secondary' | 'boring' | 'danger' | 'success'
-export type ButtonSize = 'small' | 'middle' | 'large'
+export type ButtonSize = 'small' | 'medium' | 'large'
 export type ButtonHtmlType = 'button' | 'submit' | 'reset'
 
 const props = withDefaults(
@@ -29,7 +29,7 @@ const props = withDefaults(
   }>(),
   {
     type: 'primary',
-    size: 'middle',
+    size: 'medium',
     icon: undefined,
     disabled: false,
     loading: false,
