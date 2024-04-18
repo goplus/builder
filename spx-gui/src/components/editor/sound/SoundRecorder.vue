@@ -134,6 +134,7 @@ const initWaveSurfer = () => {
     cursorWidth: 4,
     normalize: true,
     renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
+      // TODO: Better drawing algorithm to reduce flashing?
       const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
         const { width, height } = ctx.canvas
         const halfHeight = height / 2
