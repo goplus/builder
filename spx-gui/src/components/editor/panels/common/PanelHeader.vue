@@ -1,7 +1,8 @@
 <!-- Header for Sprite/Sound Panel -->
 
 <template>
-  <div class="panel-header" :class="{ active }" :style="styleVars">
+  <!-- TODO: use UICardHeader? -->
+  <div class="panel-header" :class="{ active }">
     <div class="main">
       <slot></slot>
     </div>
@@ -19,24 +20,9 @@
 <script setup lang="ts">
 import { UIDropdown, UIIcon } from '@/components/ui'
 
-// uiVariables.color.(sprite|sound|stage)
-export type Color = {
-  400: string
-  500: string
-  600: string
-  main: string
-}
-
-const props = defineProps<{
+defineProps<{
   active: boolean
-  color: Color
 }>()
-
-const styleVars = {
-  '--panel-header-color-normal': props.color.main,
-  '--panel-header-color-hover': props.color[400],
-  '--panel-header-color-active': props.color[600]
-}
 </script>
 
 <style scoped lang="scss">
@@ -51,8 +37,8 @@ const styleVars = {
 
   &.active {
     color: var(--ui-color-grey-100);
-    border-color: var(--panel-header-color-normal);
-    background-color: var(--panel-header-color-normal);
+    border-color: var(--panel-color-main);
+    background-color: var(--panel-color-main);
   }
 }
 
@@ -73,14 +59,22 @@ const styleVars = {
   color: inherit;
   border-radius: 14px;
   cursor: pointer;
+
+  // TODO: check color here
+  &:hover {
+    background-color: var(--ui-color-grey-200);
+  }
+  &:active {
+    background-color: var(--ui-color-grey-300);
+  }
 }
 
 .panel-header.active .add {
   &:hover {
-    background-color: var(--panel-header-color-hover);
+    background-color: var(--panel-color-400);
   }
   &:active {
-    background-color: var(--panel-header-color-active);
+    background-color: var(--panel-color-600);
   }
 }
 </style>

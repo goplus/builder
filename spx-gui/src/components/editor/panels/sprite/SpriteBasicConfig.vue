@@ -1,7 +1,12 @@
 <template>
   <div class="line">
     {{ sprite.name }}
-    <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
+    <UIIcon
+      class="edit-icon"
+      :title="$t({ en: 'Rename', zh: '重命名' })"
+      type="edit"
+      @click="handleNameEdit"
+    />
   </div>
   <div class="line">
     <UINumberInput type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
@@ -16,9 +21,7 @@
       :value="sprite.size * 100"
       @update:value="(s) => sprite.setSize((s ?? 100) / 100)"
     >
-      <template #prefix>
-        {{ $t({ en: 'Size', zh: '大小' }) }}:
-      </template>
+      <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
     </UINumberInput>
   </div>
   <div class="line">
@@ -46,14 +49,14 @@
       />
     </p>
   </div>
-  <div class="line">
-    <!-- Entry for "add to library", its appearance or position may change later -->
-    <UIButton @click="handleAddToLibrary(sprite)">Add to library</UIButton>
+  <div v-if="isLibraryEnabled()" class="line">
+    <UIButton @click="handleAddToLibrary(sprite)">Add to asset library</UIButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
+import { isLibraryEnabled } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { useAddAssetToLibrary } from '@/components/library'
@@ -90,6 +93,13 @@ function handleAddToLibrary(sprite: Sprite) {
 
 .edit-icon {
   cursor: pointer;
+  color: var(--ui-color-grey-900);
+  &:hover {
+    color: var(--ui-color-grey-800);
+  }
+  &:active {
+    color: var(--ui-color-grey-1000);
+  }
 }
 
 .with-label {

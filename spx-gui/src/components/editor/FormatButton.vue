@@ -18,8 +18,8 @@ const props = defineProps<{
   codeEditor: InstanceType<typeof CodeEditor>
 }>()
 
-const handleFormat = useMessageHandle(
-  () => props.codeEditor.format(),
-  { en: 'Format failed', zh: '格式化失败' }
-)
+const handleFormat = useMessageHandle(() => props.codeEditor.format(), {
+  en: 'Format failed',
+  zh: '格式化失败'
+})
 </script>

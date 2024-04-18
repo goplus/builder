@@ -28,7 +28,8 @@ const emit = defineEmits<{
   display: flex;
 }
 
-.positive, .negative {
+.positive,
+.negative {
   width: 32px;
   height: 32px;
   display: flex;

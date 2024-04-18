@@ -222,7 +222,7 @@ const stopRecording = () => {
 const saveRecording = async () => {
   const soundName = `Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
   const file = fromBlob(`${soundName}.webm`, audioBlob.value!)
-  const sound = new Sound(soundName, file)
+  const sound = Sound.create(soundName, file)
   editorCtx.project.addSound(sound)
   closeRecorder()
 }

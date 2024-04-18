@@ -77,14 +77,22 @@ export class Costume {
     })
   }
 
-  constructor(nameBase: string, file: File, inits?: CostumeInits) {
-    this.name = getCostumeName(null, nameBase)
+  constructor(name: string, file: File, inits?: CostumeInits) {
+    this.name = name
     this.img = file
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
     this.faceRight = inits?.faceRight ?? 0
     this.bitmapResolution = inits?.bitmapResolution ?? 1
     return reactive(this) as this
+  }
+
+  /**
+   * Create instance with default inits
+   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   */
+  static create(nameBase: string, file: File, inits?: CostumeInits) {
+    return new Costume(getCostumeName(null, nameBase), file, inits)
   }
 
   static load(

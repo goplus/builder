@@ -77,13 +77,9 @@ watchEffect(
     })
 
     const mime = nameToMime(props.sound.file.name)
-    const nativeFile = new File(
-      [await props.sound.file.arrayBuffer()],
-      props.sound.name,
-      {
-        type: mime
-      }
-    )
+    const nativeFile = new File([await props.sound.file.arrayBuffer()], props.sound.name, {
+      type: mime
+    })
     wavesurfer.loadBlob(nativeFile)
 
     wavesurfer.on('play', () => {

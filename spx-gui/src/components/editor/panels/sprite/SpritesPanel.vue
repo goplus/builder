@@ -1,29 +1,42 @@
 <template>
-  <section v-show="props.active" class="sprites-details">
-    <PanelHeader :color="uiVariables.color.sprite" :active="editorCtx.selectedSprite != null">
-      {{ $t({ en: 'Sprites', zh: '精灵' }) }}
-      <template #add-options>
-        <UIMenu>
-          <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
-          <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
-        </UIMenu>
-      </template>
-    </PanelHeader>
-    <ul class="sprite-list">
-      <SpriteItem
-        v-for="sprite in sprites"
-        :key="sprite.name"
-        :sprite="sprite"
-        :active="isSelected(sprite)"
-        @remove="handleSpriteRemove(sprite)"
-        @click="handleSpriteClick(sprite)"
-      />
-    </ul>
-    <PanelFooter v-if="editorCtx.selectedSprite != null">
-      <SpriteBasicConfig :sprite="editorCtx.selectedSprite" :project="editorCtx.project" />
-    </PanelFooter>
-  </section>
-  <div v-show="!props.active" class="sprites-overview">TODO</div>
+  <CommonPanel
+    :expanded="expanded"
+    :active="editorCtx.selectedSprite != null"
+    :title="$t({ en: 'Sprites', zh: '精灵' })"
+    :color="uiVariables.color.sprite"
+    @expand="emit('expand')"
+  >
+    <template #add-options>
+      <UIMenu>
+        <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+      </UIMenu>
+    </template>
+    <template #details>
+      <PanelList>
+        <SpriteItem
+          v-for="sprite in sprites"
+          :key="sprite.name"
+          :sprite="sprite"
+          :active="isSelected(sprite)"
+          @remove="handleSpriteRemove(sprite)"
+          @click="handleSpriteClick(sprite)"
+        />
+      </PanelList>
+      <PanelFooter v-if="editorCtx.selectedSprite != null">
+        <SpriteBasicConfig :sprite="editorCtx.selectedSprite" :project="editorCtx.project" />
+      </PanelFooter>
+    </template>
+    <template #summary>
+      <PanelSummaryList :has-more="spritesForOverviewHasMore">
+        <SpriteSummaryItem
+          v-for="sprite in spritesForOverview"
+          :key="sprite.name"
+          :sprite="sprite"
+        />
+      </PanelSummaryList>
+    </template>
+  </CommonPanel>
 </template>
 
 <script setup lang="ts">
@@ -38,19 +51,30 @@ import { useAddAssetFromLibrary } from '@/components/library'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
-import SpriteItem from './SpriteItem.vue'
-import SpriteBasicConfig from './SpriteBasicConfig.vue'
-import PanelHeader from '../common/PanelHeader.vue'
+import CommonPanel from '../common/CommonPanel.vue'
+import PanelList from '../common/PanelList.vue'
+import PanelSummaryList from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
+import SpriteItem from './SpriteItem.vue'
+import SpriteSummaryItem from './SpriteSummaryItem.vue'
+import SpriteBasicConfig from './SpriteBasicConfig.vue'
 
-const props = defineProps<{
-  active: boolean
+defineProps<{
+  expanded: boolean
+}>()
+
+const emit = defineEmits<{
+  expand: []
 }>()
 
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const sprites = computed(() => editorCtx.project.sprites)
+
+const numForPreview = 2 // TODO: it will be ideal to calculate the number (2) with element height
+const spritesForOverview = computed(() => sprites.value.slice(0, numForPreview))
+const spritesForOverviewHasMore = sprites.value.length > numForPreview
 
 function isSelected(sprite: Sprite) {
   return sprite.name === editorCtx.selectedSprite?.name
@@ -69,10 +93,10 @@ const handleUpload = useMessageHandle(
     const imgs = await selectImgs()
     const project = editorCtx.project
     const spriteName = imgs.length === 1 ? stripExt(imgs[0].name) : ''
-    const sprite = new Sprite(spriteName)
+    const sprite = Sprite.create(spriteName)
     for (const img of imgs) {
       const file = fromNativeFile(img)
-      const costume = new Costume(stripExt(img.name), file)
+      const costume = Costume.create(stripExt(img.name), file)
       sprite.addCostume(costume)
     }
     project.addSprite(sprite)
@@ -88,35 +112,11 @@ function handleChoose() {
 </script>
 
 <style scoped lang="scss">
-.sprites-details, .sprites-overview {
-  border-right: 1px solid var(--ui-color-grey-300);
-}
-
-.sprites-details {
-  height: 100%;
+.overview-sprite-list {
+  padding: 12px;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.add {
-  margin-left: 0.5em;
-  padding: 0 4px;
-  cursor: pointer;
-}
-
-.sprite-list {
-  flex: 1 1 0;
-  overflow-y: auto;
-  margin: 0;
-  padding: 12px var(--ui-gap-middle);
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
-}
-
-.sprites-overview {
-  width: 60px;
+  gap: 12px;
 }
 </style>

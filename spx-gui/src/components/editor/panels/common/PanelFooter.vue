@@ -1,4 +1,4 @@
-<!-- Header for Sprite/Sound Panel -->
+<!-- (floating) Footer for Sprite/Sound Panel -->
 
 <template>
   <div class="panel-footer">
@@ -6,9 +6,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-
-</script>
+<script setup lang="ts"></script>
 
 <style scoped lang="scss">
 .panel-footer {

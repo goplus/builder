@@ -44,12 +44,21 @@ export class Sound {
     this.sampleCount = sampleCount
   }
 
-  constructor(nameBase: string, file: File, inits?: SoundInits) {
-    this.name = getSoundName(null, nameBase)
+  constructor(name: string, file: File, inits?: SoundInits) {
+    this.name = name
     this.file = file
     // TODO: confirm default values here
-    ;(this.rate = inits?.rate ?? 0), (this.sampleCount = inits?.sampleCount ?? 0)
+    this.rate = inits?.rate ?? 0
+    this.sampleCount = inits?.sampleCount ?? 0
     return reactive(this) as this
+  }
+
+  /**
+   * Create instance with default inits
+   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   */
+  static create(nameBase: string, file: File, inits?: SoundInits) {
+    return new Sound(getSoundName(null, nameBase), file, inits)
   }
 
   static async load(name: string, files: Files) {
