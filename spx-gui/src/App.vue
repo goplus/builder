@@ -1,14 +1,14 @@
 <template>
   <UIConfigProvider>
-    <UIModalProvider>
-      <NMessageProvider>
+    <NMessageProvider>
+      <UIModalProvider>
         <NDialogProvider>
           <NModalProvider>
             <RouterView />
           </NModalProvider>
         </NDialogProvider>
-      </NMessageProvider>
-    </UIModalProvider>
+      </UIModalProvider>
+    </NMessageProvider>
   </UIConfigProvider>
 </template>
 
