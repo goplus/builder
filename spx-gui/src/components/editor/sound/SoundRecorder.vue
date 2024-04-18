@@ -93,8 +93,9 @@ import { Sound } from '@/models/sound'
 import { purple } from '@/components/ui/tokens/colors'
 import { UIIconButton } from '@/components/ui'
 
-const emits = defineEmits<{
-  close: []
+const emit = defineEmits<{
+  saved: []
+  recordStarted: []
 }>()
 
 const recording = ref(false)
@@ -204,6 +205,7 @@ const initWaveSurfer = () => {
 }
 
 const startRecording = async () => {
+  emit('recordStarted')
   const devices = await RecordPlugin.getAvailableAudioDevices()
   if (devices.length === 0) {
     alert('No audio input devices available. TODO: i18n, use message hook?')
@@ -234,7 +236,7 @@ const resetRecording = () => {
 }
 
 const closeRecorder = () => {
-  emits('close')
+  emit('saved')
 }
 </script>
 

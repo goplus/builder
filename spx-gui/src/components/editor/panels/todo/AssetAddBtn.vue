@@ -57,18 +57,7 @@
     </div>
   </div>
 
-  <UIFormModal
-    v-model:visible="showRecorder"
-    :title="
-      $t({
-        en: 'Record Sound',
-        zh: '录制声音'
-      })
-    "
-    center-title
-  >
-    <SoundRecorder @close="showRecorder = false" />
-  </UIFormModal>
+  <SoundRecorderModal v-model:visible="showRecorder" />
 
   <n-modal
     v-model:show="showUploadModal"
@@ -133,7 +122,6 @@ import { Add as AddIcon } from '@vicons/ionicons5'
 import { Sprite } from '@/models/sprite'
 import { fromNativeFile } from '@/models/common/file'
 import { Sound } from '@/models/sound'
-import SoundRecorder from '@/components/editor/sound/SoundRecorder.vue'
 import { addAsset, IsPublic, AssetType } from '@/apis/asset'
 import { isImage, isSound } from '@/utils/utils'
 import { useNetwork } from '@/utils/network'
@@ -143,7 +131,7 @@ import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { sprite2Asset, validateSpriteName } from '@/models/common/asset'
 import { useAddAssetFromLibrary } from '@/components/library'
-import { UIFormModal } from '@/components/ui'
+import SoundRecorderModal from '../../sound/SoundRecorderModal.vue'
 
 // ----------props & emit------------------------------------
 interface PropType {
