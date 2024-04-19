@@ -1,7 +1,7 @@
 <template>
   <div
     class="ui-menu-item"
-    :class="{ disabled: disabled, interactive: interactive }"
+    :class="{ disabled: ctx?.disabled, 'in-group': ctx?.inGroup, interactive: interactive }"
     @click="handleClick"
   >
     <div v-if="hasSlotIcon" class="icon">
@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { inject, useSlots } from 'vue'
-import { disabledKey } from './UIMenu.vue'
+import { ctxKey } from './UIMenu.vue'
 
 withDefaults(
   defineProps<{
@@ -30,10 +30,10 @@ const emit = defineEmits<{
 
 const slots = useSlots()
 const hasSlotIcon = !!slots['icon']
-const disabled = inject(disabledKey)
+const ctx = inject(ctxKey)
 
 function handleClick(e: MouseEvent) {
-  if (disabled?.value) return
+  if (ctx?.value.disabled) return
   emit('click', e)
 }
 </script>
@@ -58,6 +58,11 @@ $line-height: 24px; // TODO: ui var?
       // TODO: recheck color here
       background-color: var(--ui-color-grey-400);
     }
+  }
+
+  &:not(.in-group) + .ui-menu-item {
+    // TODO: check margin here
+    border-top: 1px solid var(--ui-color-dividing-line-2);
   }
 }
 

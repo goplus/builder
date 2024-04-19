@@ -9,6 +9,7 @@ import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
+import playCircle from './play-circle.svg?raw'
 import loading from './loading.svg?raw'
 import check from './check.svg?raw'
 import microphone from './microphone.svg?raw'
@@ -20,12 +21,14 @@ import edit from './edit.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
 import more from './more.svg?raw'
+import exchange from './exchange.svg?raw'
 
 const typeIconMap = {
   file,
   arrowDown,
   arrowUp,
   play,
+  playCircle,
   loading,
   check,
   microphone,
@@ -36,7 +39,8 @@ const typeIconMap = {
   edit,
   eye,
   eyeSlash,
-  more
+  more,
+  exchange
 }
 
 export type Type = keyof typeof typeIconMap

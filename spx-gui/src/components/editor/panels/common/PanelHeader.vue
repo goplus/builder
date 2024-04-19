@@ -59,7 +59,7 @@ defineProps<{
   color: inherit;
   border-radius: 14px;
   cursor: pointer;
-  transition: background-color .2s;
+  transition: background-color 0.2s;
 
   // TODO: check color here
   &:hover {

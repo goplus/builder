@@ -75,7 +75,9 @@ watchEffect(
 
     wavesurfer.on('timeupdate', () => {
       if (playing.value == null || wavesurfer == null) return
-      playing.value.progress = Math.round((wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100)
+      playing.value.progress = Math.round(
+        (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100
+      )
     })
     wavesurfer.on('error', (e) => {
       console.warn('wavesurfer error:', e)
@@ -147,5 +149,4 @@ function handleStop() {
     height: 42px;
   }
 }
-
 </style>

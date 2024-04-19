@@ -6,11 +6,14 @@
 
 <script lang="ts">
 import { type InjectionKey, type ComputedRef, provide, computed } from 'vue'
-export const disabledKey: InjectionKey<ComputedRef<boolean>> = Symbol('disabled')
+export type MenuCtx = {
+  disabled: boolean
+  inGroup: boolean
+}
+export const ctxKey: InjectionKey<ComputedRef<MenuCtx>> = Symbol('menu-ctx')
 </script>
 
 <script setup lang="ts">
-// avoid `[Vue warn]: injection "Symbol(disabled)" not found`
-const disabled = computed(() => false)
-provide(disabledKey, disabled)
+const ctx = computed(() => ({ disabled: false, inGroup: false }))
+provide(ctxKey, ctx)
 </script>

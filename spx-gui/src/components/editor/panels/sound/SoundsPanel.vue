@@ -28,11 +28,7 @@
     </template>
     <template #summary>
       <PanelSummaryList :has-more="soundsForOverviewHasMore">
-        <SoundSummaryItem
-          v-for="sound in soundsForOverview"
-          :key="sound.name"
-          :sound="sound"
-        />
+        <SoundSummaryItem v-for="sound in soundsForOverview" :key="sound.name" :sound="sound" />
       </PanelSummaryList>
     </template>
   </CommonPanel>

@@ -29,7 +29,7 @@ const emit = defineEmits<{
   stop: []
 }>()
 
-const playCssVars = computed(() => ({ 
+const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0
 }))
 </script>
@@ -40,7 +40,8 @@ const playCssVars = computed(() => ({
   height: 100%;
 }
 
-.play, .stop {
+.play,
+.stop {
   width: 100%;
   height: 100%;
   display: flex;
@@ -50,7 +51,7 @@ const playCssVars = computed(() => ({
   border-radius: 50%;
   cursor: pointer;
 
-  transition: transform .2s;
+  transition: transform 0.2s;
   --color: var(--ui-color-sound-main);
   &:hover {
     transform: scale(1.167);
@@ -67,8 +68,8 @@ const playCssVars = computed(() => ({
   background-color: var(--color);
 
   .icon {
-    width: 16px;
-    height: 16px;
+    width: 44.444%;
+    height: 44.444%;
   }
 }
 
@@ -76,8 +77,8 @@ const playCssVars = computed(() => ({
   position: relative;
   color: var(--color);
   .icon {
-    width: 18px;
-    height: 18px;
+    width: 50%;
+    height: 50%;
   }
 }
 

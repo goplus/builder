@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { provide, computed } from 'vue'
-import { disabledKey } from './UIMenu.vue'
+import { ctxKey } from './UIMenu.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -17,8 +17,13 @@ const props = withDefaults(
   }
 )
 
-const disabled = computed(() => props.disabled)
-provide(disabledKey, disabled)
+provide(
+  ctxKey,
+  computed(() => ({
+    disabled: props.disabled,
+    inGroup: true
+  }))
+)
 </script>
 
 <style lang="scss" scoped>
