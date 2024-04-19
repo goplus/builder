@@ -1,58 +1,66 @@
 <template>
-  <div>
-    <template v-if="scratchAssets.sprites.length">
+  <div class="container">
+    <div v-if="scratchAssets.sprites.length">
       <div>Sprites</div>
-      <NGrid cols="6">
+      <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.sprites"
           :key="asset.name"
-          :class="['file-row', { selected: selected.sprites.has(asset) }]"
           @click="selectSprite(asset)"
         >
-          <div>{{ asset.name }}</div>
-          <BlobImage
-            preview-disabled
-            width="80"
-            height="80"
-            :fallback-src="error"
-            :blob="asset.costumes[0].blob"
-          />
+          <ScratchItemContainer :selected="selected.sprites.has(asset)">
+            <BlobImage
+              preview-disabled
+              width="80"
+              height="80"
+              :fallback-src="error"
+              :blob="asset.costumes[0].blob"
+            />
+            <div>{{ asset.name }}</div>
+          </ScratchItemContainer>
         </NGridItem>
       </NGrid>
-    </template>
-    <div>Sounds</div>
-    <NGrid cols="6">
-      <NGridItem
-        v-for="asset in scratchAssets.sounds"
-        :key="asset.name"
-        :class="['file-row', { selected: selected.sounds.has(asset) }]"
-        @click="selectSound(asset)"
-      >
-        <div>{{ asset.filename }}</div>
-        <div class="sound-container">
-          <BlobSoundPlayer :blob="asset.blob" />
-        </div>
-      </NGridItem>
-    </NGrid>
-    <div>Backdrops</div>
-    <NGrid cols="6">
-      <NGridItem
-        v-for="asset in scratchAssets.backdrops"
-        :key="asset.name"
-        :class="['file-row', { selected: selected.backdrops.has(asset) }]"
-        @click="selectBackdrop(asset)"
-      >
-        <div>{{ asset.filename }}</div>
-        <BlobImage
-          :blob="asset.blob"
-          preview-disabled
-          width="80"
-          height="80"
-          :fallback-src="error"
-        />
-      </NGridItem>
-    </NGrid>
-    <UIButton @click="importSelected">
+    </div>
+    <div v-if="scratchAssets.sounds.length">
+      <div>Sounds</div>
+      <NGrid cols="6" x-gap="8" y-gap="8">
+        <NGridItem
+          v-for="asset in scratchAssets.sounds"
+          :key="asset.name"
+          @click="selectSound(asset)"
+        >
+          <ScratchItemContainer :selected="selected.sounds.has(asset)">
+            <div class="sound-container">
+              <BlobSoundPlayer :blob="asset.blob" />
+            </div>
+            <div>{{ asset.filename }}</div>
+          </ScratchItemContainer>
+        </NGridItem>
+      </NGrid>
+    </div>
+
+    <div v-if="scratchAssets.backdrops.length">
+      <div>Backdrops</div>
+      <NGrid cols="6" x-gap="8" y-gap="8">
+        <NGridItem
+          v-for="asset in scratchAssets.backdrops"
+          :key="asset.name"
+          @click="selectBackdrop(asset)"
+        >
+          <ScratchItemContainer :selected="selected.backdrops.has(asset)">
+            <BlobImage
+              :blob="asset.blob"
+              preview-disabled
+              width="80"
+              height="80"
+              :fallback-src="error"
+            />
+            <div>{{ asset.filename }}</div>
+          </ScratchItemContainer>
+        </NGridItem>
+      </NGrid>
+    </div>
+    <UIButton size="large" class="import-button" @click="importSelected">
       {{
         $t({
           en: 'Import',
@@ -78,6 +86,7 @@ import type { Project } from '@/models/project'
 import BlobSoundPlayer from './BlobSoundPlayer.vue'
 import { ref, watch } from 'vue'
 import { UIButton } from '../ui'
+import ScratchItemContainer from './ScratchItemContainer.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
@@ -192,7 +201,13 @@ const importSelected = () => {
   width: 48px;
 }
 
-.selected {
-  background-color: #f0f0f0;
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-button {
+  align-self: flex-end;
 }
 </style>
