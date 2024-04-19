@@ -26,7 +26,7 @@
         v-for="asset in scratchAssets.sounds"
         :key="asset.name"
         :class="['file-row', { selected: selected.sounds.has(asset) }]"
-        @click="select(asset, 'sounds')"
+        @click="selectSound(asset)"
       >
         <div>{{ asset.filename }}</div>
         <div class="sound-container">
@@ -40,7 +40,7 @@
         v-for="asset in scratchAssets.backdrops"
         :key="asset.name"
         :class="['file-row', { selected: selected.backdrops.has(asset) }]"
-        @click="select(asset, 'backdrops')"
+        @click="selectBackdrop(asset)"
       >
         <div>{{ asset.filename }}</div>
         <BlobImage
@@ -119,11 +119,22 @@ const selectSprite = (sprite: ExportedScratchSprite) => {
   }
 }
 
-const select = (asset: ExportedScratchFile, type: 'backdrops' | 'sounds') => {
-  if (selected.value[type].has(asset)) {
-    selected.value[type].delete(asset)
+const selectSound = (sound: ExportedScratchFile) => {
+  if (selected.value.sounds.has(sound)) {
+    selected.value.sounds.delete(sound)
   } else {
-    selected.value[type].add(asset)
+    selected.value.sounds.add(sound)
+  }
+}
+
+const selectBackdrop = (backdrop: ExportedScratchFile) => {
+  if (selected.value.backdrops.has(backdrop)) {
+    selected.value.backdrops.delete(backdrop)
+  } else {
+    if (selected.value.backdrops.size >= 1) {
+      selected.value.backdrops.clear()
+    }
+    selected.value.backdrops.add(backdrop)
   }
 }
 
@@ -135,7 +146,7 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   )
 }
 
-const importSprite = async (asset: ExportedScratchSprite) => {
+const importSprite = (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map((costume) =>
     Costume.create(costume.name, new LazyFile(costume.name, () => costume.blob.arrayBuffer()))
   )
@@ -147,14 +158,14 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   message.success(`Imported sprite ${asset.name}`)
 }
 
-const importSound = async (asset: ExportedScratchFile) => {
+const importSound = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = Sound.create(asset.name, file)
   props.project.addSound(sound)
   message.success(`Imported sound ${file.name}`)
 }
 
-const importBackdrop = async (asset: ExportedScratchFile) => {
+const importBackdrop = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = Backdrop.create(asset.name, file)
   props.project.stage.setBackdrop(backdrop)
