@@ -1,44 +1,24 @@
 import { h } from 'vue'
-import { useModal, useDialog } from 'naive-ui'
+import { useModal as naive_useModal, useDialog } from 'naive-ui'
 import { IsPublic, type ProjectData } from '@/apis/project'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
-import ProjectCreate from './ProjectCreate.vue'
+import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectList from './ProjectList.vue'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
 import { getProjectShareRoute } from '@/router'
+import { useModal } from '@/components/ui'
 
 export function useCreateProject() {
-  const modalCtrl = useModal()
-  const { t } = useI18n()
+  const modal = useModal(ProjectCreateModal)
 
   return function createProject() {
-    return new Promise<ProjectData>((resolve, reject) => {
-      const modal = modalCtrl.create({
-        title: t({ en: 'Create a new project', zh: '创建新的项目' }),
-        content: () =>
-          h(ProjectCreate, {
-            onCreated(projectData) {
-              resolve(projectData)
-              modal.destroy()
-            },
-            onCancelled() {
-              reject(new Cancelled())
-              modal.destroy()
-            }
-          }),
-        preset: 'dialog',
-        onHide() {
-          reject(new Cancelled())
-          modal.destroy()
-        }
-      })
-    })
+    return modal({}) as Promise<ProjectData>
   }
 }
 
 export function useChooseProject() {
-  const modalCtrl = useModal()
+  const modalCtrl = naive_useModal()
   const { t } = useI18n()
 
   return function chooseProject() {
