@@ -8,13 +8,11 @@ import { ref, watchEffect } from 'vue'
 const src = ref()
 
 const props = defineProps<{
-  arrayBuffer: ArrayBuffer
+  blob: Blob
 }>()
 
 watchEffect((onCleanup) => {
-  const blob = new Blob([props.arrayBuffer])
-  const url = URL.createObjectURL(blob)
-
+  const url = URL.createObjectURL(props.blob)
   src.value = url
 
   onCleanup(() => URL.revokeObjectURL(url))
