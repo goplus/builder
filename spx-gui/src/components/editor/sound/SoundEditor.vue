@@ -2,91 +2,88 @@
   <EditorHeader :color="uiVariables.color.sound.main">
     {{ sound.name }}
   </EditorHeader>
-  <div class="sound-edit-content">
-    <div class="sound-edit-content-top">
-      <span class="text-sound">
-        <NGradientText type="danger">
-          <div class="sounds-hint">
-            {{
-              $t({
-                en: 'Sound',
-                zh: '声音'
-              })
-            }}
-          </div>
-        </NGradientText>
-      </span>
+  <div class="main">
+    <div class="name">
+      {{ sound.name }}
+      <UIIcon
+        class="edit-icon"
+        :title="$t({ en: 'Rename', zh: '重命名' })"
+        type="edit"
+        @click="handleNameEdit"
+      />
     </div>
-  </div>
-  <div class="waveform-content">
-    <div ref="waveformContainer" class="waveform-container"></div>
-  </div>
-  <div class="sound-edit-content-bottom">
-    <div>
-      <button @click="togglePlayPause()">
-        <img v-if="!isPlaying" class="sound-icon" src="./icons/play.svg" />
-        <img v-else class="sound-icon" src="./icons/pause.svg" />
-      </button>
+    <div class="content">
+      <div ref="waveform" class="waveform"></div>
+    </div>
+    <div class="opeartions">
+      <DumbSoundPlayer
+        class="play-button"
+        :playing="playing != null"
+        :progress="playing?.progress ?? 0"
+        @play="handlePlay"
+        @stop="handleStop"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
-import { ref, watchEffect, onUnmounted, type Ref } from 'vue'
-import { NGradientText } from 'naive-ui'
-import EditorHeader from '../EditorHeader.vue'
-import { useUIVariables } from '@/components/ui'
+import { ref, watchEffect, onUnmounted } from 'vue'
+import { useUIVariables, UIIcon, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
+import { useFileUrl } from '@/utils/file'
+import { useEditorCtx } from '../EditorContextProvider.vue'
+import EditorHeader from '../EditorHeader.vue'
+import DumbSoundPlayer from './DumbSoundPlayer.vue'
+import { useWavesurfer } from './wavesurfer'
+import SoundRenameModal from './SoundRenameModal.vue'
 
 const props = defineProps<{
   sound: Sound
 }>()
 
-const uiVariables = useUIVariables()
-const waveformContainer = ref<HTMLDivElement>()
+const editorCtx = useEditorCtx()
+const renameSound = useModal(SoundRenameModal)
 
-let wavesurfer: WaveSurfer | null = null
-let isPlaying: Ref<boolean> = ref(false)
-
-const nameToMime = (name: string) => {
-  if (name.endsWith('.webm')) {
-    return 'audio/webm'
-  }
-  if (name.endsWith('.mp3')) {
-    return 'audio/mp3'
-  }
-  return 'audio/wav'
+function handleNameEdit() {
+  renameSound({
+    sound: props.sound,
+    project: editorCtx.project
+  })
 }
+
+const uiVariables = useUIVariables()
+const waveform = ref<HTMLDivElement>()
+const createWavesurfer = useWavesurfer(waveform)
+
+type Playing = {
+  progress: number // percent
+}
+
+const playing = ref<Playing | null>(null)
+const audioUrl = useFileUrl(() => props.sound.file)
+let wavesurfer: WaveSurfer | null = null
 
 watchEffect(
   async () => {
-    if (wavesurfer) {
-      wavesurfer.destroy()
-    }
-    if (!waveformContainer.value) {
-      throw new Error('Waveform container is not ready')
-    }
+    wavesurfer?.destroy()
+    if (audioUrl.value == null) return
 
-    wavesurfer = WaveSurfer.create({
-      container: waveformContainer.value,
-      waveColor: 'rgb(255,114,142)',
-      progressColor: 'rgb(224,213,218)',
-      cursorColor: 'rgb(229,29,100)',
-      interact: false
-    })
+    wavesurfer = createWavesurfer()
+    wavesurfer.load(audioUrl.value)
 
-    const mime = nameToMime(props.sound.file.name)
-    const nativeFile = new File([await props.sound.file.arrayBuffer()], props.sound.name, {
-      type: mime
+    wavesurfer.on('timeupdate', () => {
+      if (playing.value == null || wavesurfer == null) return
+      playing.value.progress = Math.round((wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100)
     })
-    wavesurfer.loadBlob(nativeFile)
-
-    wavesurfer.on('play', () => {
-      isPlaying.value = true
+    wavesurfer.on('error', (e) => {
+      console.warn('wavesurfer error:', e)
+      handleStop()
     })
-    wavesurfer.on('pause', () => {
-      isPlaying.value = false
+    wavesurfer.on('finish', () => {
+      // delay to make the animation more natural
+      setTimeout(handleStop, 400)
     })
   },
   {
@@ -95,152 +92,60 @@ watchEffect(
 )
 
 onUnmounted(() => {
-  if (wavesurfer) {
-    wavesurfer.destroy()
-  }
+  wavesurfer?.destroy()
 })
 
-const togglePlayPause = async () => {
-  if (!wavesurfer) {
-    return
-  }
-  await wavesurfer.playPause()
-  isPlaying.value = wavesurfer.isPlaying()
+async function handlePlay() {
+  if (wavesurfer == null) return
+  playing.value = { progress: 0 }
+  await wavesurfer.play()
+}
+
+function handleStop() {
+  wavesurfer?.stop()
+  playing.value = null
 }
 </script>
 
-<style scoped>
-.vertical-dashed-line-long {
-  border: none;
-  border-left: 2px dashed #e53b65;
-  height: 55px;
-}
-
-.vertical-dashed-line-short {
-  border: none;
-  border-left: 2px dashed #f0bfcb;
-  height: 45px;
-}
-
-.sounds-hint {
-  font-size: 20px;
-}
-
-.text-sound {
-  margin-left: 5px;
-  font-size: 20px;
-}
-
-.speed-change-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  width: 30px;
-  height: 20px;
-  border: #f9c3d3 dashed 2px;
-  border-radius: 5px;
-  color: #e53b65;
-  cursor: pointer;
-}
-
-.speed-change-container-text {
-  font-size: 13px;
-}
-
-.sound-edit-content-top {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 25px;
-}
-
-.sound-edit-content-top-input-sound-name {
-  width: 100px;
-  height: 36px;
-  font-size: 10px;
-}
-
-.waveform-content {
-  position: relative;
-  z-index: 0;
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-.waveform-container {
-  width: 600px;
-  background-size: 10px 10px;
-  background-image: linear-gradient(to right, rgba(244, 187, 187, 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(247, 179, 179, 0.1) 1px, transparent 1px);
-}
-
-.sound-edit-content-bottom {
-  margin-top: 15px;
-  display: flex;
-  gap: 13px;
-}
-
-.sound-icon-container {
-  font-size: 18px;
-  color: #474343;
+<style scoped lang="scss">
+.main {
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
+  gap: 24px;
+}
+
+.name {
+  display: flex;
   align-items: center;
+  gap: 8px;
+
+  .edit-icon {
+    cursor: pointer;
+    color: var(--ui-color-grey-900);
+    &:hover {
+      color: var(--ui-color-grey-800);
+    }
+    &:active {
+      color: var(--ui-color-grey-1000);
+    }
+  }
 }
 
-.sound-icon-container.disabled {
-  color: grey;
+.content {
+  width: 100%;
 }
 
-.sound-icon-container button[disabled] {
-  pointer-events: none;
+.waveform {
+  width: 100%;
+  height: 222px; /** TODO: scale with width? */
 }
 
-.sound-icon {
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+.opeartions {
+  .play-button {
+    width: 42px;
+    height: 42px;
+  }
 }
 
-.sound-icon:hover {
-  transform: scale(1.1);
-}
-
-.sound-icon-with-text {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  transition:
-    transform 0.3s ease-in-out,
-    color 0.3s ease-in-out;
-}
-
-.sound-icon-text {
-  font-size: 13px;
-}
-
-.sound-icon-with-text:hover {
-  transform: scale(1.2);
-}
-
-.sound-icon-with-text:active {
-  filter: drop-shadow(0px 0px 10px rgb(242, 133, 133));
-}
-
-button {
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-button:focus {
-  outline: none;
-}
-
-button img {
-  display: block;
-}
 </style>

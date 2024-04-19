@@ -15,6 +15,7 @@ const ext2mime: Record<string, string | undefined> = {
   mp3: 'audio/mpeg',
   wav: 'audio/wav',
   ogg: 'audio/ogg',
+  webm: 'audio/webm',
   json: 'application/json',
   spx: 'text/plain',
   gmx: 'text/plain'
@@ -28,6 +29,8 @@ const ext2mime: Record<string, string | undefined> = {
 export const getMimeFromExt = (ext: string) => ext2mime[ext]
 
 export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
+// TODO: check audio support for spx in browser
+export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 
 export type FileSelectOptions = {
   accept?: string
@@ -72,6 +75,12 @@ export function selectImg() {
 export function selectImgs() {
   const accept = imgExts.map((ext) => `.${ext}`).join(',')
   return selectFiles({ accept })
+}
+
+/** Let the user select single audio file */
+export function selectAudio() {
+  const accept = audioExts.map((ext) => `.${ext}`).join(',')
+  return selectFile({ accept })
 }
 
 /** Get url for File */

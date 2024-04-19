@@ -86,7 +86,8 @@ watch(
     } else {
       select(null)
     }
-  }
+  },
+  { immediate: true }
 )
 
 const editorCtx = shallowReactive<EditorCtx>({ select } as any)

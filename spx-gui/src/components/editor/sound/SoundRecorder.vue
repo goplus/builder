@@ -89,9 +89,9 @@ import { onUnmounted } from 'vue'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
-import { purple } from '@/components/ui/tokens/colors'
 import { UIIconButton } from '@/components/ui'
 import { RecordPlugin } from '@/utils/wavesurfer-record'
+import { useWavesurfer } from './wavesurfer'
 
 const emit = defineEmits<{
   saved: []
@@ -104,7 +104,8 @@ const playing = ref(false)
 const audioBlob = ref<Blob | null>(null)
 let wavesurfer: WaveSurfer
 let recordPlugin: RecordPlugin
-const waveformContainer = ref(null)
+const waveformContainer = ref<HTMLElement>()
+const createWavesurfer = useWavesurfer(waveformContainer)
 
 const editorCtx = useEditorCtx()
 
@@ -125,64 +126,7 @@ const initWaveSurfer = () => {
   if (wavesurfer) {
     wavesurfer.destroy()
   }
-  wavesurfer = WaveSurfer.create({
-    interact: false,
-    container: waveformContainer.value,
-    waveColor: purple[400],
-    progressColor: purple[300] + '80',
-    height: 160,
-    cursorWidth: 4,
-    normalize: true,
-    renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
-      // TODO: Better drawing algorithm to reduce flashing?
-      const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
-        const { width, height } = ctx.canvas
-        const halfHeight = height / 2
-        const numPoints = Math.floor(width / 5)
-        const blockSize = Math.floor(channel.length / numPoints)
-        const smoothedData = new Float32Array(numPoints)
-
-        // Smooth the data by averaging blocks
-        for (let i = 0; i < numPoints; i++) {
-          let sum = 0
-          for (let j = 0; j < blockSize; j++) {
-            sum += Math.abs(channel[i * blockSize + j])
-          }
-          smoothedData[i] = sum / blockSize
-        }
-
-        // Draw with bezier curves
-        ctx.beginPath()
-        ctx.moveTo(0, halfHeight)
-
-        for (let i = 1; i < smoothedData.length; i++) {
-          const prevX = (i - 1) * (width / numPoints)
-          const currX = i * (width / numPoints)
-          const midX = (prevX + currX) / 2
-          const prevY = halfHeight + smoothedData[i - 1] * halfHeight * vScale
-          const currY = halfHeight + smoothedData[i] * halfHeight * vScale
-
-          // Use a quadratic bezier curve to the middle of the interval for a smoother line
-          ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + currY) / 2)
-          ctx.quadraticCurveTo(midX, (prevY + currY) / 2, currX, currY)
-        }
-
-        ctx.lineTo(width, halfHeight)
-        ctx.strokeStyle = purple[400]
-        ctx.stroke()
-        ctx.closePath()
-        ctx.fillStyle = purple[400]
-        ctx.fill()
-      }
-
-      const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
-
-      // Only one channel is assumed, render it twice (mirrored)
-      smoothAndDrawChannel(channel, 5) // Upper part
-      smoothAndDrawChannel(channel, -5) // Lower part (mirrored)
-    }
-  })
-
+  wavesurfer = createWavesurfer()
   recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
 
   wavesurfer.on('play', () => {

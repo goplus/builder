@@ -62,6 +62,7 @@ const emit = defineEmits<{
   white-space: nowrap;
   text-align: center;
   text-overflow: ellipsis;
+  color: var(--ui-color-title);
 }
 
 .remove {

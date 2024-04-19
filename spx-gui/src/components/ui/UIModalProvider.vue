@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO: animation when modal show -->
   <component
     :is="currentModal.component"
     v-if="currentModal != null"
