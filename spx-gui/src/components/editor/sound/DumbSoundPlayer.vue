@@ -68,8 +68,8 @@ const playCssVars = computed(() => ({
   background-color: var(--color);
 
   .icon {
-    width: 16px;
-    height: 16px;
+    width: 44.444%;
+    height: 44.444%;
   }
 }
 
@@ -77,8 +77,8 @@ const playCssVars = computed(() => ({
   position: relative;
   color: var(--color);
   .icon {
-    width: 18px;
-    height: 18px;
+    width: 50%;
+    height: 50%;
   }
 }
 

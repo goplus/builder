@@ -9,6 +9,7 @@ import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
+import playCircle from './play-circle.svg?raw'
 import loading from './loading.svg?raw'
 import check from './check.svg?raw'
 import microphone from './microphone.svg?raw'
@@ -27,6 +28,7 @@ const typeIconMap = {
   arrowDown,
   arrowUp,
   play,
+  playCircle,
   loading,
   check,
   microphone,
