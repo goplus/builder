@@ -20,6 +20,7 @@ import edit from './edit.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
 import more from './more.svg?raw'
+import exchange from './exchange.svg?raw'
 
 const typeIconMap = {
   file,
@@ -36,7 +37,8 @@ const typeIconMap = {
   edit,
   eye,
   eyeSlash,
-  more
+  more,
+  exchange
 }
 
 export type Type = keyof typeof typeIconMap

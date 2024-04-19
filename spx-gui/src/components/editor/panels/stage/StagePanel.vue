@@ -1,42 +1,47 @@
 <template>
-  <section class="stage-panel">
-    <UICardHeader>
-      {{ $t({ en: 'Stage', zh: '舞台' }) }}
-    </UICardHeader>
+  <section class="stage-panel" :class="{ active }" :style="cssVars">
+    <!-- TODO: use UICardHeader? -->
+    <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
-      <NDropdown trigger="hover" :options="options" @select="handleOption">
-        <div class="overview" :class="{ active: isSelected }" @click="select">
-          <div class="img" :style="imgStyle"></div>
-        </div>
-      </NDropdown>
+      <div class="overview" :class="{ active }" @click="activate">
+        <div class="img" :style="imgStyle"></div>
+        <UIDropdown trigger="click">
+          <template #trigger>
+            <div v-show="active" class="replace">
+              <UIIcon class="icon" type="exchange" />
+            </div>
+          </template>
+          <UIMenu>
+            <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
+            <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+          </UIMenu>
+        </UIDropdown>
+      </div>
+      <footer v-if="isLibraryEnabled() && backdrop != null">
+        <UIButton @click="handleAddToLibrary()">Add</UIButton>
+      </footer>
     </main>
-    <footer>
-      <!-- Entry for "add to library", its appearance or position may change later -->
-      <NButton v-if="backdrop != null" @click="handleAddToLibrary()">Add to library</NButton>
-    </footer>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NDropdown, NButton } from 'naive-ui'
 import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/library'
+import { UIButton, UIDropdown, UIIcon, UIMenu, UIMenuItem, getCssVars, useUIVariables } from '@/components/ui'
+import { isLibraryEnabled } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { useI18n } from '@/utils/i18n'
 import { AssetType } from '@/apis/asset'
 import { selectImg, useFileUrl } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { UICardHeader } from '@/components/ui'
 
-const { t } = useI18n()
 const editorCtx = useEditorCtx()
 
-const isSelected = computed(() => editorCtx.selected?.type === 'stage')
+const active = computed(() => editorCtx.selected?.type === 'stage')
 
-function select() {
+function activate() {
   editorCtx.select('stage')
 }
 
@@ -56,29 +61,8 @@ const handleUpload = useMessageHandle(
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-const options = computed(() => {
-  return [
-    {
-      key: 'upload',
-      label: t({ en: 'Upload', zh: '上传' }),
-      handler: handleUpload
-    },
-    {
-      key: 'fromLibrary',
-      label: t({ en: 'Choose from asset library', zh: '从素材库选择' }),
-      handler: () => addAssetFromLibrary(editorCtx.project, AssetType.Backdrop)
-    }
-  ]
-})
-
-function handleOption(key: string) {
-  for (const option of options.value) {
-    if (option.key === key) {
-      option.handler()
-      return
-    }
-  }
-  throw new Error(`unknown option key: ${key}`)
+function handleChoose() {
+  addAssetFromLibrary(editorCtx.project, AssetType.Backdrop)
 }
 
 const addToLibrary = useAddAssetToLibrary()
@@ -86,30 +70,93 @@ const addToLibrary = useAddAssetToLibrary()
 function handleAddToLibrary() {
   addToLibrary(backdrop.value!)
 }
+
+const uiVariables = useUIVariables()
+const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 </script>
 
 <style scoped lang="scss">
-.overview {
+.header {
+  height: 44px;
+  width: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 16px;
+  color: var(--ui-color-title);
+  border-bottom: 1px solid var(--ui-color-grey-400);
+}
+
+.stage-panel.active {
+  .header {
+    color: var(--ui-color-grey-100);
+    background-color: var(--ui-color-stage-main);
+    border-color: var(--ui-color-stage-main);
+  }
+}
+
+.main {
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  width: 80px;
-  height: fit-content;
-  padding: 6px;
-  position: relative;
   align-items: center;
-  border: 1px solid #333;
+  gap: 12px;
+}
+
+.overview {
+  width: 100%;
+  padding: 4px;
+  position: relative;
+  border-radius: var(--ui-border-radius-1);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
+
+  &:not(.active):hover {
+    background-color: var(--ui-color-grey-400);
+  }
 
   &.active {
-    border-color: yellow;
-    background-color: yellow;
+    padding: 2px;
+    background-color: var(--ui-color-grey-400);
+    border: 2px solid var(--ui-color-stage-main);
   }
 }
 
 .img {
   width: 100%;
-  height: 68px;
+  padding-bottom: 80%;
+  border-radius: 4px;
   background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
+}
+
+.replace {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+
+  display: flex;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+
+  color: var(--ui-color-grey-100);
+  border-radius: 24px;
+  background: var(--panel-color-main);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--panel-color-400);
+  }
+  &:active {
+    background-color: var(--panel-color-600);
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
 }
 </style>
