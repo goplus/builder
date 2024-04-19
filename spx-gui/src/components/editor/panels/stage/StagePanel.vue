@@ -27,7 +27,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/library'
-import { UIButton, UIDropdown, UIIcon, UIMenu, UIMenuItem, getCssVars, useUIVariables } from '@/components/ui'
+import {
+  UIButton,
+  UIDropdown,
+  UIIcon,
+  UIMenu,
+  UIMenuItem,
+  getCssVars,
+  useUIVariables
+} from '@/components/ui'
 import { isLibraryEnabled } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'

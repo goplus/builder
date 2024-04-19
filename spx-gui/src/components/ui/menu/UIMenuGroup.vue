@@ -17,10 +17,13 @@ const props = withDefaults(
   }
 )
 
-provide(ctxKey, computed(() => ({
-  disabled: props.disabled,
-  inGroup: true
-})))
+provide(
+  ctxKey,
+  computed(() => ({
+    disabled: props.disabled,
+    inGroup: true
+  }))
+)
 </script>
 
 <style lang="scss" scoped>

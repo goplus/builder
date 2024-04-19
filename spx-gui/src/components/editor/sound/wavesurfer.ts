@@ -26,7 +26,7 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
           const numPoints = Math.floor(width / 5)
           const blockSize = Math.floor(channel.length / numPoints)
           const smoothedData = new Float32Array(numPoints)
-    
+
           // Smooth the data by averaging blocks
           for (let i = 0; i < numPoints; i++) {
             let sum = 0
@@ -35,23 +35,23 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
             }
             smoothedData[i] = sum / blockSize
           }
-    
+
           // Draw with bezier curves
           ctx.beginPath()
           ctx.moveTo(0, halfHeight)
-    
+
           for (let i = 1; i < smoothedData.length; i++) {
             const prevX = (i - 1) * (width / numPoints)
             const currX = i * (width / numPoints)
             const midX = (prevX + currX) / 2
             const prevY = halfHeight + smoothedData[i - 1] * halfHeight * vScale
             const currY = halfHeight + smoothedData[i] * halfHeight * vScale
-    
+
             // Use a quadratic bezier curve to the middle of the interval for a smoother line
             ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + currY) / 2)
             ctx.quadraticCurveTo(midX, (prevY + currY) / 2, currX, currY)
           }
-    
+
           ctx.lineTo(width, halfHeight)
           ctx.strokeStyle = uiVariables.color.sound[400]
           ctx.stroke()
@@ -59,9 +59,9 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
           ctx.fillStyle = uiVariables.color.sound[400]
           ctx.fill()
         }
-    
+
         const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
-    
+
         // Only one channel is assumed, render it twice (mirrored)
         smoothAndDrawChannel(channel, 5) // Upper part
         smoothAndDrawChannel(channel, -5) // Lower part (mirrored)
