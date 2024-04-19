@@ -3,7 +3,7 @@
     <UIForm :form="form" @submit="handleSubmit">
       <UIFormItem path="name">
         <UITextInput v-model:value="form.value.name" />
-        <template #tip>{{ $t(spriteNameTip) }}</template>
+        <template #tip>{{ $t(soundNameTip) }}</template>
       </UIFormItem>
       <RenameModalFooter @cancel="handleCancel" />
     </UIForm>
@@ -12,16 +12,16 @@
 
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
-import type { Sprite } from '@/models/sprite'
+import type { Sound } from '@/models/sound'
 import type { Project } from '@/models/project'
-import { spriteNameTip, validateSpriteName } from '@/models/common/asset'
+import { soundNameTip, validateSoundName } from '@/models/common/asset'
 import { useI18n } from '@/utils/i18n'
-import RenameModal from '../common/RenameModal.vue'
-import RenameModalFooter from '../common/RenameModalFooter.vue'
+import RenameModal from '../panels/common/RenameModal.vue'
+import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
 
 const props = defineProps<{
   visible: boolean
-  sprite: Sprite
+  sound: Sound
   project: Project
 }>()
 
@@ -33,7 +33,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const form = useForm({
-  name: [props.sprite.name, validateName]
+  name: [props.sound.name, validateName]
 })
 
 function handleCancel() {
@@ -41,12 +41,12 @@ function handleCancel() {
 }
 
 function handleSubmit() {
-  props.sprite.setName(form.value.name)
+  props.sound.setName(form.value.name)
   emit('resolved')
 }
 
 function validateName(name: string) {
-  if (name === props.sprite.name) return
-  return t(validateSpriteName(name, props.project) ?? null)
+  if (name === props.sound.name) return
+  return t(validateSoundName(name, props.project) ?? null)
 }
 </script>

@@ -27,12 +27,13 @@ defineProps<{
 .name {
   font-size: 10px;
   line-height: 1.5;
-  padding-bottom: 1px;
+  padding: 0 4px 1px;
 
   width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-align: center;
   text-overflow: ellipsis;
+  color: var(--ui-color-grey-800);
 }
 </style>

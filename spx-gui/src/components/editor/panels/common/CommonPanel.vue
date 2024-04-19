@@ -12,14 +12,15 @@
       <slot name="details"></slot>
     </section>
     <section v-show="!expanded" class="summary" @click="emit('expand')">
-      <UICardHeader>{{ title }}</UICardHeader>
+      <!-- TODO: use UICardHeader? -->
+      <h4 class="summary-header">{{ title }}</h4>
       <slot name="summary"></slot>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { UICardHeader, getCssVars } from '@/components/ui'
+import { getCssVars } from '@/components/ui'
 import PanelHeader from '../common/PanelHeader.vue'
 
 // uiVariables.color.(sprite|sound|stage)
@@ -74,5 +75,17 @@ const cssVars = getCssVars('--panel-color-', props.color)
   display: flex;
   flex-direction: column;
   cursor: pointer;
+}
+
+.summary-header {
+  height: 44px;
+  width: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 16px;
+  color: var(--ui-color-title);
+  border-bottom: 1px solid var(--ui-color-grey-400);
 }
 </style>

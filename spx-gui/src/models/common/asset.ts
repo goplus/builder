@@ -96,6 +96,11 @@ export function validateCostumeName(name: string, sprite: Sprite | null) {
     return { en: `Costume with name ${name} already exists`, zh: '存在同名的造型' }
 }
 
+export const soundNameTip = {
+  en: 'The sound name can only contain ASCII letters, digits, and the character _.',
+  zh: '声音名称只能包含英文字母、数字及下划线'
+}
+
 export function validateSoundName(name: string, project: Project | null) {
   // Now same validation logic for sprite & sound
   return validateSpriteName(name, project)
