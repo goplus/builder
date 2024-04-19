@@ -1,17 +1,31 @@
 <template>
-  <UIForm :form="form" @submit="handleSubmit">
-    <UIFormItem :label="$t({ en: 'Project Name', zh: '项目名' })" path="name">
-      <UITextInput v-model:value="form.value.name" />
-    </UIFormItem>
-    <UIFormItem>
-      <UIButton type="boring" @click="handleCancel">
-        {{ $t({ en: 'Cancel', zh: '取消' }) }}
-      </UIButton>
-      <UIButton type="primary" html-type="submit">
-        {{ $t({ en: 'Create', zh: '创建' }) }}
-      </UIButton>
-    </UIFormItem>
-  </UIForm>
+  <UIFormModal
+    :title="$t({ en: 'Create a new project', zh: '创建新的项目' })"
+    :visible="props.visible"
+    @update:visible="handleCancel"
+  >
+    <UIForm :form="form" @submit="handleSubmit">
+      <UIFormItem
+        path="name"
+        :label="
+          $t({
+            en: 'The project name cannot be modified after it is created.',
+            zh: '项目名创建后无法修改。'
+          })
+        "
+      >
+        <UITextInput
+          v-model:value="form.value.name"
+          :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
+        />
+      </UIFormItem>
+      <UIFormItem :show-feedback="false">
+        <UIButton class="create-button" type="primary" html-type="submit">
+          {{ $t({ en: 'Create', zh: '创建' }) }}
+        </UIButton>
+      </UIFormItem>
+    </UIForm>
+  </UIFormModal>
 </template>
 
 <script setup lang="ts">
@@ -19,6 +33,7 @@ import {
   UIButton,
   UIForm,
   UIFormItem,
+  UIFormModal,
   UITextInput,
   useForm,
   type FormValidationResult
@@ -29,9 +44,13 @@ import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 
+const props = defineProps<{
+  visible: boolean
+}>()
+
 const emit = defineEmits<{
-  created: [ProjectData]
   cancelled: []
+  resolved: [ProjectData]
 }>()
 
 const { t } = useI18n()
@@ -41,15 +60,15 @@ const form = useForm({
   name: ['', validateName]
 })
 
-function handleCancel() {
-  emit('cancelled')
-}
-
 const addProject = useMessageHandle(
   apiAddProject,
   { en: 'Failed to create project', zh: '创建失败' },
   (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
 ).fn
+
+function handleCancel() {
+  emit('cancelled')
+}
 
 async function handleSubmit() {
   const projectData = await addProject({
@@ -57,7 +76,7 @@ async function handleSubmit() {
     isPublic: IsPublic.personal,
     files: {}
   })
-  emit('created', projectData)
+  emit('resolved', projectData)
 }
 
 async function validateName(name: string): Promise<FormValidationResult> {
@@ -92,4 +111,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.create-button {
+  margin: 0 auto;
+}
+</style>
