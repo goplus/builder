@@ -3,7 +3,12 @@
     <template v-if="scratchAssets.sprites.length">
       <div>Sprites</div>
       <NGrid cols="6">
-        <NGridItem v-for="asset in scratchAssets.sprites" :key="asset.name" class="file-row">
+        <NGridItem
+          v-for="asset in scratchAssets.sprites"
+          :key="asset.name"
+          :class="['file-row', { selected: selected.sprites.has(asset) }]"
+          @click="selectSprite(asset)"
+        >
           <div>{{ asset.name }}</div>
           <BlobImage
             preview-disabled
@@ -12,13 +17,17 @@
             :fallback-src="error"
             :blob="asset.costumes[0].blob"
           />
-          <NButton @click="importSprite(asset)">Import</NButton>
         </NGridItem>
       </NGrid>
     </template>
     <div>Sounds</div>
     <NGrid cols="6">
-      <NGridItem v-for="asset in scratchAssets.sounds" :key="asset.name" class="file-row">
+      <NGridItem
+        v-for="asset in scratchAssets.sounds"
+        :key="asset.name"
+        :class="['file-row', { selected: selected.sounds.has(asset) }]"
+        @click="select(asset, 'sounds')"
+      >
         <div>{{ asset.filename }}</div>
         <div class="sound-container">
           <BlobSoundPlayer :blob="asset.blob" />
@@ -27,7 +36,12 @@
     </NGrid>
     <div>Backdrops</div>
     <NGrid cols="6">
-      <NGridItem v-for="asset in scratchAssets.backdrops" :key="asset.name" class="file-row">
+      <NGridItem
+        v-for="asset in scratchAssets.backdrops"
+        :key="asset.name"
+        :class="['file-row', { selected: selected.backdrops.has(asset) }]"
+        @click="select(asset, 'backdrops')"
+      >
         <div>{{ asset.filename }}</div>
         <BlobImage
           :blob="asset.blob"
@@ -36,15 +50,22 @@
           height="80"
           :fallback-src="error"
         />
-        <NButton @click="importBackdrop(asset)">Import</NButton>
       </NGridItem>
     </NGrid>
+    <UIButton @click="importSelected">
+      {{
+        $t({
+          en: 'Import',
+          zh: '导入'
+        })
+      }}
+    </UIButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Sound } from '@/models/sound'
-import { NButton, NGrid, NGridItem, useMessage } from 'naive-ui'
+import { NGrid, NGridItem, useMessage } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
 import error from '@/assets/error.svg'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
@@ -55,13 +76,56 @@ import BlobImage from './BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
 import BlobSoundPlayer from './BlobSoundPlayer.vue'
+import { ref, watch } from 'vue'
+import { UIButton } from '../ui'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
   project: Project
 }>()
 
+const emit = defineEmits<{
+  imported: []
+}>()
+
 const message = useMessage()
+
+const selected = ref<{
+  backdrops: Set<ExportedScratchFile>
+  sounds: Set<ExportedScratchFile>
+  sprites: Set<ExportedScratchSprite>
+}>({
+  backdrops: new Set(),
+  sounds: new Set(),
+  sprites: new Set()
+})
+
+watch(
+  () => props.scratchAssets,
+  () => {
+    selected.value = {
+      backdrops: new Set(),
+      sounds: new Set(),
+      sprites: new Set()
+    }
+  }
+)
+
+const selectSprite = (sprite: ExportedScratchSprite) => {
+  if (selected.value.sprites.has(sprite)) {
+    selected.value.sprites.delete(sprite)
+  } else {
+    selected.value.sprites.add(sprite)
+  }
+}
+
+const select = (asset: ExportedScratchFile, type: 'backdrops' | 'sounds') => {
+  if (selected.value[type].has(asset)) {
+    selected.value[type].delete(asset)
+  } else {
+    selected.value[type].add(asset)
+  }
+}
 
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   return new LazyFile(
@@ -96,11 +160,28 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
   props.project.stage.setBackdrop(backdrop)
   message.success(`Imported backdrop ${file.name}`)
 }
+
+const importSelected = () => {
+  for (const sprite of selected.value.sprites) {
+    importSprite(sprite)
+  }
+  for (const sound of selected.value.sounds) {
+    importSound(sound)
+  }
+  for (const backdrop of selected.value.backdrops) {
+    importBackdrop(backdrop)
+  }
+  emit('imported')
+}
 </script>
 
 <style lang="scss" scoped>
 .sound-container {
   height: 48px;
   width: 48px;
+}
+
+.selected {
+  background-color: #f0f0f0;
 }
 </style>

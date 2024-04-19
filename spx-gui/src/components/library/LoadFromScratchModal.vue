@@ -1,6 +1,11 @@
 <template>
   <UIFormModal v-model:visible="visible" title="Load from scratch" size="large">
-    <LoadFromScratch v-if="scratchAssets" :project="project" :scratch-assets="scratchAssets" />
+    <LoadFromScratch
+      v-if="scratchAssets"
+      :project="project"
+      :scratch-assets="scratchAssets"
+      @imported="visible = false"
+    />
   </UIFormModal>
 </template>
 <script setup lang="ts">
