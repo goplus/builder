@@ -22,18 +22,7 @@
 <script setup lang="ts">
 import { getCssVars } from '@/components/ui'
 import PanelHeader from '../common/PanelHeader.vue'
-
-// uiVariables.color.(sprite|sound|stage)
-export type Color = {
-  100: string
-  200: string
-  300: string
-  400: string
-  500: string
-  600: string
-  700: string
-  main: string
-}
+import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
   title: string

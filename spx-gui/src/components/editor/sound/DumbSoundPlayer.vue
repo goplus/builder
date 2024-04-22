@@ -1,7 +1,7 @@
 <!-- Sound player (only UI) -->
 
 <template>
-  <div class="sound-play">
+  <div class="sound-play" :style="colorCssVars">
     <div v-show="!playing" class="play" @click.stop="emit('play')">
       <UIIcon class="icon" type="play" />
     </div>
@@ -18,10 +18,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIIcon } from '@/components/ui'
+import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
   playing: boolean
   progress: number
+  color: Color
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +33,14 @@ const emit = defineEmits<{
 
 const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0
+}))
+
+const colorCssVars = computed(() => ({
+  '--color-main': props.color.main,
+  '--color-100': props.color[100],
+  '--color-300': props.color[300],
+  '--color-400': props.color[400],
+  '--color-600': props.color[600]
 }))
 </script>
 
@@ -52,14 +62,14 @@ const playCssVars = computed(() => ({
   cursor: pointer;
 
   transition: transform 0.2s;
-  --color: var(--ui-color-sound-main);
+  --color: var(--color-main);
   &:hover {
     transform: scale(1.167);
-    --color: var(--ui-color-sound-400);
+    --color: var(--color-400);
   }
   &:active {
     transform: scale(1.167);
-    --color: var(--ui-color-sound-600);
+    --color: var(--color-600);
   }
 }
 
@@ -102,7 +112,7 @@ const playCssVars = computed(() => ({
     stroke-linecap: round;
 
     &.bg {
-      stroke: var(--ui-color-sound-300);
+      stroke: var(--color-300);
     }
 
     &.fg {

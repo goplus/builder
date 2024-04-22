@@ -1,96 +1,159 @@
 <template>
-  <div class="asset-detail-info">
-    <div>Sprites TODO: i18n / re-style / refactor as components / include SVG?</div>
-    <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in scratchAssets?.sprites" :key="asset.name" class="file-row">
-        <div>{{ asset.name }}</div>
-        <ArrayBufferImage
-          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
-          preview-disabled
-          width="80"
-          height="80"
-          :fallback-src="error"
-          :array-buffer="asset.costumes[0].arrayBuffer"
-        />
-        <NButton @click="importSprite(asset)">Import</NButton>
-      </n-grid-item>
-    </n-grid>
-    <div>Sounds</div>
-    <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in scratchAssets?.sounds" :key="asset.name" class="file-row">
-        <div>{{ asset.filename }}</div>
-        <n-image
-          preview-disabled
-          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
-          width="80"
-          height="80"
-          :src="soundsImportSvg"
-          @click="playAudio(asset)"
-        />
-        <NButton @click="importSound(asset)">Import</NButton>
-      </n-grid-item>
-    </n-grid>
-    <div>Backdrops</div>
-    <n-grid cols="3 s:4 m:5 l:6 xl:7 2xl:8" responsive="screen">
-      <n-grid-item v-for="asset in scratchAssets?.backdrops" :key="asset.name" class="file-row">
-        <div>{{ asset.filename }}</div>
-        <ArrayBufferImage
-          :array-buffer="asset.arrayBuffer"
-          style="position: absolute; top: 30px; margin: auto; border-radius: 20px"
-          preview-disabled
-          width="80"
-          height="80"
-          :fallback-src="error"
-        />
-        <NButton @click="importBackdrop(asset)">Import</NButton>
-      </n-grid-item>
-    </n-grid>
+  <div class="container">
+    <div v-if="scratchAssets.sprites.length">
+      <div>Sprites</div>
+      <NGrid cols="6" x-gap="8" y-gap="8">
+        <NGridItem
+          v-for="asset in scratchAssets.sprites"
+          :key="asset.name"
+          @click="selectSprite(asset)"
+        >
+          <ScratchItemContainer :selected="selected.sprites.has(asset)">
+            <div class="asset-image">
+              <BlobImage :blob="asset.costumes[0].blob" />
+            </div>
+            <div class="asset-name">{{ asset.name }}</div>
+          </ScratchItemContainer>
+        </NGridItem>
+      </NGrid>
+    </div>
+    <div v-if="scratchAssets.sounds.length">
+      <div>Sounds</div>
+      <NGrid cols="6" x-gap="8" y-gap="8">
+        <NGridItem
+          v-for="asset in scratchAssets.sounds"
+          :key="asset.name"
+          @click="selectSound(asset)"
+        >
+          <ScratchItemContainer :selected="selected.sounds.has(asset)">
+            <div class="asset-image">
+              <div class="sound-container">
+                <BlobSoundPlayer :blob="asset.blob" :color="uiVariables.color.primary" />
+              </div>
+            </div>
+            <div>0:00 TODO</div>
+            <div class="asset-name">{{ asset.name }}</div>
+          </ScratchItemContainer>
+        </NGridItem>
+      </NGrid>
+    </div>
+
+    <div v-if="scratchAssets.backdrops.length">
+      <div>Backdrops</div>
+      <NGrid cols="6" x-gap="8" y-gap="8">
+        <NGridItem
+          v-for="asset in scratchAssets.backdrops"
+          :key="asset.name"
+          @click="selectBackdrop(asset)"
+        >
+          <ScratchItemContainer :selected="selected.backdrops.has(asset)">
+            <div class="asset-image">
+              <BlobImage :blob="asset.blob" />
+            </div>
+            <div class="asset-name">{{ asset.name }}</div>
+          </ScratchItemContainer>
+        </NGridItem>
+      </NGrid>
+    </div>
+    <UIButton size="large" class="import-button" @click="importSelected">
+      {{
+        $t({
+          en: 'Import',
+          zh: '导入'
+        })
+      }}
+    </UIButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Sound } from '@/models/sound'
-import { NButton, NGrid, NGridItem, NImage, useMessage } from 'naive-ui'
+import { NGrid, NGridItem } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
-import error from '@/assets/error.svg'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
-import soundsImportSvg from './images/sound-import.svg'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { File as LazyFile } from '@/models/common/file'
-import { getMimeFromExt } from '@/utils/file'
-import ArrayBufferImage from './ArrayBufferImage.vue'
+import BlobImage from './BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
+import BlobSoundPlayer from './BlobSoundPlayer.vue'
+import { ref, watch } from 'vue'
+import { UIButton, useMessage, useUIVariables } from '../ui'
+import ScratchItemContainer from './ScratchItemContainer.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
   project: Project
 }>()
 
+const emit = defineEmits<{
+  imported: []
+}>()
+
 const message = useMessage()
 
-const playAudio = (asset: ExportedScratchFile) => {
-  const blob = new Blob([asset.arrayBuffer], { type: getMimeFromExt(asset.extension) })
-  const url = URL.createObjectURL(blob)
-  let audio = new Audio(url)
-  audio.play()
-  audio.onended = () => {
-    URL.revokeObjectURL(url)
+const selected = ref<{
+  backdrops: Set<ExportedScratchFile>
+  sounds: Set<ExportedScratchFile>
+  sprites: Set<ExportedScratchSprite>
+}>({
+  backdrops: new Set(),
+  sounds: new Set(),
+  sprites: new Set()
+})
+
+const uiVariables = useUIVariables()
+
+watch(
+  () => props.scratchAssets,
+  () => {
+    selected.value = {
+      backdrops: new Set(),
+      sounds: new Set(),
+      sprites: new Set()
+    }
+  }
+)
+
+const selectSprite = (sprite: ExportedScratchSprite) => {
+  if (selected.value.sprites.has(sprite)) {
+    selected.value.sprites.delete(sprite)
+  } else {
+    selected.value.sprites.add(sprite)
+  }
+}
+
+const selectSound = (sound: ExportedScratchFile) => {
+  if (selected.value.sounds.has(sound)) {
+    selected.value.sounds.delete(sound)
+  } else {
+    selected.value.sounds.add(sound)
+  }
+}
+
+const selectBackdrop = (backdrop: ExportedScratchFile) => {
+  if (selected.value.backdrops.has(backdrop)) {
+    selected.value.backdrops.delete(backdrop)
+  } else {
+    if (selected.value.backdrops.size >= 1) {
+      selected.value.backdrops.clear()
+    }
+    selected.value.backdrops.add(backdrop)
   }
 }
 
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   return new LazyFile(
     `${scratchFile.name}.${scratchFile.extension}`,
-    async () => scratchFile.arrayBuffer,
+    () => scratchFile.blob.arrayBuffer(),
     {}
   )
 }
 
-const importSprite = async (asset: ExportedScratchSprite) => {
+const importSprite = (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map((costume) =>
-    Costume.create(costume.name, new LazyFile(costume.name, async () => costume.arrayBuffer))
+    Costume.create(costume.name, new LazyFile(costume.name, () => costume.blob.arrayBuffer()))
   )
   const sprite = Sprite.create(asset.name, '')
   for (const costume of costumes) {
@@ -100,66 +163,67 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   message.success(`Imported sprite ${asset.name}`)
 }
 
-const importSound = async (asset: ExportedScratchFile) => {
+const importSound = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = Sound.create(asset.name, file)
   props.project.addSound(sound)
   message.success(`Imported sound ${file.name}`)
 }
 
-const importBackdrop = async (asset: ExportedScratchFile) => {
+const importBackdrop = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = Backdrop.create(asset.name, file)
   props.project.stage.setBackdrop(backdrop)
   message.success(`Imported backdrop ${file.name}`)
 }
+
+const importSelected = () => {
+  for (const sprite of selected.value.sprites) {
+    importSprite(sprite)
+  }
+  for (const sound of selected.value.sounds) {
+    importSound(sound)
+  }
+  for (const backdrop of selected.value.backdrops) {
+    importBackdrop(backdrop)
+  }
+  emit('imported')
+}
 </script>
 
 <style lang="scss" scoped>
-.download-infos {
+.sound-container {
+  height: 48px;
+  width: 48px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-button {
+  align-self: flex-end;
+}
+
+.asset-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
   text-align: center;
 }
 
-.asset-detail-info {
-  display: block;
-  margin: 5px;
-  min-height: 50vh;
-  .selected-border {
-    border: 3px solid #000;
-  }
+.asset-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
 
-  .selected-btn {
-    background: #a6a6a680;
-    color: white;
-  }
-  .file-row {
-    margin: auto;
-    margin-top: 10px;
-    width: 80%;
-    height: 150px;
-    border-radius: 20px;
-    border: 3px solid #eeeeee;
-    box-shadow: 0 4px 4px 0 #00000026;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    overflow: visible;
-    cursor: pointer;
-    .video-play {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-    }
-    .file-btn {
-      width: 100%;
-      height: 100%;
-      padding: 10px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-around;
-    }
+  & > img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: var(--ui-border-radius-1);
   }
 }
 </style>

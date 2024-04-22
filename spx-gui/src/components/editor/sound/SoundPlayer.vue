@@ -4,6 +4,7 @@
   <DumbSoundPlayer
     :playing="playing != null"
     :progress="playing?.progress ?? 0"
+    :color="color"
     @play="handlePlay"
     @stop="handleStop"
   />
@@ -12,9 +13,11 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
+import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
   src: string | null
+  color: Color
 }>()
 
 type Playing = {

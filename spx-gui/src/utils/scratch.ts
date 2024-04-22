@@ -1,10 +1,11 @@
 import JSZip from 'jszip'
+import { getMimeFromExt } from './file'
 
 export interface ExportedScratchFile {
   name: string
   extension: string
   filename: string
-  arrayBuffer: ArrayBuffer
+  blob: Blob
 }
 
 export interface ExportedScratchSprite {
@@ -75,7 +76,7 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
         name: file.name,
         extension: file.dataFormat,
         filename: `${file.name}.${file.dataFormat}`,
-        arrayBuffer
+        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) })
       })
     }
     return files

@@ -1,5 +1,5 @@
 import { h } from 'vue'
-import { useModal } from 'naive-ui'
+import { useModal as naive_useModal } from 'naive-ui'
 import { useI18n } from '@/utils/i18n'
 import { Cancelled } from '@/utils/exception'
 import { AssetType, type AssetData } from '@/apis/asset'
@@ -9,9 +9,13 @@ import type { Sound } from '@/models/sound'
 import type { Sprite } from '@/models/sprite'
 import AssetLibrary from './AssetLibrary.vue'
 import AssetAdd from './AssetAdd.vue'
+import { useModal } from '../ui'
+import LoadFromScratchModal from './LoadFromScratchModal.vue'
+import { selectFile } from '@/utils/file'
+import { parseScratchFileAssets } from '@/utils/scratch'
 
 export function useAddAssetFromLibrary() {
-  const modalCtrl = useModal()
+  const modalCtrl = naive_useModal()
   const { t } = useI18n()
 
   return function addAssetFromLibrary(project: Project, type: AssetType): Promise<void> {
@@ -30,7 +34,7 @@ export function useAddAssetFromLibrary() {
 }
 
 export function useAddAssetToLibrary() {
-  const modalCtrl = useModal()
+  const modalCtrl = naive_useModal()
   const { t } = useI18n()
 
   return function addAssetToLibrary(asset: Backdrop | Sound | Sprite) {
@@ -56,5 +60,15 @@ export function useAddAssetToLibrary() {
         }
       })
     })
+  }
+}
+
+export function useLoadFromScratchModal() {
+  const invokeModal = useModal(LoadFromScratchModal)
+
+  return async function loadFromScratchModal(project: Project) {
+    const file = await selectFile({ accept: '.sb3' })
+    const exportedScratchAssets = await parseScratchFileAssets(file)
+    return invokeModal({ project, exportedScratchAssets }) as Promise<void>
   }
 }

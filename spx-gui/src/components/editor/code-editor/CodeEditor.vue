@@ -82,7 +82,7 @@ const categories = [
     icon: iconSound,
     label: { en: 'Sound', zh: '声音' },
     snippets: soundSnippets,
-    color: uiVariables.color.purple.main
+    color: uiVariables.color.sound.main
   },
   {
     icon: iconMotion,

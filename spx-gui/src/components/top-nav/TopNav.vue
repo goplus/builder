@@ -100,8 +100,7 @@
 // if this top-nav is for editor only, we should move it into editor
 // TODO: check if the same top nav is needed for pages other than editor
 
-import { computed, h } from 'vue'
-import { useModal } from 'naive-ui'
+import { computed } from 'vue'
 import {
   UIButton,
   UIDropdown,
@@ -126,8 +125,6 @@ import {
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
-import { parseScratchFileAssets } from '@/utils/scratch'
-import LoadFromScratch from '../library/LoadFromScratch.vue'
 import logoSvg from './logo.svg'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
@@ -138,6 +135,7 @@ import exportProjectSvg from './icons/export-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
+import { useLoadFromScratchModal } from '../library'
 
 const props = defineProps<{
   project: Project | null
@@ -151,8 +149,7 @@ const createProject = useCreateProject()
 const chooseProject = useChooseProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
-
-const importFromScratchModal = useModal()
+const loadFromScratchModal = useLoadFromScratchModal()
 
 function openProject(projectName: string) {
   // FIXME
@@ -180,17 +177,8 @@ async function handleExportProjectFile() {
 }
 
 async function handleImportFromScratch() {
-  const project = props.project
-  if (!project) {
-    return
-  }
-  const file = await selectFile({ accept: '.sb3' })
-  const exportedScratchAssets = await parseScratchFileAssets(file)
-  importFromScratchModal.create({
-    title: i18n.t({ en: 'Import from Scratch', zh: '从 Scratch 导入' }),
-    preset: 'dialog',
-    content: () => h(LoadFromScratch, { scratchAssets: exportedScratchAssets, project })
-  })
+  if (!props.project) return
+  loadFromScratchModal(props.project)
 }
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
