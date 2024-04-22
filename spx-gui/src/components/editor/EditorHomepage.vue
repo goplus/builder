@@ -3,7 +3,7 @@
     <header class="editor-header">
       <TopNav :project="project" />
     </header>
-    <main v-if="userStore.userInfo" class="editor-main">
+    <main v-if="userStore.userInfo" :class="['editor-main', { 'in-homepage': !projectName }]">
       <template v-if="projectName">
         <div v-if="isLoading" class="loading-wrapper">
           <NSpin size="large" />
@@ -21,8 +21,22 @@
         <div v-else>TODO</div>
       </template>
       <template v-else>
-        <ProjectList @selected="handleSelected" />
-        <NButton @click="handleCreate">+</NButton>
+        <div class="my-projects">
+          <div class="header">
+            {{ $t({ en: 'My projects', zh: '我的项目' }) }}
+          </div>
+          <NDivider class="divider" />
+          <ProjectList :in-homepage="true" @selected="handleSelected" />
+          <UIButton
+            class="create-project-button"
+            type="primary"
+            size="large"
+            icon="plus"
+            @click="handleCreate"
+          >
+            {{ $t({ en: 'New Project', zh: '新建项目' }) }}
+          </UIButton>
+        </div>
       </template>
     </main>
   </section>
@@ -31,7 +45,7 @@
 <script setup lang="ts">
 import { watchEffect, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NSpin } from 'naive-ui'
+import { NSpin, NDivider } from 'naive-ui'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { Project } from '@/models/project'
@@ -43,6 +57,7 @@ import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
+import { UIButton } from '@/components/ui'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -202,6 +217,39 @@ async function handleCreate() {
   display: flex;
   gap: var(--ui-gap-middle);
   padding: 16px;
+}
+
+.editor-main.in-homepage {
+  padding: 25px;
+  display: flex;
+  justify-content: center;
+  background-color: var(--ui-color-grey-100);
+}
+
+.my-projects {
+  width: 1248px;
+  padding-bottom: 51px;
+  display: flex;
+  flex-direction: column;
+
+  .header {
+    font-size: 16px;
+    line-height: 26px;
+    color: var(--ui-color-grey-1000);
+    padding: 15px 24px;
+  }
+
+  .divider {
+    margin: 0;
+  }
+
+  .create-project-button {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 28px;
+    margin: 0 auto;
+  }
 }
 
 .loading-wrapper {

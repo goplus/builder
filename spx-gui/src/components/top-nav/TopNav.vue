@@ -1,6 +1,8 @@
 <template>
   <nav class="top-nav">
-    <img class="logo" :src="logoSvg" />
+    <router-link class="logo" to="/">
+      <img :src="logoSvg" />
+    </router-link>
     <UIDropdown placement="bottom-start">
       <template #trigger>
         <div class="project-dropdown">
@@ -202,8 +204,10 @@ const handleSave = useMessageHandle(
 }
 
 .logo {
+  height: 100%;
   margin: 0 20px 0 24px;
-  align-self: center;
+  display: flex;
+  align-items: center;
 }
 
 .project-dropdown,
