@@ -1,5 +1,9 @@
 <template>
-  <UIFormModal v-model:visible="visible" title="Load from scratch" size="large">
+  <UIFormModal
+    v-model:visible="visible"
+    :title="$t({ en: 'Import assets from Scratch', zh: '从 Scratch 导入资源' })"
+    size="large"
+  >
     <LoadFromScratch
       v-if="scratchAssets"
       :project="project"

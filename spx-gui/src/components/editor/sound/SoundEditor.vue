@@ -17,6 +17,7 @@
     </div>
     <div class="opeartions">
       <DumbSoundPlayer
+        :color="uiVariables.color.purple"
         class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"

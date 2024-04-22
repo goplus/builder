@@ -10,7 +10,7 @@
         >
           <ScratchItemContainer :selected="selected.sprites.has(asset)">
             <div class="asset-image">
-              <BlobImage preview-disabled :fallback-src="error" :blob="asset.costumes[0].blob" />
+              <BlobImage :blob="asset.costumes[0].blob" />
             </div>
             <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
@@ -28,7 +28,7 @@
           <ScratchItemContainer :selected="selected.sounds.has(asset)">
             <div class="asset-image">
               <div class="sound-container">
-                <BlobSoundPlayer :blob="asset.blob" />
+                <BlobSoundPlayer :blob="asset.blob" :color="uiVariables.color.primary" />
               </div>
             </div>
             <div>0:00 TODO</div>
@@ -48,7 +48,7 @@
         >
           <ScratchItemContainer :selected="selected.backdrops.has(asset)">
             <div class="asset-image">
-              <BlobImage :blob="asset.blob" preview-disabled :fallback-src="error" />
+              <BlobImage :blob="asset.blob" />
             </div>
             <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
@@ -68,9 +68,8 @@
 
 <script setup lang="ts">
 import { Sound } from '@/models/sound'
-import { NGrid, NGridItem, useMessage } from 'naive-ui'
+import { NGrid, NGridItem } from 'naive-ui'
 import { Sprite } from '@/models/sprite'
-import error from '@/assets/error.svg'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
@@ -80,7 +79,7 @@ import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
 import BlobSoundPlayer from './BlobSoundPlayer.vue'
 import { ref, watch } from 'vue'
-import { UIButton } from '../ui'
+import { UIButton, useMessage, useUIVariables } from '../ui'
 import ScratchItemContainer from './ScratchItemContainer.vue'
 
 const props = defineProps<{
@@ -103,6 +102,8 @@ const selected = ref<{
   sounds: new Set(),
   sprites: new Set()
 })
+
+const uiVariables = useUIVariables()
 
 watch(
   () => props.scratchAssets,
