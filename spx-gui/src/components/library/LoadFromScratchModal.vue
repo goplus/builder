@@ -1,14 +1,14 @@
 <template>
   <UIFormModal
-    v-model:visible="visible"
-    :title="$t({ en: 'Import assets from Scratch', zh: '从 Scratch 导入资源' })"
     size="large"
+    :title="$t({ en: 'Import assets from Scratch', zh: '从 Scratch 导入资源' })"
+    :visible="visible"
+    @update:visible="emit('cancelled')"
   >
     <LoadFromScratch
-      v-if="scratchAssets"
       :project="project"
-      :scratch-assets="scratchAssets"
-      @imported="visible = false"
+      :scratch-assets="exportedScratchAssets"
+      @imported="emit('resolved')"
     />
   </UIFormModal>
 </template>
@@ -16,23 +16,16 @@
 import type { Project } from '@/models/project'
 import { UIFormModal } from '../ui'
 import LoadFromScratch from './LoadFromScratch.vue'
-import { ref } from 'vue'
-import { parseScratchFileAssets, type ExportedScratchAssets } from '@/utils/scratch'
-import { selectFile } from '@/utils/file'
+import type { ExportedScratchAssets } from '@/utils/scratch'
 
 defineProps<{
   project: Project
+  exportedScratchAssets: ExportedScratchAssets
+  visible: boolean
 }>()
 
-const scratchAssets = ref<ExportedScratchAssets | null>(null)
-const visible = ref(false)
-
-defineExpose({
-  open: async () => {
-    const file = await selectFile({ accept: '.sb3' })
-    const exportedScratchAssets = await parseScratchFileAssets(file)
-    scratchAssets.value = exportedScratchAssets
-    visible.value = true
-  }
-})
+const emit = defineEmits<{
+  cancelled: []
+  resolved: []
+}>()
 </script>

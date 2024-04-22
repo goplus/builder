@@ -93,7 +93,6 @@
         </UIMenuGroup>
       </UIMenu>
     </UIDropdown>
-    <LoadFromScratchModal v-if="project" ref="loadFromScratchModal" :project="project" />
   </nav>
 </template>
 
@@ -101,7 +100,7 @@
 // if this top-nav is for editor only, we should move it into editor
 // TODO: check if the same top nav is needed for pages other than editor
 
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import {
   UIButton,
   UIDropdown,
@@ -136,7 +135,7 @@ import exportProjectSvg from './icons/export-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
-import LoadFromScratchModal from '../library/LoadFromScratchModal.vue'
+import { useLoadFromScratchModal } from '../library'
 
 const props = defineProps<{
   project: Project | null
@@ -150,8 +149,7 @@ const createProject = useCreateProject()
 const chooseProject = useChooseProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
-
-const loadFromScratchModal = ref<InstanceType<typeof LoadFromScratchModal>>()
+const loadFromScratchModal = useLoadFromScratchModal()
 
 function openProject(projectName: string) {
   // FIXME
@@ -179,7 +177,8 @@ async function handleExportProjectFile() {
 }
 
 async function handleImportFromScratch() {
-  loadFromScratchModal.value?.open()
+  if (!props.project) return
+  loadFromScratchModal(props.project)
 }
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))

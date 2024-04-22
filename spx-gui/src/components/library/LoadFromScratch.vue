@@ -223,7 +223,7 @@ const importSelected = () => {
   & > img {
     max-width: 100%;
     max-height: 100%;
-    border-radius: var(--ui-border-radius-2);
+    border-radius: var(--ui-border-radius-1);
   }
 }
 </style>
