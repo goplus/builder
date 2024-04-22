@@ -14,7 +14,7 @@
             <template #icon><img :src="newSvg" /></template>
             {{ $t({ en: 'New project', zh: '新建项目' }) }}
           </UIMenuItem>
-          <UIMenuItem @click="handleOpenProject">
+          <UIMenuItem @click="openProject">
             <template #icon><img :src="openSvg" /></template>
             {{ $t({ en: 'Open project...', zh: '打开项目...' }) }}
           </UIMenuItem>
@@ -121,7 +121,7 @@ import { Project } from '@/models/project'
 import { useUserStore } from '@/stores'
 import {
   useCreateProject,
-  useChooseProject,
+  useOpenProject,
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
@@ -146,24 +146,14 @@ const userStore = useUserStore()
 const { isOnline } = useNetwork()
 
 const createProject = useCreateProject()
-const chooseProject = useChooseProject()
+const openProject = useOpenProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
 const loadFromScratchModal = useLoadFromScratchModal()
 
-function openProject(projectName: string) {
-  // FIXME
-  location.assign(getProjectEditorRoute(projectName))
-}
-
 async function handleNewProject() {
   const { name } = await createProject()
-  openProject(name)
-}
-
-async function handleOpenProject() {
-  const { name } = await chooseProject()
-  openProject(name)
+  location.assign(getProjectEditorRoute(name))
 }
 
 async function handleImportProjectFile() {

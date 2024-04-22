@@ -1,12 +1,11 @@
-import { h } from 'vue'
-import { useModal as naive_useModal, useDialog } from 'naive-ui'
+import { useDialog } from 'naive-ui'
 import { IsPublic, type ProjectData } from '@/apis/project'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
-import ProjectList from './ProjectList.vue'
+import ProjectOpenModal from './ProjectOpenModal.vue'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
-import { getProjectShareRoute } from '@/router'
+import { getProjectEditorRoute, getProjectShareRoute } from '@/router'
 import { useModal } from '@/components/ui'
 
 export function useCreateProject() {
@@ -17,28 +16,12 @@ export function useCreateProject() {
   }
 }
 
-export function useChooseProject() {
-  const modalCtrl = naive_useModal()
-  const { t } = useI18n()
+export function useOpenProject() {
+  const modal = useModal(ProjectOpenModal)
 
-  return function chooseProject() {
-    return new Promise<ProjectData>((resolve, reject) => {
-      const modal = modalCtrl.create({
-        title: t({ en: 'Choose a project', zh: '选择一个项目' }),
-        content: () =>
-          h(ProjectList, {
-            onSelected(projectData) {
-              resolve(projectData)
-              modal.destroy()
-            }
-          }),
-        preset: 'dialog',
-        onHide() {
-          reject(new Cancelled())
-          modal.destroy()
-        }
-      })
-    })
+  return async function openProject() {
+    const project = await (modal({}) as Promise<ProjectData>)
+    location.assign(getProjectEditorRoute(project.name))
   }
 }
 
