@@ -1,8 +1,7 @@
 <template>
-  <NImage :src="src" />
+  <img :src="src" />
 </template>
 <script setup lang="ts">
-import { NImage } from 'naive-ui'
 import { ref, watchEffect } from 'vue'
 
 const src = ref()

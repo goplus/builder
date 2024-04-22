@@ -9,14 +9,10 @@
           @click="selectSprite(asset)"
         >
           <ScratchItemContainer :selected="selected.sprites.has(asset)">
-            <BlobImage
-              preview-disabled
-              width="80"
-              height="80"
-              :fallback-src="error"
-              :blob="asset.costumes[0].blob"
-            />
-            <div>{{ asset.name }}</div>
+            <div class="asset-image">
+              <BlobImage preview-disabled :fallback-src="error" :blob="asset.costumes[0].blob" />
+            </div>
+            <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
         </NGridItem>
       </NGrid>
@@ -30,10 +26,13 @@
           @click="selectSound(asset)"
         >
           <ScratchItemContainer :selected="selected.sounds.has(asset)">
-            <div class="sound-container">
-              <BlobSoundPlayer :blob="asset.blob" />
+            <div class="asset-image">
+              <div class="sound-container">
+                <BlobSoundPlayer :blob="asset.blob" />
+              </div>
             </div>
-            <div>{{ asset.filename }}</div>
+            <div>0:00 TODO</div>
+            <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
         </NGridItem>
       </NGrid>
@@ -48,14 +47,10 @@
           @click="selectBackdrop(asset)"
         >
           <ScratchItemContainer :selected="selected.backdrops.has(asset)">
-            <BlobImage
-              :blob="asset.blob"
-              preview-disabled
-              width="80"
-              height="80"
-              :fallback-src="error"
-            />
-            <div>{{ asset.filename }}</div>
+            <div class="asset-image">
+              <BlobImage :blob="asset.blob" preview-disabled :fallback-src="error" />
+            </div>
+            <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
         </NGridItem>
       </NGrid>
@@ -209,5 +204,25 @@ const importSelected = () => {
 
 .import-button {
   align-self: flex-end;
+}
+
+.asset-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
+
+.asset-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
+
+  & > img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: var(--ui-border-radius-2);
+  }
 }
 </style>
