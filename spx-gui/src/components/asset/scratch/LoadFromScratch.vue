@@ -74,12 +74,12 @@ import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/sc
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { File as LazyFile } from '@/models/common/file'
-import BlobImage from './BlobImage.vue'
+import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
-import BlobSoundPlayer from './BlobSoundPlayer.vue'
+import BlobSoundPlayer from '../BlobSoundPlayer.vue'
 import { ref, watch } from 'vue'
-import { UIButton, useMessage, useUIVariables } from '../ui'
+import { UIButton, useMessage, useUIVariables } from '@/components/ui'
 import ScratchItemContainer from './ScratchItemContainer.vue'
 
 const props = defineProps<{

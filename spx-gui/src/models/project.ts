@@ -142,6 +142,10 @@ export class Project extends Disposble {
     return reactive(this) as this
   }
 
+  applyMetadata(metadata: Metadata) {
+    assign<Project>(this, metadata)
+  }
+
   /** Load with metadata & files */
   async load(metadata: Metadata, files: Files) {
     const configFile = files[projectConfigFilePath]
@@ -155,7 +159,7 @@ export class Project extends Disposble {
       Sound.loadAll(files),
       Sprite.loadAll(files)
     ])
-    assign<Project>(this, metadata)
+    this.applyMetadata(metadata)
     this.zorder = zorder ?? []
     this.stage = stage
     this.sprites = []
@@ -221,7 +225,7 @@ export class Project extends Disposble {
   async saveToCloud() {
     const [metadata, files] = this.export()
     const res = await cloudHelper.save(metadata, files)
-    await this.load(res.metadata, res.files)
+    this.applyMetadata(res.metadata)
     this.hasUnsyncedChanges = false
   }
 
@@ -249,7 +253,8 @@ export class Project extends Disposble {
         () => this.exportWithoutHasUnsyncedChanges(),
         () => {
           this.hasUnsyncedChanges = true
-        }
+        },
+        { flush: 'sync' } // so that `saveToCloud` correctly sets `hasUnsyncedChanges` to `false`
       )
     )
   }

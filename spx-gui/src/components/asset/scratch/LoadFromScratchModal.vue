@@ -14,7 +14,7 @@
 </template>
 <script setup lang="ts">
 import type { Project } from '@/models/project'
-import { UIFormModal } from '../ui'
+import { UIFormModal } from '@/components/ui'
 import LoadFromScratch from './LoadFromScratch.vue'
 import type { ExportedScratchAssets } from '@/utils/scratch'
 
