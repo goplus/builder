@@ -24,11 +24,23 @@ function expand(panel: 'sprites' | 'sounds') {
 }
 
 const editorCtx = useEditorCtx()
+
 watch(
   () => editorCtx.selected,
   (selected) => {
     if (selected?.type === 'sprite' && expandedPanel.value !== 'sprites') expand('sprites')
-    if (selected?.type === 'sound' && expandedPanel.value !== 'sounds') expand('sounds')
+    else if (selected?.type === 'sound' && expandedPanel.value !== 'sounds') expand('sounds')
+  }
+)
+
+watch(
+  () => expandedPanel.value,
+  expanded => {
+    if (expanded === 'sprites' && editorCtx.selected?.type !== 'sprite' && editorCtx.project.sprites.length > 0) {
+      editorCtx.select('sprite', editorCtx.project.sprites[0].name)
+    } else if (expanded === 'sounds' && editorCtx.selected?.type !== 'sound' && editorCtx.project.sounds.length > 0) {
+      editorCtx.select('sound', editorCtx.project.sounds[0].name)
+    }
   }
 )
 </script>

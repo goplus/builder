@@ -28,9 +28,9 @@
       </PanelFooter>
     </template>
     <template #summary>
-      <PanelSummaryList :has-more="spritesForOverviewHasMore">
+      <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
         <SpriteSummaryItem
-          v-for="sprite in spritesForOverview"
+          v-for="sprite in summaryListData.list"
           :key="sprite.name"
           :sprite="sprite"
         />
@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
 import { selectImgs } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
@@ -53,7 +53,7 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
-import PanelSummaryList from '../common/PanelSummaryList.vue'
+import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
@@ -71,10 +71,8 @@ const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const sprites = computed(() => editorCtx.project.sprites)
-
-const numForPreview = 2 // TODO: it will be ideal to calculate the number (2) with element height
-const spritesForOverview = computed(() => sprites.value.slice(0, numForPreview))
-const spritesForOverviewHasMore = sprites.value.length > numForPreview
+const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
+const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sprite: Sprite) {
   return sprite.name === editorCtx.selectedSprite?.name

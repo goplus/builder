@@ -1,31 +1,27 @@
-import { onMounted, onUnmounted, ref } from 'vue'
-import type { Ref } from 'vue'
+import { ref, watch, type WatchSource } from 'vue'
 
-export function useSize(elRef: Ref<HTMLElement | null>) {
+export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
   const width = ref(0)
   const height = ref(0)
-  let observer: ResizeObserver | null = null
 
-  // monitor element size change
-  const onElementResize = (entries: any) => {
-    for (const entry of entries) {
-      const { width: elementWidth, height: elementHeight } = entry.contentRect
-      width.value = elementWidth
-      height.value = elementHeight
-    }
+  function onElementResize(entries: ResizeObserverEntry[]) {
+    const { width: elementWidth, height: elementHeight } = entries[0].contentRect
+    width.value = elementWidth
+    height.value = elementHeight
   }
 
-  onMounted(() => {
-    if (elRef.value) {
-      observer = new ResizeObserver(onElementResize)
-      observer.observe(elRef.value)
-    }
-  })
-  onUnmounted(() => {
-    if (observer) {
-      observer.disconnect()
-    }
-  })
+  watch(
+    elSource,
+    (el, _, onCleanup) => {
+      if (el != null) {
+        const observer = new ResizeObserver(onElementResize)
+        observer.observe(el)
+        onCleanup(() => observer.disconnect())
+      }
+    },
+    { immediate: true }
+  )
+
   return {
     width,
     height

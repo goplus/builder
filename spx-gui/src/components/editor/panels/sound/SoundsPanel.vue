@@ -27,8 +27,8 @@
       </PanelList>
     </template>
     <template #summary>
-      <PanelSummaryList :has-more="soundsForOverviewHasMore">
-        <SoundSummaryItem v-for="sound in soundsForOverview" :key="sound.name" :sound="sound" />
+      <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
+        <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.name" :sound="sound" />
       </PanelSummaryList>
     </template>
   </CommonPanel>
@@ -48,7 +48,7 @@ import { stripExt } from '@/utils/path'
 import { fromNativeFile } from '@/models/common/file'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
-import PanelSummaryList from '../common/PanelSummaryList.vue'
+import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
 import SoundItem from './SoundItem.vue'
 import SoundSummaryItem from './SoundSummaryItem.vue'
 
@@ -64,10 +64,8 @@ const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const sounds = computed(() => editorCtx.project.sounds)
-
-const numForPreview = 2 // TODO: it will be ideal to calculate the number (2) with element height
-const soundsForOverview = computed(() => sounds.value.slice(0, numForPreview))
-const soundsForOverviewHasMore = sounds.value.length > numForPreview
+const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
+const summaryListData = useSummaryList(sounds, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sound: Sound) {
   return sound.name === editorCtx.selectedSound?.name
