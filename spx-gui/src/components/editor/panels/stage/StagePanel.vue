@@ -18,7 +18,7 @@
         </UIDropdown>
       </div>
       <footer v-if="isLibraryEnabled() && backdrop != null">
-        <UIButton @click="handleAddToLibrary()">Add</UIButton>
+        <UIButton @click="addToLibrary(backdrop)">Add</UIButton>
       </footer>
     </main>
   </section>
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/library'
+import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import {
   UIButton,
   UIDropdown,
@@ -74,10 +74,6 @@ function handleChoose() {
 }
 
 const addToLibrary = useAddAssetToLibrary()
-
-function handleAddToLibrary() {
-  addToLibrary(backdrop.value!)
-}
 
 const uiVariables = useUIVariables()
 const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)

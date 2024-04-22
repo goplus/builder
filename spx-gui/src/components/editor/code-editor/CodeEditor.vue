@@ -17,14 +17,14 @@
     <div class="snippets-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div class="snippets">
-        <UITag
+        <UITagButton
           v-for="(snippet, i) in activeCategory.snippets"
           :key="i"
           :title="snippet.detail"
           @click="handleSnippetClick(snippet)"
         >
           {{ snippet.label }}
-        </UITag>
+        </UITagButton>
       </div>
     </div>
     <div class="code-text-editor-wrapper">
@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
-import { useUIVariables, UITag } from '@/components/ui'
+import { useUIVariables, UITagButton } from '@/components/ui'
 import {
   CodeTextEditor,
   motionSnippets,

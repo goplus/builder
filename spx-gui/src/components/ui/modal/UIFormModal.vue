@@ -5,8 +5,8 @@
         <div :class="['title', { center: centerTitle }]">
           {{ title }}
         </div>
-        <div class="close" @click="handleCloseButton">×</div>
-        <!-- TODO: replace x with an icon -->
+        <slot name="header-extra"></slot>
+        <CloseBtn @click="handleCloseButton" />
       </div>
 
       <NDivider class="divider" />
@@ -20,6 +20,7 @@
 <script setup lang="ts">
 import { NDivider } from 'naive-ui'
 import UIModal from './UIModal.vue'
+import CloseBtn from './CloseBtn.vue'
 
 defineProps<{
   title: string
@@ -50,7 +51,6 @@ const handleCloseButton = () => {
   display: flex;
   align-items: center;
   padding: 8px 24px;
-  position: relative;
   height: 56px;
 }
 
@@ -58,18 +58,11 @@ const handleCloseButton = () => {
   font-size: 16px;
   line-height: 26px;
   flex: 1;
+  display: flex;
 }
 
 .center {
   text-align: center;
-}
-
-.close {
-  cursor: pointer;
-  font-size: 24px;
-  font-weight: 100;
-  position: absolute;
-  right: 20px;
 }
 
 .divider {

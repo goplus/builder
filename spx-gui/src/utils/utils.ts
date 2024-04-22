@@ -1,3 +1,5 @@
+import { ref, watchEffect } from 'vue'
+
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
   if (!extension) return false
@@ -29,4 +31,17 @@ export function debounce<T extends (...args: any[]) => any>(func: T, delay: numb
  */
 export function isLibraryEnabled() {
   return window.location.search.includes('?library')
+}
+
+export function useAsyncComputed<T>(getter: () => Promise<T>) {
+  const r = ref<T>()
+  watchEffect(async (onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    const result = await getter()
+    if (!cancelled) r.value = result
+  })
+  return r
 }

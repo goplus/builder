@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
-import { usePopupContainer } from './utils'
+import { usePopupContainer } from '../utils'
 
 export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{

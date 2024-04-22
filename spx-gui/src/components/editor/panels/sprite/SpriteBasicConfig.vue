@@ -50,7 +50,7 @@
     </p>
   </div>
   <div v-if="isLibraryEnabled()" class="line">
-    <UIButton @click="handleAddToLibrary(sprite)">Add to asset library</UIButton>
+    <UIButton @click="addToLibrary(sprite)">Add to asset library</UIButton>
   </div>
 </template>
 
@@ -59,7 +59,7 @@ import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
 import { isLibraryEnabled } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import { useAddAssetToLibrary } from '@/components/library'
+import { useAddAssetToLibrary } from '@/components/asset'
 import VisibleInput from '../common/VisibleInput.vue'
 import SpriteRenameModal from './SpriteRenameModal.vue'
 
@@ -78,10 +78,6 @@ function handleNameEdit() {
 }
 
 const addToLibrary = useAddAssetToLibrary()
-
-function handleAddToLibrary(sprite: Sprite) {
-  addToLibrary(sprite)
-}
 </script>
 
 <style scoped lang="scss">

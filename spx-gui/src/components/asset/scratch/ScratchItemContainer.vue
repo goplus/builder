@@ -6,7 +6,7 @@
 </template>
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { UIIcon } from '../ui'
+import { UIIcon } from '@/components/ui'
 
 defineProps<{
   selected: boolean

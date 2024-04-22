@@ -25,15 +25,20 @@
         @stop="handleStop"
       />
     </div>
+    <footer v-if="isLibraryEnabled()">
+      <UIButton @click="addToLibrary(sound)">Add to asset library</UIButton>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted } from 'vue'
-import { useUIVariables, UIIcon, useModal } from '@/components/ui'
+import { useUIVariables, UIIcon, UIButton, useModal } from '@/components/ui'
+import { isLibraryEnabled } from '@/utils/utils'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
+import { useAddAssetToLibrary } from '@/components/asset'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
@@ -108,6 +113,8 @@ function handleStop() {
   wavesurfer?.stop()
   playing.value = null
 }
+
+const addToLibrary = useAddAssetToLibrary()
 </script>
 
 <style scoped lang="scss">

@@ -125,6 +125,7 @@ import {
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
+import { useLoadFromScratchModal } from '@/components/asset'
 import logoSvg from './logo.svg'
 import enSvg from './icons/en.svg?raw'
 import zhSvg from './icons/zh.svg?raw'
@@ -135,7 +136,6 @@ import exportProjectSvg from './icons/export-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
-import { useLoadFromScratchModal } from '../library'
 
 const props = defineProps<{
   project: Project | null

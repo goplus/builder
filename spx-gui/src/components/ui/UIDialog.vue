@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import UIModal from './UIModal.vue'
+import UIModal from './modal/UIModal.vue'
 import errorSvg from './dialog-icons/error.svg'
 import warningSvg from './dialog-icons/warning.svg'
 import infoSvg from './dialog-icons/info.svg'
