@@ -28,7 +28,7 @@
 
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
-import { useSize } from '@/utils/dom'
+import { useContentSize } from '@/utils/dom'
 import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UICard, UICardHeader, UIButton } from '@/components/ui'
@@ -42,7 +42,7 @@ const editorCtx = useEditorCtx()
 
 const project = computed(() => editorCtx.project)
 const stageViewerContainer = ref<HTMLElement | null>(null)
-const { width: containerWidth, height: containerHeight } = useSize(stageViewerContainer)
+const { width: containerWidth, height: containerHeight } = useContentSize(stageViewerContainer)
 
 const selectedSpriteNames = ref<string[]>([])
 

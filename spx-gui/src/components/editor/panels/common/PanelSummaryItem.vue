@@ -1,39 +1,26 @@
-<!-- Summary item (sprite / sound) on panel -->
+<!-- Summary item (sprite / sound / more) on panel -->
 
 <template>
   <li class="summary-item">
     <slot></slot>
-    <p class="name">{{ name }}</p>
   </li>
 </template>
 
-<script setup lang="ts">
-defineProps<{
-  name: string
-}>()
+<script lang="ts">
+// Currently summary item size is fixed, so we define it as constant
+export const size = { width: 56, height: 56 } // px
 </script>
+
+<script setup lang="ts"></script>
 
 <style lang="scss" scoped>
 .summary-item {
   display: flex;
-  flex-direction: column;
   width: 56px;
-  height: fit-content;
+  height: 56px;
   align-items: center;
+  justify-content: center;
   border-radius: var(--ui-border-radius-1);
-  border: 2px solid var(--ui-color-grey-300);
   background-color: var(--ui-color-grey-300);
-}
-.name {
-  font-size: 10px;
-  line-height: 1.5;
-  padding: 0 4px 1px;
-
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-  text-overflow: ellipsis;
-  color: var(--ui-color-grey-800);
 }
 </style>

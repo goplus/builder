@@ -1,5 +1,5 @@
 <template>
-  <PanelSummaryItem :name="props.sprite.name">
+  <PanelSummaryItem>
     <div class="img" :style="imgStyle"></div>
   </PanelSummaryItem>
 </template>
