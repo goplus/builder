@@ -93,69 +93,75 @@ const {
   isLoading,
   error
 } = useQuery(
-  async () => {
-    if (userStore.userInfo == null) return null
-
-    let localProject: Project | null
-    try {
-      localProject = new Project()
-      await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
-    } catch (e) {
-      console.warn('Failed to load project from local cache', e)
-      localProject = null
-      clear(LOCAL_CACHE_KEY)
-    }
-
-    if (localProject && localProject.owner !== userStore.userInfo.name) {
-      // Case 4: Different user: Discard local cache
-      clear(LOCAL_CACHE_KEY)
-      localProject = null
-    }
-
-    // https://github.com/goplus/builder/issues/259
-    // Local Cache Saving & Restoring
-    if (localProject?.hasUnsyncedChanges) {
-      if (!projectName.value) {
-        if (askOpenCached(localProject)) {
-          // Case 3: User has a project in the cache but not opening any project:
-          // Open the saved project
-          openProject(localProject.name!) // FIXME: name should be required?
-        } else {
-          // Case 3: Clear local cache
-          clear(LOCAL_CACHE_KEY)
-        }
-        return null
-      }
-
-      if (localProject.name !== projectName.value) {
-        if (askOpenNew(localProject, projectName.value)) {
-          // Case 2: User has a project in the cache but not opening the project in the cache:
-          // asked to open the saved project
-          openProject(localProject.name!)
-          return null
-        }
-        // Case 2 fallthrough: Let the project to be loaded from cloud
-      }
-    }
-
-    if (!projectName.value) return null
-    let newProject = new Project()
-    await newProject.loadFromCloud(userStore.userInfo.name, projectName.value)
-
-    if (localProject?.hasUnsyncedChanges) {
-      if (newProject.version <= localProject.version && askOpenCached(localProject)) {
-        // Case 1: User has a project in the cache and opening the same project:
-        // asked to open the saved project
-        newProject = localProject
-      }
-    }
-
-    newProject.startWatchToSetHasUnsyncedChanges()
-    newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
-    return newProject
+  () => {
+    // We need to read `userStore.userInfo.name` & `projectName.value` synchronously,
+    // so their change will drive `useQuery` to re-fetch
+    return loadProject(userStore.userInfo?.name, projectName.value)
   },
   { en: 'Load project failed', zh: '加载项目失败' }
 )
+
+async function loadProject(user: string | undefined, projectName: string | undefined) {
+  if (user == null) return null
+
+  let localProject: Project | null
+  try {
+    localProject = new Project()
+    await localProject.loadFromLocalCache(LOCAL_CACHE_KEY)
+  } catch (e) {
+    console.warn('Failed to load project from local cache', e)
+    localProject = null
+    clear(LOCAL_CACHE_KEY)
+  }
+
+  if (localProject && localProject.owner !== user) {
+    // Case 4: Different user: Discard local cache
+    clear(LOCAL_CACHE_KEY)
+    localProject = null
+  }
+
+  // https://github.com/goplus/builder/issues/259
+  // Local Cache Saving & Restoring
+  if (localProject?.hasUnsyncedChanges) {
+    if (!projectName) {
+      if (askOpenCached(localProject)) {
+        // Case 3: User has a project in the cache but not opening any project:
+        // Open the saved project
+        openProject(localProject.name!) // FIXME: name should be required?
+      } else {
+        // Case 3: Clear local cache
+        clear(LOCAL_CACHE_KEY)
+      }
+      return null
+    }
+
+    if (localProject.name !== projectName) {
+      if (askOpenNew(localProject, projectName)) {
+        // Case 2: User has a project in the cache but not opening the project in the cache:
+        // asked to open the saved project
+        openProject(localProject.name!)
+        return null
+      }
+      // Case 2 fallthrough: Let the project to be loaded from cloud
+    }
+  }
+
+  if (!projectName) return null
+  let newProject = new Project()
+  await newProject.loadFromCloud(user, projectName)
+
+  if (localProject?.hasUnsyncedChanges) {
+    if (newProject.version <= localProject.version && askOpenCached(localProject)) {
+      // Case 1: User has a project in the cache and opening the same project:
+      // asked to open the saved project
+      newProject = localProject
+    }
+  }
+
+  newProject.startWatchToSetHasUnsyncedChanges()
+  newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
+  return newProject
+}
 
 watch(
   // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
@@ -183,9 +189,7 @@ watchEffect((onCleanup) => {
 })
 
 function openProject(projectName: string) {
-  // FIXME: Vue's router.push does not cause the useQuery hook to re-run.
-  // We have to use location.assign to force a full page reload.
-  location.assign(getProjectEditorRoute(projectName))
+  router.push(getProjectEditorRoute(projectName))
 }
 
 function handleSelected(project: ProjectData) {

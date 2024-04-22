@@ -1,4 +1,5 @@
 import { useDialog } from 'naive-ui'
+import { useRouter } from 'vue-router'
 import { IsPublic, type ProjectData } from '@/apis/project'
 import { Cancelled, useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
@@ -17,11 +18,12 @@ export function useCreateProject() {
 }
 
 export function useOpenProject() {
+  const router = useRouter()
   const modal = useModal(ProjectOpenModal)
 
   return async function openProject() {
     const project = await (modal({}) as Promise<ProjectData>)
-    location.assign(getProjectEditorRoute(project.name))
+    router.push(getProjectEditorRoute(project.name))
   }
 }
 
