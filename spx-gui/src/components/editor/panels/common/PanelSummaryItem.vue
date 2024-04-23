@@ -11,7 +11,14 @@
 export const size = { width: 56, height: 56 } // px
 </script>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+// Empty `defineEmits` to avoid empty `<script setup>`, which causes build error:
+// ```
+// "default" is not exported by "src/components/editor/panels/common/PanelSummaryItem.vue?vue&type=script&lang.ts",
+// imported by "src/components/editor/panels/common/PanelSummaryItem.vue".
+// ```
+defineEmits<{}>()
+</script>
 
 <style lang="scss" scoped>
 .summary-item {
