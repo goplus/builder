@@ -124,7 +124,9 @@ const thumbnailSrc = useFileUrl(() => {
   if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
   if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
 })
-const thumbnailStyle = computed(() => thumbnailSrc.value && { backgroundImage: `url("${thumbnailSrc.value}")` })
+const thumbnailStyle = computed(
+  () => thumbnailSrc.value && { backgroundImage: `url("${thumbnailSrc.value}")` }
+)
 </script>
 
 <style scoped lang="scss">

@@ -12,7 +12,10 @@ import { computed, type Ref, type WatchSource } from 'vue'
 import { useContentSize } from '@/utils/dom'
 import { size as itemSize } from './PanelSummaryItem.vue'
 
-export function useSummaryList<T>(list: Ref<T[]>, listWrapperSource: WatchSource<HTMLElement | null>) {
+export function useSummaryList<T>(
+  list: Ref<T[]>,
+  listWrapperSource: WatchSource<HTMLElement | null>
+) {
   const { height } = useContentSize(listWrapperSource)
   return computed(() => {
     const maxVisibleItemNum = Math.floor(height.value / itemSize.height)

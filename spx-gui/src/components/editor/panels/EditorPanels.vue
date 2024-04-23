@@ -35,10 +35,18 @@ watch(
 
 watch(
   () => expandedPanel.value,
-  expanded => {
-    if (expanded === 'sprites' && editorCtx.selected?.type !== 'sprite' && editorCtx.project.sprites.length > 0) {
+  (expanded) => {
+    if (
+      expanded === 'sprites' &&
+      editorCtx.selected?.type !== 'sprite' &&
+      editorCtx.project.sprites.length > 0
+    ) {
       editorCtx.select('sprite', editorCtx.project.sprites[0].name)
-    } else if (expanded === 'sounds' && editorCtx.selected?.type !== 'sound' && editorCtx.project.sounds.length > 0) {
+    } else if (
+      expanded === 'sounds' &&
+      editorCtx.selected?.type !== 'sound' &&
+      editorCtx.project.sounds.length > 0
+    ) {
       editorCtx.select('sound', editorCtx.project.sounds[0].name)
     }
   }
