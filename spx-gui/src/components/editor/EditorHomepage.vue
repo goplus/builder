@@ -231,10 +231,11 @@ async function handleCreate() {
 }
 
 .my-projects {
-  width: 1248px;
+  width: 1208px;
   padding-bottom: 51px;
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
 
   .header {
     font-size: 16px;

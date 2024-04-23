@@ -1,7 +1,7 @@
 <template>
   <UIFormModal
     :title="$t({ en: 'Open project', zh: '打开项目' })"
-    :style="{ width: '960px' }"
+    :style="{ width: '936px' }"
     :visible="props.visible"
     @update:visible="handleCancel"
   >
