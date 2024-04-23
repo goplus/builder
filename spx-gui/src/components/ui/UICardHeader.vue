@@ -3,17 +3,13 @@
     <div class="main">
       <slot></slot>
     </div>
-    <NDivider class="divider" />
+    <UIDivider />
   </div>
 </template>
 <script setup lang="ts">
-import { NDivider } from 'naive-ui'
+import { UIDivider } from '@/components/ui'
 </script>
 <style scoped lang="scss">
-.divider {
-  margin: 0;
-}
-
 .main {
   display: flex;
   align-items: center;
