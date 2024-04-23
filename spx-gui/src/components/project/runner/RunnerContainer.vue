@@ -156,6 +156,7 @@ button {
   border-bottom: 1px solid var(--ui-color-grey-400);
   height: 56px;
   position: relative;
+  color: var(--ui-color-title);
 }
 
 .runner-container {
@@ -294,5 +295,6 @@ button {
   font-weight: 500;
   gap: 8px;
   position: relative;
+  color: var(--ui-color-title);
 }
 </style>

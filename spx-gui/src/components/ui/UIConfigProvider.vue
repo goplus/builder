@@ -89,7 +89,8 @@ const themeOverrides: GlobalThemeOverrides = {
     borderFocus: `1px solid ${uiVariables.color.primary.main}`,
     boxShadowFocus: 'none',
     boxShadowFocusError: 'none',
-    suffixTextColor: uiVariables.color.grey[800]
+    suffixTextColor: uiVariables.color.grey[800],
+    textColor: uiVariables.color.grey[1000]
   },
   Radio: {
     boxShadowFocus: `inset 0 0 0 1px ${uiVariables.color.primary.main}`

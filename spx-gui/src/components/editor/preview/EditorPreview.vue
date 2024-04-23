@@ -72,6 +72,7 @@ watch(
 
   .header {
     flex: 1;
+    color: var(--ui-color-title);
   }
 
   .stage-viewer-container {

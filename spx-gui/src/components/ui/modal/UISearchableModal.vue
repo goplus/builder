@@ -58,5 +58,6 @@ const handleCloseButton = () => {
   line-height: 26px;
   flex: 1;
   display: flex;
+  color: var(--ui-color-title);
 }
 </style>

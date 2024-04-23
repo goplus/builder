@@ -1,19 +1,20 @@
 <template>
   <UIFormModal
+    class="project-create-modal"
     :title="$t({ en: 'Create a new project', zh: '创建新的项目' })"
     :visible="props.visible"
     @update:visible="handleCancel"
   >
     <UIForm :form="form" @submit="handleSubmit">
-      <UIFormItem
-        path="name"
-        :label="
+      <div class="alert">
+        {{
           $t({
             en: 'The project name cannot be modified after it is created.',
             zh: '项目名创建后无法修改。'
           })
-        "
-      >
+        }}
+      </div>
+      <UIFormItem path="name">
         <UITextInput
           v-model:value="form.value.name"
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
@@ -112,6 +113,11 @@ async function validateName(name: string): Promise<FormValidationResult> {
 </script>
 
 <style scoped lang="scss">
+.alert {
+  height: 30px;
+  color: var(--ui-color-grey-900);
+}
+
 .create-button {
   margin: 0 auto;
 }
