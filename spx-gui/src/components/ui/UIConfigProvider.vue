@@ -38,8 +38,12 @@ const themeOverrides: GlobalThemeOverrides = {
     borderColor: uiVariables.color.border,
     errorColor: uiVariables.color.danger.main,
     errorColorHover: uiVariables.color.danger[100],
+    warningColor: uiVariables.color.yellow.main,
+    warningColorHover: uiVariables.color.yellow[100],
     successColor: uiVariables.color.success.main,
     successColorHover: uiVariables.color.success[100],
+    infoColor: uiVariables.color.primary.main,
+    infoColorHover: uiVariables.color.primary[100],
 
     // TODO: review boxShadow mapping
     boxShadow1: uiVariables.boxShadow.small,
@@ -76,6 +80,16 @@ const themeOverrides: GlobalThemeOverrides = {
   },
   Checkbox: {
     boxShadowFocus: 'none'
+  },
+  Message: {
+    padding: `11px ${uiVariables.gap.middle}`,
+    iconMargin: `0 8px 0 0`,
+    lineHeight: '1.57143',
+    textColorInfo: uiVariables.color.title,
+    textColorSuccess: uiVariables.color.title,
+    textColorWarning: uiVariables.color.title,
+    textColorError: uiVariables.color.title,
+    maxWidth: '367px'
   }
 }
 </script>

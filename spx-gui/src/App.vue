@@ -1,6 +1,6 @@
 <template>
   <UIConfigProvider>
-    <NMessageProvider>
+    <UIMessageProvider>
       <UIModalProvider>
         <NDialogProvider>
           <NModalProvider>
@@ -8,13 +8,13 @@
           </NModalProvider>
         </NDialogProvider>
       </UIModalProvider>
-    </NMessageProvider>
+    </UIMessageProvider>
   </UIConfigProvider>
 </template>
 
 <script setup lang="ts">
-import { NMessageProvider, NModalProvider, NDialogProvider } from 'naive-ui'
-import { UIConfigProvider, UIModalProvider } from '@/components/ui'
+import { NModalProvider, NDialogProvider } from 'naive-ui'
+import { UIConfigProvider, UIModalProvider, UIMessageProvider } from '@/components/ui'
 </script>
 
 <style lang="scss">

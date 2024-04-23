@@ -101,7 +101,7 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 }
 
 .main {
-  padding: 12px 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -110,7 +110,7 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 
 .overview {
   width: 100%;
-  padding: 4px;
+  padding: 2px;
   position: relative;
   border-radius: var(--ui-border-radius-1);
   background-color: var(--ui-color-grey-300);
@@ -121,7 +121,7 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   }
 
   &.active {
-    padding: 2px;
+    padding: 0;
     background-color: var(--ui-color-grey-400);
     border: 2px solid var(--ui-color-stage-main);
   }
@@ -129,7 +129,7 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
 
 .img {
   width: 100%;
-  padding-bottom: 80%;
+  height: 40px;
   border-radius: 4px;
   background-position: center;
   background-size: cover;

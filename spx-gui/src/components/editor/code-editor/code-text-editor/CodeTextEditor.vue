@@ -45,8 +45,12 @@ onMounted(() => {
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
     scrollBeyondLastLine: false,
+    overviewRulerLanes: 0,
+    renderLineHighlight: 'none',
     scrollbar: {
-      useShadows: false
+      useShadows: false,
+      horizontalScrollbarSize: 8,
+      verticalScrollbarSize: 8
     }
   })
 

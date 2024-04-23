@@ -103,6 +103,7 @@
 // TODO: check if the same top nav is needed for pages other than editor
 
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   UIButton,
   UIDropdown,
@@ -146,6 +147,7 @@ const props = defineProps<{
 const i18n = useI18n()
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
+const router = useRouter()
 
 const createProject = useCreateProject()
 const openProject = useOpenProject()
@@ -155,7 +157,7 @@ const loadFromScratchModal = useLoadFromScratchModal()
 
 async function handleNewProject() {
   const { name } = await createProject()
-  location.assign(getProjectEditorRoute(name))
+  router.push(getProjectEditorRoute(name))
 }
 
 async function handleImportProjectFile() {

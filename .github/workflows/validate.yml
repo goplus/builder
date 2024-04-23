@@ -53,6 +53,10 @@ jobs:
         working-directory: spx-gui
         run: npm run test
 
+      - name: Build
+        working-directory: spx-gui
+        run: npm run build
+
   spx-backend-test:
     runs-on: ubuntu-latest
     steps:

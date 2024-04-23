@@ -1,7 +1,7 @@
 import { onMounted, ref } from 'vue'
 
-/** Get container for all popup content (Modal, Dropdown, Tooltip, ...) */
-export function usePopupContainer() {
+/** Get root container for UI components (basically the root container for the app) */
+export function useRootContainer() {
   const container = ref<HTMLElement>()
   onMounted(() => {
     // TODO:
@@ -10,4 +10,9 @@ export function usePopupContainer() {
     container.value = document.getElementsByClassName('ui-config-provider')[0] as HTMLElement
   })
   return container
+}
+
+/** Get container for all popup content (Modal, Dropdown, Tooltip, ...) */
+export function usePopupContainer() {
+  return useRootContainer()
 }
