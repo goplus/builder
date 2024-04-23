@@ -9,9 +9,9 @@
       </UIButton>
     </UICardHeader>
 
-    <n-modal v-model:show="show" class="project-runner-modal">
-      <RunnerContainer :project="project" @close="show = false" />
-    </n-modal>
+    <UIFullScreenModal v-model:show="show" class="project-runner-modal">
+      <RunnerContainer mode="debug" :project="project" @close="show = false" />
+    </UIFullScreenModal>
     <div ref="stageViewerContainer" class="stage-viewer-container">
       <!-- When the mount is not complete, use the default value to prevent errors during component initialization -->
       <StageViewer
@@ -29,12 +29,11 @@
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue'
 import { useContentSize } from '@/utils/dom'
-import { NModal } from 'naive-ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UICard, UICardHeader, UIButton } from '@/components/ui'
-import RunnerContainer from './RunnerContainer.vue'
+import { UICard, UICardHeader, UIButton, UIFullScreenModal } from '@/components/ui'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
+import RunnerContainer from '@/components/project/runner/RunnerContainer.vue'
 
 let show = ref(false)
 

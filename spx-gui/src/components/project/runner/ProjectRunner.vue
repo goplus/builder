@@ -1,11 +1,3 @@
-<!--
- * @Author: Zhang Zhi Yang
- * @Date: 2024-03-06 14:08:44
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 16:49:50
- * @FilePath: \spx-gui\src\components\project-runner\ProjectRunner.vue
- * @Description: 
--->
 <template>
   <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" />
 </template>

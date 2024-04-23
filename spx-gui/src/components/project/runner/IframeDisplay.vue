@@ -46,10 +46,3 @@ watch(iframe, () => {
   }
 })
 </script>
-<style scoped lang="scss">
-.runner {
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-}
-</style>
