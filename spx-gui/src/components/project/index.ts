@@ -4,7 +4,7 @@ import { IsPublic, type ProjectData } from '@/apis/project'
 import { useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import type { Project } from '@/models/project'
 import { getProjectEditorRoute, getProjectShareRoute } from '@/router'
 
@@ -54,8 +54,8 @@ export function useSaveAndShareProject() {
 
   const saveAndShare = useMessageHandle(
     async (project: Project) => {
-      project.setPublic(IsPublic.public)
-      await project.saveToCloud()
+      if (project.isPublic !== IsPublic.public) project.setPublic(IsPublic.public)
+      if (project.hasUnsyncedChanges) await project.saveToCloud()
       await copySharingLink(project)
     },
     { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
@@ -63,28 +63,37 @@ export function useSaveAndShareProject() {
   ).fn
 
   return async function saveAndShareProject(project: Project) {
-    // TODO: the check should be unnecessary
-    if (project.isPublic == null) throw new Error('isPublic required')
+    const { isPublic, hasUnsyncedChanges } = project
+    if (isPublic == null) throw new Error('isPublic required')
 
-    // TODO: check if current state is already synced to cloud,
-    // if so, skip the confirm dialog
-    await withConfirm({
-      title: t({ en: 'Share project', zh: '分享项目' }),
-      content: t(getShareHintMessage(project.isPublic)),
-      confirmHandler: () => saveAndShare(project)
-    })
-  }
-}
-
-function getShareHintMessage(isPublic: IsPublic) {
-  if (isPublic === IsPublic.personal)
-    return {
-      en: "To share the peoject, we will save the project's current state to cloud & make it public",
-      zh: '分享操作会将当前项目状态保存到云端，并将项目设置为公开'
+    if (isPublic === IsPublic.public) {
+      if (!hasUnsyncedChanges) return shareWithConfirm(null)
+      else
+        return shareWithConfirm({
+          en: "To share the project, we will save the project's current state to cloud",
+          zh: '分享操作会将当前项目状态保存到云端'
+        })
+    } else {
+      if (!hasUnsyncedChanges)
+        return shareWithConfirm({
+          en: 'To share the project, we will make the project public',
+          zh: '分享操作会将当前项目设置为公开'
+        })
+      else
+        return shareWithConfirm({
+          en: "To share the project, we will save the project's current state to cloud & make it public",
+          zh: '分享操作会将当前项目状态保存到云端，并将项目设置为公开'
+        })
     }
-  return {
-    en: "To share the peoject, we will save the project's current state to cloud",
-    zh: '分享操作会将当前项目状态保存到云端'
+
+    async function shareWithConfirm(confirmMessage: LocaleMessage | null) {
+      if (confirmMessage == null) return saveAndShare(project)
+      await withConfirm({
+        title: t({ en: 'Share project', zh: '分享项目' }),
+        content: t(confirmMessage),
+        confirmHandler: () => saveAndShare(project)
+      })
+    }
   }
 }
 
@@ -97,22 +106,24 @@ export function useStopSharingProject() {
       project.setPublic(IsPublic.personal)
       await project.saveToCloud()
     },
-    { en: 'Failed to stop sharing project', zh: '未成功停止共享项目' },
-    { en: 'Project sharing is now stopped', zh: '项目已停止共享' }
+    { en: 'Failed to stop sharing project', zh: '未成功停止分享项目' },
+    { en: 'Project sharing is now stopped', zh: '项目已停止分享' }
   ).fn
 
   return async function stopSharingProject(project: Project) {
-    // TODO: the check should be unnecessary
-    if (project.isPublic == null) throw new Error('isPublic required')
-
-    // TODO: check if current state is already synced to cloud,
-    // if so, skip the confirm dialog
-    await withConfirm({
-      title: t({ en: 'Stop sharing project', zh: '停止共享项目' }),
-      content: t({
-        en: 'If project-sharing stopped, others will no longer have permission to access the project, and all project-sharing links will expire',
-        zh: '项目停止共享后，其他人不再可以访问项目，所有的项目分享链接也将失效'
-      }),
+    let confirmMessage = {
+      en: 'If sharing stopped, others will no longer have permission to access the project, and all project-sharing links will expire',
+      zh: '停止分享后，其他人不再可以访问项目，所有的项目分享链接也将失效'
+    }
+    if (project.hasUnsyncedChanges) {
+      confirmMessage = {
+        en: `The project's current state will be saved to cloud. ${confirmMessage.en}`,
+        zh: `当前项目状态将被保存到云端；${confirmMessage.zh}`
+      }
+    }
+    return withConfirm({
+      title: t({ en: 'Stop sharing project', zh: '停止分享项目' }),
+      content: t(confirmMessage),
       confirmHandler: () => doStopSharingProject(project)
     })
   }
