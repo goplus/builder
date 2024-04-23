@@ -12,13 +12,13 @@
         <slot name="input"></slot>
         <CloseBtn @click="handleCloseButton" />
       </div>
-      <NDivider class="divider" />
+      <UIDivider />
       <slot></slot>
     </div>
   </UIModal>
 </template>
 <script setup lang="ts">
-import { NDivider } from 'naive-ui'
+import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
 import CloseBtn from './CloseBtn.vue'
 
@@ -58,9 +58,5 @@ const handleCloseButton = () => {
   line-height: 26px;
   flex: 1;
   display: flex;
-}
-
-.divider {
-  margin: 0;
 }
 </style>

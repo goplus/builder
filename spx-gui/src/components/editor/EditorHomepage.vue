@@ -25,7 +25,7 @@
           <div class="header">
             {{ $t({ en: 'My projects', zh: '我的项目' }) }}
           </div>
-          <NDivider class="divider" />
+          <UIDivider />
           <ProjectList :in-homepage="true" @selected="handleSelected" />
           <UIButton
             class="create-project-button"
@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { watchEffect, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { NSpin, NDivider } from 'naive-ui'
+import { NSpin } from 'naive-ui'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { Project } from '@/models/project'
@@ -57,7 +57,7 @@ import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
-import { UIButton } from '@/components/ui'
+import { UIButton, UIDivider } from '@/components/ui'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -237,10 +237,6 @@ async function handleCreate() {
     line-height: 26px;
     color: var(--ui-color-grey-1000);
     padding: 15px 24px;
-  }
-
-  .divider {
-    margin: 0;
   }
 
   .create-project-button {
