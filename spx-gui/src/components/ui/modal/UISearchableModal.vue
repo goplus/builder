@@ -10,7 +10,7 @@
           {{ title }}
         </h4>
         <slot name="input"></slot>
-        <CloseBtn @click="handleCloseButton" />
+        <UIModalClose @click="handleCloseButton" />
       </div>
       <UIDivider />
       <slot></slot>
@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
-import CloseBtn from './CloseBtn.vue'
+import UIModalClose from './UIModalClose.vue'
 
 defineProps<{
   title: string

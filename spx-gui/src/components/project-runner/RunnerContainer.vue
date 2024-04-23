@@ -10,7 +10,7 @@
       <button>
         <UIIcon type="share" @click="handleShare" />
       </button>
-      <CloseBtn v-if="mode === 'debug'" class="close" @click="emit('close')" />
+      <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
     </div>
     <div :class="['main', displayMode, { expanded }]">
       <div class="runner-container">
@@ -52,8 +52,7 @@ import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
 import { useSaveAndShareProject, useShareProject } from '@/components/project'
-import { UIIcon } from '../ui'
-import CloseBtn from '../ui/modal/CloseBtn.vue'
+import { UIIcon, UIModalClose } from '../ui'
 
 const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
 const emit = defineEmits<{
