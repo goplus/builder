@@ -24,6 +24,9 @@ import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
 import close from './close.svg?raw'
+import rotate from './rotate.svg?raw'
+import share from './share.svg?raw'
+import arrowAlt from './arrow-alt.svg?raw'
 
 const typeIconMap = {
   file,
@@ -44,7 +47,10 @@ const typeIconMap = {
   more,
   exchange,
   search,
-  close
+  close,
+  rotate,
+  share,
+  arrowAlt
 }
 
 export type Type = keyof typeof typeIconMap

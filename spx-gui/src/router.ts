@@ -6,7 +6,7 @@ export function getProjectEditorRoute(projectName: string) {
 }
 
 export function getProjectShareRoute(owner: string, name: string) {
-  return `/share/${owner}/${name}`
+  return `/share/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }
 
 const routes: Array<RouteRecordRaw> = [
