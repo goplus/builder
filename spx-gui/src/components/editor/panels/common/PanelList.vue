@@ -11,7 +11,7 @@
   flex: 1 1 0;
   overflow-y: auto;
   margin: 0;
-  padding: 12px var(--ui-gap-middle);
+  padding: 12px;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;

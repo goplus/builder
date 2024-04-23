@@ -197,11 +197,10 @@ const thumbnailStyle = computed(() => thumbnailSrc.value && { backgroundImage: `
 
 .thumbnail {
   flex: 0 0 auto;
-  // TODO: recheck margin
-  margin-right: 20px;
+  margin-right: 12px;
   margin-top: 12px;
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;

@@ -79,7 +79,7 @@ watch(
     display: flex;
     overflow: hidden;
     justify-content: center;
-    padding: 1em;
+    padding: 12px;
 
     .stage-viewer {
       border-radius: var(--ui-border-radius-1);
