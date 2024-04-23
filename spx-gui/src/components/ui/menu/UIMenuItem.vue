@@ -39,12 +39,11 @@ function handleClick(e: MouseEvent) {
 </script>
 
 <style lang="scss" scoped>
-$line-height: 24px; // TODO: ui var?
-
 .ui-menu-item {
   padding: 8px 20px 8px 12px;
-  line-height: $line-height;
+  line-height: 16px;
   display: flex;
+  align-items: center;
   gap: 6px;
 
   &.disabled {
@@ -60,15 +59,19 @@ $line-height: 24px; // TODO: ui var?
     }
   }
 
-  &:not(.in-group) + .ui-menu-item {
-    // TODO: check margin here
-    border-top: 1px solid var(--ui-color-dividing-line-2);
+  &:not(.in-group) {
+    padding-top: 16px;
+    padding-bottom: 16px;
+
+    & + .ui-menu-item {
+      border-top: 1px solid var(--ui-color-dividing-line-2);
+    }
   }
 }
 
 .icon {
-  width: $line-height;
-  height: $line-height;
+  width: 24px;
+  height: 24px;
 
   :deep(*) {
     width: 100%;

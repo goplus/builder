@@ -34,12 +34,14 @@
         @update:value="(v) => emit('update:value', v)"
       />
     </div>
+    <div class="thumbnail" :style="thumbnailStyle" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { useUIVariables, UITagButton } from '@/components/ui'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
   motionSnippets,
@@ -54,6 +56,7 @@ import iconLook from './icons/look.svg?raw'
 import iconMotion from './icons/motion.svg?raw'
 import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
+import { useFileUrl } from '@/utils/file'
 
 defineProps<{
   value: string
@@ -64,6 +67,7 @@ const emit = defineEmits<{
 }>()
 
 const uiVariables = useUIVariables()
+const editorCtx = useEditorCtx()
 
 const categories = [
   {
@@ -115,6 +119,12 @@ defineExpose({
     await codeTextEditor.value?.format()
   }
 })
+
+const thumbnailSrc = useFileUrl(() => {
+  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
+  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
+})
+const thumbnailStyle = computed(() => thumbnailSrc.value && { backgroundImage: `url("${thumbnailSrc.value}")` })
 </script>
 
 <style scoped lang="scss">
@@ -162,7 +172,7 @@ defineExpose({
 }
 
 .snippets-wrapper {
-  flex: 0 1 180px; /* TODO: check size here */
+  flex: 1 0 90px;
   padding: 12px;
   background-color: var(--ui-color-grey-300);
 
@@ -180,8 +190,20 @@ defineExpose({
 }
 
 .code-text-editor-wrapper {
-  flex: 1 1 400px;
+  flex: 3 1 300px;
   min-width: 0;
   padding: 12px;
+}
+
+.thumbnail {
+  flex: 0 0 auto;
+  // TODO: recheck margin
+  margin-right: 20px;
+  margin-top: 12px;
+  width: 72px;
+  height: 72px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 </style>
