@@ -1,6 +1,7 @@
 <template>
   <UIFormModal
     class="rename-modal"
+    style="width: 512px"
     :title="$t({ en: 'Rename', zh: '重命名' })"
     :visible="visible"
     @update:visible="emit('cancel')"
@@ -20,11 +21,3 @@ const emit = defineEmits<{
   cancel: []
 }>()
 </script>
-
-<style scoped lang="scss">
-.rename-modal {
-  // TODO: this (`width`) is not working
-  // the data-v-xxx of this component is not correctly added to the modal element
-  width: 512px;
-}
-</style>
