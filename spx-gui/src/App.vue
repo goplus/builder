@@ -1,20 +1,26 @@
 <template>
-  <UIConfigProvider>
+  <UIConfigProvider :config="config">
     <UIMessageProvider>
       <UIModalProvider>
-        <NDialogProvider>
-          <NModalProvider>
-            <RouterView />
-          </NModalProvider>
-        </NDialogProvider>
+        <RouterView />
       </UIModalProvider>
     </UIMessageProvider>
   </UIConfigProvider>
 </template>
 
 <script setup lang="ts">
-import { NModalProvider, NDialogProvider } from 'naive-ui'
+import { computed } from 'vue'
 import { UIConfigProvider, UIModalProvider, UIMessageProvider } from '@/components/ui'
+import { useI18n } from './utils/i18n'
+
+const { t } = useI18n()
+
+const config = computed(() => ({
+  confirmDialog: {
+    cancelText: t({ en: 'Cancel', zh: '取消' }),
+    confirmText: t({ en: 'Confirm', zh: '确认' })
+  }
+}))
 </script>
 
 <style lang="scss">

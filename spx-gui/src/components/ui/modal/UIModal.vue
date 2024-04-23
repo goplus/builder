@@ -32,6 +32,7 @@ const attachTo = usePopupContainer()
   box-shadow: var(--ui-box-shadow-big);
   border-radius: var(--ui-border-radius-2);
   background-color: white;
+  overflow: hidden;
 }
 
 .size-small {

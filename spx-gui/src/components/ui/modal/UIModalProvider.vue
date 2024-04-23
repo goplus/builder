@@ -1,18 +1,21 @@
 <template>
-  <component
-    :is="currentModal.component"
-    v-if="currentModal != null"
-    :key="currentModal.id"
-    v-bind="currentModal.props"
-    :visible="currentVisible"
-    @cancelled="handleCancelled"
-    @resolved="handleResolved"
-  />
-  <slot></slot>
+  <NModalProvider>
+    <component
+      :is="currentModal.component"
+      v-if="currentModal != null"
+      :key="currentModal.id"
+      v-bind="currentModal.props"
+      :visible="currentVisible"
+      @cancelled="handleCancelled"
+      @resolved="handleResolved"
+    />
+    <slot></slot>
+  </NModalProvider>
 </template>
 
 <script lang="ts">
 import { type InjectionKey, inject, provide, ref, shallowRef, nextTick } from 'vue'
+import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
 // The Modal Component should provide API (props & emits) as following:
@@ -69,6 +72,7 @@ async function setCurrent(modal: ModalInfo | null) {
   currentModal.value = modal
   if (modal != null) {
     // delay visible-setting, so there will be animation for modal-show
+    // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
     await nextTick()
     if (currentModal.value !== modal) return
     currentVisible.value = true
