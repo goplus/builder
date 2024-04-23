@@ -33,7 +33,7 @@ import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UICard, UICardHeader, UIButton, UIFullScreenModal } from '@/components/ui'
 import StageViewer from './stage-viewer'
 import type { SelectedSpritesChangeEvent } from './stage-viewer'
-import RunnerContainer from '@/components/project-runner/RunnerContainer.vue'
+import RunnerContainer from '@/components/project/runner/RunnerContainer.vue'
 
 let show = ref(false)
 

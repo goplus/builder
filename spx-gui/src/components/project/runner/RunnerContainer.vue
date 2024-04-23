@@ -50,9 +50,9 @@
 import { onMounted, ref, type CSSProperties, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
-import ProjectRunner from '@/components/project-runner/ProjectRunner.vue'
+import ProjectRunner from './ProjectRunner.vue'
 import { useSaveAndShareProject, useShareProject } from '@/components/project'
-import { UIIcon, UIModalClose } from '../ui'
+import { UIIcon, UIModalClose } from '@/components/ui'
 
 const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
 const emit = defineEmits<{

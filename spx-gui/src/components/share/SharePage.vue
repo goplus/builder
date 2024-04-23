@@ -6,7 +6,7 @@ import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ref } from 'vue'
 import { Project } from '@/models/project'
-import RunnerContainer from '../project-runner/RunnerContainer.vue'
+import RunnerContainer from '../project/runner/RunnerContainer.vue'
 
 const route = useRoute()
 const project = ref<Project>()
