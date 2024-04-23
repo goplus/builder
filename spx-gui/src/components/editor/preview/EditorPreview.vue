@@ -83,7 +83,10 @@ watch(
 
     .stage-viewer {
       border-radius: var(--ui-border-radius-1);
-      background: #f0f0f0;
+      background-image: url(@/components/project/bg.svg);
+      background-position: center;
+      background-repeat: repeat;
+      background-size: contain;
     }
   }
 }
