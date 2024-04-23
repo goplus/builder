@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO: animation when modal show -->
   <component
     :is="currentModal.component"
     v-if="currentModal != null"
@@ -13,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, ref, shallowRef } from 'vue'
+import { type InjectionKey, inject, provide, ref, shallowRef, nextTick } from 'vue'
 import { Cancelled } from '@/utils/exception'
 
 // The Modal Component should provide API (props & emits) as following:
@@ -66,9 +65,14 @@ export function useModal<P extends ModalComponentProps, T>(component: ModalCompo
 const currentModal = shallowRef<ModalInfo | null>(null)
 const currentVisible = ref(false)
 
-function setCurrent(modal: ModalInfo | null) {
+async function setCurrent(modal: ModalInfo | null) {
   currentModal.value = modal
-  if (modal != null) currentVisible.value = true
+  if (modal != null) {
+    // delay visible-setting, so there will be animation for modal-show
+    await nextTick()
+    if (currentModal.value !== modal) return
+    currentVisible.value = true
+  }
 }
 
 function handleCancelled(reason?: unknown) {
