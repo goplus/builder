@@ -65,7 +65,7 @@ function transformProjectDataToProject(projectData: ProjectData) {
   height: 570px;
   flex: 1 1 0;
   overflow-y: auto;
-  margin: 0 0 20px 12px;
+  margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -73,7 +73,7 @@ function transformProjectDataToProject(projectData: ProjectData) {
 }
 
 .project-list.in-homepage {
-  margin: 20px 24px 20px 44px;
+  margin: 20px 24px;
   gap: 20px;
 }
 </style>
