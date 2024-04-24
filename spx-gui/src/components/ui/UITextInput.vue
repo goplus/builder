@@ -31,5 +31,18 @@ const slots = useSlots()
       background-color: var(--ui-color-grey-400);
     }
   }
+
+  &.n-input--error-status {
+    background-color: #feefef; // TODO: uiVars?
+    &:not(.n-input--focus) :deep(.n-input__state-border) {
+      visibility: hidden;
+    }
+    &:hover {
+      background-color: #fdc7c7; // TODO: uiVars?
+    }
+    &.n-input--focus {
+      background-color: var(--ui-color-grey-100);
+    }
+  }
 }
 </style>
