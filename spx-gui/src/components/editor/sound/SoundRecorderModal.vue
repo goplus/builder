@@ -11,51 +11,25 @@
     @update:visible="handleUpdateShowRecorder"
   >
     <SoundRecorder @saved="handleClose" @record-started="recordStarted = true" />
-    <UIDialog
-      v-model:visible="showDialog"
+    <UIConfirmDialog
+      :visible="showDialog"
       type="warning"
-      :title="
+      :title="$t({ en: 'Quit recording?', zh: '退出录音？' })"
+      :content="
         $t({
-          en: 'Quit Recording?',
-          zh: '退出录音？'
+          en: 'The current content will not be saved. Are you sure you want to quit?',
+          zh: '当前内容不会被保存，确定要退出吗？'
         })
       "
-      size="small"
-    >
-      <div>
-        <div>
-          {{
-            $t({
-              en: 'The current content will not be saved. Are you sure you want to quit?',
-              zh: '当前内容不会被保存，确定要退出吗？'
-            })
-          }}
-        </div>
-        <div class="button-container">
-          <UIButton type="boring" @click="showDialog = false">
-            {{
-              $t({
-                en: 'Cancel',
-                zh: '取消'
-              })
-            }}
-          </UIButton>
-          <UIButton type="primary" @click="handleClose">
-            {{
-              $t({
-                en: 'Leave',
-                zh: '离开'
-              })
-            }}
-          </UIButton>
-        </div>
-      </div>
-    </UIDialog>
+      :confirm-text="$t({ en: 'Quit', zh: '退出' })"
+      @cancelled="showDialog = false"
+      @resolved="handleClose"
+    />
   </UIFormModal>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UIFormModal, UIDialog, UIButton } from '@/components/ui'
+import { UIFormModal, UIConfirmDialog } from '@/components/ui'
 import SoundRecorder from './SoundRecorder.vue'
 
 const recordStarted = ref(false)
@@ -87,11 +61,3 @@ const handleClose = () => {
   showDialog.value = false
 }
 </script>
-<style lang="scss" scoped>
-.button-container {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  padding-top: 16px;
-}
-</style>

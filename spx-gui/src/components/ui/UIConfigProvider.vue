@@ -22,6 +22,22 @@ export function useUIVariables() {
   return vars
 }
 
+// config for UI components' behavior
+export type Config = {
+  confirmDialog?: {
+    cancelText?: string
+    confirmText?: string
+  }
+}
+
+const configKey: InjectionKey<Readonly<Ref<Config>>> = Symbol('config')
+
+export function useConfig() {
+  const config = inject(configKey)
+  if (config == null) throw new Error('useConfig should be called inside of UIConfigProvider')
+  return config
+}
+
 const themeOverrides: GlobalThemeOverrides = {
   common: {
     // TODO: review text color mapping
@@ -96,9 +112,17 @@ const themeOverrides: GlobalThemeOverrides = {
 
 <script setup lang="ts">
 import { NConfigProvider } from 'naive-ui'
-import { provide } from 'vue'
+import { provide, toRef, type Ref } from 'vue'
+
+const props = defineProps<{
+  config?: Config
+}>()
 
 provide(uiVariablesKey, uiVariables)
+provide(
+  configKey,
+  toRef(() => props.config ?? {})
+)
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>

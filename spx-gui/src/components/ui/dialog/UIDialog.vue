@@ -4,7 +4,7 @@
       <div class="icon">
         <img :src="iconMap[type]" alt="icon" />
       </div>
-      <div>
+      <div class="main">
         <div class="title">
           {{ title }}
         </div>
@@ -15,11 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import UIModal from './modal/UIModal.vue'
-import errorSvg from './dialog-icons/error.svg'
-import warningSvg from './dialog-icons/warning.svg'
-import infoSvg from './dialog-icons/info.svg'
-import successSvg from './dialog-icons/success.svg'
+import UIModal from '../modal/UIModal.vue'
+import errorSvg from './icons/error.svg'
+import warningSvg from './icons/warning.svg'
+import infoSvg from './icons/info.svg'
+import successSvg from './icons/success.svg'
 
 defineProps<{
   title: string
@@ -39,10 +39,15 @@ const iconMap = {
   height: 24px;
 }
 
+.main {
+  flex: 1 1 0;
+}
+
 .title {
   font-size: 16px;
-  font-weight: 500;
-  padding-bottom: 8px;
+  line-height: 26px;
+  color: var(--ui-color-title);
+  margin-bottom: 8px;
 }
 
 .main {
