@@ -80,6 +80,7 @@ watch(
     overflow: hidden;
     justify-content: center;
     padding: 12px;
+    height: 100%;
 
     .stage-viewer {
       border-radius: var(--ui-border-radius-1);

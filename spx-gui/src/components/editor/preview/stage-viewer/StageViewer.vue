@@ -258,11 +258,12 @@ const onStageMenuMouseLeave = () => {
 }
 
 const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
+  if (!e.target.parent) return
   // clear choose sprite
-  if (e.target.parent!.attrs.name !== 'sprite' || e.target.parent!.attrs.name !== 'controller') {
+  if (e.target.parent.attrs.name !== 'sprite' || e.target.parent.attrs.name !== 'controller') {
     stageSelectSpritesName.value = []
   }
-  const name = e.target!.attrs.spriteName
+  const name = e.target.attrs.spriteName
   if (name) {
     stageSelectSpritesName.value = [name]
   }
