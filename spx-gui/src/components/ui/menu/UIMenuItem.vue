@@ -48,23 +48,35 @@ function handleClick(e: MouseEvent) {
 
   &.disabled {
     cursor: not-allowed;
+    color: var(--ui-color-grey-600);
+    .icon {
+      opacity: 0.5;
+    }
   }
 
   &.interactive:not(.disabled) {
     cursor: pointer;
 
     &:hover {
-      // TODO: recheck color here
       background-color: var(--ui-color-grey-400);
     }
   }
 
   &:not(.in-group) {
-    padding-top: 16px;
-    padding-bottom: 16px;
+    margin: 8px 0;
 
     & + .ui-menu-item {
-      border-top: 1px solid var(--ui-color-dividing-line-2);
+      margin-top: 16px;
+      position: relative;
+      &:before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 0;
+        width: 100%;
+        height: 0;
+        border-top: 1px solid var(--ui-color-dividing-line-2);
+      }
     }
   }
 }

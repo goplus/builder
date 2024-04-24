@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-menu-group" :class="{ disabled: disabled }">
+  <div class="ui-menu-group">
     <slot></slot>
   </div>
 </template>
@@ -29,12 +29,6 @@ provide(
 <style lang="scss" scoped>
 .ui-menu-group {
   padding: 8px 0px;
-
-  &.disabled {
-    // TODO: confirm color details here
-    color: var(--ui-color-grey-600);
-    background-color: var(--ui-color-disabled);
-  }
 }
 
 .ui-menu-group + .ui-menu-group {
