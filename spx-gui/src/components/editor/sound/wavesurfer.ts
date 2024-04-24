@@ -16,7 +16,8 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
       waveColor: uiVariables.color.sound[400],
       progressColor: uiVariables.color.sound[300] + '80',
       height: 'auto',
-      cursorWidth: 4,
+      cursorWidth: 1,
+      cursorColor: uiVariables.color.grey[800],
       normalize: true,
       renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
         // TODO: Better drawing algorithm to reduce flashing?
