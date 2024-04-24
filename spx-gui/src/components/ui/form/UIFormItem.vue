@@ -1,11 +1,9 @@
 <template>
-  <!-- TODO: show-feedback: false when no feedback content -->
+  <!-- TODO: margin among multiple FormItems -->
   <NFormItem class="ui-form-item" :show-label="!!label" :label="label" :path="path">
-    <div class="content">
-      <slot></slot>
-      <p v-if="!!slots.tip" class="tip"><slot name="tip"></slot></p>
-    </div>
+    <slot></slot>
   </NFormItem>
+  <p v-if="!!slots.tip" class="tip"><slot name="tip"></slot></p>
 </template>
 
 <script setup lang="ts">
@@ -21,14 +19,15 @@ const slots = useSlots()
 </script>
 
 <style lang="scss" scoped>
-.content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.ui-form-item :deep(.n-form-item-feedback-wrapper) {
+  line-height: 1.57143;
+  &:empty {
+    display: none;
+  }
 }
 
 .tip {
+  margin-top: 4px;
   color: var(--ui-color-hint-1);
 }
 </style>
