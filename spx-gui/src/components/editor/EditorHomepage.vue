@@ -27,15 +27,11 @@
           </div>
           <UIDivider />
           <ProjectList :in-homepage="true" @selected="handleSelected" />
-          <UIButton
-            class="create-project-button"
-            type="primary"
-            size="large"
-            icon="plus"
-            @click="handleCreate"
-          >
-            {{ $t({ en: 'New Project', zh: '新建项目' }) }}
-          </UIButton>
+          <div class="create-project-button">
+            <UIButton type="primary" size="large" icon="plus" @click="handleCreate">
+              {{ $t({ en: 'New Project', zh: '新建项目' }) }}
+            </UIButton>
+          </div>
         </div>
       </template>
     </main>
@@ -249,7 +245,8 @@ async function handleCreate() {
     left: 0;
     right: 0;
     bottom: 28px;
-    margin: 0 auto;
+    display: flex;
+    justify-content: center;
   }
 }
 
