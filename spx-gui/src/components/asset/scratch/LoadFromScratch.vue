@@ -219,6 +219,7 @@ const importSelected = () => {
   flex: 1;
   display: flex;
   align-items: center;
+  overflow: hidden;
 
   & > img {
     max-width: 100%;

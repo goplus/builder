@@ -204,8 +204,7 @@ const closeRecorder = () => {
 }
 
 .recorder-waveform {
-  width: 99%;
-  height: 129px;
+  height: 160px;
 }
 
 .hidden {
@@ -220,14 +219,15 @@ const closeRecorder = () => {
 
 .button-container {
   display: flex;
-  margin-top: 20px;
+  margin-top: 32px;
+  margin-bottom: 8px;
   gap: 40px;
   justify-content: center;
 }
 
 .icon-button {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-direction: column;
   font-size: 14px;
   align-items: center;

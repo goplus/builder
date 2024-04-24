@@ -4,12 +4,22 @@
       <div>
         {{ project?.name }}
       </div>
-      <button>
-        <UIIcon type="rotate" @click="handleRerun" />
-      </button>
-      <button>
-        <UIIcon type="share" @click="handleShare" />
-      </button>
+      <UITooltip placement="bottom">
+        <template #trigger>
+          <button>
+            <UIIcon type="rotate" @click="handleRerun" />
+          </button>
+        </template>
+        {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+      </UITooltip>
+      <UITooltip placement="bottom">
+        <template #trigger>
+          <button>
+            <UIIcon type="share" @click="handleShare" />
+          </button>
+        </template>
+        {{ $t({ en: 'Share', zh: '分享' }) }}
+      </UITooltip>
       <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
     </div>
     <div :class="['main', displayMode, { expanded }]">
@@ -52,7 +62,7 @@ import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import ProjectRunner from './ProjectRunner.vue'
 import { useSaveAndShareProject, useShareProject } from '@/components/project'
-import { UIIcon, UIModalClose } from '@/components/ui'
+import { UIIcon, UIModalClose, UITooltip } from '@/components/ui'
 
 const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
 const emit = defineEmits<{

@@ -1,8 +1,8 @@
 <template>
   <UIFormModal
-    size="large"
     :title="$t({ en: 'Import assets from Scratch', zh: '从 Scratch 导入资源' })"
     :visible="visible"
+    style="width: 928px"
     @update:visible="emit('cancelled')"
   >
     <LoadFromScratch

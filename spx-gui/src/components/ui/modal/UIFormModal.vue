@@ -5,7 +5,6 @@
         <div :class="['title', { center: centerTitle }]">
           {{ title }}
         </div>
-        <slot name="header-extra"></slot>
         <UIModalClose @click="handleCloseButton" />
       </div>
 
@@ -58,7 +57,6 @@ const handleCloseButton = () => {
   font-size: 16px;
   line-height: 26px;
   flex: 1;
-  display: flex;
   color: var(--ui-color-title);
 }
 
