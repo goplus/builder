@@ -28,6 +28,9 @@ export type Config = {
     cancelText?: string
     confirmText?: string
   }
+  empty?: {
+    text?: string
+  }
 }
 
 const configKey: InjectionKey<Readonly<Ref<Config>>> = Symbol('config')

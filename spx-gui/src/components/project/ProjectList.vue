@@ -1,12 +1,9 @@
 <template>
   <UILoading v-if="isLoading" />
-  <!-- TODO: replace this with a component -->
-  <div v-else-if="error != null">
+  <UIError v-else-if="error != null" :retry="refetch">
     {{ $t(error.userMessage) }}
-    <UIButton type="boring" @click="refetch">
-      {{ $t({ en: 'Refresh', zh: '刷新' }) }}
-    </UIButton>
-  </div>
+  </UIError>
+  <UIEmpty v-else-if="projects?.data.length === 0" />
   <!-- TODO: infinite scrolling-like pagination -->
   <ul v-else :class="['project-list', { 'in-homepage': inHomepage }]">
     <ProjectItem
@@ -21,7 +18,7 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { UIButton, UILoading } from '@/components/ui'
+import { UILoading, UIError, UIEmpty } from '@/components/ui'
 import ProjectItem from './ProjectItem.vue'
 import { listProject, type ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'

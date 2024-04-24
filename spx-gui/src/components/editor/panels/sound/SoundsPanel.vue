@@ -16,6 +16,9 @@
     <template #details>
       <SoundRecorderModal v-model:visible="recorderVisible" />
       <PanelList>
+        <UIEmpty v-if="sounds.length === 0">
+          {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
+        </UIEmpty>
         <SoundItem
           v-for="sound in sounds"
           :key="sound.name"
@@ -28,6 +31,9 @@
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
+        <UIEmpty v-if="sounds.length === 0">
+          {{ $t({ en: 'Empty', zh: '无' }) }}
+        </UIEmpty>
         <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.name" :sound="sound" />
       </PanelSummaryList>
     </template>
@@ -36,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, useUIVariables } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'

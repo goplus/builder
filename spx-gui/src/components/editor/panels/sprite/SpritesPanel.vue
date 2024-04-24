@@ -14,6 +14,9 @@
     </template>
     <template #details>
       <PanelList>
+        <UIEmpty v-if="sprites.length === 0">
+          {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
+        </UIEmpty>
         <SpriteItem
           v-for="sprite in sprites"
           :key="sprite.name"
@@ -29,6 +32,9 @@
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
+        <UIEmpty v-if="sprites.length === 0">
+          {{ $t({ en: 'Empty', zh: '无' }) }}
+        </UIEmpty>
         <SpriteSummaryItem
           v-for="sprite in summaryListData.list"
           :key="sprite.name"
@@ -50,7 +56,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UIMenu, UIMenuItem, useUIVariables } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, useUIVariables } from '@/components/ui'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'

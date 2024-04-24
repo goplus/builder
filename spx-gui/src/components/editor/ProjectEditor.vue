@@ -6,7 +6,9 @@
       v-else-if="editorCtx.selected?.type === 'stage'"
       :stage="editorCtx.project.stage"
     />
-    <div v-else>TODO</div>
+    <UIEmpty v-else>
+      {{ $t({ en: 'Add or select a target to start', zh: '添加或选择一个编辑对象' }) }}
+    </UIEmpty>
   </UICard>
   <div class="sider">
     <EditorPreview />
@@ -15,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { UICard } from '@/components/ui'
+import { UICard, UIEmpty } from '@/components/ui'
 import SoundEditor from './sound/SoundEditor.vue'
 import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
