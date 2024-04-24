@@ -1,5 +1,5 @@
 <template>
-  <!-- TODO: show-feedback: false when no feedback content -->
+  <!-- TODO: margin among multiple FormItems -->
   <NFormItem class="ui-form-item" :show-label="!!label" :label="label" :path="path">
     <slot></slot>
   </NFormItem>

@@ -20,11 +20,11 @@
           :placeholder="$t({ en: 'Please enter the project name', zh: '请输入项目名' })"
         />
       </UIFormItem>
-      <UIFormItem :show-feedback="false">
+      <footer class="footer">
         <UIButton class="create-button" type="primary" html-type="submit">
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
-      </UIFormItem>
+      </footer>
     </UIForm>
   </UIFormModal>
 </template>
@@ -118,7 +118,9 @@ async function validateName(name: string): Promise<FormValidationResult> {
   color: var(--ui-color-grey-900);
 }
 
-.create-button {
-  margin: 0 auto;
+.footer {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
 }
 </style>
