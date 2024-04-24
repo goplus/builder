@@ -76,7 +76,10 @@ const projectName = computed(
 const askOpenNew = (cached: Project, targetName: string): Promise<boolean> => {
   return new Promise((resolve) =>
     withConfirm({
-      title: 'Discard unsaved changes?',
+      title: t({
+        en: 'Unsaved changes',
+        zh: '未保存的更改'
+      }),
       content: t({
         en: `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`,
         zh: `之前的项目 ${cached.name} 有未保存的更改。放弃更改并打开新项目 "${targetName}"？`
@@ -94,7 +97,10 @@ const askOpenNew = (cached: Project, targetName: string): Promise<boolean> => {
 const askOpenCached = (cached: Project): Promise<boolean> => {
   return new Promise((resolve) =>
     withConfirm({
-      title: 'Discard unsaved changes?',
+      title: t({
+        en: 'Unsaved changes',
+        zh: '未保存的更改'
+      }),
       content: t({
         en: `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`,
         zh: `缓存中有一个项目有未保存的更改。打开缓存的项目 ${cached.name}？`
