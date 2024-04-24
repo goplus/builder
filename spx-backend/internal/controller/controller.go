@@ -491,7 +491,7 @@ type FmtCodeInput struct {
 
 // FmtCode Format code
 func (ctrl *Controller) FmtCode(ctx context.Context, input *FmtCodeInput) (res *fmtcode.FormatResponse) {
-	return fmtcode.FmtCode(input.Body, input.FixImports)
+	return fmtcode.FmtCode(ctx, input.Body, input.FixImports)
 }
 
 type UpInfo struct {
