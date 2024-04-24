@@ -80,7 +80,7 @@ const creationTime = computed(() => dayjs(props.project.cTime!).format('YYYY.MM.
   .name {
     font-size: 14px;
     line-height: 22px;
-    color: var(--ui-color-grey-1000);
+    color: var(--ui-color-title);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

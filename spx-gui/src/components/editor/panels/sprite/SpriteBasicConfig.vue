@@ -1,5 +1,5 @@
 <template>
-  <div class="line">
+  <div class="line name">
     {{ sprite.name }}
     <UIIcon
       class="edit-icon"
@@ -85,6 +85,10 @@ const addToLibrary = useAddAssetToLibrary()
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.name {
+  color: var(--ui-color-title);
 }
 
 .edit-icon {

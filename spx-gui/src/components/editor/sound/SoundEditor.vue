@@ -129,6 +129,7 @@ const addToLibrary = useAddAssetToLibrary()
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--ui-color-title);
 
   .edit-icon {
     cursor: pointer;

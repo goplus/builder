@@ -236,7 +236,7 @@ async function handleCreate() {
   .header {
     font-size: 16px;
     line-height: 26px;
-    color: var(--ui-color-grey-1000);
+    color: var(--ui-color-title);
     padding: 15px 24px;
   }
 
