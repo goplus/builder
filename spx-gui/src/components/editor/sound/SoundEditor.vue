@@ -149,6 +149,9 @@ const addToLibrary = useAddAssetToLibrary()
 .waveform {
   width: 100%;
   height: 222px; /** TODO: scale with width? */
+  border: 1px solid var(--ui-color-grey-500);
+  border-radius: var(--ui-border-radius-1);
+  overflow: hidden;
 }
 
 .opeartions {
