@@ -1,6 +1,7 @@
 package fmtcode
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/goplus/builder/spx-backend/internal/utils/log"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/tools/imports"
 )
@@ -64,9 +66,11 @@ func formatGoMod(file string, data []byte) ([]byte, error) {
 }
 
 // FmtCode Format code
-func FmtCode(body string, fixImports bool) (res *FormatResponse) {
+func FmtCode(ctx context.Context, body string, fixImports bool) (res *FormatResponse) {
+	logger := log.GetReqLogger(ctx)
 	fs, err := splitFiles([]byte(body))
 	if err != nil {
+		logger.Printf("splitFiles failed: %v", err)
 		fmtErr := extractErrorInfo(err.Error())
 		res = &FormatResponse{
 			Body:  "",
@@ -88,6 +92,7 @@ func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 				var tmpDir string
 				tmpDir, err = os.MkdirTemp("", "gopformat")
 				if err != nil {
+					logger.Printf("os.MkdirTemp failed: %v", err)
 					fmtErr := extractErrorInfo(err.Error())
 					res = &FormatResponse{
 						Body:  "",
@@ -98,6 +103,7 @@ func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 				defer os.RemoveAll(tmpDir)
 				tmpGopFile := filepath.Join(tmpDir, "prog.gop")
 				if err = os.WriteFile(tmpGopFile, in, 0644); err != nil {
+					logger.Printf("os.WriteFile failed: %v", err)
 					fmtErr := extractErrorInfo(err.Error())
 					res = &FormatResponse{
 						Body:  "",
@@ -111,6 +117,7 @@ func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 				var fmtErr []byte
 				fmtErr, err = cmd.Output()
 				if err != nil {
+					logger.Printf("cmd.Output failed: %v, %s", err, string(fmtErr))
 					fmtErr := extractErrorInfo(strings.Replace(string(fmtErr), tmpGopFile, "prog.gop", -1))
 					res = &FormatResponse{
 						Body:  "",
@@ -120,10 +127,12 @@ func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 				}
 				out, err = os.ReadFile(tmpGopFile)
 				if err != nil {
+					logger.Printf("os.ReadFile failed: %v", err)
 					err = errors.New("interval error when formatting gop code")
 				}
 			}
 			if err != nil {
+				logger.Printf("error encountered: %v", err)
 				errMsg := err.Error()
 				if !fixImports {
 					// Unlike imports.Process, format.Source does not prefix
@@ -141,6 +150,7 @@ func FmtCode(body string, fixImports bool) (res *FormatResponse) {
 		case path.Base(f) == "go.mod":
 			out, err := formatGoMod(f, fs.Data(f))
 			if err != nil {
+				logger.Printf("formatGoMod failed: %v", err)
 				fmtErr := extractErrorInfo(err.Error())
 				res = &FormatResponse{
 					Body:  "",
