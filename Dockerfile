@@ -45,7 +45,7 @@ FROM go-builder
 RUN apt update && apt install -y nginx
 
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/sites-available/default
 
 # Compress WASM files for gzip_static
 RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;
