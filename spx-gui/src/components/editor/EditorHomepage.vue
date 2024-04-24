@@ -53,7 +53,8 @@ import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
-import { UIButton, UIDivider } from '@/components/ui'
+import { UIButton, UIDivider, useConfirmDialog } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -68,19 +69,47 @@ watchEffect(() => {
 
 const router = useRouter()
 const createProject = useCreateProject()
+
+const withConfirm = useConfirmDialog()
+const { t } = useI18n()
+
 const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
-const askOpenNew = (cached: Project, targetName: string) => {
-  return confirm(
-    `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`
+const askOpenNew = (cached: Project, targetName: string): Promise<boolean> => {
+  return new Promise((resolve) =>
+    withConfirm({
+      title: 'Discard unsaved changes?',
+      content: t({
+        en: `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`,
+        zh: `之前的项目 ${cached.name} 有未保存的更改。放弃更改并打开新项目 "${targetName}"？`
+      })
+    })
+      .then(() => {
+        resolve(true)
+      })
+      .catch(() => {
+        resolve(false)
+      })
   )
 }
 
-const askOpenCached = (cached: Project) => {
-  return confirm(
-    `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`
+const askOpenCached = (cached: Project): Promise<boolean> => {
+  return new Promise((resolve) =>
+    withConfirm({
+      title: 'Discard unsaved changes?',
+      content: t({
+        en: `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`,
+        zh: `缓存中有一个项目有未保存的更改。打开缓存的项目 ${cached.name}？`
+      })
+    })
+      .then(() => {
+        resolve(true)
+      })
+      .catch(() => {
+        resolve(false)
+      })
   )
 }
 
@@ -110,17 +139,17 @@ async function loadProject(user: string | undefined, projectName: string | undef
     clear(LOCAL_CACHE_KEY)
   }
 
+  // https://github.com/goplus/builder/issues/259
+  // Local Cache Saving & Restoring
   if (localProject && localProject.owner !== user) {
     // Case 4: Different user: Discard local cache
     clear(LOCAL_CACHE_KEY)
     localProject = null
   }
 
-  // https://github.com/goplus/builder/issues/259
-  // Local Cache Saving & Restoring
   if (localProject?.hasUnsyncedChanges) {
     if (!projectName) {
-      if (askOpenCached(localProject)) {
+      if (await askOpenCached(localProject)) {
         // Case 3: User has a project in the cache but not opening any project:
         // Open the saved project
         openProject(localProject.name!) // FIXME: name should be required?
@@ -132,12 +161,13 @@ async function loadProject(user: string | undefined, projectName: string | undef
     }
 
     if (localProject.name !== projectName) {
-      if (askOpenNew(localProject, projectName)) {
+      if (await askOpenNew(localProject, projectName)) {
         // Case 2: User has a project in the cache but not opening the project in the cache:
         // asked to open the saved project
         openProject(localProject.name!)
         return null
       }
+      clear(LOCAL_CACHE_KEY)
       // Case 2 fallthrough: Let the project to be loaded from cloud
     }
   }
@@ -147,7 +177,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
   await newProject.loadFromCloud(user, projectName)
 
   if (localProject?.hasUnsyncedChanges) {
-    if (newProject.version <= localProject.version && askOpenCached(localProject)) {
+    if (newProject.version <= localProject.version && (await askOpenCached(localProject))) {
       // Case 1: User has a project in the cache and opening the same project:
       // asked to open the saved project
       newProject = localProject
