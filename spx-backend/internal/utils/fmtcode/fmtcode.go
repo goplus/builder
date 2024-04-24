@@ -111,6 +111,7 @@ func FmtCode(ctx context.Context, body string, fixImports bool) (res *FormatResp
 					}
 					return
 				}
+				// TODO: include gop as a package depencency, instead of executing gop as binary
 				cmd := exec.Command("gop", "fmt", "-smart", tmpGopFile)
 				//gop fmt returns error result in stdout, so we do not need to handle stderr
 				//err is to check gop fmt return code

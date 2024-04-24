@@ -20,8 +20,8 @@ RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt
     && apt install -y gop
 
 # Build backend
-WORKDIR /app/spx-backend/cmd/spx-backend
-RUN gop build -o spx-backend .
+WORKDIR /app/spx-backend
+RUN gop build -o spx-backend ./cmd/spx-backend
 
 FROM node:20.11.1 as frontend-builder
 
@@ -39,7 +39,10 @@ COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/ma
 
 RUN npm run build
 
-FROM nginx:bookworm
+FROM go-builder
+
+# Install nginx
+RUN apt update && apt install -y nginx
 
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -51,6 +54,4 @@ EXPOSE 80
 
 WORKDIR /app
 
-COPY --from=go-builder /app/spx-backend/cmd/spx-backend/spx-backend /app/spx-backend
-
-CMD ./spx-backend & nginx -g "daemon off;" & wait
+CMD ./spx-backend/spx-backend & nginx -g "daemon off;" & wait
