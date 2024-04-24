@@ -204,8 +204,7 @@ const closeRecorder = () => {
 }
 
 .recorder-waveform {
-  width: 99%;
-  height: 129px;
+  height: 160px;
 }
 
 .hidden {
