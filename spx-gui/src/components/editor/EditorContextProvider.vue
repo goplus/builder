@@ -49,7 +49,8 @@ import {
   shallowReactive,
   computed,
   watchEffect,
-  shallowRef
+  shallowRef,
+  effect
 } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
@@ -92,14 +93,39 @@ const selectedSound = computed(() => {
   return selectedRef.value?.type === 'sound' ? selectedRef.value.value : null
 })
 
+function selectSprite() {
+  if (props.project.sprites.length > 0) {
+    select('sprite', props.project.sprites[0].name)
+  } else {
+    select(null)
+  }
+}
+
+function selectSound() {
+  if (props.project.sounds.length > 0) {
+    select('sound', props.project.sounds[0].name)
+  } else {
+    select(null)
+  }
+}
+
+// selected sprite / sound removed
+// TODO: consider moving selected to model Project, so we can deal with renaming easily
+effect(() => {
+  if (selectedSprite.value != null && !props.project.sprites.includes(selectedSprite.value)) {
+    selectSprite()
+    return
+  }
+  if (selectedSound.value != null && !props.project.sounds.includes(selectedSound.value)) {
+    selectSound()
+    return
+  }
+})
+
 watch(
   () => props.project,
-  (project) => {
-    if (project.sprites.length > 0) {
-      select('sprite', project.sprites[0].name)
-    } else {
-      select(null)
-    }
+  () => {
+    selectSprite()
   },
   { immediate: true }
 )
