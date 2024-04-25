@@ -8,7 +8,7 @@ import type { Sprite } from '@/models/sprite'
 import type { Sound } from '@/models/sound'
 
 type Selected =
-| {
+  | {
       type: 'sprite'
       value: Sprite
     }
@@ -42,7 +42,15 @@ export function useEditorCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, watch, shallowReactive, computed, watchEffect, shallowRef } from 'vue'
+import {
+  provide,
+  type InjectionKey,
+  watch,
+  shallowReactive,
+  computed,
+  watchEffect,
+  shallowRef
+} from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
 
@@ -62,13 +70,13 @@ function select(type: unknown, name?: string) {
     return
   }
   if (type === 'sprite') {
-    const sprite = props.project.sprites.find(s => s.name === name)
+    const sprite = props.project.sprites.find((s) => s.name === name)
     if (sprite == null) throw new Error(`sprite ${name} not found`)
     selectedRef.value = { type, value: sprite }
     return
   }
   if (type === 'sound') {
-    const sound = props.project.sounds.find(s => s.name === name)
+    const sound = props.project.sounds.find((s) => s.name === name)
     if (sound == null) throw new Error(`sound ${name} not found`)
     selectedRef.value = { type, value: sound }
     return
