@@ -4,13 +4,17 @@
 
 <script lang="ts">
 import { inject } from 'vue'
-import { type Sprite } from '@/models/sprite'
+import type { Sprite } from '@/models/sprite'
 import type { Sound } from '@/models/sound'
 
 type Selected =
+| {
+      type: 'sprite'
+      value: Sprite
+    }
   | {
-      type: 'sprite' | 'sound'
-      name: string
+      type: 'sound'
+      value: Sound
     }
   | {
       type: 'stage'
@@ -38,7 +42,7 @@ export function useEditorCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, ref, watch, shallowReactive, computed, watchEffect } from 'vue'
+import { provide, type InjectionKey, watch, shallowReactive, computed, watchEffect, shallowRef } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
 
@@ -47,35 +51,37 @@ const props = defineProps<{
   userInfo: UserInfo
 }>()
 
-const selectedRef = ref<Selected | null>(null)
+const selectedRef = shallowRef<Selected | null>(null)
 
 function select(selected: null): void
 function select(type: 'stage'): void
 function select(type: 'sprite' | 'sound', name: string): void
-function select(type: any, name?: string) {
-  selectedRef.value = name == null ? { type } : { type, name }
+function select(type: unknown, name?: string) {
+  if (type === 'stage') {
+    selectedRef.value = { type }
+    return
+  }
+  if (type === 'sprite') {
+    const sprite = props.project.sprites.find(s => s.name === name)
+    if (sprite == null) throw new Error(`sprite ${name} not found`)
+    selectedRef.value = { type, value: sprite }
+    return
+  }
+  if (type === 'sound') {
+    const sound = props.project.sounds.find(s => s.name === name)
+    if (sound == null) throw new Error(`sound ${name} not found`)
+    selectedRef.value = { type, value: sound }
+    return
+  }
+  selectedRef.value = null
 }
 
-// When sprite name changed, we lose the selected state
-// TODO: consider moving selected to model Project, so we can deal with renaming easily
-const selectedSpriteName = computed(() => {
-  const selected = selectedRef.value
-  return selected?.type === 'sprite' ? selected.name : null
-})
-
 const selectedSprite = computed(() => {
-  if (!selectedSpriteName.value) return null
-  return props.project.sprites.find((s) => s.name === selectedSpriteName.value) || null
-})
-
-const selectedSoundName = computed(() => {
-  const selected = selectedRef.value
-  return selected?.type === 'sound' ? selected.name : null
+  return selectedRef.value?.type === 'sprite' ? selectedRef.value.value : null
 })
 
 const selectedSound = computed(() => {
-  if (!selectedSoundName.value) return null
-  return props.project.sounds.find((s) => s.name === selectedSoundName.value) || null
+  return selectedRef.value?.type === 'sound' ? selectedRef.value.value : null
 })
 
 watch(
