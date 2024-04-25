@@ -1,100 +1,106 @@
 <template>
   <nav class="top-nav">
-    <router-link class="logo" to="/">
-      <img :src="logoSvg" />
-    </router-link>
-    <UIDropdown placement="bottom-start">
-      <template #trigger>
-        <div class="project-dropdown">
-          <UIIcon class="icon-file" type="file" />
-          <UIIcon class="icon-arrow" type="arrowDown" />
-        </div>
-      </template>
-      <UIMenu>
-        <UIMenuGroup :disabled="!isOnline">
-          <UIMenuItem @click="handleNewProject">
-            <template #icon><img :src="newSvg" /></template>
-            {{ $t({ en: 'New project', zh: '新建项目' }) }}
-          </UIMenuItem>
-          <UIMenuItem @click="openProject">
-            <template #icon><img :src="openSvg" /></template>
-            {{ $t({ en: 'Open project...', zh: '打开项目...' }) }}
-          </UIMenuItem>
-        </UIMenuGroup>
-        <UIMenuGroup :disabled="project == null">
-          <UIMenuItem @click="handleImportProjectFile">
-            <template #icon><img :src="importProjectSvg" /></template>
-            {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
-          </UIMenuItem>
-          <UIMenuItem @click="handleExportProjectFile">
-            <template #icon><img :src="exportProjectSvg" /></template>
-            {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
-          </UIMenuItem>
-        </UIMenuGroup>
-        <UIMenuGroup :disabled="project == null">
-          <UIMenuItem @click="handleImportFromScratch">
-            <template #icon><img :src="importScratchSvg" /></template>
-            {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
-          </UIMenuItem>
-        </UIMenuGroup>
-        <UIMenuGroup :disabled="project == null || !isOnline">
-          <UIMenuItem @click="shareProject(project!)">
-            <template #icon><img :src="shareSvg" /></template>
-            {{ $t({ en: 'Share project', zh: '分享项目' }) }}
-          </UIMenuItem>
-          <UIMenuItem
-            v-if="project?.isPublic === IsPublic.public"
-            @click="stopSharingProject(project!)"
-          >
-            <template #icon><img :src="stopSharingSvg" /></template>
-            {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
-          </UIMenuItem>
-        </UIMenuGroup>
-      </UIMenu>
-    </UIDropdown>
-    <UITooltip placement="bottom">
-      <template #trigger>
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="lang" @click="toggleLang" v-html="langContent"></div>
-      </template>
-      {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
-    </UITooltip>
-    <p class="project-name">{{ project?.name }}</p>
-    <div class="save">
-      <UIButton
-        v-if="project != null"
-        type="secondary"
-        :disabled="!isOnline"
-        :loading="handleSave.isLoading.value"
-        @click="handleSave.fn"
-      >
-        {{ $t({ en: 'Save', zh: '保存' }) }}
-      </UIButton>
+    <div class="left">
+      <router-link class="logo" to="/">
+        <img :src="logoSvg" />
+      </router-link>
+      <UIDropdown placement="bottom-start">
+        <template #trigger>
+          <div class="project-dropdown">
+            <UIIcon class="icon-file" type="file" />
+            <UIIcon class="icon-arrow" type="arrowDown" />
+          </div>
+        </template>
+        <UIMenu>
+          <UIMenuGroup :disabled="!isOnline">
+            <UIMenuItem @click="handleNewProject">
+              <template #icon><img :src="newSvg" /></template>
+              {{ $t({ en: 'New project', zh: '新建项目' }) }}
+            </UIMenuItem>
+            <UIMenuItem @click="openProject">
+              <template #icon><img :src="openSvg" /></template>
+              {{ $t({ en: 'Open project...', zh: '打开项目...' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleImportProjectFile">
+              <template #icon><img :src="importProjectSvg" /></template>
+              {{ $t({ en: 'Import project file...', zh: '导入项目文件...' }) }}
+            </UIMenuItem>
+            <UIMenuItem @click="handleExportProjectFile">
+              <template #icon><img :src="exportProjectSvg" /></template>
+              {{ $t({ en: 'Export project file', zh: '导出项目文件' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleImportFromScratch">
+              <template #icon><img :src="importScratchSvg" /></template>
+              {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null || !isOnline">
+            <UIMenuItem @click="shareProject(project!)">
+              <template #icon><img :src="shareSvg" /></template>
+              {{ $t({ en: 'Share project', zh: '分享项目' }) }}
+            </UIMenuItem>
+            <UIMenuItem
+              v-if="project?.isPublic === IsPublic.public"
+              @click="stopSharingProject(project!)"
+            >
+              <template #icon><img :src="stopSharingSvg" /></template>
+              {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+        </UIMenu>
+      </UIDropdown>
+      <UITooltip placement="bottom">
+        <template #trigger>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="lang" @click="toggleLang" v-html="langContent"></div>
+        </template>
+        {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
+      </UITooltip>
     </div>
-    <div v-if="!userStore.userInfo" class="sign-in">
-      <UIButton :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
-        $t({ en: 'Sign in', zh: '登录' })
-      }}</UIButton>
+    <div class="center">
+      <p class="project-name">{{ project?.name }}</p>
     </div>
-    <UIDropdown v-else placement="bottom-end">
-      <template #trigger>
-        <div class="avatar">
-          <img class="avatar-img" :src="userStore.userInfo.avatar" />
-        </div>
-      </template>
-      <UIMenu class="user-menu">
-        <UIMenuGroup>
-          <UIMenuItem :interactive="false">
-            {{ userStore.userInfo.displayName || userStore.userInfo.name }}
-          </UIMenuItem>
-        </UIMenuGroup>
-        <UIMenuGroup>
-          <UIMenuItem @click="userStore.signOut()">{{
-            $t({ en: 'Sign out', zh: '登出' })
-          }}</UIMenuItem>
-        </UIMenuGroup>
-      </UIMenu>
-    </UIDropdown>
+    <div class="right">
+      <div class="save">
+        <UIButton
+          v-if="project != null"
+          type="secondary"
+          :disabled="!isOnline"
+          :loading="handleSave.isLoading.value"
+          @click="handleSave.fn"
+        >
+          {{ $t({ en: 'Save', zh: '保存' }) }}
+        </UIButton>
+      </div>
+      <div v-if="!userStore.userInfo" class="sign-in">
+        <UIButton :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
+          $t({ en: 'Sign in', zh: '登录' })
+        }}</UIButton>
+      </div>
+      <UIDropdown v-else placement="bottom-end">
+        <template #trigger>
+          <div class="avatar">
+            <img class="avatar-img" :src="userStore.userInfo.avatar" />
+          </div>
+        </template>
+        <UIMenu class="user-menu">
+          <UIMenuGroup>
+            <UIMenuItem :interactive="false">
+              {{ userStore.userInfo.displayName || userStore.userInfo.name }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup>
+            <UIMenuItem @click="userStore.signOut()">{{
+              $t({ en: 'Sign out', zh: '登出' })
+            }}</UIMenuItem>
+          </UIMenuGroup>
+        </UIMenu>
+      </UIDropdown>
+    </div>
   </nav>
 </template>
 
@@ -193,8 +199,9 @@ const handleSave = useMessageHandle(
 
 .top-nav {
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
 
   color: var(--ui-color-grey-100);
   background-color: var(--ui-color-primary-main);
@@ -203,6 +210,23 @@ const handleSave = useMessageHandle(
   background-image: url(./bg.svg);
   box-shadow: var(--ui-box-shadow-diffusion);
   height: 50px;
+}
+
+.left, .right {
+  flex-basis: 30%;
+  display: flex;
+}
+
+.center {
+  flex-basis: 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.right {
+  justify-content: flex-end;
 }
 
 .logo {
@@ -239,7 +263,6 @@ const handleSave = useMessageHandle(
   cursor: pointer;
 }
 
-.project-name,
 .save,
 .sign-in,
 .avatar {
@@ -249,8 +272,9 @@ const handleSave = useMessageHandle(
 }
 
 .project-name {
-  flex: 1 1 0;
-  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 16px;
 }
 
