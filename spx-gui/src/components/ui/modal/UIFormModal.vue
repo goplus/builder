@@ -51,7 +51,6 @@ const handleCloseButton = () => {
   align-items: center;
   padding: 8px 24px;
   height: 56px;
-  position: relative;
 }
 
 .title {
@@ -59,6 +58,7 @@ const handleCloseButton = () => {
   line-height: 26px;
   flex: 1;
   color: var(--ui-color-title);
+  padding-left: 24px;
 }
 
 .center {
@@ -70,7 +70,6 @@ const handleCloseButton = () => {
 }
 
 .close {
-  position: absolute;
-  right: 20px;
+  margin-right: -4px;
 }
 </style>

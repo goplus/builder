@@ -10,8 +10,6 @@ import UIIcon from '../icons/UIIcon.vue'
 
 <style scoped lang="scss">
 .ui-modal-close {
-  margin-left: 8px;
-  margin-right: -4px;
   width: 28px;
   height: 28px;
   display: flex;
