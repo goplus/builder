@@ -58,11 +58,11 @@ const handleCloseButton = () => {
   line-height: 26px;
   flex: 1;
   color: var(--ui-color-title);
-  padding-left: 24px;
 }
 
 .center {
   text-align: center;
+  padding-left: 24px; // take a offset of the same size with close btn, to make the title content correctly centered
 }
 
 .body {

@@ -56,7 +56,8 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   border-radius: 42px;
   cursor: pointer;
 
-  &:not(:disabled):active, &.loading {
+  &:not(:disabled):active,
+  &.loading {
     border-bottom-width: 0;
   }
 

@@ -69,7 +69,7 @@ function handleClick(e: MouseEvent) {
       margin-top: 16px;
       position: relative;
       &:before {
-        content: "";
+        content: '';
         position: absolute;
         top: -8px;
         left: 0;

@@ -212,7 +212,8 @@ const handleSave = useMessageHandle(
   height: 50px;
 }
 
-.left, .right {
+.left,
+.right {
   flex-basis: 30%;
   display: flex;
 }
