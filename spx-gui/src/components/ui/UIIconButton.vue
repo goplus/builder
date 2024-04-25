@@ -38,8 +38,6 @@ const props = withDefaults(
   }
 )
 
-// TODO: loading style for Button is not designed yet.
-// We use disabled to indicate loading tempararily.
 const disabled = computed(() => props.disabled || props.loading)
 const icon = computed(() => (props.loading ? 'loading' : props.icon))
 </script>
@@ -58,16 +56,19 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   border-radius: 42px;
   cursor: pointer;
 
-  &:not(:disabled):active {
+  &:not(:disabled):active, &.loading {
     border-bottom-width: 0;
   }
 
   &:disabled,
   &:disabled:hover {
     cursor: not-allowed;
-    color: var(--ui-color-disabled-text);
-    background-color: var(--ui-color-disabled-bg);
-    border-bottom-color: var(--ui-color-grey-500);
+
+    &:not(.loading) {
+      color: var(--ui-color-disabled-text);
+      background-color: var(--ui-color-disabled-bg);
+      border-bottom-color: var(--ui-color-grey-500);
+    }
   }
 
   .icon {
