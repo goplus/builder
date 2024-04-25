@@ -150,8 +150,13 @@ const handleDragMove = (event: KonvaEventObject<MouseEvent>) => {
  */
 const handleDragEnd = (event: { target: { attrs: { x: number; y: number } } }) => {
   const { x, y } = getSpxPostion(event.target.attrs.x, event.target.attrs.y)
-  props.sprite.setX(x)
-  props.sprite.setY(y)
+  props.sprite.setX(round(x))
+  props.sprite.setY(round(y))
   controller.value = null
+}
+
+/** Rounded to two decimal places */
+function round(num: number) {
+  return Math.round(num * 100) / 100
 }
 </script>
