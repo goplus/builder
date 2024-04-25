@@ -59,16 +59,25 @@ export class Stage {
     for (const b of this._backdrops) {
       this.removeBackdrop(b.name)
     }
-    this._addBackdrop(backdrop)
-    this._setBackdropIndex(this._backdrops.length - 1)
+    this._setBackdropIndex(this._addBackdrop(backdrop))
   }
 
-  removeBackdrop(name: string) {
+  removeBackdrop(name: string): void {
     const idx = this._backdrops.findIndex((s) => s.name === name)
-    const [backdrop] = this._backdrops.splice(idx, 1)
-    backdrop.setStage(null)
+    if (idx === -1) {
+      throw new Error(`backdrop ${name} not found`)
+    }
+
+    const [removedBackdrop] = this._backdrops.splice(idx, 1)
+    removedBackdrop.setStage(null)
+
+    // Maintain current backdrop's index if possible
     if (this._backdropIndex === idx) {
       this._setBackdropIndex(0)
+      // Note that if there is only one backdrop in the array
+      // and it is removed, the index will also be set to 0
+    } else if (this._backdropIndex > idx) {
+      this._setBackdropIndex(this._backdropIndex - 1)
     }
   }
 
@@ -86,16 +95,14 @@ export class Stage {
 
   /**
    * Add given backdrop to stage.
-   * Note: the backdrop's name may be altered to avoid conflict
+   * Note: the backdrop's name may be altered to avoid conflict.
+   * @returns index of the added backdrop
    */
-  _addBackdrop(backdrop: Backdrop) {
+  _addBackdrop(backdrop: Backdrop): number {
     const newName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newName)
     backdrop.setStage(this)
-    this._backdrops.push(backdrop)
-    if (this._backdrops.length === 1) {
-      this._setBackdropIndex(0)
-    }
+    return this._backdrops.push(backdrop) - 1
   }
 
   _topBackdrop(name: string) {
