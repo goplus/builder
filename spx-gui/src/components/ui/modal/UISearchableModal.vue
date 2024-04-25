@@ -10,7 +10,7 @@
           {{ title }}
         </h4>
         <slot name="input"></slot>
-        <UIModalClose @click="handleCloseButton" />
+        <UIModalClose class="close" @click="handleCloseButton" />
       </div>
       <UIDivider />
       <slot></slot>
@@ -59,5 +59,10 @@ const handleCloseButton = () => {
   flex: 1;
   display: flex;
   color: var(--ui-color-title);
+}
+
+.close {
+  margin-left: 8px;
+  margin-right: -4px;
 }
 </style>

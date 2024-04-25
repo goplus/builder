@@ -5,7 +5,7 @@
         <div :class="['title', { center: centerTitle }]">
           {{ title }}
         </div>
-        <UIModalClose @click="handleCloseButton" />
+        <UIModalClose class="close" @click="handleCloseButton" />
       </div>
 
       <UIDivider />
@@ -58,6 +58,7 @@ const handleCloseButton = () => {
   line-height: 26px;
   flex: 1;
   color: var(--ui-color-title);
+  padding-left: 24px;
 }
 
 .center {
@@ -66,5 +67,9 @@ const handleCloseButton = () => {
 
 .body {
   padding: 20px 24px;
+}
+
+.close {
+  margin-right: -4px;
 }
 </style>
