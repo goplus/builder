@@ -50,6 +50,7 @@ export class Stage {
   get backdrop(): Backdrop | null {
     return this._backdrops[this._backdropIndex] ?? null
   }
+
   /**
    * Set given backdrop to stage.
    * Note: the backdrop's name may be altered to avoid conflict
@@ -59,7 +60,9 @@ export class Stage {
       this.removeBackdrop(b.name)
     }
     this._addBackdrop(backdrop)
+    this._setBackdropIndex(this._backdrops.length - 1)
   }
+
   removeBackdrop(name: string) {
     const idx = this._backdrops.findIndex((s) => s.name === name)
     const [backdrop] = this._backdrops.splice(idx, 1)
@@ -80,6 +83,7 @@ export class Stage {
   _setBackdropIndex(backdropIndex: number) {
     this._backdropIndex = backdropIndex
   }
+
   /**
    * Add given backdrop to stage.
    * Note: the backdrop's name may be altered to avoid conflict
@@ -89,8 +93,11 @@ export class Stage {
     backdrop.setName(newName)
     backdrop.setStage(this)
     this._backdrops.push(backdrop)
-    // TODO: `this.backdropIndex`?
+    if (this._backdrops.length === 1) {
+      this._setBackdropIndex(0)
+    }
   }
+
   _topBackdrop(name: string) {
     const idx = this._backdrops.findIndex((s) => s.name === name)
     if (idx < 0) throw new Error(`backdrop ${name} not found`)
