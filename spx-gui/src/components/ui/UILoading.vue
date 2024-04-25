@@ -11,7 +11,6 @@ import { NSpin } from 'naive-ui'
 <style lang="scss" scoped>
 // TODO: loading style not designed yet
 .ui-loading {
-  flex: 1 1 auto;
   width: 100%;
   height: 80%;
   display: flex;
