@@ -22,6 +22,7 @@
       @update:value="(s) => sprite.setSize((s ?? 100) / 100)"
     >
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
+      <template #suffix>%</template>
     </UINumberInput>
   </div>
   <div class="line">

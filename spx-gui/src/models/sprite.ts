@@ -129,7 +129,6 @@ export class Sprite extends Disposble {
     this.name = name
     this.code = code
     this.costumes = []
-    // TODO: check default values here
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
@@ -147,10 +146,10 @@ export class Sprite extends Disposble {
    */
   static create(nameBase: string, code?: string, inits?: SpriteInits) {
     return new Sprite(getSpriteName(null, nameBase), code ?? '', {
-      heading: 0,
+      heading: 90,
       x: 0,
       y: 0,
-      size: 100,
+      size: 1,
       visible: true,
       ...inits
     })
