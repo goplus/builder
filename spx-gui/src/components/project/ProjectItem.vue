@@ -12,10 +12,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import dayjs from 'dayjs'
 import { useFileUrl } from '@/utils/file'
 import { Project } from '@/models/project'
-import dayjs from 'dayjs'
-import defaultProjectSvg from './icons/default-project.svg'
+import defaultSpriteSvg from '@/assets/default-sprite.svg'
 
 const props = defineProps<{
   inHomepage?: boolean
@@ -25,7 +25,7 @@ const props = defineProps<{
 const imgSrc = useFileUrl(() => props.project.sprites[0]?.costume?.img)
 
 const imgStyle = computed(() => {
-  const backgroundImage = imgSrc.value || defaultProjectSvg
+  const backgroundImage = imgSrc.value || defaultSpriteSvg
   return { backgroundImage: `url("${backgroundImage}")` }
 })
 
