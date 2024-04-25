@@ -61,12 +61,11 @@ defineProps<{
   cursor: pointer;
   transition: background-color 0.2s;
 
-  // TODO: check color here
   &:hover {
-    background-color: var(--ui-color-grey-200);
+    background-color: var(--ui-color-grey-400);
   }
   &:active {
-    background-color: var(--ui-color-grey-300);
+    background-color: var(--ui-color-grey-500);
   }
 }
 

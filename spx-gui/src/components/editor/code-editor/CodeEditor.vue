@@ -206,5 +206,6 @@ const thumbnailStyle = computed(
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
+  opacity: 0.3;
 }
 </style>

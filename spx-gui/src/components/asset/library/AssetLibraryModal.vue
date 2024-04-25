@@ -30,15 +30,10 @@
         <h3 class="title">{{ $t(category.message) }}</h3>
         <div class="content">
           <UILoading v-if="isLoading" />
-          <!-- TODO: UI component Error? -->
-          <div v-else-if="error != null" class="error">
+          <UIError v-else-if="error != null" :retry="refetch">
             {{ $t(error.userMessage) }}
-            <button @click="refetch">{{ $t({ en: 'Refresh', zh: '刷新' }) }}</button>
-          </div>
-          <!-- TODO: UI component Empty? -->
-          <p v-else-if="assets != null && assets.data.length === 0" class="empty">
-            {{ $t({ en: 'There is nothing', zh: '空空如也' }) }}
-          </p>
+          </UIError>
+          <UIEmpty v-else-if="assets?.data.length === 0" />
           <ul v-else-if="assets != null && type === AssetType.Sound" class="asset-list">
             <SoundItem
               v-for="asset in assets!.data"
@@ -84,7 +79,16 @@
 
 <script lang="ts" setup>
 import { computed, defineProps, ref } from 'vue'
-import { UITextInput, UIIcon, UITag, UILoading, UIButton, UISearchableModal } from '@/components/ui'
+import {
+  UITextInput,
+  UIIcon,
+  UITag,
+  UILoading,
+  UIEmpty,
+  UIError,
+  UIButton,
+  UISearchableModal
+} from '@/components/ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
@@ -226,12 +230,6 @@ async function handleSelect(asset: AssetData) {
   min-height: 200px;
   max-height: 400px;
   overflow-y: auto;
-}
-.error {
-  color: var(--ui-color-danger-main);
-}
-.empty {
-  color: var(--ui-color-hint-2);
 }
 .asset-list {
   display: flex;

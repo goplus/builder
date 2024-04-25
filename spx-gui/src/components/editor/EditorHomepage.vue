@@ -5,12 +5,10 @@
     </header>
     <main v-if="userStore.userInfo" :class="['editor-main', { 'in-homepage': !projectName }]">
       <template v-if="projectName">
-        <div v-if="isLoading" class="loading-wrapper">
-          <NSpin size="large" />
-        </div>
-        <div v-else-if="error != null">
+        <UILoading v-if="isLoading" />
+        <UIError v-else-if="error != null" :retry="refetch">
           {{ $t(error.userMessage) }}
-        </div>
+        </UIError>
         <EditorContextProvider
           v-else-if="project != null"
           :project="project"
@@ -18,7 +16,6 @@
         >
           <ProjectEditor />
         </EditorContextProvider>
-        <div v-else>TODO</div>
       </template>
       <template v-else>
         <div class="my-projects">
@@ -41,7 +38,6 @@
 <script setup lang="ts">
 import { watchEffect, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { NSpin } from 'naive-ui'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { Project } from '@/models/project'
@@ -53,7 +49,7 @@ import { useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
-import { UIButton, UIDivider, useConfirmDialog } from '@/components/ui'
+import { UIButton, UIDivider, UILoading, UIError, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
@@ -116,7 +112,8 @@ const askOpenCached = (cached: Project): Promise<boolean> => {
 const {
   data: project,
   isLoading,
-  error
+  error,
+  refetch
 } = useQuery(
   () => {
     // We need to read `userStore.userInfo.name` & `projectName.value` synchronously,
@@ -278,12 +275,5 @@ async function handleCreate() {
     display: flex;
     justify-content: center;
   }
-}
-
-.loading-wrapper {
-  width: 100%;
-  height: 400px;
-  display: flex;
-  justify-content: center;
 }
 </style>

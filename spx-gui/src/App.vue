@@ -19,6 +19,9 @@ const config = computed(() => ({
   confirmDialog: {
     cancelText: t({ en: 'Cancel', zh: '取消' }),
     confirmText: t({ en: 'Confirm', zh: '确认' })
+  },
+  empty: {
+    text: t({ en: 'No result.', zh: '没有结果' })
   }
 }))
 </script>

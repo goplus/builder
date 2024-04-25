@@ -1,6 +1,6 @@
 <template>
   <div class="ui-loading">
-    <NSpin size="large" />
+    <NSpin />
   </div>
 </template>
 
@@ -11,10 +11,8 @@ import { NSpin } from 'naive-ui'
 <style lang="scss" scoped>
 // TODO: loading style not designed yet
 .ui-loading {
-  flex: 1 1 auto;
   width: 100%;
-  height: 100%;
-  max-height: 400px;
+  height: 80%;
   display: flex;
   justify-content: center;
 }
