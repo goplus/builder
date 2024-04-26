@@ -1,49 +1,14 @@
-/*
- * @Author: Zhang Zhi Yang
- * @Date: 2024-03-08 22:15:52
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-13 14:04:58
- * @FilePath: \builder\spx-gui\src\components\stage-viewer\common.ts
- * @Description:
- */
-import type { KonvaEventObject, Node } from 'konva/lib/Node'
-import type { Sprite } from '@/models/sprite'
+import { inject, provide, reactive, type InjectionKey } from 'vue'
 
-/**
- * @description: Costume
- */
-export interface StageCostume {
-  name: string
-  x: number
-  y: number
-  url: string
+export const spritesReadyKey: InjectionKey<Map<string, boolean>> = Symbol('sprites-status')
+
+export function useSpritesReady() {
+  const s = inject(spritesReadyKey)
+  if (s == null) throw new Error('TODO')
+  return s
 }
 
-/**
- * @description: Scene of Backdrop
- */
-export interface StageScene {
-  name: string
-  url: string
-}
-/**
- * @description: Backdrop
- */
-export interface StageBackdrop {
-  scenes: StageScene[]
-  costumes: StageCostume[]
-  currentCostumeIndex: number
-}
-
-export interface SpriteEvent {
-  sprite: Sprite
-}
-
-export interface SpriteApperanceChangeEvent extends SpriteEvent {
-  sprite: Sprite
-  node: Node
-}
-
-export interface SpriteDragMoveEvent extends SpriteEvent {
-  event: KonvaEventObject<MouseEvent>
+export function provideSpritesReady() {
+  const spritesReady = reactive(new Map<string, boolean>())
+  provide(spritesReadyKey, spritesReady)
 }

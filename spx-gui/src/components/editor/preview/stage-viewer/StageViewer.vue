@@ -1,372 +1,149 @@
-<!--
- * @Author: Zhang Zhi Yang
- * @Date: 2024-02-05 14:09:40
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-13 15:09:57
- * @FilePath: \spx-gui\src\components\stage-viewer\StageViewer.vue
- * @Description: 
--->
 <template>
-  <div id="stage-viewer">
-    <div id="menu" ref="menu" @mouseleave="onStageMenuMouseLeave">
-      <div @click="moveSprite('up')">
-        {{
-          $t({
-            en: 'Move up',
-            zh: '上移'
-          })
-        }}
-      </div>
-      <div @click="moveSprite('down')">
-        {{
-          $t({
-            en: 'Move down',
-            zh: '下移'
-          })
-        }}
-      </div>
-      <div @click="moveSprite('top')">
-        {{
-          $t({
-            en: 'Move top',
-            zh: '置顶'
-          })
-        }}
-      </div>
-      <div @click="moveSprite('bottom')">
-        {{
-          $t({
-            en: 'Move bottom',
-            zh: '置底'
-          })
-        }}
-      </div>
-    </div>
+  <div ref="conatiner" class="stage-viewer">
     <v-stage
-      ref="stage"
-      :config="{
-        width: props.width,
-        height: props.height,
-        scaleX: scale,
-        scaleY: scale
-      }"
-      @mousedown="onStageClick"
-      @contextmenu="onStageMenu"
+      v-if="stageConfig != null && backdropImg != null"
+      ref="stageRef"
+      :config="stageConfig"
+      @mousedown="handleStageMousedown"
+      @contextmenu="handleContextMenu"
     >
-      <BackdropLayer
-        :stage="props.project.stage"
-        :offset-config="{
-          offsetX: (props.width / scale - mapSize.width) / 2,
-          offsetY: (props.height / scale - mapSize.height) / 2
-        }"
-        :map-size="mapSize"
-      />
-      <SpriteLayer
-        :offset-config="{
-          offsetX: (props.width / scale - mapSize.width) / 2,
-          offsetY: (props.height / scale - mapSize.height) / 2
-        }"
-        :sprite-list="props.project.sprites"
-        :zorder="props.project.zorder"
-        :selected-sprite-names="stageSelectSpritesName"
-        :map-size="mapSize"
-        @on-sprite-drag-move="onSpriteDragMove"
-        @on-sprite-apperance-change="onSpriteApperanceChange"
-      />
-      <v-layer
-        :config="{
-          name: 'controller',
-          x: (props.width / scale - mapSize.width) / 2,
-          y: (props.height / scale - mapSize.height) / 2
-        }"
-      >
-        <v-transformer
-          ref="transformer"
-          :config="{
-            enabledAnchors: [],
-            borderDash: [6, 6],
-            rotateEnabled: false,
-            draggable: true
-          }"
+      <v-layer>
+        <v-image v-if="backdropImg != null" :config="{ ...mapSize, image: backdropImg }"></v-image>
+      </v-layer>
+      <v-layer>
+        <SpriteItem
+          v-for="sprite in visibleSprites"
+          :key="sprite.name"
+          :sprite="sprite"
+          :map-size="mapSize!"
         />
-        <!-- The top layer's controller of the selected sprite,and the controller's and the controllable size is consistent with the sprite. -->
-        <template v-for="[spritename, selectSprite] of selectedControllerMap" :key="spritename">
-          <v-rect
-            :config="{
-              controller: true,
-              spriteName: spritename,
-              fill: 'rgba(0,0,0,0)',
-              draggable: true,
-              width: selectSprite.rect.width,
-              height: selectSprite.rect.height,
-              x: selectSprite.rect.x,
-              y: selectSprite.rect.y,
-              offsetX: selectSprite.rect.offsetX,
-              offsetY: selectSprite.rect.offsetY,
-              scaleX: selectSprite.rect.scaleX,
-              scaleY: selectSprite.rect.scaleY,
-              rotation: selectSprite.rect.rotation
-            }"
-          >
-          </v-rect>
-        </template>
+      </v-layer>
+      <v-layer>
+        <SpriteTransformer />
       </v-layer>
     </v-stage>
+    <UIDropdown trigger="manual" :visible="menuVisible" v-bind="menuPos" placement="bottom-start">
+      <UIMenu>
+        <UIMenuItem @click="moveSprite('up')">{{
+          $t({ en: 'Bring forward', zh: '向前移动' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('top')">{{
+          $t({ en: 'Bring to front', zh: '移到最前' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('down')">{{
+          $t({ en: 'Send backward', zh: '向后移动' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('bottom')">{{
+          $t({ en: 'Send to back', zh: '移到最后' })
+        }}</UIMenuItem>
+      </UIMenu>
+    </UIDropdown>
   </div>
 </template>
+
 <script setup lang="ts">
-import SpriteLayer from './SpriteLayer.vue'
-import BackdropLayer from './BackdropLayer.vue'
-import { computed, effect, ref, watch, withDefaults } from 'vue'
-import type { StageViewerEmits, StageViewerProps } from './index'
-import type { KonvaEventObject, Node } from 'konva/lib/Node'
+import { computed, ref } from 'vue'
+import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
-import type { RectConfig } from 'konva/lib/shapes/Rect.js'
-import type { SpriteDragMoveEvent, SpriteApperanceChangeEvent } from './common'
-import type { Size } from '@/models/common'
+import { UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
+import { useContentSize } from '@/utils/dom'
+import { useAsyncComputed } from '@/utils/utils'
+import type { Sprite } from '@/models/sprite'
+import { useImgFile } from '@/utils/file'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import SpriteTransformer from './SpriteTransformer.vue'
+import SpriteItem from './SpriteItem.vue'
+import { provideSpritesReady } from './common'
 
-// the controller which is top layer,store the corresponding node information and the information of its control node
-interface Controller {
-  node: Node
-  rect: RectConfig
-}
+provideSpritesReady()
 
-// ----------props & emit------------------------------------
-const props = withDefaults(defineProps<StageViewerProps>(), {
-  height: 400, // container height
-  width: 400 // container width
-})
-const emits = defineEmits<StageViewerEmits>()
+const editorCtx = useEditorCtx()
+const conatiner = ref<HTMLElement | null>(null)
+const containerSize = useContentSize(conatiner)
 
-// instance of konva's stage & menu
-const stage = ref<Stage>()
-const transformer = ref()
-const menu = ref()
+const stageRef = ref<any>()
+const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
 
-//  which sprite are selected
-const stageSelectSpritesName = ref<string[]>([])
-//  Control node‘s information corresponding to stageSelectSpritesName
-const selectedControllerMap = ref<Map<String, Controller>>(new Map())
-
-// get spx map size
-const mapSize = ref<Size>({
-  width: 400,
-  height: 400
-})
-
-// get the scale of stage viewer
-// container size or stage size changes will recalculate the actual size
+/** containerSize / mapSize */
 const scale = computed(() => {
-  const widthScale = props.width / mapSize.value.width
-  const heightScale = props.height / mapSize.value.height
-  const scale = Math.min(widthScale, heightScale, 1)
-  return scale
+  if (containerSize.width.value == null || containerSize.height.value == null) return null
+  if (mapSize.value == null) return null
+  const widthScale = containerSize.width.value / mapSize.value.width
+  const heightScale = containerSize.height.value / mapSize.value.height
+  return Math.min(widthScale, heightScale)
 })
 
-effect(async () => {
-  mapSize.value = await props.project.stage.getMapSize()
+const stageConfig = computed(() => {
+  if (scale.value == null) return null
+  if (mapSize.value == null) return null
+  const width = mapSize.value.width * scale.value
+  const height = mapSize.value.height * scale.value
+  return {
+    width,
+    height,
+    scale: {
+      x: scale.value,
+      y: scale.value
+    }
+  }
 })
 
-// sync the selected sprite name of prop to stageSelectSpritesName
-watch(
-  () => props.selectedSpriteNames,
-  (spriteNames) => {
-    if (spriteNames.length === 0 || !spriteNames) {
-      stageSelectSpritesName.value = []
-      return
-    }
-    if (
-      spriteNames.length === stageSelectSpritesName.value.length &&
-      spriteNames.every((name, index) => name === stageSelectSpritesName.value[index])
-    ) {
-      return
-    }
+const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
 
-    stageSelectSpritesName.value = spriteNames
-  }
-)
+const visibleSprites = computed(() => {
+  const { zorder, sprites } = editorCtx.project
+  return zorder.map((name) => sprites.find((s) => s.name === name)).filter(Boolean) as Sprite[]
+})
 
-//stageSelectSpritesName change tigger the transformer show or hide
-watch(
-  () => stageSelectSpritesName.value,
-  () => {
-    if (
-      props.selectedSpriteNames.length !== stageSelectSpritesName.value.length ||
-      !props.selectedSpriteNames.every(
-        (name, index) => name === stageSelectSpritesName.value[index]
-      )
-    ) {
-      emits('onSelectedSpritesChange', { names: stageSelectSpritesName.value })
-    }
-    showSelectedTranformer()
-  }
-)
+const menuVisible = ref(false)
+const menuPos = ref({ x: 0, y: 0 })
 
-// when the stageSelectSpritesName change,update the info of the controller
-watch(
-  () => stageSelectSpritesName.value,
-  () => {
-    const map = new Map<String, { node: Node; rect: RectConfig }>()
-    stageSelectSpritesName.value.forEach((name) => {
-      const node = stage.value?.getStage().findOne((node: Node) => {
-        return node.getAttr('spriteName') === name
-      })
-      if (!node) return
-      map.set(name, {
-        node: node,
-        rect: {
-          width: node.attrs.image.width,
-          height: node.attrs.image.height,
-          x: node.attrs.x,
-          y: node.attrs.y,
-          scaleX: node.attrs.scaleX,
-          scaleY: node.attrs.scaleY,
-          offsetX: node.attrs.offsetX,
-          offsetY: node.attrs.offsetY,
-          rotation: node.attrs.rotation
-        }
-      })
-    })
-    selectedControllerMap.value = map
-  }
-)
-
-// show stage menu,when click a sprite
-const onStageMenu = (e: KonvaEventObject<MouseEvent>) => {
+function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
   e.evt.preventDefault()
-  if (!stage.value) return
-  // only the sprite need contextmenu
-  if (e.target.parent!.attrs.name !== 'sprite' && e.target.parent!.attrs.name !== 'controller') {
-    menu.value.style.display = 'none'
-    stageSelectSpritesName.value = []
-    return
+  if (stageRef.value == null || e.target.parent == null) return
+  const stage: Stage = stageRef.value.getStage()
+  const pointerPos = stage.getPointerPosition()
+  if (pointerPos == null) return
+  const stagePos = stage.getContent().getBoundingClientRect()
+  const offsetY = -8 // offset for dropdown menu
+  menuPos.value = {
+    x: stagePos.x + pointerPos.x,
+    y: stagePos.y + pointerPos.y + offsetY
   }
-  if (e.target.getAttr('spriteName')) {
-    stageSelectSpritesName.value = [e.target.getAttr('spriteName')]
-    menu.value.style.display = 'block'
-    // after entering the menu element, the menu will disappear after leaving the menu.
-    // The problem of entering the menu immediately after clicking is avoided by offsetting the menu by 4 pixels to the bottom and right
-    menu.value.style.top = stage.value.getStage().getPointerPosition()!.y + 4 + 'px'
-    menu.value.style.left = stage.value.getStage().getPointerPosition()!.x + 4 + 'px'
-  }
+  menuVisible.value = true
 }
 
-// hide stage menu
-const onStageMenuMouseLeave = () => {
-  menu.value.style.display = 'none'
-  stageSelectSpritesName.value = []
+function handleStageMousedown() {
+  if (menuVisible.value) menuVisible.value = false
 }
 
-const onStageClick = (e: KonvaEventObject<MouseEvent>) => {
-  if (!e.target.parent) return
-  // clear choose sprite
-  if (e.target.parent.attrs.name !== 'sprite' || e.target.parent.attrs.name !== 'controller') {
-    stageSelectSpritesName.value = []
-  }
-  const name = e.target.attrs.spriteName
-  if (name) {
-    stageSelectSpritesName.value = [name]
-  }
-}
-
-// move sprite to up or down & emit  the new zorder list
-const moveSprite = (direction: 'up' | 'down' | 'top' | 'bottom') => {
-  if (!stageSelectSpritesName.value.length) return
-
-  const project = props.project
-  const spriteName = stageSelectSpritesName.value[0]
-  const node = stage.value!.getStage().findOne((node: Node) => {
-    return node.getAttr('spriteName') === spriteName
-  }) as Node
+function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
+  const { project, selectedSprite } = editorCtx
+  if (selectedSprite == null) return
   if (direction === 'up') {
-    project.upSpriteZorder(spriteName)
-    node.moveUp()
+    project.upSpriteZorder(selectedSprite.name)
   } else if (direction === 'down') {
-    project.downSpriteZorder(spriteName)
-    node.moveDown()
+    project.downSpriteZorder(selectedSprite.name)
   } else if (direction === 'top') {
-    project.topSpriteZorder(spriteName)
-    node.moveToTop()
+    project.topSpriteZorder(selectedSprite.name)
   } else if (direction === 'bottom') {
-    project.bottomSpriteZorder(spriteName)
-    node.moveToBottom()
-  } else {
-    return
+    project.bottomSpriteZorder(selectedSprite.name)
   }
-
-  menu.value.style.display = 'none'
-}
-
-const showSelectedTranformer = () => {
-  if (!stage.value) return
-  const spriteNames = stageSelectSpritesName.value
-  const nodes = stage.value.getStage().find((node: Node) => {
-    if (node.getAttr('spriteName') && spriteNames.includes(node.getAttr('spriteName'))) {
-      return true
-    } else {
-      return false
-    }
-  })
-  // choosed nodes in tranformer
-  const transformerNode = transformer.value.getNode()
-  if (nodes.length) {
-    transformerNode.nodes([...nodes])
-  } else {
-    transformerNode.nodes([])
-  }
-}
-
-const onSpriteDragMove = (e: SpriteDragMoveEvent) => {
-  const controller = selectedControllerMap.value.get(e.sprite.name)
-  if (controller) {
-    updateController(controller as Controller, e.event.target.attrs)
-  }
-}
-
-const onSpriteApperanceChange = (e: SpriteApperanceChangeEvent) => {
-  const controller = selectedControllerMap.value.get(e.sprite.name)
-  if (controller) {
-    updateController(controller as Controller, e.node.attrs)
-  }
-}
-
-const updateController = (controller: Controller, attrs: any) => {
-  controller.rect.x = attrs.x
-  controller.rect.y = attrs.y
-  controller.rect.scaleX = attrs.scaleX
-  controller.rect.scaleY = attrs.scaleY
-  controller.rect.rotation = attrs.rotation
-  controller.rect.offsetX = attrs.offsetX
-  controller.rect.offsetY = attrs.offsetY
+  menuVisible.value = false
 }
 </script>
 <style scoped>
-#stage-viewer {
-  position: relative;
-  height: v-bind("props.height + 'px'");
-  width: v-bind("props.width + 'px'");
-}
-
-#menu {
-  z-index: 999;
-  display: none;
-  position: absolute;
-  width: 60px;
-  background-color: white;
-  box-shadow: 0 0 5px grey;
-  border-radius: 3px;
-}
-
-#menu > div {
+.stage-viewer {
+  height: 100%;
+  width: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
-  cursor: pointer;
-  padding: 4px;
-}
 
-#menu > div:hover {
-  display: flex;
-  justify-content: center;
-  background-color: #f0f0f0;
+  border-radius: var(--ui-border-radius-1);
+  background-image: url(@/components/project/bg.svg);
+  background-position: center;
+  background-repeat: repeat;
+  background-size: contain;
 }
 </style>
