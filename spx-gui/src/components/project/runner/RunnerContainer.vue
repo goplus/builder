@@ -43,6 +43,7 @@
           </button>
         </div>
         <div class="console">
+          <div class="spacer"></div>
           <div
             v-for="{ id, time, message, type } in consoleMessages"
             :key="id"
@@ -93,7 +94,7 @@ watch(
     const mapSize = await newProject.stage.getMapSize()
 
     runnerAspectRatio.value.aspectRatio = `${mapSize.width}/${mapSize.height}`
-    // displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
+    displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
     consoleMessages.value = []
 
     // Wait for the project to be injected into the component
@@ -254,6 +255,9 @@ button {
   .expand-icon {
     transform: rotate(90deg);
   }
+}
+.spacer {
+  flex: 1;
 }
 
 .landscape {
