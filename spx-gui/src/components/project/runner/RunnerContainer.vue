@@ -175,7 +175,8 @@ button {
   display: flex;
   justify-content: center;
   border: 1px solid var(--ui-color-grey-400);
-  border-radius: 8px;
+  background-color: var(--ui-color-grey-300);
+  padding: 20px;
 }
 
 .wrapper {
@@ -193,19 +194,11 @@ button {
 .main {
   flex: 1;
   display: flex;
-  gap: 16px;
-  padding: 16px;
-  padding-bottom: 0;
   overflow: hidden;
   height: 100%;
 
   &.landscape {
     flex-direction: column;
-  }
-
-  &.portrait {
-    padding-bottom: 16px;
-    padding-right: 0;
   }
 }
 
@@ -240,7 +233,6 @@ button {
   .console-container {
     border-bottom: 1px solid var(--ui-color-grey-400);
     border-right: none;
-    border-radius: 8px 0 0 8px;
   }
 
   .console {
@@ -287,17 +279,15 @@ button {
 .console-container {
   border: 1px solid var(--ui-color-grey-400);
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
 
   display: flex;
   flex-direction: column;
 }
 
 .console-header {
-  padding: 12px;
+  min-height: 44px;
   background-color: var(--ui-color-grey-300);
   border-bottom: 1px solid var(--ui-color-grey-400);
-  border-radius: 8px 8px 0 0;
   display: flex;
   justify-content: center;
   align-items: center;
