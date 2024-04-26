@@ -124,6 +124,7 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
   watchEffect(() => {
     const srcOrBlob = audio()
     if (!srcOrBlob) {
+      duration.value = null
       return
     }
     const src = typeof srcOrBlob === 'string' ? srcOrBlob : URL.createObjectURL(srcOrBlob)
@@ -132,6 +133,11 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
     audioElement.onloadedmetadata = () => {
       duration.value = audioElement.duration
       if (typeof srcOrBlob !== 'string') {
+        URL.revokeObjectURL(src)
+      }
+    }
+    if (typeof srcOrBlob !== 'string') {
+      audioElement.onerror = () => {
         URL.revokeObjectURL(src)
       }
     }
