@@ -186,7 +186,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
   await newProject.loadFromCloud(user, projectName)
 
   // If there is no newer cloud version, use local version without confirmation.
-  // If there is newer cloud version, use cloud version without confirmation.
+  // If there is a newer cloud version, use cloud version without confirmation.
   // (clear local cache if cloud version is newer)
   if (localProject?.hasUnsyncedChanges) {
     if (newProject.version <= localProject.version) {
@@ -227,10 +227,15 @@ watchEffect((onCleanup) => {
         cancelText: t({
           en: 'Discard changes',
           zh: '不保存'
-        })
+        }),
+        confirmText: t({
+          en: 'Save',
+          zh: '保存'
+        }),
+        confirmHandler: () => project.value!.saveToCloud()
       })
         .then(() => {
-          next(false)
+          next()
         })
         .catch(async () => {
           await clear(LOCAL_CACHE_KEY)
