@@ -47,7 +47,6 @@ export class Sound {
   constructor(name: string, file: File, inits?: SoundInits) {
     this.name = name
     this.file = file
-    // TODO: confirm default values here
     this.rate = inits?.rate ?? 0
     this.sampleCount = inits?.sampleCount ?? 0
     return reactive(this) as this

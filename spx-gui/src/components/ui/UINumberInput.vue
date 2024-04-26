@@ -8,6 +8,9 @@
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
     </template>
+    <template v-if="!!slots.suffix" #suffix>
+      <slot name="suffix"></slot>
+    </template>
   </NInputNumber>
 </template>
 

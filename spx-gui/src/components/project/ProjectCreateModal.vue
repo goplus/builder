@@ -5,7 +5,7 @@
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <UIForm :form="form" @submit="handleSubmit">
+    <UIForm :form="form" @submit="handleSubmit.fn">
       <div class="alert">
         {{
           $t({
@@ -21,7 +21,12 @@
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton class="create-button" type="primary" html-type="submit">
+        <UIButton
+          class="create-button"
+          type="primary"
+          html-type="submit"
+          :loading="handleSubmit.isLoading.value"
+        >
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
@@ -44,6 +49,15 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
+import { Sprite } from '@/models/sprite'
+import { Costume } from '@/models/costume'
+import { File } from '@/models/common/file'
+import { uploadFiles } from '@/models/common/cloud'
+import { filename } from '@/utils/path'
+import defaultSpriteSvg from '@/assets/default-sprite.svg'
+import defaultBackdropImg from '@/assets/default-backdrop.png'
+import { Backdrop } from '@/models/backdrop'
+import { Project } from '@/models/project'
 
 const props = defineProps<{
   visible: boolean
@@ -71,14 +85,38 @@ function handleCancel() {
   emit('cancelled')
 }
 
-async function handleSubmit() {
-  const projectData = await addProject({
-    name: form.value.name,
-    isPublic: IsPublic.personal,
-    files: {}
+function createFile(url: string) {
+  return new File(filename(url), async () => {
+    const resp = await fetch(url)
+    const blob = await resp.blob()
+    return blob.arrayBuffer()
   })
-  emit('resolved', projectData)
 }
+
+const handleSubmit = useMessageHandle(
+  async () => {
+    // make default project
+    const spriteFile = createFile(defaultSpriteSvg)
+    const spritePos = { x: -71, y: 75 } // offset to make sprite centered. depending on the size of spriteFile
+    const sprite = Sprite.create('', undefined, spritePos)
+    sprite.addCostume(Costume.create('', spriteFile))
+    const backdropFile = createFile(defaultBackdropImg)
+    const backdrop = Backdrop.create('', backdropFile)
+    const project = new Project()
+    project.stage.setBackdrop(backdrop)
+    project.addSprite(sprite)
+    // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
+    const files = project.export()[1]
+    const fileUrls = await uploadFiles(files)
+    const projectData = await addProject({
+      name: form.value.name,
+      isPublic: IsPublic.personal,
+      files: fileUrls
+    })
+    emit('resolved', projectData)
+  },
+  { en: 'Failed to create project', zh: '项目创建失败' }
+)
 
 async function validateName(name: string): Promise<FormValidationResult> {
   name = name.trim()
