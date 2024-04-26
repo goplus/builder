@@ -31,7 +31,7 @@ export type Props = {
   content: string
   cancelText?: string
   confirmText?: string
-  confirmHandler?: () => Promise<void>
+  confirmHandler?: () => unknown
 }
 
 const props = withDefaults(defineProps<Props>(), {
