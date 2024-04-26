@@ -18,7 +18,7 @@ export function useSummaryList<T>(
 ) {
   const { height } = useContentSize(listWrapperSource)
   return computed(() => {
-    const maxVisibleItemNum = Math.floor(height.value / itemSize.height)
+    const maxVisibleItemNum = Math.floor((height.value ?? 0) / itemSize.height)
     if (list.value.length <= maxVisibleItemNum) {
       return {
         list: list.value,

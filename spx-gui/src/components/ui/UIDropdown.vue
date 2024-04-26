@@ -1,11 +1,14 @@
 <template>
   <NPopover
     class="ui-dropdown-content"
+    :placement="placement"
     :trigger="trigger"
-    raw
+    :show="visible"
+    :x="x"
+    :y="y"
     :to="attachTo"
     :show-arrow="false"
-    :placement="placement"
+    raw
   >
     <template #trigger>
       <slot name="trigger"></slot>
@@ -19,16 +22,22 @@ import { NPopover } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
 export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
-export type Trigger = 'click' | 'hover'
+export type Trigger = 'click' | 'hover' | 'manual'
 
 withDefaults(
   defineProps<{
     placement?: Placement
     trigger?: Trigger
+    visible?: boolean
+    x?: number
+    y?: number
   }>(),
   {
     placement: 'bottom',
-    trigger: 'hover'
+    trigger: 'hover',
+    visible: undefined,
+    x: undefined,
+    y: undefined
   }
 )
 

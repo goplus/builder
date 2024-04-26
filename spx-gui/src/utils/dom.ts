@@ -1,8 +1,8 @@
 import { ref, watch, type WatchSource } from 'vue'
 
 export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
-  const width = ref(0)
-  const height = ref(0)
+  const width = ref<number | null>(null)
+  const height = ref<number | null>(null)
 
   function onElementResize(entries: ResizeObserverEntry[]) {
     const { width: elementWidth, height: elementHeight } = entries[0].contentRect

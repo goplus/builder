@@ -96,10 +96,10 @@ export class Project extends Disposble {
     this.zorder = newZorder
   }
   upSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i) => i + 1)
+    this.setSpriteZorderIdx(name, (i, len) => Math.min(i + 1, len - 1))
   }
   downSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i) => i - 1)
+    this.setSpriteZorderIdx(name, (i) => Math.max(i - 1, 0))
   }
   topSpriteZorder(name: string) {
     this.setSpriteZorderIdx(name, (_, len) => len - 1)
