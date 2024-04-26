@@ -122,7 +122,7 @@ function spx2Konva({ x, y, heading, size }: SpxAttrs): KonvaAttrs {
 
 // to [-180, 180)
 function resolveDegree(num: number) {
-  if (Number.isFinite(num) || Number.isNaN(num)) return num
+  if (!Number.isFinite(num) || Number.isNaN(num)) return num
   num = num % 360
   if (num >= 180) num = num - 360
   if (num < -180) num = num + 360
