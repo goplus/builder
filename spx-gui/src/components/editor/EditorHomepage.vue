@@ -73,16 +73,23 @@ const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
 )
 
-const askOpenNew = (cached: Project, targetName: string): Promise<boolean> => {
+const askToOpenTargetWithAnotherInCache = (
+  targetName: string,
+  cachedName: string
+): Promise<boolean> => {
   return new Promise((resolve) =>
     withConfirm({
       title: t({
-        en: 'Unsaved changes',
-        zh: '未保存的更改'
+        en: `Open project ${targetName}?`,
+        zh: `打开项目 ${targetName}？`
       }),
       content: t({
-        en: `Previous project ${cached.name} has unsaved changes. Discard it and open the new project "${targetName}"?`,
-        zh: `之前的项目 ${cached.name} 有未保存的更改。放弃更改并打开新项目 "${targetName}"？`
+        en: `There are unsaved changes for project ${cachedName}. The changes will be discarded if you continue to open project ${targetName}. Are you sure to continue?`,
+        zh: `项目 ${cachedName} 存在未保存的变更，若继续打开项目 ${targetName}，项目 ${cachedName} 的变更将被丢弃。确定继续吗？`
+      }),
+      cancelText: t({
+        en: `Open project ${cachedName}`,
+        zh: `打开项目 ${cachedName}`
       })
     })
       .then(() => {
@@ -94,16 +101,16 @@ const askOpenNew = (cached: Project, targetName: string): Promise<boolean> => {
   )
 }
 
-const askOpenCached = (cached: Project): Promise<boolean> => {
+const askToOpenCachedVersionForCurrent = (cachedName: string): Promise<boolean> => {
   return new Promise((resolve) =>
     withConfirm({
       title: t({
-        en: 'Unsaved changes',
-        zh: '未保存的更改'
+        en: 'Restore unsaved changes?',
+        zh: '恢复未保存的变更？'
       }),
       content: t({
-        en: `There is a project in the cache that has unsaved changes. Open the cached project ${cached.name}?`,
-        zh: `缓存中有一个项目有未保存的更改。打开缓存的项目 ${cached.name}？`
+        en: `You have unsaved changes for project ${cachedName}. Do you want to open project ${cachedName} and restore them?`,
+        zh: `项目 ${cachedName} 存在未保存的变更，要打开项目 ${cachedName} 并恢复未保存的变更吗？`
       })
     })
       .then(() => {
@@ -139,39 +146,38 @@ async function loadProject(user: string | undefined, projectName: string | undef
   } catch (e) {
     console.warn('Failed to load project from local cache', e)
     localProject = null
-    clear(LOCAL_CACHE_KEY)
+    await clear(LOCAL_CACHE_KEY)
   }
 
   // https://github.com/goplus/builder/issues/259
+  // https://github.com/goplus/builder/issues/393
   // Local Cache Saving & Restoring
   if (localProject && localProject.owner !== user) {
     // Case 4: Different user: Discard local cache
-    clear(LOCAL_CACHE_KEY)
+    await clear(LOCAL_CACHE_KEY)
     localProject = null
   }
 
   if (localProject?.hasUnsyncedChanges) {
     if (!projectName) {
-      if (await askOpenCached(localProject)) {
+      if (await askToOpenCachedVersionForCurrent(localProject.name!)) {
         // Case 3: User has a project in the cache but not opening any project:
         // Open the saved project
         openProject(localProject.name!) // FIXME: name should be required?
       } else {
         // Case 3: Clear local cache
-        clear(LOCAL_CACHE_KEY)
+        await clear(LOCAL_CACHE_KEY)
       }
       return null
     }
 
     if (localProject.name !== projectName) {
-      if (await askOpenNew(localProject, projectName)) {
-        // Case 2: User has a project in the cache but not opening the project in the cache:
-        // asked to open the saved project
+      if (await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)) {
+        await clear(LOCAL_CACHE_KEY)
+      } else {
         openProject(localProject.name!)
         return null
       }
-      clear(LOCAL_CACHE_KEY)
-      // Case 2 fallthrough: Let the project to be loaded from cloud
     }
   }
 
@@ -179,11 +185,14 @@ async function loadProject(user: string | undefined, projectName: string | undef
   let newProject = new Project()
   await newProject.loadFromCloud(user, projectName)
 
+  // If there is no newer cloud version, use local version without confirmation.
+  // If there is a newer cloud version, use cloud version without confirmation.
+  // (clear local cache if cloud version is newer)
   if (localProject?.hasUnsyncedChanges) {
-    if (newProject.version <= localProject.version && (await askOpenCached(localProject))) {
-      // Case 1: User has a project in the cache and opening the same project:
-      // asked to open the saved project
+    if (newProject.version <= localProject.version) {
       newProject = localProject
+    } else {
+      await clear(LOCAL_CACHE_KEY)
     }
   }
 
@@ -204,17 +213,40 @@ watch(
 )
 
 watchEffect((onCleanup) => {
-  const f = (event: BeforeUnloadEvent) => {
+  const cleanup = router.beforeEach((to, from, next) => {
     if (project.value?.hasUnsyncedChanges) {
-      // impossible to show a custom message
-      event.preventDefault()
+      withConfirm({
+        title: t({
+          en: 'Save changes?',
+          zh: '保存变更？'
+        }),
+        content: t({
+          en: 'There are changes not saved yet. Do you want to save them?',
+          zh: '存在未保存的变更，要保存吗？'
+        }),
+        cancelText: t({
+          en: 'Discard changes',
+          zh: '不保存'
+        }),
+        confirmText: t({
+          en: 'Save',
+          zh: '保存'
+        }),
+        confirmHandler: () => project.value!.saveToCloud()
+      })
+        .then(() => {
+          next()
+        })
+        .catch(async () => {
+          await clear(LOCAL_CACHE_KEY)
+          next()
+        })
+    } else {
+      next()
     }
-  }
-
-  window.addEventListener('beforeunload', f)
-  onCleanup(() => {
-    window.removeEventListener('beforeunload', f)
   })
+
+  onCleanup(cleanup)
 })
 
 function openProject(projectName: string) {
