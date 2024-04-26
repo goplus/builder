@@ -39,15 +39,7 @@
           :key="asset.name"
           @click="selectSound(asset)"
         >
-          <ScratchItemContainer :selected="selected.sounds.has(asset)">
-            <div class="asset-image">
-              <div class="sound-container">
-                <BlobSoundPlayer :blob="asset.blob" :color="uiVariables.color.primary" />
-              </div>
-            </div>
-            <div>0:00 TODO</div>
-            <div class="asset-name">{{ asset.name }}</div>
-          </ScratchItemContainer>
+          <SoundItem :asset="asset" :selected="selected.sounds.has(asset)" />
         </NGridItem>
       </NGrid>
     </div>
@@ -98,10 +90,10 @@ import { File as LazyFile } from '@/models/common/file'
 import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
-import BlobSoundPlayer from '../BlobSoundPlayer.vue'
 import { ref, watch } from 'vue'
-import { UIButton, useMessage, useUIVariables } from '@/components/ui'
+import { UIButton, useMessage } from '@/components/ui'
 import ScratchItemContainer from './ScratchItemContainer.vue'
+import SoundItem from './SoundItem.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
@@ -123,8 +115,6 @@ const selected = ref<{
   sounds: new Set(),
   sprites: new Set()
 })
-
-const uiVariables = useUIVariables()
 
 watch(
   () => props.scratchAssets,
@@ -213,15 +203,11 @@ const importSelected = () => {
 </script>
 
 <style lang="scss" scoped>
-.sound-container {
-  height: 48px;
-  width: 48px;
-}
-
 .container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  color: var(--ui-color-grey-1000);
 }
 
 .import-button {

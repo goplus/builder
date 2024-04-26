@@ -7,6 +7,8 @@
  * @Description: Audio Utils
  */
 
+import { computed, ref, watchEffect } from 'vue'
+
 /**
  * Converts an array of audio chunks into an AudioBuffer.
  *
@@ -107,4 +109,40 @@ const decodeAudioData = (arrayBuffer: ArrayBuffer): Promise<AudioBuffer> => {
   const audioContext: AudioContext = new (window.AudioContext ||
     (window as any).webkitAudioContext)()
   return audioContext.decodeAudioData(arrayBuffer)
+}
+
+const formatDuration = (seconds: number): string => {
+  const minutes: number = Math.floor(seconds / 60)
+  const remainingSeconds: number = Math.floor(seconds % 60)
+  const formattedSeconds: string =
+    remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`
+  return `${minutes}:${formattedSeconds}`
+}
+
+export const useAudioDuration = (audio: () => string | Blob | null) => {
+  const duration = ref<number | null>(null)
+  watchEffect(() => {
+    const srcOrBlob = audio()
+    if (!srcOrBlob) {
+      return
+    }
+    const src = typeof srcOrBlob === 'string' ? srcOrBlob : URL.createObjectURL(srcOrBlob)
+    const audioElement = document.createElement('audio')
+    audioElement.src = src
+    audioElement.onloadedmetadata = () => {
+      duration.value = audioElement.duration
+      if (typeof srcOrBlob !== 'string') {
+        URL.revokeObjectURL(src)
+      }
+    }
+  })
+  return {
+    duration,
+    formattedDuration: computed(() => {
+      if (duration.value === null || duration.value === Infinity) {
+        return ''
+      }
+      return formatDuration(duration.value)
+    })
+  }
 }
