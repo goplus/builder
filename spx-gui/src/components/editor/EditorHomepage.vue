@@ -167,6 +167,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
       } else {
         // Case 3: Clear local cache
         await clear(LOCAL_CACHE_KEY)
+        localProject = null
       }
       return null
     }
@@ -174,6 +175,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
     if (localProject.name !== projectName) {
       if (await askToOpenTargetWithAnotherInCache(projectName, localProject.name!)) {
         await clear(LOCAL_CACHE_KEY)
+        localProject = null
       } else {
         openProject(localProject.name!)
         return null
