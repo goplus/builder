@@ -93,7 +93,7 @@ watch(
     const mapSize = await newProject.stage.getMapSize()
 
     runnerAspectRatio.value.aspectRatio = `${mapSize.width}/${mapSize.height}`
-    displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
+    // displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
     consoleMessages.value = []
 
     // Wait for the project to be injected into the component
@@ -174,7 +174,6 @@ button {
   flex: 1;
   display: flex;
   justify-content: center;
-  border: 1px solid var(--ui-color-grey-400);
   background-color: var(--ui-color-grey-300);
   padding: 20px;
 }
@@ -233,6 +232,7 @@ button {
   .console-container {
     border-bottom: 1px solid var(--ui-color-grey-400);
     border-right: none;
+    border-top: none;
   }
 
   .console {
