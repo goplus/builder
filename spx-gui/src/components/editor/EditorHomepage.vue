@@ -232,7 +232,10 @@ watchEffect((onCleanup) => {
           en: 'Save',
           zh: '保存'
         }),
-        confirmHandler: () => project.value!.saveToCloud()
+        async confirmHandler() {
+          await project.value!.saveToCloud()
+          await clear(LOCAL_CACHE_KEY)
+        }
       })
         .then(() => {
           next()
