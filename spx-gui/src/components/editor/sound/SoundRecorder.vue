@@ -94,7 +94,7 @@ import { RecordPlugin } from '@/utils/wavesurfer-record'
 import { useWavesurfer } from './wavesurfer'
 
 const emit = defineEmits<{
-  saved: []
+  saved: [Sound]
   recordStarted: []
 }>()
 
@@ -164,20 +164,15 @@ const stopRecording = () => {
 }
 
 const saveRecording = async () => {
-  const soundName = `Recording ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
-  const file = fromBlob(`${soundName}.webm`, audioBlob.value!)
-  const sound = Sound.create(soundName, file)
+  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, audioBlob.value!)
+  const sound = Sound.create('recording', file)
   editorCtx.project.addSound(sound)
-  closeRecorder()
+  emit('saved', sound)
 }
 
 const resetRecording = () => {
   audioBlob.value = null
   wavesurfer.empty()
-}
-
-const closeRecorder = () => {
-  emit('saved')
 }
 </script>
 

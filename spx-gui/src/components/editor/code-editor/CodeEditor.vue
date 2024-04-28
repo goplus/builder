@@ -17,10 +17,10 @@
     <div class="snippets-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div class="snippets">
+        <!-- TODO: use snippet detail as title -->
         <UITagButton
           v-for="(snippet, i) in activeCategory.snippets"
           :key="i"
-          :title="snippet.detail"
           @click="handleSnippetClick(snippet)"
         >
           {{ snippet.label }}
@@ -174,7 +174,9 @@ const thumbnailStyle = computed(
 }
 
 .snippets-wrapper {
-  flex: 1 0 90px;
+  // 162px is the max width of snippet buttons, use 162px as base width
+  // to keep snippets-wrapper's width stable when switch among different snippet categories
+  flex: 1 0 162px;
   padding: 12px;
   background-color: var(--ui-color-grey-300);
 
@@ -192,7 +194,7 @@ const thumbnailStyle = computed(
 }
 
 .code-text-editor-wrapper {
-  flex: 3 1 300px;
+  flex: 5 1 300px;
   min-width: 0;
   padding: 12px;
 }

@@ -45,3 +45,9 @@ export function useAsyncComputed<T>(getter: () => Promise<T>) {
   })
   return r
 }
+
+/** Do math round with given decimal places */
+export function round(num: number, decimalPlaceNum = 0) {
+  const factor = 10 ** decimalPlaceNum
+  return Math.round(num * factor) / factor
+}

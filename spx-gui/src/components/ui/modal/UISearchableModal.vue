@@ -3,7 +3,7 @@
 -->
 
 <template>
-  <UIModal :visible="visible" @update:visible="handleUpdateShow">
+  <UIModal :visible="visible" :auto-focus="false" @update:visible="handleUpdateShow">
     <div class="container">
       <div class="header">
         <h4 class="title">

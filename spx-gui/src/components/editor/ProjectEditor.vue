@@ -36,7 +36,7 @@ const editorCtx = useEditorCtx()
   flex-direction: column;
 }
 .sider {
-  flex: 0 0 40%;
+  flex: 0 0 492px;
   min-width: 0;
   display: flex;
   flex-direction: column;

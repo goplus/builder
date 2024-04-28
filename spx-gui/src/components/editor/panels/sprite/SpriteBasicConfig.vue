@@ -18,8 +18,8 @@
     <UINumberInput
       type="number"
       :min="0"
-      :value="sprite.size * 100"
-      @update:value="(s) => sprite.setSize((s ?? 100) / 100)"
+      :value="sizePercent"
+      @update:value="handleSizePercentChange"
     >
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
       <template #suffix>%</template>
@@ -56,8 +56,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
-import { isLibraryEnabled } from '@/utils/utils'
+import { isLibraryEnabled, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { useAddAssetToLibrary } from '@/components/asset'
@@ -76,6 +77,15 @@ function handleNameEdit() {
     sprite: props.sprite,
     project: props.project
   })
+}
+
+// use `round` to avoid `0.07 * 100 = 7.000000000000001`
+// TODO: use some 3rd-party tool like [Fraction.js](https://github.com/rawify/Fraction.js)
+const sizePercent = computed(() => round(props.sprite.size * 100))
+
+function handleSizePercentChange(s: any) {
+  if (s == null) return
+  props.sprite.setSize(round(s / 100, 2))
 }
 
 const addToLibrary = useAddAssetToLibrary()

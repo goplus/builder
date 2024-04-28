@@ -117,7 +117,8 @@ import {
   UIMenu,
   UIMenuGroup,
   UIMenuItem,
-  UIIcon
+  UIIcon,
+  useConfirmDialog
 } from '@/components/ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
@@ -166,7 +167,17 @@ async function handleNewProject() {
   router.push(getProjectEditorRoute(name))
 }
 
+const confirm = useConfirmDialog()
+
 async function handleImportProjectFile() {
+  await confirm({
+    title: i18n.t({ en: 'Import project file', zh: '导入项目文件' }),
+    content: i18n.t({
+      en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
+      zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
+    }),
+    confirmText: i18n.t({ en: 'Continue', zh: '继续' })
+  })
   const file = await selectFile({ accept: '.zip' })
   await props.project!.loadZipFile(file)
 }

@@ -2,6 +2,8 @@ import * as monaco from 'monaco-editor'
 
 export type Snippet = monaco.languages.CompletionItem
 
+// TODO: detail info for snippets
+
 // motion snippet
 export const stepSnippet: Snippet = {
   label: 'step',
@@ -125,8 +127,7 @@ export const saySnippet: Snippet = {
   insertText: 'say ${1:}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a say function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 export const thinkSnippet: Snippet = {
@@ -134,38 +135,33 @@ export const thinkSnippet: Snippet = {
   insertText: 'think ${1:}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a think function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const setCostumeSnippet: Snippet = {
   label: 'setCostume',
   insertText: 'setCostume ${1:costumeName}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a setCostume function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const nextCostumeSnippet: Snippet = {
   label: 'nextCostume',
   insertText: 'nextCostume',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a nextCostume function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const prevCostumeSnippet: Snippet = {
   label: 'prevCostume',
   insertText: 'prevCostume',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a prevCostume function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const animateSnippet: Snippet = {
   label: 'animate',
   insertText: 'animate ${1:name}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a animate function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 export const startSceneSnippet: Snippet = {
@@ -173,82 +169,71 @@ export const startSceneSnippet: Snippet = {
   insertText: 'startScene ${1:costumeName}, ${2:wait}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a startScene function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const nextSceneSnippet: Snippet = {
   label: 'nextScene',
   insertText: 'nextScene ${1:condition}',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a nextScene function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const CameraSnippet: Snippet = {
   label: 'Camera',
   insertText: 'Camera',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a Camera function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const changeSizeSnippet: Snippet = {
   label: 'changeSize',
   insertText: 'changeSize ${1:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a changeSize function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const setSizeSnippet: Snippet = {
   label: 'setSize',
   insertText: 'setSize ${1:G}, ${2:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a setSize function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const clearGraphEffectsSnippet: Snippet = {
   label: 'clearGraphEffects',
   insertText: 'clearGraphEffects',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is clearGraphEffects function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const showSnippet: Snippet = {
   label: 'show',
   insertText: 'show',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is show function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const hideSnippet: Snippet = {
   label: 'hide',
   insertText: 'hide',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is hide function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const gotoFrontSnippet: Snippet = {
   label: 'gotoFront',
   insertText: 'gotoFront',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is gotoFront function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 export const gotoBackSnippet: Snippet = {
   label: 'gotoBack',
   insertText: 'gotoBack',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is gotoBack function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const goBackLayersSnippet: Snippet = {
   label: 'goBackLayers',
   insertText: 'goBackLayers ${1:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is goBackLayers function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 // sound snippet
@@ -258,46 +243,40 @@ export const playSnippet: Snippet = {
   insertText: 'play ${1:S}, ${2:condition}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'play function with condition'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const stopAllSoundsSnippet: Snippet = {
   label: 'stopAllSounds',
   insertText: 'stopAllSounds',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is stopAllSounds function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const changeEffectSnippet: Snippet = {
   label: 'changeEffect',
   insertText: 'changeEffect ${1:S}, ${2:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is changeEffect function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const setEffectSnippet: Snippet = {
   label: 'setEffect',
   insertText: 'setEffect ${1:S}, ${2:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is setEffect function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const clearSoundEffectSnippet: Snippet = {
   label: 'clearSoundEffect',
   insertText: 'clearSoundEffect',
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is clearSoundEffect function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const changeVolumeSnippet: Snippet = {
   label: 'changeVolume',
   insertText: 'changeVolume ${1:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is changeVolume function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 export const setVolumeSnippet: Snippet = {
@@ -305,8 +284,7 @@ export const setVolumeSnippet: Snippet = {
   insertText: 'setVolume ${1:N}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is setVolume function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 // control snippet
 
@@ -315,8 +293,7 @@ export const waitSnippet: Snippet = {
   insertText: 'wait ${1:seconds}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a wait function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 
 export const forSnippet: Snippet = {
@@ -324,64 +301,56 @@ export const forSnippet: Snippet = {
   insertText: 'for ${1:} {\n\t${2:}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a for function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const forRangeSnippet: Snippet = {
   label: 'forr',
   insertText: 'for range :${1:N} {\n\t${2:code}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a for range function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const stopSnippet: Snippet = {
   label: 'stop',
   insertText: 'stop ${1:all}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a stop function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const onClonedSnippet: Snippet = {
   label: 'onCloned',
   insertText: 'onCloned => {\n\t${1:param}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a onCloned function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const cloneSnippet: Snippet = {
   label: 'clone',
   insertText: 'clone ${1:param}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a clone function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const destroySnippet: Snippet = {
   label: 'destroy',
   insertText: 'destroy ${1:param}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a destroy function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const dieSnippet: Snippet = {
   label: 'die',
   insertText: 'die ${1:param}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a die function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const setDyingSnippet: Snippet = {
   label: 'setDying',
   insertText: 'setDying ${1:param}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Event,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a setDying function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 // event snippet
 export const onStartSnippet: Snippet = {
@@ -389,16 +358,14 @@ export const onStartSnippet: Snippet = {
   insertText: 'onStart => {\n\t${1:condition}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is onStart Function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const onAnyKeySnippet: Snippet = {
   label: 'onAnyKey',
   insertText: 'onAnyKey ${1:key} => {\n\t${2:condition}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is onAnyKey Function'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const onKeySnippet: Snippet = {
   label: 'onKey',
@@ -419,8 +386,7 @@ export const onClickSnippet: Snippet = {
   insertText: 'onClick => {\n\t${1:condition}\t\n}',
   insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
   kind: monaco.languages.CompletionItemKind.Function,
-  range: new monaco.Range(1, 1, 1, 1),
-  detail: 'This is a click event'
+  range: new monaco.Range(1, 1, 1, 1)
 }
 export const onMsgSnippet: Snippet = {
   label: 'onMsg',

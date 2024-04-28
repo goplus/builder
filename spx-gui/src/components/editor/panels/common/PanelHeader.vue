@@ -6,7 +6,7 @@
     <div class="main">
       <slot></slot>
     </div>
-    <UIDropdown trigger="click" placement="bottom-end">
+    <UIDropdown trigger="click" placement="bottom-end" :offset="{ x: 0, y: 16 }">
       <template #trigger>
         <div class="add">
           <UIIcon type="plus" />

@@ -23,6 +23,7 @@ import type { Size } from '@/models/common'
 import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useSpritesReady } from './common'
+import { round } from '@/utils/utils'
 
 const props = defineProps<{
   sprite: Sprite
@@ -105,7 +106,7 @@ function konva2Spx({ x, y, rotation, scaleX }: KonvaAttrs): SpxAttrs {
     x: round(x - props.mapSize.width / 2),
     y: round(props.mapSize.height / 2 - y),
     heading: resolveDegree(round(rotation + 90)),
-    size: round(scaleX * bitmapResolution.value)
+    size: round(scaleX * bitmapResolution.value, 2)
   }
 }
 
@@ -127,10 +128,5 @@ function resolveDegree(num: number) {
   if (num >= 180) num = num - 360
   if (num < -180) num = num + 360
   return num
-}
-
-/** Rounded to two decimal places */
-function round(num: number) {
-  return Math.round(num * 100) / 100
 }
 </script>

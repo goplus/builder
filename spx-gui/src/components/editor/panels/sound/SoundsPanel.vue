@@ -14,7 +14,7 @@
       </UIMenu>
     </template>
     <template #details>
-      <SoundRecorderModal v-model:visible="recorderVisible" />
+      <SoundRecorderModal v-model:visible="recorderVisible" @saved="handleRecorded" />
       <PanelList>
         <UIEmpty v-if="sounds.length === 0">
           {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
@@ -88,24 +88,29 @@ function handleSoundClick(sound: Sound) {
 const handleUpload = useMessageHandle(
   async () => {
     const audio = await selectAudio()
-    const project = editorCtx.project
     const file = fromNativeFile(audio)
     const sound = Sound.create(stripExt(audio.name), file)
-    project.addSound(sound)
+    editorCtx.project.addSound(sound)
+    editorCtx.select('sound', sound.name)
   },
   { en: 'Upload failed', zh: '上传失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-function handleChoose() {
-  addAssetFromLibrary(editorCtx.project, AssetType.Sound)
+async function handleChoose() {
+  const sound = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
+  editorCtx.select('sound', sound.name)
 }
 
 const recorderVisible = ref(false)
 
 function handleRecord() {
   recorderVisible.value = true
+}
+
+function handleRecorded(sound: Sound) {
+  editorCtx.select('sound', sound.name)
 }
 </script>
 

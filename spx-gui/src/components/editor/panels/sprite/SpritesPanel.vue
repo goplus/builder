@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { selectImgs } from '@/utils/file'
+import { selectImg } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Costume } from '@/models/costume'
 import { stripExt } from '@/utils/path'
@@ -94,24 +94,22 @@ function handleSpriteClick(sprite: Sprite) {
 
 const handleUpload = useMessageHandle(
   async () => {
-    const imgs = await selectImgs()
-    const project = editorCtx.project
-    const spriteName = imgs.length === 1 ? stripExt(imgs[0].name) : ''
-    const sprite = Sprite.create(spriteName)
-    for (const img of imgs) {
-      const file = fromNativeFile(img)
-      const costume = Costume.create(stripExt(img.name), file)
-      sprite.addCostume(costume)
-    }
-    project.addSprite(sprite)
+    // When we support costume list & edit, we should allow user to choose multiple images (for multiple costumes) here
+    const img = await selectImg()
+    const sprite = Sprite.create(stripExt(img.name))
+    const costume = Costume.create('default', fromNativeFile(img))
+    sprite.addCostume(costume)
+    editorCtx.project.addSprite(sprite)
+    editorCtx.select('sprite', sprite.name)
   },
   { en: 'Upload failed', zh: '上传失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-function handleChoose() {
-  addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+async function handleChoose() {
+  const sprite = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+  editorCtx.select('sprite', sprite.name)
 }
 </script>
 

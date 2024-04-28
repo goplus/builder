@@ -1,5 +1,5 @@
 <template>
-  <NModal :to="attachTo" :show="visible" @update:show="handleUpdateShow">
+  <NModal :to="attachTo" :show="visible" :auto-focus="autoFocus" @update:show="handleUpdateShow">
     <div :class="['container', `size-${size || 'medium'}`]">
       <slot></slot>
     </div>
@@ -13,6 +13,7 @@ export type ModalSize = 'small' | 'medium' | 'large' | 'full'
 defineProps<{
   size?: ModalSize
   visible?: boolean
+  autoFocus?: boolean
 }>()
 
 const emit = defineEmits<{

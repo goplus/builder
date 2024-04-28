@@ -4,10 +4,11 @@
     :placement="placement"
     :trigger="trigger"
     :show="visible"
-    :x="x"
-    :y="y"
+    :x="pos?.x"
+    :y="pos?.y"
     :to="attachTo"
     :show-arrow="false"
+    :style="{ marginTop: offset.y + 'px', marginLeft: offset.x + 'px' }"
     raw
   >
     <template #trigger>
@@ -23,21 +24,25 @@ import { usePopupContainer } from './utils'
 
 export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
 export type Trigger = 'click' | 'hover' | 'manual'
+export type Pos = {
+  x: number
+  y: number
+}
 
 withDefaults(
   defineProps<{
     placement?: Placement
     trigger?: Trigger
     visible?: boolean
-    x?: number
-    y?: number
+    pos?: Pos
+    offset?: Pos
   }>(),
   {
     placement: 'bottom',
     trigger: 'hover',
     visible: undefined,
-    x: undefined,
-    y: undefined
+    pos: undefined,
+    offset: () => ({ x: 0, y: 8 })
   }
 )
 
