@@ -65,7 +65,11 @@ gop build -o spx-backend ./cmd/spx-backend
 
 ### 4. Quick Play
 
-Import the zip(04-Bullet.zip in builder/tools/04-Bullet.zip)in the top button 'Import - upload', and click the run button in the stage, then wait for a few seconds.
+To start using Go+ Builder, you need to create a new project. You can do this by clicking on the `New Project` button, which is located at the bottom of the home page, and inside the drop-down menu that looks like a folder in the top navigation bar.
+
+After creating a new project, you will find that the project already contains some preset content. You can explore this content to understand the structure and functionality of the project.
+
+Remember, the preset content in the new project is just a starting point. Feel free to modify it and add your own content to make the project your own.
 
 ## API Documentation
 
