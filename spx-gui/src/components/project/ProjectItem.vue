@@ -15,7 +15,7 @@ import { computed } from 'vue'
 import dayjs from 'dayjs'
 import { useFileUrl } from '@/utils/file'
 import { Project } from '@/models/project'
-import defaultSpriteSvg from '@/assets/default-sprite.svg'
+import defaultSpritePng from '@/assets/default-sprite.png'
 
 const props = defineProps<{
   inHomepage?: boolean
@@ -25,7 +25,7 @@ const props = defineProps<{
 const imgSrc = useFileUrl(() => props.project.sprites[0]?.costume?.img)
 
 const imgStyle = computed(() => {
-  const backgroundImage = imgSrc.value || defaultSpriteSvg
+  const backgroundImage = imgSrc.value || defaultSpritePng
   return { backgroundImage: `url("${backgroundImage}")` }
 })
 
