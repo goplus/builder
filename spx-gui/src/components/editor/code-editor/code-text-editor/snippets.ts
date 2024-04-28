@@ -2,6 +2,8 @@ import * as monaco from 'monaco-editor'
 
 export type Snippet = monaco.languages.CompletionItem
 
+// TODO: detail info for snippets
+
 // motion snippet
 export const stepSnippet: Snippet = {
   label: 'step',

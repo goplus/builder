@@ -17,10 +17,10 @@
     <div class="snippets-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div class="snippets">
+        <!-- TODO: use snippet detail as title -->
         <UITagButton
           v-for="(snippet, i) in activeCategory.snippets"
           :key="i"
-          :title="snippet.detail"
           @click="handleSnippetClick(snippet)"
         >
           {{ snippet.label }}
