@@ -15,7 +15,12 @@
     <UINumberInput type="number" :value="sprite.y" @update:value="(y) => sprite.setY(y ?? 0)">
       <template #prefix>Y:</template>
     </UINumberInput>
-    <UINumberInput type="number" :min="0" :value="size" @update:value="handleSizeChange">
+    <UINumberInput
+      type="number"
+      :min="0"
+      :value="sizePercent"
+      @update:value="handleSizePercentChange"
+    >
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
       <template #suffix>%</template>
     </UINumberInput>
@@ -51,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
 import { isLibraryEnabled, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
@@ -58,7 +64,6 @@ import type { Project } from '@/models/project'
 import { useAddAssetToLibrary } from '@/components/asset'
 import VisibleInput from '../common/VisibleInput.vue'
 import SpriteRenameModal from './SpriteRenameModal.vue'
-import { computed } from 'vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -76,9 +81,9 @@ function handleNameEdit() {
 
 // use `round` to avoid `0.07 * 100 = 7.000000000000001`
 // TODO: use some 3rd-party tool like [Fraction.js](https://github.com/rawify/Fraction.js)
-const size = computed(() => round(props.sprite.size * 100))
+const sizePercent = computed(() => round(props.sprite.size * 100))
 
-function handleSizeChange(s: any) {
+function handleSizePercentChange(s: any) {
   if (s == null) return
   props.sprite.setSize(round(s / 100, 2))
 }
