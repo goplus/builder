@@ -168,6 +168,12 @@ export class Project extends Disposble {
     sounds.forEach((s) => this.addSound(s))
   }
 
+  /** Export metadata & files without revision state
+   * (version, cTime, uTime, hasUnsyncedChanges).
+   * States version, cTime and uTime are updated after syncing to cloud
+   * by the server, which are not supposed to trigger unsynced changes
+   * watcher.
+   */
   private exportWithoutRevisionState(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,

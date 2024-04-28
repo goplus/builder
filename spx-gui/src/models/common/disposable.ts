@@ -13,7 +13,7 @@ export class Disposble {
   }
 
   dispose() {
-    while (this._disposers.length) {
+    while (this._disposers.length > 0) {
       this._disposers.pop()?.()
     }
   }
