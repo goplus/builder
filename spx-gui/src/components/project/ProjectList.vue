@@ -10,7 +10,7 @@
       v-for="project in projects?.data"
       :key="project.id"
       :in-homepage="inHomepage"
-      :project="transformProjectDataToProject(project)"
+      :project-data="project"
       @click="() => emit('selected', project)"
     />
   </ul>
@@ -21,9 +21,7 @@ import { ref } from 'vue'
 import { UILoading, UIError, UIEmpty } from '@/components/ui'
 import ProjectItem from './ProjectItem.vue'
 import { listProject, type ProjectData } from '@/apis/project'
-import { Project } from '@/models/project'
 import { useQuery } from '@/utils/exception'
-import { useUserStore } from '@/stores/user'
 
 defineProps<{
   inHomepage?: boolean
@@ -45,16 +43,6 @@ const {
   en: 'Failed to list project',
   zh: '获取项目列表失败'
 })
-
-const userStore = useUserStore()
-
-// FIXME: slow zone
-function transformProjectDataToProject(projectData: ProjectData) {
-  if (userStore.userInfo == null) throw new Error('login required')
-  let newProject = new Project()
-  newProject.loadFromCloud(userStore.userInfo.name, projectData.name)
-  return newProject
-}
 </script>
 
 <style lang="scss" scoped>
