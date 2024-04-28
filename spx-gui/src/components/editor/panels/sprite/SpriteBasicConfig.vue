@@ -107,5 +107,6 @@ const addToLibrary = useAddAssetToLibrary()
   display: flex;
   gap: 4px;
   align-items: center;
+  word-break: keep-all;
 }
 </style>

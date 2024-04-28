@@ -49,12 +49,12 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { Sprite } from '@/models/sprite'
+import { Sprite, type SpriteInits } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
 import { uploadFiles } from '@/models/common/cloud'
 import { filename } from '@/utils/path'
-import defaultSpriteSvg from '@/assets/default-sprite.svg'
+import defaultSpritePng from '@/assets/default-sprite.png'
 import defaultBackdropImg from '@/assets/default-backdrop.png'
 import { Backdrop } from '@/models/backdrop'
 import { Project } from '@/models/project'
@@ -96,9 +96,9 @@ function createFile(url: string) {
 const handleSubmit = useMessageHandle(
   async () => {
     // make default project
-    const spriteFile = createFile(defaultSpriteSvg)
-    const spritePos = { x: -71, y: 75 } // offset to make sprite centered. depending on the size of spriteFile
-    const sprite = Sprite.create('', undefined, spritePos)
+    const spriteFile = createFile(defaultSpritePng)
+    const spriteInits: SpriteInits = { x: -71, y: 75, size: 0.5 } // offset & size to make sprite centered. depending on the size of spriteFile
+    const sprite = Sprite.create('', undefined, spriteInits)
     sprite.addCostume(Costume.create('', spriteFile))
     const backdropFile = createFile(defaultBackdropImg)
     const backdrop = Backdrop.create('', backdropFile)
