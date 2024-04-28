@@ -96,6 +96,10 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
       }
     }
   }
+
+  &:focus {
+    outline: 2px solid var(--ui-color-primary-700);
+  }
 }
 
 .type-primary {
