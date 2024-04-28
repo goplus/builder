@@ -73,6 +73,12 @@ export async function asset2Sound(assetData: PartialAssetData) {
 }
 
 function validateAssetName(name: string) {
+  if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
+  if (name.length > 100)
+    return {
+      en: 'The name is too long (maximum is 100 characters)',
+      zh: '名字长度超出限制（最多 100 个字符）'
+    }
   // spx code is go+ code, and the asset name will compiled to an identifier of go+
   // so asset name rules is depend on the identifier rules of go+.
   const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/

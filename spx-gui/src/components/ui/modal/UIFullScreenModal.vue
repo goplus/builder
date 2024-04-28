@@ -1,5 +1,5 @@
 <template>
-  <NModal :to="attachTo" :show="visible" @update:show="handleUpdateShow">
+  <NModal :to="attachTo" auto-focus :show="visible" @update:show="handleUpdateShow">
     <div class="container">
       <slot></slot>
     </div>
