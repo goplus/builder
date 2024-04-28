@@ -4,32 +4,42 @@
       <div class="img" :style="imgStyle"></div>
     </div>
     <div class="info">
-      <p class="name">{{ project.name }}</p>
+      <p class="name">{{ projectData.name }}</p>
       <p class="creation-time">{{ creationTime }}</p>
     </div>
   </li>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import dayjs from 'dayjs'
 import { useFileUrl } from '@/utils/file'
-import { Project } from '@/models/project'
 import defaultSpritePng from '@/assets/default-sprite.png'
+import type { ProjectData } from '@/apis/project'
+import { Project } from '@/models/project'
 
 const props = defineProps<{
   inHomepage?: boolean
-  project: Project
+  projectData: ProjectData
 }>()
 
-const imgSrc = useFileUrl(() => props.project.sprites[0]?.costume?.img)
+const project = ref<Project | null>(null)
+
+watchEffect((onCleanup) => {
+  let p = new Project()
+  p.loadFromCloud(props.projectData)
+  onCleanup(() => p.dispose())
+  project.value = p
+})
+
+const imgSrc = useFileUrl(() => project.value?.sprites[0]?.costume?.img)
 
 const imgStyle = computed(() => {
   const backgroundImage = imgSrc.value || defaultSpritePng
   return { backgroundImage: `url("${backgroundImage}")` }
 })
 
-const creationTime = computed(() => dayjs(props.project.cTime!).format('YYYY.MM.DD HH:mm'))
+const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.MM.DD HH:mm'))
 </script>
 
 <style lang="scss" scoped>

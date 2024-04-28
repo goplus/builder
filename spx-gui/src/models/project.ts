@@ -7,7 +7,7 @@ import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
-import { IsPublic } from '@/apis/project'
+import { IsPublic, type ProjectData } from '@/apis/project'
 import { Disposble } from './common/disposable'
 import { toConfig, type Files, fromConfig } from './common/file'
 import { Stage, type RawStageConfig } from './stage'
@@ -216,8 +216,13 @@ export class Project extends Disposble {
   // TODO: Some go+-builder-specific file format (instead of zip) support?
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string) {
-    const { metadata, files } = await cloudHelper.load(owner, name)
+  async loadFromCloud(owner: string, name: string): Promise<void>
+  async loadFromCloud(projectData: ProjectData): Promise<void>
+  async loadFromCloud(ownerOrProjectData: string | ProjectData, name?: string) {
+    const { metadata, files } =
+      typeof ownerOrProjectData === 'string'
+        ? await cloudHelper.load(ownerOrProjectData, name!)
+        : cloudHelper.parseProjectData(ownerOrProjectData)
     await this.load(metadata, files)
   }
 

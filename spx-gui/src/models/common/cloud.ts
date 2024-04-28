@@ -24,7 +24,7 @@ export async function save(metadata: Metadata, files: Files) {
   return parseProjectData(projectData)
 }
 
-function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
+export function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
   const files = getFiles(fileUrls)
   return { metadata, files }
 }
