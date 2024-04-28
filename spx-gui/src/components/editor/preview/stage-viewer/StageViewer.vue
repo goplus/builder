@@ -22,7 +22,7 @@
         <SpriteTransformer />
       </v-layer>
     </v-stage>
-    <UIDropdown trigger="manual" :visible="menuVisible" v-bind="menuPos" placement="bottom-start">
+    <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
         <UIMenuItem @click="moveSprite('up')">{{
           $t({ en: 'Bring forward', zh: '向前移动' })

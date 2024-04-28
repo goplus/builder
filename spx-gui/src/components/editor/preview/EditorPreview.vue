@@ -32,7 +32,7 @@ const editorCtx = useEditorCtx()
 
 <style scoped lang="scss">
 .editor-preview {
-  height: 40vh;
+  height: 419px;
   display: flex;
   flex-direction: column;
   position: relative;

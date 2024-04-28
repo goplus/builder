@@ -1,14 +1,7 @@
 <template>
   <div class="container">
     <div v-if="scratchAssets.sprites.length">
-      <div>
-        {{
-          $t({
-            en: 'Sprites',
-            zh: '精灵'
-          })
-        }}
-      </div>
+      <h4 class="title">{{ $t({ en: 'Sprites', zh: '精灵' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.sprites"
@@ -25,14 +18,7 @@
       </NGrid>
     </div>
     <div v-if="scratchAssets.sounds.length">
-      <div>
-        {{
-          $t({
-            en: 'Sounds',
-            zh: '声音'
-          })
-        }}
-      </div>
+      <h4 class="title">{{ $t({ en: 'Sounds', zh: '声音' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.sounds"
@@ -45,14 +31,7 @@
     </div>
 
     <div v-if="scratchAssets.backdrops.length">
-      <div>
-        {{
-          $t({
-            en: 'Backdrops',
-            zh: '背景'
-          })
-        }}
-      </div>
+      <h4 class="title">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.backdrops"
@@ -208,6 +187,10 @@ const importSelected = () => {
   flex-direction: column;
   gap: 20px;
   color: var(--ui-color-grey-1000);
+}
+
+.title {
+  margin-bottom: 8px;
 }
 
 .import-button {

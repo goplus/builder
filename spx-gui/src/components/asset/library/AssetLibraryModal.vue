@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    style="width: 1020px"
+    style="width: 1064px"
     :visible="props.visible"
     :title="$t(title)"
     @update:visible="emit('cancelled')"
@@ -209,7 +209,7 @@ async function handleSelect(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 auto;
+  flex: 0 0 136px;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);
@@ -229,8 +229,7 @@ async function handleSelect(asset: AssetData) {
   color: var(--ui-color-grey-900);
 }
 .content {
-  min-height: 200px;
-  max-height: 400px;
+  height: 505px;
   overflow-y: auto;
 }
 .asset-list {
