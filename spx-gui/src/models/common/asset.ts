@@ -10,13 +10,13 @@ import type { Stage } from '../stage'
 
 export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files'>
 
-export type AssetModel<T extends AssetType = AssetType> = (
-  T extends AssetType.Sound ? Sound : (
-    T extends AssetType.Sprite ? Sprite : (
-      T extends AssetType.Backdrop ? Backdrop : never
-    )
-  )
-)
+export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
+  ? Sound
+  : T extends AssetType.Sprite
+    ? Sprite
+    : T extends AssetType.Backdrop
+      ? Backdrop
+      : never
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   const fileUrls = await uploadFiles(sprite.export())

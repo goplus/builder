@@ -42,7 +42,7 @@ withDefaults(
     trigger: 'hover',
     visible: undefined,
     pos: undefined,
-    offset: () =>({ x: 0, y: 8 })
+    offset: () => ({ x: 0, y: 8 })
   }
 )
 

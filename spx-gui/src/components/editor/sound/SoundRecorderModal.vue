@@ -31,7 +31,7 @@
 import { ref } from 'vue'
 import { UIFormModal, UIConfirmDialog } from '@/components/ui'
 import SoundRecorder from './SoundRecorder.vue'
-import type { Sound } from '@/models/sound';
+import type { Sound } from '@/models/sound'
 
 const recordStarted = ref(false)
 const showDialog = ref(false)
@@ -42,7 +42,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:visible': [boolean]
-  'saved': [sound: Sound]
+  saved: [sound: Sound]
 }>()
 
 const handleUpdateShowRecorder = (visible: boolean) => {
