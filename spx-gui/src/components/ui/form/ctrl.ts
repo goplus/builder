@@ -9,6 +9,11 @@ export type FormValidator<V> = (v: V) => FormValidatorReturned
 
 export type FormValidated = { hasError: boolean }
 
+export enum FormTrigger {
+  debouncedInput = 'debounced-input',
+  delayedBlur = 'delayed-blur'
+}
+
 export type FormCtrl<V = { [p: string]: unknown }> = {
   _nFormRef: Ref<FormInst | null>
   _nFormRules: FormRules
@@ -34,7 +39,7 @@ export function useForm<V extends { [p: string]: unknown }>(input: {
         if (result == null) return
         throw new Error(result)
       },
-      trigger: ['input', 'blur'] // TODO: we need to define our own trigger logic
+      trigger: [FormTrigger.debouncedInput, FormTrigger.delayedBlur]
     }
   })
 
