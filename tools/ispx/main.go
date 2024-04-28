@@ -1,6 +1,7 @@
 package main
 
 //go:generate qexp -outdir pkg github.com/goplus/spx
+//go:generate qexp -outdir pkg github.com/hajimehoshi/ebiten/v2
 
 import (
 	"archive/zip"
@@ -10,6 +11,7 @@ import (
 	"syscall/js"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
+	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
 	"github.com/goplus/builder/ispx/zipfs"
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
