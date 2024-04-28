@@ -1,9 +1,10 @@
 <template>
   <UIDialog
+    style="width: 445px"
     :visible="visible"
     :type="type"
     :title="title"
-    style="width: 445px"
+    :mask-closable="false"
     @update:visible="emit('cancelled')"
   >
     <div>{{ content }}</div>

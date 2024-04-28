@@ -1,5 +1,11 @@
 <template>
-  <NModal :to="attachTo" :show="visible" :auto-focus="autoFocus" @update:show="handleUpdateShow">
+  <NModal
+    :to="attachTo"
+    :show="visible"
+    :auto-focus="autoFocus"
+    :mask-closable="maskClosable"
+    @update:show="handleUpdateShow"
+  >
     <div :class="['container', `size-${size || 'medium'}`]">
       <slot></slot>
     </div>
@@ -14,6 +20,7 @@ defineProps<{
   size?: ModalSize
   visible?: boolean
   autoFocus?: boolean
+  maskClosable?: boolean
 }>()
 
 const emit = defineEmits<{
