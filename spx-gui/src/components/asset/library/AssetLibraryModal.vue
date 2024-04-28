@@ -93,7 +93,7 @@ import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import type { Project } from '@/models/project'
-import { asset2Backdrop, asset2Sound, asset2Sprite } from '@/models/common/asset'
+import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
@@ -101,14 +101,14 @@ import BackdropItem from './BackdropItem.vue'
 const categories = [categoryAll, ...categoriesWithoutAll]
 
 const props = defineProps<{
-  visible: boolean
   type: AssetType
+  visible: boolean
   project: Project
 }>()
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [AssetModel]
 }>()
 
 const searchInput = ref('')
@@ -170,22 +170,24 @@ const handleConfirm = useMessageHandle(
       case AssetType.Sprite: {
         const sprite = await asset2Sprite(asset)
         props.project.addSprite(sprite)
+        emit('resolved', sprite)
         break
       }
       case AssetType.Backdrop: {
         const backdrop = await asset2Backdrop(asset)
         props.project.stage.setBackdrop(backdrop)
+        emit('resolved', backdrop)
         break
       }
       case AssetType.Sound: {
-        const sprite = await asset2Sound(asset)
-        props.project.addSound(sprite)
+        const sound = await asset2Sound(asset)
+        props.project.addSound(sound)
+        emit('resolved', sound)
         break
       }
       default:
         throw new Error('unknow asset type')
     }
-    emit('resolved')
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )

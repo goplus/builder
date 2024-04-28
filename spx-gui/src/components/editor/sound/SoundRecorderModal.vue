@@ -10,7 +10,7 @@
     center-title
     @update:visible="handleUpdateShowRecorder"
   >
-    <SoundRecorder @saved="handleClose" @record-started="recordStarted = true" />
+    <SoundRecorder @saved="handleSaved" @record-started="recordStarted = true" />
     <UIConfirmDialog
       :visible="showDialog"
       type="warning"
@@ -23,7 +23,7 @@
       "
       :confirm-text="$t({ en: 'Quit', zh: '退出' })"
       @cancelled="showDialog = false"
-      @resolved="handleClose"
+      @resolved="closeModal()"
     />
   </UIFormModal>
 </template>
@@ -31,6 +31,7 @@
 import { ref } from 'vue'
 import { UIFormModal, UIConfirmDialog } from '@/components/ui'
 import SoundRecorder from './SoundRecorder.vue'
+import type { Sound } from '@/models/sound';
 
 const recordStarted = ref(false)
 const showDialog = ref(false)
@@ -41,6 +42,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:visible': [boolean]
+  'saved': [sound: Sound]
 }>()
 
 const handleUpdateShowRecorder = (visible: boolean) => {
@@ -48,16 +50,21 @@ const handleUpdateShowRecorder = (visible: boolean) => {
     if (recordStarted.value) {
       showDialog.value = true
     } else {
-      handleClose()
+      closeModal()
     }
   } else {
     emit('update:visible', true)
   }
 }
 
-const handleClose = () => {
+function closeModal() {
   emit('update:visible', false)
   recordStarted.value = false
   showDialog.value = false
+}
+
+function handleSaved(sound: Sound) {
+  emit('saved', sound)
+  closeModal()
 }
 </script>

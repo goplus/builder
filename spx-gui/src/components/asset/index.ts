@@ -9,11 +9,12 @@ import { parseScratchFileAssets } from '@/utils/scratch'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
+import type { AssetModel } from '@/models/common/asset'
 
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
-  return function addAssetFromLibrary(project: Project, type: AssetType) {
-    return invokeAssetLibraryModal({ project, type }) as Promise<void>
+  return function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
+    return invokeAssetLibraryModal({ project, type }) as Promise<AssetModel<T>>
   }
 }
 
