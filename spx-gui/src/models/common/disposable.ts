@@ -13,9 +13,8 @@ export class Disposble {
   }
 
   dispose() {
-    const disposers = this._disposers.splice(0)
-    for (const disposer of disposers) {
-      disposer()
+    while (this._disposers.length) {
+      this._disposers.pop()?.()
     }
   }
 }

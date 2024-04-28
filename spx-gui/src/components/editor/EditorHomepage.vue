@@ -236,10 +236,10 @@ watchEffect((onCleanup) => {
         }),
         async confirmHandler() {
           await project.value!.saveToCloud()
-          await clear(LOCAL_CACHE_KEY)
         }
       })
-        .then(() => {
+        .then(async () => {
+          await clear(LOCAL_CACHE_KEY)
           next()
         })
         .catch(async () => {

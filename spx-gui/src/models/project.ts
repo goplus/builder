@@ -168,15 +168,12 @@ export class Project extends Disposble {
     sounds.forEach((s) => this.addSound(s))
   }
 
-  private exportWithoutHasUnsyncedChanges(): [Metadata, Files] {
+  private exportWithoutRevisionState(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,
       name: this.name,
-      isPublic: this.isPublic,
-      version: this.version,
-      cTime: this.cTime,
-      uTime: this.uTime
+      isPublic: this.isPublic
     }
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
@@ -190,7 +187,10 @@ export class Project extends Disposble {
 
   /** Export metadata & files */
   export(): [Metadata, Files] {
-    const [metadata, files] = this.exportWithoutHasUnsyncedChanges()
+    const [metadata, files] = this.exportWithoutRevisionState()
+    metadata.version = this.version
+    metadata.cTime = this.cTime
+    metadata.uTime = this.uTime
     metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
     return [metadata, files]
   }
@@ -250,11 +250,10 @@ export class Project extends Disposble {
   startWatchToSetHasUnsyncedChanges() {
     this.addDisposer(
       watch(
-        () => this.exportWithoutHasUnsyncedChanges(),
+        () => this.exportWithoutRevisionState(),
         () => {
           this.hasUnsyncedChanges = true
-        },
-        { flush: 'sync' } // so that `saveToCloud` correctly sets `hasUnsyncedChanges` to `false`
+        }
       )
     )
   }
