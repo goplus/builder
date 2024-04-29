@@ -10,6 +10,11 @@
   </li>
 </template>
 
+<script lang="ts">
+export const projectItemSize = { width: 168, height: 182 },
+  projectItemSizeInHomepage = { width: 216, height: 230 }
+</script>
+
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
 import dayjs from 'dayjs'
