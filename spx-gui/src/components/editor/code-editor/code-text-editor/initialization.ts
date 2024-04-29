@@ -1,15 +1,15 @@
-import { onMounted } from 'vue'
-import * as monaco from 'monaco-editor'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import { allSnippets } from './snippets'
 import { useUIVariables } from '@/components/ui'
+import type { IRange, languages } from 'monaco-editor'
 
 function completionItem(
-  range: monaco.IRange | monaco.languages.CompletionItemRanges
-): monaco.languages.CompletionItem[] {
+  range: IRange | languages.CompletionItemRanges,
+  monaco: typeof import('monaco-editor')
+): languages.CompletionItem[] {
   return [
     ...keywords.map((keyword) => ({
       label: keyword,
@@ -47,7 +47,10 @@ async function initFormatWasm() {
 export const defaultThemeName = 'spx-default-theme'
 
 /** Global initializations for monaco editor */
-function init({ color }: ReturnType<typeof useUIVariables>) {
+export function initMonaco(
+  monaco: typeof import('monaco-editor'),
+  { color }: ReturnType<typeof useUIVariables>
+) {
   self.MonacoEnvironment = {
     getWorker() {
       return new EditorWorker()
@@ -216,24 +219,11 @@ function init({ color }: ReturnType<typeof useUIVariables>) {
         startColumn: word.startColumn,
         endColumn: word.endColumn
       }
-      const suggestions: monaco.languages.CompletionItem[] = completionItem(range)
+      const suggestions: languages.CompletionItem[] = completionItem(range, monaco)
       return { suggestions }
     }
   })
 
   // tempararily disable in-browser format
   // initFormat()
-}
-
-let inited = false
-
-/** Ensure global initializations for monaco editor */
-export function useMonacoInitialization() {
-  const uiVariables = useUIVariables()
-
-  onMounted(() => {
-    if (inited) return
-    init(uiVariables)
-    inited = true
-  })
 }
