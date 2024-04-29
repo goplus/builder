@@ -19,24 +19,22 @@ const emit = defineEmits<{
 }>()
 
 const editorElement = ref<HTMLElement | null>(null)
-const monacoInstance = shallowRef<{
-  monaco: typeof import('monaco-editor')
-  editor: editor.IStandaloneCodeEditor
-} | null>(null)
+
+const monaco = shallowRef<typeof import('monaco-editor')>()
+const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 
 const uiVariables = useUIVariables()
 const { t, lang } = useI18n()
 
-watchEffect(async (onClenaup) => {
-  loader.config({
-    'vs/nls': {
-      availableLanguages: {
-        '*': lang.value === 'zh' ? 'zh-cn' : 'en'
-      }
+loader.config({
+  'vs/nls': {
+    availableLanguages: {
+      '*': lang.value === 'zh' ? 'zh-cn' : 'en'
     }
-  })
-  // Config will only be effective once.
+  }
+})
 
+watchEffect(async (onClenaup) => {
   const monaco_ = await loader.init()
   initMonaco(monaco_, uiVariables)
   const editor = monaco_.editor.create(editorElement.value!, {
@@ -84,10 +82,8 @@ watchEffect(async (onClenaup) => {
     emit('update:value', editor.getValue())
   })
 
-  monacoInstance.value = {
-    monaco: monaco_,
-    editor
-  }
+  monaco.value = monaco_
+  monacoEditor.value = editor
 
   onClenaup(() => {
     editor.dispose()
@@ -97,17 +93,17 @@ watchEffect(async (onClenaup) => {
 watch(
   () => props.value,
   (val) => {
-    if (monacoInstance.value) {
-      const editorValue = monacoInstance.value.editor.getValue()
+    if (monaco.value && monacoEditor.value) {
+      const editorValue = monacoEditor.value.getValue()
       if (val !== editorValue) {
-        monacoInstance.value.editor.setValue(val)
+        monacoEditor.value.setValue(val)
       }
     }
   }
 )
 
 function insertSnippet(snippet: languages.CompletionItem, position?: Position) {
-  const editor = monacoInstance.value?.editor
+  const editor = monacoEditor.value
   if (editor == null) return
 
   if (position) {
@@ -119,14 +115,14 @@ function insertSnippet(snippet: languages.CompletionItem, position?: Position) {
 }
 
 async function format() {
-  const editor = monacoInstance.value?.editor
+  const editor = monacoEditor.value
   if (editor == null) return
 
   const res = await onlineFormatSpxCode(editor.getValue())
   if (res.Body) {
     editor.setValue(res.Body)
   } else {
-    monacoInstance.value?.monaco.editor.setModelMarkers(editor.getModel()!, 'owner', [
+    monaco.value?.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
         message: res.Error.Msg,
         severity: MarkerSeverity.Warning,
