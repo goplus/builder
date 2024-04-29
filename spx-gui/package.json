@@ -13,6 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@monaco-editor/loader": "^1.4.0",
     "dayjs": "^1.11.10",
     "file-saver": "^2.0.5",
     "js-pkce": "^1.4.0",

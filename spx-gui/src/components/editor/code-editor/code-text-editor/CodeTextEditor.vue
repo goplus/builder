@@ -3,10 +3,13 @@
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, onMounted, ref, shallowRef, watch } from 'vue'
-import * as monaco from 'monaco-editor'
+import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
-import { useMonacoInitialization, defaultThemeName } from './initialization'
+import { initMonaco, defaultThemeName } from './initialization'
+import loader from '@monaco-editor/loader'
+import { KeyCode, languages, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
+import { useUIVariables } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
 
 const props = defineProps<{
   value: string
@@ -16,12 +19,25 @@ const emit = defineEmits<{
 }>()
 
 const editorElement = ref<HTMLElement | null>(null)
-const monacoEditor = shallowRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 
-useMonacoInitialization()
+const monaco = shallowRef<typeof import('monaco-editor')>()
+const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 
-onMounted(() => {
-  const editor = monaco.editor.create(editorElement.value!, {
+const uiVariables = useUIVariables()
+const { t, lang } = useI18n()
+
+loader.config({
+  'vs/nls': {
+    availableLanguages: {
+      '*': lang.value === 'zh' ? 'zh-cn' : 'en'
+    }
+  }
+})
+
+watchEffect(async (onClenaup) => {
+  const monaco_ = await loader.init()
+  initMonaco(monaco_, uiVariables)
+  const editor = monaco_.editor.create(editorElement.value!, {
     value: props.value, // set the initial value of the editor
     theme: defaultThemeName,
     language: 'spx', // define the language mode
@@ -56,8 +72,8 @@ onMounted(() => {
 
   editor.addAction({
     id: 'format',
-    label: 'Format Code',
-    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL],
+    label: t({ zh: '格式化', en: 'Format Code' }),
+    keybindings: [KeyMod.CtrlCmd | KeyCode.KeyL],
     contextMenuGroupId: 'navigation',
     run: format
   })
@@ -66,17 +82,18 @@ onMounted(() => {
     emit('update:value', editor.getValue())
   })
 
+  monaco.value = monaco_
   monacoEditor.value = editor
-})
 
-onUnmounted(() => {
-  monacoEditor.value?.dispose()
+  onClenaup(() => {
+    editor.dispose()
+  })
 })
 
 watch(
   () => props.value,
   (val) => {
-    if (monacoEditor.value) {
+    if (monaco.value && monacoEditor.value) {
       const editorValue = monacoEditor.value.getValue()
       if (val !== editorValue) {
         monacoEditor.value.setValue(val)
@@ -85,7 +102,7 @@ watch(
   }
 )
 
-function insertSnippet(snippet: monaco.languages.CompletionItem, position?: monaco.Position) {
+function insertSnippet(snippet: languages.CompletionItem, position?: Position) {
   const editor = monacoEditor.value
   if (editor == null) return
 
@@ -105,10 +122,10 @@ async function format() {
   if (res.Body) {
     editor.setValue(res.Body)
   } else {
-    monaco.editor.setModelMarkers(editor.getModel()!, 'owner', [
+    monaco.value?.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
         message: res.Error.Msg,
-        severity: monaco.MarkerSeverity.Warning,
+        severity: MarkerSeverity.Warning,
         startLineNumber: res.Error.Line,
         startColumn: res.Error.Column,
         endLineNumber: res.Error.Column,
