@@ -141,9 +141,34 @@ export class Sprite extends Disposble {
   }
 
   /**
-   * Create instance with default inits
-   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   * Adjust position & size to fit current project
+   * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
    */
+  async autoFit() {
+    const { costumes, _project: project } = this
+    if (project == null) throw new Error('`autoFit` should be called after added to a project')
+    if (costumes.length > 0) {
+      const [mapSize, costumeSize] = await Promise.all([
+        project.stage.getMapSize(),
+        costumes[0].getSize()
+      ])
+      let size = this.size
+      if (mapSize != null) {
+        // ensure the sprite's size no larger than half-of-mapSize
+        size = Math.min(
+          mapSize.width / 2 / costumeSize.width,
+          mapSize.height / 2 / costumeSize.height,
+          this.size
+        )
+        this.setSize(size)
+      }
+      // ensure the sprite placed in the center of stage, TODO: consider heading
+      this.setX((-costumeSize.width * size) / 2)
+      this.setY((costumeSize.height * size) / 2)
+    }
+  }
+
+  /** Create sprite within builder (by user actions) */
   static create(nameBase: string, code?: string, inits?: SpriteInits) {
     return new Sprite(getSpriteName(null, nameBase), code ?? '', {
       heading: 90,

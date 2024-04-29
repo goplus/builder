@@ -100,6 +100,7 @@ const handleUpload = useMessageHandle(
     const costume = Costume.create('default', fromNativeFile(img))
     sprite.addCostume(costume)
     editorCtx.project.addSprite(sprite)
+    await sprite.autoFit()
     editorCtx.select('sprite', sprite.name)
   },
   { en: 'Upload failed', zh: '上传失败' }
