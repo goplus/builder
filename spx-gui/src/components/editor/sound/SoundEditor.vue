@@ -1,10 +1,10 @@
 <template>
   <EditorHeader :color="uiVariables.color.sound.main">
-    {{ sound.name }}
+    <AssetName>{{ sound.name }}</AssetName>
   </EditorHeader>
   <div class="main">
     <div class="name">
-      {{ sound.name }}
+      <AssetName>{{ sound.name }}</AssetName>
       <UIIcon
         class="edit-icon"
         :title="$t({ en: 'Rename', zh: '重命名' })"
@@ -39,6 +39,7 @@ import { isLibraryEnabled } from '@/utils/utils'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
 import { useAddAssetToLibrary } from '@/components/asset'
+import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'

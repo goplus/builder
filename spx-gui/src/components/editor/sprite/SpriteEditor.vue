@@ -1,6 +1,7 @@
 <template>
   <EditorHeader :color="uiVariables.color.sprite.main">
-    {{ sprite.name }} / {{ $t({ en: 'Code', zh: '代码' }) }}
+    <AssetName>{{ sprite.name }}</AssetName>
+    &nbsp;/ {{ $t({ en: 'Code', zh: '代码' }) }}
     <template #extra>
       <FormatButton v-if="codeEditor != null" :code-editor="codeEditor" />
     </template>
@@ -12,6 +13,7 @@
 import { ref } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import { useUIVariables } from '@/components/ui'
+import AssetName from '@/components/asset/AssetName.vue'
 import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../FormatButton.vue'
 import EditorHeader from '../EditorHeader.vue'

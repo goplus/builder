@@ -1,6 +1,6 @@
 <template>
   <div class="line name">
-    {{ sprite.name }}
+    <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
       class="edit-icon"
       :title="$t({ en: 'Rename', zh: '重命名' })"
@@ -62,6 +62,7 @@ import { isLibraryEnabled, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
 import { useAddAssetToLibrary } from '@/components/asset'
+import AssetName from '@/components/asset/AssetName.vue'
 import VisibleInput from '../common/VisibleInput.vue'
 import SpriteRenameModal from './SpriteRenameModal.vue'
 
