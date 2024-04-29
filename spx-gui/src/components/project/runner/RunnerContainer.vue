@@ -1,26 +1,21 @@
 <template>
   <div class="container">
     <div class="header">
-      <div>
+      <div class="header-left"></div>
+      <div class="project-name">
         {{ project?.name }}
       </div>
-      <UITooltip placement="bottom">
-        <template #trigger>
-          <button>
-            <UIIcon type="rotate" @click="handleRerun" />
-          </button>
-        </template>
-        {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
-      </UITooltip>
-      <UITooltip placement="bottom">
-        <template #trigger>
-          <button>
-            <UIIcon type="share" @click="handleShare" />
-          </button>
-        </template>
-        {{ $t({ en: 'Share', zh: '分享' }) }}
-      </UITooltip>
-      <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
+      <div class="header-right">
+        <UIButton class="button">
+          <UIIcon type="rotate" @click="handleRerun" />
+          {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
+        </UIButton>
+        <UIButton class="button" type="boring">
+          <UIIcon type="share" @click="handleShare" />
+          {{ $t({ en: 'Share', zh: '分享' }) }}
+        </UIButton>
+        <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
+      </div>
     </div>
     <div :class="['main', displayMode, { expanded }]">
       <div class="runner-container">
@@ -63,7 +58,7 @@ import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import ProjectRunner from './ProjectRunner.vue'
 import { useSaveAndShareProject, useShareProject } from '@/components/project'
-import { UIIcon, UIModalClose, UITooltip } from '@/components/ui'
+import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
 
 const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
 const emit = defineEmits<{
@@ -140,15 +135,8 @@ button {
   padding: 0;
 }
 
-.header button > .ui-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--ui-color-primary-500);
-}
-
 .close {
-  position: absolute;
-  right: 20px;
+  transform: scale(1.2);
 }
 
 .container {
@@ -157,17 +145,45 @@ button {
   height: 100vh;
   overflow: hidden;
 }
+
 .header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 40px;
+  gap: 32px;
   font-size: 16px;
   font-weight: 500;
   border-bottom: 1px solid var(--ui-color-grey-400);
   height: 56px;
-  position: relative;
   color: var(--ui-color-title);
+}
+
+.header-left {
+  flex: 1;
+  flex-basis: 30%;
+}
+
+.project-name {
+  flex: 1;
+  flex-basis: 40%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-right {
+  flex: 1;
+  flex-basis: 30%;
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.button > .ui-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .runner-container {
