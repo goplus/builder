@@ -170,6 +170,7 @@ const handleConfirm = useMessageHandle(
       case AssetType.Sprite: {
         const sprite = await asset2Sprite(asset)
         props.project.addSprite(sprite)
+        await sprite.autoFit()
         emit('resolved', sprite)
         break
       }

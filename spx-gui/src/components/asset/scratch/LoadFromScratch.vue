@@ -47,7 +47,12 @@
         </NGridItem>
       </NGrid>
     </div>
-    <UIButton size="large" class="import-button" @click="importSelected">
+    <UIButton
+      size="large"
+      class="import-button"
+      :loading="importSelected.isLoading.value"
+      @click="importSelected.fn"
+    >
       {{
         $t({
           en: 'Import',
@@ -66,11 +71,12 @@ import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/sc
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { File as LazyFile } from '@/models/common/file'
+import { useMessageHandle } from '@/utils/exception'
 import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
 import { ref, watch } from 'vue'
-import { UIButton, useMessage } from '@/components/ui'
+import { UIButton } from '@/components/ui'
 import ScratchItemContainer from './ScratchItemContainer.vue'
 import SoundItem from './SoundItem.vue'
 
@@ -82,8 +88,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   imported: []
 }>()
-
-const message = useMessage()
 
 const selected = ref<{
   backdrops: Set<ExportedScratchFile>
@@ -141,44 +145,45 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
   )
 }
 
-const importSprite = (asset: ExportedScratchSprite) => {
+const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map((costume) =>
     Costume.create(costume.name, new LazyFile(costume.name, () => costume.blob.arrayBuffer()))
   )
-  const sprite = Sprite.create(asset.name, '')
+  const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
     sprite.addCostume(costume)
   }
   props.project.addSprite(sprite)
-  message.success(`Imported sprite ${asset.name}`)
+  await sprite.autoFit()
+  return sprite
 }
 
 const importSound = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = Sound.create(asset.name, file)
   props.project.addSound(sound)
-  message.success(`Imported sound ${file.name}`)
 }
 
 const importBackdrop = (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = Backdrop.create(asset.name, file)
   props.project.stage.setBackdrop(backdrop)
-  message.success(`Imported backdrop ${file.name}`)
 }
 
-const importSelected = () => {
-  for (const sprite of selected.value.sprites) {
-    importSprite(sprite)
-  }
-  for (const sound of selected.value.sounds) {
-    importSound(sound)
-  }
-  for (const backdrop of selected.value.backdrops) {
-    importBackdrop(backdrop)
-  }
-  emit('imported')
-}
+const importSelected = useMessageHandle(
+  async () => {
+    const { sprites, sounds, backdrops } = selected.value
+    await Promise.all([
+      ...Array.from(sprites).map(importSprite),
+      ...Array.from(sounds).map(importSound),
+      ...Array.from(backdrops).map(importBackdrop)
+    ])
+    emit('imported')
+  },
+  // TODO: more detailed error message
+  { en: 'Error encountered when importing assets', zh: '素材导入遇到错误' },
+  { en: 'Assets imprted', zh: '素材导入成功' }
+)
 </script>
 
 <style lang="scss" scoped>

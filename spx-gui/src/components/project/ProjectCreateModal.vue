@@ -49,7 +49,7 @@ import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { Sprite, type SpriteInits } from '@/models/sprite'
+import { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
 import { uploadFiles } from '@/models/common/cloud'
@@ -96,15 +96,12 @@ function createFile(url: string) {
 const handleSubmit = useMessageHandle(
   async () => {
     // make default project
-    const spriteFile = createFile(defaultSpritePng)
-    const spriteInits: SpriteInits = { x: -71, y: 75, size: 0.5 } // offset & size to make sprite centered. depending on the size of spriteFile
-    const sprite = Sprite.create('', undefined, spriteInits)
-    sprite.addCostume(Costume.create('', spriteFile))
-    const backdropFile = createFile(defaultBackdropImg)
-    const backdrop = Backdrop.create('', backdropFile)
+    const sprite = Sprite.create('')
+    sprite.addCostume(Costume.create('', createFile(defaultSpritePng)))
     const project = new Project()
-    project.stage.setBackdrop(backdrop)
+    project.stage.setBackdrop(Backdrop.create('', createFile(defaultBackdropImg)))
     project.addSprite(sprite)
+    await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
     const files = project.export()[1]
     const fileUrls = await uploadFiles(files)

@@ -129,7 +129,7 @@ export class Stage {
   }
 
   /** Dicide map size based on map config & backdrop information */
-  async getMapSize(): Promise<Size> {
+  async getMapSize(): Promise<Size | null> {
     const { mapWidth: width, mapHeight: height } = this
     if (width != null && height != null) {
       return { width, height }
@@ -137,7 +137,7 @@ export class Stage {
     if (this.backdrop != null) {
       return await this.backdrop.getSize()
     }
-    return { width: 0, height: 0 }
+    return null
   }
 
   constructor(code = '', inits?: Partial<StageInits>) {
