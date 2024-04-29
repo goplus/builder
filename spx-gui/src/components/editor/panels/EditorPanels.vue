@@ -11,9 +11,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { watchEffect, ref, watch, shallowRef } from 'vue'
 import { UICard } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import type { Sound } from '@/models/sound'
+import type { Sprite } from '@/models/sprite'
 import SoundsPanel from './sound/SoundsPanel.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
 import StagePanel from './stage/StagePanel.vue'
@@ -33,6 +35,39 @@ watch(
   }
 )
 
+const lastSelectedSprite = shallowRef<Sprite | null>(null)
+watchEffect(() => {
+  if (editorCtx.selectedSprite != null) {
+    lastSelectedSprite.value = editorCtx.selectedSprite
+  }
+})
+watchEffect(() => {
+  // lastSelectedSprite removed from project
+  // TODO: a simple & reliable way to listen to sprite-removing is required
+  if (
+    lastSelectedSprite.value != null &&
+    !editorCtx.project.sprites.includes(lastSelectedSprite.value)
+  ) {
+    lastSelectedSprite.value = null
+  }
+})
+
+const lastSelectedSound = shallowRef<Sound | null>(null)
+watchEffect(() => {
+  if (editorCtx.selectedSound != null) {
+    lastSelectedSound.value = editorCtx.selectedSound
+  }
+})
+watchEffect(() => {
+  // lastSelectedSound removed from project
+  if (
+    lastSelectedSound.value != null &&
+    !editorCtx.project.sounds.includes(lastSelectedSound.value)
+  ) {
+    lastSelectedSound.value = null
+  }
+})
+
 watch(
   () => expandedPanel.value,
   (expanded) => {
@@ -41,13 +76,16 @@ watch(
       editorCtx.selected?.type !== 'sprite' &&
       editorCtx.project.sprites.length > 0
     ) {
-      editorCtx.select('sprite', editorCtx.project.sprites[0].name)
+      editorCtx.select(
+        'sprite',
+        lastSelectedSprite.value?.name ?? editorCtx.project.sprites[0].name
+      )
     } else if (
       expanded === 'sounds' &&
       editorCtx.selected?.type !== 'sound' &&
       editorCtx.project.sounds.length > 0
     ) {
-      editorCtx.select('sound', editorCtx.project.sounds[0].name)
+      editorCtx.select('sound', lastSelectedSound.value?.name ?? editorCtx.project.sounds[0].name)
     }
   }
 )
