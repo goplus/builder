@@ -21,7 +21,7 @@
         class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
-        @play="handlePlay"
+        :play-handler="handlePlay"
         @stop="handleStop"
       />
     </div>

@@ -6,7 +6,7 @@
       </div>
     </div>
     <div class="asset-name">{{ asset.name }}</div>
-    <div class="duration">{{ formattedDuration }}</div>
+    <div class="duration">{{ formattedDuration || '&nbsp;' }}</div>
   </ScratchItemContainer>
 </template>
 <script setup lang="ts">

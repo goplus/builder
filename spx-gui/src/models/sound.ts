@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { extname, join, resolve } from '@/utils/path'
+import { adaptAudio } from '@/utils/spx'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 import { getSoundName, validateSoundName } from './common/asset'
 import type { Project } from './project'
@@ -56,8 +57,9 @@ export class Sound {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(nameBase: string, file: File, inits?: SoundInits) {
-    return new Sound(getSoundName(null, nameBase), file, inits)
+  static async create(nameBase: string, file: File, inits?: SoundInits) {
+    const adaptedFile = await adaptAudio(file)
+    return new Sound(getSoundName(null, nameBase), adaptedFile, inits)
   }
 
   static async load(name: string, files: Files) {

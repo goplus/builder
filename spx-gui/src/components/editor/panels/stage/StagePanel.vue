@@ -61,7 +61,7 @@ const handleUpload = useMessageHandle(
   async () => {
     const img = await selectImg()
     const file = fromNativeFile(img)
-    const backdrop = Backdrop.create(stripExt(img.name), file)
+    const backdrop = await Backdrop.create(stripExt(img.name), file)
     editorCtx.project.stage.setBackdrop(backdrop)
   },
   { en: 'Upload failed', zh: '上传失败' }

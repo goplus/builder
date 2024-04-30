@@ -75,20 +75,6 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
     height: var(--ui-font-size-text);
   }
 
-  &.loading .icon {
-    animation: button-icon-spin 1s linear infinite;
-    @keyframes button-icon-spin {
-      from {
-        transform-origin: 50% 50%;
-        transform: rotate(0);
-      }
-      to {
-        transform-origin: 50% 50%;
-        transform: rotate(360deg);
-      }
-    }
-  }
-
   &:focus {
     outline: 2px solid var(--ui-color-primary-700);
   }

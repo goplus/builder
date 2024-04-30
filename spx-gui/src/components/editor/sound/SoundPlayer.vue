@@ -5,7 +5,7 @@
     :playing="playing != null"
     :progress="playing?.progress ?? 0"
     :color="color"
-    @play="handlePlay"
+    :play-handler="handlePlay"
     @stop="handleStop"
   />
 </template>

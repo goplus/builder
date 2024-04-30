@@ -97,7 +97,7 @@ const handleUpload = useMessageHandle(
     // When we support costume list & edit, we should allow user to choose multiple images (for multiple costumes) here
     const img = await selectImg()
     const sprite = Sprite.create(stripExt(img.name))
-    const costume = Costume.create('default', fromNativeFile(img))
+    const costume = await Costume.create('default', fromNativeFile(img))
     sprite.addCostume(costume)
     editorCtx.project.addSprite(sprite)
     await sprite.autoFit()

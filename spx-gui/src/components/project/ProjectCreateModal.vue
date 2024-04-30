@@ -97,9 +97,11 @@ const handleSubmit = useMessageHandle(
   async () => {
     // make default project
     const sprite = Sprite.create('')
-    sprite.addCostume(Costume.create('', createFile(defaultSpritePng)))
+    const costume = await Costume.create('', createFile(defaultSpritePng))
+    sprite.addCostume(costume)
     const project = new Project()
-    project.stage.setBackdrop(Backdrop.create('', createFile(defaultBackdropImg)))
+    const backdrop = await Backdrop.create('', createFile(defaultBackdropImg))
+    project.stage.setBackdrop(backdrop)
     project.addSprite(sprite)
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
