@@ -5,7 +5,7 @@
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <ProjectList @selected="$emit('resolved', $event)" />
+    <ProjectList :style="{ maxHeight: '570px' }" @selected="$emit('resolved', $event)" />
   </UIFormModal>
 </template>
 

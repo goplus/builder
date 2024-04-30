@@ -23,8 +23,10 @@
             {{ $t({ en: 'My projects', zh: '我的项目' }) }}
           </div>
           <UIDivider />
-          <ProjectList :in-homepage="true" @selected="handleSelected" />
-          <div class="create-project-button">
+          <div class="body">
+            <ProjectList :in-homepage="true" @selected="handleSelected" />
+          </div>
+          <div class="footer">
             <UIButton type="primary" size="large" icon="plus" @click="handleCreate">
               {{ $t({ en: 'New Project', zh: '新建项目' }) }}
             </UIButton>
@@ -305,7 +307,14 @@ async function handleCreate() {
     padding: 15px 24px;
   }
 
-  .create-project-button {
+  .body {
+    flex: 1 1 0;
+    overflow: hidden;
+    display: flex;
+    padding: 20px 24px 0;
+  }
+
+  .footer {
     position: absolute;
     left: 0;
     right: 0;
