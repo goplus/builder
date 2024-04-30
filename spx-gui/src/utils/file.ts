@@ -29,7 +29,6 @@ const ext2mime: Record<string, string | undefined> = {
 export const getMimeFromExt = (ext: string) => ext2mime[ext]
 
 export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
-// TODO: check audio support for spx in browser
 export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 
 export type FileSelectOptions = {
@@ -77,9 +76,21 @@ export function selectImgs() {
   return selectFiles({ accept })
 }
 
-/** Let the user select single audio file */
-export function selectAudio() {
-  const accept = audioExts.map((ext) => `.${ext}`).join(',')
+/** Get audio exts of formats that current browser support (to decode / play) */
+async function getSupportedAudioExts() {
+  // `audio.canPlayType` seems to be more reliable than `MediaRecorder.isTypeSupported` & `navigator.mediaCapabilities.decodingInfo`
+  const audio = new Audio()
+  return (await Promise.all(audioExts.map(async (ext) => {
+    const mimeType = getMimeFromExt(ext)
+    if (mimeType == null) return null
+    return audio.canPlayType(mimeType) !== '' ? ext : null
+  }))).filter(Boolean) as string[]
+}
+
+/** Let the user select single audio file (supported by spx) */
+export async function selectAudio() {
+  const supportedExts = await getSupportedAudioExts()
+  const accept = supportedExts.map((ext) => `.${ext}`).join(',')
   return selectFile({ accept })
 }
 

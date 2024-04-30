@@ -88,8 +88,7 @@ function handleSoundClick(sound: Sound) {
 const handleUpload = useMessageHandle(
   async () => {
     const audio = await selectAudio()
-    const file = fromNativeFile(audio)
-    const sound = Sound.create(stripExt(audio.name), file)
+    const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
     editorCtx.project.addSound(sound)
     editorCtx.select('sound', sound.name)
   },

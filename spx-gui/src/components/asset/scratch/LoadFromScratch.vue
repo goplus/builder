@@ -70,7 +70,7 @@ import { Sprite } from '@/models/sprite'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
-import { File as LazyFile } from '@/models/common/file'
+import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
@@ -138,16 +138,12 @@ const selectBackdrop = (backdrop: ExportedScratchFile) => {
 }
 
 const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
-  return new LazyFile(
-    `${scratchFile.name}.${scratchFile.extension}`,
-    () => scratchFile.blob.arrayBuffer(),
-    {}
-  )
+  return fromBlob(`${scratchFile.name}.${scratchFile.extension}`, scratchFile.blob)
 }
 
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = asset.costumes.map((costume) =>
-    Costume.create(costume.name, new LazyFile(costume.name, () => costume.blob.arrayBuffer()))
+    Costume.create(costume.name, scratchToSpxFile(costume))
   )
   const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
@@ -158,9 +154,9 @@ const importSprite = async (asset: ExportedScratchSprite) => {
   return sprite
 }
 
-const importSound = (asset: ExportedScratchFile) => {
+const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const sound = Sound.create(asset.name, file)
+  const sound = await Sound.create(asset.name, file)
   props.project.addSound(sound)
 }
 

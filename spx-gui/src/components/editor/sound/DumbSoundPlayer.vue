@@ -2,7 +2,7 @@
 
 <template>
   <div class="sound-play" :style="colorCssVars">
-    <div v-show="!playing" class="play" @click.stop="emit('play')">
+    <div v-show="!playing" class="play" @click.stop="handlePlay.fn">
       <UIIcon class="icon" type="play" />
     </div>
     <div v-show="playing" class="stop" @click.stop="emit('stop')">
@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useMessageHandle } from '@/utils/exception'
 import { UIIcon } from '@/components/ui'
 import type { Color } from '@/components/ui/tokens/colors'
 
@@ -24,12 +25,17 @@ const props = defineProps<{
   playing: boolean
   progress: number
   color: Color
+  playHandler: () => Promise<void>
 }>()
 
 const emit = defineEmits<{
-  play: []
   stop: []
 }>()
+
+const handlePlay = useMessageHandle(
+  () => props.playHandler(),
+  { en: 'Play audio failed', zh: '无法播放音频' }
+)
 
 const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0

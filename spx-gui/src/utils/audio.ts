@@ -1,37 +1,10 @@
-/*
- * @Author: Yao xinyue kother@qq.com
- * @Date: 2024-03-06 19:52:28
- * @LastEditors: Yao xinyue
- * @LastEditTime: 2024-03-06 19:52:28
- * @FilePath: src/util/audio.ts
- * @Description: Audio Utils
- */
-
 import { computed, ref, watchEffect } from 'vue'
 
-/**
- * Converts an array of audio chunks into an AudioBuffer.
- *
- * @param {Blob[]} audioChunks - An array of audio chunks, typically collected during media recording.
- * @param {string} mimeType - The MIME type of the audio, based on your MediaRecorder settings.
- * @returns {Promise<AudioBuffer>} A promise that resolves to an AudioBuffer constructed from the input audio chunks.
- */
-export const convertAudioChunksToAudioBuffer = async (
-  audioChunks: Blob[],
-  mimeType: string
-): Promise<AudioBuffer> => {
-  const audioBlob: Blob = new Blob(audioChunks, { type: mimeType })
-  const arrayBuffer: ArrayBuffer = await blobToArrayBuffer(audioBlob)
-  return await decodeAudioData(arrayBuffer)
-}
+const audioContext = new AudioContext()
 
-/**
- * Converts an AudioBuffer into a WAV Blob.
- *
- * @param {AudioBuffer} audioBuffer - The AudioBuffer to be converted.
- * @returns {Blob} A Blob in WAV format representing the input AudioBuffer.
- */
-export const audioBufferToWavBlob = (audioBuffer: AudioBuffer): Blob => {
+/** Convert arbitrary-type (supported by current browser) audio content to type-`audio/wav` content. */
+export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
+  const audioBuffer = await audioContext.decodeAudioData(ab)
   const numOfChan = audioBuffer.numberOfChannels
   const length = audioBuffer.length * numOfChan * 2 + 44
   const buffer = new ArrayBuffer(length)
@@ -79,36 +52,7 @@ export const audioBufferToWavBlob = (audioBuffer: AudioBuffer): Blob => {
     view.setUint32(pos, data, true)
     pos += 4
   }
-  return new Blob([view], { type: 'audio/wav' })
-}
-
-/**
- * Converts a Blob to an ArrayBuffer.
- *
- * @param {Blob} blob - The Blob to be converted.
- * @returns {Promise<ArrayBuffer>} A promise that resolves to an ArrayBuffer representing the Blob's data.
- */
-const blobToArrayBuffer = (blob: Blob): Promise<ArrayBuffer> => {
-  return new Promise((resolve, reject) => {
-    const reader: FileReader = new FileReader()
-    reader.onloadend = () => {
-      resolve(reader.result as ArrayBuffer)
-    }
-    reader.onerror = reject
-    reader.readAsArrayBuffer(blob)
-  })
-}
-
-/**
- * Decodes an ArrayBuffer into an AudioBuffer using the AudioContext.
- *
- * @param {ArrayBuffer} arrayBuffer - The ArrayBuffer to be decoded.
- * @returns {Promise<AudioBuffer>} A promise that resolves to an AudioBuffer representing the decoded audio data.
- */
-const decodeAudioData = (arrayBuffer: ArrayBuffer): Promise<AudioBuffer> => {
-  const audioContext: AudioContext = new (window.AudioContext ||
-    (window as any).webkitAudioContext)()
-  return audioContext.decodeAudioData(arrayBuffer)
+  return buffer
 }
 
 const formatDuration = (seconds: number): string => {

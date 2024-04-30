@@ -1,5 +1,5 @@
 <template>
-  <UIModal :visible="visible" auto-focus @update:visible="handleUpdateShow">
+  <UIModal :visible="visible" auto-focus mask-closable @update:visible="handleUpdateShow">
     <div class="container">
       <div class="header">
         <div :class="['title', { center: centerTitle }]">

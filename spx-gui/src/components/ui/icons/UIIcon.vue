@@ -1,7 +1,7 @@
 <template v-html="typeIconMap[type]">
   <!-- TODO: is there any way to avoid the wrapper `<div>`? -->
   <!-- eslint-disable-next-line vue/no-lone-template, vue/no-v-html -->
-  <div class="ui-icon" v-html="typeIconMap[type]"></div>
+  <div class="ui-icon" :class="{ spinning: type === 'loading' }" v-html="typeIconMap[type]"></div>
 </template>
 
 <script setup lang="ts">
@@ -69,6 +69,20 @@ defineProps<{
   :deep(svg) {
     width: 100%;
     height: 100%;
+  }
+}
+
+.spinning {
+  animation: ui-icon-spinning 1s linear infinite;
+  @keyframes ui-icon-spinning {
+    from {
+      transform-origin: 50% 50%;
+      transform: rotate(0);
+    }
+    to {
+      transform-origin: 50% 50%;
+      transform: rotate(360deg);
+    }
   }
 }
 </style>
