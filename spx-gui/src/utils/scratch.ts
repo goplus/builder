@@ -83,12 +83,9 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
   }
 
   for (const target of projectData.targets) {
-    const imageFiles = await convertFiles(
-      target.costumes.filter((costume) => costume.dataFormat !== 'svg')
-      // FIXME: SVG causes error
-    )
-
+    const imageFiles = await convertFiles(target.costumes)
     const soundFiles = await convertFiles(target.sounds)
+
     if (imageFiles.length > 0) {
       if (target.isStage) {
         scratchAssets.backdrops.push(...imageFiles)
