@@ -1,17 +1,24 @@
 <template>
-  <div class="ui-modal-close">
+  <div :class="['ui-modal-close', `size-${size}`]">
     <UIIcon type="close" class="icon" />
   </div>
 </template>
 
 <script setup lang="ts">
 import UIIcon from '../icons/UIIcon.vue'
+
+withDefaults(
+  defineProps<{
+    size?: 'medium' | 'large'
+  }>(),
+  {
+    size: 'medium'
+  }
+)
 </script>
 
 <style scoped lang="scss">
 .ui-modal-close {
-  width: 28px;
-  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,10 +33,25 @@ import UIIcon from '../icons/UIIcon.vue'
   &:active {
     background-color: var(--ui-color-grey-500);
   }
-}
 
-.icon {
-  width: 20px;
-  height: 20px;
+  &.size-medium {
+    width: 28px;
+    height: 28px;
+
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &.size-large {
+    width: 32px;
+    height: 32px;
+
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+  }
 }
 </style>
