@@ -1,10 +1,18 @@
 import { computed, ref, watchEffect } from 'vue'
 
-const audioContext = new AudioContext()
+let audioContext: AudioContext
+
+// Reuse single AudioContext instance, see details in https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
+// > It's recommended to create one AudioContext and reuse it instead of initializing a new one each time,
+// > and it's OK to use a single AudioContext for several different audio sources and pipeline concurrently.
+function getAudioContext() {
+  if (audioContext == null) audioContext = new AudioContext()
+  return audioContext
+}
 
 /** Convert arbitrary-type (supported by current browser) audio content to type-`audio/wav` content. */
 export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
-  const audioBuffer = await audioContext.decodeAudioData(ab)
+  const audioBuffer = await getAudioContext().decodeAudioData(ab)
   const numOfChan = audioBuffer.numberOfChannels
   const length = audioBuffer.length * numOfChan * 2 + 44
   const buffer = new ArrayBuffer(length)
