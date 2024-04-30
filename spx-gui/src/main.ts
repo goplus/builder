@@ -7,40 +7,28 @@
  * @Description:
  */
 import { createApp } from 'vue'
-import App from './App.vue'
-import { initAssets, initCodeEditor } from './plugins'
-import { initRouter } from '@/router/index'
-import { initI18n } from '@/language'
-import { addFileUrl } from './util/file'
 import VueKonva from 'vue-konva'
-import { initStore, useUserStore } from './store'
-import { serviceManager } from '@/axios'
-import { createDiscreteApi } from 'naive-ui'
 
-const { message } = createDiscreteApi(['message'])
-const initServive = async () => {
+import 'vfonts/Lato.css' // TODO: what is this for?
+import 'vfonts/FiraCode.css'
+
+import { initI18n } from './i18n'
+import App from './App.vue'
+import { initRouter } from './router'
+import { initStore, useUserStore } from './stores'
+import { client } from './apis/common'
+
+const initApiClient = async () => {
   const userStore = useUserStore()
-  serviceManager.setAccessTokenFn(userStore.getFreshAccessToken)
-  serviceManager.setNotifyErrorFn((msg: string) => {
-    message.error(msg)
-  })
+  client.setAuthProvider(userStore.getFreshAccessToken)
 }
 
 async function initApp() {
-  // const loading = createApp(Loading);
-  // loading.mount('#appLoading');
-
-  // Give priority to loading css,js resources
-  initAssets()
-  addFileUrl()
-
   const app = createApp(App)
 
   initStore(app)
-  initServive()
+  initApiClient()
   await initRouter(app)
-  await initCodeEditor()
-
   await initI18n(app)
 
   app.use(VueKonva)

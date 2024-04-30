@@ -1,0 +1,73 @@
+name: Validate (lint, test & ...)
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  spx-gui-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.1
+          cache: npm
+          cache-dependency-path: spx-gui/package-lock.json
+
+      - name: Setup Go 1.21.3
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.3'
+
+      - name: Install modules
+        working-directory: spx-gui
+        run: npm install
+
+      - name: Run Vue TSC
+        working-directory: spx-gui
+        run: npm run type-check
+
+      - name: Run ESLint
+        working-directory: spx-gui
+        run: npm run lint
+
+      - name: Build WASM
+        working-directory: spx-gui
+        run: npm run build-wasm
+
+      - name: Run Vitest
+        working-directory: spx-gui
+        run: npm run test
+
+      - name: Build
+        working-directory: spx-gui
+        run: npm run build
+
+  spx-backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go & Go+
+        uses: goplus/setup-goplus@v1
+        with:
+          go-version: '1.21.3'
+          gop-version: '1.2.5'
+
+      - name: Run unit test cases
+        working-directory: spx-backend
+        run: go test ./...

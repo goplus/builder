@@ -11,12 +11,17 @@
       }
     },
     {
-      "src": "/widgets/loader.js",
+      "src": "/widgets/(.*)",
       "headers": {
         "Cache-Control": "public,max-age=300"
       }
     },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }

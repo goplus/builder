@@ -1,7 +1,6 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": [
-    "env.d.ts",
     "src/**/*",
     "src/**/*.vue"
   ],
@@ -15,15 +14,6 @@
     "paths": {
       "@/*": [
         "src/*"
-      ],
-      "comps/*": [
-        "src/components/*"
-      ],
-      "views/*": [
-        "src/views/*"
-      ],
-      "store/*": [
-        "src/store/*"
       ]
     }
   }
