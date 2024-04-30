@@ -6,12 +6,16 @@
         {{ project?.name }}
       </div>
       <div class="header-right">
-        <UIButton class="button">
-          <UIIcon type="rotate" @click="handleRerun" />
+        <UIButton class="button" icon="rotate" @click="handleRerun">
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
-        <UIButton class="button" type="boring">
-          <UIIcon type="share" @click="handleShare" />
+        <UIButton
+          class="button"
+          type="boring"
+          icon="share"
+          :loading="handleShare.isLoading.value"
+          @click="handleShare.fn"
+        >
           {{ $t({ en: 'Share', zh: '分享' }) }}
         </UIButton>
         <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
@@ -59,6 +63,7 @@ import type { Project } from '@/models/project'
 import ProjectRunner from './ProjectRunner.vue'
 import { useSaveAndShareProject, useShareProject } from '@/components/project'
 import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
 const emit = defineEmits<{
@@ -119,13 +124,16 @@ const handleRerun = () => {
 
 const saveAndShareProject = useSaveAndShareProject()
 const shareProject = useShareProject()
-const handleShare = () => {
-  if (props.mode === 'debug') {
-    saveAndShareProject(props.project)
-  } else {
-    shareProject(props.project)
-  }
-}
+const handleShare = useMessageHandle(
+  () => {
+    if (props.mode === 'debug') {
+      return saveAndShareProject(props.project)
+    } else {
+      return shareProject(props.project)
+    }
+  },
+  { en: 'Failed to share project', zh: '分享项目失败' }
+)
 </script>
 <style lang="scss" scoped>
 button {
@@ -179,11 +187,6 @@ button {
   justify-content: flex-end;
   align-items: center;
   padding-right: 20px;
-}
-
-.button > .ui-icon {
-  width: 14px;
-  height: 14px;
 }
 
 .runner-container {
