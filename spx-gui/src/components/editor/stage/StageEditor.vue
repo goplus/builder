@@ -1,5 +1,5 @@
 <template>
-  <EditorHeader :color="uiVariables.color.sprite.main">
+  <EditorHeader :color="uiVariables.color.stage.main">
     {{ $t({ en: 'Stage', zh: '舞台' }) }} / {{ $t({ en: 'Code', zh: '代码' }) }}
     <template #extra>
       <FormatButton v-if="codeEditor != null" :code-editor="codeEditor" />
