@@ -4,6 +4,7 @@ import type { File, Files } from './common/file'
 import { resolve } from '@/utils/path'
 import { getBackdropName, validateBackdropName } from './common/asset'
 import type { Stage } from './stage'
+import { adaptImg } from '@/utils/spx'
 
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig
@@ -32,8 +33,9 @@ export class Backdrop extends Costume {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(nameBase: string, file: File, inits?: BackdropInits) {
-    return new Backdrop(getBackdropName(null, nameBase), file, inits)
+  static async create(nameBase: string, file: File, inits?: BackdropInits) {
+    const adaptedFile = await adaptImg(file)
+    return new Backdrop(getBackdropName(null, nameBase), adaptedFile, inits)
   }
 
   static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {

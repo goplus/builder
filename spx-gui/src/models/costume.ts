@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 
 import { extname, resolve } from '@/utils/path'
+import { adaptImg } from '@/utils/spx'
 import { File, type Files } from './common/file'
 import { type Size } from './common'
 import type { Sprite } from './sprite'
@@ -91,8 +92,9 @@ export class Costume {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(nameBase: string, file: File, inits?: CostumeInits) {
-    return new Costume(getCostumeName(null, nameBase), file, inits)
+  static async create(nameBase: string, file: File, inits?: CostumeInits) {
+    const adaptedFile = await adaptImg(file)
+    return new Costume(getCostumeName(null, nameBase), adaptedFile, inits)
   }
 
   static load(
