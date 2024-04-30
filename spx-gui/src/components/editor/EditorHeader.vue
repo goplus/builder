@@ -34,5 +34,6 @@ defineProps<{
   align-items: center;
   font-size: 16px;
   color: var(--ui-color-grey-100);
+  border-radius: var(--ui-border-radius-3) var(--ui-border-radius-3) 0 0;
 }
 </style>
