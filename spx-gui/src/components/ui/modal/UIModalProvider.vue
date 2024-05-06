@@ -14,7 +14,16 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, ref, shallowRef, nextTick } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  ref,
+  shallowRef,
+  nextTick,
+  type Component,
+  type Prop
+} from 'vue'
 import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
@@ -22,40 +31,49 @@ import { Cancelled } from '@/utils/exception'
 export type ModalComponentProps = {
   visible: boolean
 }
-export type ModalComponentEmits<T> = {
-  cancelled: [reason?: unknown]
-  resolved: [resolved?: T]
+export type ModalComponentEmits<Resolved> = {
+  cancelled: [reason: unknown]
+  resolved: [resolved: Resolved]
 }
 
-// TODO: improve typing
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ModalComponent<P, T> = any
+export type ModalComponent<Props extends ModalComponentProps, Resolved> = Component<
+  Props,
+  {},
+  {},
+  {},
+  {},
+  ModalComponentEmits<Resolved>
+>
 
-export type ModalHandlers<T> = {
-  resolve(resolved: T): void
+export type ModalHandlers<Resolved> = {
+  resolve(resolved: Resolved): void
   reject(e: unknown): void
 }
 
-export type ModalInfo<P extends ModalComponentProps = any, T = any> = {
+export type ModalInfo = {
   id: number
-  component: ModalComponent<P, T>
-  props: Omit<P, keyof ModalComponentProps>
-  handlers: ModalHandlers<T>
+  component: Component
+  props: any
+  handlers: ModalHandlers<any>
 }
 
-type ModalContext<P extends ModalComponentProps, T> = {
-  setCurrent(current: ModalInfo<P, T> | null): void
+type ModalContext = {
+  setCurrent(current: ModalInfo | null): void
 }
 
-const modalContextInjectKey: InjectionKey<ModalContext<any, any>> = Symbol('modal-context')
+const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
 
 let mid = 0
 
-export function useModal<P extends ModalComponentProps, T>(component: ModalComponent<P, T>) {
+export function useModal<Props extends ModalComponentProps, Resolved>(
+  component: ModalComponent<Props, Resolved>
+) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(props: Omit<P, keyof ModalComponentProps>) {
-    return new Promise<T>((resolve, reject) => {
+  return function invokeModal(
+    props: Omit<Prop<ModalComponent<Props, Resolved>>, keyof ModalComponentProps>
+  ) {
+    return new Promise<Resolved>((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
       ctx.setCurrent({ id: mid, component, props, handlers })
