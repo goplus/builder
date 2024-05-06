@@ -5,12 +5,7 @@
       {{ $t(loadError.userMessage) }}
     </UIError>
     <UIEmpty v-else-if="items.length === 0" />
-    <ul
-      v-else
-      class="list"
-      :style="{ minHeight: `${listMinHeight}px`, gap: `${gap}px` }"
-      @scroll="handleScroll"
-    >
+    <ul v-else class="list" :style="{ gap: `${gap}px` }" @scroll="handleScroll">
       <slot></slot>
       <li v-if="isFetchingMore" class="fetch-more-container">
         <UILoading />
@@ -56,8 +51,6 @@ const rows = computed(() =>
 const cols = computed(() =>
   Math.floor(((listContainerWidth.value ?? 0) + props.gap) / (props.itemSize.width + props.gap))
 )
-
-const listMinHeight = computed(() => rows.value * (props.itemSize.height + props.gap) - props.gap)
 
 const pageSize = computed(() => (rows.value + 2) * cols.value) // 2 more rows for scrolling
 const pageIndex = ref(1)
