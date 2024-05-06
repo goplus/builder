@@ -10,7 +10,11 @@ import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import type { AssetModel } from '@/models/common/asset'
+import type { ComponentProps, ModalComponentProps } from '../ui/modal/UIModalProvider.vue'
+import type { Component } from 'vue'
 
+type Test<C extends Component> = ComponentProps<C> extends ModalComponentProps<infer R> ? R : never
+type T = Test<typeof AssetLibraryModal>
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {

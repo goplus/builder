@@ -22,28 +22,18 @@ import {
   shallowRef,
   nextTick,
   type Component,
-  type Prop
+  type VNodeProps,
+  type AllowedComponentProps
 } from 'vue'
 import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
 // The Modal Component should provide API (props & emits) as following:
-export type ModalComponentProps = {
-  visible: boolean
+export type ModalComponentProps<Resolved> = {
+  readonly visible: boolean
+  onCancelled?: () => any
+  onResolved?: (resolved: Resolved) => any
 }
-export type ModalComponentEmits<Resolved> = {
-  cancelled: [reason: unknown]
-  resolved: [resolved: Resolved]
-}
-
-export type ModalComponent<Props extends ModalComponentProps, Resolved> = Component<
-  Props,
-  {},
-  {},
-  {},
-  {},
-  ModalComponentEmits<Resolved>
->
 
 export type ModalHandlers<Resolved> = {
   resolve(resolved: Resolved): void
@@ -65,14 +55,16 @@ const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context'
 
 let mid = 0
 
-export function useModal<Props extends ModalComponentProps, Resolved>(
-  component: ModalComponent<Props, Resolved>
+export type ComponentProps<C extends Component> = C extends new (...args: any) => any
+  ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
+  : never
+
+export function useModal<Resolved, C extends Component>(
+  component: ComponentProps<C> extends ModalComponentProps<Resolved> ? C : never
 ) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(
-    props: Omit<Prop<ModalComponent<Props, Resolved>>, keyof ModalComponentProps>
-  ) {
+  return function invokeModal(props: Omit<ComponentProps<C>, keyof ModalComponentProps<Resolved>>) {
     return new Promise<Resolved>((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
