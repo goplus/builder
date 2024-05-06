@@ -26,13 +26,19 @@ const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const uiVariables = useUIVariables()
 const { t, lang } = useI18n()
 
-loader.config({
-  'vs/nls': {
-    availableLanguages: {
-      '*': lang.value === 'zh' ? 'zh-cn' : 'en'
-    }
+if (lang.value !== 'en') {
+  const langOverride = {
+    zh: 'zh-cn'
   }
-})
+  const locale = langOverride[lang.value] || lang.value
+  loader.config({
+    'vs/nls': {
+      availableLanguages: {
+        '*': locale
+      }
+    }
+  })
+}
 
 watchEffect(async (onClenaup) => {
   const monaco_ = await loader.init()
