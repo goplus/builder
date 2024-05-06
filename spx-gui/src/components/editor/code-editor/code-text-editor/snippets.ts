@@ -454,7 +454,6 @@ export const lookSnippets = [
   startSceneSnippet,
   nextSceneSnippet,
   CameraSnippet,
-  changeSizeSnippet,
   setSizeSnippet,
   clearGraphEffectsSnippet,
   showSnippet,
