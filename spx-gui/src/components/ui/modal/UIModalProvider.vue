@@ -59,13 +59,17 @@ export type ComponentProps<C extends Component> = C extends new (...args: any) =
   ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
   : never
 
-export function useModal<Resolved, C extends Component>(
-  component: ComponentProps<C> extends ModalComponentProps<Resolved> ? C : never
-) {
+export function useModal<C extends Component>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(props: Omit<ComponentProps<C>, keyof ModalComponentProps<Resolved>>) {
-    return new Promise<Resolved>((resolve, reject) => {
+  return function invokeModal(
+    props: ComponentProps<C> extends ModalComponentProps<infer Resolved>
+      ? Omit<ComponentProps<C>, keyof ModalComponentProps<Resolved>>
+      : never
+  ) {
+    return new Promise<
+      ComponentProps<C> extends ModalComponentProps<infer Resolved> ? Resolved : never
+    >((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
       ctx.setCurrent({ id: mid, component, props, handlers })
