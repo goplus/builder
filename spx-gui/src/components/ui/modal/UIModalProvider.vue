@@ -28,12 +28,14 @@ import {
 import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
-// The Modal Component should provide API (props & emits) as following:
-export type ModalComponentProps<Resolved> = {
+// The Modal Component should provide Props as following:
+export type ModalComponentProps = {
   readonly visible: boolean
-  onCancelled?: () => any
-  onResolved?: (resolved: Resolved) => any
 }
+
+// The Modal Component should provide Emits as following:
+export type ModalComponentEmit<Resolved> = ((event: 'resolved', resolved: Resolved) => void) &
+  ((event: 'cancelled') => void)
 
 export type ModalHandlers<Resolved> = {
   resolve(resolved: Resolved): void
@@ -55,20 +57,26 @@ const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context'
 
 let mid = 0
 
-export type ComponentProps<C extends Component> = C extends new (...args: any) => any
+type ComponentProps<C extends Component> = C extends new (...args: any) => any
   ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
+  : never
+
+type ComponentEmit<C extends Component> = C extends new (...args: any) => any
+  ? InstanceType<C>['$emit']
   : never
 
 export function useModal<C extends Component>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
   return function invokeModal(
-    props: ComponentProps<C> extends ModalComponentProps<infer Resolved>
-      ? Omit<ComponentProps<C>, keyof ModalComponentProps<Resolved>>
+    props: ComponentProps<C> extends ModalComponentProps
+      ? ComponentEmit<C> extends ModalComponentEmit<any>
+        ? Omit<ComponentProps<C>, keyof ModalComponentProps>
+        : never
       : never
   ) {
     return new Promise<
-      ComponentProps<C> extends ModalComponentProps<infer Resolved> ? Resolved : never
+      ComponentEmit<C> extends ModalComponentEmit<infer Resolved> ? Resolved : never
     >((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }

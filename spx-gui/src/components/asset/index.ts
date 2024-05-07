@@ -21,7 +21,7 @@ export function useAddAssetFromLibrary() {
 export function useAddAssetToLibrary() {
   const invokeAddAssetModal = useModal(AssetAddModal)
   return function addAssetToLibrary(asset: Backdrop | Sound | Sprite) {
-    return invokeAddAssetModal({ asset }) as Promise<void>
+    return invokeAddAssetModal({ asset })
   }
 }
 
@@ -31,6 +31,6 @@ export function useLoadFromScratchModal() {
   return async function loadFromScratchModal(project: Project) {
     const file = await selectFile({ accept: '.sb3' })
     const exportedScratchAssets = await parseScratchFileAssets(file)
-    return invokeModal({ project, exportedScratchAssets }) as Promise<void>
+    return invokeModal({ project, exportedScratchAssets })
   }
 }

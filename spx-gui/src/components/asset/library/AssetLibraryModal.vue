@@ -1,10 +1,5 @@
 <template>
-  <UISearchableModal
-    style="width: 1064px"
-    :visible="props.visible"
-    :title="$t(title)"
-    @update:visible="emit('cancelled')"
-  >
+  <UISearchableModal style="width: 1064px" :visible="props.visible" :title="$t(title)">
     <template #input>
       <UITextInput
         v-model:value="searchInput"
