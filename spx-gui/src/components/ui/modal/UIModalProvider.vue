@@ -65,6 +65,16 @@ type ComponentEmit<C extends Component> = C extends new (...args: any) => any
   ? InstanceType<C>['$emit']
   : never
 
+/**
+ *
+ * @param component The Modal Component, which should provide Props and Emits as following:
+ * `{ visible: boolean }`, `{ resolved: (resolved: any) => void, cancelled: () => void }`.
+ *
+ *
+ * @returns A function to invoke the Modal Component. The returned function has a
+ * props argument, which has `never` type if the Modal Component does not provide
+ *  `ModalComponentProps` and `ModalComponentEmit<any>`.
+ */
 export function useModal<C extends Component>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
