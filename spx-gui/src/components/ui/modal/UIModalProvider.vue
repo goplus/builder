@@ -14,48 +14,80 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, ref, shallowRef, nextTick } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  ref,
+  shallowRef,
+  nextTick,
+  type Component,
+  type VNodeProps,
+  type AllowedComponentProps
+} from 'vue'
 import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
-// The Modal Component should provide API (props & emits) as following:
+// The Modal Component should provide Props as following:
 export type ModalComponentProps = {
-  visible: boolean
-}
-export type ModalComponentEmits<T> = {
-  cancelled: [reason?: unknown]
-  resolved: [resolved?: T]
+  readonly visible: boolean
 }
 
-// TODO: improve typing
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ModalComponent<P, T> = any
+// The Modal Component should provide Emits as following:
+export type ModalComponentEmit<Resolved> = ((event: 'resolved', resolved: Resolved) => void) &
+  ((event: 'cancelled') => void)
 
-export type ModalHandlers<T> = {
-  resolve(resolved: T): void
+export type ModalHandlers<Resolved> = {
+  resolve(resolved: Resolved): void
   reject(e: unknown): void
 }
 
-export type ModalInfo<P extends ModalComponentProps = any, T = any> = {
+export type ModalInfo = {
   id: number
-  component: ModalComponent<P, T>
-  props: Omit<P, keyof ModalComponentProps>
-  handlers: ModalHandlers<T>
+  component: Component
+  props: any
+  handlers: ModalHandlers<any>
 }
 
-type ModalContext<P extends ModalComponentProps, T> = {
-  setCurrent(current: ModalInfo<P, T> | null): void
+type ModalContext = {
+  setCurrent(current: ModalInfo | null): void
 }
 
-const modalContextInjectKey: InjectionKey<ModalContext<any, any>> = Symbol('modal-context')
+const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
 
 let mid = 0
 
-export function useModal<P extends ModalComponentProps, T>(component: ModalComponent<P, T>) {
+type ComponentProps<C extends Component> = C extends new (...args: any) => any
+  ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
+  : never
+
+type ComponentEmit<C extends Component> = C extends new (...args: any) => any
+  ? InstanceType<C>['$emit']
+  : never
+
+/**
+ *
+ * @param component The Modal Component, which should provide Props and Emits as following:
+ * `{ visible: boolean }`, `{ resolved: (resolved: any) => void, cancelled: () => void }`.
+ *
+ *
+ * @returns A function to invoke the Modal Component. The returned function has a
+ * props argument, which has `never` type if the Modal Component does not provide
+ *  `ModalComponentProps` and `ModalComponentEmit<any>`.
+ */
+export function useModal<C extends Component>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(props: Omit<P, keyof ModalComponentProps>) {
-    return new Promise<T>((resolve, reject) => {
+  return function invokeModal(
+    props: ComponentProps<C> extends ModalComponentProps
+      ? ComponentEmit<C> extends ModalComponentEmit<any>
+        ? Omit<ComponentProps<C>, keyof ModalComponentProps>
+        : never
+      : never
+  ) {
+    return new Promise<
+      ComponentEmit<C> extends ModalComponentEmit<infer Resolved> ? Resolved : never
+    >((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
       ctx.setCurrent({ id: mid, component, props, handlers })

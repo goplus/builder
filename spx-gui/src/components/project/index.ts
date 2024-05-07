@@ -1,6 +1,6 @@
 import { useRouter } from 'vue-router'
 import { useModal, useConfirmDialog } from '@/components/ui'
-import { IsPublic, type ProjectData } from '@/apis/project'
+import { IsPublic } from '@/apis/project'
 import { useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
@@ -12,7 +12,7 @@ export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
   return function createProject() {
-    return modal({}) as Promise<ProjectData>
+    return modal({})
   }
 }
 
@@ -21,7 +21,7 @@ export function useOpenProject() {
   const modal = useModal(ProjectOpenModal)
 
   return async function openProject() {
-    const project = await (modal({}) as Promise<ProjectData>)
+    const project = await modal({})
     router.push(getProjectEditorRoute(project.name))
   }
 }
