@@ -16,10 +16,11 @@
           :key="sprite.name"
           :sprite="sprite"
           :map-size="mapSize!"
+          :sprites-ready-map="spritesReadyMap"
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer />
+        <SpriteTransformer :sprites-ready-map="spritesReadyMap" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -38,14 +39,15 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
+    <UILoading v-if="spritesAndBackdropLoading" class="loading" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
-import { UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
+import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
@@ -53,9 +55,6 @@ import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
-import { provideSpritesReady } from './common'
-
-provideSpritesReady()
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
@@ -63,6 +62,8 @@ const containerSize = useContentSize(conatiner)
 
 const stageRef = ref<any>()
 const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
+
+const spritesReadyMap = ref(new Map<string, boolean>())
 
 /** containerSize / mapSize */
 const scale = computed(() => {
@@ -89,6 +90,14 @@ const stageConfig = computed(() => {
 })
 
 const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
+
+const spritesAndBackdropLoading = computed(() => {
+  if (backdropImg.value == null) return true
+  return (
+    spritesReadyMap.value.size !== editorCtx.project.sprites.length ||
+    Array.from(spritesReadyMap.value.values()).some((v) => !v)
+  )
+})
 
 const visibleSprites = computed(() => {
   const { zorder, sprites } = editorCtx.project
@@ -145,5 +154,14 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   background-position: center;
   background-repeat: repeat;
   background-size: contain;
+  position: relative;
+}
+
+.loading {
+  position: absolute;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.5);
 }
 </style>

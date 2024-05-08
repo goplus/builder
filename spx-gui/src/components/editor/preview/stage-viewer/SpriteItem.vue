@@ -22,12 +22,12 @@ import type { Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { useSpritesReady } from './common'
 import { round } from '@/utils/utils'
 
 const props = defineProps<{
   sprite: Sprite
   mapSize: Size
+  spritesReadyMap: Map<string, boolean>
 }>()
 
 const nodeRef = ref<any>()
@@ -36,19 +36,17 @@ const costume = computed(() => props.sprite.costume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const image = useImgFile(() => costume.value?.img)
 
-const spritesReady = useSpritesReady()
-
 watchEffect((onCleanup) => {
   // We need to notify event ready for SpriteTransformer (to get correct node size)
   const name = props.sprite.name
   const img = image.value
-  onCleanup(() => spritesReady.delete(props.sprite.name))
+  onCleanup(() => props.spritesReadyMap.delete(props.sprite.name))
   if (img == null) {
-    spritesReady.set(props.sprite.name, false)
+    props.spritesReadyMap.set(props.sprite.name, false)
     return
   }
   function handleImageLoad() {
-    spritesReady.set(name, true)
+    props.spritesReadyMap.set(name, true)
   }
   img.addEventListener('load', handleImageLoad)
   onCleanup(() => img.removeEventListener('load', handleImageLoad))
