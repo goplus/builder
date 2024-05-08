@@ -132,32 +132,26 @@ const cssVariables = getCssVars('--ui-', uiVariables)
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/fonts/font.css';
+@font-face {
+  font-family: 'AlibabaHealthB';
+  src: url('./fonts/AlibabaHealthFont2.0CN-85B.ttf') format('truetype');
+}
 
 .ui-config-provider {
   height: 100%;
 
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-text);
-  font-family:
-    // ChauPhilomeneOne,
-    AlibabaPuHuiT,
-    Cherry Bomb,
-    Heyhoo,
-    sans-serif;
+  font-family: AlibabaHealthB, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   line-height: 1.57143;
 }
 </style>
 
 <style lang="scss">
-/* TODO: var definition for font-size, line-height & font-weight? */
-/* TODO: actully different font-weight for h1-h6, but with different font-family to achieve this (if we use FZLanTing YuanS) */
-
 /* Special title */
 h1 {
   font-size: 20px;
   line-height: 1.4;
-  font-weight: 500;
 }
 
 /* Standard title */

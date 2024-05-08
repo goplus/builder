@@ -16,6 +16,5 @@ import { UIDivider } from '@/components/ui'
   height: 43px;
   padding: 0 16px;
   font-size: 16px;
-  font-weight: 500;
 }
 </style>

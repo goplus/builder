@@ -94,7 +94,6 @@ const onStop = () => {
       border-radius: 16px;
       z-index: 100;
       font-size: 14px;
-      font-weight: 600;
       padding: 4px 14px;
       color: white;
       cursor: pointer;
