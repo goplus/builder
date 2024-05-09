@@ -25,23 +25,15 @@ const slots = useSlots()
 .ui-text-input {
   // it's not possible to control input's hovered-bg-color with themeOverrides,
   // so we do background color control here
-  &:not(.n-input--focus, .n-input--error-status) {
+  &:not(.n-input--focus, .n-input--error-status, .n-input--success-status) {
     background-color: var(--ui-color-grey-300);
-    &:hover {
-      background-color: var(--ui-color-grey-400);
-    }
   }
-
-  &.n-input--error-status {
-    background-color: #feefef; // TODO: uiVars?
-    &:not(.n-input--focus) :deep(.n-input__state-border) {
-      visibility: hidden;
-    }
-    &:hover {
-      background-color: #fdc7c7; // TODO: uiVars?
-    }
-    &.n-input--focus {
-      background-color: var(--ui-color-grey-100);
+  &:not(.n-input--focus):hover {
+    background-color: var(--ui-color-grey-400);
+  }
+  &.n-input--success-status {
+    :deep(.n-input__state-border) {
+      border: 1px solid var(--ui-color-success-main);
     }
   }
 }
