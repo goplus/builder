@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
@@ -63,18 +63,18 @@ const containerSize = useContentSize(conatiner)
 const stageRef = ref<any>()
 const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
 
-const spritesReadyMap = ref(new Map<Sprite, boolean>())
+const spritesReadyMap = reactive(new Map<Sprite, boolean>())
 watch(
   () => [...editorCtx.project.sprites],
   () => {
-    for (const sprite of spritesReadyMap.value.keys()) {
+    for (const sprite of spritesReadyMap.keys()) {
       if (!editorCtx.project.sprites.includes(sprite)) {
-        spritesReadyMap.value.delete(sprite)
+        spritesReadyMap.delete(sprite)
       }
     }
     for (const sprite of editorCtx.project.sprites) {
-      if (!spritesReadyMap.value.has(sprite)) {
-        spritesReadyMap.value.set(sprite, false)
+      if (!spritesReadyMap.has(sprite)) {
+        spritesReadyMap.set(sprite, false)
       }
     }
   },
@@ -109,10 +109,7 @@ const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
 
 const spritesAndBackdropLoading = computed(() => {
   if (backdropImg.value == null) return true
-  return (
-    spritesReadyMap.value.size !== editorCtx.project.sprites.length ||
-    Array.from(spritesReadyMap.value.values()).some((v) => !v)
-  )
+  return editorCtx.project.sprites.every((s) => spritesReadyMap.get(s))
 })
 
 const visibleSprites = computed(() => {
