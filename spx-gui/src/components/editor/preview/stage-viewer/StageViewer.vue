@@ -20,7 +20,7 @@
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite)" />
+        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite.name)" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
@@ -63,23 +63,7 @@ const containerSize = useContentSize(conatiner)
 const stageRef = ref<any>()
 const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
 
-const spritesReadyMap = reactive(new Map<Sprite, boolean>())
-watch(
-  () => [...editorCtx.project.sprites],
-  () => {
-    for (const sprite of spritesReadyMap.keys()) {
-      if (!editorCtx.project.sprites.includes(sprite)) {
-        spritesReadyMap.delete(sprite)
-      }
-    }
-    for (const sprite of editorCtx.project.sprites) {
-      if (!spritesReadyMap.has(sprite)) {
-        spritesReadyMap.set(sprite, false)
-      }
-    }
-  },
-  { immediate: true }
-)
+const spritesReadyMap = reactive(new Map<string, boolean>())
 
 /** containerSize / mapSize */
 const scale = computed(() => {
@@ -109,7 +93,7 @@ const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
 
 const spritesAndBackdropLoading = computed(() => {
   if (backdropImg.value == null) return true
-  return editorCtx.project.sprites.every((s) => spritesReadyMap.get(s))
+  return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
 })
 
 const visibleSprites = computed(() => {

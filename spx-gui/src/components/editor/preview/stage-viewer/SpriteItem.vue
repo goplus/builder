@@ -27,7 +27,7 @@ import { round } from '@/utils/utils'
 const props = defineProps<{
   sprite: Sprite
   mapSize: Size
-  spritesReadyMap: Map<Sprite, boolean>
+  spritesReadyMap: Map<string, boolean>
 }>()
 
 const nodeRef = ref<any>()
@@ -37,14 +37,23 @@ const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const image = useImgFile(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
+  const spriteName = props.sprite.name
+  onCleanup(() => {
+    props.spritesReadyMap.delete(spriteName)
+  })
+})
+
+watchEffect((onCleanup) => {
+  const spriteName = props.sprite.name
+
   const img = image.value
   if (img == null) {
-    props.spritesReadyMap.set(props.sprite, false)
+    props.spritesReadyMap.set(spriteName, false)
     return
   }
   function handleImageLoad() {
     // We need to notify event ready for SpriteTransformer (to get correct node size)
-    props.spritesReadyMap.set(props.sprite, true)
+    props.spritesReadyMap.set(spriteName, true)
   }
   img.addEventListener('load', handleImageLoad)
   onCleanup(() => img.removeEventListener('load', handleImageLoad))
