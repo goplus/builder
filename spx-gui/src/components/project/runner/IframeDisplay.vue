@@ -34,6 +34,9 @@ watch(iframe, () => {
 
   iframeWindow.addEventListener('wasmReady', () => {
     iframeWindow.startWithZipBuffer(zipData)
+    const canvas = iframeWindow.document.querySelector('canvas')
+    if (canvas == null) throw new Error('canvas expected in iframe')
+    canvas.focus() // focus to canvas by default, so the user can interact with the game immediately
   })
   iframeWindow.console.log = function (...args: unknown[]) {
     // eslint-disable-next-line no-console
