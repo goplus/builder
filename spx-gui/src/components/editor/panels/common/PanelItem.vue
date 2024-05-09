@@ -7,15 +7,17 @@
     <div class="remove" @click.stop="emit('remove')">
       <UIIcon class="icon" type="trash" />
     </div>
+    <UILoading v-if="loading" class="loading" />
   </li>
 </template>
 
 <script setup lang="ts">
-import { UIIcon } from '@/components/ui'
+import { UIIcon, UILoading } from '@/components/ui'
 
 const props = defineProps<{
   active: boolean
   name: string
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +26,10 @@ const emit = defineEmits<{
 </script>
 
 <style lang="scss" scoped>
+.loading {
+  position: absolute;
+}
+
 .panel-item {
   display: flex;
   flex-direction: column;
