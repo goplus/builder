@@ -20,7 +20,7 @@
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer :sprites-ready-map="spritesReadyMap" />
+        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite)" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
@@ -63,7 +63,23 @@ const containerSize = useContentSize(conatiner)
 const stageRef = ref<any>()
 const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
 
-const spritesReadyMap = ref(new Map<string, boolean>())
+const spritesReadyMap = ref(new Map<Sprite, boolean>())
+watch(
+  () => [...editorCtx.project.sprites],
+  () => {
+    for (const sprite of spritesReadyMap.value.keys()) {
+      if (!editorCtx.project.sprites.includes(sprite)) {
+        spritesReadyMap.value.delete(sprite)
+      }
+    }
+    for (const sprite of editorCtx.project.sprites) {
+      if (!spritesReadyMap.value.has(sprite)) {
+        spritesReadyMap.value.set(sprite, false)
+      }
+    }
+  },
+  { immediate: true }
+)
 
 /** containerSize / mapSize */
 const scale = computed(() => {

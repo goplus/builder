@@ -7,9 +7,10 @@ import { effect, ref } from 'vue'
 import type { Transformer } from 'konva/lib/shapes/Transformer'
 import type { Node } from 'konva/lib/Node'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import type { Sprite } from '@/models/sprite'
 
 const props = defineProps<{
-  spritesReadyMap: Map<string, boolean>
+  spritesReady: (sprite: Sprite) => boolean
 }>()
 
 const transformer = ref<any>()
@@ -24,7 +25,7 @@ effect(async () => {
     return
   }
   // Wait for sprite ready, so that Konva can get correct node size
-  if (!props.spritesReadyMap.get(sprite.name)) return
+  if (!props.spritesReady(sprite)) return
   const stage = transformerNode.getStage()
   if (stage == null) throw new Error('no stage')
   const selectedNode = stage.findOne((node: Node) => node.getAttr('spriteName') === sprite.name)
