@@ -15,7 +15,7 @@ import { Sprite } from './sprite'
 import { Sound } from './sound'
 import * as cloudHelper from './common/cloud'
 import * as localHelper from './common/local'
-import * as zipHelper from './common/zip'
+import * as gbpHelper from './common/gbp'
 import { assign } from './common'
 import { ensureValidSpriteName, ensureValidSoundName } from './common/asset'
 
@@ -201,9 +201,8 @@ export class Project extends Disposble {
     return [metadata, files]
   }
 
-  /** Load from a zip file */
-  async loadZipFile(zipFile: globalThis.File) {
-    const { metadata, files } = await zipHelper.load(zipFile)
+  async loadGbpFile(file: globalThis.File) {
+    const { metadata, files } = await gbpHelper.load(file)
     this.load(
       {
         // name is the only metadata we need when load from file
@@ -213,10 +212,9 @@ export class Project extends Disposble {
     )
   }
 
-  /** Export to a zip file */
   async exportGbpFile() {
     const [metadata, files] = this.export()
-    return await zipHelper.save(metadata, files)
+    return await gbpHelper.save(metadata, files)
   }
 
   // TODO: Some go+-builder-specific file format (instead of zip) support?

@@ -8,11 +8,11 @@ import { filename, stripExt } from '@/utils/path'
 import { File as LazyFile, type Files as LazyFiles } from './file'
 import type { Metadata } from '../project'
 
-export async function load(zipFile: File) {
+export async function load(gbpFile: File) {
   const metadata: Metadata = {
-    name: stripExt(zipFile.name)
+    name: stripExt(gbpFile.name)
   }
-  const jszip = await JSZip.loadAsync(zipFile)
+  const jszip = await JSZip.loadAsync(gbpFile)
   const files: LazyFiles = {}
   await Promise.all(
     Object.keys(jszip.files).map(async (path) => {
