@@ -134,8 +134,8 @@ async function format() {
         severity: MarkerSeverity.Warning,
         startLineNumber: res.Error.Line,
         startColumn: res.Error.Column,
-        endLineNumber: res.Error.Column,
-        endColumn: res.Error.Line
+        endLineNumber: res.Error.Line,
+        endColumn: res.Error.Column
       }
     ])
   }
