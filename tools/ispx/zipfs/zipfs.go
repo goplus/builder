@@ -150,9 +150,9 @@ func (rsc *readSeekCloser) Close() error {
 }
 
 func (z *ZipFs) Open(file string) (
-	io.ReadSeekCloser, error,
-	// Though the interface requires io.ReadCloser, issues arise when using
-	// io.ReadCloser with some file types in spx, which need to be able to seek.
+	io.ReadCloser, error,
+	// Although the interface requires io.ReadCloser, issues arise when using
+	// io.ReadCloser with some file types in spx, which need Seek.
 ) {
 	file = path.Clean(path.Join(z.root, file))
 	f, ok := z.files[file]
