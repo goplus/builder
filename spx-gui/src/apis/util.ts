@@ -5,18 +5,18 @@
 import { client } from './common'
 
 export interface FormatError {
-  Column: number
-  Line: number
-  Msg: string
+  column: number
+  line: number
+  msg: string
 }
 
 export interface FormatResponse {
-  Body: string
-  Error: FormatError
+  body: string
+  error?: FormatError
 }
 
 export function formatSpxCode(body: string) {
-  return client.post('/util/fmt', { body }) as Promise<FormatResponse>
+  return client.post('/util/fmtcode', { body }) as Promise<FormatResponse>
 }
 
 export type UpInfo = {

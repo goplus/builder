@@ -459,7 +459,7 @@ func (this *project) MainEntry() {
 		replyWithData(ctx, nil)
 	})
 //line cmd/spx-backend/project_yap.gox:273:1
-	this.Post("/util/fmt", func(ctx *yap.Context) {
+	this.Post("/util/fmtcode", func(ctx *yap.Context) {
 //line cmd/spx-backend/project_yap.gox:274:1
 		input := &controller.FmtCodeInput{}
 //line cmd/spx-backend/project_yap.gox:275:1
@@ -470,54 +470,61 @@ func (this *project) MainEntry() {
 			return
 		}
 //line cmd/spx-backend/project_yap.gox:278:1
-		res := this.ctrl.FmtCode(utils.GetCtx(ctx), input)
+		res, err := this.ctrl.FmtCode(utils.GetCtx(ctx), input)
 //line cmd/spx-backend/project_yap.gox:279:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:280:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:281:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:283:1
 		replyWithData(ctx, res)
 	})
-//line cmd/spx-backend/project_yap.gox:283:1
-	this.Get("/util/upinfo", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:284:1
-		if
-//line cmd/spx-backend/project_yap.gox:284:1
-		_, ok := ensureUser(ctx); !ok {
-//line cmd/spx-backend/project_yap.gox:285:1
-			return
-		}
 //line cmd/spx-backend/project_yap.gox:287:1
-		upInfo, err := this.ctrl.GetUpInfo(utils.GetCtx(ctx))
+	this.Get("/util/upinfo", func(ctx *yap.Context) {
 //line cmd/spx-backend/project_yap.gox:288:1
-		if err != nil {
+		if
+//line cmd/spx-backend/project_yap.gox:288:1
+		_, ok := ensureUser(ctx); !ok {
 //line cmd/spx-backend/project_yap.gox:289:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:290:1
 			return
 		}
+//line cmd/spx-backend/project_yap.gox:291:1
+		upInfo, err := this.ctrl.GetUpInfo(utils.GetCtx(ctx))
 //line cmd/spx-backend/project_yap.gox:292:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:293:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:294:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:296:1
 		replyWithData(ctx, upInfo)
 	})
-//line cmd/spx-backend/project_yap.gox:295:1
-	var err error
-//line cmd/spx-backend/project_yap.gox:296:1
-	logger := log.GetLogger()
-//line cmd/spx-backend/project_yap.gox:297:1
-	this.ctrl, err = controller.NewController(context.Background())
-//line cmd/spx-backend/project_yap.gox:298:1
-	if err != nil {
 //line cmd/spx-backend/project_yap.gox:299:1
+	var err error
+//line cmd/spx-backend/project_yap.gox:300:1
+	logger := log.GetLogger()
+//line cmd/spx-backend/project_yap.gox:301:1
+	this.ctrl, err = controller.NewController(context.Background())
+//line cmd/spx-backend/project_yap.gox:302:1
+	if err != nil {
+//line cmd/spx-backend/project_yap.gox:303:1
 		logger.Fatalln("New controller failed:", err)
 	}
-//line cmd/spx-backend/project_yap.gox:301:1
+//line cmd/spx-backend/project_yap.gox:305:1
 	user.CasdoorConfigInit()
-//line cmd/spx-backend/project_yap.gox:302:1
+//line cmd/spx-backend/project_yap.gox:306:1
 	port := os.Getenv("PORT")
-//line cmd/spx-backend/project_yap.gox:303:1
+//line cmd/spx-backend/project_yap.gox:307:1
 	if port == "" {
-//line cmd/spx-backend/project_yap.gox:304:1
+//line cmd/spx-backend/project_yap.gox:308:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/project_yap.gox:306:1
+//line cmd/spx-backend/project_yap.gox:310:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/project_yap.gox:307:1
+//line cmd/spx-backend/project_yap.gox:311:1
 	this.Run(port, UserMiddleware, ReqIDMiddleware, CorsMiddleware)
 }
 func (this *project) Main() {
