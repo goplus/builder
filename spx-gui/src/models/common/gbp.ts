@@ -1,6 +1,9 @@
 /**
- * @file Zip file related helper
- * @desc load-from & export-to zip file
+ * @file Gbp file related helper
+ * @desc load-from & export-to gbp file
+ * Gbp file is a zip file with a specific structure that contains
+ * metadata and files for a Go+ builder project.
+ * https://github.com/goplus/builder/issues/464
  */
 
 import JSZip from 'jszip'
