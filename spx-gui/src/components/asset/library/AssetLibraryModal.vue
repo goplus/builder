@@ -9,6 +9,7 @@
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
+        clearable
         :placeholder="$t({ en: 'Search', zh: '搜索' })"
         @keypress.enter="handleSearch"
       >
