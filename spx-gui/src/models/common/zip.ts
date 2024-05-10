@@ -32,5 +32,5 @@ export async function save({ name }: Metadata, files: LazyFiles) {
     })
   )
   const blob = await zip.generateAsync({ type: 'blob' })
-  return new File([blob], (name || 'Untitled') + '.zip')
+  return new File([blob], (name || 'Untitled') + '.gbp')
 }

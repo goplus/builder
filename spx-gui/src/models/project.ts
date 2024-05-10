@@ -214,7 +214,7 @@ export class Project extends Disposble {
   }
 
   /** Export to a zip file */
-  async exportZipFile() {
+  async exportGbpFile() {
     const [metadata, files] = this.export()
     return await zipHelper.save(metadata, files)
   }
