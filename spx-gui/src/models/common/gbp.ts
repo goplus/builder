@@ -1,6 +1,9 @@
 /**
- * @file Zip file related helper
- * @desc load-from & export-to zip file
+ * @file Gbp file related helper
+ * @desc load-from & export-to gbp file
+ * Gbp file is a zip file with a specific structure that contains
+ * metadata and files for a Go+ builder project.
+ * https://github.com/goplus/builder/issues/464
  */
 
 import JSZip from 'jszip'
@@ -8,11 +11,11 @@ import { filename, stripExt } from '@/utils/path'
 import { File as LazyFile, type Files as LazyFiles } from './file'
 import type { Metadata } from '../project'
 
-export async function load(zipFile: File) {
+export async function load(gbpFile: File) {
   const metadata: Metadata = {
-    name: stripExt(zipFile.name)
+    name: stripExt(gbpFile.name)
   }
-  const jszip = await JSZip.loadAsync(zipFile)
+  const jszip = await JSZip.loadAsync(gbpFile)
   const files: LazyFiles = {}
   await Promise.all(
     Object.keys(jszip.files).map(async (path) => {
@@ -32,5 +35,5 @@ export async function save({ name }: Metadata, files: LazyFiles) {
     })
   )
   const blob = await zip.generateAsync({ type: 'blob' })
-  return new File([blob], (name || 'Untitled') + '.zip')
+  return new File([blob], (name || 'Untitled') + '.gbp')
 }

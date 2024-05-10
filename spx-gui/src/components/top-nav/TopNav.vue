@@ -178,13 +178,13 @@ async function handleImportProjectFile() {
     }),
     confirmText: i18n.t({ en: 'Continue', zh: '继续' })
   })
-  const file = await selectFile({ accept: '.zip' })
-  await props.project!.loadZipFile(file)
+  const file = await selectFile({ accept: '.gbp' })
+  await props.project!.loadGbpFile(file)
 }
 
 async function handleExportProjectFile() {
-  const zipFile = await props.project!.exportZipFile()
-  saveAs(zipFile, zipFile.name) // TODO: what if user cancelled download?
+  const gbpFile = await props.project!.exportGbpFile()
+  saveAs(gbpFile, gbpFile.name) // TODO: what if user cancelled download?
 }
 
 async function handleImportFromScratch() {
