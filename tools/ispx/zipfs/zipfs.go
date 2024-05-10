@@ -164,6 +164,7 @@ func (z *ZipFs) Open(file string) (
 	if err != nil {
 		return nil, err
 	}
+	defer rc.Close()
 
 	buf, err := io.ReadAll(rc)
 	if err != nil {
