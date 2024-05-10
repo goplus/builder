@@ -3,8 +3,8 @@
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
     </template>
-    <template v-if="clearable || !!slots.suffix" #suffix>
-      <div v-if="clearable" class="close" @click="emit('update:value', '')">
+    <template v-if="(value && clearable) || !!slots.suffix" #suffix>
+      <div v-if="value && clearable" class="clear" @click="emit('update:value', '')">
         <svg
           width="12"
           height="12"
@@ -56,7 +56,7 @@ const slots = useSlots()
   }
 }
 
-.close {
+.clear {
   display: flex;
   align-items: center;
   justify-content: center;
