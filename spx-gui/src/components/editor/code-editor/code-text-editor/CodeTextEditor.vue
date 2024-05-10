@@ -18,7 +18,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const editorElement = ref<HTMLElement | null>(null)
+const editorElement = ref<HTMLDivElement>()
 
 const monaco = shallowRef<typeof import('monaco-editor')>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
@@ -40,9 +40,13 @@ if (lang.value !== 'en') {
   })
 }
 
-watchEffect(async (onClenaup) => {
-  const monaco_ = await loader.init()
+const monacoPromise = loader.init().then((monaco_) => {
   initMonaco(monaco_, uiVariables)
+  return monaco_
+})
+
+watchEffect(async (onClenaup) => {
+  const monaco_ = await monacoPromise
   const editor = monaco_.editor.create(editorElement.value!, {
     value: props.value, // set the initial value of the editor
     theme: defaultThemeName,
