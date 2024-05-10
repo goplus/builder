@@ -5,7 +5,7 @@
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <UIForm :form="form" @submit="handleSubmit.fn">
+    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
           $t({

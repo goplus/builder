@@ -1,6 +1,6 @@
 <template>
   <RenameModal :visible="visible" @cancel="handleCancel">
-    <UIForm :form="form" @submit="handleSubmit">
+    <UIForm :form="form" has-success-feedback @submit="handleSubmit">
       <UIFormItem path="name">
         <UITextInput v-model:value="form.value.name" />
         <template #tip>{{ $t(soundNameTip) }}</template>
@@ -41,7 +41,9 @@ function handleCancel() {
 }
 
 function handleSubmit() {
-  props.sound.setName(form.value.name)
+  if (form.value.name !== props.sound.name) {
+    props.sound.setName(form.value.name)
+  }
   emit('resolved')
 }
 
