@@ -1,5 +1,10 @@
 <template>
-  <NInput class="ui-text-input" :value="value" @update:value="(v) => emit('update:value', v)">
+  <NInput
+    class="ui-text-input"
+    :value="value"
+    :clearable="clearable"
+    @update:value="(v) => emit('update:value', v)"
+  >
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
     </template>
@@ -12,6 +17,7 @@ import { NInput } from 'naive-ui'
 
 defineProps<{
   value: string
+  clearable?: boolean
 }>()
 
 const emit = defineEmits<{
