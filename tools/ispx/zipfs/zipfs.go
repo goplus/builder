@@ -2,6 +2,7 @@ package zipfs
 
 import (
 	"archive/zip"
+	"bytes"
 	"io"
 	"io/fs"
 	"path"
@@ -140,8 +141,18 @@ func (z *ZipFs) Abs(path string) (string, error) {
 // 	Close() error
 // }
 
+type readSeekCloser struct {
+	*bytes.Reader
+}
+
+func (rsc *readSeekCloser) Close() error {
+	return nil
+}
+
 func (z *ZipFs) Open(file string) (
-	io.ReadCloser, error,
+	io.ReadSeekCloser, error,
+	// Though the interface requires io.ReadCloser, issues arise when using
+	// io.ReadCloser with some file types in spx, which need to be able to seek.
 ) {
 	file = path.Clean(path.Join(z.root, file))
 	f, ok := z.files[file]
@@ -149,7 +160,17 @@ func (z *ZipFs) Open(file string) (
 		return nil, fs.ErrNotExist
 	}
 
-	return f.Open()
+	rc, err := f.Open()
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &readSeekCloser{bytes.NewReader(buf)}, nil
 }
 
 func (z *ZipFs) Close() error {
