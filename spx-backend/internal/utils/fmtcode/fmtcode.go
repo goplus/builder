@@ -13,33 +13,64 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-// FmtCode Format code
-func FmtCode(ctx context.Context, body string, fixImports bool) *FormatResponse {
+type FormatResponse struct {
+	Body  string       `json:"body"`
+	Error *FormatError `json:"error,omitempty"`
+}
+
+type FormatError struct {
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
+	Msg    string `json:"msg"`
+}
+
+var formatErrorInfoRE = regexp.MustCompile(`:(\d+):(\d+): ([^(\n]+)`)
+
+// parseFormatError parses a format error message and returns a FormatError.
+// It returns nil if the error message is not in the expected format.
+func parseFormatError(err error) *FormatError {
+	matches := formatErrorInfoRE.FindStringSubmatch(err.Error())
+	if len(matches) < 4 {
+		return nil
+	}
+	// The regexp is reliable enough to produce integral line and column numbers.
+	ln, _ := strconv.Atoi(matches[1])
+	col, _ := strconv.Atoi(matches[2])
+	msg := matches[3]
+	return &FormatError{Line: ln, Column: col, Msg: msg}
+}
+
+// FmtCode formats code in the given body.
+func FmtCode(ctx context.Context, body string, fixImports bool) (*FormatResponse, error) {
 	logger := log.GetReqLogger(ctx)
 	fs, err := splitFiles([]byte(body))
 	if err != nil {
 		logger.Printf("splitFiles failed: %v", err)
-		return newErrorResponse(err)
+		return nil, err
 	}
 	for _, f := range fs.files {
+		var (
+			out []byte
+			err error
+		)
 		switch {
 		case path.Ext(f) == ".go":
-			out, err := formatGo(f, fs.Data(f), fixImports)
-			if err != nil {
-				logger.Printf("formatGo failed: %v", err)
-				return newErrorResponse(err)
-			}
-			fs.AddFile(f, out)
+			out, err = formatGo(f, fs.Data(f), fixImports)
 		case path.Base(f) == "go.mod":
-			out, err := formatGoMod(f, fs.Data(f))
-			if err != nil {
-				logger.Printf("formatGoMod failed: %v", err)
-				return newErrorResponse(err)
+			out, err = formatGoMod(f, fs.Data(f))
+		}
+		if err != nil {
+			logger.Printf("format failed: %v", err)
+			if fe := parseFormatError(err); fe != nil {
+				return &FormatResponse{Error: fe}, nil
 			}
+			return nil, err
+		}
+		if out != nil {
 			fs.AddFile(f, out)
 		}
 	}
-	return newSuccessResponse(string(fs.Format()))
+	return &FormatResponse{Body: string(fs.Format())}, nil
 }
 
 func formatGo(file string, data []byte, fixImports bool) ([]byte, error) {
@@ -62,31 +93,4 @@ func formatGoMod(file string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 	return f.Format()
-}
-
-type FormatResponse struct {
-	Body  string       `json:",omitempty"`
-	Error *FormatError `json:",omitempty"`
-}
-
-type FormatError struct {
-	Line   int    `json:",omitempty"`
-	Column int    `json:",omitempty"`
-	Msg    string `json:",omitempty"`
-}
-
-func newSuccessResponse(body string) *FormatResponse { return &FormatResponse{Body: body} }
-
-var formatErrorInfoRE = regexp.MustCompile(`:(\d+):(\d+): ([^(\n]+)`)
-
-func newErrorResponse(err error) *FormatResponse {
-	fe := &FormatError{Msg: err.Error()}
-	matches := formatErrorInfoRE.FindStringSubmatch(fe.Msg)
-	if len(matches) > 3 {
-		// The regexp is reliable enough to produce integral line and column numbers.
-		fe.Line, _ = strconv.Atoi(matches[1])
-		fe.Column, _ = strconv.Atoi(matches[2])
-		fe.Msg = matches[3]
-	}
-	return &FormatResponse{Error: fe}
 }

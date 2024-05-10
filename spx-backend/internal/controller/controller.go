@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 
 	_ "image/png"
-	"os"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/utils/fmtcode"
@@ -490,7 +490,7 @@ type FmtCodeInput struct {
 }
 
 // FmtCode Format code
-func (ctrl *Controller) FmtCode(ctx context.Context, input *FmtCodeInput) (res *fmtcode.FormatResponse) {
+func (ctrl *Controller) FmtCode(ctx context.Context, input *FmtCodeInput) (*fmtcode.FormatResponse, error) {
 	return fmtcode.FmtCode(ctx, input.Body, input.FixImports)
 }
 

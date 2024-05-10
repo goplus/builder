@@ -270,12 +270,16 @@ delete "/asset/:id", ctx => {
 }
 
 // Format code
-post "/util/fmt", ctx => {
+post "/util/fmtcode", ctx => {
 	input := &controller.FmtCodeInput{}
 	if ok := parseJson(ctx, input); !ok {
 		return
 	}
-	res := ctrl.FmtCode(utils.getCtx(ctx), input)
+	res, err := ctrl.FmtCode(utils.getCtx(ctx), input)
+	if err != nil {
+		handlerInnerError(ctx, err)
+		return
+	}
 	replyWithData(ctx, res)
 }
 

@@ -129,20 +129,20 @@ async function format() {
   if (editor == null) return
 
   const res = await onlineFormatSpxCode(editor.getValue())
-  if (res.Body) {
-    editor.setValue(res.Body)
-  } else {
+  if (res.error) {
     monaco.value?.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
-        message: res.Error.Msg,
+        message: res.error.msg,
         severity: MarkerSeverity.Warning,
-        startLineNumber: res.Error.Line,
-        startColumn: res.Error.Column,
-        endLineNumber: res.Error.Line,
-        endColumn: res.Error.Column
+        startLineNumber: res.error.line,
+        startColumn: res.error.column,
+        endLineNumber: res.error.line,
+        endColumn: res.error.column
       }
     ])
+    return
   }
+  editor.setValue(res.body)
 }
 
 defineExpose({
