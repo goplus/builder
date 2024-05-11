@@ -1,7 +1,7 @@
 <template>
   <div ref="conatiner" class="stage-viewer">
     <v-stage
-      v-if="stageConfig != null && backdropImg != null"
+      v-if="stageConfig != null && !backdropLoading"
       ref="stageRef"
       :config="stageConfig"
       @mousedown="handleStageMousedown"
@@ -90,9 +90,10 @@ const stageConfig = computed(() => {
 })
 
 const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
+const backdropLoading = computed(() => editorCtx.project.stage.backdrop?.img != null && backdropImg.value == null)
 
 const spritesAndBackdropLoading = computed(() => {
-  if (backdropImg.value == null) return true
+  if (backdropLoading.value) return true
   return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
 })
 

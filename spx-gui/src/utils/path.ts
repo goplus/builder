@@ -1,11 +1,12 @@
+import resolveUri from '@jridgewell/resolve-uri'
+
 export function join(base: string, ...paths: string[]) {
   // TODO
   return [base, ...paths].join('/')
 }
 
 export function resolve(base: string, ...paths: string[]) {
-  // TODO
-  return [base, ...paths].join('/')
+  return resolveUri([base, ...paths].join('/'), undefined)
 }
 
 export function filename(urlOrPath: string) {

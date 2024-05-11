@@ -13,6 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@jridgewell/resolve-uri": "^3.1.2",
     "@monaco-editor/loader": "^1.4.0",
     "@vercel/edge": "^1.1.1",
     "dayjs": "^1.11.10",
