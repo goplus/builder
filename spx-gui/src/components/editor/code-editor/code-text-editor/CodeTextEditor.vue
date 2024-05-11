@@ -1,7 +1,9 @@
 <template>
   <div ref="editorElement" class="code-text-editor"></div>
 </template>
-
+<script lang="ts">
+let monaco: typeof import('monaco-editor')
+</script>
 <script setup lang="ts">
 import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
@@ -20,7 +22,6 @@ const emit = defineEmits<{
 
 const editorElement = ref<HTMLDivElement>()
 
-const monaco = shallowRef<typeof import('monaco-editor')>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 
 const uiVariables = useUIVariables()
@@ -40,14 +41,18 @@ if (lang.value !== 'en') {
   })
 }
 
-const monacoPromise = loader.init().then((monaco_) => {
+const getMonaco = async () => {
+  if (monaco) return monaco
+  const monaco_ = await loader.init()
+  if (monaco) return monaco
   initMonaco(monaco_, uiVariables)
-  return monaco_
-})
+  monaco = monaco_
+  return monaco
+}
 
 watchEffect(async (onClenaup) => {
-  const monaco_ = await monacoPromise
-  const editor = monaco_.editor.create(editorElement.value!, {
+  const monaco = await getMonaco()
+  const editor = monaco.editor.create(editorElement.value!, {
     value: props.value, // set the initial value of the editor
     theme: defaultThemeName,
     language: 'spx', // define the language mode
@@ -92,7 +97,6 @@ watchEffect(async (onClenaup) => {
     emit('update:value', editor.getValue())
   })
 
-  monaco.value = monaco_
   monacoEditor.value = editor
 
   onClenaup(() => {
@@ -103,7 +107,7 @@ watchEffect(async (onClenaup) => {
 watch(
   () => props.value,
   (val) => {
-    if (monaco.value && monacoEditor.value) {
+    if (monaco && monacoEditor.value) {
       const editorValue = monacoEditor.value.getValue()
       if (val !== editorValue) {
         monacoEditor.value.setValue(val)
@@ -130,7 +134,7 @@ async function format() {
 
   const res = await onlineFormatSpxCode(editor.getValue())
   if (res.error) {
-    monaco.value?.editor.setModelMarkers(editor.getModel()!, 'owner', [
+    monaco?.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
         message: res.error.msg,
         severity: MarkerSeverity.Warning,
