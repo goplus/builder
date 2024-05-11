@@ -499,6 +499,8 @@ type UpInfo struct {
 	Token string `json:"token"`
 	// Valid time for uptoken, unit: second
 	Expires uint64 `json:"expires"`
+	// Maximum file size allowed in bytes
+	MaxSize int64 `json:"maxSize"`
 	// Bucket Region
 	Region string `json:"region"`
 	// Base URL to fetch file
@@ -506,18 +508,23 @@ type UpInfo struct {
 }
 
 func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
-	var expires uint64 = 1800 // second
 	putPolicy := qiniuStorage.PutPolicy{
 		Scope:        ctrl.kodo.bucket,
+		Expires:      1800, // 30 minutes
 		ForceSaveKey: true,
-		SaveKey:      "files/$(etag)/$(fname)",
-		Expires:      expires,
+		SaveKey:      "files/$(etag)-$(fsize)",
+
+		// The hardcoded size limit here should be sufficient for most
+		// frontend use cases. If needed, we can make it configurable in
+		// the future.
+		FsizeLimit: 25 << 20, // 25 MiB
 	}
 	mac := qiniuAuth.New(ctrl.kodo.ak, ctrl.kodo.sk)
 	upToken := putPolicy.UploadToken(mac)
 	return &UpInfo{
 		Token:   upToken,
-		Expires: expires,
+		Expires: putPolicy.Expires,
+		MaxSize: putPolicy.FsizeLimit,
 		Region:  ctrl.kodo.bucketRegion,
 		BaseUrl: ctrl.kodo.baseUrl,
 	}, nil

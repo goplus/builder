@@ -24,6 +24,8 @@ export type UpInfo = {
   token: string
   /** Valid time for uptoken, unit: second */
   expires: number
+  /** Maximum file size allowed in bytes */
+  maxSize: number
   /** Base URL to fetch file */
   baseUrl: string
   /** Bucket Region */

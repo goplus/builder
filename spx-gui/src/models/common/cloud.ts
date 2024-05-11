@@ -84,7 +84,8 @@ type QiniuUploadRes = {
 
 async function upload(file: File) {
   const nativeFile = await toNativeFile(file)
-  const { token, baseUrl, region } = await getUpInfo()
+  const { token, maxSize, baseUrl, region } = await getUpInfo()
+  if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
   const observable = qiniu.upload(
     nativeFile,
     null,
@@ -109,7 +110,7 @@ async function upload(file: File) {
 }
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {
-  /** Expire timestamp (ms) */
+  /** Timestamp (ms) after which the uptoken is considered expired */
   expiresAt: number
 }
 
