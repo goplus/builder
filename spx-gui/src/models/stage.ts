@@ -27,9 +27,9 @@ export type RawStageConfig = {
   scenes?: RawBackdropConfig[]
   sceneIndex?: number
   map?: RawMapConfig
-  // TODO:
-  // costumes: CostumeConfig[]
-  // currentCostumeIndex: number
+  // For compatibility
+  costumes?: RawBackdropConfig[]
+  currentCostumeIndex?: number
 }
 
 export type MapSize = {
@@ -150,7 +150,7 @@ export class Stage {
     return reactive(this) as this
   }
 
-  static async load({ scenes: sceneConfigs, sceneIndex, map }: RawStageConfig, files: Files) {
+  static async load({ scenes: sceneConfigs, sceneIndex, costumes: costumeConfigs, currentCostumeIndex, map }: RawStageConfig, files: Files) {
     // TODO: empty stage
     let code = ''
     for (const codeFilePath of stageCodeFilePaths) {
@@ -160,12 +160,12 @@ export class Stage {
       break
     }
     const stage = new Stage(code, {
-      backdropIndex: sceneIndex,
+      backdropIndex: sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (sceneConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = (sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
       stage._addBackdrop(backdrop)
     }
