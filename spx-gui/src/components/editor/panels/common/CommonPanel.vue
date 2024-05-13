@@ -46,6 +46,8 @@ const cssVars = getCssVars('--panel-color-', props.color)
   &.expanded {
     flex: 1 1 0;
   }
+
+  position: relative;
 }
 
 .common-panel + .common-panel {

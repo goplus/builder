@@ -2,11 +2,23 @@
   <div class="line name">
     <AssetName>{{ sprite.name }}</AssetName>
     <UIIcon
-      class="edit-icon"
+      class="icon"
       :title="$t({ en: 'Rename', zh: '重命名' })"
       type="edit"
       @click="handleNameEdit"
     />
+    <div class="spacer" />
+    <UITooltip>
+      <template #trigger>
+        <UIIcon class="icon" type="doubleArrowDown" @click="emit('collapse')" />
+      </template>
+      {{
+        $t({
+          en: 'Collapse',
+          zh: '收起'
+        })
+      }}
+    </UITooltip>
   </div>
   <div class="line">
     <UINumberInput type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
@@ -57,7 +69,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UINumberInput, UIButton, UIIcon, useModal } from '@/components/ui'
+import { UINumberInput, UIButton, UIIcon, useModal, UITooltip } from '@/components/ui'
 import { isLibraryEnabled, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
@@ -69,6 +81,10 @@ import SpriteRenameModal from './SpriteRenameModal.vue'
 const props = defineProps<{
   sprite: Sprite
   project: Project
+}>()
+
+const emit = defineEmits<{
+  collapse: []
 }>()
 
 const renameSprite = useModal(SpriteRenameModal)
@@ -97,13 +113,14 @@ const addToLibrary = useAddAssetToLibrary()
   display: flex;
   gap: 12px;
   align-items: center;
+  height: 24px;
 }
 
 .name {
   color: var(--ui-color-title);
 }
 
-.edit-icon {
+.icon {
   cursor: pointer;
   color: var(--ui-color-grey-900);
   &:hover {
@@ -119,5 +136,9 @@ const addToLibrary = useAddAssetToLibrary()
   gap: 4px;
   align-items: center;
   word-break: keep-all;
+}
+
+.spacer {
+  flex: 1;
 }
 </style>
