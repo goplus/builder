@@ -2,7 +2,7 @@
  * @desc util-related APIs of spx-backend
  */
 
-import { client } from './common'
+import { client, type FileUrls } from './common'
 
 export interface FormatError {
   column: number
@@ -34,4 +34,13 @@ export type UpInfo = {
 
 export function getUpInfo() {
   return client.get('/util/upinfo') as Promise<UpInfo>
+}
+
+export type DownloadableFileUrls = {
+  /** Map from object keys to signed URLs for the objects */
+  objectUrls: FileUrls
+}
+
+export function makeDownloadableFileUrls(objects: string[]) {
+  return client.post('/util/fileurls', { objects: objects }) as Promise<DownloadableFileUrls>
 }

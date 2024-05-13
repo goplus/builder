@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
+	"strings"
+	"time"
 
 	_ "image/png"
 
@@ -35,8 +38,7 @@ type Controller struct {
 }
 
 type kodoConfig struct {
-	ak           string
-	sk           string
+	cred         *qiniuAuth.Credentials
 	bucket       string
 	bucketRegion string
 	baseUrl      string
@@ -60,8 +62,10 @@ func NewController(ctx context.Context) (ret *Controller, err error) {
 	}
 
 	kc := &kodoConfig{
-		ak:           mustEnv(logger, "KODO_AK"),
-		sk:           mustEnv(logger, "KODO_SK"),
+		cred: qiniuAuth.New(
+			mustEnv(logger, "KODO_AK"),
+			mustEnv(logger, "KODO_SK"),
+		),
 		bucket:       mustEnv(logger, "KODO_BUCKET"),
 		bucketRegion: mustEnv(logger, "KODO_BUCKET_REGION"),
 		baseUrl:      mustEnv(logger, "KODO_BASE_URL"),
@@ -519,8 +523,7 @@ func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
 		// the future.
 		FsizeLimit: 25 << 20, // 25 MiB
 	}
-	mac := qiniuAuth.New(ctrl.kodo.ak, ctrl.kodo.sk)
-	upToken := putPolicy.UploadToken(mac)
+	upToken := putPolicy.UploadToken(ctrl.kodo.cred)
 	return &UpInfo{
 		Token:   upToken,
 		Expires: putPolicy.Expires,
@@ -528,4 +531,49 @@ func (ctrl *Controller) GetUpInfo(ctx context.Context) (*UpInfo, error) {
 		Region:  ctrl.kodo.bucketRegion,
 		BaseUrl: ctrl.kodo.baseUrl,
 	}, nil
+}
+
+type MakeFileURLsParams struct {
+	// Objects is a list of object keys.
+	Objects []string `json:"objects"`
+}
+
+type FileURLs struct {
+	// ObjectURLs is a map from object keys to signed URLs for the objects.
+	ObjectURLs map[string]string `json:"objectUrls"`
+}
+
+func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsParams) (*FileURLs, error) {
+	const expires = 2 * 24 * 3600 // 2 days
+	logger := log.GetReqLogger(ctx)
+	fileURLs := &FileURLs{
+		ObjectURLs: make(map[string]string, len(params.Objects)),
+	}
+	for _, object := range params.Objects {
+		if !strings.HasPrefix(object, ctrl.kodo.baseUrl) {
+			err := fmt.Errorf("unrecognized object key: %s", object)
+			logger.Printf("%v", err)
+			return nil, err
+		}
+		u, err := url.Parse(object)
+		if err != nil {
+			logger.Printf("failed to parse object key: %s: %v", object, err)
+			return nil, err
+		}
+		u.Fragment = ""
+
+		// INFO: Workaround for browser caching issue with signed URLs, causing redundant downloads.
+		now := time.Now().UTC()
+		e := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Unix() + expires
+
+		if u.RawQuery != "" {
+			u.RawQuery += "&"
+		}
+		u.RawQuery += fmt.Sprintf("e=%d", e)
+
+		objectURL := u.String()
+		objectURL += "&token=" + ctrl.kodo.cred.Sign([]byte(objectURL))
+		fileURLs.ObjectURLs[object] = objectURL
+	}
+	return fileURLs, nil
 }

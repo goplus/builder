@@ -296,6 +296,23 @@ get "/util/upinfo", ctx => {
 	replyWithData(ctx, upInfo)
 }
 
+// Make file urls for downloading
+post "/util/fileurls", ctx => {
+	if _, ok := ensureUser(ctx); !ok {
+		return
+	}
+	params := &controller.MakeFileURLsParams{}
+	if ok := parseJson(ctx, params); !ok {
+		return
+	}
+	fileURLs, err := ctrl.MakeFileURLs(utils.getCtx(ctx), params)
+	if err != nil {
+		handlerInnerError(ctx, err)
+		return
+	}
+	replyWithData(ctx, fileURLs)
+}
+
 var err error
 logger := log.GetLogger()
 ctrl, err = controller.NewController(context.Background())

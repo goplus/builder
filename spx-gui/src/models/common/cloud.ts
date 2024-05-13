@@ -3,13 +3,17 @@ import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
 import type { FileCollection, ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
-import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo } from '@/apis/util'
+import {
+  getUpInfo as getRawUpInfo,
+  type UpInfo as RawUpInfo,
+  makeDownloadableFileUrls
+} from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
 
 export async function load(owner: string, name: string) {
   const projectData = await getProject(owner, name)
-  return parseProjectData(projectData)
+  return await parseProjectData(projectData)
 }
 
 export async function save(metadata: Metadata, files: Files) {
@@ -21,11 +25,11 @@ export async function save(metadata: Metadata, files: Files) {
   const projectData = await (id != null
     ? updateProject(owner, name, { isPublic, files: fileUrls })
     : addProject({ name, isPublic, files: fileUrls }))
-  return parseProjectData(projectData)
+  return await parseProjectData(projectData)
 }
 
-export function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
-  const files = getFiles(fileUrls)
+export async function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
+  const files = await getFiles(fileUrls)
   return { metadata, files }
 }
 
@@ -40,10 +44,12 @@ export async function uploadFiles(files: Files): Promise<FileCollection> {
   return fileUrls
 }
 
-export function getFiles(fileUrls: FileCollection): Files {
+export async function getFiles(fileUrls: FileCollection): Promise<Files> {
+  const objects = Object.values(fileUrls)
+  const { objectUrls } = await makeDownloadableFileUrls(objects)
   const files: Files = {}
   Object.keys(fileUrls).forEach((path) => {
-    const url = fileUrls[path]
+    const url = objectUrls[fileUrls[path]]
     files[path] = createFileWithUrl(filename(path), url)
   })
   return files

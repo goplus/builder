@@ -226,7 +226,7 @@ export class Project extends Disposble {
     const { metadata, files } =
       typeof ownerOrProjectData === 'string'
         ? await cloudHelper.load(ownerOrProjectData, name!)
-        : cloudHelper.parseProjectData(ownerOrProjectData)
+        : await cloudHelper.parseProjectData(ownerOrProjectData)
     await this.load(metadata, files)
   }
 
