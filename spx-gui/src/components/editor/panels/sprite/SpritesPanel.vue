@@ -26,9 +26,21 @@
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter v-if="editorCtx.selectedSprite != null">
-        <SpriteBasicConfig :sprite="editorCtx.selectedSprite" :project="editorCtx.project" />
+      <PanelFooter v-if="footerExpanded && editorCtx.selectedSprite != null">
+        <SpriteBasicConfig
+          :sprite="editorCtx.selectedSprite"
+          :project="editorCtx.project"
+          @collapse="footerExpanded = false"
+        />
       </PanelFooter>
+      <UITooltip v-if="!footerExpanded && editorCtx.selectedSprite != null">
+        <template #trigger>
+          <div class="footer-expand-button" @click="footerExpanded = true">
+            <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
+          </div>
+        </template>
+        {{ $t({ en: 'Expand', zh: '展开' }) }}
+      </UITooltip>
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
@@ -56,7 +68,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UIMenu, UIMenuItem, UIEmpty, useUIVariables } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, useUIVariables, UIIcon, UITooltip } from '@/components/ui'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
@@ -75,6 +87,8 @@ const emit = defineEmits<{
 
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
+
+const footerExpanded = ref(false)
 
 const sprites = computed(() => editorCtx.project.sprites)
 const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
@@ -121,5 +135,23 @@ async function handleChoose() {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.footer-expand-button {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  right: 12px;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px -2px 8px 0px rgba(51, 51, 51, 0.08);
+  background-color: var(--ui-color-grey-300);
+  cursor: pointer;
+}
+
+.footer-expand-icon {
+  transform: rotate(180deg);
 }
 </style>

@@ -27,6 +27,7 @@ import close from './close.svg?raw'
 import rotate from './rotate.svg?raw'
 import share from './share.svg?raw'
 import arrowAlt from './arrow-alt.svg?raw'
+import doubleArrowDown from './double-arrow-down.svg?raw'
 
 const typeIconMap = {
   file,
@@ -50,7 +51,8 @@ const typeIconMap = {
   close,
   rotate,
   share,
-  arrowAlt
+  arrowAlt,
+  doubleArrowDown
 }
 
 export type Type = keyof typeof typeIconMap
