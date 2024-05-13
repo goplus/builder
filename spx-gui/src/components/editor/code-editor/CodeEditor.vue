@@ -3,11 +3,12 @@
     <ul class="categories-wrapper">
       <li
         v-for="(category, i) in categories"
+        v-show="category.snippets.length > 0"
         :key="i"
         class="category"
-        :class="{ active: category === activeCategory }"
+        :class="{ active: i === activeCategoryIndex }"
         :style="{ '--category-color': category.color }"
-        @click="handleCategoryClick(category)"
+        @click="handleCategoryClick(i)"
       >
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="icon" v-html="category.icon"></div>
@@ -16,15 +17,15 @@
     </ul>
     <div class="snippets-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
-      <div class="snippets">
-        <!-- TODO: use snippet detail as title -->
-        <UITagButton
-          v-for="(snippet, i) in activeCategory.snippets"
-          :key="i"
-          @click="handleSnippetClick(snippet)"
-        >
-          {{ snippet.label }}
-        </UITagButton>
+      <div v-for="(snippets, i) in activeCategory.snippets" :key="i" class="snippets">
+        <UITooltip v-for="(snippet, j) in snippets" :key="j">
+          {{ $t(snippet.desc) }}
+          <template #trigger>
+            <UITagButton @click="handleSnippetClick(snippet)">
+              <span class="snippet-text">{{ snippet.label }}</span>
+            </UITagButton>
+          </template>
+        </UITooltip>
       </div>
     </div>
     <div class="code-text-editor-wrapper">
@@ -40,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
-import { useUIVariables, UITagButton } from '@/components/ui'
+import { useUIVariables, UITagButton, UITooltip } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
@@ -49,7 +50,11 @@ import {
   lookSnippets,
   controlSnippets,
   soundSnippets,
-  type Snippet
+  type Snippet,
+  SnippetTarget,
+  sensingSnippets,
+  gameSnippets,
+  getVariableSnippets
 } from './code-text-editor'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
@@ -69,43 +74,75 @@ const emit = defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const categories = [
-  {
-    icon: iconEvent,
-    label: { en: 'Event', zh: '事件' },
-    snippets: eventSnippets,
-    color: uiVariables.color.yellow.main
-  },
-  {
-    icon: iconLook,
-    label: { en: 'Look', zh: '外观' },
-    snippets: lookSnippets,
-    color: '#fd8d60'
-  },
-  {
-    icon: iconSound,
-    label: { en: 'Sound', zh: '声音' },
-    snippets: soundSnippets,
-    color: uiVariables.color.sound.main
-  },
-  {
-    icon: iconMotion,
-    label: { en: 'Motion', zh: '运动' },
-    snippets: motionSnippets,
-    color: '#91d644'
-  },
-  {
-    icon: iconControl,
-    label: { en: 'Control', zh: '控制' },
-    snippets: controlSnippets,
-    color: '#67ceff'
-  }
-]
+const variablesSnippets = computed(() => getVariableSnippets(editorCtx.project))
 
-const activeCategory = shallowRef(categories[0])
+const categories = computed(() => {
+  return [
+    {
+      icon: iconEvent,
+      color: uiVariables.color.yellow.main,
+      label: { en: 'Event', zh: '事件' },
+      snippets: eventSnippets
+    },
+    {
+      icon: iconMotion,
+      color: '#91d644',
+      label: { en: 'Motion', zh: '运动' },
+      snippets: motionSnippets
+    },
+    {
+      icon: iconLook,
+      color: '#fd8d60',
+      label: { en: 'Look', zh: '外观' },
+      snippets: lookSnippets
+    },
+    {
+      icon: iconLook, // TODO
+      color: '#fd8d60',
+      label: { en: 'Sensing', zh: '感知' },
+      snippets: sensingSnippets
+    },
+    {
+      icon: iconLook, // TODO
+      color: '#fd8d60',
+      label: { en: 'Game', zh: '游戏' },
+      snippets: gameSnippets
+    },
+    {
+      icon: iconSound,
+      color: uiVariables.color.sound.main,
+      label: { en: 'Sound', zh: '声音' },
+      snippets: soundSnippets
+    },
+    {
+      icon: iconControl,
+      color: '#67ceff',
+      label: { en: 'Control', zh: '控制' },
+      snippets: controlSnippets
+    },
+    {
+      icon: iconControl, // TODO
+      color: '#67ceff',
+      label: { en: 'Variable', zh: '变量' },
+      snippets: variablesSnippets.value
+    }
+  ].map((c) => ({ ...c, snippets: filterSnippets(c.snippets) }))
+})
 
-function handleCategoryClick(category: (typeof categories)[0]) {
-  activeCategory.value = category
+function filterSnippets(snippets: Snippet[][]) {
+  const isSprite = editorCtx.selected?.type === 'sprite'
+  if (isSprite) return snippets
+  // for stage, filter snippets that targets sprite only
+  return snippets
+    .map((ss) => ss.filter((s) => s.target === SnippetTarget.all))
+    .filter((ss) => ss.length > 0)
+}
+
+const activeCategoryIndex = shallowRef(0)
+const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
+
+function handleCategoryClick(index: number) {
+  activeCategoryIndex.value = index
 }
 
 const codeTextEditor = ref<InstanceType<typeof CodeTextEditor>>()
@@ -179,6 +216,7 @@ const thumbnailStyle = computed(
   flex: 1 0 162px;
   padding: 12px;
   background-color: var(--ui-color-grey-300);
+  overflow-y: auto;
 
   .title {
     font-size: var(--ui-font-size-text);
@@ -186,10 +224,23 @@ const thumbnailStyle = computed(
   }
 
   .snippets {
-    margin-top: 12px;
+    margin: 12px 0;
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+
+    + .snippets {
+      // TODO: need design
+      padding-top: 12px;
+      border-top: 1px dashed var(--ui-color-dividing-line-1);
+    }
+  }
+
+  .snippet-text {
+    max-width: 9em;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 

@@ -3,15 +3,18 @@
 </template>
 <script lang="ts">
 let monaco: typeof import('monaco-editor')
+let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
 import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
-import { initMonaco, defaultThemeName } from './initialization'
 import loader from '@monaco-editor/loader'
-import { KeyCode, languages, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
+import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
+import { initMonaco, defaultThemeName } from './monaco'
+import type { Snippet } from './snippets'
 
 const props = defineProps<{
   value: string
@@ -25,13 +28,14 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 
 const uiVariables = useUIVariables()
-const { t, lang } = useI18n()
+const i18n = useI18n()
+editorCtx = useEditorCtx()
 
-if (lang.value !== 'en') {
+if (i18n.lang.value !== 'en') {
   const langOverride = {
     zh: 'zh-cn'
   }
-  const locale = langOverride[lang.value] || lang.value
+  const locale = langOverride[i18n.lang.value] || i18n.lang.value
   loader.config({
     'vs/nls': {
       availableLanguages: {
@@ -45,7 +49,7 @@ const getMonaco = async () => {
   if (monaco) return monaco
   const monaco_ = await loader.init()
   if (monaco) return monaco
-  initMonaco(monaco_, uiVariables)
+  initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
   monaco = monaco_
   return monaco
 }
@@ -87,7 +91,7 @@ watchEffect(async (onClenaup) => {
 
   editor.addAction({
     id: 'format',
-    label: t({ zh: '格式化', en: 'Format Code' }),
+    label: i18n.t({ zh: '格式化', en: 'Format Code' }),
     keybindings: [KeyMod.CtrlCmd | KeyCode.KeyL],
     contextMenuGroupId: 'navigation',
     run: format
@@ -116,7 +120,7 @@ watch(
   }
 )
 
-function insertSnippet(snippet: languages.CompletionItem, position?: Position) {
+function insertSnippet(snippet: Snippet, position?: Position) {
   const editor = monacoEditor.value
   if (editor == null) return
 

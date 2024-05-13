@@ -34,6 +34,7 @@ const editorCtx = useEditorCtx()
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: visible; // avoid cutting dropdown menu of CodeTextEditor (monaco)
 }
 .sider {
   flex: 0 0 492px;

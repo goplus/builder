@@ -1,36 +1,12 @@
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
+import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { allSnippets } from './snippets'
+import { SnippetType, getAllSnippets } from './snippets'
 import { useUIVariables } from '@/components/ui'
 import type { IRange, languages } from 'monaco-editor'
-
-function completionItem(
-  range: IRange | languages.CompletionItemRanges,
-  monaco: typeof import('monaco-editor')
-): languages.CompletionItem[] {
-  return [
-    ...keywords.map((keyword) => ({
-      label: keyword,
-      insertText: keyword,
-      kind: monaco.languages.CompletionItemKind.Keyword,
-      detail: 'This is a keyword',
-      range
-    })),
-    ...allSnippets.map((e) => ({
-      ...e,
-      range
-    })),
-    ...typeKeywords.map((typeKeyword) => ({
-      label: typeKeyword,
-      insertText: typeKeyword,
-      kind: monaco.languages.CompletionItemKind.TypeParameter,
-      detail: 'This is a type',
-      range
-    }))
-  ]
-}
+import type { Project } from '@/models/project'
 
 declare global {
   /** Notice: this is available only after `initFormatWasm()` */
@@ -49,7 +25,9 @@ export const defaultThemeName = 'spx-default-theme'
 /** Global initializations for monaco editor */
 export function initMonaco(
   monaco: typeof import('monaco-editor'),
-  { color }: ReturnType<typeof useUIVariables>
+  { color }: ReturnType<typeof useUIVariables>,
+  i18n: I18n,
+  getProject: () => Project
 ) {
   self.MonacoEnvironment = {
     getWorker() {
@@ -72,7 +50,6 @@ export function initMonaco(
       { token: 'number', foreground: color.blue[600] },
       { token: 'keyword', foreground: color.red[300] },
       { token: 'typeKeywords', foreground: color.purple.main },
-      { token: 'functions', foreground: color.primary.main },
       { token: 'brackets', foreground: color.title }
     ],
     colors: {
@@ -97,21 +74,6 @@ export function initMonaco(
       ['(', ')'],
       ['"', '"'],
       ["'", "'"]
-    ],
-    onEnterRules: [
-      // if current cursor is betwwen work and space，then will not indent
-      {
-        beforeText: /\w/,
-        afterText: /^$/,
-        action: { indentAction: monaco.languages.IndentAction.None }
-      },
-      {
-        // match  /*
-        beforeText: /^\s*(\/\*)/,
-        // match */
-        afterText: /^\s*\*\/$/,
-        action: { indentAction: monaco.languages.IndentAction.IndentOutdent }
-      }
     ]
   })
 
@@ -121,7 +83,6 @@ export function initMonaco(
     keywords,
     typeKeywords,
     operators,
-    functions: allSnippets.map((e) => e.label),
     brackets,
     symbols: /[=><!~?:&|+\-*/^%]+/,
     escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
@@ -139,7 +100,6 @@ export function initMonaco(
             cases: {
               '@typeKeywords': 'typeKeywords',
               '@keywords': 'keyword',
-              '@functions': 'functions',
               '@default': 'identifier'
             }
           }
@@ -151,7 +111,7 @@ export function initMonaco(
 
         // delimiters and operators
         [/[{}()[\]]/, '@brackets'],
-        [/[<>](?!@symbols)/, '@brackets'],
+        // [/[<>](?!@symbols)/, '@brackets'],
         [
           /@symbols/,
           {
@@ -219,11 +179,61 @@ export function initMonaco(
         startColumn: word.startColumn,
         endColumn: word.endColumn
       }
-      const suggestions: languages.CompletionItem[] = completionItem(range, monaco)
+      const suggestions: languages.CompletionItem[] = getCompletionItems(
+        range,
+        monaco,
+        i18n,
+        getProject()
+      )
       return { suggestions }
     }
   })
 
   // tempararily disable in-browser format
   // initFormat()
+}
+
+function getCompletionItems(
+  range: IRange | languages.CompletionItemRanges,
+  monaco: typeof import('monaco-editor'),
+  i18n: I18n,
+  project: Project
+): languages.CompletionItem[] {
+  return [
+    ...keywords.map((keyword) => ({
+      label: keyword,
+      insertText: keyword,
+      kind: monaco.languages.CompletionItemKind.Keyword,
+      range
+    })),
+    ...typeKeywords.map((typeKeyword) => ({
+      label: typeKeyword,
+      insertText: typeKeyword,
+      kind: monaco.languages.CompletionItemKind.TypeParameter,
+      range
+    })),
+    ...getAllSnippets(project).map((s) => ({
+      label: s.label,
+      insertText: s.insertText,
+      insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+      kind: getCompletionItemKind(s.type, monaco),
+      detail: i18n.t(s.desc),
+      range
+    }))
+  ]
+}
+
+function getCompletionItemKind(type: SnippetType, monaco: typeof import('monaco-editor')) {
+  switch (type) {
+    case SnippetType.method:
+      return monaco.languages.CompletionItemKind.Function
+    case SnippetType.function:
+      return monaco.languages.CompletionItemKind.Function
+    case SnippetType.constant:
+      return monaco.languages.CompletionItemKind.Constant
+    case SnippetType.keyword:
+      return monaco.languages.CompletionItemKind.Snippet
+    case SnippetType.variable:
+      return monaco.languages.CompletionItemKind.Variable
+  }
 }
