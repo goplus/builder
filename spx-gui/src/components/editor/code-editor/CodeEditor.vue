@@ -85,6 +85,12 @@ const categories = computed(() => {
       snippets: eventSnippets
     },
     {
+      icon: iconControl,
+      color: '#67ceff',
+      label: { en: 'Control', zh: '控制' },
+      snippets: controlSnippets
+    },
+    {
       icon: iconMotion,
       color: '#91d644',
       label: { en: 'Motion', zh: '运动' },
@@ -103,28 +109,22 @@ const categories = computed(() => {
       snippets: sensingSnippets
     },
     {
-      icon: iconLook, // TODO
-      color: '#fd8d60',
-      label: { en: 'Game', zh: '游戏' },
-      snippets: gameSnippets
-    },
-    {
       icon: iconSound,
       color: uiVariables.color.sound.main,
       label: { en: 'Sound', zh: '声音' },
       snippets: soundSnippets
     },
     {
-      icon: iconControl,
-      color: '#67ceff',
-      label: { en: 'Control', zh: '控制' },
-      snippets: controlSnippets
-    },
-    {
       icon: iconControl, // TODO
       color: '#67ceff',
       label: { en: 'Variable', zh: '变量' },
       snippets: variablesSnippets.value
+    },
+    {
+      icon: iconControl, // TODO
+      color: '#67ceff',
+      label: { en: 'Game', zh: '游戏' },
+      snippets: gameSnippets
     }
   ].map((c) => ({ ...c, snippets: filterSnippets(c.snippets) }))
 })

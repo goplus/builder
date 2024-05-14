@@ -113,24 +113,25 @@ const soundVolumeSnippets = [spx.volume, spx.setVolume, spx.changeVolume]
 export const soundSnippets = [soundPlayStopSnippets, soundVolumeSnippets]
 
 export const controlSnippets = [
-  [gop.varDefinition],
+  [spx.wait],
   [gop.ifStatemeent, gop.ifElseStatemeent],
-  [gop.forLoop, gop.forRange, gop.forRangeSet],
-  [gop.println]
+  [gop.forLoop, gop.forRange, gop.forRangeSet]
 ]
 
 const gameStopSnippets = [spx.exit]
 
 const gameSpriteSnippets = [spx.clone, spx.die]
 
-const gameUtilsSnippets = [spx.wait, spx.rand]
+const gameUtilsSnippets = [spx.rand, gop.println]
 
 export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnippets]
 
 export function getVariableSnippets(project: Project) {
   // TODO: costumes & backdrops here
   const { sprites, sounds } = project
-  const snippets: Snippet[][] = []
+  const snippets: Snippet[][] = [
+    [gop.varDefinition]
+  ]
   snippets.push(
     sprites.map((sprite) => ({
       type: SnippetType.variable,
