@@ -519,16 +519,16 @@ export const play1: Snippet = {
   type: SnippetType.method,
   target: SnippetTarget.all,
   label: 'play',
-  desc: { en: 'Play given sound.', zh: '播放指定的声音' },
-  insertText: 'play ${1:sound}'
+  desc: { en: 'Play sound with given name.', zh: '播放声音（指定名字）' },
+  insertText: 'play ${1:""}'
 }
 
 export const play2: Snippet = {
   type: SnippetType.method,
   target: SnippetTarget.all,
   label: 'play S,W',
-  desc: { en: 'Play given sound and wait for it to complete.', zh: '播放指定的声音并等待其完成' },
-  insertText: 'play ${1:sound}, true'
+  desc: { en: 'Play sound with given name and wait for it to complete.', zh: '播放声音（指定名字）并等待其完成' },
+  insertText: 'play ${1:""}, true'
 }
 
 // TODO: error `undefined: Loop` with `insertText: 'play ${1:sound}, { Loop: true }'`
@@ -536,8 +536,8 @@ export const play2: Snippet = {
 //   type: DefType.method,
 //   target: DefTarget.all,
 //   label: 'play S,L',
-//   desc: { en: 'Play given sound on loop.', zh: 'TODO' },
-//   insertText: 'play ${1:sound}, { Loop: true }'
+//   desc: { en: 'Play sound with given name on loop.', zh: 'TODO' },
+//   insertText: 'play ${1:""}, { Loop: true }'
 // }
 
 export const stopAllSounds: Snippet = {
