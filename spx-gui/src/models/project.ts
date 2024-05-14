@@ -203,7 +203,7 @@ export class Project extends Disposble {
 
   async loadGbpFile(file: globalThis.File) {
     const { metadata, files } = await gbpHelper.load(file)
-    this.load(
+    await this.load(
       {
         // name is the only metadata we need when load from file
         name: this.name ?? metadata.name

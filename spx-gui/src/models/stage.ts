@@ -150,7 +150,16 @@ export class Stage {
     return reactive(this) as this
   }
 
-  static async load({ scenes: sceneConfigs, sceneIndex, costumes: costumeConfigs, currentCostumeIndex, map }: RawStageConfig, files: Files) {
+  static async load(
+    {
+      scenes: sceneConfigs,
+      sceneIndex,
+      costumes: costumeConfigs,
+      currentCostumeIndex,
+      map
+    }: RawStageConfig,
+    files: Files
+  ) {
     // TODO: empty stage
     let code = ''
     for (const codeFilePath of stageCodeFilePaths) {

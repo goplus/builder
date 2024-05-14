@@ -24,19 +24,21 @@ export type SpriteInits = {
   size?: number
   rotationStyle?: RotationStyle
   costumeIndex?: number
+  currentCostumeIndex?: number // For compatibility
   visible?: boolean
   isDraggable?: boolean
-  // TODO:
-  // costumeSet?: costumeSet
-  // costumeMPSet?: costumeMPSet
-  // currentCostumeIndex?: int
-  // fAnimations?: map
-  // mAnimations?: map
-  // tAnimations?: map
+
+  // Not supported by builder:
+  fAnimations?: unknown
+  mAnimations?: unknown
+  tAnimations?: unknown
 }
 
 export type RawSpriteConfig = SpriteInits & {
   costumes?: RawCostumeConfig[]
+  // Not supported by builder:
+  costumeSet?: unknown
+  costumeMPSet?: unknown
 }
 
 export const spriteAssetPath = 'assets/sprites'
@@ -134,9 +136,13 @@ export class Sprite extends Disposble {
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
     this.rotationStyle = getRotationStyle(inits?.rotationStyle)
-    this.costumeIndex = inits?.costumeIndex ?? 0
+    this.costumeIndex = inits?.costumeIndex ?? inits?.currentCostumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
+
+    for (const field of ['fAnimations', 'mAnimations', 'tAnimations'] as const) {
+      if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
+    }
     return reactive(this) as this
   }
 
@@ -184,16 +190,28 @@ export class Sprite extends Disposble {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
-    const { costumes: costumeConfigs, ...inits } = (await toConfig(configFile)) as RawSpriteConfig
+    const {
+      costumes: costumeConfigs,
+      costumeSet,
+      costumeMPSet,
+      ...inits
+    } = (await toConfig(configFile)) as RawSpriteConfig
     let code = ''
     const codeFile = files[name + '.spx']
     if (codeFile != null) {
       code = await toText(codeFile)
     }
     const sprite = new Sprite(name, code, inits)
-    const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
-    for (const costume of costumes) {
-      sprite.addCostume(costume)
+    if (costumeConfigs != null) {
+      const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
+      for (const costume of costumes) {
+        sprite.addCostume(costume)
+      }
+    } else {
+      if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
+      else if (costumeMPSet != null)
+        console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
+      else console.warn(`no costume found for sprite: ${name}`)
     }
     return sprite
   }
