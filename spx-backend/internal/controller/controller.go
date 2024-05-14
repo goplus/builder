@@ -551,9 +551,8 @@ func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsPa
 	}
 	for _, object := range params.Objects {
 		if !strings.HasPrefix(object, ctrl.kodo.baseUrl) {
-			err := fmt.Errorf("unrecognized object key: %s", object)
-			logger.Printf("%v", err)
-			return nil, err
+			fileURLs.ObjectURLs[object] = object // not a Kodo object
+			continue
 		}
 		u, err := url.Parse(object)
 		if err != nil {
