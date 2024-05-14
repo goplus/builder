@@ -169,28 +169,34 @@ async function handleNewProject() {
 
 const confirm = useConfirmDialog()
 
-async function handleImportProjectFile() {
-  await confirm({
-    title: i18n.t({ en: 'Import project file', zh: '导入项目文件' }),
-    content: i18n.t({
-      en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
-      zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
-    }),
-    confirmText: i18n.t({ en: 'Continue', zh: '继续' })
-  })
-  const file = await selectFile({ accept: '.gbp' })
-  await props.project!.loadGbpFile(file)
-}
+const handleImportProjectFile = useMessageHandle(
+  async () => {
+    await confirm({
+      title: i18n.t({ en: 'Import project file', zh: '导入项目文件' }),
+      content: i18n.t({
+        en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
+        zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
+      }),
+      confirmText: i18n.t({ en: 'Continue', zh: '继续' })
+    })
+    const file = await selectFile({ accept: '.gbp' })
+    await props.project!.loadGbpFile(file)
+  },
+  { en: 'Failed to import project file', zh: '导入项目文件失败' }
+).fn
 
-async function handleExportProjectFile() {
-  const gbpFile = await props.project!.exportGbpFile()
-  saveAs(gbpFile, gbpFile.name) // TODO: what if user cancelled download?
-}
+const handleExportProjectFile = useMessageHandle(
+  async () => {
+    const gbpFile = await props.project!.exportGbpFile()
+    saveAs(gbpFile, gbpFile.name) // TODO: what if user cancelled download?
+  },
+  { en: 'Failed to export project file', zh: '导出项目文件失败' }
+).fn
 
-async function handleImportFromScratch() {
-  if (!props.project) return
-  loadFromScratchModal(props.project)
-}
+const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(props.project!), {
+  en: 'Failed to import from scratch file',
+  zh: '从 Scratch 项目文件导入失败'
+}).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 
