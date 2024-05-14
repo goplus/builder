@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/goplus/igop v0.24.0
 	github.com/goplus/reflectx v1.2.2
-	github.com/goplus/spx v1.0.0
+	github.com/goplus/spx v1.0.1-0.20240513212547-3b95f57610c0
 )
 
 require (
@@ -25,7 +25,7 @@ require (
 	github.com/jezek/xgb v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/qiniu/audio v0.2.1 // indirect
-	github.com/qiniu/x v1.13.9 // indirect
+	github.com/qiniu/x v1.13.10 // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/timandy/routine v1.1.1 // indirect
