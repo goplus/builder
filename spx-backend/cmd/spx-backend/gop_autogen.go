@@ -502,29 +502,59 @@ func (this *project) MainEntry() {
 //line cmd/spx-backend/project_yap.gox:296:1
 		replyWithData(ctx, upInfo)
 	})
-//line cmd/spx-backend/project_yap.gox:299:1
-	var err error
 //line cmd/spx-backend/project_yap.gox:300:1
-	logger := log.GetLogger()
+	this.Post("/util/fileurls", func(ctx *yap.Context) {
 //line cmd/spx-backend/project_yap.gox:301:1
-	this.ctrl, err = controller.NewController(context.Background())
+		if
+//line cmd/spx-backend/project_yap.gox:301:1
+		_, ok := ensureUser(ctx); !ok {
 //line cmd/spx-backend/project_yap.gox:302:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:304:1
+		params := &controller.MakeFileURLsParams{}
+//line cmd/spx-backend/project_yap.gox:305:1
+		if
+//line cmd/spx-backend/project_yap.gox:305:1
+		ok := parseJson(ctx, params); !ok {
+//line cmd/spx-backend/project_yap.gox:306:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:308:1
+		fileURLs, err := this.ctrl.MakeFileURLs(utils.GetCtx(ctx), params)
+//line cmd/spx-backend/project_yap.gox:309:1
+		if err != nil {
+//line cmd/spx-backend/project_yap.gox:310:1
+			handlerInnerError(ctx, err)
+//line cmd/spx-backend/project_yap.gox:311:1
+			return
+		}
+//line cmd/spx-backend/project_yap.gox:313:1
+		replyWithData(ctx, fileURLs)
+	})
+//line cmd/spx-backend/project_yap.gox:316:1
+	var err error
+//line cmd/spx-backend/project_yap.gox:317:1
+	logger := log.GetLogger()
+//line cmd/spx-backend/project_yap.gox:318:1
+	this.ctrl, err = controller.NewController(context.Background())
+//line cmd/spx-backend/project_yap.gox:319:1
 	if err != nil {
-//line cmd/spx-backend/project_yap.gox:303:1
+//line cmd/spx-backend/project_yap.gox:320:1
 		logger.Fatalln("New controller failed:", err)
 	}
-//line cmd/spx-backend/project_yap.gox:305:1
+//line cmd/spx-backend/project_yap.gox:322:1
 	user.CasdoorConfigInit()
-//line cmd/spx-backend/project_yap.gox:306:1
+//line cmd/spx-backend/project_yap.gox:323:1
 	port := os.Getenv("PORT")
-//line cmd/spx-backend/project_yap.gox:307:1
+//line cmd/spx-backend/project_yap.gox:324:1
 	if port == "" {
-//line cmd/spx-backend/project_yap.gox:308:1
+//line cmd/spx-backend/project_yap.gox:325:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/project_yap.gox:310:1
+//line cmd/spx-backend/project_yap.gox:327:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/project_yap.gox:311:1
+//line cmd/spx-backend/project_yap.gox:328:1
 	this.Run(port, UserMiddleware, ReqIDMiddleware, CorsMiddleware)
 }
 func (this *project) Main() {

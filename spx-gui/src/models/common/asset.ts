@@ -28,7 +28,7 @@ export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
 }
 
 export async function asset2Sprite(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
+  const files = await getFiles(assetData.files)
   const sprites = await Sprite.loadAll(files)
   if (sprites.length === 0) throw new Error('no sprite loaded')
   return sprites[0]
@@ -49,7 +49,7 @@ export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetDa
 }
 
 export async function asset2Backdrop(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
+  const files = await getFiles(assetData.files)
   const configFile = files[virtualBackdropConfigFileName]
   if (configFile == null) throw new Error('no config file found')
   const config = (await toConfig(configFile)) as BackdropInits
@@ -66,7 +66,7 @@ export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
 }
 
 export async function asset2Sound(assetData: PartialAssetData) {
-  const files = getFiles(assetData.files)
+  const files = await getFiles(assetData.files)
   const sounds = await Sound.loadAll(files)
   if (sounds.length === 0) throw new Error('no sound loaded')
   return sounds[0]
