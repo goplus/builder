@@ -194,7 +194,7 @@ const handleExportProjectFile = useMessageHandle(
 ).fn
 
 const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(props.project!), {
-  en: 'Failed to import from scratch file',
+  en: 'Failed to import from Scratch file',
   zh: '从 Scratch 项目文件导入失败'
 }).fn
 
