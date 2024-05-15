@@ -30,6 +30,7 @@ const editorCtx = useEditorCtx()
 
 <style scoped lang="scss">
 .main {
+  position: relative;
   flex: 1 1 0;
   min-width: 0;
   display: flex;

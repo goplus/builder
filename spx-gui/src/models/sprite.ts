@@ -4,7 +4,7 @@
  */
 
 import { reactive } from 'vue'
-import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
+import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
 import { Disposble } from './common/disposable'
 import { join } from '@/utils/path'
 import { type RawCostumeConfig, Costume } from './costume'
@@ -50,21 +50,26 @@ export function getSpriteAssetPath(name: string) {
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
-  _project: Project | null = null
+  private project: Project | null = null
   setProject(project: Project | null) {
-    this._project = project
+    this.project = project
   }
 
   name: string
   setName(name: string) {
-    const err = validateSpriteName(name, this._project)
+    const err = validateSpriteName(name, this.project)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 
-  code: string
+  private codeFile: File | null
+  private get codeFileName() { return `${this.name}.spx` }
+  async getCode() {
+    if (this.codeFile == null) return ''
+    return toText(this.codeFile)
+  }
   setCode(code: string) {
-    this.code = code
+    this.codeFile = fromText(this.codeFileName, code)
   }
 
   costumes: Costume[]
@@ -126,10 +131,10 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(name: string, code = '', inits?: SpriteInits) {
+  constructor(name: string, codeFile: File | null = null, inits?: SpriteInits) {
     super()
     this.name = name
-    this.code = code
+    this.codeFile = codeFile
     this.costumes = []
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
@@ -151,7 +156,7 @@ export class Sprite extends Disposble {
    * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
    */
   async autoFit() {
-    const { costumes, _project: project } = this
+    const { costumes, project: project } = this
     if (project == null) throw new Error('`autoFit` should be called after added to a project')
     if (costumes.length > 0) {
       const [mapSize, costumeSize] = await Promise.all([
@@ -175,8 +180,8 @@ export class Sprite extends Disposble {
   }
 
   /** Create sprite within builder (by user actions) */
-  static create(nameBase: string, code?: string, inits?: SpriteInits) {
-    return new Sprite(getSpriteName(null, nameBase), code ?? '', {
+  static create(nameBase: string, codeFile?: File, inits?: SpriteInits) {
+    return new Sprite(getSpriteName(null, nameBase), codeFile, {
       heading: 90,
       x: 0,
       y: 0,
@@ -196,12 +201,8 @@ export class Sprite extends Disposble {
       costumeMPSet,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
-    let code = ''
     const codeFile = files[name + '.spx']
-    if (codeFile != null) {
-      code = await toText(codeFile)
-    }
-    const sprite = new Sprite(name, code, inits)
+    const sprite = new Sprite(name, codeFile, inits)
     if (costumeConfigs != null) {
       const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
       for (const costume of costumes) {
@@ -250,7 +251,7 @@ export class Sprite extends Disposble {
       isDraggable: this.isDraggable,
       costumes: costumeConfigs
     }
-    files[`${this.name}.spx`] = fromText(`${this.name}.spx`, this.code)
+    files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
