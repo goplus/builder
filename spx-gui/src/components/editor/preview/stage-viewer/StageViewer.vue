@@ -39,7 +39,7 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-    <UILoading v-if="spritesAndBackdropLoading" class="loading" />
+    <UILoading v-if="spritesAndBackdropLoading" cover />
   </div>
 </template>
 
@@ -153,13 +153,5 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
-}
-
-.loading {
-  position: absolute;
-  z-index: 100;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.5);
 }
 </style>

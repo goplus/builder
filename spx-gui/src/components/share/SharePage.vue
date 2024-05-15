@@ -1,6 +1,6 @@
 <template>
   <RunnerContainer v-if="project" mode="share" :project="project" />
-  <UILoading v-else class="loading" />
+  <UILoading v-else cover />
 </template>
 <script setup lang="ts">
 import { watch } from 'vue'
@@ -28,9 +28,3 @@ watch(
   { deep: true, immediate: true }
 )
 </script>
-<style lang="scss" scoped>
-.loading {
-  height: 100%;
-  width: 100%;
-}
-</style>

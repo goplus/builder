@@ -1,7 +1,7 @@
 <template>
   <div class="iframe-container">
     <iframe ref="iframe" class="iframe" frameborder="0" src="about:blank" />
-    <UILoading v-if="loading" class="loading" />
+    <UILoading v-if="loading" cover />
   </div>
 </template>
 <script setup lang="ts">
@@ -68,9 +68,5 @@ watch(iframe, () => {
 .iframe {
   width: 100%;
   height: 100%;
-}
-
-.loading {
-  position: absolute;
 }
 </style>

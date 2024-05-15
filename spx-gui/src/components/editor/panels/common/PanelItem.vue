@@ -7,7 +7,7 @@
     <div class="remove" @click.stop="emit('remove')">
       <UIIcon class="icon" type="trash" />
     </div>
-    <UILoading v-if="loading" class="loading" />
+    <UILoading v-if="loading" cover />
   </li>
 </template>
 
@@ -26,10 +26,6 @@ const emit = defineEmits<{
 </script>
 
 <style lang="scss" scoped>
-.loading {
-  position: absolute;
-}
-
 .panel-item {
   display: flex;
   flex-direction: column;
