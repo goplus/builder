@@ -2,7 +2,7 @@
  * @desc util-related APIs of spx-backend
  */
 
-import { client, type FileUrls } from './common'
+import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
 
 export interface FormatError {
   column: number
@@ -26,8 +26,8 @@ export type UpInfo = {
   expires: number
   /** Maximum file size allowed in bytes */
   maxSize: number
-  /** Base URL to fetch file */
-  baseUrl: string
+  /** Bucket name */
+  bucket: string
   /** Bucket Region */
   region: string
 }
@@ -36,11 +36,8 @@ export function getUpInfo() {
   return client.get('/util/upinfo') as Promise<UpInfo>
 }
 
-export type DownloadableFileUrls = {
-  /** Map from object keys to signed URLs for the objects */
-  objectUrls: FileUrls
-}
-
-export function makeDownloadableFileUrls(objects: string[]) {
-  return client.post('/util/fileurls', { objects: objects }) as Promise<DownloadableFileUrls>
+export function makeObjectUrls(objects: UniversalUrl[]) {
+  return client.post('/util/fileurls', { objects: objects }) as Promise<{
+    objectUrls: UniversalToWebUrlMap
+  }>
 }

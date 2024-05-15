@@ -19,11 +19,11 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
       : never
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
-  const fileUrls = await uploadFiles(sprite.export())
+  const fileCollection = await uploadFiles(sprite.export())
   return {
     displayName: sprite.name,
     assetType: AssetType.Sprite,
-    files: fileUrls
+    files: fileCollection
   }
 }
 
@@ -40,11 +40,11 @@ const virtualBackdropConfigFileName = 'assets/__backdrop__.json'
 export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetData> {
   const [config, files] = backdrop.export()
   files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
-  const fileUrls = await uploadFiles(files)
+  const fileColleciton = await uploadFiles(files)
   return {
     displayName: backdrop.name,
     assetType: AssetType.Backdrop,
-    files: fileUrls
+    files: fileColleciton
   }
 }
 
@@ -57,11 +57,11 @@ export async function asset2Backdrop(assetData: PartialAssetData) {
 }
 
 export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
-  const fileUrls = await uploadFiles(sound.export())
+  const fileCollection = await uploadFiles(sound.export())
   return {
     displayName: sound.name,
     assetType: AssetType.Sound,
-    files: fileUrls
+    files: fileCollection
   }
 }
 
