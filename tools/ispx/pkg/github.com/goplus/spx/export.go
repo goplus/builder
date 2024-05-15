@@ -77,7 +77,6 @@ func init() {
 			"MovingInfo":    reflect.TypeOf((*q.MovingInfo)(nil)).Elem(),
 			"PlayAction":    reflect.TypeOf((*q.PlayAction)(nil)).Elem(),
 			"PlayOptions":   reflect.TypeOf((*q.PlayOptions)(nil)).Elem(),
-			"Pos":           reflect.TypeOf((*q.Pos)(nil)).Elem(),
 			"RotationStyle": reflect.TypeOf((*q.RotationStyle)(nil)).Elem(),
 			"Sound":         reflect.TypeOf((*q.Sound)(nil)).Elem(),
 			"Sprite":        reflect.TypeOf((*q.Sprite)(nil)).Elem(),
@@ -88,6 +87,7 @@ func init() {
 		AliasTypes: map[string]reflect.Type{
 			"Color": reflect.TypeOf((*q.Color)(nil)).Elem(),
 			"Key":   reflect.TypeOf((*q.Key)(nil)).Elem(),
+			"Pos":   reflect.TypeOf((*int)(nil)).Elem(),
 		},
 		Vars: map[string]reflect.Value{},
 		Funcs: map[string]reflect.Value{

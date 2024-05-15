@@ -147,7 +147,7 @@ export function getVariableSnippets(project: Project) {
       target: SnippetTarget.all,
       label: sound.name,
       desc: { en: `Sound "${sound.name}"`, zh: `声音 ${sound.name}` },
-      insertText: sound.name // TODO: should be strinfg literal, see details in https://github.com/goplus/builder/issues/443
+      insertText: `"${sound.name}"`
     }))
   )
   return snippets
