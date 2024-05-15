@@ -97,21 +97,25 @@ export async function selectAudio() {
 /** Get url for File */
 export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
   watch(
     fileSource,
     (file, _, onCleanup) => {
       if (file == null) return
+      loadingRef.value = true
       file.url(onCleanup).then((url) => {
         urlRef.value = url
+      }).finally(() => {
+        loadingRef.value = false
       })
     },
     { immediate: true }
   )
-  return urlRef
+  return [urlRef, loadingRef] as const
 }
 
 export function useImgFile(fileSource: WatchSource<File | undefined>) {
-  const urlRef = useFileUrl(fileSource)
+  const [urlRef, loadingRef] = useFileUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
   watch(urlRef, (url, _, onCleanup) => {
     onCleanup(() => {
@@ -124,5 +128,5 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
-  return imgRef
+  return [imgRef, loadingRef] as const
 }

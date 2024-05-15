@@ -28,7 +28,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const audioSrc = useFileUrl(() => props.sound.file)
+const [audioSrc] = useFileUrl(() => props.sound.file)
 
 const uiVariables = useUIVariables()
 </script>

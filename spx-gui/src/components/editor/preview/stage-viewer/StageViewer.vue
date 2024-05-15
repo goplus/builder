@@ -89,8 +89,7 @@ const stageConfig = computed(() => {
   }
 })
 
-const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
-const backdropLoading = computed(() => editorCtx.project.stage.backdrop?.img != null && backdropImg.value == null)
+const [backdropImg, backdropLoading] = useImgFile(() => editorCtx.project.stage.backdrop?.img)
 
 const spritesAndBackdropLoading = computed(() => {
   if (backdropLoading.value) return true

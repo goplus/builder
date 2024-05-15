@@ -69,7 +69,7 @@ type Playing = {
 }
 
 const playing = ref<Playing | null>(null)
-const audioUrl = useFileUrl(() => props.sound.file)
+const [audioUrl] = useFileUrl(() => props.sound.file)
 let wavesurfer: WaveSurfer | null = null
 
 watchEffect(

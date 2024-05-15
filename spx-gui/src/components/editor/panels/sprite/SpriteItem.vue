@@ -1,11 +1,11 @@
 <template>
   <PanelItem :active="active" :name="props.sprite.name" :loading="!imgSrc" @remove="emit('remove')">
-    <div class="img" :style="imgStyle"></div>
+    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
   </PanelItem>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
 import PanelItem from '../common/PanelItem.vue'
@@ -19,16 +19,12 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const imgSrc = useFileUrl(() => props.sprite.costume?.img)
-const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
+const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.costume?.img)
 </script>
 
 <style lang="scss" scoped>
 .img {
   width: 60px;
   height: 60px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <li :class="['project-item', { 'in-homepage': inHomepage }]">
     <div class="img-box">
-      <div class="img" :style="imgStyle"></div>
+      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
     <div class="info">
       <p class="name">{{ projectData.name }}</p>
@@ -18,6 +18,7 @@ export const projectItemSize = { width: 168, height: 182 },
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
 import dayjs from 'dayjs'
+import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
@@ -30,18 +31,18 @@ const props = defineProps<{
 
 const project = ref<Project | null>(null)
 
-watchEffect((onCleanup) => {
+watchEffect(async (onCleanup) => {
   let p = new Project()
-  p.loadFromCloud(props.projectData)
   onCleanup(() => p.dispose())
+  await p.loadFromCloud(props.projectData)
   project.value = p
 })
 
-const imgSrc = useFileUrl(() => project.value?.sprites[0]?.costume?.img)
-
-const imgStyle = computed(() => {
-  const backgroundImage = imgSrc.value || defaultSpritePng
-  return { backgroundImage: `url("${backgroundImage}")` }
+const [_imgSrc, _imgLoading] = useFileUrl(() => project.value?.sprites[0]?.costume?.img)
+const imgLoading = computed(() => project.value == null || _imgLoading.value)
+const imgSrc = computed(() => {
+  if (_imgSrc.value != null) return _imgSrc.value
+  return imgLoading.value ? null : defaultSpritePng
 })
 
 const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.MM.DD HH:mm'))
@@ -78,9 +79,6 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     .img {
       width: 100%;
       height: 100%;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: contain;
     }
   }
 

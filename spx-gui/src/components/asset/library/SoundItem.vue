@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const uiVariables = useUIVariables()
 const sound = useAsyncComputed(() => asset2Sound(props.asset))
-const audioSrc = useFileUrl(() => sound.value?.file)
+const [audioSrc] = useFileUrl(() => sound.value?.file)
 const { formattedDuration } = useAudioDuration(() => {
   return audioSrc.value
 })
