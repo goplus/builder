@@ -1,15 +1,15 @@
 import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
 import { File, toNativeFile, type Files } from './file'
-import type { FileCollection, ProjectData } from '@/apis/project'
+import type { ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
-import {
-  getUpInfo as getRawUpInfo,
-  type UpInfo as RawUpInfo,
-  makeDownloadableFileUrls
-} from '@/apis/util'
+import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo, makeObjectUrls } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
+import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
+
+// See https://github.com/goplus/builder/issues/411 for all the supported schemes, future plans, and discussions.
+const kodoScheme = 'kodo://'
 
 export async function load(owner: string, name: string) {
   const projectData = await getProject(owner, name)
@@ -20,37 +20,63 @@ export async function save(metadata: Metadata, files: Files) {
   const { owner, name, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
-  const fileUrls = await uploadFiles(files)
+  const fileCollection = await uploadFiles(files)
   const isPublic = metadata.isPublic ?? IsPublic.personal
   const projectData = await (id != null
-    ? updateProject(owner, name, { isPublic, files: fileUrls })
-    : addProject({ name, isPublic, files: fileUrls }))
+    ? updateProject(owner, name, { isPublic, files: fileCollection })
+    : addProject({ name, isPublic, files: fileCollection }))
   return await parseProjectData(projectData)
 }
 
-export async function parseProjectData({ files: fileUrls, ...metadata }: ProjectData) {
-  const files = await getFiles(fileUrls)
+export async function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
+  const files = await getFiles(fileCollection)
   return { metadata, files }
 }
 
 export async function uploadFiles(files: Files): Promise<FileCollection> {
-  const fileUrls: FileCollection = {}
+  const fileCollection: FileCollection = {}
   const entries = await Promise.all(
     Object.keys(files).map(async (path) => [path, await uploadFile(files[path]!)] as const)
   )
-  for (const [path, fileUrl] of entries) {
-    fileUrls[path] = fileUrl
+  for (const [path, url] of entries) {
+    fileCollection[path] = url
   }
-  return fileUrls
+  return fileCollection
 }
 
-export async function getFiles(fileUrls: FileCollection): Promise<Files> {
-  const objects = Object.values(fileUrls)
-  const { objectUrls } = await makeDownloadableFileUrls(objects)
+export async function getFiles(fileCollection: FileCollection): Promise<Files> {
+  const objects = Object.values(fileCollection).filter((url) => url.startsWith(kodoScheme))
+  const { objectUrls } = await makeObjectUrls(objects)
+
+  // FIXME: Remove legacyObjects related code after migration is done
+  const legacyKodoUrlPrefix = 'https://builder-static-test.goplus.org/'
+  const legacyObjects = Object.values(fileCollection)
+    .filter((url) => url.startsWith(legacyKodoUrlPrefix))
+    .map(
+      (url) =>
+        kodoScheme +
+        'goplus-builder-static-test/' +
+        url.slice(legacyKodoUrlPrefix.length).split('?')[0]
+    )
+  const { objectUrls: legacyObjectUrls } = await makeObjectUrls(legacyObjects)
+
   const files: Files = {}
-  Object.keys(fileUrls).forEach((path) => {
-    const url = objectUrls[fileUrls[path]]
-    files[path] = createFileWithUrl(filename(path), url)
+  Object.keys(fileCollection).forEach((path) => {
+    const universalUrl = fileCollection[path]
+    let webUrl = universalUrl
+    if (universalUrl.startsWith(kodoScheme)) {
+      webUrl = objectUrls[universalUrl]
+    } else if (universalUrl.startsWith(legacyKodoUrlPrefix)) {
+      webUrl =
+        legacyObjectUrls[
+          kodoScheme +
+            'goplus-builder-static-test/' +
+            universalUrl.slice(legacyKodoUrlPrefix.length).split('?')[0]
+        ]
+    }
+    const file = createFileWithWebUrl(filename(path), webUrl)
+    setUniversalUrl(file, universalUrl)
+    files[path] = file
   })
   return files
 }
@@ -58,28 +84,26 @@ export async function getFiles(fileUrls: FileCollection): Promise<Files> {
 // A mark to avoid unnecessary uploading for static files
 // TODO: we can apply similar strategy to json or code files
 const fileUrlKey = Symbol('url')
-function setUrl(file: File, url: string) {
+function setUniversalUrl(file: File, url: UniversalUrl) {
   ;(file as any)[fileUrlKey] = url
 }
-function getUrl(file: File): string | null {
+function getUniversalUrl(file: File): UniversalUrl | null {
   return (file as any)[fileUrlKey] ?? null
 }
 
-export function createFileWithUrl(name: string, url: string) {
-  const file = new File(name, async () => {
-    const resp = await fetch(url)
+export function createFileWithWebUrl(name: string, webUrl: WebUrl) {
+  return new File(name, async () => {
+    const resp = await fetch(webUrl)
     const blob = await resp.blob()
     return blob.arrayBuffer()
   })
-  setUrl(file, url)
-  return file
 }
 
 async function uploadFile(file: File) {
-  const uploadedUrl = getUrl(file)
+  const uploadedUrl = getUniversalUrl(file)
   if (uploadedUrl != null) return uploadedUrl
-  const url = await upload(file)
-  setUrl(file, url)
+  const url = await uploadToKodo(file)
+  setUniversalUrl(file, url)
   return url
 }
 
@@ -88,9 +112,9 @@ type QiniuUploadRes = {
   hash: string
 }
 
-async function upload(file: File) {
+async function uploadToKodo(file: File) {
   const nativeFile = await toNativeFile(file)
-  const { token, maxSize, baseUrl, region } = await getUpInfo()
+  const { token, maxSize, bucket, region } = await getUpInfo()
   if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
   const observable = qiniu.upload(
     nativeFile,
@@ -112,7 +136,7 @@ async function upload(file: File) {
       }
     })
   })
-  return baseUrl + '/' + key
+  return (kodoScheme + bucket + '/' + key) as UniversalUrl
 }
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {

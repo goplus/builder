@@ -1,9 +1,7 @@
-import type { ByPage, PaginationParams, FileUrls } from './common'
+import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, IsPublic } from './common'
 
 export { IsPublic }
-
-export type { FileUrls as FileCollection }
 
 export enum ProjectDataType {
   Sprite = 0,
@@ -21,7 +19,7 @@ export type ProjectData = {
   /** Public status */
   isPublic: IsPublic
   /** Files the project contains */
-  files: FileUrls
+  files: FileCollection
   /** Project version */
   version: number
   /** Create time */

@@ -1,4 +1,4 @@
-import type { ByPage, PaginationParams, FileUrls } from './common'
+import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, IsPublic } from './common'
 
 export { IsPublic }
@@ -21,7 +21,7 @@ export type AssetData = {
   /** Public status */
   isPublic: IsPublic
   /** Files the asset contains */
-  files: FileUrls
+  files: FileCollection
   /** Preview URL for the asset, e.g., a gif for a sprite */
   preview: string
   /** Asset Type */
