@@ -227,7 +227,6 @@ button {
   .message {
     font-family: monospace;
     font-size: smaller;
-    white-space: nowrap;
     .time {
       opacity: 0.5;
       padding-left: 0.5em;
