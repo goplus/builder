@@ -63,7 +63,9 @@ export class Sprite extends Disposble {
   }
 
   private codeFile: File | null
-  private get codeFileName() { return `${this.name}.spx` }
+  private get codeFileName() {
+    return `${this.name}.spx`
+  }
   async getCode() {
     if (this.codeFile == null) return ''
     return toText(this.codeFile)

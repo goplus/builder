@@ -32,10 +32,10 @@ const emit = defineEmits<{
   stop: []
 }>()
 
-const handlePlay = useMessageHandle(
-  () => props.playHandler(),
-  { en: 'Play audio failed', zh: '无法播放音频' }
-)
+const handlePlay = useMessageHandle(() => props.playHandler(), {
+  en: 'Play audio failed',
+  zh: '无法播放音频'
+})
 
 const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0

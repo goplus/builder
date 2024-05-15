@@ -129,9 +129,7 @@ export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnip
 export function getVariableSnippets(project: Project) {
   // TODO: costumes & backdrops here
   const { sprites, sounds } = project
-  const snippets: Snippet[][] = [
-    [gop.varDefinition]
-  ]
+  const snippets: Snippet[][] = [[gop.varDefinition]]
   snippets.push(
     sprites.map((sprite) => ({
       type: SnippetType.variable,

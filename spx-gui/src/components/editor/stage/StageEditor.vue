@@ -6,7 +6,7 @@
     </template>
   </EditorHeader>
   <CodeEditor ref="codeEditor" :value="code ?? ''" @update:value="(v) => stage.setCode(v)" />
-    <UILoading v-show="code == null" cover />
+  <UILoading v-show="code == null" cover />
 </template>
 
 <script setup lang="ts">

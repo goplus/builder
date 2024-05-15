@@ -80,11 +80,15 @@ export function selectImgs() {
 async function getSupportedAudioExts() {
   // `audio.canPlayType` seems to be more reliable than `MediaRecorder.isTypeSupported` & `navigator.mediaCapabilities.decodingInfo`
   const audio = new Audio()
-  return (await Promise.all(audioExts.map(async (ext) => {
-    const mimeType = getMimeFromExt(ext)
-    if (mimeType == null) return null
-    return audio.canPlayType(mimeType) !== '' ? ext : null
-  }))).filter(Boolean) as string[]
+  return (
+    await Promise.all(
+      audioExts.map(async (ext) => {
+        const mimeType = getMimeFromExt(ext)
+        if (mimeType == null) return null
+        return audio.canPlayType(mimeType) !== '' ? ext : null
+      })
+    )
+  ).filter(Boolean) as string[]
 }
 
 /** Let the user select single audio file (supported by spx) */
@@ -103,11 +107,14 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
     (file, _, onCleanup) => {
       if (file == null) return
       loadingRef.value = true
-      file.url(onCleanup).then((url) => {
-        urlRef.value = url
-      }).finally(() => {
-        loadingRef.value = false
-      })
+      file
+        .url(onCleanup)
+        .then((url) => {
+          urlRef.value = url
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
     },
     { immediate: true }
   )

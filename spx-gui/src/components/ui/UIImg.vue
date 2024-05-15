@@ -20,10 +20,14 @@ const props = withDefaults(
     size: 'contain'
   }
 )
-const imgStyle = computed(() => props.src == null ? null : {
-  backgroundImage: `url("${props.src}")`,
-  backgroundSize: props.size
-})
+const imgStyle = computed(() =>
+  props.src == null
+    ? null
+    : {
+        backgroundImage: `url("${props.src}")`,
+        backgroundSize: props.size
+      }
+)
 </script>
 
 <style lang="scss" scoped>

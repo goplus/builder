@@ -30,7 +30,7 @@ withDefaults(
     z-index: 100;
     width: 100%;
     height: 100%;
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255, 255, 255, 0.5);
   }
 }
 </style>
