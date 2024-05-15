@@ -98,7 +98,8 @@ watchEffect(async (onClenaup) => {
   })
 
   editor.onDidChangeModelContent(() => {
-    emit('update:value', editor.getValue())
+    const newValue = editor.getValue()
+    if (newValue !== props.value) emit('update:value', newValue)
   })
 
   monacoEditor.value = editor
