@@ -8,7 +8,7 @@
 .asset-name {
   max-width: 16em;
   overflow-x: hidden;
-  word-break: keep-all;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 </style>
