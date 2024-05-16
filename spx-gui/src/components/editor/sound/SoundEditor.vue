@@ -22,6 +22,7 @@
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
         :play-handler="handlePlay"
+        :loading="audioLoading"
         @stop="handleStop"
       />
     </div>
@@ -69,7 +70,7 @@ type Playing = {
 }
 
 const playing = ref<Playing | null>(null)
-const [audioUrl] = useFileUrl(() => props.sound.file)
+const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 let wavesurfer: WaveSurfer | null = null
 
 watchEffect(

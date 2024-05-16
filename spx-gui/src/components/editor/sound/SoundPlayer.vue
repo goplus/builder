@@ -6,12 +6,13 @@
     :progress="playing?.progress ?? 0"
     :color="color"
     :play-handler="handlePlay"
+    :loading="loading"
     @stop="handleStop"
   />
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
 import type { Color } from '@/components/ui/tokens/colors'
 
@@ -49,6 +50,8 @@ function makePlaying(src: string) {
   })
   return p
 }
+
+const loading = computed(() => props.src == null) // TODO: seeking?
 
 function handleStop() {
   playing.value?.audio.pause()

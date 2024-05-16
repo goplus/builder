@@ -7,17 +7,15 @@
     <div class="remove" @click.stop="emit('remove')">
       <UIIcon class="icon" type="trash" />
     </div>
-    <UILoading v-if="loading" cover />
   </li>
 </template>
 
 <script setup lang="ts">
-import { UIIcon, UILoading } from '@/components/ui'
+import { UIIcon } from '@/components/ui'
 
 const props = defineProps<{
   active: boolean
   name: string
-  loading?: boolean
 }>()
 
 const emit = defineEmits<{

@@ -1,5 +1,5 @@
 <template>
-  <PanelItem :active="active" :name="props.sprite.name" :loading="!imgSrc" @remove="emit('remove')">
+  <PanelItem :active="active" :name="props.sprite.name" @remove="emit('remove')">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
   </PanelItem>
 </template>
