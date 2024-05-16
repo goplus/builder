@@ -6,9 +6,16 @@
     <div class="info">
       <div class="name-container">
         <div class="name">{{ projectData.name }}</div>
-        <UIDropdown>
+        <UIDropdown trigger="click">
           <template #trigger>
-            <UIIcon type="more" @click.stop />
+            <div @click.stop>
+              <UITooltip>
+                <template #trigger>
+                  <UIIcon type="more" />
+                </template>
+                {{ $t({ en: 'More', zh: '更多' }) }}
+              </UITooltip>
+            </div>
           </template>
           <UIMenu>
             <UIMenuItem @click="() => handleRemoveProject(projectData)">
@@ -34,7 +41,7 @@ import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'
-import { UIDropdown, UIIcon, UIMenu, UIMenuItem } from '../ui'
+import { UIDropdown, UIIcon, UIMenu, UIMenuItem, UITooltip } from '../ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useRemoveProject } from '.'
 
