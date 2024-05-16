@@ -527,7 +527,10 @@ export const play2: Snippet = {
   type: SnippetType.method,
   target: SnippetTarget.all,
   label: 'play S,W',
-  desc: { en: 'Play sound with given name and wait for it to complete.', zh: '播放声音（指定名字）并等待其完成' },
+  desc: {
+    en: 'Play sound with given name and wait for it to complete.',
+    zh: '播放声音（指定名字）并等待其完成'
+  },
   insertText: 'play ${1:""}, true'
 }
 

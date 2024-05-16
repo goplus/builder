@@ -3,7 +3,6 @@
     class="sound-item"
     :active="active"
     :name="props.sound.name"
-    :loading="!audioSrc"
     @remove="emit('remove')"
   >
     <div class="content">
@@ -28,7 +27,7 @@ const emit = defineEmits<{
   remove: []
 }>()
 
-const audioSrc = useFileUrl(() => props.sound.file)
+const [audioSrc] = useFileUrl(() => props.sound.file)
 
 const uiVariables = useUIVariables()
 </script>

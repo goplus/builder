@@ -12,13 +12,15 @@
       </svg>
       <UIIcon class="icon" type="stop" />
     </div>
+    <!-- TODO: style optimization for sound player -->
+    <UILoading v-show="loading" cover class="loading"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { UIIcon } from '@/components/ui'
+import { UIIcon, UILoading } from '@/components/ui'
 import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
@@ -26,16 +28,17 @@ const props = defineProps<{
   progress: number
   color: Color
   playHandler: () => Promise<void>
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
   stop: []
 }>()
 
-const handlePlay = useMessageHandle(
-  () => props.playHandler(),
-  { en: 'Play audio failed', zh: '无法播放音频' }
-)
+const handlePlay = useMessageHandle(() => props.playHandler(), {
+  en: 'Play audio failed',
+  zh: '无法播放音频'
+})
 
 const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0
@@ -54,6 +57,7 @@ const colorCssVars = computed(() => ({
 .sound-play {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .play,
@@ -129,5 +133,9 @@ const colorCssVars = computed(() => ({
       stroke: var(--color);
     }
   }
+}
+
+.loading {
+  border-radius: 50%;
 }
 </style>

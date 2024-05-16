@@ -34,7 +34,7 @@ const nodeRef = ref<any>()
 const editorCtx = useEditorCtx()
 const costume = computed(() => props.sprite.costume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const image = useImgFile(() => costume.value?.img)
+const [image] = useImgFile(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
   const spriteName = props.sprite.name

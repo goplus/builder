@@ -4,7 +4,7 @@
     <h4 class="header">{{ $t({ en: 'Stage', zh: '舞台' }) }}</h4>
     <main class="main">
       <div class="overview" :class="{ active }" @click="activate">
-        <div class="img" :style="imgStyle"></div>
+        <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
         <UIDropdown trigger="click">
           <template #trigger>
             <div v-show="active" class="replace">
@@ -31,6 +31,7 @@ import {
   UIButton,
   UIDropdown,
   UIIcon,
+  UIImg,
   UIMenu,
   UIMenuItem,
   getCssVars,
@@ -54,8 +55,7 @@ function activate() {
 }
 
 const backdrop = computed(() => editorCtx.project.stage.backdrop)
-const imgSrc = useFileUrl(() => backdrop.value?.img)
-const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
+const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
 const handleUpload = useMessageHandle(
   async () => {
@@ -131,8 +131,6 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   width: 100%;
   height: 40px;
   border-radius: 4px;
-  background-position: center;
-  background-size: cover;
 }
 
 .replace {

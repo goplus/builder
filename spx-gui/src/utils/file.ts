@@ -80,11 +80,15 @@ export function selectImgs() {
 async function getSupportedAudioExts() {
   // `audio.canPlayType` seems to be more reliable than `MediaRecorder.isTypeSupported` & `navigator.mediaCapabilities.decodingInfo`
   const audio = new Audio()
-  return (await Promise.all(audioExts.map(async (ext) => {
-    const mimeType = getMimeFromExt(ext)
-    if (mimeType == null) return null
-    return audio.canPlayType(mimeType) !== '' ? ext : null
-  }))).filter(Boolean) as string[]
+  return (
+    await Promise.all(
+      audioExts.map(async (ext) => {
+        const mimeType = getMimeFromExt(ext)
+        if (mimeType == null) return null
+        return audio.canPlayType(mimeType) !== '' ? ext : null
+      })
+    )
+  ).filter(Boolean) as string[]
 }
 
 /** Let the user select single audio file (supported by spx) */
@@ -97,21 +101,28 @@ export async function selectAudio() {
 /** Get url for File */
 export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
   watch(
     fileSource,
     (file, _, onCleanup) => {
       if (file == null) return
-      file.url(onCleanup).then((url) => {
-        urlRef.value = url
-      })
+      loadingRef.value = true
+      file
+        .url(onCleanup)
+        .then((url) => {
+          urlRef.value = url
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
     },
     { immediate: true }
   )
-  return urlRef
+  return [urlRef, loadingRef] as const
 }
 
 export function useImgFile(fileSource: WatchSource<File | undefined>) {
-  const urlRef = useFileUrl(fileSource)
+  const [urlRef, loadingRef] = useFileUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
   watch(urlRef, (url, _, onCleanup) => {
     onCleanup(() => {
@@ -124,5 +135,5 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
-  return imgRef
+  return [imgRef, loadingRef] as const
 }

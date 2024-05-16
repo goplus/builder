@@ -1,6 +1,7 @@
 /**
  * @file class File
  * @desc File-like class, while load lazily.
+ *       Files are expected to be immutable. Everytime you want to modify a file, create a new instance.
  */
 
 import { getMimeFromExt } from '@/utils/file'

@@ -142,7 +142,20 @@ const cssVariables = getCssVars('--ui-', uiVariables)
 
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-text);
-  font-family: AlibabaHealthB, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-family:
+    AlibabaHealthB,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji';
   line-height: 1.57143;
 }
 </style>
