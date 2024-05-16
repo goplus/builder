@@ -1,7 +1,7 @@
 <template>
-  <AssetItem class="sound-item" :active="active">
+  <AssetItem class="sound-item" :selected="selected">
     <div class="player">
-      <SoundPlayer :src="audioSrc" :color="uiVariables.color.primary" />
+      <SoundPlayer :src="audioSrc" color="primary" />
     </div>
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
     <p class="duration">{{ formattedDuration }}</p>
@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { useUIVariables } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
@@ -21,10 +20,9 @@ import { useAudioDuration } from '@/utils/audio'
 
 const props = defineProps<{
   asset: AssetData
-  active: boolean
+  selected: boolean
 }>()
 
-const uiVariables = useUIVariables()
 const sound = useAsyncComputed(() => asset2Sound(props.asset))
 const [audioSrc] = useFileUrl(() => sound.value?.file)
 const { formattedDuration } = useAudioDuration(() => {

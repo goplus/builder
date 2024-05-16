@@ -7,9 +7,7 @@
         <UIImg class="img" :src="imgSrc" size="cover" :loading="imgLoading" />
         <UIDropdown trigger="click">
           <template #trigger>
-            <div v-show="active" class="replace">
-              <UIIcon class="icon" type="exchange" />
-            </div>
+            <UICornerIcon v-show="active" color="stage" type="exchange" />
           </template>
           <UIMenu>
             <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
@@ -29,8 +27,8 @@ import { computed } from 'vue'
 import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import {
   UIButton,
+  UICornerIcon,
   UIDropdown,
-  UIIcon,
   UIImg,
   UIMenu,
   UIMenuItem,
@@ -131,34 +129,5 @@ const cssVars = getCssVars('--panel-color-', uiVariables.color.stage)
   width: 100%;
   height: 40px;
   border-radius: 4px;
-}
-
-.replace {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-
-  display: flex;
-  width: 24px;
-  height: 24px;
-  justify-content: center;
-  align-items: center;
-
-  color: var(--ui-color-grey-100);
-  border-radius: 24px;
-  background: var(--panel-color-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--panel-color-400);
-  }
-  &:active {
-    background-color: var(--panel-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <AssetItem class="backdrop-item" :active="active">
+  <AssetItem class="backdrop-item" :selected="selected">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
@@ -16,7 +16,7 @@ import AssetItemName from './AssetItemName.vue'
 
 const props = defineProps<{
   asset: AssetData
-  active: boolean
+  selected: boolean
 }>()
 
 const backdrop = useAsyncComputed(() => asset2Backdrop(props.asset))

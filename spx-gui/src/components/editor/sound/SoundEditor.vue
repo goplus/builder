@@ -1,5 +1,5 @@
 <template>
-  <EditorHeader :color="uiVariables.color.sound.main">
+  <EditorHeader color="sound">
     <AssetName>{{ sound.name }}</AssetName>
   </EditorHeader>
   <div class="main">
@@ -17,7 +17,7 @@
     </div>
     <div class="opeartions">
       <DumbSoundPlayer
-        :color="uiVariables.color.sound"
+        color="sound"
         class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted } from 'vue'
-import { useUIVariables, UIIcon, UIButton, useModal } from '@/components/ui'
+import { UIIcon, UIButton, useModal } from '@/components/ui'
 import { isLibraryEnabled } from '@/utils/utils'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -61,7 +61,6 @@ function handleNameEdit() {
   })
 }
 
-const uiVariables = useUIVariables()
 const waveform = ref<HTMLDivElement>()
 const createWavesurfer = useWavesurfer(waveform)
 

@@ -1,5 +1,5 @@
 <template>
-  <AssetItem class="sprite-item" :active="active">
+  <AssetItem class="sprite-item" :selected="selected">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
@@ -16,7 +16,7 @@ import AssetItemName from './AssetItemName.vue'
 
 const props = defineProps<{
   asset: AssetData
-  active: boolean
+  selected: boolean
 }>()
 
 const sprite = useAsyncComputed(() => asset2Sprite(props.asset))

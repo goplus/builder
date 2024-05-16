@@ -13,14 +13,14 @@
       <UIIcon class="icon" type="stop" />
     </div>
     <!-- TODO: style optimization for sound player -->
-    <UILoading v-show="loading" cover class="loading"/>
+    <UILoading v-show="loading" cover class="loading" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
-import { UIIcon, UILoading } from '@/components/ui'
+import { UIIcon, UILoading, useUIVariables } from '@/components/ui'
 import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
@@ -44,13 +44,17 @@ const playCssVars = computed(() => ({
   '--progress': props.progress ?? 0
 }))
 
-const colorCssVars = computed(() => ({
-  '--color-main': props.color.main,
-  '--color-100': props.color[100],
-  '--color-300': props.color[300],
-  '--color-400': props.color[400],
-  '--color-600': props.color[600]
-}))
+const uiVariables = useUIVariables()
+const colorCssVars = computed(() => {
+  const color = uiVariables.color[props.color]
+  return {
+    '--color-main': color.main,
+    '--color-100': color[100],
+    '--color-300': color[300],
+    '--color-400': color[400],
+    '--color-600': color[600]
+  }
+})
 </script>
 
 <style lang="scss" scoped>

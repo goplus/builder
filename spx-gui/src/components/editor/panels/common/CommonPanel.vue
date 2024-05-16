@@ -19,10 +19,19 @@
   </div>
 </template>
 
+<script lang="ts">
+export const panelColorKey: InjectionKey<Color> = Symbol('color')
+export function usePanelColor() {
+  const color = inject(panelColorKey)
+  if (color == null) throw new Error('usePanelColor should be called inside of CommonPanel')
+  return color
+}
+</script>
+
 <script setup lang="ts">
-import { getCssVars } from '@/components/ui'
+import { computed, inject, provide, type InjectionKey } from 'vue'
+import { getCssVars, useUIVariables, type Color } from '@/components/ui'
 import PanelHeader from '../common/PanelHeader.vue'
-import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
   title: string
@@ -35,7 +44,9 @@ const emit = defineEmits<{
   expand: []
 }>()
 
-const cssVars = getCssVars('--panel-color-', props.color)
+const uiVariables = useUIVariables()
+const cssVars = computed(() => getCssVars('--panel-color-', uiVariables.color[props.color]))
+provide(panelColorKey, props.color)
 </script>
 
 <style scoped lang="scss">

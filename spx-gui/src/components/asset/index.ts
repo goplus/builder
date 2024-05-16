@@ -14,7 +14,7 @@ import type { AssetModel } from '@/models/common/asset'
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    return invokeAssetLibraryModal({ project, type }) as Promise<AssetModel<T>>
+    return invokeAssetLibraryModal({ project, type }) as Promise<Array<AssetModel<T>>>
   }
 }
 

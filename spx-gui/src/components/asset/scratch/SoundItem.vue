@@ -2,7 +2,7 @@
   <ScratchItemContainer :selected="selected">
     <div class="sound-display">
       <div class="sound-container">
-        <BlobSoundPlayer :blob="asset.blob" :color="uiVariables.color.primary" />
+        <BlobSoundPlayer :blob="asset.blob" color="primary" />
       </div>
     </div>
     <div class="asset-name">{{ asset.name }}</div>
@@ -13,15 +13,12 @@
 import type { ExportedScratchFile } from '@/utils/scratch'
 import BlobSoundPlayer from '../BlobSoundPlayer.vue'
 import ScratchItemContainer from './ScratchItemContainer.vue'
-import { useUIVariables } from '@/components/ui'
 import { useAudioDuration } from '@/utils/audio'
 
 const props = defineProps<{
   asset: ExportedScratchFile
   selected: boolean
 }>()
-
-const uiVariables = useUIVariables()
 
 const { formattedDuration } = useAudioDuration(() => props.asset.blob)
 </script>

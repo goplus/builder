@@ -13,8 +13,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import type { Color } from '@/components/ui'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
-import type { Color } from '@/components/ui/tokens/colors'
 
 const props = defineProps<{
   src: string | null

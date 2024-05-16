@@ -3,7 +3,7 @@
     :expanded="expanded"
     :active="editorCtx.selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
-    :color="uiVariables.color.sprite"
+    color="sprite"
     @expand="emit('expand')"
   >
     <template #add-options>
@@ -68,7 +68,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { useAddAssetFromLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UIMenu, UIMenuItem, UIEmpty, useUIVariables, UIIcon, UITooltip } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
 import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue'
@@ -85,7 +85,6 @@ const emit = defineEmits<{
   expand: []
 }>()
 
-const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const footerExpanded = ref(false)
@@ -123,8 +122,8 @@ const handleUpload = useMessageHandle(
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
 async function handleChoose() {
-  const sprite = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
-  editorCtx.select('sprite', sprite.name)
+  const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
+  editorCtx.select('sprite', sprites[0].name)
 }
 </script>
 
