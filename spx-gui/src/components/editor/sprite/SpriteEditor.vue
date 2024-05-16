@@ -1,5 +1,5 @@
 <template>
-  <EditorHeader :color="uiVariables.color.sprite.main">
+  <EditorHeader color="sprite">
     <AssetName>{{ sprite.name }}</AssetName>
     &nbsp;/ {{ $t({ en: 'Code', zh: '代码' }) }}
     <template #extra>
@@ -14,7 +14,7 @@
 import { ref } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
-import { useUIVariables, UILoading } from '@/components/ui'
+import { UILoading } from '@/components/ui'
 import AssetName from '@/components/asset/AssetName.vue'
 import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../FormatButton.vue'
@@ -25,7 +25,6 @@ const props = defineProps<{
 }>()
 
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
-const uiVariables = useUIVariables()
 const code = useAsyncComputed(() => props.sprite.getCode())
 </script>
 

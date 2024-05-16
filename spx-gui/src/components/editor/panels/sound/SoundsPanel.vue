@@ -3,7 +3,7 @@
     :expanded="expanded"
     :active="editorCtx.selectedSound != null"
     :title="$t({ en: 'Sounds', zh: '声音' })"
-    :color="uiVariables.color.sound"
+    color="sound"
     @expand="emit('expand')"
   >
     <template #add-options>
@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { UIMenu, UIMenuItem, UIEmpty, useUIVariables } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
@@ -66,7 +66,6 @@ const emit = defineEmits<{
   expand: []
 }>()
 
-const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
 const sounds = computed(() => editorCtx.project.sounds)
@@ -98,8 +97,8 @@ const handleUpload = useMessageHandle(
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
 async function handleChoose() {
-  const sound = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
-  editorCtx.select('sound', sound.name)
+  const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
+  editorCtx.select('sound', sounds[0].name)
 }
 
 const recorderVisible = ref(false)

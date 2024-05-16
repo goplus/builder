@@ -1,12 +1,7 @@
 <template>
-  <PanelItem
-    class="sound-item"
-    :active="active"
-    :name="props.sound.name"
-    @remove="emit('remove')"
-  >
+  <PanelItem class="sound-item" :active="active" :name="props.sound.name" @remove="emit('remove')">
     <div class="content">
-      <SoundPlayer :src="audioSrc" :color="uiVariables.color.sound" />
+      <SoundPlayer :src="audioSrc" color="sound" />
     </div>
   </PanelItem>
 </template>
@@ -16,7 +11,6 @@ import { useFileUrl } from '@/utils/file'
 import { Sound } from '@/models/sound'
 import SoundPlayer from '../../sound/SoundPlayer.vue'
 import PanelItem from '../common/PanelItem.vue'
-import { useUIVariables } from '@/components/ui'
 
 const props = defineProps<{
   sound: Sound
@@ -28,8 +22,6 @@ const emit = defineEmits<{
 }>()
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
-
-const uiVariables = useUIVariables()
 </script>
 
 <style lang="scss" scoped>

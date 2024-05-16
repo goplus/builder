@@ -3,7 +3,7 @@
 <template>
   <div class="editor-header">
     <!-- In the future, there will be tabs here -->
-    <div class="main" :style="{ background: color }">
+    <div class="main" :style="{ background: uiVariables.color[color].main }">
       <slot></slot>
     </div>
     <div class="extra">
@@ -13,9 +13,13 @@
 </template>
 
 <script setup lang="ts">
+import { type Color, useUIVariables } from '../ui'
+
 defineProps<{
-  color: string
+  color: Color
 }>()
+
+const uiVariables = useUIVariables()
 </script>
 
 <style scoped lang="scss">
