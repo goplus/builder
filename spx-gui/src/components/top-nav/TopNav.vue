@@ -33,6 +33,12 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleRemoveProject">
+              <template #icon><img :src="importProjectSvg" /></template>
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
             <UIMenuItem @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
               {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
@@ -132,6 +138,7 @@ import { useUserStore } from '@/stores'
 import {
   useCreateProject,
   useOpenProject,
+  useRemoveProject,
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
@@ -158,6 +165,7 @@ const router = useRouter()
 
 const createProject = useCreateProject()
 const openProject = useOpenProject()
+const removeProject = useRemoveProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
 const loadFromScratchModal = useLoadFromScratchModal()
@@ -197,6 +205,14 @@ const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(prop
   en: 'Failed to import from Scratch file',
   zh: '从 Scratch 项目文件导入失败'
 }).fn
+
+const handleRemoveProject = useMessageHandle(
+  async () => {
+    await removeProject(props.project!.owner!, props.project!.name!)
+    router.push('/')
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 

@@ -4,7 +4,19 @@
       <div class="img" :style="imgStyle"></div>
     </div>
     <div class="info">
-      <p class="name">{{ projectData.name }}</p>
+      <div class="name-container">
+        <div class="name">{{ projectData.name }}</div>
+        <UIDropdown>
+          <template #trigger>
+            <UIIcon type="more" @click.stop />
+          </template>
+          <UIMenu>
+            <UIMenuItem @click="() => handleRemoveProject(projectData)">
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenu>
+        </UIDropdown>
+      </div>
       <p class="creation-time">{{ creationTime }}</p>
     </div>
   </li>
@@ -22,6 +34,9 @@ import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'
+import { UIDropdown, UIIcon, UIMenu, UIMenuItem } from '../ui'
+import { useMessageHandle } from '@/utils/exception'
+import { useRemoveProject } from '.'
 
 const props = defineProps<{
   inHomepage?: boolean
@@ -29,6 +44,17 @@ const props = defineProps<{
 }>()
 
 const project = ref<Project | null>(null)
+
+const removeProject = useRemoveProject()
+
+const handleRemoveProject = useMessageHandle(
+  async (projectData: ProjectData) => {
+    await removeProject(projectData.owner, projectData.name)
+    // TODO: instead of reloading the page, update the project list
+    location.reload()
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
 
 watchEffect((onCleanup) => {
   let p = new Project()
@@ -105,6 +131,12 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     font-size: 10px;
     line-height: 18px;
     color: var(--ui-color-grey-800);
+  }
+
+  .name-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 
