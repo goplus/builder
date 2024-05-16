@@ -33,12 +33,6 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
-            <UIMenuItem @click="handleRemoveProject">
-              <template #icon><img :src="importProjectSvg" /></template>
-              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
-            </UIMenuItem>
-          </UIMenuGroup>
-          <UIMenuGroup :disabled="project == null">
             <UIMenuItem @click="handleImportFromScratch">
               <template #icon><img :src="importScratchSvg" /></template>
               {{ $t({ en: 'Import assets from Scratch file', zh: '从 Scratch 项目文件导入' }) }}
@@ -55,6 +49,12 @@
             >
               <template #icon><img :src="stopSharingSvg" /></template>
               {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleRemoveProject">
+              <template #icon><img :src="removeProjectSvg" /></template>
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
             </UIMenuItem>
           </UIMenuGroup>
         </UIMenu>
@@ -150,6 +150,7 @@ import newSvg from './icons/new.svg'
 import openSvg from './icons/open.svg'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
+import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'

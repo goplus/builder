@@ -34,7 +34,7 @@ export function useRemoveProject() {
     return withConfirm({
       title: t({ en: `Remove project ${name}`, zh: `删除项目 ${name}` }),
       content: t({
-        en: 'The project will be deleted and cannot be recovered. Are you sure to remove the project?',
+        en: 'The project will be removed and cannot be recovered. Are you sure to remove the project?',
         zh: '项目将被删除，无法恢复。确定要删除项目吗？'
       }),
       confirmHandler: () => deleteProject(owner, name)
