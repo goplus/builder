@@ -8,8 +8,8 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
-        <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromLocalFile">{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromAssetLibrary">{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #details>
@@ -108,7 +108,7 @@ function handleSpriteClick(sprite: Sprite) {
   editorCtx.select('sprite', sprite.name)
 }
 
-const handleUpload = useMessageHandle(
+const handleAddFromLocalFile = useMessageHandle(
   async () => {
     // When we support costume list & edit, we should allow user to choose multiple images (for multiple costumes) here
     const img = await selectImg()
@@ -119,12 +119,12 @@ const handleUpload = useMessageHandle(
     await sprite.autoFit()
     editorCtx.select('sprite', sprite.name)
   },
-  { en: 'Upload failed', zh: '上传失败' }
+  { en: 'Add from local file failed', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-async function handleChoose() {
+async function handleAddFromAssetLibrary() {
   const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
   editorCtx.select('sprite', sprites[0].name)
 }

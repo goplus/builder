@@ -235,7 +235,7 @@ async function handleAssetClick(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 auto;
+  flex: 0 0 136px;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);

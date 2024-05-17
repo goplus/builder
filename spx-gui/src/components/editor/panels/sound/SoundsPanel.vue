@@ -8,8 +8,8 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
-        <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromLocalFile">{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromAssetLibrary">{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem>
         <UIMenuItem @click="handleRecord">{{ $t({ en: 'Record', zh: '录音' }) }}</UIMenuItem>
       </UIMenu>
     </template>
@@ -87,19 +87,19 @@ function handleSoundClick(sound: Sound) {
   editorCtx.select('sound', sound.name)
 }
 
-const handleUpload = useMessageHandle(
+const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
     editorCtx.project.addSound(sound)
     editorCtx.select('sound', sound.name)
   },
-  { en: 'Upload failed', zh: '上传失败' }
+  { en: 'Add from local file failed', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-async function handleChoose() {
+async function handleAddFromAssetLibrary() {
   const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
   editorCtx.select('sound', sounds[0].name)
 }
