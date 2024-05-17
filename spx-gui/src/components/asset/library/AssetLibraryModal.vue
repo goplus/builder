@@ -159,7 +159,7 @@ const {
       pageIndex: 1,
       assetType: props.type,
       keyword: keyword.value,
-      category: (c === categoryAll.value || c === cPersonal) ? undefined : c,
+      category: c === categoryAll.value || c === cPersonal ? undefined : c,
       owner: c === cPersonal ? undefined : '*',
       isPublic: c === cPersonal ? undefined : IsPublic.public
     })

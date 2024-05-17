@@ -4,12 +4,22 @@
   <li class="panel-item" :class="{ active: active }">
     <slot></slot>
     <p class="name">{{ name }}</p>
-    <UICornerIcon v-show="active" :color="panelColor" type="trash" @click.stop="emit('remove')" />
+    <UIDropdown trigger="click" placement="bottom-end">
+      <template #trigger>
+        <UICornerIcon v-show="active" :color="panelColor" type="more" />
+      </template>
+      <UIMenu>
+        <UIMenuItem @click="emit('add-to-asset-library')">{{
+          $t({ en: 'Add to asset library', zh: '添加到素材库' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
+      </UIMenu>
+    </UIDropdown>
   </li>
 </template>
 
 <script setup lang="ts">
-import { UICornerIcon } from '@/components/ui'
+import { UICornerIcon, UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
 import { usePanelColor } from './CommonPanel.vue'
 
 defineProps<{
@@ -19,6 +29,7 @@ defineProps<{
 
 const emit = defineEmits<{
   remove: []
+  'add-to-asset-library': []
 }>()
 
 const panelColor = usePanelColor()

@@ -23,6 +23,7 @@
           :sprite="sprite"
           :active="isSelected(sprite)"
           @remove="handleSpriteRemove(sprite)"
+          @add-to-asset-library="addToLibrary(sprite)"
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
@@ -65,7 +66,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { Costume } from '@/models/costume'
 import { stripExt } from '@/utils/path'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -100,6 +101,8 @@ function isSelected(sprite: Sprite) {
 function handleSpriteRemove(sprite: Sprite) {
   editorCtx.project.removeSprite(sprite.name)
 }
+
+const addToLibrary = useAddAssetToLibrary()
 
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.select('sprite', sprite.name)

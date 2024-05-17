@@ -25,6 +25,7 @@
           :sound="sound"
           :active="isSelected(sound)"
           @remove="handleSoundRemove(sound)"
+          @add-to-asset-library="addToLibrary(sound)"
           @click="handleSoundClick(sound)"
         />
       </PanelList>
@@ -47,7 +48,7 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
 import SoundRecorderModal from '@/components/editor/sound/SoundRecorderModal.vue'
-import { useAddAssetFromLibrary } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { selectAudio } from '@/utils/file'
 import { stripExt } from '@/utils/path'
@@ -79,6 +80,8 @@ function isSelected(sound: Sound) {
 function handleSoundRemove(sound: Sound) {
   editorCtx.project.removeSound(sound.name)
 }
+
+const addToLibrary = useAddAssetToLibrary()
 
 function handleSoundClick(sound: Sound) {
   editorCtx.select('sound', sound.name)

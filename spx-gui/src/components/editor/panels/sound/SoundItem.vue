@@ -1,5 +1,11 @@
 <template>
-  <PanelItem class="sound-item" :active="active" :name="props.sound.name" @remove="emit('remove')">
+  <PanelItem
+    class="sound-item"
+    :active="active"
+    :name="props.sound.name"
+    @remove="emit('remove')"
+    @add-to-asset-library="emit('add-to-asset-library')"
+  >
     <div class="content">
       <SoundPlayer :src="audioSrc" color="sound" />
     </div>
@@ -19,6 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   remove: []
+  'add-to-asset-library': []
 }>()
 
 const [audioSrc] = useFileUrl(() => props.sound.file)

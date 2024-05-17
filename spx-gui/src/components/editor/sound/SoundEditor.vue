@@ -26,7 +26,7 @@
         @stop="handleStop"
       />
     </div>
-    <footer v-if="isLibraryEnabled()">
+    <footer v-if="isAddPublicLibraryEnabled()">
       <UIButton @click="addToLibrary(sound)">Add to asset library</UIButton>
     </footer>
   </div>
@@ -36,7 +36,7 @@
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted } from 'vue'
 import { UIIcon, UIButton, useModal } from '@/components/ui'
-import { isLibraryEnabled } from '@/utils/utils'
+import { isAddPublicLibraryEnabled } from '@/utils/utils'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
 import { useAddAssetToLibrary } from '@/components/asset'
