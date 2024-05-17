@@ -29,11 +29,6 @@
   </li>
 </template>
 
-<script lang="ts">
-export const projectItemSize = { width: 168, height: 182 },
-  projectItemSizeInHomepage = { width: 216, height: 230 }
-</script>
-
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
 import dayjs from 'dayjs'
@@ -50,6 +45,10 @@ const props = defineProps<{
   projectData: ProjectData
 }>()
 
+const emit = defineEmits<{
+  removed: []
+}>()
+
 const project = ref<Project | null>(null)
 
 const removeProject = useRemoveProject()
@@ -57,8 +56,7 @@ const removeProject = useRemoveProject()
 const handleRemoveProject = useMessageHandle(
   async (projectData: ProjectData) => {
     await removeProject(projectData.owner, projectData.name)
-    // TODO: instead of reloading the page, update the project list
-    location.reload()
+    emit('removed')
   },
   { en: 'Failed to remove project', zh: '删除项目失败' }
 ).fn
