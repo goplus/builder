@@ -9,7 +9,7 @@
         <UICornerIcon v-show="active" :color="panelColor" type="more" />
       </template>
       <UIMenu>
-        <UIMenuItem @click="emit('add-to-asset-library')">{{
+        <UIMenuItem @click="emit('addToAssetLibrary')">{{
           $t({ en: 'Add to asset library', zh: '添加到素材库' })
         }}</UIMenuItem>
         <UIMenuItem @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
@@ -29,7 +29,7 @@ defineProps<{
 
 const emit = defineEmits<{
   remove: []
-  'add-to-asset-library': []
+  addToAssetLibrary: []
 }>()
 
 const panelColor = usePanelColor()

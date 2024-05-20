@@ -4,7 +4,7 @@
     :active="active"
     :name="props.sound.name"
     @remove="emit('remove')"
-    @add-to-asset-library="emit('add-to-asset-library')"
+    @add-to-asset-library="emit('addToAssetLibrary')"
   >
     <div class="content">
       <SoundPlayer :src="audioSrc" color="sound" />
@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   remove: []
-  'add-to-asset-library': []
+  addToAssetLibrary: []
 }>()
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
