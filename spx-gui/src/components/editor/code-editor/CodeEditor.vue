@@ -36,12 +36,13 @@
       />
     </div>
     <UIImg class="thumbnail" :src="thumbnailSrc" />
+    <UILoading v-show="loading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
-import { useUIVariables, UITagButton, UITooltip, UIImg } from '@/components/ui'
+import { useUIVariables, UITagButton, UITooltip, UIImg, UILoading } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
@@ -63,9 +64,15 @@ import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
 import { useFileUrl } from '@/utils/file'
 
-defineProps<{
-  value: string
-}>()
+withDefaults(
+  defineProps<{
+    loading?: boolean
+    value: string
+  }>(),
+  {
+    loading: false
+  }
+)
 
 const emit = defineEmits<{
   'update:value': [value: string]
@@ -165,6 +172,7 @@ const [thumbnailSrc] = useFileUrl(() => {
 
 <style scoped lang="scss">
 .code-editor {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;

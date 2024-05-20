@@ -5,16 +5,19 @@
       <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code' && codeEditor != null" :code-editor="codeEditor" />
+      <FormatButton
+        v-if="selectedTab === 'code' && codeEditor != null && code != null"
+        :code-editor="codeEditor"
+      />
     </template>
   </EditorHeader>
   <CodeEditor
     v-show="selectedTab === 'code'"
     ref="codeEditor"
+    :loading="code == null"
     :value="code ?? ''"
     @update:value="(v) => stage.setCode(v)"
   />
-  <UILoading v-show="selectedTab === 'code' && code == null" cover />
   <BackdropsEditor v-show="selectedTab === 'backdrops'" :stage="stage" />
 </template>
 
@@ -22,7 +25,7 @@
 import { ref } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
 import type { Stage } from '@/models/stage'
-import { UILoading, UITabs, UITab } from '@/components/ui'
+import { UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../FormatButton.vue'
 import EditorHeader from '../EditorHeader.vue'
@@ -36,9 +39,3 @@ const selectedTab = ref<'code' | 'backdrops'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.stage.getCode())
 </script>
-
-<style scoped lang="scss">
-.header {
-  flex: 1 1 0;
-}
-</style>

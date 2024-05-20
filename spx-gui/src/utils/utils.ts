@@ -1,4 +1,4 @@
-import { ref, shallowReactive, watch, watchEffect, type WatchSource } from 'vue'
+import { ref, shallowReactive, watch, watchEffect } from 'vue'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -52,11 +52,11 @@ export function round(num: number, decimalPlaceNum = 0) {
   return Math.round(num * factor) / factor
 }
 
-/** Convert value source to a reactive object, which tracks changes of source */
-export function computedShallowReactive<T extends object>(source: WatchSource<T>) {
+/** Construct a (shallow-)reactive object based on given value-getter, which tracks changes of source */
+export function computedShallowReactive<T extends object>(getter: () => T) {
   const r = shallowReactive({}) as T
   watch(
-    source,
+    getter,
     (value) => {
       const keys = Object.keys(value) as (keyof T)[]
       for (const key of keys) {
