@@ -1,13 +1,13 @@
 <template>
   <div class="project-list">
     <UIError v-if="isError && error">
-      {{ 'userMessage' in error ? $t((error as ActionException).userMessage) : error?.message }}
+      {{ error instanceof ActionException ? $t(error.userMessage) : error?.message }}
     </UIError>
-    <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].length === 0" />
+    <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].data.length === 0" />
     <ul v-if="data" class="list">
       <template v-for="page in data?.pages">
         <ProjectItem
-          v-for="project in page"
+          v-for="project in page.data"
           :key="project.id"
           :in-homepage="inHomepage"
           :project-data="project"
@@ -27,7 +27,7 @@ import { listProject, type ProjectData } from '@/apis/project'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
 import { UIEmpty, UIError, UILoading } from '../ui'
 import { nextTick, ref, watchEffect } from 'vue'
-import type { ActionException } from '@/utils/exception'
+import { ActionException } from '@/utils/exception'
 
 defineProps<{
   inHomepage?: boolean
@@ -46,11 +46,12 @@ const { data, error, isError, isPending, isFetchingNextPage, fetchNextPage, hasN
     initialPageParam: 1,
 
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      const { data } = await listProject({ pageSize, pageIndex: pageParam })
-      return data
+      return await listProject({ pageSize, pageIndex: pageParam })
     },
     getNextPageParam: (lastPage, pages, lastPageParam) => {
-      return lastPage.length === pageSize ? lastPageParam + 1 : undefined
+      return pages.reduce((acc, page) => acc + page.data.length, 0) < lastPage.total
+        ? lastPageParam + 1
+        : undefined
     }
   })
 
@@ -83,7 +84,7 @@ watchEffect((onCleanup) => {
 
 const handleProjectRemoved = (project: ProjectData) => {
   if (!data.value) return
-  const newPages = data.value.pages.map((page) => page.filter((p) => p.id !== project.id))
+  const newPages = data.value.pages.map((page) => page.data.filter((p) => p.id !== project.id))
   queryClient.setQueryData(['projects'], {
     pages: newPages,
     pageParams: data?.value?.pageParams
