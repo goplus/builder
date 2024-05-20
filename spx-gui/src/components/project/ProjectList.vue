@@ -1,7 +1,7 @@
 <template>
   <div class="project-list">
-    <UIError v-if="isError && error">
-      {{ error instanceof ActionException ? $t(error.userMessage) : error?.message }}
+    <UIError v-if="isError && error instanceof ActionException">
+      {{ $t(error.userMessage) }}
     </UIError>
     <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].data.length === 0" />
     <ul v-if="data" class="list">
