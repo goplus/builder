@@ -120,6 +120,7 @@ const handleProjectRemoved = (project: ProjectData) => {
   overflow-y: auto;
 }
 .list {
+  width: 100%;
   flex: 1 1 0;
   display: flex;
   flex-wrap: wrap;
