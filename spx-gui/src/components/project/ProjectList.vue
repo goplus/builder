@@ -28,6 +28,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
 import { UIEmpty, UIError, UILoading } from '../ui'
 import { nextTick, ref, watchEffect } from 'vue'
 import { ActionException, useAction } from '@/utils/exception'
+import type { ByPage } from '@/apis/common'
 
 defineProps<{
   inHomepage?: boolean
@@ -89,7 +90,10 @@ watchEffect((onCleanup) => {
 
 const handleProjectRemoved = (project: ProjectData) => {
   if (!data.value) return
-  const newPages = data.value.pages.map((page) => page.data.filter((p) => p.id !== project.id))
+  const newPages: ByPage<ProjectData>[] = data.value.pages.map((page) => ({
+    ...page,
+    data: page.data.filter((p) => p.id !== project.id)
+  }))
   queryClient.setQueryData(['projects'], {
     pages: newPages,
     pageParams: data?.value?.pageParams
