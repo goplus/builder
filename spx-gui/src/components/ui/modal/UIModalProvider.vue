@@ -1,14 +1,14 @@
 <template>
   <NModalProvider>
-    <component
-      :is="currentModal.component"
-      v-if="currentModal != null"
-      :key="currentModal.id"
-      v-bind="currentModal.props"
-      :visible="currentVisible"
-      @cancelled="handleCancelled"
-      @resolved="handleResolved"
-    />
+    <template v-for="modal in currentModals" :key="modal.id">
+      <component
+        :is="modal.component"
+        v-bind="modal.props"
+        :visible="modal.visible"
+        @cancelled="(reason?: unknown) => handleCancelled(modal.id, reason)"
+        @resolved="(resolved?: unknown) => handleResolved(modal.id, resolved)"
+      />
+    </template>
     <slot></slot>
   </NModalProvider>
 </template>
@@ -18,8 +18,7 @@ import {
   type InjectionKey,
   inject,
   provide,
-  ref,
-  shallowRef,
+  shallowReactive,
   nextTick,
   type Component,
   type VNodeProps,
@@ -47,10 +46,11 @@ export type ModalInfo = {
   component: Component
   props: any
   handlers: ModalHandlers<any>
+  visible: boolean
 }
 
 type ModalContext = {
-  setCurrent(current: ModalInfo | null): void
+  add(modalInfo: Omit<ModalInfo, 'visible'>): void
 }
 
 const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
@@ -90,40 +90,41 @@ export function useModal<C extends Component>(component: C) {
     >((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
-      ctx.setCurrent({ id: mid, component, props, handlers })
+      ctx.add({ id: mid, component, props, handlers })
     })
   }
 }
 </script>
 
 <script setup lang="ts">
-const currentModal = shallowRef<ModalInfo | null>(null)
-const currentVisible = ref(false)
+const currentModals = shallowReactive<ModalInfo[]>([])
 
-async function setCurrent(modal: ModalInfo | null) {
-  currentModal.value = modal
-  if (modal != null) {
-    // delay visible-setting, so there will be animation for modal-show
-    // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
-    await nextTick()
-    if (currentModal.value !== modal) return
-    currentVisible.value = true
-  }
+async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
+  const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
+  currentModals.push(currentModal)
+  // delay visible-setting, so there will be animation for modal-show
+  // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
+  await nextTick()
+  currentModal.visible = true
 }
 
-function handleCancelled(reason?: unknown) {
-  const modal = currentModal.value
+function remove(id: number, onHide: (modal: ModalInfo) => void) {
+  const modal = currentModals.find(m => m.id === id)
   if (modal == null) return
-  currentVisible.value = false
-  modal.handlers.reject(new Cancelled(reason))
+  modal.visible = false
+  onHide(modal)
+  setTimeout(() => { // wait for hide animation to finish
+    currentModals.splice(currentModals.findIndex(m => m.id === id), 1)
+  }, 300)
 }
 
-function handleResolved(resolved?: unknown) {
-  const modal = currentModal.value
-  if (modal == null) return
-  currentVisible.value = false
-  modal.handlers.resolve(resolved)
+function handleCancelled(id: number, reason?: unknown) {
+  remove(id, (m) => m.handlers.reject(new Cancelled(reason)))
 }
 
-provide(modalContextInjectKey, { setCurrent })
+function handleResolved(id: number, resolved?: unknown) {
+  remove(id, (m) => m.handlers.resolve(resolved))
+}
+
+provide(modalContextInjectKey, { add })
 </script>
