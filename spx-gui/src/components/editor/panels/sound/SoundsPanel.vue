@@ -8,8 +8,12 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem>
-        <UIMenuItem @click="handleAddFromAssetLibrary">{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromLocalFile">{{
+          $t({ en: 'Select local file', zh: '选择本地文件' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromAssetLibrary">{{
+          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
+        }}</UIMenuItem>
         <UIMenuItem @click="handleRecord">{{ $t({ en: 'Record', zh: '录音' }) }}</UIMenuItem>
       </UIMenu>
     </template>
@@ -94,7 +98,7 @@ const handleAddFromLocalFile = useMessageHandle(
     editorCtx.project.addSound(sound)
     editorCtx.select('sound', sound.name)
   },
-  { en: 'Add from local file failed', zh: '从本地文件添加失败' }
+  { en: 'Failed to add sound from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()

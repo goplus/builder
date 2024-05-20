@@ -8,8 +8,12 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleAddFromLocalFile">{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem>
-        <UIMenuItem @click="handleAddFromAssetLibrary">{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromLocalFile">{{
+          $t({ en: 'Select local file', zh: '选择本地文件' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromAssetLibrary">{{
+          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
+        }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #details>
@@ -119,7 +123,7 @@ const handleAddFromLocalFile = useMessageHandle(
     await sprite.autoFit()
     editorCtx.select('sprite', sprite.name)
   },
-  { en: 'Add from local file failed', zh: '从本地文件添加失败' }
+  { en: 'Failed to add sprite from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()

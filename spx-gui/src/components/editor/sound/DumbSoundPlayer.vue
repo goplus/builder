@@ -36,7 +36,7 @@ const emit = defineEmits<{
 }>()
 
 const handlePlay = useMessageHandle(() => props.playHandler(), {
-  en: 'Play audio failed',
+  en: 'Failed to play audio',
   zh: '无法播放音频'
 })
 

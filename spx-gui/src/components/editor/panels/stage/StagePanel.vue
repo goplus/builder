@@ -10,8 +10,12 @@
             <UICornerIcon v-show="active" color="stage" type="exchange" />
           </template>
           <UIMenu>
-            <UIMenuItem @click="handleAddFromLocalFile">{{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}</UIMenuItem>
-            <UIMenuItem @click="handleAddFromAssetLibrary">{{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}</UIMenuItem>
+            <UIMenuItem @click="handleAddFromLocalFile">{{
+              $t({ en: 'Select local file', zh: '选择本地文件' })
+            }}</UIMenuItem>
+            <UIMenuItem @click="handleAddFromAssetLibrary">{{
+              $t({ en: 'Choose from asset library', zh: '从素材库选择' })
+            }}</UIMenuItem>
             <UIMenuItem v-if="backdrop != null" @click="addToLibrary(backdrop)">{{
               // TODO: move to stage editor in #460
               $t({ en: 'Add to asset library', zh: '添加到素材库' })
@@ -61,7 +65,7 @@ const handleAddFromLocalFile = useMessageHandle(
     const backdrop = await Backdrop.create(stripExt(img.name), file)
     editorCtx.project.stage.setBackdrop(backdrop)
   },
-  { en: 'Add from local file failed', zh: '从本地文件添加失败' }
+  { en: 'Failed to add backdrop from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
