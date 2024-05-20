@@ -36,7 +36,7 @@ const hasSlotIcon = !!slots['icon']
 const ctx = inject(ctxKey)
 const dropdownCtrl = useDropdown()
 
-const disabled = computed(() => props.disabled || !!ctx?.value.disabled)
+const disabled = computed(() => props.disabled || !!ctx?.disabled)
 
 function handleClick(e: MouseEvent) {
   if (disabled.value) return

@@ -6,8 +6,8 @@
 
 <script lang="ts">
 export type TabsCtx = {
-  color: Ref<Color>
-  value: Ref<string>
+  color: Color
+  value: string
   setValue(value: string): void
 }
 const tabsCtxInjectionKey: InjectionKey<TabsCtx> = Symbol('tabs-ctx')
@@ -19,8 +19,9 @@ export function useTabsCtx() {
 </script>
 
 <script setup lang="ts">
-import { type InjectionKey, inject, provide, type Ref, toRefs } from 'vue'
+import { type InjectionKey, inject, provide } from 'vue'
 import { type Color } from '../tokens/colors'
+import { computedShallowReactive } from '@/utils/utils'
 
 const props = withDefaults(
   defineProps<{
@@ -36,15 +37,16 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-const propRefs = toRefs(props)
-
-provide(tabsCtxInjectionKey, {
-  color: propRefs.color,
-  value: propRefs.value,
-  setValue(value: string) {
-    emit('update:value', value)
-  }
-})
+provide(
+  tabsCtxInjectionKey,
+  computedShallowReactive(() => ({
+    color: props.color,
+    value: props.value,
+    setValue(value: string) {
+      emit('update:value', value)
+    }
+  }))
+)
 </script>
 
 <style lang="scss" scoped>

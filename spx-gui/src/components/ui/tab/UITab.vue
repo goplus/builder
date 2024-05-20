@@ -15,11 +15,11 @@ const props = defineProps<{
 }>()
 
 const tabsCtx = useTabsCtx()
-const active = computed(() => tabsCtx.value.value === props.value)
+const active = computed(() => tabsCtx.value === props.value)
 const uiVariables = useUIVariables()
 const cssVars = computed(() =>
   getCssVars('--ui-tab-color-', {
-    main: uiVariables.color[tabsCtx.color.value].main
+    main: uiVariables.color[tabsCtx.color].main
   })
 )
 

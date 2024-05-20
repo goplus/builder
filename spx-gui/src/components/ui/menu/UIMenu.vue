@@ -5,15 +5,14 @@
 </template>
 
 <script lang="ts">
-import { type InjectionKey, type ComputedRef, provide, computed } from 'vue'
+import { type InjectionKey, provide } from 'vue'
 export type MenuCtx = {
   disabled: boolean
   inGroup: boolean
 }
-export const ctxKey: InjectionKey<ComputedRef<MenuCtx>> = Symbol('menu-ctx')
+export const ctxKey: InjectionKey<MenuCtx> = Symbol('menu-ctx')
 </script>
 
 <script setup lang="ts">
-const ctx = computed(() => ({ disabled: false, inGroup: false }))
-provide(ctxKey, ctx)
+provide(ctxKey, { disabled: false, inGroup: false })
 </script>
