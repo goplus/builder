@@ -1,27 +1,26 @@
 <template>
-  <AssetItem class="backdrop-item" :active="active">
-    <div class="img" :style="imgStyle"></div>
+  <AssetItem class="backdrop-item" :selected="selected">
+    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
-import AssetItem from './AssetItem.vue'
-import AssetItemName from './AssetItemName.vue'
 import { asset2Backdrop } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
+import AssetItem from './AssetItem.vue'
+import AssetItemName from './AssetItemName.vue'
 
 const props = defineProps<{
   asset: AssetData
-  active: boolean
+  selected: boolean
 }>()
 
 const backdrop = useAsyncComputed(() => asset2Backdrop(props.asset))
-const imgSrc = useFileUrl(() => backdrop.value?.img)
-const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSrc.value}")` })
+const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 </script>
 
 <style lang="scss" scoped>
@@ -29,8 +28,5 @@ const imgStyle = computed(() => imgSrc.value && { backgroundImage: `url("${imgSr
   margin: 2px 0 6px;
   width: 99px;
   height: 99px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
 }
 </style>

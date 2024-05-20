@@ -1,12 +1,12 @@
 <template>
   <div :class="['scratch-item-container', { selected }]">
-    <UIIcon v-if="selected" type="check" class="check-icon" />
+    <UICornerIcon v-show="selected" type="check" />
     <slot></slot>
   </div>
 </template>
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { UIIcon } from '@/components/ui'
+import { UICornerIcon } from '@/components/ui'
 
 defineProps<{
   selected: boolean
@@ -36,17 +36,5 @@ defineProps<{
     background-color: var(--ui-color-primary-200);
     border: 2px solid var(--ui-color-primary-500);
   }
-}
-
-.check-icon {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  color: white;
-  border-radius: 50%;
-  background-color: var(--ui-color-primary-500);
-  padding: 4px;
-  width: 24px;
-  height: 24px;
 }
 </style>

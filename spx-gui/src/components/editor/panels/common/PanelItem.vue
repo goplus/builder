@@ -1,35 +1,30 @@
 <!-- Item (sprite / sound) on panel -->
 
 <template>
-  <li class="panel-item" :class="{ active: props.active }">
+  <li class="panel-item" :class="{ active: active }">
     <slot></slot>
-    <p class="name">{{ props.name }}</p>
-    <div class="remove" @click.stop="emit('remove')">
-      <UIIcon class="icon" type="trash" />
-    </div>
-    <UILoading v-if="loading" class="loading" />
+    <p class="name">{{ name }}</p>
+    <UICornerIcon v-show="active" :color="panelColor" type="trash" @click.stop="emit('remove')" />
   </li>
 </template>
 
 <script setup lang="ts">
-import { UIIcon, UILoading } from '@/components/ui'
+import { UICornerIcon } from '@/components/ui'
+import { usePanelColor } from './CommonPanel.vue'
 
-const props = defineProps<{
+defineProps<{
   active: boolean
   name: string
-  loading?: boolean
 }>()
 
 const emit = defineEmits<{
   remove: []
 }>()
+
+const panelColor = usePanelColor()
 </script>
 
 <style lang="scss" scoped>
-.loading {
-  position: absolute;
-}
-
 .panel-item {
   display: flex;
   flex-direction: column;
@@ -50,10 +45,6 @@ const emit = defineEmits<{
   &.active {
     border-color: var(--panel-color-main);
     background-color: var(--panel-color-200);
-
-    .remove {
-      visibility: visible;
-    }
   }
 }
 
@@ -69,35 +60,5 @@ const emit = defineEmits<{
   text-align: center;
   text-overflow: ellipsis;
   color: var(--ui-color-title);
-}
-
-.remove {
-  visibility: hidden;
-  position: absolute;
-  top: -6px;
-  right: -6px;
-
-  display: flex;
-  width: 24px;
-  height: 24px;
-  justify-content: center;
-  align-items: center;
-
-  color: var(--ui-color-grey-100);
-  border-radius: 24px;
-  background: var(--panel-color-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--panel-color-400);
-  }
-  &:active {
-    background-color: var(--panel-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
 }
 </style>

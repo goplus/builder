@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
+import type { Color } from '@/components/ui'
 import SoundPlayer from '../editor/sound/SoundPlayer.vue'
-import type { Color } from '../ui/tokens/colors'
 
 const props = defineProps<{
   blob: Blob

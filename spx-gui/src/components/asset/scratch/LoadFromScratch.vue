@@ -142,9 +142,9 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 }
 
 const importSprite = async (asset: ExportedScratchSprite) => {
-  const costumes = await Promise.all(asset.costumes.map((costume) =>
-    Costume.create(costume.name, scratchToSpxFile(costume))
-  ))
+  const costumes = await Promise.all(
+    asset.costumes.map((costume) => Costume.create(costume.name, scratchToSpxFile(costume)))
+  )
   const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
     sprite.addCostume(costume)

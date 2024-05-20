@@ -1,11 +1,20 @@
 <template>
-  <div class="ui-loading">
+  <div class="ui-loading" :class="{ cover }">
     <NSpin />
   </div>
 </template>
 
 <script setup lang="ts">
 import { NSpin } from 'naive-ui'
+
+withDefaults(
+  defineProps<{
+    cover?: boolean
+  }>(),
+  {
+    cover: false
+  }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -15,5 +24,14 @@ import { NSpin } from 'naive-ui'
   height: 80%;
   display: flex;
   justify-content: center;
+
+  &.cover {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
 }
 </style>

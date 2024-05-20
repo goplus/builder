@@ -35,13 +35,13 @@
         @update:value="(v) => emit('update:value', v)"
       />
     </div>
-    <div class="thumbnail" :style="thumbnailStyle" />
+    <UIImg class="thumbnail" :src="thumbnailSrc" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
-import { useUIVariables, UITagButton, UITooltip } from '@/components/ui'
+import { useUIVariables, UITagButton, UITooltip, UIImg } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
@@ -157,13 +157,10 @@ defineExpose({
   }
 })
 
-const thumbnailSrc = useFileUrl(() => {
+const [thumbnailSrc] = useFileUrl(() => {
   if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
   if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
 })
-const thumbnailStyle = computed(
-  () => thumbnailSrc.value && { backgroundImage: `url("${thumbnailSrc.value}")` }
-)
 </script>
 
 <style scoped lang="scss">
@@ -256,9 +253,6 @@ const thumbnailStyle = computed(
   margin-top: 12px;
   width: 60px;
   height: 60px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
   opacity: 0.3;
 }
 </style>

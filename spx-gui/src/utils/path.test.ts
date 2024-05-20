@@ -12,7 +12,9 @@ describe('resolve', () => {
     expect(resolve('https://test.com/foo', 'bar')).toBe('https://test.com/foo/bar')
     expect(resolve('https://test.com/foo', 'bar', 'baz')).toBe('https://test.com/foo/bar/baz')
     expect(resolve('https://test.com/foo/bar', 'baz')).toBe('https://test.com/foo/bar/baz')
-    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe('https://test.com/foo/bar/baz/qux')
+    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe(
+      'https://test.com/foo/bar/baz/qux'
+    )
   })
   it('should work well with no path', () => {
     expect(resolve('foo')).toBe('foo')

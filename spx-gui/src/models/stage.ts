@@ -5,7 +5,7 @@
 
 import { reactive } from 'vue'
 import { filename } from '@/utils/path'
-import { toText, type Files, fromText } from './common/file'
+import { toText, type Files, fromText, File } from './common/file'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type Size } from './common'
 import { ensureValidBackdropName } from './common/asset'
@@ -42,9 +42,13 @@ const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
 export class Stage {
-  code: string
+  private codeFile: File | null
+  async getCode() {
+    if (this.codeFile == null) return ''
+    return toText(this.codeFile)
+  }
   setCode(code: string) {
-    this.code = code
+    this.codeFile = fromText(stageCodeFileName, code)
   }
 
   get backdrop(): Backdrop | null {
@@ -140,8 +144,8 @@ export class Stage {
     return null
   }
 
-  constructor(code = '', inits?: Partial<StageInits>) {
-    this.code = code
+  constructor(codeFile: File | null = null, inits?: Partial<StageInits>) {
+    this.codeFile = codeFile
     this._backdrops = []
     this._backdropIndex = inits?.backdropIndex ?? 0
     this.mapWidth = inits?.mapWidth
@@ -161,14 +165,13 @@ export class Stage {
     files: Files
   ) {
     // TODO: empty stage
-    let code = ''
+    let codeFile: File | undefined
     for (const codeFilePath of stageCodeFilePaths) {
-      const codeFile = files[codeFilePath]
-      if (codeFile == null) continue
-      code = await toText(codeFile)
+      if (files[codeFilePath] == null) continue
+      codeFile = files[codeFilePath]
       break
     }
-    const stage = new Stage(code, {
+    const stage = new Stage(codeFile, {
       backdropIndex: sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
@@ -184,7 +187,7 @@ export class Stage {
   export(): [RawStageConfig, Files] {
     const files: Files = {}
     const backdropConfigs: RawBackdropConfig[] = []
-    files[stageCodeFilePath] = fromText(stageCodeFileName, this.code)
+    files[stageCodeFilePath] = this.codeFile ?? fromText(stageCodeFileName, '')
     for (const backdrop of this._backdrops) {
       const [backdropConfig, backdropFiles] = backdrop.export()
       backdropConfigs.push(backdropConfig)

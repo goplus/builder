@@ -2,7 +2,7 @@
   <UISearchableModal
     style="width: 1064px"
     :visible="props.visible"
-    :title="$t(title)"
+    :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
   >
     <template #input>
@@ -40,8 +40,8 @@
               v-for="asset in assets!.data"
               :key="asset.id"
               :asset="asset"
-              :active="selectedId === asset.id"
-              @click="handleSelect(asset)"
+              :selected="isSelected(asset)"
+              @click="handleAssetClick(asset)"
             />
           </ul>
           <ul v-else-if="assets != null && type === AssetType.Sprite" class="asset-list">
@@ -49,8 +49,8 @@
               v-for="asset in assets!.data"
               :key="asset.id"
               :asset="asset"
-              :active="selectedId === asset.id"
-              @click="handleSelect(asset)"
+              :selected="isSelected(asset)"
+              @click="handleAssetClick(asset)"
             />
           </ul>
           <ul v-else-if="assets != null && type === AssetType.Backdrop" class="asset-list">
@@ -58,15 +58,23 @@
               v-for="asset in assets!.data"
               :key="asset.id"
               :asset="asset"
-              :active="selectedId === asset.id"
-              @click="handleSelect(asset)"
+              :selected="isSelected(asset)"
+              @click="handleAssetClick(asset)"
             />
           </ul>
         </div>
         <footer class="footer">
+          <span v-show="selected.length > 0">
+            {{
+              $t({
+                en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
+                zh: `已选中 ${selected.length} 个${entityMessage.zh}`
+              })
+            }}
+          </span>
           <UIButton
             size="large"
-            :disabled="selectedId == null"
+            :disabled="selected.length === 0"
             :loading="handleConfirm.isLoading.value"
             @click="handleConfirm.fn"
           >
@@ -79,7 +87,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, ref } from 'vue'
+import { computed, defineProps, ref, shallowReactive } from 'vue'
 import {
   UITextInput,
   UIIcon,
@@ -109,7 +117,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [AssetModel]
+  resolved: [AssetModel[]]
 }>()
 
 const searchInput = ref('')
@@ -122,13 +130,7 @@ const entityMessages = {
   [AssetType.Sound]: { en: 'sound', zh: '声音' }
 }
 
-const title = computed(() => {
-  const entityMessage = entityMessages[props.type]
-  return {
-    en: `Choose a ${entityMessage.en}`,
-    zh: `选择${entityMessage.zh}`
-  }
-})
+const entityMessage = computed(() => entityMessages[props.type])
 
 const {
   isLoading,
@@ -160,42 +162,48 @@ function handleSelectCategory(c: Category) {
   category.value = c
 }
 
-const selectedId = ref<string | null>()
+const selected = shallowReactive<AssetData[]>([])
+
+async function addAssetToProject(asset: AssetData) {
+  switch (asset.assetType) {
+    case AssetType.Sprite: {
+      const sprite = await asset2Sprite(asset)
+      props.project.addSprite(sprite)
+      await sprite.autoFit()
+      return sprite
+    }
+    case AssetType.Backdrop: {
+      const backdrop = await asset2Backdrop(asset)
+      // TODO: change `setBackdrop` to `addBackdrop` in #460
+      props.project.stage.setBackdrop(backdrop)
+      return backdrop
+    }
+    case AssetType.Sound: {
+      const sound = await asset2Sound(asset)
+      props.project.addSound(sound)
+      return sound
+    }
+    default:
+      throw new Error('unknow asset type')
+  }
+}
 
 const handleConfirm = useMessageHandle(
   async () => {
-    const asset =
-      selectedId.value != null ? assets.value?.data.find((a) => a.id === selectedId.value) : null
-    if (asset == null) return
-    switch (asset.assetType) {
-      case AssetType.Sprite: {
-        const sprite = await asset2Sprite(asset)
-        props.project.addSprite(sprite)
-        await sprite.autoFit()
-        emit('resolved', sprite)
-        break
-      }
-      case AssetType.Backdrop: {
-        const backdrop = await asset2Backdrop(asset)
-        props.project.stage.setBackdrop(backdrop)
-        emit('resolved', backdrop)
-        break
-      }
-      case AssetType.Sound: {
-        const sound = await asset2Sound(asset)
-        props.project.addSound(sound)
-        emit('resolved', sound)
-        break
-      }
-      default:
-        throw new Error('unknow asset type')
-    }
+    const assetModels = await Promise.all(selected.map(addAssetToProject))
+    emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
 
-async function handleSelect(asset: AssetData) {
-  selectedId.value = asset.id
+function isSelected(asset: AssetData) {
+  return selected.some((a) => a.id === asset.id)
+}
+
+async function handleAssetClick(asset: AssetData) {
+  const index = selected.findIndex((a) => a.id === asset.id)
+  if (index < 0) selected.push(asset)
+  else selected.splice(index, 1)
 }
 </script>
 
@@ -220,19 +228,20 @@ async function handleSelect(asset: AssetData) {
   background: var(--ui-color-grey-200);
 }
 .main {
-  padding: 20px 24px;
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
   justify-content: stretch;
 }
 .title {
-  margin-bottom: 8px;
+  padding: 20px 24px 0;
   color: var(--ui-color-grey-900);
 }
 .content {
-  height: 505px;
+  height: 513px;
+  padding: 8px 24px 0;
   overflow-y: auto;
+  overflow-x: visible;
 }
 .asset-list {
   display: flex;
@@ -240,8 +249,10 @@ async function handleSelect(asset: AssetData) {
   flex-wrap: wrap;
 }
 .footer {
-  margin-top: 20px;
+  padding: 20px 24px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--ui-gap-middle);
 }
 </style>
