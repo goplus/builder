@@ -1,7 +1,8 @@
 <template>
-  <EditorHeader color="sprite">
-    <AssetName>{{ sprite.name }}</AssetName>
-    &nbsp;/ {{ $t({ en: 'Code', zh: '代码' }) }}
+  <EditorHeader>
+    <UITabs value="code" color="sprite">
+      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
+    </UITabs>
     <template #extra>
       <FormatButton v-if="codeEditor != null" :code-editor="codeEditor" />
     </template>
@@ -14,8 +15,7 @@
 import { ref } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
-import { UILoading } from '@/components/ui'
-import AssetName from '@/components/asset/AssetName.vue'
+import { UILoading, UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../FormatButton.vue'
 import EditorHeader from '../EditorHeader.vue'

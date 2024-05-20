@@ -1,5 +1,5 @@
 <template>
-  <UIImg class="backdrop-preview" :src="imgSrc" :loading="imgLoading" />
+  <UIImg class="backdrop-preview" :src="imgSrc" :loading="imgLoading" size="cover" />
 </template>
 
 <script setup lang="ts">

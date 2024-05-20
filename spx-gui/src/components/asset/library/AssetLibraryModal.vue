@@ -190,8 +190,7 @@ async function addAssetToProject(asset: AssetData) {
     }
     case AssetType.Backdrop: {
       const backdrop = await asset2Backdrop(asset)
-      // TODO: change `setBackdrop` to `addBackdrop` in #460
-      props.project.stage.setBackdrop(backdrop)
+      props.project.stage.addBackdrop(backdrop)
       return backdrop
     }
     case AssetType.Sound: {

@@ -158,7 +158,7 @@ defineExpose({
 })
 
 const [thumbnailSrc] = useFileUrl(() => {
-  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
+  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.defaultBackdrop?.img
   if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
 })
 </script>

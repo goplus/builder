@@ -1,6 +1,8 @@
 <template>
-  <EditorHeader color="sound">
-    <AssetName>{{ sound.name }}</AssetName>
+  <EditorHeader>
+    <UITabs value="sound" color="sound">
+      <UITab value="sound">{{ $t({ en: 'Sound', zh: '声音' }) }}</UITab>
+    </UITabs>
   </EditorHeader>
   <div class="main">
     <div class="name">
@@ -35,7 +37,7 @@
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted } from 'vue'
-import { UIIcon, UIButton, useModal } from '@/components/ui'
+import { UIIcon, UIButton, UITab, UITabs, useModal } from '@/components/ui'
 import { isAddPublicLibraryEnabled } from '@/utils/utils'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
