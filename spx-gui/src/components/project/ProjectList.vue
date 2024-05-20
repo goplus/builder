@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="project-list">
+  <div ref="container" :class="['project-list', { 'in-homepage': inHomepage }]">
     <UIError v-if="isError && error">
       {{ $t((error as ActionException).userMessage) }}
     </UIError>
@@ -124,7 +124,7 @@ const handleProjectRemoved = (project: ProjectData) => {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 20px;
+  gap: 12px;
   padding-bottom: 20px;
   position: relative;
 }
@@ -133,5 +133,10 @@ const handleProjectRemoved = (project: ProjectData) => {
   bottom: 0;
   width: 100%;
   height: 300px;
+}
+.in-homepage {
+  .list {
+    gap: 20px;
+  }
 }
 </style>
