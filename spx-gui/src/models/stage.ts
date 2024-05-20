@@ -51,70 +51,45 @@ export class Stage {
     this.codeFile = fromText(stageCodeFileName, code)
   }
 
-  get backdrop(): Backdrop | null {
-    return this._backdrops[this._backdropIndex] ?? null
+  backdrops: Backdrop[]
+  private backdropIndex: number
+  get defaultBackdrop(): Backdrop | null {
+    return this.backdrops[this.backdropIndex] ?? null
   }
-
-  /**
-   * Set given backdrop to stage.
-   * Note: the backdrop's name may be altered to avoid conflict
-   */
-  setBackdrop(backdrop: Backdrop) {
-    for (const b of this._backdrops) {
-      this.removeBackdrop(b.name)
-    }
-    this._setBackdropIndex(this._addBackdrop(backdrop))
-  }
-
-  removeBackdrop(name: string): void {
-    const idx = this._backdrops.findIndex((s) => s.name === name)
-    if (idx === -1) {
-      throw new Error(`backdrop ${name} not found`)
-    }
-
-    const [removedBackdrop] = this._backdrops.splice(idx, 1)
-    removedBackdrop.setStage(null)
-
-    // Maintain current backdrop's index if possible
-    if (this._backdropIndex === idx) {
-      this._setBackdropIndex(0)
-      // Note that if there is only one backdrop in the array
-      // and it is removed, the index will also be set to 0
-    } else if (this._backdropIndex > idx) {
-      this._setBackdropIndex(this._backdropIndex - 1)
-    }
-  }
-
-  // Currently we support at most one backdrop, so
-  // * fields like `backdrops`、`backdropIndex`
-  // * methods like `setBackdropIndex`、`addBackdrop`、`topBackdrop`
-  // are marked private to prevent usage from outside of models.
-  // Instead, we offer `setBackdrop` to manipulate backdrops.
-
-  _backdrops: Backdrop[]
-  _backdropIndex: number
-  _setBackdropIndex(backdropIndex: number) {
-    this._backdropIndex = backdropIndex
+  setDefaultBackdrop(name: string) {
+    const idx = this.backdrops.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`backdrop ${name} not found`)
+    this.backdropIndex = idx
   }
 
   /**
    * Add given backdrop to stage.
    * Note: the backdrop's name may be altered to avoid conflict.
-   * @returns index of the added backdrop
    */
-  _addBackdrop(backdrop: Backdrop): number {
+  addBackdrop(backdrop: Backdrop) {
     const newName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newName)
     backdrop.setStage(this)
-    return this._backdrops.push(backdrop) - 1
+    this.backdrops.push(backdrop)
   }
 
-  _topBackdrop(name: string) {
-    const idx = this._backdrops.findIndex((s) => s.name === name)
-    if (idx < 0) throw new Error(`backdrop ${name} not found`)
-    const [backdrop] = this._backdrops.splice(idx, 1)
-    this._backdrops.unshift(backdrop)
-    // TODO: relation to `this.backdropIndex`?
+  removeBackdrop(name: string): void {
+    const idx = this.backdrops.findIndex((s) => s.name === name)
+    if (idx === -1) {
+      throw new Error(`backdrop ${name} not found`)
+    }
+
+    const [removedBackdrop] = this.backdrops.splice(idx, 1)
+    removedBackdrop.setStage(null)
+
+    // Maintain current backdrop's index if possible
+    if (this.backdropIndex === idx) {
+      this.backdropIndex = 0
+      // Note that if there is only one backdrop in the array
+      // and it is removed, the index will also be set to 0
+    } else if (this.backdropIndex > idx) {
+      this.backdropIndex = this.backdropIndex - 1
+    }
   }
 
   mapWidth: number | undefined
@@ -138,16 +113,16 @@ export class Stage {
     if (width != null && height != null) {
       return { width, height }
     }
-    if (this.backdrop != null) {
-      return await this.backdrop.getSize()
+    if (this.defaultBackdrop != null) {
+      return await this.defaultBackdrop.getSize()
     }
     return null
   }
 
   constructor(codeFile: File | null = null, inits?: Partial<StageInits>) {
     this.codeFile = codeFile
-    this._backdrops = []
-    this._backdropIndex = inits?.backdropIndex ?? 0
+    this.backdrops = []
+    this.backdropIndex = inits?.backdropIndex ?? 0
     this.mapWidth = inits?.mapWidth
     this.mapHeight = inits?.mapHeight
     this.mapMode = getMapMode(inits?.mapMode)
@@ -179,7 +154,7 @@ export class Stage {
     })
     const backdrops = (sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
-      stage._addBackdrop(backdrop)
+      stage.addBackdrop(backdrop)
     }
     return stage
   }
@@ -188,12 +163,12 @@ export class Stage {
     const files: Files = {}
     const backdropConfigs: RawBackdropConfig[] = []
     files[stageCodeFilePath] = this.codeFile ?? fromText(stageCodeFileName, '')
-    for (const backdrop of this._backdrops) {
+    for (const backdrop of this.backdrops) {
       const [backdropConfig, backdropFiles] = backdrop.export()
       backdropConfigs.push(backdropConfig)
       Object.assign(files, backdropFiles)
     }
-    const { _backdropIndex: backdropIndex, mapWidth, mapHeight, mapMode } = this
+    const { backdropIndex, mapWidth, mapHeight, mapMode } = this
     const config: RawStageConfig = {
       scenes: backdropConfigs,
       sceneIndex: backdropIndex,

@@ -130,9 +130,6 @@ const selectBackdrop = (backdrop: ExportedScratchFile) => {
   if (selected.value.backdrops.has(backdrop)) {
     selected.value.backdrops.delete(backdrop)
   } else {
-    if (selected.value.backdrops.size >= 1) {
-      selected.value.backdrops.clear()
-    }
     selected.value.backdrops.add(backdrop)
   }
 }
@@ -163,7 +160,7 @@ const importSound = async (asset: ExportedScratchFile) => {
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = await Backdrop.create(asset.name, file)
-  props.project.stage.setBackdrop(backdrop)
+  props.project.stage.addBackdrop(backdrop)
 }
 
 const importSelected = useMessageHandle(

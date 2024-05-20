@@ -101,7 +101,7 @@ const handleSubmit = useMessageHandle(
     sprite.addCostume(costume)
     const project = new Project()
     const backdrop = await Backdrop.create('', createFile(defaultBackdropImg))
-    project.stage.setBackdrop(backdrop)
+    project.stage.addBackdrop(backdrop)
     project.addSprite(sprite)
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?

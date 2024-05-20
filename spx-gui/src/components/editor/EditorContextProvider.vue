@@ -42,18 +42,10 @@ export function useEditorCtx() {
 </script>
 
 <script setup lang="ts">
-import {
-  provide,
-  type InjectionKey,
-  watch,
-  shallowReactive,
-  computed,
-  watchEffect,
-  shallowRef,
-  effect
-} from 'vue'
+import { provide, type InjectionKey, watch, computed, shallowRef, effect } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
+import { computedShallowReactive } from '@/utils/utils'
 
 const props = defineProps<{
   project: Project
@@ -130,15 +122,14 @@ watch(
   { immediate: true }
 )
 
-const editorCtx = shallowReactive<EditorCtx>({ select } as any)
-watchEffect(() => {
-  // TODO: any simpler way to achieve this (like what Pinia do with store exposes)?
-  editorCtx.project = props.project
-  editorCtx.userInfo = props.userInfo
-  editorCtx.selected = selectedRef.value
-  editorCtx.selectedSprite = selectedSprite.value
-  editorCtx.selectedSound = selectedSound.value
-})
+const editorCtx = computedShallowReactive(() => ({
+  select,
+  project: props.project,
+  userInfo: props.userInfo,
+  selected: selectedRef.value,
+  selectedSprite: selectedSprite.value,
+  selectedSound: selectedSound.value
+}))
 
 provide(editorCtxKey, editorCtx)
 </script>

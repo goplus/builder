@@ -11,7 +11,7 @@
 import { useSlots } from 'vue'
 import { useConfig } from './UIConfigProvider.vue'
 
-const config = useConfig().value.empty
+const config = useConfig().empty
 const slots = useSlots()
 </script>
 

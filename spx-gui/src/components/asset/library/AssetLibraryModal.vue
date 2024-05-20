@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    style="width: 1064px"
+    style="width: 1076px"
     :visible="props.visible"
     :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -190,8 +190,7 @@ async function addAssetToProject(asset: AssetData) {
     }
     case AssetType.Backdrop: {
       const backdrop = await asset2Backdrop(asset)
-      // TODO: change `setBackdrop` to `addBackdrop` in #460
-      props.project.stage.setBackdrop(backdrop)
+      props.project.stage.addBackdrop(backdrop)
       return backdrop
     }
     case AssetType.Sound: {
@@ -235,7 +234,7 @@ async function handleAssetClick(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 136px;
+  flex: 0 0 148px;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);

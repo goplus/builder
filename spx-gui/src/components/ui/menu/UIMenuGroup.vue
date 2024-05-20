@@ -5,7 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { provide, computed } from 'vue'
+import { provide } from 'vue'
+import { computedShallowReactive } from '@/utils/utils'
 import { ctxKey } from './UIMenu.vue'
 
 const props = withDefaults(
@@ -19,7 +20,7 @@ const props = withDefaults(
 
 provide(
   ctxKey,
-  computed(() => ({
+  computedShallowReactive(() => ({
     disabled: props.disabled,
     inGroup: true
   }))
