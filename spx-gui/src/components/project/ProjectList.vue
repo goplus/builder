@@ -1,5 +1,5 @@
 <template>
-  <div class="project-list">
+  <div ref="container" class="project-list">
     <UIError v-if="isError && error">
       {{ $t((error as ActionException).userMessage) }}
     </UIError>
@@ -39,6 +39,7 @@ const emit = defineEmits<{
 }>()
 
 const intersectTrigger = ref<HTMLDivElement | null>(null)
+const container = ref<HTMLDivElement | null>(null)
 
 const listProjectAction = useAction(listProject, {
   en: 'Failed to list projects',
@@ -68,18 +69,23 @@ watchEffect((onCleanup) => {
     return
   }
 
-  const observer = new IntersectionObserver(async (entries) => {
-    if (entries[0].isIntersecting && hasNextPage.value) {
-      await fetchNextPage({
-        // Will throw if another fetch is already in progress
-        throwOnError: true
-      })
-      await nextTick()
-      // Trigger the observer again to check if the content is enough to fill the viewport
-      observer.unobserve(intersectTrigger.value!)
-      observer.observe(intersectTrigger.value!)
+  const observer = new IntersectionObserver(
+    async (entries) => {
+      if (entries[0].isIntersecting && hasNextPage.value) {
+        await fetchNextPage({
+          // Will throw if another fetch is already in progress
+          throwOnError: true
+        })
+        await nextTick()
+        // Trigger the observer again to check if the content is enough to fill the viewport
+        observer.unobserve(intersectTrigger.value!)
+        observer.observe(intersectTrigger.value!)
+      }
+    },
+    {
+      root: container.value
     }
-  })
+  )
 
   observer.observe(intersectTrigger.value)
 
