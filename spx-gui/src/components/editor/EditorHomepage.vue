@@ -309,9 +309,9 @@ async function handleCreate() {
 
   .body {
     flex: 1 1 0;
-    overflow: hidden;
     display: flex;
-    padding: 20px 24px 0;
+    padding: 20px 24px;
+    overflow: hidden;
   }
 
   .footer {

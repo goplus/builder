@@ -51,6 +51,12 @@
               {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
             </UIMenuItem>
           </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleRemoveProject">
+              <template #icon><img :src="removeProjectSvg" /></template>
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
         </UIMenu>
       </UIDropdown>
       <UITooltip placement="bottom">
@@ -132,6 +138,7 @@ import { useUserStore } from '@/stores'
 import {
   useCreateProject,
   useOpenProject,
+  useRemoveProject,
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
@@ -143,6 +150,7 @@ import newSvg from './icons/new.svg'
 import openSvg from './icons/open.svg'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
+import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
@@ -158,6 +166,7 @@ const router = useRouter()
 
 const createProject = useCreateProject()
 const openProject = useOpenProject()
+const removeProject = useRemoveProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
 const loadFromScratchModal = useLoadFromScratchModal()
@@ -197,6 +206,14 @@ const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(prop
   en: 'Failed to import from Scratch file',
   zh: '从 Scratch 项目文件导入失败'
 }).fn
+
+const handleRemoveProject = useMessageHandle(
+  async () => {
+    await removeProject(props.project!.owner!, props.project!.name!)
+    router.push('/')
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 

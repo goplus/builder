@@ -4,16 +4,30 @@
       <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
     <div class="info">
-      <p class="name">{{ projectData.name }}</p>
+      <div class="name-container">
+        <div class="name">{{ projectData.name }}</div>
+        <UIDropdown trigger="click">
+          <template #trigger>
+            <div @click.stop>
+              <UITooltip>
+                <template #trigger>
+                  <UIIcon type="more" />
+                </template>
+                {{ $t({ en: 'More', zh: '更多' }) }}
+              </UITooltip>
+            </div>
+          </template>
+          <UIMenu>
+            <UIMenuItem @click="() => handleRemoveProject(projectData)">
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenu>
+        </UIDropdown>
+      </div>
       <p class="creation-time">{{ creationTime }}</p>
     </div>
   </li>
 </template>
-
-<script lang="ts">
-export const projectItemSize = { width: 168, height: 182 },
-  projectItemSizeInHomepage = { width: 216, height: 230 }
-</script>
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
@@ -23,13 +37,30 @@ import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'
+import { UIDropdown, UIIcon, UIMenu, UIMenuItem, UITooltip } from '../ui'
+import { useRemoveProject } from '.'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   inHomepage?: boolean
   projectData: ProjectData
 }>()
 
+const emit = defineEmits<{
+  removed: []
+}>()
+
 const project = ref<Project | null>(null)
+
+const removeProject = useRemoveProject()
+
+const handleRemoveProject = useMessageHandle(
+  async (projectData: ProjectData) => {
+    await removeProject(projectData.owner, projectData.name)
+    emit('removed')
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
 
 watchEffect(async (onCleanup) => {
   let p = new Project()
@@ -103,6 +134,12 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     font-size: 10px;
     line-height: 18px;
     color: var(--ui-color-grey-800);
+  }
+
+  .name-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 

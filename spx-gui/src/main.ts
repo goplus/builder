@@ -8,6 +8,7 @@
  */
 import { createApp } from 'vue'
 import VueKonva from 'vue-konva'
+import { VueQueryPlugin } from '@tanstack/vue-query'
 
 import { initI18n } from './i18n'
 import App from './App.vue'
@@ -29,6 +30,8 @@ async function initApp() {
   await initI18n(app)
 
   app.use(VueKonva)
+
+  app.use(VueQueryPlugin)
 
   app.mount('#app')
 }
