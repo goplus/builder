@@ -8,8 +8,12 @@
   >
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
-        <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromLocalFile">{{
+          $t({ en: 'Select local file', zh: '选择本地文件' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="handleAddFromAssetLibrary">{{
+          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
+        }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #details>
@@ -23,6 +27,7 @@
           :sprite="sprite"
           :active="isSelected(sprite)"
           @remove="handleSpriteRemove(sprite)"
+          @add-to-asset-library="addToLibrary(sprite)"
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
@@ -65,7 +70,7 @@ import { fromNativeFile } from '@/models/common/file'
 import { Costume } from '@/models/costume'
 import { stripExt } from '@/utils/path'
 import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -101,11 +106,13 @@ function handleSpriteRemove(sprite: Sprite) {
   editorCtx.project.removeSprite(sprite.name)
 }
 
+const addToLibrary = useAddAssetToLibrary()
+
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.select('sprite', sprite.name)
 }
 
-const handleUpload = useMessageHandle(
+const handleAddFromLocalFile = useMessageHandle(
   async () => {
     // When we support costume list & edit, we should allow user to choose multiple images (for multiple costumes) here
     const img = await selectImg()
@@ -116,12 +123,12 @@ const handleUpload = useMessageHandle(
     await sprite.autoFit()
     editorCtx.select('sprite', sprite.name)
   },
-  { en: 'Upload failed', zh: '上传失败' }
+  { en: 'Failed to add sprite from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-async function handleChoose() {
+async function handleAddFromAssetLibrary() {
   const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
   editorCtx.select('sprite', sprites[0].name)
 }

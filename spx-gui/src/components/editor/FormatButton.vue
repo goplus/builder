@@ -19,7 +19,7 @@ const props = defineProps<{
 }>()
 
 const handleFormat = useMessageHandle(() => props.codeEditor.format(), {
-  en: 'Format failed',
+  en: 'Failed to format',
   zh: '格式化失败'
 })
 </script>

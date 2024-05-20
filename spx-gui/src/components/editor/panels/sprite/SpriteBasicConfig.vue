@@ -62,18 +62,14 @@
       />
     </p>
   </div>
-  <div v-if="isLibraryEnabled()" class="line">
-    <UIButton @click="addToLibrary(sprite)">Add to asset library</UIButton>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UINumberInput, UIButton, UIIcon, useModal, UITooltip } from '@/components/ui'
-import { isLibraryEnabled, round } from '@/utils/utils'
+import { UINumberInput, UIIcon, useModal, UITooltip } from '@/components/ui'
+import { round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import { useAddAssetToLibrary } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
 import VisibleInput from '../common/VisibleInput.vue'
 import SpriteRenameModal from './SpriteRenameModal.vue'
@@ -104,8 +100,6 @@ function handleSizePercentChange(s: any) {
   if (s == null) return
   props.sprite.setSize(round(s / 100, 2))
 }
-
-const addToLibrary = useAddAssetToLibrary()
 </script>
 
 <style scoped lang="scss">

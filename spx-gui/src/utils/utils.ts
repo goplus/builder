@@ -24,12 +24,12 @@ export function debounce<T extends (...args: any[]) => any>(func: T, delay: numb
 }
 
 /**
- * If (add-to-)library features are enabled.
- * In release v1.2, we do not allow users to add asset to library (the corresponding features are disabled).
+ * If add-to-public-library features are enabled.
+ * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).
  * These features are only enabled when there is `?library` in URL query. A simple & ugly interface will be provided.
  * This is a informal & temporary behavior.
  */
-export function isLibraryEnabled() {
+export function isAddPublicLibraryEnabled() {
   return window.location.search.includes('?library')
 }
 

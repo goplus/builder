@@ -10,14 +10,19 @@
             <UICornerIcon v-show="active" color="stage" type="exchange" />
           </template>
           <UIMenu>
-            <UIMenuItem @click="handleUpload">{{ $t({ en: 'Upload', zh: '上传' }) }}</UIMenuItem>
-            <UIMenuItem @click="handleChoose">{{ $t({ en: 'Choose', zh: '选择' }) }}</UIMenuItem>
+            <UIMenuItem @click="handleAddFromLocalFile">{{
+              $t({ en: 'Select local file', zh: '选择本地文件' })
+            }}</UIMenuItem>
+            <UIMenuItem @click="handleAddFromAssetLibrary">{{
+              $t({ en: 'Choose from asset library', zh: '从素材库选择' })
+            }}</UIMenuItem>
+            <UIMenuItem v-if="backdrop != null" @click="addToLibrary(backdrop)">{{
+              // TODO: move to stage editor in #460
+              $t({ en: 'Add to asset library', zh: '添加到素材库' })
+            }}</UIMenuItem>
           </UIMenu>
         </UIDropdown>
       </div>
-      <footer v-if="isLibraryEnabled() && backdrop != null">
-        <UIButton @click="addToLibrary(backdrop)">Add</UIButton>
-      </footer>
     </main>
   </section>
 </template>
@@ -26,7 +31,6 @@
 import { computed } from 'vue'
 import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
 import {
-  UIButton,
   UICornerIcon,
   UIDropdown,
   UIImg,
@@ -35,7 +39,6 @@ import {
   getCssVars,
   useUIVariables
 } from '@/components/ui'
-import { isLibraryEnabled } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
 import { selectImg, useFileUrl } from '@/utils/file'
@@ -55,19 +58,19 @@ function activate() {
 const backdrop = computed(() => editorCtx.project.stage.backdrop)
 const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
-const handleUpload = useMessageHandle(
+const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const img = await selectImg()
     const file = fromNativeFile(img)
     const backdrop = await Backdrop.create(stripExt(img.name), file)
     editorCtx.project.stage.setBackdrop(backdrop)
   },
-  { en: 'Upload failed', zh: '上传失败' }
+  { en: 'Failed to add backdrop from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-function handleChoose() {
+function handleAddFromAssetLibrary() {
   addAssetFromLibrary(editorCtx.project, AssetType.Backdrop)
 }
 

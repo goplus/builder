@@ -135,7 +135,7 @@ const {
     // so their change will drive `useQuery` to re-fetch
     return loadProject(userStore.userInfo?.name, projectName.value)
   },
-  { en: 'Load project failed', zh: '加载项目失败' }
+  { en: 'Failed to load project', zh: '加载项目失败' }
 )
 
 async function loadProject(user: string | undefined, projectName: string | undefined) {

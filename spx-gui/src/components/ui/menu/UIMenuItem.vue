@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import { inject, useSlots } from 'vue'
+import { useDropdown } from '../UIDropdown.vue'
 import { ctxKey } from './UIMenu.vue'
 
 withDefaults(
@@ -31,9 +32,13 @@ const emit = defineEmits<{
 const slots = useSlots()
 const hasSlotIcon = !!slots['icon']
 const ctx = inject(ctxKey)
+const dropdownCtrl = useDropdown()
 
 function handleClick(e: MouseEvent) {
   if (ctx?.value.disabled) return
+  // It is common to put a menu in a dropdown. For most of the cases, it is ideal to hide the
+  // dropdown when menu-item clicked. We may make this behavior configurable if required.
+  dropdownCtrl?.setVisible(false)
   emit('click', e)
 }
 </script>

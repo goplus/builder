@@ -19,6 +19,13 @@
     <section class="body">
       <div class="sider">
         <UITag
+          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
+          @click="handleSelectCategory(categoryPersonal)"
+        >
+          {{ $t(categoryPersonal.message) }}
+        </UITag>
+        <UIDivider />
+        <UITag
           v-for="c in categories"
           :key="c.value"
           :type="c.value === category.value ? 'primary' : 'boring'"
@@ -96,7 +103,8 @@ import {
   UIEmpty,
   UIError,
   UIButton,
-  UISearchableModal
+  UISearchableModal,
+  UIDivider
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { useMessageHandle, useQuery } from '@/utils/exception'
@@ -120,10 +128,6 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-const searchInput = ref('')
-const keyword = ref('')
-const category = ref(categoryAll)
-
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
   [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
@@ -132,22 +136,34 @@ const entityMessages = {
 
 const entityMessage = computed(() => entityMessages[props.type])
 
+const searchInput = ref('')
+const keyword = ref('')
+// "personal" is not actually a category. Define it as a category for convenience
+const categoryPersonal = computed<Category>(() => ({
+  value: 'personal',
+  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
+}))
+const category = ref(categoryAll)
+
 const {
   isLoading,
   data: assets,
   error,
   refetch
 } = useQuery(
-  () =>
-    listAsset({
+  () => {
+    const c = category.value.value
+    const cPersonal = categoryPersonal.value.value
+    return listAsset({
       pageSize: 500, // try to get all
       pageIndex: 1,
       assetType: props.type,
       keyword: keyword.value,
-      category: category.value.value === categoryAll.value ? undefined : category.value.value,
-      owner: '*',
-      isPublic: IsPublic.public
-    }),
+      category: c === categoryAll.value || c === cPersonal ? undefined : c,
+      owner: c === cPersonal ? undefined : '*',
+      isPublic: c === cPersonal ? undefined : IsPublic.public
+    })
+  },
   {
     en: 'Failed to list',
     zh: '获取列表失败'
