@@ -1,7 +1,7 @@
 <template>
   <div class="project-list">
-    <UIError v-if="isError && error instanceof ActionException">
-      {{ $t(error.userMessage) }}
+    <UIError v-if="isError && error">
+      {{ $t((error as ActionException).userMessage) }}
     </UIError>
     <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].data.length === 0" />
     <ul v-if="data" class="list">
@@ -27,7 +27,7 @@ import { listProject, type ProjectData } from '@/apis/project'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
 import { UIEmpty, UIError, UILoading } from '../ui'
 import { nextTick, ref, watchEffect } from 'vue'
-import { ActionException } from '@/utils/exception'
+import { ActionException, useAction } from '@/utils/exception'
 
 defineProps<{
   inHomepage?: boolean
@@ -39,6 +39,11 @@ const emit = defineEmits<{
 
 const intersectTrigger = ref<HTMLDivElement | null>(null)
 
+const listProjectAction = useAction(listProject, {
+  en: 'Failed to list projects',
+  zh: '获取项目列表失败'
+})
+
 const pageSize = 30
 const { data, error, isError, isPending, isFetchingNextPage, fetchNextPage, hasNextPage } =
   useInfiniteQuery({
@@ -46,7 +51,7 @@ const { data, error, isError, isPending, isFetchingNextPage, fetchNextPage, hasN
     initialPageParam: 1,
 
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      return await listProject({ pageSize, pageIndex: pageParam })
+      return await listProjectAction.fn({ pageSize, pageIndex: pageParam })
     },
     getNextPageParam: (lastPage, pages, lastPageParam) => {
       return pages.reduce((acc, page) => acc + page.data.length, 0) < lastPage.total
