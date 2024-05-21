@@ -36,7 +36,7 @@
       />
     </div>
     <UIImg class="thumbnail" :src="thumbnailSrc" />
-    <UILoading v-show="loading" cover />
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 
@@ -166,7 +166,7 @@ defineExpose({
 
 const [thumbnailSrc] = useFileUrl(() => {
   if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.defaultBackdrop?.img
-  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
+  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.defaultCostume?.img
 })
 </script>
 

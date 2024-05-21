@@ -1,7 +1,7 @@
 <template>
-  <li class="backdrop-item" :class="{ active: selected }">
+  <EditorItem :selected="selected" color="stage">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" size="cover" />
-    <h5 class="name">{{ backdrop.name }}</h5>
+    <EditorItemName class="name">{{ backdrop.name }}</EditorItemName>
     <UIDropdown trigger="click">
       <template #trigger>
         <UICornerIcon v-show="selected" color="stage" type="more" />
@@ -15,7 +15,7 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-  </li>
+  </EditorItem>
 </template>
 
 <script setup lang="ts">
@@ -26,6 +26,8 @@ import type { Backdrop } from '@/models/backdrop'
 import { useAddAssetToLibrary } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import type { Stage } from '@/models/stage'
+import EditorItem from '../common/EditorItem.vue'
+import EditorItemName from '../common/EditorItemName.vue'
 
 const props = defineProps<{
   stage: Stage
@@ -50,45 +52,13 @@ function handelRemove() {
 </script>
 
 <style lang="scss" scoped>
-.backdrop-item {
-  width: 88px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  align-items: center;
-  border-radius: var(--ui-border-radius-2);
-  border: 2px solid var(--ui-color-grey-300);
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-
-  &:not(.active):hover {
-    border-color: var(--ui-color-grey-400);
-    background-color: var(--ui-color-grey-400);
-  }
-
-  &.active {
-    border-color: var(--ui-color-stage-main);
-    background-color: var(--ui-color-stage-200);
-  }
-}
-
 .img {
   margin: 12px 0 14px;
   width: 52px;
   height: 39px;
   border-radius: 4px;
 }
-
 .name {
-  font-size: 10px;
-  line-height: 1.6;
   padding: 3px 8px 3px;
-
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-  text-overflow: ellipsis;
-  color: var(--ui-color-title);
 }
 </style>

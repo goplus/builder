@@ -1,7 +1,7 @@
 <template>
   <div class="iframe-container">
     <iframe ref="iframe" class="iframe" frameborder="0" src="about:blank" />
-    <UILoading v-if="loading" cover />
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 <script setup lang="ts">

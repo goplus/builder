@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const sprite = useAsyncComputed(() => asset2Sprite(props.asset))
-const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.costume?.img)
+const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 </script>
 
 <style lang="scss" scoped>

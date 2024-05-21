@@ -69,7 +69,7 @@ watchEffect(async (onCleanup) => {
   project.value = p
 })
 
-const [_imgSrc, _imgLoading] = useFileUrl(() => project.value?.sprites[0]?.costume?.img)
+const [_imgSrc, _imgLoading] = useFileUrl(() => project.value?.sprites[0]?.defaultCostume?.img)
 const imgLoading = computed(() => project.value == null || _imgLoading.value)
 const imgSrc = computed(() => {
   if (_imgSrc.value != null) return _imgSrc.value

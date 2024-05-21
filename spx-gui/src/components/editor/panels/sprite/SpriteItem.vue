@@ -25,7 +25,7 @@ const emit = defineEmits<{
   addToAssetLibrary: []
 }>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.costume?.img)
+const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
 </script>
 
 <style lang="scss" scoped>
