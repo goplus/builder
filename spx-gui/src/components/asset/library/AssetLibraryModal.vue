@@ -94,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, ref, shallowReactive } from 'vue'
+import { computed, defineProps, ref, shallowReactive, watch } from 'vue'
 import {
   UITextInput,
   UIIcon,
@@ -107,6 +107,7 @@ import {
   UIDivider
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
+import { debounce } from '@/utils/utils'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import type { Project } from '@/models/project'
@@ -138,6 +139,12 @@ const entityMessage = computed(() => entityMessages[props.type])
 
 const searchInput = ref('')
 const keyword = ref('')
+
+// do search (with a delay) when search-input changed
+watch(searchInput, debounce(() => {
+  keyword.value = searchInput.value
+}, 500))
+
 // "personal" is not actually a category. Define it as a category for convenience
 const categoryPersonal = computed<Category>(() => ({
   value: 'personal',
