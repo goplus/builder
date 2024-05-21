@@ -21,8 +21,8 @@ import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
-import FormatButton from '../FormatButton.vue'
-import EditorHeader from '../EditorHeader.vue'
+import FormatButton from '../code-editor/FormatButton.vue'
+import EditorHeader from '../common/EditorHeader.vue'
 
 const props = defineProps<{
   sprite: Sprite
