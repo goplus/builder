@@ -2,7 +2,12 @@
   <EditorItem :selected="selected" color="sprite">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <EditorItemName class="name">{{ costume.name }}</EditorItemName>
-    <UICornerIcon v-show="selected && removable" color="sprite" type="trash" @click.stop="handelRemove" />
+    <UICornerIcon
+      v-show="selected && removable"
+      color="sprite"
+      type="trash"
+      @click.stop="handelRemove"
+    />
   </EditorItem>
 </template>
 

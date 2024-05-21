@@ -28,7 +28,9 @@ withDefaults(
   justify-content: center;
   visibility: hidden;
   opacity: 0;
-  transition: visibility 0.3s, opacity 0.3s;
+  transition:
+    visibility 0.3s,
+    opacity 0.3s;
 
   &.cover {
     position: absolute;

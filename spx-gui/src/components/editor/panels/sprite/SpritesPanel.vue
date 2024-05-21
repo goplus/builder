@@ -117,10 +117,12 @@ const handleAddFromLocalFile = useMessageHandle(
     const imgs = await selectImgs()
     const spriteName = imgs.length > 1 ? '' : stripExt(imgs[0].name)
     const sprite = Sprite.create(spriteName)
-    const costumes = await Promise.all(imgs.map(img => {
-      const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
-      return Costume.create(costumeName, fromNativeFile(img))
-    }))
+    const costumes = await Promise.all(
+      imgs.map((img) => {
+        const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
+        return Costume.create(costumeName, fromNativeFile(img))
+      })
+    )
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
