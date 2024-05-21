@@ -39,7 +39,7 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-    <UILoading v-if="spritesAndBackdropLoading" cover />
+    <UILoading :visible="spritesAndBackdropLoading" cover />
   </div>
 </template>
 

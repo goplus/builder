@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { selectImg } from '@/utils/file'
+import { selectImgs } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
 import { Costume } from '@/models/costume'
 import { stripExt } from '@/utils/path'
@@ -114,11 +114,18 @@ function handleSpriteClick(sprite: Sprite) {
 
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
-    // When we support costume list & edit, we should allow user to choose multiple images (for multiple costumes) here
-    const img = await selectImg()
-    const sprite = Sprite.create(stripExt(img.name))
-    const costume = await Costume.create('default', fromNativeFile(img))
-    sprite.addCostume(costume)
+    const imgs = await selectImgs()
+    const spriteName = imgs.length > 1 ? '' : stripExt(imgs[0].name)
+    const sprite = Sprite.create(spriteName)
+    const costumes = await Promise.all(
+      imgs.map((img) => {
+        const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
+        return Costume.create(costumeName, fromNativeFile(img))
+      })
+    )
+    for (const costume of costumes) {
+      sprite.addCostume(costume)
+    }
     editorCtx.project.addSprite(sprite)
     await sprite.autoFit()
     editorCtx.select('sprite', sprite.name)

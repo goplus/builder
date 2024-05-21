@@ -1,6 +1,6 @@
 <template>
-  <RunnerContainer v-if="project" mode="share" :project="project" />
-  <UILoading v-else cover />
+  <RunnerContainer v-if="project != null" mode="share" :project="project" />
+  <UILoading :visible="project == null" cover />
 </template>
 <script setup lang="ts">
 import { watch } from 'vue'

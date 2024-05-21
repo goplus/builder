@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-loading" :class="{ cover }">
+  <div class="ui-loading" :class="{ cover, visible }">
     <NSpin />
   </div>
 </template>
@@ -10,9 +10,11 @@ import { NSpin } from 'naive-ui'
 withDefaults(
   defineProps<{
     cover?: boolean
+    visible?: boolean
   }>(),
   {
-    cover: false
+    cover: false,
+    visible: true
   }
 )
 </script>
@@ -24,6 +26,11 @@ withDefaults(
   height: 80%;
   display: flex;
   justify-content: center;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    visibility 0.3s,
+    opacity 0.3s;
 
   &.cover {
     position: absolute;
@@ -32,6 +39,11 @@ withDefaults(
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &.visible {
+    visibility: visible;
+    opacity: 1;
   }
 }
 </style>
