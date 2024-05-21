@@ -3,7 +3,7 @@ import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { SnippetType, getAllSnippets } from './snippets'
+import { SnippetType, getAllSnippets, type Selected } from './snippets'
 import { useUIVariables } from '@/components/ui'
 import type { IRange, languages } from 'monaco-editor'
 import type { Project } from '@/models/project'
@@ -27,7 +27,8 @@ export function initMonaco(
   monaco: typeof import('monaco-editor'),
   { color }: ReturnType<typeof useUIVariables>,
   i18n: I18n,
-  getProject: () => Project
+  getProject: () => Project,
+  getSelected: () => Selected | null
 ) {
   self.MonacoEnvironment = {
     getWorker() {
@@ -183,7 +184,8 @@ export function initMonaco(
         range,
         monaco,
         i18n,
-        getProject()
+        getProject(),
+        getSelected()
       )
       return { suggestions }
     }
@@ -197,7 +199,8 @@ function getCompletionItems(
   range: IRange | languages.CompletionItemRanges,
   monaco: typeof import('monaco-editor'),
   i18n: I18n,
-  project: Project
+  project: Project,
+  selected: Selected | null
 ): languages.CompletionItem[] {
   return [
     ...keywords.map((keyword) => ({
@@ -212,7 +215,7 @@ function getCompletionItems(
       kind: monaco.languages.CompletionItemKind.TypeParameter,
       range
     })),
-    ...getAllSnippets(project).map((s) => ({
+    ...getAllSnippets(project, selected).map((s) => ({
       label: s.label,
       insertText: s.insertText,
       insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,

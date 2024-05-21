@@ -81,7 +81,7 @@ const emit = defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const variablesSnippets = computed(() => getVariableSnippets(editorCtx.project))
+const variablesSnippets = computed(() => getVariableSnippets(editorCtx.project, editorCtx.selected))
 
 const categories = computed(() => {
   return [
