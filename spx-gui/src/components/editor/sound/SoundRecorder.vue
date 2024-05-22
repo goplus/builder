@@ -13,6 +13,7 @@
           })
         }}
       </div>
+      <SoundEditorControl v-model:value="audioRange" />
     </div>
     <div class="button-container">
       <div v-if="!recording && !audioBlob" class="icon-button">
@@ -92,6 +93,7 @@ import { Sound } from '@/models/sound'
 import { UIIconButton } from '@/components/ui'
 import { RecordPlugin } from '@/utils/wavesurfer-record'
 import { useWavesurfer } from './wavesurfer'
+import SoundEditorControl from './SoundEditorControl.vue'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -108,6 +110,8 @@ const waveformContainer = ref<HTMLElement>()
 const createWavesurfer = useWavesurfer(waveformContainer)
 
 const editorCtx = useEditorCtx()
+
+const audioRange = ref({ left: 0.2, right: 0.5 })
 
 onMounted(() => {
   initWaveSurfer()
@@ -187,6 +191,7 @@ const resetRecording = () => {
   border-radius: var(--ui-border-radius-2);
   height: 160px;
   position: relative;
+  overflow: hidden;
 }
 
 .recorder-waveform-overlay {
@@ -200,6 +205,7 @@ const resetRecording = () => {
 
 .recorder-waveform {
   height: 160px;
+  padding: 0 16px;
 }
 
 .hidden {
