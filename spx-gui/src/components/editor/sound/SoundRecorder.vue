@@ -15,6 +15,9 @@
       </div>
       <SoundEditorControl v-model:value="audioRange" />
     </div>
+    <div v-if="!recording && audioBlob" class="volume-slider-container">
+      <VolumeSlider v-model:value="audioRange" />
+    </div>
     <div class="button-container">
       <div v-if="!recording && !audioBlob" class="icon-button">
         <UIIconButton icon="microphone" type="danger" @click="startRecording" />
@@ -94,6 +97,7 @@ import { UIIconButton } from '@/components/ui'
 import { RecordPlugin } from '@/utils/wavesurfer-record'
 import { useWavesurfer } from './wavesurfer'
 import SoundEditorControl from './SoundEditorControl.vue'
+import VolumeSlider from './VolumeSlider.vue'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -232,5 +236,9 @@ const resetRecording = () => {
   flex-direction: column;
   font-size: 14px;
   align-items: center;
+}
+.volume-slider-container {
+  padding-top: 24px;
+  margin-bottom: -8px;
 }
 </style>
