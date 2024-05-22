@@ -167,7 +167,10 @@ const saveRecording = async () => {
 
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, wav)
   const sound = await Sound.create('recording', file)
-  editorCtx.project.addSound(sound)
+  await editorCtx.project.history.doAction(
+    { en: 'addSound', zh: 'addSound' },
+    () => editorCtx.project.addSound(sound)
+  )
   emit('saved', sound)
 }
 

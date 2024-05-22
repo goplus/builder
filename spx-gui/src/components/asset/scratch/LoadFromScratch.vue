@@ -169,11 +169,14 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
 const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected.value
-    const imported = await Promise.all([
-      ...Array.from(sprites).map(importSprite),
-      ...Array.from(sounds).map(importSound),
-      ...Array.from(backdrops).map(importBackdrop)
-    ])
+    const imported = await props.project.history.doAction(
+      { en: 'importScratch', zh: 'importScratch' },
+      () => Promise.all([
+        ...Array.from(sprites).map(importSprite),
+        ...Array.from(sounds).map(importSound),
+        ...Array.from(backdrops).map(importBackdrop)
+      ])
+    )
     emit('imported', imported)
   },
   // TODO: more detailed error message

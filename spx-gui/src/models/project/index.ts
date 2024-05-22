@@ -8,16 +8,17 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposble } from './common/disposable'
-import { toConfig, type Files, fromConfig } from './common/file'
-import { Stage, type RawStageConfig } from './stage'
-import { Sprite } from './sprite'
-import { Sound } from './sound'
-import * as cloudHelper from './common/cloud'
-import * as localHelper from './common/local'
-import * as gbpHelper from './common/gbp'
-import { assign } from './common'
-import { ensureValidSpriteName, ensureValidSoundName } from './common/asset'
+import { Disposble } from '../common/disposable'
+import { toConfig, type Files, fromConfig } from '../common/file'
+import { Stage, type RawStageConfig } from '../stage'
+import { Sprite } from '../sprite'
+import { Sound } from '../sound'
+import * as cloudHelper from '../common/cloud'
+import * as localHelper from '../common/local'
+import * as gbpHelper from '../common/gbp'
+import { assign } from '../common'
+import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
+import { History } from './history'
 
 export type Metadata = {
   id?: string
@@ -47,9 +48,14 @@ export type Selected =
     }
   | null
 
+type BuilderConfig = {
+  selected?: Selected
+}
+
 type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
+  builder?: BuilderConfig
   // TODO: camera
 }
 
@@ -73,6 +79,7 @@ export class Project extends Disposble {
     const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
     sprite.dispose()
+    this.autoSelect()
   }
   /**
    * Add given sprite to project.
@@ -160,7 +167,6 @@ export class Project extends Disposble {
     this.isPublic = isPublic
   }
 
-  // TODO: consider saving selected info in metadata?
   selected: Selected = null
 
   get selectedSprite() {
@@ -194,8 +200,11 @@ export class Project extends Disposble {
     }
   }
 
+  history: History
+
   constructor() {
     super()
+    this.history = new History(reactive(this) as this)
     this.zorder = []
     this.stage = new Stage()
     this.sprites = []
@@ -212,26 +221,39 @@ export class Project extends Disposble {
   }
 
   /** Load with metadata & files */
-  async load(metadata: Metadata, files: Files) {
+  async load(metadata: Metadata | null, files: Files) {
     const configFile = files[projectConfigFilePath]
     const config: RawProjectConfig = {}
     if (configFile != null) {
       Object.assign(config, await toConfig(configFile))
     }
-    const { zorder, ...stageConfig } = config
+    const { zorder, builder, ...stageConfig } = config
     const [stage, sounds, sprites] = await Promise.all([
       Stage.load(stageConfig, files),
       Sound.loadAll(files),
       Sprite.loadAll(files)
     ])
-    this.applyMetadata(metadata)
+    if (metadata != null) this.applyMetadata(metadata)
     this.zorder = zorder ?? []
+    this.selected = builder?.selected ?? null
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     sprites.forEach((s) => this.addSprite(s))
     this.sounds.splice(0).forEach((s) => s.dispose())
     sounds.forEach((s) => this.addSound(s))
     this.autoSelect()
+  }
+
+  exportFiles(): Files {
+    const files: Files = {}
+    const [stageConfig, stageFiles] = this.stage.export()
+    const builder = { selected: this.selected }
+    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder, builder }
+    files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
+    Object.assign(files, stageFiles)
+    Object.assign(files, ...this.sprites.map((s) => s.export()))
+    Object.assign(files, ...this.sounds.map((s) => s.export()))
+    return files
   }
 
   /** Export metadata & files without revision state
@@ -247,13 +269,7 @@ export class Project extends Disposble {
       name: this.name,
       isPublic: this.isPublic
     }
-    const files: Files = {}
-    const [stageConfig, stageFiles] = this.stage.export()
-    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
-    files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
-    Object.assign(files, stageFiles)
-    Object.assign(files, ...this.sprites.map((s) => s.export()))
-    Object.assign(files, ...this.sounds.map((s) => s.export()))
+    const files = this.exportFiles()
     return [metadata, files]
   }
 

@@ -215,7 +215,10 @@ async function addAssetToProject(asset: AssetData) {
 
 const handleConfirm = useMessageHandle(
   async () => {
-    const assetModels = await Promise.all(selected.map(addAssetToProject))
+    const assetModels = await props.project.history.doAction(
+      { en: 'addAsset', zh: 'addAsset' },
+      () => Promise.all(selected.map(addAssetToProject))
+    )
     emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }

@@ -16,7 +16,7 @@
     ref="codeEditor"
     :loading="code == null"
     :value="code ?? ''"
-    @update:value="(v) => sprite.setCode(v)"
+    @update:value="handleCodeUpdate"
   />
   <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
 </template>
@@ -30,12 +30,21 @@ import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor from './CostumesEditor.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
 
+const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'costumes'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.sprite.getCode())
+
+function handleCodeUpdate(value: string) {
+  editorCtx.project.history.doAction(
+    { en: 'setCode', zh: 'setCode' },
+    () => props.sprite.setCode(value)
+  )
+}
 </script>

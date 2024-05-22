@@ -16,7 +16,7 @@
   />
 </template>
 <script lang="ts" setup>
-import { computed, defineProps, onMounted, ref, watchEffect } from 'vue'
+import { computed, defineProps, onMounted, ref, watch, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
@@ -36,8 +36,7 @@ const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useImgFile(() => costume.value?.img)
 
-watchEffect((onCleanup) => {
-  const spriteName = props.sprite.name
+watch(() => props.sprite.name, (spriteName, __, onCleanup) => {
   onCleanup(() => {
     props.spritesReadyMap.delete(spriteName)
   })
@@ -49,6 +48,11 @@ watchEffect((onCleanup) => {
 
   const img = image.value
   if (img == null) return
+  if (img.complete) {
+    // TODO
+    props.spritesReadyMap.set(spriteName, true)
+    return
+  }
   function handleImageLoad() {
     // We need to notify event ready for SpriteTransformer (to get correct node size)
     props.spritesReadyMap.set(spriteName, true)
@@ -79,10 +83,15 @@ function handleChange(e: KonvaEventObject<unknown>) {
     scaleX: e.target.scaleX(),
     scaleY: e.target.scaleY()
   })
-  props.sprite.setX(x)
-  props.sprite.setY(y)
-  props.sprite.setHeading(heading)
-  props.sprite.setSize(size)
+  editorCtx.project.history.doAction(
+    { en: 'configureSprite', zh: 'configureSprite' },
+    () => {
+      props.sprite.setX(x)
+      props.sprite.setY(y)
+      props.sprite.setHeading(heading)
+      props.sprite.setSize(size)
+    }
+  )
 }
 
 function handleMousedown() {

@@ -21,17 +21,17 @@
     </UITooltip>
   </div>
   <div class="line">
-    <UINumberInput type="number" :value="sprite.x" @update:value="(x) => sprite.setX(x ?? 0)">
+    <UINumberInput type="number" :value="sprite.x" @update:value="wrapAction((x) => sprite.setX(x ?? 0))">
       <template #prefix>X:</template>
     </UINumberInput>
-    <UINumberInput type="number" :value="sprite.y" @update:value="(y) => sprite.setY(y ?? 0)">
+    <UINumberInput type="number" :value="sprite.y" @update:value="wrapAction((y) => sprite.setY(y ?? 0))">
       <template #prefix>Y:</template>
     </UINumberInput>
     <UINumberInput
       type="number"
       :min="0"
       :value="sizePercent"
-      @update:value="handleSizePercentChange"
+      @update:value="wrapAction(handleSizePercentChange)"
     >
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
       <template #suffix>%</template>
@@ -43,7 +43,7 @@
       :min="-180"
       :max="180"
       :value="sprite.heading"
-      @update:value="(h) => sprite.setHeading(h ?? 0)"
+      @update:value="wrapAction((h) => sprite.setHeading(h ?? 0))"
     >
       <template #prefix>
         {{
@@ -58,7 +58,7 @@
       {{ $t({ en: 'Show', zh: '显示' }) }}:
       <VisibleInput
         :value="sprite.visible"
-        @update:value="(visible) => sprite.setVisible(visible)"
+        @update:value="wrapAction((visible) => sprite.setVisible(visible))"
       />
     </p>
   </div>
@@ -99,6 +99,13 @@ const sizePercent = computed(() => round(props.sprite.size * 100))
 function handleSizePercentChange(s: any) {
   if (s == null) return
   props.sprite.setSize(round(s / 100, 2))
+}
+
+function wrapAction<Args extends any[]>(fn: (...args: Args) => unknown): (...args: Args) => unknown {
+  return (...args: Args) => props.project.history.doAction(
+    { en: 'configureSprite', zh: 'configureSprite' },
+    () => fn(...args)
+  )
 }
 </script>
 

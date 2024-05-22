@@ -14,15 +14,17 @@
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
-import { costumeNameTip, validateCostumeName } from '@/models/common/asset'
+import { costumeNameTip, validateCostumeName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
+import type { Project } from '@/models/project'
 
 const props = defineProps<{
   visible: boolean
   costume: Costume
   sprite: Sprite
+  project: Project
 }>()
 
 const emit = defineEmits<{
@@ -42,7 +44,10 @@ function handleCancel() {
 
 function handleSubmit() {
   if (form.value.name !== props.costume.name) {
-    props.costume.setName(form.value.name)
+    props.project.history.doAction(
+      { en: 'setName', zh: 'setName' },
+      () => props.costume.setName(form.value.name)
+    )
   }
   emit('resolved')
 }

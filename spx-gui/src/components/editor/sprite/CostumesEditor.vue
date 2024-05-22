@@ -33,14 +33,20 @@ import { stripExt } from '@/utils/path'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
 import CostumeDetail from './CostumeDetail.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
+
+const editorCtx = useEditorCtx()
 const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
-  props.sprite.setDefaultCostume(costume.name)
+  editorCtx.project.history.doAction(
+    { en: 'setDefaultCostume', zh: 'setDefaultCostume' },
+    () => props.sprite.setDefaultCostume(costume.name)
+  )
 }
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -48,8 +54,13 @@ const handleAddFromLocalFile = useMessageHandle(
     const img = await selectImg()
     const file = fromNativeFile(img)
     const costume = await Costume.create(stripExt(img.name), file)
-    props.sprite.addCostume(costume)
-    props.sprite.setDefaultCostume(costume.name)
+    await editorCtx.project.history.doAction(
+      { en: 'addCostume', zh: 'addCostume' },
+      () => {
+        props.sprite.addCostume(costume)
+        props.sprite.setDefaultCostume(costume.name)
+      }
+    )
   },
   { en: 'Failed to add from local file', zh: '从本地文件添加失败' }
 ).fn

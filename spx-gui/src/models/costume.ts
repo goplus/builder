@@ -5,7 +5,7 @@ import { adaptImg } from '@/utils/spx'
 import { File, type Files } from './common/file'
 import { type Size } from './common'
 import type { Sprite } from './sprite'
-import { getCostumeName, validateCostumeName } from './common/asset'
+import { getCostumeName, validateCostumeName } from './common/asset-name'
 import { Disposble } from './common/disposable'
 
 export type CostumeInits = {

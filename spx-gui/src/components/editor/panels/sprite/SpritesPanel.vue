@@ -103,7 +103,10 @@ function isSelected(sprite: Sprite) {
 }
 
 function handleSpriteRemove(sprite: Sprite) {
-  editorCtx.project.removeSprite(sprite.name)
+  editorCtx.project.history.doAction(
+    { en: 'removeSprite', zh: 'removeSprite' },
+    () => editorCtx.project.removeSprite(sprite.name)
+  )
 }
 
 const addAssetToLibrary = useAddAssetToLibrary()

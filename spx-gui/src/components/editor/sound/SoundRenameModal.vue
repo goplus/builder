@@ -14,7 +14,7 @@
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import type { Project } from '@/models/project'
-import { soundNameTip, validateSoundName } from '@/models/common/asset'
+import { soundNameTip, validateSoundName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
@@ -42,7 +42,10 @@ function handleCancel() {
 
 function handleSubmit() {
   if (form.value.name !== props.sound.name) {
-    props.sound.setName(form.value.name)
+    props.project.history.doAction(
+      { en: 'setName', zh: 'setName' },
+      () => props.sound.setName(form.value.name)
+    )
   }
   emit('resolved')
 }

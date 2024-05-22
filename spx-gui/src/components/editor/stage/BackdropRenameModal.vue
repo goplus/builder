@@ -14,7 +14,7 @@
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
 import type { Project } from '@/models/project'
-import { backdropNameTip, validateBackdropName } from '@/models/common/asset'
+import { backdropNameTip, validateBackdropName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
@@ -42,7 +42,10 @@ function handleCancel() {
 
 function handleSubmit() {
   if (form.value.name !== props.backdrop.name) {
-    props.backdrop.setName(form.value.name)
+    props.project.history.doAction(
+      { en: 'setName', zh: 'setName' },
+      () => props.backdrop.setName(form.value.name)
+    )
   }
   emit('resolved')
 }

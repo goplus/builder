@@ -1,10 +1,10 @@
 import { reactive } from 'vue'
-import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
-import type { File, Files } from './common/file'
 import { resolve } from '@/utils/path'
-import { getBackdropName, validateBackdropName } from './common/asset'
-import type { Stage } from './stage'
 import { adaptImg } from '@/utils/spx'
+import type { File, Files } from './common/file'
+import { getBackdropName, validateBackdropName } from './common/asset-name'
+import type { Stage } from './stage'
+import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig

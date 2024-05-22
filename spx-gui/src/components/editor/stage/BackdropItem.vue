@@ -28,6 +28,7 @@ import { useMessageHandle } from '@/utils/exception'
 import type { Stage } from '@/models/stage'
 import EditorItem from '../common/EditorItem.vue'
 import EditorItemName from '../common/EditorItemName.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   stage: Stage
@@ -35,6 +36,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
+const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 
 const addAssetToLibrary = useAddAssetToLibrary()
@@ -47,7 +49,10 @@ const handleAddToAssetLibrary = useMessageHandle(() => addAssetToLibrary(props.b
 const removable = computed(() => props.stage.backdrops.length > 1)
 
 function handelRemove() {
-  props.stage.removeBackdrop(props.backdrop.name)
+  editorCtx.project.history.doAction(
+    { en: 'removeBackdrop', zh: 'removeBackdrop' },
+    () => props.stage.removeBackdrop(props.backdrop.name)
+  )
 }
 </script>
 

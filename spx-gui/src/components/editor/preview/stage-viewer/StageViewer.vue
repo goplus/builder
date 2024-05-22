@@ -129,15 +129,20 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   const project = editorCtx.project
   const selectedSprite = project.selectedSprite
   if (selectedSprite == null) return
-  if (direction === 'up') {
-    project.upSpriteZorder(selectedSprite.name)
-  } else if (direction === 'down') {
-    project.downSpriteZorder(selectedSprite.name)
-  } else if (direction === 'top') {
-    project.topSpriteZorder(selectedSprite.name)
-  } else if (direction === 'bottom') {
-    project.bottomSpriteZorder(selectedSprite.name)
-  }
+  project.history.doAction(
+    { en: 'moveSprite', zh: 'moveSprite' },
+    () => {
+      if (direction === 'up') {
+        project.upSpriteZorder(selectedSprite.name)
+      } else if (direction === 'down') {
+        project.downSpriteZorder(selectedSprite.name)
+      } else if (direction === 'top') {
+        project.topSpriteZorder(selectedSprite.name)
+      } else if (direction === 'bottom') {
+        project.bottomSpriteZorder(selectedSprite.name)
+      }
+    }
+  )
   menuVisible.value = false
 }
 </script>

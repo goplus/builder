@@ -66,6 +66,32 @@
         </template>
         {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
       </UITooltip>
+      <div class="undo-redo">
+        <UITooltip>
+          <template #trigger>
+            <UIButton
+              :disabled="project?.history.getUndoAction() == null"
+              :loading="handleUndo.isLoading.value"
+              @click="handleUndo.fn"
+            >
+              Undo
+            </UIButton>
+          </template>
+          {{ project?.history.getUndoAction()?.name.en }}
+        </UITooltip>
+        <UITooltip>
+          <template #trigger>
+            <UIButton
+              :disabled="project?.history.getRedoAction() == null"
+              :loading="handleRedo.isLoading.value"
+              @click="handleRedo.fn"
+            >
+              Redo
+            </UIButton>
+          </template>
+          {{ project?.history.getRedoAction()?.name.en }}
+        </UITooltip>
+      </div>
     </div>
     <div class="center">
       <p class="project-name">{{ project?.name }}</p>
@@ -189,7 +215,10 @@ const handleImportProjectFile = useMessageHandle(
       confirmText: i18n.t({ en: 'Continue', zh: '继续' })
     })
     const file = await selectFile({ accept: '.gbp' })
-    await props.project!.loadGbpFile(file)
+    await props.project?.history.doAction(
+      { en: 'loadGbpFile', zh: 'loadGbpFile' },
+      () => props.project!.loadGbpFile(file)
+    )
   },
   { en: 'Failed to import project file', zh: '导入项目文件失败' }
 ).fn
@@ -227,6 +256,16 @@ const handleSave = useMessageHandle(
   () => props.project!.saveToCloud(),
   { en: 'Failed to save project', zh: '项目保存失败' },
   { en: 'Project saved', zh: '保存成功' }
+)
+
+const handleUndo = useMessageHandle(
+  () => props.project!.history.undo(),
+  { en: 'Failed to undo', zh: '撤销操作失败' },
+)
+
+const handleRedo = useMessageHandle(
+  () => props.project!.history.redo(),
+  { en: 'Failed to redo', zh: '重做操作失败' },
 )
 </script>
 
@@ -298,6 +337,12 @@ const handleSave = useMessageHandle(
 
 .lang {
   cursor: pointer;
+}
+
+.undo-redo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .save,

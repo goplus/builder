@@ -1,9 +1,9 @@
 import { reactive } from 'vue'
 import { extname, join, resolve } from '@/utils/path'
 import { adaptAudio } from '@/utils/spx'
-import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
-import { getSoundName, validateSoundName } from './common/asset'
 import { Disposble } from './common/disposable'
+import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
+import { getSoundName, validateSoundName } from './common/asset-name'
 import type { Project } from './project'
 
 export type SoundInits = {

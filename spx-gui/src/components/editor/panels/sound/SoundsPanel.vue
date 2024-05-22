@@ -83,7 +83,10 @@ function isSelected(sound: Sound) {
 }
 
 function handleSoundRemove(sound: Sound) {
-  editorCtx.project.removeSound(sound.name)
+  editorCtx.project.history.doAction(
+    { en: 'removeSound', zh: 'removeSound' },
+    () => editorCtx.project.removeSound(sound.name)
+  )
 }
 
 const addAssetToLibrary = useAddAssetToLibrary()

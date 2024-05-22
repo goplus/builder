@@ -64,8 +64,13 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    project.addSprite(sprite)
-    await sprite.autoFit()
+    await project.history.doAction(
+      { en: 'addSprite', zh: 'addSprite' },
+      async () => {
+        project.addSprite(sprite)
+        await sprite.autoFit()
+      }
+    )
     selectAsset(project, sprite)
     return sprite
   }
@@ -75,7 +80,10 @@ export function useAddSoundFromLocalFile() {
   return async function addSoundFromLocalFile(project: Project) {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
-    project.addSound(sound)
+    await project.history.doAction(
+      { en: 'addSound', zh: 'addSound' },
+      () => project.addSound(sound)
+    )
     selectAsset(project, sound)
     return sound
   }

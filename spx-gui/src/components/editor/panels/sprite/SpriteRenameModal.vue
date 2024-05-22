@@ -14,7 +14,7 @@
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sprite } from '@/models/sprite'
 import type { Project } from '@/models/project'
-import { spriteNameTip, validateSpriteName } from '@/models/common/asset'
+import { spriteNameTip, validateSpriteName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../common/RenameModal.vue'
 import RenameModalFooter from '../common/RenameModalFooter.vue'
@@ -42,7 +42,10 @@ function handleCancel() {
 
 function handleSubmit() {
   if (form.value.name !== props.sprite.name) {
-    props.sprite.setName(form.value.name)
+    props.project.history.doAction(
+      { en: 'setName', zh: 'setName' },
+      () => props.sprite.setName(form.value.name)
+    )
   }
   emit('resolved')
 }
