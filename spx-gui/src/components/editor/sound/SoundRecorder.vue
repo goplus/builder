@@ -98,6 +98,7 @@ import { RecordPlugin } from '@/utils/wavesurfer-record'
 import { useWavesurfer } from './wavesurfer'
 import SoundEditorControl from './SoundEditorControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
+import { trimAudio } from '@/utils/audio'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -172,7 +173,13 @@ const stopRecording = () => {
 }
 
 const saveRecording = async () => {
-  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, audioBlob.value!)
+  let blob: Blob
+  if (audioRange.value.left !== 0 || audioRange.value.right !== 1) {
+    blob = await trimAudio(audioBlob.value!, audioRange.value.left, audioRange.value.right)
+  } else {
+    blob = audioBlob.value!
+  }
+  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, blob)
   const sound = await Sound.create('recording', file)
   editorCtx.project.addSound(sound)
   emit('saved', sound)

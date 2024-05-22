@@ -104,3 +104,71 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
     })
   }
 }
+
+export async function trimAudio(
+  webmBlob: Blob,
+  startRatio: number,
+  endRatio: number
+): Promise<Blob> {
+  // Ensure ratios are between 0.0 and 1.0
+  if (
+    startRatio < 0.0 ||
+    startRatio > 1.0 ||
+    endRatio < 0.0 ||
+    endRatio > 1.0 ||
+    startRatio >= endRatio
+  ) {
+    throw new Error('Invalid start or end ratio')
+  }
+
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+  const arrayBuffer = await webmBlob.arrayBuffer()
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+
+  const startTime = audioBuffer.duration * startRatio
+  const endTime = audioBuffer.duration * endRatio
+  const duration = endTime - startTime
+
+  const numChannels = audioBuffer.numberOfChannels
+  const sampleRate = audioBuffer.sampleRate
+  const startSample = startTime * sampleRate
+
+  const newAudioBuffer = audioContext.createBuffer(numChannels, duration * sampleRate, sampleRate)
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const oldChannelData = audioBuffer.getChannelData(channel)
+    const newChannelData = newAudioBuffer.getChannelData(channel)
+    for (let i = 0; i < newChannelData.length; i++) {
+      newChannelData[i] = oldChannelData[i + startSample]
+    }
+  }
+
+  return bufferToWebmBlob(newAudioBuffer, audioContext)
+}
+
+function bufferToWebmBlob(buffer: AudioBuffer, audioContext: AudioContext): Promise<Blob> {
+  return new Promise((resolve) => {
+    const destination = audioContext.createMediaStreamDestination()
+    const source = audioContext.createBufferSource()
+    source.buffer = buffer
+    source.connect(destination)
+    source.start(0)
+
+    const mediaRecorder = new MediaRecorder(destination.stream)
+    const chunks: BlobPart[] = []
+
+    mediaRecorder.ondataavailable = (event) => {
+      chunks.push(event.data)
+    }
+
+    mediaRecorder.onstop = () => {
+      const webmBlob = new Blob(chunks, { type: 'audio/webm' })
+      resolve(webmBlob)
+    }
+
+    mediaRecorder.start()
+    source.onended = () => {
+      mediaRecorder.stop()
+    }
+  })
+}
