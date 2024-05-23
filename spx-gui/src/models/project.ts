@@ -179,6 +179,10 @@ export class Project extends Disposble {
     this.selected = selected
   }
 
+  /**
+   * Check if current selected target is valid. If not, select some target automatically.
+   * Targets with the same type are preferred.
+   */
   autoSelect() {
     const selected = this.selected
     if (selected?.type === 'sprite' && this.selectedSprite == null) {
