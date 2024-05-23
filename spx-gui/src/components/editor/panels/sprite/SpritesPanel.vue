@@ -1,7 +1,7 @@
 <template>
   <CommonPanel
     :expanded="expanded"
-    :active="editorCtx.selectedSprite != null"
+    :active="editorCtx.project.selectedSprite != null"
     :title="$t({ en: 'Sprites', zh: '精灵' })"
     color="sprite"
     @expand="emit('expand')"
@@ -27,18 +27,18 @@
           :sprite="sprite"
           :active="isSelected(sprite)"
           @remove="handleSpriteRemove(sprite)"
-          @add-to-asset-library="addToLibrary(sprite)"
+          @add-to-asset-library="handleAddToAssetLibrary(sprite)"
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
-      <PanelFooter v-if="footerExpanded && editorCtx.selectedSprite != null">
+      <PanelFooter v-if="footerExpanded && editorCtx.project.selectedSprite != null">
         <SpriteBasicConfig
-          :sprite="editorCtx.selectedSprite"
+          :sprite="editorCtx.project.selectedSprite"
           :project="editorCtx.project"
           @collapse="footerExpanded = false"
         />
       </PanelFooter>
-      <UITooltip v-if="!footerExpanded && editorCtx.selectedSprite != null">
+      <UITooltip v-if="!footerExpanded && editorCtx.project.selectedSprite != null">
         <template #trigger>
           <div class="footer-expand-button" @click="footerExpanded = true">
             <UIIcon class="footer-expand-icon" type="doubleArrowDown" />
@@ -65,12 +65,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { selectImgs } from '@/utils/file'
-import { fromNativeFile } from '@/models/common/file'
-import { Costume } from '@/models/costume'
-import { stripExt } from '@/utils/path'
-import { useMessageHandle } from '@/utils/exception'
-import { useAddAssetFromLibrary, useAddAssetToLibrary } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddAssetToLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -81,6 +76,7 @@ import PanelFooter from '../common/PanelFooter.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
 import SpriteBasicConfig from './SpriteBasicConfig.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{
   expanded: boolean
@@ -99,46 +95,37 @@ const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sprite: Sprite) {
-  return sprite.name === editorCtx.selectedSprite?.name
+  return sprite.name === editorCtx.project.selectedSprite?.name
 }
 
 function handleSpriteRemove(sprite: Sprite) {
   editorCtx.project.removeSprite(sprite.name)
 }
 
-const addToLibrary = useAddAssetToLibrary()
+const addAssetToLibrary = useAddAssetToLibrary()
+
+const handleAddToAssetLibrary = useMessageHandle((sprite: Sprite) => addAssetToLibrary(sprite), {
+  en: 'Failed to add sprite to asset library',
+  zh: '添加素材库失败'
+}).fn
 
 function handleSpriteClick(sprite: Sprite) {
-  editorCtx.select('sprite', sprite.name)
+  editorCtx.project.select({ type: 'sprite', name: sprite.name })
 }
 
+const addFromLocalFile = useAddSpriteFromLocalFile()
+
 const handleAddFromLocalFile = useMessageHandle(
-  async () => {
-    const imgs = await selectImgs()
-    const spriteName = imgs.length > 1 ? '' : stripExt(imgs[0].name)
-    const sprite = Sprite.create(spriteName)
-    const costumes = await Promise.all(
-      imgs.map((img) => {
-        const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
-        return Costume.create(costumeName, fromNativeFile(img))
-      })
-    )
-    for (const costume of costumes) {
-      sprite.addCostume(costume)
-    }
-    editorCtx.project.addSprite(sprite)
-    await sprite.autoFit()
-    editorCtx.select('sprite', sprite.name)
-  },
+  () => addFromLocalFile(editorCtx.project),
   { en: 'Failed to add sprite from local file', zh: '从本地文件添加失败' }
 ).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-async function handleAddFromAssetLibrary() {
-  const sprites = await addAssetFromLibrary(editorCtx.project, AssetType.Sprite)
-  editorCtx.select('sprite', sprites[0].name)
-}
+const handleAddFromAssetLibrary = useMessageHandle(
+  () => addAssetFromLibrary(editorCtx.project, AssetType.Sprite),
+  { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
+).fn
 </script>
 
 <style scoped lang="scss">

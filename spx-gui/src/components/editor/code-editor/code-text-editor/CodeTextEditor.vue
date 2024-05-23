@@ -53,8 +53,7 @@ const getMonaco = async () => {
     monaco_,
     uiVariables,
     i18n,
-    () => editorCtx.project,
-    () => editorCtx.selected
+    () => editorCtx.project
   )
   monaco = monaco_
   return monaco

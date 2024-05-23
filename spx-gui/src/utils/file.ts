@@ -144,5 +144,6 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
+  // TODO: involve image loading status in
   return [imgRef, loadingRef] as const
 }

@@ -6,6 +6,7 @@
     :type="htmlType"
   >
     <UIIcon v-if="icon != null" class="icon" :type="icon" />
+    <slot v-else name="icon"></slot>
     <slot></slot>
   </button>
 </template>
@@ -21,7 +22,6 @@ const props = withDefaults(
   defineProps<{
     type?: ButtonType
     size?: ButtonSize
-    // we may support custom icon later (by slot `icon`)
     icon?: IconType
     disabled?: boolean
     loading?: boolean

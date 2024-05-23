@@ -1,7 +1,5 @@
 import { flatten } from 'lodash'
 import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
-import type { Sound } from '@/models/sound'
 import { type Snippet, SnippetTarget, SnippetType } from './common'
 import * as gop from './gop'
 import * as spx from './spx'
@@ -128,22 +126,7 @@ const gameUtilsSnippets = [spx.rand, gop.println]
 
 export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnippets]
 
-// TODO: consider moving selected to model Project, so we can get selected easily
-// check this together with `src/components/editor/EditorContextProvider.vue`
-export type Selected =
-  | {
-      type: 'sprite'
-      value: Sprite
-    }
-  | {
-      type: 'sound'
-      value: Sound
-    }
-  | {
-      type: 'stage'
-    }
-
-export function getVariableSnippets(project: Project, selected: Selected | null) {
+export function getVariableSnippets(project: Project) {
   // TODO: costumes & backdrops here
   const { sprites, sounds } = project
   const snippets: Snippet[][] = [[gop.varDefinition]]
@@ -165,9 +148,9 @@ export function getVariableSnippets(project: Project, selected: Selected | null)
       insertText: `"${sound.name}"`
     }))
   )
-  if (selected?.type === 'sprite') {
+  if (project.selectedSprite != null) {
     snippets.push(
-      selected.value.costumes.map((costume) => ({
+      project.selectedSprite.costumes.map((costume) => ({
         type: SnippetType.variable,
         target: SnippetTarget.all,
         label: costume.name,
@@ -176,7 +159,7 @@ export function getVariableSnippets(project: Project, selected: Selected | null)
       }))
     )
   }
-  if (selected?.type === 'stage') {
+  if (project.selected?.type === 'stage') {
     snippets.push(
       project.stage.backdrops.map((backdrop) => ({
         type: SnippetType.variable,
@@ -190,7 +173,7 @@ export function getVariableSnippets(project: Project, selected: Selected | null)
   return snippets
 }
 
-export function getAllSnippets(project: Project, selected: Selected | null) {
+export function getAllSnippets(project: Project) {
   return flatten([
     ...eventSnippets,
     ...motionSnippets,
@@ -200,6 +183,6 @@ export function getAllSnippets(project: Project, selected: Selected | null) {
     ...controlSnippets,
     ...gameSnippets,
     ...spx.keys,
-    ...getVariableSnippets(project, selected)
+    ...getVariableSnippets(project)
   ])
 }

@@ -4,32 +4,10 @@
 
 <script lang="ts">
 import { inject } from 'vue'
-import type { Sprite } from '@/models/sprite'
-import type { Sound } from '@/models/sound'
-
-type Selected =
-  | {
-      type: 'sprite'
-      value: Sprite
-    }
-  | {
-      type: 'sound'
-      value: Sound
-    }
-  | {
-      type: 'stage'
-    }
 
 export type EditorCtx = {
   project: Project
   userInfo: UserInfo
-  selected: Selected | null
-  selectedSprite: Sprite | null
-  selectedSound: Sound | null
-
-  select(selected: null): void
-  select(type: 'stage'): void
-  select(type: 'sprite' | 'sound', name: string): void
 }
 
 const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
@@ -42,7 +20,7 @@ export function useEditorCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, watch, computed, shallowRef, effect } from 'vue'
+import { provide, type InjectionKey } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
 import { computedShallowReactive } from '@/utils/utils'
@@ -52,83 +30,9 @@ const props = defineProps<{
   userInfo: UserInfo
 }>()
 
-const selectedRef = shallowRef<Selected | null>(null)
-
-function select(selected: null): void
-function select(type: 'stage'): void
-function select(type: 'sprite' | 'sound', name: string): void
-function select(type: unknown, name?: string) {
-  if (type === 'stage') {
-    selectedRef.value = { type }
-    return
-  }
-  if (type === 'sprite') {
-    const sprite = props.project.sprites.find((s) => s.name === name)
-    if (sprite == null) throw new Error(`sprite ${name} not found`)
-    selectedRef.value = { type, value: sprite }
-    return
-  }
-  if (type === 'sound') {
-    const sound = props.project.sounds.find((s) => s.name === name)
-    if (sound == null) throw new Error(`sound ${name} not found`)
-    selectedRef.value = { type, value: sound }
-    return
-  }
-  selectedRef.value = null
-}
-
-const selectedSprite = computed(() => {
-  return selectedRef.value?.type === 'sprite' ? selectedRef.value.value : null
-})
-
-const selectedSound = computed(() => {
-  return selectedRef.value?.type === 'sound' ? selectedRef.value.value : null
-})
-
-function selectSprite() {
-  if (props.project.sprites.length > 0) {
-    select('sprite', props.project.sprites[0].name)
-  } else {
-    select(null)
-  }
-}
-
-function selectSound() {
-  if (props.project.sounds.length > 0) {
-    select('sound', props.project.sounds[0].name)
-  } else {
-    select(null)
-  }
-}
-
-// selected sprite / sound removed
-// TODO: consider moving selected to model Project, so we can deal with renaming easily
-effect(() => {
-  if (selectedSprite.value != null && !props.project.sprites.includes(selectedSprite.value)) {
-    selectSprite()
-    return
-  }
-  if (selectedSound.value != null && !props.project.sounds.includes(selectedSound.value)) {
-    selectSound()
-    return
-  }
-})
-
-watch(
-  () => props.project,
-  () => {
-    selectSprite()
-  },
-  { immediate: true }
-)
-
 const editorCtx = computedShallowReactive(() => ({
-  select,
   project: props.project,
-  userInfo: props.userInfo,
-  selected: selectedRef.value,
-  selectedSprite: selectedSprite.value,
-  selectedSound: selectedSound.value
+  userInfo: props.userInfo
 }))
 
 provide(editorCtxKey, editorCtx)

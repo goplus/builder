@@ -64,19 +64,20 @@
 </template>
 
 <script setup lang="ts">
-import { Sound } from '@/models/sound'
+import { ref, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
+import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
-import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
 import type { Project } from '@/models/project'
-import { ref, watch } from 'vue'
+import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
+import BlobImage from '../BlobImage.vue'
 import ScratchItemContainer from './ScratchItemContainer.vue'
 import SoundItem from './SoundItem.vue'
 
@@ -86,7 +87,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  imported: []
+  imported: [AssetModel[]]
 }>()
 
 const selected = ref<{
@@ -155,23 +156,25 @@ const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = await Sound.create(asset.name, file)
   props.project.addSound(sound)
+  return sound
 }
 
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const backdrop = await Backdrop.create(asset.name, file)
   props.project.stage.addBackdrop(backdrop)
+  return backdrop
 }
 
 const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected.value
-    await Promise.all([
+    const imported = await Promise.all([
       ...Array.from(sprites).map(importSprite),
       ...Array.from(sounds).map(importSound),
       ...Array.from(backdrops).map(importBackdrop)
     ])
-    emit('imported')
+    emit('imported', imported)
   },
   // TODO: more detailed error message
   { en: 'Error encountered when importing assets', zh: '素材导入遇到错误' },
