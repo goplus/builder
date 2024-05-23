@@ -127,7 +127,6 @@ const gameUtilsSnippets = [spx.rand, gop.println]
 export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnippets]
 
 export function getVariableSnippets(project: Project) {
-  // TODO: costumes & backdrops here
   const { sprites, sounds } = project
   const snippets: Snippet[][] = [[gop.varDefinition]]
   snippets.push(
@@ -152,7 +151,7 @@ export function getVariableSnippets(project: Project) {
     snippets.push(
       project.selectedSprite.costumes.map((costume) => ({
         type: SnippetType.variable,
-        target: SnippetTarget.all,
+        target: SnippetTarget.sprite,
         label: costume.name,
         desc: { en: `Costume "${costume.name}"`, zh: `造型 ${costume.name}` },
         insertText: `"${costume.name}"`
@@ -163,7 +162,7 @@ export function getVariableSnippets(project: Project) {
     snippets.push(
       project.stage.backdrops.map((backdrop) => ({
         type: SnippetType.variable,
-        target: SnippetTarget.all,
+        target: SnippetTarget.stage,
         label: backdrop.name,
         desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
         insertText: `"${backdrop.name}"`

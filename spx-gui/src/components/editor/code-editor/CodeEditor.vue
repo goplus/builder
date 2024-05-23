@@ -141,7 +141,7 @@ function filterSnippets(snippets: Snippet[][]) {
   if (isSprite) return snippets
   // for stage, filter snippets that targets sprite only
   return snippets
-    .map((ss) => ss.filter((s) => s.target === SnippetTarget.all))
+    .map((ss) => ss.filter((s) => s.target !== SnippetTarget.sprite))
     .filter((ss) => ss.length > 0)
 }
 
