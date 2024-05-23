@@ -52,7 +52,11 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
 import SoundRecorderModal from '@/components/editor/sound/SoundRecorderModal.vue'
-import { useAddAssetFromLibrary, useAddAssetToLibrary, useAddSoundFromLocalFile } from '@/components/asset'
+import {
+  useAddAssetFromLibrary,
+  useAddAssetToLibrary,
+  useAddSoundFromLocalFile
+} from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
@@ -93,10 +97,10 @@ function handleSoundClick(sound: Sound) {
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
-const handleAddFromLocalFile = useMessageHandle(
-  () => addFromLocalFile(editorCtx.project),
-  { en: 'Failed to add sound from local file', zh: '从本地文件添加失败' }
-).fn
+const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx.project), {
+  en: 'Failed to add sound from local file',
+  zh: '从本地文件添加失败'
+}).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 const handleAddFromAssetLibrary = useMessageHandle(

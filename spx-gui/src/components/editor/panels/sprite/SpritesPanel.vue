@@ -65,7 +65,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import { useAddAssetFromLibrary, useAddAssetToLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
+import {
+  useAddAssetFromLibrary,
+  useAddAssetToLibrary,
+  useAddSpriteFromLocalFile
+} from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -115,10 +119,10 @@ function handleSpriteClick(sprite: Sprite) {
 
 const addFromLocalFile = useAddSpriteFromLocalFile()
 
-const handleAddFromLocalFile = useMessageHandle(
-  () => addFromLocalFile(editorCtx.project),
-  { en: 'Failed to add sprite from local file', zh: '从本地文件添加失败' }
-).fn
+const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx.project), {
+  en: 'Failed to add sprite from local file',
+  zh: '从本地文件添加失败'
+}).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 

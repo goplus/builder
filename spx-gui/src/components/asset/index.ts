@@ -26,7 +26,7 @@ function selectAsset(project: Project, asset: AssetModel | undefined) {
 export function useAddAssetFromLibrary() {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
-    const added = await invokeAssetLibraryModal({ project, type }) as Array<AssetModel<T>>
+    const added = (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
     selectAsset(project, added[0])
     return added
   }

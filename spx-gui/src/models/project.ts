@@ -87,7 +87,8 @@ export class Project extends Disposble {
     if (!this.zorder.includes(sprite.name)) {
       this.zorder = [...this.zorder, sprite.name]
     }
-    sprite.addDisposer( // update zorder & selected when sprite renamed
+    sprite.addDisposer(
+      // update zorder & selected when sprite renamed
       watch(
         () => sprite.name,
         (newName, originalName) => {
@@ -102,7 +103,10 @@ export class Project extends Disposble {
       this.zorder = this.zorder.filter((v) => v !== sprite.name)
     })
   }
-  private setSpriteZorderIdx(name: string, newIdx: number | ((idx: number, length: number) => number)) {
+  private setSpriteZorderIdx(
+    name: string,
+    newIdx: number | ((idx: number, length: number) => number)
+  ) {
     const idx = this.zorder.findIndex((v) => v === name)
     if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
@@ -139,7 +143,8 @@ export class Project extends Disposble {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
-    sound.addDisposer( // update selected when sound renamed
+    sound.addDisposer(
+      // update selected when sound renamed
       watch(
         () => sound.name,
         (newName, originalName) => {
@@ -192,8 +197,8 @@ export class Project extends Disposble {
     this.sprites = []
     this.sounds = []
     this.addDisposer(() => {
-      this.sprites.splice(0).forEach(s => s.dispose())
-      this.sounds.splice(0).forEach(s => s.dispose())
+      this.sprites.splice(0).forEach((s) => s.dispose())
+      this.sounds.splice(0).forEach((s) => s.dispose())
     })
     return reactive(this) as this
   }
@@ -218,9 +223,9 @@ export class Project extends Disposble {
     this.applyMetadata(metadata)
     this.zorder = zorder ?? []
     this.stage = stage
-    this.sprites.splice(0).forEach(s => s.dispose())
+    this.sprites.splice(0).forEach((s) => s.dispose())
     sprites.forEach((s) => this.addSprite(s))
-    this.sounds.splice(0).forEach(s => s.dispose())
+    this.sounds.splice(0).forEach((s) => s.dispose())
     sounds.forEach((s) => this.addSound(s))
     this.autoSelect()
   }

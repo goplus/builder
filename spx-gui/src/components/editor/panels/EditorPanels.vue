@@ -36,7 +36,7 @@ watch(
 // TODO: do test here
 const lastSelectedSprite = shallowRef<string | null>(null)
 const lastSelectedSound = shallowRef<string | null>(null)
-  watch(
+watch(
   () => editorCtx.project.selected,
   (_, lastSelected) => {
     if (lastSelected?.type === 'sprite') lastSelectedSprite.value = lastSelected.name

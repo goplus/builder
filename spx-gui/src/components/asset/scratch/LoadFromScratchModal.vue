@@ -8,7 +8,7 @@
     <LoadFromScratch
       :project="project"
       :scratch-assets="exportedScratchAssets"
-      @imported="imported => emit('resolved', imported)"
+      @imported="(imported) => emit('resolved', imported)"
     />
   </UIFormModal>
 </template>

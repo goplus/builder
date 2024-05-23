@@ -49,12 +49,7 @@ const getMonaco = async () => {
   if (monaco) return monaco
   const monaco_ = await loader.init()
   if (monaco) return monaco
-  initMonaco(
-    monaco_,
-    uiVariables,
-    i18n,
-    () => editorCtx.project
-  )
+  initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
   monaco = monaco_
   return monaco
 }

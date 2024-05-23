@@ -141,9 +141,12 @@ const searchInput = ref('')
 const keyword = ref('')
 
 // do search (with a delay) when search-input changed
-watch(searchInput, debounce(() => {
-  keyword.value = searchInput.value
-}, 500))
+watch(
+  searchInput,
+  debounce(() => {
+    keyword.value = searchInput.value
+  }, 500)
+)
 
 // "personal" is not actually a category. Define it as a category for convenience
 const categoryPersonal = computed<Category>(() => ({
