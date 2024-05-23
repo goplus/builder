@@ -33,7 +33,6 @@ watch(
   }
 )
 
-// TODO: do test here
 const lastSelectedSprite = shallowRef<string | null>(null)
 const lastSelectedSound = shallowRef<string | null>(null)
 watch(

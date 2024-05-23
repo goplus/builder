@@ -13,21 +13,23 @@
         size="large"
         :loading="handleAddFromLocalFile.isLoading.value"
         @click="handleAddFromLocalFile.fn"
-        >{{
-          // TODO: icon design here not finished yet
-          $t({ en: 'Select local file', zh: '选择本地文件' })
-        }}</UIButton
       >
+        <template #icon>
+          <img class="icon" :src="localFileImg" />
+        </template>
+        {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
+      </UIButton>
       <UIButton
         type="boring"
         size="large"
         :loading="handleAddFromAssetLibrary.isLoading.value"
         @click="handleAddFromAssetLibrary.fn"
-        >{{
-          // TODO: icon design here not finished yet
-          $t({ en: 'Choose from asset library', zh: '从素材库选择' })
-        }}</UIButton
       >
+        <template #icon>
+          <img class="icon" :src="assetLibraryImg" />
+        </template>
+        {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
+      </UIButton>
     </div>
   </div>
 </template>
@@ -37,8 +39,10 @@ import { UIButton } from '@/components/ui'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
-import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 import placeholderImg from './placeholder.svg'
+import localFileImg from './local-file.svg'
+import assetLibraryImg from './asset-library.svg'
 
 const editorCtx = useEditorCtx()
 
@@ -76,5 +80,10 @@ const handleAddFromAssetLibrary = useMessageHandle(
   margin-top: 32px;
   display: flex;
   gap: var(--ui-gap-large);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
 }
 </style>

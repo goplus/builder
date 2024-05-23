@@ -27,7 +27,7 @@ import SpriteEditor from './sprite/SpriteEditor.vue'
 import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
-import EditorPlaceholder from './common/EditorPlaceholder.vue'
+import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
