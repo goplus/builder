@@ -6,9 +6,11 @@ import type { Ref } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
 import { useUIVariables } from '@/components/ui'
 
-export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
+export function useWavesurfer(container: Ref<HTMLElement | undefined>, gain: Ref<number>) {
   const uiVariables = useUIVariables()
-  return function createWavesurfer() {
+
+  const mediaElement = document.createElement('audio')
+  function createWavesurfer() {
     if (container.value == null) throw new Error('wavesurfer container not ready')
     return new WaveSurfer({
       interact: false,
@@ -19,6 +21,7 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
       cursorWidth: 1,
       cursorColor: uiVariables.color.grey[800],
       normalize: true,
+      media: mediaElement,
       renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
         // TODO: Better drawing algorithm to reduce flashing?
         const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
@@ -63,10 +66,14 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
 
         const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
 
+        const scale = gain.value * 5
+
         // Only one channel is assumed, render it twice (mirrored)
-        smoothAndDrawChannel(channel, 5) // Upper part
-        smoothAndDrawChannel(channel, -5) // Lower part (mirrored)
+        smoothAndDrawChannel(channel, scale) // Upper part
+        smoothAndDrawChannel(channel, -scale) // Lower part (mirrored)
       }
     })
   }
+
+  return { createWavesurfer, mediaElement }
 }

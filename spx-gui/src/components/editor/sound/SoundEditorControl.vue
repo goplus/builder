@@ -18,7 +18,9 @@
 import { ref, onMounted, onUnmounted, defineProps, defineEmits } from 'vue'
 
 const props = defineProps<{ value: { left: number; right: number } }>()
-const emit = defineEmits<{ (e: 'update:value', value: { left: number; right: number }): void }>()
+const emit = defineEmits<{
+  'update:value': [value: { left: number; right: number }]
+}>()
 
 const isDragging = ref(false)
 const dragSide = ref<'left' | 'right' | null>(null)

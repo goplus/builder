@@ -16,7 +16,7 @@
       <SoundEditorControl v-model:value="audioRange" />
     </div>
     <div v-if="!recording && audioBlob" class="volume-slider-container">
-      <VolumeSlider v-model:value="audioRange" />
+      <VolumeSlider :value="gain" @update:value="handleUpdateVolume" />
     </div>
     <div class="button-container">
       <div v-if="!recording && !audioBlob" class="icon-button">
@@ -98,7 +98,7 @@ import { RecordPlugin } from '@/utils/wavesurfer-record'
 import { useWavesurfer } from './wavesurfer'
 import SoundEditorControl from './SoundEditorControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
-import { trimAudio } from '@/utils/audio'
+import { trimAndApplyGain } from '@/utils/audio'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -112,11 +112,26 @@ const audioBlob = ref<Blob | null>(null)
 let wavesurfer: WaveSurfer
 let recordPlugin: RecordPlugin
 const waveformContainer = ref<HTMLElement>()
-const createWavesurfer = useWavesurfer(waveformContainer)
+
+const audioRange = ref({ left: 0, right: 1 })
+const gain = ref(1)
+
+const { createWavesurfer, mediaElement } = useWavesurfer(waveformContainer, gain)
+
+const gainNode = ref<GainNode>()
 
 const editorCtx = useEditorCtx()
 
-const audioRange = ref({ left: 0.2, right: 0.5 })
+const handleUpdateVolume = (v: number) => {
+  gain.value = v
+
+  if (gainNode.value) {
+    gainNode.value.gain.value = v
+  }
+
+  // Just to trigger a redraw. Should not make a visible difference in zoom level.
+  wavesurfer.zoom(1)
+}
 
 onMounted(() => {
   initWaveSurfer()
@@ -135,6 +150,14 @@ const initWaveSurfer = () => {
   if (wavesurfer) {
     wavesurfer.destroy()
   }
+
+  const audioContext = new AudioContext()
+  const source = audioContext.createMediaElementSource(mediaElement)
+  const gainNode_ = audioContext.createGain()
+  source.connect(gainNode_)
+  gainNode_.connect(audioContext.destination)
+  gainNode.value = gainNode_
+
   wavesurfer = createWavesurfer()
   recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
 
@@ -174,8 +197,13 @@ const stopRecording = () => {
 
 const saveRecording = async () => {
   let blob: Blob
-  if (audioRange.value.left !== 0 || audioRange.value.right !== 1) {
-    blob = await trimAudio(audioBlob.value!, audioRange.value.left, audioRange.value.right)
+  if (audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1) {
+    blob = await trimAndApplyGain(
+      audioBlob.value!,
+      audioRange.value.left,
+      audioRange.value.right,
+      gain.value
+    )
   } else {
     blob = audioBlob.value!
   }
@@ -188,6 +216,8 @@ const saveRecording = async () => {
 const resetRecording = () => {
   audioBlob.value = null
   wavesurfer.empty()
+  gain.value = 1
+  audioRange.value = { left: 0, right: 1 }
 }
 </script>
 

@@ -105,10 +105,11 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
   }
 }
 
-export async function trimAudio(
+export async function trimAndApplyGain(
   webmBlob: Blob,
   startRatio: number,
-  endRatio: number
+  endRatio: number,
+  gainValue: number
 ): Promise<Blob> {
   // Ensure ratios are between 0.0 and 1.0
   if (
@@ -121,29 +122,44 @@ export async function trimAudio(
     throw new Error('Invalid start or end ratio')
   }
 
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+  const audioContext = new AudioContext()
   const arrayBuffer = await webmBlob.arrayBuffer()
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
 
   const startTime = audioBuffer.duration * startRatio
   const endTime = audioBuffer.duration * endRatio
-  const duration = endTime - startTime
 
   const numChannels = audioBuffer.numberOfChannels
   const sampleRate = audioBuffer.sampleRate
-  const startSample = startTime * sampleRate
+  const startSample = Math.floor(startTime * sampleRate)
+  const endSample = Math.floor(endTime * sampleRate)
+  const newLength = endSample - startSample
 
-  const newAudioBuffer = audioContext.createBuffer(numChannels, duration * sampleRate, sampleRate)
+  const newAudioBuffer = audioContext.createBuffer(numChannels, newLength, sampleRate)
 
   for (let channel = 0; channel < numChannels; channel++) {
     const oldChannelData = audioBuffer.getChannelData(channel)
     const newChannelData = newAudioBuffer.getChannelData(channel)
-    for (let i = 0; i < newChannelData.length; i++) {
+    for (let i = 0; i < newLength; i++) {
       newChannelData[i] = oldChannelData[i + startSample]
     }
   }
 
-  return bufferToWebmBlob(newAudioBuffer, audioContext)
+  // Apply gain to the trimmed audio
+  const offlineContext = new OfflineAudioContext(numChannels, newAudioBuffer.length, sampleRate)
+  const source = offlineContext.createBufferSource()
+  source.buffer = newAudioBuffer
+
+  const gainNode = offlineContext.createGain()
+  gainNode.gain.value = gainValue
+
+  source.connect(gainNode)
+  gainNode.connect(offlineContext.destination)
+
+  source.start()
+
+  const renderedBuffer = await offlineContext.startRendering()
+  return bufferToWebmBlob(renderedBuffer, audioContext)
 }
 
 function bufferToWebmBlob(buffer: AudioBuffer, audioContext: AudioContext): Promise<Blob> {
