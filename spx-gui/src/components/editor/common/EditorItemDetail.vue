@@ -43,6 +43,17 @@ const emit = defineEmits<{
   gap: 4px;
 }
 
+.edit-icon {
+  cursor: pointer;
+  color: var(--ui-color-grey-900);
+  &:hover {
+    color: var(--ui-color-grey-800);
+  }
+  &:active {
+    color: var(--ui-color-grey-1000);
+  }
+}
+
 .img {
   width: 100%;
   aspect-ratio: 4 / 3;

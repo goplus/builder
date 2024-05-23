@@ -6,9 +6,21 @@
       </ul>
       <UIDropdown trigger="click">
         <template #trigger>
-          <button class="add">
-            <UIIcon class="icon" type="plus" />
-          </button>
+          <!--
+            TODO:
+            1. dropdown & tooltip should not be both visible: when dropdown visible, hide the tooltip
+            2. the empty `div` should be avoided. It is now required due to `Runtime directive used on component with non-element root node. The directives will not function as intended.`
+           -->
+          <div>
+            <UITooltip>
+              <template #trigger>
+                <button class="add">
+                  <UIIcon class="icon" type="plus" />
+                </button>
+              </template>
+              {{ addText }}
+            </UITooltip>
+          </div>
         </template>
         <slot name="add-options"></slot>
       </UIDropdown>
@@ -19,10 +31,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIIcon, UIDropdown, type Color, useUIVariables, getCssVars } from '@/components/ui'
+import {
+  UIIcon,
+  UIDropdown,
+  UITooltip,
+  type Color,
+  useUIVariables,
+  getCssVars
+} from '@/components/ui'
 
 const props = defineProps<{
   color: Color
+  addText: string
 }>()
 
 const uiVariables = useUIVariables()
@@ -59,11 +79,18 @@ const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.co
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ui-color-grey-100);
-  background: var(--editor-list-color-main);
   border: none;
   border-bottom-left-radius: var(--ui-border-radius-3);
   cursor: pointer;
+  color: var(--ui-color-grey-100);
+  background: var(--editor-list-color-main);
+
+  &:hover {
+    background: var(--editor-list-color-400);
+  }
+  &:active {
+    background: var(--editor-list-color-600);
+  }
 
   .icon {
     width: 16px;
