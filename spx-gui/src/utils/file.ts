@@ -1,6 +1,6 @@
 import { ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
-import { DefaultException } from './exception'
+import { Cancelled, DefaultException } from './exception'
 
 /**
  * Map file extension to mime type.
@@ -44,21 +44,36 @@ function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
     input.type = 'file'
     input.accept = accept
     input.multiple = multiple
-    input.click()
-    // TODO: dispose input? operation cancelled?
+
+    let settled = false
+    // focus event of window is triggered when file dialog is closed
+    window.addEventListener(
+      'focus',
+      () => {
+        setTimeout(() => {
+          // change event of input not triggered (if triggered, it happens soon after focus event of window)
+          if (!settled) reject(new Cancelled())
+        }, 300)
+      },
+      { once: true }
+    )
     input.onchange = async () => {
       const oversizedFileNames = Array.from(input.files!)
         .filter((file) => file.size > maxFileSize)
         .map((file) => file.name)
-      if (oversizedFileNames.length > 0)
+      if (oversizedFileNames.length > 0) {
         reject(
           new DefaultException({
             en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxFileSize} bytes)`,
             zh: `文件 ${oversizedFileNames.join(', ')} 尺寸超限（最大 ${maxFileSize} 字节）`
           })
         )
-      resolve(Array.from(input.files!))
+      } else {
+        resolve(Array.from(input.files!))
+      }
+      settled = true
     }
+    input.click()
   })
 }
 
@@ -144,5 +159,6 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
+  // TODO: involve image loading status in
   return [imgRef, loadingRef] as const
 }

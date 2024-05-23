@@ -81,7 +81,7 @@ const emit = defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const variablesSnippets = computed(() => getVariableSnippets(editorCtx.project, editorCtx.selected))
+const variablesSnippets = computed(() => getVariableSnippets(editorCtx.project))
 
 const categories = computed(() => {
   return [
@@ -137,11 +137,11 @@ const categories = computed(() => {
 })
 
 function filterSnippets(snippets: Snippet[][]) {
-  const isSprite = editorCtx.selected?.type === 'sprite'
+  const isSprite = editorCtx.project.selected?.type === 'sprite'
   if (isSprite) return snippets
   // for stage, filter snippets that targets sprite only
   return snippets
-    .map((ss) => ss.filter((s) => s.target === SnippetTarget.all))
+    .map((ss) => ss.filter((s) => s.target !== SnippetTarget.sprite))
     .filter((ss) => ss.length > 0)
 }
 
@@ -165,8 +165,9 @@ defineExpose({
 })
 
 const [thumbnailSrc] = useFileUrl(() => {
-  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.defaultBackdrop?.img
-  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.defaultCostume?.img
+  const project = editorCtx.project
+  if (project.selected?.type === 'stage') return project.stage.defaultBackdrop?.img
+  if (project.selectedSprite) return project.selectedSprite.defaultCostume?.img
 })
 </script>
 

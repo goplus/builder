@@ -3,7 +3,7 @@
     <UIError v-if="isError && error">
       {{ $t((error as ActionException).userMessage) }}
     </UIError>
-    <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].data.length === 0" />
+    <UIEmpty v-if="data?.pages.length === 0 || data?.pages[0].data.length === 0" size="large" />
     <ul v-if="data" class="list">
       <template v-for="page in data?.pages">
         <ProjectItem

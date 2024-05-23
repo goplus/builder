@@ -61,10 +61,7 @@ const handleAddFromLocalFile = useMessageHandle(
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
 const handleAddFromAssetLibrary = useMessageHandle(
-  async () => {
-    const backdrops = await addAssetFromLibrary(editorCtx.project, AssetType.Backdrop)
-    stage.value.setDefaultBackdrop(backdrops[0].name)
-  },
+  () => addAssetFromLibrary(editorCtx.project, AssetType.Backdrop),
   { en: 'Failed to add from asset library', zh: '从素材库添加失败' }
 ).fn
 </script>

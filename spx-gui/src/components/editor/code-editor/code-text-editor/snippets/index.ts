@@ -1,7 +1,5 @@
 import { flatten } from 'lodash'
 import type { Project } from '@/models/project'
-import type { Sprite } from '@/models/sprite'
-import type { Sound } from '@/models/sound'
 import { type Snippet, SnippetTarget, SnippetType } from './common'
 import * as gop from './gop'
 import * as spx from './spx'
@@ -128,23 +126,7 @@ const gameUtilsSnippets = [spx.rand, gop.println]
 
 export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnippets]
 
-// TODO: consider moving selected to model Project, so we can get selected easily
-// check this together with `src/components/editor/EditorContextProvider.vue`
-export type Selected =
-  | {
-      type: 'sprite'
-      value: Sprite
-    }
-  | {
-      type: 'sound'
-      value: Sound
-    }
-  | {
-      type: 'stage'
-    }
-
-export function getVariableSnippets(project: Project, selected: Selected | null) {
-  // TODO: costumes & backdrops here
+export function getVariableSnippets(project: Project) {
   const { sprites, sounds } = project
   const snippets: Snippet[][] = [[gop.varDefinition]]
   snippets.push(
@@ -165,22 +147,22 @@ export function getVariableSnippets(project: Project, selected: Selected | null)
       insertText: `"${sound.name}"`
     }))
   )
-  if (selected?.type === 'sprite') {
+  if (project.selectedSprite != null) {
     snippets.push(
-      selected.value.costumes.map((costume) => ({
+      project.selectedSprite.costumes.map((costume) => ({
         type: SnippetType.variable,
-        target: SnippetTarget.all,
+        target: SnippetTarget.sprite,
         label: costume.name,
         desc: { en: `Costume "${costume.name}"`, zh: `造型 ${costume.name}` },
         insertText: `"${costume.name}"`
       }))
     )
   }
-  if (selected?.type === 'stage') {
+  if (project.selected?.type === 'stage') {
     snippets.push(
       project.stage.backdrops.map((backdrop) => ({
         type: SnippetType.variable,
-        target: SnippetTarget.all,
+        target: SnippetTarget.stage,
         label: backdrop.name,
         desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
         insertText: `"${backdrop.name}"`
@@ -190,7 +172,7 @@ export function getVariableSnippets(project: Project, selected: Selected | null)
   return snippets
 }
 
-export function getAllSnippets(project: Project, selected: Selected | null) {
+export function getAllSnippets(project: Project) {
   return flatten([
     ...eventSnippets,
     ...motionSnippets,
@@ -200,6 +182,6 @@ export function getAllSnippets(project: Project, selected: Selected | null) {
     ...controlSnippets,
     ...gameSnippets,
     ...spx.keys,
-    ...getVariableSnippets(project, selected)
+    ...getVariableSnippets(project)
   ])
 }

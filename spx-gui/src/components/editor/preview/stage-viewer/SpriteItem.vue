@@ -86,7 +86,7 @@ function handleChange(e: KonvaEventObject<unknown>) {
 }
 
 function handleMousedown() {
-  editorCtx.select('sprite', props.sprite.name)
+  editorCtx.project.select({ type: 'sprite', name: props.sprite.name })
 }
 
 type KonvaAttrs = {

@@ -8,15 +8,16 @@
     <LoadFromScratch
       :project="project"
       :scratch-assets="exportedScratchAssets"
-      @imported="emit('resolved')"
+      @imported="(imported) => emit('resolved', imported)"
     />
   </UIFormModal>
 </template>
 <script setup lang="ts">
 import type { Project } from '@/models/project'
 import { UIFormModal } from '@/components/ui'
-import LoadFromScratch from './LoadFromScratch.vue'
 import type { ExportedScratchAssets } from '@/utils/scratch'
+import type { AssetModel } from '@/models/common/asset'
+import LoadFromScratch from './LoadFromScratch.vue'
 
 defineProps<{
   project: Project
@@ -26,6 +27,6 @@ defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [AssetModel[]]
 }>()
 </script>

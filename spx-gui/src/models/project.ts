@@ -33,6 +33,20 @@ export type Metadata = {
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
 
+export type Selected =
+  | {
+      type: 'sprite'
+      name: string
+    }
+  | {
+      type: 'sound'
+      name: string
+    }
+  | {
+      type: 'stage'
+    }
+  | null
+
 type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
@@ -68,26 +82,31 @@ export class Project extends Disposble {
     const newName = ensureValidSpriteName(sprite.name, this)
     sprite.setName(newName)
     sprite.setProject(this)
+    sprite.addDisposer(() => sprite.setProject(null))
     this.sprites.push(sprite)
-    // add to zorder
     if (!this.zorder.includes(sprite.name)) {
       this.zorder = [...this.zorder, sprite.name]
     }
-    // update zorder when sprite renaming
     sprite.addDisposer(
+      // update zorder & selected when sprite renamed
       watch(
         () => sprite.name,
         (newName, originalName) => {
           this.zorder = this.zorder.map((v) => (v === originalName ? newName : v))
+          if (this.selected?.type === 'sprite' && this.selected.name === originalName) {
+            this.select({ type: 'sprite', name: newName })
+          }
         }
       )
     )
-    // update zorder when sprite deleted
     sprite.addDisposer(() => {
       this.zorder = this.zorder.filter((v) => v !== sprite.name)
     })
   }
-  setSpriteZorderIdx(name: string, newIdx: number | ((idx: number, length: number) => number)) {
+  private setSpriteZorderIdx(
+    name: string,
+    newIdx: number | ((idx: number, length: number) => number)
+  ) {
     const idx = this.zorder.findIndex((v) => v === name)
     if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
@@ -111,7 +130,8 @@ export class Project extends Disposble {
   removeSound(name: string) {
     const idx = this.sounds.findIndex((s) => s.name === name)
     const [sound] = this.sounds.splice(idx, 1)
-    sound.setProject(null)
+    sound.dispose()
+    this.autoSelect()
   }
   /**
    * Add given sound to project.
@@ -121,11 +141,57 @@ export class Project extends Disposble {
     const newName = ensureValidSoundName(sound.name, this)
     sound.setName(newName)
     sound.setProject(this)
+    sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
+    sound.addDisposer(
+      // update selected when sound renamed
+      watch(
+        () => sound.name,
+        (newName, originalName) => {
+          if (this.selected?.type === 'sound' && this.selected.name === originalName) {
+            this.select({ type: 'sound', name: newName })
+          }
+        }
+      )
+    )
   }
 
   setPublic(isPublic: IsPublic) {
     this.isPublic = isPublic
+  }
+
+  // TODO: consider saving selected info in metadata?
+  selected: Selected = null
+
+  get selectedSprite() {
+    const { selected, sprites } = this
+    if (selected?.type !== 'sprite') return null
+    return sprites.find((s) => s.name === selected.name) ?? null
+  }
+
+  get selectedSound() {
+    const { selected, sounds } = this
+    if (selected?.type !== 'sound') return null
+    return sounds.find((s) => s.name === selected.name) ?? null
+  }
+
+  select(selected: Selected) {
+    this.selected = selected
+  }
+
+  /**
+   * Check if current selected target is valid. If not, select some target automatically.
+   * Targets with the same type are preferred.
+   */
+  autoSelect() {
+    const selected = this.selected
+    if (selected?.type === 'sprite' && this.selectedSprite == null) {
+      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
+    } else if (selected?.type === 'sound' && this.selectedSound == null) {
+      this.select(this.sounds[0] != null ? { type: 'sound', name: this.sounds[0].name } : null)
+    } else if (selected == null) {
+      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
+    }
   }
 
   constructor() {
@@ -135,9 +201,8 @@ export class Project extends Disposble {
     this.sprites = []
     this.sounds = []
     this.addDisposer(() => {
-      for (const sprite of this.sprites) {
-        sprite.dispose()
-      }
+      this.sprites.splice(0).forEach((s) => s.dispose())
+      this.sounds.splice(0).forEach((s) => s.dispose())
     })
     return reactive(this) as this
   }
@@ -162,10 +227,11 @@ export class Project extends Disposble {
     this.applyMetadata(metadata)
     this.zorder = zorder ?? []
     this.stage = stage
-    this.sprites = []
+    this.sprites.splice(0).forEach((s) => s.dispose())
     sprites.forEach((s) => this.addSprite(s))
-    this.sounds = []
+    this.sounds.splice(0).forEach((s) => s.dispose())
     sounds.forEach((s) => this.addSound(s))
+    this.autoSelect()
   }
 
   /** Export metadata & files without revision state
