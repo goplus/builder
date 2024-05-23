@@ -1,5 +1,5 @@
 <template>
-  <EditorList color="stage">
+  <EditorList color="stage" :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })">
     <BackdropItem
       v-for="backdrop in stage.backdrops"
       :key="backdrop.name"

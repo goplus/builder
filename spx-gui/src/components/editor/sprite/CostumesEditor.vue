@@ -1,5 +1,5 @@
 <template>
-  <EditorList color="sprite">
+  <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
     <CostumeItem
       v-for="costume in sprite.costumes"
       :key="costume.name"
