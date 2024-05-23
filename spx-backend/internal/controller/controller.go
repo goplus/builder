@@ -82,7 +82,7 @@ func NewController(ctx context.Context) (ret *Controller, err error) {
 
 func (ctrl *Controller) GetProject(ctx context.Context, owner, name string) (*model.Project, error) {
 	logger := log.GetReqLogger(ctx)
-	p, err := model.GetProjectByName(ctx, ctrl.db, owner, name)
+	p, err := model.ProjectByOwnerAndName(ctx, ctrl.db, owner, name)
 	if err != nil {
 		logger.Printf("failed to get project %s/%s: %v", owner, name, err)
 		return nil, err
@@ -110,12 +110,12 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 		logger.Printf("user & owner not match")
 		return ErrForbidden
 	}
-	project, err := model.GetProjectByName(ctx, ctrl.db, owner, name)
+	project, err := model.ProjectByOwnerAndName(ctx, ctrl.db, owner, name)
 	if err != nil {
 		logger.Printf("failed to get project %s/%s: %v", owner, name, err)
 		return err
 	}
-	return model.DeleteProjectById(ctx, ctrl.db, project.ID)
+	return model.DeleteProjectByID(ctx, ctrl.db, project.ID)
 }
 
 type AddProjectParams struct {
@@ -196,12 +196,12 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, u
 		logger.Printf("user & owner not match")
 		return nil, ErrForbidden
 	}
-	project, err := model.GetProjectByName(ctx, ctrl.db, owner, name)
+	project, err := model.ProjectByOwnerAndName(ctx, ctrl.db, owner, name)
 	if err != nil {
 		logger.Printf("failed to get project %s/%s: %v", owner, name, err)
 		return nil, err
 	}
-	result, err := model.UpdateProjectById(ctx, ctrl.db, project.ID, &model.Project{
+	result, err := model.UpdateProjectByID(ctx, ctrl.db, project.ID, &model.Project{
 		Files:    updates.Files,
 		IsPublic: updates.IsPublic,
 		Version:  project.Version + 1,
@@ -218,7 +218,7 @@ type ProjectListParams struct {
 	IsPublic *model.IsPublic
 	// IsPublic filters projects based on `Owner`, `nil` indicates that do not filter by `Owner`
 	Owner      *string
-	Pagination model.PaginationParams
+	Pagination model.Pagination
 }
 
 func (p *ProjectListParams) Validate() (ok bool, msg string) {
@@ -243,7 +243,7 @@ func (ctrl *Controller) ListProject(ctx context.Context, params *ProjectListPara
 	if params.IsPublic != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "is_public", Operation: "=", Value: *params.IsPublic})
 	}
-	byPage, err := model.ListProject(ctx, ctrl.db, params.Pagination, wheres, nil)
+	byPage, err := model.ListProjects(ctx, ctrl.db, params.Pagination, wheres, nil)
 	if err != nil {
 		logger.Printf("failed to list project: %v", err)
 		return nil, err
@@ -254,7 +254,7 @@ func (ctrl *Controller) ListProject(ctx context.Context, params *ProjectListPara
 // Asset returns an Asset.
 func (ctrl *Controller) GetAsset(ctx context.Context, id string) (*model.Asset, error) {
 	logger := log.GetReqLogger(ctx)
-	asset, err := model.GetAssetById(ctx, ctrl.db, id)
+	asset, err := model.AssetByID(ctx, ctrl.db, id)
 	if err != nil {
 		logger.Printf("failed to get asset: %v", err)
 		return nil, err
@@ -291,7 +291,7 @@ type AssetListParams struct {
 	// IsPublic filters assets with `Owner`, `nil` indicates that do not filter with `Owner`
 	Owner      *string
 	OrderBy    OrderBy
-	Pagination model.PaginationParams
+	Pagination model.Pagination
 }
 
 func (p *AssetListParams) Validate() (ok bool, msg string) {
@@ -332,7 +332,7 @@ func (ctrl *Controller) ListAsset(ctx context.Context, params *AssetListParams) 
 	if params.OrderBy == ClickCountDesc {
 		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "desc"})
 	}
-	byPage, err := model.ListAsset(ctx, ctrl.db, params.Pagination, wheres, orders)
+	byPage, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders)
 	if err != nil {
 		logger.Printf("failed to query assets : %v", err)
 		return nil, err
@@ -426,7 +426,7 @@ func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
 
 func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *UpdateAssetParams) (*model.Asset, error) {
 	logger := log.GetReqLogger(ctx)
-	asset, err := model.GetAssetById(ctx, ctrl.db, id)
+	asset, err := model.AssetByID(ctx, ctrl.db, id)
 	if err != nil {
 		logger.Printf("failed to get asset %s: %v", id, err)
 		return nil, err
@@ -440,7 +440,7 @@ func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *Upd
 		logger.Printf("user & owner not match")
 		return nil, ErrForbidden
 	}
-	result, err := model.UpdateAssetById(ctx, ctrl.db, asset.ID, &model.Asset{
+	result, err := model.UpdateAssetByID(ctx, ctrl.db, asset.ID, &model.Asset{
 		DisplayName: updates.DisplayName,
 		Category:    updates.Category,
 		IsPublic:    updates.IsPublic,
@@ -470,7 +470,7 @@ func (ctrl *Controller) IncreaseAssetClickCount(ctx context.Context, id string) 
 // DeleteAsset Delete Asset
 func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
 	logger := log.GetReqLogger(ctx)
-	asset, err := model.GetAssetById(ctx, ctrl.db, id)
+	asset, err := model.AssetByID(ctx, ctrl.db, id)
 	if err != nil {
 		logger.Printf("failed to get asset %s: %v", id, err)
 		return err
@@ -484,7 +484,7 @@ func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
 		logger.Printf("user & owner not match")
 		return ErrForbidden
 	}
-	return model.DeleteAssetById(ctx, ctrl.db, id)
+	return model.DeleteAssetByID(ctx, ctrl.db, id)
 }
 
 type FmtCodeInput struct {
