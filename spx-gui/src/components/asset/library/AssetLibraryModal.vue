@@ -41,7 +41,7 @@
           <UIError v-else-if="error != null" :retry="refetch">
             {{ $t(error.userMessage) }}
           </UIError>
-          <UIEmpty v-else-if="assets?.data.length === 0" />
+          <UIEmpty v-else-if="assets?.data.length === 0" size="large" />
           <ul v-else-if="assets != null && type === AssetType.Sound" class="asset-list">
             <SoundItem
               v-for="asset in assets!.data"

@@ -20,7 +20,7 @@
     <template #details>
       <SoundRecorderModal v-model:visible="recorderVisible" @saved="handleRecorded" />
       <PanelList>
-        <UIEmpty v-if="sounds.length === 0">
+        <UIEmpty v-if="sounds.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
         </UIEmpty>
         <SoundItem
@@ -36,7 +36,7 @@
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
-        <UIEmpty v-if="sounds.length === 0">
+        <UIEmpty v-if="sounds.length === 0" size="small">
           {{ $t({ en: 'Empty', zh: '无' }) }}
         </UIEmpty>
         <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.name" :sound="sound" />

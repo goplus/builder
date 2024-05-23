@@ -18,7 +18,7 @@
     </template>
     <template #details>
       <PanelList>
-        <UIEmpty v-if="sprites.length === 0">
+        <UIEmpty v-if="sprites.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sprite', zh: '点击 + 号添加精灵' }) }}
         </UIEmpty>
         <SpriteItem
@@ -49,7 +49,7 @@
     </template>
     <template #summary>
       <PanelSummaryList ref="summaryList" :has-more="summaryListData.hasMore">
-        <UIEmpty v-if="sprites.length === 0">
+        <UIEmpty v-if="sprites.length === 0" size="small">
           {{ $t({ en: 'Empty', zh: '无' }) }}
         </UIEmpty>
         <SpriteSummaryItem

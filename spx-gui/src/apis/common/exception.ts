@@ -28,23 +28,23 @@ export enum ApiExceptionCode {
 
 const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
   [ApiExceptionCode.errorInvalidArgs]: {
-    en: 'Invalid args',
+    en: 'invalid args',
     zh: '参数错误'
   },
   [ApiExceptionCode.errorUnauthorized]: {
-    en: 'You need to login first',
+    en: 'you need to login first',
     zh: '请先登录'
   },
   [ApiExceptionCode.errorForbidden]: {
-    en: 'Permission denied',
+    en: 'permission denied',
     zh: '没有权限'
   },
   [ApiExceptionCode.errorNotFound]: {
-    en: 'Resource not exist',
+    en: 'resource not exist',
     zh: '资源不存在'
   },
   [ApiExceptionCode.errorUnknown]: {
-    en: 'Something wrong with the server',
+    en: 'something wrong with the server',
     zh: '服务器出问题了'
   }
 }

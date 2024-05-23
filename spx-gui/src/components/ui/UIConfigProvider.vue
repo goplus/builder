@@ -32,6 +32,9 @@ export type Config = {
   empty?: {
     text?: string
   }
+  error?: {
+    retryText?: string
+  }
 }
 
 const configKey: InjectionKey<Config> = Symbol('config')
