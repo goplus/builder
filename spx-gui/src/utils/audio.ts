@@ -101,6 +101,12 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
         return ''
       }
       return formatDuration(duration.value)
+    }),
+    durationSeconds: computed(() => {
+      if (duration.value === null || duration.value === Infinity) {
+        return 0
+      }
+      return duration.value
     })
   }
 }

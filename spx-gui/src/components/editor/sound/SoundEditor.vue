@@ -5,14 +5,17 @@
     </UITabs>
   </EditorHeader>
   <div class="main">
-    <div class="name">
-      <AssetName>{{ sound.name }}</AssetName>
-      <UIIcon
-        class="edit-icon"
-        :title="$t({ en: 'Rename', zh: '重命名' })"
-        type="edit"
-        @click="handleNameEdit"
-      />
+    <div class="header">
+      <div class="name">
+        <AssetName>{{ sound.name }}</AssetName>
+        <UIIcon
+          class="edit-icon"
+          :title="$t({ en: 'Rename', zh: '重命名' })"
+          type="edit"
+          @click="handleNameEdit"
+        />
+      </div>
+      <div class="duration">{{ durationSeconds ? `${durationSeconds}s` : '&nbsp;' }}</div>
     </div>
     <div class="content">
       <SoundEditorControl :value="audioRange" @update:value="handleAudioRangeUpdate" />
@@ -37,8 +40,9 @@
           icon="check"
           :loading="handleSave.isLoading.value"
           @click="handleSave.fn"
-          >Save</UIButton
         >
+          Save
+        </UIButton>
       </div>
     </div>
   </div>
@@ -46,7 +50,7 @@
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
-import { ref, watchEffect, onUnmounted, watch } from 'vue'
+import { ref, watchEffect, onUnmounted, computed } from 'vue'
 import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -61,6 +65,8 @@ import VolumeSlider from './VolumeSlider.vue'
 import { trimAndApplyGain } from '@/utils/audio'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
+import { UIButton } from '@/components/ui'
+import { useAudioDuration } from '@/utils/audio'
 
 const props = defineProps<{
   sound: Sound
@@ -76,12 +82,14 @@ function handleNameEdit() {
   })
 }
 
-const editing = ref(false)
-
 const waveform = ref<HTMLDivElement>()
 const gain = ref(1)
 const audioRange = ref<{ left: number; right: number }>({ left: 0, right: 1 })
 const { createWavesurfer } = useWavesurfer(waveform, gain)
+
+const editing = computed(
+  () => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1
+)
 
 type Playing = {
   progress: number // percent
@@ -90,6 +98,8 @@ type Playing = {
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 let wavesurfer: WaveSurfer | null = null
+
+const { durationSeconds } = useAudioDuration(() => audioUrl.value)
 
 watchEffect(async () => {
   wavesurfer?.destroy()
@@ -116,10 +126,6 @@ watchEffect(async () => {
   })
 })
 
-watch(gain, () => {
-  wavesurfer?.zoom(1)
-})
-
 onUnmounted(() => {
   wavesurfer?.destroy()
 })
@@ -137,24 +143,22 @@ function handleStop() {
 
 const handleAudioRangeUpdate = (v: { left: number; right: number }) => {
   audioRange.value = v
-  editing.value = true
 }
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  editing.value = true
+  wavesurfer?.zoom(1)
 }
 
 const handleResetEdit = () => {
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
-  editing.value = false
 }
 
 const handleSave = useMessageHandle(
   async () => {
     if (wavesurfer == null) return
-    if (audioRange.value.left === 0 && audioRange.value.right === 1 && gain.value === 1) {
+    if (!editing.value) {
       return
     }
 
@@ -186,6 +190,17 @@ const handleSave = useMessageHandle(
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.duration {
+  color: var(--ui-color-grey-700);
+  line-height: 18px;
 }
 
 .name {
