@@ -87,7 +87,7 @@
 
 <script lang="ts" setup>
 import WaveSurfer from 'wavesurfer.js'
-import { defineEmits, onMounted, ref } from 'vue'
+import { defineEmits, onMounted, ref, watch } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { onUnmounted } from 'vue'
 import dayjs from 'dayjs'
@@ -128,10 +128,12 @@ const handleUpdateVolume = (v: number) => {
   if (gainNode.value) {
     gainNode.value.gain.value = v
   }
-
-  // Just to trigger a redraw. Should not make a visible difference in zoom level.
-  wavesurfer.zoom(1)
 }
+
+watch(gain, () => {
+  // Just to trigger a redraw. Should not make a visible difference in zoom level.
+  wavesurfer?.zoom(1)
+})
 
 onMounted(() => {
   initWaveSurfer()
