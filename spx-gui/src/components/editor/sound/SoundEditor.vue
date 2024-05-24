@@ -15,7 +15,9 @@
           @click="handleNameEdit"
         />
       </div>
-      <div class="duration">{{ durationSeconds ? `${durationSeconds}s` : '&nbsp;' }}</div>
+      <div class="duration">
+        {{ formattedDurationSeconds || '&nbsp;' }}
+      </div>
     </div>
     <div class="content">
       <SoundEditorControl :value="audioRange" @update:value="handleAudioRangeUpdate" />
@@ -34,14 +36,16 @@
       <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
       <div class="spacer" />
       <div v-if="editing" class="editing-buttons">
-        <UIButton type="boring" @click="handleResetEdit">Cancel</UIButton>
+        <UIButton type="boring" @click="handleResetEdit(true)">{{
+          $t({ en: 'Cancel', zh: '取消' })
+        }}</UIButton>
         <UIButton
           type="success"
           icon="check"
           :loading="handleSave.isLoading.value"
           @click="handleSave.fn"
         >
-          Save
+          {{ $t({ en: 'Save', zh: '保存' }) }}
         </UIButton>
       </div>
     </div>
@@ -99,14 +103,16 @@ const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 let wavesurfer: WaveSurfer | null = null
 
-const { durationSeconds } = useAudioDuration(() => audioUrl.value)
+const { formattedDurationSeconds } = useAudioDuration(() => audioUrl.value)
 
 watchEffect(async () => {
-  wavesurfer?.destroy()
-  if (audioUrl.value == null) return
+  if (audioUrl.value == null || audioLoading.value) return
+
+  console.log('audioUrl changed:', audioUrl.value, props.sound.file)
 
   handleResetEdit()
 
+  wavesurfer?.destroy()
   wavesurfer = createWavesurfer()
   wavesurfer.load(audioUrl.value)
 
@@ -150,9 +156,12 @@ const handleGainUpdate = (v: number) => {
   wavesurfer?.zoom(1)
 }
 
-const handleResetEdit = () => {
+const handleResetEdit = (redraw?: boolean) => {
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
+  if (redraw) {
+    wavesurfer?.zoom(1)
+  }
 }
 
 const handleSave = useMessageHandle(

@@ -102,11 +102,11 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
       }
       return formatDuration(duration.value)
     }),
-    durationSeconds: computed(() => {
+    formattedDurationSeconds: computed(() => {
       if (duration.value === null || duration.value === Infinity) {
-        return 0
+        return ''
       }
-      return duration.value
+      return duration.value.toFixed(1) + 's'
     })
   }
 }
