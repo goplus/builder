@@ -132,29 +132,40 @@ export async function trimAndApplyGain(
   const arrayBuffer = await webmBlob.arrayBuffer()
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
 
-  const startTime = audioBuffer.duration * startRatio
-  const endTime = audioBuffer.duration * endRatio
+  let trimmedBuffer: AudioBuffer
 
-  const numChannels = audioBuffer.numberOfChannels
-  const sampleRate = audioBuffer.sampleRate
-  const startSample = Math.floor(startTime * sampleRate)
-  const endSample = Math.floor(endTime * sampleRate)
-  const newLength = endSample - startSample
+  if (startRatio === 0 && endRatio === 1) {
+    // No trimming needed
+    trimmedBuffer = audioBuffer
+  } else {
+    const startTime = audioBuffer.duration * startRatio
+    const endTime = audioBuffer.duration * endRatio
 
-  const newAudioBuffer = audioContext.createBuffer(numChannels, newLength, sampleRate)
+    const numChannels = audioBuffer.numberOfChannels
+    const sampleRate = audioBuffer.sampleRate
+    const startSample = Math.floor(startTime * sampleRate)
+    const endSample = Math.floor(endTime * sampleRate)
+    const newLength = endSample - startSample
 
-  for (let channel = 0; channel < numChannels; channel++) {
-    const oldChannelData = audioBuffer.getChannelData(channel)
-    const newChannelData = newAudioBuffer.getChannelData(channel)
-    for (let i = 0; i < newLength; i++) {
-      newChannelData[i] = oldChannelData[i + startSample]
+    trimmedBuffer = audioContext.createBuffer(numChannels, newLength, sampleRate)
+
+    for (let channel = 0; channel < numChannels; channel++) {
+      const oldChannelData = audioBuffer.getChannelData(channel)
+      const newChannelData = trimmedBuffer.getChannelData(channel)
+      for (let i = 0; i < newLength; i++) {
+        newChannelData[i] = oldChannelData[i + startSample]
+      }
     }
   }
 
-  // Apply gain to the trimmed audio
-  const offlineContext = new OfflineAudioContext(numChannels, newAudioBuffer.length, sampleRate)
+  // Apply gain to the (trimmed or original) audio
+  const offlineContext = new OfflineAudioContext(
+    trimmedBuffer.numberOfChannels,
+    trimmedBuffer.length,
+    trimmedBuffer.sampleRate
+  )
   const source = offlineContext.createBufferSource()
-  source.buffer = newAudioBuffer
+  source.buffer = trimmedBuffer
 
   const gainNode = offlineContext.createGain()
   gainNode.gain.value = gainValue

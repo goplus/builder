@@ -1,4 +1,4 @@
-import { ref, watch, type WatchSource } from 'vue'
+import { computed, ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
 import { Cancelled, DefaultException } from './exception'
 
@@ -125,20 +125,15 @@ export async function selectAudio() {
 /** Get url for File */
 export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   const urlRef = ref<string | null>(null)
-  const loadingRef = ref(false)
+  const loadingRef = computed(() => urlRef.value == null)
   watch(
     fileSource,
     (file, _, onCleanup) => {
+      urlRef.value = null
       if (file == null) return
-      loadingRef.value = true
-      file
-        .url(onCleanup)
-        .then((url) => {
-          urlRef.value = url
-        })
-        .finally(() => {
-          loadingRef.value = false
-        })
+      file.url(onCleanup).then((url) => {
+        urlRef.value = url
+      })
     },
     { immediate: true }
   )

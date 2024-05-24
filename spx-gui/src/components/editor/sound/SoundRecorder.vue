@@ -116,7 +116,7 @@ const waveformContainer = ref<HTMLElement>()
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
 
-const { createWavesurfer, mediaElement } = useWavesurfer(waveformContainer, gain)
+const createWavesurfer = useWavesurfer(waveformContainer, gain)
 
 const gainNode = ref<GainNode>()
 
@@ -153,6 +153,11 @@ const initWaveSurfer = () => {
     wavesurfer.destroy()
   }
 
+  const wavesurferResult = createWavesurfer()
+  wavesurfer = wavesurferResult.wavesurfer
+
+  const mediaElement = wavesurferResult.audioElement
+
   const audioContext = new AudioContext()
   const source = audioContext.createMediaElementSource(mediaElement)
   const gainNode_ = audioContext.createGain()
@@ -160,7 +165,6 @@ const initWaveSurfer = () => {
   gainNode_.connect(audioContext.destination)
   gainNode.value = gainNode_
 
-  wavesurfer = createWavesurfer()
   recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
 
   wavesurfer.on('play', () => {

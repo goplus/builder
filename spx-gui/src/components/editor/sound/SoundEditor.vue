@@ -89,7 +89,7 @@ function handleNameEdit() {
 const waveform = ref<HTMLDivElement>()
 const gain = ref(1)
 const audioRange = ref<{ left: number; right: number }>({ left: 0, right: 1 })
-const { createWavesurfer } = useWavesurfer(waveform, gain)
+const createWavesurfer = useWavesurfer(waveform, gain)
 
 const editing = computed(
   () => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1
@@ -105,32 +105,35 @@ let wavesurfer: WaveSurfer | null = null
 
 const { formattedDurationSeconds } = useAudioDuration(() => audioUrl.value)
 
-watchEffect(async () => {
-  if (audioUrl.value == null || audioLoading.value) return
+watchEffect(
+  async () => {
+    wavesurfer?.destroy()
+    if (audioUrl.value == null) return
 
-  console.log('audioUrl changed:', audioUrl.value, props.sound.file)
+    handleResetEdit()
 
-  handleResetEdit()
+    wavesurfer = createWavesurfer().wavesurfer
+    wavesurfer.load(audioUrl.value)
 
-  wavesurfer?.destroy()
-  wavesurfer = createWavesurfer()
-  wavesurfer.load(audioUrl.value)
-
-  wavesurfer.on('timeupdate', () => {
-    if (playing.value == null || wavesurfer == null) return
-    playing.value.progress = Math.round(
-      (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100
-    )
-  })
-  wavesurfer.on('error', (e) => {
-    console.warn('wavesurfer error:', e)
-    handleStop()
-  })
-  wavesurfer.on('finish', () => {
-    // delay to make the animation more natural
-    setTimeout(handleStop, 400)
-  })
-})
+    wavesurfer.on('timeupdate', () => {
+      if (playing.value == null || wavesurfer == null) return
+      playing.value.progress = Math.round(
+        (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100
+      )
+    })
+    wavesurfer.on('error', (e) => {
+      console.warn('wavesurfer error:', e)
+      handleStop()
+    })
+    wavesurfer.on('finish', () => {
+      // delay to make the animation more natural
+      setTimeout(handleStop, 400)
+    })
+  },
+  {
+    flush: 'post'
+  }
+)
 
 onUnmounted(() => {
   wavesurfer?.destroy()

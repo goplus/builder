@@ -2,17 +2,17 @@
  * @desc wave-surfer-related helpers for Go+ Builder Sound
  */
 
-import type { Ref } from 'vue'
+import { type Ref } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
 import { useUIVariables } from '@/components/ui'
 
 export function useWavesurfer(container: Ref<HTMLElement | undefined>, gain: Ref<number>) {
   const uiVariables = useUIVariables()
 
-  const mediaElement = document.createElement('audio')
   function createWavesurfer() {
     if (container.value == null) throw new Error('wavesurfer container not ready')
-    return new WaveSurfer({
+    const audioElement = document.createElement('audio')
+    const wavesurfer = new WaveSurfer({
       interact: false,
       container: container.value,
       waveColor: uiVariables.color.sound[400],
@@ -21,7 +21,7 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>, gain: Ref
       cursorWidth: 1,
       cursorColor: uiVariables.color.grey[800],
       normalize: true,
-      media: mediaElement,
+      media: audioElement,
       renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
         // TODO: Better drawing algorithm to reduce flashing?
         const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
@@ -73,7 +73,12 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>, gain: Ref
         smoothAndDrawChannel(channel, -scale) // Lower part (mirrored)
       }
     })
+
+    return {
+      wavesurfer,
+      audioElement
+    }
   }
 
-  return { createWavesurfer, mediaElement }
+  return createWavesurfer
 }
