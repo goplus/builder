@@ -19,7 +19,7 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
       : never
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
-  const fileCollection = await uploadFiles(sprite.export())
+  const fileCollection = await uploadFiles(sprite.export(false))
   return {
     displayName: sprite.name,
     assetType: AssetType.Sprite,

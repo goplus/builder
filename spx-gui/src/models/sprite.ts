@@ -245,7 +245,7 @@ export class Sprite extends Disposble {
     return sprites
   }
 
-  export(): Files {
+  export(includeCode = true): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -265,7 +265,9 @@ export class Sprite extends Disposble {
       isDraggable: this.isDraggable,
       costumes: costumeConfigs
     }
-    files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')
+    if (includeCode) {
+      files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')
+    }
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
