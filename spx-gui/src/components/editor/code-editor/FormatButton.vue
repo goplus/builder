@@ -12,14 +12,14 @@
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type CodeEditor from './code-editor/CodeEditor.vue'
+import type CodeEditor from './CodeEditor.vue'
 
 const props = defineProps<{
   codeEditor: InstanceType<typeof CodeEditor>
 }>()
 
 const handleFormat = useMessageHandle(() => props.codeEditor.format(), {
-  en: 'Format failed',
+  en: 'Failed to format',
   zh: '格式化失败'
 })
 </script>

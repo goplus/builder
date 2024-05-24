@@ -19,11 +19,9 @@ const editorCtx = useEditorCtx()
 effect(async () => {
   if (transformer.value == null) return
   const transformerNode: Transformer = transformer.value.getNode()
-  const sprite = editorCtx.selectedSprite
-  if (sprite == null) {
-    transformerNode.nodes([])
-    return
-  }
+  transformerNode.nodes([])
+  const sprite = editorCtx.project.selectedSprite
+  if (sprite == null) return
   // Wait for sprite ready, so that Konva can get correct node size
   if (!props.spritesReady(sprite)) return
   const stage = transformerNode.getStage()

@@ -1,5 +1,10 @@
 <template>
-  <PanelItem :active="active" :name="props.sprite.name" @remove="emit('remove')">
+  <PanelItem
+    :active="active"
+    :name="props.sprite.name"
+    @remove="emit('remove')"
+    @add-to-asset-library="emit('addToAssetLibrary')"
+  >
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
   </PanelItem>
 </template>
@@ -17,9 +22,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   remove: []
+  addToAssetLibrary: []
 }>()
 
-const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.costume?.img)
+const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
 </script>
 
 <style lang="scss" scoped>

@@ -1,6 +1,8 @@
 <template>
-  <EditorHeader color="sound">
-    <AssetName>{{ sound.name }}</AssetName>
+  <EditorHeader>
+    <UITabs value="sound" color="sound">
+      <UITab value="sound">{{ $t({ en: 'Sound', zh: '声音' }) }}</UITab>
+    </UITabs>
   </EditorHeader>
   <div class="main">
     <div class="name">
@@ -39,23 +41,18 @@
         >
       </div>
     </div>
-    <footer v-if="isLibraryEnabled()">
-      <UIButton @click="addToLibrary(sound)">Add to asset library</UIButton>
-    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import WaveSurfer from 'wavesurfer.js'
 import { ref, watchEffect, onUnmounted, watch } from 'vue'
-import { UIIcon, UIButton, useModal } from '@/components/ui'
-import { isLibraryEnabled } from '@/utils/utils'
-import { Sound } from '@/models/sound'
+import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
+import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
-import { useAddAssetToLibrary } from '@/components/asset'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import EditorHeader from '../EditorHeader.vue'
+import EditorHeader from '../common/EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
 import { useWavesurfer } from './wavesurfer'
 import SoundRenameModal from './SoundRenameModal.vue'
@@ -181,8 +178,6 @@ const handleSave = useMessageHandle(
     zh: '保存音频失败'
   }
 )
-
-const addToLibrary = useAddAssetToLibrary()
 </script>
 
 <style scoped lang="scss">

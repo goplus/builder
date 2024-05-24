@@ -32,7 +32,7 @@ const props = defineProps<{
 
 const nodeRef = ref<any>()
 const editorCtx = useEditorCtx()
-const costume = computed(() => props.sprite.costume)
+const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useImgFile(() => costume.value?.img)
 
@@ -45,12 +45,10 @@ watchEffect((onCleanup) => {
 
 watchEffect((onCleanup) => {
   const spriteName = props.sprite.name
+  props.spritesReadyMap.set(spriteName, false)
 
   const img = image.value
-  if (img == null) {
-    props.spritesReadyMap.set(spriteName, false)
-    return
-  }
+  if (img == null) return
   function handleImageLoad() {
     // We need to notify event ready for SpriteTransformer (to get correct node size)
     props.spritesReadyMap.set(spriteName, true)
@@ -88,7 +86,7 @@ function handleChange(e: KonvaEventObject<unknown>) {
 }
 
 function handleMousedown() {
-  editorCtx.select('sprite', props.sprite.name)
+  editorCtx.project.select({ type: 'sprite', name: props.sprite.name })
 }
 
 type KonvaAttrs = {

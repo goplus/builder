@@ -13,7 +13,7 @@
       <UIIcon class="icon" type="stop" />
     </div>
     <!-- TODO: style optimization for sound player -->
-    <UILoading v-show="loading" cover class="loading" />
+    <UILoading :visible="loading" cover class="loading" />
   </div>
 </template>
 
@@ -36,7 +36,7 @@ const emit = defineEmits<{
 }>()
 
 const handlePlay = useMessageHandle(() => props.playHandler(), {
-  en: 'Play audio failed',
+  en: 'Failed to play audio',
   zh: '无法播放音频'
 })
 

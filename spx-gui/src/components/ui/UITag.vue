@@ -24,6 +24,7 @@ defineProps<{
   border: 1px solid var(--ui-color-grey-600);
   border-radius: var(--ui-border-radius-2);
   cursor: pointer;
+  white-space: nowrap;
 
   &.type-primary {
     background: var(--ui-color-primary-main);

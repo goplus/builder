@@ -11,6 +11,7 @@
 <script lang="ts">
 import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
+import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
 import { getCssVars } from './tokens/utils'
 
@@ -31,9 +32,12 @@ export type Config = {
   empty?: {
     text?: string
   }
+  error?: {
+    retryText?: string
+  }
 }
 
-const configKey: InjectionKey<Readonly<Ref<Config>>> = Symbol('config')
+const configKey: InjectionKey<Config> = Symbol('config')
 
 export function useConfig() {
   const config = inject(configKey)
@@ -116,7 +120,7 @@ const themeOverrides: GlobalThemeOverrides = {
 
 <script setup lang="ts">
 import { NConfigProvider } from 'naive-ui'
-import { provide, toRef, type Ref } from 'vue'
+import { provide } from 'vue'
 
 const props = defineProps<{
   config?: Config
@@ -125,7 +129,7 @@ const props = defineProps<{
 provide(uiVariablesKey, uiVariables)
 provide(
   configKey,
-  toRef(() => props.config ?? {})
+  computedShallowReactive(() => props.config ?? {})
 )
 
 const cssVariables = getCssVars('--ui-', uiVariables)

@@ -67,8 +67,7 @@ func ensureUser(ctx *yap.Context) (u *user.User, ok bool) {
 }
 
 func parseJson(ctx *yap.Context, target any) (ok bool) {
-	b, err := io.ReadAll(ctx.Request.Body)
-	defer ctx.Request.Body.Close()
+	b, err := io.ReadAll(ctx.Body)
 	if err != nil {
 		replyWithCode(ctx, errorUnknown) // TODO: more precise error
 		return false
@@ -90,7 +89,7 @@ func handlerInnerError(ctx *yap.Context, err error) {
 		replyWithCode(ctx, errorUnauthorized)
 	case errors.Is(err, controller.ErrForbidden):
 		replyWithCode(ctx, errorForbidden)
-	case errors.Is(err, model.ErrExisted):
+	case errors.Is(err, model.ErrExist):
 		replyWithCode(ctx, errorInvalidArgs)
 	case errors.Is(err, model.ErrNotExist):
 		replyWithCode(ctx, errorNotFound)

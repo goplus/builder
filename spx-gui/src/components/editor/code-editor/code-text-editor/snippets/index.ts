@@ -127,7 +127,6 @@ const gameUtilsSnippets = [spx.rand, gop.println]
 export const gameSnippets = [gameUtilsSnippets, gameSpriteSnippets, gameStopSnippets]
 
 export function getVariableSnippets(project: Project) {
-  // TODO: costumes & backdrops here
   const { sprites, sounds } = project
   const snippets: Snippet[][] = [[gop.varDefinition]]
   snippets.push(
@@ -148,10 +147,32 @@ export function getVariableSnippets(project: Project) {
       insertText: `"${sound.name}"`
     }))
   )
+  if (project.selectedSprite != null) {
+    snippets.push(
+      project.selectedSprite.costumes.map((costume) => ({
+        type: SnippetType.variable,
+        target: SnippetTarget.sprite,
+        label: costume.name,
+        desc: { en: `Costume "${costume.name}"`, zh: `造型 ${costume.name}` },
+        insertText: `"${costume.name}"`
+      }))
+    )
+  }
+  if (project.selected?.type === 'stage') {
+    snippets.push(
+      project.stage.backdrops.map((backdrop) => ({
+        type: SnippetType.variable,
+        target: SnippetTarget.stage,
+        label: backdrop.name,
+        desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
+        insertText: `"${backdrop.name}"`
+      }))
+    )
+  }
   return snippets
 }
 
-export function getAllSnippets(project?: Project) {
+export function getAllSnippets(project: Project) {
   return flatten([
     ...eventSnippets,
     ...motionSnippets,
@@ -161,6 +182,6 @@ export function getAllSnippets(project?: Project) {
     ...controlSnippets,
     ...gameSnippets,
     ...spx.keys,
-    ...(project != null ? getVariableSnippets(project) : [])
+    ...getVariableSnippets(project)
   ])
 }

@@ -1,5 +1,6 @@
 import { ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
+import { Cancelled, DefaultException } from './exception'
 
 /**
  * Map file extension to mime type.
@@ -36,26 +37,49 @@ export type FileSelectOptions = {
   multiple?: boolean
 }
 
+const maxFileSize = 25 << 20 // 25 MiB
 function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
-  return new Promise<globalThis.File[]>((resolve) => {
+  return new Promise<globalThis.File[]>((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = accept
     input.multiple = multiple
-    input.click()
-    // TODO: dispose input? operation cancelled?
+
+    let settled = false
+    // focus event of window is triggered when file dialog is closed
+    window.addEventListener(
+      'focus',
+      () => {
+        setTimeout(() => {
+          // change event of input not triggered (if triggered, it happens soon after focus event of window)
+          if (!settled) reject(new Cancelled())
+        }, 300)
+      },
+      { once: true }
+    )
     input.onchange = async () => {
-      resolve(Array.from(input.files!))
+      const oversizedFileNames = Array.from(input.files!)
+        .filter((file) => file.size > maxFileSize)
+        .map((file) => file.name)
+      if (oversizedFileNames.length > 0) {
+        reject(
+          new DefaultException({
+            en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxFileSize} bytes)`,
+            zh: `文件 ${oversizedFileNames.join(', ')} 尺寸超限（最大 ${maxFileSize} 字节）`
+          })
+        )
+      } else {
+        resolve(Array.from(input.files!))
+      }
+      settled = true
     }
+    input.click()
   })
 }
 
 /** Let the user select single file */
 export async function selectFile(options?: Omit<FileSelectOptions, 'multiple'>) {
-  const files = await _selectFile({
-    ...options,
-    multiple: false
-  })
+  const files = await _selectFile({ ...options, multiple: false })
   return files[0]
 }
 
@@ -135,5 +159,6 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
+  // TODO: involve image loading status in
   return [imgRef, loadingRef] as const
 }

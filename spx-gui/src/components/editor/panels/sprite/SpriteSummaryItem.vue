@@ -14,7 +14,7 @@ const props = defineProps<{
   sprite: Sprite
 }>()
 
-const [imgSrc] = useFileUrl(() => props.sprite.costume?.img)
+const [imgSrc] = useFileUrl(() => props.sprite.defaultCostume?.img)
 </script>
 
 <style lang="scss" scoped>

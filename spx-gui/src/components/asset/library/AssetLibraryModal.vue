@@ -1,6 +1,6 @@
 <template>
   <UISearchableModal
-    style="width: 1064px"
+    style="width: 1076px"
     :visible="props.visible"
     :title="$t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` })"
     @update:visible="emit('cancelled')"
@@ -19,6 +19,13 @@
     <section class="body">
       <div class="sider">
         <UITag
+          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
+          @click="handleSelectCategory(categoryPersonal)"
+        >
+          {{ $t(categoryPersonal.message) }}
+        </UITag>
+        <UIDivider />
+        <UITag
           v-for="c in categories"
           :key="c.value"
           :type="c.value === category.value ? 'primary' : 'boring'"
@@ -34,7 +41,7 @@
           <UIError v-else-if="error != null" :retry="refetch">
             {{ $t(error.userMessage) }}
           </UIError>
-          <UIEmpty v-else-if="assets?.data.length === 0" />
+          <UIEmpty v-else-if="assets?.data.length === 0" size="large" />
           <ul v-else-if="assets != null && type === AssetType.Sound" class="asset-list">
             <SoundItem
               v-for="asset in assets!.data"
@@ -87,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, ref, shallowReactive } from 'vue'
+import { computed, defineProps, ref, shallowReactive, watch } from 'vue'
 import {
   UITextInput,
   UIIcon,
@@ -96,9 +103,11 @@ import {
   UIEmpty,
   UIError,
   UIButton,
-  UISearchableModal
+  UISearchableModal,
+  UIDivider
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
+import { debounce } from '@/utils/utils'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import type { Project } from '@/models/project'
@@ -120,10 +129,6 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-const searchInput = ref('')
-const keyword = ref('')
-const category = ref(categoryAll)
-
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
   [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
@@ -132,22 +137,43 @@ const entityMessages = {
 
 const entityMessage = computed(() => entityMessages[props.type])
 
+const searchInput = ref('')
+const keyword = ref('')
+
+// do search (with a delay) when search-input changed
+watch(
+  searchInput,
+  debounce(() => {
+    keyword.value = searchInput.value
+  }, 500)
+)
+
+// "personal" is not actually a category. Define it as a category for convenience
+const categoryPersonal = computed<Category>(() => ({
+  value: 'personal',
+  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
+}))
+const category = ref(categoryAll)
+
 const {
   isLoading,
   data: assets,
   error,
   refetch
 } = useQuery(
-  () =>
-    listAsset({
+  () => {
+    const c = category.value.value
+    const cPersonal = categoryPersonal.value.value
+    return listAsset({
       pageSize: 500, // try to get all
       pageIndex: 1,
       assetType: props.type,
       keyword: keyword.value,
-      category: category.value.value === categoryAll.value ? undefined : category.value.value,
-      owner: '*',
-      isPublic: IsPublic.public
-    }),
+      category: c === categoryAll.value || c === cPersonal ? undefined : c,
+      owner: c === cPersonal ? undefined : '*',
+      isPublic: c === cPersonal ? undefined : IsPublic.public
+    })
+  },
   {
     en: 'Failed to list',
     zh: '获取列表失败'
@@ -174,8 +200,7 @@ async function addAssetToProject(asset: AssetData) {
     }
     case AssetType.Backdrop: {
       const backdrop = await asset2Backdrop(asset)
-      // TODO: change `setBackdrop` to `addBackdrop` in #460
-      props.project.stage.setBackdrop(backdrop)
+      props.project.stage.addBackdrop(backdrop)
       return backdrop
     }
     case AssetType.Sound: {
@@ -219,7 +244,7 @@ async function handleAssetClick(asset: AssetData) {
   justify-content: stretch;
 }
 .sider {
-  flex: 0 0 136px;
+  flex: 0 0 148px;
   display: flex;
   flex-direction: column;
   padding: var(--ui-gap-middle);

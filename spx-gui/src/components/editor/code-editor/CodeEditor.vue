@@ -36,12 +36,13 @@
       />
     </div>
     <UIImg class="thumbnail" :src="thumbnailSrc" />
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
-import { useUIVariables, UITagButton, UITooltip, UIImg } from '@/components/ui'
+import { useUIVariables, UITagButton, UITooltip, UIImg, UILoading } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
@@ -63,9 +64,15 @@ import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
 import { useFileUrl } from '@/utils/file'
 
-defineProps<{
-  value: string
-}>()
+withDefaults(
+  defineProps<{
+    loading?: boolean
+    value: string
+  }>(),
+  {
+    loading: false
+  }
+)
 
 const emit = defineEmits<{
   'update:value': [value: string]
@@ -130,11 +137,11 @@ const categories = computed(() => {
 })
 
 function filterSnippets(snippets: Snippet[][]) {
-  const isSprite = editorCtx.selected?.type === 'sprite'
+  const isSprite = editorCtx.project.selected?.type === 'sprite'
   if (isSprite) return snippets
   // for stage, filter snippets that targets sprite only
   return snippets
-    .map((ss) => ss.filter((s) => s.target === SnippetTarget.all))
+    .map((ss) => ss.filter((s) => s.target !== SnippetTarget.sprite))
     .filter((ss) => ss.length > 0)
 }
 
@@ -158,13 +165,15 @@ defineExpose({
 })
 
 const [thumbnailSrc] = useFileUrl(() => {
-  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
-  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
+  const project = editorCtx.project
+  if (project.selected?.type === 'stage') return project.stage.defaultBackdrop?.img
+  if (project.selectedSprite) return project.selectedSprite.defaultCostume?.img
 })
 </script>
 
 <style scoped lang="scss">
 .code-editor {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;

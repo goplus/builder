@@ -43,7 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
   confirmHandler: undefined
 })
 
-const config = useConfig().value.confirmDialog
+const config = useConfig().confirmDialog
 
 const emit = defineEmits<{
   cancelled: []

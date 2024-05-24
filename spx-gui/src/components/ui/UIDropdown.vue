@@ -1,5 +1,6 @@
 <template>
   <NPopover
+    ref="nPopoverRef"
     class="ui-dropdown-content"
     :placement="placement"
     :trigger="trigger"
@@ -18,7 +19,18 @@
   </NPopover>
 </template>
 
+<script lang="ts">
+export type DropdownCtrl = {
+  setVisible(visible: boolean): void
+}
+const dropdownCtrlKey: InjectionKey<DropdownCtrl> = Symbol('dropdown-ctrl')
+export function useDropdown() {
+  return inject(dropdownCtrlKey)
+}
+</script>
+
 <script setup lang="ts">
+import { inject, provide, ref, type InjectionKey } from 'vue'
 import { NPopover } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
@@ -47,6 +59,13 @@ withDefaults(
 )
 
 const attachTo = usePopupContainer()
+
+const nPopoverRef = ref<InstanceType<typeof NPopover>>()
+provide(dropdownCtrlKey, {
+  setVisible(visible) {
+    nPopoverRef.value?.setShow(visible)
+  }
+})
 </script>
 
 <style lang="scss" scoped></style>

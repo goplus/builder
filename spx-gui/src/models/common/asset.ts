@@ -103,6 +103,11 @@ export function validateSpriteName(name: string, project: Project | null) {
   }
 }
 
+export const costumeNameTip = {
+  en: 'The costume name can only contain ASCII letters, digits, and the character _.',
+  zh: '造型名称只能包含英文字母、数字及下划线'
+}
+
 export function validateCostumeName(name: string, sprite: Sprite | null) {
   const err = validateAssetName(name)
   if (err != null) return err
@@ -120,10 +125,15 @@ export function validateSoundName(name: string, project: Project | null) {
   return validateSpriteName(name, project)
 }
 
+export const backdropNameTip = {
+  en: 'The backdrop name can only contain ASCII letters, digits, and the character _.',
+  zh: '背景名称只能包含英文字母、数字及下划线'
+}
+
 export function validateBackdropName(name: string, stage: Stage | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (stage != null && stage._backdrops.find((b) => b.name === name))
+  if (stage != null && stage.backdrops.find((b) => b.name === name))
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 

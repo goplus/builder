@@ -39,7 +39,7 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-    <UILoading v-if="spritesAndBackdropLoading" cover />
+    <UILoading :visible="spritesAndBackdropLoading" cover />
   </div>
 </template>
 
@@ -89,7 +89,9 @@ const stageConfig = computed(() => {
   }
 })
 
-const [backdropImg, backdropLoading] = useImgFile(() => editorCtx.project.stage.backdrop?.img)
+const [backdropImg, backdropLoading] = useImgFile(
+  () => editorCtx.project.stage.defaultBackdrop?.img
+)
 
 const spritesAndBackdropLoading = computed(() => {
   if (backdropLoading.value) return true
@@ -124,7 +126,8 @@ function handleStageMousedown() {
 }
 
 function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const { project, selectedSprite } = editorCtx
+  const project = editorCtx.project
+  const selectedSprite = project.selectedSprite
   if (selectedSprite == null) return
   if (direction === 'up') {
     project.upSpriteZorder(selectedSprite.name)

@@ -109,12 +109,16 @@ async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'
 }
 
 function remove(id: number, onHide: (modal: ModalInfo) => void) {
-  const modal = currentModals.find(m => m.id === id)
+  const modal = currentModals.find((m) => m.id === id)
   if (modal == null) return
   modal.visible = false
   onHide(modal)
-  setTimeout(() => { // wait for hide animation to finish
-    currentModals.splice(currentModals.findIndex(m => m.id === id), 1)
+  setTimeout(() => {
+    // wait for hide animation to finish
+    currentModals.splice(
+      currentModals.findIndex((m) => m.id === id),
+      1
+    )
   }, 300)
 }
 

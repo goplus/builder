@@ -75,17 +75,29 @@ export class Sprite extends Disposble {
   }
 
   costumes: Costume[]
-  costumeIndex: number
-  get costume(): Costume | null {
+  private costumeIndex: number
+  get defaultCostume(): Costume | null {
     return this.costumes[this.costumeIndex] ?? null
   }
-  setCostumeIndex(costumeIndex: number) {
-    this.costumeIndex = costumeIndex
+  setDefaultCostume(name: string) {
+    const idx = this.costumes.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`costume ${name} not found`)
+    this.costumeIndex = idx
   }
   removeCostume(name: string) {
     const idx = this.costumes.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`backdrop ${name} not found`)
     const [constume] = this.costumes.splice(idx, 1)
     constume.setSprite(null)
+
+    // Maintain current costume's index if possible
+    if (this.costumeIndex === idx) {
+      this.costumeIndex = 0
+      // Note that if there is only one costume in the array
+      // and it is removed, the index will also be set to 0
+    } else if (this.costumeIndex > idx) {
+      this.costumeIndex = this.costumeIndex - 1
+    }
   }
   /**
    * Add given costume to sprite.
