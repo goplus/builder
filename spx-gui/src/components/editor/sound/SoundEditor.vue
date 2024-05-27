@@ -16,7 +16,7 @@
         />
       </div>
       <div class="duration">
-        {{ formattedDurationSeconds || '&nbsp;' }}
+        {{ formattedDuration || '&nbsp;' }}
       </div>
     </div>
     <div class="content">
@@ -103,7 +103,7 @@ const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 let wavesurfer: WaveSurfer | null = null
 
-const { formattedDurationSeconds } = useAudioDuration(() => audioUrl.value)
+const { formattedDuration } = useAudioDuration(() => audioUrl.value)
 
 watchEffect(
   async () => {
@@ -187,7 +187,7 @@ const handleSave = useMessageHandle(
     )
 
     const newFile = fromBlob(props.sound.file.name, blob)
-    props.sound.file = newFile
+    props.sound.setFile(newFile)
   },
   {
     en: 'Failed to save sound',
@@ -248,20 +248,22 @@ const handleSave = useMessageHandle(
 }
 
 .spacer {
-  flex: 1;
+  flex: 1 1 0;
 }
 
 .opeartions {
   .play-button {
     width: 42px;
     height: 42px;
+    min-width: 42px;
+    min-height: 42px;
   }
 
   display: flex;
-  gap: 48px;
 
   .volume-slider {
     width: 400px;
+    margin: 0 48px;
   }
 
   .editing-buttons {

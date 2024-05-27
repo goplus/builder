@@ -13,6 +13,10 @@ function getAudioContext() {
 /** Convert arbitrary-type (supported by current browser) audio content to type-`audio/wav` content. */
 export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
   const audioBuffer = await getAudioContext().decodeAudioData(ab)
+  return audioBufferToWav(audioBuffer)
+}
+
+function audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
   const numOfChan = audioBuffer.numberOfChannels
   const length = audioBuffer.length * numOfChan * 2 + 44
   const buffer = new ArrayBuffer(length)
@@ -63,14 +67,6 @@ export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
   return buffer
 }
 
-const formatDuration = (seconds: number): string => {
-  const minutes: number = Math.floor(seconds / 60)
-  const remainingSeconds: number = Math.floor(seconds % 60)
-  const formattedSeconds: string =
-    remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`
-  return `${minutes}:${formattedSeconds}`
-}
-
 export const useAudioDuration = (audio: () => string | Blob | null) => {
   const duration = ref<number | null>(null)
   watchEffect(() => {
@@ -100,19 +96,13 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
       if (duration.value === null || duration.value === Infinity) {
         return ''
       }
-      return formatDuration(duration.value)
-    }),
-    formattedDurationSeconds: computed(() => {
-      if (duration.value === null || duration.value === Infinity) {
-        return ''
-      }
       return duration.value.toFixed(1) + 's'
     })
   }
 }
 
 export async function trimAndApplyGain(
-  webmBlob: Blob,
+  blob: Blob,
   startRatio: number,
   endRatio: number,
   gainValue: number
@@ -128,8 +118,8 @@ export async function trimAndApplyGain(
     throw new Error('Invalid start or end ratio')
   }
 
-  const audioContext = new AudioContext()
-  const arrayBuffer = await webmBlob.arrayBuffer()
+  const audioContext = getAudioContext()
+  const arrayBuffer = await blob.arrayBuffer()
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
 
   let trimmedBuffer: AudioBuffer
@@ -176,32 +166,6 @@ export async function trimAndApplyGain(
   source.start()
 
   const renderedBuffer = await offlineContext.startRendering()
-  return bufferToWebmBlob(renderedBuffer, audioContext)
-}
-
-function bufferToWebmBlob(buffer: AudioBuffer, audioContext: AudioContext): Promise<Blob> {
-  return new Promise((resolve) => {
-    const destination = audioContext.createMediaStreamDestination()
-    const source = audioContext.createBufferSource()
-    source.buffer = buffer
-    source.connect(destination)
-    source.start(0)
-
-    const mediaRecorder = new MediaRecorder(destination.stream)
-    const chunks: BlobPart[] = []
-
-    mediaRecorder.ondataavailable = (event) => {
-      chunks.push(event.data)
-    }
-
-    mediaRecorder.onstop = () => {
-      const webmBlob = new Blob(chunks, { type: 'audio/webm' })
-      resolve(webmBlob)
-    }
-
-    mediaRecorder.start()
-    source.onended = () => {
-      mediaRecorder.stop()
-    }
-  })
+  const wavBuffer = audioBufferToWav(renderedBuffer)
+  return new Blob([wavBuffer], { type: 'audio/wav' })
 }

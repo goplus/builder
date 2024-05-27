@@ -13,7 +13,7 @@
           })
         }}
       </div>
-      <SoundEditorControl v-model:value="audioRange" />
+      <SoundEditorControl v-if="!recording && audioBlob" v-model:value="audioRange" />
     </div>
     <div v-if="!recording && audioBlob" class="volume-slider-container">
       <VolumeSlider :value="gain" @update:value="handleUpdateVolume" />
