@@ -117,17 +117,23 @@ watchEffect(
 
     wavesurfer.on('timeupdate', () => {
       if (playing.value == null || wavesurfer == null) return
-      playing.value.progress = Math.round(
-        (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100
+      const ratio = wavesurfer.getCurrentTime() / wavesurfer.getDuration()
+
+      // For a smoother progress animation we make sure
+      // the progress is always increasing
+      playing.value.progress = Math.max(
+        playing.value.progress,
+        Math.round(
+          ((ratio - audioRange.value.left) / (audioRange.value.right - audioRange.value.left)) * 100
+        )
       )
+      if (ratio >= audioRange.value.right) {
+        handleStop()
+      }
     })
     wavesurfer.on('error', (e) => {
       console.warn('wavesurfer error:', e)
       handleStop()
-    })
-    wavesurfer.on('finish', () => {
-      // delay to make the animation more natural
-      setTimeout(handleStop, 400)
     })
   },
   {
@@ -142,12 +148,15 @@ onUnmounted(() => {
 async function handlePlay() {
   if (wavesurfer == null) return
   playing.value = { progress: 0 }
+  wavesurfer.seekTo(audioRange.value.left)
   await wavesurfer.play()
 }
 
 function handleStop() {
   wavesurfer?.stop()
-  playing.value = null
+  setTimeout(() => {
+    playing.value = null
+  }, 400)
 }
 
 const handleAudioRangeUpdate = (v: { left: number; right: number }) => {

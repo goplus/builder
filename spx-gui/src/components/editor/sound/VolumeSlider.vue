@@ -3,7 +3,7 @@
     <img :src="volumeDown" alt="Volume down" />
     <UISlider
       class="slider"
-      type="sound"
+      color="sound"
       :min="0"
       :max="2"
       :step="0.01"
