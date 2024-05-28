@@ -5,8 +5,8 @@ go 1.21
 toolchain go1.21.3
 
 require (
-	github.com/go-sql-driver/mysql v1.7.1
-	github.com/goplus/yap v0.7.2 //gop:class
+	github.com/go-sql-driver/mysql v1.8.1
+	github.com/goplus/yap v0.8.2-0.20240602010842-f547c8e81317 //gop:class
 	github.com/joho/godotenv v1.5.1
 	github.com/qiniu/go-cdk-driver v0.1.0
 	github.com/qiniu/x v1.13.10
@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect

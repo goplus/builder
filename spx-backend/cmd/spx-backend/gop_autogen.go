@@ -5,561 +5,680 @@ package main
 import (
 	"context"
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
-	"github.com/goplus/builder/spx-backend/internal/utils"
-	"github.com/goplus/builder/spx-backend/internal/utils/log"
-	"github.com/goplus/builder/spx-backend/internal/utils/user"
 	"github.com/goplus/yap"
 	"os"
 	"strconv"
 )
 
 const _ = true
+const (
+	firstPageIndex  = 1
+	defaultPageSize = 10
+)
 
-type project struct {
-	yap.App
-	ctrl *controller.Controller
+type delete_asset_id struct {
+	yap.Handler
+	*AppV2
 }
-//line cmd/spx-backend/project_yap.gox:17
-// Add project
-func (this *project) MainEntry() {
-//line cmd/spx-backend/project_yap.gox:18:1
-	this.Post("/project", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:19:1
-		u, ok := ensureUser(ctx)
-//line cmd/spx-backend/project_yap.gox:20:1
-		if !ok {
-//line cmd/spx-backend/project_yap.gox:21:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:23:1
-		params := &controller.AddProjectParams{}
-//line cmd/spx-backend/project_yap.gox:24:1
-		if
-//line cmd/spx-backend/project_yap.gox:24:1
-		ok = parseJson(ctx, params); !ok {
-//line cmd/spx-backend/project_yap.gox:25:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:27:1
-		params.Owner = u.Name
-//line cmd/spx-backend/project_yap.gox:28:1
-		if
-//line cmd/spx-backend/project_yap.gox:28:1
-		ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:29:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:30:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:32:1
-		res, err := this.ctrl.AddProject(utils.GetCtx(ctx), params)
-//line cmd/spx-backend/project_yap.gox:33:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:34:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:35:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:37:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:41:1
-	this.Put("/project/:owner/:name", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:42:1
-		if
-//line cmd/spx-backend/project_yap.gox:42:1
-		_, ok := ensureUser(ctx); !ok {
-//line cmd/spx-backend/project_yap.gox:43:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:45:1
-		owner := ctx.Param("owner")
-//line cmd/spx-backend/project_yap.gox:46:1
-		name := ctx.Param("name")
-//line cmd/spx-backend/project_yap.gox:47:1
-		updates := &controller.UpdateProjectParams{}
-//line cmd/spx-backend/project_yap.gox:48:1
-		if
-//line cmd/spx-backend/project_yap.gox:48:1
-		ok := parseJson(ctx, updates); !ok {
-//line cmd/spx-backend/project_yap.gox:49:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:51:1
-		if
-//line cmd/spx-backend/project_yap.gox:51:1
-		ok, msg := updates.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:52:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:53:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:55:1
-		res, err := this.ctrl.UpdateProject(utils.GetCtx(ctx), owner, name, updates)
-//line cmd/spx-backend/project_yap.gox:56:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:57:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:58:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:60:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:64:1
-	this.Get("/project/:owner/:name", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:65:1
-		owner := ctx.Param("owner")
-//line cmd/spx-backend/project_yap.gox:66:1
-		name := ctx.Param("name")
-//line cmd/spx-backend/project_yap.gox:67:1
-		res, err := this.ctrl.GetProject(utils.GetCtx(ctx), owner, name)
-//line cmd/spx-backend/project_yap.gox:68:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:69:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:70:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:72:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:76:1
-	this.Delete("/project/:owner/:name", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:77:1
-		owner := ctx.Param("owner")
-//line cmd/spx-backend/project_yap.gox:78:1
-		name := ctx.Param("name")
-//line cmd/spx-backend/project_yap.gox:79:1
-		err := this.ctrl.DeleteProject(utils.GetCtx(ctx), owner, name)
-//line cmd/spx-backend/project_yap.gox:80:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:81:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:82:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:84:1
-		replyWithData(ctx, nil)
-	})
-//line cmd/spx-backend/project_yap.gox:87:1
-	const (
-		firstPageIndex  = 1
-		defaultPageSize = 10
-	)
-//line cmd/spx-backend/project_yap.gox:93:1
-	this.Get("/projects/list", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:94:1
-		u, _ := user.GetUser(utils.GetCtx(ctx))
-//line cmd/spx-backend/project_yap.gox:95:1
-		params := &controller.ProjectListParams{}
-//line cmd/spx-backend/project_yap.gox:97:1
-		if
-//line cmd/spx-backend/project_yap.gox:97:1
-		isPublicInput := ctx.Param("isPublic"); isPublicInput != "" {
-//line cmd/spx-backend/project_yap.gox:98:1
-			isPublicInt, err := strconv.Atoi(isPublicInput)
-//line cmd/spx-backend/project_yap.gox:99:1
-			if err != nil {
-//line cmd/spx-backend/project_yap.gox:100:1
-				replyWithCode(ctx, errorInvalidArgs)
-//line cmd/spx-backend/project_yap.gox:101:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:103:1
-			isPublic := model.IsPublic(isPublicInt)
-//line cmd/spx-backend/project_yap.gox:104:1
-			params.IsPublic = &isPublic
-		}
-//line cmd/spx-backend/project_yap.gox:107:1
-		switch
-//line cmd/spx-backend/project_yap.gox:107:1
-		ownerInput := ctx.Param("owner"); ownerInput {
-//line cmd/spx-backend/project_yap.gox:108:1
-		case "":
-//line cmd/spx-backend/project_yap.gox:109:1
-			if u == nil {
-//line cmd/spx-backend/project_yap.gox:110:1
-				replyWithCode(ctx, errorUnauthorized)
-//line cmd/spx-backend/project_yap.gox:111:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:113:1
-			params.Owner = &u.Name
-//line cmd/spx-backend/project_yap.gox:114:1
-		case "*":
-//line cmd/spx-backend/project_yap.gox:115:1
-			params.Owner = nil
-//line cmd/spx-backend/project_yap.gox:116:1
-		default:
-//line cmd/spx-backend/project_yap.gox:117:1
-			params.Owner = &ownerInput
-		}
-//line cmd/spx-backend/project_yap.gox:120:1
-		params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/project_yap.gox:121:1
-		params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/project_yap.gox:122:1
-		if
-//line cmd/spx-backend/project_yap.gox:122:1
-		ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:123:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:124:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:127:1
-		result, err := this.ctrl.ListProject(utils.GetCtx(ctx), params)
-//line cmd/spx-backend/project_yap.gox:128:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:129:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:130:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:132:1
-		replyWithData(ctx, result)
-	})
-//line cmd/spx-backend/project_yap.gox:136:1
-	this.Post("/asset", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:137:1
-		u, ok := ensureUser(ctx)
-//line cmd/spx-backend/project_yap.gox:138:1
-		if !ok {
-//line cmd/spx-backend/project_yap.gox:139:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:141:1
-		params := &controller.AddAssetParams{}
-//line cmd/spx-backend/project_yap.gox:142:1
-		if
-//line cmd/spx-backend/project_yap.gox:142:1
-		ok = parseJson(ctx, params); !ok {
-//line cmd/spx-backend/project_yap.gox:143:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:145:1
-		params.Owner = u.Name
-//line cmd/spx-backend/project_yap.gox:146:1
-		if
-//line cmd/spx-backend/project_yap.gox:146:1
-		ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:147:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:148:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:150:1
-		res, err := this.ctrl.AddAsset(utils.GetCtx(ctx), params)
-//line cmd/spx-backend/project_yap.gox:151:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:152:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:153:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:155:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:159:1
-	this.Put("/asset/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:160:1
-		if
-//line cmd/spx-backend/project_yap.gox:160:1
-		_, ok := ensureUser(ctx); !ok {
-//line cmd/spx-backend/project_yap.gox:161:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:163:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:164:1
-		updates := &controller.UpdateAssetParams{}
-//line cmd/spx-backend/project_yap.gox:165:1
-		if
-//line cmd/spx-backend/project_yap.gox:165:1
-		ok := parseJson(ctx, updates); !ok {
-//line cmd/spx-backend/project_yap.gox:166:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:168:1
-		if
-//line cmd/spx-backend/project_yap.gox:168:1
-		ok, msg := updates.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:169:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:170:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:172:1
-		res, err := this.ctrl.UpdateAsset(utils.GetCtx(ctx), id, updates)
-//line cmd/spx-backend/project_yap.gox:173:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:174:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:175:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:177:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:181:1
-	this.Get("/asset/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:182:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:183:1
-		res, err := this.ctrl.GetAsset(utils.GetCtx(ctx), id)
-//line cmd/spx-backend/project_yap.gox:184:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:185:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:186:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:188:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:192:1
-	this.Get("/assets/list", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:193:1
-		u, _ := user.GetUser(utils.GetCtx(ctx))
-//line cmd/spx-backend/project_yap.gox:194:1
-		params := &controller.AssetListParams{}
-//line cmd/spx-backend/project_yap.gox:196:1
-		params.Keyword = ctx.Param("keyword")
-//line cmd/spx-backend/project_yap.gox:197:1
-		if
-//line cmd/spx-backend/project_yap.gox:197:1
-		assetTypeInput := ctx.Param("assetType"); assetTypeInput != "" {
-//line cmd/spx-backend/project_yap.gox:198:1
-			assetTypeInt, err := strconv.Atoi(assetTypeInput)
-//line cmd/spx-backend/project_yap.gox:199:1
-			if err != nil {
-//line cmd/spx-backend/project_yap.gox:200:1
-				replyWithCode(ctx, errorInvalidArgs)
-//line cmd/spx-backend/project_yap.gox:201:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:203:1
-			assetType := model.AssetType(assetTypeInt)
-//line cmd/spx-backend/project_yap.gox:204:1
-			params.AssetType = &assetType
-		}
-//line cmd/spx-backend/project_yap.gox:206:1
-		if
-//line cmd/spx-backend/project_yap.gox:206:1
-		categoryInput := ctx.Param("category"); categoryInput != "" {
-//line cmd/spx-backend/project_yap.gox:207:1
-			params.Category = &categoryInput
-		}
-//line cmd/spx-backend/project_yap.gox:209:1
-		if
-//line cmd/spx-backend/project_yap.gox:209:1
-		isPublicInput := ctx.Param("isPublic"); isPublicInput != "" {
-//line cmd/spx-backend/project_yap.gox:210:1
-			isPublicInt, err := strconv.Atoi(isPublicInput)
-//line cmd/spx-backend/project_yap.gox:211:1
-			if err != nil {
-//line cmd/spx-backend/project_yap.gox:212:1
-				replyWithCode(ctx, errorInvalidArgs)
-//line cmd/spx-backend/project_yap.gox:213:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:215:1
-			isPublic := model.IsPublic(isPublicInt)
-//line cmd/spx-backend/project_yap.gox:216:1
-			params.IsPublic = &isPublic
-		}
-//line cmd/spx-backend/project_yap.gox:219:1
-		switch
-//line cmd/spx-backend/project_yap.gox:219:1
-		ownerInput := ctx.Param("owner"); ownerInput {
-//line cmd/spx-backend/project_yap.gox:220:1
-		case "":
-//line cmd/spx-backend/project_yap.gox:221:1
-			if u == nil {
-//line cmd/spx-backend/project_yap.gox:222:1
-				replyWithCode(ctx, errorUnauthorized)
-//line cmd/spx-backend/project_yap.gox:223:1
-				return
-			}
-//line cmd/spx-backend/project_yap.gox:225:1
-			params.Owner = &u.Name
-//line cmd/spx-backend/project_yap.gox:226:1
-		case "*":
-//line cmd/spx-backend/project_yap.gox:227:1
-			params.Owner = nil
-//line cmd/spx-backend/project_yap.gox:228:1
-		default:
-//line cmd/spx-backend/project_yap.gox:229:1
-			params.Owner = &ownerInput
-		}
-//line cmd/spx-backend/project_yap.gox:232:1
-		if
-//line cmd/spx-backend/project_yap.gox:232:1
-		orderByInput := ctx.Param("orderBy"); orderByInput != "" {
-//line cmd/spx-backend/project_yap.gox:233:1
-			params.OrderBy = controller.OrderBy(orderByInput)
-		}
-//line cmd/spx-backend/project_yap.gox:235:1
-		params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/project_yap.gox:236:1
-		params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/project_yap.gox:237:1
-		if
-//line cmd/spx-backend/project_yap.gox:237:1
-		ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/project_yap.gox:238:1
-			replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/project_yap.gox:239:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:242:1
-		result, err := this.ctrl.ListAsset(utils.GetCtx(ctx), params)
-//line cmd/spx-backend/project_yap.gox:243:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:244:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:245:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:247:1
-		replyWithData(ctx, result)
-	})
-//line cmd/spx-backend/project_yap.gox:251:1
-	this.Post("/asset/:id/click", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:252:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:253:1
-		err := this.ctrl.IncreaseAssetClickCount(utils.GetCtx(ctx), id)
-//line cmd/spx-backend/project_yap.gox:254:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:255:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:256:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:258:1
-		replyWithData(ctx, nil)
-	})
-//line cmd/spx-backend/project_yap.gox:262:1
-	this.Delete("/asset/:id", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:263:1
-		id := ctx.Param("id")
-//line cmd/spx-backend/project_yap.gox:264:1
-		err := this.ctrl.DeleteAsset(utils.GetCtx(ctx), id)
-//line cmd/spx-backend/project_yap.gox:265:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:266:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:267:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:269:1
-		replyWithData(ctx, nil)
-	})
-//line cmd/spx-backend/project_yap.gox:273:1
-	this.Post("/util/fmtcode", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:274:1
-		input := &controller.FmtCodeInput{}
-//line cmd/spx-backend/project_yap.gox:275:1
-		if
-//line cmd/spx-backend/project_yap.gox:275:1
-		ok := parseJson(ctx, input); !ok {
-//line cmd/spx-backend/project_yap.gox:276:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:278:1
-		res, err := this.ctrl.FmtCode(utils.GetCtx(ctx), input)
-//line cmd/spx-backend/project_yap.gox:279:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:280:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:281:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:283:1
-		replyWithData(ctx, res)
-	})
-//line cmd/spx-backend/project_yap.gox:287:1
-	this.Get("/util/upinfo", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:288:1
-		if
-//line cmd/spx-backend/project_yap.gox:288:1
-		_, ok := ensureUser(ctx); !ok {
-//line cmd/spx-backend/project_yap.gox:289:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:291:1
-		upInfo, err := this.ctrl.GetUpInfo(utils.GetCtx(ctx))
-//line cmd/spx-backend/project_yap.gox:292:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:293:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:294:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:296:1
-		replyWithData(ctx, upInfo)
-	})
-//line cmd/spx-backend/project_yap.gox:300:1
-	this.Post("/util/fileurls", func(ctx *yap.Context) {
-//line cmd/spx-backend/project_yap.gox:301:1
-		if
-//line cmd/spx-backend/project_yap.gox:301:1
-		_, ok := ensureUser(ctx); !ok {
-//line cmd/spx-backend/project_yap.gox:302:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:304:1
-		params := &controller.MakeFileURLsParams{}
-//line cmd/spx-backend/project_yap.gox:305:1
-		if
-//line cmd/spx-backend/project_yap.gox:305:1
-		ok := parseJson(ctx, params); !ok {
-//line cmd/spx-backend/project_yap.gox:306:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:308:1
-		fileURLs, err := this.ctrl.MakeFileURLs(utils.GetCtx(ctx), params)
-//line cmd/spx-backend/project_yap.gox:309:1
-		if err != nil {
-//line cmd/spx-backend/project_yap.gox:310:1
-			handlerInnerError(ctx, err)
-//line cmd/spx-backend/project_yap.gox:311:1
-			return
-		}
-//line cmd/spx-backend/project_yap.gox:313:1
-		replyWithData(ctx, fileURLs)
-	})
-//line cmd/spx-backend/project_yap.gox:316:1
-	var err error
-//line cmd/spx-backend/project_yap.gox:317:1
+type delete_project_owner_name struct {
+	yap.Handler
+	*AppV2
+}
+type get_asset_id struct {
+	yap.Handler
+	*AppV2
+}
+type get_assets_list struct {
+	yap.Handler
+	*AppV2
+}
+type get_project_owner_name struct {
+	yap.Handler
+	*AppV2
+}
+type get_projects_list struct {
+	yap.Handler
+	*AppV2
+}
+type get_util_upinfo struct {
+	yap.Handler
+	*AppV2
+}
+type AppV2 struct {
+	yap.AppV2
+	ctrl *controller.Controller
+	err  error
+}
+type post_asset struct {
+	yap.Handler
+	*AppV2
+}
+type post_asset_id_click struct {
+	yap.Handler
+	*AppV2
+}
+type post_project struct {
+	yap.Handler
+	*AppV2
+}
+type post_util_fileurls struct {
+	yap.Handler
+	*AppV2
+}
+type post_util_fmtcode struct {
+	yap.Handler
+	*AppV2
+}
+type put_asset_id struct {
+	yap.Handler
+	*AppV2
+}
+type put_project_owner_name struct {
+	yap.Handler
+	*AppV2
+}
+//line cmd/spx-backend/main.yap:22
+func (this *AppV2) MainEntry() {
+//line cmd/spx-backend/main.yap:22:1
 	logger := log.GetLogger()
-//line cmd/spx-backend/project_yap.gox:318:1
-	this.ctrl, err = controller.NewController(context.Background())
-//line cmd/spx-backend/project_yap.gox:319:1
-	if err != nil {
-//line cmd/spx-backend/project_yap.gox:320:1
-		logger.Fatalln("New controller failed:", err)
+//line cmd/spx-backend/main.yap:24:1
+	this.ctrl, this.err = controller.New(context.Background())
+//line cmd/spx-backend/main.yap:25:1
+	if this.err != nil {
+//line cmd/spx-backend/main.yap:26:1
+		logger.Fatalln("Failed to create a new controller:", this.err)
 	}
-//line cmd/spx-backend/project_yap.gox:322:1
-	user.CasdoorConfigInit()
-//line cmd/spx-backend/project_yap.gox:323:1
+//line cmd/spx-backend/main.yap:29:1
 	port := os.Getenv("PORT")
-//line cmd/spx-backend/project_yap.gox:324:1
+//line cmd/spx-backend/main.yap:30:1
 	if port == "" {
-//line cmd/spx-backend/project_yap.gox:325:1
+//line cmd/spx-backend/main.yap:31:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/project_yap.gox:327:1
+//line cmd/spx-backend/main.yap:33:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/project_yap.gox:328:1
-	this.Run(port, UserMiddleware, ReqIDMiddleware, CorsMiddleware)
+//line cmd/spx-backend/main.yap:35:1
+	this.Run(port, NewUserMiddleware(this.ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
 }
-func (this *project) Main() {
-	yap.Gopt_App_Main(this)
+func (this *AppV2) Main() {
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(get_asset_id), new(get_assets_list), new(get_project_owner_name), new(get_projects_list), new(get_util_upinfo), new(post_asset), new(post_asset_id_click), new(post_project), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
+}
+//line cmd/spx-backend/delete_asset_#id.yap:6
+func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/delete_asset_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/delete_asset_#id.yap:8:1
+	if
+//line cmd/spx-backend/delete_asset_#id.yap:8:1
+	err := this.ctrl.DeleteAsset(ctx.Context(), this.Gop_Env("id")); err != nil {
+//line cmd/spx-backend/delete_asset_#id.yap:9:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_asset_#id.yap:10:1
+		return
+	}
+//line cmd/spx-backend/delete_asset_#id.yap:12:1
+	this.Json__1(nil)
+}
+func (this *delete_asset_id) Classfname() string {
+	return "delete_asset_#id"
+}
+//line cmd/spx-backend/delete_project_#owner_#name.yap:6
+func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/delete_project_#owner_#name.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/delete_project_#owner_#name.yap:8:1
+	if
+//line cmd/spx-backend/delete_project_#owner_#name.yap:8:1
+	err := this.ctrl.DeleteProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
+//line cmd/spx-backend/delete_project_#owner_#name.yap:9:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/delete_project_#owner_#name.yap:10:1
+		return
+	}
+//line cmd/spx-backend/delete_project_#owner_#name.yap:12:1
+	this.Json__1(nil)
+}
+func (this *delete_project_owner_name) Classfname() string {
+	return "delete_project_#owner_#name"
+}
+//line cmd/spx-backend/get_asset_#id.yap:6
+func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_asset_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_asset_#id.yap:8:1
+	asset, err := this.ctrl.GetAsset(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/get_asset_#id.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_asset_#id.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_asset_#id.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_asset_#id.yap:13:1
+	this.Json__1(asset)
+}
+func (this *get_asset_id) Classfname() string {
+	return "get_asset_#id"
+}
+//line cmd/spx-backend/get_assets_list.yap:13
+func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_assets_list.yap:13:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_assets_list.yap:15:1
+	user, _ := controller.UserFromContext(ctx.Context())
+//line cmd/spx-backend/get_assets_list.yap:16:1
+	params := &controller.ListAssetsParams{}
+//line cmd/spx-backend/get_assets_list.yap:18:1
+	params.Keyword = this.Gop_Env("keyword")
+//line cmd/spx-backend/get_assets_list.yap:20:1
+	switch
+//line cmd/spx-backend/get_assets_list.yap:20:1
+	owner := this.Gop_Env("owner"); owner {
+//line cmd/spx-backend/get_assets_list.yap:21:1
+	case "":
+//line cmd/spx-backend/get_assets_list.yap:22:1
+		if user == nil {
+//line cmd/spx-backend/get_assets_list.yap:23:1
+			replyWithCode(ctx, errorUnauthorized)
+//line cmd/spx-backend/get_assets_list.yap:24:1
+			return
+		}
+//line cmd/spx-backend/get_assets_list.yap:26:1
+		params.Owner = &user.Name
+//line cmd/spx-backend/get_assets_list.yap:27:1
+	case "*":
+//line cmd/spx-backend/get_assets_list.yap:28:1
+		params.Owner = nil
+//line cmd/spx-backend/get_assets_list.yap:29:1
+	default:
+//line cmd/spx-backend/get_assets_list.yap:30:1
+		params.Owner = &owner
+	}
+//line cmd/spx-backend/get_assets_list.yap:33:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:33:1
+	category := this.Gop_Env("category"); category != "" {
+//line cmd/spx-backend/get_assets_list.yap:34:1
+		params.Category = &category
+	}
+//line cmd/spx-backend/get_assets_list.yap:37:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:37:1
+	assetTypeParam := this.Gop_Env("assetType"); assetTypeParam != "" {
+//line cmd/spx-backend/get_assets_list.yap:38:1
+		assetTypeInt, err := strconv.Atoi(assetTypeParam)
+//line cmd/spx-backend/get_assets_list.yap:39:1
+		if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:40:1
+			replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/get_assets_list.yap:41:1
+			return
+		}
+//line cmd/spx-backend/get_assets_list.yap:43:1
+		assetType := model.AssetType(assetTypeInt)
+//line cmd/spx-backend/get_assets_list.yap:44:1
+		params.AssetType = &assetType
+	}
+//line cmd/spx-backend/get_assets_list.yap:47:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:47:1
+	isPublicParam := this.Gop_Env("isPublic"); isPublicParam != "" {
+//line cmd/spx-backend/get_assets_list.yap:48:1
+		isPublicInt, err := strconv.Atoi(isPublicParam)
+//line cmd/spx-backend/get_assets_list.yap:49:1
+		if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:50:1
+			replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/get_assets_list.yap:51:1
+			return
+		}
+//line cmd/spx-backend/get_assets_list.yap:53:1
+		isPublic := model.IsPublic(isPublicInt)
+//line cmd/spx-backend/get_assets_list.yap:54:1
+		params.IsPublic = &isPublic
+	}
+//line cmd/spx-backend/get_assets_list.yap:57:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:57:1
+	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+//line cmd/spx-backend/get_assets_list.yap:58:1
+		params.OrderBy = controller.ListAssetsOrderBy(orderBy)
+	}
+//line cmd/spx-backend/get_assets_list.yap:61:1
+	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/get_assets_list.yap:62:1
+	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_assets_list.yap:63:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:63:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/get_assets_list.yap:64:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/get_assets_list.yap:65:1
+		return
+	}
+//line cmd/spx-backend/get_assets_list.yap:68:1
+	assets, err := this.ctrl.ListAssets(ctx.Context(), params)
+//line cmd/spx-backend/get_assets_list.yap:69:1
+	if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:70:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_assets_list.yap:71:1
+		return
+	}
+//line cmd/spx-backend/get_assets_list.yap:73:1
+	this.Json__1(assets)
+}
+func (this *get_assets_list) Classfname() string {
+	return "get_assets_list"
+}
+//line cmd/spx-backend/get_project_#owner_#name.yap:6
+func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_project_#owner_#name.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_project_#owner_#name.yap:8:1
+	project, err := this.ctrl.GetProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name"))
+//line cmd/spx-backend/get_project_#owner_#name.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_project_#owner_#name.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_project_#owner_#name.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_project_#owner_#name.yap:13:1
+	this.Json__1(project)
+}
+func (this *get_project_owner_name) Classfname() string {
+	return "get_project_#owner_#name"
+}
+//line cmd/spx-backend/get_projects_list.yap:13
+func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_projects_list.yap:13:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_projects_list.yap:15:1
+	user, _ := controller.UserFromContext(ctx.Context())
+//line cmd/spx-backend/get_projects_list.yap:16:1
+	params := &controller.ListProjectsParams{}
+//line cmd/spx-backend/get_projects_list.yap:18:1
+	if
+//line cmd/spx-backend/get_projects_list.yap:18:1
+	isPublicParam := this.Gop_Env("isPublic"); isPublicParam != "" {
+//line cmd/spx-backend/get_projects_list.yap:19:1
+		isPublicInt, err := strconv.Atoi(isPublicParam)
+//line cmd/spx-backend/get_projects_list.yap:20:1
+		if err != nil {
+//line cmd/spx-backend/get_projects_list.yap:21:1
+			replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/get_projects_list.yap:22:1
+			return
+		}
+//line cmd/spx-backend/get_projects_list.yap:24:1
+		isPublic := model.IsPublic(isPublicInt)
+//line cmd/spx-backend/get_projects_list.yap:25:1
+		params.IsPublic = &isPublic
+	}
+//line cmd/spx-backend/get_projects_list.yap:28:1
+	switch
+//line cmd/spx-backend/get_projects_list.yap:28:1
+	owner := this.Gop_Env("owner"); owner {
+//line cmd/spx-backend/get_projects_list.yap:29:1
+	case "":
+//line cmd/spx-backend/get_projects_list.yap:30:1
+		if user == nil {
+//line cmd/spx-backend/get_projects_list.yap:31:1
+			replyWithCode(ctx, errorUnauthorized)
+//line cmd/spx-backend/get_projects_list.yap:32:1
+			return
+		}
+//line cmd/spx-backend/get_projects_list.yap:34:1
+		params.Owner = &user.Name
+//line cmd/spx-backend/get_projects_list.yap:35:1
+	case "*":
+//line cmd/spx-backend/get_projects_list.yap:36:1
+		params.Owner = nil
+//line cmd/spx-backend/get_projects_list.yap:37:1
+	default:
+//line cmd/spx-backend/get_projects_list.yap:38:1
+		params.Owner = &owner
+	}
+//line cmd/spx-backend/get_projects_list.yap:41:1
+	params.Pagination.Index = this.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/get_projects_list.yap:42:1
+	params.Pagination.Size = this.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_projects_list.yap:43:1
+	if
+//line cmd/spx-backend/get_projects_list.yap:43:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/get_projects_list.yap:44:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/get_projects_list.yap:45:1
+		return
+	}
+//line cmd/spx-backend/get_projects_list.yap:48:1
+	projects, err := this.ctrl.ListProjects(ctx.Context(), params)
+//line cmd/spx-backend/get_projects_list.yap:49:1
+	if err != nil {
+//line cmd/spx-backend/get_projects_list.yap:50:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_projects_list.yap:51:1
+		return
+	}
+//line cmd/spx-backend/get_projects_list.yap:53:1
+	this.Json__1(projects)
+}
+func (this *get_projects_list) Classfname() string {
+	return "get_projects_list"
+}
+//line cmd/spx-backend/get_util_upinfo.yap:6
+func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_util_upinfo.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_util_upinfo.yap:8:1
+	if
+//line cmd/spx-backend/get_util_upinfo.yap:8:1
+	_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/get_util_upinfo.yap:9:1
+		return
+	}
+//line cmd/spx-backend/get_util_upinfo.yap:11:1
+	upInfo, err := this.ctrl.GetUpInfo(ctx.Context())
+//line cmd/spx-backend/get_util_upinfo.yap:12:1
+	if err != nil {
+//line cmd/spx-backend/get_util_upinfo.yap:13:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_util_upinfo.yap:14:1
+		return
+	}
+//line cmd/spx-backend/get_util_upinfo.yap:16:1
+	this.Json__1(upInfo)
+}
+func (this *get_util_upinfo) Classfname() string {
+	return "get_util_upinfo"
+}
+//line cmd/spx-backend/post_asset.yap:10
+func (this *post_asset) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_asset.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_asset.yap:12:1
+	user, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_asset.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_asset.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_asset.yap:17:1
+	params := &controller.AddAssetParams{}
+//line cmd/spx-backend/post_asset.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_asset.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_asset.yap:21:1
+	params.Owner = user.Name
+//line cmd/spx-backend/post_asset.yap:22:1
+	if
+//line cmd/spx-backend/post_asset.yap:22:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_asset.yap:23:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_asset.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_asset.yap:27:1
+	asset, err := this.ctrl.AddAsset(ctx.Context(), params)
+//line cmd/spx-backend/post_asset.yap:28:1
+	if err != nil {
+//line cmd/spx-backend/post_asset.yap:29:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_asset.yap:30:1
+		return
+	}
+//line cmd/spx-backend/post_asset.yap:32:1
+	this.Json__1(asset)
+}
+func (this *post_asset) Classfname() string {
+	return "post_asset"
+}
+//line cmd/spx-backend/post_asset_#id_click.yap:6
+func (this *post_asset_id_click) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_asset_#id_click.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_asset_#id_click.yap:8:1
+	if
+//line cmd/spx-backend/post_asset_#id_click.yap:8:1
+	err := this.ctrl.IncreaseAssetClickCount(ctx.Context(), this.Gop_Env("id")); err != nil {
+//line cmd/spx-backend/post_asset_#id_click.yap:9:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_asset_#id_click.yap:10:1
+		return
+	}
+//line cmd/spx-backend/post_asset_#id_click.yap:12:1
+	this.Json__1(nil)
+}
+func (this *post_asset_id_click) Classfname() string {
+	return "post_asset_#id_click"
+}
+//line cmd/spx-backend/post_project.yap:10
+func (this *post_project) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_project.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_project.yap:12:1
+	user, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_project.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_project.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_project.yap:17:1
+	params := &controller.AddProjectParams{}
+//line cmd/spx-backend/post_project.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_project.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_project.yap:21:1
+	params.Owner = user.Name
+//line cmd/spx-backend/post_project.yap:22:1
+	if
+//line cmd/spx-backend/post_project.yap:22:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_project.yap:23:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_project.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_project.yap:27:1
+	project, err := this.ctrl.AddProject(ctx.Context(), params)
+//line cmd/spx-backend/post_project.yap:28:1
+	if err != nil {
+//line cmd/spx-backend/post_project.yap:29:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_project.yap:30:1
+		return
+	}
+//line cmd/spx-backend/post_project.yap:32:1
+	this.Json__1(project)
+}
+func (this *post_project) Classfname() string {
+	return "post_project"
+}
+//line cmd/spx-backend/post_util_fileurls.yap:10
+func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_util_fileurls.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_util_fileurls.yap:12:1
+	if
+//line cmd/spx-backend/post_util_fileurls.yap:12:1
+	_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/post_util_fileurls.yap:13:1
+		return
+	}
+//line cmd/spx-backend/post_util_fileurls.yap:16:1
+	params := &controller.MakeFileURLsParams{}
+//line cmd/spx-backend/post_util_fileurls.yap:17:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_util_fileurls.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_util_fileurls.yap:20:1
+	if
+//line cmd/spx-backend/post_util_fileurls.yap:20:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_util_fileurls.yap:21:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_util_fileurls.yap:22:1
+		return
+	}
+//line cmd/spx-backend/post_util_fileurls.yap:25:1
+	fileURLs, err := this.ctrl.MakeFileURLs(ctx.Context(), params)
+//line cmd/spx-backend/post_util_fileurls.yap:26:1
+	if err != nil {
+//line cmd/spx-backend/post_util_fileurls.yap:27:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_util_fileurls.yap:28:1
+		return
+	}
+//line cmd/spx-backend/post_util_fileurls.yap:30:1
+	this.Json__1(fileURLs)
+}
+func (this *post_util_fileurls) Classfname() string {
+	return "post_util_fileurls"
+}
+//line cmd/spx-backend/post_util_fmtcode.yap:10
+func (this *post_util_fmtcode) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_util_fmtcode.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_util_fmtcode.yap:12:1
+	params := &controller.FmtCodeParams{}
+//line cmd/spx-backend/post_util_fmtcode.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_util_fmtcode.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_util_fmtcode.yap:16:1
+	if
+//line cmd/spx-backend/post_util_fmtcode.yap:16:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_util_fmtcode.yap:17:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_util_fmtcode.yap:18:1
+		return
+	}
+//line cmd/spx-backend/post_util_fmtcode.yap:21:1
+	formattedCode, err := this.ctrl.FmtCode(ctx.Context(), params)
+//line cmd/spx-backend/post_util_fmtcode.yap:22:1
+	if err != nil {
+//line cmd/spx-backend/post_util_fmtcode.yap:23:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_util_fmtcode.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_util_fmtcode.yap:26:1
+	this.Json__1(formattedCode)
+}
+func (this *post_util_fmtcode) Classfname() string {
+	return "post_util_fmtcode"
+}
+//line cmd/spx-backend/put_asset_#id.yap:10
+func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/put_asset_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/put_asset_#id.yap:12:1
+	if
+//line cmd/spx-backend/put_asset_#id.yap:12:1
+	_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/put_asset_#id.yap:13:1
+		return
+	}
+//line cmd/spx-backend/put_asset_#id.yap:16:1
+	params := &controller.UpdateAssetParams{}
+//line cmd/spx-backend/put_asset_#id.yap:17:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_asset_#id.yap:18:1
+		return
+	}
+//line cmd/spx-backend/put_asset_#id.yap:20:1
+	if
+//line cmd/spx-backend/put_asset_#id.yap:20:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/put_asset_#id.yap:21:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_asset_#id.yap:22:1
+		return
+	}
+//line cmd/spx-backend/put_asset_#id.yap:25:1
+	asset, err := this.ctrl.UpdateAsset(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/put_asset_#id.yap:26:1
+	if err != nil {
+//line cmd/spx-backend/put_asset_#id.yap:27:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_asset_#id.yap:28:1
+		return
+	}
+//line cmd/spx-backend/put_asset_#id.yap:30:1
+	this.Json__1(asset)
+}
+func (this *put_asset_id) Classfname() string {
+	return "put_asset_#id"
+}
+//line cmd/spx-backend/put_project_#owner_#name.yap:10
+func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/put_project_#owner_#name.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/put_project_#owner_#name.yap:12:1
+	if
+//line cmd/spx-backend/put_project_#owner_#name.yap:12:1
+	_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/put_project_#owner_#name.yap:13:1
+		return
+	}
+//line cmd/spx-backend/put_project_#owner_#name.yap:16:1
+	params := &controller.UpdateProjectParams{}
+//line cmd/spx-backend/put_project_#owner_#name.yap:17:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/put_project_#owner_#name.yap:18:1
+		return
+	}
+//line cmd/spx-backend/put_project_#owner_#name.yap:20:1
+	if
+//line cmd/spx-backend/put_project_#owner_#name.yap:20:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/put_project_#owner_#name.yap:21:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/put_project_#owner_#name.yap:22:1
+		return
+	}
+//line cmd/spx-backend/put_project_#owner_#name.yap:25:1
+	project, err := this.ctrl.UpdateProject(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name"), params)
+//line cmd/spx-backend/put_project_#owner_#name.yap:26:1
+	if err != nil {
+//line cmd/spx-backend/put_project_#owner_#name.yap:27:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/put_project_#owner_#name.yap:28:1
+		return
+	}
+//line cmd/spx-backend/put_project_#owner_#name.yap:30:1
+	this.Json__1(project)
+}
+func (this *put_project_owner_name) Classfname() string {
+	return "put_project_#owner_#name"
 }
 func main() {
-	new(project).Main()
+	new(AppV2).Main()
 }

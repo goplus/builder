@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/goplus/builder/spx-backend/internal/utils/log"
+	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
 // Asset is the model for an asset.
@@ -113,11 +113,32 @@ func UpdateAssetByID(ctx context.Context, db *sql.DB, id string, a *Asset) (*Ass
 	return AssetByID(ctx, db, id)
 }
 
+// IncreaseAssetClickCount increases asset's click count by 1.
+func IncreaseAssetClickCount(ctx context.Context, db *sql.DB, id string) error {
+	logger := log.GetReqLogger(ctx)
+
+	query := fmt.Sprintf("UPDATE %s SET u_time = ?, click_count = click_count + 1 WHERE id = ?", TableAsset)
+	result, err := db.ExecContext(ctx, query, time.Now().UTC(), id)
+	if err != nil {
+		logger.Printf("db.ExecContext failed: %v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		logger.Printf("result.RowsAffected failed: %v", err)
+		return err
+	} else if rowsAffected == 0 {
+		return ErrNotExist
+	}
+	return nil
+}
+
 // DeleteAssetByID deletes asset with given id.
 func DeleteAssetByID(ctx context.Context, db *sql.DB, id string) error {
 	logger := log.GetReqLogger(ctx)
-	query := fmt.Sprintf("UPDATE %s SET status = ? WHERE id = ?", TableAsset)
-	if _, err := db.ExecContext(ctx, query, StatusDeleted, id); err != nil {
+	query := fmt.Sprintf("UPDATE %s SET u_time = ?, status = ? WHERE id = ?", TableAsset)
+	if _, err := db.ExecContext(ctx, query, time.Now().UTC(), StatusDeleted, id); err != nil {
 		logger.Printf("db.ExecContext failed: %v", err)
 		return err
 	}
