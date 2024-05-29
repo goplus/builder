@@ -2,23 +2,49 @@
  * @desc wave-surfer-related helpers for Go+ Builder Sound
  */
 
-import type { Ref } from 'vue'
+import { ref, watch } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
 import { useUIVariables } from '@/components/ui'
+import { getAudioContext } from '@/utils/audio'
 
-export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
+export function useWavesurfer(container: () => HTMLElement | undefined, gain: () => number) {
   const uiVariables = useUIVariables()
-  return function createWavesurfer() {
-    if (container.value == null) throw new Error('wavesurfer container not ready')
-    return new WaveSurfer({
+
+  const wavesurfer = ref<WaveSurfer | null>(null)
+  let gainNode: GainNode
+  let audioElement: HTMLAudioElement
+
+  watch(gain, (value) => {
+    if (!gainNode) return
+    gainNode.gain.value = value
+    if (wavesurfer?.value?.getDecodedData()) {
+      // Trigger a redraw only when loaded
+      wavesurfer.value.zoom(1)
+    }
+  })
+
+  watch(container, (newContainer, oldContainer, onCleanup) => {
+    if (newContainer == null) throw new Error('wavesurfer container not ready')
+    audioElement = document.createElement('audio')
+
+    const audioContext = getAudioContext()
+    const source = audioContext.createMediaElementSource(audioElement)
+    const gainNode_ = audioContext.createGain()
+    source.connect(gainNode_)
+    gainNode_.connect(audioContext.destination)
+    gainNode_.gain.value = gain()
+    gainNode = gainNode_
+
+    wavesurfer.value = new WaveSurfer({
       interact: false,
-      container: container.value,
+      container: newContainer,
       waveColor: uiVariables.color.sound[400],
       progressColor: uiVariables.color.sound[300] + '80',
       height: 'auto',
       cursorWidth: 1,
       cursorColor: uiVariables.color.grey[800],
       normalize: true,
+      media: audioElement,
       renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
         // TODO: Better drawing algorithm to reduce flashing?
         const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
@@ -63,10 +89,18 @@ export function useWavesurfer(container: Ref<HTMLElement | undefined>) {
 
         const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
 
+        const scale = gain() * 5
+
         // Only one channel is assumed, render it twice (mirrored)
-        smoothAndDrawChannel(channel, 5) // Upper part
-        smoothAndDrawChannel(channel, -5) // Lower part (mirrored)
+        smoothAndDrawChannel(channel, scale) // Upper part
+        smoothAndDrawChannel(channel, -scale) // Lower part (mirrored)
       }
     })
-  }
+
+    onCleanup(() => {
+      wavesurfer.value?.destroy()
+    })
+  })
+
+  return wavesurfer
 }

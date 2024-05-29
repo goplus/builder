@@ -5,7 +5,7 @@ let audioContext: AudioContext
 // Reuse single AudioContext instance, see details in https://developer.mozilla.org/en-US/docs/Web/API/AudioContext
 // > It's recommended to create one AudioContext and reuse it instead of initializing a new one each time,
 // > and it's OK to use a single AudioContext for several different audio sources and pipeline concurrently.
-function getAudioContext() {
+export function getAudioContext() {
   if (audioContext == null) audioContext = new AudioContext()
   return audioContext
 }
@@ -13,6 +13,10 @@ function getAudioContext() {
 /** Convert arbitrary-type (supported by current browser) audio content to type-`audio/wav` content. */
 export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
   const audioBuffer = await getAudioContext().decodeAudioData(ab)
+  return audioBufferToWav(audioBuffer)
+}
+
+function audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
   const numOfChan = audioBuffer.numberOfChannels
   const length = audioBuffer.length * numOfChan * 2 + 44
   const buffer = new ArrayBuffer(length)
@@ -63,14 +67,6 @@ export async function toWav(ab: ArrayBuffer): Promise<ArrayBuffer> {
   return buffer
 }
 
-const formatDuration = (seconds: number): string => {
-  const minutes: number = Math.floor(seconds / 60)
-  const remainingSeconds: number = Math.floor(seconds % 60)
-  const formattedSeconds: string =
-    remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`
-  return `${minutes}:${formattedSeconds}`
-}
-
 export const useAudioDuration = (audio: () => string | Blob | null) => {
   const duration = ref<number | null>(null)
   watchEffect(() => {
@@ -100,7 +96,81 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
       if (duration.value === null || duration.value === Infinity) {
         return ''
       }
-      return formatDuration(duration.value)
+      return duration.value.toFixed(1) + 's'
     })
   }
+}
+
+function trim(audioBuffer: AudioBuffer, startRatio: number, endRatio: number): AudioBuffer {
+  // Ensure ratios are between 0.0 and 1.0
+  if (
+    startRatio < 0.0 ||
+    startRatio > 1.0 ||
+    endRatio < 0.0 ||
+    endRatio > 1.0 ||
+    startRatio >= endRatio
+  ) {
+    throw new Error('Invalid start or end ratio')
+  }
+
+  if (startRatio === 0 && endRatio === 1) {
+    // No trimming needed
+    return audioBuffer
+  }
+
+  const startTime = audioBuffer.duration * startRatio
+  const endTime = audioBuffer.duration * endRatio
+
+  const numChannels = audioBuffer.numberOfChannels
+  const sampleRate = audioBuffer.sampleRate
+  const startSample = Math.floor(startTime * sampleRate)
+  const endSample = Math.floor(endTime * sampleRate)
+  const newLength = endSample - startSample
+
+  const trimmedBuffer = getAudioContext().createBuffer(numChannels, newLength, sampleRate)
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const oldChannelData = audioBuffer.getChannelData(channel)
+    const newChannelData = trimmedBuffer.getChannelData(channel)
+    for (let i = 0; i < newLength; i++) {
+      newChannelData[i] = oldChannelData[i + startSample]
+    }
+  }
+
+  return trimmedBuffer
+}
+
+async function applyGain(audioBuffer: AudioBuffer, gainValue: number): Promise<AudioBuffer> {
+  if (gainValue == 1) {
+    return audioBuffer
+  }
+  const offlineContext = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.length,
+    audioBuffer.sampleRate
+  )
+  const source = offlineContext.createBufferSource()
+  source.buffer = audioBuffer
+
+  const gainNode = offlineContext.createGain()
+  gainNode.gain.value = gainValue
+
+  source.connect(gainNode)
+  gainNode.connect(offlineContext.destination)
+
+  source.start()
+
+  return await offlineContext.startRendering()
+}
+
+export async function trimAndApplyGainToWavBlob(
+  audioBuffer: AudioBuffer,
+  startRatio: number,
+  endRatio: number,
+  gainValue: number
+): Promise<Blob> {
+  const trimmedBuffer = trim(audioBuffer, startRatio, endRatio)
+  const gainBuffer = await applyGain(trimmedBuffer, gainValue)
+  const wavBuffer = audioBufferToWav(gainBuffer)
+  return new Blob([wavBuffer], { type: 'audio/wav' })
 }

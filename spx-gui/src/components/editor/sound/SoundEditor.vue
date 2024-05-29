@@ -5,35 +5,62 @@
     </UITabs>
   </EditorHeader>
   <div class="main">
-    <div class="name">
-      <AssetName>{{ sound.name }}</AssetName>
-      <UIIcon
-        class="edit-icon"
-        :title="$t({ en: 'Rename', zh: '重命名' })"
-        type="edit"
-        @click="handleNameEdit"
-      />
+    <div class="header">
+      <div class="name">
+        <AssetName>{{ sound.name }}</AssetName>
+        <UIIcon
+          class="edit-icon"
+          :title="$t({ en: 'Rename', zh: '重命名' })"
+          type="edit"
+          @click="handleNameEdit"
+        />
+      </div>
+      <div class="duration">
+        {{ formattedDuration || '&nbsp;' }}
+      </div>
     </div>
-    <div class="content">
-      <div ref="waveform" class="waveform"></div>
-    </div>
+    <WavesurferWithRange
+      ref="wavesurferRef"
+      v-model:range="audioRange"
+      class="wavesurfer"
+      :audio-url="audioUrl"
+      :gain="gain"
+      @progress="handleProgress"
+      @stop="handleStop"
+      @load="handleResetEdit"
+      @play="handlePlay"
+    />
     <div class="opeartions">
       <DumbSoundPlayer
         color="sound"
         class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
-        :play-handler="handlePlay"
+        :play-handler="handlePlayClick"
         :loading="audioLoading"
-        @stop="handleStop"
+        @stop="handleStopClick"
       />
+      <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
+      <div class="spacer" />
+      <div v-if="editing" class="editing-buttons">
+        <UIButton type="boring" @click="handleResetEdit">{{
+          $t({ en: 'Cancel', zh: '取消' })
+        }}</UIButton>
+        <UIButton
+          type="success"
+          icon="check"
+          :loading="handleSave.isLoading.value"
+          @click="handleSave.fn"
+        >
+          {{ $t({ en: 'Save', zh: '保存' }) }}
+        </UIButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import WaveSurfer from 'wavesurfer.js'
-import { ref, watchEffect, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -41,8 +68,13 @@ import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
-import { useWavesurfer } from './wavesurfer'
 import SoundRenameModal from './SoundRenameModal.vue'
+import VolumeSlider from './VolumeSlider.vue'
+import { fromBlob } from '@/models/common/file'
+import { useMessageHandle } from '@/utils/exception'
+import { UIButton } from '@/components/ui'
+import { useAudioDuration } from '@/utils/audio'
+import WavesurferWithRange from './WavesurferWithRange.vue'
 
 const props = defineProps<{
   sound: Sound
@@ -58,8 +90,13 @@ function handleNameEdit() {
   })
 }
 
-const waveform = ref<HTMLDivElement>()
-const createWavesurfer = useWavesurfer(waveform)
+const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
+const gain = ref(1)
+const audioRange = ref({ left: 0, right: 1 })
+
+const editing = computed(
+  () => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1
+)
 
 type Playing = {
   progress: number // percent
@@ -67,50 +104,61 @@ type Playing = {
 
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
-let wavesurfer: WaveSurfer | null = null
 
-watchEffect(
-  async () => {
-    wavesurfer?.destroy()
-    if (audioUrl.value == null) return
+const { formattedDuration } = useAudioDuration(() => audioUrl.value)
 
-    wavesurfer = createWavesurfer()
-    wavesurfer.load(audioUrl.value)
+async function handlePlayClick() {
+  if (wavesurferRef.value == null) return
+  wavesurferRef.value.play()
+}
 
-    wavesurfer.on('timeupdate', () => {
-      if (playing.value == null || wavesurfer == null) return
-      playing.value.progress = Math.round(
-        (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100
-      )
-    })
-    wavesurfer.on('error', (e) => {
-      console.warn('wavesurfer error:', e)
-      handleStop()
-    })
-    wavesurfer.on('finish', () => {
-      // delay to make the animation more natural
-      setTimeout(handleStop, 400)
-    })
-  },
-  {
-    flush: 'post'
-  }
-)
-
-onUnmounted(() => {
-  wavesurfer?.destroy()
-})
-
-async function handlePlay() {
-  if (wavesurfer == null) return
+function handlePlay() {
   playing.value = { progress: 0 }
-  await wavesurfer.play()
+}
+
+function handleStopClick() {
+  wavesurferRef.value?.stop()
+  handleStop()
 }
 
 function handleStop() {
-  wavesurfer?.stop()
-  playing.value = null
+  // delay to make the animation more natural
+  setTimeout(() => {
+    playing.value = null
+  }, 400)
 }
+
+function handleProgress(value: number) {
+  if (playing.value == null) return
+  playing.value.progress = Math.max(playing.value.progress, value * 100)
+}
+
+const handleGainUpdate = (v: number) => {
+  gain.value = v
+}
+
+const handleResetEdit = () => {
+  gain.value = 1
+  audioRange.value = { left: 0, right: 1 }
+}
+
+const handleSave = useMessageHandle(
+  async () => {
+    if (wavesurferRef.value == null) return
+    if (!editing.value) {
+      return
+    }
+
+    const blob = await wavesurferRef.value.exportWav()
+
+    const newFile = fromBlob(props.sound.file.name, blob)
+    props.sound.setFile(newFile)
+  },
+  {
+    en: 'Failed to save sound',
+    zh: '保存音频失败'
+  }
+)
 </script>
 
 <style scoped lang="scss">
@@ -119,6 +167,17 @@ function handleStop() {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.duration {
+  color: var(--ui-color-grey-700);
+  line-height: 18px;
 }
 
 .name {
@@ -139,22 +198,33 @@ function handleStop() {
   }
 }
 
-.content {
-  width: 100%;
+.wavesurfer {
+  height: 222px;
 }
 
-.waveform {
-  width: 100%;
-  height: 222px; /** TODO: scale with width? */
-  border: 1px solid var(--ui-color-grey-500);
-  border-radius: var(--ui-border-radius-1);
-  overflow: hidden;
+.spacer {
+  flex: 1 1 0;
 }
 
 .opeartions {
   .play-button {
     width: 42px;
     height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  display: flex;
+
+  .volume-slider {
+    width: 400px;
+    margin: 0 48px;
+  }
+
+  .editing-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
 }
 </style>
