@@ -101,11 +101,7 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
   }
 }
 
-function trimAudioBuffer(
-  audioBuffer: AudioBuffer,
-  startRatio: number,
-  endRatio: number
-): AudioBuffer {
+function trim(audioBuffer: AudioBuffer, startRatio: number, endRatio: number): AudioBuffer {
   // Ensure ratios are between 0.0 and 1.0
   if (
     startRatio < 0.0 ||
@@ -144,37 +140,37 @@ function trimAudioBuffer(
   return trimmedBuffer
 }
 
-async function applyGainAndRender(audioBuffer: AudioBuffer, gainValue: number): Promise<Blob> {
-  let buffer = audioBuffer
-  if (gainValue != 1) {
-    const offlineContext = new OfflineAudioContext(
-      audioBuffer.numberOfChannels,
-      audioBuffer.length,
-      audioBuffer.sampleRate
-    )
-    const source = offlineContext.createBufferSource()
-    source.buffer = audioBuffer
-
-    const gainNode = offlineContext.createGain()
-    gainNode.gain.value = gainValue
-
-    source.connect(gainNode)
-    gainNode.connect(offlineContext.destination)
-
-    source.start()
-
-    buffer = await offlineContext.startRendering()
+async function applyGain(audioBuffer: AudioBuffer, gainValue: number): Promise<AudioBuffer> {
+  if (gainValue == 1) {
+    return audioBuffer
   }
-  const wavBuffer = audioBufferToWav(buffer)
-  return new Blob([wavBuffer], { type: 'audio/wav' })
+  const offlineContext = new OfflineAudioContext(
+    audioBuffer.numberOfChannels,
+    audioBuffer.length,
+    audioBuffer.sampleRate
+  )
+  const source = offlineContext.createBufferSource()
+  source.buffer = audioBuffer
+
+  const gainNode = offlineContext.createGain()
+  gainNode.gain.value = gainValue
+
+  source.connect(gainNode)
+  gainNode.connect(offlineContext.destination)
+
+  source.start()
+
+  return await offlineContext.startRendering()
 }
 
-export async function trimAndApplyGain(
+export async function trimAndApplyGainToWavBlob(
   audioBuffer: AudioBuffer,
   startRatio: number,
   endRatio: number,
   gainValue: number
 ): Promise<Blob> {
-  const trimmedBuffer = trimAudioBuffer(audioBuffer, startRatio, endRatio)
-  return applyGainAndRender(trimmedBuffer, gainValue)
+  const trimmedBuffer = trim(audioBuffer, startRatio, endRatio)
+  const gainBuffer = await applyGain(trimmedBuffer, gainValue)
+  const wavBuffer = audioBufferToWav(gainBuffer)
+  return new Blob([wavBuffer], { type: 'audio/wav' })
 }

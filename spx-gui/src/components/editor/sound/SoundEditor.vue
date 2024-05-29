@@ -145,8 +145,7 @@ const handleSave = useMessageHandle(
       return
     }
 
-    const wav = await wavesurferRef.value.exportWav()
-    const blob = new Blob([wav], { type: 'audio/wav' })
+    const blob = await wavesurferRef.value.exportWav()
 
     const newFile = fromBlob(props.sound.file.name, blob)
     props.sound.setFile(newFile)

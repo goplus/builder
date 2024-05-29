@@ -10,7 +10,7 @@ import { ref, watch, watchEffect } from 'vue'
 import SoundEditorControl from './SoundEditorControl.vue'
 import { useWavesurfer } from './wavesurfer'
 import type WaveSurfer from 'wavesurfer.js'
-import { trimAndApplyGain } from '@/utils/audio'
+import { trimAndApplyGainToWavBlob } from '@/utils/audio'
 
 const props = defineProps<{
   audioUrl?: string | null
@@ -49,9 +49,14 @@ defineExpose({
   },
   exportWav: async () => {
     if (wavesurferRef.value == null) throw new Error('wavesurferRef is null')
-    const audioBuffer = await wavesurferRef.value.getDecodedData()
+    const audioBuffer = wavesurferRef.value.getDecodedData()
     if (audioBuffer == null) throw new Error('audioBuffer is null')
-    const wav = await trimAndApplyGain(audioBuffer, props.range.left, props.range.right, props.gain)
+    const wav = await trimAndApplyGainToWavBlob(
+      audioBuffer,
+      props.range.left,
+      props.range.right,
+      props.gain
+    )
     return wav
   },
   empty: () => {
