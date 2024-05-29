@@ -1,0 +1,25 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  deploy-spx-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine GOPLUS_DEPLOY_GIT_REF
+        run: |
+          GOPLUS_DEPLOY_GIT_REF=${GITHUB_SHA}
+          if [ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]; then
+            GOPLUS_DEPLOY_GIT_REF=main
+          fi
+          echo "GOPLUS_DEPLOY_GIT_REF=${GOPLUS_DEPLOY_GIT_REF}" >> ${GITHUB_ENV}
+      - name: Deploy
+        env:
+          GOPLUS_DEPLOY_TOKEN: ${{ secrets.GOPLUS_DEPLOY_TOKEN }}
+        run: |
+          curl -fsSL -X POST https://deploy.goplus.org/qpass-deploy-pkg \
+          -H "Authorization: Bearer ${GOPLUS_DEPLOY_TOKEN}" \
+          -H "Content-Type: application/json; charset=utf-8" \
+          -d '{"business": "goPlus", "app_name": "builder", "git_tag": "'"${GOPLUS_DEPLOY_GIT_REF}"'"}'
