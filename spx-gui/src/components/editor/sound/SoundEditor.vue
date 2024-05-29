@@ -19,10 +19,16 @@
         {{ formattedDuration || '&nbsp;' }}
       </div>
     </div>
-    <div class="content">
-      <SoundEditorControl :value="audioRange" @update:value="handleAudioRangeUpdate" />
-      <div ref="waveform" class="waveform"></div>
-    </div>
+    <WavesurferWithRange
+      ref="wavesurferRef"
+      v-model:range="audioRange"
+      class="wavesurfer"
+      :audio-url="audioUrl"
+      :gain="gain"
+      @progress="handleProgress"
+      @stop="handleStop"
+      @load="handleResetEdit"
+    />
     <div class="opeartions">
       <DumbSoundPlayer
         color="sound"
@@ -31,12 +37,12 @@
         :progress="playing?.progress ?? 0"
         :play-handler="handlePlay"
         :loading="audioLoading"
-        @stop="handleStop"
+        @stop="handleStopClick"
       />
       <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
       <div class="spacer" />
       <div v-if="editing" class="editing-buttons">
-        <UIButton type="boring" @click="handleResetEdit(true)">{{
+        <UIButton type="boring" @click="handleResetEdit">{{
           $t({ en: 'Cancel', zh: '取消' })
         }}</UIButton>
         <UIButton
@@ -53,8 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import WaveSurfer from 'wavesurfer.js'
-import { ref, watchEffect, onUnmounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -62,15 +67,13 @@ import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
-import { useWavesurfer } from './wavesurfer'
 import SoundRenameModal from './SoundRenameModal.vue'
-import SoundEditorControl from './SoundEditorControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
-import { trimAndApplyGain } from '@/utils/audio'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
 import { useAudioDuration } from '@/utils/audio'
+import WavesurferWithRange from './WavesurferWithRange.vue'
 
 const props = defineProps<{
   sound: Sound
@@ -86,10 +89,9 @@ function handleNameEdit() {
   })
 }
 
-const waveform = ref<HTMLDivElement>()
+const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
 const gain = ref(1)
-const audioRange = ref<{ left: number; right: number }>({ left: 0, right: 1 })
-const createWavesurfer = useWavesurfer(waveform, gain)
+const audioRange = ref({ left: 0, right: 1 })
 
 const editing = computed(
   () => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1
@@ -101,99 +103,50 @@ type Playing = {
 
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
-let wavesurfer: WaveSurfer | null = null
 
 const { formattedDuration } = useAudioDuration(() => audioUrl.value)
 
-watchEffect(
-  async () => {
-    wavesurfer?.destroy()
-    if (audioUrl.value == null) return
-
-    handleResetEdit()
-
-    wavesurfer = createWavesurfer().wavesurfer
-    wavesurfer.load(audioUrl.value)
-
-    wavesurfer.on('timeupdate', () => {
-      if (playing.value == null || wavesurfer == null) return
-      const ratio = wavesurfer.getCurrentTime() / wavesurfer.getDuration()
-
-      // For a smoother progress animation we make sure
-      // the progress is always increasing
-      playing.value.progress = Math.max(
-        playing.value.progress,
-        Math.round(
-          ((ratio - audioRange.value.left) / (audioRange.value.right - audioRange.value.left)) * 100
-        )
-      )
-      if (ratio >= audioRange.value.right) {
-        handleStop()
-      }
-    })
-    wavesurfer.on('error', (e) => {
-      console.warn('wavesurfer error:', e)
-      handleStop()
-    })
-  },
-  {
-    flush: 'post'
-  }
-)
-
-onUnmounted(() => {
-  wavesurfer?.destroy()
-})
-
 async function handlePlay() {
-  if (wavesurfer == null) return
+  if (wavesurferRef.value == null) return
   playing.value = { progress: 0 }
-  wavesurfer.seekTo(audioRange.value.left)
-  await wavesurfer.play()
+  wavesurferRef.value.play()
+}
+
+function handleStopClick() {
+  wavesurferRef.value?.stop()
+  handleStop()
 }
 
 function handleStop() {
-  wavesurfer?.stop()
+  // delay to make the animation more natural
   setTimeout(() => {
     playing.value = null
   }, 400)
 }
 
-const handleAudioRangeUpdate = (v: { left: number; right: number }) => {
-  audioRange.value = v
+function handleProgress(value: number) {
+  if (playing.value == null) return
+  playing.value.progress = Math.max(playing.value.progress, value * 100)
 }
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  wavesurfer?.zoom(1)
 }
 
-const handleResetEdit = (redraw?: boolean) => {
+const handleResetEdit = () => {
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
-  if (redraw) {
-    wavesurfer?.zoom(1)
-  }
 }
 
 const handleSave = useMessageHandle(
   async () => {
-    if (wavesurfer == null) return
+    if (wavesurferRef.value == null) return
     if (!editing.value) {
       return
     }
 
-    const ab = await props.sound.file.arrayBuffer()
-    const srcBlob = new Blob([ab], {
-      type: props.sound.file.type
-    })
-
-    const blob = await trimAndApplyGain(
-      srcBlob,
-      audioRange.value.left,
-      audioRange.value.right,
-      gain.value
-    )
+    const wav = await wavesurferRef.value.exportWav()
+    const blob = new Blob([wav], { type: 'audio/wav' })
 
     const newFile = fromBlob(props.sound.file.name, blob)
     props.sound.setFile(newFile)
@@ -242,18 +195,8 @@ const handleSave = useMessageHandle(
   }
 }
 
-.content {
-  width: 100%;
-  position: relative;
-  border: 1px solid var(--ui-color-grey-500);
-  border-radius: var(--ui-border-radius-1);
-  overflow: hidden;
-}
-
-.waveform {
-  width: 100%;
-  height: 222px; /** TODO: scale with width? */
-  padding: 0 16px;
+.wavesurfer {
+  height: 222px;
 }
 
 .spacer {

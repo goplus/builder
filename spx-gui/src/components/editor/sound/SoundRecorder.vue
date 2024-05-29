@@ -1,9 +1,13 @@
 <template>
   <div class="container">
     <div class="recorder-waveform-container">
-      <div
-        ref="waveformContainer"
-        :class="['recorder-waveform', { hidden: !recording && !audioBlob }]"
+      <!-- We use v-if to reset the component as there are issues re-recording. -->
+      <WavesurferWithRange
+        v-if="recording || audioBlob"
+        ref="wavesurferRef"
+        v-model:range="audioRange"
+        :gain="gain"
+        @init="handleWaveSurferInit"
       />
       <div v-if="!recording && !audioBlob" class="recorder-waveform-overlay">
         {{
@@ -13,14 +17,13 @@
           })
         }}
       </div>
-      <SoundEditorControl v-if="!recording && audioBlob" v-model:value="audioRange" />
     </div>
     <div v-if="!recording && audioBlob" class="volume-slider-container">
       <VolumeSlider :value="gain" @update:value="handleUpdateVolume" />
     </div>
     <div class="button-container">
       <div v-if="!recording && !audioBlob" class="icon-button">
-        <UIIconButton icon="microphone" type="danger" @click="startRecording" />
+        <UIIconButton icon="microphone" type="danger" @click="recording = true" />
         <span>
           {{
             $t({
@@ -57,7 +60,7 @@
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton icon="play" type="info" size="large" @click="wavesurfer.playPause()" />
+          <UIIconButton icon="play" type="info" size="large" @click="wavesurferRef?.play()" />
           <span>
             {{
               $t({
@@ -86,19 +89,16 @@
 </template>
 
 <script lang="ts" setup>
-import WaveSurfer from 'wavesurfer.js'
-import { defineEmits, onMounted, ref, watch } from 'vue'
+import { defineEmits, ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { onUnmounted } from 'vue'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import { UIIconButton } from '@/components/ui'
 import { RecordPlugin } from '@/utils/wavesurfer-record'
-import { useWavesurfer } from './wavesurfer'
-import SoundEditorControl from './SoundEditorControl.vue'
 import VolumeSlider from './VolumeSlider.vue'
-import { trimAndApplyGain } from '@/utils/audio'
+import WavesurferWithRange from './WavesurferWithRange.vue'
+import type WaveSurfer from 'wavesurfer.js'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -109,62 +109,20 @@ const recording = ref(false)
 const playing = ref(false)
 
 const audioBlob = ref<Blob | null>(null)
-let wavesurfer: WaveSurfer
 let recordPlugin: RecordPlugin
-const waveformContainer = ref<HTMLElement>()
+
+const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
 
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
-
-const createWavesurfer = useWavesurfer(waveformContainer, gain)
-
-const gainNode = ref<GainNode>()
 
 const editorCtx = useEditorCtx()
 
 const handleUpdateVolume = (v: number) => {
   gain.value = v
-
-  if (gainNode.value) {
-    gainNode.value.gain.value = v
-  }
 }
 
-watch(gain, () => {
-  // Just to trigger a redraw. Should not make a visible difference in zoom level.
-  wavesurfer?.zoom(1)
-})
-
-onMounted(() => {
-  initWaveSurfer()
-})
-
-onUnmounted(() => {
-  if (wavesurfer) {
-    wavesurfer.destroy()
-  }
-})
-
-const initWaveSurfer = () => {
-  if (!waveformContainer.value) {
-    throw new Error('Waveform container not initialized')
-  }
-  if (wavesurfer) {
-    wavesurfer.destroy()
-  }
-
-  const wavesurferResult = createWavesurfer()
-  wavesurfer = wavesurferResult.wavesurfer
-
-  const mediaElement = wavesurferResult.audioElement
-
-  const audioContext = new AudioContext()
-  const source = audioContext.createMediaElementSource(mediaElement)
-  const gainNode_ = audioContext.createGain()
-  source.connect(gainNode_)
-  gainNode_.connect(audioContext.destination)
-  gainNode.value = gainNode_
-
+const handleWaveSurferInit = (wavesurfer: WaveSurfer) => {
   recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
 
   wavesurfer.on('play', () => {
@@ -178,23 +136,25 @@ const initWaveSurfer = () => {
     recording.value = false
     audioBlob.value = blob
   })
-  recordPlugin.on('record-start', () => {
-    recording.value = true
-  })
-}
 
-const startRecording = async () => {
-  emit('recordStarted')
-  const devices = await RecordPlugin.getAvailableAudioDevices()
-  if (devices.length === 0) {
-    alert('No audio input devices available. TODO: i18n, use message hook?')
-    return
+  const startRecording = async () => {
+    emit('recordStarted')
+
+    resetRecording()
+
+    const devices = await RecordPlugin.getAvailableAudioDevices()
+    if (devices.length === 0) {
+      alert('No audio input devices available. TODO: i18n, use message hook?')
+      return
+    }
+    const device = devices[0]
+
+    await recordPlugin.startRecording({
+      deviceId: device.deviceId
+    })
   }
-  const device = devices[0]
 
-  await recordPlugin.startRecording({
-    deviceId: device.deviceId
-  })
+  void startRecording()
 }
 
 const stopRecording = () => {
@@ -202,18 +162,10 @@ const stopRecording = () => {
 }
 
 const saveRecording = async () => {
-  let blob: Blob
-  if (audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1) {
-    blob = await trimAndApplyGain(
-      audioBlob.value!,
-      audioRange.value.left,
-      audioRange.value.right,
-      gain.value
-    )
-  } else {
-    blob = audioBlob.value!
-  }
-  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, blob)
+  if (!wavesurferRef.value) return
+  const wav = await wavesurferRef.value.exportWav()
+
+  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, wav)
   const sound = await Sound.create('recording', file)
   editorCtx.project.addSound(sound)
   emit('saved', sound)
@@ -221,7 +173,7 @@ const saveRecording = async () => {
 
 const resetRecording = () => {
   audioBlob.value = null
-  wavesurfer.empty()
+  wavesurferRef.value?.empty()
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
 }
