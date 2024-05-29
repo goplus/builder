@@ -15,11 +15,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, defineProps, defineEmits } from 'vue'
+import { ref, defineProps, defineEmits } from 'vue'
 
 const props = defineProps<{ value: { left: number; right: number } }>()
 const emit = defineEmits<{
   'update:value': [value: { left: number; right: number }]
+  stopDrag: [side: 'left' | 'right']
 }>()
 
 const isDragging = ref(false)
@@ -34,6 +35,8 @@ const startDrag = (side: 'left' | 'right') => {
 }
 
 const stopDrag = () => {
+  if (dragSide.value == null) return
+  emit('stopDrag', dragSide.value)
   isDragging.value = false
   dragSide.value = null
   document.removeEventListener('mousemove', onMouseMove)
@@ -61,14 +64,6 @@ const onMouseMove = (event: MouseEvent) => {
     right: newRight
   })
 }
-
-onMounted(() => {
-  document.addEventListener('mouseup', stopDrag)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('mouseup', stopDrag)
-})
 </script>
 
 <style scoped lang="scss">

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div ref="wavesurferDiv" class="wavesurfer" />
-    <SoundEditorControl :value="range" @update:value="handleAudioRangeUpdate" />
+    <SoundEditorControl :value="range" @update:value="handleAudioRangeUpdate" @stop-drag="play" />
   </div>
 </template>
 
@@ -30,17 +30,27 @@ const emit = defineEmits<{
 watch(
   () => props.range.left,
   (left) => {
-    if (wavesurferRef.value == null) return
+    if (wavesurferRef.value == null || wavesurferRef.value.isPlaying()) return
     wavesurferRef.value.seekTo(left)
   }
 )
 
+watch(
+  () => props.gain,
+  () => {
+    if (wavesurferRef.value?.isPlaying()) return
+    play()
+  }
+)
+
+const play = () => {
+  if (wavesurferRef.value == null) return
+  wavesurferRef.value.seekTo(props.range.left)
+  wavesurferRef.value.play()
+}
+
 defineExpose({
-  play: () => {
-    if (wavesurferRef.value == null) return
-    wavesurferRef.value.seekTo(props.range.left)
-    wavesurferRef.value.play()
-  },
+  play,
   stop: () => {
     if (wavesurferRef.value == null) return
     wavesurferRef.value.pause()

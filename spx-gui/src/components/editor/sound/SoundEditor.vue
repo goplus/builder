@@ -28,6 +28,7 @@
       @progress="handleProgress"
       @stop="handleStop"
       @load="handleResetEdit"
+      @play="handlePlay"
     />
     <div class="opeartions">
       <DumbSoundPlayer
@@ -35,7 +36,7 @@
         class="play-button"
         :playing="playing != null"
         :progress="playing?.progress ?? 0"
-        :play-handler="handlePlay"
+        :play-handler="handlePlayClick"
         :loading="audioLoading"
         @stop="handleStopClick"
       />
@@ -106,10 +107,13 @@ const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 
 const { formattedDuration } = useAudioDuration(() => audioUrl.value)
 
-async function handlePlay() {
+async function handlePlayClick() {
   if (wavesurferRef.value == null) return
-  playing.value = { progress: 0 }
   wavesurferRef.value.play()
+}
+
+function handlePlay() {
+  playing.value = { progress: 0 }
 }
 
 function handleStopClick() {
