@@ -7,6 +7,24 @@ export const fontSize = {
   text: '14px'
 } as const
 
+export const fontFamily = {
+  // see definition for `AlibabaHealthB` in global.scss
+  main: `AlibabaHealthB,
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  'Noto Sans',
+  sans-serif,
+  'Apple Color Emoji',
+  'Segoe UI Emoji',
+  'Segoe UI Symbol',
+  'Noto Color Emoji'`,
+  code: 'Menlo, Monaco, "Courier New", monospace'
+}
+
 export const borderRadius = {
   1: '8px',
   2: '12px',

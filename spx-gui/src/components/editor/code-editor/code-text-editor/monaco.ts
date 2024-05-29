@@ -3,7 +3,7 @@ import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { SnippetType, getAllSnippets } from './snippets'
+import { ToolType, getAllTools } from './tools'
 import { useUIVariables } from '@/components/ui'
 import type { IRange, languages } from 'monaco-editor'
 import type { Project } from '@/models/project'
@@ -189,6 +189,39 @@ export function initMonaco(
     }
   })
 
+  monaco.languages.registerHoverProvider('spx', {
+    provideHover(model, position) {
+      const word = model.getWordAtPosition(position)
+      if (word == null) return
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn
+      }
+      const tools = getAllTools(getProject())
+      const tool = tools.find((s) => s.keyword === word.word)
+      if (tool == null) return
+      let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
+      if (tool.usage != null) {
+        text += ` \`${tool.usage.sample}\``
+      } else {
+        text = [
+          text,
+          ...tool.usages!.map((usage) => {
+            const colon = i18n.t({ en: ': ', zh: '：' })
+            const desc = i18n.t(usage.desc)
+            return `* ${desc}${colon}\`${usage.sample}\``
+          })
+        ].join('\n')
+      }
+      return {
+        range,
+        contents: [{ value: text }]
+      }
+    }
+  })
+
   // tempararily disable in-browser format
   // initFormat()
 }
@@ -199,7 +232,7 @@ function getCompletionItems(
   i18n: I18n,
   project: Project
 ): languages.CompletionItem[] {
-  return [
+  const items: languages.CompletionItem[] = [
     ...keywords.map((keyword) => ({
       label: keyword,
       insertText: keyword,
@@ -211,29 +244,45 @@ function getCompletionItems(
       insertText: typeKeyword,
       kind: monaco.languages.CompletionItemKind.TypeParameter,
       range
-    })),
-    ...getAllSnippets(project).map((s) => ({
-      label: s.label,
-      insertText: s.insertText,
-      insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-      kind: getCompletionItemKind(s.type, monaco),
-      detail: i18n.t(s.desc),
-      range
     }))
   ]
+  for (const tool of getAllTools(project)) {
+    const basics = {
+      label: tool.keyword,
+      insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+      kind: getCompletionItemKind(tool.type, monaco),
+      range
+    }
+    if (tool.usage != null) {
+      items.push({
+        ...basics,
+        insertText: tool.usage.insertText,
+        detail: i18n.t(tool.desc)
+      })
+      continue
+    }
+    for (const usage of tool.usages!) {
+      items.push({
+        ...basics,
+        insertText: usage.insertText,
+        detail: [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ')
+      })
+    }
+  }
+  return items
 }
 
-function getCompletionItemKind(type: SnippetType, monaco: typeof import('monaco-editor')) {
+function getCompletionItemKind(type: ToolType, monaco: typeof import('monaco-editor')) {
   switch (type) {
-    case SnippetType.method:
+    case ToolType.method:
       return monaco.languages.CompletionItemKind.Function
-    case SnippetType.function:
+    case ToolType.function:
       return monaco.languages.CompletionItemKind.Function
-    case SnippetType.constant:
+    case ToolType.constant:
       return monaco.languages.CompletionItemKind.Constant
-    case SnippetType.keyword:
+    case ToolType.keyword:
       return monaco.languages.CompletionItemKind.Snippet
-    case SnippetType.variable:
+    case ToolType.variable:
       return monaco.languages.CompletionItemKind.Variable
   }
 }

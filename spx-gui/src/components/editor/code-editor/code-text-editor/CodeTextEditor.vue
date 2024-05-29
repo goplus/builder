@@ -14,7 +14,7 @@ import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName } from './monaco'
-import type { Snippet } from './snippets'
+import { useLocalStorage } from '@/utils/utils'
 
 const props = defineProps<{
   value: string
@@ -54,25 +54,28 @@ const getMonaco = async () => {
   return monaco
 }
 
+const initialFontSize = 14
+const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
+
 watchEffect(async (onClenaup) => {
   const monaco = await getMonaco()
   const editor = monaco.editor.create(editorElement.value!, {
-    value: props.value, // set the initial value of the editor
+    value: props.value,
     theme: defaultThemeName,
-    language: 'spx', // define the language mode
+    language: 'spx',
     minimap: { enabled: false },
-    selectOnLineNumbers: true, // select the line number's of the code
-    roundedSelection: true, // rounded selection
-    readOnly: false, // read/write
+    selectOnLineNumbers: true,
+    roundedSelection: true,
+    readOnly: false,
     cursorStyle: 'line', // line, block, 'line-thin', 'block-outline', 'underline', 'underline-thin'
-    automaticLayout: true, // auto layout
+    automaticLayout: true,
     glyphMargin: true, // the margin is used for glyph margin and line numbers
     useTabStops: false, // use tab key
-    renderControlCharacters: false, // render control characters
-    fontSize: 14, // font size
-    quickSuggestionsDelay: 100, // quick suggestions
+    renderControlCharacters: false,
+    fontSize: fontSize.value,
+    quickSuggestionsDelay: 100,
     wordWrapColumn: 40,
-    tabSize: 4, // tab size
+    tabSize: 4,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
     foldingStrategy: 'indentation', // 折叠方式  auto | indentation
@@ -102,6 +105,13 @@ watchEffect(async (onClenaup) => {
     if (newValue !== props.value) emit('update:value', newValue)
   })
 
+  editor.onDidChangeConfiguration((e) => {
+    const fontSizeId = monaco.editor.EditorOption.fontSize
+    if (e.hasChanged(fontSizeId)) {
+      fontSize.value = editor.getOptions().get(fontSizeId)
+    }
+  })
+
   monacoEditor.value = editor
 
   onClenaup(() => {
@@ -121,7 +131,7 @@ watch(
   }
 )
 
-function insertSnippet(snippet: Snippet, position?: Position) {
+function insertSnippet(insertText: string, position?: Position) {
   const editor = monacoEditor.value
   if (editor == null) return
 
@@ -129,7 +139,7 @@ function insertSnippet(snippet: Snippet, position?: Position) {
     editor.setPosition(position)
   }
   let contribution = editor.getContribution('snippetController2')
-  ;(contribution as any).insert(snippet.insertText) // FIXME: get rid of `as any`
+  ;(contribution as any).insert(insertText) // FIXME: get rid of `as any`
   editor.focus()
 }
 
@@ -154,15 +164,74 @@ async function format() {
   editor.setValue(res.body)
 }
 
+const actionIds = {
+  in: 'fontZoomIn',
+  out: 'fontZoomOut'
+}
+
+function zoomFont(action: 'in' | 'out' | 'initial') {
+  const editor = monacoEditor.value
+  if (editor == null) return
+  if (action === 'initial') {
+    editor.updateOptions({ fontSize: initialFontSize })
+    editor.trigger('keyboard', `editor.action.fontZoomReset`, {})
+    return
+  }
+  editor.trigger('keyboard', `editor.action.${actionIds[action]}`, {})
+}
+
 defineExpose({
   insertSnippet,
-  format
+  format,
+  zoomFont
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .code-text-editor {
   width: 100%;
   height: 100%;
+}
+</style>
+
+<style lang="scss">
+.code-text-editor .monaco-editor .monaco-hover {
+  // keep consistent with component `UITooltip`
+  width: auto !important;
+  height: auto !important;
+  border: none;
+  border-radius: var(--ui-border-radius-1);
+  color: var(--ui-color-grey-100);
+  background-color: var(--ui-color-grey-1000);
+  box-shadow: var(--ui-box-shadow-small);
+
+  .monaco-hover-content {
+    height: auto !important;
+  }
+
+  .hover-contents:not(.html-hover-contents) {
+    padding: 7px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .rendered-markdown {
+    ul {
+      list-style: square;
+    }
+    ol {
+      list-style: decimal;
+    }
+    code {
+      // keep consistent with component `UICode`
+      padding: 2px 4px;
+      font-size: 10px;
+      font-family: var(--ui-font-family-code);
+      line-height: 1.6;
+      color: var(--ui-color-primary-main);
+      background-color: var(--ui-color-primary-200);
+      border-radius: 4px;
+    }
+  }
 }
 </style>
