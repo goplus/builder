@@ -136,30 +136,12 @@ const cssVariables = getCssVars('--ui-', uiVariables)
 </script>
 
 <style lang="scss" scoped>
-@font-face {
-  font-family: 'AlibabaHealthB';
-  src: url('./fonts/AlibabaHealthFont2.0CN-85B.ttf') format('truetype');
-}
-
 .ui-config-provider {
   height: 100%;
 
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-text);
-  font-family:
-    AlibabaHealthB,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    'Noto Sans',
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji';
+  font-family: var(--ui-font-family-main);
   line-height: 1.57143;
 }
 </style>

@@ -1,4 +1,4 @@
-import { ref, shallowReactive, watch, watchEffect } from 'vue'
+import { ref, shallowReactive, shallowRef, watch, watchEffect } from 'vue'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -66,4 +66,22 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
     { immediate: true }
   )
   return r
+}
+
+export function useLocalStorage<T>(key: string, initialValue: T) {
+  const ref = shallowRef<T>(initialValue)
+  const storedValue = localStorage.getItem(key)
+  if (storedValue != null) {
+    ref.value = JSON.parse(storedValue)
+  }
+  watch(ref, (newValue) => {
+    if (newValue === initialValue) {
+      // Remove the key if the value is the initial value.
+      // Note: this may be unexpected for some special use cases
+      localStorage.removeItem(key)
+      return
+    }
+    localStorage.setItem(key, JSON.stringify(newValue))
+  })
+  return ref
 }

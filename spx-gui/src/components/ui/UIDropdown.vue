@@ -34,7 +34,7 @@ import { inject, provide, ref, type InjectionKey } from 'vue'
 import { NPopover } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
-export type Placement = 'bottom' | 'bottom-start' | 'bottom-end'
+export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
 export type Trigger = 'click' | 'hover' | 'manual'
 export type Pos = {
   x: number
