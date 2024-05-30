@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sprite } from '@/models/sprite'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 import { spriteNameTip, validateSpriteName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../common/RenameModal.vue'
@@ -40,11 +40,14 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
+const actionRenameSprite = {
+  name: { en: 'rename sprite', zh: '重命名精灵' }
+}
+
+async function handleSubmit() {
   if (form.value.name !== props.sprite.name) {
-    props.project.history.doAction(
-      { en: 'setName', zh: 'setName' },
-      () => props.sprite.setName(form.value.name)
+    await props.project.history.doAction(actionRenameSprite, () =>
+      props.sprite.setName(form.value.name)
     )
   }
   emit('resolved')

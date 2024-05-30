@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sound } from '@/models/sound'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 import { soundNameTip, validateSoundName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
@@ -40,12 +40,10 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (form.value.name !== props.sound.name) {
-    props.project.history.doAction(
-      { en: 'setName', zh: 'setName' },
-      () => props.sound.setName(form.value.name)
-    )
+    const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
+    await props.project.history.doAction(action, () => props.sound.setName(form.value.name))
   }
   emit('resolved')
 }

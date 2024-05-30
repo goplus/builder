@@ -110,7 +110,7 @@ import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
 import { debounce } from '@/utils/utils'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
@@ -215,9 +215,9 @@ async function addAssetToProject(asset: AssetData) {
 
 const handleConfirm = useMessageHandle(
   async () => {
-    const assetModels = await props.project.history.doAction(
-      { en: 'addAsset', zh: 'addAsset' },
-      () => Promise.all(selected.map(addAssetToProject))
+    const action = { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } }
+    const assetModels = await props.project.history.doAction(action, () =>
+      Promise.all(selected.map(addAssetToProject))
     )
     emit('resolved', assetModels)
   },

@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
@@ -41,10 +41,13 @@ const selectedTab = ref<'code' | 'costumes'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.sprite.getCode())
 
+// use `computed` to keep reference-equal for `mergeable`, see details in project history
+const actionUpdateCode = computed(() => ({
+  name: { en: `Update ${props.sprite.name} code`, zh: `修改 ${props.sprite.name} 代码` },
+  mergeable: true
+}))
+
 function handleCodeUpdate(value: string) {
-  editorCtx.project.history.doAction(
-    { en: 'setCode', zh: 'setCode' },
-    () => props.sprite.setCode(value)
-  )
+  editorCtx.project.history.doAction(actionUpdateCode.value, () => props.sprite.setCode(value))
 }
 </script>

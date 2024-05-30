@@ -83,10 +83,9 @@ function isSelected(sound: Sound) {
 }
 
 function handleSoundRemove(sound: Sound) {
-  editorCtx.project.history.doAction(
-    { en: 'removeSound', zh: 'removeSound' },
-    () => editorCtx.project.removeSound(sound.name)
-  )
+  const name = sound.name
+  const action = { name: { en: `Remove sound ${name}`, zh: `删除声音 ${name}` } }
+  editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(name))
 }
 
 const addAssetToLibrary = useAddAssetToLibrary()

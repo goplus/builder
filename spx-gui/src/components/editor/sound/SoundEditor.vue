@@ -150,13 +150,14 @@ const handleSave = useMessageHandle(
     }
 
     const blob = await wavesurferRef.value.exportWav()
-
     const newFile = fromBlob(props.sound.file.name, blob)
-    props.sound.setFile(newFile)
+    const sname = props.sound.name
+    const action = { name: { en: `Update sound ${sname}`, zh: `修改声音 ${sname}` } }
+    await editorCtx.project.history.doAction(action, () => props.sound.setFile(newFile))
   },
   {
     en: 'Failed to save sound',
-    zh: '保存音频失败'
+    zh: '保存声音失败'
   }
 )
 </script>

@@ -74,7 +74,7 @@ import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import type { ExportedScratchSprite } from '@/utils/scratch'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
 import BlobImage from '../BlobImage.vue'
@@ -169,9 +169,9 @@ const importBackdrop = async (asset: ExportedScratchFile) => {
 const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected.value
-    const imported = await props.project.history.doAction(
-      { en: 'importScratch', zh: 'importScratch' },
-      () => Promise.all([
+    const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
+    const imported = await props.project.history.doAction(action, () =>
+      Promise.all([
         ...Array.from(sprites).map(importSprite),
         ...Array.from(sounds).map(importSound),
         ...Array.from(backdrops).map(importBackdrop)

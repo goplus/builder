@@ -6,8 +6,8 @@
       </router-link>
       <UIDropdown placement="bottom-start">
         <template #trigger>
-          <div class="project-dropdown">
-            <UIIcon class="icon-file" type="file" />
+          <div class="dropdown">
+            <UIIcon class="icon-main" type="file" />
             <UIIcon class="icon-arrow" type="arrowDown" />
           </div>
         </template>
@@ -59,6 +59,24 @@
           </UIMenuGroup>
         </UIMenu>
       </UIDropdown>
+      <UIDropdown placement="bottom-start">
+        <template #trigger>
+          <div class="dropdown">
+            <UIIcon class="icon-main" type="clock" />
+            <UIIcon class="icon-arrow" type="arrowDown" />
+          </div>
+        </template>
+        <UIMenu>
+          <UIMenuItem :disabled="undoAction == null" @click="handleUndo.fn">
+            <template #icon><img :src="undoSvg" /></template>
+            <span class="history-menu-text">{{ $t(undoText) }}</span>
+          </UIMenuItem>
+          <UIMenuItem :disabled="redoAction == null" @click="handleRedo.fn">
+            <template #icon><img :src="redoSvg" /></template>
+            <span class="history-menu-text">{{ $t(redoText) }}</span>
+          </UIMenuItem>
+        </UIMenu>
+      </UIDropdown>
       <UITooltip placement="bottom">
         <template #trigger>
           <!-- eslint-disable-next-line vue/no-v-html -->
@@ -66,32 +84,6 @@
         </template>
         {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
       </UITooltip>
-      <div class="undo-redo">
-        <UITooltip>
-          <template #trigger>
-            <UIButton
-              :disabled="project?.history.getUndoAction() == null"
-              :loading="handleUndo.isLoading.value"
-              @click="handleUndo.fn"
-            >
-              Undo
-            </UIButton>
-          </template>
-          {{ project?.history.getUndoAction()?.name.en }}
-        </UITooltip>
-        <UITooltip>
-          <template #trigger>
-            <UIButton
-              :disabled="project?.history.getRedoAction() == null"
-              :loading="handleRedo.isLoading.value"
-              @click="handleRedo.fn"
-            >
-              Redo
-            </UIButton>
-          </template>
-          {{ project?.history.getRedoAction()?.name.en }}
-        </UITooltip>
-      </div>
     </div>
     <div class="center">
       <p class="project-name">{{ project?.name }}</p>
@@ -180,6 +172,8 @@ import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
+import undoSvg from './icons/undo.svg'
+import redoSvg from './icons/redo.svg'
 
 const props = defineProps<{
   project: Project | null
@@ -204,10 +198,12 @@ async function handleNewProject() {
 
 const confirm = useConfirmDialog()
 
+const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
+
 const handleImportProjectFile = useMessageHandle(
   async () => {
     await confirm({
-      title: i18n.t({ en: 'Import project file', zh: '导入项目文件' }),
+      title: i18n.t(importProjectFileMessage),
       content: i18n.t({
         en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
         zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
@@ -215,10 +211,8 @@ const handleImportProjectFile = useMessageHandle(
       confirmText: i18n.t({ en: 'Continue', zh: '继续' })
     })
     const file = await selectFile({ accept: '.gbp' })
-    await props.project?.history.doAction(
-      { en: 'loadGbpFile', zh: 'loadGbpFile' },
-      () => props.project!.loadGbpFile(file)
-    )
+    const action = { name: importProjectFileMessage }
+    await props.project?.history.doAction(action, () => props.project!.loadGbpFile(file))
   },
   { en: 'Failed to import project file', zh: '导入项目文件失败' }
 ).fn
@@ -258,15 +252,29 @@ const handleSave = useMessageHandle(
   { en: 'Project saved', zh: '保存成功' }
 )
 
-const handleUndo = useMessageHandle(
-  () => props.project!.history.undo(),
-  { en: 'Failed to undo', zh: '撤销操作失败' },
-)
+const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)
 
-const handleRedo = useMessageHandle(
-  () => props.project!.history.redo(),
-  { en: 'Failed to redo', zh: '重做操作失败' },
-)
+const undoText = computed(() => ({
+  en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
+  zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
+}))
+
+const redoAction = computed(() => props.project?.history.getRedoAction() ?? null)
+
+const redoText = computed(() => ({
+  en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
+  zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
+}))
+
+const handleUndo = useMessageHandle(() => props.project!.history.undo(), {
+  en: 'Failed to undo',
+  zh: '撤销操作失败'
+})
+
+const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
+  en: 'Failed to redo',
+  zh: '重做操作失败'
+})
 </script>
 
 <style lang="scss" scoped>
@@ -312,7 +320,7 @@ const handleRedo = useMessageHandle(
   align-items: center;
 }
 
-.project-dropdown,
+.dropdown,
 .lang {
   height: 100%;
   padding: 0 20px;
@@ -324,8 +332,8 @@ const handleRedo = useMessageHandle(
   }
 }
 
-.project-dropdown {
-  .icon-file {
+.dropdown {
+  .icon-main {
     width: 24px;
     height: 24px;
   }
@@ -333,6 +341,13 @@ const handleRedo = useMessageHandle(
     width: 16px;
     height: 16px;
   }
+}
+
+.history-menu-text {
+  max-width: 20em;
+  overflow-x: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .lang {

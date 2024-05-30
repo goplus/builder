@@ -49,10 +49,9 @@ const handleAddToAssetLibrary = useMessageHandle(() => addAssetToLibrary(props.b
 const removable = computed(() => props.stage.backdrops.length > 1)
 
 function handelRemove() {
-  editorCtx.project.history.doAction(
-    { en: 'removeBackdrop', zh: 'removeBackdrop' },
-    () => props.stage.removeBackdrop(props.backdrop.name)
-  )
+  const name = props.backdrop.name
+  const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
+  editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(name))
 }
 </script>
 

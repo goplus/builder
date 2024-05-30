@@ -18,7 +18,7 @@ import { costumeNameTip, validateCostumeName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 
 const props = defineProps<{
   visible: boolean
@@ -42,12 +42,10 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (form.value.name !== props.costume.name) {
-    props.project.history.doAction(
-      { en: 'setName', zh: 'setName' },
-      () => props.costume.setName(form.value.name)
-    )
+    const action = { name: { en: 'Rename costume', zh: '重命名造型' } }
+    await props.project.history.doAction(action, () => props.costume.setName(form.value.name))
   }
   emit('resolved')
 }

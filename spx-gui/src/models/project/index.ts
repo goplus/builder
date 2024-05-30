@@ -20,6 +20,8 @@ import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { History } from './history'
 
+export type { Action } from './history'
+
 export type Metadata = {
   id?: string
   owner?: string
@@ -48,14 +50,9 @@ export type Selected =
     }
   | null
 
-type BuilderConfig = {
-  selected?: Selected
-}
-
 type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
-  builder?: BuilderConfig
   // TODO: camera
 }
 
@@ -68,6 +65,12 @@ export class Project extends Disposble {
   cTime?: string
   uTime?: string
 
+  /**
+   * If there is any change of game content not synced (to cloud) yet.
+   * TODO: we need to optimize logic for maintaining `hasUnsyncedChanges` to correctly reflect the state.
+   * For example, if the user do some change & then undo it, the `hasUnsyncedChanges` should be `false`.
+   * It's a similar issue to https://github.com/goplus/builder/issues/520 .
+   */
   hasUnsyncedChanges = false
 
   stage: Stage
@@ -204,7 +207,8 @@ export class Project extends Disposble {
 
   constructor() {
     super()
-    this.history = new History(reactive(this) as this)
+    const reactiveThis = reactive(this) as this
+    this.history = new History(reactiveThis)
     this.zorder = []
     this.stage = new Stage()
     this.sprites = []
@@ -213,42 +217,38 @@ export class Project extends Disposble {
       this.sprites.splice(0).forEach((s) => s.dispose())
       this.sounds.splice(0).forEach((s) => s.dispose())
     })
-    return reactive(this) as this
+    return reactiveThis
   }
 
-  applyMetadata(metadata: Metadata) {
+  private applyMetadata(metadata: Metadata) {
     assign<Project>(this, metadata)
   }
 
-  /** Load with metadata & files */
-  async load(metadata: Metadata | null, files: Files) {
+  async loadGameFiles(files: Files) {
     const configFile = files[projectConfigFilePath]
     const config: RawProjectConfig = {}
     if (configFile != null) {
       Object.assign(config, await toConfig(configFile))
     }
-    const { zorder, builder, ...stageConfig } = config
+    const { zorder, ...stageConfig } = config
     const [stage, sounds, sprites] = await Promise.all([
       Stage.load(stageConfig, files),
       Sound.loadAll(files),
       Sprite.loadAll(files)
     ])
-    if (metadata != null) this.applyMetadata(metadata)
-    this.zorder = zorder ?? []
-    this.selected = builder?.selected ?? null
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     sprites.forEach((s) => this.addSprite(s))
     this.sounds.splice(0).forEach((s) => s.dispose())
     sounds.forEach((s) => this.addSound(s))
+    this.zorder = zorder ?? []
     this.autoSelect()
   }
 
-  exportFiles(): Files {
+  exportGameFiles(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
-    const builder = { selected: this.selected }
-    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder, builder }
+    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export()))
@@ -256,30 +256,25 @@ export class Project extends Disposble {
     return files
   }
 
-  /** Export metadata & files without revision state
-   * (version, cTime, uTime, hasUnsyncedChanges).
-   * States version, cTime and uTime are updated after syncing to cloud
-   * by the server, which are not supposed to trigger unsynced changes
-   * watcher.
-   */
-  private exportWithoutRevisionState(): [Metadata, Files] {
+  /** Load with metadata & game files */
+  async load(metadata: Metadata, files: Files) {
+    this.applyMetadata(metadata)
+    await this.loadGameFiles(files)
+  }
+
+  /** Export metadata & game files */
+  export(): [Metadata, Files] {
     const metadata: Metadata = {
       id: this.id,
       owner: this.owner,
       name: this.name,
-      isPublic: this.isPublic
+      isPublic: this.isPublic,
+      version: this.version,
+      cTime: this.cTime,
+      uTime: this.uTime,
+      hasUnsyncedChanges: this.hasUnsyncedChanges
     }
-    const files = this.exportFiles()
-    return [metadata, files]
-  }
-
-  /** Export metadata & files */
-  export(): [Metadata, Files] {
-    const [metadata, files] = this.exportWithoutRevisionState()
-    metadata.version = this.version
-    metadata.cTime = this.cTime
-    metadata.uTime = this.uTime
-    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
+    const files = this.exportGameFiles()
     return [metadata, files]
   }
 
@@ -298,8 +293,6 @@ export class Project extends Disposble {
     const [metadata, files] = this.export()
     return await gbpHelper.save(metadata, files)
   }
-
-  // TODO: Some go+-builder-specific file format (instead of zip) support?
 
   /** Load from cloud */
   async loadFromCloud(owner: string, name: string): Promise<void>
@@ -341,7 +334,7 @@ export class Project extends Disposble {
   startWatchToSetHasUnsyncedChanges() {
     this.addDisposer(
       watch(
-        () => this.exportWithoutRevisionState(),
+        () => this.exportGameFiles(),
         () => {
           this.hasUnsyncedChanges = true
         }

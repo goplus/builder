@@ -41,10 +41,12 @@ const selectedTab = ref<'code' | 'backdrops'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.stage.getCode())
 
+const action = {
+  name: { en: 'Update stage code', zh: '修改舞台代码' },
+  mergeable: true
+}
+
 function handleCodeUpdate(value: string) {
-  editorCtx.project.history.doAction(
-    { en: 'setCode', zh: 'setCode' },
-    () => props.stage.setCode(value)
-  )
+  editorCtx.project.history.doAction(action, () => props.stage.setCode(value))
 }
 </script>

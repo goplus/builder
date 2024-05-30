@@ -43,10 +43,8 @@ const editorCtx = useEditorCtx()
 const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
-  editorCtx.project.history.doAction(
-    { en: 'setDefaultCostume', zh: 'setDefaultCostume' },
-    () => props.sprite.setDefaultCostume(costume.name)
-  )
+  const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
+  editorCtx.project.history.doAction(action, () => props.sprite.setDefaultCostume(costume.name))
 }
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -54,13 +52,11 @@ const handleAddFromLocalFile = useMessageHandle(
     const img = await selectImg()
     const file = fromNativeFile(img)
     const costume = await Costume.create(stripExt(img.name), file)
-    await editorCtx.project.history.doAction(
-      { en: 'addCostume', zh: 'addCostume' },
-      () => {
-        props.sprite.addCostume(costume)
-        props.sprite.setDefaultCostume(costume.name)
-      }
-    )
+    const action = { name: { en: 'Add costume', zh: '添加造型' } }
+    await editorCtx.project.history.doAction(action, () => {
+      props.sprite.addCostume(costume)
+      props.sprite.setDefaultCostume(costume.name)
+    })
   },
   { en: 'Failed to add from local file', zh: '从本地文件添加失败' }
 ).fn
