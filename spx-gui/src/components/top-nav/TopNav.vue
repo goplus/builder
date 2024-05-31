@@ -59,7 +59,7 @@
           </UIMenuGroup>
         </UIMenu>
       </UIDropdown>
-      <UIDropdown placement="bottom-start">
+      <UIDropdown v-if="project != null" placement="bottom-start">
         <template #trigger>
           <div class="dropdown">
             <UIIcon class="icon-main" type="clock" />

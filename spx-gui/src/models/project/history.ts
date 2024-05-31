@@ -70,8 +70,8 @@ export class History {
     return this.states[this.index + 1]?.action ?? null
   }
 
-  async redo() {
-    await this.goto(this.index + 1)
+  redo() {
+    return this.mutex.runExclusive(() => this.goto(this.index + 1))
   }
 
   getUndoAction() {
@@ -79,14 +79,15 @@ export class History {
     return this.action
   }
 
-  async undo() {
-    await this.goto(this.index - 1)
+  undo() {
+    return this.mutex.runExclusive(() => this.goto(this.index - 1))
   }
 
   doAction<T>(action: Action, fn: () => T | Promise<T>): Promise<T> {
     return this.mutex.runExclusive(async () => {
       // history after current state (for redo) will be discarded on any action
       this.states.splice(this.index)
+
       // nothing to do for history, when we merge coming action with current action
       if (this.action === action && action.mergeable) return fn()
 

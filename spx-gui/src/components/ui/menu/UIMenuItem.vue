@@ -50,7 +50,6 @@ function handleClick(e: MouseEvent) {
 <style lang="scss" scoped>
 .ui-menu-item {
   padding: 8px 20px 8px 12px;
-  line-height: 16px;
   display: flex;
   align-items: center;
   gap: 6px;
