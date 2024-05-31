@@ -18,21 +18,23 @@ export type AssetData = {
   owner: string
   /** Asset Category */
   category: string
-  /** Public status */
-  isPublic: IsPublic
-  /** Files the asset contains */
-  files: FileCollection
-  /** Preview URL for the asset, e.g., a gif for a sprite */
-  preview: string
   /** Asset Type */
   assetType: AssetType
+  /** Files the asset contains */
+  files: FileCollection
+  /** Hash of the files */
+  filesHash: string
+  /** Preview URL for the asset, e.g., a gif for a sprite */
+  preview: string
   /** Click count of the asset */
   clickCount: number
+  /** Public status */
+  isPublic: IsPublic
 }
 
 export type AddAssetParams = Pick<
   AssetData,
-  'displayName' | 'category' | 'isPublic' | 'files' | 'preview' | 'assetType'
+  'displayName' | 'category' | 'assetType' | 'files' | 'filesHash' | 'preview' | 'isPublic'
 >
 
 export function addAsset(params: AddAssetParams) {
@@ -57,10 +59,11 @@ export enum ListAssetParamOrderBy {
 
 export type ListAssetParams = PaginationParams & {
   keyword?: string
-  assetType?: AssetType
-  category?: string
-  isPublic?: IsPublic
   owner?: string
+  category?: string
+  assetType?: AssetType
+  filesHash?: string
+  isPublic?: IsPublic
   orderBy?: ListAssetParamOrderBy
 }
 

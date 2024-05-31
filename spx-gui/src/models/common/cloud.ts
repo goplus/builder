@@ -20,7 +20,7 @@ export async function save(metadata: Metadata, files: Files) {
   const { owner, name, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
-  const fileCollection = await uploadFiles(files)
+  const { fileCollection } = await uploadFiles(files)
   const isPublic = metadata.isPublic ?? IsPublic.personal
   const projectData = await (id != null
     ? updateProject(owner, name, { isPublic, files: fileCollection })
@@ -33,7 +33,9 @@ export async function parseProjectData({ files: fileCollection, ...metadata }: P
   return { metadata, files }
 }
 
-export async function uploadFiles(files: Files): Promise<FileCollection> {
+export async function uploadFiles(
+  files: Files
+): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const fileCollection: FileCollection = {}
   const entries = await Promise.all(
     Object.keys(files).map(async (path) => [path, await uploadFile(files[path]!)] as const)
@@ -41,7 +43,22 @@ export async function uploadFiles(files: Files): Promise<FileCollection> {
   for (const [path, url] of entries) {
     fileCollection[path] = url
   }
-  return fileCollection
+  const fileCollectionHash = await hashFiles(fileCollection)
+  return { fileCollection, fileCollectionHash }
+}
+
+export async function hashFiles(fileCollection: FileCollection): Promise<string> {
+  // Sort fileCollection alphabetically by path to ensure consistent hash
+  const sortedFileCollection = Object.fromEntries(
+    Object.entries(fileCollection).sort(([pathA], [pathB]) =>
+      pathA < pathB ? -1 : pathA > pathB ? 1 : 0
+    )
+  )
+  const data = new TextEncoder().encode(JSON.stringify(sortedFileCollection))
+  const hash = await crypto.subtle.digest('SHA-1', data)
+  const hashB64 = btoa(String.fromCharCode(...Array.from(new Uint8Array(hash))))
+  const fileCollectionHash = 'h1:' + hashB64
+  return fileCollectionHash
 }
 
 export async function getFiles(fileCollection: FileCollection): Promise<Files> {

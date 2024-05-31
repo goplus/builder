@@ -58,6 +58,9 @@ type ListAssetsParams struct {
 	// AccessType is the access type filter, applied only if non-nil.
 	AssetType *model.AssetType
 
+	// FilesHash is the files hash filter, applied only if non-nil.
+	FilesHash *string
+
 	// IsPublic is the visibility filter, applied only if non-nil.
 	IsPublic *model.IsPublic
 
@@ -96,6 +99,9 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	if params.AssetType != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "asset_type", Operation: "=", Value: *params.AssetType})
 	}
+	if params.FilesHash != nil {
+		wheres = append(wheres, model.FilterCondition{Column: "files_hash", Operation: "=", Value: *params.FilesHash})
+	}
 	if params.IsPublic != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "is_public", Operation: "=", Value: *params.IsPublic})
 	}
@@ -123,6 +129,7 @@ type AddAssetParams struct {
 	Category    string               `json:"category"`
 	AssetType   model.AssetType      `json:"assetType"`
 	Files       model.FileCollection `json:"files"`
+	FilesHash   string               `json:"filesHash"`
 	Preview     string               `json:"preview"`
 	IsPublic    model.IsPublic       `json:"isPublic"`
 }
@@ -144,6 +151,9 @@ func (p *AddAssetParams) Validate() (ok bool, msg string) {
 	case model.AssetTypeSprite, model.AssetTypeBackdrop, model.AssetTypeSound:
 	default:
 		return false, "invalid assetType"
+	}
+	if p.FilesHash == "" {
+		return false, "missing filesHash"
 	}
 	switch p.IsPublic {
 	case model.Personal, model.Public:
@@ -168,6 +178,7 @@ func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*
 		Category:    params.Category,
 		AssetType:   params.AssetType,
 		Files:       params.Files,
+		FilesHash:   params.FilesHash,
 		Preview:     params.Preview,
 		IsPublic:    params.IsPublic,
 	})
@@ -184,6 +195,7 @@ type UpdateAssetParams struct {
 	Category    string               `json:"category"`
 	AssetType   model.AssetType      `json:"assetType"`
 	Files       model.FileCollection `json:"files"`
+	FilesHash   string               `json:"filesHash"`
 	Preview     string               `json:"preview"`
 	IsPublic    model.IsPublic       `json:"isPublic"`
 }
@@ -202,6 +214,9 @@ func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
 	case model.AssetTypeSprite, model.AssetTypeBackdrop, model.AssetTypeSound:
 	default:
 		return false, "invalid assetType"
+	}
+	if p.FilesHash == "" {
+		return false, "missing filesHash"
 	}
 	switch p.IsPublic {
 	case model.Personal, model.Public:
@@ -225,6 +240,7 @@ func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *Upd
 		Category:    updates.Category,
 		AssetType:   updates.AssetType,
 		Files:       updates.Files,
+		FilesHash:   updates.FilesHash,
 		Preview:     updates.Preview,
 		IsPublic:    updates.IsPublic,
 	})
