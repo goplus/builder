@@ -39,7 +39,7 @@ export function useWavesurfer(container: () => HTMLElement | undefined, gain: ()
       interact: false,
       container: newContainer,
       waveColor: uiVariables.color.sound[400],
-      progressColor: uiVariables.color.sound[300] + '80',
+      progressColor: uiVariables.color.sound[400],
       height: 'auto',
       cursorWidth: 1,
       cursorColor: uiVariables.color.grey[800],

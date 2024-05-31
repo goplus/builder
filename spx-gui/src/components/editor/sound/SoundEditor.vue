@@ -135,6 +135,7 @@ function handleProgress(value: number) {
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
+  wavesurferRef.value?.play()
 }
 
 const handleResetEdit = () => {
