@@ -215,7 +215,9 @@ async function addAssetToProject(asset: AssetData) {
 
 const handleConfirm = useMessageHandle(
   async () => {
-    const action = { name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` } }
+    const action = {
+      name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
+    }
     const assetModels = await props.project.history.doAction(action, () =>
       Promise.all(selected.map(addAssetToProject))
     )
