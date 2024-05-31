@@ -35,14 +35,6 @@ watch(
   }
 )
 
-watch(
-  () => props.gain,
-  () => {
-    if (wavesurferRef.value?.isPlaying()) return
-    play()
-  }
-)
-
 const play = () => {
   if (wavesurferRef.value == null) return
   wavesurferRef.value.seekTo(props.range.left)
