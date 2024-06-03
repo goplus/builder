@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/goplus/builder/spx-backend/internal/utils/log"
+	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
 // Project is the model for a project.
@@ -114,8 +114,8 @@ func UpdateProjectByID(ctx context.Context, db *sql.DB, id string, p *Project) (
 // DeleteProjectByID deletes project with given id.
 func DeleteProjectByID(ctx context.Context, db *sql.DB, id string) error {
 	logger := log.GetReqLogger(ctx)
-	query := fmt.Sprintf("UPDATE %s SET status = ? WHERE id = ?", TableProject)
-	if _, err := db.ExecContext(ctx, query, StatusDeleted, id); err != nil {
+	query := fmt.Sprintf("UPDATE %s SET u_time = ?, status = ? WHERE id = ?", TableProject)
+	if _, err := db.ExecContext(ctx, query, time.Now().UTC(), StatusDeleted, id); err != nil {
 		logger.Printf("db.ExecContext failed: %v", err)
 		return err
 	}

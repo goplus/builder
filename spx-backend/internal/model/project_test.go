@@ -242,7 +242,7 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = DeleteProjectByID(context.Background(), db, "1")
 		require.NoError(t, err)
@@ -253,7 +253,7 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		err = DeleteProjectByID(context.Background(), db, "1")
 		require.Error(t, err)

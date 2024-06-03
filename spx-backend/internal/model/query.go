@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/goplus/builder/spx-backend/internal/utils/log"
+	"github.com/goplus/builder/spx-backend/internal/log"
 )
 
 // Query queries a table.

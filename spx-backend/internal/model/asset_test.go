@@ -173,13 +173,62 @@ func TestUpdateAssetByID(t *testing.T) {
 	})
 }
 
+func TestIncreaseAssetClickCount(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		err = IncreaseAssetClickCount(context.Background(), db, "1")
+		require.NoError(t, err)
+	})
+
+	t.Run("NotExist", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
+			WillReturnResult(sqlmock.NewResult(1, 0))
+		err = IncreaseAssetClickCount(context.Background(), db, "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrNotExist)
+	})
+
+	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
+			WillReturnError(sql.ErrConnDone)
+		err = IncreaseAssetClickCount(context.Background(), db, "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+
+	t.Run("ClosedConnForRowsAffected", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
+			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
+		err = IncreaseAssetClickCount(context.Background(), db, "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+}
+
 func TestDeleteAssetByID(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		db, mock, err := sqlmock.New()
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = DeleteAssetByID(context.Background(), db, "1")
 		require.NoError(t, err)
@@ -190,7 +239,7 @@ func TestDeleteAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		err = DeleteAssetByID(context.Background(), db, "1")
 		require.Error(t, err)

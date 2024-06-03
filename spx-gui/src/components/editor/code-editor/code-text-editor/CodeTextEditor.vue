@@ -147,7 +147,10 @@ async function format() {
   const editor = monacoEditor.value
   if (editor == null) return
 
-  const res = await onlineFormatSpxCode(editor.getValue())
+  const editorValue = editor.getValue()
+  if (!editorValue) return
+
+  const res = await onlineFormatSpxCode(editorValue)
   if (res.error) {
     monaco?.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
