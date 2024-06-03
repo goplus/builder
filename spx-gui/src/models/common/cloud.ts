@@ -6,7 +6,7 @@ import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo, makeObjectUrls } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
-import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
+import type { WebUrl, UniversalUrl, UniversalToWebUrlMap, FileCollection } from '@/apis/common'
 
 // See https://github.com/goplus/builder/issues/411 for all the supported schemes, future plans, and discussions.
 const kodoScheme = 'kodo://'
@@ -45,35 +45,25 @@ export async function uploadFiles(files: Files): Promise<FileCollection> {
 }
 
 export async function getFiles(fileCollection: FileCollection): Promise<Files> {
-  const objects = Object.values(fileCollection).filter((url) => url.startsWith(kodoScheme))
-  const { objectUrls } = await makeObjectUrls(objects)
-
-  // FIXME: Remove legacyObjects related code after migration is done
-  const legacyKodoUrlPrefix = 'https://builder-static-test.goplus.org/'
-  const legacyObjects = Object.values(fileCollection)
-    .filter((url) => url.startsWith(legacyKodoUrlPrefix))
-    .map(
-      (url) =>
-        kodoScheme +
-        'goplus-builder-static-test/' +
-        url.slice(legacyKodoUrlPrefix.length).split('?')[0]
-    )
-  const { objectUrls: legacyObjectUrls } = await makeObjectUrls(legacyObjects)
+  let objectUrls: UniversalToWebUrlMap = {}
+  const objectUniversalUrls = Object.values(fileCollection).filter((url) =>
+    url.startsWith(kodoScheme)
+  )
+  if (objectUniversalUrls.length) {
+    const result = await makeObjectUrls(objectUniversalUrls)
+    objectUrls = result.objectUrls
+  }
 
   const files: Files = {}
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]
     let webUrl = universalUrl
-    if (universalUrl.startsWith(kodoScheme)) {
-      webUrl = objectUrls[universalUrl]
-    } else if (universalUrl.startsWith(legacyKodoUrlPrefix)) {
-      webUrl =
-        legacyObjectUrls[
-          kodoScheme +
-            'goplus-builder-static-test/' +
-            universalUrl.slice(legacyKodoUrlPrefix.length).split('?')[0]
-        ]
+
+    const objectUrl = objectUrls[universalUrl]
+    if (objectUrl) {
+      webUrl = objectUrl
     }
+
     const file = createFileWithWebUrl(filename(path), webUrl)
     setUniversalUrl(file, universalUrl)
     files[path] = file
