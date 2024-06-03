@@ -24,10 +24,12 @@ export type RawMapConfig = {
 }
 
 export type RawStageConfig = {
-  scenes?: RawBackdropConfig[]
-  sceneIndex?: number
+  backdrops?: RawBackdropConfig[]
+  backdropIndex?: number
   map?: RawMapConfig
   // For compatibility
+  scenes?: RawBackdropConfig[]
+  sceneIndex?: number
   costumes?: RawBackdropConfig[]
   currentCostumeIndex?: number
 }
@@ -131,6 +133,8 @@ export class Stage {
 
   static async load(
     {
+      backdrops: backdropConfigs,
+      backdropIndex,
       scenes: sceneConfigs,
       sceneIndex,
       costumes: costumeConfigs,
@@ -147,12 +151,12 @@ export class Stage {
       break
     }
     const stage = new Stage(codeFile, {
-      backdropIndex: sceneIndex ?? currentCostumeIndex,
+      backdropIndex: backdropIndex ?? sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }
@@ -170,8 +174,8 @@ export class Stage {
     }
     const { backdropIndex, mapWidth, mapHeight, mapMode } = this
     const config: RawStageConfig = {
-      scenes: backdropConfigs,
-      sceneIndex: backdropIndex,
+      backdrops: backdropConfigs,
+      backdropIndex: backdropIndex,
       map: { width: mapWidth, height: mapHeight, mode: mapMode }
     }
     return [config, files]
