@@ -109,7 +109,6 @@ export class Stage {
     this.mapMode = mapMode
   }
 
-  /** Dicide map size based on map config & backdrop information */
   getMapSize(): Size {
     return { width: this.mapWidth, height: this.mapHeight }
   }
@@ -149,7 +148,9 @@ export class Stage {
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) =>
+      Backdrop.load(c, files)
+    )
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }

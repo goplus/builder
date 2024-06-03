@@ -12,7 +12,7 @@
 •Scale Mode: The image will be proportionally scaled to ensure it covers the stage; some parts of the image may be cropped
 `,
               zh: `•平铺模式：图片会平铺（重复）以填满舞台
-•缩放模式：图片会被按比例缩放，以确保刚好覆盖舞台；图片的某些部分可能会被裁减
+•缩放模式：图片会被按比例缩放，以确保刚好覆盖舞台；图片的某些部分可能会被裁剪
 `
             })
           }}</pre>
