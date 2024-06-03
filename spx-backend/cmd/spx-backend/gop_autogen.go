@@ -4,12 +4,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/yap"
+	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 )
 
 const _ = true
@@ -79,28 +84,61 @@ type put_project_owner_name struct {
 	yap.Handler
 	*AppV2
 }
-//line cmd/spx-backend/main.yap:22
+//line cmd/spx-backend/main.yap:26
 func (this *AppV2) MainEntry() {
-//line cmd/spx-backend/main.yap:22:1
-	logger := log.GetLogger()
-//line cmd/spx-backend/main.yap:24:1
-	this.ctrl, this.err = controller.New(context.Background())
-//line cmd/spx-backend/main.yap:25:1
-	if this.err != nil {
 //line cmd/spx-backend/main.yap:26:1
+	logger := log.GetLogger()
+//line cmd/spx-backend/main.yap:28:1
+	this.ctrl, this.err = controller.New(context.Background())
+//line cmd/spx-backend/main.yap:29:1
+	if this.err != nil {
+//line cmd/spx-backend/main.yap:30:1
 		logger.Fatalln("Failed to create a new controller:", this.err)
 	}
-//line cmd/spx-backend/main.yap:29:1
+//line cmd/spx-backend/main.yap:33:1
 	port := os.Getenv("PORT")
-//line cmd/spx-backend/main.yap:30:1
+//line cmd/spx-backend/main.yap:34:1
 	if port == "" {
-//line cmd/spx-backend/main.yap:31:1
+//line cmd/spx-backend/main.yap:35:1
 		port = ":8080"
 	}
-//line cmd/spx-backend/main.yap:33:1
+//line cmd/spx-backend/main.yap:37:1
 	logger.Printf("Listening to %s", port)
-//line cmd/spx-backend/main.yap:35:1
-	this.Run(port, NewUserMiddleware(this.ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
+//line cmd/spx-backend/main.yap:39:1
+	h := this.Handler(NewUserMiddleware(this.ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
+//line cmd/spx-backend/main.yap:40:1
+	server := &http.Server{Addr: port, Handler: h}
+//line cmd/spx-backend/main.yap:42:1
+	stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+//line cmd/spx-backend/main.yap:43:1
+	defer stop()
+//line cmd/spx-backend/main.yap:44:1
+	var serverErr error
+//line cmd/spx-backend/main.yap:45:1
+	go func() {
+//line cmd/spx-backend/main.yap:46:1
+		serverErr = server.ListenAndServe()
+//line cmd/spx-backend/main.yap:47:1
+		stop()
+	}()
+//line cmd/spx-backend/main.yap:49:1
+	<-stopCtx.Done()
+//line cmd/spx-backend/main.yap:50:1
+	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
+//line cmd/spx-backend/main.yap:51:1
+		logger.Fatalln("Server error:", this.err)
+	}
+//line cmd/spx-backend/main.yap:54:1
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+//line cmd/spx-backend/main.yap:55:1
+	defer cancel()
+//line cmd/spx-backend/main.yap:56:1
+	if
+//line cmd/spx-backend/main.yap:56:1
+	err := server.Shutdown(shutdownCtx); err != nil {
+//line cmd/spx-backend/main.yap:57:1
+		logger.Fatalln("Failed to gracefully shut down:", err)
+	}
 }
 func (this *AppV2) Main() {
 	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(get_asset_id), new(get_assets_list), new(get_project_owner_name), new(get_projects_list), new(get_util_upinfo), new(post_asset), new(post_asset_id_click), new(post_project), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
