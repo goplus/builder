@@ -91,7 +91,7 @@ const expanded = ref(false)
 watch(
   () => props.project,
   async (newProject) => {
-    const mapSize = (await newProject.stage.getMapSize()) ?? { width: 0, height: 0 }
+    const mapSize = newProject.stage.getMapSize()
 
     runnerAspectRatio.value.aspectRatio = `${mapSize.width}/${mapSize.height}`
     displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'

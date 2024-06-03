@@ -150,7 +150,6 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
   const imgRef = ref<HTMLImageElement | null>(null)
   watch(urlRef, (url, _, onCleanup) => {
     onCleanup(() => {
-      imgRef.value?.remove()
       imgRef.value = null
     })
     if (url != null) {

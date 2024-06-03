@@ -9,6 +9,7 @@
         v-if="selectedTab === 'code' && codeEditor != null && code != null"
         :code-editor="codeEditor"
       />
+      <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>
   <CodeEditor
@@ -31,6 +32,7 @@ import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './BackdropsEditor.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import BackdropModeSelector from './BackdropModeSelector.vue'
 
 const props = defineProps<{
   stage: Stage

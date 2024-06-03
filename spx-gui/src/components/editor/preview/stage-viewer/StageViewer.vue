@@ -8,7 +8,7 @@
       @contextmenu="handleContextMenu"
     >
       <v-layer>
-        <v-image v-if="backdropImg != null" :config="{ ...mapSize, image: backdropImg }"></v-image>
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
       </v-layer>
       <v-layer>
         <SpriteItem
@@ -36,24 +36,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
+import { MapMode } from '@/models/stage'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
 const stageRef = ref<any>()
-const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
+const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
 const spritesReadyMap = reactive(new Map<string, boolean>())
 
@@ -84,6 +84,58 @@ const stageConfig = computed(() => {
 const [backdropImg, backdropLoading] = useImgFile(
   () => editorCtx.project.stage.defaultBackdrop?.img
 )
+
+const konvaBackdropConfig = ref<any>()
+
+watchEffect(async () => {
+  const computeKonvaBackdropConfig = () => {
+    if (backdropImg.value == null || backdropLoading.value || stageConfig.value == null) {
+      return
+    }
+
+    if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
+      const stageWidth = stageConfig.value.width
+      const stageHeight = stageConfig.value.height
+      const imageWidth = backdropImg.value.width
+      const imageHeight = backdropImg.value.height
+
+      const scaleX = stageWidth / imageWidth
+      const scaleY = stageHeight / imageHeight
+      const scale = Math.min(scaleX, scaleY)
+
+      const width = imageWidth * scale
+      const height = imageHeight * scale
+      const x = (stageWidth - width) / 2
+      const y = (stageHeight - height) / 2
+
+      return {
+        fillPatternImage: backdropImg.value,
+        width: width,
+        height: height,
+        x: x,
+        y: y,
+        fillPatternRepeat: 'no-repeat',
+        fillPatternScaleX: scale,
+        fillPatternScaleY: scale
+      }
+    } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
+      const stageWidth = stageConfig.value.width
+      const stageHeight = stageConfig.value.height
+
+      return {
+        fillPatternRepeat: 'repeat',
+        fillPatternImage: backdropImg.value,
+        width: stageWidth,
+        height: stageHeight
+      }
+    }
+  }
+
+  const newValue = computeKonvaBackdropConfig()
+  konvaBackdropConfig.value = undefined
+  await nextTick()
+  konvaBackdropConfig.value = newValue
+})
 
 const spritesAndBackdropLoading = computed(() => {
   if (backdropLoading.value) return true
