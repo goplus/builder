@@ -1,7 +1,7 @@
 <template>
   <div ref="conatiner" class="stage-viewer">
     <v-stage
-      v-if="stageConfig != null && !backdropLoading"
+      v-if="stageConfig != null"
       ref="stageRef"
       :config="stageConfig"
       @mousedown="handleStageMousedown"
@@ -42,7 +42,7 @@ import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import type { Sprite } from '@/models/sprite'
-import { useImgFile } from '@/utils/file'
+import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
@@ -81,15 +81,24 @@ const stageConfig = computed(() => {
   }
 })
 
-const [backdropImg, backdropLoading] = useImgFile(
+const backdropImg = ref<HTMLImageElement | null>(null)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(
   () => editorCtx.project.stage.defaultBackdrop?.img
 )
+watchEffect(() => {
+  if (backdropSrc.value == null) return
+  const img = new Image()
+  img.src = backdropSrc.value
+  img.addEventListener('load', () => {
+    backdropImg.value = img
+  })
+})
 
 const konvaBackdropConfig = ref<any>()
 
 watchEffect(async () => {
   const computeKonvaBackdropConfig = () => {
-    if (backdropImg.value == null || backdropLoading.value || stageConfig.value == null) {
+    if (backdropImg.value == null || stageConfig.value == null) {
       return
     }
 
@@ -138,7 +147,7 @@ watchEffect(async () => {
 })
 
 const spritesAndBackdropLoading = computed(() => {
-  if (backdropLoading.value) return true
+  if (backdropSrcLoading.value) return true
   return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
 })
 
