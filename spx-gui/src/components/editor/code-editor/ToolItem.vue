@@ -42,7 +42,7 @@
 import { UITagButton, UITooltip, UIDropdown, UIMenu, UIMenuItem, UICode } from '@/components/ui'
 import { ToolType, ToolCallEffect, type Tool } from './code-text-editor'
 import iconRead from './icons/read.svg?raw'
-import iconWrite from './icons/write.svg?raw'
+import iconEffect from './icons/effect.svg?raw'
 import iconListen from './icons/listen.svg?raw'
 import iconCode from './icons/code.svg?raw'
 
@@ -59,7 +59,7 @@ function getIcon(tool: Tool) {
   if ([ToolType.function, ToolType.method].includes(tool.type)) {
     if (tool.callEffect === ToolCallEffect.listen) return iconListen
     if (tool.callEffect === ToolCallEffect.read) return iconRead
-    if (tool.callEffect === ToolCallEffect.write) return iconWrite
+    if (tool.callEffect === ToolCallEffect.write) return iconEffect
   }
   return iconCode
 }
