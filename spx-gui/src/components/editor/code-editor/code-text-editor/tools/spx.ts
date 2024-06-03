@@ -533,89 +533,89 @@ export const mouseHitItem: Tool = {
   }
 }
 
-export const sceneName: Tool = {
+export const backdropName: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.read,
   target: ToolContext.all,
-  keyword: 'sceneName',
-  desc: { en: 'Get the name of the current scene', zh: '获取当前场景的名称' },
+  keyword: 'backdropName',
+  desc: { en: 'Get the name of the current backdrop', zh: '获取当前背景的名称' },
   usage: {
-    sample: 'sceneName',
-    insertText: 'sceneName'
+    sample: 'backdropName',
+    insertText: 'backdropName'
   }
 }
 
-export const sceneIndex: Tool = {
+export const backdropIndex: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.read,
   target: ToolContext.all,
-  keyword: 'sceneIndex',
-  desc: { en: 'Get the index of the current scene', zh: '获取当前场景的索引' },
+  keyword: 'backdropIndex',
+  desc: { en: 'Get the index of the current backdrop', zh: '获取当前背景的索引' },
   usage: {
-    sample: 'sceneIndex',
-    insertText: 'sceneIndex'
+    sample: 'backdropIndex',
+    insertText: 'backdropIndex'
   }
 }
 
-export const startScene: Tool = {
+export const startBackdrop: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
   target: ToolContext.all,
-  keyword: 'startScene',
+  keyword: 'startBackdrop',
   desc: {
-    en: 'Set the current scene by specifying name or index',
-    zh: '通过指定名称或索引切换场景'
+    en: 'Set the current backdrop by specifying name or index',
+    zh: '通过指定名称或索引切换背景'
   },
   usages: [
     {
-      desc: { en: 'Without waiting', zh: '不等待场景切换完成' },
-      sample: 'startScene "scene1"',
-      insertText: 'startScene ${1:nameOrIndex}'
+      desc: { en: 'Without waiting', zh: '不等待背景切换完成' },
+      sample: 'startBackdrop "backdrop1"',
+      insertText: 'startBackdrop ${1:nameOrIndex}'
     },
     {
-      desc: { en: 'With waiting', zh: '等待场景切换完成' },
-      sample: 'startScene "scene1", true',
-      insertText: 'startScene ${1:nameOrIndex}, true'
+      desc: { en: 'With waiting', zh: '等待背景切换完成' },
+      sample: 'startBackdrop "backdrop1", true',
+      insertText: 'startBackdrop ${1:nameOrIndex}, true'
     }
   ]
 }
 
-export const nextScene: Tool = {
+export const nextBackdrop: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
   target: ToolContext.all,
-  keyword: 'nextScene',
-  desc: { en: 'Switch to the next scene', zh: '切换到下一个场景' },
+  keyword: 'nextBackdrop',
+  desc: { en: 'Switch to the next backdrop', zh: '切换到下一个背景' },
   usages: [
     {
-      desc: { en: 'Without waiting', zh: '不等待场景切换完成' },
-      sample: 'nextScene',
-      insertText: 'nextScene'
+      desc: { en: 'Without waiting', zh: '不等待背景切换完成' },
+      sample: 'nextBackdrop',
+      insertText: 'nextBackdrop'
     },
     {
-      desc: { en: 'With waiting', zh: '等待场景切换完成' },
-      sample: 'nextScene true',
-      insertText: 'nextScene true'
+      desc: { en: 'With waiting', zh: '等待背景切换完成' },
+      sample: 'nextBackdrop true',
+      insertText: 'nextBackdrop true'
     }
   ]
 }
 
-export const prevScene: Tool = {
+export const prevBackdrop: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
   target: ToolContext.all,
-  keyword: 'prevScene',
-  desc: { en: 'Switch to the previous scene', zh: '切换到上一个场景' },
+  keyword: 'prevBackdrop',
+  desc: { en: 'Switch to the previous backdrop', zh: '切换到上一个背景' },
   usages: [
     {
-      desc: { en: 'Without waiting', zh: '不等待场景切换完成' },
-      sample: 'prevScene',
-      insertText: 'prevScene'
+      desc: { en: 'Without waiting', zh: '不等待背景切换完成' },
+      sample: 'prevBackdrop',
+      insertText: 'prevBackdrop'
     },
     {
-      desc: { en: 'With waiting', zh: '等待场景切换完成' },
-      sample: 'prevScene true',
-      insertText: 'prevScene true'
+      desc: { en: 'With waiting', zh: '等待背景切换完成' },
+      sample: 'prevBackdrop true',
+      insertText: 'prevBackdrop true'
     }
   ]
 }
@@ -867,23 +867,22 @@ export const onMsg: Tool = {
   ]
 }
 
-// TODO: rename "scene" to "backdrop"
-export const onScene: Tool = {
+export const onBackdrop: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.listen,
   target: ToolContext.all,
-  keyword: 'onScene',
-  desc: { en: 'Listen to scene switching', zh: '场景切换时执行' },
+  keyword: 'onBackdrop',
+  desc: { en: 'Listen to backdrop switching', zh: '背景切换时执行' },
   usages: [
     {
-      desc: { en: 'Any scene', zh: '任意场景' },
-      sample: 'onScene scene => {}',
-      insertText: 'onScene scene => {\n\t${1}\n}'
+      desc: { en: 'Any backdrop', zh: '任意背景' },
+      sample: 'onBackdrop backdrop => {}',
+      insertText: 'onBackdrop backdrop => {\n\t${1}\n}'
     },
     {
-      desc: { en: 'Specific scene', zh: '指定场景' },
-      sample: 'onScene "scene1", => {}',
-      insertText: 'onScene ${1:scene}, => {\n\t${2}\n}'
+      desc: { en: 'Specific backdrop', zh: '指定背景' },
+      sample: 'onBackdrop "backdrop1", => {}',
+      insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}'
     }
   ]
 }

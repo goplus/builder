@@ -41,7 +41,7 @@ export const eventCategory: ToolCategory = {
     },
     {
       label: { en: 'Stage Events', zh: '舞台事件' },
-      tools: [spx.onScene]
+      tools: [spx.onBackdrop]
     }
   ]
 }
@@ -107,7 +107,7 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
-      tools: [spx.sceneName, spx.sceneIndex, spx.startScene, spx.nextScene, spx.nextScene]
+      tools: [spx.backdropName, spx.backdropIndex, spx.startBackdrop, spx.nextBackdrop, spx.prevBackdrop]
     }
   ]
 }
