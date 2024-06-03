@@ -112,6 +112,12 @@ watchEffect(async (onClenaup) => {
     }
   })
 
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
+    // We provide global undo/redo in project editor, without keyboard shortcut support.
+    // So we disable default undo behavior (Cmd/Ctrl+Z) of monaco, which may cause confusing behavior if used together with global undo/redo.
+    // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
+  })
+
   monacoEditor.value = editor
 
   onClenaup(() => {

@@ -30,7 +30,8 @@ watch(
   (selected) => {
     if (selected?.type === 'sprite' && expandedPanel.value !== 'sprites') expand('sprites')
     else if (selected?.type === 'sound' && expandedPanel.value !== 'sounds') expand('sounds')
-  }
+  },
+  { immediate: true }
 )
 
 const lastSelectedSprite = shallowRef<string | null>(null)

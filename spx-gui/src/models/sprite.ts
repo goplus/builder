@@ -4,11 +4,11 @@
  */
 
 import { reactive } from 'vue'
+import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
 import { Disposble } from './common/disposable'
-import { join } from '@/utils/path'
+import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset-name'
 import { type RawCostumeConfig, Costume } from './costume'
-import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset'
 import type { Project } from './project'
 
 export enum RotationStyle {

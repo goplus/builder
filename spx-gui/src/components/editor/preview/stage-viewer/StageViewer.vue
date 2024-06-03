@@ -25,18 +25,10 @@
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
-        <UIMenuItem @click="moveSprite('up')">{{
-          $t({ en: 'Bring forward', zh: '向前移动' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('top')">{{
-          $t({ en: 'Bring to front', zh: '移到最前' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('down')">{{
-          $t({ en: 'Send backward', zh: '向后移动' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('bottom')">{{
-          $t({ en: 'Send to back', zh: '移到最后' })
-        }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('up')">{{ $t(moveActionNames.up) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('top')">{{ $t(moveActionNames.top) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('down')">{{ $t(moveActionNames.down) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('bottom')">{{ $t(moveActionNames.bottom) }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
     <UILoading :visible="spritesAndBackdropLoading" cover />
@@ -125,19 +117,29 @@ function handleStageMousedown() {
   if (menuVisible.value) menuVisible.value = false
 }
 
+const moveActionNames = {
+  up: { en: 'Bring forward', zh: '向前移动' },
+  top: { en: 'Bring to front', zh: '移到最前' },
+  down: { en: 'Send backward', zh: '向后移动' },
+  bottom: { en: 'Send to back', zh: '移到最后' }
+}
+
 function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   const project = editorCtx.project
   const selectedSprite = project.selectedSprite
   if (selectedSprite == null) return
-  if (direction === 'up') {
-    project.upSpriteZorder(selectedSprite.name)
-  } else if (direction === 'down') {
-    project.downSpriteZorder(selectedSprite.name)
-  } else if (direction === 'top') {
-    project.topSpriteZorder(selectedSprite.name)
-  } else if (direction === 'bottom') {
-    project.bottomSpriteZorder(selectedSprite.name)
-  }
+  const action = { name: moveActionNames[direction] }
+  project.history.doAction(action, () => {
+    if (direction === 'up') {
+      project.upSpriteZorder(selectedSprite.name)
+    } else if (direction === 'down') {
+      project.downSpriteZorder(selectedSprite.name)
+    } else if (direction === 'top') {
+      project.topSpriteZorder(selectedSprite.name)
+    } else if (direction === 'bottom') {
+      project.bottomSpriteZorder(selectedSprite.name)
+    }
+  })
   menuVisible.value = false
 }
 </script>

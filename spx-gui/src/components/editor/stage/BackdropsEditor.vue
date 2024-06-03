@@ -44,7 +44,8 @@ const stage = computed(() => editorCtx.project.stage)
 const selected = computed(() => stage.value.defaultBackdrop)
 
 function handleSelect(backdrop: Backdrop) {
-  stage.value.setDefaultBackdrop(backdrop.name)
+  const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
+  editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.name))
 }
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -52,8 +53,11 @@ const handleAddFromLocalFile = useMessageHandle(
     const img = await selectImg()
     const file = fromNativeFile(img)
     const backdrop = await Backdrop.create(stripExt(img.name), file)
-    stage.value.addBackdrop(backdrop)
-    stage.value.setDefaultBackdrop(backdrop.name)
+    const action = { name: { en: 'Add backdrop', zh: '添加背景' } }
+    editorCtx.project.history.doAction(action, () => {
+      stage.value.addBackdrop(backdrop)
+      stage.value.setDefaultBackdrop(backdrop.name)
+    })
   },
   { en: 'Failed to add from local file', zh: '从本地文件添加失败' }
 ).fn

@@ -6,9 +6,9 @@
 import { reactive } from 'vue'
 import { filename } from '@/utils/path'
 import { toText, type Files, fromText, File } from './common/file'
+import { ensureValidBackdropName } from './common/asset-name'
+import type { Size } from './common'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
-import { type Size } from './common'
-import { ensureValidBackdropName } from './common/asset'
 
 export type StageInits = {
   backdropIndex: number

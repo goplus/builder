@@ -10,8 +10,8 @@
       visible: sprite.visible,
       ...spx2Konva(sprite)
     }"
-    @dragend="handleChange"
-    @transformend="handleChange"
+    @dragend="handleDragEnd"
+    @transformend="handleTransformed"
     @mousedown="handleMousedown"
   />
 </template>
@@ -23,6 +23,7 @@ import type { Size } from '@/models/common'
 import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { round } from '@/utils/utils'
+import type { Action } from '@/models/project'
 
 const props = defineProps<{
   sprite: Sprite
@@ -38,14 +39,8 @@ const [image] = useImgFile(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
   const spriteName = props.sprite.name
-  onCleanup(() => {
-    props.spritesReadyMap.delete(spriteName)
-  })
-})
-
-watchEffect((onCleanup) => {
-  const spriteName = props.sprite.name
   props.spritesReadyMap.set(spriteName, false)
+  onCleanup(() => props.spritesReadyMap.delete(spriteName))
 
   const img = image.value
   if (img == null) return
@@ -53,8 +48,15 @@ watchEffect((onCleanup) => {
     // We need to notify event ready for SpriteTransformer (to get correct node size)
     props.spritesReadyMap.set(spriteName, true)
   }
+  if (img.complete) {
+    handleImageLoad()
+    return
+  }
   img.addEventListener('load', handleImageLoad)
-  onCleanup(() => img.removeEventListener('load', handleImageLoad))
+  onCleanup(() => {
+    props.spritesReadyMap.delete(spriteName)
+    img.removeEventListener('load', handleImageLoad)
+  })
 })
 
 onMounted(() => {
@@ -70,8 +72,22 @@ onMounted(() => {
   }
 })
 
+function handleDragEnd(e: KonvaEventObject<unknown>) {
+  const sname = props.sprite.name
+  handleChange(e, {
+    name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
+  })
+}
+
+function handleTransformed(e: KonvaEventObject<unknown>) {
+  const sname = props.sprite.name
+  handleChange(e, {
+    name: { en: `Resize sprite ${sname}`, zh: `调整精灵 ${sname} 大小` }
+  })
+}
+
 /** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>) {
+function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   const { x, y, heading, size } = konva2Spx({
     x: e.target.x(),
     y: e.target.y(),
@@ -79,10 +95,12 @@ function handleChange(e: KonvaEventObject<unknown>) {
     scaleX: e.target.scaleX(),
     scaleY: e.target.scaleY()
   })
-  props.sprite.setX(x)
-  props.sprite.setY(y)
-  props.sprite.setHeading(heading)
-  props.sprite.setSize(size)
+  editorCtx.project.history.doAction(action, () => {
+    props.sprite.setX(x)
+    props.sprite.setY(y)
+    props.sprite.setHeading(heading)
+    props.sprite.setSize(size)
+  })
 }
 
 function handleMousedown() {

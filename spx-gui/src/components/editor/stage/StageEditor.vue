@@ -16,7 +16,7 @@
     ref="codeEditor"
     :loading="code == null"
     :value="code ?? ''"
-    @update:value="(v) => stage.setCode(v)"
+    @update:value="handleCodeUpdate"
   />
   <BackdropsEditor v-show="selectedTab === 'backdrops'" :stage="stage" />
 </template>
@@ -30,12 +30,23 @@ import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './BackdropsEditor.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   stage: Stage
 }>()
 
+const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'backdrops'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.stage.getCode())
+
+const action = {
+  name: { en: 'Update stage code', zh: '修改舞台代码' },
+  mergeable: true
+}
+
+function handleCodeUpdate(value: string) {
+  editorCtx.project.history.doAction(action, () => props.stage.setCode(value))
+}
 </script>

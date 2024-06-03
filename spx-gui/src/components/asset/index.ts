@@ -9,7 +9,7 @@ import type { AssetModel } from '@/models/common/asset'
 import { stripExt } from '@/utils/path'
 import { Costume } from '@/models/costume'
 import { fromNativeFile } from '@/models/common/file'
-import type { Project } from '@/models/project'
+import { type Project } from '@/models/project'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
@@ -64,8 +64,11 @@ export function useAddSpriteFromLocalFile() {
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    project.addSprite(sprite)
-    await sprite.autoFit()
+    const action = { name: { en: 'Add sprite', zh: '添加精灵' } }
+    await project.history.doAction(action, async () => {
+      project.addSprite(sprite)
+      await sprite.autoFit()
+    })
     selectAsset(project, sprite)
     return sprite
   }
@@ -75,7 +78,8 @@ export function useAddSoundFromLocalFile() {
   return async function addSoundFromLocalFile(project: Project) {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
-    project.addSound(sound)
+    const action = { name: { en: 'Add sound', zh: '添加声音' } }
+    await project.history.doAction(action, () => project.addSound(sound))
     selectAsset(project, sound)
     return sound
   }

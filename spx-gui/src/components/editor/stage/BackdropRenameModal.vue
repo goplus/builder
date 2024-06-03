@@ -13,8 +13,8 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
-import type { Project } from '@/models/project'
-import { backdropNameTip, validateBackdropName } from '@/models/common/asset'
+import { type Project } from '@/models/project'
+import { backdropNameTip, validateBackdropName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
@@ -40,9 +40,10 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (form.value.name !== props.backdrop.name) {
-    props.backdrop.setName(form.value.name)
+    const action = { name: { en: 'Rename backdrop', zh: '重命名背景' } }
+    await props.project.history.doAction(action, () => props.backdrop.setName(form.value.name))
   }
   emit('resolved')
 }

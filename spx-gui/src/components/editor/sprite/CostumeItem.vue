@@ -19,6 +19,7 @@ import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
 import EditorItem from '../common/EditorItem.vue'
 import EditorItemName from '../common/EditorItemName.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   costume: Costume
@@ -26,12 +27,15 @@ const props = defineProps<{
   selected: boolean
 }>()
 
+const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 
 const removable = computed(() => props.sprite.costumes.length > 1)
 
 function handelRemove() {
-  props.sprite.removeCostume(props.costume.name)
+  const name = props.costume.name
+  const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
+  editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(name))
 }
 </script>
 

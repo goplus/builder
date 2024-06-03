@@ -13,18 +13,21 @@ import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CostumeRenameModal from './CostumeRenameModal.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   costume: Costume
   sprite: Sprite
 }>()
 
+const editorCtx = useEditorCtx()
 const renameCostume = useModal(CostumeRenameModal)
 
 function handleRename() {
   renameCostume({
     costume: props.costume,
-    sprite: props.sprite
+    sprite: props.sprite,
+    project: editorCtx.project
   })
 }
 

@@ -103,7 +103,9 @@ function isSelected(sprite: Sprite) {
 }
 
 function handleSpriteRemove(sprite: Sprite) {
-  editorCtx.project.removeSprite(sprite.name)
+  const sname = sprite.name
+  const action = { name: { en: `Remove sprite ${sname}`, zh: `删除精灵 ${sname}` } }
+  editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(sname))
 }
 
 const addAssetToLibrary = useAddAssetToLibrary()

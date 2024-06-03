@@ -8,16 +8,19 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposble } from './common/disposable'
-import { toConfig, type Files, fromConfig } from './common/file'
-import { Stage, type RawStageConfig } from './stage'
-import { Sprite } from './sprite'
-import { Sound } from './sound'
-import * as cloudHelper from './common/cloud'
-import * as localHelper from './common/local'
-import * as gbpHelper from './common/gbp'
-import { assign } from './common'
-import { ensureValidSpriteName, ensureValidSoundName } from './common/asset'
+import { Disposble } from '../common/disposable'
+import { toConfig, type Files, fromConfig } from '../common/file'
+import { Stage, type RawStageConfig } from '../stage'
+import { Sprite } from '../sprite'
+import { Sound } from '../sound'
+import * as cloudHelper from '../common/cloud'
+import * as localHelper from '../common/local'
+import * as gbpHelper from '../common/gbp'
+import { assign } from '../common'
+import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
+import { History } from './history'
+
+export type { Action } from './history'
 
 export type Metadata = {
   id?: string
@@ -62,6 +65,12 @@ export class Project extends Disposble {
   cTime?: string
   uTime?: string
 
+  /**
+   * If there is any change of game content not synced (to cloud) yet.
+   * TODO: we need to optimize logic for maintaining `hasUnsyncedChanges` to correctly reflect the state.
+   * For example, if the user do some change & then undo it, the `hasUnsyncedChanges` should be `false`.
+   * It's a similar issue to https://github.com/goplus/builder/issues/520 .
+   */
   hasUnsyncedChanges = false
 
   stage: Stage
@@ -73,6 +82,7 @@ export class Project extends Disposble {
     const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
     sprite.dispose()
+    this.autoSelect()
   }
   /**
    * Add given sprite to project.
@@ -160,7 +170,6 @@ export class Project extends Disposble {
     this.isPublic = isPublic
   }
 
-  // TODO: consider saving selected info in metadata?
   selected: Selected = null
 
   get selectedSprite() {
@@ -194,8 +203,12 @@ export class Project extends Disposble {
     }
   }
 
+  history: History
+
   constructor() {
     super()
+    const reactiveThis = reactive(this) as this
+    this.history = new History(reactiveThis)
     this.zorder = []
     this.stage = new Stage()
     this.sprites = []
@@ -204,15 +217,14 @@ export class Project extends Disposble {
       this.sprites.splice(0).forEach((s) => s.dispose())
       this.sounds.splice(0).forEach((s) => s.dispose())
     })
-    return reactive(this) as this
+    return reactiveThis
   }
 
-  applyMetadata(metadata: Metadata) {
+  private applyMetadata(metadata: Metadata) {
     assign<Project>(this, metadata)
   }
 
-  /** Load with metadata & files */
-  async load(metadata: Metadata, files: Files) {
+  async loadGameFiles(files: Files) {
     const configFile = files[projectConfigFilePath]
     const config: RawProjectConfig = {}
     if (configFile != null) {
@@ -224,29 +236,16 @@ export class Project extends Disposble {
       Sound.loadAll(files),
       Sprite.loadAll(files)
     ])
-    this.applyMetadata(metadata)
-    this.zorder = zorder ?? []
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     sprites.forEach((s) => this.addSprite(s))
     this.sounds.splice(0).forEach((s) => s.dispose())
     sounds.forEach((s) => this.addSound(s))
+    this.zorder = zorder ?? []
     this.autoSelect()
   }
 
-  /** Export metadata & files without revision state
-   * (version, cTime, uTime, hasUnsyncedChanges).
-   * States version, cTime and uTime are updated after syncing to cloud
-   * by the server, which are not supposed to trigger unsynced changes
-   * watcher.
-   */
-  private exportWithoutRevisionState(): [Metadata, Files] {
-    const metadata: Metadata = {
-      id: this.id,
-      owner: this.owner,
-      name: this.name,
-      isPublic: this.isPublic
-    }
+  exportGameFiles(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
@@ -254,16 +253,28 @@ export class Project extends Disposble {
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export()))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
-    return [metadata, files]
+    return files
   }
 
-  /** Export metadata & files */
+  /** Load with metadata & game files */
+  async load(metadata: Metadata, files: Files) {
+    this.applyMetadata(metadata)
+    await this.loadGameFiles(files)
+  }
+
+  /** Export metadata & game files */
   export(): [Metadata, Files] {
-    const [metadata, files] = this.exportWithoutRevisionState()
-    metadata.version = this.version
-    metadata.cTime = this.cTime
-    metadata.uTime = this.uTime
-    metadata.hasUnsyncedChanges = this.hasUnsyncedChanges
+    const metadata: Metadata = {
+      id: this.id,
+      owner: this.owner,
+      name: this.name,
+      isPublic: this.isPublic,
+      version: this.version,
+      cTime: this.cTime,
+      uTime: this.uTime,
+      hasUnsyncedChanges: this.hasUnsyncedChanges
+    }
+    const files = this.exportGameFiles()
     return [metadata, files]
   }
 
@@ -282,8 +293,6 @@ export class Project extends Disposble {
     const [metadata, files] = this.export()
     return await gbpHelper.save(metadata, files)
   }
-
-  // TODO: Some go+-builder-specific file format (instead of zip) support?
 
   /** Load from cloud */
   async loadFromCloud(owner: string, name: string): Promise<void>
@@ -325,7 +334,7 @@ export class Project extends Disposble {
   startWatchToSetHasUnsyncedChanges() {
     this.addDisposer(
       watch(
-        () => this.exportWithoutRevisionState(),
+        () => this.exportGameFiles(),
         () => {
           this.hasUnsyncedChanges = true
         }
