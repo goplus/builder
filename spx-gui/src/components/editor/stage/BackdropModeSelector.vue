@@ -35,7 +35,7 @@
     </div>
     <UIButtonGroup
       :value="editorCtx.project.stage.mapMode"
-      @update:value="(v) => editorCtx.project.stage.setMapMode(v as MapMode)"
+      @update:value="(v) => handleUpdateMapMode(v as MapMode)"
     >
       <UIButtonGroupItem value="repeat">
         <div class="padded-button-group">{{ $t({ en: 'Tile', zh: '平铺' }) }}</div>
@@ -50,6 +50,15 @@
 import { UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import type { MapMode } from '@/models/stage'
+
+const handleUpdateMapMode = (mode: MapMode) => {
+  editorCtx.project.history.doAction(
+    { name: { en: 'Update backdrop mode', zh: '修改背景模式' } },
+    () => {
+      editorCtx.project.stage.setMapMode(mode)
+    }
+  )
+}
 
 const editorCtx = useEditorCtx()
 </script>
