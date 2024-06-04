@@ -266,51 +266,58 @@ func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_assets_list.yap:47:1
 	if
 //line cmd/spx-backend/get_assets_list.yap:47:1
-	isPublicParam := this.Gop_Env("isPublic"); isPublicParam != "" {
+	filesHash := this.Gop_Env("filesHash"); filesHash != "" {
 //line cmd/spx-backend/get_assets_list.yap:48:1
-		isPublicInt, err := strconv.Atoi(isPublicParam)
-//line cmd/spx-backend/get_assets_list.yap:49:1
-		if err != nil {
-//line cmd/spx-backend/get_assets_list.yap:50:1
-			replyWithCode(ctx, errorInvalidArgs)
+		params.FilesHash = &filesHash
+	}
 //line cmd/spx-backend/get_assets_list.yap:51:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:51:1
+	isPublicParam := this.Gop_Env("isPublic"); isPublicParam != "" {
+//line cmd/spx-backend/get_assets_list.yap:52:1
+		isPublicInt, err := strconv.Atoi(isPublicParam)
+//line cmd/spx-backend/get_assets_list.yap:53:1
+		if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:54:1
+			replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/get_assets_list.yap:55:1
 			return
 		}
-//line cmd/spx-backend/get_assets_list.yap:53:1
+//line cmd/spx-backend/get_assets_list.yap:57:1
 		isPublic := model.IsPublic(isPublicInt)
-//line cmd/spx-backend/get_assets_list.yap:54:1
+//line cmd/spx-backend/get_assets_list.yap:58:1
 		params.IsPublic = &isPublic
 	}
-//line cmd/spx-backend/get_assets_list.yap:57:1
+//line cmd/spx-backend/get_assets_list.yap:61:1
 	if
-//line cmd/spx-backend/get_assets_list.yap:57:1
+//line cmd/spx-backend/get_assets_list.yap:61:1
 	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
-//line cmd/spx-backend/get_assets_list.yap:58:1
+//line cmd/spx-backend/get_assets_list.yap:62:1
 		params.OrderBy = controller.ListAssetsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_assets_list.yap:61:1
-	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_assets_list.yap:62:1
-	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_assets_list.yap:63:1
-	if
-//line cmd/spx-backend/get_assets_list.yap:63:1
-	ok, msg := params.Validate(); !ok {
-//line cmd/spx-backend/get_assets_list.yap:64:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/get_assets_list.yap:65:1
-		return
-	}
+	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
+//line cmd/spx-backend/get_assets_list.yap:66:1
+	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
+//line cmd/spx-backend/get_assets_list.yap:67:1
+	if
+//line cmd/spx-backend/get_assets_list.yap:67:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/get_assets_list.yap:68:1
-	assets, err := this.ctrl.ListAssets(ctx.Context(), params)
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/get_assets_list.yap:69:1
-	if err != nil {
-//line cmd/spx-backend/get_assets_list.yap:70:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_assets_list.yap:71:1
 		return
 	}
+//line cmd/spx-backend/get_assets_list.yap:72:1
+	assets, err := this.ctrl.ListAssets(ctx.Context(), params)
 //line cmd/spx-backend/get_assets_list.yap:73:1
+	if err != nil {
+//line cmd/spx-backend/get_assets_list.yap:74:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_assets_list.yap:75:1
+		return
+	}
+//line cmd/spx-backend/get_assets_list.yap:77:1
 	this.Json__1(assets)
 }
 func (this *get_assets_list) Classfname() string {

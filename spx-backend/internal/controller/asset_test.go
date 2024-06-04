@@ -151,22 +151,24 @@ func TestControllerListAssets(t *testing.T) {
 		paramsOwner := "fake-name"
 		paramsCategory := "fake-category"
 		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
 		params := &ListAssetsParams{
 			Keyword:    "fake",
 			Owner:      &paramsOwner,
 			Category:   &paramsCategory,
 			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
 			IsPublic:   &paramsIsPublic,
 			OrderBy:    DefaultOrder,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Personal, model.StatusDeleted).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted).
 			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
 				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Personal, model.StatusDeleted, 0, 10).
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted, 0, 10).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
 				AddRow(1, "fake-asset", "fake-name"))
 		assets, err := ctrl.ListAssets(ctx, params)
@@ -184,22 +186,24 @@ func TestControllerListAssets(t *testing.T) {
 		paramsOwner := "fake-name"
 		paramsCategory := "fake-category"
 		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
 		params := &ListAssetsParams{
 			Keyword:    "fake",
 			Owner:      &paramsOwner,
 			Category:   &paramsCategory,
 			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
 			IsPublic:   &paramsIsPublic,
 			OrderBy:    TimeDesc,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
 			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
 				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \? ORDER BY c_time DESC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted, 0, 10).
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY c_time DESC LIMIT \?, \? `).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
 				AddRow(1, "fake-asset", "fake-name"))
 		assets, err := ctrl.ListAssets(ctx, params)
@@ -216,21 +220,23 @@ func TestControllerListAssets(t *testing.T) {
 		ctx := newContextWithTestUser(context.Background())
 		paramsCategory := "fake-category"
 		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
 		params := &ListAssetsParams{
 			Keyword:    "fake",
 			Category:   &paramsCategory,
 			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
 			IsPublic:   &paramsIsPublic,
 			OrderBy:    ClickCountDesc,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
+			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
 			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
 				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \? ORDER BY click_count DESC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted, 0, 10).
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY click_count DESC LIMIT \?, \? `).
+			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
 				AddRow(1, "fake-asset", "fake-name"))
 		assets, err := ctrl.ListAssets(ctx, params)
@@ -248,22 +254,24 @@ func TestControllerListAssets(t *testing.T) {
 		paramsOwner := "another-fake-name"
 		paramsCategory := "fake-category"
 		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
 		params := &ListAssetsParams{
 			Keyword:    "fake",
 			Owner:      &paramsOwner,
 			Category:   &paramsCategory,
 			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
 			IsPublic:   &paramsIsPublic,
 			OrderBy:    DefaultOrder,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
 			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
 				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, model.Public, model.StatusDeleted, 0, 10).
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
 				AddRow(1, "fake-asset", "another-fake-name"))
 		assets, err := ctrl.ListAssets(ctx, params)
@@ -282,12 +290,14 @@ func TestControllerListAssets(t *testing.T) {
 		paramsOwner := "fake-name"
 		paramsCategory := "fake-category"
 		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
 		params := &ListAssetsParams{
 			Keyword:    "fake",
 			Owner:      &paramsOwner,
 			Category:   &paramsCategory,
 			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
 			IsPublic:   &paramsIsPublic,
 			OrderBy:    DefaultOrder,
 			Pagination: model.Pagination{Index: 1, Size: 10},
@@ -306,6 +316,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -321,6 +332,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -336,6 +348,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -351,6 +364,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -366,6 +380,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -381,12 +396,29 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   -1,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid assetType", msg)
+	})
+
+	t.Run("EmptyFilesHash", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing filesHash", msg)
 	})
 
 	t.Run("InvalidIsPublic", func(t *testing.T) {
@@ -396,6 +428,7 @@ func TestAddAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    -1,
 		}
@@ -417,10 +450,11 @@ func TestControllerAddAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
-		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
@@ -442,6 +476,7 @@ func TestControllerAddAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -461,6 +496,7 @@ func TestControllerAddAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -481,6 +517,7 @@ func TestControllerAddAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -497,6 +534,7 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -511,6 +549,7 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -525,6 +564,7 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -539,6 +579,7 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 			Category:    "",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -553,6 +594,7 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   -1,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -561,12 +603,28 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 		assert.Equal(t, "invalid assetType", msg)
 	})
 
+	t.Run("EmptyFilesHash", func(t *testing.T) {
+		params := &UpdateAssetParams{
+			DisplayName: "fake-asset",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing filesHash", msg)
+	})
+
 	t.Run("InvalidIsPublic", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "fake-asset",
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    -1,
 		}
@@ -587,17 +645,18 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Public))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Public))
 		asset, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.NoError(t, err)
 		require.NotNil(t, asset)
@@ -615,12 +674,13 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		_, err = ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
@@ -636,12 +696,13 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		_, err = ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
@@ -657,6 +718,7 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
@@ -677,13 +739,14 @@ func TestControllerUpdateAsset(t *testing.T) {
 			Category:    "fake-category",
 			AssetType:   model.AssetTypeSprite,
 			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
 			Preview:     "fake-preview",
 			IsPublic:    model.Personal,
 		}
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		_, err = ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
@@ -698,8 +761,8 @@ func TestControllerIncreaseAssetClickCount(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = ctrl.IncreaseAssetClickCount(ctx, "1")
@@ -712,8 +775,8 @@ func TestControllerIncreaseAssetClickCount(t *testing.T) {
 
 		ctx := context.Background()
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		err = ctrl.IncreaseAssetClickCount(ctx, "1")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
@@ -725,8 +788,8 @@ func TestControllerIncreaseAssetClickCount(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		err = ctrl.IncreaseAssetClickCount(ctx, "1")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
@@ -750,8 +813,8 @@ func TestControllerIncreaseAssetClickCount(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		err = ctrl.IncreaseAssetClickCount(ctx, "1")
@@ -767,8 +830,8 @@ func TestControllerDeleteAsset(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = ctrl.DeleteAsset(ctx, "1")
@@ -781,8 +844,8 @@ func TestControllerDeleteAsset(t *testing.T) {
 
 		ctx := context.Background()
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		err = ctrl.DeleteAsset(ctx, "1")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
@@ -794,8 +857,8 @@ func TestControllerDeleteAsset(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		err = ctrl.DeleteAsset(ctx, "1")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
@@ -819,8 +882,8 @@ func TestControllerDeleteAsset(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), model.Personal))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
+				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
 		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		err = ctrl.DeleteAsset(ctx, "1")

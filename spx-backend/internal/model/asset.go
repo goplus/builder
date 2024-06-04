@@ -36,6 +36,9 @@ type Asset struct {
 	// Files contains the asset's files.
 	Files FileCollection `db:"files" json:"files"`
 
+	// FilesHash is the hash of the asset's files.
+	FilesHash string `db:"files_hash" json:"filesHash"`
+
 	// Preview is the URL for the asset preview, e.g., a gif for a sprite.
 	Preview string `db:"preview" json:"preview"`
 
@@ -77,8 +80,8 @@ func AddAsset(ctx context.Context, db *sql.DB, a *Asset) (*Asset, error) {
 	logger := log.GetReqLogger(ctx)
 
 	now := time.Now().UTC()
-	query := fmt.Sprintf("INSERT INTO %s (c_time, u_time, display_name, owner, category, asset_type, files, preview, click_count, is_public, status) VALUES (?,?,?,?,?,?,?,?,?,?,?)", TableAsset)
-	result, err := db.ExecContext(ctx, query, now, now, a.DisplayName, a.Owner, a.Category, a.AssetType, a.Files, a.Preview, a.ClickCount, a.IsPublic, StatusNormal)
+	query := fmt.Sprintf("INSERT INTO %s (c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", TableAsset)
+	result, err := db.ExecContext(ctx, query, now, now, a.DisplayName, a.Owner, a.Category, a.AssetType, a.Files, a.FilesHash, a.Preview, a.ClickCount, a.IsPublic, StatusNormal)
 	if err != nil {
 		logger.Printf("db.ExecContext failed: %v", err)
 		return nil, err
@@ -96,8 +99,8 @@ func AddAsset(ctx context.Context, db *sql.DB, a *Asset) (*Asset, error) {
 func UpdateAssetByID(ctx context.Context, db *sql.DB, id string, a *Asset) (*Asset, error) {
 	logger := log.GetReqLogger(ctx)
 
-	query := fmt.Sprintf("UPDATE %s SET u_time = ?, display_name = ?, category = ?, asset_type = ?, files = ?, preview = ?, is_public = ? WHERE id = ?", TableAsset)
-	result, err := db.ExecContext(ctx, query, time.Now().UTC(), a.DisplayName, a.Category, a.AssetType, a.Files, a.Preview, a.IsPublic, id)
+	query := fmt.Sprintf("UPDATE %s SET u_time = ?, display_name = ?, category = ?, asset_type = ?, files = ?, files_hash = ?, preview = ?, is_public = ? WHERE id = ?", TableAsset)
+	result, err := db.ExecContext(ctx, query, time.Now().UTC(), a.DisplayName, a.Category, a.AssetType, a.Files, a.FilesHash, a.Preview, a.IsPublic, id)
 	if err != nil {
 		logger.Printf("db.ExecContext failed: %v", err)
 		return nil, err

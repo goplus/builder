@@ -14,6 +14,7 @@ CREATE TABLE `asset`  (
                           `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
                           `asset_type` int NULL DEFAULT NULL,
                           `files` json NULL,
+                          `files_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
                           `preview` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
                           `click_count` int NULL DEFAULT 0,
                           `is_public` tinyint NULL DEFAULT NULL,

@@ -79,7 +79,7 @@ func TestAddAsset(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"display_name"}).
@@ -95,7 +95,7 @@ func TestAddAsset(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnError(sql.ErrConnDone)
 		asset, err := AddAsset(context.Background(), db, &Asset{DisplayName: "foo"})
 		require.Error(t, err)
@@ -108,7 +108,7 @@ func TestAddAsset(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO asset \(c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
 		asset, err := AddAsset(context.Background(), db, &Asset{DisplayName: "foo"})
 		require.Error(t, err)
@@ -122,7 +122,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"display_name"}).
@@ -138,7 +138,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewResult(1, 0))
 		asset, err := UpdateAssetByID(context.Background(), db, "1", &Asset{DisplayName: "foo"})
 		require.Error(t, err)
@@ -151,7 +151,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnError(sql.ErrConnDone)
 		asset, err := UpdateAssetByID(context.Background(), db, "1", &Asset{DisplayName: "foo"})
 		require.Error(t, err)
@@ -164,7 +164,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, preview = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
 		asset, err := UpdateAssetByID(context.Background(), db, "1", &Asset{DisplayName: "foo"})
 		require.Error(t, err)

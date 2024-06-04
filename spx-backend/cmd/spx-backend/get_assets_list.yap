@@ -44,6 +44,10 @@ if assetTypeParam := ${assetType}; assetTypeParam != "" {
 	params.AssetType = &assetType
 }
 
+if filesHash := ${filesHash}; filesHash != "" {
+	params.FilesHash = &filesHash
+}
+
 if isPublicParam := ${isPublic}; isPublicParam != "" {
 	isPublicInt, err := strconv.Atoi(isPublicParam)
 	if err != nil {
