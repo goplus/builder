@@ -57,7 +57,6 @@ const editorCtx = useEditorCtx()
 .container {
   display: flex;
   align-items: center;
-  padding: 0 16px;
   color: var(--ui-color-grey-800);
   gap: 16px;
 }
