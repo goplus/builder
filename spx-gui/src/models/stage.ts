@@ -94,12 +94,12 @@ export class Stage {
     }
   }
 
-  mapWidth: number | undefined
+  mapWidth: number
   setMapWidth(mapWidth: number) {
     this.mapWidth = mapWidth
   }
 
-  mapHeight: number | undefined
+  mapHeight: number
   setMapHeight(mapHeight: number) {
     this.mapHeight = mapHeight
   }
@@ -109,24 +109,16 @@ export class Stage {
     this.mapMode = mapMode
   }
 
-  /** Dicide map size based on map config & backdrop information */
-  async getMapSize(): Promise<Size | null> {
-    const { mapWidth: width, mapHeight: height } = this
-    if (width != null && height != null) {
-      return { width, height }
-    }
-    if (this.defaultBackdrop != null) {
-      return await this.defaultBackdrop.getSize()
-    }
-    return null
+  getMapSize(): Size {
+    return { width: this.mapWidth, height: this.mapHeight }
   }
 
   constructor(codeFile: File | null = null, inits?: Partial<StageInits>) {
     this.codeFile = codeFile
     this.backdrops = []
     this.backdropIndex = inits?.backdropIndex ?? 0
-    this.mapWidth = inits?.mapWidth
-    this.mapHeight = inits?.mapHeight
+    this.mapWidth = inits?.mapWidth ?? 480
+    this.mapHeight = inits?.mapHeight ?? 360
     this.mapMode = getMapMode(inits?.mapMode)
     return reactive(this) as this
   }
@@ -156,7 +148,9 @@ export class Stage {
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) =>
+      Backdrop.load(c, files)
+    )
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }
@@ -182,16 +176,15 @@ export class Stage {
   }
 }
 
+// In Builder we only support repeat and fillRatio
 export enum MapMode {
-  fill = 'fill',
+  // fill = 'fill',
   repeat = 'repeat',
-  fillRatio = 'fillRatio',
-  fillCut = 'fillCut'
+  fillRatio = 'fillRatio'
+  // fillCut = 'fillCut'
 }
 
 function getMapMode(mode?: string): MapMode {
   if (mode === 'repeat') return MapMode.repeat
-  if (mode === 'fillCut') return MapMode.fillCut
-  if (mode === 'fillRatio') return MapMode.fillRatio
-  return MapMode.fill
+  return MapMode.fillRatio
 }

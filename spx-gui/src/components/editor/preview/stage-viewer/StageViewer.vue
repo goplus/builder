@@ -1,14 +1,14 @@
 <template>
   <div ref="conatiner" class="stage-viewer">
     <v-stage
-      v-if="stageConfig != null && !backdropLoading"
+      v-if="stageConfig != null"
       ref="stageRef"
       :config="stageConfig"
       @mousedown="handleStageMousedown"
       @contextmenu="handleContextMenu"
     >
       <v-layer>
-        <v-image v-if="backdropImg != null" :config="{ ...mapSize, image: backdropImg }"></v-image>
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
       </v-layer>
       <v-layer>
         <SpriteItem
@@ -36,24 +36,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
-import { useImgFile } from '@/utils/file'
+import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
+import { MapMode } from '@/models/stage'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
 const stageRef = ref<any>()
-const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
+const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
 const spritesReadyMap = reactive(new Map<string, boolean>())
 
@@ -81,12 +81,70 @@ const stageConfig = computed(() => {
   }
 })
 
-const [backdropImg, backdropLoading] = useImgFile(
+const backdropImg = ref<HTMLImageElement | null>(null)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(
   () => editorCtx.project.stage.defaultBackdrop?.img
 )
+watchEffect(() => {
+  if (backdropSrc.value == null) return
+  const img = new Image()
+  img.src = backdropSrc.value
+  img.addEventListener('load', () => {
+    backdropImg.value = img
+  })
+})
+
+const konvaBackdropConfig = computed(() => {
+  if (backdropImg.value == null || stageConfig.value == null) {
+    return null
+  }
+
+  const stageWidth = mapSize.value.width
+  const stageHeight = mapSize.value.height
+  const imageWidth = backdropImg.value.width
+  const imageHeight = backdropImg.value.height
+
+  if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
+    const scaleX = stageWidth / imageWidth
+    const scaleY = stageHeight / imageHeight
+    const scale = Math.max(scaleX, scaleY) // Use max to cover the entire stage
+
+    const width = imageWidth * scale
+    const height = imageHeight * scale
+    const x = (stageWidth - width) / 2
+    const y = (stageHeight - height) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'no-repeat',
+      fillPatternX: x,
+      fillPatternY: y,
+      fillPatternScaleX: scale,
+      fillPatternScaleY: scale
+    }
+  } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
+    const offsetX = (stageWidth - imageWidth) / 2
+    const offsetY = (stageHeight - imageHeight) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'repeat',
+      fillPatternX: offsetX,
+      fillPatternY: offsetY,
+      fillPatternScaleX: 1,
+      fillPatternScaleY: 1
+    }
+  }
+  console.warn('Unsupported map mode:', editorCtx.project.stage.mapMode)
+  return null
+})
 
 const spritesAndBackdropLoading = computed(() => {
-  if (backdropLoading.value) return true
+  if (backdropSrcLoading.value || !backdropImg.value) return true
   return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
 })
 
@@ -157,5 +215,7 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+
+  overflow: hidden;
 }
 </style>

@@ -56,19 +56,35 @@
     </UINumberInput>
     <p class="with-label">
       {{ $t({ en: 'Show', zh: '显示' }) }}:
-      <VisibleInput :value="sprite.visible" @update:value="handleVisibleUpdate" />
+      <UIButtonGroup
+        :value="sprite.visible ? 'visible' : 'hidden'"
+        @update:value="(v) => handleVisibleUpdate(v === 'visible')"
+      >
+        <UIButtonGroupItem value="visible">
+          <UIIcon type="eye" />
+        </UIButtonGroupItem>
+        <UIButtonGroupItem value="hidden">
+          <UIIcon type="eyeSlash" />
+        </UIButtonGroupItem>
+      </UIButtonGroup>
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UINumberInput, UIIcon, useModal, UITooltip } from '@/components/ui'
+import {
+  UINumberInput,
+  UIIcon,
+  useModal,
+  UITooltip,
+  UIButtonGroup,
+  UIButtonGroupItem
+} from '@/components/ui'
 import { debounce, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
 import AssetName from '@/components/asset/AssetName.vue'
-import VisibleInput from '../common/VisibleInput.vue'
 import SpriteRenameModal from './SpriteRenameModal.vue'
 
 const props = defineProps<{
