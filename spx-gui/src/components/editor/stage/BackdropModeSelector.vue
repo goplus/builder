@@ -34,24 +34,24 @@
       </UITooltip>
     </div>
     <UIButtonGroup
-      :values="{
-        repeat: PaddedText($t({ en: 'Tile', zh: '平铺' })),
-        fillRatio: PaddedText($t({ en: 'Scale', zh: '缩放' }))
-      }"
       :value="editorCtx.project.stage.mapMode"
       @update:value="(v) => editorCtx.project.stage.setMapMode(v as MapMode)"
-    />
+    >
+      <UIButtonGroupItem value="repeat">
+        <div class="padded-button-group">{{ $t({ en: 'Tile', zh: '平铺' }) }}</div>
+      </UIButtonGroupItem>
+      <UIButtonGroupItem value="fillRatio">
+        <div class="padded-button-group">{{ $t({ en: 'Scale', zh: '缩放' }) }}</div>
+      </UIButtonGroupItem>
+    </UIButtonGroup>
   </div>
 </template>
 <script setup lang="ts">
-import { UITooltip, UIButtonGroup } from '@/components/ui'
+import { UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { h } from 'vue'
 import type { MapMode } from '@/models/stage'
 
 const editorCtx = useEditorCtx()
-
-const PaddedText = (text: string) => h('div', { style: { padding: '0 12px' } }, text)
 </script>
 <style scoped lang="scss">
 .container {
@@ -66,5 +66,9 @@ const PaddedText = (text: string) => h('div', { style: { padding: '0 12px' } }, 
   display: flex;
   gap: 4px;
   align-items: center;
+}
+
+.padded-button-group {
+  padding: 0 12px;
 }
 </style>
