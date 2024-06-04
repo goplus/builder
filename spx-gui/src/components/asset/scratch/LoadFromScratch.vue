@@ -35,14 +35,14 @@
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.backdrops"
-          :key="asset.name"
+          :key="asset.costume.name"
           @click="selectBackdrop(asset)"
         >
-          <ScratchItemContainer :selected="selected.backdrops.has(asset)">
+          <ScratchItemContainer :selected="selected.backdrop === asset">
             <div class="asset-image">
-              <BlobImage :blob="asset.blob" />
+              <BlobImage :blob="asset.costume.blob" />
             </div>
-            <div class="asset-name">{{ asset.name }}</div>
+            <div class="asset-name">{{ asset.costume.name }}</div>
           </ScratchItemContainer>
         </NGridItem>
       </NGrid>
@@ -68,7 +68,11 @@ import { ref, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
-import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
+import {
+  type ExportedScratchAssets,
+  type ExportedScratchFile,
+  type ExportedScratchBackdrop
+} from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
@@ -91,11 +95,11 @@ const emit = defineEmits<{
 }>()
 
 const selected = ref<{
-  backdrops: Set<ExportedScratchFile>
+  backdrop: ExportedScratchBackdrop | null
   sounds: Set<ExportedScratchFile>
   sprites: Set<ExportedScratchSprite>
 }>({
-  backdrops: new Set(),
+  backdrop: null,
   sounds: new Set(),
   sprites: new Set()
 })
@@ -104,7 +108,7 @@ watch(
   () => props.scratchAssets,
   () => {
     selected.value = {
-      backdrops: new Set(),
+      backdrop: null,
       sounds: new Set(),
       sprites: new Set()
     }
@@ -127,11 +131,11 @@ const selectSound = (sound: ExportedScratchFile) => {
   }
 }
 
-const selectBackdrop = (backdrop: ExportedScratchFile) => {
-  if (selected.value.backdrops.has(backdrop)) {
-    selected.value.backdrops.delete(backdrop)
+const selectBackdrop = (backdrop: ExportedScratchBackdrop) => {
+  if (selected.value.backdrop === backdrop) {
+    selected.value.backdrop = null
   } else {
-    selected.value.backdrops.add(backdrop)
+    selected.value.backdrop = backdrop
   }
 }
 
@@ -159,24 +163,29 @@ const importSound = async (asset: ExportedScratchFile) => {
   return sound
 }
 
-const importBackdrop = async (asset: ExportedScratchFile) => {
-  const file = scratchToSpxFile(asset)
-  const backdrop = await Backdrop.create(asset.name, file)
+const importBackdrop = async (asset: ExportedScratchBackdrop) => {
+  const file = scratchToSpxFile(asset.costume)
+  const backdrop = await Backdrop.create(asset.costume.name, file, {
+    bitmapResolution: asset.bitmapResolution
+  })
   props.project.stage.addBackdrop(backdrop)
   return backdrop
 }
 
 const importSelected = useMessageHandle(
   async () => {
-    const { sprites, sounds, backdrops } = selected.value
+    const { sprites, sounds, backdrop } = selected.value
     const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
-    const imported = await props.project.history.doAction(action, () =>
-      Promise.all([
+    const imported = await props.project.history.doAction(action, () => {
+      const promises: (Promise<Sprite> | Promise<Sound> | Promise<Backdrop>)[] = [
         ...Array.from(sprites).map(importSprite),
-        ...Array.from(sounds).map(importSound),
-        ...Array.from(backdrops).map(importBackdrop)
-      ])
-    )
+        ...Array.from(sounds).map(importSound)
+      ]
+      if (backdrop != null) {
+        promises.push(importBackdrop(backdrop))
+      }
+      return Promise.all(promises)
+    })
     emit('imported', imported)
   },
   // TODO: more detailed error message

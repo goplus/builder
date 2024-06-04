@@ -13,10 +13,15 @@ export interface ExportedScratchSprite {
   costumes: ExportedScratchFile[]
 }
 
+export interface ExportedScratchBackdrop {
+  costume: ExportedScratchFile
+  bitmapResolution: number
+}
+
 export interface ExportedScratchAssets {
   sprites: ExportedScratchSprite[]
   sounds: ExportedScratchFile[]
-  backdrops: ExportedScratchFile[]
+  backdrops: ExportedScratchBackdrop[]
 }
 
 interface ScratchFile {
@@ -88,7 +93,10 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
 
     if (imageFiles.length > 0) {
       if (target.isStage) {
-        scratchAssets.backdrops.push(...imageFiles)
+        scratchAssets.backdrops.push({
+          costume: imageFiles[0],
+          bitmapResolution: target.costumes[0].bitmapResolution
+        })
       } else {
         scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
       }
