@@ -5,20 +5,21 @@
 </template>
 
 <script setup lang="ts">
-import { type Ref, computed, inject } from 'vue'
+import { computed, inject } from 'vue'
+import { selectedValueInjectionKey, updateValueInjectionKey } from './UIButtonGroup.vue'
 
 const props = defineProps<{
   value: string
 }>()
 
-const selectedValue = inject('selectedValue') as Ref<string>
-const updateValue = inject('updateValue') as (value: string) => void
+const selectedValue = inject(selectedValueInjectionKey)
+const updateValue = inject(updateValueInjectionKey)
 
-const isActive = computed(() => selectedValue.value === props.value)
+const isActive = computed(() => selectedValue === props.value)
 
 const handleClick = () => {
   if (!isActive.value) {
-    updateValue(props.value)
+    updateValue?.(props.value)
   }
 }
 </script>
