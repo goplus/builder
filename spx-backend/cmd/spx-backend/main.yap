@@ -1,8 +1,12 @@
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -32,4 +36,23 @@ if port == "" {
 }
 logger.Printf("Listening to %s", port)
 
-run port, NewUserMiddleware(ctrl), NewReqIDMiddleware(), NewCORSMiddleware()
+h := handler(NewUserMiddleware(ctrl), NewReqIDMiddleware(), NewCORSMiddleware())
+server := &http.Server{Addr: port, Handler: h}
+
+stopCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+defer stop()
+var serverErr error
+go func() {
+	serverErr = server.ListenAndServe()
+	stop()
+}()
+<-stopCtx.Done()
+if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
+	logger.Fatalln("Server error:", err)
+}
+
+shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+defer cancel()
+if err := server.Shutdown(shutdownCtx); err != nil {
+	logger.Fatalln("Failed to gracefully shut down:", err)
+}
