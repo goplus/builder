@@ -5,7 +5,8 @@
 </template>
 
 <script lang="ts">
-export const selectedValueInjectionKey: InjectionKey<string | undefined> = Symbol('selectedValue')
+export const selectedValueInjectionKey: InjectionKey<() => string | undefined> =
+  Symbol('selectedValue')
 export const updateValueInjectionKey: InjectionKey<(value: string) => void> = Symbol('updateValue')
 </script>
 
@@ -20,7 +21,7 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-provide(selectedValueInjectionKey, props.value)
+provide(selectedValueInjectionKey, () => props.value)
 provide(updateValueInjectionKey, (value: string) => {
   emit('update:value', value)
 })

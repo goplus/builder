@@ -15,7 +15,7 @@ const props = defineProps<{
 const selectedValue = inject(selectedValueInjectionKey)
 const updateValue = inject(updateValueInjectionKey)
 
-const isActive = computed(() => selectedValue === props.value)
+const isActive = computed(() => selectedValue?.() === props.value)
 
 const handleClick = () => {
   if (!isActive.value) {

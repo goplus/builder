@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
@@ -94,60 +94,57 @@ watchEffect(() => {
   })
 })
 
-const konvaBackdropConfig = ref<any>()
-
-watchEffect(async () => {
-  const computeKonvaBackdropConfig = () => {
-    if (backdropImg.value == null || stageConfig.value == null) {
-      return
-    }
-
-    if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
-      const stageWidth = stageConfig.value.width
-      const stageHeight = stageConfig.value.height
-      const imageWidth = backdropImg.value.width
-      const imageHeight = backdropImg.value.height
-
-      const scaleX = stageWidth / imageWidth
-      const scaleY = stageHeight / imageHeight
-      const scale = Math.min(scaleX, scaleY)
-
-      const width = imageWidth * scale
-      const height = imageHeight * scale
-      const x = (stageWidth - width) / 2
-      const y = (stageHeight - height) / 2
-
-      return {
-        fillPatternImage: backdropImg.value,
-        width: width,
-        height: height,
-        x: x,
-        y: y,
-        fillPatternRepeat: 'no-repeat',
-        fillPatternScaleX: scale,
-        fillPatternScaleY: scale
-      }
-    } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
-      const stageWidth = stageConfig.value.width
-      const stageHeight = stageConfig.value.height
-
-      return {
-        fillPatternRepeat: 'repeat',
-        fillPatternImage: backdropImg.value,
-        width: stageWidth,
-        height: stageHeight
-      }
-    }
+const konvaBackdropConfig = computed(() => {
+  if (backdropImg.value == null || stageConfig.value == null) {
+    return null
   }
 
-  const newValue = computeKonvaBackdropConfig()
-  konvaBackdropConfig.value = undefined
-  await nextTick()
-  konvaBackdropConfig.value = newValue
+  const stageWidth = mapSize.value.width
+  const stageHeight = mapSize.value.height
+  const imageWidth = backdropImg.value.width
+  const imageHeight = backdropImg.value.height
+
+  if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
+    const scaleX = stageWidth / imageWidth
+    const scaleY = stageHeight / imageHeight
+    const scale = Math.max(scaleX, scaleY) // Use max to cover the entire stage
+
+    const width = imageWidth * scale
+    const height = imageHeight * scale
+    const x = (stageWidth - width) / 2
+    const y = (stageHeight - height) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'no-repeat',
+      fillPatternX: x,
+      fillPatternY: y,
+      fillPatternScaleX: scale,
+      fillPatternScaleY: scale
+    }
+  } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
+    const offsetX = (stageWidth - imageWidth) / 2
+    const offsetY = (stageHeight - imageHeight) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'repeat',
+      fillPatternX: offsetX,
+      fillPatternY: offsetY,
+      fillPatternScaleX: 1,
+      fillPatternScaleY: 1
+    }
+  }
+  console.warn('Unsupported map mode:', editorCtx.project.stage.mapMode)
+  return null
 })
 
 const spritesAndBackdropLoading = computed(() => {
-  if (backdropSrcLoading.value) return true
+  if (backdropSrcLoading.value || !backdropImg.value) return true
   return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
 })
 
@@ -218,5 +215,7 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   background-repeat: repeat;
   background-size: contain;
   position: relative;
+
+  overflow: hidden;
 }
 </style>
