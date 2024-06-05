@@ -176,13 +176,13 @@ const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected.value
     const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
-    const imported = await props.project.history.doAction(action, () => {
-      return Promise.all([
+    const imported = await props.project.history.doAction(action, () =>
+      Promise.all([
         ...Array.from(sprites).map(importSprite),
         ...Array.from(sounds).map(importSound),
         ...Array.from(backdrops).map(importBackdrop)
       ])
-    })
+    )
     emit('imported', imported)
   },
   // TODO: more detailed error message

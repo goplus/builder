@@ -75,14 +75,13 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
         continue
       }
       const arrayBuffer = await zipFile.async('arraybuffer')
-      const exported = {
+      files.push({
         name: file.name,
         extension: file.dataFormat,
         filename: `${file.name}.${file.dataFormat}`,
         blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) }),
         bitmapResolution: 'bitmapResolution' in file ? file.bitmapResolution : undefined
-      }
-      files.push(exported)
+      })
     }
     return files
   }
@@ -93,8 +92,7 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
 
     if (imageFiles.length > 0) {
       if (target.isStage) {
-        // We assume there is only one backdrop for the stage
-        scratchAssets.backdrops.push(imageFiles[0])
+        scratchAssets.backdrops.push(...imageFiles)
       } else {
         scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
       }
