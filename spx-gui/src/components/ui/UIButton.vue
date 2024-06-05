@@ -74,10 +74,6 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
     width: var(--ui-font-size-text);
     height: var(--ui-font-size-text);
   }
-
-  &:focus {
-    outline: 2px solid var(--ui-color-primary-700);
-  }
 }
 
 .type-primary {

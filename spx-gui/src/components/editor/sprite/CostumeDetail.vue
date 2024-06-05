@@ -38,7 +38,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 .img-wrapper {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background-image: url(./costume-bg.png);
+  background-image: url(./costume-bg.svg);
 }
 .img {
   width: 100%;
