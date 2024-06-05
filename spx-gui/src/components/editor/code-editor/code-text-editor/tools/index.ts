@@ -107,7 +107,13 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
-      tools: [spx.backdropName, spx.backdropIndex, spx.startBackdrop, spx.nextBackdrop, spx.prevBackdrop]
+      tools: [
+        spx.backdropName,
+        spx.backdropIndex,
+        spx.startBackdrop,
+        spx.nextBackdrop,
+        spx.prevBackdrop
+      ]
     }
   ]
 }

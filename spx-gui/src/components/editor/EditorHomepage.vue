@@ -200,8 +200,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
     }
   }
 
-  newProject.startWatchToSetHasUnsyncedChanges()
-  newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
+  await newProject.startEditing(LOCAL_CACHE_KEY)
   return newProject
 }
 

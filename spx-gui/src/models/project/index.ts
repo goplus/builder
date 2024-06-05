@@ -16,6 +16,7 @@ import { Sound } from '../sound'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
+import { hashFiles } from '../common/hash'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
 import { History } from './history'
@@ -30,7 +31,8 @@ export type Metadata = {
   version?: number
   cTime?: string
   uTime?: string
-  hasUnsyncedChanges?: boolean
+  filesHash?: string
+  lastSyncedFilesHash?: string
 }
 
 const projectConfigFileName = 'index.json'
@@ -65,13 +67,12 @@ export class Project extends Disposble {
   cTime?: string
   uTime?: string
 
-  /**
-   * If there is any change of game content not synced (to cloud) yet.
-   * TODO: we need to optimize logic for maintaining `hasUnsyncedChanges` to correctly reflect the state.
-   * For example, if the user do some change & then undo it, the `hasUnsyncedChanges` should be `false`.
-   * It's a similar issue to https://github.com/goplus/builder/issues/520 .
-   */
-  hasUnsyncedChanges = false
+  private filesHash?: string
+  private lastSyncedFilesHash?: string
+  /** If there is any change of game content not synced (to cloud) yet. */
+  get hasUnsyncedChanges() {
+    return this.lastSyncedFilesHash !== this.filesHash
+  }
 
   stage: Stage
   sprites: Sprite[]
@@ -272,7 +273,8 @@ export class Project extends Disposble {
       version: this.version,
       cTime: this.cTime,
       uTime: this.uTime,
-      hasUnsyncedChanges: this.hasUnsyncedChanges
+      filesHash: this.filesHash,
+      lastSyncedFilesHash: this.lastSyncedFilesHash
     }
     const files = this.exportGameFiles()
     return [metadata, files]
@@ -308,9 +310,9 @@ export class Project extends Disposble {
   /** Save to cloud */
   async saveToCloud() {
     const [metadata, files] = this.export()
-    const res = await cloudHelper.save(metadata, files)
-    this.applyMetadata(res.metadata)
-    this.hasUnsyncedChanges = false
+    const saved = await cloudHelper.save(metadata, files)
+    this.applyMetadata(saved.metadata)
+    this.lastSyncedFilesHash = await hashFiles(files)
   }
 
   /** Load from local cache */
@@ -321,25 +323,29 @@ export class Project extends Disposble {
     await this.load(metadata, files)
   }
 
-  /** Sync to local cache */
-  startWatchToSyncLocalCache(key: string) {
-    const saveExports = debounce(() => {
-      const [metadata, files] = this.export()
-      localHelper.save(key, metadata, files)
-    }, 1000)
-    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
-  }
-
-  /** Should be called before `startWatchToSyncLocalCache()` */
-  startWatchToSetHasUnsyncedChanges() {
+  /** Initialize editing features (sync change to local cache, update hasUnsyncedChanges on update, ...) */
+  async startEditing(localCacheKey: string) {
+    if (this.lastSyncedFilesHash == null) {
+      this.lastSyncedFilesHash = await hashFiles(this.exportGameFiles())
+    }
     this.addDisposer(
       watch(
         () => this.exportGameFiles(),
-        () => {
-          this.hasUnsyncedChanges = true
-        }
+        async (files, _, onCleanup) => {
+          let cancelled = false
+          onCleanup(() => (cancelled = true))
+          const filesHash = await hashFiles(files)
+          if (!cancelled) this.filesHash = filesHash
+        },
+        { immediate: true }
       )
     )
+    // sync changes to local cache
+    const saveExports = debounce(() => {
+      const [metadata, files] = this.export()
+      localHelper.save(localCacheKey, metadata, files)
+    }, 1000)
+    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
   }
 }
 

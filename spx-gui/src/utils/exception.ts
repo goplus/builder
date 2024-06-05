@@ -153,6 +153,7 @@ export function useQuery<T>(
       },
       (e) => {
         error.value = e
+        console.warn(e)
       }
     )
   }
