@@ -66,4 +66,8 @@ const editorCtx = useEditorCtx()
   }
   padding: 16px;
 }
+
+.run-button {
+  height: 30px;
+}
 </style>
