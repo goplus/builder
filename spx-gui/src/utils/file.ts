@@ -53,11 +53,12 @@ function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
         setTimeout(() => {
           // change event of input not triggered (if triggered, it happens soon after focus event of window)
           if (!settled) reject(new Cancelled())
-        }, 300)
+        }, 1000)
       },
       { once: true }
     )
     input.onchange = async () => {
+      // TODO: we should not check size for `.gbp` or scratch files
       const oversizedFileNames = Array.from(input.files!)
         .filter((file) => file.size > maxFileSize)
         .map((file) => file.name)
