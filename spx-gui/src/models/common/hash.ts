@@ -19,7 +19,7 @@ export async function hashFileCollection(fileCollection: FileCollection): Promis
     )
   )
   const data = new TextEncoder().encode(JSON.stringify(sortedFileCollection))
-  return calculatehash(data)
+  return calculateHash(data)
 }
 
 async function hashFile(file: File): Promise<string> {
@@ -31,12 +31,12 @@ async function hashFile(file: File): Promise<string> {
       file.name,
       ab.byteLength
     )
-  const hash = await calculatehash(ab)
+  const hash = await calculateHash(ab)
   file.meta.hash = hash
   return hash
 }
 
-async function calculatehash(data: BufferSource) {
+async function calculateHash(data: BufferSource) {
   const hash = await crypto.subtle.digest('SHA-1', data)
   const hashB64 = btoa(String.fromCharCode(...Array.from(new Uint8Array(hash))))
   return 'h1:' + hashB64
