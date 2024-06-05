@@ -111,9 +111,9 @@ const categories = computed(() => {
       ...eventCategory
     },
     {
-      icon: iconControl,
-      color: '#67ceff',
-      ...controlCategory
+      icon: iconLook,
+      color: '#fd8d60',
+      ...lookCategory
     },
     {
       icon: iconMotion,
@@ -121,9 +121,9 @@ const categories = computed(() => {
       ...motionCategory
     },
     {
-      icon: iconLook,
-      color: '#fd8d60',
-      ...lookCategory
+      icon: iconControl,
+      color: '#67ceff',
+      ...controlCategory
     },
     {
       icon: iconSensing,
