@@ -4,6 +4,7 @@
  *       Files are expected to be immutable. Everytime you want to modify a file, create a new instance.
  */
 
+import { markRaw } from 'vue'
 import { getMimeFromExt } from '@/utils/file'
 import { extname } from '@/utils/path'
 import type { Disposer } from './disposable'
@@ -15,6 +16,11 @@ export type Options = {
   // TODO: lastModified, endings
 }
 
+export type Metadata = {
+  universalUrl?: string
+  hash?: string
+}
+
 export type Loader = () => Promise<ArrayBuffer>
 
 /** File-like class, while load lazily */
@@ -22,24 +28,32 @@ export class File {
   /** MIME type of file */
   type: string
 
+  /**
+   * Metadata related to current file.
+   * If you want to save data during the file's lifetime (including serialization & deserialization), put it here.
+   * It's ok to read & write this field directly as long as you are clear about what you are doing.
+   */
+  meta: Metadata = {}
+
   constructor(
     /** File name */
     public name: string,
     /** Loader for file content */
-    public _loader: Loader,
+    private loader: Loader,
     options?: Options
   ) {
     this.type = options?.type ?? getMimeFromExt(extname(name).slice(1)) ?? ''
+    markRaw(this)
   }
 
-  _content: ArrayBuffer | null = null
-  _promisedContent: Promise<ArrayBuffer> | null = null
+  private content: ArrayBuffer | null = null
+  private promisedContent: Promise<ArrayBuffer> | null = null
 
   async arrayBuffer() {
-    if (this._content != null) return this._content
-    if (this._promisedContent != null) return this._promisedContent
-    return (this._promisedContent = this._loader().then((ab) => {
-      return (this._content = ab)
+    if (this.content != null) return this.content
+    if (this.promisedContent != null) return this.promisedContent
+    return (this.promisedContent = this.loader().then((ab) => {
+      return (this.content = ab)
     }))
   }
 
@@ -63,8 +77,6 @@ export class File {
 export type Files = {
   [path: string]: File | undefined
 }
-
-export type ReadFile = (path: string) => Promise<File>
 
 function str2Ab(str: string) {
   const encoder = new TextEncoder()

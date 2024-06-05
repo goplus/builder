@@ -1,12 +1,13 @@
 import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
-import { File, toNativeFile, type Files } from './file'
+import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
-import { getUpInfo as getRawUpInfo, type UpInfo as RawUpInfo, makeObjectUrls } from '@/apis/util'
+import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
-import type { WebUrl, UniversalUrl, UniversalToWebUrlMap, FileCollection } from '@/apis/common'
+import { File, toNativeFile, type Files } from './file'
+import { hashFileCollection } from './hash'
 
 // See https://github.com/goplus/builder/issues/411 for all the supported schemes, future plans, and discussions.
 const kodoScheme = 'kodo://'
@@ -43,22 +44,8 @@ export async function uploadFiles(
   for (const [path, url] of entries) {
     fileCollection[path] = url
   }
-  const fileCollectionHash = await hashFiles(fileCollection)
+  const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
-}
-
-export async function hashFiles(fileCollection: FileCollection): Promise<string> {
-  // Sort fileCollection alphabetically by path to ensure consistent hash
-  const sortedFileCollection = Object.fromEntries(
-    Object.entries(fileCollection).sort(([pathA], [pathB]) =>
-      pathA < pathB ? -1 : pathA > pathB ? 1 : 0
-    )
-  )
-  const data = new TextEncoder().encode(JSON.stringify(sortedFileCollection))
-  const hash = await crypto.subtle.digest('SHA-1', data)
-  const hashB64 = btoa(String.fromCharCode(...Array.from(new Uint8Array(hash))))
-  const fileCollectionHash = 'h1:' + hashB64
-  return fileCollectionHash
 }
 
 export async function getFiles(fileCollection: FileCollection): Promise<Files> {
@@ -67,8 +54,7 @@ export async function getFiles(fileCollection: FileCollection): Promise<Files> {
     url.startsWith(kodoScheme)
   )
   if (objectUniversalUrls.length) {
-    const result = await makeObjectUrls(objectUniversalUrls)
-    objectUrls = result.objectUrls
+    objectUrls = await makeObjectUrls(objectUniversalUrls)
   }
 
   const files: Files = {}
@@ -88,17 +74,18 @@ export async function getFiles(fileCollection: FileCollection): Promise<Files> {
   return files
 }
 
-// A mark to avoid unnecessary uploading for static files
-// TODO: we can apply similar strategy to json or code files
-const fileUrlKey = Symbol('url')
 function setUniversalUrl(file: File, url: UniversalUrl) {
-  ;(file as any)[fileUrlKey] = url
+  file.meta.universalUrl = url
+  // for binary files stored in kodo, use universalUrl as hash to skip hash-calculating
+  if (!['text/plain', 'application/json'].includes(file.type) && file.meta.hash == null) {
+    file.meta.hash = url
+  }
 }
 function getUniversalUrl(file: File): UniversalUrl | null {
-  return (file as any)[fileUrlKey] ?? null
+  return file.meta.universalUrl ?? null
 }
 
-export function createFileWithWebUrl(name: string, webUrl: WebUrl) {
+function createFileWithWebUrl(name: string, webUrl: WebUrl) {
   return new File(name, async () => {
     const resp = await fetch(webUrl)
     const blob = await resp.blob()
@@ -119,7 +106,7 @@ type QiniuUploadRes = {
   hash: string
 }
 
-async function uploadToKodo(file: File) {
+async function uploadToKodo(file: File): Promise<UniversalUrl> {
   const nativeFile = await toNativeFile(file)
   const { token, maxSize, bucket, region } = await getUpInfo()
   if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
@@ -143,7 +130,7 @@ async function uploadToKodo(file: File) {
       }
     })
   })
-  return (kodoScheme + bucket + '/' + key) as UniversalUrl
+  return kodoScheme + bucket + '/' + key
 }
 
 type UpInfo = Omit<RawUpInfo, 'expires'> & {

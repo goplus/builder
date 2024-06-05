@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, shallowRef, watchEffect } from 'vue'
 import dayjs from 'dayjs'
 import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
@@ -50,7 +50,7 @@ const emit = defineEmits<{
   removed: []
 }>()
 
-const project = ref<Project | null>(null)
+const project = shallowRef<Project | null>(null)
 
 const removeProject = useRemoveProject()
 

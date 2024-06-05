@@ -36,8 +36,9 @@ export function getUpInfo() {
   return client.get('/util/upinfo') as Promise<UpInfo>
 }
 
-export function makeObjectUrls(objects: UniversalUrl[]) {
-  return client.post('/util/fileurls', { objects: objects }) as Promise<{
+export async function makeObjectUrls(objects: UniversalUrl[]) {
+  const res = (await client.post('/util/fileurls', { objects: objects })) as {
     objectUrls: UniversalToWebUrlMap
-  }>
+  }
+  return res.objectUrls
 }

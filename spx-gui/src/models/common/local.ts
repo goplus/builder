@@ -1,5 +1,5 @@
 import localforage from 'localforage'
-import { File, type Files } from './file'
+import { File, type Files, type Metadata as FileMetadata } from './file'
 import type { Metadata } from '../project'
 
 const storage = localforage.createInstance({
@@ -14,6 +14,7 @@ type MetadataEx = Metadata & {
 type RawFile = {
   name: string
   content: ArrayBuffer
+  meta?: FileMetadata
 }
 
 async function getMetadataEx(key: string) {
@@ -33,13 +34,15 @@ async function removeMetadataEx(key: string) {
 async function readFile(key: string, path: string): Promise<File> {
   const rawFile = await storage.getItem(`${key}/${path}`)
   if (rawFile == null) throw new Error('file not found in storage')
-  const { name, content } = rawFile as RawFile
-  return new File(name, async () => content)
+  const { name, content, meta } = rawFile as RawFile
+  const file = new File(name, async () => content)
+  if (meta != null) file.meta = meta
+  return file
 }
 
 async function writeFile(key: string, path: string, file: File) {
   const content = await file.arrayBuffer()
-  const rawFile: RawFile = { name: file.name, content }
+  const rawFile: RawFile = { name: file.name, content, meta: file.meta }
   await storage.setItem(`${key}/${path}`, rawFile)
 }
 
