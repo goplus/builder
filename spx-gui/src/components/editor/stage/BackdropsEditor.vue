@@ -52,9 +52,7 @@ const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const img = await selectImg()
     const file = fromNativeFile(img)
-    const backdrop = await Backdrop.create(stripExt(img.name), file, {
-      bitmapResolution: /svg/.test(img.type) ? 1 : 2
-    })
+    const backdrop = await Backdrop.create(stripExt(img.name), file)
     const action = { name: { en: 'Add backdrop', zh: '添加背景' } }
     editorCtx.project.history.doAction(action, () => {
       stage.value.addBackdrop(backdrop)

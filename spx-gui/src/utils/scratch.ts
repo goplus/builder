@@ -6,6 +6,7 @@ export interface ExportedScratchFile {
   extension: string
   filename: string
   blob: Blob
+  bitmapResolution?: number
 }
 
 export interface ExportedScratchSprite {
@@ -13,15 +14,10 @@ export interface ExportedScratchSprite {
   costumes: ExportedScratchFile[]
 }
 
-export interface ExportedScratchBackdrop {
-  costume: ExportedScratchFile
-  bitmapResolution: number
-}
-
 export interface ExportedScratchAssets {
   sprites: ExportedScratchSprite[]
   sounds: ExportedScratchFile[]
-  backdrops: ExportedScratchBackdrop[]
+  backdrops: ExportedScratchFile[]
 }
 
 interface ScratchFile {
@@ -67,7 +63,9 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
     backdrops: []
   }
 
-  const convertFiles = async (scratchFiles: ScratchFile[]): Promise<ExportedScratchFile[]> => {
+  const convertFiles = async (
+    scratchFiles: (ScratchCostume | ScratchSound)[]
+  ): Promise<ExportedScratchFile[]> => {
     const files = []
     for (const file of scratchFiles) {
       const zipFilename = getFilename(file)
@@ -77,12 +75,14 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
         continue
       }
       const arrayBuffer = await zipFile.async('arraybuffer')
-      files.push({
+      const exported = {
         name: file.name,
         extension: file.dataFormat,
         filename: `${file.name}.${file.dataFormat}`,
-        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) })
-      })
+        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) }),
+        bitmapResolution: 'bitmapResolution' in file ? file.bitmapResolution : undefined
+      }
+      files.push(exported)
     }
     return files
   }
@@ -93,10 +93,8 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
 
     if (imageFiles.length > 0) {
       if (target.isStage) {
-        scratchAssets.backdrops.push({
-          costume: imageFiles[0],
-          bitmapResolution: target.costumes[0].bitmapResolution
-        })
+        // We assume there is only one backdrop for the stage
+        scratchAssets.backdrops.push(imageFiles[0])
       } else {
         scratchAssets.sprites.push({ name: target.name, costumes: imageFiles })
       }

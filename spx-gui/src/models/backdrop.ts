@@ -35,7 +35,10 @@ export class Backdrop extends Costume {
    */
   static async create(nameBase: string, file: File, inits?: BackdropInits) {
     const adaptedFile = await adaptImg(file)
-    return new Backdrop(getBackdropName(null, nameBase), adaptedFile, inits)
+    return new Backdrop(getBackdropName(null, nameBase), adaptedFile, {
+      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
+      ...inits
+    })
   }
 
   static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {

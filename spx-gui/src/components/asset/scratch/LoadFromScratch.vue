@@ -35,14 +35,14 @@
       <NGrid cols="6" x-gap="8" y-gap="8">
         <NGridItem
           v-for="asset in scratchAssets.backdrops"
-          :key="asset.costume.name"
+          :key="asset.name"
           @click="selectBackdrop(asset)"
         >
-          <ScratchItemContainer :selected="selected.backdrop === asset">
+          <ScratchItemContainer :selected="selected.backdrops.has(asset)">
             <div class="asset-image">
-              <BlobImage :blob="asset.costume.blob" />
+              <BlobImage :blob="asset.blob" />
             </div>
-            <div class="asset-name">{{ asset.costume.name }}</div>
+            <div class="asset-name">{{ asset.name }}</div>
           </ScratchItemContainer>
         </NGridItem>
       </NGrid>
@@ -68,11 +68,7 @@ import { ref, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
-import {
-  type ExportedScratchAssets,
-  type ExportedScratchFile,
-  type ExportedScratchBackdrop
-} from '@/utils/scratch'
+import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
@@ -95,11 +91,11 @@ const emit = defineEmits<{
 }>()
 
 const selected = ref<{
-  backdrop: ExportedScratchBackdrop | null
+  backdrops: Set<ExportedScratchFile>
   sounds: Set<ExportedScratchFile>
   sprites: Set<ExportedScratchSprite>
 }>({
-  backdrop: null,
+  backdrops: new Set(),
   sounds: new Set(),
   sprites: new Set()
 })
@@ -108,7 +104,7 @@ watch(
   () => props.scratchAssets,
   () => {
     selected.value = {
-      backdrop: null,
+      backdrops: new Set(),
       sounds: new Set(),
       sprites: new Set()
     }
@@ -131,11 +127,11 @@ const selectSound = (sound: ExportedScratchFile) => {
   }
 }
 
-const selectBackdrop = (backdrop: ExportedScratchBackdrop) => {
-  if (selected.value.backdrop === backdrop) {
-    selected.value.backdrop = null
+const selectBackdrop = (backdrop: ExportedScratchFile) => {
+  if (selected.value.backdrops.has(backdrop)) {
+    selected.value.backdrops.delete(backdrop)
   } else {
-    selected.value.backdrop = backdrop
+    selected.value.backdrops.add(backdrop)
   }
 }
 
@@ -145,7 +141,11 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 
 const importSprite = async (asset: ExportedScratchSprite) => {
   const costumes = await Promise.all(
-    asset.costumes.map((costume) => Costume.create(costume.name, scratchToSpxFile(costume)))
+    asset.costumes.map((costume) =>
+      Costume.create(costume.name, scratchToSpxFile(costume), {
+        bitmapResolution: costume.bitmapResolution
+      })
+    )
   )
   const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
@@ -163,9 +163,9 @@ const importSound = async (asset: ExportedScratchFile) => {
   return sound
 }
 
-const importBackdrop = async (asset: ExportedScratchBackdrop) => {
-  const file = scratchToSpxFile(asset.costume)
-  const backdrop = await Backdrop.create(asset.costume.name, file, {
+const importBackdrop = async (asset: ExportedScratchFile) => {
+  const file = scratchToSpxFile(asset)
+  const backdrop = await Backdrop.create(asset.name, file, {
     bitmapResolution: asset.bitmapResolution
   })
   props.project.stage.addBackdrop(backdrop)
@@ -174,17 +174,14 @@ const importBackdrop = async (asset: ExportedScratchBackdrop) => {
 
 const importSelected = useMessageHandle(
   async () => {
-    const { sprites, sounds, backdrop } = selected.value
+    const { sprites, sounds, backdrops } = selected.value
     const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
     const imported = await props.project.history.doAction(action, () => {
-      const promises: (Promise<Sprite> | Promise<Sound> | Promise<Backdrop>)[] = [
+      return Promise.all([
         ...Array.from(sprites).map(importSprite),
-        ...Array.from(sounds).map(importSound)
-      ]
-      if (backdrop != null) {
-        promises.push(importBackdrop(backdrop))
-      }
-      return Promise.all(promises)
+        ...Array.from(sounds).map(importSound),
+        ...Array.from(backdrops).map(importBackdrop)
+      ])
     })
     emit('imported', imported)
   },
