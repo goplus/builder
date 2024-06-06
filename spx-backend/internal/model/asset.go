@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -66,8 +65,7 @@ const (
 
 // AssetByID gets asset with given id. Returns `ErrNotExist` if it does not exist.
 func AssetByID(ctx context.Context, db *sql.DB, id string) (*Asset, error) {
-	where := []FilterCondition{{Column: "id", Operation: "=", Value: id}}
-	return QueryFirst[Asset](ctx, db, TableAsset, where, nil)
+	return QueryByID[Asset](ctx, db, TableAsset, id)
 }
 
 // ListAssets lists assets with given pagination, where conditions and order by conditions.
@@ -77,41 +75,15 @@ func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters [
 
 // AddAsset adds an asset.
 func AddAsset(ctx context.Context, db *sql.DB, a *Asset) (*Asset, error) {
-	logger := log.GetReqLogger(ctx)
-
-	now := time.Now().UTC()
-	query := fmt.Sprintf("INSERT INTO %s (c_time, u_time, display_name, owner, category, asset_type, files, files_hash, preview, click_count, is_public, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", TableAsset)
-	result, err := db.ExecContext(ctx, query, now, now, a.DisplayName, a.Owner, a.Category, a.AssetType, a.Files, a.FilesHash, a.Preview, a.ClickCount, a.IsPublic, StatusNormal)
-	if err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		logger.Printf("failed to get last insert id: %v", err)
-		return nil, err
-	}
-	return AssetByID(ctx, db, strconv.FormatInt(id, 10))
+	return Create(ctx, db, TableAsset, a)
 }
 
 // UpdateAssetByID updates asset with given id.
 func UpdateAssetByID(ctx context.Context, db *sql.DB, id string, a *Asset) (*Asset, error) {
 	logger := log.GetReqLogger(ctx)
-
-	query := fmt.Sprintf("UPDATE %s SET u_time = ?, display_name = ?, category = ?, asset_type = ?, files = ?, files_hash = ?, preview = ?, is_public = ? WHERE id = ?", TableAsset)
-	result, err := db.ExecContext(ctx, query, time.Now().UTC(), a.DisplayName, a.Category, a.AssetType, a.Files, a.FilesHash, a.Preview, a.IsPublic, id)
-	if err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
+	if err := UpdateByID(ctx, db, TableAsset, id, a, "display_name", "category", "asset_type", "files", "files_hash", "preview", "is_public"); err != nil {
+		logger.Printf("UpdateByID failed: %v", err)
 		return nil, err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		logger.Printf("result.RowsAffected failed: %v", err)
-		return nil, err
-	} else if rowsAffected == 0 {
-		return nil, ErrNotExist
 	}
 	return AssetByID(ctx, db, id)
 }
@@ -139,11 +111,5 @@ func IncreaseAssetClickCount(ctx context.Context, db *sql.DB, id string) error {
 
 // DeleteAssetByID deletes asset with given id.
 func DeleteAssetByID(ctx context.Context, db *sql.DB, id string) error {
-	logger := log.GetReqLogger(ctx)
-	query := fmt.Sprintf("UPDATE %s SET u_time = ?, status = ? WHERE id = ?", TableAsset)
-	if _, err := db.ExecContext(ctx, query, time.Now().UTC(), StatusDeleted, id); err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
-		return err
-	}
-	return nil
+	return UpdateByID(ctx, db, TableAsset, id, &Asset{Status: StatusDeleted}, "status")
 }

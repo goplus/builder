@@ -3,8 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strconv"
+	"errors"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -45,8 +44,7 @@ const TableProject = "project"
 
 // ProjectByID gets project with given id. Returns `ErrNotExist` if it does not exist.
 func ProjectByID(ctx context.Context, db *sql.DB, id string) (*Project, error) {
-	where := []FilterCondition{{Column: "id", Operation: "=", Value: id}}
-	return QueryFirst[Project](ctx, db, TableProject, where, nil)
+	return QueryByID[Project](ctx, db, TableProject, id)
 }
 
 // ProjectByOwnerAndName gets project with given owner and name. Returns `ErrNotExist` if it does not exist
@@ -69,55 +67,25 @@ func AddProject(ctx context.Context, db *sql.DB, p *Project) (*Project, error) {
 
 	if _, err := ProjectByOwnerAndName(ctx, db, p.Owner, p.Name); err == nil {
 		return nil, ErrExist
-	} else if err != ErrNotExist {
+	} else if !errors.Is(err, ErrNotExist) {
 		logger.Printf("ProjectByOwnerAndName failed: %v", err)
 		return nil, err
 	}
 
-	now := time.Now().UTC()
-	query := fmt.Sprintf("INSERT INTO %s (c_time, u_time, name, owner, version, files, is_public, status) VALUES (?,?,?,?,?,?,?,?)", TableProject)
-	result, err := db.ExecContext(ctx, query, now, now, p.Name, p.Owner, p.Version, p.Files, p.IsPublic, StatusNormal)
-	if err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		logger.Printf("failed to get last insert id: %v", err)
-		return nil, err
-	}
-	return ProjectByID(ctx, db, strconv.FormatInt(id, 10))
+	return Create(ctx, db, TableProject, p)
 }
 
 // UpdateProjectByID updates project with given id.
 func UpdateProjectByID(ctx context.Context, db *sql.DB, id string, p *Project) (*Project, error) {
 	logger := log.GetReqLogger(ctx)
-
-	query := fmt.Sprintf("UPDATE %s SET u_time = ?, version = ?, files = ?, is_public = ? WHERE id = ?", TableProject)
-	result, err := db.ExecContext(ctx, query, time.Now().UTC(), p.Version, p.Files, p.IsPublic, id)
-	if err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
+	if err := UpdateByID(ctx, db, TableProject, id, p, "version", "files", "is_public"); err != nil {
+		logger.Printf("UpdateByID failed: %v", err)
 		return nil, err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		logger.Printf("result.RowsAffected failed: %v", err)
-		return nil, err
-	} else if rowsAffected == 0 {
-		return nil, ErrNotExist
 	}
 	return ProjectByID(ctx, db, id)
 }
 
 // DeleteProjectByID deletes project with given id.
 func DeleteProjectByID(ctx context.Context, db *sql.DB, id string) error {
-	logger := log.GetReqLogger(ctx)
-	query := fmt.Sprintf("UPDATE %s SET u_time = ?, status = ? WHERE id = ?", TableProject)
-	if _, err := db.ExecContext(ctx, query, time.Now().UTC(), StatusDeleted, id); err != nil {
-		logger.Printf("db.ExecContext failed: %v", err)
-		return err
-	}
-	return nil
+	return UpdateByID(ctx, db, TableProject, id, &Project{Status: StatusDeleted}, "status")
 }

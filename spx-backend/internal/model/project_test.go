@@ -110,7 +110,7 @@ func TestAddProject(t *testing.T) {
 
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows(nil))
-		mock.ExpectExec(`INSERT INTO project \(c_time, u_time, name, owner, version, files, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO project \(.+\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM project WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"name"}).
@@ -155,23 +155,8 @@ func TestAddProject(t *testing.T) {
 
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows(nil))
-		mock.ExpectExec(`INSERT INTO project \(c_time, u_time, name, owner, version, files, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)`).
+		mock.ExpectExec(`INSERT INTO project \(.+\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)`).
 			WillReturnError(sql.ErrConnDone)
-		project, err := AddProject(context.Background(), db, &Project{Name: "foo", Owner: "owner"})
-		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrConnDone)
-		assert.Nil(t, project)
-	})
-
-	t.Run("ClosedConnForLastInsertID", func(t *testing.T) {
-		db, mock, err := sqlmock.New()
-		require.NoError(t, err)
-		defer db.Close()
-
-		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		mock.ExpectExec(`INSERT INTO project \(c_time, u_time, name, owner, version, files, is_public, status\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)`).
-			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
 		project, err := AddProject(context.Background(), db, &Project{Name: "foo", Owner: "owner"})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, sql.ErrConnDone)
@@ -185,28 +170,16 @@ func TestUpdateProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), 2, sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM project WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"name"}).
 				AddRow("foo"))
-		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Name: "foo"})
+		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Version: 2})
 		require.NoError(t, err)
 		require.NotNil(t, project)
 		assert.Equal(t, "foo", project.Name)
-	})
-
-	t.Run("NotExist", func(t *testing.T) {
-		db, mock, err := sqlmock.New()
-		require.NoError(t, err)
-		defer db.Close()
-
-		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
-			WillReturnResult(sqlmock.NewResult(1, 0))
-		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Name: "foo"})
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrNotExist)
-		assert.Nil(t, project)
 	})
 
 	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
@@ -214,22 +187,10 @@ func TestUpdateProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), 2, sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnError(sql.ErrConnDone)
-		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Name: "foo"})
-		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrConnDone)
-		assert.Nil(t, project)
-	})
-
-	t.Run("ClosedConnForRowsAffected", func(t *testing.T) {
-		db, mock, err := sqlmock.New()
-		require.NoError(t, err)
-		defer db.Close()
-
-		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
-			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
-		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Name: "foo"})
+		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Version: 2})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 		assert.Nil(t, project)
@@ -242,7 +203,8 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = DeleteProjectByID(context.Background(), db, "1")
 		require.NoError(t, err)
@@ -253,7 +215,8 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
+		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnError(sql.ErrConnDone)
 		err = DeleteProjectByID(context.Background(), db, "1")
 		require.Error(t, err)

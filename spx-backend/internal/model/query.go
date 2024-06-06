@@ -3,7 +3,11 @@ package model
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
@@ -111,4 +115,106 @@ func QueryFirst[T any](ctx context.Context, db *sql.DB, table string, where []Fi
 		return nil, err
 	}
 	return &item, nil
+}
+
+// QueryByID queries an item by ID. Returns [ErrNotExist] if it does not exist.
+func QueryByID[T any](ctx context.Context, db *sql.DB, table string, id string) (*T, error) {
+	where := []FilterCondition{{Column: "id", Operation: "=", Value: id}}
+	return QueryFirst[T](ctx, db, table, where, nil)
+}
+
+// Create creates an item.
+func Create[T any](ctx context.Context, db *sql.DB, table string, item *T) (*T, error) {
+	logger := log.GetReqLogger(ctx)
+
+	itemValue, dbFields, err := reflectModelItem(item)
+	if err != nil {
+		logger.Printf("failed to reflect model item: %v", err)
+		return nil, err
+	}
+	if len(dbFields) == 0 {
+		return nil, errors.New("no db fields found")
+	}
+
+	now := time.Now().UTC()
+	columns := make([]string, 0, len(dbFields))
+	values := make([]any, 0, len(dbFields))
+	for dbTag, dbField := range dbFields {
+		var value any
+		switch dbTag {
+		case "id":
+			// Skip id column since it's supposed to be auto-generated.
+			continue
+		case "c_time", "u_time":
+			value = now
+		case "status":
+			value = StatusNormal
+		default:
+			value = itemValue.FieldByIndex(dbField.Index).Interface()
+		}
+		columns = append(columns, dbTag)
+		values = append(values, value)
+	}
+
+	joinedColumns := strings.Join(columns, ",")
+	joinedPlaceholders := strings.Repeat(",?", len(columns))[1:]
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, joinedColumns, joinedPlaceholders)
+
+	result, err := db.ExecContext(ctx, query, values...)
+	if err != nil {
+		logger.Printf("db.ExecContext failed: %v", err)
+		return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		logger.Printf("failed to get last insert id: %v", err)
+		return nil, err
+	}
+	return QueryByID[T](ctx, db, table, strconv.FormatInt(id, 10))
+}
+
+// UpdateByID updates an item by ID.
+func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string, item *T, columns ...string) error {
+	logger := log.GetReqLogger(ctx)
+
+	itemValue, dbFields, err := reflectModelItem(item)
+	if err != nil {
+		logger.Printf("failed to reflect model item: %v", err)
+		return err
+	}
+
+	exprs := make([]string, 1, len(columns)+1)
+	exprs[0] = "u_time=?"
+	args := make([]any, 1, len(columns)+1)
+	args[0] = time.Now().UTC()
+	for _, col := range columns {
+		dbField, ok := dbFields[col]
+		if !ok {
+			return fmt.Errorf("column %s does not exist in struct", col)
+		}
+		switch col {
+		case "id", "c_time", "u_time":
+			return fmt.Errorf("column %s is read-only", col)
+		}
+		exprs = append(exprs, fmt.Sprintf("%s=?", col))
+		args = append(args, itemValue.FieldByIndex(dbField.Index).Interface())
+	}
+	args = append(args, id)
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE id=?", table, strings.Join(exprs, ","))
+	result, err := db.ExecContext(ctx, query, args...)
+	if err != nil {
+		logger.Printf("db.ExecContext failed: %v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		logger.Printf("result.RowsAffected failed: %v", err)
+		return err
+	} else if rowsAffected == 0 {
+		return ErrNotExist
+	}
+	return nil
 }

@@ -43,6 +43,29 @@ func TestReflectModelDBFields(t *testing.T) {
 	})
 }
 
+func TestReflectModelItem(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		type User struct {
+			ID   int    `db:"id"`
+			Name string `db:"name"`
+		}
+		user := User{}
+		value, fields, err := reflectModelItem(&user)
+		require.NoError(t, err)
+		assert.NotZero(t, value)
+		assert.NotEmpty(t, fields)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		var user int
+		value, fields, err := reflectModelItem(&user)
+		require.Error(t, err)
+		assert.EqualError(t, err, "item must be a struct")
+		assert.Zero(t, value)
+		assert.Empty(t, fields)
+	})
+}
+
 func TestRowsScan(t *testing.T) {
 	type User struct {
 		ID   int    `db:"id"`

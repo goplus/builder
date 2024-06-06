@@ -35,19 +35,26 @@ func reflectModelDBFields(t reflect.Type) map[string]reflect.StructField {
 	return m
 }
 
+// reflectModelItem returns the [reflect.Value] and database fields for a model item.
+func reflectModelItem(item any) (itemValue reflect.Value, dbFields map[string]reflect.StructField, err error) {
+	itemValue = reflect.ValueOf(item).Elem()
+	itemType := itemValue.Type()
+	if itemType.Kind() != reflect.Struct {
+		return reflect.Value{}, nil, errors.New("item must be a struct")
+	}
+	dbFields, ok := dbFieldsForRegisteredModels[itemType]
+	if !ok {
+		dbFields = reflectModelDBFields(itemType)
+	}
+	return
+}
+
 // rowsScan scans a single SQL row into a generic struct with automatic field mapping.
 func rowsScan[T any](rows *sql.Rows) (T, error) {
 	var item T
-	itemValue := reflect.ValueOf(&item).Elem()
-	itemType := itemValue.Type()
-	if itemType.Kind() != reflect.Struct {
-		return item, errors.New("item must be a struct")
-	}
-	fields, ok := dbFieldsForRegisteredModels[itemType]
-	if !ok {
-		// This occurs when the model is not registered, such as with an
-		// anonymous struct used in a complex query.
-		fields = reflectModelDBFields(itemType)
+	itemValue, dbFields, err := reflectModelItem(&item)
+	if err != nil {
+		return item, err
 	}
 
 	columns, err := rows.Columns()
@@ -56,11 +63,11 @@ func rowsScan[T any](rows *sql.Rows) (T, error) {
 	}
 	dests := make([]any, len(columns))
 	for i, col := range columns {
-		field, ok := fields[col]
+		dbField, ok := dbFields[col]
 		if !ok {
 			return item, fmt.Errorf("column %s does not exist in struct", col)
 		}
-		dests[i] = itemValue.FieldByName(field.Name).Addr().Interface()
+		dests[i] = itemValue.FieldByName(dbField.Name).Addr().Interface()
 	}
 	return item, rows.Scan(dests...)
 }
