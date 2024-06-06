@@ -94,7 +94,10 @@ export class Costume {
    */
   static async create(nameBase: string, file: File, inits?: CostumeInits) {
     const adaptedFile = await adaptImg(file)
-    return new Costume(getCostumeName(null, nameBase), adaptedFile, inits)
+    return new Costume(getCostumeName(null, nameBase), adaptedFile, {
+      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
+      ...inits
+    })
   }
 
   static load(
