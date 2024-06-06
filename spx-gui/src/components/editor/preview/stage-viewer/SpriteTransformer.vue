@@ -1,5 +1,15 @@
 <template>
-  <v-transformer ref="transformer" :config="{ keepRatio: true, shouldOverdrawWholeArea: true }" />
+  <v-transformer
+    ref="transformer"
+    :config="{
+      keepRatio: true,
+      shouldOverdrawWholeArea: true,
+      rotateAnchorCursor: 'grab',
+      centeredScaling: true,
+      enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+      flipEnabled: false
+    }"
+  />
 </template>
 
 <script setup lang="ts">
