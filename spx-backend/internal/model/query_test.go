@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -148,7 +149,8 @@ func TestQueryFirst(t *testing.T) {
 				AddRow(1, "foo", StatusNormal))
 		user, err := QueryFirst[User](context.Background(), db, "user", nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, &User{ID: 1, Name: "foo", Status: StatusNormal}, user)
+		require.NotNil(t, user)
+		assert.Equal(t, User{ID: 1, Name: "foo", Status: StatusNormal}, *user)
 	})
 
 	t.Run("NotExist", func(t *testing.T) {
@@ -189,5 +191,209 @@ func TestQueryFirst(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "column age does not exist in struct")
 		assert.Nil(t, user)
+	})
+}
+
+func TestQueryByID(t *testing.T) {
+	type User struct {
+		ID     string `db:"id"`
+		Name   string `db:"name"`
+		Status Status `db:"status"`
+	}
+
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectQuery(`SELECT \* FROM user WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "status"}).
+				AddRow(1, "foo", StatusNormal))
+		user, err := QueryByID[User](context.Background(), db, "user", "1")
+		require.NoError(t, err)
+		require.NotNil(t, user)
+		assert.Equal(t, User{ID: "1", Name: "foo", Status: StatusNormal}, *user)
+	})
+
+	t.Run("NotExist", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectQuery(`SELECT \* FROM user WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
+			WillReturnRows(mock.NewRows(nil))
+		user, err := QueryByID[User](context.Background(), db, "user", "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrNotExist)
+		assert.Nil(t, user)
+	})
+}
+
+func TestCreate(t *testing.T) {
+	type User struct {
+		ID     int       `db:"id"`
+		CTime  time.Time `db:"c_time"`
+		UTime  time.Time `db:"u_time"`
+		Name   string    `db:"name"`
+		Status Status    `db:"status"`
+	}
+
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`INSERT INTO user \(.+\) VALUES \(\?,\?,\?,\?\)`).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectQuery(`SELECT \* FROM user WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "status"}).
+				AddRow(1, "foo", StatusNormal))
+		user, err := Create(context.Background(), db, "user", &User{Name: "foo", Status: StatusNormal})
+		require.NoError(t, err)
+		require.NotNil(t, user)
+		assert.Equal(t, User{ID: 1, Name: "foo", Status: StatusNormal}, *user)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		var user int
+		_, err = Create(context.Background(), db, "user", &user)
+		require.Error(t, err)
+		assert.EqualError(t, err, "item must be a struct")
+	})
+
+	t.Run("NoDBFields", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		var user struct{}
+		_, err = Create(context.Background(), db, "user", &user)
+		require.Error(t, err)
+		assert.EqualError(t, err, "no db fields found")
+	})
+
+	t.Run("ClosedConnForInsertQuery", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`INSERT INTO user \(.+\) VALUES \(\?,\?,\?,\?\)`).
+			WillReturnError(sql.ErrConnDone)
+		_, err = Create(context.Background(), db, "user", &User{Name: "foo", Status: StatusNormal})
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+
+	t.Run("ClosedConnForLastInsertID", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`INSERT INTO user \(.+\) VALUES \(\?,\?,\?,\?\)`).
+			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
+		_, err = Create(context.Background(), db, "user", &User{Name: "foo", Status: StatusNormal})
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+}
+
+func TestUpdateByID(t *testing.T) {
+	type User struct {
+		ID     string    `db:"id"`
+		CTime  time.Time `db:"c_time"`
+		UTime  time.Time `db:"u_time"`
+		Name   string    `db:"name"`
+		Status Status    `db:"status"`
+	}
+
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), "foo", "1").
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectQuery(`SELECT \* FROM user WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
+			WillReturnRows(mock.NewRows([]string{"id", "name", "status"}).
+				AddRow("1", "foo", StatusNormal))
+		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
+		require.NoError(t, err)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		var user int
+		err = UpdateByID(context.Background(), db, "user", "1", &user, "name")
+		require.Error(t, err)
+		assert.EqualError(t, err, "item must be a struct")
+	})
+
+	t.Run("ColumnNotExist", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		var user struct{}
+		err = UpdateByID(context.Background(), db, "user", "1", &user, "name")
+		require.Error(t, err)
+		assert.EqualError(t, err, "column name does not exist in struct")
+	})
+
+	t.Run("ReadOnlyColumn", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		var user User
+		err = UpdateByID(context.Background(), db, "user", "1", &user, "id")
+		require.Error(t, err)
+		assert.EqualError(t, err, "column id is read-only")
+	})
+
+	t.Run("NotExist", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), "foo", "1").
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrNotExist)
+	})
+
+	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), "foo", "1").
+			WillReturnError(sql.ErrConnDone)
+		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+
+	t.Run("ClosedConnForRowsAffected", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+			WithArgs(sqlmock.AnyArg(), "foo", "1").
+			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
+		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
 	})
 }

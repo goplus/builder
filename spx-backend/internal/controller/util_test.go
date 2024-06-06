@@ -80,8 +80,8 @@ func TestControllerGetUpInfo(t *testing.T) {
 		assert.NotEmpty(t, upInfo.Token)
 		assert.NotZero(t, upInfo.Expires)
 		assert.NotZero(t, upInfo.MaxSize)
-		assert.Equal(t, upInfo.Bucket, ctrl.kodo.bucket)
-		assert.Equal(t, upInfo.Region, ctrl.kodo.bucketRegion)
+		assert.Equal(t, ctrl.kodo.bucket, upInfo.Bucket)
+		assert.Equal(t, ctrl.kodo.bucketRegion, upInfo.Region)
 	})
 }
 
