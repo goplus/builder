@@ -1,6 +1,5 @@
 <template>
   <UIButton
-    size="small"
     type="boring"
     :loading="handleFormat.isLoading.value"
     @click="handleFormat.fn"
