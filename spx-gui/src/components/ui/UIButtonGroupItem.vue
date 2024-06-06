@@ -26,7 +26,7 @@ const handleClick = () => {
 
 <style scoped lang="scss">
 .ui-button-group-item {
-  height: 30px;
+  height: var(--ui-line-height-2);
   min-width: 32px;
   display: flex;
   align-items: center;

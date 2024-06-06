@@ -5,9 +5,11 @@
     :disabled="disabled"
     :type="htmlType"
   >
-    <UIIcon v-if="icon != null" class="icon" :type="icon" />
-    <slot v-else name="icon"></slot>
-    <slot></slot>
+    <div class="content">
+      <UIIcon v-if="icon != null" class="icon" :type="icon" />
+      <slot v-else name="icon"></slot>
+      <slot></slot>
+    </div>
   </button>
 </template>
 
@@ -44,29 +46,45 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 <style lang="scss" scoped>
 .ui-button {
   display: flex;
-  height: calc(var(--ui-line-height-2) + 4px);
-  padding: 0 16px;
-  align-items: center;
-  gap: 4px;
-
+  align-items: stretch;
+  height: var(--ui-line-height-2);
+  padding: 0 0 4px 0;
+  background: none;
   border: none;
-  border-bottom-width: 4px;
-  border-bottom-style: solid;
   border-radius: var(--ui-border-radius-2);
   cursor: pointer;
 
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-primary-main);
+  --ui-button-shadow-color: var(--ui-color-primary-700);
+
+  .content {
+    display: flex;
+    padding: 0 16px;
+    align-items: center;
+    gap: 4px;
+    border-radius: var(--ui-border-radius-2);
+
+    color: var(--ui-button-color);
+    background-color: var(--ui-button-bg-color);
+    box-shadow: 0 4px var(--ui-button-shadow-color);
+  }
+
   &:not(:disabled):active,
   &.loading {
-    border-bottom-width: 0;
+    padding-bottom: 0;
+    .content {
+      box-shadow: none;
+    }
   }
 
   &:disabled {
     cursor: not-allowed;
 
     &:not(.loading) {
-      color: var(--ui-color-disabled-text);
-      background-color: var(--ui-color-disabled-bg);
-      border-bottom-color: var(--ui-color-grey-500);
+      --ui-button-color: var(--ui-color-disabled-text);
+      --ui-button-bg-color: var(--ui-color-disabled-bg);
+      --ui-button-shadow-color: var(--ui-color-grey-500);
     }
   }
 
@@ -77,61 +95,64 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 }
 
 .type-primary {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-primary-main);
-  border-bottom-color: var(--ui-color-primary-700);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-primary-main);
+  --ui-button-shadow-color: var(--ui-color-primary-700);
 
   &:hover:not(:active, :disabled) {
-    background-color: var(--ui-color-primary-400);
+    --ui-button-bg-color: var(--ui-color-primary-400);
   }
 }
 
 .type-secondary {
-  color: var(--ui-color-primary-main);
-  background-color: var(--ui-color-primary-200);
-  border-bottom-color: var(--ui-color-primary-300);
+  --ui-button-color: var(--ui-color-primary-main);
+  --ui-button-bg-color: var(--ui-color-primary-200);
+  --ui-button-shadow-color: var(--ui-color-primary-300);
 
   &:hover:not(:active, :disabled) {
-    background-color: var(--ui-color-primary-100);
+    --ui-button-bg-color: var(--ui-color-primary-100);
   }
 }
 
 .type-boring {
-  color: var(--ui-color-text);
-  background-color: var(--ui-color-grey-300);
-  border-bottom-color: var(--ui-color-grey-600);
+  --ui-button-color: var(--ui-color-text);
+  --ui-button-bg-color: var(--ui-color-grey-300);
+  --ui-button-shadow-color: var(--ui-color-grey-600);
 
   &:hover:not(:active, :disabled) {
-    background-color: var(--ui-color-grey-200);
+    --ui-button-bg-color: var(--ui-color-grey-200);
   }
 }
 
 .type-danger {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-danger-main);
-  border-bottom-color: var(--ui-color-danger-300);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-danger-main);
+  --ui-button-shadow-color: var(--ui-color-danger-300);
 
   &:hover:not(:active, :disabled) {
-    background-color: var(--ui-color-danger-100);
+    --ui-button-bg-color: var(--ui-color-danger-100);
   }
 }
 
 .type-success {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-success-main);
-  border-bottom-color: var(--ui-color-success-300);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-success-main);
+  --ui-button-shadow-color: var(--ui-color-success-300);
 
   &:hover:not(:active, :disabled) {
-    background-color: var(--ui-color-success-100);
+    --ui-button-bg-color: var(--ui-color-success-100);
   }
 }
 
 .size-large {
-  font-size: 15px;
-  line-height: 1.6;
-  height: calc(var(--ui-line-height-3) + 4px);
-  padding: 0 24px;
-  gap: 8px;
+  height: var(--ui-line-height-3);
+
+  .content {
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0 24px;
+    gap: 8px;
+  }
 
   .icon {
     width: 15px;
@@ -140,11 +161,14 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 }
 
 .size-small {
-  font-size: 13px;
-  line-height: 1.5;
-  height: calc(var(--ui-line-height-1) + 4px);
-  padding: 0 12px;
-  gap: 4px;
+  height: var(--ui-line-height-1);
+
+  .content {
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0 12px;
+    gap: 4px;
+  }
 
   .icon {
     width: 13px;
