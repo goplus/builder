@@ -32,7 +32,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 <style lang="scss" scoped>
 .img {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  flex: 1 1 0;
   border-radius: 8px;
 }
 </style>

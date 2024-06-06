@@ -177,4 +177,8 @@ h6 {
   font-size: 10px;
   line-height: 1.6;
 }
+
+button:focus {
+  outline: 2px solid var(--ui-color-primary-700);
+}
 </style>

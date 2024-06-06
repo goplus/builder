@@ -37,8 +37,8 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 <style lang="scss" scoped>
 .img-wrapper {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  background-image: url(./costume-bg.png);
+  flex: 1 1 0;
+  background-image: url(./costume-bg.svg);
 }
 .img {
   width: 100%;
