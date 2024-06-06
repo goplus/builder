@@ -125,8 +125,8 @@ watchEffect(async () => {
     margin: 0 16px;
   }
   height: 160px;
-  border: 1px solid var(--ui-color-grey-500);
-  border-radius: var(--ui-border-radius-1);
+  border-radius: 12px;
+  background-color: var(--ui-color-grey-300);
   overflow: hidden;
 }
 </style>

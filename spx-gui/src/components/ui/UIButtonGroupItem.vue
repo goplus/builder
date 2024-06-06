@@ -26,13 +26,14 @@ const handleClick = () => {
 
 <style scoped lang="scss">
 .ui-button-group-item {
-  height: 32px;
+  height: 30px;
   min-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--ui-color-grey-300);
   cursor: pointer;
+  color: var(--ui-color-grey-1000);
 
   &.active {
     color: var(--ui-color-primary-400);

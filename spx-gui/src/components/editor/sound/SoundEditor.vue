@@ -16,7 +16,7 @@
         />
       </div>
       <div class="duration">
-        {{ formattedDuration || '&nbsp;' }}
+        {{ formattedTrimmedDuration || '&nbsp;' }}
       </div>
     </div>
     <WavesurferWithRange
@@ -73,7 +73,7 @@ import VolumeSlider from './VolumeSlider.vue'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
-import { useAudioDuration } from '@/utils/audio'
+import { formatDuration, useAudioDuration } from '@/utils/audio'
 import WavesurferWithRange from './WavesurferWithRange.vue'
 
 const props = defineProps<{
@@ -105,7 +105,12 @@ type Playing = {
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 
-const { formattedDuration } = useAudioDuration(() => audioUrl.value)
+const { duration } = useAudioDuration(() => audioUrl.value)
+const formattedTrimmedDuration = computed(() => {
+  if (duration.value === null) return ''
+  const { left, right } = audioRange.value
+  return formatDuration(duration.value * (right - left))
+})
 
 async function handlePlayClick() {
   if (wavesurferRef.value == null) return

@@ -44,7 +44,7 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 <style lang="scss" scoped>
 .ui-button {
   display: flex;
-  height: var(--ui-line-height-2);
+  height: calc(var(--ui-line-height-2) + 4px);
   padding: 0 16px;
   align-items: center;
   gap: 4px;
@@ -133,7 +133,7 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 .size-large {
   font-size: 15px;
   line-height: 1.6;
-  height: var(--ui-line-height-3);
+  height: calc(var(--ui-line-height-3) + 4px);
   padding: 0 24px;
   gap: 8px;
 
@@ -146,7 +146,7 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 .size-small {
   font-size: 13px;
   line-height: 1.5;
-  height: var(--ui-line-height-1);
+  height: calc(var(--ui-line-height-1) + 4px);
   padding: 0 12px;
   gap: 4px;
 

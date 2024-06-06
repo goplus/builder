@@ -67,6 +67,17 @@ function audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
   return buffer
 }
 
+export const formatDuration = (durationInSeconds: number | null | undefined) => {
+  if (
+    durationInSeconds === null ||
+    durationInSeconds === undefined ||
+    durationInSeconds === Infinity
+  ) {
+    return ''
+  }
+  return durationInSeconds.toFixed(1) + 's'
+}
+
 export const useAudioDuration = (audio: () => string | Blob | null) => {
   const duration = ref<number | null>(null)
   watchEffect(() => {
@@ -92,12 +103,7 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
   })
   return {
     duration,
-    formattedDuration: computed(() => {
-      if (duration.value === null || duration.value === Infinity) {
-        return ''
-      }
-      return duration.value.toFixed(1) + 's'
-    })
+    formattedDuration: computed(() => formatDuration(duration.value))
   }
 }
 

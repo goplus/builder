@@ -9,12 +9,7 @@
         <UIDropdown trigger="click">
           <template #trigger>
             <div @click.stop>
-              <UITooltip>
-                <template #trigger>
-                  <UIIcon type="more" />
-                </template>
-                {{ $t({ en: 'More', zh: '更多' }) }}
-              </UITooltip>
+              <UIIcon type="more" />
             </div>
           </template>
           <UIMenu>
@@ -37,7 +32,7 @@ import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'
-import { UIDropdown, UIIcon, UIMenu, UIMenuItem, UITooltip } from '../ui'
+import { UIDropdown, UIIcon, UIMenu, UIMenuItem } from '../ui'
 import { useRemoveProject } from '.'
 import { useMessageHandle } from '@/utils/exception'
 
