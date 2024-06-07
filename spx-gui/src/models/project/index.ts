@@ -52,9 +52,15 @@ export type Selected =
     }
   | null
 
+export type RunConfig = {
+  width?: number
+  height?: number
+}
+
 type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
+  run?: RunConfig
   // TODO: camera
 }
 
@@ -249,7 +255,17 @@ export class Project extends Disposble {
   exportGameFiles(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
-    const config: RawProjectConfig = { ...stageConfig, zorder: this.zorder }
+    const config: RawProjectConfig = {
+      ...stageConfig,
+      run: {
+        // TODO: we should not hard code the width & height here,
+        // instead we should use the runtime size of component `ProjectRunner`,
+        // after https://github.com/goplus/builder/issues/584
+        width: stageConfig.map?.width,
+        height: stageConfig.map?.height,
+      },
+      zorder: this.zorder
+    }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
     Object.assign(files, ...this.sprites.map((s) => s.export()))
