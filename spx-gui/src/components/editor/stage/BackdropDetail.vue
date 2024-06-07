@@ -1,11 +1,14 @@
 <template>
   <EditorItemDetail :name="backdrop.name" @rename="handleRename">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <div class="img-wrapper">
+      <img v-if="imgSrc != null" class="img" :src="imgSrc" />
+      <UILoading :visible="imgLoading" cover />
+    </div>
   </EditorItemDetail>
 </template>
 
 <script setup lang="ts">
-import { UIImg, useModal } from '@/components/ui'
+import { useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
 import { useEditorCtx } from '../EditorContextProvider.vue'
@@ -30,9 +33,16 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 </script>
 
 <style lang="scss" scoped>
-.img {
+.img-wrapper {
   width: 100%;
   flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.img {
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 8px;
 }
 </style>

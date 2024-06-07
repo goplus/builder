@@ -85,6 +85,10 @@ const cssVars = computed(() => getCssVars('--editor-list-color-', uiVariables.co
   color: var(--ui-color-grey-100);
   background: var(--editor-list-color-main);
 
+  // ensure the button's outline not covered by detail content on the right side
+  position: relative;
+  z-index: 1;
+
   &:hover {
     background: var(--editor-list-color-400);
   }
