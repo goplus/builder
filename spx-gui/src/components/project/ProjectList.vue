@@ -112,6 +112,7 @@ const handleProjectRemoved = (project: ProjectData) => {
 
 <style lang="scss" scoped>
 .project-list {
+  margin-right: -20px; // negative right margin to allow optional scrollbar
   flex: 1 1 0;
   display: flex;
   flex-direction: column;

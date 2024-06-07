@@ -269,7 +269,7 @@ async function handleAssetClick(asset: AssetData) {
 }
 .content {
   height: 513px;
-  padding: 8px 24px 0;
+  padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
   overflow-y: auto;
   overflow-x: visible;
 }
