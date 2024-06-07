@@ -1,5 +1,6 @@
 import { ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
+import { Cancelled, DefaultException } from './exception'
 
 /**
  * Map file extension to mime type.
@@ -36,26 +37,50 @@ export type FileSelectOptions = {
   multiple?: boolean
 }
 
+const maxFileSize = 25 << 20 // 25 MiB
 function _selectFile({ accept = '', multiple = false }: FileSelectOptions) {
-  return new Promise<globalThis.File[]>((resolve) => {
+  return new Promise<globalThis.File[]>((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = accept
     input.multiple = multiple
-    input.click()
-    // TODO: dispose input? operation cancelled?
+
+    let settled = false
+    // focus event of window is triggered when file dialog is closed
+    window.addEventListener(
+      'focus',
+      () => {
+        setTimeout(() => {
+          // change event of input not triggered (if triggered, it happens soon after focus event of window)
+          if (!settled) reject(new Cancelled())
+        }, 1000)
+      },
+      { once: true }
+    )
     input.onchange = async () => {
-      resolve(Array.from(input.files!))
+      // TODO: we should not check size for `.gbp` or scratch files
+      const oversizedFileNames = Array.from(input.files!)
+        .filter((file) => file.size > maxFileSize)
+        .map((file) => file.name)
+      if (oversizedFileNames.length > 0) {
+        reject(
+          new DefaultException({
+            en: `File ${oversizedFileNames.join(', ')} size exceeds limit (max ${maxFileSize} bytes)`,
+            zh: `文件 ${oversizedFileNames.join(', ')} 尺寸超限（最大 ${maxFileSize} 字节）`
+          })
+        )
+      } else {
+        resolve(Array.from(input.files!))
+      }
+      settled = true
     }
+    input.click()
   })
 }
 
 /** Let the user select single file */
 export async function selectFile(options?: Omit<FileSelectOptions, 'multiple'>) {
-  const files = await _selectFile({
-    ...options,
-    multiple: false
-  })
+  const files = await _selectFile({ ...options, multiple: false })
   return files[0]
 }
 
@@ -80,11 +105,15 @@ export function selectImgs() {
 async function getSupportedAudioExts() {
   // `audio.canPlayType` seems to be more reliable than `MediaRecorder.isTypeSupported` & `navigator.mediaCapabilities.decodingInfo`
   const audio = new Audio()
-  return (await Promise.all(audioExts.map(async (ext) => {
-    const mimeType = getMimeFromExt(ext)
-    if (mimeType == null) return null
-    return audio.canPlayType(mimeType) !== '' ? ext : null
-  }))).filter(Boolean) as string[]
+  return (
+    await Promise.all(
+      audioExts.map(async (ext) => {
+        const mimeType = getMimeFromExt(ext)
+        if (mimeType == null) return null
+        return audio.canPlayType(mimeType) !== '' ? ext : null
+      })
+    )
+  ).filter(Boolean) as string[]
 }
 
 /** Let the user select single audio file (supported by spx) */
@@ -97,21 +126,28 @@ export async function selectAudio() {
 /** Get url for File */
 export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   const urlRef = ref<string | null>(null)
+  const loadingRef = ref(false)
   watch(
     fileSource,
     (file, _, onCleanup) => {
       if (file == null) return
-      file.url(onCleanup).then((url) => {
-        urlRef.value = url
-      })
+      loadingRef.value = true
+      file
+        .url(onCleanup)
+        .then((url) => {
+          urlRef.value = url
+        })
+        .finally(() => {
+          loadingRef.value = false
+        })
     },
     { immediate: true }
   )
-  return urlRef
+  return [urlRef, loadingRef] as const
 }
 
 export function useImgFile(fileSource: WatchSource<File | undefined>) {
-  const urlRef = useFileUrl(fileSource)
+  const [urlRef, loadingRef] = useFileUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
   watch(urlRef, (url, _, onCleanup) => {
     onCleanup(() => {
@@ -124,5 +160,6 @@ export function useImgFile(fileSource: WatchSource<File | undefined>) {
       imgRef.value = img
     }
   })
-  return imgRef
+  // TODO: involve image loading status in
+  return [imgRef, loadingRef] as const
 }

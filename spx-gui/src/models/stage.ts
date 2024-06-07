@@ -5,10 +5,10 @@
 
 import { reactive } from 'vue'
 import { filename } from '@/utils/path'
-import { toText, type Files, fromText } from './common/file'
+import { toText, type Files, fromText, File } from './common/file'
+import { ensureValidBackdropName } from './common/asset-name'
+import type { Size } from './common'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
-import { type Size } from './common'
-import { ensureValidBackdropName } from './common/asset'
 
 export type StageInits = {
   backdropIndex: number
@@ -24,12 +24,14 @@ export type RawMapConfig = {
 }
 
 export type RawStageConfig = {
+  backdrops?: RawBackdropConfig[]
+  backdropIndex?: number
+  map?: RawMapConfig
+  // For compatibility
   scenes?: RawBackdropConfig[]
   sceneIndex?: number
-  map?: RawMapConfig
-  // TODO:
-  // costumes: CostumeConfig[]
-  // currentCostumeIndex: number
+  costumes?: RawBackdropConfig[]
+  currentCostumeIndex?: number
 }
 
 export type MapSize = {
@@ -42,83 +44,62 @@ const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
 export class Stage {
-  code: string
+  private codeFile: File | null
+  async getCode() {
+    if (this.codeFile == null) return ''
+    return toText(this.codeFile)
+  }
   setCode(code: string) {
-    this.code = code
+    this.codeFile = fromText(stageCodeFileName, code)
   }
 
-  get backdrop(): Backdrop | null {
-    return this._backdrops[this._backdropIndex] ?? null
+  backdrops: Backdrop[]
+  private backdropIndex: number
+  get defaultBackdrop(): Backdrop | null {
+    return this.backdrops[this.backdropIndex] ?? null
   }
-
-  /**
-   * Set given backdrop to stage.
-   * Note: the backdrop's name may be altered to avoid conflict
-   */
-  setBackdrop(backdrop: Backdrop) {
-    for (const b of this._backdrops) {
-      this.removeBackdrop(b.name)
-    }
-    this._setBackdropIndex(this._addBackdrop(backdrop))
-  }
-
-  removeBackdrop(name: string): void {
-    const idx = this._backdrops.findIndex((s) => s.name === name)
-    if (idx === -1) {
-      throw new Error(`backdrop ${name} not found`)
-    }
-
-    const [removedBackdrop] = this._backdrops.splice(idx, 1)
-    removedBackdrop.setStage(null)
-
-    // Maintain current backdrop's index if possible
-    if (this._backdropIndex === idx) {
-      this._setBackdropIndex(0)
-      // Note that if there is only one backdrop in the array
-      // and it is removed, the index will also be set to 0
-    } else if (this._backdropIndex > idx) {
-      this._setBackdropIndex(this._backdropIndex - 1)
-    }
-  }
-
-  // Currently we support at most one backdrop, so
-  // * fields like `backdrops`、`backdropIndex`
-  // * methods like `setBackdropIndex`、`addBackdrop`、`topBackdrop`
-  // are marked private to prevent usage from outside of models.
-  // Instead, we offer `setBackdrop` to manipulate backdrops.
-
-  _backdrops: Backdrop[]
-  _backdropIndex: number
-  _setBackdropIndex(backdropIndex: number) {
-    this._backdropIndex = backdropIndex
+  setDefaultBackdrop(name: string) {
+    const idx = this.backdrops.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`backdrop ${name} not found`)
+    this.backdropIndex = idx
   }
 
   /**
    * Add given backdrop to stage.
    * Note: the backdrop's name may be altered to avoid conflict.
-   * @returns index of the added backdrop
    */
-  _addBackdrop(backdrop: Backdrop): number {
+  addBackdrop(backdrop: Backdrop) {
     const newName = ensureValidBackdropName(backdrop.name, this)
     backdrop.setName(newName)
     backdrop.setStage(this)
-    return this._backdrops.push(backdrop) - 1
+    this.backdrops.push(backdrop)
   }
 
-  _topBackdrop(name: string) {
-    const idx = this._backdrops.findIndex((s) => s.name === name)
-    if (idx < 0) throw new Error(`backdrop ${name} not found`)
-    const [backdrop] = this._backdrops.splice(idx, 1)
-    this._backdrops.unshift(backdrop)
-    // TODO: relation to `this.backdropIndex`?
+  removeBackdrop(name: string): void {
+    const idx = this.backdrops.findIndex((s) => s.name === name)
+    if (idx === -1) {
+      throw new Error(`backdrop ${name} not found`)
+    }
+
+    const [removedBackdrop] = this.backdrops.splice(idx, 1)
+    removedBackdrop.setStage(null)
+
+    // Maintain current backdrop's index if possible
+    if (this.backdropIndex === idx) {
+      this.backdropIndex = 0
+      // Note that if there is only one backdrop in the array
+      // and it is removed, the index will also be set to 0
+    } else if (this.backdropIndex > idx) {
+      this.backdropIndex = this.backdropIndex - 1
+    }
   }
 
-  mapWidth: number | undefined
+  mapWidth: number
   setMapWidth(mapWidth: number) {
     this.mapWidth = mapWidth
   }
 
-  mapHeight: number | undefined
+  mapHeight: number
   setMapHeight(mapHeight: number) {
     this.mapHeight = mapHeight
   }
@@ -128,46 +109,50 @@ export class Stage {
     this.mapMode = mapMode
   }
 
-  /** Dicide map size based on map config & backdrop information */
-  async getMapSize(): Promise<Size | null> {
-    const { mapWidth: width, mapHeight: height } = this
-    if (width != null && height != null) {
-      return { width, height }
-    }
-    if (this.backdrop != null) {
-      return await this.backdrop.getSize()
-    }
-    return null
+  getMapSize(): Size {
+    return { width: this.mapWidth, height: this.mapHeight }
   }
 
-  constructor(code = '', inits?: Partial<StageInits>) {
-    this.code = code
-    this._backdrops = []
-    this._backdropIndex = inits?.backdropIndex ?? 0
-    this.mapWidth = inits?.mapWidth
-    this.mapHeight = inits?.mapHeight
+  constructor(codeFile: File | null = null, inits?: Partial<StageInits>) {
+    this.codeFile = codeFile
+    this.backdrops = []
+    this.backdropIndex = inits?.backdropIndex ?? 0
+    this.mapWidth = inits?.mapWidth ?? 480
+    this.mapHeight = inits?.mapHeight ?? 360
     this.mapMode = getMapMode(inits?.mapMode)
     return reactive(this) as this
   }
 
-  static async load({ scenes: sceneConfigs, sceneIndex, map }: RawStageConfig, files: Files) {
+  static async load(
+    {
+      backdrops: backdropConfigs,
+      backdropIndex,
+      scenes: sceneConfigs,
+      sceneIndex,
+      costumes: costumeConfigs,
+      currentCostumeIndex,
+      map
+    }: RawStageConfig,
+    files: Files
+  ) {
     // TODO: empty stage
-    let code = ''
+    let codeFile: File | undefined
     for (const codeFilePath of stageCodeFilePaths) {
-      const codeFile = files[codeFilePath]
-      if (codeFile == null) continue
-      code = await toText(codeFile)
+      if (files[codeFilePath] == null) continue
+      codeFile = files[codeFilePath]
       break
     }
-    const stage = new Stage(code, {
-      backdropIndex: sceneIndex,
+    const stage = new Stage(codeFile, {
+      backdropIndex: backdropIndex ?? sceneIndex ?? currentCostumeIndex,
       mapWidth: map?.width,
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (sceneConfigs ?? []).map((c) => Backdrop.load(c, files))
+    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) =>
+      Backdrop.load(c, files)
+    )
     for (const backdrop of backdrops) {
-      stage._addBackdrop(backdrop)
+      stage.addBackdrop(backdrop)
     }
     return stage
   }
@@ -175,32 +160,31 @@ export class Stage {
   export(): [RawStageConfig, Files] {
     const files: Files = {}
     const backdropConfigs: RawBackdropConfig[] = []
-    files[stageCodeFilePath] = fromText(stageCodeFileName, this.code)
-    for (const backdrop of this._backdrops) {
+    files[stageCodeFilePath] = this.codeFile ?? fromText(stageCodeFileName, '')
+    for (const backdrop of this.backdrops) {
       const [backdropConfig, backdropFiles] = backdrop.export()
       backdropConfigs.push(backdropConfig)
       Object.assign(files, backdropFiles)
     }
-    const { _backdropIndex: backdropIndex, mapWidth, mapHeight, mapMode } = this
+    const { backdropIndex, mapWidth, mapHeight, mapMode } = this
     const config: RawStageConfig = {
-      scenes: backdropConfigs,
-      sceneIndex: backdropIndex,
+      backdrops: backdropConfigs,
+      backdropIndex: backdropIndex,
       map: { width: mapWidth, height: mapHeight, mode: mapMode }
     }
     return [config, files]
   }
 }
 
+// In Builder we only support repeat and fillRatio
 export enum MapMode {
-  fill = 'fill',
+  // fill = 'fill',
   repeat = 'repeat',
-  fillRatio = 'fillRatio',
-  fillCut = 'fillCut'
+  fillRatio = 'fillRatio'
+  // fillCut = 'fillCut'
 }
 
 function getMapMode(mode?: string): MapMode {
   if (mode === 'repeat') return MapMode.repeat
-  if (mode === 'fillCut') return MapMode.fillCut
-  if (mode === 'fillRatio') return MapMode.fillRatio
-  return MapMode.fill
+  return MapMode.fillRatio
 }

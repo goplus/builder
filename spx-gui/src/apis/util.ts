@@ -2,21 +2,21 @@
  * @desc util-related APIs of spx-backend
  */
 
-import { client } from './common'
+import { client, type UniversalUrl, type UniversalToWebUrlMap } from './common'
 
 export interface FormatError {
-  Column: number
-  Line: number
-  Msg: string
+  column: number
+  line: number
+  msg: string
 }
 
 export interface FormatResponse {
-  Body: string
-  Error: FormatError
+  body: string
+  error?: FormatError
 }
 
 export function formatSpxCode(body: string) {
-  return client.post('/util/fmt', { body }) as Promise<FormatResponse>
+  return client.post('/util/fmtcode', { body }) as Promise<FormatResponse>
 }
 
 export type UpInfo = {
@@ -24,12 +24,21 @@ export type UpInfo = {
   token: string
   /** Valid time for uptoken, unit: second */
   expires: number
-  /** Base URL to fetch file */
-  baseUrl: string
+  /** Maximum file size allowed in bytes */
+  maxSize: number
+  /** Bucket name */
+  bucket: string
   /** Bucket Region */
   region: string
 }
 
 export function getUpInfo() {
   return client.get('/util/upinfo') as Promise<UpInfo>
+}
+
+export async function makeObjectUrls(objects: UniversalUrl[]) {
+  const res = (await client.post('/util/fileurls', { objects: objects })) as {
+    objectUrls: UniversalToWebUrlMap
+  }
+  return res.objectUrls
 }

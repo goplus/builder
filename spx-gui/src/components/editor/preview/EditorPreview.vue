@@ -4,7 +4,7 @@
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton class="run-button" size="small" type="primary" icon="play" @click="show = true">
+      <UIButton class="run-button" type="primary" icon="play" @click="show = true">
         {{ $t({ en: 'Run', zh: '运行' }) }}
       </UIButton>
     </UICardHeader>

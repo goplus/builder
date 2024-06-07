@@ -4,11 +4,11 @@
  */
 
 import { reactive } from 'vue'
-import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
-import { Disposble } from './common/disposable'
 import { join } from '@/utils/path'
+import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
+import { Disposble } from './common/disposable'
+import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset-name'
 import { type RawCostumeConfig, Costume } from './costume'
-import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset'
 import type { Project } from './project'
 
 export enum RotationStyle {
@@ -24,19 +24,21 @@ export type SpriteInits = {
   size?: number
   rotationStyle?: RotationStyle
   costumeIndex?: number
+  currentCostumeIndex?: number // For compatibility
   visible?: boolean
   isDraggable?: boolean
-  // TODO:
-  // costumeSet?: costumeSet
-  // costumeMPSet?: costumeMPSet
-  // currentCostumeIndex?: int
-  // fAnimations?: map
-  // mAnimations?: map
-  // tAnimations?: map
+
+  // Not supported by builder:
+  fAnimations?: unknown
+  mAnimations?: unknown
+  tAnimations?: unknown
 }
 
 export type RawSpriteConfig = SpriteInits & {
   costumes?: RawCostumeConfig[]
+  // Not supported by builder:
+  costumeSet?: unknown
+  costumeMPSet?: unknown
 }
 
 export const spriteAssetPath = 'assets/sprites'
@@ -48,35 +50,54 @@ export function getSpriteAssetPath(name: string) {
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
-  _project: Project | null = null
+  private project: Project | null = null
   setProject(project: Project | null) {
-    this._project = project
+    this.project = project
   }
 
   name: string
   setName(name: string) {
-    const err = validateSpriteName(name, this._project)
+    const err = validateSpriteName(name, this.project)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
 
-  code: string
+  private codeFile: File | null
+  private get codeFileName() {
+    return `${this.name}.spx`
+  }
+  async getCode() {
+    if (this.codeFile == null) return ''
+    return toText(this.codeFile)
+  }
   setCode(code: string) {
-    this.code = code
+    this.codeFile = fromText(this.codeFileName, code)
   }
 
   costumes: Costume[]
-  costumeIndex: number
-  get costume(): Costume | null {
+  private costumeIndex: number
+  get defaultCostume(): Costume | null {
     return this.costumes[this.costumeIndex] ?? null
   }
-  setCostumeIndex(costumeIndex: number) {
-    this.costumeIndex = costumeIndex
+  setDefaultCostume(name: string) {
+    const idx = this.costumes.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`costume ${name} not found`)
+    this.costumeIndex = idx
   }
   removeCostume(name: string) {
     const idx = this.costumes.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`backdrop ${name} not found`)
     const [constume] = this.costumes.splice(idx, 1)
     constume.setSprite(null)
+
+    // Maintain current costume's index if possible
+    if (this.costumeIndex === idx) {
+      this.costumeIndex = 0
+      // Note that if there is only one costume in the array
+      // and it is removed, the index will also be set to 0
+    } else if (this.costumeIndex > idx) {
+      this.costumeIndex = this.costumeIndex - 1
+    }
   }
   /**
    * Add given costume to sprite.
@@ -124,19 +145,23 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(name: string, code = '', inits?: SpriteInits) {
+  constructor(name: string, codeFile: File | null = null, inits?: SpriteInits) {
     super()
     this.name = name
-    this.code = code
+    this.codeFile = codeFile
     this.costumes = []
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
     this.rotationStyle = getRotationStyle(inits?.rotationStyle)
-    this.costumeIndex = inits?.costumeIndex ?? 0
+    this.costumeIndex = inits?.costumeIndex ?? inits?.currentCostumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
+
+    for (const field of ['fAnimations', 'mAnimations', 'tAnimations'] as const) {
+      if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
+    }
     return reactive(this) as this
   }
 
@@ -145,7 +170,7 @@ export class Sprite extends Disposble {
    * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
    */
   async autoFit() {
-    const { costumes, _project: project } = this
+    const { costumes, project: project } = this
     if (project == null) throw new Error('`autoFit` should be called after added to a project')
     if (costumes.length > 0) {
       const [mapSize, costumeSize] = await Promise.all([
@@ -169,8 +194,8 @@ export class Sprite extends Disposble {
   }
 
   /** Create sprite within builder (by user actions) */
-  static create(nameBase: string, code?: string, inits?: SpriteInits) {
-    return new Sprite(getSpriteName(null, nameBase), code ?? '', {
+  static create(nameBase: string, codeFile?: File, inits?: SpriteInits) {
+    return new Sprite(getSpriteName(null, nameBase), codeFile, {
       heading: 90,
       x: 0,
       y: 0,
@@ -184,16 +209,24 @@ export class Sprite extends Disposble {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
-    const { costumes: costumeConfigs, ...inits } = (await toConfig(configFile)) as RawSpriteConfig
-    let code = ''
+    const {
+      costumes: costumeConfigs,
+      costumeSet,
+      costumeMPSet,
+      ...inits
+    } = (await toConfig(configFile)) as RawSpriteConfig
     const codeFile = files[name + '.spx']
-    if (codeFile != null) {
-      code = await toText(codeFile)
-    }
-    const sprite = new Sprite(name, code, inits)
-    const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
-    for (const costume of costumes) {
-      sprite.addCostume(costume)
+    const sprite = new Sprite(name, codeFile, inits)
+    if (costumeConfigs != null) {
+      const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
+      for (const costume of costumes) {
+        sprite.addCostume(costume)
+      }
+    } else {
+      if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
+      else if (costumeMPSet != null)
+        console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
+      else console.warn(`no costume found for sprite: ${name}`)
     }
     return sprite
   }
@@ -212,7 +245,7 @@ export class Sprite extends Disposble {
     return sprites
   }
 
-  export(): Files {
+  export(includeCode = true): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -232,7 +265,9 @@ export class Sprite extends Disposble {
       isDraggable: this.isDraggable,
       costumes: costumeConfigs
     }
-    files[`${this.name}.spx`] = fromText(`${this.name}.spx`, this.code)
+    if (includeCode) {
+      files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')
+    }
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }

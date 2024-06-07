@@ -5,7 +5,7 @@
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <UIForm :form="form" @submit="handleSubmit.fn">
+    <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
           $t({
@@ -101,16 +101,16 @@ const handleSubmit = useMessageHandle(
     sprite.addCostume(costume)
     const project = new Project()
     const backdrop = await Backdrop.create('', createFile(defaultBackdropImg))
-    project.stage.setBackdrop(backdrop)
+    project.stage.addBackdrop(backdrop)
     project.addSprite(sprite)
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
     const files = project.export()[1]
-    const fileUrls = await uploadFiles(files)
+    const { fileCollection } = await uploadFiles(files)
     const projectData = await addProject({
       name: form.value.name,
       isPublic: IsPublic.personal,
-      files: fileUrls
+      files: fileCollection
     })
     emit('resolved', projectData)
   },

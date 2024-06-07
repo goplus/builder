@@ -1,30 +1,32 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="code-editor">
     <ul class="categories-wrapper">
       <li
         v-for="(category, i) in categories"
+        v-show="category.groups.length > 0"
         :key="i"
         class="category"
-        :class="{ active: category === activeCategory }"
+        :class="{ active: i === activeCategoryIndex }"
         :style="{ '--category-color': category.color }"
-        @click="handleCategoryClick(category)"
+        @click="handleCategoryClick(i)"
       >
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="icon" v-html="category.icon"></div>
         <p class="label">{{ $t(category.label) }}</p>
       </li>
     </ul>
-    <div class="snippets-wrapper">
+    <div class="tools-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
-      <div class="snippets">
-        <!-- TODO: use snippet detail as title -->
-        <UITagButton
-          v-for="(snippet, i) in activeCategory.snippets"
-          :key="i"
-          @click="handleSnippetClick(snippet)"
-        >
-          {{ snippet.label }}
-        </UITagButton>
+      <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
+        <h5 class="group-title">{{ $t(group.label) }}</h5>
+        <div class="defs">
+          <ToolItem
+            v-for="(def, j) in group.tools"
+            :key="j"
+            :tool="def"
+            @use-snippet="handleUseSnippet"
+          />
+        </div>
       </div>
     </div>
     <div class="code-text-editor-wrapper">
@@ -34,33 +36,63 @@
         @update:value="(v) => emit('update:value', v)"
       />
     </div>
-    <div class="thumbnail" :style="thumbnailStyle" />
+    <div class="extra">
+      <UIImg class="thumbnail" :src="thumbnailSrc" />
+      <div class="zoomer">
+        <button class="zoom-btn" title="Zoom in" @click="handleZoom('in')" v-html="iconZoomIn" />
+        <button class="zoom-btn" title="Zoom out" @click="handleZoom('out')" v-html="iconZoomOut" />
+        <button
+          class="zoom-btn"
+          title="Reset"
+          @click="handleZoom('initial')"
+          v-html="iconZoomReset"
+        />
+      </div>
+    </div>
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, shallowRef } from 'vue'
-import { useUIVariables, UITagButton } from '@/components/ui'
+import { useUIVariables, UIImg, UILoading } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import {
   CodeTextEditor,
-  motionSnippets,
-  eventSnippets,
-  lookSnippets,
-  controlSnippets,
-  soundSnippets,
-  type Snippet
+  motionCategory,
+  eventCategory,
+  lookCategory,
+  controlCategory,
+  soundCategory,
+  ToolContext,
+  sensingCategory,
+  gameCategory,
+  getVariableCategory,
+  type ToolGroup
 } from './code-text-editor'
+import ToolItem from './ToolItem.vue'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'
 import iconMotion from './icons/motion.svg?raw'
 import iconSound from './icons/sound.svg?raw'
 import iconControl from './icons/control.svg?raw'
+import iconGame from './icons/game.svg?raw'
+import iconSensing from './icons/sensing.svg?raw'
+import iconVariable from './icons/variable.svg?raw'
+import iconZoomIn from './icons/zoom-in.svg?raw'
+import iconZoomOut from './icons/zoom-out.svg?raw'
+import iconZoomReset from './icons/zoom-reset.svg?raw'
 import { useFileUrl } from '@/utils/file'
 
-defineProps<{
-  value: string
-}>()
+withDefaults(
+  defineProps<{
+    loading?: boolean
+    value: string
+  }>(),
+  {
+    loading: false
+  }
+)
 
 const emit = defineEmits<{
   'update:value': [value: string]
@@ -69,68 +101,100 @@ const emit = defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const categories = [
-  {
-    icon: iconEvent,
-    label: { en: 'Event', zh: '事件' },
-    snippets: eventSnippets,
-    color: uiVariables.color.yellow.main
-  },
-  {
-    icon: iconLook,
-    label: { en: 'Look', zh: '外观' },
-    snippets: lookSnippets,
-    color: '#fd8d60'
-  },
-  {
-    icon: iconSound,
-    label: { en: 'Sound', zh: '声音' },
-    snippets: soundSnippets,
-    color: uiVariables.color.sound.main
-  },
-  {
-    icon: iconMotion,
-    label: { en: 'Motion', zh: '运动' },
-    snippets: motionSnippets,
-    color: '#91d644'
-  },
-  {
-    icon: iconControl,
-    label: { en: 'Control', zh: '控制' },
-    snippets: controlSnippets,
-    color: '#67ceff'
-  }
-]
+const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
 
-const activeCategory = shallowRef(categories[0])
+const categories = computed(() => {
+  return [
+    {
+      icon: iconEvent,
+      color: '#fabd2c',
+      ...eventCategory
+    },
+    {
+      icon: iconLook,
+      color: '#fd8d60',
+      ...lookCategory
+    },
+    {
+      icon: iconMotion,
+      color: '#91d644',
+      ...motionCategory
+    },
+    {
+      icon: iconControl,
+      color: '#3fcdd9',
+      ...controlCategory
+    },
+    {
+      icon: iconSensing,
+      color: '#4fc2f8',
+      ...sensingCategory
+    },
+    {
+      icon: iconSound,
+      color: uiVariables.color.sound.main,
+      ...soundCategory
+    },
+    {
+      icon: iconVariable,
+      color: '#5a7afe',
+      ...variablesDefs.value
+    },
+    {
+      icon: iconGame,
+      color: '#e14e9f',
+      ...gameCategory
+    }
+  ].map((c) => ({ ...c, groups: filterGroups(c.groups) }))
+})
 
-function handleCategoryClick(category: (typeof categories)[0]) {
-  activeCategory.value = category
+function filterGroups(groups: ToolGroup[]) {
+  const isSprite = editorCtx.project.selected?.type === 'sprite'
+  return groups
+    .map((g) => ({
+      ...g,
+      tools: g.tools.filter((d) => {
+        if (d.target === ToolContext.all) return true
+        const target = isSprite ? ToolContext.sprite : ToolContext.stage
+        return d.target === target
+      })
+    }))
+    .filter((g) => g.tools.length > 0)
+}
+
+const activeCategoryIndex = shallowRef(0)
+const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
+
+function handleCategoryClick(index: number) {
+  activeCategoryIndex.value = index
 }
 
 const codeTextEditor = ref<InstanceType<typeof CodeTextEditor>>()
 
-function handleSnippetClick(snippet: Snippet) {
-  codeTextEditor.value?.insertSnippet(snippet)
+function handleUseSnippet(insertText: string) {
+  codeTextEditor.value?.insertSnippet(insertText)
 }
+
+function handleZoom(action: 'in' | 'out' | 'initial') {
+  codeTextEditor.value?.zoomFont(action)
+}
+
+const [thumbnailSrc] = useFileUrl(() => {
+  const project = editorCtx.project
+  if (project.selected?.type === 'stage') return project.stage.defaultBackdrop?.img
+  if (project.selectedSprite) return project.selectedSprite.defaultCostume?.img
+})
 
 defineExpose({
   async format() {
     await codeTextEditor.value?.format()
   }
 })
-
-const thumbnailSrc = useFileUrl(() => {
-  if (editorCtx.selected?.type === 'stage') return editorCtx.project.stage.backdrop?.img
-  if (editorCtx.selectedSprite) return editorCtx.selectedSprite.costume?.img
-})
-const thumbnailStyle = computed(
-  () => thumbnailSrc.value && { backgroundImage: `url("${thumbnailSrc.value}")` }
-)
 </script>
 
 <style scoped lang="scss">
 .code-editor {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -139,15 +203,15 @@ const thumbnailStyle = computed(
 
 .categories-wrapper {
   flex: 0 0 auto;
-  padding: 12px 8px;
+  padding: 12px 4px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .category {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -170,23 +234,43 @@ const thumbnailStyle = computed(
   .label {
     margin-top: 2px;
     text-align: center;
+    font-size: 10px;
+    line-height: 1.6;
   }
 }
 
-.snippets-wrapper {
-  // 162px is the max width of snippet buttons, use 162px as base width
-  // to keep snippets-wrapper's width stable when switch among different snippet categories
+.tools-wrapper {
+  // 162px is the max width of def buttons, use 162px as base width
+  // to keep tools-wrapper's width stable when switch among different def categories
   flex: 1 0 162px;
   padding: 12px;
   background-color: var(--ui-color-grey-300);
+  overflow-y: auto;
 
   .title {
     font-size: var(--ui-font-size-text);
     color: var(--ui-color-title);
   }
 
-  .snippets {
-    margin-top: 12px;
+  .def-group {
+    margin: 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    + .def-group {
+      padding-top: 12px;
+      border-top: 1px dashed var(--ui-color-border);
+    }
+  }
+
+  .group-title {
+    color: var(--ui-color-grey-700);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .defs {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
@@ -199,15 +283,48 @@ const thumbnailStyle = computed(
   padding: 12px;
 }
 
+.extra {
+  padding: 12px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .thumbnail {
   flex: 0 0 auto;
-  margin-right: 12px;
-  margin-top: 12px;
   width: 60px;
   height: 60px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
   opacity: 0.3;
+}
+
+.zoomer {
+  width: 60px;
+  padding-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-middle);
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  color: var(--ui-color-text);
+  background-color: var(--ui-color-grey-300);
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: var(--ui-color-grey-200);
+  }
+  &:active {
+    background-color: var(--ui-color-grey-400);
+  }
 }
 </style>

@@ -8,11 +8,11 @@ echo "WORKSPACE: ${PWD}"
 
 PREVIEW_URL=http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local
 
-echo VITE_PUBLISH_BASE_URL=${PREVIEW_URL}/ > spx-gui/.env.local
-export CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
-docker build -t ${CONTAINER_IMAGE} -f ./Dockerfile . --builder="kube" --push
-export CURRENT_TIME=$(date "--iso-8601=seconds")
+echo VITE_PUBLISH_BASE_URL="${PREVIEW_URL}"/ > spx-gui/.env.local
+CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
+docker build -t "${CONTAINER_IMAGE}" --build-arg image_address=aslan-spock-register.qiniu.io/goplus/ -f ./Dockerfile . --builder="kube" --push
 
+CURRENT_TIME="$(date "--iso-8601=seconds")"
 # generate kubernetes yaml with unique flag for PR
 cat > builder.yaml << EOF
 apiVersion: apps/v1

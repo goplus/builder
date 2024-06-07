@@ -17,9 +17,20 @@ export enum IsPublic {
   public = 1
 }
 
-/** Map from relative path to URL */
-export type FileUrls = {
-  [path: string]: string
+/** Url with 'http://' or 'https://' scheme, used for web resources */
+export type WebUrl = string
+
+/** Url for universal resources, which could be either a WebUrl or a Url with a custom scheme like 'kodo://' */
+export type UniversalUrl = string
+
+/** Map from UniversalUrl to WebUrl */
+export type UniversalToWebUrlMap = {
+  [universalUrl: UniversalUrl]: WebUrl
+}
+
+/** Map from relative path to UniversalUrl */
+export type FileCollection = {
+  [path: string]: UniversalUrl
 }
 
 export const client = new Client()

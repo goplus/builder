@@ -1,7 +1,7 @@
 <template>
   <div
     class="ui-menu-item"
-    :class="{ disabled: ctx?.disabled, 'in-group': ctx?.inGroup, interactive: interactive }"
+    :class="{ disabled, 'in-group': ctx?.inGroup, interactive: interactive }"
     @click="handleClick"
   >
     <div v-if="hasSlotIcon" class="icon">
@@ -12,15 +12,18 @@
 </template>
 
 <script setup lang="ts">
-import { inject, useSlots } from 'vue'
+import { computed, inject, useSlots } from 'vue'
+import { useDropdown } from '../UIDropdown.vue'
 import { ctxKey } from './UIMenu.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     interactive?: boolean
+    disabled?: boolean
   }>(),
   {
-    interactive: true
+    interactive: true,
+    disabled: false
   }
 )
 
@@ -31,9 +34,15 @@ const emit = defineEmits<{
 const slots = useSlots()
 const hasSlotIcon = !!slots['icon']
 const ctx = inject(ctxKey)
+const dropdownCtrl = useDropdown()
+
+const disabled = computed(() => props.disabled || !!ctx?.disabled)
 
 function handleClick(e: MouseEvent) {
-  if (ctx?.value.disabled) return
+  if (disabled.value) return
+  // It is common to put a menu in a dropdown. For most of the cases, it is ideal to hide the
+  // dropdown when menu-item clicked. We may make this behavior configurable if required.
+  dropdownCtrl?.setVisible(false)
   emit('click', e)
 }
 </script>
@@ -41,7 +50,6 @@ function handleClick(e: MouseEvent) {
 <style lang="scss" scoped>
 .ui-menu-item {
   padding: 8px 20px 8px 12px;
-  line-height: 16px;
   display: flex;
   align-items: center;
   gap: 6px;

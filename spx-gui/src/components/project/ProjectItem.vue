@@ -1,47 +1,74 @@
 <template>
   <li :class="['project-item', { 'in-homepage': inHomepage }]">
     <div class="img-box">
-      <div class="img" :style="imgStyle"></div>
+      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
     <div class="info">
-      <p class="name">{{ projectData.name }}</p>
+      <div class="name-container">
+        <div class="name">{{ projectData.name }}</div>
+        <UIDropdown trigger="click">
+          <template #trigger>
+            <div @click.stop>
+              <UIIcon type="more" />
+            </div>
+          </template>
+          <UIMenu>
+            <UIMenuItem @click="() => handleRemoveProject(projectData)">
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenu>
+        </UIDropdown>
+      </div>
       <p class="creation-time">{{ creationTime }}</p>
     </div>
   </li>
 </template>
 
-<script lang="ts">
-export const projectItemSize = { width: 168, height: 182 },
-  projectItemSizeInHomepage = { width: 216, height: 230 }
-</script>
-
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, shallowRef, watchEffect } from 'vue'
 import dayjs from 'dayjs'
+import { UIImg } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import type { ProjectData } from '@/apis/project'
 import { Project } from '@/models/project'
+import { UIDropdown, UIIcon, UIMenu, UIMenuItem } from '../ui'
+import { useRemoveProject } from '.'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   inHomepage?: boolean
   projectData: ProjectData
 }>()
 
-const project = ref<Project | null>(null)
+const emit = defineEmits<{
+  removed: []
+}>()
 
-watchEffect((onCleanup) => {
+const project = shallowRef<Project | null>(null)
+
+const removeProject = useRemoveProject()
+
+const handleRemoveProject = useMessageHandle(
+  async (projectData: ProjectData) => {
+    await removeProject(projectData.owner, projectData.name)
+    emit('removed')
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
+
+watchEffect(async (onCleanup) => {
   let p = new Project()
-  p.loadFromCloud(props.projectData)
   onCleanup(() => p.dispose())
+  await p.loadFromCloud(props.projectData)
   project.value = p
 })
 
-const imgSrc = useFileUrl(() => project.value?.sprites[0]?.costume?.img)
-
-const imgStyle = computed(() => {
-  const backgroundImage = imgSrc.value || defaultSpritePng
-  return { backgroundImage: `url("${backgroundImage}")` }
+const [_imgSrc, _imgLoading] = useFileUrl(() => project.value?.sprites[0]?.defaultCostume?.img)
+const imgLoading = computed(() => project.value == null || _imgLoading.value)
+const imgSrc = computed(() => {
+  if (_imgSrc.value != null) return _imgSrc.value
+  return imgLoading.value ? null : defaultSpritePng
 })
 
 const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.MM.DD HH:mm'))
@@ -78,9 +105,6 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     .img {
       width: 100%;
       height: 100%;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: contain;
     }
   }
 
@@ -105,6 +129,12 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     font-size: 10px;
     line-height: 18px;
     color: var(--ui-color-grey-800);
+  }
+
+  .name-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
 

@@ -7,9 +7,11 @@
     type="button"
     :disabled="disabled"
   >
-    <div class="icon">
-      <UIIcon v-if="icon != null" class="ui-icon" :type="icon" />
-      <slot v-else name="default"></slot>
+    <div class="content">
+      <div class="icon">
+        <UIIcon v-if="icon != null" class="ui-icon" :type="icon" />
+        <slot v-else name="default"></slot>
+      </div>
     </div>
   </button>
 </template>
@@ -47,18 +49,36 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   display: flex;
   width: 42px;
   height: 42px;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
 
+  padding: 0 0 4px 0;
+  background: none;
   border: none;
-  border-bottom-width: 4px;
-  border-bottom-style: solid;
-  border-radius: 42px;
+  border-radius: 100%;
   cursor: pointer;
+
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-primary-main);
+  --ui-button-shadow-color: var(--ui-color-primary-700);
+
+  .content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
+
+    color: var(--ui-button-color);
+    background-color: var(--ui-button-bg-color);
+    box-shadow: 0 4px var(--ui-button-shadow-color);
+  }
 
   &:not(:disabled):active,
   &.loading {
-    border-bottom-width: 0;
+    padding-bottom: 0;
+    .content {
+      box-shadow: none;
+    }
   }
 
   &:disabled,
@@ -66,9 +86,9 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
     cursor: not-allowed;
 
     &:not(.loading) {
-      color: var(--ui-color-disabled-text);
-      background-color: var(--ui-color-disabled-bg);
-      border-bottom-color: var(--ui-color-grey-500);
+      --ui-button-color: var(--ui-color-disabled-text);
+      --ui-button-bg-color: var(--ui-color-disabled-bg);
+      --ui-button-shadow-color: var(--ui-color-grey-500);
     }
   }
 
@@ -89,12 +109,12 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 }
 
 .type-primary {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-primary-main);
-  border-bottom-color: var(--ui-color-primary-700);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-primary-main);
+  --ui-button-shadow-color: var(--ui-color-primary-700);
 
-  &:hover:not(:active) {
-    background-color: var(--ui-color-primary-400);
+  &:hover:not(:active, :disabled) {
+    --ui-button-bg-color: var(--ui-color-primary-400);
   }
 }
 
@@ -109,52 +129,52 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 }
 
 .type-secondary {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-blue-500);
-  border-bottom-color: var(--ui-color-blue-700);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-blue-500);
+  --ui-button-shadow-color: var(--ui-color-blue-700);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-blue-400);
+    --ui-button-bg-color: var(--ui-color-blue-400);
   }
 }
 
 .type-boring {
-  color: var(--ui-color-text);
-  background-color: var(--ui-color-grey-300);
-  border-bottom-color: var(--ui-color-grey-600);
+  --ui-button-color: var(--ui-color-text);
+  --ui-button-bg-color: var(--ui-color-grey-300);
+  --ui-button-shadow-color: var(--ui-color-grey-600);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-grey-200);
+    --ui-button-bg-color: var(--ui-color-grey-200);
   }
 }
 
 .type-danger {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-danger-main);
-  border-bottom-color: var(--ui-color-danger-300);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-danger-main);
+  --ui-button-shadow-color: var(--ui-color-danger-300);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-danger-100);
+    --ui-button-bg-color: var(--ui-color-danger-100);
   }
 }
 
 .type-success {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-success-main);
-  border-bottom-color: var(--ui-color-success-300);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-success-main);
+  --ui-button-shadow-color: var(--ui-color-success-300);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-success-100);
+    --ui-button-bg-color: var(--ui-color-success-100);
   }
 }
 
 .type-info {
-  color: var(--ui-color-grey-100);
-  background-color: var(--ui-color-purple-500);
-  border-bottom-color: var(--ui-color-purple-700);
+  --ui-button-color: var(--ui-color-grey-100);
+  --ui-button-bg-color: var(--ui-color-purple-500);
+  --ui-button-shadow-color: var(--ui-color-purple-700);
 
   &:hover:not(:active) {
-    background-color: var(--ui-color-purple-400);
+    --ui-button-bg-color: var(--ui-color-purple-400);
   }
 }
 </style>

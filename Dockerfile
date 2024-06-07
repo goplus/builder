@@ -1,6 +1,6 @@
 # All-in-one Dockerfile for building the SPX GUI
-
-FROM golang:1.21 as go-builder
+ARG image_address
+FROM ${image_address}golang:1.21 as go-builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt
 WORKDIR /app/spx-backend
 RUN gop build -o spx-backend ./cmd/spx-backend
 
-FROM node:20.11.1 as frontend-builder
+FROM ${image_address}node:20.11.1 as frontend-builder
 
 WORKDIR /app/spx-gui
 

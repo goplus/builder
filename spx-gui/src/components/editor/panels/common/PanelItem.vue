@@ -1,26 +1,38 @@
 <!-- Item (sprite / sound) on panel -->
 
 <template>
-  <li class="panel-item" :class="{ active: props.active }">
+  <li class="panel-item" :class="{ active: active }">
     <slot></slot>
-    <p class="name">{{ props.name }}</p>
-    <div class="remove" @click.stop="emit('remove')">
-      <UIIcon class="icon" type="trash" />
-    </div>
+    <p class="name">{{ name }}</p>
+    <UIDropdown trigger="click" placement="bottom-end">
+      <template #trigger>
+        <UICornerIcon v-show="active" :color="panelColor" type="more" />
+      </template>
+      <UIMenu>
+        <UIMenuItem @click="emit('addToAssetLibrary')">{{
+          $t({ en: 'Add to asset library', zh: '添加到素材库' })
+        }}</UIMenuItem>
+        <UIMenuItem @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
+      </UIMenu>
+    </UIDropdown>
   </li>
 </template>
 
 <script setup lang="ts">
-import { UIIcon } from '@/components/ui'
+import { UICornerIcon, UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
+import { usePanelColor } from './CommonPanel.vue'
 
-const props = defineProps<{
+defineProps<{
   active: boolean
   name: string
 }>()
 
 const emit = defineEmits<{
   remove: []
+  addToAssetLibrary: []
 }>()
+
+const panelColor = usePanelColor()
 </script>
 
 <style lang="scss" scoped>
@@ -44,10 +56,6 @@ const emit = defineEmits<{
   &.active {
     border-color: var(--panel-color-main);
     background-color: var(--panel-color-200);
-
-    .remove {
-      visibility: visible;
-    }
   }
 }
 
@@ -63,35 +71,5 @@ const emit = defineEmits<{
   text-align: center;
   text-overflow: ellipsis;
   color: var(--ui-color-title);
-}
-
-.remove {
-  visibility: hidden;
-  position: absolute;
-  top: -6px;
-  right: -6px;
-
-  display: flex;
-  width: 24px;
-  height: 24px;
-  justify-content: center;
-  align-items: center;
-
-  color: var(--ui-color-grey-100);
-  border-radius: 24px;
-  background: var(--panel-color-main);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--panel-color-400);
-  }
-  &:active {
-    background-color: var(--panel-color-600);
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
 }
 </style>

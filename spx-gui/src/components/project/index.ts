@@ -1,6 +1,6 @@
 import { useRouter } from 'vue-router'
 import { useModal, useConfirmDialog } from '@/components/ui'
-import { IsPublic, type ProjectData } from '@/apis/project'
+import { IsPublic, deleteProject } from '@/apis/project'
 import { useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
@@ -12,7 +12,7 @@ export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
   return function createProject() {
-    return modal({}) as Promise<ProjectData>
+    return modal({})
   }
 }
 
@@ -21,8 +21,24 @@ export function useOpenProject() {
   const modal = useModal(ProjectOpenModal)
 
   return async function openProject() {
-    const project = await (modal({}) as Promise<ProjectData>)
+    const project = await modal({})
     router.push(getProjectEditorRoute(project.name))
+  }
+}
+
+export function useRemoveProject() {
+  const withConfirm = useConfirmDialog()
+  const { t } = useI18n()
+
+  return async function removeProject(owner: string, name: string) {
+    return withConfirm({
+      title: t({ en: `Remove project ${name}`, zh: `删除项目 ${name}` }),
+      content: t({
+        en: `Removed projects can not be recovered. Are you sure you want to remove project ${name}?`,
+        zh: `删除后的项目无法恢复，确定要删除项目 ${name} 吗？`
+      }),
+      confirmHandler: () => deleteProject(owner, name)
+    })
   }
 }
 

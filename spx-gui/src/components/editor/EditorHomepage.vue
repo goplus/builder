@@ -135,7 +135,7 @@ const {
     // so their change will drive `useQuery` to re-fetch
     return loadProject(userStore.userInfo?.name, projectName.value)
   },
-  { en: 'Load project failed', zh: '加载项目失败' }
+  { en: 'Failed to load project', zh: '加载项目失败' }
 )
 
 async function loadProject(user: string | undefined, projectName: string | undefined) {
@@ -200,8 +200,7 @@ async function loadProject(user: string | undefined, projectName: string | undef
     }
   }
 
-  newProject.startWatchToSetHasUnsyncedChanges()
-  newProject.startWatchToSyncLocalCache(LOCAL_CACHE_KEY)
+  await newProject.startEditing(LOCAL_CACHE_KEY)
   return newProject
 }
 
@@ -309,9 +308,9 @@ async function handleCreate() {
 
   .body {
     flex: 1 1 0;
-    overflow: hidden;
     display: flex;
-    padding: 20px 24px 0;
+    padding: 20px 24px;
+    overflow: hidden;
   }
 
   .footer {

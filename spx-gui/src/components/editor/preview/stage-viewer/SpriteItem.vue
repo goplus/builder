@@ -10,8 +10,8 @@
       visible: sprite.visible,
       ...spx2Konva(sprite)
     }"
-    @dragend="handleChange"
-    @transformend="handleChange"
+    @dragend="handleDragEnd"
+    @transformend="handleTransformed"
     @mousedown="handleMousedown"
   />
 </template>
@@ -22,36 +22,41 @@ import type { Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { useImgFile } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { useSpritesReady } from './common'
 import { round } from '@/utils/utils'
+import type { Action } from '@/models/project'
 
 const props = defineProps<{
   sprite: Sprite
   mapSize: Size
+  spritesReadyMap: Map<string, boolean>
 }>()
 
 const nodeRef = ref<any>()
 const editorCtx = useEditorCtx()
-const costume = computed(() => props.sprite.costume)
+const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const image = useImgFile(() => costume.value?.img)
-
-const spritesReady = useSpritesReady()
+const [image] = useImgFile(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
-  // We need to notify event ready for SpriteTransformer (to get correct node size)
-  const name = props.sprite.name
+  const spriteName = props.sprite.name
+  props.spritesReadyMap.set(spriteName, false)
+  onCleanup(() => props.spritesReadyMap.delete(spriteName))
+
   const img = image.value
-  onCleanup(() => spritesReady.delete(props.sprite.name))
-  if (img == null) {
-    spritesReady.set(props.sprite.name, false)
+  if (img == null) return
+  function handleImageLoad() {
+    // We need to notify event ready for SpriteTransformer (to get correct node size)
+    props.spritesReadyMap.set(spriteName, true)
+  }
+  if (img.complete) {
+    handleImageLoad()
     return
   }
-  function handleImageLoad() {
-    spritesReady.set(name, true)
-  }
   img.addEventListener('load', handleImageLoad)
-  onCleanup(() => img.removeEventListener('load', handleImageLoad))
+  onCleanup(() => {
+    props.spritesReadyMap.delete(spriteName)
+    img.removeEventListener('load', handleImageLoad)
+  })
 })
 
 onMounted(() => {
@@ -67,8 +72,22 @@ onMounted(() => {
   }
 })
 
+function handleDragEnd(e: KonvaEventObject<unknown>) {
+  const sname = props.sprite.name
+  handleChange(e, {
+    name: { en: `Move sprite ${sname}`, zh: `移动精灵 ${sname}` }
+  })
+}
+
+function handleTransformed(e: KonvaEventObject<unknown>) {
+  const sname = props.sprite.name
+  handleChange(e, {
+    name: { en: `Resize sprite ${sname}`, zh: `调整精灵 ${sname} 大小` }
+  })
+}
+
 /** Handler for position-change (drag) or transform */
-function handleChange(e: KonvaEventObject<unknown>) {
+function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   const { x, y, heading, size } = konva2Spx({
     x: e.target.x(),
     y: e.target.y(),
@@ -76,14 +95,16 @@ function handleChange(e: KonvaEventObject<unknown>) {
     scaleX: e.target.scaleX(),
     scaleY: e.target.scaleY()
   })
-  props.sprite.setX(x)
-  props.sprite.setY(y)
-  props.sprite.setHeading(heading)
-  props.sprite.setSize(size)
+  editorCtx.project.history.doAction(action, () => {
+    props.sprite.setX(x)
+    props.sprite.setY(y)
+    props.sprite.setHeading(heading)
+    props.sprite.setSize(size)
+  })
 }
 
 function handleMousedown() {
-  editorCtx.select('sprite', props.sprite.name)
+  editorCtx.project.select({ type: 'sprite', name: props.sprite.name })
 }
 
 type KonvaAttrs = {

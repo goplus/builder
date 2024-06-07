@@ -6,8 +6,8 @@
       </router-link>
       <UIDropdown placement="bottom-start">
         <template #trigger>
-          <div class="project-dropdown">
-            <UIIcon class="icon-file" type="file" />
+          <div class="dropdown">
+            <UIIcon class="icon-main" type="file" />
             <UIIcon class="icon-arrow" type="arrowDown" />
           </div>
         </template>
@@ -51,6 +51,30 @@
               {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
             </UIMenuItem>
           </UIMenuGroup>
+          <UIMenuGroup :disabled="project == null">
+            <UIMenuItem @click="handleRemoveProject">
+              <template #icon><img :src="removeProjectSvg" /></template>
+              {{ $t({ en: 'Remove project', zh: '删除项目' }) }}
+            </UIMenuItem>
+          </UIMenuGroup>
+        </UIMenu>
+      </UIDropdown>
+      <UIDropdown v-if="project != null" placement="bottom-start">
+        <template #trigger>
+          <div class="dropdown">
+            <UIIcon class="icon-main" type="clock" />
+            <UIIcon class="icon-arrow" type="arrowDown" />
+          </div>
+        </template>
+        <UIMenu>
+          <UIMenuItem :disabled="undoAction == null" @click="handleUndo.fn">
+            <template #icon><img :src="undoSvg" /></template>
+            <span class="history-menu-text">{{ $t(undoText) }}</span>
+          </UIMenuItem>
+          <UIMenuItem :disabled="redoAction == null" @click="handleRedo.fn">
+            <template #icon><img :src="redoSvg" /></template>
+            <span class="history-menu-text">{{ $t(redoText) }}</span>
+          </UIMenuItem>
         </UIMenu>
       </UIDropdown>
       <UITooltip placement="bottom">
@@ -132,6 +156,7 @@ import { useUserStore } from '@/stores'
 import {
   useCreateProject,
   useOpenProject,
+  useRemoveProject,
   useSaveAndShareProject,
   useStopSharingProject
 } from '@/components/project'
@@ -143,9 +168,12 @@ import newSvg from './icons/new.svg'
 import openSvg from './icons/open.svg'
 import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
+import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
 import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
+import undoSvg from './icons/undo.svg'
+import redoSvg from './icons/redo.svg'
 
 const props = defineProps<{
   project: Project | null
@@ -158,6 +186,7 @@ const router = useRouter()
 
 const createProject = useCreateProject()
 const openProject = useOpenProject()
+const removeProject = useRemoveProject()
 const shareProject = useSaveAndShareProject()
 const stopSharingProject = useStopSharingProject()
 const loadFromScratchModal = useLoadFromScratchModal()
@@ -169,28 +198,45 @@ async function handleNewProject() {
 
 const confirm = useConfirmDialog()
 
-async function handleImportProjectFile() {
-  await confirm({
-    title: i18n.t({ en: 'Import project file', zh: '导入项目文件' }),
-    content: i18n.t({
-      en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
-      zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
-    }),
-    confirmText: i18n.t({ en: 'Continue', zh: '继续' })
-  })
-  const file = await selectFile({ accept: '.zip' })
-  await props.project!.loadZipFile(file)
-}
+const importProjectFileMessage = { en: 'Import project file', zh: '导入项目文件' }
 
-async function handleExportProjectFile() {
-  const zipFile = await props.project!.exportZipFile()
-  saveAs(zipFile, zipFile.name) // TODO: what if user cancelled download?
-}
+const handleImportProjectFile = useMessageHandle(
+  async () => {
+    await confirm({
+      title: i18n.t(importProjectFileMessage),
+      content: i18n.t({
+        en: 'Existing content of current project will be replaced with imported content. Are you sure to continue?',
+        zh: '当前项目中的内容将被导入项目文件的内容覆盖，确定继续吗？'
+      }),
+      confirmText: i18n.t({ en: 'Continue', zh: '继续' })
+    })
+    const file = await selectFile({ accept: '.gbp' })
+    const action = { name: importProjectFileMessage }
+    await props.project?.history.doAction(action, () => props.project!.loadGbpFile(file))
+  },
+  { en: 'Failed to import project file', zh: '导入项目文件失败' }
+).fn
 
-async function handleImportFromScratch() {
-  if (!props.project) return
-  loadFromScratchModal(props.project)
-}
+const handleExportProjectFile = useMessageHandle(
+  async () => {
+    const gbpFile = await props.project!.exportGbpFile()
+    saveAs(gbpFile, gbpFile.name) // TODO: what if user cancelled download?
+  },
+  { en: 'Failed to export project file', zh: '导出项目文件失败' }
+).fn
+
+const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(props.project!), {
+  en: 'Failed to import from Scratch file',
+  zh: '从 Scratch 项目文件导入失败'
+}).fn
+
+const handleRemoveProject = useMessageHandle(
+  async () => {
+    await removeProject(props.project!.owner!, props.project!.name!)
+    router.push('/')
+  },
+  { en: 'Failed to remove project', zh: '删除项目失败' }
+).fn
 
 const langContent = computed(() => (i18n.lang.value === 'en' ? enSvg : zhSvg))
 
@@ -205,6 +251,30 @@ const handleSave = useMessageHandle(
   { en: 'Failed to save project', zh: '项目保存失败' },
   { en: 'Project saved', zh: '保存成功' }
 )
+
+const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)
+
+const undoText = computed(() => ({
+  en: undoAction.value != null ? `Undo "${undoAction.value.name.en}"` : 'Undo',
+  zh: undoAction.value != null ? `撤销“${undoAction.value.name.zh}”` : '撤销'
+}))
+
+const redoAction = computed(() => props.project?.history.getRedoAction() ?? null)
+
+const redoText = computed(() => ({
+  en: redoAction.value != null ? `Redo "${redoAction.value.name.en}"` : 'Redo',
+  zh: redoAction.value != null ? `重做“${redoAction.value.name.zh}”` : '重做'
+}))
+
+const handleUndo = useMessageHandle(() => props.project!.history.undo(), {
+  en: 'Failed to undo',
+  zh: '撤销操作失败'
+})
+
+const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
+  en: 'Failed to redo',
+  zh: '重做操作失败'
+})
 </script>
 
 <style lang="scss" scoped>
@@ -250,7 +320,7 @@ const handleSave = useMessageHandle(
   align-items: center;
 }
 
-.project-dropdown,
+.dropdown,
 .lang {
   height: 100%;
   padding: 0 20px;
@@ -262,8 +332,8 @@ const handleSave = useMessageHandle(
   }
 }
 
-.project-dropdown {
-  .icon-file {
+.dropdown {
+  .icon-main {
     width: 24px;
     height: 24px;
   }
@@ -273,8 +343,21 @@ const handleSave = useMessageHandle(
   }
 }
 
+.history-menu-text {
+  max-width: 20em;
+  overflow-x: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .lang {
   cursor: pointer;
+}
+
+.undo-redo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .save,

@@ -21,8 +21,8 @@ const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
 
 defineExpose({
   run: async () => {
-    const zipFile = await props.project.exportZipFile()
-    zipData.value = await zipFile.arrayBuffer()
+    const gbpFile = await props.project.exportGbpFile()
+    zipData.value = await gbpFile.arrayBuffer()
   },
   stop: () => {
     zipData.value = null

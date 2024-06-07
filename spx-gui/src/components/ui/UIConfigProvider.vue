@@ -11,6 +11,7 @@
 <script lang="ts">
 import { type GlobalThemeOverrides } from 'naive-ui'
 import { inject, type InjectionKey } from 'vue'
+import { computedShallowReactive } from '@/utils/utils'
 import * as uiVariables from './tokens'
 import { getCssVars } from './tokens/utils'
 
@@ -31,9 +32,12 @@ export type Config = {
   empty?: {
     text?: string
   }
+  error?: {
+    retryText?: string
+  }
 }
 
-const configKey: InjectionKey<Readonly<Ref<Config>>> = Symbol('config')
+const configKey: InjectionKey<Config> = Symbol('config')
 
 export function useConfig() {
   const config = inject(configKey)
@@ -116,7 +120,7 @@ const themeOverrides: GlobalThemeOverrides = {
 
 <script setup lang="ts">
 import { NConfigProvider } from 'naive-ui'
-import { provide, toRef, type Ref } from 'vue'
+import { provide } from 'vue'
 
 const props = defineProps<{
   config?: Config
@@ -125,39 +129,28 @@ const props = defineProps<{
 provide(uiVariablesKey, uiVariables)
 provide(
   configKey,
-  toRef(() => props.config ?? {})
+  computedShallowReactive(() => props.config ?? {})
 )
 
 const cssVariables = getCssVars('--ui-', uiVariables)
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/fonts/font.css';
-
 .ui-config-provider {
   height: 100%;
 
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-text);
-  font-family:
-    // ChauPhilomeneOne,
-    AlibabaPuHuiT,
-    Cherry Bomb,
-    Heyhoo,
-    sans-serif;
+  font-family: var(--ui-font-family-main);
   line-height: 1.57143;
 }
 </style>
 
 <style lang="scss">
-/* TODO: var definition for font-size, line-height & font-weight? */
-/* TODO: actully different font-weight for h1-h6, but with different font-family to achieve this (if we use FZLanTing YuanS) */
-
 /* Special title */
 h1 {
   font-size: 20px;
   line-height: 1.4;
-  font-weight: 500;
 }
 
 /* Standard title */
@@ -183,5 +176,9 @@ h5 {
 h6 {
   font-size: 10px;
   line-height: 1.6;
+}
+
+button:focus {
+  outline: 2px solid var(--ui-color-primary-700);
 }
 </style>

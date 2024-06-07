@@ -1,14 +1,17 @@
 <!-- Asset Item in asset-library -->
 
 <template>
-  <li class="asset-item" :class="{ active: props.active }">
+  <li class="asset-item" :class="{ active: props.selected }">
     <slot></slot>
+    <UICornerIcon v-show="selected" type="check" />
   </li>
 </template>
 
 <script setup lang="ts">
+import { UICornerIcon } from '@/components/ui'
+
 const props = defineProps<{
-  active: boolean
+  selected: boolean
 }>()
 </script>
 

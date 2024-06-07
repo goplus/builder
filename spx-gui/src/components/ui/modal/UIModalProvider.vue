@@ -1,97 +1,134 @@
 <template>
   <NModalProvider>
-    <component
-      :is="currentModal.component"
-      v-if="currentModal != null"
-      :key="currentModal.id"
-      v-bind="currentModal.props"
-      :visible="currentVisible"
-      @cancelled="handleCancelled"
-      @resolved="handleResolved"
-    />
+    <template v-for="modal in currentModals" :key="modal.id">
+      <component
+        :is="modal.component"
+        v-bind="modal.props"
+        :visible="modal.visible"
+        @cancelled="(reason?: unknown) => handleCancelled(modal.id, reason)"
+        @resolved="(resolved?: unknown) => handleResolved(modal.id, resolved)"
+      />
+    </template>
     <slot></slot>
   </NModalProvider>
 </template>
 
 <script lang="ts">
-import { type InjectionKey, inject, provide, ref, shallowRef, nextTick } from 'vue'
+import {
+  type InjectionKey,
+  inject,
+  provide,
+  shallowReactive,
+  nextTick,
+  type Component,
+  type VNodeProps,
+  type AllowedComponentProps
+} from 'vue'
 import { NModalProvider } from 'naive-ui'
 import { Cancelled } from '@/utils/exception'
 
-// The Modal Component should provide API (props & emits) as following:
+// The Modal Component should provide Props as following:
 export type ModalComponentProps = {
-  visible: boolean
-}
-export type ModalComponentEmits<T> = {
-  cancelled: [reason?: unknown]
-  resolved: [resolved?: T]
+  readonly visible: boolean
 }
 
-// TODO: improve typing
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ModalComponent<P, T> = any
+// The Modal Component should provide Emits as following:
+export type ModalComponentEmit<Resolved> = ((event: 'resolved', resolved: Resolved) => void) &
+  ((event: 'cancelled') => void)
 
-export type ModalHandlers<T> = {
-  resolve(resolved: T): void
+export type ModalHandlers<Resolved> = {
+  resolve(resolved: Resolved): void
   reject(e: unknown): void
 }
 
-export type ModalInfo<P extends ModalComponentProps = any, T = any> = {
+export type ModalInfo = {
   id: number
-  component: ModalComponent<P, T>
-  props: Omit<P, keyof ModalComponentProps>
-  handlers: ModalHandlers<T>
+  component: Component
+  props: any
+  handlers: ModalHandlers<any>
+  visible: boolean
 }
 
-type ModalContext<P extends ModalComponentProps, T> = {
-  setCurrent(current: ModalInfo<P, T> | null): void
+type ModalContext = {
+  add(modalInfo: Omit<ModalInfo, 'visible'>): void
 }
 
-const modalContextInjectKey: InjectionKey<ModalContext<any, any>> = Symbol('modal-context')
+const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context')
 
 let mid = 0
 
-export function useModal<P extends ModalComponentProps, T>(component: ModalComponent<P, T>) {
+type ComponentProps<C extends Component> = C extends new (...args: any) => any
+  ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
+  : never
+
+type ComponentEmit<C extends Component> = C extends new (...args: any) => any
+  ? InstanceType<C>['$emit']
+  : never
+
+/**
+ *
+ * @param component The Modal Component, which should provide Props and Emits as following:
+ * `{ visible: boolean }`, `{ resolved: (resolved: any) => void, cancelled: () => void }`.
+ *
+ *
+ * @returns A function to invoke the Modal Component. The returned function has a
+ * props argument, which has `never` type if the Modal Component does not provide
+ *  `ModalComponentProps` and `ModalComponentEmit<any>`.
+ */
+export function useModal<C extends Component>(component: C) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(props: Omit<P, keyof ModalComponentProps>) {
-    return new Promise<T>((resolve, reject) => {
+  return function invokeModal(
+    props: ComponentProps<C> extends ModalComponentProps
+      ? ComponentEmit<C> extends ModalComponentEmit<any>
+        ? Omit<ComponentProps<C>, keyof ModalComponentProps>
+        : never
+      : never
+  ) {
+    return new Promise<
+      ComponentEmit<C> extends ModalComponentEmit<infer Resolved> ? Resolved : never
+    >((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
-      ctx.setCurrent({ id: mid, component, props, handlers })
+      ctx.add({ id: mid, component, props, handlers })
     })
   }
 }
 </script>
 
 <script setup lang="ts">
-const currentModal = shallowRef<ModalInfo | null>(null)
-const currentVisible = ref(false)
+const currentModals = shallowReactive<ModalInfo[]>([])
 
-async function setCurrent(modal: ModalInfo | null) {
-  currentModal.value = modal
-  if (modal != null) {
-    // delay visible-setting, so there will be animation for modal-show
-    // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
-    await nextTick()
-    if (currentModal.value !== modal) return
-    currentVisible.value = true
-  }
+async function add({ id, component, props, handlers }: Omit<ModalInfo, 'visible'>) {
+  const currentModal = shallowReactive({ id, component, props, handlers, visible: false })
+  currentModals.push(currentModal)
+  // delay visible-setting, so there will be animation for modal-show
+  // TODO: the mouse-event position get lost after delay, we may fix it by save the position & set it after delay
+  await nextTick()
+  currentModal.visible = true
 }
 
-function handleCancelled(reason?: unknown) {
-  const modal = currentModal.value
+function remove(id: number, onHide: (modal: ModalInfo) => void) {
+  const modal = currentModals.find((m) => m.id === id)
   if (modal == null) return
-  currentVisible.value = false
-  modal.handlers.reject(new Cancelled(reason))
+  modal.visible = false
+  onHide(modal)
+  setTimeout(() => {
+    // wait for hide animation to finish
+    currentModals.splice(
+      currentModals.findIndex((m) => m.id === id),
+      1
+    )
+  }, 300)
 }
 
-function handleResolved(resolved?: unknown) {
-  const modal = currentModal.value
-  if (modal == null) return
-  currentVisible.value = false
-  modal.handlers.resolve(resolved)
+function handleCancelled(id: number, reason?: unknown) {
+  remove(id, (m) => m.handlers.reject(new Cancelled(reason)))
 }
 
-provide(modalContextInjectKey, { setCurrent })
+function handleResolved(id: number, resolved?: unknown) {
+  remove(id, (m) => m.handlers.resolve(resolved))
+}
+
+provide(modalContextInjectKey, { add })
 </script>

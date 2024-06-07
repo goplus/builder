@@ -64,19 +64,20 @@
 </template>
 
 <script setup lang="ts">
-import { Sound } from '@/models/sound'
+import { ref, watch } from 'vue'
 import { NGrid, NGridItem } from 'naive-ui'
+import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { type ExportedScratchAssets, type ExportedScratchFile } from '@/utils/scratch'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
-import BlobImage from '../BlobImage.vue'
 import type { ExportedScratchSprite } from '@/utils/scratch'
-import type { Project } from '@/models/project'
-import { ref, watch } from 'vue'
+import { type Project } from '@/models/project'
+import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
+import BlobImage from '../BlobImage.vue'
 import ScratchItemContainer from './ScratchItemContainer.vue'
 import SoundItem from './SoundItem.vue'
 
@@ -86,7 +87,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  imported: []
+  imported: [AssetModel[]]
 }>()
 
 const selected = ref<{
@@ -130,9 +131,6 @@ const selectBackdrop = (backdrop: ExportedScratchFile) => {
   if (selected.value.backdrops.has(backdrop)) {
     selected.value.backdrops.delete(backdrop)
   } else {
-    if (selected.value.backdrops.size >= 1) {
-      selected.value.backdrops.clear()
-    }
     selected.value.backdrops.add(backdrop)
   }
 }
@@ -142,9 +140,13 @@ const scratchToSpxFile = (scratchFile: ExportedScratchFile) => {
 }
 
 const importSprite = async (asset: ExportedScratchSprite) => {
-  const costumes = await Promise.all(asset.costumes.map((costume) =>
-    Costume.create(costume.name, scratchToSpxFile(costume))
-  ))
+  const costumes = await Promise.all(
+    asset.costumes.map((costume) =>
+      Costume.create(costume.name, scratchToSpxFile(costume), {
+        bitmapResolution: costume.bitmapResolution
+      })
+    )
+  )
   const sprite = Sprite.create(asset.name)
   for (const costume of costumes) {
     sprite.addCostume(costume)
@@ -158,23 +160,30 @@ const importSound = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
   const sound = await Sound.create(asset.name, file)
   props.project.addSound(sound)
+  return sound
 }
 
 const importBackdrop = async (asset: ExportedScratchFile) => {
   const file = scratchToSpxFile(asset)
-  const backdrop = await Backdrop.create(asset.name, file)
-  props.project.stage.setBackdrop(backdrop)
+  const backdrop = await Backdrop.create(asset.name, file, {
+    bitmapResolution: asset.bitmapResolution
+  })
+  props.project.stage.addBackdrop(backdrop)
+  return backdrop
 }
 
 const importSelected = useMessageHandle(
   async () => {
     const { sprites, sounds, backdrops } = selected.value
-    await Promise.all([
-      ...Array.from(sprites).map(importSprite),
-      ...Array.from(sounds).map(importSound),
-      ...Array.from(backdrops).map(importBackdrop)
-    ])
-    emit('imported')
+    const action = { name: { en: 'Import from Scratch file', zh: '从 Scratch 项目文件导入' } }
+    const imported = await props.project.history.doAction(action, () =>
+      Promise.all([
+        ...Array.from(sprites).map(importSprite),
+        ...Array.from(sounds).map(importSound),
+        ...Array.from(backdrops).map(importBackdrop)
+      ])
+    )
+    emit('imported', imported)
   },
   // TODO: more detailed error message
   { en: 'Error encountered when importing assets', zh: '素材导入遇到错误' },

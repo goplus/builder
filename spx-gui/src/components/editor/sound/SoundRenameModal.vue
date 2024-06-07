@@ -1,6 +1,6 @@
 <template>
   <RenameModal :visible="visible" @cancel="handleCancel">
-    <UIForm :form="form" @submit="handleSubmit">
+    <UIForm :form="form" has-success-feedback @submit="handleSubmit">
       <UIFormItem path="name">
         <UITextInput v-model:value="form.value.name" />
         <template #tip>{{ $t(soundNameTip) }}</template>
@@ -13,8 +13,8 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sound } from '@/models/sound'
-import type { Project } from '@/models/project'
-import { soundNameTip, validateSoundName } from '@/models/common/asset'
+import { type Project } from '@/models/project'
+import { soundNameTip, validateSoundName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
 import RenameModalFooter from '../panels/common/RenameModalFooter.vue'
@@ -40,8 +40,11 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
-  props.sound.setName(form.value.name)
+async function handleSubmit() {
+  if (form.value.name !== props.sound.name) {
+    const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
+    await props.project.history.doAction(action, () => props.sound.setName(form.value.name))
+  }
   emit('resolved')
 }
 

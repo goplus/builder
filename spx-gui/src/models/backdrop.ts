@@ -1,10 +1,10 @@
 import { reactive } from 'vue'
-import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
-import type { File, Files } from './common/file'
 import { resolve } from '@/utils/path'
-import { getBackdropName, validateBackdropName } from './common/asset'
-import type { Stage } from './stage'
 import { adaptImg } from '@/utils/spx'
+import type { File, Files } from './common/file'
+import { getBackdropName, validateBackdropName } from './common/asset-name'
+import type { Stage } from './stage'
+import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig
@@ -35,7 +35,10 @@ export class Backdrop extends Costume {
    */
   static async create(nameBase: string, file: File, inits?: BackdropInits) {
     const adaptedFile = await adaptImg(file)
-    return new Backdrop(getBackdropName(null, nameBase), adaptedFile, inits)
+    return new Backdrop(getBackdropName(null, nameBase), adaptedFile, {
+      bitmapResolution: /svg/.test(file.type) ? 1 : 2,
+      ...inits
+    })
   }
 
   static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {

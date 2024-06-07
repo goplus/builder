@@ -1,33 +1,53 @@
 <template>
-  <EditorHeader :color="uiVariables.color.sprite.main">
-    <AssetName>{{ sprite.name }}</AssetName>
-    &nbsp;/ {{ $t({ en: 'Code', zh: '代码' }) }}
+  <EditorHeader>
+    <UITabs v-model:value="selectedTab" color="sprite">
+      <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
+      <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
+    </UITabs>
     <template #extra>
-      <FormatButton v-if="codeEditor != null" :code-editor="codeEditor" />
+      <FormatButton
+        v-if="selectedTab === 'code' && codeEditor != null && code != null"
+        :code-editor="codeEditor"
+      />
     </template>
   </EditorHeader>
-  <CodeEditor ref="codeEditor" :value="sprite.code" @update:value="(v) => sprite.setCode(v)" />
+  <CodeEditor
+    v-show="selectedTab === 'code'"
+    ref="codeEditor"
+    :loading="code == null"
+    :value="code ?? ''"
+    @update:value="handleCodeUpdate"
+  />
+  <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
-import { useUIVariables } from '@/components/ui'
-import AssetName from '@/components/asset/AssetName.vue'
+import { UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
-import FormatButton from '../FormatButton.vue'
-import EditorHeader from '../EditorHeader.vue'
+import FormatButton from '../code-editor/FormatButton.vue'
+import EditorHeader from '../common/EditorHeader.vue'
+import CostumesEditor from './CostumesEditor.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
-defineProps<{
+const props = defineProps<{
   sprite: Sprite
 }>()
 
+const editorCtx = useEditorCtx()
+const selectedTab = ref<'code' | 'costumes'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
-const uiVariables = useUIVariables()
-</script>
+const code = useAsyncComputed(() => props.sprite.getCode())
 
-<style scoped lang="scss">
-.header {
-  flex: 1 1 0;
+// use `computed` to keep reference-equal for `mergeable`, see details in project history
+const actionUpdateCode = computed(() => ({
+  name: { en: `Update ${props.sprite.name} code`, zh: `修改 ${props.sprite.name} 代码` },
+  mergeable: true
+}))
+
+function handleCodeUpdate(value: string) {
+  editorCtx.project.history.doAction(actionUpdateCode.value, () => props.sprite.setCode(value))
 }
-</style>
+</script>

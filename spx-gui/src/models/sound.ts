@@ -1,8 +1,9 @@
 import { reactive } from 'vue'
 import { extname, join, resolve } from '@/utils/path'
 import { adaptAudio } from '@/utils/spx'
+import { Disposble } from './common/disposable'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
-import { getSoundName, validateSoundName } from './common/asset'
+import { getSoundName, validateSoundName } from './common/asset-name'
 import type { Project } from './project'
 
 export type SoundInits = {
@@ -17,7 +18,7 @@ export type RawSoundConfig = SoundInits & {
 export const soundAssetPath = 'assets/sounds'
 export const soundConfigFileName = 'index.json'
 
-export class Sound {
+export class Sound extends Disposble {
   _project: Project | null = null
   setProject(project: Project | null) {
     this._project = project
@@ -46,6 +47,7 @@ export class Sound {
   }
 
   constructor(name: string, file: File, inits?: SoundInits) {
+    super()
     this.name = name
     this.file = file
     this.rate = inits?.rate ?? 0

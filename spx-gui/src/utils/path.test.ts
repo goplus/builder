@@ -1,5 +1,37 @@
 import { describe, it, expect } from 'vitest'
-import { filename, stripExt } from './path'
+import { resolve, filename, stripExt } from './path'
+
+describe('resolve', () => {
+  it('should work well with path', () => {
+    expect(resolve('foo', 'bar')).toBe('foo/bar')
+    expect(resolve('foo', 'bar', 'baz')).toBe('foo/bar/baz')
+    expect(resolve('/foo/bar', 'baz')).toBe('/foo/bar/baz')
+    expect(resolve('/foo/bar', 'baz', 'qux')).toBe('/foo/bar/baz/qux')
+  })
+  it('should work well with url', () => {
+    expect(resolve('https://test.com/foo', 'bar')).toBe('https://test.com/foo/bar')
+    expect(resolve('https://test.com/foo', 'bar', 'baz')).toBe('https://test.com/foo/bar/baz')
+    expect(resolve('https://test.com/foo/bar', 'baz')).toBe('https://test.com/foo/bar/baz')
+    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe(
+      'https://test.com/foo/bar/baz/qux'
+    )
+  })
+  it('should work well with no path', () => {
+    expect(resolve('foo')).toBe('foo')
+    expect(resolve('https://test.com/foo')).toBe('https://test.com/foo')
+  })
+  it('should work well with complex path', () => {
+    expect(resolve('foo', 'bar/baz')).toBe('foo/bar/baz')
+    expect(resolve('foo', 'bar/baz', 'qux')).toBe('foo/bar/baz/qux')
+    expect(resolve('foo/bar', 'baz/qux')).toBe('foo/bar/baz/qux')
+    expect(resolve('foo/bar', 'baz/qux', 'quux')).toBe('foo/bar/baz/qux/quux')
+    expect(resolve('foo', 'bar/../baz')).toBe('foo/baz')
+    expect(resolve('foo', 'bar/../baz', 'qux')).toBe('foo/baz/qux')
+    expect(resolve('foo', '.')).toBe('foo')
+    expect(resolve('foo', './bar')).toBe('foo/bar')
+    expect(resolve('foo/bar/baz', '../../qux')).toBe('foo/qux')
+  })
+})
 
 describe('filename', () => {
   it('should work well with path', () => {

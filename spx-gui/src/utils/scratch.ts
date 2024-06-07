@@ -6,6 +6,7 @@ export interface ExportedScratchFile {
   extension: string
   filename: string
   blob: Blob
+  bitmapResolution?: number
 }
 
 export interface ExportedScratchSprite {
@@ -62,7 +63,9 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
     backdrops: []
   }
 
-  const convertFiles = async (scratchFiles: ScratchFile[]): Promise<ExportedScratchFile[]> => {
+  const convertFiles = async (
+    scratchFiles: (ScratchCostume | ScratchSound)[]
+  ): Promise<ExportedScratchFile[]> => {
     const files = []
     for (const file of scratchFiles) {
       const zipFilename = getFilename(file)
@@ -76,7 +79,8 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
         name: file.name,
         extension: file.dataFormat,
         filename: `${file.name}.${file.dataFormat}`,
-        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) })
+        blob: new Blob([arrayBuffer], { type: getMimeFromExt(file.dataFormat) }),
+        bitmapResolution: 'bitmapResolution' in file ? file.bitmapResolution : undefined
       })
     }
     return files

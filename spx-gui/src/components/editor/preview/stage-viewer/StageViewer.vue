@@ -1,14 +1,14 @@
 <template>
   <div ref="conatiner" class="stage-viewer">
     <v-stage
-      v-if="stageConfig != null && backdropImg != null"
+      v-if="stageConfig != null"
       ref="stageRef"
       :config="stageConfig"
       @mousedown="handleStageMousedown"
       @contextmenu="handleContextMenu"
     >
       <v-layer>
-        <v-image v-if="backdropImg != null" :config="{ ...mapSize, image: backdropImg }"></v-image>
+        <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
       </v-layer>
       <v-layer>
         <SpriteItem
@@ -16,53 +16,46 @@
           :key="sprite.name"
           :sprite="sprite"
           :map-size="mapSize!"
+          :sprites-ready-map="spritesReadyMap"
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer />
+        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite.name)" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
-        <UIMenuItem @click="moveSprite('up')">{{
-          $t({ en: 'Bring forward', zh: '向前移动' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('top')">{{
-          $t({ en: 'Bring to front', zh: '移到最前' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('down')">{{
-          $t({ en: 'Send backward', zh: '向后移动' })
-        }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('bottom')">{{
-          $t({ en: 'Send to back', zh: '移到最后' })
-        }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('up')">{{ $t(moveActionNames.up) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('top')">{{ $t(moveActionNames.top) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('down')">{{ $t(moveActionNames.down) }}</UIMenuItem>
+        <UIMenuItem @click="moveSprite('bottom')">{{ $t(moveActionNames.bottom) }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
+    <UILoading :visible="spritesAndBackdropLoading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
-import { UIDropdown, UIMenu, UIMenuItem } from '@/components/ui'
+import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
-import { useImgFile } from '@/utils/file'
+import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
-import { provideSpritesReady } from './common'
-
-provideSpritesReady()
+import { MapMode } from '@/models/stage'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
 const stageRef = ref<any>()
-const mapSize = useAsyncComputed(() => editorCtx.project.stage.getMapSize())
+const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+
+const spritesReadyMap = reactive(new Map<string, boolean>())
 
 /** containerSize / mapSize */
 const scale = computed(() => {
@@ -88,7 +81,72 @@ const stageConfig = computed(() => {
   }
 })
 
-const backdropImg = useImgFile(() => editorCtx.project.stage.backdrop?.img)
+const backdropImg = ref<HTMLImageElement | null>(null)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(
+  () => editorCtx.project.stage.defaultBackdrop?.img
+)
+watchEffect(() => {
+  if (backdropSrc.value == null) return
+  const img = new Image()
+  img.src = backdropSrc.value
+  img.addEventListener('load', () => {
+    backdropImg.value = img
+  })
+})
+
+const konvaBackdropConfig = computed(() => {
+  if (backdropImg.value == null || stageConfig.value == null) {
+    return null
+  }
+
+  const stageWidth = mapSize.value.width
+  const stageHeight = mapSize.value.height
+  const imageWidth = backdropImg.value.width
+  const imageHeight = backdropImg.value.height
+
+  if (editorCtx.project.stage.mapMode === MapMode.fillRatio) {
+    const scaleX = stageWidth / imageWidth
+    const scaleY = stageHeight / imageHeight
+    const scale = Math.max(scaleX, scaleY) // Use max to cover the entire stage
+
+    const width = imageWidth * scale
+    const height = imageHeight * scale
+    const x = (stageWidth - width) / 2
+    const y = (stageHeight - height) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'no-repeat',
+      fillPatternX: x,
+      fillPatternY: y,
+      fillPatternScaleX: scale,
+      fillPatternScaleY: scale
+    }
+  } else if (editorCtx.project.stage.mapMode === MapMode.repeat) {
+    const offsetX = (stageWidth - imageWidth) / 2
+    const offsetY = (stageHeight - imageHeight) / 2
+
+    return {
+      fillPatternImage: backdropImg.value,
+      width: stageWidth,
+      height: stageHeight,
+      fillPatternRepeat: 'repeat',
+      fillPatternX: offsetX,
+      fillPatternY: offsetY,
+      fillPatternScaleX: 1,
+      fillPatternScaleY: 1
+    }
+  }
+  console.warn('Unsupported map mode:', editorCtx.project.stage.mapMode)
+  return null
+})
+
+const spritesAndBackdropLoading = computed(() => {
+  if (backdropSrcLoading.value || !backdropImg.value) return true
+  return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
+})
 
 const visibleSprites = computed(() => {
   const { zorder, sprites } = editorCtx.project
@@ -117,18 +175,29 @@ function handleStageMousedown() {
   if (menuVisible.value) menuVisible.value = false
 }
 
+const moveActionNames = {
+  up: { en: 'Bring forward', zh: '向前移动' },
+  top: { en: 'Bring to front', zh: '移到最前' },
+  down: { en: 'Send backward', zh: '向后移动' },
+  bottom: { en: 'Send to back', zh: '移到最后' }
+}
+
 function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
-  const { project, selectedSprite } = editorCtx
+  const project = editorCtx.project
+  const selectedSprite = project.selectedSprite
   if (selectedSprite == null) return
-  if (direction === 'up') {
-    project.upSpriteZorder(selectedSprite.name)
-  } else if (direction === 'down') {
-    project.downSpriteZorder(selectedSprite.name)
-  } else if (direction === 'top') {
-    project.topSpriteZorder(selectedSprite.name)
-  } else if (direction === 'bottom') {
-    project.bottomSpriteZorder(selectedSprite.name)
-  }
+  const action = { name: moveActionNames[direction] }
+  project.history.doAction(action, () => {
+    if (direction === 'up') {
+      project.upSpriteZorder(selectedSprite.name)
+    } else if (direction === 'down') {
+      project.downSpriteZorder(selectedSprite.name)
+    } else if (direction === 'top') {
+      project.topSpriteZorder(selectedSprite.name)
+    } else if (direction === 'bottom') {
+      project.bottomSpriteZorder(selectedSprite.name)
+    }
+  })
   menuVisible.value = false
 }
 </script>
@@ -145,5 +214,8 @@ function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
   background-position: center;
   background-repeat: repeat;
   background-size: contain;
+  position: relative;
+
+  overflow: hidden;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <RenameModal :visible="visible" @cancel="handleCancel">
-    <UIForm :form="form" @submit="handleSubmit">
+    <UIForm :form="form" has-success-feedback @submit="handleSubmit">
       <UIFormItem path="name">
         <UITextInput v-model:value="form.value.name" />
         <template #tip>{{ $t(spriteNameTip) }}</template>
@@ -13,8 +13,8 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Sprite } from '@/models/sprite'
-import type { Project } from '@/models/project'
-import { spriteNameTip, validateSpriteName } from '@/models/common/asset'
+import { type Project } from '@/models/project'
+import { spriteNameTip, validateSpriteName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../common/RenameModal.vue'
 import RenameModalFooter from '../common/RenameModalFooter.vue'
@@ -40,8 +40,16 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function handleSubmit() {
-  props.sprite.setName(form.value.name)
+const actionRenameSprite = {
+  name: { en: 'rename sprite', zh: '重命名精灵' }
+}
+
+async function handleSubmit() {
+  if (form.value.name !== props.sprite.name) {
+    await props.project.history.doAction(actionRenameSprite, () =>
+      props.sprite.setName(form.value.name)
+    )
+  }
   emit('resolved')
 }
 

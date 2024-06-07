@@ -91,7 +91,7 @@ const expanded = ref(false)
 watch(
   () => props.project,
   async (newProject) => {
-    const mapSize = (await newProject.stage.getMapSize()) ?? { width: 0, height: 0 }
+    const mapSize = newProject.stage.getMapSize()
 
     runnerAspectRatio.value.aspectRatio = `${mapSize.width}/${mapSize.height}`
     displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
@@ -159,7 +159,6 @@ button {
   align-items: center;
   gap: 32px;
   font-size: 16px;
-  font-weight: 500;
   border-bottom: 1px solid var(--ui-color-grey-400);
   height: 56px;
   color: var(--ui-color-title);
@@ -228,7 +227,6 @@ button {
   .message {
     font-family: monospace;
     font-size: smaller;
-    white-space: nowrap;
     .time {
       opacity: 0.5;
       padding-left: 0.5em;
@@ -315,7 +313,6 @@ button {
   justify-content: center;
   align-items: center;
   font-size: 16px;
-  font-weight: 500;
   gap: 8px;
   position: relative;
   color: var(--ui-color-title);
