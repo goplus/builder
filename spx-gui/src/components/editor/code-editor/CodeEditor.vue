@@ -107,7 +107,7 @@ const categories = computed(() => {
   return [
     {
       icon: iconEvent,
-      color: uiVariables.color.yellow.main,
+      color: '#fabd2c',
       ...eventCategory
     },
     {
@@ -122,7 +122,7 @@ const categories = computed(() => {
     },
     {
       icon: iconControl,
-      color: '#67ceff',
+      color: '#3fcdd9',
       ...controlCategory
     },
     {

@@ -34,6 +34,7 @@ const emit = defineEmits<{
   flex-direction: column;
   gap: 20px;
   background-color: var(--ui-color-grey-200);
+  border-bottom-right-radius: var(--ui-border-radius-3);
 }
 
 .name {

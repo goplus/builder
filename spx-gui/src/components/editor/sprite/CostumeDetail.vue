@@ -38,6 +38,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 .img-wrapper {
   width: 100%;
   flex: 1 1 0;
+  border-radius: 8px;
   background-image: url(./costume-bg.svg);
 }
 .img {
