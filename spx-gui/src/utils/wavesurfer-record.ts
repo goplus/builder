@@ -46,7 +46,6 @@ const findSupportedMimeType = () =>
 export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOptions> {
   private stream: MediaStream | null = null
   private mediaRecorder: MediaRecorder | null = null
-  private dataWindow: Float32Array | null = null
   private isWaveformPaused = false
   private originalOptions: { cursorWidth: number; interact: boolean } | undefined
   private timer: Timer
@@ -82,10 +81,11 @@ export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOpt
     const audioContext = new AudioContext()
     const source = audioContext.createMediaStreamSource(stream)
     const analyser = audioContext.createAnalyser()
+    analyser.fftSize = 1024
     source.connect(analyser)
 
-    const bufferLength = analyser.frequencyBinCount
-    const dataArray = new Float32Array(bufferLength)
+    const dataArray = new Float32Array(analyser.frequencyBinCount)
+    const dataWindow: number[] = []
 
     let animationId: number
 
@@ -96,17 +96,7 @@ export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOpt
       }
 
       analyser.getFloatTimeDomainData(dataArray)
-
-      const newLength = (this.dataWindow?.length || 0) + bufferLength
-      const tempArray = new Float32Array(newLength)
-      // Append the new data to the existing data
-      if (this.dataWindow) {
-        tempArray.set(this.dataWindow, 0)
-        tempArray.set(dataArray, this.dataWindow.length)
-      } else {
-        tempArray.set(dataArray, 0)
-      }
-      this.dataWindow = tempArray
+      dataWindow.push(...dataArray)
 
       if (this.wavesurfer) {
         this.originalOptions ??= {
@@ -115,7 +105,7 @@ export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOpt
         }
         this.wavesurfer.options.cursorWidth = 0
         this.wavesurfer.options.interact = false
-        this.wavesurfer.load('', [tempArray], this.duration)
+        this.wavesurfer.load('', [dataWindow], this.duration)
       }
 
       animationId = requestAnimationFrame(drawWaveform)
@@ -167,7 +157,6 @@ export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOpt
   /** Start recording audio from the microphone */
   public async startRecording(options?: RecordPluginDeviceOptions) {
     const stream = this.stream || (await this.startMic(options))
-    this.dataWindow = null
     const mediaRecorder =
       this.mediaRecorder ||
       new MediaRecorder(stream, {
