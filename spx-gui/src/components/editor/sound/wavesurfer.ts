@@ -41,8 +41,8 @@ export function useWavesurfer(
 
     /**
      * Cache for averaged data. Only used for recording.
-     * The recorder will set the cache to null and enable it when recording starts,
-     * and will disable it when recording stops.
+     * As we expect the `WaveSurfer` to be destroyed and recreated on every recording,
+     * we don't need to reset the cache when the recording stops.
      */
     const cachedAveragedData: {
       cache: { averagedData: number[]; originalLength: number; blockSize: number } | null
