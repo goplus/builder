@@ -10,7 +10,7 @@ import { getAudioContext } from '@/utils/audio'
 export function useWavesurfer(
   container: () => HTMLElement | undefined,
   gain: () => number,
-  recording?: boolean
+  recording: boolean
 ) {
   const uiVariables = useUIVariables()
 
@@ -44,10 +44,10 @@ export function useWavesurfer(
      * As we expect the `WaveSurfer` to be destroyed and recreated on every recording,
      * we don't need to reset the cache when the recording stops.
      */
-    const cachedAveragedData: {
-      cache: { averagedData: number[]; originalLength: number; blockSize: number } | null
-    } = {
-      cache: null
+    let cache: {
+      averagedData: number[]
+      originalLength: number
+      blockSize: number
     }
 
     wavesurfer.value = new WaveSurfer({
@@ -65,8 +65,6 @@ export function useWavesurfer(
           const halfHeight = ctx.canvas.height / 2
 
           const averageBlock = (data: number[] | Float32Array, blockSize: number): number[] => {
-            const { cache } = cachedAveragedData
-
             // Check if we can use the cached data
             if (
               recording &&
@@ -90,7 +88,7 @@ export function useWavesurfer(
                   newAveragedData.push(sum / blockSize)
                 }
 
-                cachedAveragedData.cache = {
+                cache = {
                   averagedData: newAveragedData,
                   originalLength: data.length,
                   blockSize
@@ -114,7 +112,7 @@ export function useWavesurfer(
             }
 
             // Update cache with new averaged data
-            cachedAveragedData.cache = {
+            cache = {
               averagedData,
               originalLength: data.length,
               blockSize

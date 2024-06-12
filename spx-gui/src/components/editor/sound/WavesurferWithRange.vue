@@ -16,6 +16,7 @@ const props = defineProps<{
   audioUrl?: string | null
   range: { left: number; right: number }
   gain: number
+  recording?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -75,7 +76,8 @@ const wavesurferDiv = ref<HTMLDivElement>()
 
 const wavesurferRef = useWavesurfer(
   () => wavesurferDiv.value,
-  () => props.gain
+  () => props.gain,
+  props.recording
 )
 
 // we assume that wavesurferDiv.value will not change
