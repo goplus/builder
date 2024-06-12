@@ -156,7 +156,7 @@ export function useWavesurfer(
 
           const channel = peaks[0]
 
-          const scale = gain() * 3000
+          const scale = gain() * 1200
 
           const blockSize = channel.length > 200000 ? 2000 : channel.length > 100000 ? 1000 : 500
 
