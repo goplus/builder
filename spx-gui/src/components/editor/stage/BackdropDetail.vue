@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { useModal } from '@/components/ui'
+import { useModal, UILoading } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
 import { useEditorCtx } from '../EditorContextProvider.vue'
