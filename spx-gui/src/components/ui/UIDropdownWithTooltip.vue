@@ -32,10 +32,12 @@ const tooltipVisible = ref(false)
 
 const handleDropdownVisibleChange = (v: boolean) => {
   dropdownVisible.value = v
-  tooltipVisible.value = false
+  if (v) {
+    tooltipVisible.value = false
+  }
 }
 
 const handleTooltipVisibleChange = (v: boolean) => {
-  tooltipVisible.value = v
+  tooltipVisible.value = v && !dropdownVisible.value
 }
 </script>
