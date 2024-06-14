@@ -20,6 +20,12 @@ module.exports = {
       }
     ],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-redeclare': 'off'
+    'no-redeclare': 'off',
+    'vue/no-undef-components': [
+      'error',
+      {
+        ignorePatterns: ['router-view', 'router-link', 'v-.*']
+      }
+    ]
   }
 }
