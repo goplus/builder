@@ -20,6 +20,17 @@ module.exports = {
       }
     ],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-redeclare': 'off'
+    'no-redeclare': 'off',
+    'vue/no-undef-components': [
+      'error',
+      {
+        ignorePatterns: [
+          // These rules will match components in both kebab-case and CamelCase
+          'router-view',
+          'router-link',
+          'v-.*' // for Vue Konva components
+        ]
+      }
+    ]
   }
 }
