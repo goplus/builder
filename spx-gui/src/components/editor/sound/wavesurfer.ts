@@ -158,6 +158,9 @@ export function useWavesurfer(
 
           const scale = gain() * 1200
 
+          // TODO: For now, blockSize is fixed to 2000 for longer recordings
+          // to address the issue of slow update. This should be optimized
+          // in the future.
           const blockSize = channel.length > 200000 ? 2000 : channel.length > 100000 ? 1000 : 500
 
           const smoothedChannel = averageBlock(channel, blockSize)
