@@ -24,7 +24,12 @@ module.exports = {
     'vue/no-undef-components': [
       'error',
       {
-        ignorePatterns: ['router-view', 'router-link', 'v-.*']
+        ignorePatterns: [
+          // These rules will match components in both kebab-case and CamelCase
+          'router-view',
+          'router-link',
+          'v-.*' // for Vue Konva components
+        ]
       }
     ]
   }
