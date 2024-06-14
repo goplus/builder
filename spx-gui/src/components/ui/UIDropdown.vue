@@ -11,6 +11,7 @@
     :show-arrow="false"
     :style="{ marginTop: offset.y + 'px', marginLeft: offset.x + 'px' }"
     raw
+    @update:show="(v) => emit('update:visible', v)"
   >
     <template #trigger>
       <slot name="trigger"></slot>
@@ -57,6 +58,10 @@ withDefaults(
     offset: () => ({ x: 0, y: 8 })
   }
 )
+
+const emit = defineEmits<{
+  'update:visible': [boolean]
+}>()
 
 const attachTo = usePopupContainer()
 

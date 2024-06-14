@@ -1,5 +1,12 @@
 <template>
-  <NTooltip class="ui-tooltip" trigger="hover" :to="attachTo" :placement="placement">
+  <NTooltip
+    class="ui-tooltip"
+    trigger="hover"
+    :to="attachTo"
+    :placement="placement"
+    :show="visible"
+    @update:show="(v) => emit('update:visible', v)"
+  >
     <template #trigger>
       <slot name="trigger"></slot>
     </template>
@@ -16,11 +23,17 @@ export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-sta
 withDefaults(
   defineProps<{
     placement?: Placement
+    visible?: boolean
   }>(),
   {
-    placement: 'top'
+    placement: 'top',
+    visible: undefined
   }
 )
+
+const emit = defineEmits<{
+  'update:visible': [boolean]
+}>()
 
 const attachTo = usePopupContainer()
 </script>
