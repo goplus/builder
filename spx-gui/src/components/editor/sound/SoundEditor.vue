@@ -123,7 +123,7 @@ function handlePlay() {
 
 function handleStopClick() {
   wavesurferRef.value?.stop()
-  handleStop()
+  playing.value = null
 }
 
 function handleStop() {
