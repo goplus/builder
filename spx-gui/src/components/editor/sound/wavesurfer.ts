@@ -7,7 +7,11 @@ import WaveSurfer from 'wavesurfer.js'
 import { useUIVariables } from '@/components/ui'
 import { getAudioContext } from '@/utils/audio'
 
-export function useWavesurfer(container: () => HTMLElement | undefined, gain: () => number) {
+export function useWavesurfer(
+  container: () => HTMLElement | undefined,
+  gain: () => number,
+  recording: boolean
+) {
   const uiVariables = useUIVariables()
 
   const wavesurfer = ref<WaveSurfer | null>(null)
@@ -35,6 +39,17 @@ export function useWavesurfer(container: () => HTMLElement | undefined, gain: ()
     gainNode_.gain.value = gain()
     gainNode = gainNode_
 
+    /**
+     * Cache for averaged data. Only used for recording.
+     * As we expect the `WaveSurfer` to be destroyed and recreated on every recording,
+     * we don't need to reset the cache when the recording stops.
+     */
+    let cache: {
+      averagedData: number[]
+      originalLength: number
+      blockSize: number
+    }
+
     wavesurfer.value = new WaveSurfer({
       interact: false,
       container: newContainer,
@@ -46,54 +61,124 @@ export function useWavesurfer(container: () => HTMLElement | undefined, gain: ()
       normalize: true,
       media: audioElement,
       renderFunction: (peaks: (Float32Array | number[])[], ctx: CanvasRenderingContext2D): void => {
-        // TODO: Better drawing algorithm to reduce flashing?
-        const smoothAndDrawChannel = (channel: Float32Array, vScale: number) => {
-          const { width, height } = ctx.canvas
-          const halfHeight = height / 2
-          const numPoints = Math.floor(width / 5)
-          const blockSize = Math.floor(channel.length / numPoints)
-          const smoothedData = new Float32Array(numPoints)
+        try {
+          const halfHeight = ctx.canvas.height / 2
 
-          // Smooth the data by averaging blocks
-          for (let i = 0; i < numPoints; i++) {
-            let sum = 0
-            for (let j = 0; j < blockSize; j++) {
-              sum += Math.abs(channel[i * blockSize + j])
+          const averageBlock = (data: number[] | Float32Array, blockSize: number): number[] => {
+            // Check if we can use the cached data
+            if (
+              recording &&
+              cache &&
+              cache.blockSize === blockSize &&
+              cache.originalLength <= data.length
+            ) {
+              const newBlocks =
+                Math.floor(data.length / blockSize) - Math.floor(cache.originalLength / blockSize)
+
+              // If there are new blocks to process
+              if (newBlocks > 0) {
+                const newAveragedData = cache.averagedData.slice()
+                const startIndex = cache.originalLength
+                for (let i = 0; i < newBlocks; i++) {
+                  let sum = 0
+                  for (let j = 0; j < blockSize; j++) {
+                    const index = startIndex + i * blockSize + j
+                    sum += Math.max(0, data[index])
+                  }
+                  newAveragedData.push(sum / blockSize)
+                }
+
+                cache = {
+                  averagedData: newAveragedData,
+                  originalLength: data.length,
+                  blockSize
+                }
+                return newAveragedData
+              }
+
+              // If no new blocks to process, return cached data
+              return cache.averagedData
             }
-            smoothedData[i] = sum / blockSize
+
+            // Calculate new averaged data if cache is not valid or not present
+            const averagedData: number[] = new Array(Math.floor(data.length / blockSize))
+            for (let i = 0; i < averagedData.length; i++) {
+              let sum = 0
+              for (let j = 0; j < blockSize; j++) {
+                const index = i * blockSize + j
+                sum += Math.max(0, data[index])
+              }
+              averagedData[i] = sum / blockSize
+            }
+
+            // Update cache with new averaged data
+            cache = {
+              averagedData,
+              originalLength: data.length,
+              blockSize
+            }
+
+            return averagedData
           }
 
-          // Draw with bezier curves
-          ctx.beginPath()
-          ctx.moveTo(0, halfHeight)
+          const drawSmoothCurve = (
+            ctx: CanvasRenderingContext2D,
+            points: number[],
+            getPoint: (index: number) => number
+          ) => {
+            const segmentLength = ctx.canvas.width / (points.length - 1)
 
-          for (let i = 1; i < smoothedData.length; i++) {
-            const prevX = (i - 1) * (width / numPoints)
-            const currX = i * (width / numPoints)
-            const midX = (prevX + currX) / 2
-            const prevY = halfHeight + smoothedData[i - 1] * halfHeight * vScale
-            const currY = halfHeight + smoothedData[i] * halfHeight * vScale
+            ctx.beginPath()
+            ctx.moveTo(0, halfHeight)
 
-            // Use a quadratic bezier curve to the middle of the interval for a smoother line
-            ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + currY) / 2)
-            ctx.quadraticCurveTo(midX, (prevY + currY) / 2, currX, currY)
+            for (let i = 0; i < points.length - 2; i++) {
+              const xc = (i * segmentLength + (i + 1) * segmentLength) / 2
+              const yc = (getPoint(i) + getPoint(i + 1)) / 2
+              ctx.quadraticCurveTo(i * segmentLength, getPoint(i), xc, yc)
+            }
+
+            ctx.quadraticCurveTo(
+              (points.length - 2) * segmentLength,
+              getPoint(points.length - 2),
+              ctx.canvas.width,
+              getPoint(points.length - 1)
+            )
+
+            ctx.lineTo(ctx.canvas.width, halfHeight)
+
+            ctx.strokeStyle = uiVariables.color.sound[400]
+            ctx.lineWidth = 2
+            ctx.stroke()
+            ctx.closePath()
+            ctx.fillStyle = uiVariables.color.sound[400]
+            ctx.fill()
           }
 
-          ctx.lineTo(width, halfHeight)
-          ctx.strokeStyle = uiVariables.color.sound[400]
-          ctx.stroke()
-          ctx.closePath()
-          ctx.fillStyle = uiVariables.color.sound[400]
-          ctx.fill()
+          const channel = peaks[0]
+
+          const scale = gain() * 1200
+
+          // TODO: For now, blockSize is fixed to 2000 for longer recordings
+          // to address the issue of slow update. This should be optimized
+          // in the future.
+          const blockSize = channel.length > 200000 ? 2000 : channel.length > 100000 ? 1000 : 500
+
+          const smoothedChannel = averageBlock(channel, blockSize)
+
+          drawSmoothCurve(
+            ctx,
+            smoothedChannel,
+            (index: number) => smoothedChannel[index] * scale + halfHeight
+          )
+          drawSmoothCurve(
+            ctx,
+            smoothedChannel,
+            (index: number) => -smoothedChannel[index] * scale + halfHeight
+          )
+        } catch (e) {
+          // wavesurfer does not log errors so we do it ourselves
+          console.error(e)
         }
-
-        const channel = Array.isArray(peaks[0]) ? new Float32Array(peaks[0] as number[]) : peaks[0]
-
-        const scale = gain() * 5
-
-        // Only one channel is assumed, render it twice (mirrored)
-        smoothAndDrawChannel(channel, scale) // Upper part
-        smoothAndDrawChannel(channel, -scale) // Lower part (mirrored)
       }
     })
 

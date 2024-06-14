@@ -6,6 +6,7 @@
         v-if="recording || audioBlob"
         ref="wavesurferRef"
         v-model:range="audioRange"
+        recording
         :gain="gain"
         @init="handleWaveSurferInit"
       />
@@ -99,6 +100,7 @@ import { RecordPlugin } from '@/utils/wavesurfer-record'
 import VolumeSlider from './VolumeSlider.vue'
 import WavesurferWithRange from './WavesurferWithRange.vue'
 import type WaveSurfer from 'wavesurfer.js'
+import { toWav } from '@/utils/audio'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -162,10 +164,13 @@ const stopRecording = () => {
 }
 
 const saveRecording = async () => {
-  if (!wavesurferRef.value) return
-  const wav = await wavesurferRef.value.exportWav()
+  if (!wavesurferRef.value || !audioBlob.value) return
+  const wav = await toWav(await audioBlob.value.arrayBuffer())
 
-  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.webm`, wav)
+  const file = fromBlob(
+    `Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`,
+    new Blob([wav], { type: 'audio/wav' })
+  )
   const sound = await Sound.create('recording', file)
   const action = { name: { en: 'Add recording', zh: '添加录音' } }
   await editorCtx.project.history.doAction(action, () => editorCtx.project.addSound(sound))

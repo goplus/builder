@@ -16,6 +16,12 @@ const props = defineProps<{
   audioUrl?: string | null
   range: { left: number; right: number }
   gain: number
+  // When true, the component will render the waveform differently.
+  // It enables the cache and updates the waveform in real-time.
+  // TODO: Currently in the recording mode, the waveform will be rendered
+  // in different samples than in the normal mode, resulting different smoothness.
+  // We may fix this in the future.
+  recording?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -75,7 +81,8 @@ const wavesurferDiv = ref<HTMLDivElement>()
 
 const wavesurferRef = useWavesurfer(
   () => wavesurferDiv.value,
-  () => props.gain
+  () => props.gain,
+  props.recording
 )
 
 // we assume that wavesurferDiv.value will not change
