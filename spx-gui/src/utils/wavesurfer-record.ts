@@ -179,6 +179,7 @@ export class RecordPlugin extends BasePlugin<RecordPluginEvents, RecordPluginOpt
       this.emit(ev, blob)
       if (this.options.renderRecordedAudio) {
         this.applyOriginalOptionsIfNeeded()
+        this.wavesurfer?.loadBlob(blob)
       }
     }
 
