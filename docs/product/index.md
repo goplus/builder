@@ -65,8 +65,8 @@ Stage 包含以下信息：
 Sprite 包含以下信息：
 
 * Name: 名字，在所属的 Project 中唯一
-* Script: 脚本，对 Stage 运行逻辑的描述
-* Costumes: 造型列表，一个 Stage 可以对应一个或多个 Costume
+* Script: 脚本，对 Sprite 运行逻辑的描述
+* Costumes: 造型列表，一个 Sprite 可以对应一个或多个 Costume
 * Config: 其他配置信息，如默认 Costume 的选用、初始位置、方向、尺寸、可见状态等
 
 ### 造型 Costume
