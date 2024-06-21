@@ -101,7 +101,6 @@ watch(
       const ratio = audio.currentTime / audio.duration
       if (ratio >= props.range.right) {
         audio.pause()
-        audio.currentTime = audio.duration * props.range.left
       }
       const nextProgress = Math.min(
         Math.max((ratio - props.range.left) / (props.range.right - props.range.left), 0),
@@ -127,6 +126,8 @@ watch(
 
     const onPause = () => {
       emit('stop')
+      progress.value = 0
+      audio.currentTime = audio.duration * props.range.left
     }
     audio.addEventListener('pause', onPause)
 
