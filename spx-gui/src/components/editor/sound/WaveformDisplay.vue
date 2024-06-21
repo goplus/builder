@@ -1,5 +1,5 @@
 <template>
-  <canvas ref="canvas" class="waveform" :style="{ height: `${height}px` }"></canvas>
+  <canvas ref="canvas" :style="{ height: `${height}px` }"></canvas>
 </template>
 <script setup lang="ts">
 import { useUIVariables } from '@/components/ui'
@@ -9,7 +9,7 @@ const props = defineProps<{
   points: number[]
   scale: number
   height: number
-  offsetXMultiplier?: number
+  drawPaddingRight?: number
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -44,7 +44,8 @@ onMounted(() => {
 
 const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip = false) => {
   const halfHeight = ctx.canvas.height / 2
-  const segmentLength = ctx.canvas.width / (points.length - 1)
+  const paddedWidth = ctx.canvas.width * (1 - (props.drawPaddingRight || 0))
+  const segmentLength = paddedWidth / (points.length - 1)
 
   const getPoint = (i: number) => {
     if (flip) {
@@ -56,19 +57,17 @@ const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip =
   ctx.beginPath()
   ctx.moveTo(0, halfHeight)
 
-  const offsetX = (props.offsetXMultiplier || 0) * ctx.canvas.width
-  console.log(offsetX, props.offsetXMultiplier, ctx.canvas.width)
-
   for (let i = 0; i < points.length - 2; i++) {
-    const xc = (i * segmentLength + (i + 1) * segmentLength) / 2 + offsetX
+    const currentOffsetX = i / points.length
+    const xc = (i * segmentLength + (i + 1) * segmentLength) / 2 + currentOffsetX
     const yc = (getPoint(i) + getPoint(i + 1)) / 2
-    ctx.quadraticCurveTo(i * segmentLength + offsetX, getPoint(i), xc, yc)
+    ctx.quadraticCurveTo(i * segmentLength + currentOffsetX, getPoint(i), xc, yc)
   }
 
   ctx.quadraticCurveTo(
-    (points.length - 2) * segmentLength + offsetX,
+    (points.length - 2) * segmentLength,
     getPoint(points.length - 2),
-    ctx.canvas.width + offsetX,
+    paddedWidth,
     getPoint(points.length - 1)
   )
 
@@ -95,9 +94,3 @@ const draw = () => {
 
 watch(() => [props.points, props.scale], draw, { deep: true })
 </script>
-
-<style scoped lang="scss">
-.waveform {
-  width: 100%;
-}
-</style>

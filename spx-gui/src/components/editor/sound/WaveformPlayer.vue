@@ -2,7 +2,7 @@
   <WaveformWithControls
     :height="height"
     :waveform-data="waveformDataFromSrc || props.customWaveformData?.data || []"
-    :offset-x-multiplier="waveformDataFromSrc ? 0 : props.customWaveformData?.offsetX"
+    :draw-padding-right="waveformDataFromSrc ? 0 : props.customWaveformData?.paddingRight"
     :gain="gain"
     :progress="progress"
     :range="range"
@@ -18,7 +18,7 @@ import { useAsyncComputed } from '@/utils/utils'
 
 const props = defineProps<{
   audioSrc?: string
-  customWaveformData?: { data: number[]; offsetX?: number }
+  customWaveformData?: { data: number[]; paddingRight: number }
   range: { left: number; right: number }
   gain: number
   height: number
@@ -148,15 +148,26 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
   const channelData = audioBuffer.getChannelData(0)
 
-  console.log(Math.sqrt(channelData.length))
-  const blockSize =
-    128 * Math.max(Math.floor(Math.sqrt(Math.floor(channelData.length / 1024) * 1024) / 10), 16)
+  // First, we group the data into blocks by a fixed block size of 128 samples
+  // to match the behavior of the recorder.
+  // TODO: This could potentially be optimized by some math, or just ommitted
+  const preProcessedData = new Array<number>(Math.floor(channelData.length / 128))
+  for (let i = 0; i < preProcessedData.length; i++) {
+    let sum = 0
+    for (let j = 0; j < 128; j++) {
+      sum += Math.abs(channelData[i * 128 + j])
+    }
+    preProcessedData[i] = sum / 128
+  }
 
-  const points = new Array<number>(Math.floor(channelData.length / blockSize))
+  const targetPointLength = 80
+  const blockSize = Math.max(Math.floor(preProcessedData.length / targetPointLength / 10) * 10, 10)
+
+  const points = new Array<number>(Math.floor(preProcessedData.length / blockSize))
   for (let i = 0; i < points.length; i++) {
     let sum = 0
     for (let j = 0; j < blockSize; j++) {
-      sum += Math.abs(channelData[i * blockSize + j])
+      sum += preProcessedData[i * blockSize + j]
     }
     points[i] = (sum / blockSize) * scale
   }

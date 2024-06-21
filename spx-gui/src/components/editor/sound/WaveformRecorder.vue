@@ -35,7 +35,7 @@ const emit = defineEmits<{
   recordStopped: [Blob]
 }>()
 
-const waveformData = ref<{ data: number[]; offsetX: number }>()
+const waveformData = ref<{ data: number[]; paddingRight: number }>()
 const recordedBlob = ref<Blob | null>(null)
 
 const recordedSrc = ref<string>()
@@ -53,8 +53,58 @@ watchEffect((onCleanup) => {
 
 const waveformPlayerRef = ref<InstanceType<typeof WaveformPlayer> | null>(null)
 
-let rawData: number[] = []
 let mediaRecorder: MediaRecorder | null = null
+
+let rawData: number[] = []
+let rawDataBuffer: number[] = []
+
+let cachedWaveformData: {
+  data: number[]
+  blockSize: number
+} = {
+  data: [],
+  blockSize: 0
+}
+
+const updateWaveform = () => {
+  if (!mediaRecorder) return
+  const scale = 5
+
+  rawData = [...rawData, ...rawDataBuffer]
+  rawDataBuffer = []
+
+  const targetPointLength = 80
+  const blockSize = Math.max(Math.floor(rawData.length / targetPointLength / 10) * 10, 10)
+
+  if (blockSize > 0) {
+    let points: number[] = []
+    if (cachedWaveformData.blockSize === blockSize) {
+      points = cachedWaveformData.data
+    } else {
+      cachedWaveformData = { data: [], blockSize }
+    }
+
+    const startIdx = points.length * blockSize
+    const newPoints = new Array<number>(Math.floor((rawData.length - startIdx) / blockSize))
+
+    for (let i = 0; i < newPoints.length; i++) {
+      let sum = 0
+      for (let j = 0; j < blockSize; j++) {
+        sum += rawData[startIdx + i * blockSize + j]
+      }
+      newPoints[i] = (sum / blockSize) * scale
+    }
+
+    cachedWaveformData.data = [...points, ...newPoints]
+
+    waveformData.value = {
+      data: cachedWaveformData.data,
+      paddingRight: (rawData.length % blockSize) / blockSize / cachedWaveformData.data.length
+    }
+  }
+
+  requestAnimationFrame(updateWaveform)
+}
 
 const startRecording = async () => {
   if (mediaRecorder) {
@@ -69,31 +119,6 @@ const startRecording = async () => {
   }
   const audioWorkletNode = new AudioWorkletNode(audioContext, 'sum-processor', {})
   source.connect(audioWorkletNode)
-
-  audioWorkletNode.port.onmessage = (
-    event: MessageEvent<{
-      sum: number
-      length: number // We assume this is always 128: <https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process>
-    }>
-  ) => {
-    rawData.push(event.data.sum / event.data.length)
-    const scale = 5
-
-    const blockSize = 64
-    const points = new Array<number>(Math.floor(rawData.length / blockSize))
-    for (let i = 0; i < points.length; i++) {
-      let sum = 0
-      for (let j = 0; j < blockSize; j++) {
-        sum += rawData[i * blockSize + j]
-      }
-      points[i] = (sum / blockSize) * scale
-    }
-    const offsetX = ((-1 / points.length) * (rawData.length % blockSize)) / blockSize
-    waveformData.value = {
-      data: points,
-      offsetX: isFinite(offsetX) ? offsetX : 0
-    }
-  }
 
   const nextMediaRecorder = new MediaRecorder(stream, {
     mimeType: 'audio/webm',
@@ -117,12 +142,25 @@ const startRecording = async () => {
     emit('recordStopped', blob)
     source.disconnect()
     rawData = []
-    waveformData.value = undefined
+    rawDataBuffer = []
+    // waveformData.value = undefined
   }
 
   nextMediaRecorder.onstart = () => {
+    audioWorkletNode.port.onmessage = (
+      event: MessageEvent<{
+        sum: number
+        length: number // We assume this is always 128: <https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process>
+      }>
+    ) => {
+      rawDataBuffer.push(event.data.sum / event.data.length)
+      // This function runs every 128 samples, which is about 3ms at 44.1kHz
+      // So we want to keep it as simple as possible
+    }
+
     mediaRecorder = nextMediaRecorder
     emit('recordStarted')
+    requestAnimationFrame(updateWaveform)
   }
   nextMediaRecorder.onstop = onStop
   nextMediaRecorder.onpause = onStop
