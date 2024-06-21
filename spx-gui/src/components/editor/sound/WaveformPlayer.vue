@@ -47,7 +47,6 @@ defineExpose({
       ? audioElement.value.duration * props.range.left
       : 0
     progress.value = 0
-    emit('stop')
   },
   exportWav: async (): Promise<Blob> => {
     if (!props.audioSrc) throw new Error('audioSrc is not provided')
@@ -103,7 +102,6 @@ watch(
       if (ratio >= props.range.right) {
         audio.pause()
         audio.currentTime = audio.duration * props.range.left
-        emit('stop')
       }
       const nextProgress = Math.min(
         Math.max((ratio - props.range.left) / (props.range.right - props.range.left), 0),
@@ -127,14 +125,20 @@ watch(
     }
     audio.addEventListener('play', onPlay)
 
+    const onPause = () => {
+      emit('stop')
+    }
+    audio.addEventListener('pause', onPause)
+
     audioElement.value = audio
     onCleanup(() => {
       audio.pause()
-      emit('stop')
       progress.value = 0
       emit('progress', 0)
+
       audio.removeEventListener('error', onError)
       audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('pause', onPause)
     })
   },
   { immediate: true }
