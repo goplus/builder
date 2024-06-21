@@ -19,15 +19,15 @@
         {{ formattedTrimmedDuration || '&nbsp;' }}
       </div>
     </div>
-    <WavesurferWithRange
-      ref="wavesurferRef"
+    <WaveformPlayer
+      v-if="audioUrl"
+      ref="waveformPlayerRef"
       v-model:range="audioRange"
-      class="wavesurfer"
-      :audio-url="audioUrl"
+      :height="222"
+      :audio-src="audioUrl"
       :gain="gain"
       @progress="handleProgress"
       @stop="handleStop"
-      @load="handleResetEdit"
       @play="handlePlay"
     />
     <div class="opeartions">
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -74,7 +74,39 @@ import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
-import WavesurferWithRange from './WavesurferWithRange.vue'
+import WaveformPlayer from './WaveformPlayer.vue'
+
+// import WaveformDisplay from './WaveformDisplay.vue'
+// import sumProcessorUrl from './sum-processor.js?url'
+
+// const points = ref<number[]>([])
+
+// onMounted(async () => {
+//   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+//   const audioContext = getAudioContext()
+//   const source = audioContext.createMediaStreamSource(stream)
+//   await audioContext.audioWorklet.addModule(sumProcessorUrl)
+//   const audioWorkletNode = new AudioWorkletNode(audioContext, 'sum-processor', {})
+//   source.connect(audioWorkletNode)
+
+//   let runningSum = 0
+//   let n = 0
+
+//   audioWorkletNode.port.onmessage = (
+//     event: MessageEvent<{
+//       sum: number
+//       length: number
+//     }>
+//   ) => {
+//     runningSum += event.data.sum / event.data.length
+//     n++
+//     if (n === 16) {
+//       points.value.push((runningSum / n) * 5)
+//       runningSum = 0
+//       n = 0
+//     }
+//   }
+// })
 
 const props = defineProps<{
   sound: Sound
@@ -90,7 +122,7 @@ function handleNameEdit() {
   })
 }
 
-const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
+const waveformPlayerRef = ref<InstanceType<typeof WaveformPlayer> | null>(null)
 const gain = ref(1)
 const audioRange = ref({ left: 0, right: 1 })
 
@@ -105,6 +137,13 @@ type Playing = {
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 
+const handleResetEdit = () => {
+  gain.value = 1
+  audioRange.value = { left: 0, right: 1 }
+}
+
+watch(audioUrl, handleResetEdit)
+
 const { duration } = useAudioDuration(() => audioUrl.value)
 const formattedTrimmedDuration = computed(() => {
   if (duration.value === null) return ''
@@ -113,8 +152,8 @@ const formattedTrimmedDuration = computed(() => {
 })
 
 async function handlePlayClick() {
-  if (wavesurferRef.value == null) return
-  wavesurferRef.value.play()
+  if (waveformPlayerRef.value == null) return
+  waveformPlayerRef.value.play()
 }
 
 function handlePlay() {
@@ -122,7 +161,7 @@ function handlePlay() {
 }
 
 function handleStopClick() {
-  wavesurferRef.value?.stop()
+  waveformPlayerRef.value?.stop()
   playing.value = null
 }
 
@@ -140,22 +179,17 @@ function handleProgress(value: number) {
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  wavesurferRef.value?.play()
-}
-
-const handleResetEdit = () => {
-  gain.value = 1
-  audioRange.value = { left: 0, right: 1 }
+  waveformPlayerRef.value?.play()
 }
 
 const handleSave = useMessageHandle(
   async () => {
-    if (wavesurferRef.value == null) return
+    if (waveformPlayerRef.value == null) return
     if (!editing.value) {
       return
     }
 
-    const blob = await wavesurferRef.value.exportWav()
+    const blob = await waveformPlayerRef.value.exportWav()
     const newFile = fromBlob(props.sound.file.name, blob)
     const sname = props.sound.name
     const action = { name: { en: `Update sound ${sname}`, zh: `修改声音 ${sname}` } }
@@ -203,10 +237,6 @@ const handleSave = useMessageHandle(
       color: var(--ui-color-grey-1000);
     }
   }
-}
-
-.wavesurfer {
-  height: 222px;
 }
 
 .spacer {
