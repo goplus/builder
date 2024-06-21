@@ -71,6 +71,7 @@ const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip =
     getPoint(points.length - 1)
   )
 
+  ctx.lineTo(ctx.canvas.width, getPoint(points.length - 1))
   ctx.lineTo(ctx.canvas.width, halfHeight)
 
   ctx.strokeStyle = uiVariables.color.sound[400]

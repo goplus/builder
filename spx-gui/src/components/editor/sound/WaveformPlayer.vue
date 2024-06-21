@@ -56,7 +56,7 @@ defineExpose({
     const audioContext = getAudioContext()
     const arrayBuffer = await (await fetch(props.audioSrc)).arrayBuffer()
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-    const wavBlob = trimAndApplyGainToWavBlob(
+    const wavBlob = await trimAndApplyGainToWavBlob(
       audioBuffer,
       props.range.left,
       props.range.right,

@@ -106,7 +106,6 @@ import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import { UIIconButton } from '@/components/ui'
 import VolumeSlider from './VolumeSlider.vue'
-import { toWav } from '@/utils/audio'
 import WaveformRecorder from './WaveformRecorder.vue'
 
 const emit = defineEmits<{
@@ -135,12 +134,9 @@ const stopRecording = () => {
 
 const saveRecording = async () => {
   if (!waveformRecorderRef.value || !audioBlob.value) return
-  const wav = await toWav(await audioBlob.value.arrayBuffer())
+  const wav = await waveformRecorderRef.value.exportWav()
 
-  const file = fromBlob(
-    `Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`,
-    new Blob([wav], { type: 'audio/wav' })
-  )
+  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)
   const action = { name: { en: 'Add recording', zh: '添加录音' } }
   await editorCtx.project.history.doAction(action, () => editorCtx.project.addSound(sound))

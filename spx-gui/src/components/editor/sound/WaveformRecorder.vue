@@ -74,7 +74,7 @@ const updateWaveform = () => {
   rawDataBuffer = []
 
   const targetPointLength = 80
-  const blockSize = Math.max(Math.floor(rawData.length / targetPointLength / 10) * 10, 10)
+  const blockSize = Math.max(Math.floor(rawData.length / targetPointLength / 20) * 20, 10)
 
   if (blockSize > 0) {
     let points: number[] = []
