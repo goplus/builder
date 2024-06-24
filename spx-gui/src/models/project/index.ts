@@ -262,7 +262,7 @@ export class Project extends Disposble {
         // instead we should use the runtime size of component `ProjectRunner`,
         // after https://github.com/goplus/builder/issues/584
         width: stageConfig.map?.width,
-        height: stageConfig.map?.height,
+        height: stageConfig.map?.height
       },
       zorder: this.zorder
     }

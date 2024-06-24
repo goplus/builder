@@ -118,11 +118,8 @@ export class Costume {
     /** Path of directory which contains the sprite's config file */
     basePath: string
   ): [RawCostumeConfig, Files] {
-    const name = (
-      this.parent instanceof Animation
-      ? this.parent.withCostumeNamePrefix(this.name)
-      : this.name
-    )
+    const name =
+      this.parent instanceof Animation ? this.parent.withCostumeNamePrefix(this.name) : this.name
     const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {
       x: this.x,

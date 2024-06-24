@@ -1,7 +1,11 @@
 import { reactive } from 'vue'
 
 import type { Sprite } from './sprite'
-import { ensureValidCostumeName, getAnimationName, validateAnimationName } from './common/asset-name'
+import {
+  ensureValidCostumeName,
+  getAnimationName,
+  validateAnimationName
+} from './common/asset-name'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Files } from './common/file'
 
@@ -9,7 +13,7 @@ enum AniType {
   frame = 0,
   move = 1,
   turn = 2,
-  glide = 3,
+  glide = 3
 }
 
 type ActionConfig = {
@@ -25,7 +29,7 @@ export type AnimationInits = {
   duration?: number
   anitype?: number
   onStart?: ActionConfig
-  
+
   // not supported by builder:
   fps?: number
   isLoop?: boolean // TODO
@@ -63,7 +67,7 @@ export class Animation {
 
   private stripCostumeNamePrefix(name: string) {
     if (!name.startsWith(this.costumeNamePrefix)) return name
-    return name = name.slice(this.costumeNamePrefix.length)
+    return name.slice(this.costumeNamePrefix.length)
   }
 
   costumes: Costume[]
@@ -108,7 +112,12 @@ export class Animation {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static async create(nameBase: string, sprite: Sprite, costumes: Costume[], inits?: AnimationInits) {
+  static async create(
+    nameBase: string,
+    sprite: Sprite,
+    costumes: Costume[],
+    inits?: AnimationInits
+  ) {
     for (const costume of costumes) {
       sprite.removeCostume(costume.name)
     }
@@ -117,11 +126,7 @@ export class Animation {
     return animation
   }
 
-  static load(
-    name: string,
-    { from, to, ...inits }: RawAnimationConfig,
-    sprite: Sprite,
-  ) {
+  static load(name: string, { from, to, ...inits }: RawAnimationConfig, sprite: Sprite) {
     if (from == null || to == null) throw new Error(`from and to expected for Animation ${name}`)
     const fromIndex = getCostumeIndex(sprite.costumes, from)
     const toIndex = getCostumeIndex(sprite.costumes, to)

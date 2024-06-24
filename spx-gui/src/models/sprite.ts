@@ -7,7 +7,12 @@ import { reactive } from 'vue'
 import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
 import { Disposble } from './common/disposable'
-import { ensureValidAnimationName, ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset-name'
+import {
+  ensureValidAnimationName,
+  ensureValidCostumeName,
+  getSpriteName,
+  validateSpriteName
+} from './common/asset-name'
 import { type RawCostumeConfig, Costume } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
@@ -22,9 +27,9 @@ export enum State {
   default = 'default',
   die = 'die',
   step = 'step',
-   // not supported by builder:
-	turn = 'turn',
-	glide = 'glide',
+  // not supported by builder:
+  turn = 'turn',
+  glide = 'glide'
 }
 
 export type SpriteInits = {
@@ -38,7 +43,7 @@ export type SpriteInits = {
   visible?: boolean
   isDraggable?: boolean
   defaultAnimation?: string
-	animBindings?: Record<string, string | undefined>
+  animBindings?: Record<string, string | undefined>
 }
 
 export type RawSpriteConfig = SpriteInits & {
@@ -138,7 +143,7 @@ export class Sprite extends Disposble {
     this.animations.push(animation)
   }
 
-	private animationBindings: Record<State, string | undefined>
+  private animationBindings: Record<State, string | undefined>
   getAnimationBoundStates(animationName: string) {
     const states: State[] = []
     Object.entries(this.animationBindings).forEach(([state, name]) => {
@@ -199,7 +204,7 @@ export class Sprite extends Disposble {
       [State.die]: inits?.animBindings?.[State.die],
       [State.step]: inits?.animBindings?.[State.step],
       [State.turn]: inits?.animBindings?.[State.turn],
-      [State.glide]: inits?.animBindings?.[State.glide],
+      [State.glide]: inits?.animBindings?.[State.glide]
     }
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
