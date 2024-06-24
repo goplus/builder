@@ -1,5 +1,5 @@
 <template>
-  <canvas ref="canvas" :style="{ height: `${height}px` }"></canvas>
+  <canvas ref="canvas"></canvas>
 </template>
 <script setup lang="ts">
 import { useUIVariables } from '@/components/ui'
@@ -8,7 +8,6 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 const props = defineProps<{
   points: number[]
   scale: number
-  height: number
   drawPaddingRight?: number
 }>()
 

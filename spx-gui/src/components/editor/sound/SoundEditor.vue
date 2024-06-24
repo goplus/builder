@@ -22,7 +22,7 @@
     <WaveformPlayer
       ref="waveformPlayerRef"
       v-model:range="audioRange"
-      :height="222"
+      class="waveform-player"
       :audio-src="audioUrl || undefined"
       :gain="gain"
       @progress="handleProgress"
@@ -73,7 +73,7 @@ import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
-import WaveformPlayer from './WaveformPlayer.vue'
+import { WaveformPlayer } from './waveform'
 
 const props = defineProps<{
   sound: Sound
@@ -230,5 +230,9 @@ const handleSave = useMessageHandle(
     gap: 8px;
     align-items: center;
   }
+}
+
+.waveform-player {
+  height: 222px;
 }
 </style>

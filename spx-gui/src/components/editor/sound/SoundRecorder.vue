@@ -102,7 +102,7 @@ import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import { UIIconButton } from '@/components/ui'
 import VolumeSlider from './VolumeSlider.vue'
-import WaveformRecorder from './WaveformRecorder.vue'
+import { WaveformRecorder } from './waveform'
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -198,6 +198,7 @@ const resetRecording = () => {
   font-size: 14px;
   align-items: center;
 }
+
 .volume-slider-container {
   padding-top: 24px;
   margin-bottom: -8px;

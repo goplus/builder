@@ -1,6 +1,5 @@
 <template>
   <WaveformWithControls
-    :height="height"
     :waveform-data="waveformDataFromSrc || props.customWaveformData?.data || []"
     :draw-padding-right="waveformDataFromSrc ? 0 : props.customWaveformData?.paddingRight"
     :gain="gain"
@@ -21,7 +20,6 @@ const props = defineProps<{
   customWaveformData?: { data: number[]; paddingRight: number }
   range: { left: number; right: number }
   gain: number
-  height: number
 }>()
 
 const play = async () => {

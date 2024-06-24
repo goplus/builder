@@ -1,14 +1,11 @@
 <template>
   <div class="container">
-    <div class="waveform-container">
-      <WaveformDisplay
-        :height="height"
-        class="waveform"
-        :points="waveformData"
-        :scale="gain"
-        :draw-padding-right="drawPaddingRight"
-      />
-    </div>
+    <WaveformDisplay
+      class="waveform"
+      :points="waveformData"
+      :scale="gain"
+      :draw-padding-right="drawPaddingRight"
+    />
     <WaveformRangeControl
       :value="range"
       @update:value="emit('update:range', $event)"
@@ -30,7 +27,6 @@ const props = defineProps<{
   range: { left: number; right: number }
   gain: number
   progress: number
-  height: number
   drawPaddingRight?: number
 }>()
 
@@ -50,6 +46,7 @@ const progressStyle = computed(() => {
   position: relative;
   .waveform {
     width: 100%;
+    height: 100%;
   }
   .waveform-container {
     padding: 0 16px;
@@ -57,6 +54,9 @@ const progressStyle = computed(() => {
   border-radius: 12px;
   background-color: var(--ui-color-grey-300);
   overflow: hidden;
+
+  width: 100%;
+  height: 100%;
 }
 
 .cursor {

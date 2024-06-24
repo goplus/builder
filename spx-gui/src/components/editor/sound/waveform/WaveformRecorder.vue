@@ -1,17 +1,14 @@
 <template>
-  <div>
-    <WaveformPlayer
-      ref="waveformPlayerRef"
-      :audio-src="recordedSrc"
-      :custom-waveform-data="waveformData"
-      :range="range"
-      :gain="gain"
-      :height="160"
-      @update:range="emit('update:range', $event)"
-      @play="emit('playbackStarted')"
-      @stop="emit('playbackStoped')"
-    />
-  </div>
+  <WaveformPlayer
+    ref="waveformPlayerRef"
+    :audio-src="recordedSrc"
+    :custom-waveform-data="waveformData"
+    :range="range"
+    :gain="gain"
+    @update:range="emit('update:range', $event)"
+    @play="emit('playbackStarted')"
+    @stop="emit('playbackStoped')"
+  />
 </template>
 <script lang="ts">
 let sumProcessorLoaded = false
@@ -201,4 +198,3 @@ defineExpose({
   }
 })
 </script>
-<style lang="scss" scoped></style>
