@@ -76,38 +76,6 @@ import { UIButton } from '@/components/ui'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
 import WaveformPlayer from './WaveformPlayer.vue'
 
-// import WaveformDisplay from './WaveformDisplay.vue'
-// import sumProcessorUrl from './sum-processor.js?url'
-
-// const points = ref<number[]>([])
-
-// onMounted(async () => {
-//   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-//   const audioContext = getAudioContext()
-//   const source = audioContext.createMediaStreamSource(stream)
-//   await audioContext.audioWorklet.addModule(sumProcessorUrl)
-//   const audioWorkletNode = new AudioWorkletNode(audioContext, 'sum-processor', {})
-//   source.connect(audioWorkletNode)
-
-//   let runningSum = 0
-//   let n = 0
-
-//   audioWorkletNode.port.onmessage = (
-//     event: MessageEvent<{
-//       sum: number
-//       length: number
-//     }>
-//   ) => {
-//     runningSum += event.data.sum / event.data.length
-//     n++
-//     if (n === 16) {
-//       points.value.push((runningSum / n) * 5)
-//       runningSum = 0
-//       n = 0
-//     }
-//   }
-// })
-
 const props = defineProps<{
   sound: Sound
 }>()

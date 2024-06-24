@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const play = async () => {
   if (!audioElement.value) return
-  if (!isFinite(audioElement.value.duration)) {
+  if (!Number.isFinite(audioElement.value.duration)) {
     console.warn('audio duration is invalid. Started from the beginning.')
     // This can happen when the audio is not loaded yet.
     audioElement.value.currentTime = 0
@@ -43,7 +43,7 @@ defineExpose({
   stop: () => {
     if (!audioElement.value) return
     audioElement.value.pause()
-    audioElement.value.currentTime = isFinite(audioElement.value.duration)
+    audioElement.value.currentTime = Number.isFinite(audioElement.value.duration)
       ? audioElement.value.duration * props.range.left
       : 0
     progress.value = 0
@@ -166,7 +166,7 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
   }
 
   const targetPointLength = 80
-  const blockSize = Math.max(Math.floor(preProcessedData.length / targetPointLength / 10) * 10, 10)
+  const blockSize = Math.max(Math.floor(preProcessedData.length / targetPointLength / 20) * 20, 10)
 
   const points = new Array<number>(Math.floor(preProcessedData.length / blockSize))
   for (let i = 0; i < points.length; i++) {

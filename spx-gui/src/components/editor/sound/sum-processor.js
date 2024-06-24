@@ -1,4 +1,8 @@
-// TypeScript does not include the AudioWorkletProcessor type
+// This file is similar to a worker. It is expected to be imported
+// with `?url` where it need to be used.
+
+// As we import it with `?url`, it is not processed by TypeScript
+// or Rollup. It is directly loaded by the browser.
 
 class SumProcessor extends AudioWorkletProcessor {
   process(inputs, outputs) {
