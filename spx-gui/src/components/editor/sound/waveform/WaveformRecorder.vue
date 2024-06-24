@@ -83,12 +83,15 @@ const updateWaveform = () => {
 
   if (blockSize > 0) {
     let points: number[] = []
+    // If the block size is the same, we can just append the new blocks to the existing data.
+    // Otherwise, we need to clear the cache.
     if (cachedWaveformData.blockSize === blockSize) {
       points = cachedWaveformData.data
     } else {
       cachedWaveformData = { data: [], blockSize }
     }
 
+    // For more comments on this part, see WaveformPlayer.vue
     const startIdx = points.length * blockSize
     const newPoints = new Array<number>(Math.floor((rawData.length - startIdx) / blockSize))
 
@@ -144,16 +147,21 @@ const startRecording = async () => {
     source.disconnect()
     rawData = []
     rawDataBuffer = []
-    // waveformData.value = undefined
   }
 
   nextMediaRecorder.onstart = () => {
+    let n = 0
     audioWorkletNode.port.onmessage = (
       event: MessageEvent<{
         sum: number
         length: number // We assume this is always 128: <https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process>
       }>
     ) => {
+      n++
+      if (n <= 16) return
+      // We skip the first 16*128 samples to make the recording waveform align
+      // with the playback waveform.
+
       rawDataBuffer.push(event.data.sum / event.data.length)
       // This function runs every 128 samples, which is about 3ms at 44.1kHz
       // So we want to keep it as simple as possible

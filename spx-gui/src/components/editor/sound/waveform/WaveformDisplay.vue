@@ -7,7 +7,13 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   points: number[]
+  // Dynamic scaling factor for the waveform display.
   scale: number
+  // The right padding of the waveform display, as a ratio of the total width.
+  // Used for a smooth animation when the waveform is continuously appended.
+  // The last point of the waveform will be drawn at x coordinate of
+  // `canvas.width * (1 - drawPaddingRight)`.
+  // Then there will be a straight line to the right edge of the canvas.
   drawPaddingRight?: number
 }>()
 
@@ -57,10 +63,9 @@ const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip =
   ctx.moveTo(0, halfHeight)
 
   for (let i = 0; i < points.length - 2; i++) {
-    const currentOffsetX = i / points.length
-    const xc = (i * segmentLength + (i + 1) * segmentLength) / 2 + currentOffsetX
+    const xc = (i * segmentLength + (i + 1) * segmentLength) / 2
     const yc = (getPoint(i) + getPoint(i + 1)) / 2
-    ctx.quadraticCurveTo(i * segmentLength + currentOffsetX, getPoint(i), xc, yc)
+    ctx.quadraticCurveTo(i * segmentLength, getPoint(i), xc, yc)
   }
 
   ctx.quadraticCurveTo(

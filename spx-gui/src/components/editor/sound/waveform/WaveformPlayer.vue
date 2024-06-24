@@ -1,7 +1,11 @@
 <template>
   <WaveformWithControls
-    :waveform-data="waveformDataFromSrc || props.customWaveformData?.data || []"
-    :draw-padding-right="waveformDataFromSrc ? 0 : props.customWaveformData?.paddingRight"
+    :waveform-data="waveformDataFromSrc?.data || props.customWaveformData?.data || []"
+    :draw-padding-right="
+      waveformDataFromSrc
+        ? waveformDataFromSrc.paddingRight
+        : props.customWaveformData?.paddingRight
+    "
     :gain="gain"
     :progress="progress"
     :range="range"
@@ -164,9 +168,13 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
     preProcessedData[i] = sum / 128
   }
 
+  // We want the final waveform to have a length of about 80 points.
   const targetPointLength = 80
+  // We use floor(x / 20) * 20 to make the block size a multiple of 20.
+  // Thus it changes less frequently and the waveform is more stable.
   const blockSize = Math.max(Math.floor(preProcessedData.length / targetPointLength / 20) * 20, 10)
 
+  // We then calculate the average of each block and scale it.
   const points = new Array<number>(Math.floor(preProcessedData.length / blockSize))
   for (let i = 0; i < points.length; i++) {
     let sum = 0
@@ -175,6 +183,9 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
     }
     points[i] = (sum / blockSize) * scale
   }
-  return points
+  return {
+    data: points,
+    paddingRight: (preProcessedData.length % blockSize) / blockSize / points.length
+  }
 })
 </script>
