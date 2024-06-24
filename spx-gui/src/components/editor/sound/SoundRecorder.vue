@@ -2,19 +2,14 @@
   <div class="container">
     <div class="recorder-waveform-container">
       <WaveformRecorder
-        v-if="recording || audioBlob"
+        v-if="recordingState === 'recording' || recordingState === 'recorded'"
         ref="waveformRecorderRef"
         v-model:range="audioRange"
         :gain="gain"
-        @record-started="recording = true"
-        @record-stopped="
-          (blob) => {
-            recording = false
-            audioBlob = blob
-          }
-        "
+        @record-started="recordingState = 'recording'"
+        @record-stopped="recordingState = 'recorded'"
       />
-      <div v-if="!recording && !audioBlob" class="recorder-waveform-overlay">
+      <div v-if="recordingState === 'yetStarted'" class="recorder-waveform-overlay">
         {{
           $t({
             en: 'Begin recording by clicking the button below',
@@ -23,12 +18,12 @@
         }}
       </div>
     </div>
-    <div v-if="!recording && audioBlob" class="volume-slider-container">
+    <div v-if="recordingState === 'recorded'" class="volume-slider-container">
       <VolumeSlider :value="gain" @update:value="handleGainUpdate" />
     </div>
     <div class="button-container">
-      <div v-if="!recording && !audioBlob" class="icon-button">
-        <UIIconButton icon="microphone" type="danger" @click="recording = true" />
+      <div v-if="recordingState === 'yetStarted'" class="icon-button">
+        <UIIconButton icon="microphone" type="danger" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -38,7 +33,7 @@
           }}
         </span>
       </div>
-      <div v-else-if="recording" class="icon-button">
+      <div v-else-if="recordingState === 'recording'" class="icon-button">
         <UIIconButton icon="stop" type="danger" @click="stopRecording" />
         <span>
           {{
@@ -113,8 +108,7 @@ const emit = defineEmits<{
   recordStarted: []
 }>()
 
-const recording = ref(false)
-const audioBlob = ref<Blob | null>(null)
+const recordingState = ref<'yetStarted' | 'recording' | 'recorded'>('yetStarted')
 
 const waveformRecorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
 
@@ -133,7 +127,7 @@ const stopRecording = () => {
 }
 
 const saveRecording = async () => {
-  if (!waveformRecorderRef.value || !audioBlob.value) return
+  if (!waveformRecorderRef.value || recordingState.value !== 'recorded') return
   const wav = await waveformRecorderRef.value.exportWav()
 
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
@@ -144,7 +138,7 @@ const saveRecording = async () => {
 }
 
 const resetRecording = () => {
-  audioBlob.value = null
+  recordingState.value = 'yetStarted'
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
 }

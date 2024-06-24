@@ -88,6 +88,7 @@ watch(
   () => props.audioSrc,
   (newValue, oldValue, onCleanup) => {
     const audio = new Audio(props.audioSrc)
+    audio.load()
     const audioContext = getAudioContext()
     const source = audioContext.createMediaElementSource(audio)
     const nextGainNode = audioContext.createGain()

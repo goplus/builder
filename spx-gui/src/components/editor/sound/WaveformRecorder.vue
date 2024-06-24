@@ -15,6 +15,14 @@
 </template>
 <script lang="ts">
 let sumProcessorLoaded = false
+
+const newSumProcessorNode = async (audioContext: AudioContext) => {
+  if (!sumProcessorLoaded) {
+    await audioContext.audioWorklet.addModule(sumProcessorUrl)
+    sumProcessorLoaded = true
+  }
+  return new AudioWorkletNode(audioContext, 'sum-processor', {})
+}
 </script>
 <script setup lang="ts">
 import { getAudioContext } from '@/utils/audio'
@@ -113,11 +121,7 @@ const startRecording = async () => {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
   const audioContext = getAudioContext()
   const source = audioContext.createMediaStreamSource(stream)
-  if (!sumProcessorLoaded) {
-    await audioContext.audioWorklet.addModule(sumProcessorUrl)
-    sumProcessorLoaded = true
-  }
-  const audioWorkletNode = new AudioWorkletNode(audioContext, 'sum-processor', {})
+  const audioWorkletNode = await newSumProcessorNode(audioContext)
   source.connect(audioWorkletNode)
 
   const nextMediaRecorder = new MediaRecorder(stream, {
