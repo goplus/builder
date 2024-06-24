@@ -1,16 +1,16 @@
 <template>
   <div class="container">
     <div class="recorder-waveform-container">
-      <!-- We use v-if to reset the component as there are issues re-recording. -->
-      <WavesurferWithRange
-        v-if="recording || audioBlob"
-        ref="wavesurferRef"
-        v-model:range="audioRange"
-        recording
+      <WaveformRecorder
+        v-if="recordingState === 'recording' || recordingState === 'recorded'"
+        ref="waveformRecorderRef"
+        :range="audioRange"
         :gain="gain"
-        @init="handleWaveSurferInit"
+        @update:range="recordingState === 'recorded' && (audioRange = $event)"
+        @record-started="recordingState = 'recording'"
+        @record-stopped="recordingState = 'recorded'"
       />
-      <div v-if="!recording && !audioBlob" class="recorder-waveform-overlay">
+      <div v-if="recordingState === 'yetStarted'" class="recorder-waveform-overlay">
         {{
           $t({
             en: 'Begin recording by clicking the button below',
@@ -19,12 +19,12 @@
         }}
       </div>
     </div>
-    <div v-if="!recording && audioBlob" class="volume-slider-container">
-      <VolumeSlider :value="gain" @update:value="handleUpdateVolume" />
+    <div v-if="recordingState === 'recorded'" class="volume-slider-container">
+      <VolumeSlider :value="gain" @update:value="handleGainUpdate" />
     </div>
     <div class="button-container">
-      <div v-if="!recording && !audioBlob" class="icon-button">
-        <UIIconButton icon="microphone" type="danger" @click="recording = true" />
+      <div v-if="recordingState === 'yetStarted'" class="icon-button">
+        <UIIconButton icon="microphone" type="danger" @click="recordingState = 'recording'" />
         <span>
           {{
             $t({
@@ -34,7 +34,7 @@
           }}
         </span>
       </div>
-      <div v-else-if="recording" class="icon-button">
+      <div v-else-if="recordingState === 'recording'" class="icon-button">
         <UIIconButton icon="stop" type="danger" @click="stopRecording" />
         <span>
           {{
@@ -61,7 +61,12 @@
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton icon="play" type="info" size="large" @click="wavesurferRef?.play()" />
+          <UIIconButton
+            icon="play"
+            type="info"
+            size="large"
+            @click="waveformRecorderRef?.startPlayback()"
+          />
           <span>
             {{
               $t({
@@ -96,81 +101,37 @@ import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
 import { UIIconButton } from '@/components/ui'
-import { RecordPlugin } from '@/utils/wavesurfer-record'
 import VolumeSlider from './VolumeSlider.vue'
-import WavesurferWithRange from './WavesurferWithRange.vue'
-import type WaveSurfer from 'wavesurfer.js'
-import { toWav } from '@/utils/audio'
+import { WaveformRecorder } from './waveform'
 
 const emit = defineEmits<{
   saved: [Sound]
   recordStarted: []
 }>()
 
-const recording = ref(false)
-const playing = ref(false)
+const recordingState = ref<'yetStarted' | 'recording' | 'recorded'>('yetStarted')
 
-const audioBlob = ref<Blob | null>(null)
-let recordPlugin: RecordPlugin
-
-const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
+const waveformRecorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(null)
 
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
 
 const editorCtx = useEditorCtx()
 
-const handleUpdateVolume = (v: number) => {
+const handleGainUpdate = (v: number) => {
   gain.value = v
-}
-
-const handleWaveSurferInit = (wavesurfer: WaveSurfer) => {
-  recordPlugin = wavesurfer.registerPlugin(RecordPlugin.create())
-
-  wavesurfer.on('play', () => {
-    playing.value = true
-  })
-  wavesurfer.on('pause', () => {
-    playing.value = false
-  })
-
-  recordPlugin.on('record-end', (blob) => {
-    recording.value = false
-    audioBlob.value = blob
-  })
-
-  const startRecording = async () => {
-    emit('recordStarted')
-
-    resetRecording()
-
-    const devices = await RecordPlugin.getAvailableAudioDevices()
-    if (devices.length === 0) {
-      alert('No audio input devices available. TODO: i18n, use message hook?')
-      return
-    }
-    const device = devices[0]
-
-    await recordPlugin.startRecording({
-      deviceId: device.deviceId
-    })
-  }
-
-  void startRecording()
+  waveformRecorderRef.value?.startPlayback()
 }
 
 const stopRecording = () => {
-  recordPlugin.stopRecording()
+  waveformRecorderRef.value?.stopRecording()
 }
 
 const saveRecording = async () => {
-  if (!wavesurferRef.value || !audioBlob.value) return
-  const wav = await toWav(await audioBlob.value.arrayBuffer())
+  if (!waveformRecorderRef.value || recordingState.value !== 'recorded') return
+  const wav = await waveformRecorderRef.value.exportWav()
 
-  const file = fromBlob(
-    `Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`,
-    new Blob([wav], { type: 'audio/wav' })
-  )
+  const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)
   const action = { name: { en: 'Add recording', zh: '添加录音' } }
   await editorCtx.project.history.doAction(action, () => editorCtx.project.addSound(sound))
@@ -178,8 +139,7 @@ const saveRecording = async () => {
 }
 
 const resetRecording = () => {
-  audioBlob.value = null
-  wavesurferRef.value?.empty()
+  recordingState.value = 'yetStarted'
   gain.value = 1
   audioRange.value = { left: 0, right: 1 }
 }
@@ -238,6 +198,7 @@ const resetRecording = () => {
   font-size: 14px;
   align-items: center;
 }
+
 .volume-slider-container {
   padding-top: 24px;
   margin-bottom: -8px;
