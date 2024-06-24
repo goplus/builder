@@ -20,11 +20,10 @@
       </div>
     </div>
     <WaveformPlayer
-      v-if="audioUrl"
       ref="waveformPlayerRef"
       v-model:range="audioRange"
       :height="222"
-      :audio-src="audioUrl"
+      :audio-src="audioUrl || undefined"
       :gain="gain"
       @progress="handleProgress"
       @stop="handleStop"

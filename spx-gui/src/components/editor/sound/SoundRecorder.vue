@@ -4,8 +4,9 @@
       <WaveformRecorder
         v-if="recordingState === 'recording' || recordingState === 'recorded'"
         ref="waveformRecorderRef"
-        v-model:range="audioRange"
+        :range="audioRange"
         :gain="gain"
+        @update:range="recordingState === 'recorded' && (audioRange = $event)"
         @record-started="recordingState = 'recording'"
         @record-stopped="recordingState = 'recorded'"
       />

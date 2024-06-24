@@ -93,5 +93,5 @@ const draw = () => {
   }
 }
 
-watch(() => [props.points, props.scale], draw, { deep: true })
+watch(() => [props.points, props.points.length, props.scale], draw)
 </script>
