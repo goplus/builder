@@ -146,9 +146,9 @@ export class Animation {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const costume of this.costumes) {
-      const [config, file] = costume.export(basePath)
-      costumeConfigs.push(config)
-      Object.assign(files, file)
+      const [costumeConfig, costumeFiles] = costume.export(basePath)
+      costumeConfigs.push(costumeConfig)
+      Object.assign(files, costumeFiles)
     }
     const config: RawAnimationConfig = {
       from: costumeConfigs[0]?.name,

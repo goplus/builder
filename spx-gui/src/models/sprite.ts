@@ -312,8 +312,8 @@ export class Sprite extends Disposble {
 
   export(includeCode = true): Files {
     const assetPath = getSpriteAssetPath(this.name)
-    const files: Files = {}
     const costumeConfigs: RawCostumeConfig[] = []
+    const files: Files = {}
     for (const c of this.costumes) {
       const [costumeConfig, costumeFiles] = c.export(assetPath)
       costumeConfigs.push(costumeConfig)
