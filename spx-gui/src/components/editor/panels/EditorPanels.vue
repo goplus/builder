@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, shallowRef, effectScope } from 'vue'
+import { ref, watch, shallowRef } from 'vue'
 import { UICard } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundsPanel from './sound/SoundsPanel.vue'
@@ -36,24 +36,17 @@ watch(
 
 const lastSelectedSprite = shallowRef<string | null>(null)
 const lastSelectedSound = shallowRef<string | null>(null)
-const watchScope = effectScope()
 watch(
-  () => editorCtx.project,
-  (project, _, onCleanup) => {
-    lastSelectedSprite.value = null
-    lastSelectedSound.value = null
-    // use standalone effect scope to avoid error when clean up, see details in https://github.com/vuejs/core/issues/5783
-    watchScope.run(() => {
-      onCleanup(watch(
-        () => project.selected,
-        (_, lastSelected) => {
-          if (lastSelected?.type === 'sprite') lastSelectedSprite.value = lastSelected.name
-          else if (lastSelected?.type === 'sound') lastSelectedSound.value = lastSelected.name
-        }
-      ))
-    })
-  },
-  { immediate: true }
+  () => [editorCtx.project, editorCtx.project.selected] as const,
+  ([project], [lastProject, lastSelected]) => {
+    if (project !== lastProject) {
+      lastSelectedSprite.value = null
+      lastSelectedSound.value = null
+      return
+    }
+    if (lastSelected?.type === 'sprite') lastSelectedSprite.value = lastSelected.name
+    else if (lastSelected?.type === 'sound') lastSelectedSound.value = lastSelected.name
+  }
 )
 
 watch(
