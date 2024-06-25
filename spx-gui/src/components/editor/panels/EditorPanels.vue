@@ -37,8 +37,13 @@ watch(
 const lastSelectedSprite = shallowRef<string | null>(null)
 const lastSelectedSound = shallowRef<string | null>(null)
 watch(
-  () => editorCtx.project.selected,
-  (_, lastSelected) => {
+  () => [editorCtx.project, editorCtx.project.selected] as const,
+  ([project], [lastProject, lastSelected]) => {
+    if (project !== lastProject) {
+      lastSelectedSprite.value = null
+      lastSelectedSound.value = null
+      return
+    }
     if (lastSelected?.type === 'sprite') lastSelectedSprite.value = lastSelected.name
     else if (lastSelected?.type === 'sound') lastSelectedSound.value = lastSelected.name
   }
