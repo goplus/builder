@@ -7,6 +7,7 @@ import { type Size } from './common'
 import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import { Disposble } from './common/disposable'
+import { Animation } from './animation'
 
 export type CostumeInits = {
   x?: number
@@ -21,14 +22,14 @@ export type RawCostumeConfig = CostumeInits & {
 }
 
 export class Costume {
-  _sprite: Sprite | null = null
-  setSprite(sprite: Sprite | null) {
-    this._sprite = sprite
+  private parent: Sprite | Animation | null = null
+  setParent(parent: Sprite | Animation | null) {
+    this.parent = parent
   }
 
   name: string
   setName(name: string) {
-    const err = validateCostumeName(name, this._sprite)
+    const err = validateCostumeName(name, this.parent)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
@@ -103,7 +104,7 @@ export class Costume {
   static load(
     { name, path, ...inits }: RawCostumeConfig,
     files: Files,
-    /** Path of directory which contains the config file */
+    /** Path of directory which contains the sprite's config file */
     basePath: string
   ) {
     if (name == null) throw new Error(`name expected for costume`)
@@ -114,16 +115,18 @@ export class Costume {
   }
 
   export(
-    /** Path of directory which contains the config file */
+    /** Path of directory which contains the sprite's config file */
     basePath: string
   ): [RawCostumeConfig, Files] {
-    const filename = this.name + extname(this.img.name)
+    const name =
+      this.parent instanceof Animation ? this.parent.withCostumeNamePrefix(this.name) : this.name
+    const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {
       x: this.x,
       y: this.y,
       faceRight: this.faceRight,
       bitmapResolution: this.bitmapResolution,
-      name: this.name,
+      name,
       path: filename
     }
     const files = {
