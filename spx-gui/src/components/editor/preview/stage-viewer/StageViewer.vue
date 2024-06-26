@@ -20,7 +20,7 @@
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite.name)" />
+        <SpriteTransformer :sprites-ready-map="spritesReadyMap" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">

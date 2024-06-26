@@ -1,4 +1,4 @@
-import { ref, shallowReactive, shallowRef, watch, watchEffect } from 'vue'
+import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -84,4 +84,22 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     localStorage.setItem(key, JSON.stringify(newValue))
   })
   return ref
+}
+
+/**
+ * Reactive value to promise.
+ * ```ts
+ * await until(() => someCondition)
+ * ```
+ */
+export function until(condition: WatchSource<boolean>) {
+  return new Promise<void>((resolve) => {
+    watch(
+      condition,
+      (value) => {
+        if (value) resolve()
+      },
+      { immediate: true, once: true }
+    )
+  })
 }

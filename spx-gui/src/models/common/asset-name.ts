@@ -92,8 +92,17 @@ function upFirst(str: string) {
   return str[0].toUpperCase() + str.slice(1)
 }
 
+function lowFirst(str: string) {
+  return str[0].toLowerCase() + str.slice(1)
+}
+
 /** Convert any string to valid asset name, empty string may be returned */
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
+  const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
+  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
+}
+
+export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
   src = src
     .replace(/[^a-zA-Z0-9_]+/g, '_')
     .replace(/([A-Z])/g, '_$1')
@@ -119,7 +128,7 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeAssetName(base, 'pascal') || 'Sprite'
+  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'Sprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
@@ -149,7 +158,7 @@ export function ensureValidAnimationName(name: string, sprite: Sprite | null) {
 }
 
 export function getSoundName(project: Project | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'sound'
+  base = normalizeGopIdentifierAssetName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
