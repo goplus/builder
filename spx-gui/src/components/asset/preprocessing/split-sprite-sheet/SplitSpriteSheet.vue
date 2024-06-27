@@ -34,15 +34,14 @@ const props = defineProps<{
   applied: boolean
 }>()
 
-// SplitSpriteSheet is supposed to take at most one file
-const file = computed(() => props.input[0])
-const [imgRef] = useFileImg(file)
-
 const emit = defineEmits<{
   applied: [File[]]
   cancel: []
 }>()
 
+// SplitSpriteSheet is supposed to take at most one file
+const file = computed(() => props.input[0])
+const [imgRef] = useFileImg(file)
 const bgColor = ref<Color | null>(null)
 const rowNum = ref(1)
 const colNum = ref(1)
@@ -85,7 +84,8 @@ function drawGrid() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.drawImage(img, 0, 0)
   ctx.strokeStyle = uiVariables.color.grey[800]
-  ctx.lineWidth = 1
+  const scale = canvas.width / canvas.getBoundingClientRect().width
+  ctx.lineWidth = Math.max(1, Math.round(scale))
   for (let i = 1; i < rowNum.value; i++) {
     const y = Math.round((i * canvas.height) / rowNum.value)
     ctx.beginPath()
@@ -104,6 +104,10 @@ function drawGrid() {
   }
 }
 
+/**
+ * If current preview-state different from the applied output.
+ * When the user changed the row/col number, the preview-state is dirty, until the the changes are applied again.
+ */
 const dirty = ref(false)
 
 watch([rowNum, colNum], async () => {

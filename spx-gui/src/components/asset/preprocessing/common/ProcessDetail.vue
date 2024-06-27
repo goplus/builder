@@ -69,13 +69,9 @@ header {
 }
 main {
   flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   overflow-y: auto;
 
   border-radius: var(--ui-border-radius-1);
-  background-color: var(--ui-color-grey-200);
+  background-color: var(--ui-color-grey-300);
 }
 </style>

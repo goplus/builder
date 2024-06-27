@@ -21,7 +21,8 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 
 <style lang="scss" scoped>
 .costume-item {
-  flex: 0 0 88px;
+  flex: 0 0 auto;
+  width: 88px;
   height: fit-content;
   display: flex;
   flex-direction: column;

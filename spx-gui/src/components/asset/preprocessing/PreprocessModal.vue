@@ -9,7 +9,7 @@
     <main class="main">
       <div class="sider">
         <ProcessItem
-          :img-src="supportedMethods[0].thumbnail"
+          :img-src="originalThumbnail"
           :name="$t({ en: 'Original', zh: '原图' })"
           :applied="false"
           :active="activeMethod == null"
@@ -20,7 +20,7 @@
           :key="method.value"
           :img-src="method.thumbnail"
           :name="$t(method.name)"
-          :applied="isApplied(method.value)"
+          :applied="isMethodApplied(method.value)"
           :active="activeMethod === method.value"
           @click="handleMethodClick(method.value)"
         />
@@ -43,7 +43,7 @@
           :key="method.value"
           :active="activeMethod === method.value"
           :input="getMethodInput(method.value)"
-          :applied="isApplied(method.value)"
+          :applied="isMethodApplied(method.value)"
           @applied="(output) => handleMethodApplied(method.value, output)"
           @cancel="cancelMethod(method.value)"
         />
@@ -78,15 +78,16 @@
 
 <script lang="ts" setup>
 import { defineProps, ref, shallowReactive, shallowRef, watch } from 'vue'
-import { UIButton, UIFormModal } from '@/components/ui'
-import { Costume } from '@/models/costume'
-import type { LocaleMessage } from '@/utils/i18n'
-import { File } from '@/models/common/file'
 import { stripExt } from '@/utils/path'
-import CostumeItem from './CostumeItem.vue'
+import type { LocaleMessage } from '@/utils/i18n'
+import { Costume } from '@/models/costume'
+import { File } from '@/models/common/file'
+import { UIButton, UIFormModal } from '@/components/ui'
 import ProcessItem from './common/ProcessItem.vue'
 import ImgPreview from './common/ImgPreview.vue'
 import ProcessDetail from './common/ProcessDetail.vue'
+import CostumeItem from './CostumeItem.vue'
+import originalThumbnail from './original-thumbnail.svg'
 import SplitSpriteSheet from './split-sprite-sheet/SplitSpriteSheet.vue'
 import splitSpriteSheetThumbnail from './split-sprite-sheet/thumbnail.svg'
 
@@ -109,6 +110,10 @@ enum Method {
 
 // TODO: calculate `supportedMethods` based on input information.
 // for example, exclude SplitSpriteSheet if there are more than one files
+/**
+ * All supported methods for preprocessing.
+ * The order of methods is the order of applying.
+ */
 const supportedMethods = [
   {
     value: Method.SplitSpriteSheet,
@@ -119,14 +124,17 @@ const supportedMethods = [
 ]
 
 const activeMethod = ref<Method | null>(null)
-
 function handleMethodClick(method: Method | null) {
   activeMethod.value = method
 }
 
 type Output = File[]
 
-/** Apply output corresponding to supportedMethods */
+/**
+ * Outputs for supportedMethods.
+ * If the method is not applied, the corresponding output is `null`.
+ * The output of the previous method is the input of the next method.
+ */
 const outputs = shallowReactive<Array<Output | null>>([])
 
 function getMethodInput(method: Method): File[] {
@@ -138,14 +146,14 @@ function getMethodInput(method: Method): File[] {
   return props.files
 }
 
-function isApplied(method: Method) {
+function isMethodApplied(method: Method) {
   const idx = supportedMethods.findIndex((m) => m.value === method)
   return outputs[idx] != null
 }
 
 function handleMethodApplied(method: Method, output: File[]) {
   const idx = supportedMethods.findIndex((m) => m.value === method)
-  // process methods should be applied in order, so we need to remove the following outputs
+  // methods are applied in order, so we need to unapply the following methods, as thier inputs have changed
   outputs.splice(idx)
   outputs.push(output)
   updateCostumes(output)
@@ -182,6 +190,10 @@ async function handleCostumeClick(costume: Costume) {
   else selectedCostumes.splice(index, 1)
 }
 
+function handleConfirm() {
+  emit('resolved', selectedCostumes)
+}
+
 watch(
   () => props.files,
   async (files) => {
@@ -190,10 +202,6 @@ watch(
   },
   { immediate: true }
 )
-
-function handleConfirm() {
-  emit('resolved', selectedCostumes)
-}
 </script>
 
 <style lang="scss" scoped>
@@ -213,14 +221,19 @@ function handleConfirm() {
 .footer-main {
   flex: 1 1 0;
   min-width: 0;
+
+  // negative margin & fixed height to allow optional scrollbar of .costume-wrapper
+  height: 135px;
+  margin-bottom: -16px;
 }
 .footer-title {
   color: --ui-color-title;
 }
 .costume-wrapper {
   width: 100%;
-  padding-top: 4px;
+  padding-top: 9px;
   overflow-x: auto;
+  scrollbar-width: thin;
 }
 .costume-list {
   display: flex;
