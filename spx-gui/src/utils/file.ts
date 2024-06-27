@@ -148,7 +148,7 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
 
 /**
  * Get image element (HTMLImageElement) based on given (image) file.
- * The image element is guaranteed to be loaded when returned.
+ * The image element is guaranteed to be loaded when set to ref.
  */
 export function useFileImg(fileSource: WatchSource<File | undefined>) {
   const [urlRef, urlLoadingRef] = useFileUrl(fileSource)
