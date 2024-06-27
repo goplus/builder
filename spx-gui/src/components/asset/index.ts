@@ -13,6 +13,7 @@ import { type Project } from '@/models/project'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
+import PreprocessModal from './preprocessing/PreprocessModal.vue'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
@@ -51,26 +52,61 @@ export function useLoadFromScratchModal() {
 }
 
 export function useAddSpriteFromLocalFile() {
+  const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: Project) {
-    const imgs = await selectImgs()
-    const spriteName = imgs.length > 1 ? '' : stripExt(imgs[0].name)
+    const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
+    const nativeFiles = await selectImgs()
+    const files = nativeFiles.map((f) => fromNativeFile(f))
+    const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
     const sprite = Sprite.create(spriteName)
-    const costumes = await Promise.all(
-      imgs.map((img) => {
-        const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
-        return Costume.create(costumeName, fromNativeFile(img))
-      })
-    )
+    let costumes: Costume[]
+    if (files.length > 1) {
+      // Now split-sprite-sheet is the only preprocessing method we support, it is meant to be skipped when multiple images are selected.
+      // So we can skip the whole preprocessing modal and directly create costumes. In the future we will support more preprocessing methods,
+      // such as background-elimination, which is meant to be applied even when multiple images are selected. Then we will not skip the preprocessing modal.
+      costumes = await Promise.all(
+        files.map((file) => {
+          return Costume.create(stripExt(file.name), file)
+        })
+      )
+    } else {
+      costumes = await preprocess({ files, actionMessage })
+    }
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    const action = { name: { en: 'Add sprite', zh: '添加精灵' } }
-    await project.history.doAction(action, async () => {
+    await project.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
       await sprite.autoFit()
     })
     selectAsset(project, sprite)
     return sprite
+  }
+}
+
+export function useAddCostumeFromLocalFile() {
+  const preprocess = useModal(PreprocessModal)
+  return async function addCostumeFromLocalFile(sprite: Sprite, project: Project) {
+    const actionMessage = { en: 'Add costume', zh: '添加造型' }
+    const nativeFiles = await selectImgs()
+    const files = nativeFiles.map((f) => fromNativeFile(f))
+    let costumes: Costume[]
+    if (files.length > 1) {
+      // Now split-sprite-sheet is the only preprocessing method we support, it is meant to be skipped when multiple images are selected.
+      // So we can skip the whole preprocessing modal and directly create costumes. In the future we will support more preprocessing methods,
+      // such as background-elimination, which is meant to be applied even when multiple images are selected. Then we will not skip the preprocessing modal.
+      costumes = await Promise.all(
+        files.map((file) => {
+          return Costume.create(stripExt(file.name), file)
+        })
+      )
+    } else {
+      costumes = await preprocess({ files, actionMessage })
+    }
+    await project.history.doAction({ name: actionMessage }, () => {
+      for (const costume of costumes) sprite.addCostume(costume)
+      sprite.setDefaultCostume(costumes[0].name)
+    })
   }
 }
 

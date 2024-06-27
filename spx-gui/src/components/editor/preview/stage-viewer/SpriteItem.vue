@@ -20,7 +20,7 @@ import { computed, defineProps, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
-import { useImgFile } from '@/utils/file'
+import { useFileImg } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { round } from '@/utils/utils'
 import type { Action } from '@/models/project'
@@ -35,28 +35,12 @@ const nodeRef = ref<any>()
 const editorCtx = useEditorCtx()
 const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const [image] = useImgFile(() => costume.value?.img)
+const [image] = useFileImg(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
   const spriteName = props.sprite.name
-  props.spritesReadyMap.set(spriteName, false)
+  props.spritesReadyMap.set(spriteName, image.value != null)
   onCleanup(() => props.spritesReadyMap.delete(spriteName))
-
-  const img = image.value
-  if (img == null) return
-  function handleImageLoad() {
-    // We need to notify event ready for SpriteTransformer (to get correct node size)
-    props.spritesReadyMap.set(spriteName, true)
-  }
-  if (img.complete) {
-    handleImageLoad()
-    return
-  }
-  img.addEventListener('load', handleImageLoad)
-  onCleanup(() => {
-    props.spritesReadyMap.delete(spriteName)
-    img.removeEventListener('load', handleImageLoad)
-  })
 })
 
 onMounted(() => {
