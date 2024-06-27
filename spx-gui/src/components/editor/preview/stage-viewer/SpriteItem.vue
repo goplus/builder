@@ -5,9 +5,8 @@
       spriteName: sprite.name,
       image: image,
       draggable: true,
-      offsetX: costume?.x,
-      offsetY: costume?.y,
       visible: sprite.visible,
+      ...offset,
       ...spx2Konva(sprite)
     }"
     @dragend="handleDragEnd"
@@ -90,6 +89,16 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
 function handleMousedown() {
   editorCtx.project.select({ type: 'sprite', name: props.sprite.name })
 }
+
+const offset = computed(() => {
+  const pivot = props.sprite.pivot
+  const c = costume.value
+  if (c == null) return { offsetX: 0, offsetY: 0 }
+  return {
+    offsetX: c.x + pivot.x * c.bitmapResolution,
+    offsetY: c.y - pivot.y * c.bitmapResolution
+  }
+})
 
 type KonvaAttrs = {
   x: number

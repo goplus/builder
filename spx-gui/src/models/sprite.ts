@@ -32,6 +32,11 @@ export enum State {
   glide = 'glide'
 }
 
+export type Pivot = {
+  x: number
+  y: number
+}
+
 export type SpriteInits = {
   heading?: number
   x?: number
@@ -44,6 +49,7 @@ export type SpriteInits = {
   isDraggable?: boolean
   defaultAnimation?: string
   animBindings?: Record<string, string | undefined>
+  pivot?: Pivot
 }
 
 export type RawSpriteConfig = SpriteInits & {
@@ -208,6 +214,11 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
+  pivot: Pivot
+  setPivot(pivot: Pivot) {
+    this.pivot = pivot
+  }
+
   constructor(name: string, code: string = '', inits?: SpriteInits) {
     super()
     this.name = name
@@ -229,6 +240,7 @@ export class Sprite extends Disposble {
     this.costumeIndex = inits?.costumeIndex ?? inits?.currentCostumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
+    this.pivot = inits?.pivot ?? { x: 0, y: 0 }
     return reactive(this) as this
   }
 
@@ -237,12 +249,12 @@ export class Sprite extends Disposble {
    * TODO: review the relation between `autoFit` & `Sprite.create` / `asset2Sprite` / `Project addSprite`
    */
   async autoFit() {
-    const { costumes, project: project } = this
+    const { defaultCostume, project: project } = this
     if (project == null) throw new Error('`autoFit` should be called after added to a project')
-    if (costumes.length > 0) {
+    if (defaultCostume != null) {
       const [mapSize, costumeSize] = await Promise.all([
         project.stage.getMapSize(),
-        costumes[0].getSize()
+        defaultCostume.getSize()
       ])
       let size = this.size
       if (mapSize != null) {
@@ -254,9 +266,12 @@ export class Sprite extends Disposble {
         )
         this.setSize(size)
       }
-      // ensure the sprite placed in the center of stage, TODO: consider heading
-      this.setX((-costumeSize.width * size) / 2)
-      this.setY((costumeSize.height * size) / 2)
+      // ensure the sprite placed in the center of stage
+      // TODO: it may be better to keep updating the pivot whenever defaultCostume's size changed.
+      // while it introduces extra complexity. In the future we gonna see if it deserves so.
+      this.setPivot({ x: costumeSize.width / 2, y: -costumeSize.height / 2 })
+      this.setX(0)
+      this.setY(0)
     }
   }
 
@@ -352,6 +367,7 @@ export class Sprite extends Disposble {
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
+      pivot: this.pivot,
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
       defaultAnimation: defaultAnimation,
