@@ -254,7 +254,7 @@ export class Sprite extends Disposble {
       // ensure the sprite placed in the center of stage
       // TODO: it may be better to keep updating the pivot whenever defaultCostume's size changed.
       // while it introduces extra complexity. In the future we gonna see if it deserves so.
-      this.setPivot({ x: costumeSize.width / 2, y: -costumeSize.height / 2 }) // TODO: spx fix
+      this.setPivot({ x: costumeSize.width / 2, y: -costumeSize.height / 2 })
       this.setX(0)
       this.setY(0)
     }
