@@ -52,7 +52,7 @@ import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
-import { uploadFiles } from '@/models/common/cloud'
+import { saveFiles } from '@/models/common/cloud'
 import { filename } from '@/utils/path'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import defaultBackdropImg from '@/assets/default-backdrop.png'
@@ -106,7 +106,7 @@ const handleSubmit = useMessageHandle(
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
     const files = project.export()[1]
-    const { fileCollection } = await uploadFiles(files)
+    const { fileCollection } = await saveFiles(files)
     const projectData = await addProject({
       name: form.value.name,
       isPublic: IsPublic.personal,
