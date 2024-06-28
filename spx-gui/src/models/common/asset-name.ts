@@ -98,6 +98,7 @@ function lowFirst(str: string) {
 
 /** Convert any string to valid asset name, empty string may be returned */
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
+  if (src === '') return ''
   const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
   return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
 }

@@ -1,9 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { getSoundName, getSpriteName, normalizeGopIdentifierAssetName } from './asset-name'
+import { getSoundName, getSpriteName, normalizeAssetName, normalizeGopIdentifierAssetName } from './asset-name'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import { fromText } from './file'
+
+describe('normalizeAssetName', () => {
+  it('should work well with camel case', () => {
+    expect(normalizeAssetName('abc', 'camel')).toBe('abc')
+  })
+  it('should work well with pascal case', () => {
+    expect(normalizeAssetName('abc', 'pascal')).toBe('Abc')
+  })
+  it('should work well with empty string', () => {
+    expect(normalizeAssetName('', 'camel')).toBe('')
+    expect(normalizeAssetName('', 'pascal')).toBe('')
+  })
+  it('should work well with non-ascii chars', () => {
+    expect(normalizeAssetName('中文-1', 'camel')).toBe('中文-1')
+    expect(normalizeAssetName('中文 2', 'pascal')).toBe('中文 2')
+  })
+})
 
 describe('normalizeGopIdentifierAssetName', () => {
   it('should work well with camel case', () => {
