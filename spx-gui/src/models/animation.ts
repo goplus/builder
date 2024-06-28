@@ -27,7 +27,6 @@ const defaultFps = 25 // TODO
 
 export type AnimationInits = {
   duration?: number
-  anitype?: number
   onStart?: ActionConfig
 
   // not supported by builder:
@@ -37,6 +36,7 @@ export type AnimationInits = {
 }
 
 export type RawAnimationConfig = AnimationInits & {
+  anitype?: number
   from?: number | string
   to?: number | string
 }
@@ -80,8 +80,21 @@ export class Animation {
       costume.setParent(this)
     }
     this.costumes = costumes
-    if (this.duration == null) {
+    if (this.duration === 0) {
       this.duration = costumes.length / defaultFps
+    }
+  }
+
+  /**
+   * Ungroup costumes, which will be added back to sprite.
+   * Typically called before the animation removed from the sprite.
+   */
+  ungroup() {
+    if (this.sprite == null) throw new Error('sprite expected')
+    const costumes = this.costumes
+    this.setCostumes([])
+    for (const costume of costumes) {
+      this.sprite.addCostume(costume)
     }
   }
 
@@ -112,7 +125,7 @@ export class Animation {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static async create(
+  static create(
     nameBase: string,
     sprite: Sprite,
     costumes: Costume[],
