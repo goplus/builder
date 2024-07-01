@@ -44,7 +44,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { type ProjectData, getProject, addProject as apiAddProject, IsPublic } from '@/apis/project'
+import { type ProjectData, getProject, addProject, IsPublic } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
@@ -74,12 +74,6 @@ const userStore = useUserStore()
 const form = useForm({
   name: ['', validateName]
 })
-
-const addProject = useMessageHandle(
-  apiAddProject,
-  { en: 'Failed to create project', zh: '创建失败' },
-  (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
-).fn
 
 function handleCancel() {
   emit('cancelled')
@@ -113,8 +107,13 @@ const handleSubmit = useMessageHandle(
       files: fileCollection
     })
     emit('resolved', projectData)
+    return projectData
   },
-  { en: 'Failed to create project', zh: '项目创建失败' }
+  { en: 'Failed to create project', zh: '项目创建失败' },
+  (projectData) => ({
+    en: `Project ${projectData.name} created`,
+    zh: `项目 ${projectData.name} 创建成功`
+  })
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {
