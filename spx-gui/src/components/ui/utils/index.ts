@@ -16,3 +16,13 @@ export function useRootContainer() {
 export function usePopupContainer() {
   return useRootContainer()
 }
+
+/** If given target in any popup content */
+export function isInPopup(target: HTMLElement | null) {
+  let el = target
+  while (el != null) {
+    if (el.classList.contains('n-popover') || el.classList.contains('n-modal')) return true
+    el = el.parentElement
+  }
+  return false
+}

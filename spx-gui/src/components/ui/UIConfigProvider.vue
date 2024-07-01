@@ -181,4 +181,11 @@ h6 {
 button:focus {
   outline: 2px solid var(--ui-color-primary-700);
 }
+
+// vueuc (dep of naive-ui) uses `pointer-events: all` on children of `v-binder-follower-content`, which wraps `Popover` content in naive-ui.
+// It causes pointer behavior issues in popup content. For example, a svg in a `visibility: hidden` element will still be clickable.
+// So we override it here to fix the issue. See details in https://github.com/07akioni/vueuc/issues/314
+.v-binder-follower-content > * {
+  pointer-events: initial;
+}
 </style>

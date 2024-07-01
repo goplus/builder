@@ -29,6 +29,9 @@ import share from './share.svg?raw'
 import arrowAlt from './arrow-alt.svg?raw'
 import doubleArrowDown from './double-arrow-down.svg?raw'
 import clock from './clock.svg?raw'
+import timer from './timer.svg?raw'
+import status from './status.svg?raw'
+import sound from './sound.svg?raw'
 
 const typeIconMap = {
   file,
@@ -54,7 +57,10 @@ const typeIconMap = {
   share,
   arrowAlt,
   doubleArrowDown,
-  clock
+  clock,
+  timer,
+  status,
+  sound
 }
 
 export type Type = keyof typeof typeIconMap
