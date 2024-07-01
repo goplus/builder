@@ -19,8 +19,8 @@
     :value="code ?? ''"
     @update:value="handleCodeUpdate"
   />
-  <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
-  <AnimationEditor v-show="selectedTab === 'animation'" :sprite="sprite" />
+  <CostumesEditor v-if="selectedTab === 'costumes'" :sprite="sprite" />
+  <AnimationEditor v-if="selectedTab === 'animation'" :sprite="sprite" />
 </template>
 
 <script setup lang="ts">

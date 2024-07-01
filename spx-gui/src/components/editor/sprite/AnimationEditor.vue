@@ -5,21 +5,18 @@
       :key="animation.name"
       :sprite="sprite"
       :costume="animation.costumes[0]"
-      :selected="true"
-      @click="() => {}"
+      :selected="selectedAnimation === animation"
+      @click="selectedAnimation = animation"
     />
-    <GroupCostumesModal :visible="true" :sprite="sprite" />
     <template #add-options>
       <UIMenu>
-        <UIMenuItem @click="() => {}">{{
-          $t({ en: 'Select local file', zh: '选择本地文件' })
+        <UIMenuItem @click="handleGroupCostumes">{{
+          $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' })
         }}</UIMenuItem>
       </UIMenu>
     </template>
     <template #detail>
-      <div>
-        {{ sprite.name }}
-      </div>
+      <AnimationDetail v-if="selectedAnimation" :animation="selectedAnimation" />
     </template>
   </EditorList>
 </template>
@@ -28,14 +25,43 @@
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
 import CostumeItem from './CostumeItem.vue'
-import { UIMenu, UIMenuItem } from '@/components/ui'
-import { watchEffect } from 'vue'
+import { UIMenu, UIMenuItem, useModal } from '@/components/ui'
+import { shallowRef } from 'vue'
+import AnimationDetail from './AnimationDetail.vue'
 import GroupCostumesModal from '@/components/asset/animation/GroupCostumesModal.vue'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
-watchEffect(() => {
-  console.log(props.sprite, props.sprite.animations)
-})
+
+const selectedAnimation = shallowRef(props.sprite.animations[0])
+
+const editorCtx = useEditorCtx()
+
+const groupCostumes = useModal(GroupCostumesModal)
+
+const handleGroupCostumes = async () => {
+  const { animation, removedCostumes } = await groupCostumes({
+    sprite: props.sprite
+  })
+
+  editorCtx.project.history.doAction(
+    {
+      name: { en: `Group costumes as animation`, zh: `将造型合并为动画` }
+    },
+    () => {
+      props.sprite.addAnimation(animation)
+      for (const costume of removedCostumes) {
+        props.sprite.removeCostume(costume.name)
+      }
+    }
+  )
+}
 </script>
+<style scoped lang="scss">
+.background {
+  width: 100%;
+  height: 100%;
+}
+</style>

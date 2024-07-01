@@ -1,25 +1,27 @@
 <template>
-  <EditorItemDetail :name="costume.name" @rename="handleRename">
+  <EditorItemDetail :name="animation.name" @rename="handleRename">
     <div class="img-wrapper">
+      <MuteSwitch class="mute-switch" state="normal" />
       <CheckerboardBackground class="background" />
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+      <div class="animation-container">
+        <AnimationPlayer :animation="animation" class="animation-player" />
+      </div>
     </div>
   </EditorItemDetail>
 </template>
 
 <script setup lang="ts">
-import { UIImg, useModal } from '@/components/ui'
-import { useFileUrl } from '@/utils/file'
-import type { Costume } from '@/models/costume'
-import type { Sprite } from '@/models/sprite'
+import { useModal } from '@/components/ui'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import CostumeRenameModal from './CostumeRenameModal.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
+import type { Animation } from '@/models/animation'
+import AnimationPlayer from './animation/AnimationPlayer.vue'
+import MuteSwitch from './animation/MuteSwitch.vue'
 
 const props = defineProps<{
-  costume: Costume
-  sprite: Sprite
+  animation: Animation
 }>()
 
 const editorCtx = useEditorCtx()
@@ -32,8 +34,6 @@ function handleRename() {
     project: editorCtx.project
   })
 }
-
-const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
 
 <style lang="scss" scoped>
@@ -53,8 +53,24 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
   right: 0;
 }
 
-.img {
+.animation-container {
   width: 100%;
   height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.animation-player {
+  max-width: 100%;
+  max-height: 100%;
+  z-index: 10;
+}
+
+.mute-switch {
+  position: absolute;
+  z-index: 20;
+  top: 12px;
+  right: 12px;
 }
 </style>

@@ -86,7 +86,7 @@ const handleConfirm = () => {
     }
   }
 
-  const animation = Animation.create('New Animation', props.sprite, costumes)
+  const animation = Animation.create('animation', props.sprite, costumes)
   emit('resolved', { animation, removedCostumes })
 }
 </script>
@@ -103,6 +103,7 @@ const handleConfirm = () => {
   padding: 20px 24px;
   overflow-y: auto;
   max-height: 600px;
+  user-select: none;
 }
 
 .footer {
