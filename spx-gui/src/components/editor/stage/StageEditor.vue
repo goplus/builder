@@ -23,8 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
+import { computed, ref } from 'vue'
 import type { Stage } from '@/models/stage'
 import { UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
@@ -41,7 +40,7 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'backdrops'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
-const code = useAsyncComputed(() => props.stage.getCode())
+const code = computed(() => props.stage.code)
 
 const action = {
   name: { en: 'Update stage code', zh: '修改舞台代码' },
