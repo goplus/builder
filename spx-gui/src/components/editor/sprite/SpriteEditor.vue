@@ -19,7 +19,8 @@
     :value="code ?? ''"
     @update:value="handleCodeUpdate"
   />
-  <CostumesEditor v-if="selectedTab === 'costumes'" :sprite="sprite" />
+  <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
+  <!-- We use v-if to prevent the animation from running in the background -->
   <AnimationEditor v-if="selectedTab === 'animation'" :sprite="sprite" />
 </template>
 
