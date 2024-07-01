@@ -125,12 +125,7 @@ export class Animation {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(
-    nameBase: string,
-    sprite: Sprite,
-    costumes: Costume[],
-    inits?: AnimationInits
-  ) {
+  static create(nameBase: string, sprite: Sprite, costumes: Costume[], inits?: AnimationInits) {
     for (const costume of costumes) {
       sprite.removeCostume(costume.name)
     }

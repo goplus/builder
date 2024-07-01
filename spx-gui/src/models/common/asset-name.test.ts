@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { getSoundName, getSpriteName, normalizeAssetName, normalizeGopIdentifierAssetName } from './asset-name'
+import {
+  getSoundName,
+  getSpriteName,
+  normalizeAssetName,
+  normalizeGopIdentifierAssetName
+} from './asset-name'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'

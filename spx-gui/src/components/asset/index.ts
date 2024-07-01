@@ -24,11 +24,11 @@ function selectAsset(project: Project, asset: AssetModel | undefined) {
   }
 }
 
-export function useAddAssetFromLibrary() {
+export function useAddAssetFromLibrary(autoSelect = true) {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
     const added = (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
-    selectAsset(project, added[0])
+    if (autoSelect) selectAsset(project, added[0])
     return added
   }
 }
@@ -110,13 +110,13 @@ export function useAddCostumeFromLocalFile() {
   }
 }
 
-export function useAddSoundFromLocalFile() {
+export function useAddSoundFromLocalFile(autoSelect = true) {
   return async function addSoundFromLocalFile(project: Project) {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
     await project.history.doAction(action, () => project.addSound(sound))
-    selectAsset(project, sound)
+    if (autoSelect) selectAsset(project, sound)
     return sound
   }
 }
