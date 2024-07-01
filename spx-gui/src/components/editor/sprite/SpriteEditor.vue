@@ -3,6 +3,7 @@
     <UITabs v-model:value="selectedTab" color="sprite">
       <UITab value="code">{{ $t({ en: 'Code', zh: '代码' }) }}</UITab>
       <UITab value="costumes">{{ $t({ en: 'Costumes', zh: '造型' }) }}</UITab>
+      <UITab value="animation">{{ $t({ en: 'Animation', zh: '动画' }) }}</UITab>
     </UITabs>
     <template #extra>
       <FormatButton
@@ -19,6 +20,7 @@
     @update:value="handleCodeUpdate"
   />
   <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
+  <AnimationEditor v-show="selectedTab === 'animation'" :sprite="sprite" />
 </template>
 
 <script setup lang="ts">
@@ -31,13 +33,14 @@ import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor from './CostumesEditor.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import AnimationEditor from './AnimationEditor.vue'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
 
 const editorCtx = useEditorCtx()
-const selectedTab = ref<'code' | 'costumes'>('code')
+const selectedTab = ref<'code' | 'costumes' | 'animation'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = useAsyncComputed(() => props.sprite.getCode())
 
