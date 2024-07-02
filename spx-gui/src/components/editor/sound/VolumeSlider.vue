@@ -1,6 +1,6 @@
 <template>
   <div class="volume-slider">
-    <img :src="volumeDown" alt="Volume down" />
+    <UIIcon type="volumeOff" class="volume-icon" />
     <UISlider
       class="slider"
       color="sound"
@@ -11,13 +11,11 @@
       :tooltip="false"
       @update:value="(v) => emit('update:value', v)"
     />
-    <img :src="volumeUp" alt="Volume up" />
+    <UIIcon type="volumeUp" class="volume-icon" />
   </div>
 </template>
 <script setup lang="ts">
-import { UISlider } from '@/components/ui'
-import volumeDown from './icons/volume-down.svg'
-import volumeUp from './icons/volume-up.svg'
+import { UIIcon, UISlider } from '@/components/ui'
 
 defineProps<{
   value: number
@@ -32,5 +30,11 @@ const emit = defineEmits<{
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.volume-icon {
+  width: 24px;
+  height: 24px;
+  color: #6e7781;
 }
 </style>

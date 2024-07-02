@@ -32,6 +32,8 @@ import clock from './clock.svg?raw'
 import timer from './timer.svg?raw'
 import status from './status.svg?raw'
 import sound from './sound.svg?raw'
+import volumeUp from './volume-up.svg?raw'
+import volumeOff from './volume-off.svg?raw'
 
 const typeIconMap = {
   file,
@@ -60,7 +62,9 @@ const typeIconMap = {
   clock,
   timer,
   status,
-  sound
+  sound,
+  volumeUp,
+  volumeOff
 }
 
 export type Type = keyof typeof typeIconMap
