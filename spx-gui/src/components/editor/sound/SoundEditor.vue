@@ -82,12 +82,14 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const renameSound = useModal(SoundRenameModal)
 
-function handleNameEdit() {
-  renameSound({
-    sound: props.sound,
-    project: editorCtx.project
-  })
-}
+const handleNameEdit = useMessageHandle(
+  () =>
+    renameSound({
+      sound: props.sound,
+      project: editorCtx.project
+    }),
+  { en: 'Failed to rename sound', zh: '重命名声音失败' }
+).fn
 
 const waveformPlayerRef = ref<InstanceType<typeof WaveformPlayer> | null>(null)
 const gain = ref(1)

@@ -8,6 +8,7 @@
 
 <script setup lang="ts">
 import { UIImg, useModal } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
@@ -23,13 +24,15 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const renameCostume = useModal(CostumeRenameModal)
 
-function handleRename() {
-  renameCostume({
-    costume: props.costume,
-    sprite: props.sprite,
-    project: editorCtx.project
-  })
-}
+const handleRename = useMessageHandle(
+  () =>
+    renameCostume({
+      costume: props.costume,
+      sprite: props.sprite,
+      project: editorCtx.project
+    }),
+  { en: 'Failed to rename costume', zh: '重命名造型失败' }
+).fn
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
