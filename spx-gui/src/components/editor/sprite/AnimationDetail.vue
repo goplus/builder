@@ -1,11 +1,11 @@
 <template>
   <EditorItemDetail :name="animation.name" @rename="handleRename">
     <div class="img-wrapper">
-      <MuteSwitch class="mute-switch" state="normal" />
       <CheckerboardBackground class="background" />
-      <div class="animation-container">
-        <AnimationPlayer :animation="animation" class="animation-player" />
-      </div>
+      <AnimationPlayer :animation="animation" class="animation-player" />
+    </div>
+    <div>
+      <AnimationSettings :animation="animation" :sprite="sprite" />
     </div>
   </EditorItemDetail>
 </template>
@@ -13,27 +13,36 @@
 <script setup lang="ts">
 import { useModal } from '@/components/ui'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
-import CostumeRenameModal from './CostumeRenameModal.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import CheckerboardBackground from './CheckerboardBackground.vue'
 import type { Animation } from '@/models/animation'
 import AnimationPlayer from './animation/AnimationPlayer.vue'
-import MuteSwitch from './animation/MuteSwitch.vue'
+import AnimationRenameModal from './AnimationRenameModal.vue'
+import type { Sprite } from '@/models/sprite'
+import AnimationSettings from './animation/AnimationSettings.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   animation: Animation
+  sprite: Sprite
 }>()
 
 const editorCtx = useEditorCtx()
-const renameCostume = useModal(CostumeRenameModal)
+const renameCostume = useModal(AnimationRenameModal)
 
-function handleRename() {
-  renameCostume({
-    costume: props.costume,
-    sprite: props.sprite,
-    project: editorCtx.project
-  })
-}
+const handleRename = useMessageHandle(
+  async () => {
+    renameCostume({
+      animation: props.animation,
+      sprite: props.sprite,
+      project: editorCtx.project
+    })
+  },
+  {
+    en: 'Rename animation failed',
+    zh: '重命名动画失败'
+  }
+).fn
 </script>
 
 <style lang="scss" scoped>
@@ -53,18 +62,10 @@ function handleRename() {
   right: 0;
 }
 
-.animation-container {
+.animation-player {
+  position: absolute;
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.animation-player {
-  max-width: 100%;
-  max-height: 100%;
-  z-index: 10;
 }
 
 .mute-switch {

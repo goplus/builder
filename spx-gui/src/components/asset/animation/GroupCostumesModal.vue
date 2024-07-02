@@ -41,7 +41,6 @@
 </template>
 <script setup lang="ts">
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
-import { Animation } from '@/models/animation'
 import type { Costume } from '@/models/costume'
 import { defineProps, defineEmits, ref } from 'vue'
 import CostumeItem from './CostumeItem.vue'
@@ -56,8 +55,8 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [
     {
-      animation: Animation
-      removedCostumes: Costume[]
+      selectedCostumes: Costume[]
+      removeCostumes: boolean
     }
   ]
 }>()
@@ -77,17 +76,13 @@ const handleCostumeClick = (costume: Costume) => {
 const handleConfirm = () => {
   // By this way we can keep the order of the costumes
   const costumes = []
-  const removedCostumes = []
   for (const costume of props.sprite.costumes) {
     if (selectedCostumes.value.has(costume)) {
       costumes.push(costume)
-    } else {
-      removedCostumes.push(costume)
     }
   }
 
-  const animation = Animation.create('animation', props.sprite, costumes)
-  emit('resolved', { animation, removedCostumes })
+  emit('resolved', { selectedCostumes: costumes, removeCostumes: removeCostumes.value })
 }
 </script>
 <style lang="scss" scoped>

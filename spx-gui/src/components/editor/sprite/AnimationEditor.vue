@@ -1,10 +1,10 @@
 <template>
   <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
-    <CostumeItem
+    <AnimationItem
       v-for="animation in sprite.animations"
       :key="animation.name"
       :sprite="sprite"
-      :costume="animation.costumes[0]"
+      :animation="animation"
       :selected="selectedAnimation === animation"
       @click="selectedAnimation = animation"
     />
@@ -16,7 +16,7 @@
       </UIMenu>
     </template>
     <template #detail>
-      <AnimationDetail v-if="selectedAnimation" :animation="selectedAnimation" />
+      <AnimationDetail v-if="selectedAnimation" :animation="selectedAnimation" :sprite="sprite" />
     </template>
   </EditorList>
 </template>
@@ -24,25 +24,35 @@
 <script setup lang="ts">
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
-import CostumeItem from './CostumeItem.vue'
 import { UIMenu, UIMenuItem, useModal } from '@/components/ui'
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import AnimationDetail from './AnimationDetail.vue'
 import GroupCostumesModal from '@/components/asset/animation/GroupCostumesModal.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import { Animation } from '@/models/animation'
+import AnimationItem from './AnimationItem.vue'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
 
-const selectedAnimation = shallowRef(props.sprite.animations[0])
+const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
 
 const editorCtx = useEditorCtx()
 
 const groupCostumes = useModal(GroupCostumesModal)
 
+watch(
+  () => props.sprite,
+  (sprite) => {
+    if (!(selectedAnimation.value && sprite.animations.includes(selectedAnimation.value))) {
+      selectedAnimation.value = sprite.animations[0] || null
+    }
+  }
+)
+
 const handleGroupCostumes = async () => {
-  const { animation, removedCostumes } = await groupCostumes({
+  const { selectedCostumes, removeCostumes } = await groupCostumes({
     sprite: props.sprite
   })
 
@@ -51,9 +61,16 @@ const handleGroupCostumes = async () => {
       name: { en: `Group costumes as animation`, zh: `将造型合并为动画` }
     },
     () => {
+      const animation = Animation.create(
+        'animation',
+        props.sprite,
+        selectedCostumes.map((costume) => costume.clone())
+      )
       props.sprite.addAnimation(animation)
-      for (const costume of removedCostumes) {
-        props.sprite.removeCostume(costume.name)
+      if (removeCostumes) {
+        for (const costume of selectedCostumes) {
+          props.sprite.removeCostume(costume.name)
+        }
       }
     }
   )
