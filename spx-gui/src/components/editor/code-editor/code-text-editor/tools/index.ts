@@ -103,7 +103,8 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Costume', zh: '造型' },
-      tools: [spx.costumeName, spx.costumeIndex, spx.setCostume, spx.nextCostume, spx.prevCostume]
+      // index-related tools are excluded, as they are not recommended to use (animation is prefered)
+      tools: [spx.costumeName, spx.setCostume]
     },
     {
       label: { en: 'Animation', zh: '动画' },

@@ -171,12 +171,13 @@ export const setCostume: Tool = {
   target: ToolContext.sprite,
   keyword: 'setCostume',
   desc: {
-    en: 'Set the current costume by specifying name or index',
-    zh: '通过指定名称或索引设置当前造型'
+    en: 'Set the current costume by specifying name',
+    zh: '通过指定名称设置当前造型'
   },
+  // index-related usages are excluded, as they are not recommended to use (animation is prefered)
   usage: {
-    sample: 'setCostume 0',
-    insertText: 'setCostume ${1:nameOrIndex}'
+    sample: 'setCostume "happy"',
+    insertText: 'setCostume ${1:name}'
   }
 }
 
