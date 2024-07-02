@@ -95,7 +95,10 @@ export const die: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'die',
-  desc: { en: 'Let current sprite die', zh: '让当前精灵死亡' },
+  desc: {
+    en: 'Let current sprite die. Animation bound to state "die" will be played.',
+    zh: '让当前精灵死亡，绑定到“死亡”状态的动画会被播放'
+  },
   usage: {
     sample: 'die',
     insertText: 'die'
@@ -201,6 +204,18 @@ export const prevCostume: Tool = {
   }
 }
 
+export const animate: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'animate',
+  desc: { en: 'Play animation with given name', zh: '通过指定名称播放动画' },
+  usage: {
+    sample: 'animate "jump"',
+    insertText: 'animate ${1:name}'
+  }
+}
+
 export const say: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
@@ -261,10 +276,25 @@ export const move: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'move',
-  desc: { en: 'Move given steps, toward current heading', zh: '向当前朝向移动指定的步数' },
+  desc: { en: 'Move given distance, toward current heading', zh: '向当前朝向移动指定的距离' },
   usage: {
     sample: 'move 10',
-    insertText: 'move ${1:steps}'
+    insertText: 'move ${1:distance}'
+  }
+}
+
+export const step: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'step',
+  desc: {
+    en: 'Step given distance, toward current heading. Animation bound to state "step" will be played',
+    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
+  },
+  usage: {
+    sample: 'step 10',
+    insertText: 'step ${1:distance}'
   }
 }
 
