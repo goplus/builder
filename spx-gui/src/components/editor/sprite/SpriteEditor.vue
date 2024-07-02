@@ -23,7 +23,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
 import CodeEditor from '../code-editor/CodeEditor.vue'
@@ -39,7 +38,7 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'costumes'>('code')
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
-const code = useAsyncComputed(() => props.sprite.getCode())
+const code = computed(() => props.sprite.code)
 
 // use `computed` to keep reference-equal for `mergeable`, see details in project history
 const actionUpdateCode = computed(() => ({

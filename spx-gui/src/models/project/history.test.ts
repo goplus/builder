@@ -109,7 +109,7 @@ describe('History', () => {
 
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionUpdateCode)
-    expect(await project.sprites[0].getCode()).toBe('code')
+    expect(project.sprites[0].code).toBe('code')
 
     await history.doAction(actionUpdateCode, () => {
       project.sprites[0].setCode('code2')
@@ -117,17 +117,17 @@ describe('History', () => {
 
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionUpdateCode)
-    expect(await project.sprites[0].getCode()).toBe('code2')
+    expect(project.sprites[0].code).toBe('code2')
 
     await history.undo()
     expect(history.getRedoAction()).toBe(actionUpdateCode)
     expect(history.getUndoAction()).toBeNull()
-    expect(await project.sprites[0].getCode()).toBe('')
+    expect(project.sprites[0].code).toBe('')
 
     await history.redo()
     expect(history.getRedoAction()).toBeNull()
     expect(history.getUndoAction()).toBe(actionUpdateCode)
-    expect(await project.sprites[0].getCode()).toBe('code2')
+    expect(project.sprites[0].code).toBe('code2')
   })
 
   it('should work well with concurrent actions', async () => {
