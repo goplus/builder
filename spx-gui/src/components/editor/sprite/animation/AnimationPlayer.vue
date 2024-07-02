@@ -70,8 +70,13 @@ const divStyle = computed(() => ({
 watchEffect((onCleanup) => {
   if (frameSrcList.value.length === 0) return
 
-  const animationIntervalId = setInterval(() => {
-    currentFrameIndex.value = (currentFrameIndex.value + 1) % frameSrcList.value.length
+  const animationIntervalId = setInterval(async () => {
+    const nextIndex = (currentFrameIndex.value + 1) % frameSrcList.value.length
+    // Preload next frame to avoid flicker
+    const nextFrame = new Image()
+    nextFrame.src = frameSrcList.value[nextIndex]
+    await nextFrame.decode()
+    currentFrameIndex.value = nextIndex
   }, frameInterval.value)
 
   onCleanup(() => {
