@@ -47,7 +47,7 @@ import TopNav from '@/components/top-nav/TopNav.vue'
 import ProjectList from '@/components/project/ProjectList.vue'
 import { useCreateProject } from '@/components/project'
 import { getProjectEditorRoute } from '@/router'
-import { useQuery } from '@/utils/exception'
+import { useMessageHandle, useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
@@ -258,10 +258,13 @@ function handleSelected(project: ProjectData) {
   openProject(project.name)
 }
 
-async function handleCreate() {
-  const newProject = await createProject()
-  openProject(newProject.name)
-}
+const handleCreate = useMessageHandle(
+  async () => {
+    const newProject = await createProject()
+    openProject(newProject.name)
+  },
+  { en: 'Failed to create project', zh: '创建项目失败' }
+).fn
 </script>
 
 <style scoped lang="scss">

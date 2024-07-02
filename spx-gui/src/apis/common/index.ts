@@ -17,10 +17,10 @@ export enum IsPublic {
   public = 1
 }
 
-/** Url with 'http://' or 'https://' scheme, used for web resources */
+/** Url with 'http:', 'https:', or 'data:' schemes, used for web resources that can be accessed directly via `fetch()` */
 export type WebUrl = string
 
-/** Url for universal resources, which could be either a WebUrl or a Url with a custom scheme like 'kodo://' */
+/** Url for universal resources, which could be either a WebUrl or a Url with a custom scheme like 'kodo:' */
 export type UniversalUrl = string
 
 /** Map from UniversalUrl to WebUrl */

@@ -1,7 +1,6 @@
 import { useRouter } from 'vue-router'
-import { useModal, useConfirmDialog } from '@/components/ui'
+import { useModal, useConfirmDialog, useMessage } from '@/components/ui'
 import { IsPublic, deleteProject } from '@/apis/project'
-import { useMessageHandle } from '@/utils/exception'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -42,20 +41,17 @@ export function useRemoveProject() {
   }
 }
 
-async function copySharingLink(project: Project) {
-  const { owner, name } = project
-  // TODO: the check should be unnecessary
-  if (owner == null || name == null) throw new Error(`owner (${owner}), name (${name}) required`)
-  await navigator.clipboard.writeText(`${location.origin}${getProjectShareRoute(owner, name)}`)
-}
-
 /** Copy sharing link for given project */
 export function useShareProject() {
-  return useMessageHandle(
-    copySharingLink,
-    { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
-    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
-  ).fn
+  const m = useMessage()
+  const { t } = useI18n()
+  return async function shareProject(project: Project) {
+    const { owner, name } = project
+    // TODO: the check should be unnecessary
+    if (owner == null || name == null) throw new Error(`owner (${owner}), name (${name}) required`)
+    await navigator.clipboard.writeText(`${location.origin}${getProjectShareRoute(owner, name)}`)
+    m.success(t({ en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }))
+  }
 }
 
 /**
@@ -65,50 +61,46 @@ export function useShareProject() {
  * - copy sharing link
  */
 export function useSaveAndShareProject() {
-  const withConfirm = useConfirmDialog()
   const { t } = useI18n()
+  const withConfirm = useConfirmDialog()
+  const shareProject = useShareProject()
 
-  const saveAndShare = useMessageHandle(
-    async (project: Project) => {
-      if (project.isPublic !== IsPublic.public) project.setPublic(IsPublic.public)
-      if (project.hasUnsyncedChanges) await project.saveToCloud()
-      await copySharingLink(project)
-    },
-    { en: 'Failed to get link for sharing', zh: '获取分享链接失败' },
-    { en: 'Link copied to clipboard', zh: '分享链接已复制到剪贴板' }
-  ).fn
+  async function saveAndShare(project: Project) {
+    if (project.isPublic !== IsPublic.public) project.setPublic(IsPublic.public)
+    if (project.hasUnsyncedChanges) await project.saveToCloud()
+    await shareProject(project)
+  }
+
+  async function saveAndShareWithConfirm(project: Project, confirmMessage: LocaleMessage) {
+    await withConfirm({
+      title: t({ en: 'Share project', zh: '分享项目' }),
+      content: t(confirmMessage),
+      confirmHandler: () => saveAndShare(project)
+    })
+  }
 
   return async function saveAndShareProject(project: Project) {
     const { isPublic, hasUnsyncedChanges } = project
     if (isPublic == null) throw new Error('isPublic required')
 
     if (isPublic === IsPublic.public) {
-      if (!hasUnsyncedChanges) return shareWithConfirm(null)
+      if (!hasUnsyncedChanges) return saveAndShare(project)
       else
-        return shareWithConfirm({
+        return saveAndShareWithConfirm(project, {
           en: "To share the project, we will save the project's current state to cloud",
           zh: '分享操作会将当前项目状态保存到云端'
         })
     } else {
       if (!hasUnsyncedChanges)
-        return shareWithConfirm({
+        return saveAndShareWithConfirm(project, {
           en: 'To share the project, we will make the project public',
           zh: '分享操作会将当前项目设置为公开'
         })
       else
-        return shareWithConfirm({
+        return saveAndShareWithConfirm(project, {
           en: "To share the project, we will save the project's current state to cloud & make it public",
           zh: '分享操作会将当前项目状态保存到云端，并将项目设置为公开'
         })
-    }
-
-    async function shareWithConfirm(confirmMessage: LocaleMessage | null) {
-      if (confirmMessage == null) return saveAndShare(project)
-      await withConfirm({
-        title: t({ en: 'Share project', zh: '分享项目' }),
-        content: t(confirmMessage),
-        confirmHandler: () => saveAndShare(project)
-      })
     }
   }
 }
@@ -116,15 +108,6 @@ export function useSaveAndShareProject() {
 export function useStopSharingProject() {
   const withConfirm = useConfirmDialog()
   const { t } = useI18n()
-
-  const doStopSharingProject = useMessageHandle(
-    async (project: Project) => {
-      project.setPublic(IsPublic.personal)
-      await project.saveToCloud()
-    },
-    { en: 'Failed to stop sharing project', zh: '未成功停止分享项目' },
-    { en: 'Project sharing is now stopped', zh: '项目已停止分享' }
-  ).fn
 
   return async function stopSharingProject(project: Project) {
     let confirmMessage = {
@@ -140,7 +123,10 @@ export function useStopSharingProject() {
     return withConfirm({
       title: t({ en: 'Stop sharing project', zh: '停止分享项目' }),
       content: t(confirmMessage),
-      confirmHandler: () => doStopSharingProject(project)
+      confirmHandler: async () => {
+        project.setPublic(IsPublic.personal)
+        await project.saveToCloud()
+      }
     })
   }
 }

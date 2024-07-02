@@ -10,13 +10,14 @@
 
       <UIDivider />
 
-      <div class="body">
+      <div class="body" :style="bodyStyle">
         <slot></slot>
       </div>
     </div>
   </UIModal>
 </template>
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
 import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
 import UIModalClose from './UIModalClose.vue'
@@ -25,6 +26,9 @@ defineProps<{
   title: string
   visible?: boolean
   centerTitle?: boolean
+  // maybe it is better to let caller specify the body class instead of body style,
+  // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
+  bodyStyle?: CSSProperties
 }>()
 
 const emit = defineEmits<{

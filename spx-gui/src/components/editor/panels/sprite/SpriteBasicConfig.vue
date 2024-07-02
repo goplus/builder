@@ -81,6 +81,7 @@ import {
   UIButtonGroup,
   UIButtonGroupItem
 } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import { debounce, round } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
@@ -98,12 +99,14 @@ const emit = defineEmits<{
 
 const renameSprite = useModal(SpriteRenameModal)
 
-function handleNameEdit() {
-  renameSprite({
-    sprite: props.sprite,
-    project: props.project
-  })
-}
+const handleNameEdit = useMessageHandle(
+  () =>
+    renameSprite({
+      sprite: props.sprite,
+      project: props.project
+    }),
+  { en: 'Failed to rename sprite', zh: '重命名精灵失败' }
+).fn
 
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.sprite.setX(x ?? 0))
 const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(y ?? 0))

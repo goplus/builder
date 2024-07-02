@@ -67,7 +67,10 @@ function audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
   return buffer
 }
 
-export const formatDuration = (durationInSeconds: number | null | undefined) => {
+export const formatDuration = (
+  durationInSeconds: number | null | undefined,
+  fractionDigits = 1
+) => {
   if (
     durationInSeconds === null ||
     durationInSeconds === undefined ||
@@ -75,7 +78,7 @@ export const formatDuration = (durationInSeconds: number | null | undefined) => 
   ) {
     return ''
   }
-  return durationInSeconds.toFixed(1) + 's'
+  return durationInSeconds.toFixed(fractionDigits) + 's'
 }
 
 export const useAudioDuration = (audio: () => string | Blob | null) => {

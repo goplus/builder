@@ -20,7 +20,7 @@
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite.name)" />
+        <SpriteTransformer :sprites-ready-map="spritesReadyMap" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -47,6 +47,7 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
 import { MapMode } from '@/models/stage'
+import Konva from 'konva'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
@@ -158,6 +159,12 @@ const menuPos = ref({ x: 0, y: 0 })
 
 function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
   e.evt.preventDefault()
+
+  // Ignore right click on backdrop.
+  // Konva.Rect is a subclass of Konva.Shape.
+  // Currently we have all sprites as Konva.Shape and backdrop as Konva.Rect.
+  if (e.target instanceof Konva.Rect) return
+
   if (stageRef.value == null || e.target.parent == null) return
   const stage: Stage = stageRef.value.getStage()
   const pointerPos = stage.getPointerPosition()

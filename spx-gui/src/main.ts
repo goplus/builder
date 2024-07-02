@@ -1,11 +1,3 @@
-/*
- * @Author: Xu Ning
- * @Date: 2024-01-12 11:15:15
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:38:25
- * @FilePath: \spx-gui\src\main.ts
- * @Description:
- */
 import { createApp } from 'vue'
 import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
@@ -35,4 +27,5 @@ async function initApp() {
 
   app.mount('#app')
 }
+
 initApp()

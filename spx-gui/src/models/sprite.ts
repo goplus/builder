@@ -7,8 +7,14 @@ import { reactive } from 'vue'
 import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
 import { Disposble } from './common/disposable'
-import { ensureValidCostumeName, getSpriteName, validateSpriteName } from './common/asset-name'
+import {
+  ensureValidAnimationName,
+  ensureValidCostumeName,
+  getSpriteName,
+  validateSpriteName
+} from './common/asset-name'
 import { type RawCostumeConfig, Costume } from './costume'
+import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
 
 export enum RotationStyle {
@@ -17,28 +23,37 @@ export enum RotationStyle {
   leftRight = 'left-right'
 }
 
+export enum State {
+  default = 'default',
+  die = 'die',
+  step = 'step',
+  // not supported by builder:
+  turn = 'turn',
+  glide = 'glide'
+}
+
 export type SpriteInits = {
   heading?: number
   x?: number
   y?: number
   size?: number
-  rotationStyle?: RotationStyle
+  rotationStyle?: string
   costumeIndex?: number
   currentCostumeIndex?: number // For compatibility
   visible?: boolean
   isDraggable?: boolean
-
-  // Not supported by builder:
-  fAnimations?: unknown
-  mAnimations?: unknown
-  tAnimations?: unknown
+  defaultAnimation?: string
+  animBindings?: Record<string, string | undefined>
 }
 
 export type RawSpriteConfig = SpriteInits & {
   costumes?: RawCostumeConfig[]
+  fAnimations?: Record<string, RawAnimationConfig | undefined>
   // Not supported by builder:
   costumeSet?: unknown
   costumeMPSet?: unknown
+  mAnimations?: unknown
+  tAnimations?: unknown
 }
 
 export const spriteAssetPath = 'assets/sprites'
@@ -86,9 +101,9 @@ export class Sprite extends Disposble {
   }
   removeCostume(name: string) {
     const idx = this.costumes.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`backdrop ${name} not found`)
+    if (idx === -1) throw new Error(`costume ${name} not found`)
     const [constume] = this.costumes.splice(idx, 1)
-    constume.setSprite(null)
+    constume.setParent(null)
 
     // Maintain current costume's index if possible
     if (this.costumeIndex === idx) {
@@ -106,8 +121,41 @@ export class Sprite extends Disposble {
   addCostume(costume: Costume) {
     const newCostumeName = ensureValidCostumeName(costume.name, this)
     costume.setName(newCostumeName)
-    costume.setSprite(this)
+    costume.setParent(this)
     this.costumes.push(costume)
+  }
+
+  animations: Animation[]
+  removeAnimation(name: string) {
+    const idx = this.animations.findIndex((s) => s.name === name)
+    if (idx === -1) throw new Error(`animation ${name} not found`)
+    const [animation] = this.animations.splice(idx, 1)
+    animation.setSprite(null)
+  }
+  /**
+   * Add given animation to sprite.
+   * Note: the animation's name may be altered to avoid conflict
+   */
+  addAnimation(animation: Animation) {
+    const newAnimationName = ensureValidAnimationName(animation.name, this)
+    animation.setName(newAnimationName)
+    animation.setSprite(this)
+    this.animations.push(animation)
+  }
+
+  private animationBindings: Record<State, string | undefined>
+  getAnimationBoundStates(animationName: string) {
+    const states: State[] = []
+    Object.entries(this.animationBindings).forEach(([state, name]) => {
+      if (name === animationName) states.push(state as State)
+    })
+    return states
+  }
+  setAnimationBoundStates(animationName: string, states: State[]) {
+    Object.entries(this.animationBindings).forEach(([state, bound]) => {
+      if (states.includes(state as State)) this.animationBindings[state as State] = animationName
+      else if (bound === animationName) this.animationBindings[state as State] = undefined
+    })
   }
 
   heading: number
@@ -150,6 +198,14 @@ export class Sprite extends Disposble {
     this.name = name
     this.codeFile = codeFile
     this.costumes = []
+    this.animations = []
+    this.animationBindings = {
+      [State.default]: inits?.defaultAnimation,
+      [State.die]: inits?.animBindings?.[State.die],
+      [State.step]: inits?.animBindings?.[State.step],
+      [State.turn]: inits?.animBindings?.[State.turn],
+      [State.glide]: inits?.animBindings?.[State.glide]
+    }
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
@@ -158,10 +214,6 @@ export class Sprite extends Disposble {
     this.costumeIndex = inits?.costumeIndex ?? inits?.currentCostumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
-
-    for (const field of ['fAnimations', 'mAnimations', 'tAnimations'] as const) {
-      if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
-    }
     return reactive(this) as this
   }
 
@@ -213,6 +265,9 @@ export class Sprite extends Disposble {
       costumes: costumeConfigs,
       costumeSet,
       costumeMPSet,
+      fAnimations: animationConfigs,
+      mAnimations,
+      tAnimations,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
     const codeFile = files[name + '.spx']
@@ -228,6 +283,16 @@ export class Sprite extends Disposble {
         console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
       else console.warn(`no costume found for sprite: ${name}`)
     }
+    if (animationConfigs != null) {
+      const animations = Object.entries(animationConfigs).map(([name, config]) =>
+        Animation.load(name, config!, sprite)
+      )
+      for (const animation of animations) {
+        sprite.addAnimation(animation)
+      }
+    }
+    if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)
+    if (tAnimations != null) console.warn(`unsupported field: tAnimations for sprite ${name}`)
     return sprite
   }
 
@@ -254,6 +319,14 @@ export class Sprite extends Disposble {
       costumeConfigs.push(costumeConfig)
       Object.assign(files, costumeFiles)
     }
+    const animationConfigs: Record<string, RawAnimationConfig> = {}
+    for (const a of this.animations) {
+      const [animationConfig, animationCostumesConfigs, animationFiles] = a.export(assetPath)
+      animationConfigs[a.name] = animationConfig
+      costumeConfigs.push(...animationCostumesConfigs)
+      Object.assign(files, animationFiles)
+    }
+    const { [State.default]: defaultAnimation, ...animBindings } = this.animationBindings
     const config: RawSpriteConfig = {
       heading: this.heading,
       x: this.x,
@@ -263,7 +336,10 @@ export class Sprite extends Disposble {
       costumeIndex: this.costumeIndex,
       visible: this.visible,
       isDraggable: this.isDraggable,
-      costumes: costumeConfigs
+      costumes: costumeConfigs,
+      fAnimations: animationConfigs,
+      defaultAnimation: defaultAnimation,
+      animBindings: animBindings
     }
     if (includeCode) {
       files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')

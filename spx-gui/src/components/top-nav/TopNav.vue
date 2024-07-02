@@ -17,7 +17,7 @@
               <template #icon><img :src="newSvg" /></template>
               {{ $t({ en: 'New project', zh: '新建项目' }) }}
             </UIMenuItem>
-            <UIMenuItem @click="openProject">
+            <UIMenuItem @click="handleOpenProject">
               <template #icon><img :src="openSvg" /></template>
               {{ $t({ en: 'Open project...', zh: '打开项目...' }) }}
             </UIMenuItem>
@@ -39,13 +39,13 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
-            <UIMenuItem @click="shareProject(project!)">
+            <UIMenuItem @click="handleShareProject">
               <template #icon><img :src="shareSvg" /></template>
               {{ $t({ en: 'Share project', zh: '分享项目' }) }}
             </UIMenuItem>
             <UIMenuItem
               v-if="project?.isPublic === IsPublic.public"
-              @click="stopSharingProject(project!)"
+              @click="handleStopSharingProject"
             >
               <template #icon><img :src="stopSharingSvg" /></template>
               {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
@@ -185,16 +185,19 @@ const { isOnline } = useNetwork()
 const router = useRouter()
 
 const createProject = useCreateProject()
-const openProject = useOpenProject()
-const removeProject = useRemoveProject()
-const shareProject = useSaveAndShareProject()
-const stopSharingProject = useStopSharingProject()
-const loadFromScratchModal = useLoadFromScratchModal()
+const handleNewProject = useMessageHandle(
+  async () => {
+    const { name } = await createProject()
+    router.push(getProjectEditorRoute(name))
+  },
+  { en: 'Failed to create new project', zh: '新建项目失败' }
+).fn
 
-async function handleNewProject() {
-  const { name } = await createProject()
-  router.push(getProjectEditorRoute(name))
-}
+const openProject = useOpenProject()
+const handleOpenProject = useMessageHandle(openProject, {
+  en: 'Failed to open project',
+  zh: '打开项目失败'
+}).fn
 
 const confirm = useConfirmDialog()
 
@@ -225,11 +228,26 @@ const handleExportProjectFile = useMessageHandle(
   { en: 'Failed to export project file', zh: '导出项目文件失败' }
 ).fn
 
+const loadFromScratchModal = useLoadFromScratchModal()
 const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(props.project!), {
   en: 'Failed to import from Scratch file',
   zh: '从 Scratch 项目文件导入失败'
 }).fn
 
+const shareProject = useSaveAndShareProject()
+const handleShareProject = useMessageHandle(() => shareProject(props.project!), {
+  en: 'Failed to share project',
+  zh: '分享项目失败'
+}).fn
+
+const stopSharingProject = useStopSharingProject()
+const handleStopSharingProject = useMessageHandle(
+  () => stopSharingProject(props.project!),
+  { en: 'Failed to stop sharing project', zh: '停止分享项目失败' },
+  { en: 'Project sharing is now stopped', zh: '项目已停止分享' }
+).fn
+
+const removeProject = useRemoveProject()
 const handleRemoveProject = useMessageHandle(
   async () => {
     await removeProject(props.project!.owner!, props.project!.name!)
