@@ -66,8 +66,10 @@ export function useSaveAndShareProject() {
   const shareProject = useShareProject()
 
   async function saveAndShare(project: Project) {
-    if (project.isPublic !== IsPublic.public) project.setPublic(IsPublic.public)
-    if (project.hasUnsyncedChanges) await project.saveToCloud()
+    if (project.isPublic !== IsPublic.public || project.hasUnsyncedChanges) {
+      project.setPublic(IsPublic.public)
+      await project.saveToCloud()
+    }
     await shareProject(project)
   }
 

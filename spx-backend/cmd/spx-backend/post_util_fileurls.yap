@@ -9,10 +9,6 @@ import (
 
 ctx := &Context
 
-if _, ok := ensureUser(ctx); !ok {
-	return
-}
-
 params := &controller.MakeFileURLsParams{}
 if !parseJSON(ctx, params) {
 	return

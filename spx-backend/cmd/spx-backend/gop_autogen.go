@@ -565,38 +565,31 @@ func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_util_fileurls.yap:10:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_util_fileurls.yap:12:1
-	if
-//line cmd/spx-backend/post_util_fileurls.yap:12:1
-	_, ok := ensureUser(ctx); !ok {
+	params := &controller.MakeFileURLsParams{}
 //line cmd/spx-backend/post_util_fileurls.yap:13:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_util_fileurls.yap:14:1
 		return
 	}
 //line cmd/spx-backend/post_util_fileurls.yap:16:1
-	params := &controller.MakeFileURLsParams{}
+	if
+//line cmd/spx-backend/post_util_fileurls.yap:16:1
+	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_util_fileurls.yap:17:1
-	if !parseJSON(ctx, params) {
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 //line cmd/spx-backend/post_util_fileurls.yap:18:1
 		return
 	}
-//line cmd/spx-backend/post_util_fileurls.yap:20:1
-	if
-//line cmd/spx-backend/post_util_fileurls.yap:20:1
-	ok, msg := params.Validate(); !ok {
 //line cmd/spx-backend/post_util_fileurls.yap:21:1
-		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-//line cmd/spx-backend/post_util_fileurls.yap:22:1
-		return
-	}
-//line cmd/spx-backend/post_util_fileurls.yap:25:1
 	fileURLs, err := this.ctrl.MakeFileURLs(ctx.Context(), params)
-//line cmd/spx-backend/post_util_fileurls.yap:26:1
+//line cmd/spx-backend/post_util_fileurls.yap:22:1
 	if err != nil {
-//line cmd/spx-backend/post_util_fileurls.yap:27:1
+//line cmd/spx-backend/post_util_fileurls.yap:23:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_util_fileurls.yap:28:1
+//line cmd/spx-backend/post_util_fileurls.yap:24:1
 		return
 	}
-//line cmd/spx-backend/post_util_fileurls.yap:30:1
+//line cmd/spx-backend/post_util_fileurls.yap:26:1
 	this.Json__1(fileURLs)
 }
 func (this *post_util_fileurls) Classfname() string {
