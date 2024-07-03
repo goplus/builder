@@ -1,17 +1,12 @@
 <template>
   <div :style="divStyle" class="animation-player-inner">
-    <MuteSwitch
-      v-if="audioElement"
-      class="mute-switch"
-      :muted="audioElement.muted"
-      @click="audioElement.muted = !audioElement.muted"
-    />
+    <MuteSwitch v-if="audioElement" class="mute-switch" :muted="muted" @click="muted = !muted" />
   </div>
 </template>
 <script setup lang="ts">
 import type { Animation } from '@/models/animation'
 import type { Disposer } from '@/models/common/disposable'
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useFileUrl } from '@/utils/file'
 import MuteSwitch from './MuteSwitch.vue'
@@ -27,6 +22,13 @@ const [soundSrc, soudLoading] = useFileUrl(
 )
 const frameSrcList = ref<string[]>([])
 const audioElement = ref<HTMLAudioElement | null>(null)
+const muted = ref(true)
+watch(muted, (muted) => {
+  if (!audioElement.value) {
+    return
+  }
+  audioElement.value.muted = muted
+})
 watchEffect(async (onCleanup) => {
   if (!soundSrc.value && soudLoading.value) {
     audioElement.value?.pause()
@@ -57,7 +59,7 @@ watchEffect(async (onCleanup) => {
 
   if (soundSrc.value && !soudLoading.value) {
     const nextAudioElement = new Audio()
-    nextAudioElement.muted = true
+    nextAudioElement.muted = muted.value
     nextAudioElement.src = soundSrc.value
     nextAudioElement.load()
     await new Promise((resolve, reject) => {
