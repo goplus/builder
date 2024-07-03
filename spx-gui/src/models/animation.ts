@@ -76,8 +76,8 @@ export class Animation {
     for (const costume of costumes) {
       let costumeName = this.stripCostumeNamePrefix(costume.name)
       costumeName = ensureValidCostumeName(costumeName, this)
-      costume.setName(costumeName)
       costume.setParent(this)
+      costume.setName(costumeName)
     }
     this.costumes = costumes
     if (this.duration === 0) {
@@ -111,7 +111,7 @@ export class Animation {
   constructor(name: string, inits?: AnimationInits) {
     this.name = name
     this.costumes = []
-    this.duration = inits?.duration ?? 0
+    this.duration = inits?.duration ?? 5
     this.sound = inits?.onStart?.play ?? null
 
     for (const field of ['fps', 'isLoop', 'onPlay'] as const) {
@@ -126,9 +126,6 @@ export class Animation {
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
   static create(nameBase: string, sprite: Sprite, costumes: Costume[], inits?: AnimationInits) {
-    for (const costume of costumes) {
-      sprite.removeCostume(costume.name)
-    }
     const animation = new Animation(getAnimationName(null, nameBase), inits)
     animation.setCostumes(costumes)
     return animation

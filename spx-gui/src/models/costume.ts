@@ -89,6 +89,15 @@ export class Costume {
     return reactive(this) as this
   }
 
+  clone() {
+    return new Costume(this.name, this.img, {
+      x: this.x,
+      y: this.y,
+      faceRight: this.faceRight,
+      bitmapResolution: this.bitmapResolution
+    })
+  }
+
   /**
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
