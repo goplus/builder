@@ -2,8 +2,8 @@
   <div>
     <UITooltip>
       <template #trigger>
-        <div :class="['mute-switch-button', state]">
-          <UIIcon :type="state === 'normal' ? 'volumeUp' : 'volumeOff'" />
+        <div class="mute-switch-button">
+          <UIIcon :type="muted ? 'volumeOff' : 'volumeUp'" />
         </div>
       </template>
       <template #default>
@@ -18,7 +18,7 @@
 import { UIIcon, UITooltip } from '@/components/ui'
 
 defineProps<{
-  state: 'normal' | 'muted' | 'disabled'
+  muted: boolean
 }>()
 </script>
 <style scoped lang="scss">
@@ -34,9 +34,8 @@ defineProps<{
   justify-content: center;
   background-color: #fff;
 
-  &.disabled {
+  &:hover {
     background-color: var(--ui-color-grey-300);
-    cursor: not-allowed;
   }
 }
 </style>
