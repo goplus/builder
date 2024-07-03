@@ -5,7 +5,7 @@
 
 import { reactive } from 'vue'
 import { join } from '@/utils/path'
-import { fromText, type Files, fromConfig, toText, toConfig, listDirs, File } from './common/file'
+import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
 import { Disposble } from './common/disposable'
 import {
   ensureValidAnimationName,
@@ -62,6 +62,10 @@ export function getSpriteAssetPath(name: string) {
   return join(spriteAssetPath, name)
 }
 
+function getSpriteCodeFileName(name: string) {
+  return `${name}.spx`
+}
+
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
@@ -77,16 +81,9 @@ export class Sprite extends Disposble {
     this.name = name
   }
 
-  private codeFile: File | null
-  private get codeFileName() {
-    return `${this.name}.spx`
-  }
-  async getCode() {
-    if (this.codeFile == null) return ''
-    return toText(this.codeFile)
-  }
+  code: string
   setCode(code: string) {
-    this.codeFile = fromText(this.codeFileName, code)
+    this.code = code
   }
 
   costumes: Costume[]
@@ -193,10 +190,10 @@ export class Sprite extends Disposble {
     this.isDraggable = isDraggable
   }
 
-  constructor(name: string, codeFile: File | null = null, inits?: SpriteInits) {
+  constructor(name: string, code: string = '', inits?: SpriteInits) {
     super()
     this.name = name
-    this.codeFile = codeFile
+    this.code = code
     this.costumes = []
     this.animations = []
     this.animationBindings = {
@@ -246,8 +243,8 @@ export class Sprite extends Disposble {
   }
 
   /** Create sprite within builder (by user actions) */
-  static create(nameBase: string, codeFile?: File, inits?: SpriteInits) {
-    return new Sprite(getSpriteName(null, nameBase), codeFile, {
+  static create(nameBase: string, code?: string, inits?: SpriteInits) {
+    return new Sprite(getSpriteName(null, nameBase), code, {
       heading: 90,
       x: 0,
       y: 0,
@@ -270,8 +267,9 @@ export class Sprite extends Disposble {
       tAnimations,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
-    const codeFile = files[name + '.spx']
-    const sprite = new Sprite(name, codeFile, inits)
+    const codeFile = files[getSpriteCodeFileName(name)]
+    const code = codeFile != null ? await toText(codeFile) : ''
+    const sprite = new Sprite(name, code, inits)
     if (costumeConfigs != null) {
       const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
       for (const costume of costumes) {
@@ -342,7 +340,8 @@ export class Sprite extends Disposble {
       animBindings: animBindings
     }
     if (includeCode) {
-      files[this.codeFileName] = this.codeFile ?? fromText(this.codeFileName, '')
+      const codeFileName = getSpriteCodeFileName(this.name)
+      files[codeFileName] = fromText(codeFileName, this.code)
     }
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files

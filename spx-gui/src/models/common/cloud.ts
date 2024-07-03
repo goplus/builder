@@ -36,7 +36,7 @@ export async function save(metadata: Metadata, files: Files) {
   const projectData = await (id != null
     ? updateProject(owner, name, { isPublic, files: fileCollection })
     : addProject({ name, isPublic, files: fileCollection }))
-  return await parseProjectData(projectData)
+  return { metadata: projectData, files }
 }
 
 export async function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
@@ -47,20 +47,11 @@ export async function parseProjectData({ files: fileCollection, ...metadata }: P
 export async function saveFiles(
   files: Files
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
-  const fileCollection: FileCollection = {}
-  for (const [path, file] of Object.entries(files)) {
-    if (!file) continue
-    if (inlineableFileTypes.includes(file.type)) {
-      // Little trick from [https://fetch.spec.whatwg.org/#data-urls]: `12. If mimeType starts with ';', then prepend 'text/plain' to mimeType.`
-      // Saves some bytes.
-      const mimeType = file.type === 'text/plain' ? ';' : file.type
-
-      const urlEncodedContent = encodeURIComponent(await toText(file))
-      fileCollection[path] = `${fileUniversalUrlSchemes.data}${mimeType},${urlEncodedContent}`
-    } else {
-      fileCollection[path] = await uploadFile(file)
-    }
-  }
+  const fileCollection = Object.fromEntries(
+    await Promise.all(
+      Object.keys(files).map(async (path) => [path, await saveFile(files[path]!)] as const)
+    )
+  )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
 }
@@ -109,15 +100,27 @@ function createFileWithWebUrl(name: string, webUrl: WebUrl) {
   })
 }
 
-async function uploadFile(file: File) {
-  const uploadedUrl = getUniversalUrl(file)
-  if (uploadedUrl != null) return uploadedUrl
-  const url = await uploadToKodo(file)
+async function saveFile(file: File) {
+  const savedUrl = getUniversalUrl(file)
+  if (savedUrl != null) return savedUrl
+
+  const url = inlineableFileTypes.includes(file.type)
+    ? await inlineFile(file)
+    : await uploadToKodo(file)
   setUniversalUrl(file, url)
   return url
 }
 
-type QiniuUploadRes = {
+async function inlineFile(file: File): Promise<UniversalUrl> {
+  // Little trick from [https://fetch.spec.whatwg.org/#data-urls]: `12. If mimeType starts with ';', then prepend 'text/plain' to mimeType.`
+  // Saves some bytes.
+  const mimeType = file.type === 'text/plain' ? ';' : file.type
+
+  const urlEncodedContent = encodeURIComponent(await toText(file))
+  return `${fileUniversalUrlSchemes.data}${mimeType},${urlEncodedContent}`
+}
+
+type KodoUploadRes = {
   key: string
   hash: string
 }
@@ -136,7 +139,7 @@ async function uploadToKodo(file: File): Promise<UniversalUrl> {
     },
     { region: region as any }
   )
-  const { key } = await new Promise<QiniuUploadRes>((resolve, reject) => {
+  const { key } = await new Promise<KodoUploadRes>((resolve, reject) => {
     observable.subscribe({
       error(e) {
         reject(e)
