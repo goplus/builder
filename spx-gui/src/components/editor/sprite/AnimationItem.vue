@@ -20,6 +20,7 @@ import EditorItem from '../common/EditorItem.vue'
 import EditorItemName from '../common/EditorItemName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import type { Animation } from '@/models/animation'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   animation: Animation
@@ -32,11 +33,17 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 
 const removable = computed(() => props.sprite.costumes.length > 1)
 
-function handelRemove() {
-  const name = props.animation.name
-  const action = { name: { en: `Remove animation ${name}`, zh: `删除动画 ${name}` } }
-  editorCtx.project.history.doAction(action, () => props.sprite.removeAnimation(name))
-}
+const handelRemove = useMessageHandle(
+  () => {
+    const name = props.animation.name
+    const action = { name: { en: `Remove animation ${name}`, zh: `删除动画 ${name}` } }
+    return editorCtx.project.history.doAction(action, () => props.sprite.removeAnimation(name))
+  },
+  {
+    en: 'Failed to remove animation',
+    zh: '删除动画失败'
+  }
+).fn
 </script>
 
 <style lang="scss" scoped>

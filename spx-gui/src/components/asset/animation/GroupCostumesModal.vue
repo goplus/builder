@@ -17,7 +17,6 @@
         :key="costume.name"
         :costume="costume"
         :selected="selectedCostumes.has(costume)"
-        class="animation-costume-item"
         @click="handleCostumeClick(costume)"
       />
     </div>
@@ -42,7 +41,7 @@
 <script setup lang="ts">
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
 import type { Costume } from '@/models/costume'
-import { defineProps, defineEmits, ref } from 'vue'
+import { defineProps, defineEmits, ref, reactive } from 'vue'
 import CostumeItem from './CostumeItem.vue'
 import type { Sprite } from '@/models/sprite'
 
@@ -63,13 +62,13 @@ const emit = defineEmits<{
 
 const removeCostumes = ref(true)
 
-const selectedCostumes = ref<Set<Costume>>(new Set())
+const selectedCostumes = reactive<Set<Costume>>(new Set())
 
 const handleCostumeClick = (costume: Costume) => {
-  if (selectedCostumes.value.has(costume)) {
-    selectedCostumes.value.delete(costume)
+  if (selectedCostumes.has(costume)) {
+    selectedCostumes.delete(costume)
   } else {
-    selectedCostumes.value.add(costume)
+    selectedCostumes.add(costume)
   }
 }
 
@@ -77,7 +76,7 @@ const handleConfirm = () => {
   // By this way we can keep the order of the costumes
   const costumes = []
   for (const costume of props.sprite.costumes) {
-    if (selectedCostumes.value.has(costume)) {
+    if (selectedCostumes.has(costume)) {
       costumes.push(costume)
     }
   }
@@ -86,11 +85,6 @@ const handleConfirm = () => {
 }
 </script>
 <style lang="scss" scoped>
-.animation-costume-item {
-  width: 140px;
-  height: 140px;
-}
-
 .container {
   display: flex;
   flex-wrap: wrap;

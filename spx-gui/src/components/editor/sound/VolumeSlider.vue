@@ -35,6 +35,6 @@ const emit = defineEmits<{
 .volume-icon {
   width: 24px;
   height: 24px;
-  color: #6e7781;
+  color: var(--ui-color-grey-800);
 }
 </style>

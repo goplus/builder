@@ -4,9 +4,7 @@
       <CheckerboardBackground class="background" />
       <AnimationPlayer :animation="animation" class="animation-player" />
     </div>
-    <div>
-      <AnimationSettings :animation="animation" :sprite="sprite" />
-    </div>
+    <AnimationSettings :animation="animation" :sprite="sprite" />
   </EditorItemDetail>
 </template>
 
@@ -31,8 +29,8 @@ const editorCtx = useEditorCtx()
 const renameCostume = useModal(AnimationRenameModal)
 
 const handleRename = useMessageHandle(
-  async () => {
-    renameCostume({
+  () => {
+    return renameCostume({
       animation: props.animation,
       sprite: props.sprite,
       project: editorCtx.project

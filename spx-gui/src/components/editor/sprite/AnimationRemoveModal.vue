@@ -18,7 +18,7 @@
         {{
           $t({
             en: "Preserve (the costumes will be moved to the sprite's costume list)",
-            zh: '保留（造型将被移动到角色的造型列表中）'
+            zh: '保留（造型将被移动到精灵的造型列表中）'
           })
         }}
       </UICheckbox>

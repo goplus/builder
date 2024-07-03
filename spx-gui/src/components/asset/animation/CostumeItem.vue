@@ -1,7 +1,9 @@
 <template>
   <li class="costume-item" :class="{ active: selected }">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    <p class="name">{{ costume.name }}</p>
+    <div class="name-container">
+      <p class="name">{{ costume.name }}</p>
+    </div>
     <UICornerIcon v-show="selected" color="primary" type="check" />
   </li>
 </template>
@@ -22,12 +24,11 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 <style lang="scss" scoped>
 .costume-item {
   flex: 0 0 auto;
-  width: 88px;
-  height: fit-content;
+  width: 140px;
+  height: 140px;
   display: flex;
   flex-direction: column;
   position: relative;
-  align-items: center;
   border-radius: var(--ui-border-radius-1);
   border: 2px solid var(--ui-color-grey-300);
   background-color: var(--ui-color-grey-300);
@@ -47,21 +48,26 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 }
 
 .img {
-  width: 100%;
-  height: 100%;
+  flex: 1;
 }
 
 .name {
   font-size: 13px;
-  line-height: 1.6;
-  padding: 4px 8px 2px;
+  line-height: 20px;
 
-  width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-align: center;
   text-overflow: ellipsis;
   color: var(--ui-color-title);
   user-select: none;
+}
+
+.name-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 32px;
+  width: 100%;
 }
 </style>

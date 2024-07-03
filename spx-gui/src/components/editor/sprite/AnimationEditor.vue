@@ -31,6 +31,7 @@ import GroupCostumesModal from '@/components/asset/animation/GroupCostumesModal.
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Animation } from '@/models/animation'
 import AnimationItem from './AnimationItem.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   sprite: Sprite
@@ -51,30 +52,36 @@ watch(
   }
 )
 
-const handleGroupCostumes = async () => {
-  const { selectedCostumes, removeCostumes } = await groupCostumes({
-    sprite: props.sprite
-  })
+const handleGroupCostumes = useMessageHandle(
+  async () => {
+    const { selectedCostumes, removeCostumes } = await groupCostumes({
+      sprite: props.sprite
+    })
 
-  editorCtx.project.history.doAction(
-    {
-      name: { en: `Group costumes as animation`, zh: `将造型合并为动画` }
-    },
-    () => {
-      const animation = Animation.create(
-        'animation',
-        props.sprite,
-        selectedCostumes.map((costume) => costume.clone())
-      )
-      props.sprite.addAnimation(animation)
-      if (removeCostumes) {
-        for (const costume of selectedCostumes) {
-          props.sprite.removeCostume(costume.name)
+    editorCtx.project.history.doAction(
+      {
+        name: { en: `Group costumes as animation`, zh: `将造型合并为动画` }
+      },
+      () => {
+        const animation = Animation.create(
+          '',
+          props.sprite,
+          selectedCostumes.map((costume) => costume.clone())
+        )
+        props.sprite.addAnimation(animation)
+        if (removeCostumes) {
+          for (const costume of selectedCostumes) {
+            props.sprite.removeCostume(costume.name)
+          }
         }
       }
-    }
-  )
-}
+    )
+  },
+  {
+    en: 'Failed to group costumes as animation',
+    zh: '将造型合并为动画失败'
+  }
+).fn
 </script>
 <style scoped lang="scss">
 .background {
