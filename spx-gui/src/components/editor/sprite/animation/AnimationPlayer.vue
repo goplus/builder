@@ -111,7 +111,7 @@ const divStyle = computed(() => {
 })
 
 watchEffect((onCleanup) => {
-  if (frames.value.length === 0) return
+  if (frames.value.length === 0 || props.animation.duration === 0) return
 
   currentFrameIndex.value = 0
   const animationIntervalId = setInterval(async () => {
