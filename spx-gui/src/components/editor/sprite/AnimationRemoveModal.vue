@@ -1,7 +1,7 @@
 <template>
   <UIFormModal
-    style="width: 512px"
-    :title="$t({ en: 'Remove animation', zh: '移除动画' })"
+    style="width: 560px"
+    :title="$t({ en: 'Remove animation', zh: '删除动画' })"
     :visible="visible"
     @update:visible="emit('cancelled')"
   >
@@ -10,11 +10,11 @@
         {{
           $t({
             en: `Animation ${animation.name} will be removed. Do you want to preserve the costumes?`,
-            zh: `动画 ${animation.name} 将被移除。是否保留其中的造型？`
+            zh: `动画 ${animation.name} 将被删除。是否保留其中的造型？`
           })
         }}
       </div>
-      <UICheckbox v-model:checked="preserveCostumes">
+      <UICheckbox v-model:checked="preserveCostumes" class="checkbox">
         {{
           $t({
             en: "Preserve (the costumes will be moved to the sprite's costume list)",
@@ -59,7 +59,7 @@ const handleConfirm = async () => {
     {
       name: {
         en: `Remove animation ${props.animation.name}`,
-        zh: `移除动画 ${props.animation.name}`
+        zh: `删除动画 ${props.animation.name}`
       }
     },
     () => {
@@ -76,6 +76,9 @@ const handleConfirm = async () => {
 }
 </script>
 <style scoped lang="scss">
+.checkbox {
+  margin-top: 20px;
+}
 .action {
   margin-top: 40px;
   display: flex;

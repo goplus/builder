@@ -1,6 +1,6 @@
 <template>
   <UIDropdownModal
-    :title="$t({ en: 'Select sound', zh: '选择声音' })"
+    :title="$t(actionName)"
     style="width: 320px; max-height: 400px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
@@ -63,8 +63,9 @@ const emit = defineEmits<{
 
 const editorCtx = useEditorCtx()
 
+const actionName = { en: 'Select sound', zh: '选择声音' }
 const selected = ref(props.animation.sound)
-function handleSoundClick(sound: string) {
+async function handleSoundClick(sound: string) {
   selected.value = selected.value === sound ? null : sound
 }
 
@@ -97,8 +98,10 @@ function handleRecorded(sound: Sound) {
   selected.value = sound.name
 }
 
-function handleConfirm() {
-  props.animation.setSound(selected.value)
+async function handleConfirm() {
+  await editorCtx.project.history.doAction({ name: actionName }, () =>
+    props.animation.setSound(selected.value)
+  )
   emit('close')
 }
 </script>

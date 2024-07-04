@@ -1,5 +1,16 @@
 <template>
-  <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
+  <UIEmpty v-if="sprite.animations.length === 0" size="extra-large">
+    {{ $t({ en: 'No animations', zh: '没有动画' }) }}
+    <template #op>
+      <UIButton type="boring" size="large" @click="handleGroupCostumes">
+        <template #icon>
+          <img class="icon" :src="galleryIcon" />
+        </template>
+        {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
+      </UIButton>
+    </template>
+  </UIEmpty>
+  <EditorList v-else color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
     <AnimationItem
       v-for="animation in sprite.animations"
       :key="animation.name"
@@ -22,35 +33,34 @@
 </template>
 
 <script setup lang="ts">
+import { shallowRef, watchEffect } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
-import { UIMenu, UIMenuItem, useModal } from '@/components/ui'
-import { shallowRef, watch } from 'vue'
+import { UIMenu, UIMenuItem, useModal, UIEmpty, UIButton } from '@/components/ui'
+import { useMessageHandle } from '@/utils/exception'
 import AnimationDetail from './AnimationDetail.vue'
 import GroupCostumesModal from '@/components/asset/animation/GroupCostumesModal.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Animation } from '@/models/animation'
 import AnimationItem from './AnimationItem.vue'
-import { useMessageHandle } from '@/utils/exception'
+import galleryIcon from './gallery.svg'
 
 const props = defineProps<{
   sprite: Sprite
 }>()
 
-const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
-
 const editorCtx = useEditorCtx()
 
-const groupCostumes = useModal(GroupCostumesModal)
+const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
 
-watch(
-  () => props.sprite,
-  (sprite) => {
-    if (!(selectedAnimation.value && sprite.animations.includes(selectedAnimation.value))) {
-      selectedAnimation.value = sprite.animations[0] || null
-    }
+watchEffect(() => {
+  if (selectedAnimation.value == null) return
+  if (!props.sprite.animations.includes(selectedAnimation.value)) {
+    selectedAnimation.value = props.sprite.animations[0] ?? null
   }
-)
+})
+
+const groupCostumes = useModal(GroupCostumesModal)
 
 const handleGroupCostumes = useMessageHandle(
   async () => {
@@ -60,20 +70,22 @@ const handleGroupCostumes = useMessageHandle(
 
     editorCtx.project.history.doAction(
       {
-        name: { en: `Group costumes as animation`, zh: `将造型合并为动画` }
+        name: { en: 'Group costumes as animation', zh: '将造型合并为动画' }
       },
       () => {
         const animation = Animation.create(
           '',
-          props.sprite,
           selectedCostumes.map((costume) => costume.clone())
         )
         props.sprite.addAnimation(animation)
         if (removeCostumes) {
-          for (const costume of selectedCostumes) {
-            props.sprite.removeCostume(costume.name)
+          for (let i = selectedCostumes.length - 1; i >= 0; i--) {
+            // Do not remove the last costume
+            if (props.sprite.costumes.length <= 1) break
+            props.sprite.removeCostume(selectedCostumes[i].name)
           }
         }
+        selectedAnimation.value = animation
       }
     )
   },
@@ -84,6 +96,10 @@ const handleGroupCostumes = useMessageHandle(
 ).fn
 </script>
 <style scoped lang="scss">
+.icon {
+  width: 24px;
+  height: 24px;
+}
 .background {
   width: 100%;
   height: 100%;
