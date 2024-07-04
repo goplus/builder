@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, UICornerIcon } from '@/components/ui'
+import { UIImg, UICornerIcon, useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Sprite } from '@/models/sprite'
 import EditorItem from '../common/EditorItem.vue'
@@ -21,6 +21,7 @@ import EditorItemName from '../common/EditorItemName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import type { Animation } from '@/models/animation'
 import { useMessageHandle } from '@/utils/exception'
+import AnimationRemoveModal from './AnimationRemoveModal.vue'
 
 const props = defineProps<{
   animation: Animation
@@ -33,12 +34,15 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 
 const removable = computed(() => props.sprite.costumes.length > 1)
 
+const removeAnimation = useModal(AnimationRemoveModal)
+
 const handelRemove = useMessageHandle(
-  () => {
-    const name = props.animation.name
-    const action = { name: { en: `Remove animation ${name}`, zh: `删除动画 ${name}` } }
-    return editorCtx.project.history.doAction(action, () => props.sprite.removeAnimation(name))
-  },
+  () =>
+    removeAnimation({
+      animation: props.animation,
+      sprite: props.sprite,
+      project: editorCtx.project
+    }),
   {
     en: 'Failed to remove animation',
     zh: '删除动画失败'

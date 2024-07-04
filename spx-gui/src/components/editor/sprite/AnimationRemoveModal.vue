@@ -3,7 +3,7 @@
     style="width: 512px"
     :title="$t({ en: 'Remove animation', zh: '移除动画' })"
     :visible="visible"
-    @update:visible="emit('cancel')"
+    @update:visible="emit('cancelled')"
   >
     <div>
       <div>
@@ -24,7 +24,7 @@
       </UICheckbox>
     </div>
     <div class="action">
-      <UIButton type="boring" @click="emit('cancel')">
+      <UIButton type="boring" @click="emit('cancelled')">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
       <UIButton type="primary" @click="handleConfirm">
@@ -36,21 +36,43 @@
 <script setup lang="ts">
 import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
 import type { Animation } from '@/models/animation'
+import type { Project } from '@/models/project'
+import type { Sprite } from '@/models/sprite'
 
 import { defineProps, defineEmits, ref } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   animation: Animation
+  sprite: Sprite
+  project: Project
 }>()
 const emit = defineEmits<{
-  cancel: []
+  cancelled: []
+  resolved: []
 }>()
 
 const preserveCostumes = ref(false)
 
-const handleConfirm = () => {
-  // TODO
+const handleConfirm = async () => {
+  await props.project.history.doAction(
+    {
+      name: {
+        en: `Remove animation ${props.animation.name}`,
+        zh: `移除动画 ${props.animation.name}`
+      }
+    },
+    () => {
+      props.sprite.removeAnimation(props.animation.name)
+      if (preserveCostumes.value) {
+        for (const costume of props.animation.costumes) {
+          const clonedCostume = costume.clone()
+          props.sprite.addCostume(clonedCostume)
+        }
+      }
+    }
+  )
+  emit('resolved')
 }
 </script>
 <style scoped lang="scss">
