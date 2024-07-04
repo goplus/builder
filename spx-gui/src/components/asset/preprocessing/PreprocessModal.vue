@@ -171,13 +171,11 @@ const selectedCostumes = shallowReactive<Costume[]>([])
 
 /** Update costumes based on current process output */
 async function updateCostumes(files: File[]) {
-  costumes.value = []
-  selectedCostumes.splice(0)
   const newCostumes = await Promise.all(
     files.map((file) => Costume.create(stripExt(file.name), file))
   )
   costumes.value = newCostumes
-  selectedCostumes.push(...newCostumes)
+  selectedCostumes.splice(0, selectedCostumes.length, ...newCostumes)
 }
 
 function isCostumeSelected(costume: Costume) {
@@ -196,10 +194,8 @@ function handleConfirm() {
 
 watch(
   () => props.files,
-  async (files) => {
-    cancelMethod(supportedMethods[0].value)
-    await updateCostumes(files)
-  },
+  // The first method cancelled, all methods cancelled
+  () => cancelMethod(supportedMethods[0].value),
   { immediate: true }
 )
 </script>
