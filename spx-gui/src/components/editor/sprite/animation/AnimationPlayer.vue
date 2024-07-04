@@ -59,7 +59,12 @@ const preloadFrames = async (costumes: Costume[]) => {
         return img
       })
     ])
-    return { imgs, disposers }
+    return {
+      imgs,
+      disposer: () => {
+        disposers.forEach((f) => f())
+      }
+    }
   } catch (e) {
     while (disposers.length) {
       disposers.pop()?.()
@@ -80,9 +85,9 @@ watch(
     }
     if ((!soundSrc.value && soundLoading.value) || !props.animation.costumes.length) return
 
-    const { disposers, imgs } = await preloadFrames(props.animation.costumes)
+    const { disposer, imgs } = await preloadFrames(props.animation.costumes)
     onCleanup(() => {
-      disposers.forEach((f) => f())
+      disposer()
     })
 
     if (soundSrc.value && !soundLoading.value) {
