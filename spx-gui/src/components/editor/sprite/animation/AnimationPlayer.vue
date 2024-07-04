@@ -10,6 +10,7 @@ import { computed, ref, watch, watchEffect } from 'vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useFileUrl } from '@/utils/file'
 import MuteSwitch from './MuteSwitch.vue'
+import type { Costume } from '@/models/costume'
 
 const props = defineProps<{
   animation: Animation
@@ -17,10 +18,11 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 
-const [soundSrc, soudLoading] = useFileUrl(
+const [soundSrc, soundLoading] = useFileUrl(
   () => editorCtx.project.sounds.find((sound) => sound.name === props.animation.sound)?.file
 )
-const frameSrcList = ref<string[]>([])
+// We need to hold the frames in memory to avoid flickering
+const frames = ref<HTMLImageElement[]>([])
 const audioElement = ref<HTMLAudioElement | null>(null)
 const muted = ref(true)
 watch(muted, (muted) => {
@@ -29,70 +31,91 @@ watch(muted, (muted) => {
   }
   audioElement.value.muted = muted
 })
-watchEffect(async (onCleanup) => {
-  if (!soundSrc.value && soudLoading.value) {
-    audioElement.value?.pause()
-    audioElement.value = null
-  }
-  if (!props.animation.costumes.length) {
-    frameSrcList.value = []
-  }
-  if ((!soundSrc.value && soudLoading.value) || !props.animation.costumes.length) return
 
-  const disposers: Disposer[] = []
-  onCleanup(() => {
-    disposers.forEach((f) => f())
+const preloadAudio = async (src: string): Promise<HTMLAudioElement> => {
+  const audio = new Audio()
+  audio.muted = muted.value
+  audio.src = src
+  audio.load()
+  await new Promise((resolve, reject) => {
+    audio.oncanplaythrough = resolve
+    audio.onerror = reject
   })
+  return audio
+}
 
-  const urls = await Promise.all(
-    props.animation.costumes.map((costume) => costume.img.url((f) => disposers.push(f)))
-  )
+const preloadFrames = async (costumes: Costume[]) => {
+  const disposers: Disposer[] = []
+  try {
+    const urls = await Promise.all(
+      costumes.map((costume) => costume.img.url((f) => disposers.push(f)))
+    )
 
-  await Promise.all([
-    // Preload all frames and audio
-    ...urls.map((url) => {
-      const img = new Image()
-      img.src = url
-      return img.decode()
-    })
-  ])
-
-  if (soundSrc.value && !soudLoading.value) {
-    const nextAudioElement = new Audio()
-    nextAudioElement.muted = muted.value
-    nextAudioElement.src = soundSrc.value
-    nextAudioElement.load()
-    await new Promise((resolve, reject) => {
-      nextAudioElement.oncanplaythrough = resolve
-      nextAudioElement.onerror = reject
-    })
-    audioElement.value?.pause()
-    audioElement.value = nextAudioElement
+    const imgs = await Promise.all([
+      ...urls.map(async (url) => {
+        const img = new Image()
+        img.src = url
+        await img.decode()
+        return img
+      })
+    ])
+    return { imgs, disposers }
+  } catch (e) {
+    while (disposers.length) {
+      disposers.pop()?.()
+    }
+    throw e
   }
+}
 
-  frameSrcList.value = urls
-})
+watch(
+  () => [soundSrc.value, soundLoading.value, props.animation.costumes],
+  async (_, old, onCleanup) => {
+    if (!soundSrc.value && soundLoading.value) {
+      audioElement.value?.pause()
+      audioElement.value = null
+    }
+    if (!props.animation.costumes.length) {
+      frames.value = []
+    }
+    if ((!soundSrc.value && soundLoading.value) || !props.animation.costumes.length) return
+
+    const { disposers, imgs } = await preloadFrames(props.animation.costumes)
+    onCleanup(() => {
+      disposers.forEach((f) => f())
+    })
+
+    if (soundSrc.value && !soundLoading.value) {
+      const nextAudioElement = await preloadAudio(soundSrc.value)
+      audioElement.value?.pause()
+      audioElement.value = nextAudioElement
+    }
+
+    frames.value = imgs
+  },
+  { immediate: true, deep: true }
+)
 
 const currentFrameIndex = ref(0)
 
 const frameInterval = computed(() => {
-  if (frameSrcList.value.length === 0) return 0
-  return (props.animation.duration / frameSrcList.value.length) * 1000 // convert to milliseconds
+  if (frames.value.length === 0) return 0
+  return (props.animation.duration / frames.value.length) * 1000 // convert to milliseconds
 })
 
-const divStyle = computed(() => ({
-  background: `url(${frameSrcList.value[currentFrameIndex.value]}) center center / contain no-repeat`
-}))
+const divStyle = computed(() => {
+  if (!frames.value[currentFrameIndex.value]) return
+  return {
+    background: `url(${frames.value[currentFrameIndex.value].src}) center center / contain no-repeat`
+  }
+})
 
 watchEffect((onCleanup) => {
-  if (frameSrcList.value.length === 0) return
+  if (frames.value.length === 0) return
 
+  currentFrameIndex.value = 0
   const animationIntervalId = setInterval(async () => {
-    const nextIndex = (currentFrameIndex.value + 1) % frameSrcList.value.length
-    // Preload next frame to avoid flicker
-    const nextFrame = new Image()
-    nextFrame.src = frameSrcList.value[nextIndex]
-    await nextFrame.decode()
+    const nextIndex = (currentFrameIndex.value + 1) % frames.value.length
     currentFrameIndex.value = nextIndex
   }, frameInterval.value)
 
