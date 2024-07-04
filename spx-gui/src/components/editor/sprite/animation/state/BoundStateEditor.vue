@@ -2,7 +2,7 @@
 
 <template>
   <UIDropdownModal
-    :title="$t({ en: 'Bind state', zh: '绑定状态' })"
+    :title="$t(actionName)"
     style="width: 320px"
     @cancel="emit('close')"
     @confirm="handleConfirm"
@@ -44,6 +44,7 @@ import { ref } from 'vue'
 import type { Animation } from '@/models/animation'
 import { type Sprite, State } from '@/models/sprite'
 import { UIDropdownModal, UICornerIcon, UIBlockItem } from '@/components/ui'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import iconStateDefault from './default.svg?raw'
 import iconStateStep from './step.svg?raw'
 import iconStateDie from './die.svg?raw'
@@ -57,6 +58,8 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const editorCtx = useEditorCtx()
+const actionName = { en: 'Bind state', zh: '绑定状态' }
 const boundStates = ref(props.sprite.getAnimationBoundStates(props.animation.name))
 
 function isBound(state: State) {
@@ -69,8 +72,10 @@ function handleStateItemClick(state: State) {
     : [...boundStates.value, state]
 }
 
-function handleConfirm() {
-  props.sprite.setAnimationBoundStates(props.animation.name, boundStates.value)
+async function handleConfirm() {
+  await editorCtx.project.history.doAction({ name: actionName }, () => {
+    props.sprite.setAnimationBoundStates(props.animation.name, boundStates.value)
+  })
   emit('close')
 }
 </script>

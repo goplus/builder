@@ -1,13 +1,14 @@
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 
-import type { Sprite } from './sprite'
 import {
   ensureValidCostumeName,
   getAnimationName,
   validateAnimationName
 } from './common/asset-name'
-import type { Costume, RawCostumeConfig } from './costume'
+import { Disposble } from './common/disposable'
 import type { Files } from './common/file'
+import type { Costume, RawCostumeConfig } from './costume'
+import type { Sprite } from './sprite'
 
 enum AniType {
   frame = 0,
@@ -23,7 +24,7 @@ type ActionConfig = {
   costumes?: unknown
 }
 
-const defaultFps = 25 // TODO
+const defaultFps = 10
 
 export type AnimationInits = {
   duration?: number
@@ -41,7 +42,7 @@ export type RawAnimationConfig = AnimationInits & {
   to?: number | string
 }
 
-export class Animation {
+export class Animation extends Disposble {
   private sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
@@ -85,19 +86,6 @@ export class Animation {
     }
   }
 
-  /**
-   * Ungroup costumes, which will be added back to sprite.
-   * Typically called before the animation removed from the sprite.
-   */
-  ungroup() {
-    if (this.sprite == null) throw new Error('sprite expected')
-    const costumes = this.costumes
-    this.setCostumes([])
-    for (const costume of costumes) {
-      this.sprite.addCostume(costume)
-    }
-  }
-
   duration: number
   setDuration(duration: number) {
     this.duration = duration
@@ -108,24 +96,52 @@ export class Animation {
     this.sound = sound
   }
 
+  init() {
+    // update `this.sound` when sound removed or renamed
+    // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
+    this.addDisposer(
+      watch(
+        () => this.sprite?.project?.sounds.find((s) => s.name === this.sound),
+        (sound, _, onCleanup) => {
+          if (sound == null) {
+            this.sound = null
+            return
+          }
+          const stopWatch = watch(
+            () => sound.name,
+            (newName) => {
+              this.sound = newName
+            },
+            { flush: 'sync' }
+          ) // `flush: 'sync'` to ensure the watcher is triggered before being cleaned up
+          onCleanup(stopWatch)
+        },
+        { immediate: true }
+      )
+    )
+  }
+
   constructor(name: string, inits?: AnimationInits) {
+    super()
     this.name = name
     this.costumes = []
-    this.duration = inits?.duration ?? 5
+    this.duration = inits?.duration ?? 0
     this.sound = inits?.onStart?.play ?? null
 
     for (const field of ['fps', 'isLoop', 'onPlay'] as const) {
       if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
     }
 
-    return reactive(this) as this
+    const self = reactive(this) as this
+    self.init()
+    return self
   }
 
   /**
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(nameBase: string, sprite: Sprite, costumes: Costume[], inits?: AnimationInits) {
+  static create(nameBase: string, costumes: Costume[], inits?: AnimationInits) {
     const animation = new Animation(getAnimationName(null, nameBase), inits)
     animation.setCostumes(costumes)
     return animation

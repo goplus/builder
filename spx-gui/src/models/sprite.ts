@@ -3,7 +3,7 @@
  * @desc Object-model definition for Sprite & Costume
  */
 
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
 import { Disposble } from './common/disposable'
@@ -69,7 +69,7 @@ function getSpriteCodeFileName(name: string) {
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
-  private project: Project | null = null
+  project: Project | null = null
   setProject(project: Project | null) {
     this.project = project
   }
@@ -128,6 +128,7 @@ export class Sprite extends Disposble {
     if (idx === -1) throw new Error(`animation ${name} not found`)
     const [animation] = this.animations.splice(idx, 1)
     animation.setSprite(null)
+    animation.dispose()
   }
   /**
    * Add given animation to sprite.
@@ -137,7 +138,24 @@ export class Sprite extends Disposble {
     const newAnimationName = ensureValidAnimationName(animation.name, this)
     animation.setName(newAnimationName)
     animation.setSprite(this)
+    animation.addDisposer(() => animation.setSprite(null))
     this.animations.push(animation)
+    animation.addDisposer(
+      // update animationBindings when sprite renamed
+      watch(
+        () => animation.name,
+        (newName, originalName) => {
+          Object.entries(this.animationBindings).forEach(([state, name]) => {
+            if (name === originalName) this.animationBindings[state as State] = newName
+          })
+        }
+      )
+    )
+    animation.addDisposer(() => {
+      Object.entries(this.animationBindings).forEach(([state, name]) => {
+        if (name === animation.name) this.animationBindings[state as State] = undefined
+      })
+    })
   }
 
   private animationBindings: Record<State, string | undefined>

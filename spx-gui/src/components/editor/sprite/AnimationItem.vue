@@ -2,17 +2,11 @@
   <EditorItem :selected="selected" color="sprite">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <EditorItemName class="name">{{ animation.name }}</EditorItemName>
-    <UICornerIcon
-      v-show="selected && removable"
-      color="sprite"
-      type="trash"
-      @click.stop="handelRemove"
-    />
+    <UICornerIcon v-show="selected" color="sprite" type="trash" @click.stop="handelRemove" />
   </EditorItem>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { UIImg, UICornerIcon, useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Sprite } from '@/models/sprite'
@@ -31,8 +25,6 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
-
-const removable = computed(() => props.sprite.costumes.length > 1)
 
 const removeAnimation = useModal(AnimationRemoveModal)
 
