@@ -25,7 +25,7 @@ export const eventCategory: ToolCategory = {
     },
     {
       label: { en: 'Sensing Events', zh: '感知事件' },
-      tools: [spx.onClick, spx.onKey, spx.onAnyKey, spx.onTouched]
+      tools: [spx.onClick, spx.onKey, spx.onAnyKey]
     },
     {
       label: { en: 'Motion Events', zh: '运动事件' },

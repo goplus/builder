@@ -32,6 +32,8 @@ export const onCloned: Tool = {
   }
 }
 
+// For now `onTouched` is not exposed to the user
+// As it behaves strangely in the current implementation, see details in https://github.com/goplus/spx/issues/298
 export const onTouched: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.listen,
@@ -54,7 +56,7 @@ export const onTouched: Tool = {
     },
     {
       desc: { en: 'By some given sprites', zh: '指定的某些精灵' },
-      sample: 'onTouched [S1, S2] => {}',
+      sample: 'onTouched [S1, S2], => {}',
       insertText: 'onTouched [${1:}], => {\n\t${2}\n}'
     }
   ]
