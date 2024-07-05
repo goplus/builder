@@ -28,11 +28,7 @@
     <UINumberInput :value="sprite.y" @update:value="handleYUpdate">
       <template #prefix>Y:</template>
     </UINumberInput>
-    <UINumberInput
-      :min="0"
-      :value="sizePercent"
-      @update:value="handleSizePercentUpdate"
-    >
+    <UINumberInput :min="0" :value="sizePercent" @update:value="handleSizePercentUpdate">
       <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
       <template #suffix>%</template>
     </UINumberInput>
@@ -179,12 +175,12 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
 
 const rotationStyleTips = {
   normal: {
-    en: 'All Around: the sprite can be rotated to any heading',
-    zh: '全方向：精灵可以被旋转到任意方向'
+    en: 'Normal: the sprite can be rotated to any heading',
+    zh: '正常旋转：精灵可以被旋转到任意方向'
   },
   leftRight: {
     en: 'Left-Right: the sprite can only be flipped horizontally',
-    zh: '左-右：精灵只可以在水平方向翻转'
+    zh: '左右翻转：精灵只可以在水平方向翻转'
   },
   none: {
     en: "Don't Rotate: the sprite will not be rotated",

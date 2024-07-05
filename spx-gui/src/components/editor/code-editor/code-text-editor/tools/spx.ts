@@ -432,6 +432,18 @@ export const changeYpos: Tool = {
   }
 }
 
+export const setRotationStyle: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'setRotationStyle',
+  desc: { en: 'Set the rotation style of the sprite', zh: '设置精灵的旋转方式' },
+  usage: {
+    sample: 'setRotationStyle LeftRight',
+    insertText: 'setRotationStyle ${1:style}'
+  }
+}
+
 export const heading: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.read,
@@ -965,6 +977,10 @@ export const up = defineConst('up', { en: 'Up direction', zh: '上' })
 export const down = defineConst('down', { en: 'Down direction', zh: '下' })
 export const left = defineConst('left', { en: 'Left direction', zh: '左' })
 export const right = defineConst('right', { en: 'Right direction', zh: '右' })
+
+export const none = defineConst('none', { en: "Don't Rotate", zh: '不旋转' })
+export const leftRight = defineConst('leftRight', { en: 'Left-Right', zh: '左右翻转' })
+export const normal = defineConst('normal', { en: 'Normal', zh: '正常旋转' })
 
 export const mouse = defineConst('mouse', { en: 'Mouse', zh: '鼠标' })
 export const edge = defineConst('edge', { en: 'Edge', zh: '边缘' })

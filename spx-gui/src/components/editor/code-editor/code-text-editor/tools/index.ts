@@ -67,6 +67,10 @@ export const motionCategory: ToolCategory = {
       ]
     },
     {
+      label: { en: 'Rotation', zh: '旋转' },
+      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
+    },
+    {
       label: { en: 'Heading', zh: '方向' },
       tools: [
         spx.heading,
