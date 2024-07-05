@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="line name">
     <AssetName>{{ sprite.name }}</AssetName>
@@ -21,14 +22,13 @@
     </UITooltip>
   </div>
   <div class="line">
-    <UINumberInput type="number" :value="sprite.x" @update:value="handleXUpdate">
+    <UINumberInput :value="sprite.x" @update:value="handleXUpdate">
       <template #prefix>X:</template>
     </UINumberInput>
-    <UINumberInput type="number" :value="sprite.y" @update:value="handleYUpdate">
+    <UINumberInput :value="sprite.y" @update:value="handleYUpdate">
       <template #prefix>Y:</template>
     </UINumberInput>
     <UINumberInput
-      type="number"
       :min="0"
       :value="sizePercent"
       @update:value="handleSizePercentUpdate"
@@ -38,8 +38,41 @@
     </UINumberInput>
   </div>
   <div class="line">
+    <p class="with-label">
+      {{ $t({ en: 'Rotation', zh: '旋转' }) }}:
+      <UIButtonGroup
+        :value="sprite.rotationStyle"
+        @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
+      >
+        <UITooltip>
+          {{ $t(rotationStyleTips.normal) }}
+          <template #trigger>
+            <UIButtonGroupItem :value="RotationStyle.normal">
+              <i class="rotation-icon" v-html="rotateIcon"></i>
+            </UIButtonGroupItem>
+          </template>
+        </UITooltip>
+        <UITooltip>
+          {{ $t(rotationStyleTips.leftRight) }}
+          <template #trigger>
+            <UIButtonGroupItem :value="RotationStyle.leftRight">
+              <i class="rotation-icon" v-html="leftRightIcon"></i>
+            </UIButtonGroupItem>
+          </template>
+        </UITooltip>
+        <UITooltip>
+          {{ $t(rotationStyleTips.none) }}
+          <template #trigger>
+            <UIButtonGroupItem :value="RotationStyle.none">
+              <i class="rotation-icon" v-html="noRotateIcon"></i>
+            </UIButtonGroupItem>
+          </template>
+        </UITooltip>
+      </UIButtonGroup>
+    </p>
     <UINumberInput
-      type="number"
+      v-show="sprite.rotationStyle !== RotationStyle.leftRight"
+      :disabled="sprite.rotationStyle === RotationStyle.none"
       :min="-180"
       :max="180"
       :value="sprite.heading"
@@ -54,6 +87,21 @@
         }}:
       </template>
     </UINumberInput>
+    <UIButtonGroup
+      v-show="sprite.rotationStyle === RotationStyle.leftRight"
+      type="text"
+      :value="headingToLeftRight(sprite.heading)"
+      @update:value="(v) => handleHeadingUpdate(leftRightToHeading(v as LeftRight))"
+    >
+      <UIButtonGroupItem :value="LeftRight.left">
+        {{ $t({ en: 'Left', zh: '左' }) }}
+      </UIButtonGroupItem>
+      <UIButtonGroupItem :value="LeftRight.right">
+        {{ $t({ en: 'Right', zh: '右' }) }}
+      </UIButtonGroupItem>
+    </UIButtonGroup>
+  </div>
+  <div class="line">
     <p class="with-label">
       {{ $t({ en: 'Show', zh: '显示' }) }}:
       <UIButtonGroup
@@ -83,10 +131,19 @@ import {
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { debounce, round } from '@/utils/utils'
-import type { Sprite } from '@/models/sprite'
+import {
+  RotationStyle,
+  LeftRight,
+  headingToLeftRight,
+  leftRightToHeading,
+  type Sprite
+} from '@/models/sprite'
 import { type Project } from '@/models/project'
 import AssetName from '@/components/asset/AssetName.vue'
-import SpriteRenameModal from './SpriteRenameModal.vue'
+import SpriteRenameModal from '../SpriteRenameModal.vue'
+import rotateIcon from './rotate.svg?raw'
+import leftRightIcon from './left-right.svg?raw'
+import noRotateIcon from './no-rotate.svg?raw'
 
 const props = defineProps<{
   sprite: Sprite
@@ -120,6 +177,30 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
   props.sprite.setSize(round(sizeInPercent / 100, 2))
 })
 
+const rotationStyleTips = {
+  normal: {
+    en: 'All Around: the sprite can be rotated to any heading',
+    zh: '全方向：精灵可以被旋转到任意方向'
+  },
+  leftRight: {
+    en: 'Left-Right: the sprite can only be flipped horizontally',
+    zh: '左-右：精灵只可以在水平方向翻转'
+  },
+  none: {
+    en: "Don't Rotate: the sprite will not be rotated",
+    zh: '不旋转：精灵不会被旋转'
+  }
+}
+
+const handleRotationStyleUpdate = wrapUpdateHandler((style: RotationStyle) => {
+  props.sprite.setRotationStyle(style)
+  if (style === RotationStyle.none) props.sprite.setHeading(90)
+  if (style === RotationStyle.leftRight) {
+    // normalize heading to 90 / -90
+    props.sprite.setHeading(leftRightToHeading(headingToLeftRight(props.sprite.heading)))
+  }
+})
+
 const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite.setHeading(h ?? 0))
 const handleVisibleUpdate = wrapUpdateHandler(
   (visible: boolean) => props.sprite.setVisible(visible),
@@ -142,10 +223,10 @@ function wrapUpdateHandler<Args extends any[]>(
   display: flex;
   gap: 12px;
   align-items: center;
-  height: 24px;
 }
 
 .name {
+  height: 28px;
   color: var(--ui-color-title);
 }
 
@@ -169,5 +250,15 @@ function wrapUpdateHandler<Args extends any[]>(
 
 .spacer {
   flex: 1;
+}
+
+.rotation-icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
 }
 </style>

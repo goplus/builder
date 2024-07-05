@@ -3,6 +3,7 @@
     class="ui-number-input"
     :show-button="false"
     :value="value"
+    :disabled="disabled"
     @update:value="(v) => emit('update:value', v)"
   >
     <template v-if="!!slots.prefix" #prefix>
@@ -20,6 +21,7 @@ import { NInputNumber } from 'naive-ui'
 
 defineProps<{
   value: number | null
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +35,7 @@ const slots = useSlots()
 .ui-number-input :deep(> .n-input) {
   // it's not possible to control input's hovered-bg-color with themeOverrides,
   // so we do background color control here
-  &:not(.n-input--focus, .n-input--error-status) {
+  &:not(.n-input--focus, .n-input--error-status, .n-input--disabled) {
     background-color: var(--ui-color-grey-300);
     &:hover {
       background-color: var(--ui-color-grey-400);

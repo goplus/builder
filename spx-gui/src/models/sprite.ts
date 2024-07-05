@@ -4,6 +4,7 @@
  */
 
 import { reactive, watch } from 'vue'
+import { nomalizeDegree } from '@/utils/utils'
 import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
 import { Disposble } from './common/disposable'
@@ -386,4 +387,19 @@ function getRotationStyle(rotationStyle?: string) {
   if (rotationStyle === 'left-right') return RotationStyle.leftRight
   if (rotationStyle === 'none') return RotationStyle.none
   return RotationStyle.normal
+}
+
+export enum LeftRight {
+  left = 'left',
+  right = 'right'
+}
+
+export function headingToLeftRight(heading: number): LeftRight {
+  heading = nomalizeDegree(heading)
+  if (heading >= 0) return LeftRight.right
+  return LeftRight.left
+}
+
+export function leftRightToHeading(leftRight: LeftRight) {
+  return leftRight === LeftRight.right ? 90 : -90
 }

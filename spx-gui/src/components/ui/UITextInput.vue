@@ -1,5 +1,10 @@
 <template>
-  <NInput class="ui-text-input" :value="value" @update:value="(v) => emit('update:value', v)">
+  <NInput
+    class="ui-text-input"
+    :value="value"
+    :disabled="disabled"
+    @update:value="(v) => emit('update:value', v)"
+  >
     <template v-if="!!slots.prefix" #prefix>
       <slot name="prefix"></slot>
     </template>
@@ -30,6 +35,7 @@ import { NInput } from 'naive-ui'
 defineProps<{
   value: string
   clearable?: boolean
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +52,7 @@ const slots = useSlots()
   &:not(.n-input--focus, .n-input--error-status, .n-input--success-status) {
     background-color: var(--ui-color-grey-300);
   }
-  &:not(.n-input--focus):hover {
+  &:not(.n-input--focus, .n-input--disabled):hover {
     background-color: var(--ui-color-grey-400);
   }
   &.n-input--success-status {
