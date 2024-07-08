@@ -51,10 +51,10 @@ const preloadAudio = async (src: string): Promise<HTMLAudioElement> => {
 }
 
 const preloadFrames = async (costumeFiles: File[]) => {
-  const disposer = new Disposble()
+  const disposable = new Disposble()
   try {
     const urls = await Promise.all(
-      costumeFiles.map((costume) => costume.url((f) => disposer.addDisposer(f)))
+      costumeFiles.map((costume) => costume.url((f) => disposable.addDisposer(f)))
     )
 
     const frames = await Promise.all([
@@ -68,10 +68,10 @@ const preloadFrames = async (costumeFiles: File[]) => {
     return {
       // We need to hold the frames in memory to avoid flickering
       frames,
-      disposer
+      disposable
     }
   } catch (e) {
-    disposer.dispose()
+    disposable.dispose()
     throw e
   }
 }
@@ -131,12 +131,12 @@ watch(
       disposable.dispose()
     })
 
-    const { disposer, frames } = await preloadFrames(costumeFiles)
+    const { disposable: framesDisposable, frames } = await preloadFrames(costumeFiles)
     if (cancelled) {
-      disposer.dispose()
+      framesDisposable.dispose()
       return
     }
-    disposable.addDisposer(disposer.dispose)
+    disposable.addDisposer(framesDisposable.dispose)
 
     if (soundSrc) {
       const nextAudioElement = await preloadAudio(soundSrc)
