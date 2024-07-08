@@ -137,7 +137,6 @@ watch(
       return
     }
     disposable.addDisposer(disposer.dispose)
-    disposable.addDisposer(startPlayingFrames(frames, animationDuration))
 
     if (soundSrc) {
       const nextAudioElement = await preloadAudio(soundSrc)
@@ -147,10 +146,14 @@ watch(
       audioElement.value?.pause()
       audioElement.value = nextAudioElement
       nextAudioElement.muted = muted.value
-      disposable.addDisposer(startPlayingAudio(nextAudioElement))
+    }
+
+    disposable.addDisposer(startPlayingFrames(frames, animationDuration))
+    if (soundSrc) {
+      disposable.addDisposer(startPlayingAudio(audioElement.value!))
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true }
 )
 </script>
 <style scoped lang="scss">
