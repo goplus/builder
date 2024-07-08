@@ -8,11 +8,11 @@ export type Disposer = () => void
 export class Disposble {
   _disposers: Disposer[] = []
 
-  addDisposer(disposer: Disposer) {
+  addDisposer = (disposer: Disposer) => {
     this._disposers.push(disposer)
   }
 
-  dispose() {
+  dispose = () => {
     while (this._disposers.length > 0) {
       this._disposers.pop()?.()
     }
