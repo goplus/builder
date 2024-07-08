@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { fromText } from './common/file'
+import { delayFile } from '@/utils/test'
+import { fromText, type Files } from './common/file'
 import { Project } from './project'
 import { Sprite } from './sprite'
 import { Costume } from './costume'
@@ -78,5 +79,18 @@ describe('Animation', () => {
     project.removeSound(project.sounds[0].name)
     await nextTick()
     expect(animation.sound).toBeNull()
+  })
+
+  it('should load correctly', async () => {
+    const project = makeProject()
+    project.sprites[0].animations[0].setSound(project.sounds[0].name)
+
+    const [metadata, files] = project.export()
+    const delayedFiles: Files = Object.fromEntries(
+      Object.entries(files).map(([path, file]) => [path, delayFile(file!, 50)])
+    )
+    const newProject = new Project()
+    await newProject.load(metadata, delayedFiles)
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].name)
   })
 })

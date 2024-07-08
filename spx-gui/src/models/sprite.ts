@@ -75,7 +75,7 @@ function getSpriteCodeFileName(name: string) {
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposble {
-  project: Project | null = null
+  private project: Project | null = null
   setProject(project: Project | null) {
     this.project = project
   }

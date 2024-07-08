@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive } from 'vue'
 
 import {
   ensureValidCostumeName,
@@ -96,31 +96,6 @@ export class Animation extends Disposble {
     this.sound = sound
   }
 
-  init() {
-    // update `this.sound` when sound removed or renamed
-    // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
-    this.addDisposer(
-      watch(
-        () => this.sprite?.project?.sounds.find((s) => s.name === this.sound),
-        (sound, _, onCleanup) => {
-          if (sound == null) {
-            this.sound = null
-            return
-          }
-          const stopWatch = watch(
-            () => sound.name,
-            (newName) => {
-              this.sound = newName
-            },
-            { flush: 'sync' }
-          ) // `flush: 'sync'` to ensure the watcher is triggered before being cleaned up
-          onCleanup(stopWatch)
-        },
-        { immediate: true }
-      )
-    )
-  }
-
   constructor(name: string, inits?: AnimationInits) {
     super()
     this.name = name
@@ -132,9 +107,7 @@ export class Animation extends Disposble {
       if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
     }
 
-    const self = reactive(this) as this
-    self.init()
-    return self
+    return reactive(this) as this
   }
 
   /**
@@ -152,11 +125,11 @@ export class Animation extends Disposble {
     const fromIndex = getCostumeIndex(sprite.costumes, from)
     const toIndex = getCostumeIndex(sprite.costumes, to)
     const costumes = sprite.costumes.slice(fromIndex, toIndex + 1)
+    const animation = new Animation(name, inits)
+    animation.setCostumes(costumes.map((costume) => costume.clone()))
     for (const costume of costumes) {
       sprite.removeCostume(costume.name)
     }
-    const animation = new Animation(name, inits)
-    animation.setCostumes(costumes)
     return animation
   }
 
