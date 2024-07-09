@@ -5,11 +5,12 @@
 </template>
 <script setup lang="ts">
 import type { Animation } from '@/models/animation'
-import type { Disposer } from '@/models/common/disposable'
-import { computed, ref, watch, watchEffect } from 'vue'
+import { Disposble } from '@/models/common/disposable'
+import { computed, ref, watch } from 'vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useFileUrl } from '@/utils/file'
 import MuteSwitch from './MuteSwitch.vue'
+import type { File } from '@/models/common/file'
 
 const props = defineProps<{
   animation: Animation
@@ -17,10 +18,10 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 
-const [soundSrc, soudLoading] = useFileUrl(
+const soundFile = computed(
   () => editorCtx.project.sounds.find((sound) => sound.name === props.animation.sound)?.file
 )
-const frameSrcList = ref<string[]>([])
+const [soundSrc, soundLoading] = useFileUrl(() => soundFile.value)
 const audioElement = ref<HTMLAudioElement | null>(null)
 const muted = ref(true)
 watch(muted, (muted) => {
@@ -29,84 +30,73 @@ watch(muted, (muted) => {
   }
   audioElement.value.muted = muted
 })
-watchEffect(async (onCleanup) => {
-  if (!soundSrc.value && soudLoading.value) {
-    audioElement.value?.pause()
-    audioElement.value = null
-  }
-  if (!props.animation.costumes.length) {
-    frameSrcList.value = []
-  }
-  if ((!soundSrc.value && soudLoading.value) || !props.animation.costumes.length) return
 
-  const disposers: Disposer[] = []
-  onCleanup(() => {
-    disposers.forEach((f) => f())
+const currentFrameSrc = ref<string | null>(null)
+const divStyle = computed(() => {
+  if (!currentFrameSrc.value) return
+  return {
+    background: `url(${currentFrameSrc.value}) center center / contain no-repeat`
+  }
+})
+
+const preloadAudio = async (src: string): Promise<HTMLAudioElement> => {
+  const audio = new Audio()
+  audio.src = src
+  audio.load()
+  await new Promise((resolve, reject) => {
+    audio.oncanplaythrough = resolve
+    audio.onerror = reject
   })
+  return audio
+}
 
-  const urls = await Promise.all(
-    props.animation.costumes.map((costume) => costume.img.url((f) => disposers.push(f)))
+const preloadFrames = async (costumeFiles: File[]) => {
+  const disposable = new Disposble()
+  try {
+    const urls = await Promise.all(
+      costumeFiles.map((costume) => costume.url((f) => disposable.addDisposer(f)))
+    )
+
+    const frames = await Promise.all([
+      ...urls.map(async (url) => {
+        const img = new Image()
+        img.src = url
+        await img.decode()
+        return img
+      })
+    ])
+    return {
+      // We need to hold the frames in memory to avoid flickering
+      frames,
+      disposable
+    }
+  } catch (e) {
+    disposable.dispose()
+    throw e
+  }
+}
+
+const startPlayingFrames = (frames: HTMLImageElement[], animationDuration: number) => {
+  let currentFrameIndex = 0
+  currentFrameSrc.value = frames[0].src
+  const animationIntervalId = setInterval(
+    () => {
+      currentFrameIndex = (currentFrameIndex + 1) % frames.length
+      currentFrameSrc.value = frames[currentFrameIndex].src
+    },
+    (animationDuration / frames.length) * 1000
   )
 
-  await Promise.all([
-    // Preload all frames and audio
-    ...urls.map((url) => {
-      const img = new Image()
-      img.src = url
-      return img.decode()
-    })
-  ])
-
-  if (soundSrc.value && !soudLoading.value) {
-    const nextAudioElement = new Audio()
-    nextAudioElement.muted = muted.value
-    nextAudioElement.src = soundSrc.value
-    nextAudioElement.load()
-    await new Promise((resolve, reject) => {
-      nextAudioElement.oncanplaythrough = resolve
-      nextAudioElement.onerror = reject
-    })
-    audioElement.value?.pause()
-    audioElement.value = nextAudioElement
-  }
-
-  frameSrcList.value = urls
-})
-
-const currentFrameIndex = ref(0)
-
-const frameInterval = computed(() => {
-  if (frameSrcList.value.length === 0) return 0
-  return (props.animation.duration / frameSrcList.value.length) * 1000 // convert to milliseconds
-})
-
-const divStyle = computed(() => ({
-  background: `url(${frameSrcList.value[currentFrameIndex.value]}) center center / contain no-repeat`
-}))
-
-watchEffect((onCleanup) => {
-  if (frameSrcList.value.length === 0) return
-
-  const animationIntervalId = setInterval(async () => {
-    const nextIndex = (currentFrameIndex.value + 1) % frameSrcList.value.length
-    // Preload next frame to avoid flicker
-    const nextFrame = new Image()
-    nextFrame.src = frameSrcList.value[nextIndex]
-    await nextFrame.decode()
-    currentFrameIndex.value = nextIndex
-  }, frameInterval.value)
-
-  onCleanup(() => {
+  return () => {
     clearInterval(animationIntervalId)
-    currentFrameIndex.value = 0
-  })
-})
+    currentFrameSrc.value = null
+  }
+}
 
-watchEffect((onCleanup) => {
+const startPlayingAudio = (audioElement: HTMLAudioElement) => {
   const resetSound = () => {
-    if (!audioElement.value) return
-    audioElement.value.currentTime = 0
-    audioElement.value.play()
+    audioElement.currentTime = 0
+    audioElement.play()
   }
   const soundIntervalId = setInterval(resetSound, props.animation.duration * 1000)
   try {
@@ -116,11 +106,59 @@ watchEffect((onCleanup) => {
     // or if the sound is not allowed to play
   }
 
-  onCleanup(() => {
+  return () => {
     clearInterval(soundIntervalId)
-    audioElement.value?.pause()
-  })
-})
+    audioElement.pause()
+  }
+}
+
+watch(
+  () => ({
+    soundSrc: soundSrc.value,
+    soundLoading: soundLoading.value,
+    costumeFiles: props.animation.costumes.map((costume) => costume.img),
+    animationDuration: props.animation.duration
+  }),
+  async ({ soundSrc, soundLoading, costumeFiles, animationDuration }, old, onCleanup) => {
+    if (!soundSrc || soundLoading) {
+      audioElement.value?.pause()
+      audioElement.value = null
+    }
+    if (soundLoading || !costumeFiles.length) {
+      return
+    }
+
+    const disposable = new Disposble()
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+      disposable.dispose()
+    })
+
+    const { disposable: framesDisposable, frames } = await preloadFrames(costumeFiles)
+    if (cancelled) {
+      framesDisposable.dispose()
+      return
+    }
+    disposable.addDisposer(framesDisposable.dispose)
+
+    if (soundSrc) {
+      const nextAudioElement = await preloadAudio(soundSrc)
+      if (cancelled) {
+        return
+      }
+      audioElement.value?.pause()
+      audioElement.value = nextAudioElement
+      nextAudioElement.muted = muted.value
+    }
+
+    disposable.addDisposer(startPlayingFrames(frames, animationDuration))
+    if (soundSrc) {
+      disposable.addDisposer(startPlayingAudio(audioElement.value!))
+    }
+  },
+  { immediate: true }
+)
 </script>
 <style scoped lang="scss">
 .animation-player-inner {

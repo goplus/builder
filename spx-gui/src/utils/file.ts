@@ -130,7 +130,10 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   watch(
     fileSource,
     (file, _, onCleanup) => {
-      if (file == null) return
+      if (file == null) {
+        urlRef.value = null
+        return
+      }
       loadingRef.value = true
       file
         .url(onCleanup)

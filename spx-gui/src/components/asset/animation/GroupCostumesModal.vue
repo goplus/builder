@@ -27,7 +27,7 @@
           {{
             $t({
               en: 'Remove chosen costumes from the sprite’s costume list',
-              zh: '从角色的造型列表中移除所选造型'
+              zh: '从角色的造型列表删除所选造型'
             })
           }}
         </span>
