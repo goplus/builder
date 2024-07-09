@@ -1,29 +1,18 @@
 <!-- Asset Item in asset-library -->
 
 <template>
-  <li class="asset-item" :class="{ selected, colorfulBackground }" :style="style">
-    <div class="img-container">
-      <slot></slot>
-    </div>
+  <li class="asset-item" :class="{ active: props.selected }">
+    <slot></slot>
     <UICornerIcon v-show="selected" type="check" />
   </li>
 </template>
 
 <script setup lang="ts">
-import { UICornerIcon, type Color } from '@/components/ui'
-import { computed } from 'vue'
+import { UICornerIcon } from '@/components/ui'
 
 const props = defineProps<{
-  selected?: boolean
-  color: Color
-  colorfulBackground?: boolean
+  selected: boolean
 }>()
-
-const style = computed(() => ({
-  '--color-outline': `--ui-color-${props.color}-main`,
-  '--color-background': `--ui-color-${props.color}-200`,
-  '--color-background-faint': `--ui-color-${props.color}-100`
-}))
 </script>
 
 <style lang="scss" scoped>
@@ -39,19 +28,14 @@ const style = computed(() => ({
   background-color: var(--ui-color-grey-300);
   cursor: pointer;
 
-  &:not(.selected):hover {
+  &:not(.active):hover {
     border-color: var(--ui-color-grey-400);
     background-color: var(--ui-color-grey-400);
   }
 
-  &.selected {
-    border-color: var(--color-outline);
-    background-color: var(--color-background);
-  }
-
-  &.colorfulBackground:not(.selected):not(:hover) {
-    border-color: var(--color-background-faint);
-    background-color: var(--color-background-faint);
+  &.active {
+    border-color: var(--ui-color-primary-main);
+    background-color: var(--ui-color-primary-200);
   }
 }
 </style>
