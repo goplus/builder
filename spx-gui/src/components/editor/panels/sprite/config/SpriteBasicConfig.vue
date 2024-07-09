@@ -193,7 +193,8 @@ const handleRotationStyleUpdate = wrapUpdateHandler((style: RotationStyle) => {
   if (style === RotationStyle.none) props.sprite.setHeading(90)
   if (style === RotationStyle.leftRight) {
     // normalize heading to 90 / -90
-    props.sprite.setHeading(leftRightToHeading(headingToLeftRight(props.sprite.heading)))
+    const normalizedHeading = leftRightToHeading(headingToLeftRight(props.sprite.heading))
+    props.sprite.setHeading(normalizedHeading)
   }
 })
 
