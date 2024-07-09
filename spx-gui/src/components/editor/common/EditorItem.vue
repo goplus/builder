@@ -60,12 +60,11 @@ const cssVars = computed(() => getCssVars('--editor-item-color-', uiVariables.co
 const addAssetToLibrary = useAddAssetToLibrary()
 
 const handleAddToAssetLibrary = useMessageHandle(
-  () => {
+  async () => {
     if (!(props.item instanceof Costume) && !(props.item instanceof Animation)) {
-      return addAssetToLibrary(props.item)
+      await addAssetToLibrary(props.item)
     }
     // TODO: What to do with costumes and animations?
-    return Promise.resolve()
   },
   {
     en: 'Failed to add backdrop to asset library',
