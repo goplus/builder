@@ -42,10 +42,14 @@ github.com/goplus/spx v1.0.1-0.20240625013919-ea894f504455 h1:/E/joCS3nu+VbxBsRt
 github.com/goplus/spx v1.0.1-0.20240625013919-ea894f504455/go.mod h1:eP0Yfbt31hSgnVmfmVeSRnq/kRoDyhwz+mI3VeXb/Vo=
 github.com/goplus/spx v1.0.1-0.20240703050621-72b5b4f2242e h1:nlVcudZPaahpF7mn/HgHgIcNdqmbQP/ky5gF5UlLkWs=
 github.com/goplus/spx v1.0.1-0.20240703050621-72b5b4f2242e/go.mod h1:8HjcFxmoksU4fxQF0Kc4hBuRLpW2FkEJHmLuyMhY5w8=
+github.com/goplus/spx v1.0.1-0.20240708105507-8f9159acc876 h1:sV6oNNakUbjgCMC4PFjj/TvCbTGxCGaJIdUfFU3d4mw=
+github.com/goplus/spx v1.0.1-0.20240708105507-8f9159acc876/go.mod h1:mFopcoTwo/IhdWUhQD1SmQfNdJyY7NPKnCcy5O1W9pc=
 github.com/hajimehoshi/ebiten/v2 v2.7.5 h1:jN6FnhCd9NGYCsm5GtrweuikrlyVGCSUpH5YgL+7UKA=
 github.com/hajimehoshi/ebiten/v2 v2.7.5/go.mod h1:H2pHVgq29rfm5yeQ7jzWOM3VHsjo7/AyucODNLOhsVY=
 github.com/hajimehoshi/ebiten/v2 v2.7.6 h1:dKM/BdPZP+I/I0ElcqfQ1d06W+kA0nwhUOWzEdEBIbY=
 github.com/hajimehoshi/ebiten/v2 v2.7.6/go.mod h1:Ulbq5xDmdx47P24EJ+Mb31Zps7vQq+guieG9mghQUaA=
+github.com/hajimehoshi/ebiten/v2 v2.7.7 h1:FyiuIOZqKU4aefYVws/lBDhTZu2WY2m/eWI3PtXZaHs=
+github.com/hajimehoshi/ebiten/v2 v2.7.7/go.mod h1:Ulbq5xDmdx47P24EJ+Mb31Zps7vQq+guieG9mghQUaA=
 github.com/hajimehoshi/go-mp3 v0.3.2/go.mod h1:qMJj/CSDxx6CGHiZeCgbiq2DSUkbK0UbtXShQcnfyMM=
 github.com/hajimehoshi/go-mp3 v0.3.4 h1:NUP7pBYH8OguP4diaTZ9wJbUbk3tC0KlfzsEpWmYj68=
 github.com/hajimehoshi/go-mp3 v0.3.4/go.mod h1:fRtZraRFcWb0pu7ok0LqyFhCUrPeMsGRSVop0eemFmo=
