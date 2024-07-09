@@ -120,6 +120,10 @@ watch(
     animationDuration: props.animation.duration
   }),
   async ({ soundSrc, soundLoading, costumeFiles, animationDuration }, old, onCleanup) => {
+    if (!soundSrc || soundLoading) {
+      audioElement.value?.pause()
+      audioElement.value = null
+    }
     if (soundLoading || !costumeFiles.length) {
       return
     }
