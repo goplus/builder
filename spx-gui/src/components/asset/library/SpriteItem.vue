@@ -1,6 +1,8 @@
 <template>
   <AssetItem class="sprite-item" :selected="selected">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <div class="img-container">
+      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    </div>
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
 </template>
@@ -25,8 +27,13 @@ const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 
 <style lang="scss" scoped>
 .img {
-  margin: 2px 0 6px;
   width: 99px;
   height: 99px;
+}
+
+.img-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 </style>

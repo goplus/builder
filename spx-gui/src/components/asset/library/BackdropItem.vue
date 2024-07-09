@@ -1,6 +1,8 @@
 <template>
   <AssetItem class="backdrop-item" color="stage" :selected="selected">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    <div class="img-container">
+      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+    </div>
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
 </template>
@@ -25,8 +27,14 @@ const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 
 <style lang="scss" scoped>
 .img {
-  margin: 2px 0 6px;
-  width: 52px;
-  height: 39px;
+  width: 132px;
+  height: 98px;
+  border-radius: 9px; // is not one of the predefined tokens
+}
+
+.img-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 </style>

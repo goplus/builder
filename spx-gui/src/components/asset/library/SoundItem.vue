@@ -1,9 +1,9 @@
 <template>
   <AssetItem class="sound-item" :selected="selected">
-    <div class="player">
-      <SoundPlayer :src="audioSrc" color="primary" />
+    <div class="player-container">
+      <SoundPlayer :src="audioSrc" color="primary" class="player" />
     </div>
-    <AssetItemName>{{ asset.displayName }}</AssetItemName>
+    <AssetItemName class="name">{{ asset.displayName }} </AssetItemName>
     <p class="duration">{{ formattedDuration }}</p>
   </AssetItem>
 </template>
@@ -31,8 +31,14 @@ const { formattedDuration } = useAudioDuration(() => {
 </script>
 
 <style lang="scss" scoped>
+.player-container {
+  width: 48px;
+  height: 92px;
+  display: flex;
+  align-items: center;
+}
+
 .player {
-  margin: 22px 0;
   width: 48px;
   height: 48px;
 }
@@ -41,6 +47,11 @@ const { formattedDuration } = useAudioDuration(() => {
   color: var(--ui-color-hint-1);
   text-align: center;
   font-size: 10px;
-  line-height: 1.8;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.name {
+  height: auto;
 }
 </style>
