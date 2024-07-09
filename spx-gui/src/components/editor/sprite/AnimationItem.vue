@@ -1,17 +1,20 @@
 <template>
-  <EditorItem :selected="selected" color="sprite">
+  <EditorItem
+    :selected="selected"
+    color="sprite"
+    :item="animation"
+    :removable="true"
+    @remove="handelRemove"
+  >
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    <EditorItemName class="name">{{ animation.name }}</EditorItemName>
-    <UICornerIcon v-show="selected" color="sprite" type="trash" @click.stop="handelRemove" />
   </EditorItem>
 </template>
 
 <script setup lang="ts">
-import { UIImg, UICornerIcon, useModal } from '@/components/ui'
+import { UIImg, useModal } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Sprite } from '@/models/sprite'
 import EditorItem from '../common/EditorItem.vue'
-import EditorItemName from '../common/EditorItemName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import type { Animation } from '@/models/animation'
 import { useMessageHandle } from '@/utils/exception'
@@ -44,11 +47,7 @@ const handelRemove = useMessageHandle(
 
 <style lang="scss" scoped>
 .img {
-  margin: 0 0 2px;
   width: 60px;
   height: 60px;
-}
-.name {
-  padding: 4px 8px 2px;
 }
 </style>

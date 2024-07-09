@@ -1,5 +1,5 @@
 <template>
-  <AssetItem class="backdrop-item" :selected="selected">
+  <AssetItem class="backdrop-item" color="stage" :selected="selected">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <AssetItemName>{{ asset.displayName }}</AssetItemName>
   </AssetItem>
@@ -26,7 +26,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => backdrop.value?.img)
 <style lang="scss" scoped>
 .img {
   margin: 2px 0 6px;
-  width: 99px;
-  height: 99px;
+  width: 52px;
+  height: 39px;
 }
 </style>
