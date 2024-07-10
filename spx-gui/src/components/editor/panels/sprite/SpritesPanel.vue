@@ -79,7 +79,7 @@ import PanelSummaryList, { useSummaryList } from '../common/PanelSummaryList.vue
 import PanelFooter from '../common/PanelFooter.vue'
 import SpriteItem from './SpriteItem.vue'
 import SpriteSummaryItem from './SpriteSummaryItem.vue'
-import SpriteBasicConfig from './SpriteBasicConfig.vue'
+import SpriteBasicConfig from './config/SpriteBasicConfig.vue'
 import { useMessageHandle } from '@/utils/exception'
 
 defineProps<{

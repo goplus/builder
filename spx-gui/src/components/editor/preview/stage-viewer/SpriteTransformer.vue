@@ -1,22 +1,13 @@
 <template>
-  <v-transformer
-    ref="transformer"
-    :config="{
-      keepRatio: true,
-      shouldOverdrawWholeArea: true,
-      rotateAnchorCursor: 'grab',
-      centeredScaling: true,
-      enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
-      flipEnabled: false
-    }"
-  />
+  <v-transformer ref="transformer" :config="config" />
 </template>
 
 <script setup lang="ts">
-import { effect, nextTick, ref } from 'vue'
-import type { Transformer } from 'konva/lib/shapes/Transformer'
+import { computed, effect, nextTick, ref } from 'vue'
+import type { Transformer, TransformerConfig } from 'konva/lib/shapes/Transformer'
 import type { Node } from 'konva/lib/Node'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import { RotationStyle } from '@/models/sprite'
 
 const props = defineProps<{
   spritesReadyMap: Map<string, boolean>
@@ -24,6 +15,19 @@ const props = defineProps<{
 
 const transformer = ref<any>()
 const editorCtx = useEditorCtx()
+
+const config = computed<TransformerConfig>(() => {
+  const sprite = editorCtx.project.selectedSprite
+  return {
+    keepRatio: true,
+    shouldOverdrawWholeArea: true,
+    rotateEnabled: sprite?.rotationStyle === RotationStyle.normal,
+    rotateAnchorCursor: 'grab',
+    centeredScaling: true,
+    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+    flipEnabled: false
+  }
+})
 
 effect(async () => {
   if (transformer.value == null) return

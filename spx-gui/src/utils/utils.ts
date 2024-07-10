@@ -103,3 +103,13 @@ export function until(condition: WatchSource<boolean>) {
     )
   })
 }
+
+/** Convert arbitrary degree value to `[-180, 180)` */
+export function nomalizeDegree(num: number) {
+  if (!Number.isFinite(num) || Number.isNaN(num)) return num
+  num = num % 360
+  if (num >= 180) num = num - 360
+  if (num < -180) num = num + 360
+  if (num === 0) num = 0 // convert `-0` to `0`
+  return num
+}

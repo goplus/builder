@@ -94,6 +94,7 @@ const themeOverrides: GlobalThemeOverrides = {
     border: 'none',
     borderHover: 'none',
     borderFocus: `1px solid ${uiVariables.color.primary.main}`,
+    borderDisabled: 'none',
     boxShadowFocus: 'none',
     boxShadowFocusError: 'none',
     suffixTextColor: uiVariables.color.grey[800],

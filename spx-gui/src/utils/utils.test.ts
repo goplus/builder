@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isImage, isSound } from './utils'
+import { isImage, isSound, nomalizeDegree } from './utils'
 
 describe('isImage', () => {
   it('should return true for valid image extensions', () => {
@@ -57,5 +57,23 @@ describe('isSound', () => {
   it('should handle URLs with unusual characters', () => {
     expect(isSound('example-sound@2x.mp3')).toBe(true)
     expect(isSound('example.sound.mp3')).toBe(true)
+  })
+})
+
+describe('nomalizeDegree', () => {
+  it('should work well', () => {
+    expect(nomalizeDegree(0)).toBe(0)
+    expect(nomalizeDegree(90)).toBe(90)
+    expect(nomalizeDegree(180)).toBe(-180)
+    expect(nomalizeDegree(270)).toBe(-90)
+    expect(nomalizeDegree(360)).toBe(0)
+    expect(nomalizeDegree(450)).toBe(90)
+    expect(nomalizeDegree(720)).toBe(0)
+    expect(nomalizeDegree(-90)).toBe(-90)
+    expect(nomalizeDegree(-180)).toBe(-180)
+    expect(nomalizeDegree(-270)).toBe(90)
+    expect(nomalizeDegree(-360)).toBe(0)
+    expect(nomalizeDegree(-450)).toBe(-90)
+    expect(nomalizeDegree(-720)).toBe(0)
   })
 })
