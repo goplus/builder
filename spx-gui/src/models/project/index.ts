@@ -161,16 +161,34 @@ export class Project extends Disposble {
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
     sound.addDisposer(
-      // update selected when sound renamed
+      // update animation.sound & selected when sound renamed
+      // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
       watch(
         () => sound.name,
         (newName, originalName) => {
+          for (const sprite of this.sprites) {
+            for (const animation of sprite.animations) {
+              if (animation.sound === originalName) {
+                animation.setSound(newName)
+              }
+            }
+          }
           if (this.selected?.type === 'sound' && this.selected.name === originalName) {
             this.select({ type: 'sound', name: newName })
           }
         }
       )
     )
+    sound.addDisposer(() => {
+      // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+      for (const sprite of this.sprites) {
+        for (const animation of sprite.animations) {
+          if (animation.sound === sound.name) {
+            animation.setSound(null)
+          }
+        }
+      }
+    })
   }
 
   setPublic(isPublic: IsPublic) {
