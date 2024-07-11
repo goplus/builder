@@ -8,12 +8,12 @@
           :key="asset.name"
           @click="selectSprite(asset)"
         >
-          <ScratchItemContainer :selected="selected.sprites.has(asset)">
+          <AssetItem :selected="selected.sprites.has(asset)">
             <div class="asset-image">
               <BlobImage :blob="asset.costumes[0].blob" />
             </div>
             <div class="asset-name">{{ asset.name }}</div>
-          </ScratchItemContainer>
+          </AssetItem>
         </NGridItem>
       </NGrid>
     </div>
@@ -38,12 +38,12 @@
           :key="asset.name"
           @click="selectBackdrop(asset)"
         >
-          <ScratchItemContainer :selected="selected.backdrops.has(asset)">
+          <AssetItem :selected="selected.backdrops.has(asset)">
             <div class="asset-image">
               <BlobImage :blob="asset.blob" />
             </div>
             <div class="asset-name">{{ asset.name }}</div>
-          </ScratchItemContainer>
+          </AssetItem>
         </NGridItem>
       </NGrid>
     </div>
@@ -78,8 +78,8 @@ import { type Project } from '@/models/project'
 import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
 import BlobImage from '../BlobImage.vue'
-import ScratchItemContainer from './ScratchItemContainer.vue'
 import SoundItem from './SoundItem.vue'
+import AssetItem from '../library/AssetItem.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
@@ -222,8 +222,9 @@ const importSelected = useMessageHandle(
   overflow: hidden;
 
   & > img {
-    max-width: 100%;
-    max-height: 100%;
+    object-fit: contain;
+    width: 132px;
+    height: 98px;
     border-radius: var(--ui-border-radius-1);
   }
 }

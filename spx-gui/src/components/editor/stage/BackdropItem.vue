@@ -1,6 +1,6 @@
 <template>
   <EditorItem
-    :selected="selected"
+    :active="selected"
     color="stage"
     :item="backdrop"
     :removable="removable"

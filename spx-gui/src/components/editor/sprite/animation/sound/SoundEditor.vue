@@ -15,7 +15,7 @@
       />
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
-          <UIBlockItem class="add-sound">
+          <UIBlockItem class="add-sound" color="primary">
             <UIIcon class="icon" type="plus" />
           </UIBlockItem>
         </template>
@@ -117,11 +117,5 @@ async function handleConfirm() {
 
 .add-sound {
   justify-content: center;
-  color: var(--ui-color-primary-main);
-
-  .icon {
-    width: 24px;
-    height: 24px;
-  }
 }
 </style>

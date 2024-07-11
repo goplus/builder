@@ -1,22 +1,21 @@
 <template>
-  <PanelItem
-    class="sound-item"
+  <EditorItem
+    color="sound"
     :active="active"
     :name="props.sound.name"
+    :item="props.sound"
+    removable
     @remove="emit('remove')"
-    @add-to-asset-library="emit('addToAssetLibrary')"
   >
-    <div class="content">
-      <SoundPlayer :src="audioSrc" color="sound" />
-    </div>
-  </PanelItem>
+    <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
+  </EditorItem>
 </template>
 
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
 import { Sound } from '@/models/sound'
 import SoundPlayer from '../../sound/SoundPlayer.vue'
-import PanelItem from '../common/PanelItem.vue'
+import EditorItem from '../../common/EditorItem.vue'
 
 const props = defineProps<{
   sound: Sound
@@ -32,21 +31,8 @@ const [audioSrc] = useFileUrl(() => props.sound.file)
 </script>
 
 <style lang="scss" scoped>
-.sound-item {
-  // different rule for sprite & sound item background
-  background-color: var(--ui-color-sound-100);
-  border-color: var(--ui-color-sound-100);
-
-  &:not(.active):hover {
-    background-color: var(--ui-color-sound-200);
-    border-color: var(--ui-color-sound-200);
-  }
-}
-
-.content {
-  margin-top: 4px;
-  width: 56px;
-  height: 56px;
-  padding: 10px;
+.sound-player {
+  width: 36px;
+  height: 36px;
 }
 </style>

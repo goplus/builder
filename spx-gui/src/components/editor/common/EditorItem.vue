@@ -1,5 +1,9 @@
 <template>
-  <li class="editor-item" :class="{ active: selected }" :style="cssVars">
+  <UIBlockItem
+    :active="active"
+    :color="color"
+    :variant="color === 'sound' ? 'colorful' : 'standard'"
+  >
     <div class="image">
       <slot></slot>
     </div>
@@ -10,7 +14,7 @@
     </div>
     <UIDropdown trigger="click">
       <template #trigger>
-        <UICornerIcon v-show="selected" :color="color" type="more" />
+        <UICornerIcon v-show="active" :color="color" type="more" />
       </template>
       <UIMenu>
         <UIMenuItem @click="handleAddToAssetLibrary.fn">{{
@@ -21,19 +25,17 @@
         }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-  </li>
+  </UIBlockItem>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import {
-  getCssVars,
-  useUIVariables,
   type Color,
   UIDropdown,
   UICornerIcon,
   UIMenu,
-  UIMenuItem
+  UIMenuItem,
+  UIBlockItem
 } from '@/components/ui'
 import type { Backdrop } from '@/models/backdrop'
 import type { Sprite } from '@/models/sprite'
@@ -44,7 +46,7 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 
 const props = defineProps<{
-  selected: boolean
+  active: boolean
   color: Color
   item: Backdrop | Sound | Sprite | Costume | Animation
   removable: boolean
@@ -53,9 +55,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   remove: []
 }>()
-
-const uiVariables = useUIVariables()
-const cssVars = computed(() => getCssVars('--editor-item-color-', uiVariables.color[props.color]))
 
 const addAssetToLibrary = useAddAssetToLibrary()
 
@@ -74,29 +73,6 @@ const handleAddToAssetLibrary = useMessageHandle(
 </script>
 
 <style lang="scss" scoped>
-.editor-item {
-  width: 88px;
-  height: 88px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  align-items: center;
-  border-radius: var(--ui-border-radius-2);
-  border: 2px solid var(--ui-color-grey-300);
-  background-color: var(--ui-color-grey-300);
-  cursor: pointer;
-
-  &:not(.active):hover {
-    border-color: var(--ui-color-grey-400);
-    background-color: var(--ui-color-grey-400);
-  }
-
-  &.active {
-    border-color: var(--editor-item-color-main);
-    background-color: var(--editor-item-color-200);
-  }
-}
-
 .image {
   flex: 1;
   display: flex;

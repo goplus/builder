@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem :active="active">
+  <UIBlockItem :active="active" color="primary">
     <div class="content">
       <SoundPlayer :src="audioSrc" color="primary" />
     </div>

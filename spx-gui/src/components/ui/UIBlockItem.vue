@@ -1,43 +1,68 @@
 <template>
-  <li class="block-item" :class="{ active }">
+  <div
+    :class="['block-item', active && 'block-item-active', `block-item-${variant}`]"
+    :style="style"
+  >
     <slot></slot>
-  </li>
+  </div>
 </template>
 
 <script setup lang="ts">
-// TODO: support more variants, see details in https://github.com/goplus/builder/issues/613
-withDefaults(
+import { computed } from 'vue'
+import type { Color } from '.'
+
+const props = withDefaults(
   defineProps<{
-    active?: boolean
+    active: boolean
+    color: Color
+    variant: 'standard' | 'colorful'
   }>(),
   {
-    active: false
+    active: false,
+    variant: 'standard'
   }
 )
+
+const style = computed(() => ({
+  '--color-outline': `var(--ui-color-${props.color}-main)`,
+  '--color-background': `var(--ui-color-${props.color}-200)`,
+  '--color-background-faint': `var(--ui-color-${props.color}-100)`
+}))
 </script>
 
 <style lang="scss" scoped>
 .block-item {
-  flex: 0 0 auto;
   width: 88px;
   height: 88px;
   display: flex;
   flex-direction: column;
-  position: relative;
   align-items: center;
+  position: relative;
   border-radius: var(--ui-border-radius-1);
   border: 2px solid var(--ui-color-grey-300);
   background-color: var(--ui-color-grey-300);
   cursor: pointer;
 
-  &:not(.active):hover {
-    border-color: var(--ui-color-grey-400);
-    background-color: var(--ui-color-grey-400);
+  &:hover:not(.block-item-active) {
+    &.block-item-standard {
+      border-color: var(--ui-color-grey-400);
+      background-color: var(--ui-color-grey-400);
+    }
+
+    &.block-item-colorful {
+      border-color: var(--color-background);
+      background-color: var(--color-background);
+    }
   }
 
-  &.active {
-    border-color: var(--ui-color-primary-main);
-    background-color: var(--ui-color-primary-200);
+  &.block-item-colorful {
+    border-color: var(--color-background-faint);
+    background-color: var(--color-background-faint);
+  }
+
+  &.block-item-active {
+    border-color: var(--color-outline);
+    background-color: var(--color-background);
   }
 }
 </style>
