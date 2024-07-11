@@ -1,5 +1,5 @@
 <template>
-  <ScratchItemContainer :selected="selected">
+  <AssetItem :selected="selected">
     <div class="sound-display">
       <div class="sound-container">
         <BlobSoundPlayer :blob="asset.blob" color="primary" />
@@ -7,13 +7,13 @@
     </div>
     <div class="asset-name">{{ asset.name }}</div>
     <div class="duration">{{ formattedDuration || '&nbsp;' }}</div>
-  </ScratchItemContainer>
+  </AssetItem>
 </template>
 <script setup lang="ts">
 import type { ExportedScratchFile } from '@/utils/scratch'
 import BlobSoundPlayer from '../BlobSoundPlayer.vue'
-import ScratchItemContainer from './ScratchItemContainer.vue'
 import { useAudioDuration } from '@/utils/audio'
+import AssetItem from '../library/AssetItem.vue'
 
 const props = defineProps<{
   asset: ExportedScratchFile
