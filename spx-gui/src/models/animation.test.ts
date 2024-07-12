@@ -81,7 +81,7 @@ describe('Animation', () => {
     expect(animation.sound).toBeNull()
   })
 
-  it('should load correctly', async () => {
+  it('should work correctly while project loads', async () => {
     const project = makeProject()
     project.sprites[0].animations[0].setSound(project.sounds[0].name)
 

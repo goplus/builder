@@ -10,13 +10,6 @@ import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
 
-enum AniType {
-  frame = 0,
-  move = 1,
-  turn = 2,
-  glide = 3
-}
-
 type ActionConfig = {
   /** Sound name to play */
   play?: string
@@ -27,19 +20,26 @@ type ActionConfig = {
 export const defaultFps = 10
 
 export type AnimationInits = {
+  /** Duration for animation to be played once */
   duration?: number
   onStart?: ActionConfig
 
   // not supported by builder:
-  fps?: number
   isLoop?: boolean // TODO
   onPlay?: ActionConfig
 }
 
-export type RawAnimationConfig = AnimationInits & {
+export type RawAnimationConfig = Omit<AnimationInits, 'duration'> & {
   anitype?: number
+  frameFrom?: number | string
+  frameTo?: number | string
+  frameFps?: number
+
+  // legacy APIs, for compatibility only:
   from?: number | string
   to?: number | string
+  fps?: number
+  duration?: number
 }
 
 export class Animation extends Disposable {
@@ -103,7 +103,7 @@ export class Animation extends Disposable {
     this.duration = inits?.duration ?? 0
     this.sound = inits?.onStart?.play ?? null
 
-    for (const field of ['fps', 'isLoop', 'onPlay'] as const) {
+    for (const field of ['isLoop', 'onPlay'] as const) {
       if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
     }
 
@@ -120,12 +120,31 @@ export class Animation extends Disposable {
     return animation
   }
 
-  static load(name: string, { from, to, ...inits }: RawAnimationConfig, sprite: Sprite) {
-    if (from == null || to == null) throw new Error(`from and to expected for Animation ${name}`)
-    const fromIndex = getCostumeIndex(sprite.costumes, from)
-    const toIndex = getCostumeIndex(sprite.costumes, to)
+  static load(
+    name: string,
+    {
+      frameFrom,
+      frameTo,
+      frameFps,
+      from,
+      to,
+      fps,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      duration: _spxDuration, // drop spx `duration`, which is different from ours
+      ...inits
+    }: RawAnimationConfig,
+    sprite: Sprite
+  ) {
+    frameFrom = frameFrom ?? from
+    frameTo = frameTo ?? to
+    frameFps = frameFps ?? fps
+    if (frameFrom == null || frameTo == null)
+      throw new Error(`from and to expected for Animation ${name}`)
+    const fromIndex = getCostumeIndex(sprite.costumes, frameFrom)
+    const toIndex = getCostumeIndex(sprite.costumes, frameTo)
     const costumes = sprite.costumes.slice(fromIndex, toIndex + 1)
-    const animation = new Animation(name, inits)
+    const duration = costumes.length / (frameFps ?? defaultFps)
+    const animation = new Animation(name, { ...inits, duration })
     animation.setCostumes(costumes.map((costume) => costume.clone()))
     for (const costume of costumes) {
       sprite.removeCostume(costume.name)
@@ -145,10 +164,9 @@ export class Animation extends Disposable {
       Object.assign(files, costumeFiles)
     }
     const config: RawAnimationConfig = {
-      from: costumeConfigs[0]?.name,
-      to: costumeConfigs[costumeConfigs.length - 1]?.name,
-      duration: this.duration,
-      anitype: AniType.frame,
+      frameFrom: costumeConfigs[0]?.name,
+      frameTo: costumeConfigs[costumeConfigs.length - 1]?.name,
+      frameFps: Math.ceil(this.costumes.length / this.duration),
       onStart: this.sound == null ? undefined : { play: this.sound }
     }
     return [config, costumeConfigs, files]
