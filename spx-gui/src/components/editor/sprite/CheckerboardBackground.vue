@@ -4,10 +4,8 @@
 
 <style scoped>
 .checkerboard-background-internal {
-  background-size: 18px 18px;
+  background-size: 36px 36px; /** grid size: 18x18 */
   background-repeat: repeat;
-  width: 100%;
-  height: 100%;
   image-rendering: pixelated;
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGN49eH7fwYYePXh+38ARGwHoUrYy14AAAAASUVORK5CYII='); /* 2x2 checkerboard pattern */
   background-color: #fff;

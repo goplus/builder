@@ -1,7 +1,7 @@
 <template>
   <UIFormModal
-    style="width: 928px"
-    :visible="true"
+    style="width: 1034px"
+    :visible="visible"
     :title="
       $t({
         en: 'Group costumes as animation',
@@ -12,13 +12,28 @@
     @update:visible="emit('cancelled')"
   >
     <div class="container">
-      <CostumeItem
-        v-for="costume in props.sprite.costumes"
-        :key="costume.name"
-        :costume="costume"
-        :selected="selectedCostumes.has(costume)"
-        @click="handleCostumeClick(costume)"
-      />
+      <ul class="costume-list">
+        <CostumeItem
+          v-for="costume in props.sprite.costumes"
+          :key="costume.name"
+          :costume="costume"
+          :selected="selectedCostumeSet.has(costume)"
+          @click="handleCostumeClick(costume)"
+        />
+      </ul>
+      <div class="sep"></div>
+      <div class="preview">
+        <UIEmpty v-if="selectedCostumes.length === 0" size="medium">
+          {{ $t({ en: 'Select costumes to continue', zh: '请选择造型' }) }}
+        </UIEmpty>
+        <AnimationPlayer
+          v-else
+          class="player"
+          :costumes="selectedCostumes"
+          :duration="duration"
+          :sound="null"
+        />
+      </div>
     </div>
     <div class="footer">
       <div class="spacer" />
@@ -32,18 +47,20 @@
           }}
         </span>
       </UICheckbox>
-      <UIButton size="large" :disabled="selectedCostumes.size === 0" @click="handleConfirm">
+      <UIButton size="large" :disabled="selectedCostumeSet.size === 0" @click="handleConfirm">
         {{ $t({ en: 'Add animation', zh: '添加动画' }) }}
       </UIButton>
     </div>
   </UIFormModal>
 </template>
 <script setup lang="ts">
-import { UIButton, UICheckbox, UIFormModal } from '@/components/ui'
+import { defineProps, defineEmits, ref, reactive, computed } from 'vue'
+import { UIButton, UICheckbox, UIEmpty, UIFormModal } from '@/components/ui'
 import type { Costume } from '@/models/costume'
-import { defineProps, defineEmits, ref, reactive } from 'vue'
-import CostumeItem from './CostumeItem.vue'
 import type { Sprite } from '@/models/sprite'
+import { defaultFps } from '@/models/animation'
+import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
+import CostumeItem from './CostumeItem.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -62,37 +79,67 @@ const emit = defineEmits<{
 
 const removeCostumes = ref(true)
 
-const selectedCostumes = reactive<Set<Costume>>(new Set())
+const selectedCostumeSet = reactive<Set<Costume>>(new Set())
+const selectedCostumes = computed(() => {
+  const costumes = []
+  // By this way we can keep the order of the costumes
+  for (const costume of props.sprite.costumes) {
+    if (selectedCostumeSet.has(costume)) {
+      costumes.push(costume)
+    }
+  }
+  return costumes
+})
+const duration = computed(() => selectedCostumes.value.length / defaultFps)
 
 const handleCostumeClick = (costume: Costume) => {
-  if (selectedCostumes.has(costume)) {
-    selectedCostumes.delete(costume)
+  if (selectedCostumeSet.has(costume)) {
+    selectedCostumeSet.delete(costume)
   } else {
-    selectedCostumes.add(costume)
+    selectedCostumeSet.add(costume)
   }
 }
 
 const handleConfirm = () => {
-  // By this way we can keep the order of the costumes
-  const costumes = []
-  for (const costume of props.sprite.costumes) {
-    if (selectedCostumes.has(costume)) {
-      costumes.push(costume)
-    }
-  }
-
-  emit('resolved', { selectedCostumes: costumes, removeCostumes: removeCostumes.value })
+  emit('resolved', {
+    selectedCostumes: selectedCostumes.value,
+    removeCostumes: removeCostumes.value
+  })
 }
 </script>
 <style lang="scss" scoped>
 .container {
+  min-height: 476px;
+  max-height: 600px;
+  display: flex;
+}
+
+.costume-list {
+  padding: 20px 0 20px 24px;
+  flex: 1 1 0;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 20px 24px;
+  align-content: flex-start;
   overflow-y: auto;
-  max-height: 600px;
-  user-select: none;
+}
+
+.sep {
+  margin: 20px 0;
+  width: 1px;
+  align-self: stretch;
+  background-color: var(--ui-color-dividing-line-2);
+}
+
+.preview {
+  padding: 20px 24px;
+  flex: 0 0 402px;
+  align-self: stretch;
+
+  .player {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .footer {

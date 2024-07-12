@@ -1,18 +1,20 @@
 <template>
   <EditorItemDetail :name="animation.name" @rename="handleRename">
-    <div class="img-wrapper">
-      <CheckerboardBackground class="background" />
-      <AnimationPlayer :animation="animation" class="animation-player" />
-    </div>
+    <AnimationPlayer
+      :costumes="animation.costumes"
+      :sound="sound"
+      :duration="animation.duration"
+      class="animation-player"
+    />
     <AnimationSettings :animation="animation" :sprite="sprite" />
   </EditorItemDetail>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useModal } from '@/components/ui'
 import EditorItemDetail from '../common/EditorItemDetail.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import CheckerboardBackground from './CheckerboardBackground.vue'
 import type { Animation } from '@/models/animation'
 import AnimationPlayer from './animation/AnimationPlayer.vue'
 import AnimationRenameModal from './AnimationRenameModal.vue'
@@ -27,6 +29,9 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const renameCostume = useModal(AnimationRenameModal)
+const sound = computed(
+  () => editorCtx.project.sounds.find((sound) => sound.name === props.animation.sound) ?? null
+)
 
 const handleRename = useMessageHandle(
   () => {
@@ -44,26 +49,9 @@ const handleRename = useMessageHandle(
 </script>
 
 <style lang="scss" scoped>
-.img-wrapper {
+.animation-player {
   width: 100%;
   flex: 1 1 0;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-
-.animation-player {
-  position: absolute;
-  width: 100%;
-  height: 100%;
 }
 
 .mute-switch {

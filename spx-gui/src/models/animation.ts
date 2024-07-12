@@ -24,7 +24,7 @@ type ActionConfig = {
   costumes?: unknown
 }
 
-const defaultFps = 10
+export const defaultFps = 10
 
 export type AnimationInits = {
   duration?: number
