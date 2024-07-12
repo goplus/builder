@@ -12,6 +12,7 @@
   overflow-y: auto;
   margin: 0;
   padding: 12px 0 12px 12px; // no right padding to allow optional scrollbar
+  scrollbar-width: thin;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
