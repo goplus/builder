@@ -1,232 +1,233 @@
 # Go+ Builder
 
-Go+ Builder 是一个编辑器，编辑的对象是游戏项目。游戏基于 SPX 技术实现，SPX 是基于 Go+ 语言的游戏引擎。
+Go+ Builder is an editor that aims for game projects. The game is implemented based on spx technology, which is a game engine based on the Go+ language.
 
-Go+ 的目标用户是学习编程的 10 岁左右未成年人。
+The target users of Go+ are children around 10 years old who are learning programming.
 
-## 基本概念
+## Basic Concepts
 
-Go+ Builder 中的基本概念有：
+The basic concepts in Go+ Builder are:
 
-* 用户 User
-* 项目 Project
-* 舞台 Stage
-* 精灵 Sprite
-* 造型 Costume
-* 声音 Sound
-* 背景 Backdrop
-* 素材 Asset
+* User
+* Project
+* Stage
+* Sprite
+* Costume
+* Sound
+* Backdrop
+* Asset
 
-### 用户 User
+### User
 
-User 包含以下信息：
+User contains the following information:
 
-* Name: 可读的、全局唯一的标识，如“alice”；Name 信息不可变更
+* Name: A readable and globally unique identifier, such as "alice"; Name information cannot be changed.
 
-一个 User 可以拥有 0 个或多个 Project & Asset。Project & Asset 在云端的的添加操作都需要以某个用户身份进行，我们称该 User 拥有这些 Project & Asset。
+A User can have 0 or more Projects & Assets. Adding operations of Projects & Assets in the cloud need to be performed with a user identity. We say that the User owns these Projects & Assets.
 
-目前，User 与 Project 或 Asset 的拥有关系不可变更。
+Currently, the ownership relationship between User and Project or Asset cannot be changed.
 
-### 项目 Project
+### Project
 
-Project 包含两部分信息：
+Project contains two parts of information:
 
-1. Project 的基本信息
-2. Game: Project 所对应的游戏内容
+1. Basic information of the Project
+2. Game: The game content corresponding to the Project
 
-其中基本信息包括：
+The basic information includes:
 
-* Name: Project 的名字，它是 Project 在当前 User 下唯一的标识，如“my-test-game”，Name 信息不可变更
-* IsPublic: Project 被保存到云端后，可以选择是否公开；公开的 Project 可以被其他人读取
-* 其他，如创建时间、更新时间等
+* Name: The name of the Project, it is a unique identifier for the Project under the current User, such as "my-test-game"; Name information cannot be changed.
+* IsPublic: After the Project is saved to the cloud, you can choose whether it is public; public Projects can be read by others.
+* Others, such as creation time, update time, etc.
 
-此外，Project 所对应的游戏内容 Game 包括：
+In addition, the game content Game corresponding to the Project includes:
 
-* Stage: 舞台信息，游戏运行时全局的状态、逻辑、背景等信息包含在 Stage 中；一个 Project 对应一个 Stage
-* Sprites: 精灵列表，一个 Project 可以对应 0 个或多个 Sprite
-* Sounds: 声音列表，一个 Project 可以对应 0 个或多个 Sound
-* Zorder: Z 轴顺序，记录了当前 Project 中所有的 Sprite（以及其他特殊内容）的在 Z 轴的顺序，即渲染时的层级
-* Config: 其他配置信息，如摄像头（Camera）行为等
+* Stage: Stage information, which contains the global state, logic, background, etc. during the game runtime; one Project corresponds to one Stage.
+* Sprites: Sprite list, one Project can correspond to 0 or more Sprites.
+* Sounds: Sound list, one Project can correspond to 0 or more Sounds.
+* Zorder: Z-axis order, which records the order of all Sprites (and other special content) in the Z-axis of the current Project, that is, the rendering hierarchy.
+* Config: Other configuration information, such as camera behavior.
 
-一个 Project 对应一个可运行的游戏，它可以看成是 0 个或多个 Sprite 在一个 Stage 上按脚本“表演”的结果，而 Sound 可以被同 Project 中的 Stage 或 Sprite 在表演时使用（播放）
+A Project corresponds to a runnable game. It can be seen as the result of "performing" 0 or more Sprites on a Stage, and Sound can be used (played) by the Stage or Sprite in the same Project during the performance.
 
-因为 User Name 是全局唯一的，而 Project Name 是当前 User 下唯一的，因此一个 Project 可以被 User Name + Project Name 唯一标识。如我们可以用 `alice/my-test-game` 来标识 User `alice` 所拥有的名为 `my-test-game` 的 Project。
+Because User Name is globally unique, and Project Name is unique under the current User, a Project can be uniquely identified by User Name + Project Name. For example, we can use `alice/my-test-game` to identify the Project named `my-test-game` owned by User `alice`.
 
-### 舞台 Stage
+### Stage
 
-Stage 包含以下信息：
+Stage contains the following information:
 
-* Script: 脚本，对 Stage 运行逻辑的描述
-* Backdrops: 背景列表，一个 Stage 可以对应 0 个或多个 Backdrop
-* Config: 其他配置信息，如默认 Backdrop 的选用、舞台尺寸等
+* Script: The script that describes the running logic of the Stage.
+* Backdrops: Backdrop list, one Stage can correspond to 0 or more Backdrops.
+* Config: Other configuration information, such as the selection of the default Backdrop, stage size, etc.
 
-### 精灵 Sprite
+### Sprite
 
-Sprite 包含以下信息：
+Sprite contains the following information:
 
-* Name: 名字，在所属的 Project 中唯一
-* Script: 脚本，对 Sprite 运行逻辑的描述
-* Costumes: 造型列表，一个 Sprite 可以对应一个或多个 Costume
-* Config: 其他配置信息，如默认 Costume 的选用、初始位置、方向、尺寸、可见状态等
+* Name: The name, unique within the Project it belongs to.
+* Script: The script that describes the running logic of the Sprite.
+* Costumes: Costume list, one Sprite can correspond to one or more Costumes.
+* Config: Other configuration information, such as the selection of the default Costume, initial position, direction, size, visibility, etc.
 
-### 造型 Costume
+### Costume
 
-Costume 包含以下信息：
+Costume contains the following information:
 
-* Name: 名字，在所属的 Sprite 中唯一
-* Image: 图片，一个 Costume 对应一张图片
-* Config: 其他配置信息，如相对位置、分辨率等
+* Name: The name, unique within the Sprite it belongs to.
+* Image: The image, one Costume corresponds to one image.
+* Config: Other configuration information, such as relative position, resolution, etc.
 
-### 声音 Sound
+### Sound
 
-Sound 包含以下信息：
+Sound contains the following information:
 
-* Name: 名字，在所属的 Project 中唯一
-* Audio: 音频，一个 Sound 对应一份音频文件
+* Name: The name, unique within the Project it belongs to.
+* Audio: The audio, one Sound corresponds to one audio file.
 
-### 背景 Backdrop
+### Backdrop
 
-Backdrop 包含以下信息：
+Backdrop contains the following information:
 
-* Name: 名字，在所属的 Project 中唯一
-* Image: 图片，一个 Backdrop 对应一张图片
-* Config: 其他配置信息，如相对位置、分辨率等
+* Name: The name, unique within the Project it belongs to.
+* Image: The image, one Backdrop corresponds to one image.
+* Config: Other configuration information, such as relative position, resolution, etc.
 
-### 素材 Asset
+### Asset
 
-素材是对 Project 中独立发布的可复用内容的统称，内容的格式有多种，如 Sprite、Sound、Backdrop 等。用户在创作游戏的过程中，可以把这些相对零碎的可复用的内容独立发布，以允许自己在别的 Project、或别人在别的 Project 复用之。
+Asset is a collective term for independently published reusable content in a Project. The content can have various formats, such as Sprite, Sound, Backdrop, etc. During the process of creating a game, users can independently publish these relatively fragmented and reusable content to allow themselves or others to reuse them in other Projects.
 
-Asset 包含以下信息：
+Asset contains the following information:
 
-* DisplayName: 展示名，对 Asset 的简单描述，不同 Asset 的 DisplayName 可以相同
-* Content: 内容，可能是一个 Sprite，或者一个 Sound，或者一个 Backdrop
-* AssetType: 内容格式，标识素材所包含的内容是 Sprite、Sound、Backdrop 中的哪种
-* Category: 种类，对于素材使用场景的简单分类，如 food、animals、sports 等，方便用户根据使用场景进行筛选
-* IsPublic: Asset 被保存到云端后，可以选择是否公开；公开的 Asset 可以被其他人读取并使用
-* ClickCount: 热度，反映一个 Asset（尤其是公开 Asset）的受欢迎程度
+* DisplayName: The display name, a simple description of the Asset. The DisplayName of different Assets can be the same.
+* Content: The content, which can be a Sprite, a Sound, or a Backdrop.
+* AssetType: The content format, indicating which type of content the Asset contains, such as Sprite, Sound, or Backdrop.
+* Category: The category, a simple classification of the usage scenario of the Asset, such as food, animals, sports, etc., to facilitate users to filter based on the usage scenario.
+* IsPublic: After the Asset is saved to the cloud, you can choose whether it is public; public Assets can be read and used by others.
+* ClickCount: Popularity, reflecting the popularity of an Asset (especially public Assets).
 
 ## User Story
 
-这里简述 Go+ Builder 几个基本用户场景对应的逻辑：
+Here is a brief description of the logic corresponding to several basic user scenarios of Go+ Builder:
 
-### Project 创建与保存
+### Project Creation and Saving
 
-用户通过 Go+ Builder 可以创建新 Project，然后进行编辑：
+Users can create a new Project through Go+ Builder and then edit it:
 
-* 编辑 Project Name
-* 编辑 Stage 信息
-	- 编写全局 Script（细节 TODO）
-	- 添加并编辑 Backdrop 信息
-		+ 设置 Backdrop Name
-		+ 上传 Image
-		+ 修改其他 Backdrop Config（细节 TODO）
-	- 修改其他 Stage Config（细节 TODO）
-* 添加并编辑 Sprite
-	- 设置 Sprite Name
-	- 编写 Sprite Script（细节 TODO）
-	- 添加并编辑 Costume 信息
-		+ 设置 Costume Name
-		+ 上传 Image
-		+ 修改其他 Costume Config（细节 TODO）
-	- 修改其他 Sprite Config（细节 TODO）
-* 添加并编辑 Sound
-	- 设置 Sound Name
-	- 上传或录制 Audio（细节 TODO）
-* 对 Zorder 进行控制（控制不同内容的层级）
+* Edit Project Name
+* Edit Stage information
+	- Write global Script (details TODO)
+	- Add and edit Backdrop information
+		+ Set Backdrop Name
+		+ Upload Image
+		+ Modify other Backdrop Config (details TODO)
+	- Modify other Stage Config (details TODO)
+* Add and edit Sprite
+	- Set Sprite Name
+	- Write Sprite Script (details TODO)
+	- Add and edit Costume information
+		+ Set Costume Name
+		+ Upload Image
+		+ Modify other Costume Config (details TODO)
+	- Modify other Sprite Config (details TODO)
+* Add and edit Sound
+	- Set Sound Name
+	- Upload or record Audio (details TODO)
+* Control Zorder (control the order of different content)
 
-编辑过程中用户应当能从预览区得到反馈，实时地看到当前舞台上所有的内容（按照 Zorder 展示）。
+During the editing process, users should be able to get feedback from the preview area and see all the content on the current stage in real-time (displayed according to Zorder).
 
-编辑过程中用户可以选择运行 Project。运行 Project 即为在浏览器中运行 Project 对应的游戏（基于当前 Project 中的 Game 内容）。
+During the editing process, users can choose to run the Project. Running the Project means running the game corresponding to the Project in the browser (based on the Game content in the current Project).
 
-编辑过程中或完成后，用户可以选择保存 Project，把当前的 Project 状态保存到云端。后续提到的“保存”，如非特别说明，均指保存到云端。
+During or after the editing process, users can choose to save the Project and save the current Project status to the cloud. The term "save" mentioned later, unless otherwise specified, refers to saving to the cloud.
 
-对于尚未保存到云端的变更，编辑器会将其暂存在用户浏览器中。即，如果用户做了变更 A，且未将其保存到云端，随后关闭了编辑器。再次使用编辑器打开该 Project 时，变更 A 不会被丢弃，用户可以继续在 A 的基础上继续编辑。这个暂存是可能失效的，失效的原因包括但不限于：
+For changes that have not been saved to the cloud, the editor will temporarily store them in the user's browser. That is, if the user makes a change A and does not save it to the cloud, and then closes the editor. When opening the Project again using the editor, the change A will not be discarded, and the user can continue editing based on change A. This temporary storage may become invalid, and the reasons for invalidation include but are not limited to:
 
-* 间隔时间过长
-* 本地存储空间不足
-* 中途切换用户身份或编辑别的 Project
+* Too long interval
+* Insufficient local storage space
+* Switching user identity or editing other Projects in the middle
 
-被保存的 Project 可以是公开的，也可以是私有的，具体参见 `Project.IsPublic`。
+The saved Project can be public or private, please refer to `Project.IsPublic` for details.
 
-### 编辑已有 Project
+### Editing Existing Projects
 
-用户可以查看自己已保存的所有 Project，并再次编辑，即，在当前编辑器中恢复当时保存的状态。
+Users can view all their saved Projects and edit them again, that is, restore the saved state in the current editor.
 
-对已有 Project 的编辑动作与创建新 Project 后的编辑类似，这里不做赘述。
+The editing actions for existing Projects are similar to editing after creating a new Project, and will not be repeated here.
 
-在保存时，本次做的变更应当被追加到云端已有的 Project 上，而不会在云端产生新的 Project。
+When saving, the changes made this time should be appended to the existing Project in the cloud, and no new Project will be created in the cloud.
 
-### 在其他人的公开 Project 基础上编辑
+### Editing Based on Public Projects of Others
 
-用户可以查看并筛选所有人保存的公开 Project，并在其基础上继续编辑。需要注意，当用户在其他人的公开 Project 基础上编辑时，他编辑的并不是其他人的 Project，也无法真的修改其他人的 Project。
+Users can view and filter all public Projects saved by others, and continue editing based on them. It should be noted that when users edit based on public Projects of others, they are not actually modifying the Projects of others, and cannot modify them.
 
-这个过程从原理上看应当是：创建一个新的 Project，并把目标 Project 的 Game 拷贝过来。因此在保存时，不应当将本次做的变更追加到云端已有的 Project 上，而是在云端添加新的 Project。
+From a theoretical point of view, this process should be: create a new Project and copy the Game of the target Project. Therefore, when saving, the changes made this time should not be appended to the existing Project in the cloud, but a new Project should be added to the cloud.
 
-### 导入、导出 Project
+### Importing and Exporting Projects
 
-用户可以通过编辑器将 Project 中的 Game 导出为一个文件并保存到用户本地。注意 Project 中除 Game 外的其他信息不会被包含在导出文件中。
+Users can export the Game in a Project as a file and save it locally through the editor. Note that information other than the Game in the Project will not be included in the exported file.
 
-当用户正在编辑某个 Project 时，用户也可以在编辑器中选择导入文件，这个文件应当是自己或者别人之前通过编辑器的“导出”得到的。导入文件会将文件对应的 Game 信息恢复到当前正在编辑的 Project 中。因此对于当前正在编辑的 Project，其 Game 信息会被完全替换，而其他信息会被保留。如果我们进行保存操作，则会保存到原本正在编辑的那个 Project，而不会产生新的 Project。
+When a user is editing a Project, the user can also choose to import a file in the editor, which should be obtained by the user or others through the "export" function of the editor before. The imported file will restore the Game information to the currently edited Project. Therefore, for the currently edited Project, its Game information will be completely replaced, while other information will be retained. If we perform a save operation, it will be saved to the originally edited Project, and no new Project will be created.
 
-如果用户执行导入行为时，并没有在编辑某个已存在的 Project。我们应当先在编辑器中创建一个新的 Project，接着执行上述的“恢复 Game 信息”的过程。
+If the user performs an import action without editing an existing Project, we should first create a new Project in the editor, and then perform the process of "restoring Game information" mentioned above.
 
-### 保存 Asset
+### Saving Assets
 
-用户在编辑 Project时，可以选择将当前 Project 中的某个 Asset 保存到素材库。在保存时，用户有机会指定 DisplayName、Category、IsPublic 等信息。
+When editing a Project, users can choose to save a certain Asset in the current Project to the asset library. When saving, users have the opportunity to specify DisplayName, Category, IsPublic, and other information.
 
-与 Project 类似，公开的 Asset 可以被其他人看到并读取。
+Similar to Projects, public Assets can be seen and read by others.
 
-### 使用已保存的 Asset
+### Using Saved Assets
 
-用户可以查看并筛选所有人保存的公开 Asset，将其添加到当前 Project 中，并继续编辑。
+Users can view and filter all public Assets saved by others, add them to the current Project, and continue editing.
 
-与 Project 类似，当用户添加其他人的公开 Asset 到 Project 中并进行了后续编辑时，他并不会修改那份原始的其他人保存的 Asset。当用户添加自己的 Asset 到 Project 中并进行了后续编辑时，他同样不会修改那份原始的自己保存的 Asset。
+Similar to Projects, when users add public Assets of others to a Project and make subsequent edits, they will not modify the original Assets saved by others. When users add their own Assets to a Project and make subsequent edits, they will not modify the original Assets saved by themselves either.
 
-如果他将修改后的结果重新保存到素材库，这将在云端创建一份新的 Asset。
+If they save the modified result to the asset library, it will create a new Asset in the cloud.
 
-因此素材库中的 Asset 是不会被修改的，只会被创建或删除。
+Therefore, the Assets in the asset library will not be modified, only created or deleted.
 
-### 未登录状态编辑
+### Editing in Unauthenticated State
 
-暂不支持未登录用户通过编辑器进行操作；在尝试使用编辑器做任何 Project 操作之前，应当先登录
+Editing by unauthenticated users through the editor is not supported for now. Before attempting any Project operations using the editor, users should log in first.
 
-### 离线状态编辑
+### Editing in Offline State
 
-在离线状态下，编辑器部分可用，具体行为细节包括：
+In the offline state, part of the editor is available, and the specific behavior details include:
 
-* 如果用户当前正在编辑某个 Project（这个 Project 可能已经添加到云端，可能还没有），用户可以继续编辑
-* 用户无法将当前编辑的 Project 保存（到云端）
-* 离线状态下的变更也会暂存在用户浏览器中，逻辑与在线状态下的暂存逻辑一致
-* 用户无法查看自己或公开的 Project 列表，因此也无法从中选择并作为继续编辑的基础
-* 用户无法查看自己或公开的 Asset 列表，因此也无法从中选择并导入 Project
-* 关于用户身份
-	- 如果此前未登录，用户无法在离线状态下进行登录
-	- 如果此前已登录，且登录状态未过期，则继续使用该登录状态对应的身份
+* If the user is currently editing a Project (this Project may have been added to the cloud or may not have been added yet), the user can continue editing.
+* Users cannot save the Project (to the cloud) when in offline state.
+* Changes in the offline state will also be temporarily stored in the user's browser, and the logic is consistent with the temporary storage logic in the online state.
+* Users cannot view their own or public Project lists, so they cannot select and continue editing from them.
+* Users cannot view their own or public Asset lists, so they cannot select and import Projects from them.
+* About user identity
+	- If not logged in before, users cannot log in while in offline state.
+	- If logged in before and the login status has not expired, continue to use the identity corresponding to that login status.
 
-### 从 Scratch 项目导入 Asset
+### Importing Assets from Scratch Projects
 
-用户可以在 Go+ Builder 编辑器中选择导入一个 Scratch 项目文件（这个文件来自于 Scratch 编辑器的导出功能）。Go+ Builder 编辑器会解析并列出其中所有的 Asset，用户可以选择并导入到当前 Project 中。
+Users can choose to import a Scratch project file (obtained from the export function of the Scratch editor) in the Go+ Builder editor. The Go+ Builder editor will parse and list all the Assets in it, and users can choose and import them into the current Project.
 
-后续对于 Asset 的编辑与普通的编辑相同，这里不做赘述。
+The subsequent editing of Assets is the same as normal editing and will not be repeated here.
 
-### 分享链接
+### Sharing Links
 
-在编辑器中，我们会引导用户分享他的 Project 给他人。只有已保存且公开的 Project 才可以被分享。
+In the editor, we will guide users to share their Projects with others. Only saved and public Projects can be shared.
 
-某个 Project 的拥有者 A 分享该 Project 给另外一个用户 B 时，完整的流程如下：
+The complete process when the owner A of a certain Project shares the Project with another user B is as follows:
 
-1. A 在编辑器中已经打开了某个 Project，通过某个按钮或引导可以得到分享链接
-2. 如果该 Project 当前有未保存的变更或未公开，引导 A 保存 Project 的变更并公开，然后才能得到有意义的分享链接
-3. A 将链接通过其他渠道（如 IM、邮件、二维码等）发送给 B
-4. B 在浏览器中打开链接，链接对应的是一个独立的游戏运行页面（与编辑器无关），页面会去加载被分享的 Project，并运行
+1. A has already opened a certain Project in the editor and can obtain a sharing link through a button or guidance.
+2. If the Project currently has unsaved changes or is not public, guide A to save the changes to the Project and make it public before obtaining a meaningful sharing link.
+3. A sends the link to B through other channels (such as IM, email, QR code, etc.).
+4. B opens the link in a browser, and the link corresponds to an independent game running page (unrelated to the editor). The page will load the shared Project and run it.
 
-	需要注意用户通过这个界面只能去运行游戏，或者看到一些 Project 本身的基本信息（比如拥有者、创建时间、更新时间等）；这些动作都是对于 Project 信息的读取，而不是编辑。因此打开游戏运行页面不要求当前用户登录
+	Please note that users can only run the game through this interface or see some basic information about the Project (such as the owner, creation time, update time, etc.). These actions are for reading Project information, not for editing. Therefore, opening the game running page does not require the current user to log in.
 
-5. 除了允许 B 进行游戏外，我们通过在运行界面引导 B 在当前 Project 基础上添加自己的改动
-6. 引导链接会进入到编辑器，后续流程与上述“在其他人的公开 Project 基础上编辑”一致
+5. In addition to allowing B to play the game, we guide B to add their own changes based on the current Project.
+6. The guided link will enter the editor, and the subsequent process is the same as "Editing Based on Public Projects of Others" mentioned above.
 
-	注意，因为编辑器暂不支持未登录用户通过编辑器进行操作，因此这里我们会检查用户登录状态，逻辑相见上述“未登录状态编辑”。
+	Note that because the editor does not currently support unauthenticated users to perform operations through the editor, we will check the user's login status. The logic is the same as mentioned in "Editing in Unauthenticated State".
 
-### 嵌入到第三方站点
+### Embedding in Third-Party Websites
 
 TODO
+
