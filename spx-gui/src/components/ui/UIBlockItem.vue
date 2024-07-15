@@ -1,6 +1,11 @@
 <template>
   <div
-    :class="['block-item', active && 'block-item-active', `block-item-${variant}`]"
+    :class="[
+      'block-item',
+      active && 'block-item-active',
+      `block-item-${variant}`,
+      `block-item-${size}`
+    ]"
     :style="style"
   >
     <slot></slot>
@@ -16,10 +21,12 @@ const props = withDefaults(
     active: boolean
     color: Color
     variant: 'standard' | 'colorful'
+    size: 'medium' | 'large'
   }>(),
   {
     active: false,
-    variant: 'standard'
+    variant: 'standard',
+    size: 'medium'
   }
 )
 
@@ -32,8 +39,14 @@ const style = computed(() => ({
 
 <style lang="scss" scoped>
 .block-item {
-  width: 88px;
-  height: 88px;
+  &.block-item-medium {
+    width: 88px;
+    height: 88px;
+  }
+  &.block-item-large {
+    width: 140px;
+    height: 140px;
+  }
   display: flex;
   flex-direction: column;
   align-items: center;

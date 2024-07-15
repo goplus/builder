@@ -1,20 +1,31 @@
 <template>
-  <EditorItem :active="active" color="sprite" :item="props.sprite" removable @remove="handelRemove">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-  </EditorItem>
+  <UISpriteItem
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="sprite.name"
+    :selected="selected"
+  >
+    <CornerMenu
+      :visible="selected"
+      color="sprite"
+      removable
+      :item="sprite"
+      @remove="handelRemove"
+    />
+  </UISpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UIImg } from '@/components/ui'
+import { UISpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
-import EditorItem from '../../common/EditorItem.vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import CornerMenu from '../../common/CornerMenu.vue'
 
 const props = defineProps<{
   sprite: Sprite
-  active: boolean
+  selected: boolean
 }>()
 
 const editorCtx = useEditorCtx()

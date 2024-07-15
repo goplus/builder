@@ -25,7 +25,7 @@
           v-for="sprite in sprites"
           :key="sprite.name"
           :sprite="sprite"
-          :active="isSelected(sprite)"
+          :selected="isSelected(sprite)"
           @remove="handleSpriteRemove(sprite)"
           @add-to-asset-library="handleAddToAssetLibrary(sprite)"
           @click="handleSpriteClick(sprite)"
