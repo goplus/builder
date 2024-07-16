@@ -1,22 +1,20 @@
 <template>
-  <EditorItem
-    :active="selected"
-    color="sprite"
-    :item="costume"
-    :removable="removable"
-    @remove="handelRemove"
+  <UISpriteItem
+    :selected="selected"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="costume.name"
   >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-  </EditorItem>
+    <UICornerIcon v-if="selected && removable" type="trash" color="sprite" @click="handelRemove" />
+  </UISpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg } from '@/components/ui'
+import { UICornerIcon, UISpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
-import EditorItem from '../common/EditorItem.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 
 const props = defineProps<{

@@ -1,20 +1,18 @@
 <template>
-  <EditorItem
-    :active="selected"
-    color="sprite"
-    :item="animation"
-    :removable="true"
-    @remove="handelRemove"
+  <UISpriteItem
+    :selected="selected"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="animation.name"
   >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-  </EditorItem>
+    <UICornerIcon v-if="selected" type="trash" color="sprite" @click="handelRemove" />
+  </UISpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UIImg, useModal } from '@/components/ui'
+import { UISpriteItem, useModal, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Sprite } from '@/models/sprite'
-import EditorItem from '../common/EditorItem.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import type { Animation } from '@/models/animation'
 import { useMessageHandle } from '@/utils/exception'
