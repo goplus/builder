@@ -1,7 +1,8 @@
 <template>
-  <UIBlockItem color="sprite" :active="selected">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+  <UIBlockItem color="sound" :active="selected">
+    <div class="sound-container">
+      <!-- Use Dumb or not? -->
+      <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -10,26 +11,25 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import SoundPlayer from '../editor/sound/SoundPlayer.vue'
 import UIBlockItem from './UIBlockItem.vue'
-import UIImg from './UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 defineProps<{
-  imgSrc: string | null
-  imgLoading: boolean
+  audioSrc: string | null
   name: string
   selected: boolean
 }>()
 </script>
 <style scoped lang="scss">
-.img-container {
+.sound-container {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.img {
-  height: 60px;
-  width: 60px;
+.sound-player {
+  height: 36px;
+  width: 36px;
 }
 </style>

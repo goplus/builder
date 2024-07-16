@@ -18,13 +18,12 @@ import type { Color } from '.'
 
 const props = withDefaults(
   defineProps<{
-    active: boolean
+    active?: boolean
     color: Color
-    variant: 'standard' | 'colorful'
-    size: 'medium' | 'large'
+    variant?: 'standard' | 'colorful'
+    size?: 'medium' | 'large'
   }>(),
   {
-    active: false,
     variant: 'standard',
     size: 'medium'
   }

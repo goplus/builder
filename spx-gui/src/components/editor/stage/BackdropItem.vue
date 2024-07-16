@@ -1,23 +1,28 @@
 <template>
-  <EditorItem
-    :active="selected"
-    color="stage"
-    :item="backdrop"
-    :removable="removable"
-    @remove="handelRemove"
+  <UIBackdropItem
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="backdrop.name"
+    :selected="selected"
   >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" size="cover" />
-  </EditorItem>
+    <CornerMenu
+      :visible="selected"
+      color="stage"
+      :removable="removable"
+      :item="backdrop"
+      @remove="handelRemove"
+    />
+  </UIBackdropItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg } from '@/components/ui'
+import { UIBackdropItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
 import type { Stage } from '@/models/stage'
-import EditorItem from '../common/EditorItem.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import CornerMenu from '../common/CornerMenu.vue'
 
 const props = defineProps<{
   stage: Stage

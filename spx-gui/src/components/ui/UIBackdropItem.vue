@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem color="sprite" :active="selected">
+  <UIBlockItem color="stage" :active="selected">
     <div class="img-container">
       <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     </div>
@@ -29,7 +29,7 @@ defineProps<{
   justify-content: center;
 }
 .img {
-  height: 60px;
-  width: 60px;
+  height: 52px;
+  width: 39px;
 }
 </style>

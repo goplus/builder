@@ -1,35 +1,35 @@
 <template>
   <UIBlockItem color="primary" size="large">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" />
+    <div class="sound-container">
+      <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
     </div>
-    <UITitle size="large">
+    <UIBlockItemTitle size="large">
       {{ name }}
-    </UITitle>
+    </UIBlockItemTitle>
     <UICornerIcon v-show="selected" type="check" />
   </UIBlockItem>
 </template>
 <script setup lang="ts">
+import SoundPlayer from '../editor/sound/SoundPlayer.vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UICornerIcon from './UICornerIcon.vue'
-import UIImg from './UIImg.vue'
-import UITitle from './UITitle.vue'
+import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 defineProps<{
-  imgSrc: string
+  audioSrc: string | null
   name: string
   selected: boolean
 }>()
 </script>
 <style scoped lang="scss">
-.img-container {
+.sound-container {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.img {
-  height: 99px;
-  width: 99px;
+.sound-player {
+  height: 48px;
+  width: 48px;
 }
 </style>
