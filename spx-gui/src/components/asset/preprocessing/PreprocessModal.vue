@@ -77,12 +77,13 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, defineProps, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { stripExt } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
 import { UIButton, UIFormModal } from '@/components/ui'
+import type { MethodComponent } from './common/types'
 import ProcessItem from './common/ProcessItem.vue'
 import ImgPreview from './common/ImgPreview.vue'
 import ProcessDetail from './common/ProcessDetail.vue'
@@ -90,6 +91,8 @@ import CostumeItem from './CostumeItem.vue'
 import originalThumbnail from './original-thumbnail.svg'
 import SplitSpriteSheet from './split-sprite-sheet/SplitSpriteSheet.vue'
 import splitSpriteSheetThumbnail from './split-sprite-sheet/thumbnail.svg'
+import RemoveBackground from './remove-background/RemoveBackground.vue'
+import removeBackgroundThumbnail from './remove-background/thumbnail.svg'
 
 const props = defineProps<{
   visible: boolean
@@ -104,24 +107,42 @@ const emit = defineEmits<{
 
 /** Process method */
 enum Method {
-  SplitSpriteSheet = 'SplitSpriteSheet'
-  // RemoveBackground = 'RemoveBackground', // TODO
+  SplitSpriteSheet = 'SplitSpriteSheet',
+  RemoveBackground = 'RemoveBackground'
 }
 
-// TODO: calculate `supportedMethods` based on input information.
-// for example, exclude SplitSpriteSheet if there are more than one files
+type MethodItem = {
+  value: Method
+  name: LocaleMessage
+  thumbnail: string
+  component: MethodComponent
+}
+
 /**
  * All supported methods for preprocessing.
  * The order of methods is the order of applying.
  */
-const supportedMethods = [
-  {
-    value: Method.SplitSpriteSheet,
-    name: { en: 'Split sprite sheet', zh: '切分精灵表' },
-    thumbnail: splitSpriteSheetThumbnail,
-    component: SplitSpriteSheet
+const supportedMethods = computed(() => {
+  const methods: MethodItem[] = [
+    {
+      value: Method.RemoveBackground,
+      name: { en: 'Remove background', zh: '去除背景' },
+      thumbnail: removeBackgroundThumbnail,
+      component: RemoveBackground
+    }
+  ]
+
+  if (props.files.length === 1) {
+    methods.push({
+      value: Method.SplitSpriteSheet,
+      name: { en: 'Split sprite sheet', zh: '切分精灵表' },
+      thumbnail: splitSpriteSheetThumbnail,
+      component: SplitSpriteSheet
+    })
   }
-]
+
+  return methods
+})
 
 const activeMethod = ref<Method | null>(null)
 function handleMethodClick(method: Method | null) {
@@ -138,7 +159,7 @@ type Output = File[]
 const outputs = shallowReactive<Array<Output | null>>([])
 
 function getMethodInput(method: Method): File[] {
-  const idx = supportedMethods.findIndex((m) => m.value === method)
+  const idx = supportedMethods.value.findIndex((m) => m.value === method)
   for (let i = idx - 1; i >= 0; i--) {
     const output = outputs[i]
     if (output != null) return output
@@ -147,12 +168,12 @@ function getMethodInput(method: Method): File[] {
 }
 
 function isMethodApplied(method: Method) {
-  const idx = supportedMethods.findIndex((m) => m.value === method)
+  const idx = supportedMethods.value.findIndex((m) => m.value === method)
   return outputs[idx] != null
 }
 
 function handleMethodApplied(method: Method, output: File[]) {
-  const idx = supportedMethods.findIndex((m) => m.value === method)
+  const idx = supportedMethods.value.findIndex((m) => m.value === method)
   // methods are applied in order, so we need to unapply the following methods, as thier inputs have changed
   outputs.splice(idx)
   outputs.push(output)
@@ -160,7 +181,7 @@ function handleMethodApplied(method: Method, output: File[]) {
 }
 
 function cancelMethod(method: Method) {
-  const idx = supportedMethods.findIndex((m) => m.value === method)
+  const idx = supportedMethods.value.findIndex((m) => m.value === method)
   outputs.splice(idx)
   outputs.push(null)
   updateCostumes(getMethodInput(method))
@@ -195,7 +216,7 @@ function handleConfirm() {
 watch(
   () => props.files,
   // The first method cancelled, all methods cancelled
-  () => cancelMethod(supportedMethods[0].value),
+  () => cancelMethod(supportedMethods.value[0].value),
   { immediate: true }
 )
 </script>

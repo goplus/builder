@@ -92,12 +92,24 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-function createFileWithWebUrl(name: string, webUrl: WebUrl) {
+export function createFileWithWebUrl(name: string, webUrl: WebUrl) {
   return new File(name, async () => {
     const resp = await fetch(webUrl)
     const blob = await resp.blob()
     return blob.arrayBuffer()
   })
+}
+
+export async function getWebUrl(file: File) {
+  const universalUrl = await saveFile(file)
+  return universalUrlToWebUrl(universalUrl)
+}
+
+async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
+  const { protocol } = new URL(universalUrl)
+  if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
+  const map = await makeObjectUrls([universalUrl])
+  return map[universalUrl]
 }
 
 async function saveFile(file: File) {

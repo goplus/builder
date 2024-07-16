@@ -7,7 +7,7 @@ import { reactive, watch } from 'vue'
 import { nomalizeDegree } from '@/utils/utils'
 import { join } from '@/utils/path'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
-import { Disposble } from './common/disposable'
+import { Disposable } from './common/disposable'
 import {
   ensureValidAnimationName,
   ensureValidCostumeName,
@@ -75,7 +75,7 @@ function getSpriteCodeFileName(name: string) {
 
 export const spriteConfigFileName = 'index.json'
 
-export class Sprite extends Disposble {
+export class Sprite extends Disposable {
   private project: Project | null = null
   setProject(project: Project | null) {
     this.project = project

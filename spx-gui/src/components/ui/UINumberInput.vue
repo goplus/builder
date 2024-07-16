@@ -4,6 +4,8 @@
     :show-button="false"
     :value="value"
     :disabled="disabled"
+    :min="min"
+    :max="max"
     @update:value="(v) => emit('update:value', v)"
   >
     <template v-if="!!slots.prefix" #prefix>
@@ -22,6 +24,8 @@ import { NInputNumber } from 'naive-ui'
 defineProps<{
   value: number | null
   disabled?: boolean
+  min?: number
+  max?: number
 }>()
 
 const emit = defineEmits<{
