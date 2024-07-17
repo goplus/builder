@@ -2,7 +2,9 @@ package controller
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"net/url"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 )
@@ -17,10 +19,34 @@ func (p *MattingParams) Validate() (ok bool, msg string) {
 		return false, "missing imageUrl"
 	}
 
-	// it may introduce security risk if we allow arbitrary image URL.
-	// TODO: exclude urls targeting local / private network.
+	// It may introduce security risk if we allow arbitrary image URL.
+	// Urls targeting local or private network should be rejected.
+
+	url, err := url.Parse(p.ImageUrl)
+	if err != nil || url.Scheme == "" || url.Host == "" {
+		return false, "invalid imageUrl"
+	}
+
+	hostname := url.Hostname()
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		return false, "invalid imageUrl: lookup IP failed"
+	}
+
+	for _, ip := range ips {
+		if isIPPrivate(ip) {
+			return false, "invalid imageUrl: private IP"
+		}
+	}
 
 	return true, ""
+}
+
+func isIPPrivate(ip net.IP) bool {
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsPrivate() {
+		return true
+	}
+	return false
 }
 
 type MattingResult struct {
