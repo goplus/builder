@@ -1,35 +1,53 @@
 <template>
-  <UIBlockItem color="sound" :active="selected">
+  <UIBlockItem color="primary" size="large" class="ui-sound-item" :active="selected">
     <div class="sound-container">
-      <!-- Use Dumb or not? -->
-      <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
+      <div class="sound-player">
+        <slot></slot>
+      </div>
     </div>
-    <UIBlockItemTitle size="medium">
+    <UIBlockItemTitle size="large" class="name">
+      {{ name }}
+      {{ name }}
+      {{ name }}
       {{ name }}
     </UIBlockItemTitle>
-    <slot></slot>
+    <div class="duration">{{ duration }}</div>
+    <UICornerIcon v-show="selected" type="check" />
   </UIBlockItem>
 </template>
 <script setup lang="ts">
-import SoundPlayer from '../editor/sound/SoundPlayer.vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
+import UICornerIcon from './UICornerIcon.vue'
 
 defineProps<{
-  audioSrc: string | null
+  duration: string
   name: string
   selected: boolean
 }>()
 </script>
 <style scoped lang="scss">
+.ui-sound-item {
+  padding-top: 4px;
+}
 .sound-container {
-  flex: 1;
+  height: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .sound-player {
-  height: 36px;
-  width: 36px;
+  height: 48px;
+  width: 48px;
+}
+.duration {
+  color: var(--ui-color-hint-1);
+  text-align: center;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.name {
+  height: 20px;
 }
 </style>

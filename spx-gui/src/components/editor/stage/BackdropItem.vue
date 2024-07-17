@@ -1,5 +1,5 @@
 <template>
-  <UIBackdropItem
+  <UIEditorBackdropItem
     :img-src="imgSrc"
     :img-loading="imgLoading"
     :name="backdrop.name"
@@ -12,12 +12,12 @@
       :item="backdrop"
       @remove="handelRemove"
     />
-  </UIBackdropItem>
+  </UIEditorBackdropItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIBackdropItem } from '@/components/ui'
+import { UIEditorBackdropItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
 import type { Stage } from '@/models/stage'

@@ -1,6 +1,6 @@
 <template>
-  <div class="img" :style="imgStyle">
-    <UILoading :visible="loading" :cover="!noCover" />
+  <div class="ui-img" :style="imgStyle">
+    <UILoading v-if="loading" :cover="!noCover" />
   </div>
 </template>
 
@@ -32,9 +32,12 @@ const imgStyle = computed(() =>
 </script>
 
 <style lang="scss" scoped>
-.img {
+.ui-img {
   position: relative;
   background-position: center;
   background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

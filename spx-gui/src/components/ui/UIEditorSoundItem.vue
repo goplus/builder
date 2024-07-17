@@ -1,18 +1,18 @@
 <template>
-  <UIBlockItem color="primary" size="large">
+  <UIBlockItem color="sound" variant="colorful" :active="selected">
     <div class="sound-container">
+      <!-- Use DumbSoundPlayer or SoundPlayer? -->
       <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
     </div>
-    <UIBlockItemTitle size="large">
+    <UIBlockItemTitle size="medium">
       {{ name }}
     </UIBlockItemTitle>
-    <UICornerIcon v-show="selected" type="check" />
+    <slot></slot>
   </UIBlockItem>
 </template>
 <script setup lang="ts">
 import SoundPlayer from '../editor/sound/SoundPlayer.vue'
 import UIBlockItem from './UIBlockItem.vue'
-import UICornerIcon from './UICornerIcon.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 defineProps<{
@@ -29,7 +29,7 @@ defineProps<{
   justify-content: center;
 }
 .sound-player {
-  height: 48px;
-  width: 48px;
+  height: 36px;
+  width: 36px;
 }
 </style>

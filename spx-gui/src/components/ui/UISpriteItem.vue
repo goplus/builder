@@ -1,16 +1,17 @@
 <template>
-  <UIBlockItem color="sprite" :active="selected">
+  <UIBlockItem class="ui-sprite-item" color="primary" size="large" :active="selected">
     <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
+      <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
     </div>
-    <UIBlockItemTitle size="medium">
+    <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
-    <slot></slot>
+    <UICornerIcon v-show="selected" type="check" />
   </UIBlockItem>
 </template>
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
+import UICornerIcon from './UICornerIcon.vue'
 import UIImg from './UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
@@ -22,6 +23,9 @@ defineProps<{
 }>()
 </script>
 <style scoped lang="scss">
+.ui-sprite-item {
+  padding: 4px 0;
+}
 .img-container {
   flex: 1;
   display: flex;
@@ -29,7 +33,7 @@ defineProps<{
   justify-content: center;
 }
 .img {
-  height: 60px;
-  width: 60px;
+  height: 99px;
+  width: 99px;
 }
 </style>

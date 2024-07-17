@@ -41,10 +41,14 @@ const style = computed(() => ({
   &.block-item-medium {
     width: 88px;
     height: 88px;
+    min-height: 88px;
+    // Without min-height, the height of the element can be smaller than 88px
+    // in editor sider list.
   }
   &.block-item-large {
     width: 140px;
     height: 140px;
+    min-height: 140px;
   }
   display: flex;
   flex-direction: column;

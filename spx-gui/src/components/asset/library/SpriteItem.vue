@@ -1,20 +1,18 @@
 <template>
-  <AssetItem class="sprite-item" :selected="selected">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    </div>
-    <AssetItemName>{{ asset.displayName }}</AssetItemName>
-  </AssetItem>
+  <UISpriteItem
+    :selected="selected"
+    :img-src="imgSrc"
+    :img-loading="!imgSrc || imgLoading"
+    :name="asset.displayName"
+  />
 </template>
 
 <script setup lang="ts">
-import { UIImg } from '@/components/ui'
+import { UISpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { AssetData } from '@/apis/asset'
 import { asset2Sprite } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
-import AssetItem from './AssetItem.vue'
-import AssetItemName from './AssetItemName.vue'
 
 const props = defineProps<{
   asset: AssetData

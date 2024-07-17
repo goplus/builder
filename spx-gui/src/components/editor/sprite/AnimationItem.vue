@@ -1,16 +1,16 @@
 <template>
-  <UISpriteItem
+  <UIEditorSpriteItem
     :selected="selected"
     :img-src="imgSrc"
     :img-loading="imgLoading"
     :name="animation.name"
   >
     <UICornerIcon v-if="selected" type="trash" color="sprite" @click="handelRemove" />
-  </UISpriteItem>
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UISpriteItem, useModal, UICornerIcon } from '@/components/ui'
+import { UIEditorSpriteItem, useModal, UICornerIcon } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Sprite } from '@/models/sprite'
 import { useEditorCtx } from '../EditorContextProvider.vue'

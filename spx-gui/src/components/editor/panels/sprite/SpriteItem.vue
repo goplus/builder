@@ -1,5 +1,5 @@
 <template>
-  <UISpriteItem
+  <UIEditorSpriteItem
     :img-src="imgSrc"
     :img-loading="imgLoading"
     :name="sprite.name"
@@ -12,11 +12,11 @@
       :item="sprite"
       @remove="handelRemove"
     />
-  </UISpriteItem>
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UISpriteItem } from '@/components/ui'
+import { UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
 import { useMessageHandle } from '@/utils/exception'

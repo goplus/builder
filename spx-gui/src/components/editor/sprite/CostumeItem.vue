@@ -1,17 +1,17 @@
 <template>
-  <UISpriteItem
+  <UIEditorSpriteItem
     :selected="selected"
     :img-src="imgSrc"
     :img-loading="imgLoading"
     :name="costume.name"
   >
     <UICornerIcon v-if="selected && removable" type="trash" color="sprite" @click="handelRemove" />
-  </UISpriteItem>
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UICornerIcon, UISpriteItem } from '@/components/ui'
+import { UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
