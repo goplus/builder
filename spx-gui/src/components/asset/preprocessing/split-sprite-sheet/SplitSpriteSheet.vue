@@ -16,17 +16,16 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { untilNotNull } from '@/utils/utils'
+import { untilNotNull, memoizeAsync } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
+import { sleep } from '@/utils/test'
+import { stripExt } from '@/utils/path'
 import { fromBlob, type File } from '@/models/common/file'
 import { UILoading, UINumberInput, useUIVariables } from '@/components/ui'
 import ProcessDetail from '../common/ProcessDetail.vue'
-import { cutGrid, recognizeSpriteGrid, type Color } from './utils'
 import ImgPreview from '../common/ImgPreview.vue'
 import type { MethodComponentEmits, MethodComponentProps } from '../common/types'
-import { stripExt } from '@/utils/path'
-import { memoize } from 'lodash'
-import { sleep } from '@/utils/test'
+import { cutGrid, recognizeSpriteGrid, type Color } from './utils'
 
 const props = defineProps<MethodComponentProps>()
 const emit = defineEmits<MethodComponentEmits>()
@@ -42,8 +41,8 @@ const colNum = ref(1)
 // TODO: support recognizing & adjusting for padding & offset
 const recognizing = ref(false)
 
-// use `memoize` to ensure that recognition for same file runs only once
-const autoRecognize = memoize(async (img: HTMLImageElement) => {
+// use `memoizeAsync` to ensure that recognition for same file runs only once
+const autoRecognize = memoizeAsync(async (img: HTMLImageElement) => {
   recognizing.value = true
   await sleep(100) // ensure minimum duration for ui loading
   for await (const yielded of recognizeSpriteGrid(img)) {

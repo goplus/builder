@@ -1,3 +1,4 @@
+import { memoize } from 'lodash'
 import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
 
 export const isImage = (url: string): boolean => {
@@ -116,4 +117,18 @@ export function nomalizeDegree(num: number) {
   if (num < -180) num = num + 360
   if (num === 0) num = 0 // convert `-0` to `0`
   return num
+}
+
+/** Memoize for async function. Rejected result will not be memoized. */
+export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(fn: T, resolver?: (...args: Parameters<T>) => unknown): T {
+  const fnWithCache = memoize(fn, resolver)
+  return (async (...args: Parameters<T>) => {
+    try {
+      const result = await fnWithCache(...args)
+      return result
+    } catch (e) {
+      fnWithCache.cache.delete(resolver?.(...args) ?? args[0])
+      throw e
+    }
+  }) as T
 }

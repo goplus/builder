@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { isImage, isSound, nomalizeDegree } from './utils'
+import { isImage, isSound, nomalizeDegree, memoizeAsync } from './utils'
+import { sleep } from './test'
 
 describe('isImage', () => {
   it('should return true for valid image extensions', () => {
@@ -75,5 +76,66 @@ describe('nomalizeDegree', () => {
     expect(nomalizeDegree(-360)).toBe(0)
     expect(nomalizeDegree(-450)).toBe(-90)
     expect(nomalizeDegree(-720)).toBe(0)
+  })
+})
+
+describe('memoizeAsync', () => {
+  it('should work well', async () => {
+    let count = 0
+    const fn = memoizeAsync(async (n: number) => {
+      count++
+      await sleep(100)
+      return n
+    })
+
+    expect(await Promise.all([
+      fn(1),
+      fn(1)
+    ])).toEqual([1, 1])
+    expect(await fn(1)).toBe(1)
+    expect(await fn(2)).toBe(2)
+    expect(await fn(2)).toBe(2)
+    expect(count).toBe(2)
+  })
+
+  it('should work well with rejected promises', async () => {
+    let count = 0
+    const fn = memoizeAsync(async (n: number) => {
+      const id = ++count
+      await sleep(100)
+      if (id === 1) throw new Error('test error')
+      return n
+    })
+
+    const [p1, p2, p3] = [fn(1), fn(1), fn(2)]
+    await expect(p1).rejects.toThrow('test error')
+    await expect(p2).rejects.toThrow('test error')
+    await expect(p3).resolves.toBe(2)
+
+    await expect(fn(1)).resolves.toBe(1)
+    await expect(fn(2)).resolves.toBe(2)
+    await expect(fn(2)).resolves.toBe(2)
+    expect(count).toBe(3)
+  })
+
+  it('should work well with resolver', async () => {
+    let count = 0
+    const fn = memoizeAsync(async (a: number, b: number) => {
+      const id = ++count
+      await sleep(100)
+      if (id === 1) throw new Error('test error')
+      return a + b
+    }, (a, b) => a + b)
+
+    const [p1, p2, p3, p4] = [fn(1, 2), fn(1, 2), fn(2, 1), fn(2, 2)]
+    await expect(p1).rejects.toThrow('test error')
+    await expect(p2).rejects.toThrow('test error')
+    await expect(p3).rejects.toThrow('test error')
+    await expect(p4).resolves.toBe(4)
+
+    await expect(fn(1, 2)).resolves.toBe(3)
+    await expect(fn(2, 1)).resolves.toBe(3)
+    await expect(fn(2, 2)).resolves.toBe(4)
+    expect(count).toBe(3)
   })
 })

@@ -14,12 +14,14 @@
 </template>
 
 <script setup lang="ts">
-import { memoize } from 'lodash'
 import { ref } from 'vue'
 import { loadImg } from '@/utils/dom'
-import { filename } from '@/utils/path'
-import { untilNotNull, useAsyncComputed } from '@/utils/utils'
-import { removeBackground } from '@/apis/ai'
+import { stripExt } from '@/utils/path'
+import { untilNotNull, useAsyncComputed, memoizeAsync } from '@/utils/utils'
+import { getMimeFromExt } from '@/utils/file'
+import { toJpeg } from '@/utils/img'
+import { matting } from '@/apis/aigc'
+import { fromBlob, toNativeFile, File } from '@/models/common/file'
 import { createFileWithWebUrl, getWebUrl } from '@/models/common/cloud'
 import type { MethodComponentEmits, MethodComponentProps } from '../common/types'
 import ProcessDetail from '../common/ProcessDetail.vue'
@@ -28,12 +30,15 @@ import ImgPreview from '../common/ImgPreview.vue'
 const props = defineProps<MethodComponentProps>()
 const emit = defineEmits<MethodComponentEmits>()
 
-const inputUrlsComputed = useAsyncComputed(() => Promise.all(props.input.map(getWebUrl)))
+const inputUrlsComputed = useAsyncComputed(() => Promise.all(props.input.map(async file => {
+  file = await adaptImg(file)
+  return getWebUrl(file)
+})))
 const imgPreviewRefs = ref<Array<InstanceType<typeof ImgPreview>>>([])
 
-const batchRemoveBackground = memoize(
+const batchRemoveBackground = memoizeAsync(
   async (inputUrls: string[]) => {
-    return Promise.all(inputUrls.map((url) => removeBackground(url)))
+    return Promise.all(inputUrls.map((url) => matting(url)))
   },
   (urls) => urls.join(',')
 )
@@ -42,13 +47,13 @@ async function apply() {
   const inputUrls = await untilNotNull(inputUrlsComputed)
   const outputUrls = await batchRemoveBackground(inputUrls)
   await drawTransitions(outputUrls)
-  const outputFiles = outputUrls.map((url) => createFileWithWebUrl(filename(url), url))
+  const outputFiles = outputUrls.map((url) => createFileWithWebUrl(url))
   emit('applied', outputFiles)
 }
 
 async function cancel() {
   const inputUrls = await untilNotNull(inputUrlsComputed)
-  await drawTransitions(inputUrls, false)
+  await drawTransitions(inputUrls, true)
   emit('cancel')
 }
 
@@ -115,5 +120,17 @@ function drawTransitionFrame(
       canvas.height
     )
   }
+}
+
+/** Adapt image file to fit AIGC matting. Unsupported image files will be converted to jpeg. */
+async function adaptImg(file: File): Promise<File> {
+  /** Image file formats supported by AIGC matting */
+  const supportedImgExts = ['jpg', 'jpeg', 'png']
+  for (const ext of supportedImgExts) {
+    if (file.type === getMimeFromExt(ext)) return file
+  }
+  const jpegBlob = await toJpeg(await toNativeFile(file))
+  const jpegFileName = stripExt(file.name) + '.jpeg'
+  return fromBlob(jpegFileName, jpegBlob)
 }
 </script>

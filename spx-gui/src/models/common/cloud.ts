@@ -74,7 +74,7 @@ export async function getFiles(fileCollection: FileCollection): Promise<Files> {
       webUrl = objectUrl
     }
 
-    const file = createFileWithWebUrl(filename(path), webUrl)
+    const file = createFileWithWebUrl(webUrl, filename(path))
     setUniversalUrl(file, universalUrl)
     files[path] = file
   })
@@ -92,7 +92,7 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-export function createFileWithWebUrl(name: string, webUrl: WebUrl) {
+export function createFileWithWebUrl(webUrl: WebUrl, name = filename(webUrl)) {
   return new File(name, async () => {
     const resp = await fetch(webUrl)
     const blob = await resp.blob()
