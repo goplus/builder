@@ -120,9 +120,12 @@ export function nomalizeDegree(num: number) {
 }
 
 /** Memoize for async function. Rejected result will not be memoized. */
-export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(fn: T, resolver?: (...args: Parameters<T>) => unknown): T {
+export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
+  fn: T,
+  resolver?: (...args: Parameters<T>) => unknown
+): T {
   const fnWithCache = memoize(fn, resolver)
-  return (async (...args: Parameters<T>) => {
+  return (async (...args: any) => {
     try {
       const result = await fnWithCache(...args)
       return result

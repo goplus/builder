@@ -30,10 +30,14 @@ import ImgPreview from '../common/ImgPreview.vue'
 const props = defineProps<MethodComponentProps>()
 const emit = defineEmits<MethodComponentEmits>()
 
-const inputUrlsComputed = useAsyncComputed(() => Promise.all(props.input.map(async file => {
-  file = await adaptImg(file)
-  return getWebUrl(file)
-})))
+const inputUrlsComputed = useAsyncComputed(() =>
+  Promise.all(
+    props.input.map(async (file) => {
+      file = await adaptImg(file)
+      return getWebUrl(file)
+    })
+  )
+)
 const imgPreviewRefs = ref<Array<InstanceType<typeof ImgPreview>>>([])
 
 const batchRemoveBackground = memoizeAsync(

@@ -88,10 +88,7 @@ describe('memoizeAsync', () => {
       return n
     })
 
-    expect(await Promise.all([
-      fn(1),
-      fn(1)
-    ])).toEqual([1, 1])
+    expect(await Promise.all([fn(1), fn(1)])).toEqual([1, 1])
     expect(await fn(1)).toBe(1)
     expect(await fn(2)).toBe(2)
     expect(await fn(2)).toBe(2)
@@ -120,12 +117,15 @@ describe('memoizeAsync', () => {
 
   it('should work well with resolver', async () => {
     let count = 0
-    const fn = memoizeAsync(async (a: number, b: number) => {
-      const id = ++count
-      await sleep(100)
-      if (id === 1) throw new Error('test error')
-      return a + b
-    }, (a, b) => a + b)
+    const fn = memoizeAsync(
+      async (a: number, b: number) => {
+        const id = ++count
+        await sleep(100)
+        if (id === 1) throw new Error('test error')
+        return a + b
+      },
+      (a, b) => a + b
+    )
 
     const [p1, p2, p3, p4] = [fn(1, 2), fn(1, 2), fn(2, 1), fn(2, 2)]
     await expect(p1).rejects.toThrow('test error')
