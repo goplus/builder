@@ -1,6 +1,8 @@
 <template>
   <UISoundItem :selected="selected" :duration="formattedDuration" :name="asset.displayName">
-    <SoundPlayer :src="audioSrc" color="primary" />
+    <template #player>
+      <SoundPlayer :src="audioSrc" color="primary" />
+    </template>
   </UISoundItem>
 </template>
 

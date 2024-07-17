@@ -2,7 +2,7 @@
   <UIBlockItem color="primary" size="large" class="ui-sound-item" :active="selected">
     <div class="sound-container">
       <div class="sound-player">
-        <slot></slot>
+        <slot name="player"></slot>
       </div>
     </div>
     <UIBlockItemTitle size="large" class="name">

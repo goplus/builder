@@ -1,6 +1,8 @@
 <template>
   <UISoundItem :selected="selected" :duration="formattedDuration" :name="asset.name">
-    <BlobSoundPlayer :blob="asset.blob" color="primary" />
+    <template #player>
+      <BlobSoundPlayer :blob="asset.blob" color="primary" />
+    </template>
   </UISoundItem>
 </template>
 <script setup lang="ts">
