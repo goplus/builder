@@ -26,6 +26,7 @@ func NewAigcClient(endpoint string) *AigcClient {
 }
 
 // Call calls AIGC API.
+// API doc: https://realdream.larksuite.com/wiki/Sd3Sw5UxdiRsAqkjtfbup4pPsGe
 func (c *AigcClient) Call(ctx context.Context, method, path string, body any, responseBody any) error {
 	logger := log.GetReqLogger(ctx)
 	bodyByte, err := json.Marshal(body)

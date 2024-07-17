@@ -16,6 +16,10 @@ func (p *MattingParams) Validate() (ok bool, msg string) {
 	if p.ImageUrl == "" {
 		return false, "missing imageUrl"
 	}
+
+	// it may introduce security risk if we allow arbitrary image URL.
+	// TODO: exclude urls targeting local / private network.
+
 	return true, ""
 }
 
