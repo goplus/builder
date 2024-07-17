@@ -54,7 +54,7 @@ const style = computed(() => ({
   flex-direction: column;
   align-items: center;
   position: relative;
-  border-radius: var(--ui-border-radius-1);
+  border-radius: var(--ui-border-radius-2);
   border: 2px solid var(--ui-color-grey-300);
   background-color: var(--ui-color-grey-300);
   cursor: pointer;

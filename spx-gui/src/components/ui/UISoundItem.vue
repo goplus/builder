@@ -7,9 +7,6 @@
     </div>
     <UIBlockItemTitle size="large" class="name">
       {{ name }}
-      {{ name }}
-      {{ name }}
-      {{ name }}
     </UIBlockItemTitle>
     <div class="duration">{{ duration }}</div>
     <UICornerIcon v-show="selected" type="check" />
@@ -28,7 +25,11 @@ defineProps<{
 </script>
 <style scoped lang="scss">
 .ui-sound-item {
-  padding-top: 4px;
+  padding: 2px;
+
+  .name {
+    height: 20px;
+  }
 }
 .sound-container {
   height: 92px;
@@ -46,8 +47,5 @@ defineProps<{
   font-size: 10px;
   line-height: 16px;
   font-weight: 600;
-}
-.name {
-  height: 20px;
 }
 </style>

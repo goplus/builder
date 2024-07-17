@@ -1,8 +1,6 @@
 <template>
-  <UIBlockItem color="sprite" :active="selected">
-    <div class="img-container">
-      <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
-    </div>
+  <UIBlockItem class="ui-editor-sprite-item" color="sprite" :active="selected">
+    <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="medium">
       {{ name }}
     </UIBlockItemTitle>
@@ -22,11 +20,8 @@ defineProps<{
 }>()
 </script>
 <style scoped lang="scss">
-.img-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ui-editor-sprite-item {
+  gap: 2px;
 }
 .img {
   height: 60px;

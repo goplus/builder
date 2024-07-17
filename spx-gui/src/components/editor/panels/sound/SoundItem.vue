@@ -1,6 +1,17 @@
 <template>
   <UIEditorSoundItem :audio-src="audioSrc" :name="sound.name" :selected="selected">
-    <CornerMenu :visible="selected" color="sound" removable :item="sound" @remove="handleRemove" />
+    <template #default>
+      <CornerMenu
+        :visible="selected"
+        color="sound"
+        removable
+        :item="sound"
+        @remove="handleRemove"
+      />
+    </template>
+    <template #player>
+      <SoundPlayer color="sound" :src="audioSrc" />
+    </template>
   </UIEditorSoundItem>
 </template>
 
@@ -10,6 +21,7 @@ import { Sound } from '@/models/sound'
 import { UIEditorSoundItem } from '@/components/ui'
 import CornerMenu from '../../common/CornerMenu.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import SoundPlayer from '../../sound/SoundPlayer.vue'
 
 const props = defineProps<{
   sound: Sound

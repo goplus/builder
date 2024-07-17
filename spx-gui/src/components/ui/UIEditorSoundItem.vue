@@ -1,8 +1,9 @@
 <template>
   <UIBlockItem color="sound" variant="colorful" :active="selected">
     <div class="sound-container">
-      <!-- Use DumbSoundPlayer or SoundPlayer? -->
-      <SoundPlayer class="sound-player" :src="audioSrc" color="sound" />
+      <div class="sound-player">
+        <slot name="player"></slot>
+      </div>
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
@@ -11,7 +12,6 @@
   </UIBlockItem>
 </template>
 <script setup lang="ts">
-import SoundPlayer from '../editor/sound/SoundPlayer.vue'
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
@@ -27,6 +27,7 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 4px;
 }
 .sound-player {
   height: 36px;

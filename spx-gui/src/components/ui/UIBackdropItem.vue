@@ -1,8 +1,6 @@
 <template>
-  <UIBlockItem color="primary" size="large">
-    <div class="img-container">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-cover />
-    </div>
+  <UIBlockItem class="ui-backdrop-item" color="primary" size="large" :active="selected">
+    <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-cover />
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
@@ -23,11 +21,9 @@ defineProps<{
 }>()
 </script>
 <style scoped lang="scss">
-.img-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ui-backdrop-item {
+  padding: 2px;
+  gap: 2px;
 }
 .img {
   height: 98px;

@@ -8,12 +8,7 @@
           :key="asset.name"
           @click="selectSprite(asset)"
         >
-          <AssetItem :selected="selected.sprites.has(asset)">
-            <div class="asset-image">
-              <BlobImage :blob="asset.costumes[0].blob" />
-            </div>
-            <div class="asset-name">{{ asset.name }}</div>
-          </AssetItem>
+          <SpriteItem :asset="asset" :selected="selected.sprites.has(asset)" />
         </NGridItem>
       </NGrid>
     </div>
@@ -38,12 +33,7 @@
           :key="asset.name"
           @click="selectBackdrop(asset)"
         >
-          <AssetItem :selected="selected.backdrops.has(asset)">
-            <div class="asset-image">
-              <BlobImage :blob="asset.blob" />
-            </div>
-            <div class="asset-name">{{ asset.name }}</div>
-          </AssetItem>
+          <BackdropItem :asset="asset" :selected="selected.backdrops.has(asset)" />
         </NGridItem>
       </NGrid>
     </div>
@@ -77,9 +67,9 @@ import type { ExportedScratchSprite } from '@/utils/scratch'
 import { type Project } from '@/models/project'
 import type { AssetModel } from '@/models/common/asset'
 import { UIButton } from '@/components/ui'
-import BlobImage from '../BlobImage.vue'
 import SoundItem from './SoundItem.vue'
-import AssetItem from '../library/AssetItem.vue'
+import SpriteItem from './SpriteItem.vue'
+import BackdropItem from './BackdropItem.vue'
 
 const props = defineProps<{
   scratchAssets: ExportedScratchAssets
