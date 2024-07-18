@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-sprite-item" color="primary" size="large" :active="selected">
+  <UIBlockItem class="ui-sprite-item" size="large" :active="selected">
     <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="large">
       {{ name }}

@@ -15,7 +15,7 @@
       />
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
-          <UIBlockItem class="add-sound" color="primary">
+          <UIBlockItem class="add-sound">
             <UIIcon class="icon" type="plus" />
           </UIBlockItem>
         </template>

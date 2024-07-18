@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-backdrop-item" color="primary" size="large" :active="selected">
+  <UIBlockItem class="ui-backdrop-item" size="large" :active="selected">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-cover />
     <UIBlockItemTitle size="large">
       {{ name }}

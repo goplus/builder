@@ -25,7 +25,8 @@ const props = withDefaults(
   }>(),
   {
     variant: 'standard',
-    size: 'medium'
+    size: 'medium',
+    color: 'primary'
   }
 )
 

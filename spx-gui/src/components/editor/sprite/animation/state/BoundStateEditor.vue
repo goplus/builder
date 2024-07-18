@@ -9,7 +9,6 @@
   >
     <ul class="state-items">
       <UIBlockItem
-        color="primary"
         class="state-item"
         :active="isBound(State.default)"
         @click="handleStateItemClick(State.default)"
@@ -19,7 +18,6 @@
         <UICornerIcon v-show="isBound(State.default)" type="check" />
       </UIBlockItem>
       <UIBlockItem
-        color="primary"
         class="state-item"
         :active="isBound(State.step)"
         @click="handleStateItemClick(State.step)"
@@ -29,7 +27,6 @@
         <UICornerIcon v-show="isBound(State.step)" type="check" />
       </UIBlockItem>
       <UIBlockItem
-        color="primary"
         class="state-item"
         :active="isBound(State.die)"
         @click="handleStateItemClick(State.die)"
