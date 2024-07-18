@@ -84,22 +84,22 @@ export class Client {
     return this.handleResponse(resp)
   }
 
-  get(url: string, params?: QueryParams) {
+  get(url: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     url = params == null ? url : withQueryParams(url, params)
-    return this.request(url, null, { method: 'GET' })
+    return this.request(url, null, { ...options, method: 'GET' })
   }
 
-  post(url: string, payload?: unknown) {
-    return this.request(url, payload, { method: 'POST' })
+  post(url: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.request(url, payload, { ...options, method: 'POST' })
   }
 
-  put(url: string, payload?: unknown) {
-    return this.request(url, payload, { method: 'PUT' })
+  put(url: string, payload?: unknown, options?: Omit<RequestOptions, 'method'>) {
+    return this.request(url, payload, { ...options, method: 'PUT' })
   }
 
-  delete(url: string, params?: QueryParams) {
+  delete(url: string, params?: QueryParams, options?: Omit<RequestOptions, 'method'>) {
     url = params == null ? url : withQueryParams(url, params)
-    return this.request(url, null, { method: 'DELETE' })
+    return this.request(url, null, { ...options, method: 'DELETE' })
   }
 }
 

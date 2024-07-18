@@ -2,10 +2,10 @@
   <ProcessDetail v-show="active" :applied="applied && !dirty" :apply-fn="apply" :cancel-fn="cancel">
     <template #header>
       {{ $t({ en: 'Split sprite sheet', zh: '切分精灵表' }) }}
-      <UINumberInput v-model:value="rowNum" class="num-input" type="number" :min="1">
+      <UINumberInput v-model:value="rowNum" class="num-input" :min="1" :max="maxGridSize">
         <template #prefix> {{ $t({ en: 'Rows', zh: '行数' }) }}: </template>
       </UINumberInput>
-      <UINumberInput v-model:value="colNum" class="num-input" type="number" :min="1">
+      <UINumberInput v-model:value="colNum" class="num-input" :min="1" :max="maxGridSize">
         <template #prefix> {{ $t({ en: 'Columns', zh: '列数' }) }}: </template>
       </UINumberInput>
     </template>
@@ -16,47 +16,40 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { until } from '@/utils/utils'
+import { untilNotNull, memoizeAsync } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
+import { sleep } from '@/utils/test'
+import { stripExt } from '@/utils/path'
 import { fromBlob, type File } from '@/models/common/file'
 import { UILoading, UINumberInput, useUIVariables } from '@/components/ui'
 import ProcessDetail from '../common/ProcessDetail.vue'
-import { cutGrid, recognizeSpriteGrid, type Color } from './utils'
 import ImgPreview from '../common/ImgPreview.vue'
-import { stripExt } from '@/utils/path'
-import { memoize } from 'lodash'
-import { sleep } from '@/utils/test'
+import type { MethodComponentEmits, MethodComponentProps } from '../common/types'
+import { cutGrid, recognizeSpriteGrid, type Color } from './utils'
 
-const props = defineProps<{
-  input: File[]
-  active: boolean
-  /** If the processing is already applied (to image) */
-  applied: boolean
-}>()
+const props = defineProps<MethodComponentProps>()
+const emit = defineEmits<MethodComponentEmits>()
 
-const emit = defineEmits<{
-  applied: [File[]]
-  cancel: []
-}>()
+const maxGridSize = 50
 
 // SplitSpriteSheet is supposed to take at most one file
 const file = computed(() => props.input[0])
 const [imgRef] = useFileImg(file)
-const bgColor = ref<Color | null>(null)
+const bgColorRef = ref<Color | null>(null)
 const rowNum = ref(1)
 const colNum = ref(1)
 // TODO: support recognizing & adjusting for padding & offset
 const recognizing = ref(false)
 
-// use `memoize` to ensure that recognition for same file runs only once
-const autoRecognize = memoize(async (img: HTMLImageElement) => {
+// use `memoizeAsync` to ensure that recognition for same file runs only once
+const autoRecognize = memoizeAsync(async (img: HTMLImageElement) => {
   recognizing.value = true
   await sleep(100) // ensure minimum duration for ui loading
   for await (const yielded of recognizeSpriteGrid(img)) {
-    if (yielded.type === 'bgColor') bgColor.value = yielded.color
+    if (yielded.type === 'bgColor') bgColorRef.value = yielded.color
     if (yielded.type === 'rowCol') {
-      rowNum.value = yielded.rowNum
-      colNum.value = yielded.colNum
+      rowNum.value = Math.min(yielded.rowNum, maxGridSize)
+      colNum.value = Math.min(yielded.colNum, maxGridSize)
       break
     }
   }
@@ -67,8 +60,8 @@ watch(
   () => props.active,
   async (active) => {
     if (!active) return
-    await until(() => imgRef.value != null)
-    await autoRecognize(imgRef.value!)
+    const img = await untilNotNull(imgRef)
+    await autoRecognize(img)
   }
 )
 
@@ -116,11 +109,12 @@ watch([rowNum, colNum], async () => {
 })
 
 async function apply() {
-  await until(() => imgRef.value != null && bgColor.value != null)
-  const rows = await cutGrid(imgRef.value!, {
+  const img = await untilNotNull(imgRef)
+  const bgColor = await untilNotNull(bgColorRef)
+  const rows = await cutGrid(img, {
     rowNum: rowNum.value,
     colNum: colNum.value,
-    bgColor: bgColor.value!,
+    bgColor: bgColor,
     mimeType: 'image/png'
   })
   const files: File[] = []

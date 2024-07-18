@@ -1,8 +1,8 @@
-import { Disposble } from '@/models/common/disposable'
+import { Disposable } from '@/models/common/disposable'
 
 /** Convert arbitrary-type (supported by current browser) image content to type-`image/jpeg` content. */
 export async function toJpeg(blob: Blob) {
-  const d = new Disposble()
+  const d = new Disposable()
   return new Promise<Blob>((resolve, reject) => {
     const img = new Image()
     img.onload = () => {

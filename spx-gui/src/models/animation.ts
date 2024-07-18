@@ -5,7 +5,7 @@ import {
   getAnimationName,
   validateAnimationName
 } from './common/asset-name'
-import { Disposble } from './common/disposable'
+import { Disposable } from './common/disposable'
 import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
@@ -42,7 +42,7 @@ export type RawAnimationConfig = AnimationInits & {
   to?: number | string
 }
 
-export class Animation extends Disposble {
+export class Animation extends Disposable {
   private sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite

@@ -121,6 +121,7 @@ export function useMessageHandle<Args extends any[], T>(
         if (e instanceof Cancelled) return
         if (e instanceof ActionException) {
           m.error(t(e.userMessage))
+          console.warn(e)
           return
         }
         throw e

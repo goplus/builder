@@ -8,7 +8,7 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposble } from '../common/disposable'
+import { Disposable } from '../common/disposable'
 import { toConfig, type Files, fromConfig } from '../common/file'
 import { Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
@@ -64,7 +64,7 @@ type RawProjectConfig = RawStageConfig & {
   // TODO: camera
 }
 
-export class Project extends Disposble {
+export class Project extends Disposable {
   id?: string
   owner?: string
   name?: string

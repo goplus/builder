@@ -6,7 +6,7 @@ import { File, type Files } from './common/file'
 import { type Size } from './common'
 import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
-import { Disposble } from './common/disposable'
+import { Disposable } from './common/disposable'
 import { Animation } from './animation'
 
 export type CostumeInits = {
@@ -60,7 +60,7 @@ export class Costume {
   }
 
   async getSize() {
-    const d = new Disposble()
+    const d = new Disposable()
     const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
     return new Promise<Size>((resolve, reject) => {
       const img = new window.Image()

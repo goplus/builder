@@ -14,17 +14,9 @@
 </template>
 
 <script lang="ts">
-import {
-  type InjectionKey,
-  inject,
-  provide,
-  shallowReactive,
-  nextTick,
-  type Component,
-  type VNodeProps,
-  type AllowedComponentProps
-} from 'vue'
+import { type InjectionKey, inject, provide, shallowReactive, nextTick, type Component } from 'vue'
 import { NModalProvider } from 'naive-ui'
+import type { ComponentDefinition, PruneProps } from '@/utils/types'
 import { Cancelled } from '@/utils/exception'
 
 // The Modal Component should provide Props as following:
@@ -33,8 +25,10 @@ export type ModalComponentProps = {
 }
 
 // The Modal Component should provide Emits as following:
-export type ModalComponentEmit<Resolved> = ((event: 'resolved', resolved: Resolved) => void) &
-  ((event: 'cancelled') => void)
+export type ModalComponentEmits<Resolved> = {
+  resolved: [resolved: Resolved]
+  cancelled: []
+}
 
 export type ModalHandlers<Resolved> = {
   resolve(resolved: Resolved): void
@@ -57,40 +51,18 @@ const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context'
 
 let mid = 0
 
-type ComponentProps<C extends Component> = C extends new (...args: any) => any
-  ? Omit<InstanceType<C>['$props'], keyof VNodeProps | keyof AllowedComponentProps>
-  : never
-
-type ComponentEmit<C extends Component> = C extends new (...args: any) => any
-  ? InstanceType<C>['$emit']
-  : never
-
-/**
- *
- * @param component The Modal Component, which should provide Props and Emits as following:
- * `{ visible: boolean }`, `{ resolved: (resolved: any) => void, cancelled: () => void }`.
- *
- *
- * @returns A function to invoke the Modal Component. The returned function has a
- * props argument, which has `never` type if the Modal Component does not provide
- *  `ModalComponentProps` and `ModalComponentEmit<any>`.
- */
-export function useModal<C extends Component>(component: C) {
+export function useModal<P extends ModalComponentProps, R>(
+  component: ComponentDefinition<P, ModalComponentEmits<R>>
+) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
   return function invokeModal(
-    props: ComponentProps<C> extends ModalComponentProps
-      ? ComponentEmit<C> extends ModalComponentEmit<any>
-        ? Omit<ComponentProps<C>, keyof ModalComponentProps>
-        : never
-      : never
+    extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>
   ) {
-    return new Promise<
-      ComponentEmit<C> extends ModalComponentEmit<infer Resolved> ? Resolved : never
-    >((resolve, reject) => {
+    return new Promise<R>((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }
-      ctx.add({ id: mid, component, props, handlers })
+      ctx.add({ id: mid, component, props: extraProps, handlers })
     })
   }
 }

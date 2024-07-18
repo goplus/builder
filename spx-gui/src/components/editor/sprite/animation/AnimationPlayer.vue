@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Disposble } from '@/models/common/disposable'
+import { Disposable } from '@/models/common/disposable'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import type { Costume } from '@/models/costume'
@@ -51,7 +51,7 @@ const preloadAudio = async (src: string): Promise<HTMLAudioElement> => {
 }
 
 const preloadFrames = async (costumeFiles: File[]) => {
-  const disposable = new Disposble()
+  const disposable = new Disposable()
   try {
     const urls = await Promise.all(
       costumeFiles.map((costume) => costume.url((f) => disposable.addDisposer(f)))
@@ -128,7 +128,7 @@ watch(
       return
     }
 
-    const disposable = new Disposble()
+    const disposable = new Disposable()
     let cancelled = false
     onCleanup(() => {
       cancelled = true
