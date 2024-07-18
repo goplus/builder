@@ -1,6 +1,6 @@
 <template>
   <div class="ui-img" :style="imgStyle">
-    <UILoading v-if="loading" :cover="!noCover" />
+    <UILoading :visible="loading" :cover="!noCover" />
   </div>
 </template>
 
