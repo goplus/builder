@@ -1,6 +1,6 @@
 <template>
-  <UIBlockItem class="ui-backdrop-item" size="large" :active="selected">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-cover />
+  <UIBlockItem class="ui-sprite-item" size="large" :active="selected">
+    <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="large">
       {{ name }}
     </UIBlockItemTitle>
@@ -9,8 +9,8 @@
 </template>
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
-import UICornerIcon from './UICornerIcon.vue'
-import UIImg from './UIImg.vue'
+import UICornerIcon from '../UICornerIcon.vue'
+import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 defineProps<{
@@ -21,14 +21,11 @@ defineProps<{
 }>()
 </script>
 <style scoped lang="scss">
-.ui-backdrop-item {
+.ui-sprite-item {
   padding: 2px;
-  gap: 2px;
 }
 .img {
-  height: 98px;
-  width: 132px;
-  overflow: hidden;
-  border-radius: 9px;
+  height: 99px;
+  width: 99px;
 }
 </style>

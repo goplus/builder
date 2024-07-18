@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
-import UIImg from './UIImg.vue'
+import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 defineProps<{

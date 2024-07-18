@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
-import UICornerIcon from './UICornerIcon.vue'
+import UICornerIcon from '../UICornerIcon.vue'
 
 defineProps<{
   duration: string

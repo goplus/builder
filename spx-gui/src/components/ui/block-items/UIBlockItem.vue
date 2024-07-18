@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Color } from '.'
+import type { Color } from '..'
 
 const props = withDefaults(
   defineProps<{
