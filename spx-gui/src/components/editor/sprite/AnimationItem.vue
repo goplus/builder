@@ -5,7 +5,7 @@
     :img-loading="imgLoading"
     :name="animation.name"
   >
-    <UICornerIcon v-if="selected" type="trash" color="sprite" @click="handelRemove" />
+    <UICornerIcon v-if="selected" type="trash" color="sprite" @click="handleRemove" />
   </UIEditorSpriteItem>
 </template>
 
@@ -29,7 +29,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.animation.costumes[0].img)
 
 const removeAnimation = useModal(AnimationRemoveModal)
 
-const handelRemove = useMessageHandle(
+const handleRemove = useMessageHandle(
   () =>
     removeAnimation({
       animation: props.animation,

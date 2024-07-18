@@ -10,7 +10,7 @@
       color="sprite"
       removable
       :item="sprite"
-      @remove="handelRemove"
+      @remove="handleRemove"
     />
   </UIEditorSpriteItem>
 </template>
@@ -32,15 +32,15 @@ const editorCtx = useEditorCtx()
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
 
-const handelRemove = useMessageHandle(
+const handleRemove = useMessageHandle(
   async () => {
     const sname = props.sprite.name
     const action = { name: { en: `Remove sprite ${sname}`, zh: `删除精灵 ${sname}` } }
     await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(sname))
   },
   {
-    en: 'Failed to remove animation',
-    zh: '删除动画失败'
+    en: 'Failed to remove sprite',
+    zh: '删除精灵失败'
   }
 ).fn
 </script>

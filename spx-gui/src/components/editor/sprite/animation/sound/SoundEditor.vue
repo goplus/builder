@@ -117,5 +117,10 @@ async function handleConfirm() {
 
 .add-sound {
   justify-content: center;
+  color: var(--ui-color-primary-main);
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>

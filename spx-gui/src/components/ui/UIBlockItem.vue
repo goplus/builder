@@ -59,26 +59,34 @@ const style = computed(() => ({
   background-color: var(--ui-color-grey-300);
   cursor: pointer;
 
-  &:hover:not(.block-item-active) {
-    &.block-item-standard {
-      border-color: var(--ui-color-grey-400);
-      background-color: var(--ui-color-grey-400);
+  &.block-item-colorful {
+    border-color: var(--color-background-faint);
+    background-color: var(--color-background-faint);
+
+    &:hover:not(.block-item-active) {
+      border-color: var(--color-background);
+      background-color: var(--color-background);
     }
 
-    &.block-item-colorful {
-      border-color: var(--color-background);
+    &.block-item-active {
+      border-color: var(--color-outline);
       background-color: var(--color-background);
     }
   }
 
-  &.block-item-colorful {
-    border-color: var(--color-background-faint);
-    background-color: var(--color-background-faint);
-  }
+  &.block-item-standard {
+    border-color: var(--ui-color-grey-300);
+    background-color: var(--ui-color-grey-300);
 
-  &.block-item-active {
-    border-color: var(--color-outline);
-    background-color: var(--color-background);
+    &:hover:not(.block-item-active) {
+      border-color: var(--ui-color-grey-400);
+      background-color: var(--ui-color-grey-400);
+    }
+
+    &.block-item-active {
+      border-color: var(--color-outline);
+      background-color: var(--color-background);
+    }
   }
 }
 </style>

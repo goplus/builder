@@ -10,7 +10,7 @@
       color="stage"
       :removable="removable"
       :item="backdrop"
-      @remove="handelRemove"
+      @remove="handleRemove"
     />
   </UIEditorBackdropItem>
 </template>
@@ -23,6 +23,7 @@ import type { Backdrop } from '@/models/backdrop'
 import type { Stage } from '@/models/stage'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import CornerMenu from '../common/CornerMenu.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   stage: Stage
@@ -35,9 +36,15 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 
 const removable = computed(() => props.stage.backdrops.length > 1)
 
-function handelRemove() {
-  const name = props.backdrop.name
-  const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
-  editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(name))
-}
+const handleRemove = useMessageHandle(
+  async () => {
+    const name = props.backdrop.name
+    const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
+    await editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(name))
+  },
+  {
+    en: 'Failed to remove backdrop',
+    zh: '删除背景失败'
+  }
+).fn
 </script>
