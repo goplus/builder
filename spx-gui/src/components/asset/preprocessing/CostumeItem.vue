@@ -1,15 +1,19 @@
 <template>
-  <UIBlockItem color="primary" :active="selected">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    <p class="name">{{ costume.name }}</p>
+  <UIEditorSpriteItem
+    :name="costume.name"
+    :selected="selected"
+    color="primary"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+  >
     <UICornerIcon v-show="selected" color="primary" type="check" />
-  </UIBlockItem>
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
-import { UIImg, UICornerIcon, UIBlockItem } from '@/components/ui'
+import { UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 
 const props = defineProps<{
   selected: boolean

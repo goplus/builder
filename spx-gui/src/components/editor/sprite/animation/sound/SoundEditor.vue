@@ -10,7 +10,7 @@
         v-for="sound in editorCtx.project.sounds"
         :key="sound.name"
         :sound="sound"
-        :active="sound.name === selected"
+        :selected="sound.name === selected"
         @click="handleSoundClick(sound.name)"
       />
       <UIDropdown trigger="click" placement="top">

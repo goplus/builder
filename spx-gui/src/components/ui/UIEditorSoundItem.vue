@@ -1,5 +1,9 @@
 <template>
-  <UIBlockItem color="sound" variant="colorful" :active="selected">
+  <UIBlockItem
+    :color="color"
+    :variant="color === 'sound' ? 'colorful' : 'standard'"
+    :active="selected"
+  >
     <div class="sound-container">
       <div class="sound-player">
         <slot name="player"></slot>
@@ -15,11 +19,16 @@
 import UIBlockItem from './UIBlockItem.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
-defineProps<{
-  audioSrc: string | null
-  name: string
-  selected: boolean
-}>()
+withDefaults(
+  defineProps<{
+    color: 'sound' | 'primary'
+    name: string
+    selected: boolean
+  }>(),
+  {
+    color: 'sound'
+  }
+)
 </script>
 <style scoped lang="scss">
 .sound-container {
