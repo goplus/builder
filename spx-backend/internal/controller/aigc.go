@@ -23,8 +23,11 @@ func (p *MattingParams) Validate() (ok bool, msg string) {
 	// Urls targeting local or private network should be rejected.
 
 	url, err := url.Parse(p.ImageUrl)
-	if err != nil || url.Scheme == "" || url.Host == "" {
+	if err != nil || url.Host == "" {
 		return false, "invalid imageUrl"
+	}
+	if url.Scheme != "http" && url.Scheme != "https" {
+		return false, "invalid imageUrl: unsupported scheme"
 	}
 
 	hostname := url.Hostname()

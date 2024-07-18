@@ -50,6 +50,15 @@ func TestMattingParamsValidate(t *testing.T) {
 		assert.Equal(t, "invalid imageUrl", msg)
 	})
 
+	t.Run("InvalidScheme", func(t *testing.T) {
+		params := &MattingParams{
+			ImageUrl: "ftp://example.com/image.jpg",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid imageUrl: unsupported scheme", msg)
+	})
+
 	t.Run("LocalImageUrl", func(t *testing.T) {
 		params := &MattingParams{
 			ImageUrl: "http://localhost:8080/a.jpg",

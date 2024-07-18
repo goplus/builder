@@ -34,12 +34,11 @@ func (c *AigcClient) Call(ctx context.Context, method, path string, body any, re
 		logger.Printf("failed to marshal request body: %v", err)
 		return err
 	}
-	httpReq, err := http.NewRequest(method, c.endpoint+path, bytes.NewReader(bodyByte))
+	httpReq, err := http.NewRequestWithContext(ctx, method, c.endpoint+path, bytes.NewReader(bodyByte))
 	if err != nil {
 		logger.Printf("failed to new request: %v", err)
 		return err
 	}
-	httpReq = httpReq.WithContext(ctx)
 	logger.Printf("request %s %s", httpReq.Method, httpReq.URL.String())
 	httpReq.Header.Add("Content-Type", "application/json")
 	httpResp, err := c.client.Do(httpReq)
