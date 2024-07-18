@@ -34,10 +34,3 @@ function handelRemove() {
   editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(name))
 }
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 60px;
-  height: 60px;
-}
-</style>

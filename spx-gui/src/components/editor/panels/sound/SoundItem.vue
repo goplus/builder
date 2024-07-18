@@ -38,10 +38,3 @@ function handleRemove() {
   editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(name))
 }
 </script>
-
-<style lang="scss" scoped>
-.sound-player {
-  width: 36px;
-  height: 36px;
-}
-</style>

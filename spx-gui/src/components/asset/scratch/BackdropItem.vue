@@ -26,16 +26,3 @@ watchEffect((onCleanup) => {
   onCleanup(() => URL.revokeObjectURL(url))
 })
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 99px;
-  height: 99px;
-}
-
-.img-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-</style>

@@ -26,17 +26,3 @@ const { formattedDuration } = useAudioDuration(() => {
   return audioSrc.value
 })
 </script>
-
-<style lang="scss" scoped>
-.player-container {
-  width: 48px;
-  height: 92px;
-  display: flex;
-  align-items: center;
-}
-
-.player {
-  width: 48px;
-  height: 48px;
-}
-</style>

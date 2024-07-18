@@ -12,7 +12,7 @@ const props = defineProps<{
   selected: boolean
 }>()
 
-const imgSrc = ref()
+const imgSrc = ref<string | null>(null)
 
 watchEffect((onCleanup) => {
   if (!props.asset.costumes.length) {
@@ -24,5 +24,3 @@ watchEffect((onCleanup) => {
   onCleanup(() => URL.revokeObjectURL(url))
 })
 </script>
-
-<style lang="scss" scoped></style>

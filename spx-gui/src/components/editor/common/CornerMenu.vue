@@ -39,8 +39,8 @@ const handleAddToAssetLibrary = useMessageHandle(
     await addAssetToLibrary(props.item)
   },
   {
-    en: 'Failed to add backdrop to asset library',
-    zh: '添加素材库失败'
+    en: 'Failed to add to asset library',
+    zh: '添加至素材库失败'
   }
 )
 </script>

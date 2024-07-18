@@ -18,9 +18,3 @@ const props = defineProps<{
 
 const { formattedDuration } = useAudioDuration(() => props.asset.blob)
 </script>
-<style lang="scss" scoped>
-.sound-container {
-  height: 48px;
-  width: 48px;
-}
-</style>

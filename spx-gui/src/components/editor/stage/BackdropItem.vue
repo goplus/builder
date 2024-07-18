@@ -41,11 +41,3 @@ function handelRemove() {
   editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(name))
 }
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 52px;
-  height: 39px;
-  border-radius: 4px;
-}
-</style>

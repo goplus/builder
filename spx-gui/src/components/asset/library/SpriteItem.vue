@@ -22,16 +22,3 @@ const props = defineProps<{
 const sprite = useAsyncComputed(() => asset2Sprite(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 99px;
-  height: 99px;
-}
-
-.img-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-</style>

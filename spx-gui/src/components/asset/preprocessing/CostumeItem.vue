@@ -22,24 +22,3 @@ const props = defineProps<{
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 60px;
-  height: 60px;
-}
-
-.name {
-  margin-top: 2px;
-  font-size: 10px;
-  line-height: 1.6;
-  padding: 4px 8px 2px;
-
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-  text-overflow: ellipsis;
-  color: var(--ui-color-title);
-}
-</style>

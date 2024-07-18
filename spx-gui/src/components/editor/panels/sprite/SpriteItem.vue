@@ -44,10 +44,3 @@ const handelRemove = useMessageHandle(
   }
 ).fn
 </script>
-
-<style lang="scss" scoped>
-.img {
-  width: 60px;
-  height: 60px;
-}
-</style>

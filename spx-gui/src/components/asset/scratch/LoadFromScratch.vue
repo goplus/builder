@@ -196,26 +196,4 @@ const importSelected = useMessageHandle(
 .import-button {
   align-self: flex-end;
 }
-
-.asset-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  text-align: center;
-}
-
-.asset-image {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-
-  & > img {
-    object-fit: contain;
-    width: 132px;
-    height: 98px;
-    border-radius: var(--ui-border-radius-1);
-  }
-}
 </style>
