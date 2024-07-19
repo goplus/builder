@@ -10,7 +10,7 @@
     <ul class="state-items">
       <UIBlockItem
         class="state-item"
-        :class="{ active: isBound(State.default) }"
+        :active="isBound(State.default)"
         @click="handleStateItemClick(State.default)"
       >
         <div class="icon" v-html="iconStateDefault"></div>
@@ -19,7 +19,7 @@
       </UIBlockItem>
       <UIBlockItem
         class="state-item"
-        :class="{ active: isBound(State.step) }"
+        :active="isBound(State.step)"
         @click="handleStateItemClick(State.step)"
       >
         <div class="icon" v-html="iconStateStep"></div>
@@ -28,7 +28,7 @@
       </UIBlockItem>
       <UIBlockItem
         class="state-item"
-        :class="{ active: isBound(State.die) }"
+        :active="isBound(State.die)"
         @click="handleStateItemClick(State.die)"
       >
         <div class="icon" v-html="iconStateDie"></div>

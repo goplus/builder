@@ -10,7 +10,7 @@
         v-for="sound in editorCtx.project.sounds"
         :key="sound.name"
         :sound="sound"
-        :active="sound.name === selected"
+        :selected="sound.name === selected"
         @click="handleSoundClick(sound.name)"
       />
       <UIDropdown trigger="click" placement="top">
@@ -118,7 +118,6 @@ async function handleConfirm() {
 .add-sound {
   justify-content: center;
   color: var(--ui-color-primary-main);
-
   .icon {
     width: 24px;
     height: 24px;

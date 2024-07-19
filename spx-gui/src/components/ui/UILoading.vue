@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-loading" :class="{ cover, visible }">
+  <div class="ui-loading" :class="{ cover, visible, mask }">
     <NSpin />
   </div>
 </template>
@@ -11,10 +11,12 @@ withDefaults(
   defineProps<{
     cover?: boolean
     visible?: boolean
+    mask?: boolean
   }>(),
   {
     cover: false,
-    visible: true
+    visible: true,
+    mask: true
   }
 )
 </script>
@@ -38,7 +40,10 @@ withDefaults(
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.5);
+
+    &.mask {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
   }
 
   &.visible {

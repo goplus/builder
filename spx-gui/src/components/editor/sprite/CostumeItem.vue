@@ -1,25 +1,22 @@
 <template>
-  <EditorItem :selected="selected" color="sprite">
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-    <EditorItemName class="name">{{ costume.name }}</EditorItemName>
-    <UICornerIcon
-      v-show="selected && removable"
-      color="sprite"
-      type="trash"
-      @click.stop="handelRemove"
-    />
-  </EditorItem>
+  <UIEditorSpriteItem
+    :selected="selected"
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="costume.name"
+  >
+    <UICornerIcon v-if="selected && removable" type="trash" color="sprite" @click="handleRemove" />
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIImg, UICornerIcon } from '@/components/ui'
+import { UICornerIcon, UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'
-import EditorItem from '../common/EditorItem.vue'
-import EditorItemName from '../common/EditorItemName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   costume: Costume
@@ -32,20 +29,15 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.costume.img)
 
 const removable = computed(() => props.sprite.costumes.length > 1)
 
-function handelRemove() {
-  const name = props.costume.name
-  const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
-  editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(name))
-}
+const handleRemove = useMessageHandle(
+  async () => {
+    const name = props.costume.name
+    const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
+    await editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(name))
+  },
+  {
+    en: 'Failed to remove costume',
+    zh: '删除造型失败'
+  }
+).fn
 </script>
-
-<style lang="scss" scoped>
-.img {
-  margin: 0 0 2px;
-  width: 60px;
-  height: 60px;
-}
-.name {
-  padding: 4px 8px 2px;
-}
-</style>

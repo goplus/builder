@@ -25,9 +25,7 @@
           v-for="sprite in sprites"
           :key="sprite.name"
           :sprite="sprite"
-          :active="isSelected(sprite)"
-          @remove="handleSpriteRemove(sprite)"
-          @add-to-asset-library="handleAddToAssetLibrary(sprite)"
+          :selected="isSelected(sprite)"
           @click="handleSpriteClick(sprite)"
         />
       </PanelList>
@@ -65,11 +63,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Sprite } from '@/models/sprite'
-import {
-  useAddAssetFromLibrary,
-  useAddAssetToLibrary,
-  useAddSpriteFromLocalFile
-} from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIIcon, UITooltip } from '@/components/ui'
@@ -101,19 +95,6 @@ const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWra
 function isSelected(sprite: Sprite) {
   return sprite.name === editorCtx.project.selectedSprite?.name
 }
-
-function handleSpriteRemove(sprite: Sprite) {
-  const sname = sprite.name
-  const action = { name: { en: `Remove sprite ${sname}`, zh: `删除精灵 ${sname}` } }
-  editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(sname))
-}
-
-const addAssetToLibrary = useAddAssetToLibrary()
-
-const handleAddToAssetLibrary = useMessageHandle((sprite: Sprite) => addAssetToLibrary(sprite), {
-  en: 'Failed to add sprite to asset library',
-  zh: '添加素材库失败'
-}).fn
 
 function handleSpriteClick(sprite: Sprite) {
   editorCtx.project.select({ type: 'sprite', name: sprite.name })
