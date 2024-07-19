@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <nav class="top-nav">
     <div class="left">
@@ -79,27 +80,28 @@
       </UIDropdown>
       <UITooltip placement="bottom">
         <template #trigger>
-          <!-- eslint-disable-next-line vue/no-v-html -->
           <div class="lang" @click="toggleLang" v-html="langContent"></div>
         </template>
         {{ $t({ en: 'English / 中文', zh: '中文 / English' }) }}
       </UITooltip>
     </div>
     <div class="center">
-      <p class="project-name">{{ project?.name }}</p>
+      <template v-if="project != null">
+        <div class="project-name">{{ project.name }}</div>
+        <div class="auto-save-state">
+          <UITooltip placement="right">
+            <template #trigger>
+              <div
+                :class="['icon', autoSaveStateIcon.stateClass]"
+                v-html="autoSaveStateIcon.svg"
+              ></div>
+            </template>
+            {{ $t(autoSaveStateIcon.desc) }}
+          </UITooltip>
+        </div>
+      </template>
     </div>
     <div class="right">
-      <div class="save">
-        <UIButton
-          v-if="project != null"
-          type="secondary"
-          :disabled="!isOnline"
-          :loading="handleSave.isLoading.value"
-          @click="handleSave.fn"
-        >
-          {{ $t({ en: 'Save', zh: '保存' }) }}
-        </UIButton>
-      </div>
       <div v-if="!userStore.userInfo" class="sign-in">
         <UIButton :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
           $t({ en: 'Sign in', zh: '登录' })
@@ -146,12 +148,12 @@ import {
 } from '@/components/ui'
 import saveAs from 'file-saver'
 import { useNetwork } from '@/utils/network'
-import { useI18n } from '@/utils/i18n'
+import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { selectFile } from '@/utils/file'
 import { IsPublic } from '@/apis/common'
 import { getProjectEditorRoute } from '@/router'
-import { Project } from '@/models/project'
+import { Project, AutoSaveToCloudState } from '@/models/project'
 import { useUserStore } from '@/stores'
 import {
   useCreateProject,
@@ -174,6 +176,10 @@ import shareSvg from './icons/share.svg'
 import stopSharingSvg from './icons/stop-sharing.svg'
 import undoSvg from './icons/undo.svg'
 import redoSvg from './icons/redo.svg'
+import offlineSvg from './icons/offline.svg?raw'
+import savingSvg from './icons/saving.svg?raw'
+import failedToSaveSvg from './icons/failed-to-save.svg?raw'
+import cloudCheckSvg from './icons/cloud-check.svg?raw'
 
 const props = defineProps<{
   project: Project | null
@@ -264,11 +270,31 @@ function toggleLang() {
   location.reload()
 }
 
-const handleSave = useMessageHandle(
-  () => props.project!.saveToCloud(),
-  { en: 'Failed to save project', zh: '项目保存失败' },
-  { en: 'Project saved', zh: '保存成功' }
-)
+type AutoSaveStateIcon = {
+  svg: string
+  stateClass?: string
+  desc: LocaleMessage
+}
+const autoSaveStateIcon = computed<AutoSaveStateIcon>(() => {
+  if (!isOnline.value)
+    return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
+  switch (props.project?.autoSaveToCloudState) {
+    case AutoSaveToCloudState.Saved:
+      return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }
+    case AutoSaveToCloudState.Pending:
+      return {
+        svg: savingSvg,
+        stateClass: 'pending',
+        desc: { en: 'Pending save', zh: '待保存' }
+      }
+    case AutoSaveToCloudState.Saving:
+      return { svg: savingSvg, stateClass: 'saving', desc: { en: 'Saving', zh: '保存中' } }
+    case AutoSaveToCloudState.Failed:
+      return { svg: failedToSaveSvg, desc: { en: 'Failed to save', zh: '保存失败' } }
+    default:
+      throw new Error('unknown auto save state')
+  }
+})
 
 const undoAction = computed(() => props.project?.history.getUndoAction() ?? null)
 
@@ -378,7 +404,36 @@ const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
   align-items: center;
 }
 
-.save,
+.auto-save-state {
+  margin-left: 8px;
+  cursor: pointer;
+
+  .icon {
+    width: 24px;
+    height: 24px;
+
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+    }
+
+    &.pending :deep(svg) path,
+    &.saving :deep(svg) path {
+      stroke-dasharray: 2;
+    }
+
+    &.saving :deep(svg) path {
+      animation: dash 1s linear infinite;
+
+      @keyframes dash {
+        to {
+          stroke-dashoffset: 24;
+        }
+      }
+    }
+  }
+}
+
 .sign-in,
 .avatar {
   height: 100%;
@@ -391,10 +446,6 @@ const handleRedo = useMessageHandle(() => props.project!.history.redo(), {
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 16px;
-}
-
-.save {
-  margin: 0 8px;
 }
 
 .avatar {
