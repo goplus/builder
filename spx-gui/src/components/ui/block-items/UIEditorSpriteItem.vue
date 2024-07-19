@@ -1,6 +1,6 @@
 <template>
   <UIBlockItem class="ui-editor-sprite-item" :color="color" :active="selected">
-    <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
+    <UIImg class="img" no-loading-mask :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="medium">
       {{ name }}
     </UIBlockItemTitle>

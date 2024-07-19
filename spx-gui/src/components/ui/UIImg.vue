@@ -1,6 +1,6 @@
 <template>
   <div class="ui-img" :style="imgStyle">
-    <UILoading :visible="loading" :cover="!noCover" />
+    <UILoading :visible="loading" cover :mask="!noLoadingMask" />
   </div>
 </template>
 
@@ -13,7 +13,7 @@ const props = withDefaults(
     src: string | null
     loading?: boolean
     size?: 'contain' | 'cover'
-    noCover?: boolean
+    noLoadingMask?: boolean
   }>(),
   {
     // TODO: loading for public URL fetching

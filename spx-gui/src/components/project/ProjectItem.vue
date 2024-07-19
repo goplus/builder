@@ -1,7 +1,7 @@
 <template>
   <li :class="['project-item', { 'in-homepage': inHomepage }]">
     <div class="img-box">
-      <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-cover />
+      <UIImg class="img" :src="imgSrc" :loading="imgLoading" no-loading-mask />
     </div>
     <div class="info">
       <div class="name-container">

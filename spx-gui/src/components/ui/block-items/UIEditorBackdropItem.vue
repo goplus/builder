@@ -1,7 +1,7 @@
 <template>
   <UIBlockItem color="stage" :active="selected">
     <div class="img-container">
-      <UIImg class="img" no-cover :src="imgSrc" :loading="imgLoading" />
+      <UIImg class="img" no-loading-mask :src="imgSrc" :loading="imgLoading" />
     </div>
     <UIBlockItemTitle size="medium">
       {{ name }}
