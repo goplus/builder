@@ -1,29 +1,24 @@
 # All-in-one Dockerfile for building the SPX GUI
+
 ARG image_address
-FROM ${image_address}golang:1.21 as go-builder
+FROM ghcr.io/goplus/gop:1.2 AS go-builder
 
 WORKDIR /app
 
-# Build WASM
 COPY tools ./tools
 COPY spx-backend ./spx-backend
 
+# Build WASM
 WORKDIR /app/tools/fmt
 RUN ./build.sh
-
 WORKDIR /app/tools/ispx
 RUN ./build.sh
-
-# Install Go+
-RUN bash -c ' echo "deb [trusted=yes] https://pkgs.goplus.org/apt/ /" > /etc/apt/sources.list.d/goplus.list' \
-    && apt update \
-    && apt install -y gop
 
 # Build backend
 WORKDIR /app/spx-backend
 RUN gop build -o spx-backend ./cmd/spx-backend
 
-FROM ${image_address}node:20.11.1 as frontend-builder
+FROM ${image_address}node:20.11.1 AS frontend-builder
 
 WORKDIR /app/spx-gui
 
@@ -39,11 +34,9 @@ COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/ma
 
 RUN npm run build
 
-FROM go-builder
+FROM ${image_address}nginx:1.27
 
-# Install nginx
-RUN apt update && apt install -y nginx
-
+COPY --from=go-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/sites-available/default
 
@@ -54,4 +47,4 @@ EXPOSE 80
 
 WORKDIR /app
 
-CMD ./spx-backend/spx-backend & nginx -g "daemon off;" & wait
+CMD ["sh", "-c", "nginx && ./spx-backend/spx-backend"]
