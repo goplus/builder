@@ -38,7 +38,7 @@ FROM ${image_address}nginx:1.27
 
 COPY --from=go-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Compress WASM files for gzip_static
 RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;
