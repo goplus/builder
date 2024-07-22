@@ -54,7 +54,7 @@
   </UIFormModal>
 </template>
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, reactive, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { UIButton, UICheckbox, UIEmpty, UIFormModal } from '@/components/ui'
 import type { Costume } from '@/models/costume'
 import type { Sprite } from '@/models/sprite'

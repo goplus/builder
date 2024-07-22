@@ -95,7 +95,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, ref } from 'vue'
+import { ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'

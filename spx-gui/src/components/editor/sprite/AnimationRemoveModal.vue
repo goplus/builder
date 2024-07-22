@@ -39,7 +39,7 @@ import type { Animation } from '@/models/animation'
 import type { Project } from '@/models/project'
 import type { Sprite } from '@/models/sprite'
 
-import { defineProps, defineEmits, ref } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps<{
   visible: boolean
