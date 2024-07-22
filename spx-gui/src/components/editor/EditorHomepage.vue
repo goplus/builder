@@ -225,9 +225,10 @@ watch(
 )
 
 watchEffect((onCleanup) => {
-  const cleanup = router.beforeEach((to, from, next) => {
-    if (project.value?.hasUnsyncedChanges) {
-      withConfirm({
+  const cleanup = router.beforeEach(async () => {
+    if (!project.value?.hasUnsyncedChanges) return true
+    try {
+      await withConfirm({
         title: t({
           en: 'Save changes',
           zh: '保存变更'
@@ -244,11 +245,10 @@ watchEffect((onCleanup) => {
           if (project.value?.hasUnsyncedChanges) await project.value!.saveToCloud()
           await clear(LOCAL_CACHE_KEY)
         }
-      }).then(() => {
-        next()
       })
-    } else {
-      next()
+      return true
+    } catch {
+      return false
     }
   })
 
