@@ -77,7 +77,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { stripExt } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
 import { Costume } from '@/models/costume'

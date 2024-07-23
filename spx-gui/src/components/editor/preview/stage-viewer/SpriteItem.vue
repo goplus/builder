@@ -8,7 +8,7 @@
   />
 </template>
 <script lang="ts" setup>
-import { computed, defineProps, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action } from '@/models/project'

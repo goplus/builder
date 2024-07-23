@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
-import { ref, defineProps, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Project, fullName } from '@/models/project'
 import { shallowRef } from 'vue'
 const props = defineProps<{ owner?: string; name?: string }>()

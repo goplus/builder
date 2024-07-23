@@ -31,6 +31,20 @@ module.exports = {
           'v-.*' // for Vue Konva components
         ]
       }
+    ],
+    'no-restricted-imports': [
+      'warn',
+      {
+        paths: [
+          {
+            // Workaround for https://github.com/vuejs/eslint-plugin-vue/issues/2437
+            name: 'vue',
+            importNames: ['defineProps', 'defineEmits'],
+            message:
+              '`defineProps` and `defineEmits` are compiler macros and no longer need to be imported.'
+          }
+        ]
+      }
     ]
   }
 }
