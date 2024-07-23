@@ -1,12 +1,17 @@
 # All-in-one Dockerfile for building the SPX GUI
 
-ARG image_address
-FROM ghcr.io/goplus/gop:1.2 AS go-builder
+ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.2
+ARG NODE_BASE_IMAGE=node:20.11.1
+ARG NGINX_BASE_IMAGE=nginx:1.27
+
+FROM ${GOP_BASE_IMAGE} AS go-builder
 
 WORKDIR /app
 
 COPY tools ./tools
 COPY spx-backend ./spx-backend
+
+ARG GOPROXY
 
 # Build WASM
 WORKDIR /app/tools/fmt
@@ -18,11 +23,13 @@ RUN ./build.sh
 WORKDIR /app/spx-backend
 RUN gop build -o spx-backend ./cmd/spx-backend
 
-FROM ${image_address}node:20.11.1 AS frontend-builder
+FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/spx-gui
 
 COPY spx-gui/package.json spx-gui/package-lock.json ./
+
+ARG NPM_CONFIG_REGISTRY
 
 RUN npm install
 
@@ -34,7 +41,7 @@ COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/ma
 
 RUN npm run build
 
-FROM ${image_address}nginx:1.27
+FROM ${NGINX_BASE_IMAGE}
 
 COPY --from=go-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
@@ -47,4 +54,4 @@ EXPOSE 80
 
 WORKDIR /app
 
-CMD ["sh", "-c", "nginx && ./spx-backend/spx-backend"]
+CMD ["sh", "-c", "nginx && exec ./spx-backend/spx-backend"]
