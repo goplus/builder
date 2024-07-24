@@ -1,6 +1,6 @@
 import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
-import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
+import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
 import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
@@ -57,24 +57,10 @@ export async function saveFiles(
 }
 
 export async function getFiles(fileCollection: FileCollection): Promise<Files> {
-  const objectUniversalUrls = Object.values(fileCollection).filter(
-    (url) => new URL(url).protocol === fileUniversalUrlSchemes.kodo
-  )
-  const objectUrls: UniversalToWebUrlMap = objectUniversalUrls.length
-    ? await makeObjectUrls(objectUniversalUrls)
-    : {}
-
   const files: Files = {}
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]
-    let webUrl = universalUrl
-
-    const objectUrl = objectUrls[universalUrl]
-    if (objectUrl) {
-      webUrl = objectUrl
-    }
-
-    const file = createFileWithWebUrl(webUrl, filename(path))
+    const file = createFileWithUniversalUrl(universalUrl, filename(path))
     setUniversalUrl(file, universalUrl)
     files[path] = file
   })
@@ -92,11 +78,18 @@ function getUniversalUrl(file: File): UniversalUrl | null {
   return file.meta.universalUrl ?? null
 }
 
-export function createFileWithWebUrl(webUrl: WebUrl, name = filename(webUrl)) {
+function createFileWithUniversalUrl(url: UniversalUrl, name = filename(url)) {
   return new File(name, async () => {
+    const webUrl = await universalUrlToWebUrl(url)
     const resp = await fetch(webUrl)
-    const blob = await resp.blob()
-    return blob.arrayBuffer()
+    return resp.arrayBuffer()
+  })
+}
+
+export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
+  return new File(name, async () => {
+    const resp = await fetch(url)
+    return resp.arrayBuffer()
   })
 }
 
