@@ -93,7 +93,7 @@ interface DocAbility{
 
 ## 06_Chatbot
 
-用于负责与AI交流的部分，提供开启一个会话与继续发送消息的能力。
+用于负责与AI交流的部分，提供开启一个会话与继续发送消息的能力。提供了 解释、添加注释、修复代码 这三个对话功能。
 
 ```ts
 export interface ChatBot {
@@ -104,6 +104,8 @@ export interface ChatBot {
 ```
 
 ## 06_Suggest
+
+建议模块负责提供一个利用LLM来生成代码建议的功能，内部通过传入代码与光标位置对代码进行补全式生成。
 
 ```ts
 export interface Suggest {

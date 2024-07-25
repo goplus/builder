@@ -16,7 +16,7 @@
 1. 获取行内提示
 2. 获取错误提示
 3. 获取补全列表
-4. 获取Identity类型
+4. 获取 Token 类型
 
 - 内部实现
 
@@ -24,28 +24,109 @@
 2. 定义完整叶子结点信息（类型，名称，包，函数签名，变量名，具体单位）
 3. 维护符号表？
 4. 类型推断
+5. 解析函数签名
 
-![compiler-completionItem](./img/compiler-completionItem.png)
+- 生成行内提示流程
 
-- 对外接口
+![compiler-inlayhint](./assets/compiler-inlayhint.png)
+
+- 生成错误提示流程
+
+![compiler-diagnostics](./assets/compiler-diagnostics.png)
+
+- 生成补全流程
+
+![compiler-completionItem](./assets/compiler-completionItem.png)
+
+- 获取 Token 类型流程
+
+![compiler-token](./assets/compiler-token.png)
+
+- 模块对外接口
 
 ```ts
 interface Compiler {
     getInlayHints(fileUri: URI): InlayHint[]
-    getDiagnostics(fileUri: URI): Diagnostic[]
+    getDiagnostics(fileUri: URI): AttentionHint[]
     getCompletionItems(fileUri: URI, position: Position): CompletionItem[]
     // hover
-    getDefinition(fileUri: URI, position: Position): Identifier | null
+    getDefinition(fileUri: URI, position: Position): Token | null
 }
 ```
 
-## WASM 数据传输方案
+- 具体接口内容
 
-!设置GO项目环境`GOOS=js;GOARCH=wasm`
+```ts
+type InlayHint = {
+    content: string | Icon,
+    style: InlayHintStyle, 
+    behavior: InlayHintBehavior,
+    position: Position
+}
+type AttentionHint = {
+    level: AttentionHintLevelEnum,
+    range: IRange,
+    message: string,
+    hoverContent: LayerContent
+}
+type CompletionItem = {
+    icon: Icon,
+    label: string,
+    desc: string,
+    insertText: string,
+    preview: LayerContent
+}
+type Token = {
+    target: TokenContext,
+    module: string, // "github.com/goplus/spx"
+    name: string,   // "Sprite.touching"
+    keyword: string,
+    desc: string,
+    // 
+    usages: TokenUsage[]
+}
+```
 
+## WASM 方案
 
+设置GO项目环境`GOOS=js;GOARCH=wasm`
+
+- 对于GO环境
+
+```go
+type InlayHint struct {
+ Content  string   `json:"content"`
+ Style    string   `json:"style"`
+ Behavior string   `json:"behavior"`
+ Position Position `json:"position"`
+}
+
+type Position struct {
+ Column     int
+ LineNumber int
+}
+...
+```
+
+- 对于JS环境
+
+只需要定义前文提到的具体接口内容。
+
+## Token 定义
+
+目前参照Go语言语法规范的定义来实行。
+
+[Reference: Go Language Specification - Token](https://go.dev/ref/spec#Tokens)
 
 ## 错误类型
+
+针对可能出现的一些错误定义的类型， 分别有
+
+1. 语法错误
+2. 类型错误
+3. 逻辑错误
+
+目前针对的是错误提示这个接口设计的。
 
 ### Syntax
 
