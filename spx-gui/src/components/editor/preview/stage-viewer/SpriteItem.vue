@@ -1,29 +1,28 @@
 <template>
   <v-image
     ref="nodeRef"
-    :config="{
-      spriteName: sprite.name,
-      image: image,
-      draggable: true,
-      offsetX: costume?.x,
-      offsetY: costume?.y,
-      visible: sprite.visible,
-      ...spx2Konva(sprite)
-    }"
+    :config="config"
     @dragend="handleDragEnd"
     @transformend="handleTransformed"
     @mousedown="handleMousedown"
   />
 </template>
 <script lang="ts" setup>
-import { computed, defineProps, onMounted, ref, watchEffect } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { Sprite } from '@/models/sprite'
-import type { Size } from '@/models/common'
-import { useImgFile } from '@/utils/file'
-import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { round } from '@/utils/utils'
+import type { ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action } from '@/models/project'
+import {
+  LeftRight,
+  RotationStyle,
+  headingToLeftRight,
+  leftRightToHeading,
+  type Sprite
+} from '@/models/sprite'
+import type { Size } from '@/models/common'
+import { nomalizeDegree, round } from '@/utils/utils'
+import { useFileImg } from '@/utils/file'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 
 const props = defineProps<{
   sprite: Sprite
@@ -35,28 +34,12 @@ const nodeRef = ref<any>()
 const editorCtx = useEditorCtx()
 const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
-const [image] = useImgFile(() => costume.value?.img)
+const [image] = useFileImg(() => costume.value?.img)
 
 watchEffect((onCleanup) => {
   const spriteName = props.sprite.name
-  props.spritesReadyMap.set(spriteName, false)
+  props.spritesReadyMap.set(spriteName, image.value != null)
   onCleanup(() => props.spritesReadyMap.delete(spriteName))
-
-  const img = image.value
-  if (img == null) return
-  function handleImageLoad() {
-    // We need to notify event ready for SpriteTransformer (to get correct node size)
-    props.spritesReadyMap.set(spriteName, true)
-  }
-  if (img.complete) {
-    handleImageLoad()
-    return
-  }
-  img.addEventListener('load', handleImageLoad)
-  onCleanup(() => {
-    props.spritesReadyMap.delete(spriteName)
-    img.removeEventListener('load', handleImageLoad)
-  })
 })
 
 onMounted(() => {
@@ -82,72 +65,60 @@ function handleDragEnd(e: KonvaEventObject<unknown>) {
 function handleTransformed(e: KonvaEventObject<unknown>) {
   const sname = props.sprite.name
   handleChange(e, {
-    name: { en: `Resize sprite ${sname}`, zh: `调整精灵 ${sname} 大小` }
+    name: { en: `Transform sprite ${sname}`, zh: `调整精灵 ${sname}` }
   })
 }
 
+const config = computed<ImageConfig>(() => {
+  const { name, visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
+  const scale = size / bitmapResolution.value
+  const config = {
+    spriteName: name,
+    image: image.value ?? undefined,
+    draggable: true,
+    offsetX: 0,
+    offsetY: 0,
+    visible: visible,
+    x: props.mapSize.width / 2 + x,
+    y: props.mapSize.height / 2 - y,
+    rotation: nomalizeDegree(heading - 90),
+    scaleX: scale,
+    scaleY: scale
+  } satisfies ImageConfig
+  const c = costume.value
+  if (c != null) {
+    config.offsetX = c.x + pivot.x * c.bitmapResolution
+    config.offsetY = c.y - pivot.y * c.bitmapResolution
+  }
+  if (rotationStyle === RotationStyle.leftRight && headingToLeftRight(heading) === LeftRight.left) {
+    config.rotation = leftRightToHeading(LeftRight.left) - 90 // -180
+    // the image is already rotated with `rotation: -180`, so we adjust `scaleY` to flip it vertically
+    config.scaleY = -config.scaleY
+    // Note that you can get the same result with `ratation: 0, scaleX: -scaleX` here, but there will be problem
+    // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
+  }
+  return config
+})
+
 /** Handler for position-change (drag) or transform */
 function handleChange(e: KonvaEventObject<unknown>, action: Action) {
-  const { x, y, heading, size } = konva2Spx({
-    x: e.target.x(),
-    y: e.target.y(),
-    rotation: e.target.rotation(),
-    scaleX: e.target.scaleX(),
-    scaleY: e.target.scaleY()
-  })
+  const { sprite, mapSize } = props
+  const x = round(e.target.x() - mapSize.width / 2)
+  const y = round(mapSize.height / 2 - e.target.y())
+  let heading = sprite.heading
+  if (sprite.rotationStyle === RotationStyle.normal) {
+    heading = nomalizeDegree(round(e.target.rotation() + 90))
+  }
+  const size = round(Math.abs(e.target.scaleX()) * bitmapResolution.value, 2)
   editorCtx.project.history.doAction(action, () => {
-    props.sprite.setX(x)
-    props.sprite.setY(y)
-    props.sprite.setHeading(heading)
-    props.sprite.setSize(size)
+    sprite.setX(x)
+    sprite.setY(y)
+    sprite.setHeading(heading)
+    sprite.setSize(size)
   })
 }
 
 function handleMousedown() {
   editorCtx.project.select({ type: 'sprite', name: props.sprite.name })
-}
-
-type KonvaAttrs = {
-  x: number
-  y: number
-  rotation: number
-  scaleX: number
-  scaleY: number
-}
-
-type SpxAttrs = {
-  x: number
-  y: number
-  heading: number
-  size: number
-}
-
-function konva2Spx({ x, y, rotation, scaleX }: KonvaAttrs): SpxAttrs {
-  return {
-    x: round(x - props.mapSize.width / 2),
-    y: round(props.mapSize.height / 2 - y),
-    heading: resolveDegree(round(rotation + 90)),
-    size: round(scaleX * bitmapResolution.value, 2)
-  }
-}
-
-function spx2Konva({ x, y, heading, size }: SpxAttrs): KonvaAttrs {
-  const scale = size / bitmapResolution.value
-  return {
-    x: props.mapSize.width / 2 + x,
-    y: props.mapSize.height / 2 - y,
-    rotation: resolveDegree(heading - 90),
-    scaleX: scale,
-    scaleY: scale
-  }
-}
-
-// to [-180, 180)
-function resolveDegree(num: number) {
-  if (!Number.isFinite(num) || Number.isNaN(num)) return num
-  num = num % 360
-  if (num >= 180) num = num - 360
-  if (num < -180) num = num + 360
-  return num
 }
 </script>

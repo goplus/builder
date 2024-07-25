@@ -34,14 +34,15 @@
       </UITooltip>
     </div>
     <UIButtonGroup
+      type="text"
       :value="editorCtx.project.stage.mapMode"
       @update:value="(v) => handleUpdateMapMode(v as MapMode)"
     >
       <UIButtonGroupItem value="repeat">
-        <div class="padded-button-group">{{ $t({ en: 'Tile', zh: '平铺' }) }}</div>
+        {{ $t({ en: 'Tile', zh: '平铺' }) }}
       </UIButtonGroupItem>
       <UIButtonGroupItem value="fillRatio">
-        <div class="padded-button-group">{{ $t({ en: 'Scale', zh: '缩放' }) }}</div>
+        {{ $t({ en: 'Scale', zh: '缩放' }) }}
       </UIButtonGroupItem>
     </UIButtonGroup>
   </div>
@@ -74,9 +75,5 @@ const editorCtx = useEditorCtx()
   display: flex;
   gap: 4px;
   align-items: center;
-}
-
-.padded-button-group {
-  padding: 0 12px;
 }
 </style>

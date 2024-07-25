@@ -1,140 +1,141 @@
-# 动画 Animation
+# Animation
 
-在 Builder 中，我们允许用户轻松地添加并使用动画，让游戏角色更真实、生动。
+In Builder, we allow users to easily add and use animations to make game characters more realistic and lively.
 
-“动画”与“业务状态的变化”这两个概念容易被混淆：
+The concepts of "animation" and "changes in business state" can be easily confused:
 
-1. 在发生状态变化时，我们往往希望有“过渡动画”（让状态变化在视觉上更自然）
+1. When a state change occurs, we often want to have a "transition animation" (to make the state change visually more natural).
 
-	但播放动画并不代表有业务状态发生变化；比如当一个人物原地不动时，也可以通过呼吸起伏的动画来让这个人物显得更有生气；同样，当一个人物受到攻击时，被打击的动画未必对应于这个人物某个状态的变更。
+	However, playing an animation does not necessarily mean that there is a change in business state. For example, when a character is standing still, we can make the character appear more lively by adding a breathing animation. Similarly, when a character is attacked, the animation of being hit does not necessarily correspond to a specific change in the character's state.
 
-2. 如果我们在业务层面细粒度地定义状态，通过快速的多次状态变更，可以在业务层模拟出动画的效果
+2. If we define states at a fine-grained level in the business layer and perform state changes quickly, we can simulate the effect of animation in the business layer.
 
-	这是在当前 Builder 及大部分类似产品（如 Scratch）中，实现动画的做法（定义 Costume 并通过代码快速切换 Costume）。但这会导致纯视觉表现上的逻辑与业务逻辑混杂在一起，除非这里细粒度的状态本身就是用户在业务上希望关心的，否则这种做法会给用户带来不必要的负担，也是我们希望避免的。
+	This is the approach used in the current Builder and similar products (such as Scratch) to implement animations (defining costumes and quickly switching costumes through code). However, this approach leads to a mixture of purely visual logic and business logic. Unless the fine-grained states themselves are of interest to the user in the business context, this approach can impose unnecessary burden on the user, which is something we want to avoid.
 
-因此我们这里说的 Animation 的概念，是撇除常见的业务逻辑后，仅在视觉效果上有意义的视觉变化。以人物跑动为例，跑动对应的视觉变化往往可以拆分为两个部分：
+Therefore, when we talk about the concept of Animation here, we are referring to visual changes that are meaningful only in terms of visual effects, excluding common business logic. Taking the example of a character running, the visual changes corresponding to running can often be divided into two parts:
 
-1. 跑动对应的位置变化
-2. 跑动过程中的姿态变化
+1. Position changes corresponding to running.
+2. Posture changes during running.
 
-一般来说 1 是业务逻辑会关心的，具体位置信息也适合由用户的业务代码来维护，这个信息往往会影响游戏的后续进程或结果；而 2 往往不是业务代码会希望关心的，由 Builder 对这类视觉变化的逻辑进行抽象，即 Animation 概念，可以降低用户实现“生动的跑动”的成本。
+Generally, 1 is the concern of the business logic, and the specific position information is suitable to be maintained by the user's business code. This information often affects the subsequent progress or outcome of the game. On the other hand, 2 is often not something that the business code would be interested in. Builder abstracts the logic of these visual changes into the concept of Animation, which reduces the cost for users to implement "lively running".
 
-一般来说复杂的视觉变化伴随 Sprite 发生，因此这里的 Animation 也只针对 Sprite，而不考虑 Stage（Backdrop）。
+Complex visual changes usually occur with Sprites. Therefore, the concept of Animation here is only applicable to Sprites and not considered for the Stage (Backdrop).
 
-## 基本概念
+## Basic Concepts
 
-* 动画 Animation
-* 造型组动画 Costume-group Animation
-* 骨骼动画 Skeletal Animation
-* 精灵 Sprite
-* 动画绑定 Animation Binding
+* Animation
+* Costume-group Animation
+* Skeletal Animation
+* Sprite
+* Animation Binding
 
-### 动画 Animation
+### Animation
 
-Animation 是对那些细节不被业务代码关心的视觉变化逻辑的抽象。基于实现方式不同，分为两类：
+Animation is an abstraction of visual change logic that is not of concern to the business code. Based on the different implementation methods, it can be divided into two categories:
 
-* 造型组动画 Costume-group Animation
-* 骨骼动画 Skeletal Animation
+* Costume-group Animation
+* Skeletal Animation
 
-Animation 的基本信息包括：
+The basic information of an Animation includes:
 
-* Name: 名字，在所属的 Sprite 中唯一
-* Duration:（播放一遍的）时长，调整时长不会对动画进行裁剪，而是对动画播放速度（帧率）进行调整
-* Sound:（可选的）关联声音信息，在 Animation 每次开始时播放；若 Animation 循环播放，则 Sound 以相同的周期循环播放；Sound 的播放速度固定，不受 Animation Duration 影响
+* Name: A unique name within the Sprite it belongs to.
+* Duration: The duration (in terms of playing once). Adjusting the duration does not trim the animation, but adjusts the playback speed (frame rate) of the animation.
+* Sound: (Optional) Associated sound information that plays when the Animation starts. If the Animation loops, the Sound will play in the same cycle. The playback speed of the Sound is fixed and not affected by the Animation Duration.
 
-### 造型组动画 Costume-group Animation
+### Costume-group Animation
 
-从技术实现角度即逐帧（Frame-by-frame）动画；除 Animation 的基本信息外，一个 Costume-group Animation 还包含以下信息：
+Technically, it refers to frame-by-frame animation. In addition to the basic information of an Animation, a Costume-group Animation also includes the following information:
 
-* Costumes: 造型列表，每个造型对应一个动画帧，基于 Costume 数量 & Duration 可以确定帧率（Fps）
+* Costumes: A list of costumes, where each costume corresponds to an animation frame. The frame rate (FPS) can be determined based on the number of costumes and the duration.
 
-### 骨骼动画 Skeletal Animation
+### Skeletal Animation
 
-除 Animation 的基本信息外，一个 Skeletal Animation 还包含以下信息：
+In addition to the basic information of an Animation, a Skeletal Animation also includes the following information:
 
-* Frames: 帧列表
+* Frames: A list of frames.
 
-### 精灵 Sprite
+### Sprite
 
-在 [Go+ Builder Product](./index.md) 基础上，对 Sprite 进行扩充如下：
+Building upon the [Go+ Builder Product](./index.md), the Sprite is extended as follows:
 
-* Model: 模型信息，包括 Skeleton、Mesh 等；不是每个 Sprite 都拥有 Model 信息，只有拥有 Model 信息的 Sprite 才可以被添加 Skeletal Animation
-* Animations: Animation 列表，一个 Sprite 可以包含 0 个或多个 Animation；列表中的项可能是 Costume-group Animation，也可能是 Skeletal Animation
+* Model: Model information, including Skeleton, Mesh, etc. Not every Sprite has Model information. Only Sprites with Model information can have Skeletal Animations added.
+* Animations: A list of Animations. A Sprite can contain zero or multiple Animations. The items in the list can be Costume-group Animations or Skeletal Animations.
 
-相比 Costumes，Model 是对 Sprite 外观更为结构化的定义方式，对动作迁移、动画自动生成更友好；对应地，对 Model 的编辑会更为困难，用户自己获得相关素材的难度也更高。
+Compared to Costumes, the Model provides a more structured way of defining the appearance of a Sprite, making it more friendly for action transfer and automatic animation generation. However, editing the Model can be more difficult, and it can be more challenging for users to obtain relevant materials.
 
-我们的整体策略是：支持以 Costumes（& Costume-group Animation）作为定义 Sprite 外观的基础手段，用户可以充分利用他已有的或从别的渠道获得的素材；此外支持以 Model（& Skeletal Animation）作为定义 Sprite 外观的进阶手段，从而
+Our overall strategy is to support Costumes (& Costume-group Animations) as the basic means of defining the appearance of a Sprite. Users can make full use of existing assets or obtain them from other sources. In addition, we support Model (& Skeletal Animation) as an advanced means of defining the appearance of a Sprite, thereby:
 
-1. 在 Builder 中提供更为丰富且强大的生成能力
-2. 在游戏中获得更好的视觉效果
+1. Providing richer and more powerful generation capabilities in Builder.
+2. Achieving better visual effects in the game.
 
-因此我们后面会提供基于 Costumes 自动解析 & 生成 Model 的能力，当这样的能力足够成熟后，所有的 Sprite 都会默认拥有 Model 信息，并可以被同时添加 Costume-group Animation & Skeletal Animation。
+Therefore, we will provide the ability to automatically parse and generate Models based on Costumes when this capability becomes mature enough. All Sprites will default to having Model information and can have both Costume-group Animations and Skeletal Animations added simultaneously.
 
-在此之前，部分 Sprite（如用户通过选择本地图片文件创建）不含 Model 信息，因此不能被添加 Skeletal Animation。不论一个 Sprite 是否包含 Model 信息，它的绝大部分逻辑与操作是一致的，用户只在少数情况下（如添加 Animation 时）需要注意这一点差异，同时 Builder 会对应地提供不同的交互界面协助用户正确地进行操作。
+Before that, some Sprites (such as those created by selecting local image files) do not have Model information and therefore cannot have Skeletal Animations added. Whether a Sprite has Model information or not, most of its logic and operations are consistent. Users only need to pay attention to this difference in a few cases (such as when adding Animations), and Builder will provide different interactive interfaces to assist users in performing operations correctly.
 
-### 动画绑定 Animation Binding
+### Animation Binding
 
-除了在 Sprite 代码中命令式地调用 `animate <name>` 来播放动画外，用户可以通过将某个 Animation 绑定到特定的状态上来使其在恰当的时候自动播放；目前支持绑定的“特定状态”包括：
+In addition to calling `animate <name>` imperatively in Sprite code to play an animation, users can automatically play a specific Animation at the appropriate time by binding it to a specific state. Currently, the supported "specific states" for binding include:
 
-* 行走，通过 spx `step` 等方法触发位移时自动播放绑定的动画
-* 死亡，通过 spx `die` 等方法触发精灵死亡时自动播放绑定的动画
-* 默认，将某动画绑定到默认状态后，若 Sprite 不处在其他特定状态下，且不在播放其他动画，则自动循环播放该动画
-* ~~转向，通过 spx `turn` 等方法触发方向变更时自动播放绑定的动画~~
-* ~~滑行，通过 spx `glide` 等方法触发位移时自动播放绑定的动画~~
+* Walking: Automatically plays the bound animation when displacement is triggered by spx methods like `step`.
+* Death: Automatically plays the bound animation when the Sprite dies, triggered by spx methods like `die`.
+* Default: When an Animation is bound to the default state, if the Sprite is not in any other specific state and is not playing any other animation, the Animation will be played in a loop automatically.
+* ~~Turning: Automatically plays the bound animation when the direction changes, triggered by spx methods like `turn`.~~
+* ~~Sliding: Automatically plays the bound animation when displacement is triggered by spx methods like `glide`.~~
 
 ## User Story
 
-### 添加 Sprite
+### Adding a Sprite
 
-Sprite 可以通过如下来源得到：
+Sprites can be obtained from the following sources:
 
-1. 从素材库选择已有的 Sprite，Sprite 素材库中的 Sprite 可能包含 Model 信息也可能不包含
+1. Selecting an existing Sprite from the asset library. Sprites in the asset library may or may not have Model information.
 
-2. 基于本地图片创建
+2. Creating a Sprite based on a local image.
 
-	用户可以通过选择本地图片创建 Sprite 并添加到当前 Project 中，文件选择支持多选
+	Users can create a Sprite by selecting a local image and adding it to the current Project. The file selection supports multiple selections.
 
-	我们会提供对文件进行预处理的能力，可能包括但不限于：
+	We will provide the ability to preprocess files, which may include but is not limited to:
 
-	* 对 Sprite Sheet、gif 等进行分割
-	* 图像去背景
+	* Splitting Sprite Sheets, GIFs, etc.
+	* Background removal from images.
 
-	用户基于本地图片创建的 Sprite 默认没有 Model 信息；用户可以通过 Builder 提供的能力解析已有 Sprite 中的图像（可能需要用户辅助）& 生成 Model 信息，细节 TODO
+	Sprites created based on local images do not have Model information by default. Users can parse the images in existing Sprites (with user assistance if needed) and generate Model information using the capabilities provided by Builder. Details TBD.
 
-3. 通过用户提供的语义文本（以及其他可能的辅助信息）生成 Model & 默认 Costume，得到 Sprite
+3. Generating Model & default Costume based on user-provided semantic text (and other possible auxiliary information) to obtain a Sprite.
 
-	细节 TODO
+	Details TBD.
 
-### 向 Sprite 添加 Costume
+### Adding a Costume to a Sprite
 
-用户可以通过选择本地图片创建 Costume 并添加到当前 Sprite 中，逻辑（包括文件预处理等）与上述直接基于本地图片创建 Sprite 时添加 Costume 的逻辑一致
+Users can create a Costume by selecting a local image and adding it to the current Sprite. The logic (including file preprocessing, etc.) is the same as when adding a Costume to a Sprite created directly from a local image as described above.
 
-### 向 Sprite 添加 Costume-group Animation
+### Adding a Costume-group Animation to a Sprite
 
-对于 Sprite，通过选择其中的一个或多个 Costume，用户可以将它们合并为一个 Costume-group Animation 添加到当前 Sprite 中；被合并到 Animation 中的 Costume 不再出现在 Sprite 的 Costume 列表中
+For a Sprite, users can merge one or more Costumes by selecting them and adding them as a Costume-group Animation to the current Sprite. The Costumes merged into the Animation will no longer appear in the Sprite's Costume list.
 
-创建 Animation 时（或创建完成后），用户可以指定其 Name、Duration、Sound 等信息，也可以将其绑定到特定状态
+When creating (or after creating) an Animation, users can specify its Name, Duration, Sound, and other information. They can also bind it to specific states.
 
-### 向 Sprite 添加 Skeletal Animation
+### Adding a Skeletal Animation to a Sprite
 
-拥有 Model 信息的 Sprite 才可以添加 Skeletal Animation；对于没有 Model 信息的 Sprite，视能力的成熟度我们以恰当的方式引导用户基于已有的 Costumes（& Costume-group Animation）信息解析 & 生成 Model 信息，然后再继续添加 Skeletal Animation。
+Only Sprites with Model information can have Skeletal Animations added. For Sprites without Model information, we will guide users in an appropriate way based on the maturity of the capabilities to parse and generate Model information from existing Costumes (& Costume-group Animations) information, and then continue adding Skeletal Animations.
 
-Skeletal Animation 有如下几个来源：
+Skeletal Animations can come from the following sources:
 
-* 将系统预置的常见动作绑定到当前 Sprite
-* 用户上传或通过摄像头录制视频，系统基于视频提取动作
+* Binding common predefined actions to the current Sprite.
+* Uploading or recording videos using a camera, with the system extracting actions based on the videos.
 
-	细节 TODO
+	Details TBD.
 
-* 通过用户提供的语义文本（以及其他可能的辅助信息）生成 Animation
+* Generating Animations based on user-provided semantic text (and other possible auxiliary information).
 
-	细节 TODO
+	Details TBD.
 
-与 Costume-group Animation 类似，创建 Animation 时（或创建完成后），用户可以调整其 Name、Duration、Sound 等信息，也可以将其绑定到特定状态
+Similar to Costume-group Animations, when creating (or after creating) an Animation, users can adjust its Name, Duration, Sound, and other information. They can also bind it to specific states.
 
-### 在游戏中使用（播放）动画
+### Using (playing) Animations in the game
 
-在游戏中，播放 Costume-group Animation 或 Skeletal Animation 的做法相同，有两个方式：
+In the game, playing Costume-group Animations or Skeletal Animations is done in the same way, using two methods:
 
-1. 通过代码（`animate <name>`）播放指定名字的 Animation
-2. 将 Animation 绑定到特定状态——当特定状态触发时，指定 Animation 被自动播放
+1. Playing a specific Animation by code (`animate <name>`).
+2. Binding an Animation to a specific state - when the specific state is triggered, the specified Animation will be played automatically.
+

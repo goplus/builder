@@ -11,6 +11,7 @@ import (
 
 func setTestEnv(t *testing.T) {
 	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
+	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
 
 	t.Setenv("KODO_AK", "fake-kodo-ak")
 	t.Setenv("KODO_SK", "fake-kodo-sk")

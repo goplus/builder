@@ -19,15 +19,14 @@
         {{ formattedTrimmedDuration || '&nbsp;' }}
       </div>
     </div>
-    <WavesurferWithRange
-      ref="wavesurferRef"
+    <WaveformPlayer
+      ref="waveformPlayerRef"
       v-model:range="audioRange"
-      class="wavesurfer"
-      :audio-url="audioUrl"
+      class="waveform-player"
+      :audio-src="audioUrl || undefined"
       :gain="gain"
       @progress="handleProgress"
       @stop="handleStop"
-      @load="handleResetEdit"
       @play="handlePlay"
     />
     <div class="opeartions">
@@ -60,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
@@ -74,7 +73,7 @@ import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
-import WavesurferWithRange from './WavesurferWithRange.vue'
+import { WaveformPlayer } from './waveform'
 
 const props = defineProps<{
   sound: Sound
@@ -83,14 +82,16 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const renameSound = useModal(SoundRenameModal)
 
-function handleNameEdit() {
-  renameSound({
-    sound: props.sound,
-    project: editorCtx.project
-  })
-}
+const handleNameEdit = useMessageHandle(
+  () =>
+    renameSound({
+      sound: props.sound,
+      project: editorCtx.project
+    }),
+  { en: 'Failed to rename sound', zh: '重命名声音失败' }
+).fn
 
-const wavesurferRef = ref<InstanceType<typeof WavesurferWithRange> | null>(null)
+const waveformPlayerRef = ref<InstanceType<typeof WaveformPlayer> | null>(null)
 const gain = ref(1)
 const audioRange = ref({ left: 0, right: 1 })
 
@@ -105,6 +106,13 @@ type Playing = {
 const playing = ref<Playing | null>(null)
 const [audioUrl, audioLoading] = useFileUrl(() => props.sound.file)
 
+const handleResetEdit = () => {
+  gain.value = 1
+  audioRange.value = { left: 0, right: 1 }
+}
+
+watch(audioUrl, handleResetEdit)
+
 const { duration } = useAudioDuration(() => audioUrl.value)
 const formattedTrimmedDuration = computed(() => {
   if (duration.value === null) return ''
@@ -113,8 +121,8 @@ const formattedTrimmedDuration = computed(() => {
 })
 
 async function handlePlayClick() {
-  if (wavesurferRef.value == null) return
-  wavesurferRef.value.play()
+  if (waveformPlayerRef.value == null) return
+  waveformPlayerRef.value.play()
 }
 
 function handlePlay() {
@@ -122,7 +130,7 @@ function handlePlay() {
 }
 
 function handleStopClick() {
-  wavesurferRef.value?.stop()
+  waveformPlayerRef.value?.stop()
   playing.value = null
 }
 
@@ -140,22 +148,17 @@ function handleProgress(value: number) {
 
 const handleGainUpdate = (v: number) => {
   gain.value = v
-  wavesurferRef.value?.play()
-}
-
-const handleResetEdit = () => {
-  gain.value = 1
-  audioRange.value = { left: 0, right: 1 }
+  waveformPlayerRef.value?.play()
 }
 
 const handleSave = useMessageHandle(
   async () => {
-    if (wavesurferRef.value == null) return
+    if (waveformPlayerRef.value == null) return
     if (!editing.value) {
       return
     }
 
-    const blob = await wavesurferRef.value.exportWav()
+    const blob = await waveformPlayerRef.value.exportWav()
     const newFile = fromBlob(props.sound.file.name, blob)
     const sname = props.sound.name
     const action = { name: { en: `Update sound ${sname}`, zh: `修改声音 ${sname}` } }
@@ -205,10 +208,6 @@ const handleSave = useMessageHandle(
   }
 }
 
-.wavesurfer {
-  height: 222px;
-}
-
 .spacer {
   flex: 1 1 0;
 }
@@ -233,5 +232,9 @@ const handleSave = useMessageHandle(
     gap: 8px;
     align-items: center;
   }
+}
+
+.waveform-player {
+  height: 222px;
 }
 </style>

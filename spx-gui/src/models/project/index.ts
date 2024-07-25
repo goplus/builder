@@ -8,7 +8,7 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposble } from '../common/disposable'
+import { Disposable } from '../common/disposable'
 import { toConfig, type Files, fromConfig } from '../common/file'
 import { Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
@@ -57,6 +57,19 @@ export type RunConfig = {
   height?: number
 }
 
+export enum AutoSaveMode {
+  Off,
+  Cloud,
+  LocalCache
+}
+
+export enum AutoSaveToCloudState {
+  Saved,
+  Pending,
+  Saving,
+  Failed
+}
+
 type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
@@ -64,7 +77,7 @@ type RawProjectConfig = RawStageConfig & {
   // TODO: camera
 }
 
-export class Project extends Disposble {
+export class Project extends Disposable {
   id?: string
   owner?: string
   name?: string
@@ -161,16 +174,34 @@ export class Project extends Disposble {
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
     sound.addDisposer(
-      // update selected when sound renamed
+      // update animation.sound & selected when sound renamed
+      // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
       watch(
         () => sound.name,
         (newName, originalName) => {
+          for (const sprite of this.sprites) {
+            for (const animation of sprite.animations) {
+              if (animation.sound === originalName) {
+                animation.setSound(newName)
+              }
+            }
+          }
           if (this.selected?.type === 'sound' && this.selected.name === originalName) {
             this.select({ type: 'sound', name: newName })
           }
         }
       )
     )
+    sound.addDisposer(() => {
+      // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+      for (const sprite of this.sprites) {
+        for (const animation of sprite.animations) {
+          if (animation.sound === sound.name) {
+            animation.setSound(null)
+          }
+        }
+      }
+    })
   }
 
   setPublic(isPublic: IsPublic) {
@@ -262,7 +293,7 @@ export class Project extends Disposble {
         // instead we should use the runtime size of component `ProjectRunner`,
         // after https://github.com/goplus/builder/issues/584
         width: stageConfig.map?.width,
-        height: stageConfig.map?.height,
+        height: stageConfig.map?.height
       },
       zorder: this.zorder
     }
@@ -339,11 +370,73 @@ export class Project extends Disposble {
     await this.load(metadata, files)
   }
 
-  /** Initialize editing features (sync change to local cache, update hasUnsyncedChanges on update, ...) */
+  /** Save to local cache */
+  private async saveToLocalCache(key: string) {
+    const [metadata, files] = this.export()
+    await localHelper.save(key, metadata, files)
+  }
+
+  autoSaveMode = AutoSaveMode.Off
+  setAutoSaveMode(autoSaveMode: AutoSaveMode) {
+    this.autoSaveMode = autoSaveMode
+  }
+  autoSaveToCloudState = AutoSaveToCloudState.Saved
+
+  /** Initialize editing features */
   async startEditing(localCacheKey: string) {
     if (this.lastSyncedFilesHash == null) {
       this.lastSyncedFilesHash = await hashFiles(this.exportGameFiles())
     }
+    if (this.filesHash == null) {
+      this.filesHash = this.lastSyncedFilesHash
+    }
+
+    // watch for changes of game files, update filesHash, and auto save to cloud if hasUnsyncedChanges
+    let autoSaveToCloudRetryTimeoutId: ReturnType<typeof setTimeout> | null = null
+    const startAutoSaveToCloudRetry = () => {
+      if (autoSaveToCloudRetryTimeoutId == null) {
+        autoSaveToCloudRetryTimeoutId = setTimeout(() => {
+          autoSaveToCloudRetryTimeoutId = null
+          if (
+            this.autoSaveToCloudState === AutoSaveToCloudState.Failed &&
+            this.hasUnsyncedChanges
+          ) {
+            autoSaveToCloud()
+          }
+        }, 5000)
+      }
+    }
+    const stopAutoSaveToCloudRetry = () => {
+      if (autoSaveToCloudRetryTimeoutId != null) {
+        clearTimeout(autoSaveToCloudRetryTimeoutId)
+        autoSaveToCloudRetryTimeoutId = null
+      }
+    }
+    this.addDisposer(stopAutoSaveToCloudRetry)
+    const autoSaveToCloud = (() => {
+      const debounceSave = debounce(async () => {
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Pending) return
+        this.autoSaveToCloudState = AutoSaveToCloudState.Saving
+
+        try {
+          if (this.hasUnsyncedChanges) await this.saveToCloud()
+          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+          if (this.hasUnsyncedChanges) autoSaveToCloud()
+          else await localHelper.clear(localCacheKey)
+        } catch (e) {
+          await this.saveToLocalCache(localCacheKey) // prevent data loss
+          this.autoSaveToCloudState = AutoSaveToCloudState.Failed
+          startAutoSaveToCloudRetry()
+          throw e
+        }
+      }, 1500)
+      return () => {
+        stopAutoSaveToCloudRetry()
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
+          this.autoSaveToCloudState = AutoSaveToCloudState.Pending
+        if (this.autoSaveMode === AutoSaveMode.Cloud) debounceSave()
+      }
+    })()
     this.addDisposer(
       watch(
         () => this.exportGameFiles(),
@@ -351,17 +444,46 @@ export class Project extends Disposble {
           let cancelled = false
           onCleanup(() => (cancelled = true))
           const filesHash = await hashFiles(files)
-          if (!cancelled) this.filesHash = filesHash
+          if (cancelled) return // avoid race condition and ensure filesHash accuracy
+          this.filesHash = filesHash
+          if (this.hasUnsyncedChanges) autoSaveToCloud()
         },
         { immediate: true }
       )
     )
-    // sync changes to local cache
-    const saveExports = debounce(() => {
-      const [metadata, files] = this.export()
-      localHelper.save(localCacheKey, metadata, files)
+
+    // watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory
+    const delazyLoadGameFiles = debounce(() => {
+      const files = this.exportGameFiles()
+      const fileList = Object.keys(files)
+      fileList.map((path) => files[path]!.arrayBuffer())
     }, 1000)
-    this.addDisposer(watch(() => this.export(), saveExports, { immediate: true }))
+    const autoSaveToLocalCache = () => {
+      const debounceSave = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
+      return () => {
+        if (this.autoSaveMode === AutoSaveMode.LocalCache) debounceSave()
+        else delazyLoadGameFiles()
+      }
+    }
+    this.addDisposer(watch(() => this.export(), autoSaveToLocalCache(), { immediate: true }))
+
+    // watch for autoSaveMode switch, and trigger auto save accordingly
+    this.addDisposer(
+      watch(
+        () => this.autoSaveMode,
+        () => {
+          switch (this.autoSaveMode) {
+            case AutoSaveMode.Cloud:
+              if (this.hasUnsyncedChanges) autoSaveToCloud()
+              break
+            case AutoSaveMode.LocalCache:
+              autoSaveToLocalCache()
+              break
+          }
+        },
+        { immediate: true }
+      )
+    )
   }
 }
 

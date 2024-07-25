@@ -1,52 +1,47 @@
 <template>
-  <PanelItem
-    class="sound-item"
-    :active="active"
-    :name="props.sound.name"
-    @remove="emit('remove')"
-    @add-to-asset-library="emit('addToAssetLibrary')"
-  >
-    <div class="content">
-      <SoundPlayer :src="audioSrc" color="sound" />
-    </div>
-  </PanelItem>
+  <UIEditorSoundItem :audio-src="audioSrc" :name="sound.name" :selected="selected">
+    <template #default>
+      <CornerMenu
+        :visible="selected"
+        color="sound"
+        removable
+        :item="sound"
+        @remove="handleRemove"
+      />
+    </template>
+    <template #player>
+      <SoundPlayer color="sound" :src="audioSrc" />
+    </template>
+  </UIEditorSoundItem>
 </template>
 
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
 import { Sound } from '@/models/sound'
+import { UIEditorSoundItem } from '@/components/ui'
+import CornerMenu from '../../common/CornerMenu.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 import SoundPlayer from '../../sound/SoundPlayer.vue'
-import PanelItem from '../common/PanelItem.vue'
+import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{
   sound: Sound
-  active: boolean
-}>()
-
-const emit = defineEmits<{
-  remove: []
-  addToAssetLibrary: []
+  selected: boolean
 }>()
 
 const [audioSrc] = useFileUrl(() => props.sound.file)
-</script>
 
-<style lang="scss" scoped>
-.sound-item {
-  // different rule for sprite & sound item background
-  background-color: var(--ui-color-sound-100);
-  border-color: var(--ui-color-sound-100);
+const editorCtx = useEditorCtx()
 
-  &:not(.active):hover {
-    background-color: var(--ui-color-sound-200);
-    border-color: var(--ui-color-sound-200);
+const handleRemove = useMessageHandle(
+  async () => {
+    const name = props.sound.name
+    const action = { name: { en: `Remove sound ${name}`, zh: `删除声音 ${name}` } }
+    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(name))
+  },
+  {
+    en: 'Failed to remove sound',
+    zh: '删除声音失败'
   }
-}
-
-.content {
-  margin-top: 4px;
-  width: 56px;
-  height: 56px;
-  padding: 10px;
-}
-</style>
+).fn
+</script>

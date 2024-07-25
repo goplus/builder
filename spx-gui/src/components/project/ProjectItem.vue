@@ -92,8 +92,10 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
   }
 
   .img-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     aspect-ratio: 4 / 3;
-    padding: 2px 2px 4px;
     background-image: url(./bg.svg);
     background-position: center;
     background-repeat: repeat;
@@ -103,8 +105,8 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     border-radius: var(--ui-border-radius-2) var(--ui-border-radius-2) 0 0;
 
     .img {
-      width: 100%;
-      height: 100%;
+      width: 118px;
+      height: 118px;
     }
   }
 

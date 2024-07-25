@@ -94,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, ref, shallowReactive, watch } from 'vue'
+import { computed, ref, shallowReactive, watch } from 'vue'
 import {
   UITextInput,
   UIIcon,

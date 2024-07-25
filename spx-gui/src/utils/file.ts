@@ -1,4 +1,4 @@
-import { ref, watch, type WatchSource } from 'vue'
+import { computed, ref, watch, type WatchSource } from 'vue'
 import type { File } from '@/models/common/file'
 import { Cancelled, DefaultException } from './exception'
 
@@ -130,7 +130,10 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   watch(
     fileSource,
     (file, _, onCleanup) => {
-      if (file == null) return
+      if (file == null) {
+        urlRef.value = null
+        return
+      }
       loadingRef.value = true
       file
         .url(onCleanup)
@@ -146,20 +149,40 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
   return [urlRef, loadingRef] as const
 }
 
-export function useImgFile(fileSource: WatchSource<File | undefined>) {
-  const [urlRef, loadingRef] = useFileUrl(fileSource)
+/**
+ * Get image element (HTMLImageElement) based on given (image) file.
+ * The image element is guaranteed to be loaded when set to ref.
+ */
+export function useFileImg(fileSource: WatchSource<File | undefined>) {
+  const [urlRef, urlLoadingRef] = useFileUrl(fileSource)
   const imgRef = ref<HTMLImageElement | null>(null)
+  const imgLoadingRef = ref(false)
   watch(urlRef, (url, _, onCleanup) => {
     onCleanup(() => {
       imgRef.value?.remove()
       imgRef.value = null
     })
     if (url != null) {
+      imgLoadingRef.value = true
       const img = new window.Image()
+      img.addEventListener(
+        'load',
+        () => {
+          imgRef.value = img
+          imgLoadingRef.value = false
+        },
+        { once: true }
+      )
+      img.addEventListener(
+        'error',
+        () => {
+          imgLoadingRef.value = false
+        },
+        { once: true }
+      )
       img.src = url
-      imgRef.value = img
     }
   })
-  // TODO: involve image loading status in
-  return [imgRef, loadingRef] as const
+  const loading = computed(() => urlLoadingRef.value || imgLoadingRef.value)
+  return [imgRef, loading] as const
 }

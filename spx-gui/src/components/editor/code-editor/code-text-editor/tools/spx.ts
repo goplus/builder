@@ -32,6 +32,8 @@ export const onCloned: Tool = {
   }
 }
 
+// For now `onTouched` is not exposed to the user
+// As it behaves strangely in the current implementation, see details in https://github.com/goplus/spx/issues/298
 export const onTouched: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.listen,
@@ -54,7 +56,7 @@ export const onTouched: Tool = {
     },
     {
       desc: { en: 'By some given sprites', zh: '指定的某些精灵' },
-      sample: 'onTouched [S1, S2] => {}',
+      sample: 'onTouched [S1, S2], => {}',
       insertText: 'onTouched [${1:}], => {\n\t${2}\n}'
     }
   ]
@@ -95,7 +97,10 @@ export const die: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'die',
-  desc: { en: 'Let current sprite die', zh: '让当前精灵死亡' },
+  desc: {
+    en: 'Let current sprite die. Animation bound to state "die" will be played.',
+    zh: '让当前精灵死亡，绑定到“死亡”状态的动画会被播放'
+  },
   usage: {
     sample: 'die',
     insertText: 'die'
@@ -168,12 +173,13 @@ export const setCostume: Tool = {
   target: ToolContext.sprite,
   keyword: 'setCostume',
   desc: {
-    en: 'Set the current costume by specifying name or index',
-    zh: '通过指定名称或索引设置当前造型'
+    en: 'Set the current costume by specifying name',
+    zh: '通过指定名称设置当前造型'
   },
+  // index-related usages are excluded, as they are not recommended to use (animation is prefered)
   usage: {
-    sample: 'setCostume 0',
-    insertText: 'setCostume ${1:nameOrIndex}'
+    sample: 'setCostume "happy"',
+    insertText: 'setCostume ${1:name}'
   }
 }
 
@@ -198,6 +204,18 @@ export const prevCostume: Tool = {
   usage: {
     sample: 'prevCostume',
     insertText: 'prevCostume'
+  }
+}
+
+export const animate: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'animate',
+  desc: { en: 'Play animation with given name', zh: '通过指定名称播放动画' },
+  usage: {
+    sample: 'animate "jump"',
+    insertText: 'animate ${1:name}'
   }
 }
 
@@ -261,10 +279,25 @@ export const move: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'move',
-  desc: { en: 'Move given steps, toward current heading', zh: '向当前朝向移动指定的步数' },
+  desc: { en: 'Move given distance, toward current heading', zh: '向当前朝向移动指定的距离' },
   usage: {
     sample: 'move 10',
-    insertText: 'move ${1:steps}'
+    insertText: 'move ${1:distance}'
+  }
+}
+
+export const step: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'step',
+  desc: {
+    en: 'Step given distance, toward current heading. Animation bound to state "step" will be played',
+    zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
+  },
+  usage: {
+    sample: 'step 10',
+    insertText: 'step ${1:distance}'
   }
 }
 
@@ -396,6 +429,18 @@ export const changeYpos: Tool = {
   usage: {
     sample: 'changeYpos 10',
     insertText: 'changeYpos ${1:dY}'
+  }
+}
+
+export const setRotationStyle: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'setRotationStyle',
+  desc: { en: 'Set the rotation style of the sprite', zh: '设置精灵的旋转方式' },
+  usage: {
+    sample: 'setRotationStyle LeftRight',
+    insertText: 'setRotationStyle ${1:style}'
   }
 }
 
@@ -932,6 +977,10 @@ export const up = defineConst('up', { en: 'Up direction', zh: '上' })
 export const down = defineConst('down', { en: 'Down direction', zh: '下' })
 export const left = defineConst('left', { en: 'Left direction', zh: '左' })
 export const right = defineConst('right', { en: 'Right direction', zh: '右' })
+
+export const none = defineConst('none', { en: "Don't Rotate", zh: '不旋转' })
+export const leftRight = defineConst('leftRight', { en: 'Left-Right', zh: '左右翻转' })
+export const normal = defineConst('normal', { en: 'Normal', zh: '正常旋转' })
 
 export const mouse = defineConst('mouse', { en: 'Mouse', zh: '鼠标' })
 export const edge = defineConst('edge', { en: 'Edge', zh: '边缘' })

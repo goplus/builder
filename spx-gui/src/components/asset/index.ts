@@ -7,12 +7,12 @@ import { selectAudio, selectFile, selectImgs } from '@/utils/file'
 import { parseScratchFileAssets } from '@/utils/scratch'
 import type { AssetModel } from '@/models/common/asset'
 import { stripExt } from '@/utils/path'
-import { Costume } from '@/models/costume'
 import { fromNativeFile } from '@/models/common/file'
 import { type Project } from '@/models/project'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
+import PreprocessModal from './preprocessing/PreprocessModal.vue'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
@@ -23,11 +23,11 @@ function selectAsset(project: Project, asset: AssetModel | undefined) {
   }
 }
 
-export function useAddAssetFromLibrary() {
+export function useAddAssetFromLibrary(autoSelect = true) {
   const invokeAssetLibraryModal = useModal(AssetLibraryModal)
   return async function addAssetFromLibrary<T extends AssetType>(project: Project, type: T) {
     const added = (await invokeAssetLibraryModal({ project, type })) as Array<AssetModel<T>>
-    selectAsset(project, added[0])
+    if (autoSelect) selectAsset(project, added[0])
     return added
   }
 }
@@ -51,21 +51,18 @@ export function useLoadFromScratchModal() {
 }
 
 export function useAddSpriteFromLocalFile() {
+  const preprocess = useModal(PreprocessModal)
   return async function addSpriteFromLocalFile(project: Project) {
-    const imgs = await selectImgs()
-    const spriteName = imgs.length > 1 ? '' : stripExt(imgs[0].name)
+    const actionMessage = { en: 'Add sprite', zh: '添加精灵' }
+    const nativeFiles = await selectImgs()
+    const files = nativeFiles.map((f) => fromNativeFile(f))
+    const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
     const sprite = Sprite.create(spriteName)
-    const costumes = await Promise.all(
-      imgs.map((img) => {
-        const costumeName = imgs.length > 1 ? stripExt(img.name) : ''
-        return Costume.create(costumeName, fromNativeFile(img))
-      })
-    )
+    const costumes = await preprocess({ files, actionMessage })
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
-    const action = { name: { en: 'Add sprite', zh: '添加精灵' } }
-    await project.history.doAction(action, async () => {
+    await project.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
       await sprite.autoFit()
     })
@@ -74,13 +71,27 @@ export function useAddSpriteFromLocalFile() {
   }
 }
 
-export function useAddSoundFromLocalFile() {
+export function useAddCostumeFromLocalFile() {
+  const preprocess = useModal(PreprocessModal)
+  return async function addCostumeFromLocalFile(sprite: Sprite, project: Project) {
+    const actionMessage = { en: 'Add costume', zh: '添加造型' }
+    const nativeFiles = await selectImgs()
+    const files = nativeFiles.map((f) => fromNativeFile(f))
+    const costumes = await preprocess({ files, actionMessage })
+    await project.history.doAction({ name: actionMessage }, () => {
+      for (const costume of costumes) sprite.addCostume(costume)
+      sprite.setDefaultCostume(costumes[0].name)
+    })
+  }
+}
+
+export function useAddSoundFromLocalFile(autoSelect = true) {
   return async function addSoundFromLocalFile(project: Project) {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
     await project.history.doAction(action, () => project.addSound(sound))
-    selectAsset(project, sound)
+    if (autoSelect) selectAsset(project, sound)
     return sound
   }
 }
