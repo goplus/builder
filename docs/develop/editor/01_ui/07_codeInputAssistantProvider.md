@@ -5,17 +5,7 @@
 ![HoverProvideDocPreview](../assets/HoverProvideDocPreview.png)
 
 ```ts
-
-enum IdentifierContext {
-    /** Available only in sprite code files */
-    sprite,
-    /** Available only in stage code files */
-    stage,
-    /** Available in all code files */
-    all
-}
-
-type IdentifierUsage = {
+type CodeSnapUsage = {
     /** Description for usage, without tailing dot */
     desc: LayerContent
     /** Code sample, usually it's similar while sightly different with `insertText` */
@@ -27,33 +17,29 @@ type IdentifierUsage = {
     insertText: string
 }
 
-type Identifier = {
+type CodeSnap = {
     icon: Icon,
-    target: IdentifierContext,
-    module: string, // "github.com/goplus/spx"
-    name: string,   // "Sprite.touching"
-    keyword: string,
+    // used for 2 or more usages to explain codeSnap main function
     desc: string,
-    usages: IdentifierUsage[]
+    usages: CodeSnapUsage[],
+    token: Token
 }
 
-type IdentifierGroup = {
+type CodeSnapGroup = {
     label: string
-    identifiers: Identifier[]
+    codeSnaps: CodeSnap[]
 }
 
-type IdentifierCategory = {
+type CodeSnapCategory = {
     label: string
-    groups: IdentifierGroup[]
+    groups: CodeSnapGroup[]
     icon: Icon,
     color: string
 }
 
 interface CodeInputAssistantProvider {
     provideCodeInputAssistant(ctx: {
-        hoverUnitWord: string,
-        target: IdentifierContext,
-        usageSample: string
-    }): Promise<IdentifierCategory[]>
+        token: AbortController
+    }): Promise<CodeSnapCategory[]>
 }
 ```

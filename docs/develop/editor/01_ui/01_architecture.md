@@ -16,6 +16,13 @@ type IRange = {
     endLineNumber: number
 }
 
+type Identifier = {
+  module: string, // "github.com/goplus/spx"
+  name: string,   // "Sprite.touching"
+}
+
+type Token = Identifier
+
 enum IconEnum {
     // 函数
     Function,

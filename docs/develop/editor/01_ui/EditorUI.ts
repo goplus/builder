@@ -36,6 +36,14 @@ export type Icon = IconEnum
 
 export type Markdown = string
 
+type Identifier = {
+    module: string, // "github.com/goplus/spx"
+    name: string,   // "Sprite.touching"
+}
+
+type Token = Identifier
+
+
 // 音频播放器
 export type AudioPlayer = {
     src: string,
@@ -158,16 +166,7 @@ export interface HoverProvider {
     ): Promise<LayerContent>
 }
 
-export enum IdentifierContext {
-    /** Available only in sprite code files */
-    sprite,
-    /** Available only in stage code files */
-    stage,
-    /** Available in all code files */
-    all
-}
-
-export type IdentifierUsage = {
+type CodeSnapUsage = {
     /** Description for usage, without tailing dot */
     desc: LayerContent
     /** Code sample, usually it's similar while sightly different with `insertText` */
@@ -179,34 +178,30 @@ export type IdentifierUsage = {
     insertText: string
 }
 
-export type Identifier = {
+type CodeSnap = {
     icon: Icon,
-    target: IdentifierContext,
-    module: string, // "github.com/goplus/spx"
-    name: string,   // "Sprite.touching"
-    keyword: string,
+    // used for 2 or more usages to explain codeSnap main function
     desc: string,
-    usages: IdentifierUsage[]
+    usages: CodeSnapUsage[],
+    token: Token
 }
 
-export type IdentifierGroup = {
+type CodeSnapGroup = {
     label: string
-    identifiers: Identifier[]
+    codeSnaps: CodeSnap[]
 }
 
-export type IdentifierCategory = {
+type CodeSnapCategory = {
     label: string
-    groups: IdentifierGroup[]
+    groups: CodeSnapGroup[]
     icon: Icon,
     color: string
 }
 
-export interface CodeInputAssistantProvider {
+interface CodeInputAssistantProvider {
     provideCodeInputAssistant(ctx: {
-        hoverUnitWord: string,
-        target: IdentifierContext,
-        usageSample: string
-    }): Promise<IdentifierCategory[]>
+        token: AbortController
+    }): Promise<CodeSnapCategory[]>
 }
 
 export enum AttentionHintLevelEnum {
