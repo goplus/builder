@@ -1,16 +1,16 @@
 ## 搜索模块
 
-**模块功能** 
+**模块功能**
 
-1.通过关键词搜索商品。 
+1.通过关键词搜索商品。
 
 2.按类别、价格范围、品牌等筛选素材。
 
- 3.搜索结果需要以关联度来进行排序，关联度高的放在前面 
+3.搜索结果需要以关联度来进行排序，关联度高的放在前面
 
-4.对查询结果进行排序（如按价格、评分、时间等）。 
+4.对查询结果进行排序（如按价格、评分、时间等）。
 
-5.支持分页显示查询结果。 
+5.支持分页显示查询结果。
 
 6.显示每个商品的详细信息，包括名称、图片等。
 
@@ -62,7 +62,7 @@ e.g.
 curl --location --request GET '/asset/list/?keyword&owner&category&assetType&filesHash&isPublic&orderBy&pageIndex&pageSize' 
 ```
 
-Response 
+Response
 
 200 ok
 
@@ -115,7 +115,7 @@ e.g.
 curl --location --request GET '/asset/history/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' \
 ```
 
-Response 
+Response
 
 200 ok
 
@@ -168,7 +168,7 @@ e.g.
 curl --location --request GET '/asset/favorites/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' 
 ```
 
-Response 
+Response
 
 200 ok
 
@@ -299,7 +299,7 @@ Response
 
 传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url
 
-Request 
+Request
 
 方法 ： POST
 
@@ -331,7 +331,7 @@ Response
 
 传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url
 
-Request 
+Request
 
 方法 ： POST
 
@@ -364,7 +364,7 @@ Response
 
 传入生成任务id ， 返回生成状态
 
-Request 
+Request
 
 方法 ： GET
 
@@ -453,7 +453,7 @@ const{
 
 #### AI素材导入至素材库
 
-Request 
+Request
 
 方法：POST
 
