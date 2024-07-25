@@ -33,7 +33,7 @@ function implementHoverProviderDocPreview(ui: EditorUI) {
         provideHover: async (model: TextModel, ctx: {
             position: Position;
             hoverUnitWord: string;
-            token: AbortController
+            signal: AbortSignal
         })=> ({
             content: 'some markdown text...',
             recommendAction: {

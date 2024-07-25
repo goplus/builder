@@ -39,7 +39,7 @@ type CodeSnapCategory = {
 
 interface CodeInputAssistantProvider {
     provideCodeInputAssistant(ctx: {
-        token: AbortController
+        signal: AbortSignal
     }): Promise<CodeSnapCategory[]>
 }
 ```

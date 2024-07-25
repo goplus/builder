@@ -20,7 +20,7 @@ interface AttentionHintsProvider {
     provideAttentionHints(
         addHints: (hints: AttentionHint[])=> void,
         ctx: {
-            token: AbortController
+          signal: AbortSignal
         }
     ): void
 }
@@ -30,7 +30,7 @@ interface AttentionHintsProvider {
 ```ts
 function implementAttentionHintsProvider(ui: EditorUI) {
     ui.registerAttentionHintsProvider({
-        provideAttentionHints(addHints: (hints: AttentionHint[]) => void, ctx: { token: AbortController }) {
+        provideAttentionHints(addHints: (hints: AttentionHint[]) => void, ctx: { signal: AbortSignal }) {
             // write some logic code to get the attentionHintItems
             const attentionHintItems: AttentionHint[] = [
                 {
@@ -64,7 +64,7 @@ function implementAttentionHintsProvider(ui: EditorUI) {
                addHints(err)
             })
             // remove listener when provider is aborted
-            ctx.token.signal.addEventListener("abort", () => close())
+            ctx.signal.addEventListener("abort", () => close())
             
         }
     })

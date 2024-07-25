@@ -23,7 +23,7 @@ interface CompletionProvider {
             position: Position,
             // 如果要补全"hello world"，输入到"hello wo"，unitWord表示："wo" 
             unitWord: string,
-            token: AbortController
+            signal: AbortSignal
         }, 
         addItems: (items: CompletionItem[])=> void
     ): void

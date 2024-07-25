@@ -22,7 +22,7 @@ interface InlayHintsProvider {
     provideInlayHints(
         model: TextModel, 
         ctx: {
-            token: AbortController
+            signal: AbortSignal
         }
     ): Promise<InlayHint[]>
 }
@@ -31,7 +31,7 @@ interface InlayHintsProvider {
 ```ts
 function implementInlayHintsProvider(ui: EditorUI) {
     ui.registerInlayHintsProvider({
-        provideInlayHints: async (model: TextModel, ctx: { token: AbortController }): Promise<InlayHint[]> => {
+        provideInlayHints: async (model: TextModel, ctx: { signal: AbortSignal }): Promise<InlayHint[]> => {
             // write some logic to get the inlayHintsItems
             const inlayHintsItems: InlayHint[] = [
                 {

@@ -15,7 +15,7 @@ interface registerHoverProvider {
             position: Position,
             // 鼠标悬停的关键词
             hoverUnitWord: string,
-            token: AbortController
+            signal: AbortSignal
         }
     ): Promise<LayerContent>
 }
@@ -28,7 +28,7 @@ function implementHoverProviderAudioPlayer(ui: EditorUI) {
         provideHover: async(model: TextModel, ctx: {
             position: Position;
             hoverUnitWord: string;
-            token: AbortController
+            signal: AbortSignal
         }) => ({
             src: 'audio source url',
             duration: 125,
@@ -51,7 +51,7 @@ function implementHoverProviderForRename(ui: EditorUI) {
                             setError("name is not available");
                         }
                         // some other code need await Fn to check...
-                        ctx.token.signal.addEventListener("abort", function () {
+                        ctx.signal.addEventListener("abort", function () {
                             console.log("rename process aborted");
                         });
                     },

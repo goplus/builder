@@ -55,7 +55,7 @@ export interface RenamePreview {
     onSubmit(
         newName: string,
         ctx: {
-            token: AbortController
+            signal: AbortSignal
         },
         setError: (message: string) => void,
     ): Promise<void>
@@ -105,7 +105,7 @@ export interface CompletionProvider {
             position: Position,
             // 如果要补全"hello world"，输入到"hello wo"，unitWord表示："wo"
             unitWord: string,
-            token: AbortController
+            signal: AbortSignal
         },
         addItems: (items: CompletionItem[])=> void
     ): void
@@ -130,7 +130,7 @@ export interface InlayHintsProvider {
     provideInlayHints(
         model: TextModel,
         ctx: {
-            token: AbortController
+            signal: AbortSignal
         }
     ): Promise<InlayHint[]>
 }
@@ -161,7 +161,7 @@ export interface HoverProvider {
             position: Position,
             // 鼠标悬停的关键词
             hoverUnitWord: string,
-            token: AbortController
+            signal: AbortSignal
         }
     ): Promise<LayerContent>
 }
@@ -200,7 +200,7 @@ type CodeSnapCategory = {
 
 interface CodeInputAssistantProvider {
     provideCodeInputAssistant(ctx: {
-        token: AbortController
+        signal: AbortSignal
     }): Promise<CodeSnapCategory[]>
 }
 
@@ -220,7 +220,7 @@ export interface AttentionHintsProvider {
     provideAttentionHints(
         addHints: (hints: AttentionHint[])=> void,
         ctx: {
-            token: AbortController
+            signal: AbortSignal
         }
     ): void
 }
