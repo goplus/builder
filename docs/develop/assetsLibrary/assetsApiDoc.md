@@ -1,19 +1,3 @@
-## 搜索模块
-
-**模块功能**
-
-1.通过关键词搜索商品。
-
-2.按类别、价格范围、品牌等筛选素材。
-
-3.搜索结果需要以关联度来进行排序，关联度高的放在前面
-
-4.对查询结果进行排序（如按价格、评分、时间等）。
-
-5.支持分页显示查询结果。
-
-6.显示每个商品的详细信息，包括名称、图片等。
-
 ## 全局属性
 
 `category`:类别，如人物分为动画人物，历史人物
@@ -28,6 +12,12 @@
 
 `imageJobId`:由ai生成服务生成的标识图片（包括背景和人物）的唯一标识性属性
 
+## 搜索模块
+
+**模块功能** 1.通过关键词搜索商品。 2.按类别、价格范围、品牌等筛选素材。 3.搜索结果需要以关联度来进行排序，关联度高的放在前面 4.对查询结果进行排序（如按价格、评分、时间等）。 5.支持分页显示查询结果。 6.显示每个商品的详细信息，包括名称、图片等。
+
+![img](./assets/(null))
+
 ### 对外接口
 
 #### 素材列表
@@ -41,9 +31,7 @@ Request
 ```TypeScript
 export interface Request {
     assetType?: number;            
-    category?: string; 
-    filesHash?: string; 
-    isPublic?: number;
+    category?: category; 
     keyword?: string;
     orderBy?: string;
     owner?: string;
@@ -51,18 +39,40 @@ export interface Request {
     pageSize?: number;
     [property: string]: any;
 }
+interface category {   
+    [key: string]:{    
+       [subCategory: string]: string[];
+  }; 
+}
+category  e.g.
+category: {     
+  "内容": {
+       "动物": ["狗", "猫", "乌龟"],
+       "植物": ["树", "花", "草"]
+    },     
+  "风格": {
+       "像素风格": ["8-bit", "16-bit"],
+       "写实风格": ["高清", "逼真"]
+    }   
+}
+经过base64编码后：data = eyJhc3NldFR5cGUiOjEsImNhdGVnb3J5Ijp7IuWGheWuuSI6eyLliqjniakiOlsi54u
+XIiwi54yrIiwi5LmM6b6fIl0sIuakjeeJqSI6WyLmoJEiLCLoirEiLCLojYkiXX0sIumjjuagvCI6eyLlg4/ntKDpo4
+7moLwiOlsiOC1iaXQiLCIxNi1iaXQiXSwi5YaZ5a6e6aOO5qC8IjpbIumrmOa4hSIsIumAvOecnyJdfX0sImtleXdvc
+mQiOiLmuLjmiI8iLCJvcmRlckJ5IjoibmFtZSIsIm93bmVyIjoidXNlcjEyMyIsInBhZ2VJbmRleCI6MX0=
+
+服务端解码：{"assetType":1,"category":{"内容":{"动物":["狗","猫","乌龟"],"植物":["树","花","草"]}
+,"风格":{"像素风格":["8-bit","16-bit"],"写实风格":["高清","逼真"]}},"keyword":"游戏","orderBy":
+"name","owner":"user123","pageIndex":1,"pageSize":1}
 ```
 
-category格式：~~精灵,风格,像素风格;精灵,动物,猫;  （选取精灵，同时风格类别下的像素风格和动物类别下的猫）~~
-
-[['精灵','风格','像素风格'],['精灵','动物','猫']]
+类似json，使用Base64 编码解码
 
 ```Go
 e.g.
-curl --location --request GET '/asset/list/?keyword&owner&category&assetType&filesHash&isPublic&orderBy&pageIndex&pageSize' 
+curl --location --request GET '/asset/list/?data' 
 ```
 
-Response
+Response 
 
 200 ok
 
@@ -74,17 +84,11 @@ Response
   "data": [
     {
       "id": "string",
-      "cTime": "string",
-      "uTime": "string",
       "displayName": "string",
       "owner": "string",
-      "category": "string",
-      "assetType": 0,
       "files": "string",
-      "filesHash": "string",
       "preview": "string",
       "clickCount": 0,
-      "isPublic": 0,
       "status": 0
       "isAiGen": true
     }
@@ -103,7 +107,7 @@ Request
 ```TypeScript
 export interface Request {
     assetType?: string;
-    category?: string;
+    category?: category;
     keyword?: string;
     orderBy?: string;
     owner: string;
@@ -115,7 +119,7 @@ e.g.
 curl --location --request GET '/asset/history/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' \
 ```
 
-Response
+Response 
 
 200 ok
 
@@ -127,17 +131,11 @@ Response
   "data": [
     {
       "id": "string",
-      "cTime": "string",
-      "uTime": "string",
       "displayName": "string",
       "owner": "string",
-      "category": "string",
-      "assetType": 0,
       "files": "string",
-      "filesHash": "string",
       "preview": "string",
       "clickCount": 0,
-      "isPublic": 0,
       "status": 0
       "isAiGen": true
     }
@@ -168,7 +166,7 @@ e.g.
 curl --location --request GET '/asset/favorites/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' 
 ```
 
-Response
+Response 
 
 200 ok
 
@@ -180,17 +178,11 @@ Response
   "data": [
     {
       "id": "string",
-      "cTime": "string",
-      "uTime": "string",
       "displayName": "string",
       "owner": "string",
-      "category": "string",
-      "assetType": 0,
       "files": "string",
-      "filesHash": "string",
       "preview": "string",
       "clickCount": 0,
-      "isPublic": 0,
       "status": 0
       "isAiGen": true
     }
@@ -216,6 +208,8 @@ func AssetByID() //将搜索到的结果（暂定结果为asset_id）放入mysql
 ```
 
 ## AI生成模块
+
+![img](./assets/(null)-20240725144730930.(null))
 
 ### **图片生成模块后端实现**
 
@@ -295,11 +289,13 @@ Response
 }
 ```
 
+![img](./assets/(null)-20240725144730917.(null))
+
 #### AI图片生成精灵
 
 传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url
 
-Request
+Request 
 
 方法 ： POST
 
@@ -331,7 +327,7 @@ Response
 
 传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url
 
-Request
+Request 
 
 方法 ： POST
 
@@ -364,7 +360,7 @@ Response
 
 传入生成任务id ， 返回生成状态
 
-Request
+Request 
 
 方法 ： GET
 
@@ -388,10 +384,17 @@ curl --location --request GET '/asset/ai/status/?jobId'
   "status": 0,
   "result": {
     "jobId": "string",
-//    "category": "string",
     "type": 0,
     "files": {
-      "imageUrl": "string",
+        "imageUrl": "string",
+        "skeletonUrl" : "string",
+        "animMeshUrl" : "string",
+        "frameDataUrl" : "string"
+        "backdropImageUrl" : "string"
+    }
+  }
+}
+/*      "imageUrl": "string",
       "spriteComponent": {
         "skeletonUrl" : "string",
         "animMeshUrl" : "string",
@@ -402,12 +405,10 @@ curl --location --request GET '/asset/ai/status/?jobId'
         "backdropImageUrl" : "string"
         ......
       },
+*/
 //      "soundsComponent": [
 //        "string"
 //      ]
-    }
-  }
-}
 ```
 
 status分为以下几种：
@@ -449,11 +450,15 @@ const{
 
 - 添加ai素材到公有素材库。
 
+![img](./assets/(null)-20240725144730961.(null))
+
+![img](./assets/(null)-20240725144730919.(null))
+
 ### 对外接口
 
 #### AI素材导入至素材库
 
-Request
+Request 
 
 方法：POST
 
@@ -462,7 +467,6 @@ Request
 ```TypeScript
 export interface Request {
     jobId: string;
-//    owner: string;
     [property: string]: any;
 }
 e.g.
@@ -503,7 +507,6 @@ Request
 ```TypeScript
 export interface Request {
     assetId: string;
-//    owner: string;
     [property: string]: any;
 }
 e.g.
@@ -537,7 +540,6 @@ Request
 ```TypeScript
 export interface Request {
     assetId: string;
-//    owner: string;
     [property: string]: any;
 }
 e.g.
