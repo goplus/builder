@@ -16,7 +16,7 @@
 
 **模块功能** 1.通过关键词搜索商品。 2.按类别、价格范围、品牌等筛选素材。 3.搜索结果需要以关联度来进行排序，关联度高的放在前面 4.对查询结果进行排序（如按价格、评分、时间等）。 5.支持分页显示查询结果。 6.显示每个商品的详细信息，包括名称、图片等。
 
-![img](./assets/(null))
+![img](./assets/(null)-20240725154054598.png)
 
 ### 对外接口
 
@@ -55,17 +55,10 @@ category: {
        "写实风格": ["高清", "逼真"]
     }   
 }
-经过base64编码后：data = eyJhc3NldFR5cGUiOjEsImNhdGVnb3J5Ijp7IuWGheWuuSI6eyLliqjniakiOlsi54u
-XIiwi54yrIiwi5LmM6b6fIl0sIuakjeeJqSI6WyLmoJEiLCLoirEiLCLojYkiXX0sIumjjuagvCI6eyLlg4/ntKDpo4
-7moLwiOlsiOC1iaXQiLCIxNi1iaXQiXSwi5YaZ5a6e6aOO5qC8IjpbIumrmOa4hSIsIumAvOecnyJdfX0sImtleXdvc
-mQiOiLmuLjmiI8iLCJvcmRlckJ5IjoibmFtZSIsIm93bmVyIjoidXNlcjEyMyIsInBhZ2VJbmRleCI6MX0=
-
-服务端解码：{"assetType":1,"category":{"内容":{"动物":["狗","猫","乌龟"],"植物":["树","花","草"]}
-,"风格":{"像素风格":["8-bit","16-bit"],"写实风格":["高清","逼真"]}},"keyword":"游戏","orderBy":
-"name","owner":"user123","pageIndex":1,"pageSize":1}
+此处category结构使用URLencode
 ```
 
-类似json，使用Base64 编码解码
+
 
 ```Go
 e.g.
@@ -209,7 +202,7 @@ func AssetByID() //将搜索到的结果（暂定结果为asset_id）放入mysql
 
 ## AI生成模块
 
-![img](./assets/(null)-20240725144730930.(null))
+![img](./assets/(null)-20240725144730930.png)
 
 ### **图片生成模块后端实现**
 
@@ -289,7 +282,7 @@ Response
 }
 ```
 
-![img](./assets/(null)-20240725144730917.(null))
+![img](./assets/(null)-20240725144730917.png)
 
 #### AI图片生成精灵
 
@@ -323,15 +316,15 @@ Response
 }
 ```
 
-#### AI图片生成背景
+#### ~~AI图片生成背景~~
 
-传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url
+~~传入所选的图片的生成任务id、所选图片url ， 返回生成精灵任务id 、 生成精灵结果url~~
 
-Request 
+~~Request~~ 
 
-方法 ： POST
+~~方法 ： POST~~
 
-路径 ： /asset/ai/backdrop
+~~路径 ： /asset/ai/backdrop~~
 
 ```TypeScript
 export interface Request {
@@ -344,11 +337,11 @@ curl --location --request POST '/asset/ai/backdrop' \
 --form 'resolution=""'
 ```
 
-Response
+~~Response~~
 
-200 ok
+~~200 ok~~
 
-内容格式 ： JSON
+~~内容格式 ： JSON~~
 
 ```TypeScript
 {
@@ -450,9 +443,9 @@ const{
 
 - 添加ai素材到公有素材库。
 
-![img](./assets/(null)-20240725144730961.(null))
+![img](./assets/(null)-20240725144730961.png)
 
-![img](./assets/(null)-20240725144730919.(null))
+![img](./assets/(null)-20240725144730919.png)
 
 ### 对外接口
 
