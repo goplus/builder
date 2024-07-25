@@ -288,7 +288,7 @@ export interface ChatBot {
 - POST：/ai/chat/
 - 请求参数
 
-```json
+```typescript
 {
     id: string, // null as the first message
     chatAction: enum, //1: Explain, 2: Comment, 3: FixCode
@@ -304,7 +304,7 @@ export interface ChatBot {
 
 - 返回参数
 
-```json
+```typescript
 {
     code: number,
     msg: string,
@@ -347,7 +347,7 @@ export interface Suggest {
 - POST：/ai/task/
 - 请求参数
 
-```json
+```typescript
 {
     taskAction: enum, //1: Suggest
     userCode: string, //
@@ -360,7 +360,7 @@ export interface Suggest {
 
 - 返回参数
 
-```json
+```typescript
 {
     code: number,
     msg: string,
