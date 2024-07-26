@@ -93,7 +93,7 @@ export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   })
 }
 
-export async function getWebUrl(file: File) {
+export async function saveFileForWebUrl(file: File) {
   const universalUrl = await saveFile(file)
   return universalUrlToWebUrl(universalUrl)
 }

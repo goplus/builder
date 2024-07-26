@@ -17,12 +17,12 @@
 import { ref } from 'vue'
 import { loadImg } from '@/utils/dom'
 import { stripExt } from '@/utils/path'
-import { untilNotNull, useAsyncComputed, memoizeAsync } from '@/utils/utils'
+import { memoizeAsync } from '@/utils/utils'
 import { getMimeFromExt } from '@/utils/file'
 import { toJpeg } from '@/utils/img'
 import { matting } from '@/apis/aigc'
 import { fromBlob, toNativeFile, File } from '@/models/common/file'
-import { createFileWithWebUrl, getWebUrl } from '@/models/common/cloud'
+import { createFileWithWebUrl, saveFileForWebUrl } from '@/models/common/cloud'
 import type { MethodComponentEmits, MethodComponentProps } from '../common/types'
 import ProcessDetail from '../common/ProcessDetail.vue'
 import ImgPreview from '../common/ImgPreview.vue'
@@ -30,11 +30,11 @@ import ImgPreview from '../common/ImgPreview.vue'
 const props = defineProps<MethodComponentProps>()
 const emit = defineEmits<MethodComponentEmits>()
 
-const inputUrlsComputed = useAsyncComputed(() =>
+const getUrls = memoizeAsync((files: File[]) =>
   Promise.all(
-    props.input.map(async (file) => {
+    files.map(async (file) => {
       file = await adaptImg(file)
-      return getWebUrl(file)
+      return saveFileForWebUrl(file)
     })
   )
 )
@@ -48,7 +48,7 @@ const batchRemoveBackground = memoizeAsync(
 )
 
 async function apply() {
-  const inputUrls = await untilNotNull(inputUrlsComputed)
+  const inputUrls = await getUrls(props.input)
   const outputUrls = await batchRemoveBackground(inputUrls)
   await drawTransitions(outputUrls)
   const outputFiles = outputUrls.map((url) => createFileWithWebUrl(url))
@@ -56,7 +56,7 @@ async function apply() {
 }
 
 async function cancel() {
-  const inputUrls = await untilNotNull(inputUrlsComputed)
+  const inputUrls = await getUrls(props.input)
   await drawTransitions(inputUrls, true)
   emit('cancel')
 }
