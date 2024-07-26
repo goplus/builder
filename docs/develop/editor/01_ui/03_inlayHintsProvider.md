@@ -1,4 +1,4 @@
-### InlayHintsProvider
+# InlayHintsProvider
 效果图：
 
 ![InlayHintsProvider](../assets/InlayHintsProvider.png)
@@ -27,7 +27,7 @@ interface InlayHintsProvider {
     ): Promise<InlayHint[]>
 }
 ```
-##### 代码示例
+## 代码示例
 ```ts
 function implementInlayHintsProvider(ui: EditorUI) {
     ui.registerInlayHintsProvider({

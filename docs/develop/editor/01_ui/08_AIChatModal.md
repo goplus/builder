@@ -1,4 +1,4 @@
-### invokeAIChatModal
+# invokeAIChatModal
 
 效果图：
 
@@ -19,7 +19,7 @@ type AIChatModalOptions = {
 }
 ```
 
-##### 代码示例
+## 代码示例
 ```ts
 // hover unitWord to show doc and ask AI
 function implementHoverProviderDocPreview(ui: EditorUI) {

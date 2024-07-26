@@ -1,4 +1,4 @@
-### AttentionHintsProvider
+# AttentionHintsProvider
 效果图：
 
 ![AttentionHintsProvider](../assets/AttentionHintProvider.png)
@@ -18,7 +18,7 @@ type AttentionHint = {
 
 interface AttentionHintsProvider {
     provideAttentionHints(
-        addHints: (hints: AttentionHint[])=> void,
+        setHints: (hints: AttentionHint[])=> void,
         ctx: {
           signal: AbortSignal
         }
@@ -26,11 +26,11 @@ interface AttentionHintsProvider {
 }
 ```
 
-##### 代码示例
+## 代码示例
 ```ts
 function implementAttentionHintsProvider(ui: EditorUI) {
     ui.registerAttentionHintsProvider({
-        provideAttentionHints(addHints: (hints: AttentionHint[]) => void, ctx: { signal: AbortSignal }) {
+        provideAttentionHints(setHints: (hints: AttentionHint[]) => void, ctx: { signal: AbortSignal }) {
             // write some logic code to get the attentionHintItems
             const attentionHintItems: AttentionHint[] = [
                 {
@@ -57,11 +57,11 @@ function implementAttentionHintsProvider(ui: EditorUI) {
                 }
             ]
 
-            addHints(attentionHintItems)
+            setHints(attentionHintItems)
             
             // example to work with other events to add attentionHints
-            const close = onRuntimeError((err) => {
-               addHints(err)
+            const close = onRuntimeError((errs) => {
+               addHints([...attentionHintItems, ...errs])
             })
             // remove listener when provider is aborted
             ctx.signal.addEventListener("abort", () => close())

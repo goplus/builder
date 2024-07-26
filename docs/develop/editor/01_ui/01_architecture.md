@@ -1,5 +1,4 @@
-# 功能
-### CommonInterface
+# CommonInterface
 
 ```ts
 // 代码编辑器中鼠标光标的位置
@@ -15,13 +14,6 @@ type IRange = {
     endColumn: number,
     endLineNumber: number
 }
-
-type Identifier = {
-  module: string, // "github.com/goplus/spx"
-  name: string,   // "Sprite.touching"
-}
-
-type Token = Identifier
 
 enum IconEnum {
     // 函数
@@ -87,7 +79,7 @@ interface EditorUI {
     // 用于Lint或Runtime展示指定行提醒
     registerAttentionHintsProvider(provider: AttentionHintsProvider): void
     // 用于快捷输入代码
-    registerCodeInputAssistantProvider(provider: CodeInputAssistantProvider): void
+    registerInputAssistantProvider(provider: InputAssistantProvider): void
     // 用于激活AI对话模态框
     invokeAIChatModal(options: AIChatModalOptions): void
     // 用于激活详细文档侧边栏

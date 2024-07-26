@@ -8,7 +8,8 @@
 
 ## EditorUI
 
-EditorUI 是一个前端中编辑器的模块。负责提供编辑器UI和多种辅助编辑和理解的功能集合，包括编辑器内部提示、悬浮框、代码完成菜单、文档等。
+EditorUI 的目标是帮助用户把自身的逻辑快速而完整地通过代码表达出来。
+通过在 UI 层面实现并调用不同的功能模块，如文档快速预览、代码高亮分析、AI 答疑解惑以及更便捷的代码补全菜单，来降低初学者的编程门槛，并提高了编码效率。
 
 详见 [EditorUI](./01_ui/01_architecture.md) 。
 
@@ -119,8 +120,10 @@ interface Project {
     getContext(): ProjectContext // 现有 Project.name,  Sprite.name[]
 
     // rename
-    Sprite.setName(name: string): void
-    ...setName()
+    Sprite: {
+      setName(name: string): void
+    },
+    // ...otherAssetsName(Sound, Stage)
 }
 ```
 
