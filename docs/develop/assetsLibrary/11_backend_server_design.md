@@ -1,4 +1,96 @@
+# Controller层
+
+## AIGC
+
+```go
+interface{
+    (c *AigcClient)CallEmbedding(ctx context.Context, word string)([]float64)
+    (c *AigcClient)CallGenImage(ctx context.Context, textDesc string)
+    (c *AigcClient)CallGenAsset(ctx context.Context, imageUrl string)
+}
+```
+
+
+
+#### 对AI侧协议：
+
+```json
+文本转词向量
+Request body
+方法 POST
+路径 /embedding
+{
+  "word": "string",
+}
+e.g.
+curl --location --request POST '/embedding'  --form 'word='
+
+Response body
+内容格式 ： JSON
+{
+  "embedding": array,
+}
+```
+
+
+
+```json
+文本生成图片
+Request body
+方法 POST 
+路径 /sd/prompt
+
+{
+  "textDesc": "string",
+}
+
+e.g.
+curl --location --request POST '/sd/prompt'  --form 'textDesc='
+
+Response body
+内容格式 ： JSON
+{
+  "imageUrl": "string",
+}
+
+```
+
+
+
+```JSON
+图片生成精灵
+Request body
+方法 POST 
+路径 /imageGenSprite
+{
+  "imageUrl": "string",
+}
+
+e.g.
+curl --location --request POST '/imageGenSprite'  --imageUrl 'textDesc='
+
+Response body
+内容格式 ： JSON
+{
+  "files": {
+      "imageUrl": "string",
+      "skeletonUrl" : "string",
+      "animMeshUrl" : "string",
+      "frameDataUrl" : "string"
+  },
+}
+```
+
+## 
+
 ## 素材列表
+
+```go
+interface{
+    (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams) (*model.ByPage[model.Asset])
+    (ctrl *Controller) Embedding(word string)(float64[])
+}
+```
 
 #### AssetList
 
@@ -18,7 +110,7 @@ func (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams)
         // word to vector
         vec = Embedding(ListAssetsParams.keyword)
         // search in vector database
-        index = model.searchByEmbedding(vec)
+        id[] = model.searchByEmbedding(ctx, vec)
     }
     assets = model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders, index)
     return assets
@@ -32,67 +124,42 @@ func (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams)
 会调用 AI 侧能力
 
 ```Go
-type EmbeddingParams struct {
-    // word is the word to be embedded.
-    Word string `json:"word"`
-}
-type EmbeddingResult struct{
-    // embedding is the vector transformed by the statement
-    Embedding []float64 `json:"embedding"`
-}
 func (ctrl *Controller) Embedding(word string){
-	params = struct{
-		Word string `json:"word"`
-    }{
-        Word : Word
-    }
-	result = struct{
-        Embedding []float64 `json:"embedding"`
-    }
+
     // call aigc service
-    ctrl.aicgService.Call(ctx, http.MethodPost, "/embedding", &params, &result)
-    return result.Embedding
-}
-```
-
-POST /embedding
-
-- Request body
-
-```JSON
-{
-  "word": "string",
-}
-```
-
-- Response body
-
-```JSON
-{
-  "embedding": ["int"],
+    result []float64 = ctrl.aigcService.CallEmbedding(ctx, word)
+    return result
 }
 ```
 
 ## 文本生成图片
 
+```go
+interface{
+    (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult)
+    (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams)(*GenBackdropImageResult)
+    (ctrl *Controller) textGenImage(ctx context.Context, jobId int, textDesc string)
+}
+```
+
 #### TextGenSpriteImage
 
 ```Go
 type GenSpriteImageParams{
-    Category CategoryCollection
-    Keyword string
+    Category CategoryCollection `json:"Category"`
+    Keyword string `json:"Keyword"`
 }
 type GenSpriteImageResult{
     ImageJobId string `json:"ImageJobId"`
 }
-func (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult , err){
+func (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult){
     // combine the category and keyword in the request into text suitable for input into ai
     textDesc = paramsToText(params)
     // since the ai side currently only supports synchronization 
     // asynchronous is performed here in the backend.
     jobId = model.AddJob(jobType)
     // the coroutine request calls the ai-side service
-    go textGenImage(jobId, textDesc)
+    go textGenImage(ctx, jobId, textDesc)
     // return
     return &GenSpriteImageResult{
         ImageJobId : jobId
@@ -112,7 +179,7 @@ type GenBackdropImageParams{
 type GenBackdropImageResult{
     ImageJobId string
 }
-func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams){
+func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams)(*GenBackdropImageResult){
     // combine the category, keyword and resolution in the request into 
     // text suitable for input into ai
     textDesc = paramsToText(params)
@@ -124,7 +191,7 @@ func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdro
         ImageJobId = jobId
     }
     // the coroutine request calls the ai-side service
-    go textGenImage(jobId, textDesc)
+    go textGenImage(ctx, jobId, textDesc)
     // return
     return &GenBackdropImageResult{
         ImageJobId : jobId
@@ -135,45 +202,25 @@ func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdro
 #### TextGenImage（AI）
 
 ```Go
-type TextGenImageResult struct{
-    // the url of generate
-    ImageUrl string `json:"imageUrl"`
-}
-func textGenImage(jobId int, textDesc string){
-    params = struct{
-        TextDesc string `json:"textDesc"`
-    }{
-        TextDesc = textDesc
-    }
-    result = struct{
-        ImageUrl string `json:"imageUrl"`
-    }
+
+func (ctrl *Controller) textGenImage(ctx context.Context, jobId int, textDesc string){
     // calls the ai-side service
-    ctrl.aicgService.Call(ctx, http.MethodPost, "/textGenImage", &params, &result)
+    imageUrl = ctrl.aicgService.CallGenImage(ctx, textDesc)
     // write results back to database
-    model.UpdateAsset(jobId, result.ImageUrl)
-}
-```
-
-POST /textGenImage
-
-- Request body
-
-```JSON
-{
-  "textDesc": "string",
-}
-```
-
-- Response body
-
-```JSON
-{
-  "imageUrl": "string",
+    model.UpdateJob(ctx, ctrl.db, jobId, imageUrl)
 }
 ```
 
 ## 图片生成精灵
+
+```go
+interface{
+    (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpriteParams)(*ImageGenSpriteResult)
+    (ctrl *Controller) genAsset(jobId int,imageUrl string)
+}
+```
+
+
 
 #### ImageGenSprite
 
@@ -192,7 +239,7 @@ func (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpri
     jobId = model.AddJob(jobType)
 	
     // the coroutine request calls the ai-side service
-    go genAsset(jobId, imageUrl)
+    go genAsset(ctx, jobId, imageUrl)
     // return
     return &ImageGenSpriteResult{
         JobId = jobId
@@ -203,52 +250,23 @@ func (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpri
 #### ImageGenAsset（AI）
 
 ```Go
-type genResult struct{
-    Files FileCollection `json:"files"`
-}
-
-type FileCollection map[string]string
-
-func genAsset(jobId int,imageUrl string){
-    params = struct{
-        ImageUrl string `json:"imageUrl"`
-    }{
-        ImageUrl = imageUrl
-    }
-    result = struct{
-        Files FileCollection `json:"files"`
-    }
+func (ctrl *Controller) genAsset(ctx context.Context, jobId int,imageUrl string){
     // calls the ai-side service
-    ctrl.aicgService.Call(ctx, http.MethodPost, "/imageGenSprite", &params, &result)
+    files FileCollection = ctrl.aicgService.CallGenAsset(ctx, imageUrl)
     // write results back to database
-    model.UpdateJob(jobId , result.Files)
-}
-```
-
-POST /imageGenSprite
-
-- Request body
-
-```JSON
-{
-  "imageUrl": "string",
-}
-```
-
-- Response body
-
-```JSON
-{
-  "files": {
-      "imageUrl": "string",
-      "skeletonUrl" : "string",
-      "animMeshUrl" : "string",
-      "frameDataUrl" : "string"
-  },
+    model.UpdateJob(ctx, ctrl.db, jobId, files)
 }
 ```
 
 ## 查询生成状态
+
+```go
+interface{
+    (ctrl *Controller)GenStatus(ctx context.Context, params *GenStatusParams)(*GenStatusResult)
+}
+```
+
+
 
 #### GenStatus
 
@@ -262,23 +280,32 @@ type genResult{
     files FileCollection `json:"files"`
 }
 
-
 type GenStatusResult struct{
     Status int 'json:"status"'
     Result GenResult`json:"result"`
 }
 
-func (ctrl *Controller) GenStatus(ctx context.Context, params *GenStatusParams){
+func (ctrl *Controller) GenStatus(ctx context.Context, params *GenStatusParams)(*GenStatusResult){
     // query job status
     statusResult = model.getJob(params.jobId)
-    return &{
-        Status = statusResult.Status
-        Result = statusResult.Result
+    return &GenStatusResult{
+        Status : statusResult.Status
+        Result : statusResult.Result
     }
 }
 ```
 
 ## 收藏/添加模块
+
+```go
+interface{
+    (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAssetParams)(*ExportAiAssetResult)
+    (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams)
+    (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams)
+}
+```
+
+
 
 #### ExportAiAsset
 
@@ -289,12 +316,12 @@ type ExportAiAssetParams{
 type ExportAiAssetResult{
     AssetId string 'json:"assetId"'
 }
-func (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAssetParams){
+func (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAssetParams)(*ExportAiAssetResult){
     addAssetParams = model.getJob(params.JobId)
-    //write to vector database
-    model.addByVec(addAssetParams)
     // write to database
     asset = model.AddAsset(ctx, addAssetParams)
+    //write to vector database
+    model.addByVec(ctx, ctrl.db, asset.ID, addAssetParams.Embedding)
     return &ExportAiAssetResult{
         AssetId = asset.id
     }
@@ -308,7 +335,7 @@ type HistoryParams{
     AssetId string 'json:"assetId"'
 }
 func (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams){
-    model.AddHistory(ctx, params.AssetId)
+    model.AddHistory(ctx, ctrl.db, params.AssetId)
 }
 ```
 
@@ -318,7 +345,38 @@ func (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams){
 type FavoriteParams{
     AssetId string 'json:"assetId"'
 }
-func AddFavorite(ctx context.Context, params *FavoriteParams){
-    model.AddFavorite(ctx, params.AssetId)
+func (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams){
+    model.AddFavorite(ctx, ctrl.db, params.AssetId)
 }
 ```
+
+## Model层
+
+```go
+interface{
+    AddJob(ctx context.Context, db *sql.DB, jobType)(string) //返回jobId
+    UpdateJob(ctx context.Context, db *sql.DB, jobId string, files FileCollection)
+    GetJob(ctx context.Context, db *sql.DB, jobId string)(*Job) // 返回生成内容所有参数
+    AddByVec(ctx context.Context, db *sql.DB, assetId string, embedding float64[])
+    SearchByEmbedding(ctx context.Context, db *sql.DB, embedding float64[])(int[])//返回记录的素材库主键
+    AddFavorite(ctx context.Context, db *sql.DB, assetId string)
+    AddHistory(ctx context.Context, db *sql.DB, assetId string)
+}
+```
+
+```go
+type Job struct{
+    ID string `db:"id" json:"id"`
+    Embedding float64[] `db:"embedding" json:"embedding"`
+    Files FileCollection `db:"files" json:"files"`
+}
+type Favorite{
+    AssetId string 'db:"assetId" json:"assetId"'
+    Owner string 'db:"owner" json:"owner"'
+}
+type History{
+    AssetId string 'db:"assetId" json:"assetId"'
+    Owner string 'db:"owner" json:"owner"'
+}
+```
+
