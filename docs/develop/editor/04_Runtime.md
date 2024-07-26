@@ -1,6 +1,7 @@
 # Runtime
 
 Runtime模块在debug模式下负责捕获运行时错误并提供内容让UI组件获取。
+（模式区分： 运行项目将区分为run与debug）
 
 ## 对外接口
 
@@ -47,7 +48,12 @@ type Log = string;
 interface Runtime {
     runtimeErrorList: RuntimeError[];
     projectFilesHash: string;
+    // runtime error & painc
     handleRuntimeLog(log: Log): void;
     parseRuntimeLog(logList: Log[]): void;
 }
 ```
+
+- 流程
+
+![runtime](./assets/runtime.png)

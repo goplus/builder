@@ -13,7 +13,7 @@ EditorUI 的目标是帮助用户把自身的逻辑快速而完整地通过代�
 
 详见 [EditorUI](./01_ui/01_architecture.md) 。
 
-## Coordinator
+## [Coordinator](./02_coordinator.md)
 
 Coordinator 负责协调各个模块之间的交互。管理各个模块的交互以及数据流程，确保整个可扩展性与保证各模块内部只关心内部实现。
 
@@ -53,7 +53,7 @@ function documentImplement() {
 }
 ```
 
-## Compiler
+## [Compiler](./03_compiler.md)
 
 Compiler模块具体利用编译器能力、代码检查等能力负责对代码、proj部分进行解析并生成AST树，并根据AST进行生成类型，实现基于wasm提供。
 
@@ -77,7 +77,7 @@ interface Compiler {
 }
 ```
 
-## Runtime
+## [Runtime](./04_runtime.md)
 
 Runtime模块负责在debug模式下负责捕获运行时错误并提供内容让UI组件获取。
 
@@ -89,9 +89,16 @@ interface Runtime {
 }
 ```
 
-## Doc
+## [Doc](./05_doc&&project.md)
 
-文档模块负责提供简略文档和详细文档，通过传入identifier来判断文档的内容，再进行展示。同时目前文档可以直接维护在前端代码中，因此不需要CRUD，内部实现仅为一个文档获取的函数。  
+文档是指以Markdown格式提供的，对spx与gop关键字等代码Token的解释型文档，通过维护文档可以向用户展示功能与代码的解释。文档内容分层为简略文档和详细文档，以满足不同界面形式对不同信息量的对应。
+
+- 目前
+目前文档直接维护在前端代码中，内部实现仅为一个文档获取的函数。  
+
+- 未来
+
+考虑到未来社区支持，社区作者对其文档的可配置性需求，未来考虑增加后端数据存储支持。
 
 - 对外接口
 
@@ -102,7 +109,7 @@ interface DocAbility{
 }
 ```
 
-## Project
+## [Project](./05_doc&&project.md)
 
 用到所有Project的地方都可以由项目中原有的Project类实现。因此目前只需要复用即可。
 
@@ -127,7 +134,7 @@ interface Project {
 }
 ```
 
-## Chatbot
+## [Chatbot](./06_ai.md)
 
 用于负责与AI交流的部分，提供开启一个会话与继续发送消息的能力。提供了 解释、添加注释、修复代码 这三个对话功能。
 
@@ -139,7 +146,7 @@ export interface ChatBot {
 }
 ```
 
-## Suggest
+## [Suggest](./06_ai.md)
 
 建议模块负责提供一个利用LLM来生成代码建议的功能，内部通过传入代码与光标位置对代码进行补全式生成。
 
