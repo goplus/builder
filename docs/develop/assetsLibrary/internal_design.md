@@ -118,6 +118,7 @@ func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdro
 
 #### TextGenImage（AI）
 
+
 ```Go
 type TextGenImageParams struct {
     // the description of generate
