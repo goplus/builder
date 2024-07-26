@@ -20,14 +20,20 @@
 
 #### WASM 接口
 
-##### parseSkeletonAnimData
+```ts
+/**
+ * 帧数据
+ */
+interface AnimFrame {
+  vertices: number[][];
+  uvs: number[][];
+  indices: number[][];
+}
 
-解析骨骼动画，返回所有帧数据
-
-- 参数：
-  - animData: `Uint8Array` 骨骼动画目录(zip格式)
-- 返回值：
-  - AnimFrame[]: 帧数据
-    - vertices：`number[][]` 顶点数据
-    - uvs：`number[][]` 
-    - indices：`number[][]` 
+/**
+ * 解析骨骼动画，返回所有帧数据
+ *
+ * @param animData: 骨骼动画目录(zip格式)
+ */
+function parseSkeletonAnimData(animData: Uint8Array): AnimFrame[];
+```
