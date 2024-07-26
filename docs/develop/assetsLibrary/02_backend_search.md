@@ -3,6 +3,7 @@
 ## 模块目的
 
 此模块用于实现用户在素材库中精准查询的需求，提供高效、准确的查询服务，以便用户能够快速找到所需的素材。
+![image-20240725160715631](./assets/image-20240725160715631.png)
 
 ## 模块定位
 
@@ -14,7 +15,6 @@
 - 用户可以对查询结果进行排序（如按价格、评分、时间等）。
 - 支持分页显示查询结果。
 - 显示每个素材的详细信息，包括名称、图片等。
-
 
 ![img](./assets/(null)-20240725154054598.png)
 
@@ -58,14 +58,12 @@ category: {
 此处category结构使用URLencode
 ```
 
-
-
 ```Go
 e.g.
 curl --location --request GET '/asset/list/?data' 
 ```
 
-Response 
+Response
 
 200 ok
 
@@ -112,7 +110,7 @@ e.g.
 curl --location --request GET '/asset/history/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' \
 ```
 
-Response 
+Response
 
 200 ok
 
@@ -159,7 +157,7 @@ e.g.
 curl --location --request GET '/asset/favorites/list?owner&category&assetType&keyword&pageIndex&pageSize&orderBy' 
 ```
 
-Response 
+Response
 
 200 ok
 
