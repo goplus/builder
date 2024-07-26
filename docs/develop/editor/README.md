@@ -1,6 +1,8 @@
 # Editor
 
-针对一整个编辑器中不好用的地方进行重新架构设计，并增添了一些新的功能。
+针对编辑器中可优化用户编码过程的地方进行重新架构设计，并增添了一些新的功能。
+
+- 总体架构
 
 ![editor-architecture](./assets/editor-architecture.png)
 
@@ -94,8 +96,8 @@ interface Runtime {
 
 ```ts
 interface DocAbility{
-    getNormalDoc(identifier): Doc | null
-    getDetailDoc(identifier): Doc | null
+    getNormalDoc(token: Token): Doc | null
+    getDetailDoc(token: Token): Doc | null
 }
 ```
 
@@ -141,5 +143,6 @@ export interface ChatBot {
 ```ts
 export interface Suggest {
     startSuggestTask(input: Input): SuggestItem[]
+
 }
 ```

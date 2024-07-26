@@ -52,7 +52,9 @@ function documentImplement() {
         },
     })
 }
+```
 
+```ts
 //syntax error&runtime error example
 import { EditorUI as ui } from "./ui"
 import { RuntimeAbility as runtime } from "./runtime"
@@ -89,7 +91,9 @@ function attentionHintImplement() {
         }
     })
 }
+```
 
+```ts
 //show ai modal example
 import { EditorUI as ui } from "./ui"
 import { ChatBot as chatbox } from './ai'

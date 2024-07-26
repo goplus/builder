@@ -20,7 +20,7 @@
 
 - 内部实现
 
-1. 根据代码生成AST树
+1. 根据代码生成AST树(语义分析，语法分析)
 2. 定义完整叶子结点信息（类型，名称，包，函数签名，变量名，具体单位）
 3. 维护符号表？
 4. 类型推断
@@ -81,6 +81,10 @@ type Token = {
     type: enum,
     usages: TokenUsage[]
 }
+type Code = {
+    type: enum,
+    content: string,
+}
 ```
 
 ## WASM 方案
@@ -110,9 +114,24 @@ type Position struct {
 
 ## Token 定义
 
-目前参照Go语言语法规范的定义来实行。
+目前参照Go语言语法规范的定义来实行。分别为
+
+1. 关键字
+2. 操作符
+3. 标识符
+4. 字面量
 
 [Reference: Go Language Specification - Token](https://go.dev/ref/spec#Tokens)
+
+## 单位定义
+
+通常在定义一个函数的过程中，例如在spx的关键字`play`中，可以在其的函数签名中添加一行：
+
+```ts
+/ *
+ * @unit: {en: 'seconds', zh: '秒'}
+* /
+```
 
 ## 错误类型
 
