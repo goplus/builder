@@ -1,4 +1,106 @@
+## Model层
+
+```go
+// 对Controller层暴露接口 :
+interface{
+    // 添加任务 ，并返回jobId
+    AddJob(ctx context.Context, db *sql.DB, jobType)(string)
+    
+    // 更新任务状态
+    UpdateJob(ctx context.Context, db *sql.DB, jobId string, files FileCollection)
+    
+    // 返回生成任务记录的所有参数
+    GetJob(ctx context.Context, db *sql.DB, jobId string)(*Job)
+    
+    // 将素材id与embedding向量写入向量数据库
+    AddByVec(ctx context.Context, db *sql.DB, assetId string, embedding float64[])
+    
+    // 查找与输入embedding最相似的一系列素材id并返回
+    SearchByEmbedding(ctx context.Context, db *sql.DB, embedding float64[])(int[])
+    
+    AddFavorite(ctx context.Context, db *sql.DB, assetId string)
+    AddHistory(ctx context.Context, db *sql.DB, assetId string)
+}
+```
+
+```go
+// 新增数据类型与表
+type Job struct{
+    ID string `db:"id" json:"id"`
+    Embedding float64[] `db:"embedding" json:"embedding"`
+    Files FileCollection `db:"files" json:"files"`
+}
+type Favorite{
+    AssetId string 'db:"assetId" json:"assetId"'
+    Owner string 'db:"owner" json:"owner"'
+}
+type History{
+    AssetId string 'db:"assetId" json:"assetId"'
+    Owner string 'db:"owner" json:"owner"'
+}
+```
+
+
+
 # Controller层
+
+```go
+// AIGC接口集合 :
+interface{
+    
+    // 向ai侧服务发起将语句转化为词向量的http请求，返回编码后的向量
+    (c *AigcClient)CallEmbedding(ctx context.Context, word string)([]float64)
+    
+    // 向ai侧服务发起文本生成图片的http请求，返回图片路径
+    (c *AigcClient)CallGenImage(ctx context.Context, textDesc string)(string)
+    
+    // 向ai侧服务发起图片生成精灵素材的http请求，返回文件路径集
+    (c *AigcClient)CallGenAsset(ctx context.Context, imageUrl string)(*FileCollection)
+    
+}
+
+//素材列表接口集合 :
+interface{
+    (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams) (*model.ByPage[model.Asset])
+    (ctrl *Controller)Embedding(word string)(float64[])
+}
+
+// 文本生成图片接口集合 :
+interface{
+    // 注册图片生成任务，返回图片生成任务id
+    (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult)
+    // 同上
+    (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams)(*GenBackdropImageResult)
+    // 将生成完毕的图片路径写入任务表中，并更新任务状态
+    (ctrl *Controller) textGenImage(ctx context.Context, jobId int, textDesc string)
+}
+
+// 图片生成精灵素材接口集合 :
+interface{
+    // 注册图片生成精灵素材任务，返回任务id
+    (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpriteParams)(*ImageGenSpriteResult)
+    // 将生成完毕的素材路径集路径写入任务表中，并更新任务状态
+    (ctrl *Controller) genAsset(jobId int,imageUrl string)
+}
+
+// 查询生成状态接口集合 :
+interface{
+     //通过任务id返回任务状态，若任务完成则将路径集合一并返回
+    (ctrl *Controller)GenStatus(ctx context.Context, params *GenStatusParams)(*GenStatusResult)
+}
+
+// 添加到收藏/历史接口集合 :
+interface{
+    // 将素材记录在Asset表中 ， 并将此素材id和embedding写入向量数据库， 返回素材id
+    (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAssetParams)(*ExportAiAssetResult)
+    
+    (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams)
+    
+    (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams)
+}
+```
+
+
 
 ## AIGC
 
@@ -13,6 +115,7 @@ interface{
     
     // 向ai侧服务发起图片生成精灵素材的http请求，返回文件路径集
     (c *AigcClient)CallGenAsset(ctx context.Context, imageUrl string)(*FileCollection)
+    
 }
 ```
 
@@ -23,9 +126,11 @@ interface{
 Request body
 方法 POST
 路径 /embedding
+
 {
   "word": "string",
 }
+
 e.g.
 curl --location --request POST '/embedding'  --form 'word='
 
@@ -129,7 +234,6 @@ func (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams)
 
 ```Go
 func (ctrl *Controller) Embedding(word string){
-
     // call aigc service
     result []float64 = ctrl.aigcService.CallEmbedding(ctx, word)
     return result
@@ -356,44 +460,3 @@ func (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams)
     model.AddFavorite(ctx, ctrl.db, params.AssetId)
 }
 ```
-
-## Model层
-
-```go
-interface{
-    // 添加任务 ，并返回jobId
-    AddJob(ctx context.Context, db *sql.DB, jobType)(string)
-    
-    // 更新任务状态
-    UpdateJob(ctx context.Context, db *sql.DB, jobId string, files FileCollection)
-    
-    // 返回生成任务记录的所有参数
-    GetJob(ctx context.Context, db *sql.DB, jobId string)(*Job)
-    
-    // 将素材id与embedding向量写入向量数据库
-    AddByVec(ctx context.Context, db *sql.DB, assetId string, embedding float64[])
-    
-    // 查找与输入embedding最相似的一系列素材id并返回
-    SearchByEmbedding(ctx context.Context, db *sql.DB, embedding float64[])(int[])
-    
-    AddFavorite(ctx context.Context, db *sql.DB, assetId string)
-    AddHistory(ctx context.Context, db *sql.DB, assetId string)
-}
-```
-
-```go
-type Job struct{
-    ID string `db:"id" json:"id"`
-    Embedding float64[] `db:"embedding" json:"embedding"`
-    Files FileCollection `db:"files" json:"files"`
-}
-type Favorite{
-    AssetId string 'db:"assetId" json:"assetId"'
-    Owner string 'db:"owner" json:"owner"'
-}
-type History{
-    AssetId string 'db:"assetId" json:"assetId"'
-    Owner string 'db:"owner" json:"owner"'
-}
-```
-
