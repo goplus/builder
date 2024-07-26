@@ -4,13 +4,17 @@
 
 ```go
 interface{
+    
+    // 向ai侧服务发起将语句转化为词向量的http请求，返回编码后的向量
     (c *AigcClient)CallEmbedding(ctx context.Context, word string)([]float64)
-    (c *AigcClient)CallGenImage(ctx context.Context, textDesc string)
-    (c *AigcClient)CallGenAsset(ctx context.Context, imageUrl string)
+    
+    // 向ai侧服务发起文本生成图片的http请求，返回图片路径
+    (c *AigcClient)CallGenImage(ctx context.Context, textDesc string)(string)
+    
+    // 向ai侧服务发起图片生成精灵素材的http请求，返回文件路径集
+    (c *AigcClient)CallGenAsset(ctx context.Context, imageUrl string)(*FileCollection)
 }
 ```
-
-
 
 #### 对AI侧协议：
 
@@ -88,13 +92,13 @@ Response body
 ```go
 interface{
     (ctrl *Controller)ListAssets(ctx context.Context, params *ListAssetsParams) (*model.ByPage[model.Asset])
-    (ctrl *Controller) Embedding(word string)(float64[])
+    (ctrl *Controller)Embedding(word string)(float64[])
 }
 ```
 
 #### AssetList
 
-暴露给客户端，返回素材列表
+暴露给客户端，返回素材列表，从向量数据库寻找最符合的素材的id数组，然后用id数组在Asset表中查询
 
 ```Go
 type CategoryCollection map[string]string
@@ -136,8 +140,11 @@ func (ctrl *Controller) Embedding(word string){
 
 ```go
 interface{
+    // 注册图片生成任务，返回图片生成任务id
     (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult)
+    // 同上
     (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams)(*GenBackdropImageResult)
+    // 将生成完毕的图片路径写入任务表中，并更新任务状态
     (ctrl *Controller) textGenImage(ctx context.Context, jobId int, textDesc string)
 }
 ```
@@ -215,7 +222,9 @@ func (ctrl *Controller) textGenImage(ctx context.Context, jobId int, textDesc st
 
 ```go
 interface{
+    // 注册图片生成精灵素材任务，返回任务id
     (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpriteParams)(*ImageGenSpriteResult)
+    // 将生成完毕的素材路径集路径写入任务表中，并更新任务状态
     (ctrl *Controller) genAsset(jobId int,imageUrl string)
 }
 ```
@@ -262,11 +271,10 @@ func (ctrl *Controller) genAsset(ctx context.Context, jobId int,imageUrl string)
 
 ```go
 interface{
+     //通过任务id返回任务状态，若任务完成则将路径集合一并返回
     (ctrl *Controller)GenStatus(ctx context.Context, params *GenStatusParams)(*GenStatusResult)
 }
 ```
-
-
 
 #### GenStatus
 
@@ -299,13 +307,12 @@ func (ctrl *Controller) GenStatus(ctx context.Context, params *GenStatusParams)(
 
 ```go
 interface{
+    // 将素材记录在Asset表中 ， 并将此素材id和embedding写入向量数据库， 返回素材id
     (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAssetParams)(*ExportAiAssetResult)
     (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams)
     (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams)
 }
 ```
-
-
 
 #### ExportAiAsset
 
@@ -354,11 +361,21 @@ func (ctrl *Controller) AddFavorite(ctx context.Context, params *FavoriteParams)
 
 ```go
 interface{
-    AddJob(ctx context.Context, db *sql.DB, jobType)(string) //返回jobId
+    // 添加任务 ，并返回jobId
+    AddJob(ctx context.Context, db *sql.DB, jobType)(string)
+    
+    // 更新任务状态
     UpdateJob(ctx context.Context, db *sql.DB, jobId string, files FileCollection)
-    GetJob(ctx context.Context, db *sql.DB, jobId string)(*Job) // 返回生成内容所有参数
+    
+    // 返回生成任务记录的所有参数
+    GetJob(ctx context.Context, db *sql.DB, jobId string)(*Job)
+    
+    // 将素材id与embedding向量写入向量数据库
     AddByVec(ctx context.Context, db *sql.DB, assetId string, embedding float64[])
-    SearchByEmbedding(ctx context.Context, db *sql.DB, embedding float64[])(int[])//返回记录的素材库主键
+    
+    // 查找与输入embedding最相似的一系列素材id并返回
+    SearchByEmbedding(ctx context.Context, db *sql.DB, embedding float64[])(int[])
+    
     AddFavorite(ctx context.Context, db *sql.DB, assetId string)
     AddHistory(ctx context.Context, db *sql.DB, assetId string)
 }
