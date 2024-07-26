@@ -1,4 +1,4 @@
-### CompletionProvider
+# CompletionProvider
 效果图：
 
 ![img.png](../assets/completionProvider.png)
@@ -29,7 +29,7 @@ interface CompletionProvider {
     ): void
 }
 ```
-##### 代码示例
+## 代码示例
 ```ts
 function implementsCompletionProviders(ui: EditorUI) {
     ui.registerCompletionProvider({

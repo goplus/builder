@@ -1,4 +1,4 @@
-### SelectionProvider
+# SelectionProvider
 效果图：
 
 ![SelectionProvider](../assets/SelectionProvider.png)
@@ -20,7 +20,7 @@ interface SelectionMenuProvider {
     ): Promise<SelectionMenuItem[]>
 }
 ```
-##### 代码示例
+## 代码示例
 ```ts
 function implementSelectionProvider(ui: EditorUI) {
     ui.registerSelectionMenuProvider({

@@ -36,14 +36,6 @@ export type Icon = IconEnum
 
 export type Markdown = string
 
-type Identifier = {
-    module: string, // "github.com/goplus/spx"
-    name: string,   // "Sprite.touching"
-}
-
-type Token = Identifier
-
-
 // 音频播放器
 export type AudioPlayer = {
     src: string,
@@ -79,7 +71,7 @@ export interface EditorUI {
     // 用于Lint或Runtime展示指定行提醒
     registerAttentionHintsProvider(provider: AttentionHintsProvider): void
     // 用于快捷输入代码
-    registerCodeInputAssistantProvider(provider: CodeInputAssistantProvider): void
+    registerInputAssistantProvider(provider: InputAssistantProvider): void
     // 用于激活AI对话模态框
     invokeAIChatModal(options: AIChatModalOptions): void
     // 用于激活详细文档侧边栏
@@ -166,7 +158,7 @@ export interface HoverProvider {
     ): Promise<LayerContent>
 }
 
-type CodeSnapUsage = {
+type InputItemUsage = {
     /** Description for usage, without tailing dot */
     desc: LayerContent
     /** Code sample, usually it's similar while sightly different with `insertText` */
@@ -178,30 +170,29 @@ type CodeSnapUsage = {
     insertText: string
 }
 
-type CodeSnap = {
+type InputItem = {
     icon: Icon,
     // used for 2 or more usages to explain codeSnap main function
     desc: string,
-    usages: CodeSnapUsage[],
-    token: Token
+    usages: InputItemUsage[],
 }
 
-type CodeSnapGroup = {
+type InputItemGroup = {
     label: string
-    codeSnaps: CodeSnap[]
+    inputItems: InputItem[]
 }
 
-type CodeSnapCategory = {
+type InputItemCategory = {
     label: string
-    groups: CodeSnapGroup[]
+    groups: InputItemGroup[]
     icon: Icon,
     color: string
 }
 
-interface CodeInputAssistantProvider {
-    provideCodeInputAssistant(ctx: {
+interface InputAssistantProvider {
+    provideInputAssistant(ctx: {
         signal: AbortSignal
-    }): Promise<CodeSnapCategory[]>
+    }): Promise<InputItemCategory[]>
 }
 
 export enum AttentionHintLevelEnum {
@@ -218,7 +209,7 @@ export type AttentionHint = {
 
 export interface AttentionHintsProvider {
     provideAttentionHints(
-        addHints: (hints: AttentionHint[])=> void,
+        setHints: (hints: AttentionHint[])=> void,
         ctx: {
             signal: AbortSignal
         }

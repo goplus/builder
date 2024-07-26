@@ -1,4 +1,4 @@
-### HoverProvider
+# HoverProvider
 效果图：
 
 ![HoverProviderAudioPlayer](../assets/HoverProviderAudioPlayer.png)
@@ -20,7 +20,7 @@ interface registerHoverProvider {
     ): Promise<LayerContent>
 }
 ```
-##### 代码示例
+## 代码示例
 ```ts
 // hover some asset to show asset preview code example. this function is about how to show audio player
 function implementHoverProviderAudioPlayer(ui: EditorUI) {

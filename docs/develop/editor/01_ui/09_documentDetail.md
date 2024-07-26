@@ -1,4 +1,4 @@
-### invokeDocumentDetail
+# invokeDocumentDetail
 
 效果图：
 
@@ -25,7 +25,7 @@ type DocPreview = {
 }
 ```
 
-##### 代码示例
+## 代码示例
 ```ts
 // hover unitWord to show doc and ask AI
 function implementHoverProviderDocPreview(ui: EditorUI) {
