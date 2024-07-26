@@ -9,9 +9,9 @@
 该模块为Go+ builder后端服务的一部分。主要用于记录用户使用素材的历史记录，以及用户收藏素材的需求。此外，当用户点击收藏或添加某一AI生成的素材时，可以将该素材添加至公有素材库中。
 
 
-![img](./assets/(null)-20240725144730961.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/(null)-20240725144730961.png)
 
-![img](./assets/(null)-20240725144730919.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/(null)-20240725144730919.png)
 
 ## 模块接口
 

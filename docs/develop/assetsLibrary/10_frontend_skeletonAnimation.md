@@ -16,7 +16,7 @@
 
 通过 WASM 调用 SPX 可以确保骨骼动画的解析的一致性。预先计算帧序列，可以实现帧动画播放的精细控制，并减少和 WASM 的交互次数和数据传输量。使用 Pixi.js 可以在 JS Runtime 直接控制动画的播放状态，包括播放、暂停等，而不需要通过 WASM 多次交互。直接使用 SPX 进行渲染时，需要对 SPX 做较多的改动以支持仅骨骼动画数据的渲染控制。而通过调用 SPX 进行帧序列计算则需要 SPX 提供一个接口，利用现有的逻辑进行计算，改动相对较少。
 
-![image-20240725161053856](./assets/image-20240725161053856.png)
+![image-20240725161053856](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725161053856.png)
 
 #### WASM 接口
 

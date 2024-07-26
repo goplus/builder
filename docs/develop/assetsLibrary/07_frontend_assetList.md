@@ -10,12 +10,12 @@
 
 模块展示从[搜索模块](./08_frontend_search.md)获取的结果列表，对于 AI 生成的素材，展示生成状态及生成预览。使用虚拟列表展示搜索结果，在滚动时动态加载素材。
 
-![img](./assets/image-20240725161126697.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/202407260940696.png)
 
 ## 模块组件
 
 
-![image-20240725160911981](./assets/image-20240725160911981.png)
+![image-20240725160911981](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160911981.png)
 
 ### AssetList
 

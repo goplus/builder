@@ -4,7 +4,7 @@
 
 实现AI生成素材，补充搜索结果的需求，提供高效、符合预期的素材生成服务。包括 AI生成精灵、AI生成背景、AI生成音频等。
 
-![image-20240725160742480](./assets/image-20240725160742480.png)
+![image-20240725160742480](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160742480.png)
 
 ## 模块定位
 
@@ -13,7 +13,7 @@
 - 生成与用户输入一致（keyword、category）的素材。
 - 提供查询生成状态接口，以便前端获取查询状态。
 
-![img](./assets/(null)-20240725144730930.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/(null)-20240725144730930.png)
 
 ## 模块接口
 
@@ -86,7 +86,7 @@ Response
 }
 ```
 
-![img](./assets/(null)-20240725144730917.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/(null)-20240725144730917.png)
 
 ### AI图片生成精灵
 

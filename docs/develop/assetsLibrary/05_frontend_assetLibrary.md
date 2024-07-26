@@ -11,7 +11,7 @@
 
 ## 模块组件
 
-![image-20240725160756590](./assets/image-20240725160756590.png)
+![image-20240725160756590](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160756590.png)
 
 ### AssetLibraryModal `已有设计`
 

@@ -1,6 +1,6 @@
 # 功能模块划分
 
-![image-20240725160522955](./assets/image-20240725160522955.png)
+![](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160659326-20240726092852407.png)
 
 [产品需求文档](https://ncuhomer.feishu.cn/docx/Ghg0dqLmRoPVrlxHmXzcbjgDnEf?from=from_copylink)
 
@@ -31,21 +31,21 @@ AI生成部分的不确定性
 
 # 模块详细设计
 
-![image-20240725160659326](./assets/image-20240725160659326.png)
+![image-20240725160659326](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160659326.png)
 
 # 时序图
 
 ### 搜索、AI素材预生成
 
-![image-20240725161126697](./assets/image-20240725161126697.png)
+![image-20240725161126697](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725161126697.png)
 
 ### 搜索结果、详情页、收藏、添加到项目
 
-![image-20240725161138034](./assets/image-20240725161138034.png)
+![image-20240725161138034](https://raw.githubusercontent.com/abandon888/photoImg/main/test/202407260941487.png)
 
 ### AI生成结果、AI素材生成（背景扣除、骨骼绑定等）
 
-![image-20240725161150019](./assets/image-20240725161150019.png)
+![image-20240725161150019](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725161150019.png)
 
 ## 接口
 

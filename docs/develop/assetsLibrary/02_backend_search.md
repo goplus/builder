@@ -3,7 +3,7 @@
 ## 模块目的
 
 此模块用于实现用户在素材库中精准查询的需求，提供高效、准确的查询服务，以便用户能够快速找到所需的素材。
-![image-20240725160715631](./assets/image-20240725160715631.png)
+![image-20240725160715631](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160715631.png)
 
 ## 模块定位
 
@@ -16,7 +16,7 @@
 - 支持分页显示查询结果。
 - 显示每个素材的详细信息，包括名称、图片等。
 
-![img](./assets/(null)-20240725154054598.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/(null)-20240725154054598.png)
 
 ## 模块接口
 
@@ -56,9 +56,6 @@ category: {
     }   
 }
 此处category结构使用URLencode
-```
-
-```Go
 e.g.
 curl --location --request GET '/asset/list/?data' 
 ```

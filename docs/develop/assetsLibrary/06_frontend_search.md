@@ -14,12 +14,14 @@
 - 支持对搜索结果进行多种排序方式，如按价格、评分、时间等。
 - 在搜索结果少于预期时，请求 AI 生成素材预览。
 
-![img](./assets/image-20240725161126697.png)
+![img](https://raw.githubusercontent.com/abandon888/photoImg/main/test/202407260939399.png)
+
+
 
 ## 模块组件
 
 
-![image-20240725160837920](./assets/image-20240725160837920.png)
+![image-20240725160837920](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160837920.png)
 
 ### SearchContextProvider
 
@@ -60,7 +62,9 @@
 
 ### SearchSuggestions
 
-`P1`
+```
+P1
+```
 
 - 组件：搜索建议
 - 视图模型：

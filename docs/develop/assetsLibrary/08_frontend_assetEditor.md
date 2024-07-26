@@ -12,11 +12,9 @@
 - 对于`背景`素材，提供背景拖拽拉伸功能。
 - 对于`音频`素材，提供音频预览功能。
 
-![image-20240725161150019](./assets/image-20240725161150019.png)
-
 ## 模块组件
 
-![image-20240725160928562](./assets/image-20240725160928562.png)
+![image-20240725160928562](https://raw.githubusercontent.com/abandon888/photoImg/main/test/image-20240725160928562.png)
 
 ### AssetEditor
 
