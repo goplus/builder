@@ -2,7 +2,7 @@
 
 #### AssetList
 
-暴漏给客户端，返回素材列表
+暴露给客户端，返回素材列表
 
 ```Go
 type CategoryCollection map[string]string
@@ -40,10 +40,18 @@ type EmbeddingResult struct{
     // embedding is the vector transformed by the statement
     Embedding []float64 `json:"embedding"`
 }
-func (ctrl *Controller) Embedding(Word string){
+func (ctrl *Controller) Embedding(word string){
+	params = struct{
+		Word string `json:"word"`
+    }{
+        Word : Word
+    }
+	result = struct{
+        Embedding []float64 `json:"embedding"`
+    }
     // call aigc service
-    ctrl.aicgService.Call(ctx, http.MethodPost, "/embedding", &Params, &Result)
-    return Result
+    ctrl.aicgService.Call(ctx, http.MethodPost, "/embedding", &params, &result)
+    return result.Embedding
 }
 ```
 
@@ -75,18 +83,20 @@ type GenSpriteImageParams{
     Keyword string
 }
 type GenSpriteImageResult{
-    ImageJobId string
+    ImageJobId string `json:"ImageJobId"`
 }
-func (ctrl *Controller) GenSpriteImage(ctx context.Context, c *GenSpriteImageParams)(*GenSpriteImageResult , err){
+func (ctrl *Controller) GenSpriteImage(ctx context.Context, params *GenSpriteImageParams)(*GenSpriteImageResult , err){
     // combine the category and keyword in the request into text suitable for input into ai
-    textDesc = paramsToText(category, keyword)
+    textDesc = paramsToText(params)
     // since the ai side currently only supports synchronization 
     // asynchronous is performed here in the backend.
     jobId = model.AddJob(jobType)
     // the coroutine request calls the ai-side service
-    go TextGenImage(jobId, textDesc)
+    go textGenImage(jobId, textDesc)
     // return
-    return GenSpriteImageResult
+    return &GenSpriteImageResult{
+        ImageJobId : jobId
+    }
 }
 ```
 
@@ -105,29 +115,39 @@ type GenBackdropImageResult{
 func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdropImageParams){
     // combine the category, keyword and resolution in the request into 
     // text suitable for input into ai
-    textDesc = paramsToText(params.category, params.keyword)
+    textDesc = paramsToText(params)
     // Since the ai side currently only supports synchronization 
     // asynchronous is performed here in the backend.
     jobId = model.AddJob(jobType)
+    
+	result = GenBackdropImageResult{
+        ImageJobId = jobId
+    }
     // the coroutine request calls the ai-side service
-    go TextGenImage(jobId, textDesc)
+    go textGenImage(jobId, textDesc)
     // return
-    return GenBackdropImageResult
+    return &GenBackdropImageResult{
+        ImageJobId : jobId
+    }
 }
 ```
 
 #### TextGenImage（AI）
 
 ```Go
-type TextGenImageParams struct {
-    // the description of generate
-    TextDesc string `json:"textDesc"`
-}
 type TextGenImageResult struct{
     // the url of generate
     ImageUrl string `json:"imageUrl"`
 }
-func TextGenImage(jobId int, params *TextGenImageParams){
+func textGenImage(jobId int, textDesc string){
+    params = struct{
+        TextDesc string `json:"textDesc"`
+    }{
+        TextDesc = textDesc
+    }
+    result = struct{
+        ImageUrl string `json:"imageUrl"`
+    }
     // calls the ai-side service
     ctrl.aicgService.Call(ctx, http.MethodPost, "/textGenImage", &params, &result)
     // write results back to database
@@ -162,7 +182,6 @@ type ImageGenSpriteParams struct{
     ImageJobId string `json:"imageJobId"`
 }
 type ImageGenSpriteResult struct {
-
     JobId string `json:"jobId"`
 }
 func (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpriteParams){
@@ -171,36 +190,38 @@ func (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpri
     // Since the ai side currently only supports synchronization 
     // asynchronous is performed here in the backend.
     jobId = model.AddJob(jobType)
+	
     // the coroutine request calls the ai-side service
     go genAsset(jobId, imageUrl)
     // return
-    return imageGenSpriteResult
+    return &ImageGenSpriteResult{
+        JobId = jobId
+    }
 }
 ```
 
 #### ImageGenAsset（AI）
 
 ```Go
-type imageGenSpriteParams struct {
-    // Word is the word to be embedded.
-    ImageUrl string `json:"imageUrl"`
-}
-
 type genResult struct{
-    
     Files FileCollection `json:"files"`
 }
 
 type FileCollection map[string]string
 
 func genAsset(jobId int,imageUrl string){
-    result = imageGenSpriteParams {
+    params = struct{
+        ImageUrl string `json:"imageUrl"`
+    }{
         ImageUrl = imageUrl
+    }
+    result = struct{
+        Files FileCollection `json:"files"`
     }
     // calls the ai-side service
     ctrl.aicgService.Call(ctx, http.MethodPost, "/imageGenSprite", &params, &result)
     // write results back to database
-    model.UpdateJob(jobId , result)
+    model.UpdateJob(jobId , result.Files)
 }
 ```
 
@@ -249,8 +270,11 @@ type GenStatusResult struct{
 
 func (ctrl *Controller) GenStatus(ctx context.Context, params *GenStatusParams){
     // query job status
-    genStatusResult = model.getJob(params)
-    return genStatusResult
+    statusResult = model.getJob(params.jobId)
+    return &{
+        Status = statusResult.Status
+        Result = statusResult.Result
+    }
 }
 ```
 
@@ -271,7 +295,9 @@ func (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAsset
     model.addByVec(addAssetParams)
     // write to database
     asset = model.AddAsset(ctx, addAssetParams)
-    return asset.id
+    return &ExportAiAssetResult{
+        AssetId = asset.id
+    }
 }
 ```
 
@@ -281,7 +307,8 @@ func (ctrl *Controller) ExportAiAsset(ctx context.Context, params *ExportAiAsset
 type HistoryParams{
     AssetId string 'json:"assetId"'
 }
-func (ctrl *Controller) AddHistory(){
+func (ctrl *Controller) AddHistory(ctx context.Context, params *HistoryParams){
+    model.AddHistory(ctx, params.AssetId)
 }
 ```
 
@@ -291,6 +318,7 @@ func (ctrl *Controller) AddHistory(){
 type FavoriteParams{
     AssetId string 'json:"assetId"'
 }
-func AddFavorite(){
+func AddFavorite(ctx context.Context, params *FavoriteParams){
+    model.AddFavorite(ctx, params.AssetId)
 }
 ```
