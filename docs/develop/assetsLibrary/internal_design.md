@@ -116,7 +116,7 @@ func (ctrl *Controller) GenBackdropImage(ctx context.Context, params *GenBackdro
 }
 ```
 
-#### TextGenImage（AI侧）
+#### TextGenImage（AI）
 
 ```Go
 type TextGenImageParams struct {
@@ -178,7 +178,7 @@ func (ctrl *Controller) ImageGenSprite(ctx context.Context, params *ImageGenSpri
 }
 ```
 
-#### ImageGenAsset（AI侧）
+#### ImageGenAsset（AI）
 
 ```Go
 type imageGenSpriteParams struct {
