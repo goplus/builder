@@ -9,13 +9,23 @@ Coordinator 负责协调各个模块之间的交互。管理各个模块的交�
 interface Editor {
     jump(position: Position): void
 }
+
+type Position = {
+    line: number,
+    column: number,
+    fileUri: string
+}
 ```
 
 示例代码：
 
 ```ts
 //ui document example
-function documentImplement(ui: EditorUI, doc: DocAbility, compiler: any) {
+import { EditorUI as ui } from "./ui"
+import { DocAbility as doc } from "./doc"
+import { Compiler as compiler } from "./compiler"
+
+function documentImplement() {
     ui.registerHoverProvider({
         async providerHover(model, ctx) {
             const word = model.getValueInRange(ctx.position)
@@ -44,7 +54,12 @@ function documentImplement(ui: EditorUI, doc: DocAbility, compiler: any) {
 }
 
 //syntax error&runtime error example
-function attentionHintImplement(ui: EditorUI, runtime: RuntimeAbility, compiler: any, project: any) {
+import { EditorUI as ui } from "./ui"
+import { RuntimeAbility as runtime } from "./runtime"
+import { Compiler as compiler } from "./compiler"
+import { Project as project } from "./project"
+
+function attentionHintImplement() {
     ui.registerAttentionHintProvider({
         provideAttentionHint(addHints: (hints: AttentionHint[]) => void, ctx: { token: AbortController }) {
             const syntaxErrors = compiler.getSyntaxError();
@@ -76,7 +91,10 @@ function attentionHintImplement(ui: EditorUI, runtime: RuntimeAbility, compiler:
 }
 
 //show ai modal example
-function showAIModal(ui: EditorUI, chatBot: ChatBot) {
+import { EditorUI as ui } from "./ui"
+import { ChatBot as chatbox } from './ai'
+
+function showAIModal() {
     ui.registerSelectionMenuProvider({
         async provideSelectionMenuItems(model: TextModel, ctx: { selection: IRange, selectContent: string }) {
             return [

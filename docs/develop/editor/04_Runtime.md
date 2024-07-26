@@ -7,31 +7,29 @@ Runtime模块在debug模式下负责捕获运行时错误并提供内容让UI组
 提供一个获取捕获到的运行时输出的函数用于让UI部分获取具体内容，并且这个函数内提供的是解析完的参数。也提供回调让出现新的console行时就触发。
 
 ```typescript
+interface Runtime {
+    onRuntimeErrors(cb: (errors: RuntimeErrors) => void): Dispose;
+}
+
+// 停止捕获 并关闭监听
+type Dispose = () => void;
+
+type RuntimeErrors = {
+    errors: RuntimeError[];
+    fileHash: string;
+}
+
+type RuntimeError = {
+    message: string;
+    position: Position;
+}
+
 type Position = {
     line: number;
     column: number;
     fileUri: string;
 }
 
-type RuntimeError = {
-    Message: string;
-    Position: Position;
-}
-
-type RuntimeErrorList = RuntimeError[];
-
-type RuntimeErrors = {
-    errors: RuntimeErrorList;
-    fileHash: string;
-}
-
-type Dispose = () => void;
-
-type Log = string;
-
-class Runtime {
-    OnRuntimeErrors(cb: (errors: CurrentRuntimeError) => void): Dispose;
-}
 ```
 
 ## 详细设计

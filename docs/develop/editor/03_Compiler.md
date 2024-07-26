@@ -46,21 +46,22 @@
 
 ```ts
 interface Compiler {
-    getInlayHints(fileUri: URI): InlayHint[]
-    getDiagnostics(fileUri: URI): AttentionHint[]
-    getCompletionItems(fileUri: URI, position: Position): CompletionItem[]
+    // inside editor
+    getInlayHints(codes: Code[]): Hint[]
+    getDiagnostics(codes: Code[]): AttentionHint[]
+    // completion
+    getCompletionItems(codes: Code[], position: Position): CompletionItem[]
     // hover
-    getDefinition(fileUri: URI, position: Position): Token | null
+    getDefinition(codes: Code[], position: Position): Token | null
 }
 ```
 
 - 具体接口内容
 
 ```ts
-type InlayHint = {
-    content: string | Icon,
-    style: InlayHintStyle, 
-    behavior: InlayHintBehavior,
+type Hint = {
+    type: enum,
+    content: string,
     position: Position
 }
 type AttentionHint = {
@@ -70,26 +71,21 @@ type AttentionHint = {
     hoverContent: LayerContent
 }
 type CompletionItem = {
-    icon: Icon,
+    type: enum,
     label: string,
-    desc: string,
     insertText: string,
-    preview: LayerContent
 }
 type Token = {
-    target: TokenContext,
     module: string, // "github.com/goplus/spx"
     name: string,   // "Sprite.touching"
-    keyword: string,
-    desc: string,
-    // 
+    type: enum,
     usages: TokenUsage[]
 }
 ```
 
 ## WASM 方案
 
-设置GO项目环境`GOOS=js;GOARCH=wasm`
+需要对应的GO项目环境`GOOS=js;GOARCH=wasm`
 
 - 对于GO环境
 
@@ -120,7 +116,7 @@ type Position struct {
 
 ## 错误类型
 
-针对可能出现的一些错误定义的类型， 分别有
+针对可能出现的一些错误定义的类型，分别有
 
 1. 语法错误
 2. 类型错误

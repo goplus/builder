@@ -1,5 +1,9 @@
 # Editor
 
+针对一整个编辑器中不好用的地方进行重新架构设计，并增添了一些新的功能。
+
+![editor-architecture](./assets/editor-architecture.png)
+
 ## EditorUI
 
 EditorUI 是一个前端中编辑器的模块。负责提供编辑器UI和多种辅助编辑和理解的功能集合，包括编辑器内部提示、悬浮框、代码完成菜单、文档等。
@@ -13,11 +17,15 @@ Coordinator 负责协调各个模块之间的交互。管理各个模块的交�
 - 例子
 
 ```ts
-function documentImplement(ui: EditorUI, doc: DocAbility, compiler: any) {
+import { EditorUI as ui } from 'ui'
+import { DocAbility as doc } from 'ui'
+import { Compiler as compiler } from 'ui'
+
+function documentImplement() {
     ui.registerHoverProvider({
         async providerHover(model, ctx) {
             const word = model.getValueInRange(ctx.position)
-            const id = compiler.getID()
+            const id = compiler.getDefinition()
             const content = await doc.getNormalDoc(id)
             const moreActions: Action[] = []
             const detailContent = await doc.getDetailDoc(id)
@@ -58,11 +66,11 @@ Compiler模块具体利用编译器能力、代码检查等能力负责对代码
 ```ts
 interface Compiler {
     // List
-    getInlayHints(fileUri: URI): InlayHint[]
-    getDiagnostics(fileUri: URI): Diagnostic[]
-    getCompletionItems(fileUri: URI, position: Position): CompletionItem[]
+    getInlayHints(codes: Code[]): InlayHint[]
+    getDiagnostics(codes: Code[]): Diagnostic[]
+    getCompletionItems(codes: Code[], position: Position): CompletionItem[]
     // Single identifier
-    getDefinition(fileUri: URI, position: Position): Identifier | null
+    getDefinition(codes: Code[], position: Position): Identifier | null
 }
 ```
 
@@ -74,7 +82,7 @@ Runtime模块负责在debug模式下负责捕获运行时错误并提供内容�
 
 ```ts
 interface Runtime {
-    OnRuntimeErrors(cb: (errors: CurrentRuntimeError) => void): Dispose;
+    OnRuntimeErrors(cb: (errors: RuntimeError) => void): Dispose;
 }
 ```
 
@@ -95,15 +103,34 @@ interface DocAbility{
 
 用到所有Project的地方都可以由项目中原有的Project类实现。因此目前只需要复用即可。
 
+- 对外接口(已有)
+
+```ts
+interface Project {
+    // 获取项目中的精灵代码、背景代码
+    getProjectCode(): Code[] //现有：exportGameFiles
+
+    // project file hash
+    getFileHash(): string // 现有 filesHash
+
+    // project context 
+    getContext(): ProjectContext // 现有 Project.name,  Sprite.name[]
+
+    // rename
+    Sprite.setName(name: string): void
+    ...setName()
+}
+```
+
 ## Chatbot
 
 用于负责与AI交流的部分，提供开启一个会话与继续发送消息的能力。提供了 解释、添加注释、修复代码 这三个对话功能。
 
 ```ts
 export interface ChatBot {
-    startExplainChat(input: ExplainChatInput): Chat
-    startCommentChat(input: CommentChatInput): Chat
-    startFixCodeChat(input: FixCodeChatInput): Chat
+    startExplainChat(input: Input): Chat
+    startCommentChat(input: Input): Chat
+    startFixCodeChat(input: Input): Chat
 }
 ```
 
@@ -113,6 +140,6 @@ export interface ChatBot {
 
 ```ts
 export interface Suggest {
-    startSuggestTask(input: CodeInput): SuggestItem[]
+    startSuggestTask(input: Input): SuggestItem[]
 }
 ```
