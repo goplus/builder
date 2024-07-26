@@ -1,7 +1,7 @@
 <!-- icon at the top-right corner of item -->
 
 <template>
-  <div class="ui-corner-icon" :style="cssVars">
+  <div class="ui-corner-icon" :style="cssVars" @click.stop="emit('click', $event)">
     <UIIcon class="icon" :type="type" />
   </div>
 </template>
@@ -22,6 +22,10 @@ const props = withDefaults(
     color: 'primary'
   }
 )
+
+const emit = defineEmits<{
+  click: [MouseEvent]
+}>()
 
 const uiVariables = useUIVariables()
 const cssVars = computed(() =>
