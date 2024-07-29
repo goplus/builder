@@ -19,7 +19,7 @@
     <section class="body">
       <div class="sider">
         <UITag
-          :type="category.value === categoryPersonal.value ? 'primary' : 'boring'"
+          :type="searchCtx.category.value === categoryPersonal.value ? 'primary' : 'boring'"
           @click="handleSelectCategory(categoryPersonal)"
         >
           {{ $t(categoryPersonal.message) }}
@@ -28,41 +28,41 @@
         <UITag
           v-for="c in categories"
           :key="c.value"
-          :type="c.value === category.value ? 'primary' : 'boring'"
+          :type="c.value === searchCtx.category.value ? 'primary' : 'boring'"
           @click="handleSelectCategory(c)"
         >
           {{ $t(c.message) }}
         </UITag>
       </div>
       <main class="main">
-        <h3 class="title">{{ $t(category.message) }}</h3>
+        <h3 class="title">{{ $t(searchCtx.category.message) }}</h3>
         <div class="content">
-          <UILoading v-if="isLoading" />
-          <UIError v-else-if="error != null" :retry="refetch">
-            {{ $t(error.userMessage) }}
+          <UILoading v-if="searchResultCtx.isLoading" />
+          <UIError v-else-if="searchResultCtx.error != null" :retry="searchResultCtx.refetch">
+            {{ $t(searchResultCtx.error.userMessage) }}
           </UIError>
-          <UIEmpty v-else-if="assets?.data.length === 0" size="large" />
-          <ul v-else-if="assets != null && type === AssetType.Sound" class="asset-list">
+          <UIEmpty v-else-if="searchResultCtx.assets?.data.length === 0" size="large" />
+          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Sound" class="asset-list">
             <SoundItem
-              v-for="asset in assets!.data"
+              v-for="asset in searchResultCtx.assets!.data"
               :key="asset.id"
               :asset="asset"
               :selected="isSelected(asset)"
               @click="handleAssetClick(asset)"
             />
           </ul>
-          <ul v-else-if="assets != null && type === AssetType.Sprite" class="asset-list">
+          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Sprite" class="asset-list">
             <SpriteItem
-              v-for="asset in assets!.data"
+              v-for="asset in searchResultCtx.assets!.data"
               :key="asset.id"
               :asset="asset"
               :selected="isSelected(asset)"
               @click="handleAssetClick(asset)"
             />
           </ul>
-          <ul v-else-if="assets != null && type === AssetType.Backdrop" class="asset-list">
+          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Backdrop" class="asset-list">
             <BackdropItem
-              v-for="asset in assets!.data"
+              v-for="asset in searchResultCtx.assets!.data"
               :key="asset.id"
               :asset="asset"
               :selected="isSelected(asset)"
@@ -105,15 +105,17 @@ import {
   UIModalClose,
   UIDivider
 } from '@/components/ui'
-import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
+import { AssetType, type AssetData } from '@/apis/asset'
 import { debounce } from '@/utils/utils'
-import { useMessageHandle, useQuery } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
+
 const props = defineProps<{
   visible?: boolean
   type: AssetType
@@ -145,13 +147,14 @@ const entityMessages = {
 const entityMessage = computed(() => entityMessages[props.type])
 
 const searchInput = ref('')
-const keyword = ref('')
+const searchCtx = useSearchCtx()
+const searchResultCtx = useSearchResultCtx()
 
 // do search (with a delay) when search-input changed
 watch(
   searchInput,
   debounce(() => {
-    keyword.value = searchInput.value
+    searchCtx.keyword = searchInput.value
   }, 500)
 )
 
@@ -160,39 +163,13 @@ const categoryPersonal = computed<Category>(() => ({
   value: 'personal',
   message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
 }))
-const category = ref(categoryAll)
-
-const {
-  isLoading,
-  data: assets,
-  error,
-  refetch
-} = useQuery(
-  () => {
-    const c = category.value.value
-    const cPersonal = categoryPersonal.value.value
-    return listAsset({
-      pageSize: 500, // try to get all
-      pageIndex: 1,
-      assetType: props.type,
-      keyword: keyword.value,
-      category: c === categoryAll.value || c === cPersonal ? undefined : c,
-      owner: c === cPersonal ? undefined : '*',
-      isPublic: c === cPersonal ? undefined : IsPublic.public
-    })
-  },
-  {
-    en: 'Failed to list',
-    zh: '获取列表失败'
-  }
-)
 
 function handleSearch() {
-  keyword.value = searchInput.value
+  searchCtx.keyword = searchInput.value
 }
 
 function handleSelectCategory(c: Category) {
-  category.value = c
+  searchCtx.category = c
 }
 
 const selected = shallowReactive<AssetData[]>([])
