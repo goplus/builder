@@ -8,39 +8,63 @@ type RuntimeError = {
   filesHash: string
 }
 
-type RuntimeErrors = RuntimeError[]
-
 type Log = { type: 'log' | 'warn'; args: any[] }
 
 export class Runtime extends Disposable {
-  runtimeErrors: RuntimeErrors | undefined
+  runtimeErrors: RuntimeError[] = []
 
-  handleFilesHash(filesHash: string) {
-    //TODO
-  }
-
-  handleRuntimeLog(log: Log) {
-    //TODO
+  addRuntimeLog(log: Log, filesHash: string) {
+    if (
+      this.runtimeErrors.length > 0 &&
+      filesHash !== this.runtimeErrors[this.runtimeErrors.length - 1].filesHash
+    ) {
+      this.clearRuntimeErrors()
+    }
+    let runtimeError = this.parseRuntimeLog(log)
+    runtimeError!.filesHash = filesHash
+    this.runtimeErrors.push(runtimeError!)
+    this.notifyErrors()
   }
 
   private clearRuntimeErrors() {
-    //TODO
     this.runtimeErrors = []
   }
 
-  private parseRuntimeLog(logList: Log) {
-    //TODO
+  private parseRuntimeLog(log: Log): RuntimeError | null {
+    switch (log.args.length) {
+      case 1:
+        const logRegex = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2} .*?: (.*?):(\d+):(\d+): (.*)$/
+        const match = log.args[0].match(logRegex)
+
+        if (!match) {
+          return null
+        }
+
+        const [_, fileName, lineNumber, columnNumber, message] = match
+
+        const [fileUri] = fileName.split('.')
+
+        const position: Position = {
+          line: parseInt(lineNumber),
+          column: parseInt(columnNumber),
+          fileUri: fileUri
+        }
+
+        //TODO: make message easier to understand
+
+        return { position, message, filesHash: '' }
+      default:
+        return null
+    }
   }
 
-  private errorCallbacks: ((errors: RuntimeErrors) => void)[] = []
+  private errorCallbacks: ((errors: RuntimeError[]) => void)[] = []
 
-  private nitifyErrors() {
-    //TODO
-    this.errorCallbacks.forEach((cb) => cb(this.runtimeErrors!))
+  private notifyErrors() {
+    this.errorCallbacks.forEach((cb) => cb(this.runtimeErrors))
   }
 
-  onRuntimeErrors(cb: (errors: RuntimeErrors) => void): Disposer {
-    //TODO...
+  onRuntimeErrors(cb: (errors: RuntimeError[]) => void): Disposer {
     this.errorCallbacks.push(cb)
     const disposer: Disposer = () => {
       this.errorCallbacks = this.errorCallbacks.filter((callback) => callback !== cb)
