@@ -5,25 +5,27 @@
 <script setup lang="ts">
 import { useMessage,NMenu } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
+import { useI18n } from '@/utils/i18n'
 
-const message = useMessage()
+const { t } = useI18n()
 
-function handleUpdateValue(key: string, item: MenuOption) {
-        message.info(`[onUpdate:value]: ${JSON.stringify(key)}`)
-        message.info(`[onUpdate:value]: ${JSON.stringify(item)}`)
+const emit = defineEmits(['update:value'])
+
+function handleUpdateValue(key: string) {
+      emit('update:value', key)
 }
 
 const menuOptions: MenuOption[] = [
   {
-    label: '我的收藏',
+    label: t({ en: 'My Favorites', zh: '我的收藏' }),
     key: 'my-favorites',
   },
   {
-    label: '历史素材',
+    label: t({ en: 'History', zh: '历史记录' }),
     key: 'history',
   },
   {
-   label: '已导入素材',
+   label: t({ en: 'Imported', zh: '已导入素材' }),
     key: 'imported',
   },
 ]

@@ -24,6 +24,7 @@
         >
           {{ $t(categoryPersonal.message) }}
         </UITag>
+        <LibraryMenu @update:value="handleSelectCategory"/>
         <UIDivider />
         <UITag
           v-for="c in categories"
@@ -117,6 +118,7 @@ import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import LibraryTransfer from './LibraryTree.vue'
+import LibraryMenu from './LibraryMenu.vue'
 
 const categories = [categoryAll, ...categoriesWithoutAll]
 
