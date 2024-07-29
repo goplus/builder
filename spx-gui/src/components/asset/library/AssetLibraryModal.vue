@@ -33,6 +33,7 @@
         >
           {{ $t(c.message) }}
         </UITag>
+        <LibraryTransfer />
       </div>
       <main class="main">
         <h3 class="title">{{ $t(category.message) }}</h3>
@@ -115,6 +116,7 @@ import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/mo
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
+import LibraryTransfer from './LibraryTransfer.vue'
 
 const categories = [categoryAll, ...categoriesWithoutAll]
 
