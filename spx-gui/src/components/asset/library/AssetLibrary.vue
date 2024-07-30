@@ -18,23 +18,9 @@
     <UIDivider />
     <section class="body">
       <div class="sider">
-        <UITag
-          :type="searchCtx.category.value === categoryPersonal.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(categoryPersonal)"
-        >
-          {{ $t(categoryPersonal.message) }}
-        </UITag>
-        <LibraryMenu />
+        <LibraryMenu @update:value="handleSelectCategory"/>
         <UIDivider />
-        <LibraryTree />
-        <UITag
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === searchCtx.category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UITag>
+        <LibraryTree @update="handleSelectCategory"/>
       </div>
       <main class="main">
         <h3 class="title">{{ $t(searchCtx.category.message) }}</h3>
@@ -140,8 +126,6 @@ const handleCloseButton = () => {
   handleUpdateShow(false)
 }
 
-const categories = [categoryAll, ...categoriesWithoutAll]
-
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
   [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
@@ -162,17 +146,12 @@ watch(
   }, 500)
 )
 
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
-}))
 
 function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: Category) {
+function handleSelectCategory(c: string|string[]) {
   searchCtx.category = c
 }
 

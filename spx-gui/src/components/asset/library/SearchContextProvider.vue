@@ -10,7 +10,7 @@ import type { ByPage } from '@/apis/common'
 
 export type SearchCtx = {
   keyword: string
-  category: Category
+  category: string|string[]
   page: number
 }
 
@@ -47,7 +47,7 @@ const props = defineProps<{
 
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
-  category: categoryAll,
+  category: '*',
   page: 0,
 })
 
@@ -74,14 +74,14 @@ const {
   refetch
 } = useQuery(
   () => {
-    const c = searchCtx.category.value
+    const c = searchCtx.category
     const cPersonal = categoryPersonal.value.value
     return listAsset({
       pageSize: 500, // try to get all
       pageIndex: 1,
       assetType: props.type,
       keyword: searchCtx.keyword,
-      category: c === categoryAll.value || c === cPersonal ? undefined : c,
+      category: c,
       owner: c === cPersonal ? undefined : '*',
       isPublic: c === cPersonal ? undefined : IsPublic.public
     })
