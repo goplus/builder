@@ -24,7 +24,9 @@
         >
           {{ $t(categoryPersonal.message) }}
         </UITag>
+        <LibraryMenu />
         <UIDivider />
+        <LibraryTree />
         <UITag
           v-for="c in categories"
           :key="c.value"
@@ -115,6 +117,8 @@ import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
+import LibraryMenu from './LibraryMenu.vue'
+import LibraryTree from './LibraryTree.vue'
 
 const props = defineProps<{
   visible?: boolean
