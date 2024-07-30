@@ -1,21 +1,35 @@
 <template>
-  <div ref="editorElement" class="code-text-editor"></div>
+  <div class="code-text-editor-container">
+    <div ref="editorElement" class="code-text-editor"></div>
+    <completion-menu
+      v-show="completionMenuState.visible"
+      ref="completionMenuRef"
+      :suggestions="completionMenuState.suggestions"
+      :active-idx="completionMenuState.activeIdx"
+      :style="{
+        top: completionMenuState.position.top + 'px',
+        left: completionMenuState.position.left + 'px'
+      }"
+      @select="(_, idx) => fnSelectMonacoCompletionMenu?.(idx)"
+    ></completion-menu>
+  </div>
 </template>
 <script lang="ts">
 let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
-import { ref, shallowRef, watch, watchEffect } from 'vue'
+import { reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
-import { initMonaco, defaultThemeName } from './monaco'
+import { initMonaco, defaultThemeName, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
-
+import CompletionMenu from '@/components/editor/code-editor/code-text-editor/CompletionMenu.vue'
+import { type CompletionMenuState, upgradeCompletionMenu } from './monaco-beta'
 const props = defineProps<{
   value: string
 }>()
@@ -26,7 +40,19 @@ const emit = defineEmits<{
 const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
-
+const fnSelectMonacoCompletionMenu = shallowRef<(idx: number) => void>()
+const completionMenuRef = ref<{
+  $container: HTMLElement
+}>()
+const completionMenuState = reactive<CompletionMenuState>({
+  visible: false,
+  suggestions: [],
+  activeIdx: 0,
+  position: {
+    top: 0,
+    left: 0
+  }
+})
 const uiVariables = useUIVariables()
 const i18n = useI18n()
 editorCtx = useEditorCtx()
@@ -57,7 +83,7 @@ const getMonaco = async () => {
 const initialFontSize = 14
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
-watchEffect(async (onClenaup) => {
+watchEffect(async (onCleanup) => {
   const monaco = await getMonaco()
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
@@ -92,6 +118,39 @@ watchEffect(async (onClenaup) => {
     }
   })
 
+  function updateCompletionMenuPosition() {
+    const position = editor.getPosition()
+    if (!position) return
+    if (!completionMenuRef.value) return
+    const $completionMenu = completionMenuRef.value.$container
+    if (!$completionMenu) return
+    const pixelPosition = editor.getScrolledVisiblePosition(position)
+
+    if (!pixelPosition) return
+    const cursorY = pixelPosition.top
+    const windowHeight = window.innerHeight
+    const completionMenuHeight = $completionMenu.offsetHeight
+    completionMenuState.position.left = pixelPosition.left
+
+    // todo: may need monitor window resize for better user view
+    if (windowHeight - cursorY > completionMenuHeight) {
+      completionMenuState.position.top = cursorY + pixelPosition.height
+    } else {
+      completionMenuState.position.top = cursorY - completionMenuHeight
+    }
+  }
+
+  const { dispose: disposeCompletionMenu, select } = upgradeCompletionMenu(
+    editor,
+    completionMenuState,
+    {
+      onFocus() {
+        updateCompletionMenuPosition()
+      }
+    }
+  )
+  fnSelectMonacoCompletionMenu.value = select
+
   editor.addAction({
     id: 'format',
     label: i18n.t({ zh: '格式化', en: 'Format Code' }),
@@ -119,8 +178,9 @@ watchEffect(async (onClenaup) => {
   })
 
   monacoEditor.value = editor
-
-  onClenaup(() => {
+  onCleanup(() => {
+    disposeCompletionMenu()
+    disposeMonacoProviders()
     editor.dispose()
   })
 })
@@ -197,7 +257,9 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.code-text-editor {
+.code-text-editor,
+.code-text-editor-container {
+  position: relative;
   width: 100%;
   height: 100%;
 }
