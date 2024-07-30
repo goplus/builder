@@ -23,7 +23,6 @@
         <LibraryTree @update="handleSelectCategory"/>
       </div>
       <main class="main">
-        <h3 class="title">{{ $t(searchCtx.category.message) }}</h3>
         <div class="content">
           <UILoading v-if="searchResultCtx.isLoading" />
           <UIError v-else-if="searchResultCtx.error != null" :retry="searchResultCtx.refetch">
