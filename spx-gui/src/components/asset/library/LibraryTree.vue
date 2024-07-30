@@ -2,7 +2,6 @@
   <n-tree
     block-line
     :data="data"
-    :default-expanded-keys="defaultExpandedKeys"
     expand-on-click
     checkable
     @update:checked-keys="handleUpdateCheckedKeys"
@@ -15,9 +14,13 @@ import type { TreeOption } from 'naive-ui'
 import { categories, type Category } from './category'
 import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { NTree } from 'naive-ui'
+import { AssetType } from '@/apis/asset'
 
 const emit = defineEmits<{
   update: [string[]]
+}>()
+const props = defineProps<{
+  type: AssetType
 }>()
 function createData(categories: Category[], t: (key: LocaleMessage) => string): TreeOption[] {
   return categories.map(category => ({
@@ -32,6 +35,5 @@ function handleUpdateCheckedKeys(checkedKeys: string[]) {
 }
 
 const { t } = useI18n()
-const data = ref<TreeOption[]>(createData(categories, t))
-const defaultExpandedKeys = ref<string[]>(['roles', 'backgrounds', 'audio'])
+const data = ref<TreeOption[]>(createData(categories.find(category => category.value === AssetType[props.type].toLowerCase())?.children!, t))
 </script>

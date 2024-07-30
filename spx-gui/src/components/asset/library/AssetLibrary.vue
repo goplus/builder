@@ -20,7 +20,7 @@
       <div class="sider">
         <LibraryMenu @update:value="handleSelectCategory"/>
         <UIDivider />
-        <LibraryTree @update="handleSelectCategory"/>
+        <LibraryTree :type="type" @update="handleSelectCategory"/>
       </div>
       <main class="main">
         <div class="content">
@@ -95,7 +95,6 @@ import {
 import { AssetType, type AssetData } from '@/apis/asset'
 import { debounce } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import SoundItem from './SoundItem.vue'

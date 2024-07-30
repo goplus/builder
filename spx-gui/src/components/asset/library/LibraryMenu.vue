@@ -17,7 +17,7 @@ const selectedValue = ref<string | null>(null)
 function handleUpdateValue(key: string) {
   if (selectedValue.value === key) {
     selectedValue.value = null
-    emit('update:value', '*')
+    emit('update:value', '')
   } else {
     selectedValue.value = key
     emit('update:value', selectedValue.value)

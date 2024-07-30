@@ -8,8 +8,8 @@ export type Category = {
 
 export const categories: Category[] = [
   {
-    value: 'roles',
-    message: { en: 'Roles', zh: '角色' },
+    value: 'sprite',
+    message: { en: 'Sprite', zh: '精灵' },
     children: [
       {
         value: 'cartoon_characters',
@@ -58,8 +58,8 @@ export const categories: Category[] = [
     ]
   },
   {
-    value: 'backgrounds',
-    message: { en: 'Backgrounds', zh: '背景' },
+    value: 'backdrop',
+    message: { en: 'Backdrop', zh: '背景' },
     children: [
       {
         value: 'natural_scenery',
@@ -108,8 +108,8 @@ export const categories: Category[] = [
     ]
   },
   {
-    value: 'audio',
-    message: { en: 'Audio', zh: '音频' },
+    value: 'sound',
+    message: { en: 'Sound', zh: '音频' },
     children: [
       {
         value: 'music',

@@ -81,7 +81,7 @@ const {
       pageIndex: 1,
       assetType: props.type,
       keyword: searchCtx.keyword,
-      category: c,
+      category: c,// send like 'cartoon_characters,realistic_characters'
       owner: c === cPersonal ? undefined : '*',
       isPublic: c === cPersonal ? undefined : IsPublic.public
     })
