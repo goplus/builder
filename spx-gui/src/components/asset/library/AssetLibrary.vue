@@ -3,8 +3,8 @@
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
-        {{ type }}
       </h4>
+      <LibraryTab @update:value="handleChangeType" />
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
@@ -104,6 +104,7 @@ import BackdropItem from './BackdropItem.vue'
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
+import LibraryTab from './LibraryTab.vue'
 
 const props = defineProps<{
   visible?: boolean
@@ -134,7 +135,7 @@ const searchInput = ref('')
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 const entityMessage = computed(() => entityMessages[searchCtx.type])
-const type = ref(searchCtx.type)
+const type = ref(searchCtx.type)//just for display
 
 // do search (with a delay) when search-input changed
 watch(
@@ -151,6 +152,10 @@ function handleSearch() {
 
 function handleSelectCategory(c: string|string[]) {
   searchCtx.category = c
+}
+
+function handleChangeType(t: AssetType) {
+  searchCtx.type = t
 }
 
 const selected = shallowReactive<AssetData[]>([])
