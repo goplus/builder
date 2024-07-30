@@ -12,6 +12,7 @@ export type SearchCtx = {
   keyword: string
   category: string|string[]
   page: number
+  pageSize: number
   type: AssetType
 }
 
@@ -50,7 +51,8 @@ const searchCtx = reactive<SearchCtx>({
   keyword: '',
   category: '*',
   type: props.type,
-  page: 0,
+  page: 1,
+  pageSize: 12
 })
 
 provide(searchCtxKey, searchCtx)
@@ -79,8 +81,8 @@ const {
     const c = searchCtx.category
     const cPersonal = categoryPersonal.value.value
     return listAsset({
-      pageSize: 500, // try to get all
-      pageIndex: 1,
+      pageSize: searchCtx.pageSize,
+      pageIndex: searchCtx.page,
       assetType: props.type,
       keyword: searchCtx.keyword,
       category: c,// send like 'cartoon_characters,realistic_characters'
