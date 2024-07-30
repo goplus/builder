@@ -12,6 +12,7 @@ export type SearchCtx = {
   keyword: string
   category: string|string[]
   page: number
+  type: AssetType
 }
 
 export type SearchResultCtx = {
@@ -48,6 +49,7 @@ const props = defineProps<{
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
   category: '*',
+  type: props.type,
   page: 0,
 })
 

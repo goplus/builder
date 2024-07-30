@@ -2,7 +2,8 @@
   <div class="container">
     <div class="header">
       <h4 class="title">
-        {{ $t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` }) }}
+        {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
+        {{ type }}
       </h4>
       <UITextInput
         v-model:value="searchInput"
@@ -106,7 +107,6 @@ import LibraryTree from './LibraryTree.vue'
 
 const props = defineProps<{
   visible?: boolean
-  type: AssetType
   project: Project
 }>()
 
@@ -130,11 +130,11 @@ const entityMessages = {
   [AssetType.Sound]: { en: 'sound', zh: '声音' }
 }
 
-const entityMessage = computed(() => entityMessages[props.type])
-
 const searchInput = ref('')
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
+const entityMessage = computed(() => entityMessages[searchCtx.type])
+const type = ref(searchCtx.type)
 
 // do search (with a delay) when search-input changed
 watch(
