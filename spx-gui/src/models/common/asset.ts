@@ -5,7 +5,7 @@ import { Sprite } from '../sprite'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 
-export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files' | 'filesHash'>
+export type PartialAssetData<T extends AssetType = AssetType> = Pick<AssetData<T>, 'displayName' | 'assetType' | 'files' | 'filesHash'>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
