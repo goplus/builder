@@ -1,5 +1,5 @@
 <template>
-  <n-tabs animated :value="value" @update:value="handleUpdateValue">
+  <n-tabs animated @update:value="handleUpdateValue">
       <n-tab-pane name="0" :tab="text[0]">
       </n-tab-pane>
       <n-tab-pane name="1" :tab="text[1]">
@@ -19,7 +19,6 @@ import { AssetType } from '@/apis/asset'
 const { t } = useI18n()
 const searchCtx = useSearchCtx()
 const type = ref<AssetType>(searchCtx.type)
-const value = ref<string>(AssetType[type.value])
 const text = {
   0: t({ en: 'Sprite', zh: `精灵` }),
   1: t({ en: 'Backdrop', zh: `背景` }),
@@ -28,7 +27,6 @@ const text = {
 
 const handleUpdateValue = (value: string) => {
   searchCtx.type = Number(value) as AssetType
-  type.value = searchCtx.type
   console.log(searchCtx.type)
   //todo: 
 }
