@@ -4,7 +4,7 @@
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
       </h4>
-      <LibraryTab @update:value="handleChangeType" />
+      <LibraryTab @update:value="handleChangeType" class="tab"/>
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
@@ -18,11 +18,6 @@
     </div>
     <UIDivider />
     <section class="body">
-      <div class="sider">
-        <LibraryMenu @update:value="handleSelectCategory"/>
-        <UIDivider />
-        <LibraryTree :type="type" @update="handleSelectCategory"/>
-      </div>
       <main class="main">
         <div class="content">
           <UILoading v-if="searchResultCtx.isLoading" />
@@ -77,6 +72,11 @@
           </UIButton>
         </footer>
       </main>
+      <div class="sider">
+        <LibraryMenu @update:value="handleSelectCategory"/>
+        <UIDivider />
+        <LibraryTree :type="type" @update="handleSelectCategory"/>
+      </div>
     </section>
   </div>
 </template>
@@ -227,6 +227,9 @@ async function handleAssetClick(asset: AssetData) {
     display: flex;
     color: var(--ui-color-title);
   }
+  .tab{
+    flex: 1;
+  }
 
   .close {
     margin-left: 8px;
@@ -249,12 +252,11 @@ async function handleAssetClick(asset: AssetData) {
   }
 
   .sider {
-    flex: 0 0 148px;
+    flex: 0 0 196px;
     display: flex;
     flex-direction: column;
     padding: var(--ui-gap-middle);
-    gap: 12px;
-
+    gap: 16px;
     background: var(--ui-color-grey-200);
   }
   .main {
@@ -268,7 +270,7 @@ async function handleAssetClick(asset: AssetData) {
     color: var(--ui-color-grey-900);
   }
   .content {
-    height: 513px;
+    height: 70vh;
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;
@@ -279,7 +281,10 @@ async function handleAssetClick(asset: AssetData) {
     flex-wrap: wrap;
   }
   .footer {
+    bottom: 56px;
+    right: 196px;
     padding: 20px 24px;
+    position: fixed;
     display: flex;
     justify-content: flex-end;
     align-items: center;
