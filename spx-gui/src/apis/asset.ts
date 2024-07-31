@@ -27,7 +27,7 @@ export type AssetData = {
   /** Preview URL for the asset, e.g., a gif for a sprite */
   preview: string
   /** Click count of the asset */
-  clickCount: number
+  clickCount: number 
   /** Public status */
   isPublic: IsPublic
 }

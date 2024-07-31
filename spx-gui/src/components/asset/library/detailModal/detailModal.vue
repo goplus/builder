@@ -3,29 +3,26 @@
     来吧
   </n-button>
   <n-modal v-model:show="showModal">
-    <n-card
-      style="width: 600px"
-      title="模态框"
-      :bordered="false"
-      size="huge"
-      role="dialog"
-      aria-modal="true"
-    >
-      <template #header-extra>
-        噢！
-      </template>
-      内容
-      <template #footer>
-        尾部
-      </template>
-    </n-card>
+    <header>
+      <UIModalClose class="close" @click="handleCloseButton" />
+    </header>
+    <main>
+      <div class="content">
+        <div class="display"></div>
+        <div class="detail"></div>
+      </div>
+      <div class="sider"></div>
+    </main>
   </n-modal>
 </template>
 
 <script setup lang="ts">
 import { defineComponent, ref } from 'vue'
-import { NButton, NModal, NCard } from 'naive-ui'
+import { NButton, NModal } from 'naive-ui'
+import { UIModalClose } from '@/components/ui'
 
 const showModal=ref(false)
-
+const handleCloseButton=()=>{
+  showModal.value=false
+}
 </script>
