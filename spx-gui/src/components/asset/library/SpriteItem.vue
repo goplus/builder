@@ -10,15 +10,15 @@
 <script setup lang="ts">
 import { UISpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
-import type { AssetData } from '@/apis/asset'
-import { asset2Sprite } from '@/models/common/asset'
+import { cachedConvertAssetData } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
+import type { AssetData, AssetType } from '@/apis/asset'
 
 const props = defineProps<{
-  asset: AssetData
+  asset: AssetData<AssetType.Sprite>
   selected: boolean
 }>()
 
-const sprite = useAsyncComputed(() => asset2Sprite(props.asset))
+const sprite = useAsyncComputed(() => cachedConvertAssetData(props.asset))
 const [imgSrc, imgLoading] = useFileUrl(() => sprite.value?.defaultCostume?.img)
 </script>

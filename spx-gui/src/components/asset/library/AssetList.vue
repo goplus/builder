@@ -22,19 +22,19 @@
         <template v-for="asset in item.assets" :key="asset.id">
           <SoundItem
             v-if="asset.assetType === AssetType.Sound"
-            :asset="asset"
+            :asset="(asset as AssetData<AssetType.Sound>)"
             :selected="isSelected(asset)"
             @click="handleAssetClick(asset)"
           />
           <SpriteItem
             v-else-if="asset.assetType === AssetType.Sprite"
-            :asset="asset"
+            :asset="(asset as AssetData<AssetType.Sprite>)"
             :selected="isSelected(asset)"
             @click="handleAssetClick(asset)"
           />
           <BackdropItem
             v-else-if="asset.assetType === AssetType.Backdrop"
-            :asset="asset"
+            :asset="(asset as AssetData<AssetType.Backdrop>)"
             :selected="isSelected(asset)"
             @click="handleAssetClick(asset)"
           />

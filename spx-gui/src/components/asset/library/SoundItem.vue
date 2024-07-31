@@ -8,19 +8,19 @@
 
 <script setup lang="ts">
 import { useFileUrl } from '@/utils/file'
-import type { AssetData } from '@/apis/asset'
+import type { AssetData, AssetType } from '@/apis/asset'
 import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
-import { asset2Sound } from '@/models/common/asset'
+import { cachedConvertAssetData } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import { useAudioDuration } from '@/utils/audio'
 import { UISoundItem } from '@/components/ui'
 
 const props = defineProps<{
-  asset: AssetData
+  asset: AssetData<AssetType.Sound>
   selected: boolean
 }>()
 
-const sound = useAsyncComputed(() => asset2Sound(props.asset))
+const sound = useAsyncComputed(() => cachedConvertAssetData(props.asset))
 const [audioSrc] = useFileUrl(() => sound.value?.file)
 const { formattedDuration } = useAudioDuration(() => {
   return audioSrc.value
