@@ -188,7 +188,17 @@ watch(
 )
 </script>
 
+<style>
+.asset-list .v-vl{
+  width: 100%;
+}
+</style>
+
 <style scoped>
+.asset-list {
+  width: 100%;
+}
+
 .asset-list-row {
   display: flex;
   gap: 8px;
@@ -204,6 +214,7 @@ watch(
   justify-content: center;
   gap: 8px;
   padding: 16px;
+  padding-right: 40px;
   font-size: 14px;
   color: var(--ui-color-grey-600);
 }
