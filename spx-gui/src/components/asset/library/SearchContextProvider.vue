@@ -48,7 +48,7 @@ const props = defineProps<{
 
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
-  category: '*',
+  category: '',
   type: props.type,
   page: 0,
 })
@@ -81,7 +81,7 @@ const {
     return listAsset({
       pageSize: 500, // try to get all
       pageIndex: 1,
-      assetType: props.type,
+      assetType: searchCtx.type,
       keyword: searchCtx.keyword,
       category: c,// send like 'cartoon_characters,realistic_characters'
       owner: c === cPersonal ? undefined : '*',
