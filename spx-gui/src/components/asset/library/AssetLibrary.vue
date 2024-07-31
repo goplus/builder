@@ -20,6 +20,7 @@
     <section class="body">
       <main class="main">
         <div class="content">
+          <LibrarySelect/>
           <UILoading v-if="searchResultCtx.isLoading" />
           <UIError v-else-if="searchResultCtx.error != null" :retry="searchResultCtx.refetch">
             {{ $t(searchResultCtx.error.userMessage) }}
@@ -105,6 +106,7 @@ import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
+import LibrarySelect from './LibrarySelect.vue'
 
 const props = defineProps<{
   visible?: boolean
@@ -274,6 +276,9 @@ async function handleAssetClick(asset: AssetData) {
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;
+  }
+  .select{
+    margin-left: 50vw;
   }
   .asset-list {
     display: flex;

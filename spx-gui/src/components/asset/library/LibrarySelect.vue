@@ -1,5 +1,5 @@
 <template>
-    <n-select v-model:value="value" :options="options"/>
+    <n-select v-model:value="value" :options="options" class="select"/>
 </template>
 
 <script setup lang="ts">
@@ -35,3 +35,10 @@ const options= [
 //   searchCtx.sort = newValue
 // })
 </script>
+<style lang="scss" scoped>
+.select{
+    width: 15vw;
+    margin-left: 45vw;
+    padding: 1vh;
+}
+</style>
