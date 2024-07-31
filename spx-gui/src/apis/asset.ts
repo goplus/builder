@@ -53,8 +53,12 @@ export function deleteAsset(id: string) {
 
 export enum ListAssetParamOrderBy {
   Default = 'default',
-  TimeDesc = 'time',
-  ClickCountDesc = 'clickCount'
+  // TimeDesc = 'time',
+  ClickCountDesc = 'clickCount',
+  TimeAsc = 'timeAsc',
+  TimeDesc = 'timeDesc',
+  NameAsc = 'nameAsc',
+  NameDesc = 'nameDesc'
 }
 
 export type ListAssetParams = PaginationParams & {
