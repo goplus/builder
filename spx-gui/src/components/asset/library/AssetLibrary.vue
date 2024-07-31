@@ -2,8 +2,9 @@
   <div class="container">
     <div class="header">
       <h4 class="title">
-        {{ $t({ en: `Choose a ${entityMessage.en}`, zh: `选择${entityMessage.zh}` }) }}
+        {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
       </h4>
+      <LibraryTab @update:value="handleChangeType" />
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
@@ -18,24 +19,11 @@
     <UIDivider />
     <section class="body">
       <div class="sider">
-        <UITag
-          :type="searchCtx.category.value === categoryPersonal.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(categoryPersonal)"
-        >
-          {{ $t(categoryPersonal.message) }}
-        </UITag>
+        <LibraryMenu @update:value="handleSelectCategory"/>
         <UIDivider />
-        <UITag
-          v-for="c in categories"
-          :key="c.value"
-          :type="c.value === searchCtx.category.value ? 'primary' : 'boring'"
-          @click="handleSelectCategory(c)"
-        >
-          {{ $t(c.message) }}
-        </UITag>
+        <LibraryTree :type="type" @update="handleSelectCategory"/>
       </div>
       <main class="main">
-        <h3 class="title">{{ $t(searchCtx.category.message) }}</h3>
         <div class="content">
           <UILoading v-if="searchResultCtx.isLoading" />
           <UIError v-else-if="searchResultCtx.error != null" :retry="searchResultCtx.refetch">
@@ -108,17 +96,18 @@ import {
 import { AssetType, type AssetData } from '@/apis/asset'
 import { debounce } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
-import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
 import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
+import LibraryMenu from './LibraryMenu.vue'
+import LibraryTree from './LibraryTree.vue'
+import LibraryTab from './LibraryTab.vue'
 
 const props = defineProps<{
   visible?: boolean
-  type: AssetType
   project: Project
 }>()
 
@@ -136,19 +125,17 @@ const handleCloseButton = () => {
   handleUpdateShow(false)
 }
 
-const categories = [categoryAll, ...categoriesWithoutAll]
-
 const entityMessages = {
   [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
   [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
   [AssetType.Sound]: { en: 'sound', zh: '声音' }
 }
 
-const entityMessage = computed(() => entityMessages[props.type])
-
 const searchInput = ref('')
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
+const entityMessage = computed(() => entityMessages[searchCtx.type])
+const type = ref(searchCtx.type)//just for display
 
 // do search (with a delay) when search-input changed
 watch(
@@ -158,18 +145,17 @@ watch(
   }, 500)
 )
 
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
-}))
 
 function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: Category) {
+function handleSelectCategory(c: string|string[]) {
   searchCtx.category = c
+}
+
+function handleChangeType(t: AssetType) {
+  searchCtx.type = t
 }
 
 const selected = shallowReactive<AssetData[]>([])

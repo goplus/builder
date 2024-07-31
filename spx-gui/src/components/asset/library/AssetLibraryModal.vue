@@ -2,7 +2,6 @@
   <SearchContextProvider :type="props.type" >
     <UIModal style="width: 1076px" :visible="props.visible" @update:visible="emit('cancelled')">
       <AssetLibrary
-        :type="props.type"
         :project="props.project"
         @resolved="emit('resolved', $event)"
         @cancelled="emit('cancelled')"
