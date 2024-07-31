@@ -20,7 +20,7 @@ export class Runtime extends Disposable {
     ) {
       this.clearRuntimeErrors()
     }
-    let runtimeError = this.parseRuntimeLog(log)
+    const runtimeError = this.parseRuntimeLog(log)
     runtimeError!.filesHash = filesHash
     this.runtimeErrors.push(runtimeError!)
     this.notifyErrors()
@@ -32,7 +32,7 @@ export class Runtime extends Disposable {
 
   private parseRuntimeLog(log: Log): RuntimeError | null {
     switch (log.args.length) {
-      case 1:
+      case 1: {
         const logRegex = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2} .*?: (.*?):(\d+):(\d+): (.*)$/
         const match = log.args[0].match(logRegex)
 
@@ -40,7 +40,7 @@ export class Runtime extends Disposable {
           return null
         }
 
-        const [_, fileName, lineNumber, columnNumber, message] = match
+        const [fileName, lineNumber, columnNumber, message] = match
 
         const [fileUri] = fileName.split('.')
 
@@ -53,6 +53,7 @@ export class Runtime extends Disposable {
         //TODO: make message easier to understand
 
         return { position, message, filesHash: '' }
+      }
       default:
         return null
     }
