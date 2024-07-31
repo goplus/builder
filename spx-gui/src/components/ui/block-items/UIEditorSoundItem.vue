@@ -21,7 +21,7 @@ import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
 withDefaults(
   defineProps<{
-    color: 'sound' | 'primary'
+    color?: 'sound' | 'primary'
     name: string
     selected: boolean
   }>(),

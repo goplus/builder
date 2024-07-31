@@ -18,7 +18,7 @@ withDefaults(
     imgLoading: boolean
     name: string
     selected: boolean
-    color: 'sprite' | 'primary'
+    color?: 'sprite' | 'primary'
   }>(),
   {
     color: 'sprite'
