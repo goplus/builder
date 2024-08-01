@@ -29,11 +29,11 @@
       </div>
       <div v-else-if="item.type === 'loading-more'" class="more-info loading-more">
         <NSpin />
-        {{ $t({ en: 'Loading more...', zh: '加载更多...' }) }}
+        {{ $t({ en: 'Loading more assets...', zh: '正在加载更多素材...' }) }}
       </div>
       <div v-else-if="item.type === 'no-more'" size="small" class="more-info no-more">
         <img :src="emptyImg" alt="empty" />
-        {{ $t({ en: 'No more', zh: '没有更多了' }) }}
+        {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
       </div>
       <div v-else-if="item.type === 'loading-more-error'" class="more-info loading-more-error">
         <img :src="errorImg" alt="error" />
@@ -206,12 +206,12 @@ watch(
   gap: 8px;
   padding: 16px;
   padding-right: 40px;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--ui-color-grey-600);
 }
 
 .more-info img {
-  width: 18px;
-  height: 18px;
+  width: 36px;
+  height: 36px;
 }
 </style>
