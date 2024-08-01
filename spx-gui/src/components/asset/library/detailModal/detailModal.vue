@@ -36,15 +36,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NTag, NText } from 'naive-ui'
+import { NTag } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import type { AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
-import UITagButton from '@/components/ui/UITagButton.vue'
-import { heading } from '../../../editor/code-editor/code-text-editor/tools/spx';
-import { title } from '../../../ui/tokens/colors';
 
 // Define component props
 const props = defineProps<{
@@ -55,7 +52,7 @@ const props = defineProps<{
 const emits = defineEmits(['open'])
 
 // Ref to control modal visibility
-const showModal = ref(true)
+const showModal = ref(false)
 
 // Methods to handle button actions
 const handleCloseButton = () => {

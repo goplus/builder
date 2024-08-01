@@ -1,7 +1,6 @@
 <template>
   <div class="container">
     <DetailModal ref="detailModalRef" :asset="assetDataTest"/>
-    <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
