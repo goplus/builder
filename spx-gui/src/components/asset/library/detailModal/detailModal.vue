@@ -11,7 +11,7 @@
         </div>
       </div>
       <div class="sider">
-        <NText>{{ props.asset.displayName }}</NText>
+        <div class="title">{{ props.asset.displayName }}</div>
         <div class="button-group">
           <UIButton size="large" class="insert-button" @click="handleAddButton">
             {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}
@@ -43,6 +43,8 @@ import UIButton from '@/components/ui/UIButton.vue'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
 import UITagButton from '@/components/ui/UITagButton.vue'
+import { heading } from '../../../editor/code-editor/code-text-editor/tools/spx';
+import { title } from '../../../ui/tokens/colors';
 
 // Define component props
 const props = defineProps<{
@@ -81,7 +83,7 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-header{
+header {
   display: flex;
   justify-content: flex-end;
   padding: 10px;
@@ -123,12 +125,17 @@ main {
     margin: 20px;
     gap: 20px;
 
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #000;
+    }
+
     .button-group {
       display: flex;
       gap: 10px;
-      .insert-button {
-        
-      }
+
+      .insert-button {}
     }
 
     .sider-info {
