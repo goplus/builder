@@ -79,6 +79,7 @@ watchEffect(async (onClenaup) => {
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
     foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
