@@ -101,7 +101,6 @@ import { ref } from 'vue'
 
 const props = defineProps<{
   asset: AssetData
-  selected: boolean
   addToProjectPending: boolean
 }>()
 

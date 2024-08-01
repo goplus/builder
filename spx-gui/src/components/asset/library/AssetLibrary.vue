@@ -27,42 +27,18 @@
         <div class="content">
           <AssetList
             :add-to-project-pending="handleAddToProject.isLoading.value"
-            @update:selected="handleAssetSelectedChange"
             @add-to-project="handleAddToProject.fn"
           />
         </div>
-        <footer class="footer">
-          <span v-show="selected.length > 0">
-            {{
-              $t({
-                en: `${selected.length} ${entityMessage.en}${selected.length > 1 ? 's' : ''} selected`,
-                zh: `已选中 ${selected.length} 个${entityMessage.zh}`
-              })
-            }}
-          </span>
-          <UIButton
-            size="large"
-            :disabled="selected.length === 0"
-            :loading="handleConfirm.isLoading.value"
-            @click="handleConfirm.fn"
-          >
-            {{ $t({ en: 'Confirm', zh: '确认' }) }}
-          </UIButton>
-        </footer>
       </main>
     </section>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, shallowReactive, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   UITextInput,
   UIIcon,
-  UITag,
-  UILoading,
-  UIEmpty,
-  UIError,
-  UIButton,
   UIModalClose,
   UIDivider
 } from '@/components/ui'
@@ -94,6 +70,12 @@ const handleUpdateShow = (visible: boolean) => {
 }
 
 const handleCloseButton = () => {
+  if (addedModels.length > 0) {
+    emit('resolved', addedModels)
+  }
+  else {
+    emit('cancelled')
+  }
   handleUpdateShow(false)
 }
 
@@ -129,8 +111,6 @@ function handleChangeType(t: AssetType) {
   searchCtx.type = t
 }
 
-const selected = shallowReactive<AssetData[]>([])
-
 async function addAssetToProject(asset: AssetData) {
   switch (asset.assetType) {
     case AssetType.Sprite: {
@@ -154,33 +134,20 @@ async function addAssetToProject(asset: AssetData) {
   }
 }
 
-const handleConfirm = useMessageHandle(
-  async () => {
-    const action = {
-      name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
-    }
-    const assetModels = await props.project.history.doAction(action, () =>
-      Promise.all(selected.map(addAssetToProject))
-    )
-    emit('resolved', assetModels)
-  },
-  { en: 'Failed to add asset', zh: '素材添加失败' }
-)
+const addedModels:AssetModel[] = []
 
 const handleAddToProject = useMessageHandle(
   async (asset: AssetData) => {
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
-    await props.project.history.doAction(action, () => addAssetToProject(asset))
+    const assetModel = await props.project.history.doAction(action, () => addAssetToProject(asset))
+    addedModels.push(assetModel)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' },
   { en: 'Asset added successfully', zh: '素材添加成功' }
 )
 
-async function handleAssetSelectedChange(assets: AssetData[]) {
-  selected.splice(0, selected.length, ...assets)
-}
 </script>
 
 <style scoped lang="scss">

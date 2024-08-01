@@ -22,9 +22,7 @@
         <template v-for="asset in item.assets" :key="asset.id">
           <AssetItem
             :asset="asset"
-            :selected="isSelected(asset)"
             :add-to-project-pending="props.addToProjectPending"
-            @click="handleAssetClick(asset)"
             @add-to-project="(asset) => emit('addToProject', asset)"
           />
         </template>
@@ -61,7 +59,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:selected': [selected: AssetData[]]
   addToProject: [asset: AssetData]
 }>()
 
@@ -143,20 +140,6 @@ const handleScroll = (e: Event) => {
   if (target.scrollHeight - target.scrollTop === target.clientHeight) {
     loadMore()
   }
-}
-
-const selected = shallowReactive<AssetData[]>([])
-
-function isSelected(asset: AssetData) {
-  return selected.some((a) => a.id === asset.id)
-}
-
-async function handleAssetClick(asset: AssetData) {
-  const index = selected.findIndex((a) => a.id === asset.id)
-  if (index < 0) selected.push(asset)
-  else selected.splice(index, 1)
-
-  emit('update:selected', selected)
 }
 
 // Append search result to assetList
