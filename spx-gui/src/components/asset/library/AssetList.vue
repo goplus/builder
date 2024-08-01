@@ -11,30 +11,17 @@
     ref="virtualList"
     class="asset-list"
     :items="groupedAssetItems"
-    :item-size="140"
+    :item-size="148"
     :key-field="'id'"
-    :item-resizable="true"
+    :item-resizable="false"
     @scroll="handleScroll"
     @wheel="handleScroll"
   >
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <SoundItem
-            v-if="asset.assetType === AssetType.Sound"
-            :asset="(asset as AssetData<AssetType.Sound>)"
-            :selected="isSelected(asset)"
-            @click="handleAssetClick(asset)"
-          />
-          <SpriteItem
-            v-else-if="asset.assetType === AssetType.Sprite"
-            :asset="(asset as AssetData<AssetType.Sprite>)"
-            :selected="isSelected(asset)"
-            @click="handleAssetClick(asset)"
-          />
-          <BackdropItem
-            v-else-if="asset.assetType === AssetType.Backdrop"
-            :asset="(asset as AssetData<AssetType.Backdrop>)"
+          <AssetItem
+            :asset="asset"
             :selected="isSelected(asset)"
             @click="handleAssetClick(asset)"
           />
@@ -61,13 +48,11 @@ import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin } from 'naive-ui'
-import { AssetType, type AssetData } from '@/apis/asset'
-import SoundItem from './SoundItem.vue'
-import SpriteItem from './SpriteItem.vue'
-import BackdropItem from './BackdropItem.vue'
+import { type AssetData } from '@/apis/asset'
 import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
+import AssetItem from './AssetItem.vue'
 
 const emit = defineEmits<{
   'update:selected': [selected: AssetData[]]
@@ -76,7 +61,7 @@ const emit = defineEmits<{
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
 
 type GroupedAssetItem =
@@ -201,9 +186,12 @@ watch(
 
 .asset-list-row {
   display: flex;
-  gap: 8px;
+  gap: 2.5%;
   flex-wrap: nowrap;
+  align-items: center;
+  margin: 10px 2.5%;
 }
+
 .asset-list-row:not(:last-child) {
   margin-bottom: 8px;
 }
