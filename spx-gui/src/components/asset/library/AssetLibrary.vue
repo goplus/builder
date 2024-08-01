@@ -20,39 +20,8 @@
     <section class="body">
       <main class="main">
         <div class="content">
-          <LibrarySelect/>
-          <UILoading v-if="searchResultCtx.isLoading" />
-          <UIError v-else-if="searchResultCtx.error != null" :retry="searchResultCtx.refetch">
-            {{ $t(searchResultCtx.error.userMessage) }}
-          </UIError>
-          <UIEmpty v-else-if="searchResultCtx.assets?.data.length === 0" size="large" />
-          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Sound" class="asset-list">
-            <SoundItem
-              v-for="asset in searchResultCtx.assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
-          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Sprite" class="asset-list">
-            <SpriteItem
-              v-for="asset in searchResultCtx.assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
-          <ul v-else-if="searchResultCtx.assets != null && type === AssetType.Backdrop" class="asset-list">
-            <BackdropItem
-              v-for="asset in searchResultCtx.assets!.data"
-              :key="asset.id"
-              :asset="asset"
-              :selected="isSelected(asset)"
-              @click="handleAssetClick(asset)"
-            />
-          </ul>
+          
+          <AssetList @update:selected="handleAssetSelectedChange"/>
         </div>
         <footer class="footer">
           <span v-show="selected.length > 0">
@@ -99,10 +68,9 @@ import { debounce } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
-import SoundItem from './SoundItem.vue'
-import SpriteItem from './SpriteItem.vue'
-import BackdropItem from './BackdropItem.vue'
+
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
+import AssetList from './AssetList.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
@@ -198,14 +166,9 @@ const handleConfirm = useMessageHandle(
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
 
-function isSelected(asset: AssetData) {
-  return selected.some((a) => a.id === asset.id)
-}
 
-async function handleAssetClick(asset: AssetData) {
-  const index = selected.findIndex((a) => a.id === asset.id)
-  if (index < 0) selected.push(asset)
-  else selected.splice(index, 1)
+async function handleAssetSelectedChange(assets: AssetData[]) {
+  selected.splice(0, selected.length, ...assets)
 }
 </script>
 

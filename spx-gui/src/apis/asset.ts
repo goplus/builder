@@ -9,7 +9,7 @@ export enum AssetType {
   Sound = 2
 }
 
-export type AssetData = {
+export type AssetData<T extends AssetType = AssetType> = {
   /** Globally unique ID */
   id: string
   /** Name to display */
@@ -19,7 +19,7 @@ export type AssetData = {
   /** Asset Category */
   category: string
   /** Asset Type */
-  assetType: AssetType
+  assetType: T
   /** Files the asset contains */
   files: FileCollection
   /** Hash of the files */

@@ -5,7 +5,7 @@ import { Sprite } from '../sprite'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 
-export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files' | 'filesHash'>
+export type PartialAssetData<T extends AssetType = AssetType> = Pick<AssetData<T>, 'displayName' | 'assetType' | 'files' | 'filesHash'>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
@@ -70,4 +70,38 @@ export async function asset2Sound(assetData: PartialAssetData) {
   const sounds = await Sound.loadAll(files)
   if (sounds.length === 0) throw new Error('no sound loaded')
   return sounds[0]
+}
+
+/**
+ * A wrapper function to convert asset data to asset model.
+ * @param assetData 
+ */
+export async function convertAssetData<T extends AssetType>(assetData: PartialAssetData<T>): Promise<AssetModel<T>>;
+export async function convertAssetData(assetData: PartialAssetData): Promise<AssetModel> {
+  switch (assetData.assetType) {
+    case AssetType.Sprite:
+      return asset2Sprite(assetData)
+    case AssetType.Backdrop:
+      return asset2Backdrop(assetData)
+    case AssetType.Sound:
+      return asset2Sound(assetData)
+    default:
+      throw new Error(`unknown asset type ${assetData.assetType}`)
+  }
+}
+
+const AssetModelSymbol = Symbol('AssetModelCache')
+
+/**
+ * A wrapper function to convert asset data to asset model with cache.
+ * 
+ * The cache is stored in the asset data itself with a symbol key.
+ * @param assetData 
+ */
+export async function cachedConvertAssetData<T extends AssetType>(assetData: PartialAssetData<T> & { [AssetModelSymbol]?: AssetModel }): Promise<AssetModel<T>>;
+export async function cachedConvertAssetData(assetData: PartialAssetData & { [AssetModelSymbol]?: AssetModel }): Promise<AssetModel> {
+  if (assetData[AssetModelSymbol] != null) return assetData[AssetModelSymbol]
+  const model = await convertAssetData(assetData)
+  assetData[AssetModelSymbol] = model
+  return model
 }
