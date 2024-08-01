@@ -5,7 +5,9 @@
     </header>
     <main>
       <div class="content">
-        <div class="display"></div>
+        <div class="display">
+          <DetailDisplay v-if="asset.assetType === AssetType.Sprite" :asset="props.asset as AssetData<AssetType.Sprite>"/>
+        </div>
         <div class="detail">
           <LibraryTab />
         </div>
@@ -38,10 +40,11 @@
 import { ref } from 'vue'
 import { NTag } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
-import type { AssetData } from '@/apis/asset'
+import { AssetType, type AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
+import DetailDisplay from './SpriteDetailDisplay.vue'
 
 // Define component props
 const props = defineProps<{

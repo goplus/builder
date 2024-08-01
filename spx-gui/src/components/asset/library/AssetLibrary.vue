@@ -1,6 +1,7 @@
 <template>
   <div class="container">
     <DetailModal ref="detailModalRef" :asset="assetDataTest"/>
+
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
@@ -109,11 +110,6 @@ const assetDataTest: AssetData = {
 
 // Ref to access the modal component instance
 const detailModalRef = ref()
-
-// Method to open the modal
-const openChildModal = () => {
-  detailModalRef.value.openModal()
-}
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
