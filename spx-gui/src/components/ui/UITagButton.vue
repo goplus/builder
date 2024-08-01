@@ -1,8 +1,21 @@
 <template>
-  <button class="ui-tag-button">
+  <button :class="['ui-tag-button', customClass]">
     <slot></slot>
   </button>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = defineProps<{
+  class?: string | string[] | Record<string, boolean>
+}>()
+
+// Compute the class string to be applied
+const customClass = computed(() => {
+  return props.class
+})
+</script>
 
 <style lang="scss" scoped>
 .ui-tag-button {
