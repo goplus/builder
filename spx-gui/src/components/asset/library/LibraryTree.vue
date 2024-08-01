@@ -4,6 +4,7 @@
     :data="data"
     expand-on-click
     checkable
+    cascade
     @update:checked-keys="handleUpdateCheckedKeys"
   />
 </template>
