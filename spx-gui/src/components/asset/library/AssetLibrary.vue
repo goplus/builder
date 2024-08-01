@@ -19,14 +19,17 @@
     <UIDivider />
     <section class="body">
       <div class="sider">
-        <LibraryMenu @update:value="handleSelectCategory"/>
+        <LibraryMenu @update:value="handleSelectCategory" />
         <UIDivider />
-        <LibraryTree :type="type" @update="handleSelectCategory"/>
+        <LibraryTree :type="type" @update="handleSelectCategory" />
       </div>
       <main class="main">
         <div class="content">
-          
-          <AssetList @update:selected="handleAssetSelectedChange"/>
+          <AssetList
+            :add-to-project-pending="handleAddToProject.isLoading.value"
+            @update:selected="handleAssetSelectedChange"
+            @add-to-project="handleAddToProject.fn"
+          />
         </div>
         <footer class="footer">
           <span v-show="selected.length > 0">
@@ -104,7 +107,7 @@ const searchInput = ref('')
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 const entityMessage = computed(() => entityMessages[searchCtx.type])
-const type = ref(searchCtx.type)//just for display
+const type = ref(searchCtx.type) //just for display
 
 // do search (with a delay) when search-input changed
 watch(
@@ -114,12 +117,11 @@ watch(
   }, 500)
 )
 
-
 function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: string|string[]) {
+function handleSelectCategory(c: string | string[]) {
   searchCtx.category = c
 }
 
@@ -165,6 +167,16 @@ const handleConfirm = useMessageHandle(
   { en: 'Failed to add asset', zh: '素材添加失败' }
 )
 
+const handleAddToProject = useMessageHandle(
+  async (asset: AssetData) => {
+    const action = {
+      name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
+    }
+    await props.project.history.doAction(action, () => addAssetToProject(asset))
+  },
+  { en: 'Failed to add asset', zh: '素材添加失败' },
+  { en: 'Asset added successfully', zh: '素材添加成功' }
+)
 
 async function handleAssetSelectedChange(assets: AssetData[]) {
   selected.splice(0, selected.length, ...assets)

@@ -23,7 +23,9 @@
           <AssetItem
             :asset="asset"
             :selected="isSelected(asset)"
+            :add-to-project-pending="props.addToProjectPending"
             @click="handleAssetClick(asset)"
+            @add-to-project="(asset) => emit('addToProject', asset)"
           />
         </template>
       </div>
@@ -54,8 +56,13 @@ import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 
+const props = defineProps<{
+  addToProjectPending: boolean
+}>()
+
 const emit = defineEmits<{
   'update:selected': [selected: AssetData[]]
+  addToProject: [asset: AssetData]
 }>()
 
 const searchCtx = useSearchCtx()

@@ -37,12 +37,21 @@
             }}
           </div>
         </div>
-        <div class="asset-operation">
+        <div
+          class="asset-operation"
+          :class="{ disabled: addToProjectPending }"
+          @click="handleAddToProject"
+        >
           <NIcon :size="14" color="#ffffff">
             <PlusOutlined />
           </NIcon>
           <div class="operation-title">
-            {{ $t({ en: `Add to project`, zh: `添加到项目` }) }}
+            <!-- {{ $t({ en: `Add to project`, zh: `添加到项目` }) }} -->
+            {{
+              addToProjectPending
+                ? $t({ en: `Adding to project...`, zh: `正在添加..` })
+                : $t({ en: `Add to project`, zh: `添加到项目` })
+            }}
           </div>
         </div>
       </div>
@@ -93,6 +102,11 @@ import { ref } from 'vue'
 const props = defineProps<{
   asset: AssetData
   selected: boolean
+  addToProjectPending: boolean
+}>()
+
+const emit = defineEmits<{
+  addToProject: [asset: AssetData]
 }>()
 
 const assetModel = useAsyncComputed(() => cachedConvertAssetData(props.asset))
@@ -109,6 +123,13 @@ const handleFavorite = () => {
     favoriteCount.value--
     addAssetToFavorites(props.asset.id)
   }
+}
+
+const handleAddToProject = () => {
+  if (props.addToProjectPending) {
+    return
+  }
+  emit('addToProject', props.asset)
 }
 </script>
 
@@ -200,6 +221,11 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   grid-template-columns: 14px 0fr;
   align-items: center;
   transition: grid-template-columns 0.25s ease;
+}
+
+.asset-operation.disabled {
+  background-color: #2f2f2f77;
+  color: #cbd2d8;
 }
 
 .asset-operation .operation-title {
