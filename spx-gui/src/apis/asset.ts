@@ -30,6 +30,8 @@ export type AssetData<T extends AssetType = AssetType> = {
   clickCount: number 
   /** Public status */
   isPublic: IsPublic
+  /** Creation time */
+  cTime: string
 }
 
 export type AddAssetParams = Pick<
