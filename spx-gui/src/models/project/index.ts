@@ -94,8 +94,7 @@ export class Project extends Disposable {
   }
 
   get currentFilesHash() {
-    if (!this.hasUnsyncedChanges) this.saveToCloud()
-    return this.lastSyncedFilesHash
+    return this.filesHash
   }
 
   stage: Stage
