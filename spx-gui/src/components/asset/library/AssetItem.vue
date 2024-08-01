@@ -24,12 +24,17 @@
       </div>
       <!-- shown when hovered -->
       <div class="asset-operations">
-        <div class="asset-operation">
-          <NIcon :size="14" color="#ffffff">
+        <div class="asset-operation" @click="handleFavorite">
+          <NIcon v-if="!isFavorite" :size="14" color="#ffffff">
             <HeartOutlined />
           </NIcon>
+          <NIcon v-else :size="14" color="#f44336">
+            <HeartFilled />
+          </NIcon>
           <div class="operation-title">
-            {{ $t({ en: `Favorite`, zh: `添加到收藏` }) }}
+            {{
+              $t(isFavorite ? { en: `Unfavorite`, zh: `取消收藏` } : { en: `Favorite`, zh: `收藏` })
+            }}
           </div>
         </div>
         <div class="asset-operation">
@@ -48,15 +53,17 @@
             <NIcon color="#ffffff">
               <HeartFilled />
             </NIcon>
-            {{ 0 }}
+            {{ favoriteCount }}
           </div>
-          <div class="asset-info-item">
+          <!-- Rating is not implemented yet -->
+          <!-- <div class="asset-info-item">
             <NIcon color="#ffffff">
               <StarOutlined />
             </NIcon>
             {{ 0 }}
-          </div>
+          </div> -->
         </div>
+        <!-- Maybe we will introduce a marketplace in the future -->
         <!-- <div class="asset-info-right">{{ $t({ en: `FREE`, zh: `免费` }) }}</div> -->
       </div>
     </div>
@@ -70,12 +77,18 @@
 import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData, type AssetModel } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
-import { type AssetData, AssetType } from '@/apis/asset'
+import {
+  addAssetToFavorites,
+  type AssetData,
+  AssetType,
+  removeAssetFromFavorites
+} from '@/apis/asset'
 import SpritePreview from './SpritePreview.vue'
 import BackdropPreview from './BackdropPreview.vue'
 import SoundPreview from './SoundPreview.vue'
 import { NIcon } from 'naive-ui'
-import { HeartOutlined, HeartFilled, PlusOutlined, StarOutlined } from '@vicons/antd'
+import { HeartOutlined, HeartFilled, PlusOutlined /** , StarOutlined */ } from '@vicons/antd'
+import { ref } from 'vue'
 
 const props = defineProps<{
   asset: AssetData
@@ -83,6 +96,20 @@ const props = defineProps<{
 }>()
 
 const assetModel = useAsyncComputed(() => cachedConvertAssetData(props.asset))
+
+const isFavorite = ref(props.asset.isFavorite ?? false)
+const favoriteCount = ref(props.asset.favoriteCount ?? 0)
+
+const handleFavorite = () => {
+  isFavorite.value = !isFavorite.value
+  if (isFavorite.value) {
+    favoriteCount.value++
+    removeAssetFromFavorites(props.asset.id)
+  } else {
+    favoriteCount.value--
+    addAssetToFavorites(props.asset.id)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
