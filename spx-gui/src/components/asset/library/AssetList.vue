@@ -196,7 +196,7 @@ watch(
 }
 
 .asset-list-row:not(:last-child) {
-  margin-bottom: 8px;
+  margin-bottom: 20px;
 }
 
 .more-info {
