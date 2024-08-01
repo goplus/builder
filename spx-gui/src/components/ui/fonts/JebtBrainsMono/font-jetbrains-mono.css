@@ -1,0 +1,83 @@
+/**
+ * @license https://www.jetbrains.com/zh-cn/lp/mono/#license,
+ * free to use for commercial projects.
+ */
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 400;
+    font-style: normal;
+    src: url('JetBrainsMonoNL-Regular.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 400;
+    font-style: italic;
+    src: url('JetBrainsMonoNL-Italic.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 500;
+    font-style: normal;
+    src: url('JetBrainsMonoNL-Medium.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 500;
+    font-style: italic;
+    src: url('JetBrainsMonoNL-MediumItalic.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 600;
+    font-style: normal;
+    src: url('JetBrainsMonoNL-SemiBold.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 600;
+    font-style: italic;
+    src: url('JetBrainsMonoNL-SemiBoldItalic.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 700;
+    font-style: normal;
+    src: url('JetBrainsMonoNL-Bold.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 700;
+    font-style: italic;
+    src: url('JetBrainsMonoNL-BoldItalic.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 800;
+    font-style: normal;
+    src: url('JetBrainsMonoNL-ExtraBold.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains MonoNL';
+    font-weight: 800;
+    font-style: italic;
+    src: url('JetBrainsMonoNL-ExtraBoldItalic.ttf') format('truetype');
+    font-display: swap;
+}

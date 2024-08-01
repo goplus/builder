@@ -29,7 +29,10 @@ import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
 import CompletionMenu from '@/components/editor/code-editor/code-text-editor/CompletionMenu.vue'
-import { type CompletionMenuState, upgradeCompletionMenu } from './monaco-beta'
+import {
+  CompletionMenuProvider,
+  type CompletionMenuState
+} from './providers/CompletionMenuProvider'
 const props = defineProps<{
   value: string
 }>()
@@ -51,7 +54,9 @@ const completionMenuState = reactive<CompletionMenuState>({
   position: {
     top: 0,
     left: 0
-  }
+  },
+  lineHeight: 19,
+  word: ''
 })
 const uiVariables = useUIVariables()
 const i18n = useI18n()
@@ -105,6 +110,7 @@ watchEffect(async (onCleanup) => {
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
     foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
@@ -125,31 +131,44 @@ watchEffect(async (onCleanup) => {
     const $completionMenu = completionMenuRef.value.$container
     if (!$completionMenu) return
     const pixelPosition = editor.getScrolledVisiblePosition(position)
-
     if (!pixelPosition) return
+
+    const isMultiline = () => {
+      const { suggestions, activeIdx } = completionMenuState
+      if (activeIdx < 0 || activeIdx >= suggestions.length) return false
+      const activeSuggestion = suggestions[activeIdx]
+      if (!activeSuggestion.insertText) return false
+      const lines = activeSuggestion.insertText.split('\n')
+      if (!lines.shift()?.toLocaleLowerCase().startsWith(completionMenuState.word.toLowerCase()))
+        return false
+      return lines.length > 0
+    }
+
     const cursorY = pixelPosition.top
     const windowHeight = window.innerHeight
     const completionMenuHeight = $completionMenu.offsetHeight
     completionMenuState.position.left = pixelPosition.left
-
-    // todo: may need monitor window resize for better user view
-    if (windowHeight - cursorY > completionMenuHeight) {
-      completionMenuState.position.top = cursorY + pixelPosition.height
+    completionMenuState.lineHeight = pixelPosition.height
+    completionMenuState.position.top = cursorY + pixelPosition.height
+    if (windowHeight - cursorY > completionMenuHeight && !isMultiline()) {
+      $completionMenu.classList.remove('completion-menu--reverse-up')
     } else {
-      completionMenuState.position.top = cursorY - completionMenuHeight
+      $completionMenu.classList.add('completion-menu--reverse-up')
     }
   }
 
-  const { dispose: disposeCompletionMenu, select } = upgradeCompletionMenu(
-    editor,
-    completionMenuState,
-    {
-      onFocus() {
-        updateCompletionMenuPosition()
-      }
-    }
-  )
-  fnSelectMonacoCompletionMenu.value = select
+  const completionMenuProvider = new CompletionMenuProvider(editor, completionMenuState)
+
+  completionMenuProvider.addEventListener('onShow', () => {
+    // must be use next render time to update correct position
+    setTimeout(() => updateCompletionMenuPosition(), 0)
+  })
+
+  completionMenuProvider.addEventListener('onFocus', () => {
+    updateCompletionMenuPosition()
+  })
+
+  fnSelectMonacoCompletionMenu.value = completionMenuProvider.select
 
   editor.addAction({
     id: 'format',
@@ -179,7 +198,7 @@ watchEffect(async (onCleanup) => {
 
   monacoEditor.value = editor
   onCleanup(() => {
-    disposeCompletionMenu()
+    completionMenuProvider.dispose()
     disposeMonacoProviders()
     editor.dispose()
   })

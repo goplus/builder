@@ -11,10 +11,12 @@ withDefaults(
   defineProps<{
     suggestions?: CompletionMenuItem[]
     activeIdx?: number
+    lineHeight?: string
   }>(),
   {
     activeIdx: 0,
-    suggestions: () => []
+    suggestions: () => [],
+    lineHeight: () => '19px'
   }
 )
 
@@ -36,10 +38,6 @@ function handleActiveMenuItemUpdate($el: HTMLElement | null) {
         $el.offsetTop - $container.clientHeight + $el.clientHeight + 8
   scrollbarRef.value.scrollTo({ top })
 }
-
-defineExpose({
-  $container: $completionMenu
-})
 
 /**
  * resolve suggest matches to highlight, only used for split label and highlight
@@ -85,6 +83,10 @@ function resolveSuggestMatches2Highlight(
 
   return result
 }
+
+defineExpose({
+  $container: $completionMenu
+})
 </script>
 
 <template>
@@ -94,8 +96,8 @@ function resolveSuggestMatches2Highlight(
         <!--
           this is completion item element, `click` need to be replaced by `mousedown` event for
           current project monitor original monaco completion hide event,
-          when mouse clicked, original completion will be hidden before we can catch it,
-          this menu will be hidden too, so we need to change custom `select` event to `mousedown` event.
+          when mouse clicked, original completion will be hidden before we emit `select` event,
+          this menu will be hidden too, so we need to change `click` event to `mousedown` event.
         -->
         <li
           v-for="(suggestion, i) in suggestions"
@@ -115,7 +117,7 @@ function resolveSuggestMatches2Highlight(
           >
           </span>
 
-          <span>
+          <span class="completion-menu__item-label">
             <span
               v-for="(match, j) in resolveSuggestMatches2Highlight(
                 suggestion.label,
@@ -140,6 +142,26 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   opacity: 0;
   pointer-events: none;
 }
+
+.view-line .completion-menu__item-preview {
+  color: grey;
+  font-style: italic;
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  animation: fade-in 150ms ease-in;
+}
+
+.completion-menu--reverse-up {
+  transform: translateY(calc(-100% - v-bind(lineHeight))) !important;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 </style>
 <style scoped lang="scss">
 .completion-menu {
@@ -156,30 +178,32 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   border: solid 1px var(--ui-color-grey-700);
   border-radius: 5px;
   box-shadow: var(--ui-box-shadow-small);
+  transform: translateY(0);
+  transition:
+    150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5),
+    150ms transform cubic-bezier(0.1, 0.93, 0.15, 1.3);
 }
 
 .completion-menu__item {
+  overflow: hidden;
   display: flex;
   align-items: center;
-  overflow: hidden;
   width: 100%;
   padding: 4px;
   color: black;
   cursor: pointer;
   white-space: nowrap;
   text-overflow: ellipsis;
+  border-radius: 5px;
 }
 
 .completion-menu__item:hover {
   background-color: rgba(141, 141, 141, 0.05);
-  border-radius: 5px;
 }
 
 .completion-menu__item--active {
-  padding: 4px;
   color: black;
   background-color: rgba(42, 130, 228, 0.15);
-  border-radius: 5px;
 }
 
 .completion-menu__item--active:hover {
@@ -190,6 +214,10 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   display: inline-flex;
   margin-right: 4px;
   color: #faa135;
+}
+
+.completion-menu__item-label {
+  width: 100%;
 }
 
 .completion-menu__item-match {
