@@ -13,10 +13,10 @@
       <div class="sider">
         <NText>{{ props.asset.displayName }}</NText>
         <div class="button-group">
-          <UIButton type="primary" @click="handleAddButton">
-            {{ $t({ en: 'Add', zh: '插入到项目中' }) }}
+          <UIButton size="large" class="insert-button" @click="handleAddButton">
+            {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}
           </UIButton>
-          <UIButton @click="handleAddFav">
+          <UIButton size="large" @click="handleAddFav">
             {{ $t({ en: 'Add to favorites', zh: '添加到收藏' }) }}
           </UIButton>
         </div>
@@ -26,7 +26,7 @@
         </div>
         <div class="category">
           <div class="category-title">{{ $t({ en: 'Category', zh: '类别' }) }}</div>
-          <UITagButton type="info" class="category-content">{{ props.asset.category }}</UITagButton>
+          <NTag class="category-content">{{ props.asset.category }}</NTag>
         </div>
         <div class="more"></div>
       </div>
@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NText } from 'naive-ui'
+import { NTag, NText } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import type { AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -81,6 +81,17 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+header{
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+
+  .close {
+    cursor: pointer;
+  }
+}
+
 main {
   display: flex;
 
@@ -115,6 +126,9 @@ main {
     .button-group {
       display: flex;
       gap: 10px;
+      .insert-button {
+        
+      }
     }
 
     .sider-info {
@@ -141,6 +155,7 @@ main {
 
     .category-content {
       font-size: 14px;
+      width: fit-content;
     }
 
     .more {
