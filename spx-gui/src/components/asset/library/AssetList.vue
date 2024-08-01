@@ -125,7 +125,7 @@ const groupedAssetItems = computed(() => {
 })
 
 const loadMore = () => {
-  if (assetList.value.length >= (searchResultCtx.assets?.total ?? 0)) {
+  if (searchCtx.page * searchCtx.pageSize >= (searchResultCtx.assets?.total ?? 0)) {
     return
   }
   searchCtx.page++
@@ -157,6 +157,9 @@ watch(
   () => searchResultCtx.assets,
   (result) => {
     assetList.value.push(...(result?.data ?? []))
+    if (searchCtx.page === 1) {
+      loadMore()
+    }
   }
 )
 
