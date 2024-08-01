@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -44,7 +45,19 @@ const (
 // use input delimiter to separate user input from template.
 const userInputDelimiter = "##%%##"
 
+// template
+const (
+	userInputTemplate            = ""
+	explainTemplate              = ""
+	commentTemplate              = ""
+	fixCodeTemplate              = ""
+	suggestTaskTemplate          = ""
+	returnTemplate               = ""
+	generateMoreQuestionTemplate = ""
+)
+
 var (
+	// user's chat map manager.
 	chatMapManager = NewChatMapManager()
 )
 
@@ -188,14 +201,19 @@ func NewChat(chatAction int, ctx ProjectContext) *Chat {
 	}
 }
 
-func (c *Chat) NextInput(userInput string) (string, error) {
+func (c *Chat) NextInput(userInput string) (ChatResp, error) {
 	if c.IsExpired() {
 		chatMapManager.DeleteChat(c.ID)
-		return "", fmt.Errorf("chat is expired")
+		return ChatResp{}, fmt.Errorf("chat is expired")
 	}
 	c.CurrentChatLength++
-	//TODO(callum-chan): next call
-	return "", nil
+	prompt := chatPromptGenerator(*c)
+	resp, err := CallLLM(prompt, c.ID)
+	if err != nil {
+		fmt.Println(err)
+		return ChatResp{}, err
+	}
+	return resp.ParesAsChat(), nil
 }
 
 func (c *Chat) IsExpired() bool {
@@ -217,7 +235,22 @@ func checkInputLength(input string) bool {
 	return len(input) < maxInputLength
 }
 
+func delimitInput(input string) string {
+	return strings.Replace(input, userInputDelimiter, "", -1)
+}
+
 func chatPromptGenerator(chat Chat) string {
+	switch chat.ChatAction {
+	case ExplainChat:
+		return ""
+	case CommentChat:
+		return ""
+	case FixCodeChat:
+		return ""
+	default:
+		return ""
+
+	}
 	//TODO(callum-chan): prompt template
 	return ""
 }
