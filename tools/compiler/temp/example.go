@@ -8,24 +8,24 @@ import (
 )
 
 func main() {
-	// 源代码
+	// src
 	src := `package main
     import "fmt"
     func main() {
         fmt.Println("Hello, World!")
     }`
 
-	// 创建文件集
+	// create file set
 	fset := token.NewFileSet()
 
-	// 解析源代码
+	// parse file
 	node, err := parser.ParseFile(fset, "", src, parser.AllErrors)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	// `node` 是一个 GoPlus AST 节点，表示整个源文件
+	// ast node
 	printAstNode(node, fset)
 }
 
