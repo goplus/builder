@@ -29,7 +29,7 @@
             <div class="category-content">{{ props.asset.category }}</div>
           </div>
           <div class="more"></div>
-      </div>
+        </div>
       </div>
     </main>
   </n-modal>
@@ -42,17 +42,38 @@ import { UIModalClose } from '@/components/ui'
 import type { AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
 
+// Define component props
 const props = defineProps<{
   asset: AssetData
 }>()
-const showModal=ref(false)
-const handleCloseButton=()=>{
-  showModal.value=false
+
+// Define component emits
+const emits = defineEmits(['open'])
+
+// Ref to control modal visibility
+const showModal = ref(false)
+
+// Methods to handle button actions
+const handleCloseButton = () => {
+  showModal.value = false
 }
-const handleAddButton=()=>{
+
+const handleAddButton = () => {
   console.log('add')
 }
-const handleAddFav=()=>{
+
+const handleAddFav = () => {
   console.log('add fav')
 }
+
+// Expose method to open modal
+const openModal = () => {
+  showModal.value = true
+  emits('open')  // Emit open event when the modal is opened
+}
+
+defineExpose({
+  openModal
+})
+
 </script>

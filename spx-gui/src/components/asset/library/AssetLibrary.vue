@@ -1,10 +1,12 @@
 <template>
   <div class="container">
+    <DetailModal :asset="assetDataTest" @open-detail="handleOpenDetail"/>
+    <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
       </h4>
-      <LibraryTab @update:value="handleChangeType" class="tab"/>
+      <LibraryTab class="tab" @update:value="handleChangeType"/>
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
@@ -20,7 +22,6 @@
     <section class="body">
       <main class="main">
         <div class="content">
-          
           <AssetList @update:selected="handleAssetSelectedChange"/>
         </div>
         <footer class="footer">
@@ -74,7 +75,8 @@ import AssetList from './AssetList.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
-import LibrarySelect from './LibrarySelect.vue'
+import DetailModal from './detailModal/DetailModal.vue'
+
 
 const props = defineProps<{
   visible?: boolean
@@ -87,6 +89,37 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
+// Sample asset data
+const assetDataTest: AssetData = {
+  displayName: 'Sample Asset',
+  cTime: '2024-08-01',
+  owner: 'User',
+  category: 'Category 1',
+  id: '1',
+  assetType: AssetType.Sprite,
+  files: {
+                "assets/sprites/sword/1709276941046.png": "kodo://goplus-builder-static-test/files/FoGKeeUeK5PLpOZ4mJjKR3mDMb79/1709276941046.png",
+                "assets/sprites/sword/index.json": "kodo://goplus-builder-static-test/files/FirKxLEYMbcJZXZJDPxtmFMKkigF/index.json",
+                "sword.spx": "kodo://goplus-builder-static-test/files/FsLjb7dM8I-N-iHGmv7n5J6lxvRO/sword.spx"
+            },
+  filesHash: '',
+  preview: 'assets/sprites/sword/1709276941046.png',
+  clickCount: 0,
+  isPublic: 0
+}
+
+// Ref to access the modal component instance
+const myModalRef = ref()
+
+// Method to open the modal
+const openChildModal = () => {
+  myModalRef.value.openModal()
+}
+
+// Handle modal open event
+const handleOpenDetail = () => {
+  console.log('Modal opened')
+}
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
