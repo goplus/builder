@@ -1,8 +1,5 @@
 <template>
-  <n-button @click="showModal = true">
-    来吧
-  </n-button>
-  <n-modal v-model:show="showModal">
+  <UIModal v-model:show="showModal">
     <header>
       <UIModalClose class="close" @click="handleCloseButton" />
     </header>
@@ -32,15 +29,16 @@
         </div>
       </div>
     </main>
-  </n-modal>
+  </UIModal>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref } from 'vue'
-import { NButton, NModal, NText } from 'naive-ui'
+import { ref } from 'vue'
+import { NText } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import type { AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
+import UIModal from '@/components/ui/modal/UIModal.vue'
 
 // Define component props
 const props = defineProps<{

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <DetailModal :asset="assetDataTest" @open-detail="handleOpenDetail"/>
+    <DetailModal ref="detailModalRef" :asset="assetDataTest"/>
     <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
       <h4 class="title">
@@ -109,17 +109,13 @@ const assetDataTest: AssetData = {
 }
 
 // Ref to access the modal component instance
-const myModalRef = ref()
+const detailModalRef = ref()
 
 // Method to open the modal
 const openChildModal = () => {
-  myModalRef.value.openModal()
+  detailModalRef.value.openModal()
 }
 
-// Handle modal open event
-const handleOpenDetail = () => {
-  console.log('Modal opened')
-}
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
