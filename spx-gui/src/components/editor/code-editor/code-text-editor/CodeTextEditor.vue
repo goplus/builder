@@ -181,6 +181,7 @@ watchEffect(async (onCleanup) => {
 
   // todo: consider will this code has potential memory leak?
   fnSelectMonacoCompletionMenu.value = (idx: number) => {
+    // create anonymous arrow callback function instead of using: `fnSelectMonacoCompletionMenu.value = completionMenuProvider.select`
     // this can avoid class inner function `this` be changed by others
     completionMenuProvider.select(idx)
   }

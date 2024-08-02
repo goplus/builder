@@ -1,4 +1,3 @@
-// this is temp file will merge into monaco.ts after type error is totally resolved
 // the following code may use `any` type or `force transformed` type because some type is not exported,
 // whole type need from monaco-editor repo to generate new type definition, update all private type to public type to each file for every class.
 // todo: generate monaco.all.ts type from https://github.com/microsoft/vscode
