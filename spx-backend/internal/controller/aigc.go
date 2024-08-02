@@ -27,6 +27,21 @@ type GenerateSpriteParams struct {
 	ImageJobId string `json:"imageJobId"`
 }
 
+type QueryParams struct {
+	JobId string `json:"jobId"`
+}
+
+type QueryResult[T any] struct {
+	Status string `json:"status"`
+	Result T      `json:"result"`
+}
+
+type QueryImageResult struct {
+	JobId string   `json:"jobId"`
+	Type  string   `json:"type"`
+	Files []string `json:"files"`
+}
+
 type GenerateResult struct {
 	ImageJobId string `json:"imageJobId"`
 }
@@ -107,6 +122,12 @@ func Generating(param *GenerateParams) (*GenerateResult, error) {
 
 // GenerateSprite follow parameters to generating sprite.
 func GenerateSprite(param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
+	// todo: implement aigc generating
+	return nil, nil
+}
+
+// Query job status.
+func Query(param *QueryParams) (*QueryResult[QueryImageResult], error) {
 	// todo: implement aigc generating
 	return nil, nil
 }

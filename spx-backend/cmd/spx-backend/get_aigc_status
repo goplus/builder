@@ -1,0 +1,23 @@
+// Get generate status from ai.
+//
+// Request:
+//   POST /aigc/status
+
+import (
+	"github.com/goplus/builder/spx-backend/internal/controller"
+)
+
+ctx := &Context
+
+_, ok := ensureUser(ctx)
+if !ok {
+	return
+}
+
+result, err := ctrl.Query(ctx.Context())
+
+if err != nil {
+	replyWithInnerError(ctx, err)
+	return
+}
+json result
