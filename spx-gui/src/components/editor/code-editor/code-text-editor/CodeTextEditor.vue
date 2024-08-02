@@ -43,7 +43,7 @@ const emit = defineEmits<{
 const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
-const fnSelectMonacoCompletionMenu = shallowRef<(idx: number) => void>()
+const fnSelectMonacoCompletionMenu = shallowRef<((idx: number) => void) | null>()
 const completionMenuRef = ref<{
   $container: HTMLElement
 }>()
@@ -167,7 +167,11 @@ watchEffect(async (onCleanup) => {
     updateCompletionMenuPosition()
   })
 
-  fnSelectMonacoCompletionMenu.value = completionMenuProvider.select
+  // todo: consider will this code has potential memory leak?
+  fnSelectMonacoCompletionMenu.value = (idx: number) => {
+    // this can avoid class inner function `this` be changed by others
+    completionMenuProvider.select(idx)
+  }
 
   editor.addAction({
     id: 'format',
@@ -199,6 +203,7 @@ watchEffect(async (onCleanup) => {
   onCleanup(() => {
     completionMenuProvider.dispose()
     disposeMonacoProviders()
+    fnSelectMonacoCompletionMenu.value = null
     editor.dispose()
   })
 })

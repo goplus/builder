@@ -27,6 +27,8 @@ export interface CompletionMenuState {
 type EventCallback = () => void
 
 export class CompletionMenuProvider implements IDisposable {
+  // used for deltaDecorations for global control editor identify which inline text should be displayed with others,
+  // like: code preview(this is current provider need), parameter hint, attribute hint, etc.
   private static providerId: string = this.name
   private editor: IEditor.IStandaloneCodeEditor
   private completionMenuState: UnwrapNestedRefs<CompletionMenuState>
@@ -38,6 +40,7 @@ export class CompletionMenuProvider implements IDisposable {
     viewZoneId: string | null
     $codePreviewContainer: HTMLElement | null
   }
+  private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
   private readonly events: {
     onShow: EventCallback[]
@@ -91,11 +94,6 @@ export class CompletionMenuProvider implements IDisposable {
     })
 
     this.suggestControllerWidget.onDidFocus(() => {
-      // this callback will quicker than onDidShow 100ms,
-      // but still not immediately show completion menu when original completion menu show up.
-      // 100ms, 500ms, 1000ms. this is possible delay time to trigger this callback.
-      // source from:  chrome devtools investigate runtime and debug source code to get these.
-      // possible is 500ms.
       this.completionMenuState.visible = true
       const focusedItem = this.suggestControllerWidget.getFocusedItem()
       if (!focusedItem) return
@@ -175,11 +173,11 @@ export class CompletionMenuProvider implements IDisposable {
   private syncCompletionMenuStateFromSuggestControllerWidget(activeIdx: number = 0) {
     if (activeIdx < 0 || activeIdx >= this.suggestControllerWidget._completionModel.items.length)
       return
-    const completionItems: MonacoCompletionModelItem[] =
-      this.suggestControllerWidget._completionModel.items
+    this.monacoCompletionModelItems = this.suggestControllerWidget._completionModel.items
     this.completionMenuState.activeIdx = activeIdx
-    this.completionMenuState.suggestions =
-      this.completionModelItems2CompletionItems(completionItems)
+    this.completionMenuState.suggestions = this.completionModelItems2CompletionItems(
+      this.monacoCompletionModelItems
+    )
   }
 
   private showCodePreview(position: IPosition, insertText: string, word: string) {
@@ -229,8 +227,7 @@ export class CompletionMenuProvider implements IDisposable {
   }
 
   select(idx: number) {
-    const completionItems: MonacoCompletionModelItem[] =
-      this.suggestControllerWidget._completionModel.items
+    const completionItems: MonacoCompletionModelItem[] = this.monacoCompletionModelItems
     if (!completionItems.length || idx < 0 || idx >= completionItems.length) return
     this.suggestControllerWidget._select(completionItems[idx], idx)
   }
@@ -253,6 +250,7 @@ export class CompletionMenuProvider implements IDisposable {
     })
   }
 
+  // todo: add more case to satisfy completion item label content for better user understanding
   completionItemKind2Icon(completionIcon: CompletionItemKind): IconEnum {
     switch (completionIcon) {
       case languages.CompletionItemKind.Function:
