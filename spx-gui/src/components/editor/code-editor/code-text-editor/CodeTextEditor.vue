@@ -80,6 +80,8 @@ watchEffect(async (onClenaup) => {
     foldingHighlight: true, // 折叠等高线
     foldingStrategy: 'indentation', // 折叠方式  auto | indentation
     fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
+    // Enable this option to avoid abnormal cursor display after using JetBrains MonoNL font.
+    fontLigatures: true,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
