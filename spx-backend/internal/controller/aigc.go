@@ -23,8 +23,16 @@ type GenerateParams struct {
 	Height  int    `json:"height"`
 }
 
+type GenerateSpriteParams struct {
+	ImageJobId string `json:"imageJobId"`
+}
+
 type GenerateResult struct {
 	ImageJobId string `json:"imageJobId"`
+}
+
+type GenerateSpriteResult struct {
+	SpriteJobId string `json:"spriteJobId"`
 }
 
 func (p *MattingParams) Validate() (ok bool, msg string) {
@@ -91,8 +99,14 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 	}, nil
 }
 
-// Generating Generate following parameters for generating images.
+// Generating follow parameters to generating images.
 func Generating(param *GenerateParams) (*GenerateResult, error) {
+	// todo: implement aigc generating
+	return nil, nil
+}
+
+// GenerateSprite follow parameters to generating sprite.
+func GenerateSprite(param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
 	// todo: implement aigc generating
 	return nil, nil
 }
