@@ -104,6 +104,7 @@ const themeOverrides: GlobalThemeOverrides = {
     boxShadowFocus: `inset 0 0 0 1px ${uiVariables.color.primary.main}`
   },
   Checkbox: {
+    borderRadius: '2px',
     boxShadowFocus: 'none'
   },
   Message: {

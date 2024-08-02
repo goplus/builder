@@ -83,7 +83,7 @@ const {
     return listAsset({
       pageSize: searchCtx.pageSize,
       pageIndex: searchCtx.page,
-      assetType: props.type,
+      assetType: searchCtx.type,
       keyword: searchCtx.keyword,
       category: c,// send like 'cartoon_characters,realistic_characters'
       owner: c === cPersonal ? undefined : '*',

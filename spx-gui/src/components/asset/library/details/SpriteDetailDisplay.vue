@@ -1,8 +1,5 @@
 <template>
-  <NImage
-    :src="imgSrc!"
-    style="width: 100%;height: 100%;"
-  />
+  <UIImg class="sprite-preview" :src="imgSrc" :loading="imgLoading" style="height: 100%; width: 100%;"/>
 </template>
 
 <script setup lang="ts">
@@ -11,7 +8,7 @@ import { useFileUrl } from '@/utils/file'
 import { cachedConvertAssetData } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import type { AssetData, AssetType } from '@/apis/asset'
-import { NImage } from 'naive-ui'
+import { UIImg } from '@/components/ui'
 
 const props = defineProps<{
   asset: AssetData<AssetType.Sprite>
