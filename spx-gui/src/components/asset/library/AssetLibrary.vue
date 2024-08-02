@@ -4,8 +4,8 @@
       <h4 v-if="!selectedAsset" class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
         <!-- For debug -->
-        <span style="margin-left: 0.5rem;" @dblclick="searchCtx.type = (searchCtx.type + 1) % 3">
-        {{ $t(entityMessages[searchCtx.type]) }}
+        <span style="margin-left: 0.5rem" @dblclick="searchCtx.type = (searchCtx.type + 1) % 3">
+          {{ $t(entityMessages[searchCtx.type]) }}
         </span>
       </h4>
       <h4 v-else class="title">
@@ -30,6 +30,9 @@
 
     <section v-show="!selectedAsset" class="body">
       <main class="main">
+        <div class="order-select">
+          <LibrarySelect />
+        </div>
         <div class="content">
           <AssetList
             :add-to-project-pending="handleAddToProject.isLoading.value"
@@ -41,7 +44,11 @@
       <div class="sider">
         <LibraryMenu @update:value="handleSelectCategory" />
         <UIDivider />
-        <LibraryTree :type="type" style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin;" @update="handleSelectCategory"/>
+        <LibraryTree
+          :type="type"
+          style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
+          @update="handleSelectCategory"
+        />
       </div>
     </section>
     <Transition name="fade" mode="out-in" appear>
@@ -71,6 +78,7 @@ import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
 import DetailModal from './details/DetailModal.vue'
+import LibrarySelect from './LibrarySelect.vue'
 
 const props = defineProps<{
   visible?: boolean
@@ -243,15 +251,17 @@ const handleAddToProject = useMessageHandle(
     color: var(--ui-color-grey-900);
   }
 
+  .order-select {
+    padding: 12px 24px 0 0;
+    width: 15rem;
+    margin-left: auto;
+  }
+
   .content {
     height: 70vh;
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;
-  }
-
-  .select {
-    margin-left: 50vw;
   }
 
   .asset-list {
@@ -279,10 +289,12 @@ const handleAddToProject = useMessageHandle(
 .fade-enter-active {
   transition: all 0.25s ease;
 }
+.fade-leave-active {
+  display: none;
+}
 
 .fade-enter-from {
   opacity: 0;
   transform: translateY(20px);
 }
-
 </style>
