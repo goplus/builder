@@ -1,7 +1,7 @@
-// Get text suggestion from AI.
+// Get generate image from ai.
 //
 // Request:
-//   POST /aigc/text
+//   POST /aigc/image
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -14,7 +14,7 @@ if !ok {
 	return
 }
 
-//todo: add ctrl handler
+result, err := ctrl.Generating(ctx.Context())
 
 if err != nil {
 	replyWithInnerError(ctx, err)
