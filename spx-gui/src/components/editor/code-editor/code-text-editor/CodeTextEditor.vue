@@ -1,5 +1,6 @@
 <template>
   <div ref="editorElement" class="code-text-editor"></div>
+  <doc-preview-card style="position: absolute; top: 0"></doc-preview-card>
 </template>
 <script lang="ts">
 let monaco: typeof import('monaco-editor')
@@ -15,6 +16,7 @@ import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
+import DocPreviewCard from '@/components/editor/code-editor/code-text-editor/DocPreviewCard.vue'
 
 const props = defineProps<{
   value: string
