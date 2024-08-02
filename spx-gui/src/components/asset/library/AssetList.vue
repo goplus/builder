@@ -11,42 +11,29 @@
     ref="virtualList"
     class="asset-list"
     :items="groupedAssetItems"
-    :item-size="140"
+    :item-size="148"
     :key-field="'id'"
-    :item-resizable="true"
+    :item-resizable="false"
     @scroll="handleScroll"
     @wheel="handleScroll"
   >
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <SoundItem
-            v-if="asset.assetType === AssetType.Sound"
-            :asset="(asset as AssetData<AssetType.Sound>)"
-            :selected="isSelected(asset)"
-            @click="handleAssetClick(asset)"
-          />
-          <SpriteItem
-            v-else-if="asset.assetType === AssetType.Sprite"
-            :asset="(asset as AssetData<AssetType.Sprite>)"
-            :selected="isSelected(asset)"
-            @click="handleAssetClick(asset)"
-          />
-          <BackdropItem
-            v-else-if="asset.assetType === AssetType.Backdrop"
-            :asset="(asset as AssetData<AssetType.Backdrop>)"
-            :selected="isSelected(asset)"
-            @click="handleAssetClick(asset)"
+          <AssetItem
+            :asset="asset"
+            :add-to-project-pending="props.addToProjectPending"
+            @add-to-project="(asset) => emit('addToProject', asset)"
           />
         </template>
       </div>
       <div v-else-if="item.type === 'loading-more'" class="more-info loading-more">
         <NSpin />
-        {{ $t({ en: 'Loading more...', zh: '加载更多...' }) }}
+        {{ $t({ en: 'Loading more assets...', zh: '正在加载更多素材...' }) }}
       </div>
       <div v-else-if="item.type === 'no-more'" size="small" class="more-info no-more">
         <img :src="emptyImg" alt="empty" />
-        {{ $t({ en: 'No more', zh: '没有更多了' }) }}
+        {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
       </div>
       <div v-else-if="item.type === 'loading-more-error'" class="more-info loading-more-error">
         <img :src="errorImg" alt="error" />
@@ -61,22 +48,24 @@ import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin } from 'naive-ui'
-import { AssetType, type AssetData } from '@/apis/asset'
-import SoundItem from './SoundItem.vue'
-import SpriteItem from './SpriteItem.vue'
-import BackdropItem from './BackdropItem.vue'
+import { type AssetData } from '@/apis/asset'
 import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
+import AssetItem from './AssetItem.vue'
+
+const props = defineProps<{
+  addToProjectPending: boolean
+}>()
 
 const emit = defineEmits<{
-  'update:selected': [selected: AssetData[]]
+  addToProject: [asset: AssetData]
 }>()
 
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
 
 type GroupedAssetItem =
@@ -140,7 +129,7 @@ const groupedAssetItems = computed(() => {
 })
 
 const loadMore = () => {
-  if (assetList.value.length >= (searchResultCtx.assets?.total ?? 0)) {
+  if (searchCtx.page * searchCtx.pageSize >= (searchResultCtx.assets?.total ?? 0)) {
     return
   }
   searchCtx.page++
@@ -153,25 +142,14 @@ const handleScroll = (e: Event) => {
   }
 }
 
-const selected = shallowReactive<AssetData[]>([])
-
-function isSelected(asset: AssetData) {
-  return selected.some((a) => a.id === asset.id)
-}
-
-async function handleAssetClick(asset: AssetData) {
-  const index = selected.findIndex((a) => a.id === asset.id)
-  if (index < 0) selected.push(asset)
-  else selected.splice(index, 1)
-
-  emit('update:selected', selected)
-}
-
 // Append search result to assetList
 watch(
   () => searchResultCtx.assets,
   (result) => {
     assetList.value.push(...(result?.data ?? []))
+    if (searchCtx.page === 1) {
+      loadMore()
+    }
   }
 )
 
@@ -201,11 +179,14 @@ watch(
 
 .asset-list-row {
   display: flex;
-  gap: 8px;
+  gap: 2.5%;
   flex-wrap: nowrap;
+  align-items: center;
+  margin: 10px 2.5%;
 }
+
 .asset-list-row:not(:last-child) {
-  margin-bottom: 8px;
+  margin-bottom: 20px;
 }
 
 .more-info {
@@ -215,12 +196,12 @@ watch(
   gap: 8px;
   padding: 16px;
   padding-right: 40px;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--ui-color-grey-600);
 }
 
 .more-info img {
-  width: 18px;
-  height: 18px;
+  width: 36px;
+  height: 36px;
 }
 </style>
