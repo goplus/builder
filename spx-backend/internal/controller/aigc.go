@@ -14,6 +14,13 @@ type MattingParams struct {
 	ImageUrl string `json:"imageUrl"`
 }
 
+type GenerateParams struct {
+	// Category is the category of the image to be generated.
+	Category string `json:"category"`
+	// Keyword is the keyword of the image to be generated.
+	Keyword string `json:"keyword"`
+}
+
 func (p *MattingParams) Validate() (ok bool, msg string) {
 	if p.ImageUrl == "" {
 		return false, "missing imageUrl"
@@ -77,3 +84,5 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 		ImageUrl: aigcResult.ImageUrl,
 	}, nil
 }
+
+//Generate following parameters for generating images.
