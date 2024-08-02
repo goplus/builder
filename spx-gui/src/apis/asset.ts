@@ -30,6 +30,10 @@ export type AssetData<T extends AssetType = AssetType> = {
   clickCount: number 
   /** Public status */
   isPublic: IsPublic
+  /** Favorite status */
+  isFavorite: boolean
+  /** Favorite count */
+  favoriteCount: number
   /** Creation time */
   cTime: string
 }
@@ -83,4 +87,25 @@ export function getAsset(id: string) {
 
 export function increaseAssetClickCount(id: string) {
   return client.post(`/asset/${encodeURIComponent(id)}/click`) as Promise<void>
+}
+
+/**
+ * WARNING: This API is not implemented in the backend yet.
+ */
+export function addAssetToHistory(id: string) {
+  return client.post('/asset/history', { assetId: id }) as Promise<void>
+}
+
+/**
+ * WARNING: This API is not implemented in the backend yet.
+ */
+export function addAssetToFavorites(id: string) {
+  return client.post('/asset/favorites', { assetId: id }) as Promise<void>
+}
+
+/**
+ * WARNING: This API is not implemented in the backend yet.
+ */
+export function removeAssetFromFavorites(id: string) {
+  return client.delete('/asset/favorites', { assetId: id }) as Promise<void>
 }

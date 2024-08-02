@@ -5,7 +5,6 @@
         :project="props.project"
         @resolved="emit('resolved', $event)"
         @cancelled="emit('cancelled')"
-        @update:visible="emit('cancelled')"
       />
     </UIModal>
   </SearchContextProvider>
