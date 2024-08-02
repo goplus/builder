@@ -41,7 +41,7 @@ export function useSearchResultCtx() {
 
 <script setup lang="ts">
 import { provide, type InjectionKey, reactive, watch, computed } from 'vue'
-import { listAsset, AssetType, IsPublic, type AssetData } from '@/apis/asset'
+import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy } from '@/apis/asset'
 
 const props = defineProps<{
   type: AssetType
@@ -49,7 +49,7 @@ const props = defineProps<{
 
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
-  category: '*',
+  category: '',
   type: props.type,
   page: 1,
   pageSize: 12
@@ -87,7 +87,8 @@ const {
       keyword: searchCtx.keyword,
       category: c,// send like 'cartoon_characters,realistic_characters'
       owner: c === cPersonal ? undefined : '*',
-      isPublic: c === cPersonal ? undefined : IsPublic.public
+      isPublic: c === cPersonal ? undefined : IsPublic.public,
+      orderBy: ListAssetParamOrderBy.TimeAsc
     })
   },
   {

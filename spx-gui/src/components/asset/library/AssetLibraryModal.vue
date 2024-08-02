@@ -1,6 +1,6 @@
 <template>
   <SearchContextProvider :type="props.type" >
-    <UIModal style="width: 1076px" :visible="props.visible" @update:visible="emit('cancelled')">
+    <UIModal style="min-width: 80vw;min-height: 90vh;" :visible="props.visible" @update:visible="emit('cancelled')">
       <AssetLibrary
         :project="props.project"
         @resolved="emit('resolved', $event)"
@@ -33,5 +33,8 @@ const emit = defineEmits<{
 </script>
 
 <style lang="scss" scoped>
-
+.modal{
+  min-width: 1000px;
+  // height: 100vh;
+}
 </style>

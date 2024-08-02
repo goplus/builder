@@ -1,36 +1,32 @@
 <template>
   <div class="container">
+    <DetailModal ref="detailModalRef" :asset="assetDataTest" />
+    <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
       </h4>
-      <LibraryTab @update:value="handleChangeType" />
-      <UITextInput
-        v-model:value="searchInput"
-        class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
-      >
-        <template #prefix><UIIcon class="search-icon" type="search" /></template>
+      <UITextInput v-model:value="searchInput" class="search-input" clearable
+        :placeholder="$t({ en: 'Search', zh: '搜索' })" @keypress.enter="handleSearch">
+        <template #prefix>
+          <UIIcon class="search-icon" type="search" />
+        </template>
       </UITextInput>
       <UIModalClose class="close" @click="handleCloseButton" />
     </div>
     <UIDivider />
     <section class="body">
+      <main class="main">
+        <div class="content">
+          <AssetList :add-to-project-pending="handleAddToProject.isLoading.value"
+            @add-to-project="handleAddToProject.fn" />
+        </div>
+      </main>
       <div class="sider">
         <LibraryMenu @update:value="handleSelectCategory" />
         <UIDivider />
         <LibraryTree :type="type" @update="handleSelectCategory" />
       </div>
-      <main class="main">
-        <div class="content">
-          <AssetList
-            :add-to-project-pending="handleAddToProject.isLoading.value"
-            @add-to-project="handleAddToProject.fn"
-          />
-        </div>
-      </main>
     </section>
   </div>
 </template>
@@ -53,6 +49,8 @@ import AssetList from './AssetList.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
+import DetailModal from './details/DetailModal.vue'
+
 
 const props = defineProps<{
   visible?: boolean
@@ -64,6 +62,34 @@ const emit = defineEmits<{
   cancelled: []
   resolved: [AssetModel[]]
 }>()
+
+// Sample asset data
+const assetDataTest: AssetData = {
+  displayName: 'Sample Asset',
+  cTime: '2024-08-01',
+  owner: 'User',
+  category: 'Category 1',
+  id: '1',
+  assetType: AssetType.Sprite,
+  files: {
+    "assets/sprites/sword/1709276941046.png": "kodo://goplus-builder-static-test/files/FoGKeeUeK5PLpOZ4mJjKR3mDMb79/1709276941046.png",
+    "assets/sprites/sword/index.json": "kodo://goplus-builder-static-test/files/FirKxLEYMbcJZXZJDPxtmFMKkigF/index.json",
+    "sword.spx": "kodo://goplus-builder-static-test/files/FsLjb7dM8I-N-iHGmv7n5J6lxvRO/sword.spx"
+  },
+  filesHash: '',
+  preview: 'assets/sprites/sword/1709276941046.png',
+  clickCount: 0,
+  isPublic: 0,
+  favoriteCount: 0,
+  isFavorite: false,
+}
+
+// Ref to access the modal component instance
+const detailModalRef = ref()
+// Method to open the modal
+const openChildModal = () => {
+  detailModalRef.value.openModal()
+}
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
@@ -134,7 +160,7 @@ async function addAssetToProject(asset: AssetData) {
   }
 }
 
-const addedModels:AssetModel[] = []
+const addedModels: AssetModel[] = []
 
 const handleAddToProject = useMessageHandle(
   async (asset: AssetData) => {
@@ -163,12 +189,17 @@ const handleAddToProject = useMessageHandle(
     padding: var(--ui-gap-middle) 24px;
     height: 64px;
   }
+
   .title {
     font-size: 16px;
     line-height: 26px;
     flex: 1;
     display: flex;
     color: var(--ui-color-title);
+  }
+
+  .tab {
+    flex: 1;
   }
 
   .close {
@@ -192,37 +223,48 @@ const handleAddToProject = useMessageHandle(
   }
 
   .sider {
-    flex: 0 0 148px;
+    flex: 0 0 196px;
     display: flex;
     flex-direction: column;
     padding: var(--ui-gap-middle);
-    gap: 12px;
-
+    gap: 16px;
     background: var(--ui-color-grey-200);
   }
+
   .main {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
     justify-content: stretch;
   }
+
   .title {
     padding: 20px 24px 0;
     color: var(--ui-color-grey-900);
   }
+
   .content {
-    height: 513px;
+    height: 70vh;
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;
   }
+
+  .select {
+    margin-left: 50vw;
+  }
+
   .asset-list {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
+
   .footer {
+    bottom: 56px;
+    right: 196px;
     padding: 20px 24px;
+    position: fixed;
     display: flex;
     justify-content: flex-end;
     align-items: center;

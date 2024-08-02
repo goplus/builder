@@ -18,7 +18,6 @@ import { AssetType } from '@/apis/asset'
 
 const { t } = useI18n()
 const searchCtx = useSearchCtx()
-const type = ref<AssetType>(searchCtx.type)
 const text = {
   0: t({ en: 'Sprite', zh: `精灵` }),
   1: t({ en: 'Backdrop', zh: `背景` }),
@@ -27,8 +26,6 @@ const text = {
 
 const handleUpdateValue = (value: string) => {
   searchCtx.type = Number(value) as AssetType
-  console.log(searchCtx.type)
-  //todo: 
 }
 </script>
 

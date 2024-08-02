@@ -27,13 +27,15 @@ export type AssetData<T extends AssetType = AssetType> = {
   /** Preview URL for the asset, e.g., a gif for a sprite */
   preview: string
   /** Click count of the asset */
-  clickCount: number
+  clickCount: number 
   /** Public status */
   isPublic: IsPublic
   /** Favorite status */
   isFavorite: boolean
   /** Favorite count */
   favoriteCount: number
+  /** Creation time */
+  cTime: string
 }
 
 export type AddAssetParams = Pick<
@@ -57,8 +59,11 @@ export function deleteAsset(id: string) {
 
 export enum ListAssetParamOrderBy {
   Default = 'default',
-  TimeDesc = 'time',
-  ClickCountDesc = 'clickCount'
+  TimeDesc = 'timeDesc',
+  TimeAsc = 'timeAsc',
+  ClickCountDesc = 'clickCount',
+  NameAsc = 'nameAsc',
+  NameDesc = 'nameDesc'
 }
 
 export type ListAssetParams = PaginationParams & {
