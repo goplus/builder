@@ -79,7 +79,9 @@ const assetDataTest: AssetData = {
   filesHash: '',
   preview: 'assets/sprites/sword/1709276941046.png',
   clickCount: 0,
-  isPublic: 0
+  isPublic: 0,
+  favoriteCount: 0,
+  isFavorite: false,
 }
 
 // Ref to access the modal component instance
