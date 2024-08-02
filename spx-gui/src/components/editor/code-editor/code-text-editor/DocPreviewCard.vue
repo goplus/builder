@@ -186,24 +186,24 @@ const md = markdownit({
 // }
 const result = md.render(md.utils.escapeHtml(content))
 
-window.copyToClipboard = copyToClipboard
-
-function copyToClipboard(button: HTMLButtonElement) {
-  if (!button.previousElementSibling) return
-  const codeBlock = button.previousElementSibling
-  const code = codeBlock.textContent || ''
-  navigator.clipboard
-    .writeText(code)
-    .then(() => {
-      button.textContent = 'Copied!'
-      setTimeout(() => {
-        button.textContent = 'Copy'
-      }, 2000)
-    })
-    .catch((err) => {
-      console.error('Failed to copy: ', err)
-    })
-}
+// window.copyToClipboard = copyToClipboard
+//
+// function copyToClipboard(button: HTMLButtonElement) {
+//   if (!button.previousElementSibling) return
+//   const codeBlock = button.previousElementSibling
+//   const code = codeBlock.textContent || ''
+//   navigator.clipboard
+//     .writeText(code)
+//     .then(() => {
+//       button.textContent = 'Copied!'
+//       setTimeout(() => {
+//         button.textContent = 'Copy'
+//       }, 2000)
+//     })
+//     .catch((err) => {
+//       console.error('Failed to copy: ', err)
+//     })
+// }
 </script>
 
 <template>
