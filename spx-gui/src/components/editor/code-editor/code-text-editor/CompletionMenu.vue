@@ -156,10 +156,6 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   animation: fade-in 150ms ease-in;
 }
 
-.completion-menu--reverse-up {
-  transform: translateY(calc(-100% - v-bind(cssLineHeight))) !important;
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -186,6 +182,10 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   box-shadow: var(--ui-box-shadow-small);
   transform: translateY(0);
   transition: 150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5);
+}
+
+.completion-menu--reverse-up {
+  transform: translateY(calc(-100% - v-bind(cssLineHeight)));
 }
 
 .completion-menu__item {
