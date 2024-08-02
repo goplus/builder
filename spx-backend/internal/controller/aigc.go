@@ -19,6 +19,12 @@ type GenerateParams struct {
 	Category string `json:"category"`
 	// Keyword is the keyword of the image to be generated.
 	Keyword string `json:"keyword"`
+	Width   int    `json:"width"`
+	Height  int    `json:"height"`
+}
+
+type GenerateResult struct {
+	ImageJobId string `json:"imageJobId"`
 }
 
 func (p *MattingParams) Validate() (ok bool, msg string) {
@@ -85,4 +91,8 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 	}, nil
 }
 
-//Generate following parameters for generating images.
+// Generating Generate following parameters for generating images.
+func Generating(param *GenerateParams) (*GenerateResult, error) {
+	// todo: implement aigc generating
+	return nil, nil
+}
