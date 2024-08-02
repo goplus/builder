@@ -55,7 +55,7 @@ const props = defineProps<{
 const emits = defineEmits(['open'])
 
 // Ref to control modal visibility
-const showModal = ref(false)
+const showModal = ref(true)
 
 // Methods to handle button actions
 const handleCloseButton = () => {

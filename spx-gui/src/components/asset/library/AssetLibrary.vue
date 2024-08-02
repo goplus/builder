@@ -1,12 +1,11 @@
 <template>
   <div class="container">
     <DetailModal ref="detailModalRef" :asset="assetDataTest"/>
-
+    <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
       <h4 class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
       </h4>
-      <LibraryTab class="tab" @update:value="handleChangeType"/>
       <UITextInput
         v-model:value="searchInput"
         class="search-input"
@@ -110,6 +109,10 @@ const assetDataTest: AssetData = {
 
 // Ref to access the modal component instance
 const detailModalRef = ref()
+// Method to open the modal
+const openChildModal = () => {
+  detailModalRef.value.openModal()
+}
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
