@@ -12,7 +12,7 @@ const maxChatLength = 20
 // max input length
 const maxInputLength = 1000
 
-// expire time
+// expire time of chat
 const expireTime = time.Hour * 2
 
 // Chat actions
@@ -102,12 +102,12 @@ type AIResp struct {
 }
 
 func (resp AIResp) ParesAsSuggestTask() SuggestTaskResp {
-	//TODO(callum-chan): parse as suggest task
+	//TODO(callme-taota): parse as suggest task
 	return SuggestTaskResp{}
 }
 
 func (resp AIResp) ParesAsChat() ChatResp {
-	//TODO(callum-chan): parse as chat
+	//TODO(callme-taota): parse as chat
 	return ChatResp{}
 }
 
@@ -251,17 +251,17 @@ func chatPromptGenerator(chat Chat) string {
 		return ""
 
 	}
-	//TODO(callum-chan): prompt template
+	//TODO(callme-taota): prompt template
 	return ""
 }
 
 func (p AITaskParams) taskPromptGenerator() string {
-	//TODO(callum-chan): prompt template
+	//TODO(callme-taota): prompt template
 	return ""
 }
 
 func CallLLM(input string, id string) (AIResp, error) {
-	//TODO(callum-chan): call llm api
+	//TODO(callme-taota): call llm api
 	return AIResp{}, nil
 }
 
