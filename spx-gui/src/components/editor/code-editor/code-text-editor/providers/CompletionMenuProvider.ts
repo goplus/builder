@@ -3,8 +3,13 @@
 // whole type need from monaco-editor repo to generate new type definition, update all private type to public type to each file for every class.
 // todo: generate monaco.all.ts type from https://github.com/microsoft/vscode
 
-import { editor as IEditor, type IDisposable, type IPosition } from 'monaco-editor'
-import { languages, Range } from 'monaco-editor'
+import {
+  editor as IEditor,
+  type IDisposable,
+  type IPosition,
+  languages,
+  Range
+} from 'monaco-editor'
 import type { UnwrapNestedRefs } from 'vue'
 import type { CompletionMenuItem, MonacoCompletionModelItem } from '../tools/completion'
 
@@ -20,6 +25,7 @@ export interface CompletionMenuState {
     top: number
     left: number
   }
+  fontSize: number
   lineHeight: number
   word: string
 }
@@ -121,8 +127,8 @@ export class CompletionMenuProvider implements IDisposable {
   }
 
   private createCodePreviewDomNode(codeLines: string[]) {
-    // for now is 19px, may need update when editor line height has changed
-    const LINE_HEIGHT = 19
+    const LINE_HEIGHT = this.completionMenuState.lineHeight
+    console.log(LINE_HEIGHT)
     const $codeContainer = document.createElement('div')
     $codeContainer.classList.add('view-lines')
     $codeContainer.innerHTML = codeLines

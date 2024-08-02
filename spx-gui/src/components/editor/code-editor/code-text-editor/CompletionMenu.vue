@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { NScrollbar } from 'naive-ui'
 import type { CompletionMenuItem } from './tools/completion'
 import { determineClosestEdge, Icon2SVG, isElementInViewport } from './tools'
@@ -7,16 +7,18 @@ import type { ScrollbarInst } from 'naive-ui/es/scrollbar/src/Scrollbar'
 import { normalizeIconSize } from './tools/common'
 import type { IMatch } from './tools/monaco-editor-core'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     suggestions?: CompletionMenuItem[]
     activeIdx?: number
-    lineHeight?: string
+    lineHeight?: number
+    fontSize?: number
   }>(),
   {
     activeIdx: 0,
     suggestions: () => [],
-    lineHeight: () => '19px'
+    lineHeight: 19, // if initial fontSize is 14, then lineHeight should be rounded to fontSize * 1.35
+    fontSize: 14
   }
 )
 
@@ -26,6 +28,8 @@ defineEmits<{
 
 const $completionMenu = ref<HTMLElement>()
 const scrollbarRef = ref<typeof NScrollbar & ScrollbarInst>()
+const cssLineHeight = computed(() => `${props.lineHeight}px`)
+const cssFontSize = computed(() => `${props.fontSize}px`)
 
 function handleActiveMenuItemUpdate($el: HTMLElement | null) {
   const $container = $completionMenu.value
@@ -111,7 +115,7 @@ defineExpose({
         >
           <!-- eslint-disable vue/no-v-html -->
           <span
-            :ref="($el) => normalizeIconSize($el as HTMLElement, 20)"
+            :ref="($el) => normalizeIconSize($el as HTMLElement, fontSize * 1.35)"
             class="completion-menu__item-icon"
             v-html="Icon2SVG(suggestion.icon)"
           >
@@ -145,13 +149,15 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 
 .view-line .completion-menu__item-preview {
   color: grey;
+  font-size: var(--monaco-editor-font-size);
+  line-height: var(--monaco-editor-line-height);
   font-style: italic;
   font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
   animation: fade-in 150ms ease-in;
 }
 
 .completion-menu--reverse-up {
-  transform: translateY(calc(-100% - v-bind(lineHeight))) !important;
+  transform: translateY(calc(-100% - v-bind(cssLineHeight))) !important;
 }
 
 @keyframes fade-in {
@@ -179,9 +185,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   border-radius: 5px;
   box-shadow: var(--ui-box-shadow-small);
   transform: translateY(0);
-  transition:
-    150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5),
-    150ms transform cubic-bezier(0.1, 0.93, 0.15, 1.3);
+  transition: 150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5);
 }
 
 .completion-menu__item {
@@ -190,6 +194,8 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   align-items: center;
   width: 100%;
   padding: 4px;
+  font-size: v-bind(cssFontSize);
+  line-height: v-bind(cssLineHeight);
   color: black;
   cursor: pointer;
   white-space: nowrap;

@@ -1,11 +1,20 @@
 <template>
   <div class="code-text-editor-container">
-    <div ref="editorElement" class="code-text-editor"></div>
+    <div
+      ref="editorElement"
+      class="code-text-editor"
+      :style="{
+        '--monaco-editor-font-size': completionMenuState.fontSize + 'px',
+        '--monaco-editor-line-height': completionMenuState.lineHeight + 'px'
+      }"
+    ></div>
     <completion-menu
       v-show="completionMenuState.visible"
       ref="completionMenuRef"
       :suggestions="completionMenuState.suggestions"
       :active-idx="completionMenuState.activeIdx"
+      :line-height="completionMenuState.lineHeight"
+      :font-size="completionMenuState.fontSize"
       :style="{
         top: completionMenuState.position.top + 'px',
         left: completionMenuState.position.left + 'px'
@@ -56,6 +65,7 @@ const completionMenuState = reactive<CompletionMenuState>({
     left: 0
   },
   lineHeight: 19,
+  fontSize: 14,
   word: ''
 })
 const uiVariables = useUIVariables()
@@ -85,7 +95,8 @@ const getMonaco = async () => {
   return monaco
 }
 
-const initialFontSize = 14
+// the line height is rounded to fontSize * 1.35
+const initialFontSize = 20
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
@@ -131,7 +142,7 @@ watchEffect(async (onCleanup) => {
     if (!$completionMenu) return
     const pixelPosition = editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
-
+    const fontSize = editor.getRawOptions().fontSize || initialFontSize
     const isMultiline = () => {
       const { suggestions, activeIdx } = completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false
@@ -146,6 +157,7 @@ watchEffect(async (onCleanup) => {
     const cursorY = pixelPosition.top
     const windowHeight = window.innerHeight
     const completionMenuHeight = $completionMenu.offsetHeight
+    completionMenuState.fontSize = fontSize
     completionMenuState.position.left = pixelPosition.left
     completionMenuState.lineHeight = pixelPosition.height
     completionMenuState.position.top = cursorY + pixelPosition.height
