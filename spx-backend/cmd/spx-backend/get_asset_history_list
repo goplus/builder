@@ -5,6 +5,9 @@
 
 ctx := &Context
 
+if _, ok := ensureUser(ctx); !ok {
+	return
+}
 asset, err := ctrl.GetAsset(ctx.Context(), ${id})
 if err != nil {
 	replyWithInnerError(ctx, err)
