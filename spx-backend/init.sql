@@ -41,18 +41,18 @@ CREATE TABLE `project`  (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-create table user
-(
-    user_id            int                                   not null,
-    asset_id           int                                   not null,
-    relation_type      enum ('liked', 'history', 'imported') not null,
-    relation_timestamp timestamp default current_timestamp() null,
-    primary key (user_id, asset_id, relation_type),
-    constraint user_ibfk_1
-        foreign key (asset_id) references asset (id)
+CREATE TABLE user_asset (
+                            owner VARCHAR(255) NULL DEFAULT NULL,
+                            asset_id INT NOT NULL,
+                            relation_type ENUM ('liked', 'history', 'imported') NOT NULL,
+                            relation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NULL,
+                            PRIMARY KEY (owner, asset_id, relation_type),
+                            CONSTRAINT user_ibfk_1
+                            FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE
 );
 
+
 create index asset_id
-    on user (asset_id);
+    on user_asset (asset_id);
 
 
