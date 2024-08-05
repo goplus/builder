@@ -21,7 +21,9 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
+          <div v-if="isAiAsset in asset" :asset="asset">{{asset.id}}</div>
           <AssetItem
+            v-else
             :asset="asset"
             :add-to-project-pending="props.addToProjectPending"
             @add-to-project="(asset) => emit('addToProject', asset)"
@@ -55,6 +57,7 @@ import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
+import { AIGCStatus, generateAIImage, type AIAssetData } from '@/apis/aigc'
 
 const props = defineProps<{
   addToProjectPending: boolean
@@ -70,12 +73,24 @@ const searchResultCtx = useSearchResultCtx()
 
 const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
+const aiAssetList = ref<AIAssetData[]>([])
+const hasMoreAssets = computed(
+  () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
+)
+
+const isAiAsset = Symbol('isAiAsset')
+
+type AssetOrAIAsset =
+  | AssetData
+  | ({
+      [isAiAsset]: true
+    } & AIAssetData)
 
 type GroupedAssetItem =
   | {
       id: string
       type: 'asset-group'
-      assets: AssetData[]
+      assets: AssetOrAIAsset[]
     }
   | {
       id: string
@@ -92,7 +107,9 @@ type GroupedAssetItem =
     }
 
 const groupedAssetItems = computed(() => {
-  const list = assetList.value
+  const publicList = assetList.value
+  const aiList = aiAssetList.value.map((a) => ({ ...a, [isAiAsset]: true as const }))
+  const list = [...publicList, ...aiList]
   const result: GroupedAssetItem[] = []
 
   if (list.length === 0) {
@@ -132,7 +149,7 @@ const groupedAssetItems = computed(() => {
 })
 
 const loadMore = () => {
-  if (searchCtx.page * searchCtx.pageSize >= (searchResultCtx.assets?.total ?? 0)) {
+  if (!hasMoreAssets.value) {
     return
   }
   searchCtx.page++
@@ -145,12 +162,42 @@ const handleScroll = (e: Event) => {
   }
 }
 
+const generateMultipleAIImages = (count: number, append = true) => {
+  const promises = Array.from({ length: count }, () =>
+    generateAIImage({
+      keyword: searchCtx.keyword,
+      category: searchCtx.category,
+      assetType: searchCtx.type
+    }).then((res) => {
+      return {
+        id: res.imageJobId,
+        assetType: searchCtx.type,
+        cTime: new Date().toISOString(),
+        status: AIGCStatus.Waiting
+      }
+    })
+  )
+  Promise.all(promises).then((res) => {
+    if (append) {
+      aiAssetList.value.push(...res)
+    } else {
+      aiAssetList.value = res
+    }
+  })
+}
+
 // Append search result to assetList
 watch(
   () => searchResultCtx.assets,
   (result) => {
     assetList.value.push(...(result?.data ?? []))
-    if (searchCtx.page === 1) {
+    if (!hasMoreAssets.value) {
+      // Fill the last row with AI assets
+      const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
+      if (count <= COLUMN_COUNT) {
+        generateMultipleAIImages(count, false)
+      }
+    } else if (searchCtx.page === 1) {
       loadMore()
     }
   }
@@ -164,13 +211,14 @@ watch(
       .map((k) => searchCtx[k]),
   () => {
     assetList.value = []
+    aiAssetList.value = []
     searchCtx.page = 1
   }
 )
 </script>
 
 <style>
-.asset-list .v-vl{
+.asset-list .v-vl {
   width: 100%;
 }
 </style>
