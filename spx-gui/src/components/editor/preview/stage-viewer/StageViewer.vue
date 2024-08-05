@@ -19,9 +19,9 @@
           :sprites-ready-map="spritesReadyMap"
         />
       </v-layer>
-      <v-layer>
+      <!-- <v-layer>
         <SpriteTransformer :sprites-ready-map="spritesReadyMap" />
-      </v-layer>
+      </v-layer> -->
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
@@ -36,24 +36,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import type { Sprite } from '@/models/sprite'
+import { RotationStyle, type Sprite } from '@/models/sprite'
 import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
 import { MapMode } from '@/models/stage'
 import Konva from 'konva'
+import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
-const stageRef = ref<any>()
+const stageRef = ref<Konva.Stage>()
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
 const spritesReadyMap = reactive(new Map<string, boolean>())
@@ -156,6 +156,100 @@ const visibleSprites = computed(() => {
 
 const menuVisible = ref(false)
 const menuPos = ref({ x: 0, y: 0 })
+
+class MyTransformer extends Konva.Transformer {
+  flipButtons?: {
+    left: Konva.Rect
+    right: Konva.Rect
+  }
+  onFlip?: (side: 'left' | 'right') => void
+
+  constructor(config?: TransformerConfig | undefined, onFlip?: (side: 'left' | 'right') => void) {
+    super(config)
+    this.onFlip = onFlip
+  }
+
+  _createElements() {
+    super._createElements()
+
+    const left = new Konva.Rect({
+      width: 10,
+      height: 10,
+      fill: 'red',
+      cornerRadius: 5
+    })
+
+    const right = new Konva.Rect({
+      width: 10,
+      height: 10,
+      fill: 'blue',
+      cornerRadius: 5
+    })
+
+    left.on('click', () => {
+      console.log('click left')
+      this.onFlip?.('left')
+    })
+    right.on('click', () => {
+      console.log('click right')
+      this.onFlip?.('right')
+    })
+
+    this.add(left)
+    this.add(right)
+    this.flipButtons = {
+      left,
+      right
+    }
+  }
+
+  update(): void {
+    super.update()
+
+    if (this.flipButtons) {
+      const { left, right } = this.flipButtons
+
+      left.x(-5)
+      left.y(this.height() / 2 - left.height() / 2)
+
+      right.x(this.width() - 5)
+      right.y(this.height() / 2 - right.height() / 2)
+    }
+  }
+}
+
+watch(
+  () => editorCtx.project.selectedSprite,
+  (selectedSprite, old, onCleanup) => {
+    if (!stageRef.value || !selectedSprite) return
+    const transformerLayer = new Konva.Layer()
+    const transformer = new MyTransformer(
+      {
+        enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+      },
+      (side) => {
+        console.log(side)
+        selectedSprite.setHeading(side === 'left' ? -90 : 90)
+      }
+    )
+    const stage = stageRef.value.getStage()
+    const selectedNode = stage
+      .getStage()
+      .findOne((node: Node) => node.getAttr('spriteName') === selectedSprite.name)
+    if (!selectedNode) {
+      console.warn('selectedNode not found')
+      return
+    }
+
+    transformer.nodes([selectedNode])
+    transformerLayer.add(transformer)
+    stage.add(transformerLayer)
+
+    onCleanup(() => {
+      transformerLayer.remove()
+    })
+  }
+)
 
 function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
   e.evt.preventDefault()
