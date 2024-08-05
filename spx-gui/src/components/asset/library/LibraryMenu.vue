@@ -28,7 +28,7 @@ function handleUpdateValue(key: string) {
 const menuOptions: MenuOption[] = [
   {
     label: t({ en: 'My Favorites', zh: '我的收藏' }),
-    key: 'my-favorites',
+    key: 'liked',
   },
   {
     label: t({ en: 'History', zh: '历史记录' }),
