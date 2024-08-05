@@ -14,19 +14,13 @@ if !ok {
 	return
 }
 
-params := &controller.AddAssetParams{}
+params := &controller.AddUserAssetParams{}
 if !parseJSON(ctx, params) {
 	return
 }
-params.Owner = user.Name
-if ok, msg := params.Validate(); !ok {
-	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
-	return
-}
 
-asset, err := ctrl.AddUserAsset(ctx.Context(), params,"history")
+err := ctrl.AddUserAsset(ctx.Context(), params,"history")
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json asset

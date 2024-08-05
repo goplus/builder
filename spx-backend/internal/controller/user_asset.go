@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
@@ -18,18 +19,10 @@ type GetUserAssetParams struct {
 	AssetID int `json:"assetId"`
 }
 
-type RelationType string
-
-const (
-	Liked    RelationType = "liked"
-	History  RelationType = "history"
-	Imported RelationType = "imported"
-)
-
 // AddUserAsset adds an asset.
-func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType RelationType) error {
+func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string) error {
 	logger := log.GetReqLogger(ctx)
-
+	fmt.Println("AddUserAsset, assetType: ", assetType)
 	_, err := model.AddUserAsset(ctx, ctrl.db, &model.UserAsset{
 		//UserID:            user.ID,
 		AssetID:      params.AssetID,
@@ -50,7 +43,7 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 //}
 
 // ListUserAssets lists assets for a specific user with various filter and sort options.
-func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType RelationType, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
+func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Initialize the filter conditions
