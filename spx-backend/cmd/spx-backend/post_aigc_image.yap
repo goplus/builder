@@ -14,7 +14,8 @@ if !ok {
 	return
 }
 
-result, err := ctrl.Generating(ctx.Context())
+params := &controller.GenerateParams{}
+result, err := ctrl.Generating(ctx.Context(), params)
 
 if err != nil {
 	replyWithInnerError(ctx, err)

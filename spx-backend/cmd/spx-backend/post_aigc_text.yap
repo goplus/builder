@@ -20,4 +20,4 @@ if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json result
+

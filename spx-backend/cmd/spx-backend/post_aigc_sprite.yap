@@ -13,8 +13,8 @@ _, ok := ensureUser(ctx)
 if !ok {
 	return
 }
-
-result, err := ctrl.GenerateSprite(ctx.Context())
+params := &controller.GenerateSpriteParams{}
+result, err := ctrl.GenerateSprite(ctx.Context(),params)
 
 if err != nil {
 	replyWithInnerError(ctx, err)

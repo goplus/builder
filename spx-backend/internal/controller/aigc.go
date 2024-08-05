@@ -115,19 +115,19 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 }
 
 // Generating follow parameters to generating images.
-func Generating(param *GenerateParams) (*GenerateResult, error) {
+func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
 	// todo: implement aigc generating
 	return nil, nil
 }
 
 // GenerateSprite follow parameters to generating sprite.
-func GenerateSprite(param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
+func (ctrl *Controller) GenerateSprite(ctx context.Context, param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
 	// todo: implement aigc generating
 	return nil, nil
 }
 
 // Query job status.
-func Query(param *QueryParams) (*QueryResult[QueryImageResult], error) {
+func (ctrl *Controller) Query(ctx context.Context, param *QueryParams) (*QueryResult[QueryImageResult], error) {
 	// todo: implement aigc generating
 	return nil, nil
 }

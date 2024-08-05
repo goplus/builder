@@ -1,7 +1,7 @@
 // Add an asset.
 //
 // Request:
-//   POST /asset
+//   POST /user/history
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -9,7 +9,7 @@ import (
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
+_, ok := ensureUser(ctx)
 if !ok {
 	return
 }
