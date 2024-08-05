@@ -24,7 +24,7 @@
       </div>
       <!-- shown when hovered -->
       <div class="asset-operations">
-        <div class="asset-operation" @click="handleFavorite">
+        <div class="asset-operation" @click.stop="handleFavorite">
           <NIcon v-if="!isFavorite" :size="14" color="#ffffff">
             <HeartOutlined />
           </NIcon>
@@ -40,7 +40,7 @@
         <div
           class="asset-operation"
           :class="{ disabled: addToProjectPending }"
-          @click="handleAddToProject"
+          @click.stop="handleAddToProject"
         >
           <NIcon :size="14" color="#ffffff">
             <PlusOutlined />

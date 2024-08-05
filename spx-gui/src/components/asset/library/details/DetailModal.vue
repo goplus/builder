@@ -1,46 +1,66 @@
 <template>
-  <UIModal v-model:show="showModal" style="min-width: 80vw;min-height: 90vh;">
-    <header>
-      <UIModalClose class="close" @click="handleCloseButton" />
-    </header>
-    <main>
-      <div class="content">
-        <div class="display">
-          <DetailDisplay v-if="asset.assetType === AssetType.Sprite" :asset="props.asset as AssetData<AssetType.Sprite>"/>
-        </div>
-        <div class="detail">
-          <LibraryTab />
-        </div>
+  <main>
+    <div class="content">
+      <div class="display">
+        <DetailDisplay
+          v-if="asset.assetType === AssetType.Sprite"
+          :asset="props.asset as AssetData<AssetType.Sprite>"
+          class="sprite-detail"
+        />
       </div>
-      <div class="sider">
-        <div class="title">{{ props.asset.displayName }}</div>
-        <div class="button-group">
-          <UIButton size="large" class="insert-button" @click="handleAddButton">
-            {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}
-          </UIButton>
-          <UIButton size="large" @click="handleAddFav">
-            {{ $t({ en: 'Add to favorites', zh: '添加到收藏' }) }}
-          </UIButton>
-        </div>
-        <div class="sider-info">
-          <div class="basic-info">{{ $t({ en: 'posted time', zh: '发布时间' }) }}：{{ props.asset.cTime }}</div>
-          <div class="basic-info">{{ $t({ en: 'posted by', zh: '发布人' }) }}：{{ props.asset.owner }}</div>
-        </div>
-        <div class="category">
-          <div class="category-title">{{ $t({ en: 'Category', zh: '类别' }) }}</div>
-          <NTag class="category-content">{{ props.asset.category }}</NTag>
-        </div>
-        <div class="more"></div>
+      <div class="detail">
+        <LibraryTab />
       </div>
-    </main>
-  </UIModal>
+    </div>
+    <div class="sider">
+      <div class="title">{{ asset.displayName }}</div>
+      <div class="button-group">
+        <UIButton
+          size="large"
+          class="insert-button"
+          :disabled="addToProjectPending"
+          @click="handleAddButton"
+        >
+          <span style="white-space: nowrap">
+            <!-- {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}-->
+            {{
+              addToProjectPending
+                ? $t({ en: 'Pending...', zh: '正在添加...' })
+                : $t({ en: 'Add to project', zh: '添加到项目' })
+            }}
+          </span>
+        </UIButton>
+        <UIButton size="large" @click="handleToggleFav">
+          <span style="white-space: nowrap">
+            <!-- {{ $t({ en: 'Favorite', zh: '收藏' }) }} -->
+            {{
+              isFavorite
+                ? $t({ en: 'Unfavorite', zh: '取消收藏' })
+                : $t({ en: 'Favorite', zh: '收藏' })
+            }}
+          </span>
+        </UIButton>
+      </div>
+      <div class="sider-info">
+        <div class="basic-info">
+          {{ $t({ en: 'posted time', zh: '发布时间' }) }}：{{ displayTime }}
+        </div>
+        <div class="basic-info">{{ $t({ en: 'posted by', zh: '发布人' }) }}：{{ asset.owner }}</div>
+      </div>
+      <div class="category">
+        <div class="category-title">{{ $t({ en: 'Category', zh: '类别' }) }}</div>
+        <NTag class="category-content">{{ asset.category }}</NTag>
+      </div>
+      <div class="more"></div>
+    </div>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { NTag } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
-import { AssetType, type AssetData } from '@/apis/asset'
+import { addAssetToFavorites, AssetType, removeAssetFromFavorites, type AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
@@ -49,37 +69,38 @@ import DetailDisplay from './SpriteDetailDisplay.vue'
 // Define component props
 const props = defineProps<{
   asset: AssetData
+  addToProjectPending: boolean
 }>()
 
-// Define component emits
-const emits = defineEmits(['open'])
+const emit = defineEmits<{
+  addToProject: [asset: AssetData]
+}>()
 
-// Ref to control modal visibility
-const showModal = ref(false)
-
-// Methods to handle button actions
-const handleCloseButton = () => {
-  showModal.value = false
-}
+const isFavorite = ref(props.asset.isFavorite ?? false)
+const favoriteCount = ref(props.asset.favoriteCount ?? 0)
 
 const handleAddButton = () => {
-  console.log('add')
+  emit('addToProject', props.asset)
 }
 
-const handleAddFav = () => {
-  console.log('add fav')
+const handleToggleFav = () => {
+  isFavorite.value = !isFavorite.value
+  if (isFavorite.value) {
+    favoriteCount.value++
+    props.asset.isFavorite = true
+    props.asset.favoriteCount = favoriteCount.value
+    removeAssetFromFavorites(props.asset.id)
+  } else {
+    favoriteCount.value--
+    props.asset.isFavorite = false
+    props.asset.favoriteCount = favoriteCount.value
+    addAssetToFavorites(props.asset.id)
+  }
 }
 
-// Expose method to open modal
-const openModal = () => {
-  showModal.value = true
-  emits('open')  // Emit open event when the modal is opened
-}
-
-defineExpose({
-  openModal
+const displayTime = computed(() => {
+  return new Date(props.asset.cTime).toLocaleString()
 })
-
 </script>
 
 <style lang="scss" scoped>
@@ -104,12 +125,12 @@ main {
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #e0e0e0;
+    flex: 1;
 
     .display {
-      width: 50vw;
+      width: 100%;
       min-height: 50vh;
       border-right: 1px solid #e0e0e0;
-      background-color: #847676;
     }
 
     .detail {
@@ -135,7 +156,8 @@ main {
       display: flex;
       gap: 10px;
 
-      .insert-button {}
+      .insert-button {
+      }
     }
 
     .sider-info {
@@ -169,7 +191,5 @@ main {
       margin-top: 20px;
     }
   }
-
-
 }
 </style>

@@ -1,13 +1,25 @@
 <template>
   <div class="container">
-    <DetailModal ref="detailModalRef" :asset="assetDataTest" />
-    <button @click="openChildModal">Open Modal from Parent</button>
     <div class="header">
-      <h4 class="title">
+      <h4 v-if="!selectedAsset" class="title">
         {{ $t({ en: 'Asset Library', zh: `素材库` }) }}
+        <!-- For debug -->
+        <span style="margin-left: 0.5rem" @dblclick="searchCtx.type = (searchCtx.type + 1) % 3">
+          {{ $t(entityMessages[searchCtx.type]) }}
+        </span>
       </h4>
-      <UITextInput v-model:value="searchInput" class="search-input" clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })" @keypress.enter="handleSearch">
+      <h4 v-else class="title">
+        {{ $t({ en: 'Preview: ', zh: `预览: ` }) }}
+        {{ selectedAsset?.displayName }}
+      </h4>
+      <UITextInput
+        v-if="!selectedAsset"
+        v-model:value="searchInput"
+        class="search-input"
+        clearable
+        :placeholder="$t({ en: 'Search', zh: '搜索' })"
+        @keypress.enter="handleSearch"
+      >
         <template #prefix>
           <UIIcon class="search-icon" type="search" />
         </template>
@@ -15,29 +27,45 @@
       <UIModalClose class="close" @click="handleCloseButton" />
     </div>
     <UIDivider />
-    <section class="body">
+
+    <section v-show="!selectedAsset" class="body">
       <main class="main">
+        <div class="order-select">
+          <LibrarySelect />
+        </div>
         <div class="content">
-          <AssetList :add-to-project-pending="handleAddToProject.isLoading.value"
-            @add-to-project="handleAddToProject.fn" />
+          <AssetList
+            :add-to-project-pending="handleAddToProject.isLoading.value"
+            @add-to-project="handleAddToProject.fn"
+            @select="selectedAsset = $event"
+          />
         </div>
       </main>
       <div class="sider">
         <LibraryMenu @update:value="handleSelectCategory" />
         <UIDivider />
-        <LibraryTree :type="type" @update="handleSelectCategory" />
+        <LibraryTree
+          :type="type"
+          style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
+          @update="handleSelectCategory"
+        />
       </div>
     </section>
+    <Transition name="fade" mode="out-in" appear>
+      <section v-if="selectedAsset" class="body">
+        <DetailModal
+          :asset="selectedAsset"
+          class="asset-page"
+          :add-to-project-pending="handleAddToProject.isLoading.value"
+          @add-to-project="handleAddToProject.fn"
+        />
+      </section>
+    </Transition>
   </div>
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import {
-  UITextInput,
-  UIIcon,
-  UIModalClose,
-  UIDivider
-} from '@/components/ui'
+import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
 import { AssetType, type AssetData } from '@/apis/asset'
 import { debounce } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
@@ -50,7 +78,7 @@ import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import LibraryTab from './LibraryTab.vue'
 import DetailModal from './details/DetailModal.vue'
-
+import LibrarySelect from './LibrarySelect.vue'
 
 const props = defineProps<{
   visible?: boolean
@@ -63,43 +91,21 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-// Sample asset data
-const assetDataTest: AssetData = {
-  displayName: 'Sample Asset',
-  cTime: '2024-08-01',
-  owner: 'User',
-  category: 'Category 1',
-  id: '1',
-  assetType: AssetType.Sprite,
-  files: {
-    "assets/sprites/sword/1709276941046.png": "kodo://goplus-builder-static-test/files/FoGKeeUeK5PLpOZ4mJjKR3mDMb79/1709276941046.png",
-    "assets/sprites/sword/index.json": "kodo://goplus-builder-static-test/files/FirKxLEYMbcJZXZJDPxtmFMKkigF/index.json",
-    "sword.spx": "kodo://goplus-builder-static-test/files/FsLjb7dM8I-N-iHGmv7n5J6lxvRO/sword.spx"
-  },
-  filesHash: '',
-  preview: 'assets/sprites/sword/1709276941046.png',
-  clickCount: 0,
-  isPublic: 0,
-  favoriteCount: 0,
-  isFavorite: false,
-}
-
-// Ref to access the modal component instance
-const detailModalRef = ref()
-// Method to open the modal
-const openChildModal = () => {
-  detailModalRef.value.openModal()
-}
+const selectedAsset = ref<AssetData | null>(null)
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
 }
 
 const handleCloseButton = () => {
+  if (selectedAsset.value) {
+    selectedAsset.value = null
+    return
+  }
+
   if (addedModels.length > 0) {
     emit('resolved', addedModels)
-  }
-  else {
+  } else {
     emit('cancelled')
   }
   handleUpdateShow(false)
@@ -173,13 +179,13 @@ const handleAddToProject = useMessageHandle(
   { en: 'Failed to add asset', zh: '素材添加失败' },
   { en: 'Asset added successfully', zh: '素材添加成功' }
 )
-
 </script>
 
 <style scoped lang="scss">
 .container {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .header {
@@ -220,10 +226,12 @@ const handleAddToProject = useMessageHandle(
   & {
     display: flex;
     justify-content: stretch;
+    overflow: auto;
   }
 
   .sider {
-    flex: 0 0 196px;
+    flex: 0 0 20%;
+    min-width: 196px;
     display: flex;
     flex-direction: column;
     padding: var(--ui-gap-middle);
@@ -243,15 +251,17 @@ const handleAddToProject = useMessageHandle(
     color: var(--ui-color-grey-900);
   }
 
+  .order-select {
+    padding: 12px 24px 0 0;
+    width: 15rem;
+    margin-left: auto;
+  }
+
   .content {
     height: 70vh;
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;
-  }
-
-  .select {
-    margin-left: 50vw;
   }
 
   .asset-list {
@@ -270,5 +280,21 @@ const handleAddToProject = useMessageHandle(
     align-items: center;
     gap: var(--ui-gap-middle);
   }
+}
+
+.asset-page {
+  width: 100%;
+}
+
+.fade-enter-active {
+  transition: all 0.25s ease;
+}
+.fade-leave-active {
+  display: none;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>

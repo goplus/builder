@@ -14,6 +14,7 @@
     :item-size="148"
     :key-field="'id'"
     :item-resizable="false"
+    :ignore-item-resize="true"
     @scroll="handleScroll"
     @wheel="handleScroll"
   >
@@ -24,6 +25,7 @@
             :asset="asset"
             :add-to-project-pending="props.addToProjectPending"
             @add-to-project="(asset) => emit('addToProject', asset)"
+            @click="emit('select', asset)"
           />
         </template>
       </div>
@@ -60,6 +62,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
+  select: [asset: AssetData]
 }>()
 
 const searchCtx = useSearchCtx()
@@ -196,6 +199,7 @@ watch(
   gap: 8px;
   padding: 16px;
   padding-right: 40px;
+  padding-top: 0;
   font-size: 18px;
   color: var(--ui-color-grey-600);
 }

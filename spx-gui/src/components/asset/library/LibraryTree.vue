@@ -24,7 +24,7 @@ const props = defineProps<{
   type: AssetType
 }>()
 function createData(categories: Category[], t: (key: LocaleMessage) => string): TreeOption[] {
-  return categories.map(category => ({
+  return categories.map((category) => ({
     label: t(category.message),
     key: category.value,
     children: category.children ? createData(category.children, t) : undefined
@@ -36,5 +36,11 @@ function handleUpdateCheckedKeys(checkedKeys: string[]) {
 }
 
 const { t } = useI18n()
-const data = ref<TreeOption[]>(createData(categories.find(category => category.value === AssetType[props.type].toLowerCase())?.children!, t))
+const data = ref<TreeOption[]>(
+  createData(
+    categories.find((category) => category.value === AssetType[props.type].toLowerCase())
+      ?.children!,
+    t
+  )
+)
 </script>
