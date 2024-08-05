@@ -43,7 +43,10 @@ export interface CreateAIImageParams {
 
 const mockAIImage = {
   imageUri:
-    'kodo://goplus-builder-static-test/files/Fr1MD9ALY59z1OQj7GlY-tKbLTjh/TotK_Ganondorf.png'
+    ['kodo://goplus-builder-static-test/files/FvEYel08GXL60vuviffq9sW-9xZs/IMG20230406220355.jpg',
+      'kodo://goplus-builder-static-test/files/FtzNex_e0lYKKn7S52HTG42d9Mm9-6906',
+      'kodo://goplus-builder-static-test/files/FvbBWmTdYLqyx_Mn_wCF6KAhfZXn-5443'
+    ]
 }
 
 /**
@@ -101,7 +104,17 @@ export enum AIGCType {
 export enum AIGCStatus {
   Waiting,
   Generating,
-  Finished
+  Finished,
+  Failed,
+}
+
+export type AIGCFiles = {
+  imageUrl?: string
+  skeletonUrl?: string
+  animMeshUrl?: string
+  frameDataUrl?: string
+  backdropImageUrl?: string
+  [key: string]: string | undefined
 }
 
 export interface AIGCStatusResponse {
@@ -109,14 +122,7 @@ export interface AIGCStatusResponse {
   result?: {
     jobId: string
     type: AIGCType
-    files: {
-      imageUrl?: string
-      skeletonUrl?: string
-      animMeshUrl?: string
-      frameDataUrl?: string
-      backdropImageUrl?: string
-      [key: string]: string | undefined
-    }
+    files: AIGCFiles
   }
 }
 
@@ -149,7 +155,7 @@ export async function getAIGCStatus(jobId: string) {
             jobId,
             type: AIGCType.Image,
             files: {
-              imageUrl: mockAIImage.imageUri
+              imageUrl: mockAIImage.imageUri[Math.floor(Math.random() * mockAIImage.imageUri.length)]
             }
           }
         })

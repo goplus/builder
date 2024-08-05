@@ -21,7 +21,7 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <div v-if="isAiAsset in asset" :asset="asset">{{asset.id}}</div>
+          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" />
           <AssetItem
             v-else
             :asset="asset"
@@ -58,6 +58,7 @@ import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import { AIGCStatus, generateAIImage, type AIAssetData } from '@/apis/aigc'
+import AIAssetItem from './AIAssetItem.vue'
 
 const props = defineProps<{
   addToProjectPending: boolean
