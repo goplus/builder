@@ -40,3 +40,19 @@ CREATE TABLE `project`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+create table user
+(
+    user_id            int                                   not null,
+    asset_id           int                                   not null,
+    relation_type      enum ('liked', 'history', 'imported') not null,
+    relation_timestamp timestamp default current_timestamp() null,
+    primary key (user_id, asset_id, relation_type),
+    constraint user_ibfk_1
+        foreign key (asset_id) references asset (id)
+);
+
+create index asset_id
+    on user (asset_id);
+
+
