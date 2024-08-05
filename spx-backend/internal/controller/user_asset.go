@@ -27,21 +27,21 @@ const (
 )
 
 // AddUserAsset adds an asset.
-func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType RelationType) (*model.Asset, error) {
+func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType RelationType) error {
 	logger := log.GetReqLogger(ctx)
 
-	asset, err := model.AddUserAsset(ctx, ctrl.db, &model.UserAsset{
+	_, err := model.AddUserAsset(ctx, ctrl.db, &model.UserAsset{
 		//UserID:            user.ID,
 		AssetID:      params.AssetID,
-		RelationType: assetType,
+		RelationType: model.RelationType(assetType),
 		//RelationTimestamp: params.RelationTimestamp,
 	})
 	if err != nil {
 		logger.Printf("failed to add asset: %v", err)
-		return nil, err
+		return err
 	}
 
-	return asset, nil
+	return nil
 }
 
 //// GetUserAsset gets user asset with given user id. Returns `ErrNotExist` if it does not exist.
