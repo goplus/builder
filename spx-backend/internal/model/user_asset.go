@@ -8,8 +8,8 @@ import (
 )
 
 type UserAsset struct {
-	// UserID is the identifier for the user.
-	UserID int `db:"user_id" json:"userId"`
+	// Owner is the identifier for the user.
+	Owner string `db:"owner" json:"owner"`
 
 	// AssetID is the identifier for the asset.
 	AssetID int `db:"asset_id" json:"assetId"`

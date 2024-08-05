@@ -40,6 +40,7 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 		logger.Printf("failed to add asset: %v", err)
 		return nil, err
 	}
+
 	return asset, nil
 }
 
@@ -48,13 +49,13 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 //	return model.UserAssetByUserID(ctx, ctrl.db, userID)
 //}
 
-// listUserAssets lists assets for a specific user with various filter and sort options.
-func (ctrl *Controller) listUserAssets(ctx context.Context, userID int, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
+// ListUserAssets lists assets for a specific user with various filter and sort options.
+func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType RelationType, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Initialize the filter conditions
 	var wheres []model.FilterCondition
-	wheres = append(wheres, model.FilterCondition{Column: "ua.user_id", Operation: "=", Value: userID})
+	wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: params.Owner}, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
 	// Check if the user is not the owner and restrict to public assets
 	if user, ok := UserFromContext(ctx); !ok || params.Owner == nil || user.Name != *params.Owner {

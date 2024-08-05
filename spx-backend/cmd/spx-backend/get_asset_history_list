@@ -69,7 +69,7 @@ if ok, msg := params.Validate(); !ok {
 	return
 }
 
-assets, err := ctrl.ListUserAssets(ctx.Context(), params)
+assets, err := ctrl.ListUserAssets(ctx.Context(),"history", params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
