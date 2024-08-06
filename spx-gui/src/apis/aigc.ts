@@ -28,11 +28,6 @@ export type AIAssetData<T extends AssetType = AssetType> = {
   status: AIGCStatus
 }
 
-export const AssetSourceKey = Symbol('AssetSource')
-export type AssetOrAIAsset =
-  | (AssetData & { [AssetSourceKey]?: 'public' })
-  | (AIAssetData & { [AssetSourceKey]?: 'ai' })
-
 export interface CreateAIImageParams {
   keyword: string
   category: string | string[]
@@ -144,9 +139,9 @@ export async function getAIGCStatus(jobId: string) {
       if (timestamp === undefined) {
         mockAIGCStatusMap.set(jobId, Date.now())
         resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 2000 + random * 2000) {
+      } else if (Date.now() - timestamp < 1000 + random * 2000) {
         resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 7000 + random * 2000) {
+      } else if (Date.now() - timestamp < 5000 + random * 5000) {
         resolve({ status: AIGCStatus.Generating })
       } else {
         resolve({
