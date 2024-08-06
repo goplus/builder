@@ -10,7 +10,7 @@ import type { ByPage } from '@/apis/common'
 
 export type SearchCtx = {
   keyword: string
-  category: string|string[]
+  category: string[]
   page: number
   pageSize: number
   type: AssetType
@@ -24,7 +24,7 @@ export type SearchResultCtx = {
 }
 
 const searchCtxKey: InjectionKey<SearchCtx> = Symbol('search-ctx')
-  const searchResultCtxKey: InjectionKey<SearchResultCtx> = Symbol('search-result-ctx')
+const searchResultCtxKey: InjectionKey<SearchResultCtx> = Symbol('search-result-ctx')
 
 export function useSearchCtx() {
   const ctx = inject(searchCtxKey)
@@ -49,7 +49,7 @@ const props = defineProps<{
 
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
-  category: '',
+  category: [''],
   type: props.type,
   page: 1,
   pageSize: 12
@@ -85,7 +85,7 @@ const {
       pageIndex: searchCtx.page,
       assetType: searchCtx.type,
       keyword: searchCtx.keyword,
-      category: c,// send like 'cartoon_characters,realistic_characters'
+      category: c,
       owner: c === cPersonal ? undefined : '*',
       isPublic: c === cPersonal ? undefined : IsPublic.public,
       orderBy: ListAssetParamOrderBy.TimeAsc

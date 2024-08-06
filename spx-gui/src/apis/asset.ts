@@ -69,7 +69,7 @@ export enum ListAssetParamOrderBy {
 export type ListAssetParams = PaginationParams & {
   keyword?: string
   owner?: string
-  category?: string
+  category?: string[]
   assetType?: AssetType
   filesHash?: string
   isPublic?: IsPublic

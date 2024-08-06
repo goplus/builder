@@ -42,7 +42,7 @@
         </div>
       </main>
       <div class="sider">
-        <LibraryMenu @update:value="handleSelectCategory" />
+        <LibraryMenu @update:value="handleUserSelectCategory" />
         <UIDivider />
         <LibraryTree
           :type="type"
@@ -135,12 +135,12 @@ function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: string | string[]) {
+function handleSelectCategory(c: string[]) {
   searchCtx.category = c
 }
 
-function handleChangeType(t: AssetType) {
-  searchCtx.type = t
+function handleUserSelectCategory(c: string) {
+  // searchCtx.category = c
 }
 
 async function addAssetToProject(asset: AssetData) {
