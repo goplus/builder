@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"time"
@@ -11,6 +12,9 @@ const maxChatLength = 20
 
 // max input length
 const maxInputLength = 1000
+
+// llm max token limit
+const maxToken = 800
 
 // expire time of chat
 const expireTime = time.Hour * 2
@@ -342,8 +346,80 @@ func newLLMConf() *llmConf {
 	}
 }
 
-func CallLLM(sysInput, userInput string, id string) (AIResp, error) {
+type llmChatRequestBody struct {
+	Messages       []llmChatRequestBodyMessages `json:"messages"`
+	Model          string                       `json:"model"`
+	MaxToken       int                          `json:"max_token"`
+	ResponseFormat llmResponseFormat            `json:"response_format"`
+	Stream         bool                         `json:"stream"`
+	SteamOptions   llmStreamOptions             `json:"stream_options"`
+}
 
+func (l *llmChatRequestBody) addMessage(role int, content string) {
+	l.Messages = append(l.Messages, llmChatRequestBodyMessages{
+		Content: content,
+		Role:    getMessageRole(role),
+	})
+}
+
+type llmChatRequestBodyMessages struct {
+	Content string `json:"content"`
+	Role    string `json:"role"`
+}
+
+type llmResponseFormat struct {
+	Type string `json:"type"`
+}
+
+type llmStreamOptions struct {
+	IncludeUsage bool `json:"include_usage"`
+}
+
+const (
+	_                                    = iota
+	llmChatRequestBodyMessagesRoleSystem = 1 << (iota)
+	llmChatRequestBodyMessagesRoleUser
+	llmChatRequestBodyMessagesRoleAssistant
+)
+
+func getMessageRole(role int) string {
+	switch role {
+	case llmChatRequestBodyMessagesRoleSystem:
+		return "system"
+	case llmChatRequestBodyMessagesRoleUser:
+		return "user"
+	case llmChatRequestBodyMessagesRoleAssistant:
+		return "assistant"
+	default:
+		return ""
+	}
+}
+
+func createLLMRequestBody(sysInput, userInput string) llmChatRequestBody {
+	return llmChatRequestBody{
+		Messages: []llmChatRequestBodyMessages{
+			{
+				Content: sysInput,
+				Role:    getMessageRole(llmChatRequestBodyMessagesRoleSystem),
+			},
+			{
+				Content: userInput,
+				Role:    getMessageRole(llmChatRequestBodyMessagesRoleUser),
+			},
+		},
+		Model:    LLMConf.model,
+		MaxToken: maxToken,
+		ResponseFormat: llmResponseFormat{
+			Type: "json_object",
+		},
+		Stream:       false,
+		SteamOptions: llmStreamOptions{},
+	}
+}
+
+func CallLLM(sysInput, userInput string, id string) (AIResp, error) {
+	l := createLLMRequestBody(sysInput, userInput)
+	json.Marshal(l)
 	//TODO(callme-taota): call llm api
 	return AIResp{}, nil
 }
