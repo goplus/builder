@@ -23,6 +23,8 @@ export type SearchResultCtx = {
   refetch: () => void
 }
 
+export type GetListAssetType = 'liked' | 'history' | 'imported' | 'public'
+
 const searchCtxKey: InjectionKey<SearchCtx> = Symbol('search-ctx')
 const searchResultCtxKey: InjectionKey<SearchResultCtx> = Symbol('search-result-ctx')
 
@@ -96,6 +98,23 @@ const {
     zh: '获取列表失败'
   }
 )
+
+const getListAsset = (type: GetListAssetType) => {
+  switch (type) {
+    case 'liked':
+      searchCtx.category = ['liked']
+      break
+    case 'history':
+      searchCtx.category = ['history']
+      break
+    case 'imported':
+      searchCtx.category = ['imported']
+      break
+    case 'public':
+      searchCtx.category = ['public']
+      break
+  }
+}
 
 const searchResultCtx = reactive<SearchResultCtx>({
   isLoading: isLoading.value,
