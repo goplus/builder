@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/goplus/builder/spx-backend/internal/log"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -338,16 +338,14 @@ func (p AITaskParams) taskPromptGenerator() (string, string) {
 }
 
 func newLLMConf() *llmConf {
-	// create logger
-	logger := log.GetLogger()
 	// get config from environment and return
 	return &llmConf{
-		baseUrl:      mustEnv(logger, "LLM_BASE_URL"),
-		apiKey:       mustEnv(logger, "LLM_API_KEY"),
-		model:        mustEnv(logger, "LLM_MODEL"),
-		backUpUrl:    mustEnv(logger, "LLM_BACKUP_URL"),
-		backUpAPIKey: mustEnv(logger, "LLM_BACKUP_APIKEY"),
-		backUpModel:  mustEnv(logger, "LLM_BACKUP_MODEL"),
+		baseUrl:      os.Getenv("LLM_BASE_URL"),
+		apiKey:       os.Getenv("LLM_API_KEY"),
+		model:        os.Getenv("LLM_MODEL"),
+		backUpUrl:    os.Getenv("LLM_BACKUP_URL"),
+		backUpAPIKey: os.Getenv("LLM_BACKUP_APIKEY"),
+		backUpModel:  os.Getenv("LLM_BACKUP_MODEL"),
 	}
 }
 
