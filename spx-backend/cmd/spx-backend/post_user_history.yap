@@ -1,7 +1,7 @@
-// Get generate image from ai.
+// Add an asset.
 //
 // Request:
-//   POST /aigc/image
+//   POST /user/history
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -14,11 +14,13 @@ if !ok {
 	return
 }
 
-params := &controller.GenerateParams{}
-result, err := ctrl.Generating(ctx.Context(), params)
+params := &controller.AddUserAssetParams{}
+if !parseJSON(ctx, params) {
+	return
+}
 
+err := ctrl.AddUserAsset(ctx.Context(), params,"history")
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json result
