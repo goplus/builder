@@ -228,12 +228,13 @@ func DeleteExpireChat() {
 }
 
 type Chat struct {
-	ID                string         `json:"id"`
-	ChatAction        int            `json:"chatAction"`
-	ChatLang          string         `json:"chatLang"`
-	CurrentChatLength int            `json:"currentChatLength"`
-	ProjectContext    ProjectContext `json:"projectContext"`
-	CreatAt           time.Time      `json:"creatAt"`
+	ID                string                      `json:"id"`
+	ChatAction        int                         `json:"chatAction"`
+	ChatLang          string                      `json:"chatLang"`
+	CurrentChatLength int                         `json:"currentChatLength"`
+	ProjectContext    ProjectContext              `json:"projectContext"`
+	CreatAt           time.Time                   `json:"creatAt"`
+	Messages          []llmChatRequestBodyMessage `json:"messages"`
 }
 
 func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
@@ -247,29 +248,37 @@ func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
 	}
 }
 
-func (c *Chat) NextInput(userInput string) (ChatResp, error) {
+func (c *Chat) NextInput(userInput string) error {
 	if c.IsExpired() {
 		ChatMapManager.DeleteChat(c.ID)
-		return ChatResp{}, fmt.Errorf("chat is expired")
+		return fmt.Errorf("chat is expired")
 	}
 	if checkInputLength(userInput) {
-		return ChatResp{}, fmt.Errorf("input is too long")
+		return fmt.Errorf("input is too long")
 	}
 	if c.CurrentChatLength > maxChatLength {
-		return ChatResp{}, fmt.Errorf("chat is end")
+		return fmt.Errorf("chat is end")
 	}
 	c.CurrentChatLength++
-	prompt := chatPromptGenerator(*c)
-	resp, err := CallLLM(prompt, userInput, c.ID)
-	if err != nil {
-		fmt.Println(err)
-		return ChatResp{}, err
-	}
-	return resp.ParesAsChat(), nil
+	sysPrompt := chatPromptGenerator(*c)
+	c.PushMessage(llmChatRequestBodyMessagesRoleSystem, sysPrompt)
+	c.PushMessage(llmChatRequestBodyMessagesRoleUser, userInput)
+	return nil
 }
 
 func (c *Chat) IsExpired() bool {
 	return time.Since(c.CreatAt) > expireTime
+}
+
+func (c *Chat) PushMessage(role string, content string) {
+	c.Messages = append(c.Messages, llmChatRequestBodyMessage{
+		Role:    role,
+		Content: content,
+	})
+}
+
+func (c *Chat) GetMessages() []llmChatRequestBodyMessage {
+	return c.Messages
 }
 
 func getUserInputLanguage(userLang int) string {
@@ -288,36 +297,25 @@ func checkInputLength(input string) bool {
 }
 
 func chatPromptGenerator(chat Chat) string {
+	var s string
 	if chat.CurrentChatLength == 1 {
 		switch chat.ChatAction {
 		case ExplainChat:
-			s := fmt.Sprintf(explainTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(explainTemplate)
 		case CommentChat:
-			s := fmt.Sprintf(commentTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(commentTemplate)
 		case FixCodeChat:
-			s := fmt.Sprintf(fixCodeTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(fixCodeTemplate)
 		default:
 			return ""
 		}
 	} else {
-		s := fmt.Sprintf(userInputTemplate)
-		s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-		s += fmt.Sprintf(responseTemplate)
-		s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-		return s
+		s += fmt.Sprintf(userInputTemplate)
 	}
+	s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
+	s += fmt.Sprintf(responseTemplate)
+	s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
+	return s
 }
 
 func (p AITaskParams) taskPromptGenerator() (string, string) {
@@ -347,22 +345,15 @@ func newLLMConf() *llmConf {
 }
 
 type llmChatRequestBody struct {
-	Messages       []llmChatRequestBodyMessages `json:"messages"`
-	Model          string                       `json:"model"`
-	MaxToken       int                          `json:"max_token"`
-	ResponseFormat llmResponseFormat            `json:"response_format"`
-	Stream         bool                         `json:"stream"`
-	SteamOptions   llmStreamOptions             `json:"stream_options"`
+	Messages       []llmChatRequestBodyMessage `json:"messages"`
+	Model          string                      `json:"model"`
+	MaxToken       int                         `json:"max_token"`
+	ResponseFormat llmResponseFormat           `json:"response_format"`
+	Stream         bool                        `json:"stream"`
+	SteamOptions   llmStreamOptions            `json:"stream_options"`
 }
 
-func (l *llmChatRequestBody) addMessage(role int, content string) {
-	l.Messages = append(l.Messages, llmChatRequestBodyMessages{
-		Content: content,
-		Role:    getMessageRole(role),
-	})
-}
-
-type llmChatRequestBodyMessages struct {
+type llmChatRequestBodyMessage struct {
 	Content string `json:"content"`
 	Role    string `json:"role"`
 }
@@ -376,37 +367,27 @@ type llmStreamOptions struct {
 }
 
 const (
-	_                                    = iota
-	llmChatRequestBodyMessagesRoleSystem = 1 << (iota)
-	llmChatRequestBodyMessagesRoleUser
-	llmChatRequestBodyMessagesRoleAssistant
+	llmChatRequestBodyMessagesRoleSystem    = "system"
+	llmChatRequestBodyMessagesRoleUser      = "user"
+	llmChatRequestBodyMessagesRoleAssistant = "assistant"
 )
 
-func getMessageRole(role int) string {
-	switch role {
-	case llmChatRequestBodyMessagesRoleSystem:
-		return "system"
-	case llmChatRequestBodyMessagesRoleUser:
-		return "user"
-	case llmChatRequestBodyMessagesRoleAssistant:
-		return "assistant"
-	default:
-		return ""
+func createLLMRequestBodyMessages(sysPrompt, userInput string) []llmChatRequestBodyMessage {
+	return []llmChatRequestBodyMessage{
+		{
+			Role:    llmChatRequestBodyMessagesRoleSystem,
+			Content: sysPrompt,
+		},
+		{
+			Role:    llmChatRequestBodyMessagesRoleUser,
+			Content: userInput,
+		},
 	}
 }
 
-func createLLMRequestBody(sysInput, userInput string) llmChatRequestBody {
+func createLLMRequestBody(llmChatMessage []llmChatRequestBodyMessage) llmChatRequestBody {
 	return llmChatRequestBody{
-		Messages: []llmChatRequestBodyMessages{
-			{
-				Content: sysInput,
-				Role:    getMessageRole(llmChatRequestBodyMessagesRoleSystem),
-			},
-			{
-				Content: userInput,
-				Role:    getMessageRole(llmChatRequestBodyMessagesRoleUser),
-			},
-		},
+		Messages: llmChatMessage,
 		Model:    LLMConf.model,
 		MaxToken: maxToken,
 		ResponseFormat: llmResponseFormat{
@@ -417,8 +398,8 @@ func createLLMRequestBody(sysInput, userInput string) llmChatRequestBody {
 	}
 }
 
-func CallLLM(sysInput, userInput string, id string) (AIResp, error) {
-	l := createLLMRequestBody(sysInput, userInput)
+func CallLLM(llmChatMessage []llmChatRequestBodyMessage, id string) (AIResp, error) {
+	l := createLLMRequestBody(llmChatMessage)
 	json.Marshal(l)
 	//TODO(callme-taota): call llm api
 	return AIResp{}, nil
@@ -432,7 +413,9 @@ func StartChat(p AIStartChatParams) (ChatResp, error) {
 		return ChatResp{}, err
 	}
 	systemPrompt := chatPromptGenerator(*chat)
-	resp, err := CallLLM(systemPrompt, p.UserInput, chat.ID)
+	chat.PushMessage(llmChatRequestBodyMessagesRoleSystem, systemPrompt)
+	chat.PushMessage(llmChatRequestBodyMessagesRoleUser, p.UserInput)
+	resp, err := CallLLM(chat.GetMessages(), chat.ID)
 	if err != nil {
 		fmt.Println(err)
 		return ChatResp{}, err
@@ -441,8 +424,7 @@ func StartChat(p AIStartChatParams) (ChatResp, error) {
 }
 
 func StartTask(p AITaskParams) (SuggestTaskResp, error) {
-	sysPrompt, userInput := p.taskPromptGenerator()
-	resp, err := CallLLM(sysPrompt, userInput, "")
+	resp, err := CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()), "")
 	if err != nil {
 		fmt.Println(err)
 		return SuggestTaskResp{}, err
