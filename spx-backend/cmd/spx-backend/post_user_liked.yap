@@ -1,7 +1,7 @@
 // Add an asset.
 //
 // Request:
-//   POST /user/history
+//   POST /user/liked
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"

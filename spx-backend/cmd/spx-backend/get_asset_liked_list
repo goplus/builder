@@ -1,7 +1,7 @@
 // List assets.
 //
 // Request:
-//   GET /asset/history/list
+//   GET /asset/liked/list
 
 import (
 	"strconv"
