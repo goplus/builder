@@ -159,4 +159,4 @@ export const categories: Category[] = [
   }
 ]
 
-export const categoryAll: Category = { value: '*', message: { en: 'All', zh: '所有' } }
+export const categoryAll: Category = { value: '', message: { en: 'All', zh: '所有' } }
