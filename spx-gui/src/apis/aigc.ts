@@ -42,11 +42,11 @@ export interface CreateAIImageParams {
 }
 
 const mockAIImage = {
-  imageUri:
-    ['kodo://goplus-builder-static-test/files/FvEYel08GXL60vuviffq9sW-9xZs/IMG20230406220355.jpg',
-      'kodo://goplus-builder-static-test/files/FtzNex_e0lYKKn7S52HTG42d9Mm9-6906',
-      'kodo://goplus-builder-static-test/files/FvbBWmTdYLqyx_Mn_wCF6KAhfZXn-5443'
-    ]
+  imageUri: [
+    'kodo://goplus-builder-static-test/files/FvEYel08GXL60vuviffq9sW-9xZs/IMG20230406220355.jpg',
+    'kodo://goplus-builder-static-test/files/FtzNex_e0lYKKn7S52HTG42d9Mm9-6906',
+    'kodo://goplus-builder-static-test/files/FvbBWmTdYLqyx_Mn_wCF6KAhfZXn-5443'
+  ]
 }
 
 /**
@@ -105,7 +105,7 @@ export enum AIGCStatus {
   Waiting,
   Generating,
   Finished,
-  Failed,
+  Failed
 }
 
 export type AIGCFiles = {
@@ -140,13 +140,13 @@ export async function getAIGCStatus(jobId: string) {
   return new Promise<AIGCStatusResponse>((resolve) => {
     setTimeout(() => {
       const timestamp = mockAIGCStatusMap.get(jobId)
+      const random = Math.random()
       if (timestamp === undefined) {
         mockAIGCStatusMap.set(jobId, Date.now())
         resolve({ status: AIGCStatus.Waiting })
-      } else if (
-        Date.now() - timestamp > Math.random() * 2000 &&
-        Date.now() - timestamp < 5000 + Math.random() * 2000
-      ) {
+      } else if (Date.now() - timestamp < 2000 + random * 2000) {
+        resolve({ status: AIGCStatus.Waiting })
+      } else if (Date.now() - timestamp < 7000 + random * 2000) {
         resolve({ status: AIGCStatus.Generating })
       } else {
         resolve({
@@ -155,7 +155,7 @@ export async function getAIGCStatus(jobId: string) {
             jobId,
             type: AIGCType.Image,
             files: {
-              imageUrl: mockAIImage.imageUri[Math.floor(Math.random() * mockAIImage.imageUri.length)]
+              imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)]
             }
           }
         })

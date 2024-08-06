@@ -2,23 +2,49 @@
   <div class="asset-item ai-asset-item">
     <div class="asset-preview-container">
       <div class="asset-preview">
-        <template v-if="status !== AIGCStatus.Finished">
-          <NSpin>
-            <template #description>
-              <Transition name="slide-fade" mode="out-in" appear>
-                <span v-if="status === AIGCStatus.Waiting" class="generating-text">
-                  {{ $t({ en: `Pending...`, zh: `排队中...` }) }}
-                </span>
-                <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
-                  {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
-                </span>
-              </Transition>
-            </template>
-          </NSpin>
-        </template>
-        <template v-else>
-          <UIImg class="preview" :src="previewImageSrc" :loading="previewImageLoading" />
-        </template>
+        <Transition name="slide-fade" mode="out-in" appear>
+          <template v-if="!readyForView">
+            <NSpin>
+              <template #description>
+                <Transition name="slide-fade" mode="out-in" appear>
+                  <span v-if="status === AIGCStatus.Waiting" class="generating-text">
+                    {{ $t({ en: `Pending...`, zh: `排队中...` }) }}
+                  </span>
+                  <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
+                    {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
+                  </span>
+                  <span
+                    v-else-if="status === AIGCStatus.Finished && previewImageLoading"
+                    class="generating-text"
+                  >
+                    {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
+                  </span>
+                </Transition>
+              </template>
+            </NSpin>
+          </template>
+          <template
+            v-else-if="
+              status === AIGCStatus.Failed ||
+              (previewImageLoading === false && previewImageSrc === null)
+            "
+          >
+            <div class="failing-info">
+              <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
+                <CancelOutlined />
+              </NIcon>
+              <span v-if="status === AIGCStatus.Failed" class="failing-text">
+                {{ $t({ en: `Generation failed`, zh: `生成失败` }) }}
+              </span>
+              <span v-else class="failing-text">
+                {{ $t({ en: `Loading failed`, zh: `加载失败` }) }}
+              </span>
+            </div>
+          </template>
+          <template v-else>
+            <UIImg class="preview" :src="previewImageSrc" :loading="previewImageLoading" />
+          </template>
+        </Transition>
       </div>
     </div>
     <div class="asset-name">
@@ -36,11 +62,12 @@
 import { UIImg } from '@/components/ui'
 import { NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { AIGCStatus, getAIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
 import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
+import { CancelOutlined } from '@vicons/material'
 
 const props = defineProps<{
   asset: AIAssetData
@@ -54,6 +81,9 @@ const status = ref<AIGCStatus>(AIGCStatus.Waiting)
 
 let previewImageFile = ref<File | undefined>(undefined)
 const [previewImageSrc, previewImageLoading] = useFileUrl(() => previewImageFile.value as File)
+const readyForView = computed(
+  () => status.value === AIGCStatus.Finished && previewImageLoading.value === false
+)
 
 const POLLING_INTERVAL = 500
 
@@ -81,7 +111,6 @@ const pollStatus = async () => {
       status.value = AIGCStatus.Failed
       return
     }
-    // const files = await getFiles(cloudFiles as Required<AIGCFiles>)
     const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
       [key in keyof AIGCFiles]: File
     }
@@ -93,6 +122,7 @@ const pollStatus = async () => {
     props.asset.preview = cloudFiles.imageUrl
     previewImageFile.value = files.imageUrl
     emit('ready', props.asset)
+    return
   }
 
   if (newStatus.status !== AIGCStatus.Failed) {
@@ -178,6 +208,19 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
 .generating-text {
   display: inline-block;
   color: var(--ui-color-turquoise-400, #3fcdd9);
+}
+
+.failing-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.failing-text {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--ui-color-danger-main, #ef4149);
 }
 
 .slide-fade-enter-active,
