@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/log"
+	"io"
+	"net/http"
 	"time"
 )
 
@@ -58,18 +61,17 @@ type llmConf struct {
 
 // methods
 const (
-	_ = iota
-	GET
-	POST
-	PUT
-	DELETE
-	PATCH
+	GET    = "GET"
+	POST   = "POST"
+	PUT    = "PUT"
+	DELETE = "DELETE"
+	PATCH  = "PATCH"
 )
 
 // LLM endpoint map
 type apiEndPoint struct {
 	endPoint string
-	method   int
+	method   string
 }
 
 var llmMethodMap = map[string]apiEndPoint{
@@ -228,13 +230,13 @@ func DeleteExpireChat() {
 }
 
 type Chat struct {
-	ID                string                      `json:"id"`
-	ChatAction        int                         `json:"chatAction"`
-	ChatLang          string                      `json:"chatLang"`
-	CurrentChatLength int                         `json:"currentChatLength"`
-	ProjectContext    ProjectContext              `json:"projectContext"`
-	CreatAt           time.Time                   `json:"creatAt"`
-	Messages          []llmChatRequestBodyMessage `json:"messages"`
+	ID                string              `json:"id"`
+	ChatAction        int                 `json:"chatAction"`
+	ChatLang          string              `json:"chatLang"`
+	CurrentChatLength int                 `json:"currentChatLength"`
+	ProjectContext    ProjectContext      `json:"projectContext"`
+	CreatAt           time.Time           `json:"creatAt"`
+	Messages          []llmMessageContent `json:"messages"`
 }
 
 func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
@@ -248,22 +250,27 @@ func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
 	}
 }
 
-func (c *Chat) NextInput(userInput string) error {
+func (c *Chat) NextInput(userInput string) (ChatResp, error) {
 	if c.IsExpired() {
 		ChatMapManager.DeleteChat(c.ID)
-		return fmt.Errorf("chat is expired")
+		return ChatResp{}, fmt.Errorf("chat is expired")
 	}
 	if checkInputLength(userInput) {
-		return fmt.Errorf("input is too long")
+		return ChatResp{}, fmt.Errorf("input is too long")
 	}
 	if c.CurrentChatLength > maxChatLength {
-		return fmt.Errorf("chat is end")
+		return ChatResp{}, fmt.Errorf("chat is end")
 	}
 	c.CurrentChatLength++
 	sysPrompt := chatPromptGenerator(*c)
 	c.PushMessage(llmChatRequestBodyMessagesRoleSystem, sysPrompt)
 	c.PushMessage(llmChatRequestBodyMessagesRoleUser, userInput)
-	return nil
+	resp, err := CallLLM(c.GetMessages(), c.ID)
+	if err != nil {
+		fmt.Println(err)
+		return ChatResp{}, err
+	}
+	return resp.ParesAsChat(), nil
 }
 
 func (c *Chat) IsExpired() bool {
@@ -271,13 +278,13 @@ func (c *Chat) IsExpired() bool {
 }
 
 func (c *Chat) PushMessage(role string, content string) {
-	c.Messages = append(c.Messages, llmChatRequestBodyMessage{
+	c.Messages = append(c.Messages, llmMessageContent{
 		Role:    role,
 		Content: content,
 	})
 }
 
-func (c *Chat) GetMessages() []llmChatRequestBodyMessage {
+func (c *Chat) GetMessages() []llmMessageContent {
 	return c.Messages
 }
 
@@ -345,15 +352,15 @@ func newLLMConf() *llmConf {
 }
 
 type llmChatRequestBody struct {
-	Messages       []llmChatRequestBodyMessage `json:"messages"`
-	Model          string                      `json:"model"`
-	MaxToken       int                         `json:"max_token"`
-	ResponseFormat llmResponseFormat           `json:"response_format"`
-	Stream         bool                        `json:"stream"`
-	SteamOptions   llmStreamOptions            `json:"stream_options"`
+	Messages       []llmMessageContent `json:"messages"`
+	Model          string              `json:"model"`
+	MaxToken       int                 `json:"max_token"`
+	ResponseFormat llmResponseFormat   `json:"response_format"`
+	Stream         bool                `json:"stream"`
+	SteamOptions   llmStreamOptions    `json:"stream_options"`
 }
 
-type llmChatRequestBodyMessage struct {
+type llmMessageContent struct {
 	Content string `json:"content"`
 	Role    string `json:"role"`
 }
@@ -366,26 +373,40 @@ type llmStreamOptions struct {
 	IncludeUsage bool `json:"include_usage"`
 }
 
+type llmResponseBody struct {
+	ID      string               `json:"id"`
+	Choices []llmResponseChoices `json:"choices"`
+	Created int                  `json:"created"`
+	Usage   llmUsage             `json:"usage"`
+	Object  string               `json:"object"`
+	Model   string               `json:"model"`
+}
+
+type llmUsage struct {
+	CompletionTokens int `json:"completion_tokens"`
+	PromptTokens     int `json:"prompt_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+type llmResponseChoices struct {
+	FinishReason string            `json:"finish_reason"` // "stop" or "length" or "content_filter" or "tool_calls"
+	Index        int               `json:"index"`
+	Message      llmMessageContent `json:"message"`
+}
+
 const (
 	llmChatRequestBodyMessagesRoleSystem    = "system"
 	llmChatRequestBodyMessagesRoleUser      = "user"
 	llmChatRequestBodyMessagesRoleAssistant = "assistant"
 )
 
-func createLLMRequestBodyMessages(sysPrompt, userInput string) []llmChatRequestBodyMessage {
-	return []llmChatRequestBodyMessage{
-		{
-			Role:    llmChatRequestBodyMessagesRoleSystem,
-			Content: sysPrompt,
-		},
-		{
-			Role:    llmChatRequestBodyMessagesRoleUser,
-			Content: userInput,
-		},
-	}
+func createLLMRequestBodyMessages(sysPrompt, userInput string) []llmMessageContent {
+	return []llmMessageContent{
+		{Role: llmChatRequestBodyMessagesRoleSystem, Content: sysPrompt},
+		{Role: llmChatRequestBodyMessagesRoleUser, Content: userInput}}
 }
 
-func createLLMRequestBody(llmChatMessage []llmChatRequestBodyMessage) llmChatRequestBody {
+func createLLMRequestBody(llmChatMessage []llmMessageContent) llmChatRequestBody {
 	return llmChatRequestBody{
 		Messages: llmChatMessage,
 		Model:    LLMConf.model,
@@ -398,11 +419,57 @@ func createLLMRequestBody(llmChatMessage []llmChatRequestBodyMessage) llmChatReq
 	}
 }
 
-func CallLLM(llmChatMessage []llmChatRequestBodyMessage, id string) (AIResp, error) {
-	l := createLLMRequestBody(llmChatMessage)
-	json.Marshal(l)
+func (l llmResponseBody) AIResp(id string) (AIResp, error) {
+	if len(l.Choices) == 0 {
+		return AIResp{}, fmt.Errorf("no choices in llm response")
+	}
+	//TODO: calculate usage
+	chat, ok := ChatMapManager.GetChat(id)
+	if ok {
+		chat.PushMessage(llmChatRequestBodyMessagesRoleAssistant, l.Choices[0].Message.Content)
+	}
+	return AIResp{
+		ID:          id,
+		RespMessage: l.Choices[0].Message.Content,
+	}, nil
+}
+
+func CallLLM(llmChatMessage []llmMessageContent, id string) (AIResp, error) {
+	body := createLLMRequestBody(llmChatMessage)
+	bodyJSON, err := json.Marshal(body)
+	if err != nil {
+		return AIResp{}, err
+	}
+	req, err := http.NewRequest(llmMethodMap["chat"].method, LLMConf.baseUrl+llmMethodMap["chat"].endPoint, bytes.NewBuffer(bodyJSON))
+	if err != nil {
+		return AIResp{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+LLMConf.apiKey)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return AIResp{}, err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(resp.Body)
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return AIResp{}, err
+	}
+
+	var responseBody llmResponseBody
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	if err != nil {
+		return AIResp{}, err
+	}
+	return responseBody.AIResp(id)
 	//TODO(callme-taota): call llm api
-	return AIResp{}, nil
 }
 
 func StartChat(p AIStartChatParams) (ChatResp, error) {
@@ -413,8 +480,7 @@ func StartChat(p AIStartChatParams) (ChatResp, error) {
 		return ChatResp{}, err
 	}
 	systemPrompt := chatPromptGenerator(*chat)
-	chat.PushMessage(llmChatRequestBodyMessagesRoleSystem, systemPrompt)
-	chat.PushMessage(llmChatRequestBodyMessagesRoleUser, p.UserInput)
+	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
 	resp, err := CallLLM(chat.GetMessages(), chat.ID)
 	if err != nil {
 		fmt.Println(err)
