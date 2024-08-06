@@ -14,6 +14,14 @@
         <div class="icon" v-html="category.icon"></div>
         <p class="label">{{ $t(category.label) }}</p>
       </li>
+      <li
+        class="category"
+        style="margin-top: auto"
+        @click="documentViewer?.invokeDocumentDetail(DocsOnTouched)"
+      >
+        <div class="icon" v-html="iconControl"></div>
+        <p class="label">文档</p>
+      </li>
     </ul>
     <div class="tools-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
@@ -28,7 +36,9 @@
           />
         </div>
       </div>
+      <DocumentViewComponent :document-viewer="documentViewer"></DocumentViewComponent>
     </div>
+
     <div class="code-text-editor-wrapper">
       <CodeTextEditor
         ref="codeTextEditor"
@@ -83,6 +93,9 @@ import iconZoomIn from './icons/zoom-in.svg?raw'
 import iconZoomOut from './icons/zoom-out.svg?raw'
 import iconZoomReset from './icons/zoom-reset.svg?raw'
 import { useFileUrl } from '@/utils/file'
+import { DocumentViewer } from './features/document-viewer/DocumentViewer'
+import DocumentViewComponent from './features/document-viewer/DocumentViewComponent.vue'
+import DocsOnTouched from './docs/onTouched.md?raw'
 
 withDefaults(
   defineProps<{
@@ -98,6 +111,7 @@ const emit = defineEmits<{
   'update:value': [value: string]
 }>()
 
+const documentViewer = new DocumentViewer()
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
@@ -243,6 +257,7 @@ defineExpose({
   // 162px is the max width of def buttons, use 162px as base width
   // to keep tools-wrapper's width stable when switch among different def categories
   flex: 1 0 162px;
+  position: relative;
   padding: 12px;
   background-color: var(--ui-color-grey-300);
   overflow-y: auto;
