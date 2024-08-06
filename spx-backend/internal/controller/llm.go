@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"github.com/goplus/builder/spx-backend/internal/log"
 	"time"
 )
 
@@ -41,6 +42,36 @@ const (
 	OpenAI
 )
 
+// LLM config
+type llmConf struct {
+	baseUrl      string
+	apiKey       string
+	model        string
+	backUpUrl    string
+	backUpAPIKey string
+	backUpModel  string
+}
+
+// methods
+const (
+	_ = iota
+	GET
+	POST
+	PUT
+	DELETE
+	PATCH
+)
+
+// LLM endpoint map
+type apiEndPoint struct {
+	endPoint string
+	method   int
+}
+
+var llmMethodMap = map[string]apiEndPoint{
+	"chat": {"/chat/completions", POST},
+}
+
 // the number of more questions for user to continue the chat
 const moreQuestionNumber = 4
 const AISuggestNumber = 3
@@ -64,7 +95,9 @@ const (
 
 var (
 	// user's chat map manager.
-	chatMapManager = NewChatMapManager()
+	ChatMapManager = newChatMapManager()
+	// llm config.
+	LLMConf = newLLMConf()
 )
 
 // AIStartChatParams is the json object for the start chat request.
@@ -155,17 +188,17 @@ type Cursor struct {
 	Column int `json:"column"`
 }
 
-type ChatMapManager struct {
+type chatMapManager struct {
 	chatMap map[string]*Chat
 }
 
-func NewChatMapManager() *ChatMapManager {
-	return &ChatMapManager{
+func newChatMapManager() *chatMapManager {
+	return &chatMapManager{
 		chatMap: make(map[string]*Chat),
 	}
 }
 
-func (m *ChatMapManager) StoreChat(chat *Chat) error {
+func (m *chatMapManager) StoreChat(chat *Chat) error {
 	if value, ok := m.chatMap[chat.ID]; ok {
 		return fmt.Errorf("chat with id %s already exists", value.ID)
 	}
@@ -173,19 +206,19 @@ func (m *ChatMapManager) StoreChat(chat *Chat) error {
 	return nil
 }
 
-func (m *ChatMapManager) GetChat(id string) (*Chat, bool) {
+func (m *chatMapManager) GetChat(id string) (*Chat, bool) {
 	chat, found := m.chatMap[id]
 	return chat, found
 }
 
-func (m *ChatMapManager) DeleteChat(id string) {
+func (m *chatMapManager) DeleteChat(id string) {
 	delete(m.chatMap, id)
 }
 
 func DeleteExpireChat() {
-	for _, chat := range chatMapManager.chatMap {
+	for _, chat := range ChatMapManager.chatMap {
 		if chat.IsExpired() {
-			chatMapManager.DeleteChat(chat.ID)
+			ChatMapManager.DeleteChat(chat.ID)
 		}
 	}
 }
@@ -212,8 +245,14 @@ func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
 
 func (c *Chat) NextInput(userInput string) (ChatResp, error) {
 	if c.IsExpired() {
-		chatMapManager.DeleteChat(c.ID)
+		ChatMapManager.DeleteChat(c.ID)
 		return ChatResp{}, fmt.Errorf("chat is expired")
+	}
+	if checkInputLength(userInput) {
+		return ChatResp{}, fmt.Errorf("input is too long")
+	}
+	if c.CurrentChatLength > maxChatLength {
+		return ChatResp{}, fmt.Errorf("chat is end")
 	}
 	c.CurrentChatLength++
 	prompt := chatPromptGenerator(*c)
@@ -289,14 +328,29 @@ func (p AITaskParams) taskPromptGenerator() (string, string) {
 	}
 }
 
+func newLLMConf() *llmConf {
+	// create logger
+	logger := log.GetLogger()
+	// get config from environment and return
+	return &llmConf{
+		baseUrl:      mustEnv(logger, "LLM_BASE_URL"),
+		apiKey:       mustEnv(logger, "LLM_API_KEY"),
+		model:        mustEnv(logger, "LLM_MODEL"),
+		backUpUrl:    mustEnv(logger, "LLM_BACKUP_URL"),
+		backUpAPIKey: mustEnv(logger, "LLM_BACKUP_APIKEY"),
+		backUpModel:  mustEnv(logger, "LLM_BACKUP_MODEL"),
+	}
+}
+
 func CallLLM(sysInput, userInput string, id string) (AIResp, error) {
+
 	//TODO(callme-taota): call llm api
 	return AIResp{}, nil
 }
 
 func StartChat(p AIStartChatParams) (ChatResp, error) {
 	chat := NewChat(p.ChatAction, p.ProjectContext, p.UserLang)
-	err := chatMapManager.StoreChat(chat)
+	err := ChatMapManager.StoreChat(chat)
 	if err != nil {
 		fmt.Println(err)
 		return ChatResp{}, err
