@@ -13,12 +13,6 @@ type AddUserAssetParams struct {
 	AssetID int `json:"assetId"`
 }
 
-// GetUserAssetParams holds parameters for getting an user asset.
-type GetUserAssetParams struct {
-	// AssetID is the identifier for the asset.
-	AssetID int `json:"assetId"`
-}
-
 // AddUserAsset adds an asset.
 func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string) error {
 	logger := log.GetReqLogger(ctx)
@@ -36,11 +30,6 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 
 	return nil
 }
-
-//// GetUserAsset gets user asset with given user id. Returns `ErrNotExist` if it does not exist.
-//func (ctrl *Controller) GetUserAsset(ctx context.Context, params *GetUserAssetParams) (*model.UserAsset, error) {
-//	return model.UserAssetByUserID(ctx, ctrl.db, userID)
-//}
 
 // ListUserAssets lists assets for a specific user with various filter and sort options.
 func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
