@@ -245,36 +245,25 @@ func checkInputLength(input string) bool {
 }
 
 func chatPromptGenerator(chat Chat) string {
+	var s string
 	if chat.CurrentChatLength == 1 {
 		switch chat.ChatAction {
 		case ExplainChat:
-			s := fmt.Sprintf(explainTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(explainTemplate)
 		case CommentChat:
-			s := fmt.Sprintf(commentTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(commentTemplate)
 		case FixCodeChat:
-			s := fmt.Sprintf(fixCodeTemplate)
-			s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-			s += fmt.Sprintf(responseTemplate)
-			s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-			return s
+			s += fmt.Sprintf(fixCodeTemplate)
 		default:
 			return ""
 		}
 	} else {
-		s := fmt.Sprintf(userInputTemplate)
-		s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
-		s += fmt.Sprintf(responseTemplate)
-		s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
-		return s
+		s += fmt.Sprintf(userInputTemplate)
 	}
+	s += fmt.Sprintf(generateMoreQuestionTemplate, moreQuestionNumber)
+	s += fmt.Sprintf(responseTemplate)
+	s += fmt.Sprintf(userLanguageReplyTemplate, chat.ChatLang, chat.ChatLang)
+	return s
 }
 
 func (p AITaskParams) taskPromptGenerator() (string, string) {
