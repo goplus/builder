@@ -69,7 +69,7 @@ export enum ListAssetParamOrderBy {
 export type ListAssetParams = PaginationParams & {
   keyword?: string
   owner?: string
-  category?: string|string[]
+  category?: string
   assetType?: AssetType
   filesHash?: string
   isPublic?: IsPublic
@@ -78,6 +78,14 @@ export type ListAssetParams = PaginationParams & {
 
 export function listAsset(params?: ListAssetParams) {
   return client.get('/assets/list', params) as Promise<ByPage<AssetData>>
+}
+
+export function listHistoryAsset(params: ListAssetParams) {
+  return client.get('/assets/history/list', params) as Promise<ByPage<AssetData>>
+}
+
+export function listLikedAsset(params: ListAssetParams) {
+  return client.get('/assets/liked/list', params) as Promise<ByPage<AssetData>>
 }
 
 export function getAsset(id: string) {
