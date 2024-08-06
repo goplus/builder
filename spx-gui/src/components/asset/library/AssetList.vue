@@ -21,7 +21,12 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" />
+          <AIAssetItem
+            v-if="isAiAsset in asset"
+            :asset="asset"
+            @ready="asset[isAiAssetReady] = true"
+            @click="asset[isAiAssetReady] && emit('selectAI', asset)"
+          />
           <AssetItem
             v-else
             :asset="asset"
@@ -38,6 +43,16 @@
       <div v-else-if="item.type === 'no-more'" size="small" class="more-info no-more">
         <img :src="emptyImg" alt="empty" />
         {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
+        <Transition name="fade" mode="out-in" appear>
+          <NButton v-if="!loadingAiAsset" tertiary @click="generateMultipleAIImages(COLUMN_COUNT)">
+            <template #icon>
+              <NIcon>
+                <TipsAndUpdatesOutlined />
+              </NIcon>
+            </template>
+            {{ $t({ en: 'Create with AI', zh: 'AI 创作' }) }}
+          </NButton>
+        </Transition>
       </div>
       <div v-else-if="item.type === 'loading-more-error'" class="more-info loading-more-error">
         <img :src="errorImg" alt="error" />
@@ -51,7 +66,7 @@
 import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
-import { NVirtualList, NSpin } from 'naive-ui'
+import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
 import { type AssetData } from '@/apis/asset'
 import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
@@ -59,6 +74,7 @@ import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import { AIGCStatus, generateAIImage, type AIAssetData } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
+import { TipsAndUpdatesOutlined } from '@vicons/material'
 
 const props = defineProps<{
   addToProjectPending: boolean
@@ -67,25 +83,35 @@ const props = defineProps<{
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
   select: [asset: AssetData]
+  selectAI: [asset: AIAssetData]
 }>()
 
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
+const isAiAsset = Symbol('isAiAsset')
+const isAiAssetReady = Symbol('isAiAssetReady')
+type TaggedAIAssetData = AIAssetData & {
+  [isAiAsset]: true
+  [isAiAssetReady]: boolean
+}
 const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
-const aiAssetList = ref<AIAssetData[]>([])
+const aiAssetList = ref<TaggedAIAssetData[]>([])
 const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )
 
-const isAiAsset = Symbol('isAiAsset')
+const loadingAiAsset = computed(() =>
+  aiAssetList.value.some((a) => {
+    if (isAiAsset in a) {
+      return !a[isAiAssetReady] && a.status !== AIGCStatus.Failed
+    }
+    return false
+  })
+)
 
-type AssetOrAIAsset =
-  | AssetData
-  | ({
-      [isAiAsset]: true
-    } & AIAssetData)
+type AssetOrAIAsset = AssetData | TaggedAIAssetData
 
 type GroupedAssetItem =
   | {
@@ -108,9 +134,7 @@ type GroupedAssetItem =
     }
 
 const groupedAssetItems = computed(() => {
-  const publicList = assetList.value
-  const aiList = aiAssetList.value.map((a) => ({ ...a, [isAiAsset]: true as const }))
-  const list = [...publicList, ...aiList]
+  const list = [...assetList.value, ...aiAssetList.value]
   const result: GroupedAssetItem[] = []
 
   if (list.length === 0) {
@@ -179,10 +203,15 @@ const generateMultipleAIImages = (count: number, append = true) => {
     })
   )
   Promise.all(promises).then((res) => {
+    const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
+      ...r,
+      [isAiAsset]: true as const,
+      [isAiAssetReady]: false
+    }))
     if (append) {
-      aiAssetList.value.push(...res)
+      aiAssetList.value.push(...taggedRes)
     } else {
-      aiAssetList.value = res
+      aiAssetList.value = taggedRes
     }
   })
 }
@@ -256,5 +285,15 @@ watch(
 .more-info img {
   width: 36px;
   height: 36px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
