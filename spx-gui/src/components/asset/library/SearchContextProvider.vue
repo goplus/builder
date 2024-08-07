@@ -6,6 +6,7 @@
 import { inject } from 'vue'
 import { ActionException, useQuery } from '@/utils/exception'
 import type { ByPage } from '@/apis/common'
+import { listLikedAsset, listHistoryAsset } from '@/apis/user'
 
 export type SearchCtx = {
   keyword: string
@@ -43,7 +44,7 @@ export function useSearchResultCtx() {
 
 <script setup lang="ts">
 import { provide, type InjectionKey, reactive, watch } from 'vue'
-import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy, listHistoryAsset, listLikedAsset } from '@/apis/asset'
+import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy } from '@/apis/asset'
 
 const props = defineProps<{
   type: AssetType

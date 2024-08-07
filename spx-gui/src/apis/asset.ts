@@ -80,14 +80,6 @@ export function listAsset(params?: ListAssetParams) {
   return client.get('/assets/list', params) as Promise<ByPage<AssetData>>
 }
 
-export function listHistoryAsset(params: ListAssetParams) {
-  return client.get('/assets/history/list', params) as Promise<ByPage<AssetData>>
-}
-
-export function listLikedAsset(params: ListAssetParams) {
-  return client.get('/assets/liked/list', params) as Promise<ByPage<AssetData>>
-}
-
 export function getAsset(id: string) {
   return client.get(`/asset/${encodeURIComponent(id)}`) as Promise<AssetData>
 }
