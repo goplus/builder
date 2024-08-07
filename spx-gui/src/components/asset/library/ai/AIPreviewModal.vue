@@ -76,13 +76,13 @@
             </div>
           </template>
           <template v-else>
-            <!-- 
-				TODO: the editor or preview component for specific asset type
-			 -->
-            <div>
-              id: {{ asset.id }}; <br />
-              files: {{ asset.files }}
-            </div>
+            <AISpriteEditor v-if="asset.assetType === AssetType.Sprite" :asset="asset" />
+            <AIBackdropEditor
+              v-else-if="asset.assetType === AssetType.Backdrop"
+              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
+              class="asset-editor backdrop-editor"
+            />
+            <AISoundEditor v-else-if="asset.assetType === AssetType.Sound" :asset="asset" />
           </template>
         </Transition>
       </main>
@@ -134,6 +134,10 @@ import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
 import { type File } from '@/models/common/file'
 import { CancelOutlined } from '@vicons/material'
+import AISpriteEditor from './AISpriteEditor.vue'
+import AIBackdropEditor from './AIBackdropEditor.vue'
+import AISoundEditor from './AISoundEditor.vue'
+import { convertAIAssetToBackdrop } from '@/models/common/asset'
 
 // Define component props
 const props = defineProps<{
@@ -151,14 +155,21 @@ const contentReady = ref(props.asset[isContentReady])
 const contentJobId = ref<string | null>(null)
 const status = ref<AIGCStatus>(AIGCStatus.Finished)
 
-const requestContentGeneration = debounce(async () => {
-  // Now we only need to do content generation
-  // (removing background and binding animation) for sprite assets
+const generateContent = async () => {
   if (props.asset.assetType === AssetType.Sprite) {
     contentJobId.value = (await generateAISprite(props.asset.id)).spriteJobId
     pollStatus()
+  } else if (props.asset.assetType === AssetType.Backdrop) {
+    convertAIAssetToBackdrop(props.asset)
+    console.log('Converted backdrop:', props.asset)
+    contentReady.value = true
+  } else if (props.asset.assetType === AssetType.Sound) {
+    contentReady.value = true
   }
-}, 2000) // avoid frequent requests when switching assets
+}
+
+// avoid frequent requests when switching assets
+const debouncedGenerateContent = debounce(generateContent, 2000)
 
 watch(
   () => props.asset.id,
@@ -169,9 +180,13 @@ watch(
     }
     if (props.asset.assetType === AssetType.Sprite) {
       status.value = AIGCStatus.Waiting
+      contentJobId.value = null
+      debouncedGenerateContent()
+    } else if (props.asset.assetType === AssetType.Backdrop) {
+      generateContent()
+    } else if (props.asset.assetType === AssetType.Sound) {
+      contentReady.value = true
     }
-    contentJobId.value = null
-    requestContentGeneration()
   },
   { immediate: true }
 )

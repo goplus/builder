@@ -15,12 +15,16 @@ export async function matting(imageUrl: string) {
 export type AIAssetData<T extends AssetType = AssetType> = {
   /** Globally unique ID */
   id: string
+  /** Name to display */
+  displayName?: string
   // /** Asset Category */
   // category: string
   /** Asset Type */
   assetType: T
   /** Files the asset contains */
   files?: FileCollection
+  /** Hash of the files */
+  filesHash?: string
   /** Preview URL for the asset, e.g., a gif for a sprite */
   preview?: string
   /** Creation time */

@@ -9,7 +9,7 @@ import { type CostumeInits, type RawCostumeConfig, Costume } from './costume'
 export type BackdropInits = CostumeInits
 export type RawBackdropConfig = RawCostumeConfig
 
-const backdropAssetPath = 'assets'
+export const backdropAssetPath = 'assets'
 
 // Backdrop is almost the same as Costume
 export class Backdrop extends Costume {
