@@ -297,10 +297,12 @@ main {
   flex: 3;
   padding: 10px;
   border-right: 1px solid var(--ui-color-border, #cbd2d8);
+  overflow: hidden;
 }
 
 aside {
   flex: 1;
+  max-width: 250px;
   padding: 10px 0 10px 15px;
 }
 

@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import { cachedConvertAssetData } from '@/models/common/asset'
@@ -35,8 +35,21 @@ const stage = ref<Konva.Stage>()
 const layer = ref<Konva.Layer>()
 const nodeRef = ref<Konva.Image>()
 
-const mapWidth = computed(() => editorContainer.value?.clientWidth ?? 0)
-const mapHeight = computed(() => editorContainer.value?.clientHeight ?? 0)
+const mapWidth = ref(800)
+const mapHeight = ref(600)
+
+const updateMapSize = () => {
+  if (!editorContainer.value) {
+	return
+  }
+  mapWidth.value = editorContainer.value.clientWidth
+  mapHeight.value = editorContainer.value.clientHeight
+}
+
+onMounted(() => {
+  updateMapSize()
+  window.addEventListener('resize', updateMapSize)
+})
 
 const stageConfig = computed(() => {
   if (!editorContainer.value) {
@@ -54,13 +67,23 @@ const stageConfig = computed(() => {
 
 const [image] = useFileImg(() => backdrop.value?.img)
 
+const FILL_PERCENT = 0.8
+
+const imageSize = computed(() => {
+  if (!image.value) {
+	return null
+  }
+  const width = image.value.width
+  const height = image.value.height
+  const scale = Math.min(mapWidth.value / width, mapHeight.value / height) * FILL_PERCENT
+  return { width: width * scale, height: height * scale, scale }
+})
+
 const config = computed<ImageConfig | null>(() => {
   if (!backdrop.value) {
     return null
   }
-  console.log('backdrop:', backdrop.value, 'image:', image.value)
-  const { name, img, x, y, bitmapResolution, faceRight } = backdrop.value
-  const scale = 1 //size / bitmapResolution
+  const { name } = backdrop.value
   const config = {
     spriteName: name,
     image: image.value ?? undefined,
@@ -68,26 +91,21 @@ const config = computed<ImageConfig | null>(() => {
     offsetX: 0,
     offsetY: 0,
     visible: true,
-    x: mapWidth.value / 2 + x,
-    y: mapHeight.value / 2 - y,
-    rotation: 0, //nomalizeDegree(heading - 90),
-    scaleX: scale,
-    scaleY: scale
+	// center the image
+    x: mapWidth.value / 2 - (imageSize.value?.width ?? 0) / 2,
+	y: mapHeight.value / 2 - (imageSize.value?.height ?? 0) / 2,
+    rotation: 0, 
+    scaleX: imageSize.value?.scale ?? 1,
+    scaleY: imageSize.value?.scale ?? 1,
   } satisfies ImageConfig
-  //   const c = costume.value
-  //   if (c != null) {
-  //     config.offsetX = c.x + pivot.x * c.bitmapResolution
-  //     config.offsetY = c.y - pivot.y * c.bitmapResolution
-  //   }
-  //   if (rotationStyle === RotationStyle.leftRight && headingToLeftRight(heading) === LeftRight.left) {
-  //     config.rotation = leftRightToHeading(LeftRight.left) - 90 // -180
-  //     // the image is already rotated with `rotation: -180`, so we adjust `scaleY` to flip it vertically
-  //     config.scaleY = -config.scaleY
-  //     // Note that you can get the same result with `ratation: 0, scaleX: -scaleX` here, but there will be problem
-  //     // if the user then do transform with transformer. Konva transformer prefers to make `scaleX` positive.
-  //   }
   return config
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+</style>
