@@ -5,7 +5,6 @@
 <script lang="ts">
 import { inject } from 'vue'
 import { ActionException, useQuery } from '@/utils/exception'
-import { categoryAll, type Category } from './category'
 import type { ByPage } from '@/apis/common'
 
 export type SearchCtx = {
@@ -14,6 +13,7 @@ export type SearchCtx = {
   page: number
   pageSize: number
   type: AssetType
+  tabCategory: GetListAssetType
 }
 
 export type SearchResultCtx = {
@@ -43,7 +43,7 @@ export function useSearchResultCtx() {
 
 <script setup lang="ts">
 import { provide, type InjectionKey, reactive, watch, computed } from 'vue'
-import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy } from '@/apis/asset'
+import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy, listHistoryAsset, listLikedAsset } from '@/apis/asset'
 
 const props = defineProps<{
   type: AssetType
@@ -54,7 +54,8 @@ const searchCtx = reactive<SearchCtx>({
   category: [''],
   type: props.type,
   page: 1,
-  pageSize: 12
+  pageSize: 12,
+  tabCategory: 'public'
 })
 
 provide(searchCtxKey, searchCtx)
@@ -66,17 +67,7 @@ const {
   refetch
 } = useQuery(
   () => {
-    const c = searchCtx.category
-    return listAsset({
-      pageSize: searchCtx.pageSize,
-      pageIndex: searchCtx.page,
-      assetType: searchCtx.type,
-      keyword: searchCtx.keyword,
-      category: c,
-      owner: '*',
-      isPublic: IsPublic.public,
-      orderBy: ListAssetParamOrderBy.TimeAsc
-    })
+    return getListAsset(searchCtx.tabCategory,searchCtx.category)
   },
   {
     en: 'Failed to list',
@@ -84,20 +75,52 @@ const {
   }
 )
 
-const getListAsset = (type: GetListAssetType) => {
+const getListAsset = (type: GetListAssetType,category:string[]) => {
   switch (type) {
     case 'liked':
-      searchCtx.category = ['liked']
-      break
+    return listLikedAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: undefined,
+        category: undefined,
+        owner: '*',
+        isPublic: undefined,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
     case 'history':
-      searchCtx.category = ['history']
-      break
-    case 'imported':
-      searchCtx.category = ['imported']
-      break
+    return listHistoryAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: undefined,
+        category: undefined,
+        owner: '*',
+        isPublic: undefined,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
+    case 'imported'://when imported, the category,keyword is not needed
+    return listAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: undefined,
+        category: undefined,
+        owner: '*',//backend will automatically filter the owner
+        isPublic: IsPublic.personal,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
     case 'public':
-      searchCtx.category = ['public']
-      break
+      return listAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: searchCtx.keyword,
+        category: category,
+        owner: '*',
+        isPublic: IsPublic.public,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
   }
 }
 

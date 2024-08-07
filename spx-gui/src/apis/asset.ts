@@ -12,6 +12,8 @@ export enum AssetType {
 export type AssetData<T extends AssetType = AssetType> = {
   /** Globally unique ID */
   id: string
+  /** Creation time */
+  cTime: string
   /** Name to display */
   displayName: string
   /** Name of asset owner */
@@ -34,8 +36,6 @@ export type AssetData<T extends AssetType = AssetType> = {
   isLiked: boolean
   /** Favorite count */
   likeCount: number
-  /** Creation time */
-  cTime: string
 }
 
 export type AddAssetParams = Pick<
