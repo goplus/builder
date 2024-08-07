@@ -76,7 +76,11 @@
             </div>
           </template>
           <template v-else>
-            <AISpriteEditor v-if="asset.assetType === AssetType.Sprite" :asset="asset" />
+            <AISpriteEditor
+              v-if="asset.assetType === AssetType.Sprite"
+              :asset="asset as TaggedAIAssetData<AssetType.Sprite>"
+              class="asset-editor sprite-editor"
+            />
             <AIBackdropEditor
               v-else-if="asset.assetType === AssetType.Backdrop"
               :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
@@ -138,6 +142,7 @@ import AISpriteEditor from './AISpriteEditor.vue'
 import AIBackdropEditor from './AIBackdropEditor.vue'
 import AISoundEditor from './AISoundEditor.vue'
 import { convertAIAssetToBackdrop } from '@/models/common/asset'
+import { hashFileCollection } from '@/models/common/hash'
 
 // Define component props
 const props = defineProps<{
@@ -161,7 +166,6 @@ const generateContent = async () => {
     pollStatus()
   } else if (props.asset.assetType === AssetType.Backdrop) {
     convertAIAssetToBackdrop(props.asset)
-    console.log('Converted backdrop:', props.asset)
     contentReady.value = true
   } else if (props.asset.assetType === AssetType.Sound) {
     contentReady.value = true
@@ -229,6 +233,8 @@ const pollStatus = async () => {
       return
     }
     props.asset.files = cloudFiles
+    props.asset.filesHash = await hashFileCollection(cloudFiles)
+    props.asset.displayName = props.asset.displayName ?? props.asset.id
     props.asset[isContentReady] = true
     contentReady.value = true
     return
