@@ -149,7 +149,7 @@ func TestControllerListAssets(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
+		paramsCategory := "boy"
 		paramsAssetType := model.AssetTypeSprite
 		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
@@ -184,7 +184,7 @@ func TestControllerListAssets(t *testing.T) {
 
 		ctx := context.Background()
 		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
+		paramsCategory := "boy"
 		paramsAssetType := model.AssetTypeSprite
 		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
@@ -218,7 +218,7 @@ func TestControllerListAssets(t *testing.T) {
 		require.NoError(t, err)
 
 		ctx := newContextWithTestUser(context.Background())
-		paramsCategory := "fake-category"
+		paramsCategory := "boy"
 		paramsAssetType := model.AssetTypeSprite
 		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
@@ -252,7 +252,7 @@ func TestControllerListAssets(t *testing.T) {
 
 		ctx := newContextWithTestUser(context.Background())
 		paramsOwner := "another-fake-name"
-		paramsCategory := "fake-category"
+		paramsCategory := "boy"
 		paramsAssetType := model.AssetTypeSprite
 		paramsFilesHash := "fake-files-hash"
 		paramsIsPublic := model.Personal
