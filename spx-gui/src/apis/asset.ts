@@ -31,9 +31,9 @@ export type AssetData<T extends AssetType = AssetType> = {
   /** Public status */
   isPublic: IsPublic
   /** Favorite status */
-  isFavorite: boolean
+  isLiked: boolean
   /** Favorite count */
-  favoriteCount: number
+  likeCount: number
   /** Creation time */
   cTime: string
 }

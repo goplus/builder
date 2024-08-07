@@ -59,20 +59,6 @@ const searchCtx = reactive<SearchCtx>({
 
 provide(searchCtxKey, searchCtx)
 
-const entityMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
-}
-
-const entityMessage = computed(() => entityMessages[props.type])
-
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
-}))
-
 const {
   isLoading,
   data,
@@ -81,15 +67,14 @@ const {
 } = useQuery(
   () => {
     const c = searchCtx.category
-    const cPersonal = categoryPersonal.value.value
     return listAsset({
       pageSize: searchCtx.pageSize,
       pageIndex: searchCtx.page,
       assetType: searchCtx.type,
       keyword: searchCtx.keyword,
       category: c,
-      owner: c === cPersonal ? undefined : '*',
-      isPublic: c === cPersonal ? undefined : IsPublic.public,
+      owner: '*',
+      isPublic: IsPublic.public,
       orderBy: ListAssetParamOrderBy.TimeAsc
     })
   },

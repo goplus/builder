@@ -110,8 +110,8 @@ const emit = defineEmits<{
 
 const assetModel = useAsyncComputed(() => cachedConvertAssetData(props.asset))
 
-const isFavorite = ref(props.asset.isFavorite ?? false)
-const favoriteCount = ref(props.asset.favoriteCount ?? 0)
+const isFavorite = ref(props.asset.isLiked ?? false)
+const favoriteCount = ref(props.asset.likeCount ?? 0)
 
 const handleFavorite = () => {
   isFavorite.value = !isFavorite.value

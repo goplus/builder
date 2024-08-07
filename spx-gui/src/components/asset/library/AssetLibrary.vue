@@ -76,7 +76,6 @@ import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
 import AssetList from './AssetList.vue'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
-import LibraryTab from './LibraryTab.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
 

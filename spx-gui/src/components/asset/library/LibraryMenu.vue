@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { useMessage,NMenu } from 'naive-ui'
+import { NMenu } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import { useI18n } from '@/utils/i18n'
 import { ref } from 'vue'
