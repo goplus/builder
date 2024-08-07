@@ -1,26 +1,19 @@
 package controller
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
+	"github.com/goplus/builder/spx-backend/internal/llm"
 	"time"
 )
 
 // max chat length
 const maxChatLength = 20
 
-// max input length
-const maxInputLength = 1000
-
-// llm max token limit
-const maxToken = 800
-
 // expire time of chat
 const expireTime = time.Hour * 2
+
+// max input length
+const maxInputLength = 1000
 
 // Chat actions
 const (
@@ -42,41 +35,6 @@ const (
 	En
 	Zh
 )
-
-// LLM models
-const (
-	_ = iota
-	OpenAI
-)
-
-// LLM config
-type llmConf struct {
-	baseUrl      string
-	apiKey       string
-	model        string
-	backUpUrl    string
-	backUpAPIKey string
-	backUpModel  string
-}
-
-// methods
-const (
-	GET    = "GET"
-	POST   = "POST"
-	PUT    = "PUT"
-	DELETE = "DELETE"
-	PATCH  = "PATCH"
-)
-
-// LLM endpoint map
-type apiEndPoint struct {
-	endPoint string
-	method   string
-}
-
-var llmMethodMap = map[string]apiEndPoint{
-	"chat": {"/chat/completions", POST},
-}
 
 // the number of more questions for user to continue the chat
 const moreQuestionNumber = 4
@@ -102,8 +60,6 @@ const (
 var (
 	// user's chat map manager.
 	ChatMapManager = newChatMapManager()
-	// llm config.
-	LLMConf = newLLMConf()
 )
 
 // AIStartChatParams is the json object for the start chat request.
@@ -142,30 +98,31 @@ type Code struct {
 	Src  string `json:"src"`
 }
 
-type AIResp struct {
-	ID          string `json:"id"`
-	RespMessage string `json:"respMessage"`
-}
-
-func (resp AIResp) ParesAsSuggestTask() SuggestTaskResp {
-	//TODO(callme-taota): parse as suggest task
-	return SuggestTaskResp{}
-}
-
-func (resp AIResp) ParesAsChat() ChatResp {
-	//TODO(callme-taota): parse as chat
-	return ChatResp{}
+type LLMFrom interface {
+	FromResponse(llm.LlmResponseBody, string)
 }
 
 type ChatResp struct {
-	Id            string   `json:"id"`
+	ID            string   `json:"id"`
 	RespMessage   string   `json:"respMessage"`
 	RespQuestions []string `json:"respQuestions"`
+}
+
+func (chatResp *ChatResp) FromResponse(resp llm.LlmResponseBody, id string) {
+	if id == "" {
+		chatResp.ID = resp.ID
+	}
+	chatResp.RespMessage = resp.Choices[0].Message.Content
+	// TODO(callme-taota): parse the response to get the questions and answer.
 }
 
 type SuggestTaskResp struct {
 	TaskAction   int           `json:"taskAction"`
 	CodeSuggests []CodeSuggest `json:"codeSuggests"`
+}
+
+func (suggestTaskResp *SuggestTaskResp) FromResponse(resp llm.LlmResponseBody, id string) {
+	// TODO(callme-taota): parse the response to get the task action and code suggests.
 }
 
 type CodeSuggest struct {
@@ -230,13 +187,13 @@ func DeleteExpireChat() {
 }
 
 type Chat struct {
-	ID                string              `json:"id"`
-	ChatAction        int                 `json:"chatAction"`
-	ChatLang          string              `json:"chatLang"`
-	CurrentChatLength int                 `json:"currentChatLength"`
-	ProjectContext    ProjectContext      `json:"projectContext"`
-	CreatAt           time.Time           `json:"creatAt"`
-	Messages          []llmMessageContent `json:"messages"`
+	ID                string         `json:"id"`
+	ChatAction        int            `json:"chatAction"`
+	ChatLang          string         `json:"chatLang"`
+	CurrentChatLength int            `json:"currentChatLength"`
+	ProjectContext    ProjectContext `json:"projectContext"`
+	CreatAt           time.Time      `json:"creatAt"`
+	Messages          llm.Messages   `json:"messages"`
 }
 
 func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
@@ -250,41 +207,42 @@ func NewChat(chatAction int, ctx ProjectContext, lang int) *Chat {
 	}
 }
 
-func (c *Chat) NextInput(userInput string) (ChatResp, error) {
+func (c *Chat) NextInput(userInput string) (chatResp ChatResp, err error) {
 	if c.IsExpired() {
 		ChatMapManager.DeleteChat(c.ID)
-		return ChatResp{}, fmt.Errorf("chat is expired")
+		err = fmt.Errorf("chat is expired")
+		return
 	}
 	if checkInputLength(userInput) {
-		return ChatResp{}, fmt.Errorf("input is too long")
+		err = fmt.Errorf("input is too long")
+		return
 	}
-	if c.CurrentChatLength > maxChatLength {
-		return ChatResp{}, fmt.Errorf("chat is end")
+	if c.CurrentChatLength >= maxChatLength {
+		err = fmt.Errorf("chat is end")
+		return
 	}
 	c.CurrentChatLength++
-	sysPrompt := chatPromptGenerator(*c)
-	c.PushMessage(llmChatRequestBodyMessagesRoleSystem, sysPrompt)
-	c.PushMessage(llmChatRequestBodyMessagesRoleUser, userInput)
-	resp, err := CallLLM(c.GetMessages(), c.ID)
+	c.Messages.PushMessages(llm.ChatRequestBodyMessagesRoleUser, userInput)
+	resp, err := llm.CallLLM(c.GetMessages())
 	if err != nil {
-		fmt.Println(err)
-		return ChatResp{}, err
+		return
 	}
-	return resp.ParesAsChat(), nil
+	chatResp.FromResponse(resp, c.ID)
+	return
 }
 
 func (c *Chat) IsExpired() bool {
 	return time.Since(c.CreatAt) > expireTime
 }
 
-func (c *Chat) PushMessage(role string, content string) {
-	c.Messages = append(c.Messages, llmMessageContent{
+func (c *Chat) PushMessage(role llm.ChatMessageRole, content string) {
+	c.Messages = append(c.Messages, llm.MessageContent{
 		Role:    role,
 		Content: content,
 	})
 }
 
-func (c *Chat) GetMessages() []llmMessageContent {
+func (c *Chat) GetMessages() llm.Messages {
 	return c.Messages
 }
 
@@ -337,161 +295,47 @@ func (p AITaskParams) taskPromptGenerator() (string, string) {
 	}
 }
 
-func newLLMConf() *llmConf {
-	// get config from environment and return
-	return &llmConf{
-		baseUrl:      os.Getenv("LLM_BASE_URL"),
-		apiKey:       os.Getenv("LLM_API_KEY"),
-		model:        os.Getenv("LLM_MODEL"),
-		backUpUrl:    os.Getenv("LLM_BACKUP_URL"),
-		backUpAPIKey: os.Getenv("LLM_BACKUP_APIKEY"),
-		backUpModel:  os.Getenv("LLM_BACKUP_MODEL"),
-	}
+func createLLMRequestBodyMessages(sysInput, userInput string) llm.Messages {
+	msg := llm.CreateMessage()
+
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleSystem, sysInput)
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleUser, userInput)
+
+	return msg
 }
 
-type llmChatRequestBody struct {
-	Messages       []llmMessageContent `json:"messages"`
-	Model          string              `json:"model"`
-	MaxToken       int                 `json:"max_token"`
-	ResponseFormat llmResponseFormat   `json:"response_format"`
-	Stream         bool                `json:"stream"`
-	SteamOptions   llmStreamOptions    `json:"stream_options"`
-}
-
-type llmMessageContent struct {
-	Content string `json:"content"`
-	Role    string `json:"role"`
-}
-
-type llmResponseFormat struct {
-	Type string `json:"type"`
-}
-
-type llmStreamOptions struct {
-	IncludeUsage bool `json:"include_usage"`
-}
-
-type llmResponseBody struct {
-	ID      string               `json:"id"`
-	Choices []llmResponseChoices `json:"choices"`
-	Created int                  `json:"created"`
-	Usage   llmUsage             `json:"usage"`
-	Object  string               `json:"object"`
-	Model   string               `json:"model"`
-}
-
-type llmUsage struct {
-	CompletionTokens int `json:"completion_tokens"`
-	PromptTokens     int `json:"prompt_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type llmResponseChoices struct {
-	FinishReason string            `json:"finish_reason"` // "stop" or "length" or "content_filter" or "tool_calls"
-	Index        int               `json:"index"`
-	Message      llmMessageContent `json:"message"`
-}
-
-const (
-	llmChatRequestBodyMessagesRoleSystem    = "system"
-	llmChatRequestBodyMessagesRoleUser      = "user"
-	llmChatRequestBodyMessagesRoleAssistant = "assistant"
-)
-
-func createLLMRequestBodyMessages(sysPrompt, userInput string) []llmMessageContent {
-	return []llmMessageContent{
-		{Role: llmChatRequestBodyMessagesRoleSystem, Content: sysPrompt},
-		{Role: llmChatRequestBodyMessagesRoleUser, Content: userInput}}
-}
-
-func createLLMRequestBody(llmChatMessage []llmMessageContent) llmChatRequestBody {
-	return llmChatRequestBody{
-		Messages: llmChatMessage,
-		Model:    LLMConf.model,
-		MaxToken: maxToken,
-		ResponseFormat: llmResponseFormat{
-			Type: "json_object",
-		},
-		Stream:       false,
-		SteamOptions: llmStreamOptions{},
-	}
-}
-
-func (l llmResponseBody) AIResp(id string) (AIResp, error) {
-	if len(l.Choices) == 0 {
-		return AIResp{}, fmt.Errorf("no choices in llm response")
-	}
-	//TODO: calculate usage
-	chat, ok := ChatMapManager.GetChat(id)
-	if ok {
-		chat.PushMessage(llmChatRequestBodyMessagesRoleAssistant, l.Choices[0].Message.Content)
-	}
-	return AIResp{
-		ID:          id,
-		RespMessage: l.Choices[0].Message.Content,
-	}, nil
-}
-
-func CallLLM(llmChatMessage []llmMessageContent, id string) (AIResp, error) {
-	body := createLLMRequestBody(llmChatMessage)
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		return AIResp{}, err
-	}
-	req, err := http.NewRequest(llmMethodMap["chat"].method, LLMConf.baseUrl+llmMethodMap["chat"].endPoint, bytes.NewBuffer(bodyJSON))
-	if err != nil {
-		return AIResp{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+LLMConf.apiKey)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return AIResp{}, err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(resp.Body)
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return AIResp{}, err
-	}
-
-	var responseBody llmResponseBody
-	err = json.Unmarshal(bodyBytes, &responseBody)
-	if err != nil {
-		return AIResp{}, err
-	}
-	return responseBody.AIResp(id)
-	//TODO(callme-taota): call llm api
-}
-
-func StartChat(p AIStartChatParams) (ChatResp, error) {
+func StartChat(p AIStartChatParams) (chatResp ChatResp, err error) {
 	chat := NewChat(p.ChatAction, p.ProjectContext, p.UserLang)
-	err := ChatMapManager.StoreChat(chat)
-	if err != nil {
-		fmt.Println(err)
-		return ChatResp{}, err
-	}
 	systemPrompt := chatPromptGenerator(*chat)
 	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
-	resp, err := CallLLM(chat.GetMessages(), chat.ID)
+	resp, err := llm.CallLLM(chat.GetMessages())
 	if err != nil {
-		fmt.Println(err)
-		return ChatResp{}, err
+		return
 	}
-	return resp.ParesAsChat(), nil
+	chat.ID = resp.ID
+	err = ChatMapManager.StoreChat(chat)
+	if err != nil {
+		return
+	}
+	chatResp.FromResponse(resp, "")
+	return
 }
 
-func StartTask(p AITaskParams) (SuggestTaskResp, error) {
-	resp, err := CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()), "")
-	if err != nil {
-		fmt.Println(err)
-		return SuggestTaskResp{}, err
+func NextChatEx(id string, userInput string) (chatResp ChatResp, err error) {
+	chat, ok := ChatMapManager.GetChat(id)
+	if !ok {
+		err = fmt.Errorf("no chat found with id: %s", id)
+		return
 	}
-	return resp.ParesAsSuggestTask(), nil
+	chatResp, err = chat.NextInput(userInput)
+	return
+}
+
+func StartTask(p AITaskParams) (suggestTaskResp SuggestTaskResp, err error) {
+	resp, err := llm.CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()))
+	if err != nil {
+		return
+	}
+	suggestTaskResp.FromResponse(resp, "")
+	return
 }
