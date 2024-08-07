@@ -211,10 +211,6 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   flex-direction: row;
   align-items: center;
   gap: 6px;
-
-  //   .ai-asset-tip {
-  // 	font-style: italic;
-  //   }
 }
 
 .generating-text {

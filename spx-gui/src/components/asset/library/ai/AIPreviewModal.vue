@@ -292,13 +292,13 @@ aside {
 .ai-asset-wrapper {
   cursor: pointer;
   transition: border-color 0.3s;
-  border-radius: var(--ui-border-radius-1);
+  border-radius: calc(3px + var(--ui-border-radius-1));
   border: 3px solid transparent;
 }
 
 .ai-asset-wrapper.selected {
   border: 3px solid var(--ui-color-primary-main, #3f9ae5);
-  border-radius: var(--ui-border-radius-1);
+  border-radius: calc(3px + var(--ui-border-radius-1));
 }
 
 .generating-info {
