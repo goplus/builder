@@ -11,12 +11,6 @@ import (
 // llm max token limit
 const maxToken = 800
 
-// LLM models
-const (
-	_ = iota
-	OpenAI
-)
-
 // methods
 const (
 	GET    = "GET"
