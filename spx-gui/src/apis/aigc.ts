@@ -66,14 +66,14 @@ export async function generateAIImage({
       resolve({ imageJobId: `mock-${keyword}-${Math.random().toString(36).slice(2)}` })
     }, 1000)
   })
-  // const result = (await client.post(
-  //   '/aigc/image',
-  //   { keyword, category, assetType, width, height },
-  //   { timeout: 20 * 1000 }
-  // )) as {
-  //   imageJobId: string
-  // }
-  // return result.imageJobId
+  const result = (await client.post(
+    '/aigc/image',
+    { keyword, category, assetType, width, height },
+    { timeout: 20 * 1000 }
+  )) as {
+    imageJobId: string
+  }
+  return result
 }
 
 /**
@@ -89,10 +89,10 @@ export async function generateAISprite(imageJobId: string) {
       resolve({ spriteJobId: `mock-${imageJobId}-${Math.random().toString(36).slice(2)}` })
     }, 1000)
   })
-  // const result = (await client.post('/aigc/sprite', { imageJobId }, { timeout: 20 * 1000 })) as {
-  //   spriteJobId: string
-  // }
-  // return result.spriteJobId
+  const result = (await client.post('/aigc/sprite', { imageJobId }, { timeout: 20 * 1000 })) as {
+    spriteJobId: string
+  }
+  return result
 }
 
 export enum AIGCType {
@@ -162,10 +162,10 @@ export async function getAIGCStatus(jobId: string) {
       }
     }, 300)
   })
-  // const result = (await client.get(
-  //   `/aigc/status/${jobId}`,
-  //   {},
-  //   { timeout: 20 * 1000 }
-  // )) as AIGCStatusResponse
-  // return result
+  const result = (await client.get(
+    `/aigc/status/${jobId}`,
+    {},
+    { timeout: 20 * 1000 }
+  )) as AIGCStatusResponse
+  return result
 }
