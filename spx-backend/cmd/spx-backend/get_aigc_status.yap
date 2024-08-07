@@ -13,8 +13,10 @@ _, ok := ensureUser(ctx)
 if !ok {
 	return
 }
+params := &controller.QueryParams{}
+params.JobId = ${jobId}
 
-result, err := ctrl.Query(ctx.Context())
+result, err := ctrl.Query(ctx.Context(), params)
 
 if err != nil {
 	replyWithInnerError(ctx, err)
