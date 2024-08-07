@@ -28,6 +28,16 @@ export type AIAssetData<T extends AssetType = AssetType> = {
   status: AIGCStatus
 }
 
+export const isAiAsset = Symbol('isAiAsset')
+export const isPreviewReady = Symbol('isPreviewReady')
+export const isContentReady = Symbol('isContentReady')
+export type TaggedAIAssetData<T extends AssetType = AssetType> = AIAssetData<T> & {
+  [isAiAsset]: true
+  [isPreviewReady]: boolean
+  [isContentReady]: boolean
+}
+export type AssetOrAIAsset = AssetData | TaggedAIAssetData
+
 export interface CreateAIImageParams {
   keyword: string
   category: string | string[]

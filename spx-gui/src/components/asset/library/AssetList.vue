@@ -61,17 +61,6 @@
     </template>
   </NVirtualList>
 </template>
-<script lang="ts">
-export const isAiAsset = Symbol('isAiAsset')
-export const isPreviewReady = Symbol('isPreviewReady')
-export const isContentReady = Symbol('isContentReady')
-export type TaggedAIAssetData = AIAssetData & {
-  [isAiAsset]: true
-  [isPreviewReady]: boolean
-  [isContentReady]: boolean
-}
-export type AssetOrAIAsset = AssetData | TaggedAIAssetData
-</script>
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
@@ -82,7 +71,16 @@ import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
-import { AIGCStatus, generateAIImage, type AIAssetData } from '@/apis/aigc'
+import {
+  AIGCStatus,
+  generateAIImage,
+  isAiAsset,
+  isContentReady,
+  isPreviewReady,
+  type AIAssetData,
+  type AssetOrAIAsset,
+  type TaggedAIAssetData
+} from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
 
@@ -209,7 +207,7 @@ const generateMultipleAIImages = (count: number, append = true) => {
       ...r,
       [isAiAsset]: true as const,
       [isPreviewReady]: false,
-      [isContentReady]: false,
+      [isContentReady]: false
     }))
     if (append) {
       aiAssetList.value.push(...taggedRes)

@@ -3,8 +3,8 @@
     <div class="head head-actions">
       <Transition name="slide-fade" mode="out-in" appear>
         <div v-if="contentReady" class="head-left">
-			<!-- Maybe we could put actions of inner editors here? -->
-		</div>
+          <!-- Maybe we could put actions of inner editors here? -->
+        </div>
         <div v-else class="head-left">
           {{ $t({ zh: '正在进一步生成素材...', en: 'Further generating assets...' }) }}
         </div>
@@ -119,14 +119,20 @@ import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
 import { addAssetToFavorites, AssetType, removeAssetFromFavorites } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
-import { isContentReady, isPreviewReady, type TaggedAIAssetData } from '../AssetList.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
-import { AIGCStatus, generateAISprite, getAIGCStatus, type AIGCFiles } from '@/apis/aigc'
+import {
+  AIGCStatus,
+  generateAISprite,
+  getAIGCStatus,
+  type AIGCFiles,
+  isContentReady,
+  isPreviewReady,
+  type TaggedAIAssetData
+} from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
-import type { File } from '@/models/common/file'
+import { type File } from '@/models/common/file'
 import { CancelOutlined } from '@vicons/material'
 
 // Define component props
