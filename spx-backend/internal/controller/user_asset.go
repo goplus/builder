@@ -51,6 +51,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	}
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "a.owner", Operation: "=", Value: *params.Owner})
+		wheres = append(wheres, model.FilterCondition{Column: "ua.user_id", Operation: "=", Value: *params.Owner})
 	}
 	if params.Category != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "a.category", Operation: "=", Value: *params.Category})
@@ -79,10 +80,9 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 		SELECT a.*
 		FROM asset a
 		JOIN user_asset ua ON a.id = ua.asset_id
-		WHERE ua.user_id = ?
 	`
 
-	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders)
+	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true)
 	if err != nil {
 		logger.Printf("failed to list user assets: %v", err)
 		return nil, err

@@ -70,7 +70,7 @@ func AssetByID(ctx context.Context, db *sql.DB, id string) (*Asset, error) {
 
 // ListAssets lists assets with given pagination, where conditions and order by conditions.
 func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition) (*ByPage[Asset], error) {
-	return QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy)
+	return QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false)
 }
 
 // AddAsset adds an asset.

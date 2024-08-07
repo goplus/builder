@@ -51,31 +51,55 @@ type ByPage[T any] struct {
 	Data  []T `json:"data"`
 }
 
-// QueryByPage queries a table by page.
-func QueryByPage[T any](ctx context.Context, db *sql.DB, table string, paginaton Pagination, where []FilterCondition, orderBy []OrderByCondition) (*ByPage[T], error) {
+// QueryByPage queries a table or custom query by page.
+func QueryByPage[T any](
+	ctx context.Context,
+	db *sql.DB,
+	tableOrQuery string,
+	pagination Pagination,
+	where []FilterCondition,
+	orderBy []OrderByCondition,
+	isCustomQuery bool, // New parameter to indicate if tableOrQuery is a custom query
+) (*ByPage[T], error) {
 	logger := log.GetReqLogger(ctx)
 
+	// Build the WHERE and ORDER BY clauses
 	whereClause, whereArgs := buildWhereClause(where)
 	orderByClause := buildOrderByClause(orderBy)
 
+	var countQuery, paginatedQuery string
+
+	if isCustomQuery {
+		// Use custom query logic
+		countQuery = fmt.Sprintf("SELECT COUNT(*) FROM (%s %s) AS subquery", tableOrQuery, whereClause)
+		paginatedQuery = fmt.Sprintf("%s %s %s LIMIT ?, ?", tableOrQuery, whereClause, orderByClause)
+	} else {
+		// Use simple table logic
+		countQuery = fmt.Sprintf("SELECT COUNT(*) FROM %s %s", tableOrQuery, whereClause)
+		paginatedQuery = fmt.Sprintf("SELECT * FROM %s %s %s LIMIT ?, ?", tableOrQuery, whereClause, orderByClause)
+	}
+
+	// Execute count query
 	var total int
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s %s", table, whereClause)
 	if err := db.QueryRowContext(ctx, countQuery, whereArgs...).Scan(&total); err != nil {
 		logger.Printf("db.QueryRowContext failed: %v", err)
 		return nil, err
 	}
 
-	offset := (paginaton.Index - 1) * paginaton.Size
-	query := fmt.Sprintf("SELECT * FROM %s %s %s LIMIT ?, ?", table, whereClause, orderByClause)
-	args := append(whereArgs, offset, paginaton.Size)
-	rows, err := db.QueryContext(ctx, query, args...)
+	// Calculate offset for pagination
+	offset := (pagination.Index - 1) * pagination.Size
+	args := append(whereArgs, offset, pagination.Size)
+
+	// Execute paginated query
+	rows, err := db.QueryContext(ctx, paginatedQuery, args...)
 	if err != nil {
 		logger.Printf("db.QueryContext failed: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	data := make([]T, 0, paginaton.Size)
+	// Scan the rows into the data slice
+	data := make([]T, 0, pagination.Size)
 	for rows.Next() {
 		item, err := rowsScan[T](rows)
 		if err != nil {
