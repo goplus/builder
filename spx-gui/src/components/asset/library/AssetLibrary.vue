@@ -139,7 +139,7 @@ function handleSelectCategory(c: string[]) {
 }
 
 function handleUserSelectCategory(c: string) {
-  // searchCtx.category = c
+  searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'
 }
 
 async function addAssetToProject(asset: AssetData) {

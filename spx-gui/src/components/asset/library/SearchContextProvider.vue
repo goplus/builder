@@ -42,7 +42,7 @@ export function useSearchResultCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, reactive, watch, computed } from 'vue'
+import { provide, type InjectionKey, reactive, watch } from 'vue'
 import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy, listHistoryAsset, listLikedAsset } from '@/apis/asset'
 
 const props = defineProps<{
@@ -60,21 +60,6 @@ const searchCtx = reactive<SearchCtx>({
 
 provide(searchCtxKey, searchCtx)
 
-const {
-  isLoading,
-  data,
-  error,
-  refetch
-} = useQuery(
-  () => {
-    return getListAsset(searchCtx.tabCategory,searchCtx.category)
-  },
-  {
-    en: 'Failed to list',
-    zh: '获取列表失败'
-  }
-)
-
 const getListAsset = (type: GetListAssetType,category:string[]) => {
   switch (type) {
     case 'liked':
@@ -82,8 +67,8 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         pageSize: searchCtx.pageSize,
         pageIndex: searchCtx.page,
         assetType: searchCtx.type,
-        keyword: undefined,
-        category: undefined,
+        keyword: '',
+        category: [''],
         owner: '*',
         isPublic: undefined,
         orderBy: ListAssetParamOrderBy.TimeAsc
@@ -110,7 +95,7 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         isPublic: IsPublic.personal,
         orderBy: ListAssetParamOrderBy.TimeAsc
       })
-    case 'public':
+    default:
       return listAsset({
         pageSize: searchCtx.pageSize,
         pageIndex: searchCtx.page,
@@ -123,6 +108,23 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
       })
   }
 }
+
+const {
+  isLoading,
+  data,
+  error,
+  refetch
+} = useQuery(
+  () => {
+    return getListAsset(searchCtx.tabCategory,searchCtx.category)
+  },
+  {
+    en: 'Failed to list',
+    zh: '获取列表失败'
+  }
+)
+
+
 
 const searchResultCtx = reactive<SearchResultCtx>({
   isLoading: isLoading.value,
