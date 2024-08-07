@@ -421,7 +421,7 @@ func (l llmResponseBody) AIResp(id string) (AIResp, error) {
 	if len(l.Choices) == 0 {
 		return AIResp{}, fmt.Errorf("no choices in llm response")
 	}
-	//todo: calculate usage
+	//TODO: calculate usage
 	chat, ok := ChatMapManager.GetChat(id)
 	if ok {
 		chat.PushMessage(llmChatRequestBodyMessagesRoleAssistant, l.Choices[0].Message.Content)
