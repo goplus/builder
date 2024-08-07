@@ -125,7 +125,6 @@ watchEffect(async (onClenaup) => {
   monacoEditor.value = editor
 
   onClenaup(() => {
-    coordinator.dispose()
     editor.dispose()
   })
 })
