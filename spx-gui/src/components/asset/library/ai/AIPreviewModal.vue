@@ -17,7 +17,6 @@
           @click="handleAddButton"
         >
           <span style="white-space: nowrap">
-            <!-- {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}-->
             {{
               addToProjectPending
                 ? $t({ en: 'Pending...', zh: '正在添加...' })
@@ -27,7 +26,6 @@
         </UIButton>
         <UIButton size="large" :disabled="!contentReady" @click="handleToggleFav">
           <span style="white-space: nowrap">
-            <!-- {{ $t({ en: 'Favorite', zh: '收藏' }) }} -->
             {{
               isFavorite
                 ? $t({ en: 'Unfavorite', zh: '取消收藏' })
@@ -51,12 +49,12 @@
                     <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                       {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                     </span>
-                    <!-- <span
-                    v-else-if="status === AIGCStatus.Finished && contentFileLoading"
-                    class="generating-text"
-                  >
-                    {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
-                  </span> -->
+                    <span
+                      v-else-if="status === AIGCStatus.Finished && !contentReady"
+                      class="generating-text"
+                    >
+                      {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
+                    </span>
                   </Transition>
                 </template>
               </NSpin>
