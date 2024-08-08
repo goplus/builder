@@ -5,6 +5,7 @@
       :costumes="selectedAnimation.costumes"
       :duration="selectedAnimation.duration"
       :sound="null"
+      :style="{ width: '100%', height: '100%' }"
     />
   </div>
 </template>

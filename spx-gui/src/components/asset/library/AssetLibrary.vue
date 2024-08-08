@@ -77,6 +77,7 @@
           :ai-assets="currentAIAssetList"
           class="asset-page"
           :add-to-project-pending="handleAddToProject.isLoading.value"
+          @add-to-project="handleAddToProject.fn"
           @select-ai="handleSelectAiAsset"
         />
       </section>
