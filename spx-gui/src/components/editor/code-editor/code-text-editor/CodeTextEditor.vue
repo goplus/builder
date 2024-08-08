@@ -195,18 +195,10 @@ function zoomFont(action: 'in' | 'out' | 'initial') {
   editor.trigger('keyboard', `editor.action.${actionIds[action]}`, {})
 }
 
-function jump(position: Position) {
-  const editor = monacoEditor.value
-  if (editor == null) return
-  editor.setPosition(position)
-  editor.focus()
-}
-
 defineExpose({
   insertSnippet,
   format,
-  zoomFont,
-  jump
+  zoomFont
 })
 </script>
 

@@ -6,13 +6,13 @@
     </UITabs>
     <template #extra>
       <FormatButton
-        v-if="selectedTab === 'code' && codeEditor != null && code != null"
-        :code-editor="codeEditor"
+        v-if="selectedTab === 'code' && codeEditorUI != null && code != null"
+        :code-editor="codeEditorUI"
       />
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>
-  <CodeEditor
+  <CodeEditorUI
     v-show="selectedTab === 'code'"
     ref="codeEditor"
     :loading="code == null"
@@ -26,7 +26,7 @@
 import { computed, ref } from 'vue'
 import type { Stage } from '@/models/stage'
 import { UITabs, UITab } from '@/components/ui'
-import CodeEditor from '../code-editor/CodeEditor.vue'
+import CodeEditorUI from '../code-editor/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './BackdropsEditor.vue'
@@ -39,7 +39,7 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'backdrops'>('code')
-const codeEditor = ref<InstanceType<typeof CodeEditor>>()
+const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
 const code = computed(() => props.stage.code)
 
 const action = {

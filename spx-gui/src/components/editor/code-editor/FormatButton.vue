@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import type CodeEditor from './CodeEditor.vue'
+import type CodeEditor from './CodeEditorUI.vue'
 
 const props = defineProps<{
   codeEditor: InstanceType<typeof CodeEditor>
