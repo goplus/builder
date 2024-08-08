@@ -74,6 +74,16 @@ type RawProjectConfig = RawStageConfig & {
   // TODO: support other types in zorder
   zorder?: string[]
   run?: RunConfig
+  /**
+   * Sprite order info, used by Go+ Builder to determine the order of sprites.
+   * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+   */
+  builder_spriteOrder?: string[]
+  /**
+   * Sound order info, used by Go+ Builder to determine the order of sounds.
+   * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+   */
+  builder_soundOrder?: string[]
   // TODO: camera
 }
 
@@ -264,7 +274,12 @@ export class Project extends Disposable {
     if (configFile != null) {
       Object.assign(config, await toConfig(configFile))
     }
-    const { zorder, ...stageConfig } = config
+    const {
+      zorder,
+      builder_spriteOrder: spriteOrder,
+      builder_soundOrder: soundOrder,
+      ...stageConfig
+    } = config
     const [stage, sounds, sprites] = await Promise.all([
       Stage.load(stageConfig, files),
       Sound.loadAll(files),
@@ -272,9 +287,9 @@ export class Project extends Disposable {
     ])
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
-    sprites.forEach((s) => this.addSprite(s))
+    orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
     this.sounds.splice(0).forEach((s) => s.dispose())
-    sounds.forEach((s) => this.addSound(s))
+    orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
     this.autoSelect()
   }
@@ -291,7 +306,9 @@ export class Project extends Disposable {
         width: stageConfig.map?.width,
         height: stageConfig.map?.height
       },
-      zorder: this.zorder
+      zorder: this.zorder,
+      builder_spriteOrder: this.sprites.map((s) => s.name),
+      builder_soundOrder: this.sounds.map((s) => s.name)
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
@@ -486,4 +503,11 @@ export class Project extends Disposable {
 /** Get full name for project, which stands for a globally unique identifier for the project */
 export function fullName(owner: string, name: string) {
   return `${owner}/${name}`
+}
+
+function orderBy<T extends Sprite | Sound>(list: T[], order: string[] | undefined) {
+  if (order == null) return list
+  return list.slice().sort((a, b) => {
+    return order.indexOf(a.name) - order.indexOf(b.name)
+  })
 }
