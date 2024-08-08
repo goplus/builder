@@ -84,6 +84,14 @@ import {
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
 
+const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
+const aiGenerationDisabled = computed(() => {
+  if (typeof searchCtx.category === 'string') {
+    return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.category)
+  }
+  return searchCtx.category.some((c) => FORBIDDEN_AI_CATEGORIES.includes(c))
+})
+
 const props = defineProps<{
   addToProjectPending: boolean
 }>()
@@ -225,7 +233,7 @@ watch(
     if (!hasMoreAssets.value) {
       // Fill the last row with AI assets
       const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
-      if (count <= COLUMN_COUNT) {
+      if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
         generateMultipleAIImages(count, false)
       }
     } else if (searchCtx.page === 1) {
