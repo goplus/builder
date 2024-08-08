@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/goplus/builder/spx-backend/internal/llm"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -36,6 +37,7 @@ type Controller struct {
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
 	casdoorClient *casdoorsdk.Client
+	llm           *llm.Client
 }
 
 // New creates a new controller.
@@ -77,11 +79,22 @@ func New(ctx context.Context) (*Controller, error) {
 	}
 	casdoorClient := casdoorsdk.NewClientWithConf(casdoorAuthConfig)
 
+	llmConfig := &llm.Conf{
+		BaseUrl:      os.Getenv("LLM_BASE_URL"),
+		ApiKey:       os.Getenv("LLM_API_KEY"),
+		Model:        os.Getenv("LLM_MODEL"),
+		BackUpUrl:    os.Getenv("LLM_BACKUP_URL"),
+		BackUpAPIKey: os.Getenv("LLM_BACKUP_APIKEY"),
+		BackUpModel:  os.Getenv("LLM_BACKUP_MODEL"),
+	}
+	llm := llm.NewLLMClientWithConfig(llmConfig)
+
 	return &Controller{
 		db:            db,
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
+		llm:           llm,
 	}, nil
 }
 
