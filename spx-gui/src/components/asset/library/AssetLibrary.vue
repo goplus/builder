@@ -21,21 +21,31 @@
         {{ $t({ en: 'Preview: ', zh: `预览: ` }) }}
         {{ selectedAsset?.displayName }}
       </h4>
-      <UITextInput
+      <NAutoComplete
         v-if="!selectedAsset"
         v-model:value="searchInput"
         class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
+        :options="suggestionsOptions"
       >
-        <template #prefix>
-          <UIIcon class="search-icon" type="search" />
+        <template #default="{ handleInput, handleBlur, handleFocus, value: slotValue }">
+          <UITextInput
+            :value="slotValue"
+            clearable
+            :placeholder="$t({ en: 'Search', zh: '搜索' })"
+            @input="handleInput"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @keypress.enter="handleSearch"
+          >
+            <template #prefix>
+              <UIIcon class="search-icon" type="search" />
+            </template>
+          </UITextInput>
         </template>
-      </UITextInput>
+      </NAutoComplete>
       <UIModalClose class="close" @click="handleCloseButton" />
     </div>
-    <UIDivider v-if="!(selectedAsset && isAiAsset in selectedAsset)"/>
+    <UIDivider v-if="!(selectedAsset && isAiAsset in selectedAsset)" />
     <section v-show="!selectedAsset" class="body">
       <main class="main">
         <div class="order-select">
@@ -61,7 +71,7 @@
       </div>
     </section>
     <Transition name="fade" mode="out-in" appear>
-      <section v-if="selectedAsset && (isAiAsset in selectedAsset)" class="body">
+      <section v-if="selectedAsset && isAiAsset in selectedAsset" class="body">
         <AIPreviewModal
           :asset="selectedAsset"
           :ai-assets="currentAIAssetList"
@@ -84,12 +94,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
-import { AssetType, type AssetData } from '@/apis/asset'
-import { debounce } from '@/utils/utils'
+import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
+import { debounce, useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
-import { NIcon, NSpin } from 'naive-ui'
+import { NAutoComplete, NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
 import AssetList from './AssetList.vue'
@@ -145,6 +155,11 @@ const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 const entityMessage = computed(() => entityMessages[searchCtx.type])
 const type = ref(searchCtx.type) //just for display
+
+const suggestions = useAsyncComputed(async () => {
+  return (await getAssetSearchSuggestion(searchCtx.keyword)).suggestions
+})
+const suggestionsOptions = computed(() => suggestions.value?.map((s) => ({ label: s, value: s })) ?? [])
 
 // do search (with a delay) when search-input changed
 watch(
