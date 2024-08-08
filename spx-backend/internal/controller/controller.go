@@ -6,6 +6,7 @@ import (
 	"errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -57,7 +58,11 @@ func New(ctx context.Context) (*Controller, error) {
 		return nil, err
 	}
 	// TODO: Configure connection pool and timeouts.
-	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
 	if err != nil {
 		logger.Printf("failed to connect gorm: %v", err)
 		return nil, err

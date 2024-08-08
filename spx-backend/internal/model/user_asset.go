@@ -44,7 +44,7 @@ func AddUserAsset(ctx context.Context, db *gorm.DB, p *UserAsset) (*UserAsset, e
 		logger.Printf("failed to add asset: %v", result.Error)
 		return nil, result.Error
 	}
-	res, _ := UserAssetByID(ctx, db, p.AssetID)
+	res, _ := UserAssetByAssetID(ctx, db, p.AssetID) //TODO: this may be muiltple assets with the same assetID
 	if res == nil {
 		logger.Printf("failed to get user asset by id: %v", result.Error)
 		return nil, result.Error
@@ -64,11 +64,11 @@ func UserAssetByOwner(ctx context.Context, db *gorm.DB, owner string) (*UserAsse
 	return &item, nil
 }
 
-// UserAssetByID returns an user asset by ID or AssetID.
-func UserAssetByID(ctx context.Context, db *gorm.DB, id int) (*UserAsset, error) {
+// UserAssetByAssetID returns an user asset by ID or AssetID.
+func UserAssetByAssetID(ctx context.Context, db *gorm.DB, assetId int) (*UserAsset, error) {
 	logger := log.GetReqLogger(ctx)
 	var item UserAsset
-	result := db.First(&item, id) //todo: check if this is correct
+	result := db.First(&item, assetId)
 	if result.Error != nil {
 		logger.Printf("failed to get user asset by id: %v", result.Error)
 		return nil, result.Error
