@@ -996,7 +996,7 @@ func (this *post_user_history) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_history.yap:10:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_user_history.yap:12:1
-	_, ok := ensureUser(ctx)
+	user, ok := ensureUser(ctx)
 //line cmd/spx-backend/post_user_history.yap:13:1
 	if !ok {
 //line cmd/spx-backend/post_user_history.yap:14:1
@@ -1009,13 +1009,15 @@ func (this *post_user_history) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_history.yap:19:1
 		return
 	}
-//line cmd/spx-backend/post_user_history.yap:22:1
-	err := this.ctrl.AddUserAsset(ctx.Context(), params, "history")
+//line cmd/spx-backend/post_user_history.yap:21:1
+	params.Owner = user.Name
 //line cmd/spx-backend/post_user_history.yap:23:1
-	if err != nil {
+	err := this.ctrl.AddUserAsset(ctx.Context(), params, "history")
 //line cmd/spx-backend/post_user_history.yap:24:1
-		replyWithInnerError(ctx, err)
+	if err != nil {
 //line cmd/spx-backend/post_user_history.yap:25:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_user_history.yap:26:1
 		return
 	}
 }
@@ -1028,7 +1030,7 @@ func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_liked.yap:10:1
 	ctx := &this.Context
 //line cmd/spx-backend/post_user_liked.yap:12:1
-	_, ok := ensureUser(ctx)
+	user, ok := ensureUser(ctx)
 //line cmd/spx-backend/post_user_liked.yap:13:1
 	if !ok {
 //line cmd/spx-backend/post_user_liked.yap:14:1
@@ -1041,13 +1043,15 @@ func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_liked.yap:19:1
 		return
 	}
-//line cmd/spx-backend/post_user_liked.yap:22:1
-	err := this.ctrl.AddUserAsset(ctx.Context(), params, "liked")
+//line cmd/spx-backend/post_user_liked.yap:21:1
+	params.Owner = user.Name
 //line cmd/spx-backend/post_user_liked.yap:23:1
-	if err != nil {
+	err := this.ctrl.AddUserAsset(ctx.Context(), params, "liked")
 //line cmd/spx-backend/post_user_liked.yap:24:1
-		replyWithInnerError(ctx, err)
+	if err != nil {
 //line cmd/spx-backend/post_user_liked.yap:25:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_user_liked.yap:26:1
 		return
 	}
 }
