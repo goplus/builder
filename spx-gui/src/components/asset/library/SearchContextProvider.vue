@@ -94,7 +94,8 @@ const {
   {
     en: 'Failed to list',
     zh: '获取列表失败'
-  }
+  },
+  true
 )
 
 const searchResultCtx = reactive<SearchResultCtx>({

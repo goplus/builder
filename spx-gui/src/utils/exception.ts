@@ -146,24 +146,35 @@ export type QueryRet<T> = {
  * - do query automatically
  * - transforms exceptions like `useAction`
  * - manage states for query result
+ * - set `preventRaceCondition` to `true` to drop outdated results
  *
  * TODO: if things get more complex, we may need tools like `@tanstack/vue-query`
  */
 export function useQuery<T>(
   fn: () => Promise<T>,
-  failureSummaryMessage: LocaleMessage
+  failureSummaryMessage: LocaleMessage,
+  preventRaceCondition = false
 ): QueryRet<T> {
   const action = useAction(fn, failureSummaryMessage)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
+  let currentRequestId = 0
 
   function fetch() {
+    const requestId = ++currentRequestId
     action.fn().then(
       (d) => {
+        // Only update the data if the requestId is the latest one
+        if (preventRaceCondition && requestId !== currentRequestId) {
+          return
+        }
         data.value = d
         error.value = null
       },
       (e) => {
+        if (preventRaceCondition && requestId !== currentRequestId) {
+          return
+        }
         error.value = e
         console.warn(e)
       }
