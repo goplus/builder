@@ -7,8 +7,8 @@ import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
+import { Disposable } from '@/utils/disposable'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposable } from '../common/disposable'
 import { toConfig, type Files, fromConfig } from '../common/file'
 import { Stage, type RawStageConfig } from '../stage'
 import { Sprite } from '../sprite'
@@ -101,6 +101,7 @@ export class Project extends Disposable {
   removeSprite(name: string) {
     const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
+    this.zorder = this.zorder.filter((v) => v !== sprite.name)
     sprite.dispose()
     this.autoSelect()
   }
@@ -129,9 +130,6 @@ export class Project extends Disposable {
         }
       )
     )
-    sprite.addDisposer(() => {
-      this.zorder = this.zorder.filter((v) => v !== sprite.name)
-    })
   }
   private setSpriteZorderIdx(
     name: string,
@@ -160,6 +158,14 @@ export class Project extends Disposable {
   removeSound(name: string) {
     const idx = this.sounds.findIndex((s) => s.name === name)
     const [sound] = this.sounds.splice(idx, 1)
+    // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+    for (const sprite of this.sprites) {
+      for (const animation of sprite.animations) {
+        if (animation.sound === sound.name) {
+          animation.setSound(null)
+        }
+      }
+    }
     sound.dispose()
     this.autoSelect()
   }
@@ -192,16 +198,6 @@ export class Project extends Disposable {
         }
       )
     )
-    sound.addDisposer(() => {
-      // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
-      for (const sprite of this.sprites) {
-        for (const animation of sprite.animations) {
-          if (animation.sound === sound.name) {
-            animation.setSound(null)
-          }
-        }
-      }
-    })
   }
 
   setPublic(isPublic: IsPublic) {
