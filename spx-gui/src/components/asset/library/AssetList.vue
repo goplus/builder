@@ -44,7 +44,11 @@
         <img :src="emptyImg" alt="empty" />
         {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
         <Transition name="fade" mode="out-in" appear>
-          <NButton v-if="!loadingAiAsset" tertiary @click="generateMultipleAIImages(COLUMN_COUNT)">
+          <NButton
+            v-if="!loadingAiAsset && !aiGenerationDisabled"
+            tertiary
+            @click="abortAIGeneration = generateMultipleAIImages(COLUMN_COUNT)"
+          >
             <template #icon>
               <NIcon>
                 <TipsAndUpdatesOutlined />
@@ -112,8 +116,9 @@ const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )
 
+const aiAssetPending = ref(false)
 const loadingAiAsset = computed(() =>
-  aiAssetList.value.some((a) => {
+    aiAssetPending.value || aiAssetList.value.some((a) => {
     if (isAiAsset in a) {
       return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
     }
@@ -195,7 +200,9 @@ const handleScroll = (e: Event) => {
   }
 }
 
-const generateMultipleAIImages = (count: number, append = true) => {
+function generateMultipleAIImages(count: number, append = true): () => void {
+  let abortSignal = false
+  aiAssetPending.value = true
   const promises = Array.from({ length: count }, () =>
     generateAIImage({
       keyword: searchCtx.keyword,
@@ -211,6 +218,9 @@ const generateMultipleAIImages = (count: number, append = true) => {
     })
   )
   Promise.all(promises).then((res) => {
+    if (abortSignal) {
+      return
+    }
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
       [isAiAsset]: true as const,
@@ -223,7 +233,13 @@ const generateMultipleAIImages = (count: number, append = true) => {
       aiAssetList.value = taggedRes
     }
   })
+  aiAssetPending.value = false
+  return () => {
+    abortSignal = true
+  }
 }
+
+let abortAIGeneration: (() => void) | null = null
 
 // Append search result to assetList
 watch(
@@ -234,7 +250,7 @@ watch(
       // Fill the last row with AI assets
       const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
       if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
-        generateMultipleAIImages(count, false)
+        abortAIGeneration = generateMultipleAIImages(count, false)
       }
     } else if (searchCtx.page === 1) {
       loadMore()
@@ -249,6 +265,7 @@ watch(
       .filter((k) => k !== 'page')
       .map((k) => searchCtx[k]),
   () => {
+    abortAIGeneration?.()
     assetList.value = []
     aiAssetList.value = []
     searchCtx.page = 1
