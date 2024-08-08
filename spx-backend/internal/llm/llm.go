@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 )
 
 // llm max token limit
@@ -20,34 +19,22 @@ const (
 	PATCH  = "PATCH"
 )
 
-// ----------------------------------------------------------------------------
-
-var (
-	LLMConf = newLLMConf()
-)
-
-func newLLMConf() *llmConf {
-	// get config from environment and return
-	return &llmConf{
-		baseUrl:      os.Getenv("LLM_BASE_URL"),
-		apiKey:       os.Getenv("LLM_API_KEY"),
-		model:        os.Getenv("LLM_MODEL"),
-		backUpUrl:    os.Getenv("LLM_BACKUP_URL"),
-		backUpAPIKey: os.Getenv("LLM_BACKUP_APIKEY"),
-		backUpModel:  os.Getenv("LLM_BACKUP_MODEL"),
-	}
+type Client struct {
+	Config Conf
 }
 
-// ----------------------------------------------------------------------------
+func NewLLMClientWithConfig(config *Conf) *Client {
+	return &Client{Config: *config}
+}
 
 // LLM config
-type llmConf struct {
-	baseUrl      string
-	apiKey       string
-	model        string
-	backUpUrl    string
-	backUpAPIKey string
-	backUpModel  string
+type Conf struct {
+	BaseUrl      string
+	ApiKey       string
+	Model        string
+	BackUpUrl    string
+	BackUpAPIKey string
+	BackUpModel  string
 }
 
 // LLM endpoint map
@@ -56,8 +43,14 @@ type apiEndPoint struct {
 	method   string
 }
 
-var llmMethodMap = map[string]apiEndPoint{
-	"chat": {"/chat/completions", POST},
+type LLMMethods string
+
+const (
+	LLMChatMethod LLMMethods = "chat"
+)
+
+var llmMethodMap = map[LLMMethods]apiEndPoint{
+	LLMChatMethod: {"/chat/completions", POST},
 }
 
 type llmChatRequestBody struct {
@@ -129,10 +122,10 @@ const (
 	ChatRequestBodyMessagesRoleAssistant ChatMessageRole = "assistant"
 )
 
-func createLLMRequestBody(llmChatMessage []MessageContent) llmChatRequestBody {
+func (c *Client) createLLMRequestBody(llmChatMessage []MessageContent) llmChatRequestBody {
 	return llmChatRequestBody{
 		Messages: llmChatMessage,
-		Model:    LLMConf.model,
+		Model:    c.Config.Model,
 		MaxToken: maxToken,
 		ResponseFormat: llmResponseFormat{
 			Type: "json_object",
@@ -142,18 +135,18 @@ func createLLMRequestBody(llmChatMessage []MessageContent) llmChatRequestBody {
 	}
 }
 
-func CallLLM(llmChatMessage Messages) (responseBody LlmResponseBody, err error) {
-	body := createLLMRequestBody(llmChatMessage)
+func (c *Client) CallLLM(llmChatMessage Messages) (responseBody LlmResponseBody, err error) {
+	body := c.createLLMRequestBody(llmChatMessage)
 	bodyJSON, err := json.Marshal(body)
 	if err != nil {
 		return
 	}
-	req, err := http.NewRequest(llmMethodMap["chat"].method, LLMConf.baseUrl+llmMethodMap["chat"].endPoint, bytes.NewBuffer(bodyJSON))
+	req, err := http.NewRequest(llmMethodMap["chat"].method, c.Config.BaseUrl+llmMethodMap["chat"].endPoint, bytes.NewBuffer(bodyJSON))
 	if err != nil {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+LLMConf.apiKey)
+	req.Header.Set("Authorization", "Bearer "+c.Config.ApiKey)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
