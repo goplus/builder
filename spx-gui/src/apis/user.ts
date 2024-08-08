@@ -5,8 +5,12 @@ export type AddUserAssetParams = {
   assetId: string
 }
 
-export function addUserAsset(params: AddUserAssetParams, type: 'liked' | 'history') {
-  return client.post(`/user/${type}`, params) as Promise<null>
+export function addAssetToHistory(id: string) {
+  return client.post('/asset/history', { assetId: id }) as Promise<void>
+}
+
+export function addAssetToFavorites(id: string) {
+  return client.post('/asset/favorites', { assetId: id }) as Promise<void>
 }
 
 export function listHistoryAsset(params: ListAssetParams) {
@@ -15,4 +19,11 @@ export function listHistoryAsset(params: ListAssetParams) {
 
 export function listLikedAsset(params: ListAssetParams) {
   return client.get('/user/liked/list', params) as Promise<ByPage<AssetData>>
+}
+
+/**
+ * WARNING: This API is not implemented in the backend yet.
+ */
+export function removeAssetFromFavorites(id: string) {
+  return client.delete('/asset/favorites', { assetId: id }) as Promise<void>
 }

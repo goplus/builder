@@ -87,10 +87,8 @@ import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData, type AssetModel } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import {
-  addAssetToFavorites,
   type AssetData,
   AssetType,
-  removeAssetFromFavorites
 } from '@/apis/asset'
 import SpritePreview from './SpritePreview.vue'
 import BackdropPreview from './BackdropPreview.vue'
@@ -98,6 +96,7 @@ import SoundPreview from './SoundPreview.vue'
 import { NIcon } from 'naive-ui'
 import { HeartOutlined, HeartFilled, PlusOutlined /** , StarOutlined */ } from '@vicons/antd'
 import { ref } from 'vue'
+import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 
 const props = defineProps<{
   asset: AssetData
