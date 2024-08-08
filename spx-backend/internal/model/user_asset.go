@@ -3,11 +3,16 @@ package model
 import (
 	"context"
 	"database/sql"
+	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"gorm.io/gorm"
 	"strconv"
 	"time"
 )
 
 type UserAsset struct {
+	// ID is the identifier for the user asset.
+	ID int `db:"id" json:"id"`
 	// Owner is the identifier for the user.
 	Owner string `db:"owner" json:"owner"`
 
@@ -33,13 +38,43 @@ const (
 const TableUserAsset = "user_asset"
 
 // AddUserAsset adds an asset.
-func AddUserAsset(ctx context.Context, db *sql.DB, p *UserAsset) (*UserAsset, error) {
-	return Create(ctx, db, TableUserAsset, p)
+func AddUserAsset(ctx context.Context, db *gorm.DB, p *controller.AddUserAssetParams) (*UserAsset, error) {
+	logger := log.GetReqLogger(ctx)
+	result := db.Create(p)
+	if result.Error != nil {
+		logger.Printf("failed to add asset: %v", result.Error)
+		return nil, result.Error
+	}
+	res, _ := UserAssetByID(ctx, db, p.AssetID)
+	if res == nil {
+		logger.Printf("failed to get user asset by id: %v", result.Error)
+		return nil, result.Error
+	}
+	return res, nil
 }
 
-// UserAssetByUserID gets user asset with given user id. Returns `ErrNotExist` if it does not exist.
-func UserAssetByUserID(ctx context.Context, db *sql.DB, userID int) (*UserAsset, error) {
-	return QueryByID[UserAsset](ctx, db, TableUserAsset, strconv.Itoa(userID))
+// UserAssetByOwner returns all the user assets by owner.
+func UserAssetByOwner(ctx context.Context, db *gorm.DB, owner string) (*UserAsset, error) {
+	logger := log.GetReqLogger(ctx)
+	var item UserAsset
+	result := db.Where("owner = ?", owner).First(&item)
+	if result.Error != nil {
+		logger.Printf("failed to get user asset by owner: %v", result.Error)
+		return nil, result.Error
+	}
+	return &item, nil
+}
+
+// UserAssetByID returns an user asset by ID or AssetID.
+func UserAssetByID(ctx context.Context, db *gorm.DB, id int) (*UserAsset, error) {
+	logger := log.GetReqLogger(ctx)
+	var item UserAsset
+	result := db.First(&item, id) //todo: check if this is correct
+	if result.Error != nil {
+		logger.Printf("failed to get user asset by id: %v", result.Error)
+		return nil, result.Error
+	}
+	return &item, nil
 }
 
 // UpdateUserAsset updates an user asset.
