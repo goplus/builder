@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -33,6 +35,7 @@ type contextKey struct {
 // Controller is the controller for the service.
 type Controller struct {
 	db            *sql.DB
+	ormDb         *gorm.DB
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
 	casdoorClient *casdoorsdk.Client
@@ -54,7 +57,11 @@ func New(ctx context.Context) (*Controller, error) {
 		return nil, err
 	}
 	// TODO: Configure connection pool and timeouts.
-
+	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Printf("failed to connect gorm: %v", err)
+		return nil, err
+	}
 	kodoConfig := &kodoConfig{
 		cred: qiniuAuth.New(
 			mustEnv(logger, "KODO_AK"),
@@ -79,6 +86,7 @@ func New(ctx context.Context) (*Controller, error) {
 
 	return &Controller{
 		db:            db,
+		ormDb:         ormDb,
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
