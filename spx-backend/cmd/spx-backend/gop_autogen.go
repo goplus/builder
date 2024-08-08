@@ -1010,9 +1010,9 @@ func (this *post_user_history) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_user_history.yap:21:1
-	params.Owner = user.Name
+	owner := user.Name
 //line cmd/spx-backend/post_user_history.yap:23:1
-	err := this.ctrl.AddUserAsset(ctx.Context(), params, "history")
+	err := this.ctrl.AddUserAsset(ctx.Context(), params, "history", owner)
 //line cmd/spx-backend/post_user_history.yap:24:1
 	if err != nil {
 //line cmd/spx-backend/post_user_history.yap:25:1
@@ -1039,19 +1039,19 @@ func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_user_liked.yap:17:1
 	params := &controller.AddUserAssetParams{}
 //line cmd/spx-backend/post_user_liked.yap:18:1
-	if !parseJSON(ctx, params) {
+	owner := user.Name
 //line cmd/spx-backend/post_user_liked.yap:19:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_user_liked.yap:20:1
 		return
 	}
-//line cmd/spx-backend/post_user_liked.yap:21:1
-	params.Owner = user.Name
-//line cmd/spx-backend/post_user_liked.yap:23:1
-	err := this.ctrl.AddUserAsset(ctx.Context(), params, "liked")
 //line cmd/spx-backend/post_user_liked.yap:24:1
-	if err != nil {
+	err := this.ctrl.AddUserAsset(ctx.Context(), params, "liked", owner)
 //line cmd/spx-backend/post_user_liked.yap:25:1
-		replyWithInnerError(ctx, err)
+	if err != nil {
 //line cmd/spx-backend/post_user_liked.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_user_liked.yap:27:1
 		return
 	}
 }

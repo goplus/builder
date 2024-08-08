@@ -5,24 +5,24 @@ import (
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"strconv"
 	"time"
 )
 
 // AddUserAssetParams holds parameters for adding an user asset.
 type AddUserAssetParams struct {
 	// AssetID is the identifier for the asset.
-	AssetID int `json:"assetId"`
-	// Owner is the owner of the asset.
-	Owner string `json:"owner"`
+	AssetID string `json:"assetId"`
 }
 
 // AddUserAsset adds an asset.
-func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string) error {
+func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string, owner string) error {
 	logger := log.GetReqLogger(ctx)
 	fmt.Println("AddUserAsset, assetType: ", assetType)
-	_, err := model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
-		Owner:             params.Owner,
-		AssetID:           params.AssetID,
+	assetId, err := strconv.Atoi(params.AssetID)
+	_, err = model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
+		Owner:             owner,
+		AssetID:           assetId,
 		RelationType:      model.RelationType(assetType),
 		RelationTimestamp: time.Now(),
 	})

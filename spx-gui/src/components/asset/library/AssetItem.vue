@@ -116,10 +116,10 @@ const handleFavorite = () => {
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
     favoriteCount.value++
-    removeAssetFromFavorites(props.asset.id)
+    addAssetToFavorites(props.asset.id)
   } else {
     favoriteCount.value--
-    addAssetToFavorites(props.asset.id)
+    removeAssetFromFavorites(props.asset.id)
   }
 }
 

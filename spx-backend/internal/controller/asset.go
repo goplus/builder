@@ -5,7 +5,6 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"regexp"
-	"strconv"
 )
 
 // assetDisplayNameRE is the regular expression for asset display name.
@@ -197,11 +196,9 @@ func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*
 		return nil, err
 	}
 	if isUserAsset {
-		id, _ := strconv.Atoi(asset.ID)
 		err = ctrl.AddUserAsset(ctx, &AddUserAssetParams{
-			AssetID: id,
-			Owner:   user.Name,
-		}, "imported")
+			AssetID: asset.ID,
+		}, "imported", user.Name)
 		if err != nil {
 			logger.Printf("failed to add user asset: %v", err)
 			return nil, err

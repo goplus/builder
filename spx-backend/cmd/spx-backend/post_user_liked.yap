@@ -15,12 +15,13 @@ if !ok {
 }
 
 params := &controller.AddUserAssetParams{}
+owner := user.Name
 if !parseJSON(ctx, params) {
 	return
 }
-params.Owner = user.Name
 
-err := ctrl.AddUserAsset(ctx.Context(), params,"liked")
+
+err := ctrl.AddUserAsset(ctx.Context(), params,"liked",owner)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

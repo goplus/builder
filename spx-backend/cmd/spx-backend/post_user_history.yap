@@ -18,9 +18,9 @@ params := &controller.AddUserAssetParams{}
 if !parseJSON(ctx, params) {
 	return
 }
-params.Owner = user.Name
+owner := user.Name
 
-err := ctrl.AddUserAsset(ctx.Context(), params,"history")
+err := ctrl.AddUserAsset(ctx.Context(), params,"history",owner)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

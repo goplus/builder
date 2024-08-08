@@ -2,11 +2,8 @@
   <main>
     <div class="content">
       <div class="display">
-        <DetailDisplay
-          v-if="asset.assetType === AssetType.Sprite"
-          :asset="props.asset as AssetData<AssetType.Sprite>"
-          class="sprite-detail"
-        />
+        <DetailDisplay v-if="asset.assetType === AssetType.Sprite" :asset="props.asset as AssetData<AssetType.Sprite>"
+          class="sprite-detail" />
       </div>
       <div class="detail">
         <LibraryTab />
@@ -15,12 +12,7 @@
     <div class="sider">
       <div class="title">{{ asset.displayName }}</div>
       <div class="button-group">
-        <UIButton
-          size="large"
-          class="insert-button"
-          :disabled="addToProjectPending"
-          @click="handleAddButton"
-        >
+        <UIButton size="large" class="insert-button" :disabled="addToProjectPending" @click="handleAddButton">
           <span style="white-space: nowrap">
             <!-- {{ $t({ en: 'Insert to project', zh: '插入到项目中' }) }}-->
             {{
@@ -59,12 +51,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NTag } from 'naive-ui'
-import { UIModalClose } from '@/components/ui'
-import { addAssetToFavorites, AssetType, removeAssetFromFavorites, type AssetData } from '@/apis/asset'
+import { AssetType, type AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
-import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
 import DetailDisplay from './SpriteDetailDisplay.vue'
+import { removeAssetFromFavorites, addAssetToFavorites } from '@/apis/user'
 
 // Define component props
 const props = defineProps<{
@@ -76,8 +67,8 @@ const emit = defineEmits<{
   addToProject: [asset: AssetData]
 }>()
 
-const isFavorite = ref(props.asset.isFavorite ?? false)
-const favoriteCount = ref(props.asset.favoriteCount ?? 0)
+const isFavorite = ref(props.asset.isLiked ?? false)
+const favoriteCount = ref(props.asset.likeCount ?? 0)
 
 const handleAddButton = () => {
   emit('addToProject', props.asset)
@@ -87,14 +78,14 @@ const handleToggleFav = () => {
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
     favoriteCount.value++
-    props.asset.isFavorite = true
-    props.asset.favoriteCount = favoriteCount.value
-    removeAssetFromFavorites(props.asset.id)
+    props.asset.isLiked = true
+    props.asset.likeCount = favoriteCount.value
+    addAssetToFavorites(props.asset.id)
   } else {
     favoriteCount.value--
-    props.asset.isFavorite = false
-    props.asset.favoriteCount = favoriteCount.value
-    addAssetToFavorites(props.asset.id)
+    props.asset.isLiked = false
+    props.asset.likeCount = favoriteCount.value
+    removeAssetFromFavorites(props.asset.id)
   }
 }
 
@@ -156,8 +147,7 @@ main {
       display: flex;
       gap: 10px;
 
-      .insert-button {
-      }
+      .insert-button {}
     }
 
     .sider-info {

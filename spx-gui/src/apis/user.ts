@@ -6,11 +6,11 @@ export type AddUserAssetParams = {
 }
 
 export function addAssetToHistory(id: string) {
-  return client.post('/asset/history', { assetId: id }) as Promise<void>
+  return client.post('/user/history', { assetId: id }) as Promise<void>
 }
 
 export function addAssetToFavorites(id: string) {
-  return client.post('/asset/favorites', { assetId: id }) as Promise<void>
+  return client.post('/user/liked', { assetId: id }) as Promise<void>
 }
 
 export function listHistoryAsset(params: ListAssetParams) {
@@ -25,5 +25,5 @@ export function listLikedAsset(params: ListAssetParams) {
  * WARNING: This API is not implemented in the backend yet.
  */
 export function removeAssetFromFavorites(id: string) {
-  return client.delete('/asset/favorites', { assetId: id }) as Promise<void>
+  return client.delete('/user/liked', { assetId: id }) as Promise<void>
 }
