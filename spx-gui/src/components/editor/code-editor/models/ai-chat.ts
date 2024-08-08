@@ -1,13 +1,3 @@
-interface ChatBot {
-  startExplainChat(input: Input): Chat
-  startCommentChat(input: Input): Chat
-  startFixCodeChat(input: Input): Chat
-}
-
-interface Chat {
-  sendUserMessage(userMessage: Input): Promise<Message>
-}
-
 type Message = {
   content: string
   actions: ReplyAction[]
@@ -37,4 +27,25 @@ interface SuggestItem {
   label: string
   desc: string
   insertText: string
+}
+
+export class Chat {
+  async sendUserMessage(userMessage: Input): Promise<Message> {
+    return {
+      content: '',
+      actions: []
+    }
+  }
+}
+
+export class AIChat {
+  startExplainChat(input: Input): Chat {
+    return new Chat()
+  }
+  startCommentChat(input: Input): Chat {
+    return new Chat()
+  }
+  startFixCodeChat(input: Input): Chat {
+    return new Chat()
+  }
 }

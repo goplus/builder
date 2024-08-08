@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="code-editor">
+    <!--  this ul element area is sidebar tab nav  -->
     <ul class="categories-wrapper">
       <li
         v-for="(category, i) in categories"
@@ -15,6 +16,7 @@
         <p class="label">{{ $t(category.label) }}</p>
       </li>
     </ul>
+    <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
     <div class="tools-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
@@ -29,13 +31,16 @@
         </div>
       </div>
     </div>
+    <!--  this is core coding input area  -->
     <div class="code-text-editor-wrapper">
       <CodeTextEditor
         ref="codeTextEditor"
+        :ui="editorUI"
         :value="value"
         @update:value="(v) => emit('update:value', v)"
       />
     </div>
+    <!--  this area in coding content right side position in coding input area, current function is font zoom and sprite thumb preview  -->
     <div class="extra">
       <UIImg class="thumbnail" :src="thumbnailSrc" />
       <div class="zoomer">
@@ -83,6 +88,13 @@ import iconZoomIn from './icons/zoom-in.svg?raw'
 import iconZoomOut from './icons/zoom-out.svg?raw'
 import iconZoomReset from './icons/zoom-reset.svg?raw'
 import { useFileUrl } from '@/utils/file'
+import { EditorUI } from './EditorUI'
+import { Coordinator } from '@/components/editor/code-editor/coordinators'
+import { Compiler } from '@/components/editor/code-editor/models/compiler'
+import { Project } from '@/models/project'
+import { Runtime } from '@/components/editor/code-editor/models/runtime'
+import { DocAbility } from '@/components/editor/code-editor/models/document'
+import { AIChat } from '@/components/editor/code-editor/models/ai-chat'
 
 withDefaults(
   defineProps<{
@@ -97,6 +109,8 @@ withDefaults(
 const emit = defineEmits<{
   'update:value': [value: string]
 }>()
+
+const { coordinator, editorUI } = initCoordinator()
 
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
@@ -185,7 +199,27 @@ const [thumbnailSrc] = useFileUrl(() => {
   if (project.selectedSprite) return project.selectedSprite.defaultCostume?.img
 })
 
+function initCoordinator() {
+  const editorUI = new EditorUI()
+  const compiler = new Compiler()
+  const project = new Project()
+  const runtime = new Runtime()
+  const docAbility = new DocAbility()
+  const aiChat = new AIChat()
+
+  const coordinator = new Coordinator(editorUI, {
+    compiler,
+    project,
+    runtime,
+    docAbility,
+    aiChat
+  })
+
+  return { coordinator, compiler, project, runtime, docAbility, aiChat, editorUI }
+}
+
 defineExpose({
+  coordinator,
   async format() {
     await codeTextEditor.value?.format()
   }

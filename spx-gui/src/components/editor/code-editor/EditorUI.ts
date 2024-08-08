@@ -108,24 +108,24 @@ export interface HoverProvider {
   ): Promise<LayerContent>
 }
 
-type InputItemUsage = {
+export type InputItemUsage = {
   desc: LayerContent
   insertText: string
 }
 
-type InputItem = {
+export type InputItem = {
   icon: Icon
   label: string
   desc: string
   usages: InputItemUsage[]
 }
 
-type InputItemGroup = {
+export type InputItemGroup = {
   label: string
   inputItems: InputItem[]
 }
 
-type InputItemCategory = {
+export type InputItemCategory = {
   label: string
   icon: Icon
   color: string
@@ -210,23 +210,4 @@ export class EditorUI extends Disposable {
   public invokeDocumentDetail(docDetail: DocDetail) {
     // todo: to resolve fn `invokeDocumentDetail`
   }
-}
-
-let editorUI: EditorUI | null
-
-/**
- * single instance mode, if called multiple times, return the same instance
- */
-export function getEditorUI(): EditorUI {
-  if (editorUI) return editorUI
-  editorUI = new EditorUI()
-  return editorUI
-}
-
-/**
- * dispose editor ui, and you can create it again.
- */
-export function disposeEditorUI() {
-  editorUI?.dispose()
-  editorUI = null
 }

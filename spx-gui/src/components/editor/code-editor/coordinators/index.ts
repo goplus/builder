@@ -1,8 +1,27 @@
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import { Runtime } from '../models/runtime'
+import { Compiler } from '../models/compiler'
+import { AIChat } from '../models/ai-chat'
+import { DocAbility } from '../models/document'
+import { Project } from '@/models/project'
+
+type Position = {
+  line: number
+  column: number
+  fileUri: string
+}
+
 export class Coordinator {
-  /**
-   * this method will be called after UI Editor has been complete initialized
-   * @param {'ui' | 'model' } source - determine which source has initialized
-   */
-  invokeInit(source: 'ui' | 'model') {}
-  dispose() {}
+  constructor(
+    ui: EditorUI,
+    models: {
+      runtime: Runtime
+      compiler: Compiler
+      aiChat: AIChat
+      docAbility: DocAbility
+      project: Project
+    }
+  ) {}
+
+  public jump(position: Position): void {}
 }

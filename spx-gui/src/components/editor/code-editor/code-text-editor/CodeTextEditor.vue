@@ -15,9 +15,11 @@ import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
   value: string
+  ui: EditorUI
 }>()
 const emit = defineEmits<{
   'update:value': [string]
@@ -193,10 +195,18 @@ function zoomFont(action: 'in' | 'out' | 'initial') {
   editor.trigger('keyboard', `editor.action.${actionIds[action]}`, {})
 }
 
+function jump(position: Position) {
+  const editor = monacoEditor.value
+  if (editor == null) return
+  editor.setPosition(position)
+  editor.focus()
+}
+
 defineExpose({
   insertSnippet,
   format,
-  zoomFont
+  zoomFont,
+  jump
 })
 </script>
 
