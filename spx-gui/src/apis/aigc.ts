@@ -15,12 +15,16 @@ export async function matting(imageUrl: string) {
 export type AIAssetData<T extends AssetType = AssetType> = {
   /** Globally unique ID */
   id: string
+  /** Name to display */
+  displayName?: string
   // /** Asset Category */
   // category: string
   /** Asset Type */
   assetType: T
   /** Files the asset contains */
   files?: FileCollection
+  /** Hash of the files */
+  filesHash?: string
   /** Preview URL for the asset, e.g., a gif for a sprite */
   preview?: string
   /** Creation time */
@@ -28,10 +32,15 @@ export type AIAssetData<T extends AssetType = AssetType> = {
   status: AIGCStatus
 }
 
-export const AssetSourceKey = Symbol('AssetSource')
-export type AssetOrAIAsset =
-  | (AssetData & { [AssetSourceKey]?: 'public' })
-  | (AIAssetData & { [AssetSourceKey]?: 'ai' })
+export const isAiAsset = Symbol('isAiAsset')
+export const isPreviewReady = Symbol('isPreviewReady')
+export const isContentReady = Symbol('isContentReady')
+export type TaggedAIAssetData<T extends AssetType = AssetType> = AIAssetData<T> & {
+  [isAiAsset]: true
+  [isPreviewReady]: boolean
+  [isContentReady]: boolean
+}
+export type AssetOrAIAsset = AssetData | TaggedAIAssetData
 
 export interface CreateAIImageParams {
   keyword: string
@@ -43,11 +52,18 @@ export interface CreateAIImageParams {
 
 const mockAIImage = {
   imageUri: [
-    'kodo://goplus-builder-static-test/files/FvEYel08GXL60vuviffq9sW-9xZs/IMG20230406220355.jpg',
-    'kodo://goplus-builder-static-test/files/FtzNex_e0lYKKn7S52HTG42d9Mm9-6906',
-    'kodo://goplus-builder-static-test/files/FvbBWmTdYLqyx_Mn_wCF6KAhfZXn-5443'
+    // ...
   ]
 }
+
+const mockAISprite: {
+  files: AIGCFiles
+  filesHash: string
+}[] = [
+  // ...
+]
+
+const mockJobs: Map<string, 'image' | 'sprite'> = new Map()
 
 /**
  * Generate AI image with given keyword and category
@@ -63,7 +79,9 @@ export async function generateAIImage({
 }: CreateAIImageParams) {
   return new Promise<{ imageJobId: string }>((resolve) => {
     setTimeout(() => {
-      resolve({ imageJobId: `mock-${keyword}-${Math.random().toString(36).slice(2)}` })
+      const jobId = `mock-${keyword}-${Math.random().toString(36).slice(2)}`
+      mockJobs.set(jobId, 'image')
+      resolve({ imageJobId: jobId })
     }, 1000)
   })
   const result = (await client.post(
@@ -86,7 +104,13 @@ export async function generateAIImage({
 export async function generateAISprite(imageJobId: string) {
   return new Promise<{ spriteJobId: string }>((resolve) => {
     setTimeout(() => {
-      resolve({ spriteJobId: `mock-${imageJobId}-${Math.random().toString(36).slice(2)}` })
+      const jobId = mockJobs.get(imageJobId)
+      if (jobId !== 'image') {
+        throw new Error(`Job ${imageJobId} is not an image job`)
+      }
+      const spriteJobId = `mock-${imageJobId}-${Math.random().toString(36).slice(2)}`
+      mockJobs.set(spriteJobId, 'sprite')
+      resolve({ spriteJobId })
     }, 1000)
   })
   const result = (await client.post('/aigc/sprite', { imageJobId }, { timeout: 20 * 1000 })) as {
@@ -144,19 +168,21 @@ export async function getAIGCStatus(jobId: string) {
       if (timestamp === undefined) {
         mockAIGCStatusMap.set(jobId, Date.now())
         resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 2000 + random * 2000) {
+      } else if (Date.now() - timestamp < 1000 + random * 2000) {
         resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 7000 + random * 2000) {
+      } else if (Date.now() - timestamp < 5000 + random * 5000) {
         resolve({ status: AIGCStatus.Generating })
       } else {
+        const resultType = mockJobs.get(jobId)
+        const result = resultType === 'image' ? 
+          { imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)] }:
+          mockAISprite[Math.floor(random * mockAISprite.length)].files
         resolve({
           status: AIGCStatus.Finished,
           result: {
             jobId,
             type: AIGCType.Image,
-            files: {
-              imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)]
-            }
+            files: result
           }
         })
       }

@@ -42,12 +42,17 @@
             </div>
           </template>
           <template v-else>
-            <UIImg class="preview" :src="previewImageSrc" :loading="previewImageLoading" />
+            <UIImg
+              class="preview"
+              :src="previewImageSrc"
+              :loading="previewImageLoading"
+              :size="asset.assetType === AssetType.Sprite ? 'contain' : 'cover'"
+            />
           </template>
         </Transition>
       </div>
     </div>
-    <div class="asset-name">
+    <div v-if="props.showAiAssetTip" class="asset-name">
       <NIcon size="14" color="var(--text-color)">
         <BulbOutlined />
       </NIcon>
@@ -68,10 +73,17 @@ import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
 import { CancelOutlined } from '@vicons/material'
+import { AssetType } from '@/apis/asset'
 
-const props = defineProps<{
-  asset: AIAssetData
-}>()
+const props = withDefaults(
+  defineProps<{
+    asset: AIAssetData
+    showAiAssetTip?: boolean
+  }>(),
+  {
+    showAiAssetTip: true
+  }
+)
 
 const emit = defineEmits<{
   ready: [asset: AIAssetData]
@@ -199,10 +211,6 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   flex-direction: row;
   align-items: center;
   gap: 6px;
-
-  //   .ai-asset-tip {
-  // 	font-style: italic;
-  //   }
 }
 
 .generating-text {

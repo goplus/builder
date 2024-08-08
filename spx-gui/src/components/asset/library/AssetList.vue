@@ -24,8 +24,8 @@
           <AIAssetItem
             v-if="isAiAsset in asset"
             :asset="asset"
-            @ready="asset[isAiAssetReady] = true"
-            @click="asset[isAiAssetReady] && emit('selectAI', asset)"
+            @ready="asset[isPreviewReady] = true"
+            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)"
           />
           <AssetItem
             v-else
@@ -61,7 +61,6 @@
     </template>
   </NVirtualList>
 </template>
-
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
@@ -72,7 +71,16 @@ import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
-import { AIGCStatus, generateAIImage, type AIAssetData } from '@/apis/aigc'
+import {
+  AIGCStatus,
+  generateAIImage,
+  isAiAsset,
+  isContentReady,
+  isPreviewReady,
+  type AIAssetData,
+  type AssetOrAIAsset,
+  type TaggedAIAssetData
+} from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
 
@@ -83,18 +91,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
   select: [asset: AssetData]
-  selectAI: [asset: AIAssetData]
+  selectAi: [asset: TaggedAIAssetData, aiAssetList: TaggedAIAssetData[]]
 }>()
 
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
-const isAiAsset = Symbol('isAiAsset')
-const isAiAssetReady = Symbol('isAiAssetReady')
-type TaggedAIAssetData = AIAssetData & {
-  [isAiAsset]: true
-  [isAiAssetReady]: boolean
-}
 const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
 const aiAssetList = ref<TaggedAIAssetData[]>([])
@@ -105,13 +107,11 @@ const hasMoreAssets = computed(
 const loadingAiAsset = computed(() =>
   aiAssetList.value.some((a) => {
     if (isAiAsset in a) {
-      return !a[isAiAssetReady] && a.status !== AIGCStatus.Failed
+      return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
     }
     return false
   })
 )
-
-type AssetOrAIAsset = AssetData | TaggedAIAssetData
 
 type GroupedAssetItem =
   | {
@@ -206,7 +206,8 @@ const generateMultipleAIImages = (count: number, append = true) => {
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
       [isAiAsset]: true as const,
-      [isAiAssetReady]: false
+      [isPreviewReady]: false,
+      [isContentReady]: false
     }))
     if (append) {
       aiAssetList.value.push(...taggedRes)
