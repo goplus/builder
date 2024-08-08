@@ -7,14 +7,14 @@
     </UITabs>
     <template #extra>
       <FormatButton
-        v-if="selectedTab === 'code' && codeEditorUI != null && code != null"
-        :code-editor="codeEditorUI"
+        v-if="selectedTab === 'code' && codeEditor != null && code != null"
+        :code-editor="codeEditor"
       />
     </template>
   </EditorHeader>
-  <CodeEditorUI
+  <CodeEditor
     v-show="selectedTab === 'code'"
-    ref="codeEditorUI"
+    ref="codeEditor"
     :loading="code == null"
     :value="code ?? ''"
     @update:value="handleCodeUpdate"
@@ -28,7 +28,7 @@
 import { computed, ref } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import CodeEditorUI from '../code-editor/CodeEditorUI.vue'
+import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor from './CostumesEditor.vue'
@@ -41,7 +41,7 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'costumes' | 'animations'>('code')
-const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
+const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = computed(() => props.sprite.code)
 
 // use `computed` to keep reference-equal for `mergeable`, see details in project history

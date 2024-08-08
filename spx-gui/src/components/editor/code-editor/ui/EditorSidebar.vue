@@ -11,7 +11,7 @@ import {
   soundCategory,
   ToolContext,
   type ToolGroup
-} from '@/components/editor/code-editor/code-text-editor'
+} from '@/components/editor/code-editor/ui/code-text-editor'
 import ToolItem from './ToolItem.vue'
 import iconEvent from './icons/event.svg?raw'
 import iconLook from './icons/look.svg?raw'

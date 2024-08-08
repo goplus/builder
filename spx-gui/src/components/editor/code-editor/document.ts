@@ -1,4 +1,4 @@
-import type { Token } from '@/components/editor/code-editor/models/compiler'
+import type { Token } from '@/components/editor/code-editor/compiler'
 
 enum DocEnum {}
 

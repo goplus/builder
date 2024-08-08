@@ -1,50 +1,21 @@
-<!-- eslint-disable vue/no-v-html -->
-<template>
-  <div class="code-editor">
-    <EditorSidebar @insert-text="handleUseSnippet"></EditorSidebar>
-    <!--  this is core coding input area  -->
-    <div class="code-text-editor-wrapper">
-      <CodeTextEditor
-        ref="codeTextEditor"
-        :ui="ui"
-        :value="value"
-        @update:value="(v) => emit('update:value', v)"
-      />
-    </div>
-    <!--  this area in coding content right side position in coding input area, current function is font zoom and sprite thumb preview  -->
-    <div class="extra">
-      <UIImg class="thumbnail" :src="thumbnailSrc" />
-      <div class="zoomer">
-        <button class="zoom-btn" title="Zoom in" @click="handleZoom('in')" v-html="iconZoomIn" />
-        <button class="zoom-btn" title="Zoom out" @click="handleZoom('out')" v-html="iconZoomOut" />
-        <button
-          class="zoom-btn"
-          title="Reset"
-          @click="handleZoom('initial')"
-          v-html="iconZoomReset"
-        />
-      </div>
-    </div>
-    <UILoading :visible="loading" cover />
-  </div>
-</template>
-
 <script setup lang="ts">
+import CodeEditorUI from './ui/CodeEditorUI.vue'
+import { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import { Compiler } from '@/components/editor/code-editor/compiler'
+import { Project } from '@/models/project'
+import { Runtime } from '@/components/editor/code-editor/runtime'
+import { DocAbility } from '@/components/editor/code-editor/document'
+import { AIChat } from '@/components/editor/code-editor/ai-chat'
+import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { ref } from 'vue'
-import { UIImg, UILoading } from '@/components/ui'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import { CodeTextEditor } from './code-text-editor'
-import iconZoomIn from './icons/zoom-in.svg?raw'
-import iconZoomOut from './icons/zoom-out.svg?raw'
-import iconZoomReset from './icons/zoom-reset.svg?raw'
-import { useFileUrl } from '@/utils/file'
-import EditorSidebar from '@/components/editor/code-editor/EditorSidebar.vue'
-import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+
+defineEmits<{
+  'update:value': [value: string]
+}>()
 
 withDefaults(
   defineProps<{
     loading?: boolean
-    ui: EditorUI
     value: string
   }>(),
   {
@@ -52,92 +23,42 @@ withDefaults(
   }
 )
 
-const emit = defineEmits<{
-  'update:value': [value: string]
-}>()
+const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
 
-const editorCtx = useEditorCtx()
+const { editorUI } = initCoordinator()
 
-const codeTextEditor = ref<InstanceType<typeof CodeTextEditor>>()
+function initCoordinator() {
+  const editorUI = new EditorUI()
+  const compiler = new Compiler()
+  const project = new Project()
+  const runtime = new Runtime()
+  const docAbility = new DocAbility()
+  const aiChat = new AIChat()
 
-function handleZoom(action: 'in' | 'out' | 'initial') {
-  codeTextEditor.value?.zoomFont(action)
-}
-
-const [thumbnailSrc] = useFileUrl(() => {
-  const project = editorCtx.project
-  if (project.selected?.type === 'stage') return project.stage.defaultBackdrop?.img
-  if (project.selectedSprite) return project.selectedSprite.defaultCostume?.img
-})
-
-function handleUseSnippet(insertText: string) {
-  codeTextEditor.value?.insertSnippet(insertText)
+  const coordinator = new Coordinator(editorUI, {
+    compiler,
+    project,
+    runtime,
+    docAbility,
+    aiChat
+  })
+  return { coordinator, compiler, project, runtime, docAbility, aiChat, editorUI }
 }
 
 defineExpose({
   async format() {
-    await codeTextEditor.value?.format()
-  }
+    await codeEditorUI.value?.format()
+  },
+  editorUI
 })
 </script>
 
-<style scoped lang="scss">
-.code-editor {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  justify-content: stretch;
-}
-
-.code-text-editor-wrapper {
-  flex: 5 1 300px;
-  min-width: 0;
-  padding: 12px;
-}
-
-.extra {
-  padding: 12px;
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.thumbnail {
-  flex: 0 0 auto;
-  width: 60px;
-  height: 60px;
-  opacity: 0.3;
-}
-
-.zoomer {
-  width: 60px;
-  padding-bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ui-gap-middle);
-}
-
-.zoom-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-  border-radius: 12px;
-  color: var(--ui-color-text);
-  background-color: var(--ui-color-grey-300);
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: var(--ui-color-grey-200);
-  }
-  &:active {
-    background-color: var(--ui-color-grey-400);
-  }
-}
-</style>
+<template>
+  <CodeEditorUI
+    ref="codeEditorUI"
+    :loading="loading"
+    :value="value"
+    :ui="editorUI"
+    @update:value="$emit('update:value', $event)"
+  ></CodeEditorUI>
+</template>

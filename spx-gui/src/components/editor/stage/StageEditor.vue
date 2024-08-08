@@ -12,7 +12,7 @@
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>
-  <CodeEditorUI
+  <CodeEditor
     v-show="selectedTab === 'code'"
     ref="codeEditor"
     :loading="code == null"
@@ -26,7 +26,7 @@
 import { computed, ref } from 'vue'
 import type { Stage } from '@/models/stage'
 import { UITabs, UITab } from '@/components/ui'
-import CodeEditorUI from '../code-editor/CodeEditorUI.vue'
+import CodeEditor from '../code-editor/CodeEditor.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './BackdropsEditor.vue'
@@ -39,7 +39,7 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'backdrops'>('code')
-const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
+const codeEditorUI = ref<InstanceType<typeof CodeEditor>>()
 const code = computed(() => props.stage.code)
 
 const action = {

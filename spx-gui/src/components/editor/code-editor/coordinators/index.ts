@@ -1,8 +1,8 @@
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
-import { Runtime } from '../models/runtime'
-import { Compiler } from '../models/compiler'
-import { AIChat } from '../models/ai-chat'
-import { DocAbility } from '../models/document'
+import { Runtime } from '../runtime'
+import { Compiler } from '../compiler'
+import { AIChat } from '../ai-chat'
+import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 
 type Position = {
