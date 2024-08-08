@@ -48,6 +48,7 @@ import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy }
 
 const props = defineProps<{
   type: AssetType
+  owner: string
 }>()
 
 const searchCtx = reactive<SearchCtx>({
@@ -92,7 +93,7 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         assetType: searchCtx.type,
         keyword: undefined,
         category: undefined,
-        owner: '*',//backend will automatically filter the owner
+        owner: props.owner,//backend will automatically filter the owner
         isPublic: IsPublic.personal,
         orderBy: ListAssetParamOrderBy.TimeAsc
       })
