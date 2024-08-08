@@ -2,11 +2,10 @@ package controller
 
 import (
 	"context"
-	"regexp"
-	"strconv"
-
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"regexp"
+	"strconv"
 )
 
 // assetDisplayNameRE is the regular expression for asset display name.

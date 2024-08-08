@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"database/sql"
-	"github.com/goplus/builder/spx-backend/internal/controller"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"gorm.io/gorm"
 	"strconv"
@@ -38,7 +37,7 @@ const (
 const TableUserAsset = "user_asset"
 
 // AddUserAsset adds an asset.
-func AddUserAsset(ctx context.Context, db *gorm.DB, p *controller.AddUserAssetParams) (*UserAsset, error) {
+func AddUserAsset(ctx context.Context, db *gorm.DB, p *UserAsset) (*UserAsset, error) {
 	logger := log.GetReqLogger(ctx)
 	result := db.Create(p)
 	if result.Error != nil {
