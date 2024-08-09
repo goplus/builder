@@ -14,13 +14,11 @@ type Position = {
 export class Coordinator {
   constructor(
     ui: EditorUI,
-    abilities: {
-      runtime: Runtime
-      compiler: Compiler
-      chatBot: ChatBot
-      docAbility: DocAbility
-      project: Project
-    }
+    runtime: Runtime,
+    compiler: Compiler,
+    chatBot: ChatBot,
+    docAbility: DocAbility,
+    project: Project
   ) {}
 
   public jump(position: Position): void {}
