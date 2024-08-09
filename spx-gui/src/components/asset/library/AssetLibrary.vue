@@ -77,6 +77,7 @@
           :ai-assets="currentAIAssetList"
           class="asset-page"
           :add-to-project-pending="handleAddToProject.isLoading.value"
+          @add-to-project="handleAddToProject.fn"
           @select-ai="handleSelectAiAsset"
         />
       </section>
@@ -94,7 +95,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
-import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
+import { addAssetToHistory, AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
 import { debounce, useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
@@ -218,7 +219,10 @@ const handleAddToProject = useMessageHandle(
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
-    const assetModel = await props.project.history.doAction(action, () => addAssetToProject(asset))
+    const [, assetModel] = await Promise.all([
+      addAssetToHistory(asset.id),
+      props.project.history.doAction(action, () => addAssetToProject(asset))
+    ])
     addedModels.push(assetModel)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' },
