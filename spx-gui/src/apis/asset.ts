@@ -86,7 +86,7 @@ export function getAsset(id: string) {
 
 export function increaseAssetClickCount(id: string) {
   return client.post(`/asset/${encodeURIComponent(id)}/click`) as Promise<void>
-
+}
 
 /**
  * WARNING: This API is not implemented in the backend yet.
@@ -104,7 +104,7 @@ export async function getAssetSearchSuggestion(keyword: string, count = 6) {
     assetType: '' as any,
     pageSize: count * 2,
     pageIndex: 1,
-    category: '',
+    category: [],
     owner: '*',
     isPublic: IsPublic.public,
     orderBy: ListAssetParamOrderBy.TimeAsc
