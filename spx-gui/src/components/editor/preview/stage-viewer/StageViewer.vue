@@ -53,7 +53,9 @@ const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
-const stageRef = ref<Konva.Stage>()
+const stageRef = ref<{
+  getStage(): Konva.Stage
+}>()
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
 const spritesReadyMap = reactive(new Map<string, boolean>())

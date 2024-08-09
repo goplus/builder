@@ -7,7 +7,7 @@ import { computed, effect, nextTick, ref } from 'vue'
 import type { Transformer } from 'konva/lib/shapes/Transformer'
 import type { Node } from 'konva/lib/Node'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import type { SpriteTransformerConfig } from './transformer/sprite-transformer'
+import type { SpriteTransformerConfig } from './transformer/transformer'
 
 const props = defineProps<{
   spritesReadyMap: Map<string, boolean>

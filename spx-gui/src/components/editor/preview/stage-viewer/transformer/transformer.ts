@@ -23,7 +23,8 @@ rotatorCircleImg.src = rotatorCirclePng
 export type SpriteTransformerConfig = {
   spriteRotationStyle?: RotationStyle
   flipFunc?: () => void
-}
+  scalingReference?: 'up-left' | 'center'
+} & Pick<TransformerConfig, 'centeredScaling'>
 
 class RotatorTag extends Konva.Group {
   text: Konva.Text
@@ -32,12 +33,12 @@ class RotatorTag extends Konva.Group {
 
     // Offset the elements to make the rotation center visually centered.
     const text = new Konva.Text({
-      text: '235°',
+      text: '',
       width: 42,
       fontSize: 12,
       fill: '#fff',
       x: -21,
-      y: 3 - 8,
+      y: -5,
       align: 'center'
     })
     const background = new Konva.Rect({
@@ -102,7 +103,7 @@ class FlipButton extends Konva.Group {
   }
 }
 
-export class SpriteTransformer extends Konva.Transformer {
+export class Transformer extends Konva.Transformer {
   flipButtons: {
     left: FlipButton
     right: FlipButton
@@ -124,6 +125,7 @@ export class SpriteTransformer extends Konva.Transformer {
       borderStroke: 'rgba(10, 165, 190, 1)',
       rotateLineVisible: false,
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+      centeredScaling: config.scalingReference === 'center' ? true : false,
       // rotateAnchorOffset: 4 + 20 / 2,
       anchorStyleFunc: (anchor) => {
         const rect = anchor as Konva.Rect
@@ -158,7 +160,13 @@ export class SpriteTransformer extends Konva.Transformer {
     })
 
     const left = new FlipButton('left', () => {
-      this.flipFunc()?.()
+      this.scaleX(this.scaleX() * -1)
+      const nodeRect = this._getNodeRect()
+      this._fitNodesInto({
+        x: -nodeRect.x,
+        ...nodeRect
+      })
+      // this.flipFunc()?.()
     })
 
     const right = new FlipButton('right')
