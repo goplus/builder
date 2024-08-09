@@ -117,19 +117,11 @@ const favoriteCount = ref(props.asset.likeCount ?? 0)
 const handleFavorite = () => {
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
-    useMessageHandle(
-      async() => addAssetToFavorites(props.asset.id),
-      { en: 'Added to favorites', zh: '已收藏' },
-      { en: 'Failed to add to favorites', zh: '收藏失败' }
-    )
+    //todo: add useMessageHandle
+    addAssetToFavorites(props.asset.id)
     favoriteCount.value++
   } else {
-    
-    useMessageHandle(
-      async() => removeAssetFromFavorites(props.asset.id),
-      { en: `Removed from favorites`, zh: `已取消收藏` },
-      { en: `Failed to remove from favorites`, zh: `取消收藏失败` }
-    )
+    removeAssetFromFavorites(props.asset.id)
     favoriteCount.value--
   }
 }
