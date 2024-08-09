@@ -6,8 +6,8 @@
 import { reactive, watch } from 'vue'
 import { nomalizeDegree } from '@/utils/utils'
 import { join } from '@/utils/path'
+import { Disposable } from '@/utils/disposable'
 import { fromText, type Files, fromConfig, toText, toConfig, listDirs } from './common/file'
-import { Disposable } from './common/disposable'
 import {
   ensureValidAnimationName,
   ensureValidCostumeName,
@@ -134,6 +134,9 @@ export class Sprite extends Disposable {
     const idx = this.animations.findIndex((s) => s.name === name)
     if (idx === -1) throw new Error(`animation ${name} not found`)
     const [animation] = this.animations.splice(idx, 1)
+    Object.entries(this.animationBindings).forEach(([state, name]) => {
+      if (name === animation.name) this.animationBindings[state as State] = undefined
+    })
     animation.setSprite(null)
     animation.dispose()
   }
@@ -145,7 +148,6 @@ export class Sprite extends Disposable {
     const newAnimationName = ensureValidAnimationName(animation.name, this)
     animation.setName(newAnimationName)
     animation.setSprite(this)
-    animation.addDisposer(() => animation.setSprite(null))
     this.animations.push(animation)
     animation.addDisposer(
       // update animationBindings when sprite renamed
@@ -158,11 +160,6 @@ export class Sprite extends Disposable {
         }
       )
     )
-    animation.addDisposer(() => {
-      Object.entries(this.animationBindings).forEach(([state, name]) => {
-        if (name === animation.name) this.animationBindings[state as State] = undefined
-      })
-    })
   }
 
   private animationBindings: Record<State, string | undefined>
@@ -226,6 +223,9 @@ export class Sprite extends Disposable {
     this.code = code
     this.costumes = []
     this.animations = []
+    this.addDisposer(() => {
+      this.animations.splice(0).forEach((a) => a.dispose())
+    })
     this.animationBindings = {
       [State.default]: inits?.defaultAnimation,
       [State.die]: inits?.animBindings?.[State.die],

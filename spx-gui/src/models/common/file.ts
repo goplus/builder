@@ -7,7 +7,7 @@
 import { markRaw } from 'vue'
 import { getMimeFromExt } from '@/utils/file'
 import { extname } from '@/utils/path'
-import type { Disposer } from './disposable'
+import type { Disposer } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
 
 export type Options = {
