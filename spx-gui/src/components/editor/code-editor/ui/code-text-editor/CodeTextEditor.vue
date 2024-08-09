@@ -28,13 +28,13 @@ let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
-import { reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
 import CompletionMenu from '@/components/editor/code-editor/code-text-editor/CompletionMenu.vue'
@@ -42,8 +42,11 @@ import {
   CompletionMenuProvider,
   type CompletionMenuState
 } from './providers/CompletionMenuProvider'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+
 const props = defineProps<{
   value: string
+  ui: EditorUI
 }>()
 const emit = defineEmits<{
   'update:value': [string]
@@ -52,22 +55,7 @@ const emit = defineEmits<{
 const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
-const fnSelectMonacoCompletionMenu = shallowRef<((idx: number) => void) | null>()
-const completionMenuRef = ref<{
-  $container: HTMLElement
-}>()
-const completionMenuState = reactive<CompletionMenuState>({
-  visible: false,
-  suggestions: [],
-  activeIdx: 0,
-  position: {
-    top: 0,
-    left: 0
-  },
-  lineHeight: 19,
-  fontSize: 14,
-  word: ''
-})
+
 const uiVariables = useUIVariables()
 const i18n = useI18n()
 editorCtx = useEditorCtx()
@@ -95,8 +83,7 @@ const getMonaco = async () => {
   return monaco
 }
 
-// the line height is rounded to fontSize * 1.35
-const initialFontSize = 20
+const initialFontSize = 14
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
@@ -120,7 +107,11 @@ watchEffect(async (onCleanup) => {
     tabSize: 4,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
-    foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    foldingStrategy: 'indentation', // 折叠方式  auto | indentation,
+    fontWeight: '500', // slightly bold font to make it easier to read, and satisfy outer UI font.
+    fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
+    // Enable this option to avoid abnormal cursor display after using JetBrains MonoNL font.
+    fontLigatures: true,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
@@ -133,58 +124,6 @@ watchEffect(async (onCleanup) => {
       verticalScrollbarSize: 8
     }
   })
-
-  function updateCompletionMenuPosition() {
-    const position = editor.getPosition()
-    if (!position) return
-    if (!completionMenuRef.value) return
-    const $completionMenu = completionMenuRef.value.$container
-    if (!$completionMenu) return
-    const pixelPosition = editor.getScrolledVisiblePosition(position)
-    if (!pixelPosition) return
-    const fontSize = editor.getRawOptions().fontSize || initialFontSize
-    const isMultiline = () => {
-      const { suggestions, activeIdx } = completionMenuState
-      if (activeIdx < 0 || activeIdx >= suggestions.length) return false
-      const activeSuggestion = suggestions[activeIdx]
-      if (!activeSuggestion.insertText) return false
-      const lines = activeSuggestion.insertText.split('\n')
-      if (!lines.shift()?.toLocaleLowerCase().startsWith(completionMenuState.word.toLowerCase()))
-        return false
-      return lines.length > 0
-    }
-
-    const cursorY = pixelPosition.top
-    const windowHeight = window.innerHeight
-    const completionMenuHeight = $completionMenu.offsetHeight
-    completionMenuState.fontSize = fontSize
-    completionMenuState.position.left = pixelPosition.left
-    completionMenuState.lineHeight = pixelPosition.height
-    completionMenuState.position.top = cursorY + pixelPosition.height
-    if (windowHeight - cursorY > completionMenuHeight && !isMultiline()) {
-      $completionMenu.classList.remove('completion-menu--reverse-up')
-    } else {
-      $completionMenu.classList.add('completion-menu--reverse-up')
-    }
-  }
-
-  const completionMenuProvider = new CompletionMenuProvider(editor, completionMenuState)
-
-  completionMenuProvider.addEventListener('onShow', () => {
-    // must be use next render time to update correct position
-    setTimeout(() => updateCompletionMenuPosition(), 0)
-  })
-
-  completionMenuProvider.addEventListener('onFocus', () => {
-    updateCompletionMenuPosition()
-  })
-
-  // todo: consider will this code has potential memory leak?
-  fnSelectMonacoCompletionMenu.value = (idx: number) => {
-    // create anonymous arrow callback function instead of using: `fnSelectMonacoCompletionMenu.value = completionMenuProvider.select`
-    // this can avoid class inner function `this` be changed by others
-    completionMenuProvider.select(idx)
-  }
 
   editor.addAction({
     id: 'format',
