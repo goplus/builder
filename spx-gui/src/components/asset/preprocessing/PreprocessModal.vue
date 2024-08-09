@@ -1,7 +1,7 @@
 <template>
   <UIFormModal
     style="width: 780px"
-    :visible="props.visible"
+    :visible="props.visible && ready"
     :title="$t(actionMessage)"
     :body-style="{ padding: '0' }"
     @update:visible="emit('cancelled')"
@@ -45,7 +45,7 @@
           :input="getMethodInput(method.value)"
           :applied="isMethodApplied(method.value)"
           @applied="(output) => handleMethodApplied(method.value, output)"
-          @cancel="cancelMethod(method.value)"
+          @cancel="handleMethodCancel(method.value)"
         />
       </div>
     </main>
@@ -80,6 +80,7 @@
 import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { stripExt } from '@/utils/path'
 import type { LocaleMessage } from '@/utils/i18n'
+import { disableAIGC } from '@/utils/env'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
 import { UIButton, UIFormModal } from '@/components/ui'
@@ -123,14 +124,16 @@ type MethodItem = {
  * The order of methods is the order of applying.
  */
 const supportedMethods = computed(() => {
-  const methods: MethodItem[] = [
-    {
+  const methods: MethodItem[] = []
+
+  if (!disableAIGC) {
+    methods.push({
       value: Method.RemoveBackground,
       name: { en: 'Remove background', zh: '去除背景' },
       thumbnail: removeBackgroundThumbnail,
       component: RemoveBackground
-    }
-  ]
+    })
+  }
 
   if (props.files.length === 1) {
     methods.push({
@@ -180,11 +183,16 @@ function handleMethodApplied(method: Method, output: File[]) {
   updateCostumes(output)
 }
 
-function cancelMethod(method: Method) {
+function handleMethodCancel(method: Method) {
   const idx = supportedMethods.value.findIndex((m) => m.value === method)
   outputs.splice(idx)
   outputs.push(null)
   updateCostumes(getMethodInput(method))
+}
+
+function resetOutputs() {
+  outputs.splice(0)
+  updateCostumes(props.files)
 }
 
 const costumes = shallowRef<Costume[]>([])
@@ -213,10 +221,22 @@ function handleConfirm() {
   emit('resolved', selectedCostumes)
 }
 
+// Avoid UI flickering when there's no supported methods
+const ready = ref(false)
+
 watch(
   () => props.files,
-  // The first method cancelled, all methods cancelled
-  () => cancelMethod(supportedMethods.value[0].value),
+  async (files) => {
+    // If there's no supported methods, skip user interaction and resolve with costumes created with original files
+    if (supportedMethods.value.length === 0) {
+      await updateCostumes(files)
+      emit('resolved', costumes.value)
+      return
+    }
+
+    ready.value = true
+    resetOutputs()
+  },
   { immediate: true }
 )
 </script>
