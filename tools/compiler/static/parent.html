@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parent</title>
+</head>
+<body>
+<div>
+
+    <textarea id="codeInput" style="width: 400px;height: 500px">
+        onStart => {
+            flag := true
+            for flag {
+                onMsg "die", => {
+                    flag = false
+                }
+                glide -877, 180, 3
+                setXYpos -240, 180
+            }
+        }
+    </textarea>
+
+    <div>
+
+    </div>
+
+    <button onclick="runTypesInfo()">runTypesInfo</button>
+
+    <div id="compiler-iframe-container">
+    </div>
+</div>
+
+
+<script>
+    const container = document.getElementById("compiler-iframe-container")
+    let currentIframe = 1
+    createIframe()
+
+    function createIframe() {
+        const iframe = document.createElement("iframe")
+        iframe.id = "compiler-iframe" + currentIframe
+        iframe.width = 10
+        iframe.height = 10
+        currentIframe++
+        iframe.src = "index.html"
+        container.appendChild(iframe)
+    }
+
+    function deleteIframe() {
+        //TODO
+    }
+
+    function getIframe() {
+        return document.getElementById("compiler-iframe-container").children[0]
+    }
+
+    window.addEventListener("message", function (event) {
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+
+        var data = event.data
+        if (data.level === "wasm") {
+            console.log(data)
+        }
+
+    })
+
+    function runTypesInfo() {
+        getIframe().contentWindow.postMessage({
+            f: "getTypes",
+            info: "wasm",
+            in: {
+                name: "test.spx",
+                code: document.getElementById("codeInput").value
+            }
+        }, window.location.origin)
+    }
+
+</script>
+
+</body>
+</html>
