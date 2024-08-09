@@ -10,7 +10,7 @@ if !ok {
 	return
 }
 
-if err := ctrl.DeleteUserAsset(ctx.Context(), ${assetId},"liked",user.Name); err != nil {
+if err := ctrl.DeleteUserAsset(ctx.Context(),"liked",${assetId},user.Name); err != nil {
 replyWithInnerError(ctx, err)
 return
 }
