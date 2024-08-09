@@ -60,7 +60,7 @@ func New(ctx context.Context) (*Controller, error) {
 	}
 	// TODO: Configure connection pool and timeouts.
 	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: ormLogger.Default.LogMode(ormLogger.Info), // 设置日志级别为 Info
+		Logger: ormLogger.Default.LogMode(ormLogger.Info),
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},

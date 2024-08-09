@@ -44,7 +44,7 @@ func AddUserAsset(ctx context.Context, db *gorm.DB, p *UserAsset) (*UserAsset, e
 		logger.Printf("failed to add asset: %v", result.Error)
 		return nil, result.Error
 	}
-	res, _ := UserAssetByAssetID(ctx, db, p.AssetID) //TODO: this may be muiltple assets with the same assetID
+	res, _ := UserAssetByAssetID(ctx, db, p.AssetID) //TODO(tsingper): this may be multiple assets with the same assetID
 	if res == nil {
 		logger.Printf("failed to get user asset by id: %v", result.Error)
 		return nil, result.Error
