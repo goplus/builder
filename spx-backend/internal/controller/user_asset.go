@@ -93,3 +93,17 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 
 	return assets, nil
 }
+
+// DeleteUserAsset deletes an asset.
+func (ctrl *Controller) DeleteUserAsset(ctx context.Context, assetType string, assetID int, owner string) error {
+	logger := log.GetReqLogger(ctx)
+
+	// Delete the user asset
+	err := model.DeleteUserAsset(ctx, ctrl.ormDb, assetID, model.RelationType(assetType), owner)
+	if err != nil {
+		logger.Printf("failed to delete user asset: %v", err)
+		return err
+	}
+
+	return nil
+}
