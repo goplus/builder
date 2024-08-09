@@ -1,26 +1,10 @@
 <template>
   <div class="code-text-editor-container">
-    <div
-      ref="editorElement"
-      class="code-text-editor"
-      :style="{
-        '--monaco-editor-font-size': completionMenuState.fontSize + 'px',
-        '--monaco-editor-line-height': completionMenuState.lineHeight + 'px'
-      }"
-    ></div>
-    <completion-menu
-      v-show="completionMenuState.visible"
-      ref="completionMenuRef"
-      :suggestions="completionMenuState.suggestions"
-      :active-idx="completionMenuState.activeIdx"
-      :line-height="completionMenuState.lineHeight"
-      :font-size="completionMenuState.fontSize"
-      :style="{
-        top: completionMenuState.position.top + 'px',
-        left: completionMenuState.position.left + 'px'
-      }"
-      @select="(_, idx) => fnSelectMonacoCompletionMenu?.(idx)"
-    ></completion-menu>
+    <div ref="editorElement" class="code-text-editor"></div>
+    <completion-menu-component
+      v-if="completionMenu"
+      :completion-menu="completionMenu"
+    ></completion-menu-component>
   </div>
 </template>
 <script lang="ts">
@@ -37,12 +21,9 @@ import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
-import CompletionMenu from '@/components/editor/code-editor/code-text-editor/CompletionMenu.vue'
-import {
-  CompletionMenuProvider,
-  type CompletionMenuState
-} from './providers/CompletionMenuProvider'
+import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 const props = defineProps<{
   value: string
@@ -55,6 +36,7 @@ const emit = defineEmits<{
 const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
+const completionMenu = shallowRef<CompletionMenu>()
 
 const uiVariables = useUIVariables()
 const i18n = useI18n()
@@ -151,11 +133,12 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
+  completionMenu.value = new CompletionMenu(editor)
+
   monacoEditor.value = editor
   onCleanup(() => {
-    completionMenuProvider.dispose()
+    completionMenu.value?.dispose()
     disposeMonacoProviders()
-    fnSelectMonacoCompletionMenu.value = null
     editor.dispose()
   })
 })
