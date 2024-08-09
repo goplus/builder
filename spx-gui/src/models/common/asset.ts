@@ -1,8 +1,13 @@
 import { AssetType, type AssetData } from '@/apis/asset'
+import {
+  isContentReady,
+  isPreviewReady,
+  type TaggedAIAssetData
+} from '@/apis/aigc'
 import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
-import { Backdrop, type BackdropInits } from '../backdrop'
+import { Backdrop, backdropAssetPath, type BackdropInits, type RawBackdropConfig } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 
 export type PartialAssetData<T extends AssetType = AssetType> = Pick<AssetData<T>, 'displayName' | 'assetType' | 'files' | 'filesHash'>
@@ -104,4 +109,42 @@ export async function cachedConvertAssetData(assetData: PartialAssetData & { [As
   const model = await convertAssetData(assetData)
   assetData[AssetModelSymbol] = model
   return model
+}
+
+/**
+ * Convert a ai-generated backdrop asset (which only contains a preview image) to a full backdrop asset in place.
+ * 
+ * The full backdrop asset contains a image and a config file
+ * 
+ * @param asset A `TaggedAIAssetData` which preview is ready
+ */
+export async function convertAIAssetToBackdrop(asset: TaggedAIAssetData) {
+  if (!asset[isPreviewReady] || asset.preview === undefined) {
+    throw new Error(`asset ${asset.id}'s content is not ready`)
+  }
+  const backdropFilepath = `${backdropAssetPath}/${asset.id}.jpg`
+  const config: RawBackdropConfig = {
+    bitmapResolution: 1,
+    faceRight: 0,
+    name: asset.displayName ?? asset.id,
+    path: `${asset.id}.jpg`,
+    x: 0,
+    y: 0
+  }
+  const configFile = fromConfig(virtualBackdropConfigFileName, config, {
+    type: 'application/json'
+  })
+  const backdropFile = await getFiles({
+    [backdropFilepath]: asset.preview
+  })
+  // configFile is `application/json` and it will be saved as an inlined file
+  // backdropFile is read from the cloud (it should has a `universalUrl`) and it won't trigger a new save
+  const {fileCollection, fileCollectionHash} = await saveFiles({
+    ...backdropFile,
+    [virtualBackdropConfigFileName]: configFile
+  })
+  asset.files = fileCollection
+  asset.filesHash = fileCollectionHash
+  asset.displayName = config.name
+  asset[isContentReady] = true
 }

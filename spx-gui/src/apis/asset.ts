@@ -86,4 +86,33 @@ export function getAsset(id: string) {
 
 export function increaseAssetClickCount(id: string) {
   return client.post(`/asset/${encodeURIComponent(id)}/click`) as Promise<void>
+
+
+/**
+ * WARNING: This API is not implemented in the backend yet.
+ * Currently, it searches for assets with the given keyword and returns the first `count` unique display names.
+ * @param keyword 
+ * @param count 
+ * @returns 
+ */
+export async function getAssetSearchSuggestion(keyword: string, count = 6) {
+  if (!keyword) {
+    return { suggestions: [] }
+  }
+  const assets = await listAsset({
+    keyword,
+    assetType: '' as any,
+    pageSize: count * 2,
+    pageIndex: 1,
+    category: '',
+    owner: '*',
+    isPublic: IsPublic.public,
+    orderBy: ListAssetParamOrderBy.TimeAsc
+  })
+  return {
+    suggestions: Array.from(new Set(assets.data.map(asset => asset.displayName))).slice(0, count)
+  }
+  return client.get('/asset/suggest', { keyword, count }) as Promise<{
+    suggestions: string[]
+  }>
 }

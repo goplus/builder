@@ -21,7 +21,14 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
+          <AIAssetItem
+            v-if="isAiAsset in asset"
+            :asset="asset"
+            @ready="asset[isPreviewReady] = true"
+            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)"
+          />
           <AssetItem
+            v-else
             :asset="asset"
             :add-to-project-pending="props.addToProjectPending"
             @add-to-project="(asset) => emit('addToProject', asset)"
@@ -36,6 +43,16 @@
       <div v-else-if="item.type === 'no-more'" size="small" class="more-info no-more">
         <img :src="emptyImg" alt="empty" />
         {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
+        <Transition name="fade" mode="out-in" appear>
+          <NButton v-if="!loadingAiAsset" tertiary @click="generateMultipleAIImages(COLUMN_COUNT)">
+            <template #icon>
+              <NIcon>
+                <TipsAndUpdatesOutlined />
+              </NIcon>
+            </template>
+            {{ $t({ en: 'Create with AI', zh: 'AI 创作' }) }}
+          </NButton>
+        </Transition>
       </div>
       <div v-else-if="item.type === 'loading-more-error'" class="more-info loading-more-error">
         <img :src="errorImg" alt="error" />
@@ -44,17 +61,28 @@
     </template>
   </NVirtualList>
 </template>
-
 <script lang="ts" setup>
 import { computed, ref, shallowReactive, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
-import { NVirtualList, NSpin } from 'naive-ui'
+import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
 import { type AssetData } from '@/apis/asset'
 import type { ActionException } from '@/utils/exception'
 import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
+import {
+  AIGCStatus,
+  generateAIImage,
+  isAiAsset,
+  isContentReady,
+  isPreviewReady,
+  type AIAssetData,
+  type AssetOrAIAsset,
+  type TaggedAIAssetData
+} from '@/apis/aigc'
+import AIAssetItem from './AIAssetItem.vue'
+import { TipsAndUpdatesOutlined } from '@vicons/material'
 
 const props = defineProps<{
   addToProjectPending: boolean
@@ -63,6 +91,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
   select: [asset: AssetData]
+  selectAi: [asset: TaggedAIAssetData, aiAssetList: TaggedAIAssetData[]]
 }>()
 
 const searchCtx = useSearchCtx()
@@ -70,12 +99,25 @@ const searchResultCtx = useSearchResultCtx()
 
 const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
+const aiAssetList = ref<TaggedAIAssetData[]>([])
+const hasMoreAssets = computed(
+  () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
+)
+
+const loadingAiAsset = computed(() =>
+  aiAssetList.value.some((a) => {
+    if (isAiAsset in a) {
+      return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
+    }
+    return false
+  })
+)
 
 type GroupedAssetItem =
   | {
       id: string
       type: 'asset-group'
-      assets: AssetData[]
+      assets: AssetOrAIAsset[]
     }
   | {
       id: string
@@ -92,7 +134,7 @@ type GroupedAssetItem =
     }
 
 const groupedAssetItems = computed(() => {
-  const list = assetList.value
+  const list = [...assetList.value, ...aiAssetList.value]
   const result: GroupedAssetItem[] = []
 
   if (list.length === 0) {
@@ -132,7 +174,7 @@ const groupedAssetItems = computed(() => {
 })
 
 const loadMore = () => {
-  if (searchCtx.page * searchCtx.pageSize >= (searchResultCtx.assets?.total ?? 0)) {
+  if (!hasMoreAssets.value) {
     return
   }
   searchCtx.page++
@@ -145,12 +187,48 @@ const handleScroll = (e: Event) => {
   }
 }
 
+const generateMultipleAIImages = (count: number, append = true) => {
+  const promises = Array.from({ length: count }, () =>
+    generateAIImage({
+      keyword: searchCtx.keyword,
+      category: searchCtx.category,
+      assetType: searchCtx.type
+    }).then((res) => {
+      return {
+        id: res.imageJobId,
+        assetType: searchCtx.type,
+        cTime: new Date().toISOString(),
+        status: AIGCStatus.Waiting
+      }
+    })
+  )
+  Promise.all(promises).then((res) => {
+    const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
+      ...r,
+      [isAiAsset]: true as const,
+      [isPreviewReady]: false,
+      [isContentReady]: false
+    }))
+    if (append) {
+      aiAssetList.value.push(...taggedRes)
+    } else {
+      aiAssetList.value = taggedRes
+    }
+  })
+}
+
 // Append search result to assetList
 watch(
   () => searchResultCtx.assets,
   (result) => {
     assetList.value.push(...(result?.data ?? []))
-    if (searchCtx.page === 1) {
+    if (!hasMoreAssets.value) {
+      // Fill the last row with AI assets
+      const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
+      if (count <= COLUMN_COUNT) {
+        generateMultipleAIImages(count, false)
+      }
+    } else if (searchCtx.page === 1) {
       loadMore()
     }
   }
@@ -164,13 +242,14 @@ watch(
       .map((k) => searchCtx[k]),
   () => {
     assetList.value = []
+    aiAssetList.value = []
     searchCtx.page = 1
   }
 )
 </script>
 
 <style>
-.asset-list .v-vl{
+.asset-list .v-vl {
   width: 100%;
 }
 </style>
@@ -207,5 +286,15 @@ watch(
 .more-info img {
   width: 36px;
   height: 36px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

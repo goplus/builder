@@ -8,26 +8,44 @@
           {{ $t(entityMessages[searchCtx.type]) }}
         </span>
       </h4>
+      <h4 v-else-if="isAiAsset in selectedAsset" class="title">
+        <!-- {{ $t({ en: 'Preview: ', zh: `预览: ` }) }} -->
+        <NIcon size="14" color="var(--text-color)">
+          <BulbOutlined />
+        </NIcon>
+        <span class="ai-asset-tip">
+          {{ $t({ en: `Created by AI`, zh: `AI 创作` }) }}
+        </span>
+      </h4>
       <h4 v-else class="title">
         {{ $t({ en: 'Preview: ', zh: `预览: ` }) }}
         {{ selectedAsset?.displayName }}
       </h4>
-      <UITextInput
+      <NAutoComplete
         v-if="!selectedAsset"
         v-model:value="searchInput"
         class="search-input"
-        clearable
-        :placeholder="$t({ en: 'Search', zh: '搜索' })"
-        @keypress.enter="handleSearch"
+        :options="suggestionsOptions"
       >
-        <template #prefix>
-          <UIIcon class="search-icon" type="search" />
+        <template #default="{ handleInput, handleBlur, handleFocus, value: slotValue }">
+          <UITextInput
+            :value="slotValue"
+            clearable
+            :placeholder="$t({ en: 'Search', zh: '搜索' })"
+            @input="handleInput"
+            @focus="handleFocus"
+            @blur="handleBlur"
+            @keypress.enter="handleSearch"
+          >
+            <template #prefix>
+              <UIIcon class="search-icon" type="search" />
+            </template>
+          </UITextInput>
         </template>
-      </UITextInput>
+      </NAutoComplete>
       <UIModalClose class="close" @click="handleCloseButton" />
     </div>
-    <UIDivider />
-
+    <UIDivider v-if="!(selectedAsset && isAiAsset in selectedAsset)" />
     <section v-show="!selectedAsset" class="body">
       <main class="main">
         <div class="order-select">
@@ -38,6 +56,7 @@
             :add-to-project-pending="handleAddToProject.isLoading.value"
             @add-to-project="handleAddToProject.fn"
             @select="selectedAsset = $event"
+            @select-ai="handleSelectAiAsset"
           />
         </div>
       </main>
@@ -52,7 +71,16 @@
       </div>
     </section>
     <Transition name="fade" mode="out-in" appear>
-      <section v-if="selectedAsset" class="body">
+      <section v-if="selectedAsset && isAiAsset in selectedAsset" class="body">
+        <AIPreviewModal
+          :asset="selectedAsset"
+          :ai-assets="currentAIAssetList"
+          class="asset-page"
+          :add-to-project-pending="handleAddToProject.isLoading.value"
+          @select-ai="handleSelectAiAsset"
+        />
+      </section>
+      <section v-else-if="selectedAsset" class="body">
         <DetailModal
           :asset="selectedAsset"
           class="asset-page"
@@ -66,18 +94,22 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
-import { AssetType, type AssetData } from '@/apis/asset'
-import { debounce } from '@/utils/utils'
+import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
+import { debounce, useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
 import { asset2Backdrop, asset2Sound, asset2Sprite, type AssetModel } from '@/models/common/asset'
-
+import { NAutoComplete, NIcon, NSpin } from 'naive-ui'
+import { BulbOutlined } from '@vicons/antd'
 import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
 import AssetList from './AssetList.vue'
+import { isAiAsset, type AssetOrAIAsset, type TaggedAIAssetData } from '@/apis/aigc'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
+import type { AIAssetData } from '@/apis/aigc'
+import AIPreviewModal from './ai/AIPreviewModal.vue'
 
 const props = defineProps<{
   visible?: boolean
@@ -90,7 +122,8 @@ const emit = defineEmits<{
   resolved: [AssetModel[]]
 }>()
 
-const selectedAsset = ref<AssetData | null>(null)
+const selectedAsset = ref<AssetOrAIAsset | null>(null)
+const currentAIAssetList = ref<TaggedAIAssetData[]>([])
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
@@ -122,6 +155,11 @@ const searchResultCtx = useSearchResultCtx()
 const entityMessage = computed(() => entityMessages[searchCtx.type])
 const type = ref(searchCtx.type) //just for display
 
+const suggestions = useAsyncComputed(async () => {
+  return (await getAssetSearchSuggestion(searchCtx.keyword)).suggestions
+})
+const suggestionsOptions = computed(() => suggestions.value?.map((s) => ({ label: s, value: s })) ?? [])
+
 // do search (with a delay) when search-input changed
 watch(
   searchInput,
@@ -140,6 +178,13 @@ function handleSelectCategory(c: string[]) {
 
 function handleUserSelectCategory(c: string) {
   searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'
+}
+
+function handleSelectAiAsset(asset: TaggedAIAssetData, aiAssetList?: TaggedAIAssetData[]) {
+  selectedAsset.value = asset
+  if (aiAssetList) {
+    currentAIAssetList.value = aiAssetList
+  }
 }
 
 async function addAssetToProject(asset: AssetData) {
@@ -201,6 +246,8 @@ const handleAddToProject = useMessageHandle(
     flex: 1;
     display: flex;
     color: var(--ui-color-title);
+    align-items: center;
+    gap: 8px;
   }
 
   .tab {
@@ -226,6 +273,7 @@ const handleAddToProject = useMessageHandle(
     display: flex;
     justify-content: stretch;
     overflow: auto;
+    flex: 1;
   }
 
   .sider {
