@@ -12,12 +12,14 @@ import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
   value: string
+  ui: EditorUI
 }>()
 const emit = defineEmits<{
   'update:value': [string]

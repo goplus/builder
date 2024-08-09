@@ -6,8 +6,8 @@
     </UITabs>
     <template #extra>
       <FormatButton
-        v-if="selectedTab === 'code' && codeEditor != null && code != null"
-        :code-editor="codeEditor"
+        v-if="selectedTab === 'code' && codeEditorUI != null && code != null"
+        :code-editor="codeEditorUI"
       />
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
@@ -39,7 +39,7 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const selectedTab = ref<'code' | 'backdrops'>('code')
-const codeEditor = ref<InstanceType<typeof CodeEditor>>()
+const codeEditorUI = ref<InstanceType<typeof CodeEditor>>()
 const code = computed(() => props.stage.code)
 
 const action = {
