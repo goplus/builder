@@ -82,7 +82,7 @@ class FlipButton extends Konva.Group {
       height: 8
     }
     this.rect = new Konva.Rect({
-      fill: orientation === 'left' ? '#fff' : 'rgba(217, 223, 229, 1)',
+      fill: orientation === 'left' ? '#fff' : 'rgba(234, 239, 243, 1)',
       ...rectStyle
     })
     this.image = new Konva.Image({
