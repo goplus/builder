@@ -93,6 +93,10 @@ export class Project extends Disposable {
     return this.lastSyncedFilesHash !== this.filesHash
   }
 
+  get currentFilesHash() {
+    return this.filesHash
+  }
+
   stage: Stage
   sprites: Sprite[]
   sounds: Sound[]

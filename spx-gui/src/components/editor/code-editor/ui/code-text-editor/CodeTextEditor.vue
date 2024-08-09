@@ -12,12 +12,14 @@ import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
+import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco, defaultThemeName } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
   value: string
+  ui: EditorUI
 }>()
 const emit = defineEmits<{
   'update:value': [string]
@@ -78,7 +80,11 @@ watchEffect(async (onClenaup) => {
     tabSize: 4,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
-    foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    foldingStrategy: 'indentation', // 折叠方式  auto | indentation,
+    fontWeight: '500', // slightly bold font to make it easier to read, and satisfy outer UI font.
+    fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
+    // Enable this option to avoid abnormal cursor display after using JetBrains MonoNL font.
+    fontLigatures: true,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
