@@ -42,7 +42,7 @@ function initCoordinator() {
     docAbility,
     chatBot
   })
-  return { coordinator, compiler, project, runtime, docAbility, aiChat, editorUI }
+  return { coordinator, compiler, project, runtime, docAbility, chatBot, editorUI }
 }
 
 defineExpose({
