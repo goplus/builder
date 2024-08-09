@@ -6,7 +6,7 @@ import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
-import { File, toNativeFile, toText, type Files } from './file'
+import { File, toNativeFile, toText, type Files, isText } from './file'
 import { hashFileCollection } from './hash'
 
 // Supported universal Url schemes for files
@@ -18,9 +18,6 @@ const fileUniversalUrlSchemes = {
   data: 'data:', // for inlineable data, usually plain text or json, e.g. data:text/plain,hello%20world
   kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
 } as const
-
-// File types that can be inlined in the Data Urls
-const inlineableFileTypes = ['text/plain', 'application/json']
 
 export async function load(owner: string, name: string) {
   const projectData = await getProject(owner, name)
@@ -109,19 +106,27 @@ async function saveFile(file: File) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 
-  const url = inlineableFileTypes.includes(file.type)
-    ? await inlineFile(file)
-    : await uploadToKodo(file)
+  const url = await (isInlineable(file) ? inlineFile(file) : uploadToKodo(file))
   setUniversalUrl(file, url)
   return url
 }
 
-async function inlineFile(file: File): Promise<UniversalUrl> {
-  // Little trick from [https://fetch.spec.whatwg.org/#data-urls]: `12. If mimeType starts with ';', then prepend 'text/plain' to mimeType.`
-  // Saves some bytes.
-  const mimeType = file.type === 'text/plain' ? ';' : file.type
+const isInlineable = isText
 
-  const urlEncodedContent = encodeURIComponent(await toText(file))
+async function inlineFile(file: File): Promise<UniversalUrl> {
+  let mimeType, content
+  if (isText(file)) {
+    // Little trick from [https://fetch.spec.whatwg.org/#data-urls]: `12. If mimeType starts with ';', then prepend 'text/plain' to mimeType.`
+    // Saves some bytes.
+    mimeType = file.type === 'text/plain' ? ';' : file.type
+
+    // TODO: Implement file compression (see https://github.com/goplus/builder/issues/492)
+    content = await toText(file)
+  } else {
+    throw new Error('unsupported file type for inlining')
+  }
+
+  const urlEncodedContent = encodeURIComponent(content)
   return `${fileUniversalUrlSchemes.data}${mimeType},${urlEncodedContent}`
 }
 

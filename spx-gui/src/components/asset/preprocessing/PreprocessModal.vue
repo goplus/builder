@@ -2,7 +2,7 @@
   <UIFormModal
     style="width: 780px"
     :visible="props.visible && ready"
-    :title="$t(actionMessage)"
+    :title="$t(title)"
     :body-style="{ padding: '0' }"
     @update:visible="emit('cancelled')"
   >
@@ -68,9 +68,10 @@
         class="submit-btn"
         size="large"
         :disabled="selectedCostumes.length === 0"
-        @click="handleConfirm"
+        :loading="handleConfirm.isLoading.value"
+        @click="handleConfirm.fn"
       >
-        {{ $t(actionMessage) }}
+        {{ $t(confirmText) }}
       </UIButton>
     </footer>
   </UIFormModal>
@@ -94,12 +95,23 @@ import SplitSpriteSheet from './split-sprite-sheet/SplitSpriteSheet.vue'
 import splitSpriteSheetThumbnail from './split-sprite-sheet/thumbnail.svg'
 import RemoveBackground from './remove-background/RemoveBackground.vue'
 import removeBackgroundThumbnail from './remove-background/thumbnail.svg'
+import { saveFiles } from '@/models/common/cloud'
+import { useMessageHandle } from '@/utils/exception'
+import { useNetwork } from '@/utils/network'
 
-const props = defineProps<{
-  visible: boolean
-  files: File[]
-  actionMessage: LocaleMessage
-}>()
+const { isOnline } = useNetwork()
+
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    files: File[]
+    title: LocaleMessage
+    confirmText?: LocaleMessage
+  }>(),
+  {
+    confirmText: () => ({ en: 'Confirm', zh: '确认' })
+  }
+)
 
 const emit = defineEmits<{
   cancelled: []
@@ -217,9 +229,21 @@ async function handleCostumeClick(costume: Costume) {
   else selectedCostumes.splice(index, 1)
 }
 
-function handleConfirm() {
-  emit('resolved', selectedCostumes)
-}
+const handleConfirm = useMessageHandle(
+  async () => {
+    if (isOnline.value) {
+      const files = selectedCostumes
+        .map((costume) => costume.export(''))
+        .reduce((acc, [, files]) => ({ ...acc, ...files }), {})
+      await saveFiles(files)
+    }
+    emit('resolved', selectedCostumes)
+  },
+  {
+    en: 'Failed to upload files',
+    zh: '上传文件失败'
+  }
+)
 
 // Avoid UI flickering when there's no supported methods
 const ready = ref(false)

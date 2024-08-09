@@ -1,4 +1,4 @@
-import { useModal } from '@/components/ui'
+import { useMessage, useModal } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
@@ -13,6 +13,9 @@ import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
+import { saveFiles } from '@/models/common/cloud'
+import { useI18n } from '@/utils/i18n'
+import { useNetwork } from '@/utils/network'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
@@ -58,7 +61,11 @@ export function useAddSpriteFromLocalFile() {
     const files = nativeFiles.map((f) => fromNativeFile(f))
     const spriteName = files.length > 1 ? '' : stripExt(files[0].name)
     const sprite = Sprite.create(spriteName)
-    const costumes = await preprocess({ files, actionMessage })
+    const costumes = await preprocess({
+      files,
+      title: actionMessage,
+      confirmText: { en: 'Add', zh: '添加' }
+    })
     for (const costume of costumes) {
       sprite.addCostume(costume)
     }
@@ -77,7 +84,11 @@ export function useAddCostumeFromLocalFile() {
     const actionMessage = { en: 'Add costume', zh: '添加造型' }
     const nativeFiles = await selectImgs()
     const files = nativeFiles.map((f) => fromNativeFile(f))
-    const costumes = await preprocess({ files, actionMessage })
+    const costumes = await preprocess({
+      files,
+      title: actionMessage,
+      confirmText: { en: 'Add', zh: '添加' }
+    })
     await project.history.doAction({ name: actionMessage }, () => {
       for (const costume of costumes) sprite.addCostume(costume)
       sprite.setDefaultCostume(costumes[0].name)
@@ -86,9 +97,17 @@ export function useAddCostumeFromLocalFile() {
 }
 
 export function useAddSoundFromLocalFile(autoSelect = true) {
+  const m = useMessage()
+  const { t } = useI18n()
+  const { isOnline } = useNetwork()
   return async function addSoundFromLocalFile(project: Project) {
     const audio = await selectAudio()
     const sound = await Sound.create(stripExt(audio.name), fromNativeFile(audio))
+
+    if (isOnline.value) {
+      await m.withLoading(saveFiles(sound.export()), t({ en: 'Uploading files', zh: '上传文件中' }))
+    }
+
     const action = { name: { en: 'Add sound', zh: '添加声音' } }
     await project.history.doAction(action, () => project.addSound(sound))
     if (autoSelect) selectAsset(project, sound)
