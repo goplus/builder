@@ -19,6 +19,8 @@
           size="large"
           class="insert-button"
           :disabled="addToProjectPending"
+          :loading="addToProjectPending"
+          :style="{ width: '100%' }"
           @click="handleAddButton"
         >
           <span style="white-space: nowrap">
@@ -30,22 +32,36 @@
             }}
           </span>
         </UIButton>
-        <UIButton size="large" @click="handleToggleFav">
-          <span style="white-space: nowrap">
-            <!-- {{ $t({ en: 'Favorite', zh: '收藏' }) }} -->
-            {{
-              isFavorite
-                ? $t({ en: 'Unfavorite', zh: '取消收藏' })
-                : $t({ en: 'Favorite', zh: '收藏' })
-            }}
-          </span>
+        <UIButton size="large" class="favorite-button" type="secondary" @click="handleToggleFav">
+          <NTooltip>
+            <template #trigger>
+              <NIcon v-if="!isFavorite" :size="20" color="var(--ui-color-primary-main, #0bc0cf)">
+                <HeartOutlined />
+              </NIcon>
+              <NIcon v-else :size="20" color="var(--ui-color-primary-main, #0bc0cf)">
+                <HeartFilled />
+              </NIcon>
+            </template>
+            <span style="white-space: nowrap">
+              <!-- {{ $t({ en: 'Favorite', zh: '收藏' }) }} -->
+              {{
+                isFavorite
+                  ? $t({ en: 'Unfavorite', zh: '取消收藏' })
+                  : $t({ en: 'Favorite', zh: '收藏' })
+              }}
+            </span>
+          </NTooltip>
         </UIButton>
       </div>
       <div class="sider-info">
         <div class="basic-info">
-          {{ $t({ en: 'posted time', zh: '发布时间' }) }}：{{ displayTime }}
+          <div class="basic-info-label">{{ $t({ en: 'Author', zh: '作者' }) }}: </div>
+          <div class="basic-info-value">{{ asset.owner }}</div>
         </div>
-        <div class="basic-info">{{ $t({ en: 'posted by', zh: '发布人' }) }}：{{ asset.owner }}</div>
+        <div class="basic-info">
+          <div class="basic-info-label">{{ $t({ en: 'Created at', zh: '创建时间' }) }}: </div>
+          <div class="basic-info-value">{{ $t(displayTime(asset.cTime)) }}</div>
+        </div>
       </div>
       <div class="category">
         <div class="category-title">{{ $t({ en: 'Category', zh: '类别' }) }}</div>
@@ -77,7 +93,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { NButton, NIcon, NTag } from 'naive-ui'
+import { NButton, NIcon, NTag, NTooltip } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import {
   addAssetToFavorites,
@@ -90,7 +106,9 @@ import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
 import DetailDisplay from './SpriteDetailDisplay.vue'
 import AssetRate from '../reviews/AssetRate.vue'
-import { StarOutlined } from '@vicons/antd'
+import { StarOutlined, HeartOutlined, HeartFilled } from '@vicons/antd'
+import { template } from 'lodash'
+import type { LocaleMessage } from '@/utils/i18n'
 
 // Define component props
 const props = defineProps<{
@@ -124,9 +142,24 @@ const handleToggleFav = () => {
   }
 }
 
-const displayTime = computed(() => {
-  return new Date(props.asset.cTime).toLocaleString()
-})
+const displayTime = (date: Date | string, options?: Intl.NumberFormatOptions) => {
+  if (typeof date === 'string') {
+    date = new Date(date)
+  }
+  // return new Date(props.asset.cTime).toLocaleString('zh-CN')
+  return new Proxy({} as LocaleMessage, {
+    get: (_, key) => {
+      if (typeof key === 'string') {
+        return new Intl.DateTimeFormat(key, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          ...options
+        }).format(date)
+      }
+      return undefined
+    }
+  })
+}
 
 const assetRate = ref<InstanceType<typeof AssetRate> | null>(null)
 const rateButton = ref<InstanceType<typeof NButton> | null>(null)
@@ -203,6 +236,7 @@ main {
     gap: 10px;
 
     .insert-button {
+      flex: 1;
     }
   }
 
@@ -214,6 +248,9 @@ main {
 
   .basic-info {
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .category {
@@ -254,5 +291,19 @@ main {
       gap: 10px;
     }
   }
+}
+
+:deep(.insert-button .content) {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+:deep(.favorite-button .content) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
 }
 </style>
