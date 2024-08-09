@@ -58,7 +58,7 @@ func New(ctx context.Context) (*Controller, error) {
 		logger.Printf("failed to connect sql: %v", err)
 		return nil, err
 	}
-	// TODO: Configure connection pool and timeouts.
+	// TODO(who): Configure connection pool and timeouts.
 	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: ormLogger.Default.LogMode(ormLogger.Info),
 		NamingStrategy: schema.NamingStrategy{
