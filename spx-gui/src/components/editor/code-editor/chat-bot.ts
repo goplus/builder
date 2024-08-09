@@ -38,7 +38,7 @@ export class Chat {
   }
 }
 
-export class AIChat {
+export class ChatBot {
   startExplainChat(input: Input): Chat {
     return new Chat()
   }

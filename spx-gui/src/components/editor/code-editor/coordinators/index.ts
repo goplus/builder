@@ -1,7 +1,7 @@
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
-import { AIChat } from '../ai-chat'
+import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 
@@ -14,10 +14,10 @@ type Position = {
 export class Coordinator {
   constructor(
     ui: EditorUI,
-    models: {
+    abilities: {
       runtime: Runtime
       compiler: Compiler
-      aiChat: AIChat
+      chatBot: ChatBot
       docAbility: DocAbility
       project: Project
     }

@@ -5,7 +5,7 @@ import { Compiler } from '@/components/editor/code-editor/compiler'
 import { Project } from '@/models/project'
 import { Runtime } from '@/components/editor/code-editor/runtime'
 import { DocAbility } from '@/components/editor/code-editor/document'
-import { AIChat } from '@/components/editor/code-editor/ai-chat'
+import { ChatBot } from '@/components/editor/code-editor/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { ref } from 'vue'
 
@@ -33,14 +33,14 @@ function initCoordinator() {
   const project = new Project()
   const runtime = new Runtime()
   const docAbility = new DocAbility()
-  const aiChat = new AIChat()
+  const chatBot = new ChatBot()
 
   const coordinator = new Coordinator(editorUI, {
     compiler,
     project,
     runtime,
     docAbility,
-    aiChat
+    chatBot
   })
   return { coordinator, compiler, project, runtime, docAbility, aiChat, editorUI }
 }
