@@ -51,7 +51,7 @@ type ByPage[T any] struct {
 	Data  []T `json:"data"`
 }
 
-// QueryByPage queries a table or custom query by page.
+// QueryByPage queries a table or custom query by page,mainly use for asset table.
 func QueryByPage[T any](
 	ctx context.Context,
 	db *sql.DB,
@@ -241,4 +241,66 @@ func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string,
 		return ErrNotExist
 	}
 	return nil
+}
+
+// getLikedInfo gets the liked info of assets.
+func getLikedInfo(ctx context.Context, db *sql.DB, assetIDs []string) (map[string]struct {
+	IsLiked   bool
+	LikeCount int
+}, error) {
+	logger := log.GetReqLogger(ctx)
+
+	query := `
+		SELECT asset_id, COUNT(*) as count
+		FROM user_asset
+		WHERE asset_id IN (?) AND relation_type = 'liked'
+		GROUP BY asset_id
+	`
+
+	args := make([]interface{}, len(assetIDs))
+	for i, id := range assetIDs {
+		args[i] = id
+	}
+
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		logger.Printf("failed to prepare statement: %v", err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		logger.Printf("failed to execute query: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	likedMap := make(map[string]struct {
+		IsLiked   bool
+		LikeCount int
+	})
+
+	for rows.Next() {
+		var assetID string
+		var count int
+		if err := rows.Scan(&assetID, &count); err != nil {
+			logger.Printf("failed to scan row: %v", err)
+			return nil, err
+		}
+		likedMap[assetID] = struct {
+			IsLiked   bool
+			LikeCount int
+		}{
+			IsLiked:   true,
+			LikeCount: count,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Printf("rows iteration error: %v", err)
+		return nil, err
+	}
+
+	return likedMap, nil
 }
