@@ -7,6 +7,7 @@ import App from './App.vue'
 import { initRouter } from './router'
 import { initStore, useUserStore } from './stores'
 import { client } from './apis/common'
+import { SpriteTransformer } from './components/editor/preview/stage-viewer/transformer/sprite-transformer'
 
 const initApiClient = async () => {
   const userStore = useUserStore()
@@ -21,7 +22,9 @@ async function initApp() {
   await initRouter(app)
   await initI18n(app)
 
-  app.use(VueKonva)
+  app.use(VueKonva, {
+    customNodes: { SpriteTransformer }
+  })
 
   app.use(VueQueryPlugin)
 
