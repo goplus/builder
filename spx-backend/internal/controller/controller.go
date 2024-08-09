@@ -6,6 +6,7 @@ import (
 	"errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	ormLogger "gorm.io/gorm/logger" // GORM 的 logger 包
 	"gorm.io/gorm/schema"
 	_ "image/png"
 	"io/fs"
@@ -59,6 +60,7 @@ func New(ctx context.Context) (*Controller, error) {
 	}
 	// TODO: Configure connection pool and timeouts.
 	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: ormLogger.Default.LogMode(ormLogger.Info), // 设置日志级别为 Info
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 		},

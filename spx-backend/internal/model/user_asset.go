@@ -82,12 +82,14 @@ func UpdateUserAsset(ctx context.Context, db *sql.DB, userID int, item *UserAsse
 }
 
 // DeleteUserAsset deletes an asset.
-func DeleteUserAsset(ctx context.Context, db *gorm.DB, assetId int, assetType RelationType, owner string) error {
+func DeleteUserAsset(ctx context.Context, db *gorm.DB, assetId string, assetType RelationType, owner string) error {
 	logger := log.GetReqLogger(ctx)
-	result := db.Delete(&UserAsset{}, "asset_id = ? AND relation_type = ? AND owner = ?", assetId, assetType, owner)
+	assetIdInt, _ := strconv.Atoi(assetId)
+	result := db.Delete(&UserAsset{}, "asset_id = ? AND relation_type = ? AND owner = ?", assetIdInt, assetType, owner)
 	if result.Error != nil {
 		logger.Printf("failed to delete user asset by id: %v", result.Error)
 		return result.Error
 	}
+	logger.Printf("deleted user asset by id: %v", result.RowsAffected)
 	return nil
 }

@@ -250,26 +250,20 @@ func getLikedInfo(ctx context.Context, db *sql.DB, assetIDs []string) (map[strin
 }, error) {
 	logger := log.GetReqLogger(ctx)
 
-	query := `
-		SELECT asset_id, COUNT(*) as count
-		FROM user_asset
-		WHERE asset_id IN (?) AND relation_type = 'liked'
-		GROUP BY asset_id
-	`
-
+	// Convert assetIDs to slices of interface type
 	args := make([]interface{}, len(assetIDs))
 	for i, id := range assetIDs {
 		args[i] = id
 	}
 
-	stmt, err := db.PrepareContext(ctx, query)
-	if err != nil {
-		logger.Printf("failed to prepare statement: %v", err)
-		return nil, err
-	}
-	defer stmt.Close()
+	query := fmt.Sprintf(`
+        SELECT asset_id, COUNT(*) as count
+        FROM user_asset
+        WHERE asset_id IN (?%s) AND relation_type = 'liked'
+        GROUP BY asset_id
+    `, strings.Repeat(",?", len(args)-1))
 
-	rows, err := stmt.QueryContext(ctx, args...)
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		logger.Printf("failed to execute query: %v", err)
 		return nil, err

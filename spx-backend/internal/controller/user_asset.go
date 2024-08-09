@@ -95,7 +95,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 }
 
 // DeleteUserAsset deletes an asset.
-func (ctrl *Controller) DeleteUserAsset(ctx context.Context, assetType string, assetID int, owner string) error {
+func (ctrl *Controller) DeleteUserAsset(ctx context.Context, assetType string, assetID string, owner string) error {
 	logger := log.GetReqLogger(ctx)
 
 	// Delete the user asset
