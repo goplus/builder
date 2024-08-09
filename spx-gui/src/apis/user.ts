@@ -21,9 +21,6 @@ export function listLikedAsset(params: ListAssetParams) {
   return client.get('/user/liked/list', params) as Promise<ByPage<AssetData>>
 }
 
-/**
- * WARNING: This API is not implemented in the backend yet.
- */
 export function removeAssetFromFavorites(id: string) {
   return client.delete('/user/liked', { assetId: id }) as Promise<void>
 }
