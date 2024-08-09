@@ -115,14 +115,15 @@ func newChatResp(resp llm.LlmResponseBody, id string) ChatResp {
 	return chatResp
 }
 
-type SuggestTaskResp struct {
+type TaskResp struct {
 	TaskAction   int           `json:"taskAction"`
 	CodeSuggests []CodeSuggest `json:"codeSuggests"`
+	// ...
 }
 
-func newSuggestTaskResp(resp llm.LlmResponseBody, id string) SuggestTaskResp {
+func newSuggestTaskResp(resp llm.LlmResponseBody, id string) TaskResp {
 	// TODO(callme-taota): parse the response to get the task action and code suggests.
-	suggestTaskResp := SuggestTaskResp{}
+	suggestTaskResp := TaskResp{}
 	return suggestTaskResp
 }
 
@@ -330,10 +331,10 @@ func (ctrl *Controller) NextChatEx(ctx context.Context, id string, userInput str
 	return
 }
 
-func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (SuggestTaskResp, error) {
+func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {
 	resp, err := ctrl.llm.CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()))
 	if err != nil {
-		return SuggestTaskResp{}, err
+		return TaskResp{}, err
 	}
 	return newSuggestTaskResp(resp, ""), nil
 }
