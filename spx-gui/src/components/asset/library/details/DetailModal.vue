@@ -9,7 +9,6 @@
         />
       </div>
       <div class="detail">
-        <LibraryTab />
       </div>
     </div>
     <div class="sider">
@@ -201,11 +200,10 @@ main {
   flex: 3;
   padding: 10px;
   border-right: 1px solid var(--ui-color-border, #cbd2d8);
-  overflow: hidden;
+  overflow: auto;
 
   .display {
     width: 100%;
-    min-height: 50vh;
   }
 
   .detail {
