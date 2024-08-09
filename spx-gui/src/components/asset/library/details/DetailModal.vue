@@ -141,7 +141,7 @@ const handleToggleFav = () => {
   }
 }
 
-const displayTime = (date: Date | string, options?: Intl.NumberFormatOptions) => {
+const displayTime = (date: Date | string, options?: Intl.DateTimeFormatOptions) => {
   if (typeof date === 'string') {
     date = new Date(date)
   }
