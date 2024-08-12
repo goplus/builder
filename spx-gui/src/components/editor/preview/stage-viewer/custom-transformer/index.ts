@@ -61,8 +61,12 @@ class FlipButton extends Konva.Group {
   rect: Konva.Rect
   image: Konva.Image
 
+  declare _cursorChange: boolean
+
   constructor(orientation: 'left' | 'right', onClick?: () => void) {
     super()
+
+    const enabled = orientation === 'left'
 
     this.orientation = orientation
 
@@ -84,18 +88,32 @@ class FlipButton extends Konva.Group {
       height: 8
     }
     this.rect = new Konva.Rect({
-      fill: orientation === 'left' ? '#fff' : 'rgba(234, 239, 243, 1)',
+      fill: enabled ? '#fff' : 'rgba(234, 239, 243, 1)',
       ...rectStyle
     })
+    const setCursor = (cursor: string) => {
+      const content = this.getStage()?.content
+      if (content) {
+        content.style.cursor = cursor
+      }
+    }
+    if (enabled) {
+      this.rect.on('mouseenter', () => {
+        setCursor('pointer')
+      })
+      this.rect.on('mouseout', () => {
+        setCursor('')
+      })
+    }
     this.image = new Konva.Image({
       ...imageStyle,
-      image: orientation === 'left' ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
-      rotation: orientation === 'left' ? 180 : 0,
-      x: orientation === 'left' ? 11 : 9,
-      y: orientation === 'left' ? 14 : 6
+      image: enabled ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
+      rotation: enabled ? 180 : 0,
+      x: enabled ? 11 : 9,
+      y: enabled ? 14 : 6
     })
     this.add(this.rect, this.image)
-    if (this.orientation === 'left') {
+    if (enabled) {
       this.on('click', (e) => {
         e.cancelBubble = true
         onClick?.()
@@ -134,7 +152,7 @@ export class CustomTransformer extends Konva.Transformer {
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
       centeredScaling: config.scalingReference === 'center' ? true : false,
       anchorSize: 11,
-      rotateAnchorCursor: 'pointer',
+      rotateAnchorCursor: 'grab',
       anchorStyleFunc: (anchor) => {
         const rect = anchor as Konva.Rect
         rect.shadowEnabled(true)
@@ -207,12 +225,12 @@ export class CustomTransformer extends Konva.Transformer {
     rotator.on('mousedown touchstart', () => {
       this.rotatorTag.visible(true)
       dragging = true
-      setCursor('pointer')
+      setCursor('grabbing')
     })
     rotator.on('mouseout', () => {
       if (!dragging) return
       // Konva.Transformer resets the pointer to '', and we need to override that.
-      setCursor('pointer')
+      setCursor('grabbing')
     })
     this.on('transformend', () => {
       this.rotatorTag.visible(false)
