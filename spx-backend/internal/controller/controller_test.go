@@ -2,9 +2,13 @@ package controller
 
 import (
 	"context"
+	"github.com/qiniu/x/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -51,15 +55,31 @@ VTh1XIl/IELBoZ+rQXozGA==
 func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 	setTestEnv(t)
 
-	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	db, mock, err := sqlmock.New()
 	if err != nil {
 		return nil, nil, err
 	}
-
+	// 创建日志文件
+	logFile, err := os.OpenFile("gorm_test.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		t.Fatalf("Failed to open log file: %v", err)
+	}
+	// 设置 Gorm 的日志记录器，以便输出 SQL 语句
+	newLogger := logger.New(
+		log.New(logFile, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
 	gormDB, err := gorm.Open(mysql.New(mysql.Config{
 		Conn:                      db,
 		SkipInitializeWithVersion: true,
-	}))
+	}), &gorm.Config{
+		Logger: newLogger,
+	})
 
 	ctrl, err := New(context.Background(), gormDB)
 	if err != nil {
