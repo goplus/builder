@@ -109,6 +109,11 @@ export async function toText(file: File) {
   return decoder.decode(ab)
 }
 
+export const isText = (() => {
+  const types = ['application/json']
+  return (file: File) => file.type.startsWith('text/') || types.includes(file.type)
+})()
+
 export function fromConfig(name: string, config: unknown, options?: Options) {
   return fromText(name, JSON.stringify(config), options)
 }

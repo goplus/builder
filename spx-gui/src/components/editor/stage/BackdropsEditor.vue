@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIMenu, UIMenuItem } from '@/components/ui'
+import { UIMenu, UIMenuItem, useMessage } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { selectImg } from '@/utils/file'
 import { fromNativeFile } from '@/models/common/file'
@@ -38,6 +38,13 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorList from '../common/EditorList.vue'
 import BackdropItem from './BackdropItem.vue'
 import BackdropDetail from './BackdropDetail.vue'
+import { saveFiles } from '@/models/common/cloud'
+import { useI18n } from '@/utils/i18n'
+import { useNetwork } from '@/utils/network'
+
+const m = useMessage()
+const { t } = useI18n()
+const { isOnline } = useNetwork()
 
 const editorCtx = useEditorCtx()
 const stage = computed(() => editorCtx.project.stage)
@@ -54,6 +61,12 @@ const handleAddFromLocalFile = useMessageHandle(
     const file = fromNativeFile(img)
     const backdrop = await Backdrop.create(stripExt(img.name), file)
     const action = { name: { en: 'Add backdrop', zh: '添加背景' } }
+
+    if (isOnline.value) {
+      const [, backdropFiles] = backdrop.export()
+      await m.withLoading(saveFiles(backdropFiles), t({ en: 'Uploading files', zh: '上传文件中' }))
+    }
+
     editorCtx.project.history.doAction(action, () => {
       stage.value.addBackdrop(backdrop)
       stage.value.setDefaultBackdrop(backdrop.name)

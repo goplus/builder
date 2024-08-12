@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { loadImg } from '@/utils/dom'
-import { stripExt } from '@/utils/path'
+import { extname, stripExt } from '@/utils/path'
 import { memoizeAsync } from '@/utils/utils'
 import { getMimeFromExt } from '@/utils/file'
 import { toJpeg } from '@/utils/img'
@@ -51,7 +51,10 @@ async function apply() {
   const inputUrls = await getUrls(props.input)
   const outputUrls = await batchRemoveBackground(inputUrls)
   await drawTransitions(outputUrls)
-  const outputFiles = outputUrls.map((url) => createFileWithWebUrl(url))
+  const outputFiles = outputUrls.map((url, index) => {
+    const name = stripExt(props.input[index].name) + extname(url)
+    return createFileWithWebUrl(url, name)
+  })
   emit('applied', outputFiles)
 }
 
