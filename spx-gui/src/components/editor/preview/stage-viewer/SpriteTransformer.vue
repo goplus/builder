@@ -1,5 +1,5 @@
 <template>
-  <v-sprite-transformer ref="transformer" :config="config" />
+  <v-custom-transformer ref="transformer" :config="config" />
 </template>
 
 <script setup lang="ts">

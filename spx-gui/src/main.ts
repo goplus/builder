@@ -23,7 +23,7 @@ async function initApp() {
   await initI18n(app)
 
   app.use(VueKonva, {
-    customNodes: { Transformer: SpriteTransformer }
+    customNodes: { CustomTransformer: Transformer }
   })
 
   app.use(VueQueryPlugin)
