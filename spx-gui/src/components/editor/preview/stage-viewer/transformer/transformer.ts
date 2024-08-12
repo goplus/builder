@@ -181,11 +181,23 @@ export class Transformer extends Konva.Transformer {
     if (!(rotator instanceof Konva.Rect)) {
       throw new Error('rotator rect not found')
     }
+    const setCursor = (cursor: string) => {
+      const content = rotator.getStage()?.content
+      if (content) {
+        content.style.cursor = cursor
+      }
+    }
     rotator.on('mousedown touchstart', () => {
       this.rotatorTag.visible(true)
+      setCursor('pointer')
+    })
+    rotator.on('mouseout', () => {
+      // Konva.Transformer resets the pointer to '', and we need to override that.
+      setCursor('pointer')
     })
     this.on('transformend', () => {
       this.rotatorTag.visible(false)
+      setCursor('')
     })
     this.on(['flipFuncChange', 'spriteRotateStyleChange'].join(' '), () => this.update())
   }
