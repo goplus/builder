@@ -4,10 +4,9 @@
 
 <script setup lang="ts">
 import { computed, effect, nextTick, ref } from 'vue'
-import type { Transformer } from 'konva/lib/shapes/Transformer'
 import type { Node } from 'konva/lib/Node'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import type { SpriteTransformerConfig } from './transformer/transformer'
+import type { CustomTransformer, CustomTransformerConfig } from './custom-transformer'
 
 const props = defineProps<{
   spritesReadyMap: Map<string, boolean>
@@ -16,16 +15,17 @@ const props = defineProps<{
 const transformer = ref<any>()
 const editorCtx = useEditorCtx()
 
-const config = computed<SpriteTransformerConfig>(() => {
+const config = computed<CustomTransformerConfig>(() => {
   const sprite = editorCtx.project.selectedSprite
   return {
-    spriteRotationStyle: sprite?.rotationStyle
+    rotationStyle: sprite?.rotationStyle,
+    scalingReference: 'center'
   }
 })
 
 effect(async () => {
   if (transformer.value == null) return
-  const transformerNode: Transformer = transformer.value.getNode()
+  const transformerNode: CustomTransformer = transformer.value.getNode()
   transformerNode.nodes([])
   const sprite = editorCtx.project.selectedSprite
   if (sprite == null) return

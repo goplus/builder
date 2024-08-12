@@ -1,4 +1,3 @@
-import { RotationStyle } from '@/models/sprite'
 import Konva from 'konva'
 import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import transformerFlipArrowPng from './transformer-flip-arrow.png'
@@ -20,10 +19,10 @@ transformerFlipArrowDisabledImg.src = transformerFlipArrowDisabledPng
 const rotatorCircleImg = new Image()
 rotatorCircleImg.src = rotatorCirclePng
 
-export type SpriteTransformerConfig = {
-  spriteRotationStyle?: RotationStyle
+export type CustomTransformerConfig = {
+  rotationStyle?: 'none' | 'normal' | 'left-right'
   scalingReference?: 'up-left' | 'center'
-} & Pick<TransformerConfig, 'centeredScaling'>
+}
 
 class RotatorTag extends Konva.Group {
   text: Konva.Text
@@ -92,7 +91,7 @@ class FlipButton extends Konva.Group {
       ...imageStyle,
       image: orientation === 'left' ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
       rotation: orientation === 'left' ? 180 : 0,
-      x: orientation === 'left' ? 11 : 8,
+      x: orientation === 'left' ? 11 : 9,
       y: orientation === 'left' ? 14 : 6
     })
     this.add(this.rect, this.image)
@@ -105,20 +104,31 @@ class FlipButton extends Konva.Group {
   }
 }
 
-export class Transformer extends Konva.Transformer {
+export class CustomTransformer extends Konva.Transformer {
   flipButtons: {
     left: FlipButton
     right: FlipButton
   }
   rotatorTag: RotatorTag
 
-  spriteRotationStyle(attr?: RotationStyle): RotationStyle | undefined {
-    if (!attr) return this.getAttr('spriteRotationStyle')
-    this.setAttr('spriteRotationStyle', attr)
+  rotationStyle(
+    attr?: CustomTransformerConfig['rotationStyle']
+  ): CustomTransformerConfig['rotationStyle'] {
+    if (!attr) return this.getAttr('rotationStyle')
+    this.setAttr('rotationStyle', attr)
   }
 
-  constructor(config: SpriteTransformerConfig = {}) {
+  constructor(config: CustomTransformerConfig = {}) {
     const transformerConfig: TransformerConfig = {
+      // Makes the transformer still selected for current node even if the user
+      // clicks on another node on top of it.
+      shouldOverdrawWholeArea: true,
+
+      // Prevents negative scale.
+      flipEnabled: false,
+
+      keepRatio: true,
+
       borderStroke: 'rgba(10, 165, 190, 1)',
       rotateLineVisible: false,
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
@@ -159,6 +169,12 @@ export class Transformer extends Konva.Transformer {
 
     const left = new FlipButton('left', () => {
       const node = this._nodes[0]
+
+      // Instead of setting scaleX to *= -1, we do a rotation of 180 degrees and flip the scaleY.
+      // This is visually the same.
+      // For more details, refer to stage-viewer/SpriteItem.vue, line 94.
+      // We need mutate the rotation to match the left-right flip logic in the editor,
+      // as it decides the flip based on the rotation only.
       node.scaleY(node.scaleY() * -1)
       node.rotation(node.rotation() - 180)
       node._fire('transformend', { target: node })
@@ -203,7 +219,7 @@ export class Transformer extends Konva.Transformer {
       setCursor('')
       dragging = false
     })
-    this.on('spriteRotationStyleChange', () => {
+    this.on('rotationStyleChange', () => {
       this.update()
     })
   }
@@ -212,7 +228,7 @@ export class Transformer extends Konva.Transformer {
     super.update()
     {
       const { left, right } = this.flipButtons
-      if (this.spriteRotationStyle() === RotationStyle.leftRight) {
+      if (this.rotationStyle() === 'left-right') {
         left.x(-10)
         left.y(this.height() / 2 - 10)
         left.visible(true)
@@ -226,7 +242,7 @@ export class Transformer extends Konva.Transformer {
       }
     }
 
-    if (this.spriteRotationStyle() === RotationStyle.normal) {
+    if (this.rotationStyle() === 'normal') {
       this.rotateEnabled(true)
     } else {
       this.rotateEnabled(false)

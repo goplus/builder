@@ -7,7 +7,7 @@ import App from './App.vue'
 import { initRouter } from './router'
 import { initStore, useUserStore } from './stores'
 import { client } from './apis/common'
-import { Transformer } from './components/editor/preview/stage-viewer/transformer/transformer'
+import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 
 const initApiClient = async () => {
   const userStore = useUserStore()
@@ -23,7 +23,7 @@ async function initApp() {
   await initI18n(app)
 
   app.use(VueKonva as any, {
-    customNodes: { CustomTransformer: Transformer }
+    customNodes: { CustomTransformer }
   })
 
   app.use(VueQueryPlugin)
