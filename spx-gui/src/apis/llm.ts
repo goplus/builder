@@ -5,60 +5,78 @@
 import {client} from './common'
 
 export type ProjectContext = {
-    ProjectName: string
-    ProjectVariable: ProjectVariable
-    ProjectCode: Code[]
+    projectName: string
+    projectVariable: ProjectVariable
+    projectCode: Code[]
 }
 
 export type ProjectVariable = {
-    Type: string  // Sprites, Sounds, Stage, Costumes
-    Name: string
+    type: string  // Sprites, Sounds, Stage, Costumes
+    name: string
 }
 
 export type Code = {
-    Type: string
-    Name: string
-    Src: string
+    type: string
+    name: string
+    src: string
+}
+
+export enum ChatAction {
+    _,
+    explain,
+    comment,
+    fixCode,
+}
+
+export enum UserLang {
+    _,
+    english,
+    chinese
 }
 
 export type AIStartChatParams = {
-    ChatAction: number // "Explain" | "Comment" | "FixCode"
-    ProjectContext: ProjectContext
-    UserInput: string
-    UserLang: number // "english" | "chinese"
+    chatAction: ChatAction // "Explain" | "Comment" | "FixCode"
+    projectContext: ProjectContext
+    userInput: string
+    userLang: UserLang // "english" | "chinese"
 }
 
 export type AIChatParams = {
-    UserInput: string
+    userInput: string
+}
+
+export enum TaskAction {
+    _,
+    suggest,
 }
 
 export type AITaskParams = {
-    TaskAction: number
-    ProjectContext: ProjectContext
-    UserCode: string
-    UserCursor: Cursor
+    taskAction: TaskAction
+    projectContext: ProjectContext
+    userCode: string
+    userCursor: Cursor
 }
 
 export type Cursor = {
-    Line: number
-    Column: number
+    line: number
+    column: number
 }
 
 export type ChatResp = {
-    ID           : string
-    RespMessage  : string
-    RespQuestions: string[]
+    id           : string
+    respMessage  : string
+    respQuestions: string[]
 }
 
 export type TaskResp = {
-    TaskAction   :number
-    CodeSuggests :CodeSuggest
+    taskAction   :number
+    codeSuggests :CodeSuggest
     // ...
 }
 
 export type CodeSuggest = {
-    Label    :  string
-    InsertText: string
+    label    :  string
+    insertText: string
 }
 
 export async function startChat(params: AIStartChatParams) {

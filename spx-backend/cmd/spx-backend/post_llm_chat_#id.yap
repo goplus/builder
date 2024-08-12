@@ -1,7 +1,7 @@
 // Start ai chat.
 //
 // Request:
-//   POST /llm/chat
+//   POST /llm/chat/:id
 
 import (
 "github.com/goplus/builder/spx-backend/internal/controller"
@@ -14,11 +14,11 @@ if !ok {
 return
 }
 
-params := &controller.AIStartChatParams{}
+params := &contriller.AIChatParams{}
 if !parseJSON(ctx, params) {
 return
 }
-resp, err := ctrl.StartChat(ctx, params)
+resp, err := ctrl.NextChat(ctx, ${id}, params.UserInput)
 if err != nil {
 return
 }
