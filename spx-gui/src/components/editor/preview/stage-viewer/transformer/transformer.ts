@@ -22,7 +22,6 @@ rotatorCircleImg.src = rotatorCirclePng
 
 export type SpriteTransformerConfig = {
   spriteRotationStyle?: RotationStyle
-  flipFunc?: () => void
   scalingReference?: 'up-left' | 'center'
 } & Pick<TransformerConfig, 'centeredScaling'>
 
@@ -76,7 +75,10 @@ class FlipButton extends Konva.Group {
       shadowEnabled: true,
       shadowColor: 'rgba(51, 51, 51, 0.2)',
       shadowBlur: 4,
-      shadowOffsetY: 2
+      shadowOffsetY: 2,
+
+      stroke: 'rgba(217, 223, 229, 1)',
+      strokeWidth: 0.5
     }
     const imageStyle: Partial<ImageConfig> = {
       width: 4,
@@ -115,18 +117,14 @@ export class Transformer extends Konva.Transformer {
     this.setAttr('spriteRotationStyle', attr)
   }
 
-  flipFunc(attr?: () => void): (() => void) | undefined {
-    if (!attr) return this.getAttr('flipFunc')
-    this.setAttr('flipFunc', attr)
-  }
-
   constructor(config: SpriteTransformerConfig = {}) {
     const transformerConfig: TransformerConfig = {
       borderStroke: 'rgba(10, 165, 190, 1)',
       rotateLineVisible: false,
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
       centeredScaling: config.scalingReference === 'center' ? true : false,
-      // rotateAnchorOffset: 4 + 20 / 2,
+      anchorSize: 11,
+      rotateAnchorCursor: 'pointer',
       anchorStyleFunc: (anchor) => {
         const rect = anchor as Konva.Rect
         rect.shadowEnabled(true)
@@ -160,13 +158,10 @@ export class Transformer extends Konva.Transformer {
     })
 
     const left = new FlipButton('left', () => {
-      this.scaleX(this.scaleX() * -1)
-      const nodeRect = this._getNodeRect()
-      this._fitNodesInto({
-        x: -nodeRect.x,
-        ...nodeRect
-      })
-      // this.flipFunc()?.()
+      const node = this._nodes[0]
+      node.scaleY(node.scaleY() * -1)
+      node.rotation(node.rotation() - 180)
+      node._fire('transformend', { target: node })
     })
 
     const right = new FlipButton('right')

@@ -19,17 +19,7 @@ const editorCtx = useEditorCtx()
 const config = computed<SpriteTransformerConfig>(() => {
   const sprite = editorCtx.project.selectedSprite
   return {
-    spriteRotationStyle: sprite?.rotationStyle,
-    flipFunc: async () => {
-      editorCtx.project.history.doAction(
-        {
-          name: { en: 'Flip Sprite', zh: '翻转精灵' }
-        },
-        () => {
-          sprite?.setHeading(sprite.heading === 90 ? -90 : 90)
-        }
-      )
-    }
+    spriteRotationStyle: sprite?.rotationStyle
   }
 })
 
