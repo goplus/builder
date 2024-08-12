@@ -97,14 +97,14 @@ class FlipButton extends Konva.Group {
         content.style.cursor = cursor
       }
     }
-    if (enabled) {
-      this.rect.on('mouseenter', () => {
-        setCursor('pointer')
-      })
-      this.rect.on('mouseout', () => {
-        setCursor('')
-      })
-    }
+
+    this.rect.on('mouseenter', () => {
+      setCursor(enabled ? 'pointer' : 'not-allowed')
+    })
+    this.rect.on('mouseout', () => {
+      setCursor('')
+    })
+
     this.image = new Konva.Image({
       ...imageStyle,
       image: enabled ? transformerFlipArrowImg : transformerFlipArrowDisabledImg,
@@ -112,6 +112,10 @@ class FlipButton extends Konva.Group {
       x: enabled ? 11 : 9,
       y: enabled ? 14 : 6
     })
+    this.image.on('mouseenter', () => {
+      setCursor(enabled ? 'pointer' : 'not-allowed')
+    })
+
     this.add(this.rect, this.image)
     if (enabled) {
       this.on('click', (e) => {
