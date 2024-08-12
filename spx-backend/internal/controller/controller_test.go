@@ -59,14 +59,9 @@ func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	// 创建日志文件
-	logFile, err := os.OpenFile("gorm_test.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		t.Fatalf("Failed to open log file: %v", err)
-	}
-	// 设置 Gorm 的日志记录器，以便输出 SQL 语句
+
 	newLogger := logger.New(
-		log.New(logFile, "\r\n", log.LstdFlags),
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
 			SlowThreshold:             time.Second,
 			LogLevel:                  logger.Info,
@@ -76,12 +71,12 @@ func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 	)
 	gormDB, err := gorm.Open(mysql.New(mysql.Config{
 		Conn:                      db,
-		SkipInitializeWithVersion: true,
+		SkipInitializeWithVersion: true, // Skip initializing database with version,avoiding the error "Error 1046: No database selected"
 	}), &gorm.Config{
 		Logger: newLogger,
 	})
 
-	ctrl, err := New(context.Background(), gormDB)
+	ctrl, err := New(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -99,7 +94,7 @@ func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 func TestNew(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		setTestEnv(t)
-		ctrl, err := New(context.Background(), nil)
+		ctrl, err := New(context.Background())
 		require.NoError(t, err)
 		require.NotNil(t, ctrl)
 	})
@@ -107,7 +102,7 @@ func TestNew(t *testing.T) {
 	t.Run("InvalidDSN", func(t *testing.T) {
 		setTestEnv(t)
 		t.Setenv("GOP_SPX_DSN", "invalid-dsn")
-		ctrl, err := New(context.Background(), nil)
+		ctrl, err := New(context.Background())
 		require.Error(t, err)
 		assert.EqualError(t, err, "invalid DSN: missing the slash separating the database name")
 		require.Nil(t, ctrl)

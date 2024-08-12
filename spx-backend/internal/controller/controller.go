@@ -44,7 +44,7 @@ type Controller struct {
 }
 
 // New creates a new controller.
-func New(ctx context.Context, orm *gorm.DB) (*Controller, error) {
+func New(ctx context.Context) (*Controller, error) {
 	logger := log.GetLogger()
 
 	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
