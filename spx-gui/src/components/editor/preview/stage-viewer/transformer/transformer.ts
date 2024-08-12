@@ -187,17 +187,21 @@ export class Transformer extends Konva.Transformer {
         content.style.cursor = cursor
       }
     }
+    let dragging = false
     rotator.on('mousedown touchstart', () => {
       this.rotatorTag.visible(true)
+      dragging = true
       setCursor('pointer')
     })
     rotator.on('mouseout', () => {
+      if (!dragging) return
       // Konva.Transformer resets the pointer to '', and we need to override that.
       setCursor('pointer')
     })
     this.on('transformend', () => {
       this.rotatorTag.visible(false)
       setCursor('')
+      dragging = false
     })
     this.on(['flipFuncChange', 'spriteRotateStyleChange'].join(' '), () => this.update())
   }
