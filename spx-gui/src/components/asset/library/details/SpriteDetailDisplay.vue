@@ -3,6 +3,7 @@
     <div class="carousel-container">
       <NCarousel
         show-arrow
+        :show-dots="false"
         autoplay
         class="carousel"
         :interval="5000"
@@ -27,6 +28,14 @@
           />
           <UILoading v-else-if="custom[imgLoading].value" />
         </NCarouselItem>
+        <template #arrow="{ prev, next }">
+          <div type="button" class="custom-arrow custom-arrow--left" role="button" @click="prev">
+            <NIcon :size="32" color="var(--n-text-color, #57606a)"><ChevronLeftFilled /></NIcon>
+          </div>
+          <div type="button" class="custom-arrow custom-arrow--right" role="button" @click="next">
+            <NIcon :size="32" color="var(--n-text-color, #57606a)"><ChevronRightFilled /></NIcon>
+          </div>
+        </template>
       </NCarousel>
     </div>
     <div class="thumbnail-switcher-container">
@@ -139,9 +148,8 @@ const handleThumbnailScroll = (direction: number) => {
     } else if (direction < 0 && scrollLeft <= 0) {
       targetLeft = maxLeft
       currentDotIndex.value = dotCount.value - 1
-    }
-    else {
-      currentDotIndex.value = Math.floor(targetLeft / clientWidth)
+    } else {
+      currentDotIndex.value = Math.max(0, Math.floor(targetLeft / clientWidth))
     }
 
     thumbnailContainer.value.scrollTo({
@@ -247,6 +255,39 @@ const currentDotIndex = ref(0)
   box-shadow: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
 }
 
+.custom-arrow {
+  cursor: pointer;
+  background-color: var(--ui-color-grey-100, #ffffff);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+  box-shadow: var(--ui-box-shadow-big);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+  position: absolute;
+}
+
+.carousel-container:hover .custom-arrow {
+  opacity: 1;
+}
+
+.custom-arrow--left {
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.custom-arrow--right {
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .thumbnail-switcher-container {
   display: flex;
   flex-direction: column;
@@ -265,7 +306,7 @@ const currentDotIndex = ref(0)
     margin: 5px 10px;
     width: var(--container-width);
   }
-  
+
   .switcher-scroll-btn {
     cursor: pointer;
     display: flex;
@@ -355,7 +396,9 @@ const currentDotIndex = ref(0)
   height: 5px;
   border-radius: 5px;
   background-color: var(--ui-color-grey-500);
-  transition: background-color 0.3s, width 0.3s;
+  transition:
+    background-color 0.3s,
+    width 0.3s;
 
   &.active {
     background-color: var(--ui-color-primary-main, #0bc0cf);
