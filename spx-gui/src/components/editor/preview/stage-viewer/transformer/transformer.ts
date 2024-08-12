@@ -203,7 +203,9 @@ export class Transformer extends Konva.Transformer {
       setCursor('')
       dragging = false
     })
-    this.on(['flipFuncChange', 'spriteRotateStyleChange'].join(' '), () => this.update())
+    this.on('spriteRotationStyleChange', () => {
+      this.update()
+    })
   }
 
   update(): void {
