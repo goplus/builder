@@ -196,6 +196,7 @@ type chat struct {
 	ProjectContext    ProjectContext `json:"projectContext"`
 	CreatAt           time.Time      `json:"creatAt"`
 	Messages          llm.Messages   `json:"messages"`
+	User              *User          `json:"user"`
 }
 
 func newChat(chatAction int, ctx ProjectContext, lang int) *chat {
@@ -306,7 +307,12 @@ func createLLMRequestBodyMessages(sysInput, userInput string) llm.Messages {
 }
 
 func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (ChatResp, error) {
+	user, ok := UserFromContext(ctx)
+	if !ok {
+		return ChatResp{}, ErrForbidden
+	}
 	chat := newChat(p.ChatAction, p.ProjectContext, p.UserLang)
+	chat.User = user
 	systemPrompt := chatPromptGenerator(*chat)
 	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
 	resp, err := ctrl.llm.CallLLM(chat.getMessages())
@@ -321,11 +327,16 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	return newChatResp(resp, chat.ID), nil
 }
 
-func (ctrl *Controller) NextChatEx(ctx context.Context, id string, userInput string) (chatResp ChatResp, err error) {
+func (ctrl *Controller) NextChat(ctx context.Context, id string, userInput string) (chatResp ChatResp, err error) {
 	chat, ok := chatMapMgr.getChat(id)
 	if !ok {
 		err = fmt.Errorf("no chat found with id: %s", id)
 		return
+	}
+	chatUser := chat.User
+	_, err = EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return ChatResp{}, err
 	}
 	chatResp, err = chat.nextInput(ctrl, userInput)
 	return
