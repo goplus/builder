@@ -51,6 +51,11 @@ func TestListAssets(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WillReturnRows(mock.NewRows([]string{"display_name"}).
 				AddRow("foo"))
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
+
 		assets, err := ListAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
