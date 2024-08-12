@@ -29,74 +29,64 @@
         </NCarouselItem>
       </NCarousel>
     </div>
-    <div class="carousel-switcher-container">
-      <div class="switcher-scroll-btn left" role="button">
-        <NIcon :size="28">
-          <ChevronLeftFilled />
-        </NIcon>
-      </div>
-      <div class="carousel-switcher">
-        <div
-          v-for="(anim, index) in animations"
-          :key="anim.name"
-          class="switcher"
-          @click="currentIndex = index"
-        >
-          <NTooltip trigger="hover" placement="bottom">
-            <template #trigger>
-              <NImage
-                v-if="anim[imgSrc].value"
-                :src="anim[imgSrc].value ?? undefined"
-                width="100%"
-                object-fit="contain"
-                style="width: 100%"
-                preview-disabled
-              />
-              <UILoading v-else-if="anim[imgLoading].value" />
-            </template>
-            <span
-              >{{
-                $t({
-                  en: `Animation: ${anim.name}`,
-                  zh: `动画: ${anim.name}`
-                })
-              }}
-            </span>
-          </NTooltip>
+    <div class="thumbnail-switcher-container">
+      <div class="thumbnail-switcher">
+        <div class="switcher-scroll-btn left" role="button" @click="handleThumbnailScroll(-1)">
+          <NIcon :size="28">
+            <ChevronLeftFilled />
+          </NIcon>
         </div>
         <div
-          v-for="(custom, index) in customs"
-          :key="custom.name"
-          class="switcher"
-          @click="currentIndex = index + animations.length"
+          ref="thumbnailContainer"
+          class="thumbnail-list"
+          :style="{
+            '--count-of-group': COUNT_OF_GROUP
+          }"
         >
-          <NTooltip trigger="hover" placement="bottom">
-            <template #trigger>
-              <NImage
-                v-if="custom[imgSrc].value"
-                :src="custom[imgSrc].value ?? undefined"
-                width="100%"
-                object-fit="contain"
-                style="width: 100%"
-                preview-disabled
-              />
-              <UILoading v-else-if="custom[imgLoading].value" />
-            </template>
-            <span
-              >{{
-                $t({
-                  en: `Custom: ${custom.name}`,
-                  zh: `造型: ${custom.name}`
-                })
-              }}
-            </span>
-          </NTooltip>
+          <div
+            v-for="(preview, index) in previews"
+            :key="preview.name"
+            ref="thumbnail"
+            class="thumbnail-item"
+            :class="{
+              'group-start': index % 4 === 0,
+              active: currentIndex === index
+            }"
+            @click="currentIndex = index"
+          >
+            <NTooltip trigger="hover" placement="bottom">
+              <template #trigger>
+                <NImage
+                  v-if="preview.img.value"
+                  :src="preview.img.value ?? undefined"
+                  width="100%"
+                  object-fit="contain"
+                  style="width: 100%"
+                  preview-disabled
+                />
+                <UILoading v-else-if="preview.loading.value" />
+              </template>
+              <span v-if="preview.type === 'animation'"
+                >{{ $t({ en: 'Animation', zh: '动画' }) }}: {{ preview.name }}</span
+              >
+              <span v-else>{{ $t({ en: 'Custom', zh: '造型' }) }}: {{ preview.name }}</span>
+            </NTooltip>
+          </div>
+        </div>
+        <div class="switcher-scroll-btn right" role="button" @click="handleThumbnailScroll(1)">
+          <NIcon :size="28">
+            <ChevronRightFilled />
+          </NIcon>
         </div>
       </div>
-      <div class="switcher-scroll-btn right" role="button">
-        <NIcon :size="28">
-          <ChevronRightFilled />
-        </NIcon>
+      <div class="thumbnail-switcher-dots">
+        <div
+          v-for="i in dotCount"
+          :key="i"
+          class="thumbnail-switcher-dot"
+          :class="{ active: currentDotIndex === i - 1 }"
+          @click="handleCarouselSwitch((i - 1) * COUNT_OF_GROUP)"
+        ></div>
       </div>
     </div>
   </div>
@@ -113,14 +103,54 @@ import { UILoading } from '@/components/ui'
 import { computed, ref } from 'vue'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
 
+// The number of items in each snapped scroll group
+const COUNT_OF_GROUP = 4
+
 const props = defineProps<{
   asset: AssetData<AssetType.Sprite>
 }>()
 
+const thumbnailContainer = ref<HTMLElement | null>(null)
+const thumbnail = ref<HTMLElement[]>([])
+
 const currentIndex = ref(0)
 
 const handleCarouselSwitch = (index: number) => {
+  thumbnail.value[index].scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+    inline: 'center'
+  })
+
   currentIndex.value = index
+  currentDotIndex.value = Math.floor(index / COUNT_OF_GROUP)
+}
+
+const handleThumbnailScroll = (direction: number) => {
+  if (thumbnailContainer.value) {
+    const { clientWidth, scrollLeft, scrollWidth } = thumbnailContainer.value
+    const offset = clientWidth * direction
+    const maxLeft = scrollWidth - clientWidth
+
+    let targetLeft = scrollLeft + offset
+    if (direction > 0 && scrollLeft >= maxLeft) {
+      targetLeft = 0
+      currentDotIndex.value = 0
+    } else if (direction < 0 && scrollLeft <= 0) {
+      targetLeft = maxLeft
+      currentDotIndex.value = dotCount.value - 1
+    }
+    else {
+      currentDotIndex.value = Math.floor(targetLeft / clientWidth)
+    }
+
+    thumbnailContainer.value.scrollTo({
+      left: targetLeft,
+      behavior: 'smooth'
+    })
+
+    currentIndex.value = currentDotIndex.value * COUNT_OF_GROUP
+  }
 }
 
 const sprite = useAsyncComputed(() => {
@@ -164,14 +194,45 @@ const customs = computed(() => {
       }) ?? []
   )
 })
+
+const previews = computed(() => {
+  return animations.value
+    .map((a) => ({
+      name: a.name,
+      type: 'animation' as 'animation' | 'custom',
+      img: a[imgSrc],
+      loading: a[imgLoading]
+    }))
+    .concat(
+      customs.value.map((c) => ({
+        name: c.name,
+        type: 'custom' as const,
+        img: c[imgSrc],
+        loading: c[imgLoading]
+      }))
+    )
+})
+
+const dotCount = computed(() => {
+  return Math.ceil(previews.value.length / COUNT_OF_GROUP)
+})
+
+const currentDotIndex = ref(0)
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.container {
+  --container-width: 95%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .carousel-container {
-  width: 100%;
+  width: var(--container-width);
   height: 0;
   overflow: visible;
-  padding-bottom: 61.8%;
+  padding-bottom: calc(var(--container-width) * 0.5625);
   position: relative;
 }
 
@@ -186,49 +247,119 @@ const customs = computed(() => {
   box-shadow: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
 }
 
-.carousel-switcher-container {
-  --width: 150px;
-  --height: calc(var(--width) * 0.618);
+.thumbnail-switcher-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding-top: 10px;
-  margin: 5px 10px;
+  gap: 5px;
+  width: var(--container-width);
 }
 
-.switcher-scroll-btn {
-  cursor: pointer;
+.thumbnail-switcher {
+  & {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    margin: 5px 10px;
+    width: var(--container-width);
+  }
+  
+  .switcher-scroll-btn {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--ui-border-radius-1, 8px);
+    padding: 0 5px;
+    transition: background-color 0.2s;
+    align-self: stretch;
+  }
+
+  .switcher-scroll-btn:hover {
+    background-color: var(--ui-color-grey-300);
+  }
+
+  .thumbnail-list {
+    --gap: 10px;
+    --width: calc((100% - var(--gap) * (var(--count-of-group, 4) - 1)) / var(--count-of-group, 4));
+    --height: calc(var(--width) * 0.618);
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+    gap: var(--gap);
+    user-select: none;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    padding-right: 1px;
+  }
+
+  .thumbnail-item {
+    cursor: pointer;
+    border-radius: var(--ui-border-radius-1, 8px);
+    overflow: visible;
+    width: var(--width);
+    flex: 0 0 var(--width);
+    height: 0;
+    padding-bottom: var(--height);
+    border: 1px solid var(--ui-color-border, #cbd2d8);
+
+    box-shadow: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
+    position: relative;
+    transition: border-color 0.3s;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      filter: opacity(0.1);
+      pointer-events: none;
+      transition: background-color 0.3s;
+    }
+
+    &.group-start {
+      scroll-snap-align: start;
+    }
+
+    &.active {
+      border: 1px solid var(--ui-color-primary-main, #0bc0cf);
+    }
+
+    &.active::before {
+      background-color: var(--ui-color-primary-main, #0bc0cf);
+    }
+
+    & > * {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+  }
+}
+
+.thumbnail-switcher-dots {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: var(--ui-border-radius-1, 8px);
-  height: var(--height);
-  padding: 0 5px;
+  gap: 5px;
 }
 
-.switcher-scroll-btn:hover {
-  background-color: var(--ui-color-grey-300);
-}
-
-.carousel-switcher {
-  display: flex;
-  overflow-x: auto;
-  gap: 10px;
-  gap: 10px;
-
-  scrollbar-width: none;
-}
-
-.switcher {
+.thumbnail-switcher-dot {
   cursor: pointer;
-  border-radius: var(--ui-border-radius-1, 8px);
-  overflow: hidden;
-  width: var(--width);
-  flex: 0 0 var(--width);
-  height: var(--height);
-  border: 1px solid var(--ui-color-border, #cbd2d8);
+  width: 5px;
+  height: 5px;
+  border-radius: 5px;
+  background-color: var(--ui-color-grey-500);
+  transition: background-color 0.3s, width 0.3s;
 
-  box-shadow: var(--ui-box-shadow-small, 0px 2px 8px 0px rgba(51, 51, 51, 0.08));
+  &.active {
+    background-color: var(--ui-color-primary-main, #0bc0cf);
+    width: 10px;
+  }
 }
 </style>

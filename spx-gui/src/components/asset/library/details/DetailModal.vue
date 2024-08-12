@@ -153,7 +153,7 @@ const displayTime = (date: Date | string, options?: Intl.DateTimeFormatOptions) 
           dateStyle: 'medium',
           timeStyle: 'short',
           ...options
-        }).format(date)
+        }).format(date as Date)
       }
       return undefined
     }
@@ -207,7 +207,7 @@ main {
   }
 
   .detail {
-    margin-top: 20px;
+    margin-top: 0px;
     height: 100%;
     padding: 0 20px;
   }
