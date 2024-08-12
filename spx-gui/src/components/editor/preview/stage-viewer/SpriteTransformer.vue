@@ -19,7 +19,7 @@ const config = computed<CustomTransformerConfig>(() => {
   const sprite = editorCtx.project.selectedSprite
   return {
     rotationStyle: sprite?.rotationStyle,
-    scalingReference: 'center'
+    centeredScaling: true
   }
 })
 

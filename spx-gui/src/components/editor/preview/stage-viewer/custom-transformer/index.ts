@@ -21,8 +21,7 @@ rotatorCircleImg.src = rotatorCirclePng
 
 export type CustomTransformerConfig = {
   rotationStyle?: 'none' | 'normal' | 'left-right'
-  scalingReference?: 'up-left' | 'center'
-}
+} & Pick<TransformerConfig, 'centeredScaling'>
 
 class RotatorTag extends Konva.Group {
   text: Konva.Text
@@ -154,7 +153,6 @@ export class CustomTransformer extends Konva.Transformer {
       borderStroke: 'rgba(10, 165, 190, 1)',
       rotateLineVisible: false,
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
-      centeredScaling: config.scalingReference === 'center' ? true : false,
       anchorSize: 11,
       rotateAnchorCursor: 'grab',
       anchorStyleFunc: (anchor) => {
