@@ -22,7 +22,7 @@ async function initApp() {
   await initRouter(app)
   await initI18n(app)
 
-  app.use(VueKonva, {
+  app.use(VueKonva as any, {
     customNodes: { CustomTransformer: Transformer }
   })
 
