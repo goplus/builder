@@ -44,7 +44,7 @@ type Controller struct {
 }
 
 // New creates a new controller.
-func New(ctx context.Context) (*Controller, error) {
+func New(ctx context.Context, orm *gorm.DB) (*Controller, error) {
 	logger := log.GetLogger()
 
 	if err := godotenv.Load(); err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -59,16 +59,20 @@ func New(ctx context.Context) (*Controller, error) {
 		return nil, err
 	}
 	// TODO(who): Configure connection pool and timeouts.
-	ormDb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: ormLogger.Default.LogMode(ormLogger.Info),
-		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
-		},
-	})
-	if err != nil {
-		logger.Printf("failed to connect gorm: %v", err)
-		return nil, err
+	var ormDb *gorm.DB
+	if os.Getenv("ENV") != "test" {
+		ormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+			Logger: ormLogger.Default.LogMode(ormLogger.Info),
+			NamingStrategy: schema.NamingStrategy{
+				SingularTable: true,
+			},
+		})
+		if err != nil {
+			logger.Printf("failed to connect gorm: %v", err)
+			return nil, err
+		}
 	}
+
 	kodoConfig := &kodoConfig{
 		cred: qiniuAuth.New(
 			mustEnv(logger, "KODO_AK"),

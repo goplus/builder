@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -12,6 +14,7 @@ import (
 func setTestEnv(t *testing.T) {
 	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
 	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
+	t.Setenv("ENV", "test")
 
 	t.Setenv("KODO_AK", "fake-kodo-ak")
 	t.Setenv("KODO_SK", "fake-kodo-sk")
@@ -48,26 +51,35 @@ VTh1XIl/IELBoZ+rQXozGA==
 func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 	setTestEnv(t)
 
-	db, mock, err := sqlmock.New()
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	if err != nil {
 		return nil, nil, err
 	}
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}))
+
+	ctrl, err := New(context.Background(), gormDB)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	require.NoError(t, err)
+	ctrl.db = db
+	ctrl.ormDb = gormDB
+
 	t.Cleanup(func() {
 		db.Close()
 	})
-
-	ctrl, err := New(context.Background())
-	if err != nil {
-		return nil, nil, err
-	}
-	ctrl.db = db
 	return ctrl, mock, nil
 }
 
 func TestNew(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		setTestEnv(t)
-		ctrl, err := New(context.Background())
+		ctrl, err := New(context.Background(), nil)
 		require.NoError(t, err)
 		require.NotNil(t, ctrl)
 	})
@@ -75,7 +87,7 @@ func TestNew(t *testing.T) {
 	t.Run("InvalidDSN", func(t *testing.T) {
 		setTestEnv(t)
 		t.Setenv("GOP_SPX_DSN", "invalid-dsn")
-		ctrl, err := New(context.Background())
+		ctrl, err := New(context.Background(), nil)
 		require.Error(t, err)
 		assert.EqualError(t, err, "invalid DSN: missing the slash separating the database name")
 		require.Nil(t, ctrl)

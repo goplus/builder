@@ -25,7 +25,7 @@ var (
 
 logger := log.GetLogger()
 
-ctrl, err = controller.New(context.Background())
+ctrl, err = controller.New(context.Background(),nil)
 if err != nil {
 	logger.Fatalln("Failed to create a new controller:", err)
 }

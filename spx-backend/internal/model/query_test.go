@@ -78,7 +78,7 @@ func TestQueryByPage(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM user WHERE status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "status"}).
 				AddRow(1, "foo", StatusNormal))
-		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil)
+		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil, false)
 		require.NoError(t, err)
 		assert.Equal(t, 1, paginatedUsers.Total)
 		require.Len(t, paginatedUsers.Data, 1)
@@ -92,7 +92,7 @@ func TestQueryByPage(t *testing.T) {
 
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM user WHERE status != \?`).
 			WillReturnError(sql.ErrConnDone)
-		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil)
+		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil, false)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 		assert.Nil(t, paginatedUsers)
@@ -108,7 +108,7 @@ func TestQueryByPage(t *testing.T) {
 				AddRow(1))
 		mock.ExpectQuery(`SELECT \* FROM user WHERE status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WillReturnError(sql.ErrConnDone)
-		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil)
+		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil, false)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 		assert.Nil(t, paginatedUsers)
@@ -125,7 +125,7 @@ func TestQueryByPage(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM user WHERE status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "age", "status"}).
 				AddRow(1, "foo", 18, StatusNormal))
-		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil)
+		paginatedUsers, err := QueryByPage[User](context.Background(), db, "user", Pagination{Index: 1, Size: 10}, nil, nil, false)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "column age does not exist in struct")
 		assert.Nil(t, paginatedUsers)

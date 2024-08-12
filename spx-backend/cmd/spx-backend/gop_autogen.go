@@ -129,7 +129,7 @@ func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:26:1
 	logger := log.GetLogger()
 //line cmd/spx-backend/main.yap:28:1
-	this.ctrl, this.err = controller.New(context.Background())
+	this.ctrl, this.err = controller.New(context.Background(), nil)
 //line cmd/spx-backend/main.yap:29:1
 	if this.err != nil {
 //line cmd/spx-backend/main.yap:30:1
