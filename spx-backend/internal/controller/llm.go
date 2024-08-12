@@ -294,6 +294,7 @@ func (c *chat) nextInput(ctrl *Controller, userInput string) (ChatResp, error) {
 	if err != nil {
 		return ChatResp{}, err
 	}
+	c.pushMessage(llm.ChatRequestBodyMessagesRoleAssistant, resp.Choices[0].Message.Content)
 	return newChatResp(resp, c.ID), nil
 }
 
@@ -370,6 +371,15 @@ func createLLMRequestBodyMessages(sysInput, userInput string) llm.Messages {
 	return msg
 }
 
+func createLLMRequestBodyMessagesWithProjectCtx(sysInput, userInput string, projectContext ProjectContext) llm.Messages {
+	msg := llm.CreateMessage()
+
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleSystem, sysInput)
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleUser, fmt.Sprintf("UserInput: %s, User Entire Project %s", userInput, projectContext.String()))
+
+	return msg
+}
+
 func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (ChatResp, error) {
 	if ok, msg := p.Validate(); !ok {
 		return ChatResp{}, errors.New(msg)
@@ -381,12 +391,13 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	}
 	chat.User = user
 	systemPrompt := chatPromptGenerator(*chat)
-	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
+	chat.Messages = createLLMRequestBodyMessagesWithProjectCtx(systemPrompt, p.UserInput, p.ProjectContext)
 	resp, err := ctrl.llm.CallLLM(chat.getMessages())
 	if err != nil {
 		return ChatResp{}, err
 	}
 	chat.ID = resp.ID
+	chat.pushMessage(llm.ChatRequestBodyMessagesRoleAssistant, resp.Choices[0].Message.Content)
 	err = chatMapMgr.storeChat(chat)
 	if err != nil {
 		return ChatResp{}, err
