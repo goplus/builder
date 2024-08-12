@@ -115,14 +115,15 @@ func newChatResp(resp llm.LlmResponseBody, id string) ChatResp {
 	return chatResp
 }
 
-type SuggestTaskResp struct {
+type TaskResp struct {
 	TaskAction   int           `json:"taskAction"`
 	CodeSuggests []CodeSuggest `json:"codeSuggests"`
+	// ...
 }
 
-func newSuggestTaskResp(resp llm.LlmResponseBody, id string) SuggestTaskResp {
+func newSuggestTaskResp(resp llm.LlmResponseBody, id string) TaskResp {
 	// TODO(callme-taota): parse the response to get the task action and code suggests.
-	suggestTaskResp := SuggestTaskResp{}
+	suggestTaskResp := TaskResp{}
 	return suggestTaskResp
 }
 
@@ -179,6 +180,10 @@ func (m *chatMapManager) deleteChat(id string) {
 	delete(m.chatMap, id)
 }
 
+func (m *chatMapManager) sync() {
+	//TODO(callme-taota): have to support db sync(such as redis), in case of multi instance deploy.
+}
+
 func DeleteExpireChat() {
 	for _, chat := range chatMapMgr.chatMap {
 		if chat.isExpired() {
@@ -195,6 +200,7 @@ type chat struct {
 	ProjectContext    ProjectContext `json:"projectContext"`
 	CreatAt           time.Time      `json:"creatAt"`
 	Messages          llm.Messages   `json:"messages"`
+	User              *User          `json:"user"`
 }
 
 func newChat(chatAction int, ctx ProjectContext, lang int) *chat {
@@ -305,7 +311,12 @@ func createLLMRequestBodyMessages(sysInput, userInput string) llm.Messages {
 }
 
 func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (ChatResp, error) {
+	user, ok := UserFromContext(ctx)
+	if !ok {
+		return ChatResp{}, ErrForbidden
+	}
 	chat := newChat(p.ChatAction, p.ProjectContext, p.UserLang)
+	chat.User = user
 	systemPrompt := chatPromptGenerator(*chat)
 	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
 	resp, err := ctrl.llm.CallLLM(chat.getMessages())
@@ -320,20 +331,38 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	return newChatResp(resp, chat.ID), nil
 }
 
-func (ctrl *Controller) NextChatEx(ctx context.Context, id string, userInput string) (chatResp ChatResp, err error) {
+func (ctrl *Controller) NextChat(ctx context.Context, id string, userInput string) (chatResp ChatResp, err error) {
 	chat, ok := chatMapMgr.getChat(id)
 	if !ok {
 		err = fmt.Errorf("no chat found with id: %s", id)
 		return
 	}
+	chatUser := chat.User
+	_, err = EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return ChatResp{}, err
+	}
 	chatResp, err = chat.nextInput(ctrl, userInput)
 	return
 }
 
-func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (SuggestTaskResp, error) {
+func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
+	chat, ok := chatMapMgr.getChat(id)
+	if !ok {
+		return
+	}
+	chatUser := chat.User
+	_, err := EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return
+	}
+	chatMapMgr.deleteChat(id)
+}
+
+func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {
 	resp, err := ctrl.llm.CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()))
 	if err != nil {
-		return SuggestTaskResp{}, err
+		return TaskResp{}, err
 	}
 	return newSuggestTaskResp(resp, ""), nil
 }
