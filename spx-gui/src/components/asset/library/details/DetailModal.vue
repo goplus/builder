@@ -2,10 +2,15 @@
   <main>
     <div class="content">
       <div class="display">
-        <DetailDisplay
+        <SpriteDetailDisplay
           v-if="asset.assetType === AssetType.Sprite"
           :asset="props.asset as AssetData<AssetType.Sprite>"
           class="sprite-detail"
+        />
+        <BackdropDetailDisplay
+          v-else-if="asset.assetType === AssetType.Backdrop"
+          :asset="props.asset as AssetData<AssetType.Backdrop>"
+          class="backdrop-detail"
         />
       </div>
       <div class="detail">
@@ -103,11 +108,12 @@ import {
 import UIButton from '@/components/ui/UIButton.vue'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
-import DetailDisplay from './SpriteDetailDisplay.vue'
+import SpriteDetailDisplay from './SpriteDetailDisplay.vue'
 import AssetRate from '../reviews/AssetRate.vue'
 import { StarOutlined, HeartOutlined, HeartFilled } from '@vicons/antd'
 import { template } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
+import BackdropDetailDisplay from './BackdropDetailDisplay.vue'
 
 // Define component props
 const props = defineProps<{
