@@ -1,7 +1,7 @@
-// Start ai chat.
+// Delete ai chat.
 //
 // Request:
-//   POST /llm/chat
+//   DELETE /llm/chat/:id
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -18,9 +18,5 @@ params := &controller.AIStartChatParams{}
 if !parseJSON(ctx, params) {
 	return
 }
-resp, err := ctrl.StartChat(ctx, params)
-if err != nil {
-	replyWithInnerError(ctx, err)
-	return
-}
-json resp
+ctrl.DeleteChat(ctx, ${id})
+json {}

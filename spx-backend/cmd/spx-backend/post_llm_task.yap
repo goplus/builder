@@ -21,6 +21,7 @@ if !parseJSON(ctx, params) {
 
 resp, err := ctrl.StartTask(ctx, params)
 if err != nil {
+	replyWithInnerError(ctx, err)
 	return
 }
 json resp
