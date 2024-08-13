@@ -1,4 +1,4 @@
-package spx_backend
+package main
 
 import (
 	"context"
@@ -51,4 +51,8 @@ func NewCollection() {
 	if err != nil {
 		log.Fatalf("Failed to create collection: %v", err)
 	}
+}
+
+func main() {
+	NewCollection()
 }
