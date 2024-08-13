@@ -51,7 +51,14 @@ import { useMessageHandle, useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
-import { UIButton, UIDivider, UILoading, UIError, useConfirmDialog } from '@/components/ui'
+import {
+  UIButton,
+  UIDivider,
+  UILoading,
+  UIError,
+  useConfirmDialog,
+  useMessage
+} from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 
@@ -72,6 +79,7 @@ const createProject = useCreateProject()
 const withConfirm = useConfirmDialog()
 const { t } = useI18n()
 const { isOnline } = useNetwork()
+const m = useMessage()
 
 const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
@@ -242,9 +250,15 @@ watchEffect((onCleanup) => {
           zh: '保存'
         }),
         async confirmHandler() {
-          if (project.value?.hasUnsyncedChanges) await project.value!.saveToCloud()
-          await clear(LOCAL_CACHE_KEY)
-        }
+          try {
+            if (project.value?.hasUnsyncedChanges) await project.value!.saveToCloud()
+            await clear(LOCAL_CACHE_KEY)
+          } catch (e) {
+            m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
+            throw e
+          }
+        },
+        autoConfirm: true
       })
       return true
     } catch {
