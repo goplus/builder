@@ -7,6 +7,7 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+// SearchByVector searches for vectors in a collection that are similar to the given search vector.
 func SearchByVector(ctx context.Context, cli client.Client, collectionName string, searchVector []float32) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
 

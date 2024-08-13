@@ -31,9 +31,7 @@ default:
 }
 
 if category := ${category}; category != "" {
-	var result map[string][]string
-	json.Unmarshal([]byte(${category}), &result)
-	params.Category = &result
+	params.Category = &category
 }
 
 if assetTypeParam := ${assetType}; assetTypeParam != "" {

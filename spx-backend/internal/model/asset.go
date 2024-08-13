@@ -27,7 +27,7 @@ type Asset struct {
 	Owner string `db:"owner" json:"owner"`
 
 	// Category is the asset category.
-	Category map[string][]string `db:"category" json:"category"`
+	Category string `db:"category" json:"category"`
 
 	// AssetType indicates the type of the asset.
 	AssetType AssetType `db:"asset_type" json:"assetType"`
