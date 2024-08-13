@@ -40,10 +40,18 @@ func NewCollection() {
 		},
 	}
 
+	assetNameField := &entity.Field{
+		Name:     "asset_name",
+		DataType: entity.FieldTypeVarChar,
+		TypeParams: map[string]string{
+			"max_length": "255",
+		},
+	}
+
 	// define collection schema
 	schema := &entity.Schema{
 		CollectionName: "asset",
-		Fields:         []*entity.Field{idField, vectorField, assetIDField},
+		Fields:         []*entity.Field{idField, vectorField, assetIDField, assetNameField},
 	}
 
 	// create collection
