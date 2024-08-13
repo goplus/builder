@@ -31,6 +31,16 @@ type QueryParams struct {
 	JobId string `json:"jobId"`
 }
 
+type GetEmbeddingParams struct {
+	Prompt      string `json:"prompt"`
+	CallbackUrl string `json:"callback_url"`
+}
+
+type GetEmbeddingResult struct {
+	Embedding []float32 `json:"embedding"`
+	Desc      string    `json:"desc"`
+}
+
 type QueryResult[T any] struct {
 	Status string `json:"status"`
 	Result T      `json:"result"`
@@ -130,4 +140,16 @@ func (ctrl *Controller) GenerateSprite(ctx context.Context, param *GenerateSprit
 func (ctrl *Controller) Query(ctx context.Context, param *QueryParams) (*QueryResult[QueryImageResult], error) {
 	// todo: implement aigc generating
 	return nil, nil
+}
+
+// GetEmbedding get text embedding.
+func (ctrl *Controller) GetEmbedding(ctx context.Context, param *GetEmbeddingParams) (*GetEmbeddingResult, error) {
+	logger := log.GetReqLogger(ctx)
+	var embeddingResult GetEmbeddingResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/embedding", &param, &embeddingResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
+	}
+	return &embeddingResult, nil
 }

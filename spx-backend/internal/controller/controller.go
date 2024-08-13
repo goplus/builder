@@ -17,6 +17,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/joho/godotenv"
+	milvus "github.com/milvus-io/milvus-sdk-go/v2/client"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuAuth "github.com/qiniu/go-sdk/v7/auth"
 	qiniuLog "github.com/qiniu/x/log"
@@ -40,6 +41,7 @@ type Controller struct {
 	ormDb         *gorm.DB
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
+	milvusClient  *milvus.Client
 	casdoorClient *casdoorsdk.Client
 }
 
@@ -85,6 +87,10 @@ func New(ctx context.Context) (*Controller, error) {
 
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 
+	milvusClient, err := milvus.NewClient(ctx, milvus.Config{
+		Address: os.Getenv("MILVUS_ADDRESS"),
+	})
+
 	casdoorAuthConfig := &casdoorsdk.AuthConfig{
 		Endpoint:         os.Getenv("GOP_CASDOOR_ENDPOINT"),
 		ClientId:         os.Getenv("GOP_CASDOOR_CLIENTID"),
@@ -101,6 +107,7 @@ func New(ctx context.Context) (*Controller, error) {
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
+		milvusClient:  &milvusClient,
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"regexp"
+	"strconv"
 )
 
 // assetDisplayNameRE is the regular expression for asset display name.
@@ -299,4 +300,29 @@ func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
 		return err
 	}
 	return nil
+}
+
+// GetSearchSuggestions returns search suggestions.
+func (ctrl *Controller) GetSearchSuggestions(ctx context.Context, keyword string, limit string) ([]string, error) {
+	logger := log.GetReqLogger(ctx)
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		logger.Printf("failed to convert limit to int: %v", err)
+		return nil, err
+	}
+	embedding, err := ctrl.GetEmbedding(ctx,
+		&GetEmbeddingParams{
+			Prompt:      keyword,
+			CallbackUrl: "",
+		})
+	if err != nil {
+		logger.Printf("failed to get embedding: %v", err)
+		return nil, err
+	}
+	suggestions, err := model.SearchByVector(ctx, *ctrl.milvusClient, "asset", embedding.Embedding, limitInt)
+	if err != nil {
+		logger.Printf("failed to get search suggestions: %v", err)
+		return nil, err
+	}
+	return suggestions, nil
 }
