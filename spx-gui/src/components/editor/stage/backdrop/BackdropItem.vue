@@ -21,8 +21,8 @@ import { UIEditorBackdropItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
 import type { Stage } from '@/models/stage'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import CornerMenu from '../common/CornerMenu.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import CornerMenu from '../../common/CornerMenu.vue'
 import { useMessageHandle } from '@/utils/exception'
 
 const props = defineProps<{

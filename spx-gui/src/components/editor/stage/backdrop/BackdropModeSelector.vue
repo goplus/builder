@@ -49,7 +49,7 @@
 </template>
 <script setup lang="ts">
 import { UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
-import { useEditorCtx } from '../EditorContextProvider.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
 import type { MapMode } from '@/models/stage'
 
 const handleUpdateMapMode = (mode: MapMode) => {

@@ -3,12 +3,13 @@
  * @desc Object-model definition for Stage & Costume
  */
 
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import { filename } from '@/utils/path'
 import { toText, type Files, fromText } from './common/file'
-import { ensureValidBackdropName } from './common/asset-name'
+import { ensureValidBackdropName, ensureValidWidgetName } from './common/asset-name'
 import type { Size } from './common'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
+import { type RawWidgetConfig, type Widget, loadWidget } from './widget'
 
 export type StageInits = {
   backdropIndex: number
@@ -26,6 +27,7 @@ export type RawMapConfig = {
 export type RawStageConfig = {
   backdrops?: RawBackdropConfig[]
   backdropIndex?: number
+  widgets?: RawWidgetConfig[]
   map?: RawMapConfig
   // For compatibility
   scenes?: RawBackdropConfig[]
@@ -90,6 +92,88 @@ export class Stage {
     }
   }
 
+  widgets: Widget[]
+  /** Zorder for widgets, will be merged with sprites in model `Project` */
+  widgetsZorder: string[]
+
+  /**
+   * Add given widget to stage.
+   * Note: the widget's name may be altered to avoid conflict.
+   */
+  addWidget(widget: Widget) {
+    const newName = ensureValidWidgetName(widget.name, this)
+    widget.setName(newName)
+    widget.setStage(this)
+    widget.addDisposer(() => widget.setStage(null))
+    this.widgets.push(widget)
+
+    if (!this.widgetsZorder.includes(widget.name)) {
+      this.widgetsZorder = [...this.widgetsZorder, widget.name]
+    }
+    widget.addDisposer(
+      // update zorder & selected when widget renamed
+      watch(
+        () => widget.name,
+        (newName, originalName) => {
+          this.widgetsZorder = this.widgetsZorder.map((v) => (v === originalName ? newName : v))
+          if (this.selectedWidgetName === originalName) {
+            this.selectedWidgetName = newName
+          }
+        }
+      )
+    )
+    widget.addDisposer(() => {
+      this.widgetsZorder = this.widgetsZorder.filter((v) => v !== widget.name)
+      if (this.selectedWidgetName === widget.name) {
+        this.selectedWidgetName = null
+      }
+    })
+  }
+  removeWidget(name: string): void {
+    const idx = this.widgets.findIndex((s) => s.name === name)
+    if (idx === -1) {
+      throw new Error(`widget ${name} not found`)
+    }
+
+    const [widget] = this.widgets.splice(idx, 1)
+    widget.dispose()
+  }
+  private setWidgetZorderIdx(
+    name: string,
+    newIdx: number | ((idx: number, length: number) => number)
+  ) {
+    const idx = this.widgetsZorder.findIndex((v) => v === name)
+    if (idx < 0) throw new Error(`widget ${name} not found in zorder`)
+    const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.widgetsZorder.length) : newIdx
+    const newZorder = this.widgetsZorder.filter((v) => v !== name)
+    newZorder.splice(newIdxVal, 0, name)
+    this.widgetsZorder = newZorder
+  }
+  upWidgetZorder(name: string) {
+    this.setWidgetZorderIdx(name, (i, len) => Math.min(i + 1, len - 1))
+  }
+  downWidgetZorder(name: string) {
+    this.setWidgetZorderIdx(name, (i) => Math.max(i - 1, 0))
+  }
+  topWidgetZorder(name: string) {
+    this.setWidgetZorderIdx(name, (_, len) => len - 1)
+  }
+  bottomWidgetZorder(name: string) {
+    this.setWidgetZorderIdx(name, 0)
+  }
+
+  private selectedWidgetName: string | null = null
+  selectWidget(name: string | null) {
+    this.selectedWidgetName = name
+  }
+  get selectedWidget(): Widget | null {
+    return this.widgets.find((w) => w.name === this.selectedWidgetName) ?? null
+  }
+  autoSelectWidget() {
+    if (this.selectedWidget != null) return
+    this.selectWidget(this.widgets[0]?.name)
+  }
+
   mapWidth: number
   setMapWidth(mapWidth: number) {
     this.mapWidth = mapWidth
@@ -113,6 +197,8 @@ export class Stage {
     this.code = code
     this.backdrops = []
     this.backdropIndex = inits?.backdropIndex ?? 0
+    this.widgets = []
+    this.widgetsZorder = []
     this.mapWidth = inits?.mapWidth ?? 480
     this.mapHeight = inits?.mapHeight ?? 360
     this.mapMode = getMapMode(inits?.mapMode)
@@ -123,6 +209,7 @@ export class Stage {
     {
       backdrops: backdropConfigs,
       backdropIndex,
+      widgets: widgetConfigs,
       scenes: sceneConfigs,
       sceneIndex,
       costumes: costumeConfigs,
@@ -146,6 +233,10 @@ export class Stage {
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }
+    const widgets = (widgetConfigs ?? []).map((c) => loadWidget(c))
+    for (const widget of widgets) {
+      stage.addWidget(widget)
+    }
     return stage
   }
 
@@ -159,9 +250,15 @@ export class Stage {
       Object.assign(files, backdropFiles)
     }
     const { backdropIndex, mapWidth, mapHeight, mapMode } = this
+    const widgetsConfig: RawWidgetConfig[] = this.widgetsZorder.map((widgetName) => {
+      const widget = this.widgets.find((w) => w.name === widgetName)
+      if (widget == null) throw new Error(`widget ${widgetName} not found`)
+      return widget.export()
+    })
     const config: RawStageConfig = {
       backdrops: backdropConfigs,
       backdropIndex: backdropIndex,
+      widgets: widgetsConfig,
       map: { width: mapWidth, height: mapHeight, mode: mapMode }
     }
     return [config, files]

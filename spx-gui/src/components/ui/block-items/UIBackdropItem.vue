@@ -9,7 +9,7 @@
 </template>
 <script setup lang="ts">
 import UIBlockItem from './UIBlockItem.vue'
-import UICornerIcon from '../UICornerIcon.vue'
+import UICornerIcon from './UICornerIcon.vue'
 import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
