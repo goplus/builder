@@ -25,6 +25,7 @@
     </div>
 
     <button onclick="runTypesInfo()">runTypesInfo</button>
+    <button onclick="runCodeDiagnostics()">runCodeDiagnostics</button>
 
     <div id="compiler-iframe-container">
     </div>
@@ -39,15 +40,18 @@
     function createIframe() {
         const iframe = document.createElement("iframe")
         iframe.id = "compiler-iframe" + currentIframe
-        iframe.width = 10
-        iframe.height = 10
+        iframe.width = 0
+        iframe.height = 0
         currentIframe++
         iframe.src = "index.html"
         container.appendChild(iframe)
     }
 
-    function deleteIframe() {
-        //TODO
+    function reloadIframe() {
+        const iframe = getIframe()
+        if (iframe) {
+            iframe.contentWindow.location.reload()
+        }
     }
 
     function getIframe() {
@@ -60,6 +64,12 @@
         }
 
         var data = event.data
+        if (data.level === "log") {
+            if (data.log[0] && data.log[0].includes("goroutine ")) {
+                reloadIframe()
+            }
+            console.log(data)
+        }
         if (data.level === "wasm") {
             console.log(data)
         }
@@ -69,6 +79,17 @@
     function runTypesInfo() {
         getIframe().contentWindow.postMessage({
             f: "getTypes",
+            info: "wasm",
+            in: {
+                name: "test.spx",
+                code: document.getElementById("codeInput").value
+            }
+        }, window.location.origin)
+    }
+
+    function runCodeDiagnostics() {
+        getIframe().contentWindow.postMessage({
+            f: "getDiagnostics",
             info: "wasm",
             in: {
                 name: "test.spx",

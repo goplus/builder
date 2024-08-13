@@ -20,13 +20,18 @@ window.addEventListener('message', function (event) {
     var data = event.data
     if (data.info === "wasm") {
         let res = compilerDo(event.data)
-        window.parent.postMessage({log: "", level: "wasm", cont: res}, window.location.origin)
+        window.parent.postMessage({log: "", level: "wasm", content: res}, window.location.origin)
     }
 })
 
 const compilerFnMap = {
     'getInlayHints': getInlayHints = () => {},
-    'getDiagnostics': getDiagnostics = () => {},
+    'getDiagnostics': getDiagnostics = (data) => {
+        let fileCode = data.in.code
+        let fileName = data.in.name
+        let res = getDiagnostics_GO("",fileName,fileCode)
+        return JSON.parse(res)
+    },
     'getCompletionItems': getCompletionItems = () => {},
     'getDefinition': getDefinition = () => {},
     'getTypes': getTypes = (data) => {
@@ -42,3 +47,4 @@ function compilerDo(data) {
         return compilerFnMap[data.f](data)
     }
 }
+
