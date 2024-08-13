@@ -1,5 +1,16 @@
 <template>
-  <EditorList color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
+  <UIEmpty v-if="stage.widgets.length === 0" size="extra-large">
+    {{ $t({ en: 'No widgets', zh: '没有控件' }) }}
+    <template #op>
+      <UIButton type="boring" size="large" @click="handleAddMonitor">
+        <template #icon>
+          <img :src="monitorIcon" />
+        </template>
+        {{ $t({ en: 'Add widget Monitor', zh: '添加监视器控件' }) }}
+      </UIButton>
+    </template>
+  </UIEmpty>
+  <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
     <WidgetItem
       v-for="widget in stage.widgets"
       :key="widget.name"
@@ -21,7 +32,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
-import { UIMenu, UIMenuItem } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { type Widget } from '@/models/widget'
 import { Monitor } from '@/models/widget/monitor'
@@ -29,6 +40,7 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
 import WidgetItem from './WidgetItem.vue'
 import WidgetDetail from './detail/WidgetDetail.vue'
+import monitorIcon from './monitor-gray.svg'
 
 const editorCtx = useEditorCtx()
 const stage = computed(() => editorCtx.project.stage)

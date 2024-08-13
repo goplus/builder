@@ -4,7 +4,7 @@
     <template #op>
       <UIButton type="boring" size="large" @click="handleGroupCostumes">
         <template #icon>
-          <img class="icon" :src="galleryIcon" />
+          <img :src="galleryIcon" />
         </template>
         {{ $t({ en: 'Group costumes as animation', zh: '将造型合并为动画' }) }}
       </UIButton>
@@ -98,10 +98,6 @@ const handleGroupCostumes = useMessageHandle(
 ).fn
 </script>
 <style scoped lang="scss">
-.icon {
-  width: 24px;
-  height: 24px;
-}
 .background {
   width: 100%;
   height: 100%;
