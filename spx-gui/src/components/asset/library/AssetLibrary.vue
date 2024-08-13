@@ -95,7 +95,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
-import { addAssetToHistory, AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
+import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
 import { debounce, useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
@@ -111,6 +111,7 @@ import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
 import type { AIAssetData } from '@/apis/aigc'
 import AIPreviewModal from './ai/AIPreviewModal.vue'
+import { addAssetToHistory } from '@/apis/user'
 
 const props = defineProps<{
   visible?: boolean

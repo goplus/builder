@@ -119,7 +119,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
-import { AssetType } from '@/apis/asset'
+import { AssetType, getAsset, type AssetData } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'

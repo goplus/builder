@@ -100,9 +100,7 @@ import { computed, ref } from 'vue'
 import { NButton, NIcon, NTag, NTooltip } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import {
-  addAssetToFavorites,
   AssetType,
-  removeAssetFromFavorites,
   type AssetData
 } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
@@ -113,6 +111,7 @@ import { StarOutlined, HeartOutlined, HeartFilled } from '@vicons/antd'
 import { template } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
 import BackdropDetailDisplay from './BackdropDetailDisplay.vue'
+import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 
 // Define component props
 const props = defineProps<{

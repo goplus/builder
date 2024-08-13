@@ -20,3 +20,4 @@ go.work
 
 .idea/
 *.wasm
+spx-backend/volumes/*
