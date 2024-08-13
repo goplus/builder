@@ -1,63 +1,65 @@
-<script setup lang="ts">
-import { NVirtualList, type VirtualListInst } from 'naive-ui'
-import { type Icon, Icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/common'
+<script setup lang="ts" generic="T extends EditorMenuItem">
+import { NScrollbar } from 'naive-ui'
+import { type Icon, Icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 import { type CSSProperties, ref } from 'vue'
+
+export interface EditorMenuItem {
+  key: string | number
+  icon: Icon
+  label: string
+  iconSize: number
+  active?: boolean
+}
 
 defineProps<{
   listStyles?: CSSProperties
-  items: Array<{
-    icon: Icon
-    label: string
-    iconSize: number
-    active?: boolean
-  }>
+  items: Array<T>
 }>()
 
-const emits = defineEmits<{
-  select: [idx: any]
+defineSlots<{
+  default(props: { items: T }): any
 }>()
 
-const virtualListRef = ref<VirtualListInst & typeof NVirtualList>()
-const $editorMenu = ref<HTMLElement>()
+defineEmits<{
+  select: [item: T]
+  active: [item: T, element: HTMLLIElement]
+}>()
+
+const scrollbarRef = ref<InstanceType<typeof NScrollbar>>()
+const editorMenuElement = ref<HTMLElement>()
 
 defineExpose({
-  virtualListRef,
-  $el: $editorMenu
+  scrollbarRef,
+  editorMenuElement
 })
 </script>
 
 <template>
-  <section ref="$editorMenu" class="editor-menu">
-    <n-virtual-list
-      ref="virtualListRef"
-      visible-items-tag="ul"
-      :items="items"
-      item-resizable
-      :item-size="30"
-      :style="listStyles"
-    >
-      <template #default="{ item }">
-        <li
-          class="editor-menu__item"
-          :class="{
-            'editor-menu__item--active': item.active
-          }"
-          @mousedown="emits('select', item)"
+  <section ref="editorMenuElement" class="editor-menu">
+    <n-scrollbar ref="scrollbarRef" :style="listStyles">
+      <li
+        v-for="item in items"
+        :key="item.key"
+        :ref="(el) => item.active && $emit('active', item, el as HTMLLIElement)"
+        class="editor-menu__item"
+        :class="{
+          'editor-menu__item--active': item.active
+        }"
+        @mousedown="$emit('select', item)"
+      >
+        <!-- eslint-disable vue/no-v-html -->
+        <span
+          :ref="(el) => normalizeIconSize(el as HTMLElement, item.iconSize)"
+          class="editor-menu__item-icon"
+          v-html="Icon2SVG(item.icon)"
         >
-          <!-- eslint-disable vue/no-v-html -->
-          <span
-            :ref="($el) => normalizeIconSize($el as HTMLElement, item.iconSize)"
-            class="editor-menu__item-icon"
-            v-html="Icon2SVG(item.icon)"
-          >
-          </span>
+        </span>
 
-          <span class="editor-menu__item-label">
-            <slot v-bind="item">{{ item.label }}</slot>
-          </span>
-        </li>
-      </template>
-    </n-virtual-list>
+        <span class="editor-menu__item-label">
+          <slot :items="item">{{ item.label }}</slot>
+        </span>
+      </li>
+    </n-scrollbar>
   </section>
 </template>
 <style lang="scss">

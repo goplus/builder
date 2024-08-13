@@ -1,6 +1,6 @@
 import type monaco from 'monaco-editor'
-import type { FuzzyScore, IMatch } from '../common/monaco-editor-core'
-import type { Icon } from '@/components/editor/code-editor/common'
+import type { FuzzyScore, IMatch } from '../../common/monaco-editor-core'
+import type { Icon } from 'src/components/editor/code-editor/ui/common'
 import type { LayerContent } from '@/components/editor/code-editor/EditorUI'
 
 export interface MonacoCompletionItem extends monaco.languages.CompletionItem {}

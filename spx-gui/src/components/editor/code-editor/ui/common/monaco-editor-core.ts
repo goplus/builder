@@ -1,5 +1,5 @@
 // this file collects some common functions used in monaco editor.
-// all code is copy from `vs code` repo, repo url: https://github.com/microsoft/vscode.
+// all codes are copied from `vs code` repo, repo url: https://github.com/microsoft/vscode.
 
 /**
  * An array representing a fuzzy match.

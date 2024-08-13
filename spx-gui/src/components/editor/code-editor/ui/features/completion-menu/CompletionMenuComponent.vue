@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from 'vue'
-import { type VirtualListInst, NVirtualList } from 'naive-ui'
+import { computed, ref, watchEffect } from 'vue'
+import { NScrollbar } from 'naive-ui'
 import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
 import EditorMenu from '@/components/editor/code-editor/ui/EditorMenu.vue'
-import { IconEnum } from '@/components/editor/code-editor/common'
+import {
+  determineClosestEdge,
+  IconEnum,
+  isElementInViewport
+} from '@/components/editor/code-editor/ui/common'
 
 interface CompletionMenuItem {
-  idx: number
+  key: number
   icon: IconEnum
   label: string
   iconSize: number
@@ -21,16 +25,17 @@ const props = defineProps<{
   completionMenu: CompletionMenu
 }>()
 const completionMenuState = props.completionMenu.completionMenuState
+// for using generic vue component can't use `InstanceType<type of someGenericComponent>` it will throw error. issue: https://github.com/vuejs/language-tools/issues/3206
 const editorMenuRef = ref<{
-  virtualListRef: VirtualListInst & typeof NVirtualList
-  $el: HTMLElement
+  scrollbarRef: InstanceType<typeof NScrollbar>
+  editorMenuElement: HTMLElement
 }>()
 const cssLineHeight = computed(() => `${completionMenuState.lineHeight}px`)
 const cssFontSize = computed(() => `${completionMenuState.fontSize}px`)
 const itemHeight = computed(() => completionMenuState.fontSize * 1.57143 + 8)
 const menuItems = computed<CompletionMenuItem[]>(() =>
   props.completionMenu.completionMenuState.suggestions.map((item, i) => ({
-    idx: i,
+    key: i,
     icon: item.icon,
     label: item.label,
     // make menu icon slightly larger than fontSize for better display
@@ -43,22 +48,28 @@ const menuItems = computed<CompletionMenuItem[]>(() =>
 )
 
 watchEffect(() => {
-  const $container = editorMenuRef.value?.$el
-  if (!$container) return
-  props.completionMenu.completionMenuState.$container = $container
+  const completionMenuElement = editorMenuRef.value?.editorMenuElement
+  if (!completionMenuElement) return
+  props.completionMenu.completionMenuState.completionMenuElement = completionMenuElement
 })
 
-watch(
-  () => completionMenuState.activeIdx,
-  (activeIdx) => {
-    editorMenuRef.value?.virtualListRef.scrollTo({
-      index: activeIdx
-    })
-  }
-)
+function handleActiveMenuItem(menuItemElement: HTMLLIElement) {
+  const editorMenuElement = editorMenuRef.value?.editorMenuElement
+  if (!menuItemElement || !editorMenuElement || !editorMenuRef.value?.scrollbarRef) return
+  if (isElementInViewport(editorMenuElement, menuItemElement)) return
+  const top =
+    determineClosestEdge(editorMenuElement, menuItemElement) === 'top'
+      ? menuItemElement.offsetTop
+      : // 8 means padding top 4px and bottom 4px, can be replaced by computed element css prototype, or just keep it as 8px.
+        menuItemElement.offsetTop -
+        editorMenuElement.clientHeight +
+        menuItemElement.clientHeight +
+        8
+  editorMenuRef.value?.scrollbarRef.scrollTo({ top })
+}
 
 function handleMenuItemSelect(item: CompletionMenuItem) {
-  props.completionMenu.select(item.idx)
+  props.completionMenu.select(item.key)
 }
 </script>
 
@@ -76,8 +87,9 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
       maxHeight: 8 * itemHeight + 'px'
     }"
     @select="handleMenuItemSelect"
+    @active="(_, el) => handleActiveMenuItem(el)"
   >
-    <template #default="{ matches }">
+    <template #default="{ items: { matches } }">
       <span
         v-for="(match, j) in matches"
         :key="j"

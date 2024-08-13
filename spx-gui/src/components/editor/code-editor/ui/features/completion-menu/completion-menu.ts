@@ -13,8 +13,7 @@ import {
 } from 'monaco-editor'
 import { reactive, type UnwrapNestedRefs } from 'vue'
 import type { CompletionMenuItem, MonacoCompletionModelItem } from './completion'
-import { createMatches, type IMatch } from '@/components/editor/code-editor/ui/features/common'
-import { IconEnum } from '@/components/editor/code-editor/common'
+import { IconEnum, createMatches, type IMatch } from '@/components/editor/code-editor/ui/common'
 import EditorOption = editor.EditorOption
 
 export interface CompletionMenuState {
@@ -28,13 +27,10 @@ export interface CompletionMenuState {
   fontSize: number
   lineHeight: number
   word: string
-  $container?: HTMLElement
+  completionMenuElement?: HTMLElement
 }
 
 export class CompletionMenu implements IDisposable {
-  // used for deltaDecorations for global control editor identify which inline text should be displayed with others,
-  // like: code preview(this is current provider need), parameter hint, attribute hint, etc.
-  private static providerId: string = this.name
   private _onHide = new Emitter<void>()
   private _onShow = new Emitter<void>()
   private _onFocus = new Emitter<void>()
@@ -46,7 +42,7 @@ export class CompletionMenu implements IDisposable {
   private readonly indentSymbolBySpace: string
   private viewZoneChangeAccessorState: {
     viewZoneId: string | null
-    $codePreviewContainer: HTMLElement | null
+    codePreviewElement: HTMLElement | null
   }
   private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
@@ -76,7 +72,7 @@ export class CompletionMenu implements IDisposable {
     this.viewZoneChangeAccessorState = {
       viewZoneId: null,
       // no need to remove this element by self, because it will be removed by monaco editor.
-      $codePreviewContainer: null
+      codePreviewElement: null
     }
     this.completionMenuItemPreviewDecorationsCollection = editor.createDecorationsCollection([])
 
@@ -152,12 +148,12 @@ export class CompletionMenu implements IDisposable {
       content.replace(/* here replace `space` to html space(&nbsp;) */ / /g, '&nbsp;')
     )
     this.editor.changeViewZones((changeAccessor) => {
-      this.viewZoneChangeAccessorState.$codePreviewContainer =
+      this.viewZoneChangeAccessorState.codePreviewElement =
         this.createCodePreviewDomNode(_codeLines)
       this.viewZoneChangeAccessorState.viewZoneId = changeAccessor.addZone({
         afterLineNumber: position.lineNumber,
         heightInLines: _codeLines.length,
-        domNode: this.viewZoneChangeAccessorState.$codePreviewContainer
+        domNode: this.viewZoneChangeAccessorState.codePreviewElement
       })
     })
   }
@@ -224,8 +220,8 @@ export class CompletionMenu implements IDisposable {
   private updateCompletionMenuPosition() {
     const position = this.editor.getPosition()
     if (!position) return
-    const $completionMenu = this.completionMenuState.$container
-    if (!$completionMenu) return
+    const completionMenuElement = this.completionMenuState.completionMenuElement
+    if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
     const fontSize = Number(this.editor.getOption(EditorOption.fontLigatures))
@@ -244,15 +240,15 @@ export class CompletionMenu implements IDisposable {
 
     const cursorY = pixelPosition.top
     const windowHeight = window.innerHeight
-    const completionMenuHeight = $completionMenu.offsetHeight
+    const completionMenuHeight = completionMenuElement.offsetHeight
     this.completionMenuState.fontSize = Math.round(fontSize)
     this.completionMenuState.lineHeight = pixelPosition.height
     this.completionMenuState.position.left = pixelPosition.left
     this.completionMenuState.position.top = cursorY + pixelPosition.height
     if (windowHeight - cursorY > completionMenuHeight && !isMultiline()) {
-      $completionMenu.classList.remove('completion-menu--reverse-up')
+      completionMenuElement.classList.remove('completion-menu--reverse-up')
     } else {
-      $completionMenu.classList.add('completion-menu--reverse-up')
+      completionMenuElement.classList.add('completion-menu--reverse-up')
     }
   }
 
@@ -291,12 +287,7 @@ function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): 
   }
 }
 
-/**
- * resolve suggest matches to highlight, only used for split label and highlight
- * @param {string} label - raw text
- * @param {IMatch[]} matches - monaco match result
- * @returns {Array<{ text: string, highlighted: boolean }>}
- */
+/** resolve suggest matches to highlight, only used for split label and highlight */
 export function resolveSuggestMatches2Highlight(
   label: string,
   matches: IMatch[]
