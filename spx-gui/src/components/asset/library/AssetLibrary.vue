@@ -61,7 +61,7 @@
         </div>
       </main>
       <div class="sider">
-        <LibraryMenu @update:value="handleSelectCategory" />
+        <LibraryMenu @update:value="handleUserSelectCategory" />
         <UIDivider />
         <LibraryTree
           :type="type"
@@ -95,7 +95,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
-import { addAssetToHistory, AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
+import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
 import { debounce, useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { type Project } from '@/models/project'
@@ -107,11 +107,11 @@ import AssetList from './AssetList.vue'
 import { isAiAsset, type AssetOrAIAsset, type TaggedAIAssetData } from '@/apis/aigc'
 import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
-import LibraryTab from './LibraryTab.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
 import type { AIAssetData } from '@/apis/aigc'
 import AIPreviewModal from './ai/AIPreviewModal.vue'
+import { addAssetToHistory } from '@/apis/user'
 
 const props = defineProps<{
   visible?: boolean
@@ -174,12 +174,12 @@ function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: string | string[]) {
+function handleSelectCategory(c: string[]) {
   searchCtx.category = c
 }
 
-function handleChangeType(t: AssetType) {
-  searchCtx.type = t
+function handleUserSelectCategory(c: string) {
+  searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'
 }
 
 function handleSelectAiAsset(asset: TaggedAIAssetData, aiAssetList?: TaggedAIAssetData[]) {

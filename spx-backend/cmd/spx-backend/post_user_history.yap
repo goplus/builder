@@ -9,7 +9,7 @@ import (
 
 ctx := &Context
 
-_, ok := ensureUser(ctx)
+user, ok := ensureUser(ctx)
 if !ok {
 	return
 }
@@ -18,9 +18,11 @@ params := &controller.AddUserAssetParams{}
 if !parseJSON(ctx, params) {
 	return
 }
+owner := user.Name
 
-err := ctrl.AddUserAsset(ctx.Context(), params,"history")
+err := ctrl.AddUserAsset(ctx.Context(), params,"history",owner)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
+json nil

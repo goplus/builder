@@ -87,10 +87,8 @@ import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData, type AssetModel } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import {
-  addAssetToFavorites,
   type AssetData,
   AssetType,
-  removeAssetFromFavorites
 } from '@/apis/asset'
 import SpritePreview from './SpritePreview.vue'
 import BackdropPreview from './BackdropPreview.vue'
@@ -98,6 +96,9 @@ import SoundPreview from './SoundPreview.vue'
 import { NIcon } from 'naive-ui'
 import { HeartOutlined, HeartFilled, PlusOutlined /** , StarOutlined */ } from '@vicons/antd'
 import { ref } from 'vue'
+import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
+import { useMessageHandle } from '@/utils/exception'
+
 
 const props = defineProps<{
   asset: AssetData
@@ -110,17 +111,18 @@ const emit = defineEmits<{
 
 const assetModel = useAsyncComputed(() => cachedConvertAssetData(props.asset))
 
-const isFavorite = ref(props.asset.isFavorite ?? false)
-const favoriteCount = ref(props.asset.favoriteCount ?? 0)
+const isFavorite = ref(props.asset.isLiked ?? false)
+const favoriteCount = ref(props.asset.likeCount ?? 0)
 
 const handleFavorite = () => {
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
-    favoriteCount.value++
-    removeAssetFromFavorites(props.asset.id)
-  } else {
-    favoriteCount.value--
+    //todo: add useMessageHandle
     addAssetToFavorites(props.asset.id)
+    favoriteCount.value++
+  } else {
+    removeAssetFromFavorites(props.asset.id)
+    favoriteCount.value--
   }
 }
 

@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	ormLogger "gorm.io/gorm/logger" // GORM 的 logger 包
+	"gorm.io/gorm/schema"
 	_ "image/png"
 	"io/fs"
 	"os"
@@ -33,6 +37,7 @@ type contextKey struct {
 // Controller is the controller for the service.
 type Controller struct {
 	db            *sql.DB
+	ormDb         *gorm.DB
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
 	casdoorClient *casdoorsdk.Client
@@ -53,7 +58,20 @@ func New(ctx context.Context) (*Controller, error) {
 		logger.Printf("failed to connect sql: %v", err)
 		return nil, err
 	}
-	// TODO: Configure connection pool and timeouts.
+	// TODO(who): Configure connection pool and timeouts.
+	var ormDb *gorm.DB
+	if os.Getenv("ENV") != "test" {
+		ormDb, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+			Logger: ormLogger.Default.LogMode(ormLogger.Info),
+			NamingStrategy: schema.NamingStrategy{
+				SingularTable: true,
+			},
+		})
+		if err != nil {
+			logger.Printf("failed to connect gorm: %v", err)
+			return nil, err
+		}
+	}
 
 	kodoConfig := &kodoConfig{
 		cred: qiniuAuth.New(
@@ -79,6 +97,7 @@ func New(ctx context.Context) (*Controller, error) {
 
 	return &Controller{
 		db:            db,
+		ormDb:         ormDb,
 		kodo:          kodoConfig,
 		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,

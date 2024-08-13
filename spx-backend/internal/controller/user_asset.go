@@ -5,23 +5,26 @@ import (
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"strconv"
+	"time"
 )
 
 // AddUserAssetParams holds parameters for adding an user asset.
 type AddUserAssetParams struct {
 	// AssetID is the identifier for the asset.
-	AssetID int `json:"assetId"`
+	AssetID string `json:"assetId"`
 }
 
 // AddUserAsset adds an asset.
-func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string) error {
+func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string, owner string) error {
 	logger := log.GetReqLogger(ctx)
 	fmt.Println("AddUserAsset, assetType: ", assetType)
-	_, err := model.AddUserAsset(ctx, ctrl.db, &model.UserAsset{
-		//UserID:            user.ID,
-		AssetID:      params.AssetID,
-		RelationType: model.RelationType(assetType),
-		//RelationTimestamp: params.RelationTimestamp,
+	assetId, err := strconv.Atoi(params.AssetID)
+	_, err = model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
+		Owner:             owner,
+		AssetID:           assetId,
+		RelationType:      model.RelationType(assetType),
+		RelationTimestamp: time.Now(),
 	})
 	if err != nil {
 		logger.Printf("failed to add asset: %v", err)
@@ -51,6 +54,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	}
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "a.owner", Operation: "=", Value: *params.Owner})
+		wheres = append(wheres, model.FilterCondition{Column: "ua.user_id", Operation: "=", Value: *params.Owner})
 	}
 	if params.Category != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "a.category", Operation: "=", Value: *params.Category})
@@ -79,14 +83,27 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 		SELECT a.*
 		FROM asset a
 		JOIN user_asset ua ON a.id = ua.asset_id
-		WHERE ua.user_id = ?
 	`
 
-	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders)
+	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true)
 	if err != nil {
 		logger.Printf("failed to list user assets: %v", err)
 		return nil, err
 	}
 
 	return assets, nil
+}
+
+// DeleteUserAsset deletes an asset.
+func (ctrl *Controller) DeleteUserAsset(ctx context.Context, assetType string, assetID string, owner string) error {
+	logger := log.GetReqLogger(ctx)
+
+	// Delete the user asset
+	err := model.DeleteUserAsset(ctx, ctrl.ormDb, assetID, model.RelationType(assetType), owner)
+	if err != nil {
+		logger.Printf("failed to delete user asset: %v", err)
+		return err
+	}
+
+	return nil
 }

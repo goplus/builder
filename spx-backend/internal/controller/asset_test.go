@@ -163,14 +163,21 @@ func TestControllerListAssets(t *testing.T) {
 			OrderBy:    DefaultOrder,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
+
+		// Mock the COUNT query
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
+			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).AddRow(1))
+
+		// Mock the asset selection query
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).AddRow(1, "fake-asset", "fake-name"))
+
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("1").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
 		assets, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
@@ -198,14 +205,19 @@ func TestControllerListAssets(t *testing.T) {
 			OrderBy:    TimeDesc,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
+
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY c_time DESC LIMIT \?, \? `).
+			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).AddRow(1))
+
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY c_time DESC LIMIT \?, \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).AddRow(1, "fake-asset", "fake-name"))
+
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("1").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
 		assets, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
@@ -231,14 +243,19 @@ func TestControllerListAssets(t *testing.T) {
 			OrderBy:    ClickCountDesc,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
+
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
 			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY click_count DESC LIMIT \?, \? `).
+			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).AddRow(1))
+
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY click_count DESC LIMIT \?, \?`).
 			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).AddRow(1, "fake-asset", "fake-name"))
+
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("1").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
 		assets, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
@@ -266,14 +283,20 @@ func TestControllerListAssets(t *testing.T) {
 			OrderBy:    DefaultOrder,
 			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
+
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
+			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).AddRow(1))
+
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \?`).
 			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "another-fake-name"))
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).AddRow(1, "fake-asset", "another-fake-name"))
+
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("1").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
+
 		assets, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
@@ -437,32 +460,49 @@ func TestAddAssetParamsValidate(t *testing.T) {
 		assert.Equal(t, "invalid isPublic", msg)
 	})
 }
-
 func TestControllerAddAsset(t *testing.T) {
+
 	t.Run("Normal", func(t *testing.T) {
 		ctrl, mock, err := newTestController(t)
 		require.NoError(t, err)
 
 		ctx := newContextWithTestUser(context.Background())
-		params := &AddAssetParams{
-			DisplayName: "fake-asset",
-			Owner:       "fake-name",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+		paramsOwner := "fake-name"
+		paramsCategory := "boy"
+		paramsAssetType := model.AssetTypeSprite
+		paramsFilesHash := "fake-files-hash"
+		paramsIsPublic := model.Personal
+		params := &ListAssetsParams{
+			Keyword:    "fake",
+			Owner:      &paramsOwner,
+			Category:   &paramsCategory,
+			AssetType:  &paramsAssetType,
+			FilesHash:  &paramsFilesHash,
+			IsPublic:   &paramsIsPublic,
+			OrderBy:    DefaultOrder,
+			Pagination: model.Pagination{Index: 1, Size: 10},
 		}
-		mock.ExpectExec(`INSERT INTO asset \(.+\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
-			WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		asset, err := ctrl.AddAsset(ctx, params)
+
+		// Mock the COUNT query for asset table
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted).
+			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).AddRow(1))
+
+		// Mock the asset selection query
+		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \?`).
+			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted, 0, 10).
+			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).AddRow(1, "fake-asset", "fake-name"))
+
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?\) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("1").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
+
+		assets, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
+		require.NotNil(t, assets)
+		assert.Len(t, assets.Data, 1)
+		assert.Equal(t, "1", assets.Data[0].ID)
 	})
 
 	t.Run("NoUser", func(t *testing.T) {

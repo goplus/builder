@@ -100,13 +100,10 @@ import { computed, ref } from 'vue'
 import { NButton, NIcon, NTag, NTooltip } from 'naive-ui'
 import { UIModalClose } from '@/components/ui'
 import {
-  addAssetToFavorites,
   AssetType,
-  removeAssetFromFavorites,
   type AssetData
 } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
-import UIModal from '@/components/ui/modal/UIModal.vue'
 import LibraryTab from '../LibraryTab.vue'
 import SpriteDetailDisplay from './SpriteDetailDisplay.vue'
 import AssetRate from '../reviews/AssetRate.vue'
@@ -114,6 +111,7 @@ import { StarOutlined, HeartOutlined, HeartFilled } from '@vicons/antd'
 import { template } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
 import BackdropDetailDisplay from './BackdropDetailDisplay.vue'
+import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 
 // Define component props
 const props = defineProps<{
@@ -125,8 +123,8 @@ const emit = defineEmits<{
   addToProject: [asset: AssetData]
 }>()
 
-const isFavorite = ref(props.asset.isFavorite ?? false)
-const favoriteCount = ref(props.asset.favoriteCount ?? 0)
+const isFavorite = ref(props.asset.isLiked ?? false)
+const favoriteCount = ref(props.asset.likeCount ?? 0)
 
 const handleAddButton = () => {
   emit('addToProject', props.asset)
@@ -136,14 +134,14 @@ const handleToggleFav = () => {
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
     favoriteCount.value++
-    props.asset.isFavorite = true
-    props.asset.favoriteCount = favoriteCount.value
-    removeAssetFromFavorites(props.asset.id)
+    props.asset.isLiked = true
+    props.asset.likeCount = favoriteCount.value
+    addAssetToFavorites(props.asset.id)
   } else {
     favoriteCount.value--
-    props.asset.isFavorite = false
-    props.asset.favoriteCount = favoriteCount.value
-    addAssetToFavorites(props.asset.id)
+    props.asset.isLiked = false
+    props.asset.likeCount = favoriteCount.value
+    removeAssetFromFavorites(props.asset.id)
   }
 }
 

@@ -49,6 +49,12 @@ type Asset struct {
 
 	// Status indicates if the asset is deleted.
 	Status Status `db:"status" json:"status"`
+
+	// IsLiked indicates if the asset is liked.
+	IsLiked bool `json:"isLiked"`
+
+	// LikeCount is the number of likes on the asset.
+	LikeCount int `json:"likedCount"`
 }
 
 // TableAsset is the table name of [Asset] in database.
@@ -70,7 +76,49 @@ func AssetByID(ctx context.Context, db *sql.DB, id string) (*Asset, error) {
 
 // ListAssets lists assets with given pagination, where conditions and order by conditions.
 func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition) (*ByPage[Asset], error) {
-	return QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy)
+	logger := log.GetReqLogger(ctx)
+	assets, err := QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false)
+	if err != nil {
+		logger.Printf("QueryByPage failed: %v", err)
+		return nil, err
+	}
+	assetIDs := extractAssetIDs(assets.Data)
+
+	likedMap, err := getLikedInfo(ctx, db, assetIDs)
+	if err != nil {
+		logger.Printf("getLikedInfo failed: %v", err)
+		return nil, err
+	}
+
+	fillLikedInfo(assets.Data, likedMap)
+
+	return assets, nil
+
+}
+
+// extractAssetIDs extracts asset IDs from assets.
+func extractAssetIDs(assets []Asset) []string {
+	assetIDs := make([]string, len(assets))
+	for i, asset := range assets {
+		assetIDs[i] = asset.ID
+	}
+	return assetIDs
+}
+
+// fillLikedInfo 填充 Asset 数据的 IsLiked 和 LikeCount 属性
+func fillLikedInfo(assets []Asset, likedMap map[string]struct {
+	IsLiked   bool
+	LikeCount int
+}) {
+	for i, asset := range assets {
+		if liked, ok := likedMap[asset.ID]; ok {
+			assets[i].IsLiked = liked.IsLiked
+			assets[i].LikeCount = liked.LikeCount
+		} else {
+			assets[i].IsLiked = false
+			assets[i].LikeCount = 0
+		}
+	}
 }
 
 // AddAsset adds an asset.

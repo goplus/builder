@@ -58,7 +58,7 @@ func ProjectByOwnerAndName(ctx context.Context, db *sql.DB, owner string, name s
 
 // ListProjects lists projects with given pagination, where conditions and order by conditions.
 func ListProjects(ctx context.Context, db *sql.DB, paginaton Pagination, where []FilterCondition, orderBy []OrderByCondition) (*ByPage[Project], error) {
-	return QueryByPage[Project](ctx, db, TableProject, paginaton, where, orderBy)
+	return QueryByPage[Project](ctx, db, TableProject, paginaton, where, orderBy, false)
 }
 
 // AddProject adds a project.

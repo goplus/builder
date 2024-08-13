@@ -2,7 +2,13 @@ package controller
 
 import (
 	"context"
+	"github.com/qiniu/x/log"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +18,7 @@ import (
 func setTestEnv(t *testing.T) {
 	t.Setenv("GOP_SPX_DSN", "root:root@tcp(mysql.example.com:3306)/builder?charset=utf8&parseTime=True")
 	t.Setenv("AIGC_ENDPOINT", "https://aigc.example.com")
+	t.Setenv("ENV", "test")
 
 	t.Setenv("KODO_AK", "fake-kodo-ak")
 	t.Setenv("KODO_SK", "fake-kodo-sk")
@@ -52,15 +59,35 @@ func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	t.Cleanup(func() {
-		db.Close()
+
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true, // Skip initializing database with version,avoiding the error "Error 1046: No database selected"
+	}), &gorm.Config{
+		Logger: newLogger,
 	})
 
 	ctrl, err := New(context.Background())
 	if err != nil {
 		return nil, nil, err
 	}
+
+	require.NoError(t, err)
 	ctrl.db = db
+	ctrl.ormDb = gormDB
+
+	t.Cleanup(func() {
+		db.Close()
+	})
 	return ctrl, mock, nil
 }
 

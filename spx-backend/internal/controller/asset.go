@@ -2,10 +2,9 @@ package controller
 
 import (
 	"context"
-	"regexp"
-
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"regexp"
 )
 
 // assetDisplayNameRE is the regular expression for asset display name.
@@ -170,10 +169,16 @@ func (p *AddAssetParams) Validate() (ok bool, msg string) {
 // AddAsset adds an asset.
 func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*model.Asset, error) {
 	logger := log.GetReqLogger(ctx)
-
+	isUserAsset := false
 	user, err := EnsureUser(ctx, params.Owner)
 	if err != nil {
 		return nil, err
+	}
+
+	//handle asset category
+	if params.Category == "imported" || params.Category == "history" || params.Category == "liked" {
+		params.Category = "*"
+		isUserAsset = true
 	}
 
 	asset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{
@@ -189,6 +194,15 @@ func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*
 	if err != nil {
 		logger.Printf("failed to add asset: %v", err)
 		return nil, err
+	}
+	if isUserAsset {
+		err = ctrl.AddUserAsset(ctx, &AddUserAssetParams{
+			AssetID: asset.ID,
+		}, "imported", user.Name)
+		if err != nil {
+			logger.Printf("failed to add user asset: %v", err)
+			return nil, err
+		}
 	}
 	return asset, nil
 }

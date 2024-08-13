@@ -159,7 +159,7 @@ const handleSubmit = useMessageHandle(
     const assetData = await addAsset({
       ...params,
       displayName: form.value.name,
-      category: form.value.category,
+      category: 'imported',
       preview: 'TODO',
       isPublic: form.value.isPublic ? IsPublic.public : IsPublic.personal
     })

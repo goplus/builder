@@ -5,15 +5,16 @@
 <script lang="ts">
 import { inject } from 'vue'
 import { ActionException, useQuery } from '@/utils/exception'
-import { categoryAll, type Category } from './category'
 import type { ByPage } from '@/apis/common'
+import { listLikedAsset, listHistoryAsset } from '@/apis/user'
 
 export type SearchCtx = {
   keyword: string
-  category: string|string[]
+  category: string[]
   page: number
   pageSize: number
   type: AssetType
+  tabCategory: GetListAssetType
 }
 
 export type SearchResultCtx = {
@@ -23,8 +24,10 @@ export type SearchResultCtx = {
   refetch: () => void
 }
 
+export type GetListAssetType = 'liked' | 'history' | 'imported' | 'public'
+
 const searchCtxKey: InjectionKey<SearchCtx> = Symbol('search-ctx')
-  const searchResultCtxKey: InjectionKey<SearchResultCtx> = Symbol('search-result-ctx')
+const searchResultCtxKey: InjectionKey<SearchResultCtx> = Symbol('search-result-ctx')
 
 export function useSearchCtx() {
   const ctx = inject(searchCtxKey)
@@ -40,36 +43,73 @@ export function useSearchResultCtx() {
 </script>
 
 <script setup lang="ts">
-import { provide, type InjectionKey, reactive, watch, computed } from 'vue'
+import { provide, type InjectionKey, reactive, watch } from 'vue'
 import { listAsset, AssetType, IsPublic, type AssetData, ListAssetParamOrderBy } from '@/apis/asset'
 
 const props = defineProps<{
   type: AssetType
+  owner: string
 }>()
 
 const searchCtx = reactive<SearchCtx>({
   keyword: '',
-  category: '',
+  category: [''],
   type: props.type,
   page: 1,
-  pageSize: 12
+  pageSize: 12,
+  tabCategory: 'public'
 })
 
 provide(searchCtxKey, searchCtx)
 
-const entityMessages = {
-  [AssetType.Backdrop]: { en: 'backdrop', zh: '背景' },
-  [AssetType.Sprite]: { en: 'sprite', zh: '精灵' },
-  [AssetType.Sound]: { en: 'sound', zh: '声音' }
+const getListAsset = (type: GetListAssetType,category:string[]) => {
+  switch (type) {
+    case 'liked':
+    return listLikedAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: '',
+        category: [''],
+        owner: '*',
+        isPublic: undefined,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
+    case 'history':
+    return listHistoryAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: undefined,
+        category: undefined,
+        owner: '*',
+        isPublic: undefined,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
+    case 'imported'://when imported, the category,keyword is not needed
+    return listAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: undefined,
+        category: undefined,
+        owner: props.owner,//backend will automatically filter the owner
+        isPublic: IsPublic.personal,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
+    default:
+      return listAsset({
+        pageSize: searchCtx.pageSize,
+        pageIndex: searchCtx.page,
+        assetType: searchCtx.type,
+        keyword: searchCtx.keyword,
+        category: category,
+        owner: '*',
+        isPublic: IsPublic.public,
+        orderBy: ListAssetParamOrderBy.TimeAsc
+      })
+  }
 }
-
-const entityMessage = computed(() => entityMessages[props.type])
-
-// "personal" is not actually a category. Define it as a category for convenience
-const categoryPersonal = computed<Category>(() => ({
-  value: 'personal',
-  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
-}))
 
 const {
   isLoading,
@@ -78,18 +118,7 @@ const {
   refetch
 } = useQuery(
   () => {
-    const c = searchCtx.category
-    const cPersonal = categoryPersonal.value.value
-    return listAsset({
-      pageSize: searchCtx.pageSize,
-      pageIndex: searchCtx.page,
-      assetType: searchCtx.type,
-      keyword: searchCtx.keyword,
-      category: c,// send like 'cartoon_characters,realistic_characters'
-      owner: c === cPersonal ? undefined : '*',
-      isPublic: c === cPersonal ? undefined : IsPublic.public,
-      orderBy: ListAssetParamOrderBy.TimeAsc
-    })
+    return getListAsset(searchCtx.tabCategory,searchCtx.category)
   },
   {
     en: 'Failed to list',
@@ -97,6 +126,8 @@ const {
   },
   true
 )
+
+
 
 const searchResultCtx = reactive<SearchResultCtx>({
   isLoading: isLoading.value,

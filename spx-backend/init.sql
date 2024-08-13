@@ -42,17 +42,18 @@ CREATE TABLE `project`  (
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE user_asset (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
                             owner VARCHAR(255) NULL DEFAULT NULL,
                             asset_id INT NOT NULL,
-                            relation_type ENUM ('liked', 'history', 'imported') NOT NULL,
+                            relation_type ENUM('liked', 'history', 'imported') NOT NULL,
                             relation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NULL,
-                            PRIMARY KEY (owner, asset_id, relation_type),
+                            UNIQUE KEY unique_relation (owner, asset_id, relation_type),
                             CONSTRAINT user_ibfk_1
-                            FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE
+                                FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE CASCADE
 );
 
+CREATE INDEX asset_id_index
+    ON user_asset (asset_id);
 
-create index asset_id
-    on user_asset (asset_id);
 
 
