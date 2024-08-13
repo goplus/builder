@@ -106,7 +106,10 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   const x = round(e.target.x() - mapSize.width / 2)
   const y = round(mapSize.height / 2 - e.target.y())
   let heading = sprite.heading
-  if (sprite.rotationStyle === RotationStyle.normal) {
+  if (
+    sprite.rotationStyle === RotationStyle.normal ||
+    sprite.rotationStyle === RotationStyle.leftRight
+  ) {
     heading = nomalizeDegree(round(e.target.rotation() + 90))
   }
   const size = round(Math.abs(e.target.scaleX()) * bitmapResolution.value, 2)
