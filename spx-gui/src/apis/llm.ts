@@ -87,6 +87,10 @@ export async function nextChat(chatID: string,params: AIChatParams) {
     return client.post('/llm/chat/'+ chatID,params) as Promise<ChatResp>
 }
 
+export async function deleteChat(chatID: string,params: AIChatParams) {
+    return client.delete('/llm/chat/'+ chatID,params) as Promise<void>
+}
+
 export async function startTask(params: AITaskParams) {
     return client.post('/llm/task',params) as Promise<TaskResp>
 }

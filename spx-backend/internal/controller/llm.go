@@ -244,6 +244,10 @@ func (m *chatMapManager) deleteChat(id string) {
 	delete(m.chatMap, id)
 }
 
+func (m *chatMapManager) sync() {
+	//TODO(callme-taota): have to support db sync(such as redis), in case of multi instance deploy.
+}
+
 func DeleteExpireChat() {
 	for _, chat := range chatMapMgr.chatMap {
 		if chat.isExpired() {
@@ -421,6 +425,19 @@ func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams)
 	}
 	chatResp, err = chat.nextInput(ctrl, p.UserInput)
 	return
+}
+
+func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
+	chat, ok := chatMapMgr.getChat(id)
+	if !ok {
+		return
+	}
+	chatUser := chat.User
+	_, err := EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return
+	}
+	chatMapMgr.deleteChat(id)
 }
 
 func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {

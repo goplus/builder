@@ -4,22 +4,23 @@
 //   POST /llm/chat
 
 import (
-"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/controller"
 )
 
 ctx := &Context
 
 user, ok := ensureUser(ctx)
 if !ok {
-return
+	return
 }
 
 params := &controller.AIStartChatParams{}
 if !parseJSON(ctx, params) {
-return
+	return
 }
 resp, err := ctrl.StartChat(ctx, params)
 if err != nil {
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json resp
