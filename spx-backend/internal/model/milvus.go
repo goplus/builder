@@ -7,8 +7,15 @@ import (
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
+type MilvusAsset struct {
+	ID        int       `db:"id" json:"id"`
+	Vector    []float32 `db:"vector" json:"vector"`
+	AssetID   string    `db:"asset_id" json:"asset_id"`
+	AssetName string    `db:"asset_name" json:"asset_name"`
+}
+
 // SearchByVector searches for vectors in a collection that are similar to the given search vector.
-func SearchByVector(ctx context.Context, cli client.Client, collectionName string, searchVector []float32) ([]string, error) {
+func SearchByVector(ctx context.Context, cli client.Client, collectionName string, searchVector []float32, topK int) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Load collection
@@ -37,7 +44,7 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		"",
 
 		// Result field
-		[]string{"asset_id"},
+		[]string{"asset_name"},
 
 		[]entity.Vector{entity.FloatVector(searchVector)},
 
@@ -48,7 +55,7 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		entity.L2,
 
 		//Maximum number returned by search
-		100,
+		topK,
 
 		searchParams,
 	)
@@ -57,13 +64,13 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		return nil, err
 	}
 
-	var assetIDs []string
+	var assetNames []string
 
 	//Process search results
 	for _, result := range results {
 		f := result.Fields[0].(*entity.ColumnVarChar)
-		assetIDs = append(assetIDs, f.Data()[0])
+		assetNames = append(assetNames, f.Data()[0])
 	}
 
-	return assetIDs, nil
+	return assetNames, nil
 }
