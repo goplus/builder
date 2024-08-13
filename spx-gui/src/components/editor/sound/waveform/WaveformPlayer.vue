@@ -159,7 +159,7 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
 </script>
 
 <script lang="ts">
-export async function getWaveformData(audioBuffer: AudioBuffer, targetPointLength = 80) {
+export function getWaveformData(audioBuffer: AudioBuffer, targetPointLength = 80) {
   const scale = 5
   const channelData = audioBuffer.getChannelData(0)
 
