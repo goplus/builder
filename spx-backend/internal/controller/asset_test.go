@@ -331,6 +331,135 @@ func TestControllerListAssets(t *testing.T) {
 	})
 }
 
+func TestAddAssetParamsValidate(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("EmptyDisplayName", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing displayName", msg)
+	})
+
+	t.Run("InvalidDisplayName", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: strings.Repeat("fake-asset", 11),
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid displayName", msg)
+	})
+
+	t.Run("EmptyOwner", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing owner", msg)
+	})
+
+	t.Run("EmptyCategory", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing category", msg)
+	})
+
+	t.Run("InvalidAssetType", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   -1,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid assetType", msg)
+	})
+
+	t.Run("EmptyFilesHash", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "",
+			Preview:     "fake-preview",
+			IsPublic:    model.Personal,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing filesHash", msg)
+	})
+
+	t.Run("InvalidIsPublic", func(t *testing.T) {
+		params := &AddAssetParams{
+			DisplayName: "fake-display-name",
+			Owner:       "fake-owner",
+			Category:    "fake-category",
+			AssetType:   model.AssetTypeSprite,
+			Files:       model.FileCollection{},
+			FilesHash:   "fake-files-hash",
+			Preview:     "fake-preview",
+			IsPublic:    -1,
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid isPublic", msg)
+	})
+}
 func TestControllerAddAsset(t *testing.T) {
 
 	t.Run("Normal", func(t *testing.T) {
