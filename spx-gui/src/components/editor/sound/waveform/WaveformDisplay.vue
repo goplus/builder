@@ -47,16 +47,13 @@ onMounted(() => {
   })
 })
 
-const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip = false) => {
+const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[]) => {
   const halfHeight = ctx.canvas.height / 2
   const paddedWidth = ctx.canvas.width * (1 - (props.drawPaddingRight || 0))
   const segmentLength = paddedWidth / (points.length - 1)
 
   const getPoint = (i: number) => {
-    if (flip) {
-      return halfHeight - points[i] * halfHeight * props.scale
-    }
-    return halfHeight + points[i] * halfHeight * props.scale
+    return halfHeight - points[i] * halfHeight * props.scale
   }
 
   ctx.beginPath()
@@ -86,13 +83,20 @@ const drawSmoothCurve = (ctx: CanvasRenderingContext2D, points: number[], flip =
   ctx.fill()
 }
 
+const mirrorCanvasVertically = (ctx: CanvasRenderingContext2D) => {
+  ctx.save()
+  ctx.scale(1, -1)
+  ctx.drawImage(ctx.canvas, 0, -ctx.canvas.height)
+  ctx.restore()
+}
+
 const draw = () => {
   if (canvas.value) {
     const ctx = canvas.value.getContext('2d')
     if (ctx) {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
       drawSmoothCurve(ctx, props.points)
-      drawSmoothCurve(ctx, props.points, true)
+      mirrorCanvasVertically(ctx)
     }
   }
 }
