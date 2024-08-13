@@ -52,11 +52,12 @@ watchEffect(() => {
 const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 const code = computed(() => props.stage.code)
 
+// We define `codeUpdateAction` outside of `handleCodeUpdate` to keep reference-equal for `mergeable`, see details in project history
+const codeUpdateAction = {
+  name: { en: 'Update stage code', zh: '修改舞台代码' },
+  mergeable: true
+}
 function handleCodeUpdate(value: string) {
-  const action = {
-    name: { en: 'Update stage code', zh: '修改舞台代码' },
-    mergeable: true
-  }
-  editorCtx.project.history.doAction(action, () => props.stage.setCode(value))
+  editorCtx.project.history.doAction(codeUpdateAction, () => props.stage.setCode(value))
 }
 </script>

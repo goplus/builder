@@ -24,15 +24,9 @@ const config = computed<CustomTransformerConfig>(() => {
       centeredScaling: true
     }
   }
-  if (project.stage.selectedWidget != null) {
-    return {
-      rotationStyle: 'none',
-      centeredScaling: false
-    }
-  }
   return {
-    // rotationStyle: 'none',
-    // centeredScaling: 
+    rotationStyle: 'none',
+    centeredScaling: false
   }
 })
 
