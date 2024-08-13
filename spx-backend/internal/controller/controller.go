@@ -25,6 +25,10 @@ var (
 	ErrForbidden    = errors.New("forbidden")
 )
 
+type ParamsChecker interface {
+	Validate() (bool, string)
+}
+
 // contextKey is a value for use with [context.WithValue]. It's used as a
 // pointer so it fits in an interface{} without allocation.
 type contextKey struct {

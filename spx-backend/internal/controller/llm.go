@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/llm"
 	"time"
@@ -16,25 +17,51 @@ const expireTime = time.Hour * 2
 // max input length
 const maxInputLength = 1000
 
-// chat actions
+// ChatActions enum of input actions. Will generate different prompts.
+type ChatActions int
+
 const (
-	_           = iota
-	ExplainChat = 1 << (iota - 1)
-	CommentChat
-	FixCodeChat
+	_                       = iota
+	ExplainChat ChatActions = iota
+	CommentChat ChatActions = iota
+	FixCodeChat ChatActions = iota
 )
 
-// Task actions
+func (action ChatActions) Validate() (bool, string) {
+	validActions := []ChatActions{ExplainChat, CommentChat, FixCodeChat}
+	for _, validActions := range validActions {
+		if action == validActions {
+			return true, ""
+		}
+	}
+	return false, "action not found"
+}
+
+// TaskActions enum of task actions. Use AI to support.
+type TaskActions int
+
 const (
-	_           = iota
-	SuggestTask = 1 << (iota - 1)
+	_                       = iota
+	SuggestTask TaskActions = iota
 )
+
+func (action TaskActions) Validate() (bool, string) {
+	validActions := []TaskActions{SuggestTask}
+	for _, validActions := range validActions {
+		if action == validActions {
+			return true, ""
+		}
+	}
+	return false, "action not found"
+}
 
 // Languages enum
+type UserLang int
+
 const (
-	_ = iota
-	En
-	Zh
+	_  UserLang = iota
+	En UserLang = iota
+	Zh UserLang = iota
 )
 
 // the number of more questions for user to continue the chat
@@ -115,14 +142,15 @@ func newChatResp(resp llm.LlmResponseBody, id string) ChatResp {
 	return chatResp
 }
 
-type SuggestTaskResp struct {
+type TaskResp struct {
 	TaskAction   int           `json:"taskAction"`
 	CodeSuggests []CodeSuggest `json:"codeSuggests"`
+	// ...
 }
 
-func newSuggestTaskResp(resp llm.LlmResponseBody, id string) SuggestTaskResp {
+func newSuggestTaskResp(resp llm.LlmResponseBody, id string) TaskResp {
 	// TODO(callme-taota): parse the response to get the task action and code suggests.
-	suggestTaskResp := SuggestTaskResp{}
+	suggestTaskResp := TaskResp{}
 	return suggestTaskResp
 }
 
@@ -152,6 +180,43 @@ type Cursor struct {
 	Column int `json:"column"`
 }
 
+func (cursor *Cursor) Validate() (bool, string) {
+	if cursor.Line <= 0 || cursor.Column <= 0 {
+		return false, "cursor check failed"
+	}
+	return true, ""
+}
+
+func (params *AIStartChatParams) Validate() (bool, string) {
+	if params.UserInput == "" {
+		return false, "no input"
+	}
+	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariable) == 0 {
+		return false, "project check failed"
+	}
+	return ChatActions(params.ChatAction).Validate()
+}
+
+func (params *AIChatParams) Validate() (bool, string) {
+	if params.UserInput == "" {
+		return false, "no input"
+	}
+	return true, ""
+}
+
+func (params *AITaskParams) Validate() (bool, string) {
+	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariable) == 0 {
+		return false, "project check failed"
+	}
+	if ok, msg := TaskActions(params.TaskAction).Validate(); !ok {
+		return false, msg
+	}
+	if ok, msg := params.UserCursor.Validate(); !ok {
+		return false, msg
+	}
+	return true, ""
+}
+
 type chatMapManager struct {
 	chatMap map[string]*chat
 }
@@ -179,6 +244,10 @@ func (m *chatMapManager) deleteChat(id string) {
 	delete(m.chatMap, id)
 }
 
+func (m *chatMapManager) sync() {
+	//TODO(callme-taota): have to support db sync(such as redis), in case of multi instance deploy.
+}
+
 func DeleteExpireChat() {
 	for _, chat := range chatMapMgr.chatMap {
 		if chat.isExpired() {
@@ -189,15 +258,16 @@ func DeleteExpireChat() {
 
 type chat struct {
 	ID                string         `json:"id"`
-	ChatAction        int            `json:"chatAction"`
+	ChatAction        ChatActions    `json:"chatAction"`
 	ChatLang          string         `json:"chatLang"`
 	CurrentChatLength int            `json:"currentChatLength"`
 	ProjectContext    ProjectContext `json:"projectContext"`
 	CreatAt           time.Time      `json:"creatAt"`
 	Messages          llm.Messages   `json:"messages"`
+	User              *User          `json:"user"`
 }
 
-func newChat(chatAction int, ctx ProjectContext, lang int) *chat {
+func newChat(chatAction ChatActions, ctx ProjectContext, lang int) *chat {
 	return &chat{
 		ID:                "",
 		ChatAction:        chatAction,
@@ -228,6 +298,7 @@ func (c *chat) nextInput(ctrl *Controller, userInput string) (ChatResp, error) {
 	if err != nil {
 		return ChatResp{}, err
 	}
+	c.pushMessage(llm.ChatRequestBodyMessagesRoleAssistant, resp.Choices[0].Message.Content)
 	return newChatResp(resp, c.ID), nil
 }
 
@@ -247,7 +318,7 @@ func (c *chat) getMessages() llm.Messages {
 }
 
 func getUserInputLanguage(userLang int) string {
-	switch userLang {
+	switch UserLang(userLang) {
 	case En:
 		return "english"
 	case Zh:
@@ -283,12 +354,12 @@ func chatPromptGenerator(chat chat) string {
 	return s
 }
 
-func (p AITaskParams) taskPromptGenerator() (string, string) {
-	switch p.TaskAction {
+func (params *AITaskParams) taskPromptGenerator() (string, string) {
+	switch TaskActions(params.TaskAction) {
 	case SuggestTask:
-		sysPrompt := fmt.Sprintf(suggestTaskTemplate, p.UserCursor.Line, p.UserCursor.Column)
+		sysPrompt := fmt.Sprintf(suggestTaskTemplate, params.UserCursor.Line, params.UserCursor.Column)
 		sysPrompt += fmt.Sprintf(suggestTaskResponseTemplate, aiSuggestNumber)
-		userInput := fmt.Sprintf("Project: %s, Code arround user's cursor: %s", p.ProjectContext.String(), p.UserCode)
+		userInput := fmt.Sprintf("Project: %s, Code arround user's cursor: %s", params.ProjectContext.String(), params.UserCode)
 		return sysPrompt, userInput
 	default:
 		return "", ""
@@ -304,15 +375,33 @@ func createLLMRequestBodyMessages(sysInput, userInput string) llm.Messages {
 	return msg
 }
 
+func createLLMRequestBodyMessagesWithProjectCtx(sysInput, userInput string, projectContext ProjectContext) llm.Messages {
+	msg := llm.CreateMessage()
+
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleSystem, sysInput)
+	msg.PushMessages(llm.ChatRequestBodyMessagesRoleUser, fmt.Sprintf("UserInput: %s, User Entire Project %s", userInput, projectContext.String()))
+
+	return msg
+}
+
 func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (ChatResp, error) {
-	chat := newChat(p.ChatAction, p.ProjectContext, p.UserLang)
+	if ok, msg := p.Validate(); !ok {
+		return ChatResp{}, errors.New(msg)
+	}
+	chat := newChat(ChatActions(p.ChatAction), p.ProjectContext, p.UserLang)
+	user, ok := UserFromContext(ctx)
+	if !ok {
+		return ChatResp{}, ErrForbidden
+	}
+	chat.User = user
 	systemPrompt := chatPromptGenerator(*chat)
-	chat.Messages = createLLMRequestBodyMessages(systemPrompt, p.UserInput)
+	chat.Messages = createLLMRequestBodyMessagesWithProjectCtx(systemPrompt, p.UserInput, p.ProjectContext)
 	resp, err := ctrl.llm.CallLLM(chat.getMessages())
 	if err != nil {
 		return ChatResp{}, err
 	}
 	chat.ID = resp.ID
+	chat.pushMessage(llm.ChatRequestBodyMessagesRoleAssistant, resp.Choices[0].Message.Content)
 	err = chatMapMgr.storeChat(chat)
 	if err != nil {
 		return ChatResp{}, err
@@ -320,20 +409,44 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	return newChatResp(resp, chat.ID), nil
 }
 
-func (ctrl *Controller) NextChatEx(ctx context.Context, id string, userInput string) (chatResp ChatResp, err error) {
+func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams) (chatResp ChatResp, err error) {
+	if ok, msg := p.Validate(); !ok {
+		return ChatResp{}, errors.New(msg)
+	}
 	chat, ok := chatMapMgr.getChat(id)
 	if !ok {
 		err = fmt.Errorf("no chat found with id: %s", id)
 		return
 	}
-	chatResp, err = chat.nextInput(ctrl, userInput)
+	chatUser := chat.User
+	_, err = EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return ChatResp{}, err
+	}
+	chatResp, err = chat.nextInput(ctrl, p.UserInput)
 	return
 }
 
-func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (SuggestTaskResp, error) {
+func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
+	chat, ok := chatMapMgr.getChat(id)
+	if !ok {
+		return
+	}
+	chatUser := chat.User
+	_, err := EnsureUser(ctx, chatUser.Name)
+	if err != nil {
+		return
+	}
+	chatMapMgr.deleteChat(id)
+}
+
+func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {
+	if ok, msg := p.Validate(); !ok {
+		return TaskResp{}, errors.New(msg)
+	}
 	resp, err := ctrl.llm.CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()))
 	if err != nil {
-		return SuggestTaskResp{}, err
+		return TaskResp{}, err
 	}
 	return newSuggestTaskResp(resp, ""), nil
 }

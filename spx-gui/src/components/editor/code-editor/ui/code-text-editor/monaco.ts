@@ -5,7 +5,7 @@ import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import { ToolType, getAllTools } from './tools'
 import { useUIVariables } from '@/components/ui'
-import type { IRange, languages } from 'monaco-editor'
+import type { IDisposable, IRange, languages } from 'monaco-editor'
 import type { Project } from '@/models/project'
 
 declare global {
@@ -21,7 +21,10 @@ async function initFormatWasm() {
 }
 
 export const defaultThemeName = 'spx-default-theme'
-
+const monacoProviderDisposes: Record<string, IDisposable | null> = {
+  completionProvider: null,
+  hoverProvider: null
+}
 /** Global initializations for monaco editor */
 export function initMonaco(
   monaco: typeof import('monaco-editor'),
@@ -170,26 +173,29 @@ export function initMonaco(
   })
 
   // Code hint
-  monaco.languages.registerCompletionItemProvider('spx', {
-    provideCompletionItems: (model, position) => {
-      const word = model.getWordUntilPosition(position)
-      const range = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: word.startColumn,
-        endColumn: word.endColumn
+  monacoProviderDisposes.completionProvider = monaco.languages.registerCompletionItemProvider(
+    'spx',
+    {
+      provideCompletionItems: (model, position) => {
+        const word = model.getWordUntilPosition(position)
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        }
+        const suggestions: languages.CompletionItem[] = getCompletionItems(
+          range,
+          monaco,
+          i18n,
+          getProject()
+        )
+        return { suggestions }
       }
-      const suggestions: languages.CompletionItem[] = getCompletionItems(
-        range,
-        monaco,
-        i18n,
-        getProject()
-      )
-      return { suggestions }
     }
-  })
+  )
 
-  monaco.languages.registerHoverProvider('spx', {
+  monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider('spx', {
     provideHover(model, position) {
       const word = model.getWordAtPosition(position)
       if (word == null) return
@@ -222,8 +228,23 @@ export function initMonaco(
     }
   })
 
-  // tempararily disable in-browser format
+  // temporarily disable in-browser format
   // initFormat()
+}
+
+/**
+ * providers need to be disposed before the editor is destroyed.
+ * otherwise, in current file will cause duplicate completion items when HMR is triggered in development mode.
+ */
+export function disposeMonacoProviders() {
+  if (monacoProviderDisposes.completionProvider) {
+    monacoProviderDisposes.completionProvider.dispose()
+    monacoProviderDisposes.completionProvider = null
+  }
+  if (monacoProviderDisposes.hoverProvider) {
+    monacoProviderDisposes.hoverProvider.dispose()
+    monacoProviderDisposes.hoverProvider = null
+  }
 }
 
 function getCompletionItems(
