@@ -300,3 +300,23 @@ func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+// getSearchSuggestions returns search suggestions.
+func (ctrl *Controller) getSearchSuggestions(ctx context.Context, keyword string, limit int) ([]string, error) {
+	logger := log.GetReqLogger(ctx)
+	embedding, err := ctrl.GetEmbedding(ctx,
+		&GetEmbeddingParams{
+			Prompt:      keyword,
+			CallbackUrl: "",
+		})
+	if err != nil {
+		logger.Printf("failed to get embedding: %v", err)
+		return nil, err
+	}
+	suggestions, err := model.SearchByVector(ctx, *ctrl.milvusClient, "asset", embedding.Embedding, limit)
+	if err != nil {
+		logger.Printf("failed to get search suggestions: %v", err)
+		return nil, err
+	}
+	return suggestions, nil
+}
