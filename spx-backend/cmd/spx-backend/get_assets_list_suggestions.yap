@@ -6,7 +6,7 @@
 ctx := &Context
 
 
-assetsName, err := ctrl.getSearchSuggestions(ctx.Context(), ${query}, ${limit})
+assetsName, err := ctrl.GetSearchSuggestions(ctx.Context(), ${query}, ${limit})
 if err != nil {
 replyWithInnerError(ctx, err)
 return
