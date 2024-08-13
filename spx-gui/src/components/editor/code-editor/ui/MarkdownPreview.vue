@@ -1,153 +1,19 @@
 <script setup lang="ts">
-// attention! current file is in testing! test like: custom markdown theme, custom Markdown syntax, etc.
+// attention! current file is in testing! test like: custom Markdown theme, custom Markdown syntax, etc.
 // no need to review.
 import markdownit from 'markdown-it'
 import hljs from 'highlight.js'
+// import 'highlight.js/styles/github.min.css'
+import './common/languages/highlight-builder.css'
+import { ref, watchEffect } from 'vue'
+import { registerGoPlusLanguageHighlight } from '@/components/editor/code-editor/ui/common/languages/language-go+'
 
-const content = `\`\`\`spx
-setYpos (Y: float32)
-\`\`\`
----
-移动到指定位置
+const props = defineProps<{
+  content: string
+}>()
 
-使用示例：
-\`\`\`spx
-// 按下键盘上的按键时，精灵将往上移动
-onKey Keyup, => {
-    setYpos ypos + 1
-}
-\`\`\`
-`
-hljs.registerLanguage('spx', function (hljs) {
-  const keywords = [
-    'func',
-    'main',
-    'println',
-    'if',
-    'else',
-    'for',
-    'range',
-    'break',
-    'continue',
-    'return',
-    'switch',
-    'case',
-    'default',
-    'type',
-    'struct',
-    'map',
-    'chan',
-    'nil',
-    'true',
-    'false',
-    'iota',
-    'const',
-    'import',
-    'package',
-    'var',
-    'error',
-    'interface',
-    'struct',
-    'fallthrough',
-    'go',
-    'defer',
-    'select'
-  ]
-
-  const typeKeywords = [
-    'int',
-    'string',
-    'bool',
-    'void',
-    'map',
-    'chan',
-    'error',
-    'interface',
-    'struct',
-    'nil'
-  ]
-
-  const operators = [
-    '=',
-    '>',
-    '<',
-    '!',
-    '~',
-    '?',
-    ':',
-    '==',
-    '<=',
-    '>=',
-    '!=',
-    '&&',
-    '||',
-    '++',
-    '--',
-    '+',
-    '-',
-    '*',
-    '/',
-    '&',
-    '|',
-    '^',
-    '%',
-    '<<',
-    '>>',
-    '+=',
-    '-=',
-    '*=',
-    '/=',
-    '&=',
-    '|=',
-    '^=',
-    '%=',
-    '<<=',
-    '>>=',
-    '=>'
-  ]
-
-  return {
-    name: 'spx',
-    aliases: ['spx'],
-    keywords: {
-      keyword: keywords.join(' '),
-      type: typeKeywords.join(' ')
-    },
-    contains: [
-      hljs.C_LINE_COMMENT_MODE,
-      hljs.C_BLOCK_COMMENT_MODE,
-      hljs.QUOTE_STRING_MODE,
-      hljs.APOS_STRING_MODE,
-      hljs.NUMBER_MODE,
-      {
-        // operators
-        className: 'operator',
-        begin: /=>/
-      },
-      {
-        // operators
-        className: 'operator',
-        begin: /[=><!~?:&|+\-*/^%]+/
-      },
-      {
-        // brackets
-        className: 'bracket',
-        begin: /[{}[\]()]/
-      },
-      {
-        // type identifiers
-        className: 'type',
-        begin: /\b[A-Z][\w$]*\b/
-      },
-      {
-        // identifiers
-        className: 'identifier',
-        begin: /\b[a-z_$][\w$]*\b/
-      }
-    ]
-  }
-})
-
+// const content = SampleDoc
+hljs.registerLanguage('go+', registerGoPlusLanguageHighlight)
 const md = markdownit({
   highlight: function (str, lang): string {
     if (lang && hljs.getLanguage(lang)) {
@@ -158,16 +24,12 @@ const md = markdownit({
             language: lang
           }).value
         }</code></pre>`
-        content = content.replace(
-          '<span class="hljs-operator">=&amp;</span><span class="hljs-identifier">gt</span>;',
-          `<span class="hljs-operator">=&gt;</span>`
-        )
         return content
       } catch (e) {
         console.warn(e)
       }
     }
-    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</ code></ pre>'
+    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>'
   }
 })
 
@@ -184,7 +46,12 @@ const md = markdownit({
 //         </div>
 //       `
 // }
-const result = md.render(md.utils.escapeHtml(content))
+
+const result = ref('')
+
+watchEffect(() => {
+  result.value = md.render(props.content)
+})
 
 // window.copyToClipboard = copyToClipboard
 //
@@ -214,9 +81,6 @@ const result = md.render(md.utils.escapeHtml(content))
     <footer class="preview-card__footer"></footer>
   </article>
 </template>
-<style>
-@import url(//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/styles/github.min.css);
-</style>
 <style lang="scss">
 .preview-markdown {
   .code-block {
@@ -248,11 +112,11 @@ const result = md.render(md.utils.escapeHtml(content))
 
 <style lang="scss">
 .preview-card {
-  width: 400px;
+  min-width: 400px;
   background: white;
   border-radius: 5px;
   color: black;
-  font-size: 12px;
+  font-size: 14px;
   border: 1px solid #a6a6a6;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }

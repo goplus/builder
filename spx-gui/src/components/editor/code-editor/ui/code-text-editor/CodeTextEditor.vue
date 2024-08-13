@@ -5,7 +5,7 @@
       v-if="completionMenu"
       :completion-menu="completionMenu"
     ></completion-menu-component>
-    <doc-preview-card style="position: absolute; top: 0"></doc-preview-card>
+    <markdown-preview :content="TestMarkdown" style="position: absolute; top: 0"></markdown-preview>
   </div>
 </template>
 <script lang="ts">
@@ -25,8 +25,8 @@ import { useLocalStorage } from '@/utils/utils'
 import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
-import DocPreviewCard from '@/components/editor/code-editor/code-text-editor/DocPreviewCard.vue'
-
+import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
+import TestMarkdown from '@/components/editor/code-editor/ui/common/docs/setYpos.md?raw'
 const props = defineProps<{
   value: string
   ui: EditorUI
