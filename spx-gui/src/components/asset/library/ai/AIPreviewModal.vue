@@ -13,18 +13,18 @@
         <UIButton
           size="large"
           class="insert-button"
-          :disabled="!contentReady || addToProjectPending"
+          :disabled="!contentReady || addToProjectPending || exportPending"
           @click="handleAddButton"
         >
           <span style="white-space: nowrap">
             {{
-              addToProjectPending
+              addToProjectPending || exportPending
                 ? $t({ en: 'Pending...', zh: '正在添加...' })
                 : $t({ en: 'Add to project', zh: '添加到项目' })
             }}
           </span>
         </UIButton>
-        <UIButton size="large" :disabled="!contentReady" @click="handleToggleFav">
+        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleToggleFav">
           <span style="white-space: nowrap">
             {{
               isFavorite
@@ -130,7 +130,9 @@ import {
   type AIGCFiles,
   isContentReady,
   isPreviewReady,
-  type TaggedAIAssetData
+  type TaggedAIAssetData,
+  exportAIGCAsset,
+  exportedId
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -151,7 +153,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  addToProject: [asset: TaggedAIAssetData]
+  addToProject: [asset: AssetData]
   selectAi: [asset: TaggedAIAssetData]
 }>()
 
@@ -245,12 +247,40 @@ const pollStatus = async () => {
 }
 
 const isFavorite = ref(false)
-
-const handleAddButton = () => {
-  emit('addToProject', props.asset)
+const exportPending = ref(false)
+/**
+ * Get the public asset data from the asset data
+ * If the asset data is not exported, export it first
+ */
+const exportAssetDataToPublic = async () => {
+  if (!props.asset[isContentReady]) {
+    throw new Error('Could not export an incomplete asset')
+  }
+  exportPending.value = true
+  const assetId = props.asset[exportedId] ?? (await exportAIGCAsset(props.asset)).assetId
+  const publicAsset = await getAsset(assetId)
+  exportPending.value = false
+  return publicAsset
 }
 
-const handleToggleFav = () => {
+const publicAsset = ref<AssetData | null>(null)
+
+const handleAddButton = async () => {
+  if (props.addToProjectPending) {
+    return
+  }
+  if (!publicAsset.value) {
+    const exportedAsset = await exportAssetDataToPublic()
+    publicAsset.value = exportedAsset
+  }
+  emit('addToProject', publicAsset.value)
+}
+
+const handleToggleFav = async () => {
+  if (!publicAsset.value) {
+    const exportedAsset = await exportAssetDataToPublic()
+    publicAsset.value = exportedAsset
+  }
   isFavorite.value = !isFavorite.value
   if (isFavorite.value) {
     removeAssetFromFavorites(props.asset.id)
