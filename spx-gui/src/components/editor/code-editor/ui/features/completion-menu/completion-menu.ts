@@ -13,7 +13,7 @@ import {
 } from 'monaco-editor'
 import { reactive, type UnwrapNestedRefs } from 'vue'
 import type { CompletionMenuItem, MonacoCompletionModelItem } from './completion'
-import { IconEnum, createMatches, type IMatch } from '@/components/editor/code-editor/ui/common'
+import { IconEnum, createMatches, type IMatch } from '../../common'
 import EditorOption = editor.EditorOption
 
 export interface CompletionMenuState {

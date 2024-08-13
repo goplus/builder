@@ -20,7 +20,7 @@ export enum IconEnum {
 export type Icon = IconEnum
 
 /** transform icon enum to raw svg html content */
-export function Icon2SVG(icon: Icon): string {
+export function icon2SVG(icon: Icon): string {
   switch (icon) {
     case IconEnum.Function:
       return IconEffect
