@@ -65,6 +65,11 @@ class FlipButton extends Konva.Group {
   constructor(orientation: 'left' | 'right', onClick?: () => void) {
     super()
 
+    // The enabled button is always 'left' because of how we implement flip.
+    // We implement flip by rotating 180 degrees and flipping the scaleY.
+    // However, scaleY flip is not applied to Transformer's elements,
+    // so the transformer elements like FlipButton are only rotated 180 degrees,
+    // making the left button visually the right button.
     const enabled = orientation === 'left'
 
     this.orientation = orientation
