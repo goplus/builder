@@ -1,5 +1,5 @@
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
+import { keywords, typeKeywords } from '@/utils/spx'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
@@ -7,6 +7,7 @@ import { ToolType, getAllTools } from './tools'
 import { useUIVariables } from '@/components/ui'
 import type { IDisposable, IRange, languages } from 'monaco-editor'
 import type { Project } from '@/models/project'
+import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
 
 declare global {
   /** Notice: this is available only after `initFormatWasm()` */
@@ -26,7 +27,7 @@ const monacoProviderDisposes: Record<string, IDisposable | null> = {
   hoverProvider: null
 }
 /** Global initializations for monaco editor */
-export function initMonaco(
+export async function initMonaco(
   monaco: typeof import('monaco-editor'),
   { color }: ReturnType<typeof useUIVariables>,
   i18n: I18n,
@@ -38,33 +39,36 @@ export function initMonaco(
     }
   }
 
+  const LANGUAGE_NAME = 'spx'
+
   monaco.languages.register({
-    id: 'spx'
+    id: LANGUAGE_NAME
   })
 
-  monaco.editor.defineTheme(defaultThemeName, {
-    base: 'vs',
-    inherit: true,
-    rules: [
-      // TODO: review colors here
-      { token: 'comment', foreground: color.hint[2], fontStyle: 'italic' },
-      { token: 'string', foreground: color.green[300] },
-      { token: 'operator', foreground: color.blue.main },
-      { token: 'number', foreground: color.blue[600] },
-      { token: 'keyword', foreground: color.red[300] },
-      { token: 'typeKeywords', foreground: color.purple.main },
-      { token: 'brackets', foreground: color.title }
-    ],
-    colors: {
-      'editor.background': '#FFFFFF',
-      'scrollbar.shadow': '#FFFFFF00',
-      'scrollbarSlider.background': `${color.primary.main}50`,
-      'scrollbarSlider.hoverBackground': `${color.primary.main}80`,
-      'scrollbarSlider.activeBackground': color.primary.main
-    }
-  })
+  // monaco.editor.defineTheme(defaultThemeName, {
+  //   base: 'vs',
+  //   inherit: true,
+  //   rules: [
+  //     // TODO: review colors here
+  //     { token: 'comment', foreground: color.hint[2], fontStyle: 'italic' },
+  //     { token: 'string', foreground: color.green[300] },
+  //     { token: 'operator', foreground: color.blue.main },
+  //     { token: 'number', foreground: color.blue[600] },
+  //     { token: 'keyword', foreground: color.red[300] },
+  //     { token: 'typeKeywords', foreground: color.purple.main },
+  //     { token: 'brackets', foreground: color.title }
+  //   ],
+  //   colors: {
+  //     'editor.background': '#FFFFFF',
+  //     'scrollbar.shadow': '#FFFFFF00',
+  //     'scrollbarSlider.background': `${color.primary.main}50`,
+  //     'scrollbarSlider.hoverBackground': `${color.primary.main}80`,
+  //     'scrollbarSlider.activeBackground': color.primary.main
+  //   }
+  // })
 
-  monaco.languages.setLanguageConfiguration('spx', {
+  // keep this for auto match brackets when typing
+  monaco.languages.setLanguageConfiguration(LANGUAGE_NAME, {
     // tokenize all words as identifiers
     wordPattern: /(-?\d*\.\d\w*)|([^`~!@#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     comments: {
@@ -80,101 +84,9 @@ export function initMonaco(
     ]
   })
 
-  // Match token and highlight
-  monaco.languages.setMonarchTokensProvider('spx', {
-    defaultToken: 'invalid',
-    keywords,
-    typeKeywords,
-    operators,
-    brackets,
-    symbols: /[=><!~?:&|+\-*/^%]+/,
-    escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-    // digits
-    digits: /\d+(_+\d+)*/,
-    octaldigits: /[0-7]+(_+[0-7]+)*/,
-    binarydigits: /[0-1]+(_+[0-1]+)*/,
-    hexdigits: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
-    // The main tokenizer for our languages
-    tokenizer: {
-      root: [
-        [
-          /[a-z_$][\w$]*/,
-          {
-            cases: {
-              '@typeKeywords': 'typeKeywords',
-              '@keywords': 'keyword',
-              '@default': 'identifier'
-            }
-          }
-        ],
-        [/[A-Z][\w$]*/, 'type.identifier'],
-
-        // whitespace
-        { include: '@whitespace' },
-
-        // delimiters and operators
-        [/[{}()[\]]/, '@brackets'],
-        // [/[<>](?!@symbols)/, '@brackets'],
-        [
-          /@symbols/,
-          {
-            cases: {
-              '@operators': 'operator',
-              '@default': ''
-            }
-          }
-        ],
-
-        // numbers
-        [/(@digits)[eE]([-+]?(@digits))?/, 'number.float'],
-        [/(@digits)\.(@digits)([eE][-+]?(@digits))?/, 'number.float'],
-        [/0[xX](@hexdigits)/, 'number.hex'],
-        [/0[oO]?(@octaldigits)/, 'number.octal'],
-        [/0[bB](@binarydigits)/, 'number.binary'],
-        [/(@digits)/, 'number'],
-
-        // delimiter: after number because of .\d floats
-        [/[;,.]/, 'delimiter'],
-        [/[=><!~?:&|+\-*/^%]+/, 'operator'],
-
-        [/"([^"\\]|\\.)*$/, 'string.invalid'],
-        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
-
-        // characters
-        [/'[^\\']'/, 'string'],
-        [/(')(@escapes)(')/, ['string', 'string.escape', 'string']],
-        [/'/, 'string.invalid']
-      ],
-      comment: [
-        [/[^/*]+/, 'comment'],
-        [/\/\*/, 'comment', '@push'],
-        ['\\*/', 'comment', '@pop'],
-        [/[/*]/, 'comment']
-      ],
-
-      string: [
-        [/[^\\"]+/, 'string'],
-        [/@escapes/, 'string.escape'],
-        [/\\./, 'string.escape.invalid'],
-        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
-      ],
-
-      whitespace: [
-        [/[ \t\r\n]+/, 'white'],
-        [/\/\*/, 'comment', '@comment'],
-        [/\/\/.*$/, 'comment']
-      ],
-
-      bracketCounting: [
-        [/{/, 'delimiter.bracket', '@bracketCounting'],
-        [/}/, 'delimiter.bracket', '@pop']
-      ]
-    }
-  })
-
   // Code hint
   monacoProviderDisposes.completionProvider = monaco.languages.registerCompletionItemProvider(
-    'spx',
+    LANGUAGE_NAME,
     {
       provideCompletionItems: (model, position) => {
         const word = model.getWordUntilPosition(position)
@@ -195,7 +107,7 @@ export function initMonaco(
     }
   )
 
-  monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider('spx', {
+  monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(LANGUAGE_NAME, {
     provideHover(model, position) {
       const word = model.getWordAtPosition(position)
       if (word == null) return
@@ -227,6 +139,8 @@ export function initMonaco(
       }
     }
   })
+
+  await injectMonacoHighlightTheme(monaco)
 
   // temporarily disable in-browser format
   // initFormat()

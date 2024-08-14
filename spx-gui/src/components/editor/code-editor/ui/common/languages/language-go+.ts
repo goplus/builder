@@ -113,6 +113,7 @@ function applyColorPrimitives($container: HTMLElement) {
   //   complex64: 'complex',
   //   complex128: 'complex'
   // }
+
   $primitives.forEach((primitive) => {
     // const rawType = primitive.innerText
     // const type = primitiveTypeMap[rawType] || rawType
@@ -245,12 +246,12 @@ export function registerGoPlusLanguageHighlight(hljs: HLJSApi): Language {
         className: 'number',
         variants: [
           {
-            match: /-?\b0[xX]\.[a-fA-F0-9](_?[a-fA-F0-9])*[pP][+-]?\d(_?\d)*i?/, // hex without a present digit before . (making a digit afterwards required)
+            match: /-?\b0[xX]\.[a-fA-F0-9](_?[a-fA-F0-9])*[pP][+-]?\d(_?\d)*i?/, // hex without a present digit before . (making a digit afterward required)
             relevance: 0
           },
           {
             match:
-              /-?\b0[xX](_?[a-fA-F0-9])+((\.([a-fA-F0-9](_?[a-fA-F0-9])*)?)?[pP][+-]?\d(_?\d)*)?i?/, // hex with a present digit before . (making a digit afterwards optional)
+              /-?\b0[xX](_?[a-fA-F0-9])+((\.([a-fA-F0-9](_?[a-fA-F0-9])*)?)?[pP][+-]?\d(_?\d)*)?i?/, // hex with a present digit before . (making a digit afterward optional)
             relevance: 0
           },
           {
@@ -262,11 +263,11 @@ export function registerGoPlusLanguageHighlight(hljs: HLJSApi): Language {
             relevance: 0
           },
           {
-            match: /-?\.\d(_?\d)*([eE][+-]?\d(_?\d)*)?i?/, // decimal without a present digit before . (making a digit afterwards required)
+            match: /-?\.\d(_?\d)*([eE][+-]?\d(_?\d)*)?i?/, // decimal without a present digit before . (making a digit afterward required)
             relevance: 0
           },
           {
-            match: /-?\b\d(_?\d)*(\.(\d(_?\d)*)?)?([eE][+-]?\d(_?\d)*)?i?/, // decimal with a present digit before . (making a digit afterwards optional)
+            match: /-?\b\d(_?\d)*(\.(\d(_?\d)*)?)?([eE][+-]?\d(_?\d)*)?i?/, // decimal with a present digit before . (making a digit afterward optional)
             relevance: 0
           }
         ]

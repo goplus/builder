@@ -5,7 +5,10 @@
       v-if="completionMenu"
       :completion-menu="completionMenu"
     ></completion-menu-component>
-    <markdown-preview :content="TestMarkdown" style="position: absolute; top: 0"></markdown-preview>
+    <markdown-preview
+      :content="TestMarkdown"
+      style="position: absolute; top: 0; left: 100%; z-index: 100"
+    ></markdown-preview>
   </div>
 </template>
 <script lang="ts">
@@ -20,7 +23,7 @@ import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-e
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
-import { initMonaco, defaultThemeName, disposeMonacoProviders } from './monaco'
+import { initMonaco, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
 import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
@@ -62,7 +65,7 @@ const getMonaco = async () => {
   if (monaco) return monaco
   const monaco_ = await loader.init()
   if (monaco) return monaco
-  initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
+  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
   monaco = monaco_
   return monaco
 }
@@ -74,7 +77,6 @@ watchEffect(async (onCleanup) => {
   const monaco = await getMonaco()
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
-    theme: defaultThemeName,
     language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,

@@ -1,4 +1,41 @@
-```go+
+```gop
+var is_up_state bool
+var y float32
+
+// 自动循环切换精灵造型
+onStart => {
+    for {
+        nextCostume
+        wait 0.3
+    }
+}
+
+play "background"
+on
+
+onStart => {
+    for {
+        if !is_up_state {
+            setYpos 11
+            setYpos ypos-1
+        }
+        wait 0.008
+        if ypos < -180 {
+            setYpos 0
+        }
+    }
+}
+
+
+onKey KeySpace, => {
+    if !is_up_state {
+        is_up_state = true
+        glide xpos, ypos+40, 0.2
+        is_up_state = false
+    }
+}
+
+
 // this is for comment test
 /*
 long comment test
