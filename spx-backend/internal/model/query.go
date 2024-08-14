@@ -218,3 +218,18 @@ func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string,
 	}
 	return nil
 }
+
+// ExistsByID checks if an item with the specified ID exists in the table.
+func ExistsByID(ctx context.Context, db *sql.DB, table string, id string) (bool, error) {
+	logger := log.GetReqLogger(ctx)
+
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE id = ? AND status != ?", table)
+	var count int
+	err := db.QueryRowContext(ctx, query, id, StatusDeleted).Scan(&count)
+	if err != nil {
+		logger.Printf("db.QueryRowContext failed: %v", err)
+		return false, err
+	}
+
+	return count > 0, nil
+}

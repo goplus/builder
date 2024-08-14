@@ -2,9 +2,11 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/goplus/builder/spx-backend/internal/llm"
+	"github.com/goplus/builder/spx-backend/internal/model"
 	"time"
 )
 
@@ -406,6 +408,7 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	if err != nil {
 		return ChatResp{}, err
 	}
+	saveChat(ctx, ctrl.db, *chat)
 	return newChatResp(resp, chat.ID), nil
 }
 
@@ -415,7 +418,11 @@ func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams)
 	}
 	chat, ok := chatMapMgr.getChat(id)
 	if !ok {
-		err = fmt.Errorf("no chat found with id: %s", id)
+		if chatFromDB, ok := findChat(ctx, ctrl.db, id); ok {
+			chat = &chatFromDB
+		} else {
+			err = fmt.Errorf("no chat found with id: %s", id)
+		}
 		return
 	}
 	chatUser := chat.User
@@ -424,6 +431,10 @@ func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams)
 		return ChatResp{}, err
 	}
 	chatResp, err = chat.nextInput(ctrl, p.UserInput)
+	err = updateChat(ctx, ctrl.db, *chat)
+	if err != nil {
+		return ChatResp{}, err
+	}
 	return
 }
 
@@ -438,6 +449,10 @@ func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
 		return
 	}
 	chatMapMgr.deleteChat(id)
+	err = model.DeleteChatByID(ctx, ctrl.db, id)
+	if err != nil {
+		return
+	}
 }
 
 func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {
@@ -449,4 +464,46 @@ func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp
 		return TaskResp{}, err
 	}
 	return newSuggestTaskResp(resp, ""), nil
+}
+
+func chat2ModelChat(chat chat) *model.LLMChat {
+	return &model.LLMChat{
+		ID:                chat.ID,
+		CurrentChatLength: chat.CurrentChatLength,
+		Messages:          chat.Messages,
+		Owner:             chat.User.Name,
+		Status:            model.StatusDeleted,
+	}
+}
+
+func saveChat(ctx context.Context, db *sql.DB, chat chat) error {
+	_, err := model.CreateChat(ctx, db, chat2ModelChat(chat))
+	return err
+}
+
+func findChat(ctx context.Context, db *sql.DB, id string) (chat, bool) {
+	if ok, err := model.CheckChatExistByID(ctx, db, id); !ok || err != nil {
+		return chat{}, false
+	}
+	modelChat, err := model.ChatByID(ctx, db, id)
+	if err != nil {
+		return chat{}, false
+	}
+	c := chat{
+		ID:                modelChat.ID,
+		CurrentChatLength: modelChat.CurrentChatLength,
+		CreatAt:           modelChat.CTime,
+		Messages:          modelChat.Messages,
+		User:              &User{Name: modelChat.Owner},
+	}
+	chatMapMgr.storeChat(&c)
+	return c, true
+}
+
+func updateChat(ctx context.Context, db *sql.DB, chat chat) error {
+	_, err := model.UpdateChatMessageByID(ctx, db, chat2ModelChat(chat))
+	if err != nil {
+		return err
+	}
+	return nil
 }
