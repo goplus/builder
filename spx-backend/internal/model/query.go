@@ -256,6 +256,11 @@ func getLikedInfo(ctx context.Context, db *sql.DB, assetIDs []string) (map[strin
 		args[i] = id
 	}
 
+	// avoid array of length 0
+	if len(args) == 0 {
+		return nil, nil
+	}
+
 	query := fmt.Sprintf(`
         SELECT asset_id, COUNT(*) as count
         FROM user_asset
