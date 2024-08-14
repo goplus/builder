@@ -1,12 +1,21 @@
 import * as IMonaco from 'monaco-editor'
 import { shikiToMonaco } from '@shikijs/monaco'
-import { createHighlighter, type LanguageInput, type ThemeInput } from 'shiki'
+import {
+  type BundledLanguage,
+  type BundledTheme,
+  createHighlighter,
+  type HighlighterGeneric,
+  type LanguageInput,
+  type ThemeInput
+} from 'shiki'
 import GOTextmate from './go.tmLanguage.json' // this is sample using, need keep it now.
 import GOPTextmate from './gop.tmLanguage.json'
 import SpxLightTheme from './spx-light.json'
 import markdownit from 'markdown-it'
 
-const highlighter = await createHighlighter({
+let highlighter: HighlighterGeneric<BundledLanguage, BundledTheme> | null = null
+
+createHighlighter({
   themes: [
     // the same reason as lang property...
     SpxLightTheme as unknown as ThemeInput
@@ -25,26 +34,30 @@ const highlighter = await createHighlighter({
     spx: 'Gop',
     'go+': 'Gop'
   }
+}).then((_highlighter) => {
+  highlighter = _highlighter
 })
 
 export async function injectMonacoHighlightTheme(monaco: typeof IMonaco) {
+  if (!highlighter) throw new Error('highlighter not ready')
   shikiToMonaco(highlighter, monaco)
 }
 
 const md = markdownit({
   highlight: function (str, lang): string {
-    if (lang && highlighter.getLanguage(lang)) {
+    if (lang && highlighter?.getLanguage(lang)) {
       try {
         return getLanguageHighlightHtml(str)
       } catch (e) {
         console.warn(e)
       }
     }
-    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>'
+    return '<pre class="shiki"><code>' + md.utils.escapeHtml(str) + '</code></pre>'
   }
 })
 
 function getLanguageHighlightHtml(code: string) {
+  if (!highlighter) throw new Error('highlighter not ready')
   return highlighter.codeToHtml(code, {
     lang: 'gop',
     theme: 'spx-light'
