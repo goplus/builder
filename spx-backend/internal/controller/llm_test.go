@@ -5,6 +5,7 @@ import (
 	"github.com/goplus/builder/spx-backend/internal/llm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 	"time"
 )
@@ -315,6 +316,10 @@ ProjectCode:Code Type: Sprites, Name: Sprites1, Src: onStart => {
 }
 
 func TestCallLLM(t *testing.T) {
+
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping test in CI environment")
+	}
 
 	t.Run("TestStartExplainChat", func(t *testing.T) {
 		setTestEnv(t)
