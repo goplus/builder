@@ -17,6 +17,7 @@ import {
 import { type RawCostumeConfig, Costume } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
+import { SkeletonAnimation } from './skeletonAnimation'
 
 export enum RotationStyle {
   none = 'none',
@@ -56,6 +57,9 @@ export type SpriteInits = {
 export type RawSpriteConfig = SpriteInits & {
   costumes?: RawCostumeConfig[]
   fAnimations?: Record<string, RawAnimationConfig | undefined>
+  // Skeleton Animation
+  animator?: string
+  avatar?: string
   // Not supported by builder:
   costumeSet?: unknown
   costumeMPSet?: unknown
@@ -161,6 +165,31 @@ export class Sprite extends Disposable {
     animation.addDisposer(() => {
       Object.entries(this.animationBindings).forEach(([state, name]) => {
         if (name === animation.name) this.animationBindings[state as State] = undefined
+      })
+    })
+  }
+
+  skeletonAnimation: SkeletonAnimation | null = null
+
+  addSkeletonAnimation(skeletonAnimation: SkeletonAnimation) {
+    this.skeletonAnimation = skeletonAnimation
+    skeletonAnimation.setSprite(this)
+    skeletonAnimation.addDisposer(() => skeletonAnimation.setSprite(null))
+    skeletonAnimation.clips.forEach((clip) => {
+      clip.addDisposer(
+        watch(
+          () => clip.name,
+          (newName, originalName) => {
+            Object.entries(this.animationBindings).forEach(([state, name]) => {
+              if (name === originalName) this.animationBindings[state as State] = newName
+            })
+          }
+        )
+      )
+      clip.addDisposer(() => {
+        Object.entries(this.animationBindings).forEach(([state, name]) => {
+          if (name === clip.name) this.animationBindings[state as State] = undefined
+        })
       })
     })
   }
@@ -299,6 +328,8 @@ export class Sprite extends Disposable {
       fAnimations: animationConfigs,
       mAnimations,
       tAnimations,
+      animator: skeletonAnimator,
+      avatar: skeletonAvatar,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
     const codeFile = files[getSpriteCodeFileName(name)]
@@ -322,6 +353,15 @@ export class Sprite extends Disposable {
       for (const animation of animations) {
         sprite.addAnimation(animation)
       }
+    }
+    if (skeletonAnimator != null && skeletonAvatar != null) {
+      const skeletonAnimation = await SkeletonAnimation.load({
+        animatorFilepath: skeletonAnimator,
+        avatarFilepath: skeletonAvatar,
+        prefix: pathPrefix,
+        files: files
+      })
+      sprite.addSkeletonAnimation(skeletonAnimation)
     }
     if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)
     if (tAnimations != null) console.warn(`unsupported field: tAnimations for sprite ${name}`)
