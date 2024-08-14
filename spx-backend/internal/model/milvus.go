@@ -56,7 +56,7 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		"vector",
 
 		// distance metric type
-		entity.L2,
+		entity.COSINE,
 
 		//Maximum number returned by search
 		topK,
@@ -69,11 +69,14 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 	}
 
 	var assetNames []string
-
+	// If no search results are returned, return an empty list
+	if len(results) == 0 || len(results[0].Fields) == 0 {
+		return assetNames, nil
+	}
 	//Process search results
 	for _, result := range results {
 		f := result.Fields[0].(*entity.ColumnVarChar)
-		assetNames = append(assetNames, f.Data()[0])
+		assetNames = append(assetNames, f.Data()...)
 	}
 
 	return assetNames, nil
