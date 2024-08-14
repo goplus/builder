@@ -50,6 +50,7 @@ VTh1XIl/IELBoZ+rQXozGA==
 -----END CERTIFICATE-----`)
 	t.Setenv("GOP_CASDOOR_ORGANIZATIONNAME", "fake-organization")
 	t.Setenv("GOP_CASDOOR_APPLICATONNAME", "fake-application")
+	t.Setenv("MILVUS_ADDRESS", "fake-milvus-address")
 }
 
 func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {

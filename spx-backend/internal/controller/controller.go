@@ -87,12 +87,15 @@ func New(ctx context.Context) (*Controller, error) {
 
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 
-	milvusClient, err := milvus.NewClient(ctx, milvus.Config{
-		Address: os.Getenv("MILVUS_ADDRESS"),
-	})
-	if err != nil {
-		logger.Printf("failed to create milvus client: %v", err)
-		return nil, err
+	var milvusClient milvus.Client
+	if os.Getenv("ENV") != "test" && os.Getenv("MILVUS_ADDRESS") != "disabled" {
+		milvusClient, err = milvus.NewClient(ctx, milvus.Config{
+			Address: os.Getenv("MILVUS_ADDRESS"),
+		})
+		if err != nil {
+			logger.Printf("failed to create milvus client: %v,%v", err, os.Getenv("MILVUS_ADDRESS"))
+			return nil, err
+		}
 	}
 
 	casdoorAuthConfig := &casdoorsdk.AuthConfig{
