@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, watchEffect } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, useModal, UIEmpty, UIButton } from '@/components/ui'
@@ -53,12 +53,12 @@ const editorCtx = useEditorCtx()
 
 const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
 
-watchEffect(() => {
-  if (selectedAnimation.value == null) return
-  if (!props.sprite.animations.includes(selectedAnimation.value)) {
+watch(
+  () => props.sprite,
+  () => {
     selectedAnimation.value = props.sprite.animations[0] ?? null
   }
-})
+)
 
 const groupCostumes = useModal(GroupCostumesModal)
 
