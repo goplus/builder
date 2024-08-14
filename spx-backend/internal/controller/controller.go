@@ -90,6 +90,10 @@ func New(ctx context.Context) (*Controller, error) {
 	milvusClient, err := milvus.NewClient(ctx, milvus.Config{
 		Address: os.Getenv("MILVUS_ADDRESS"),
 	})
+	if err != nil {
+		logger.Printf("failed to create milvus client: %v", err)
+		return nil, err
+	}
 
 	casdoorAuthConfig := &casdoorsdk.AuthConfig{
 		Endpoint:         os.Getenv("GOP_CASDOOR_ENDPOINT"),

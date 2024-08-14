@@ -18,6 +18,10 @@ type MilvusAsset struct {
 func SearchByVector(ctx context.Context, cli client.Client, collectionName string, searchVector []float32, topK int) ([]string, error) {
 	logger := log.GetReqLogger(ctx)
 
+	if cli == nil || collectionName == "" || len(searchVector) == 0 || topK <= 0 {
+		logger.Printf("Invalid input: %v, %v, %v, %v", cli, collectionName, searchVector, topK)
+		return nil, nil
+	}
 	// Load collection
 	err := cli.LoadCollection(ctx, collectionName, false)
 	if err != nil {
