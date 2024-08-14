@@ -28,13 +28,21 @@ type GetGenerateParams struct {
 	Prompt   string `json:"prompt"`
 }
 
+type GenerateResult struct {
+	ImageUrl string `json:"image_url"`
+}
+
 type GenerateSpriteParams struct {
 	// ImageUrl is the image URL to be generated as sprite.
 	ImageUrl string `json:"imageUrl"`
 }
 
 type GetGenerateSpriteParams struct {
-	ImageUrl string `json:"imageUrl"`
+	ImageUrl string `json:"image_url"`
+}
+
+type GenerateSpriteResult struct {
+	SpriteUrl string `json:"material_url"`
 }
 
 type GetEmbeddingParams struct {
@@ -45,25 +53,6 @@ type GetEmbeddingParams struct {
 type GetEmbeddingResult struct {
 	Embedding []float32 `json:"embedding"`
 	Desc      string    `json:"desc"`
-}
-
-type QueryResult[T any] struct {
-	Status string `json:"status"`
-	Result T      `json:"result"`
-}
-
-type QueryImageResult struct {
-	JobId string   `json:"jobId"`
-	Type  string   `json:"type"`
-	Files []string `json:"files"`
-}
-
-type GenerateResult struct {
-	ImageJobId string `json:"imageJobId"`
-}
-
-type GenerateSpriteResult struct {
-	SpriteJobId string `json:"spriteJobId"`
 }
 
 func (p *MattingParams) Validate() (ok bool, msg string) {
@@ -134,12 +123,29 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
 	logger := log.GetReqLogger(ctx)
 	var generateResult GenerateResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
+		Category: param.Category,
+		Prompt:   param.Keyword, // todo: more parameters
+	}, &generateResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
+	}
+	return &generateResult, nil
 }
 
 // GenerateSprite follow parameters to generating sprite.
 func (ctrl *Controller) GenerateSprite(ctx context.Context, param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
-	// todo: implement aigc generating
-	return nil, nil
+	logger := log.GetReqLogger(ctx)
+	var generateSpriteResult GenerateSpriteResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/animate", &GetGenerateSpriteParams{
+		ImageUrl: param.ImageUrl,
+	}, &generateSpriteResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
+	}
+	return &generateSpriteResult, nil
 }
 
 // GetEmbedding get text embedding.
