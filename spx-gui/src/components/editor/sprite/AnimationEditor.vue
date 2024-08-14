@@ -54,8 +54,10 @@ const editorCtx = useEditorCtx()
 const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
 
 watchEffect(() => {
-  if (selectedAnimation.value == null) return
-  if (!props.sprite.animations.includes(selectedAnimation.value)) {
+  if (
+    selectedAnimation.value == null ||
+    !props.sprite.animations.includes(selectedAnimation.value)
+  ) {
     selectedAnimation.value = props.sprite.animations[0] ?? null
   }
 })
