@@ -9,6 +9,7 @@
           hidden
           @timeupdate="updateProgress"
           @loadedmetadata="handleAudioLoaded"
+          @ended="() => (playing = false)"
         />
         <div ref="waveformContainer" class="waveform-container">
           <WaveformDisplay
@@ -16,13 +17,15 @@
             ref="waveform"
             class="waveform"
             :points="waveformData.data"
-            :scale="gain"
+            :scale="0.5"
             :draw-padding-right="waveformData.paddingRight"
             :style="{
               transform: `translateX(-${wavePosition}px)`,
               width: `${(1 / visiblePercent) * 100}%`
             }"
+            @click="handleWaveformClick"
           />
+          <UILoading v-else />
           <div
             class="progress-cursor"
             :style="{
@@ -40,13 +43,13 @@
           <DumbSoundPlayer
             class="dumb-sound-player"
             :playing="playing"
-            :progress="progress"
+            :progress="progress * 100"
             color="primary"
             :play-handler="handlePlay"
             :loading="audioLoading"
             @stop="handlePlay"
           />
-          <VolumeSlider v-model:value="volume" />
+          <VolumeSlider :value="volume * 2" @update:value="handleVolumeChange"/>
           <div class="spacer" style="flex: 1" />
           <div class="time-display">{{ displayTime(current) }} / {{ displayTime(duration) }}</div>
         </div>
@@ -71,7 +74,6 @@ import { throttle } from 'lodash'
 import { computed, ref } from 'vue'
 import PreviewController from './PreviewController.vue'
 
-const gain = ref(0.5)
 const props = defineProps<{
   asset: AssetData<AssetType.Sound>
 }>()
@@ -91,10 +93,10 @@ const playing = ref(false)
 const current = ref(0)
 const duration = ref(0)
 const progress = computed(() => current.value / (duration.value || 1))
-const volume = ref(1)
+const volume = ref(0.5)
 
 const scale = ref(0)
-const scaleRate = 0.2
+const scaleRate = 0.3
 
 const visiblePercent = computed(() => {
   return Math.exp(-scaleRate * scale.value)
@@ -103,7 +105,7 @@ const visibleDuration = computed(() => {
   return duration.value * visiblePercent.value
 })
 
-const visiblePoints = ref(512)
+const visiblePoints = ref(256)
 const pointsRate = computed(() => visiblePoints.value / visibleDuration.value)
 
 const audioBuffer = useAsyncComputed(async () => {
@@ -143,6 +145,9 @@ const wavePosition = computed(() => {
 
 const handleZoomIn = () => {
   scale.value += 1
+  if (scale.value > 10) {
+    scale.value = 10
+  }
 }
 
 const handleZoomOut = () => {
@@ -172,6 +177,31 @@ const handlePlay = async () => {
     audioElement.value?.play()
     playing.value = true
   }
+}
+
+const handleWaveformClick = (e: MouseEvent) => {
+  if (!waveformContainer.value) return
+  if (!audioElement.value) return
+  const rect = waveformContainer.value.getBoundingClientRect()
+  const ratio = (e.clientX - rect.left) / rect.width
+  const targetTime = visibleDuration.value * ratio
+  let offset = 0
+  if (current.value < visibleDuration.value / 2) {
+    offset = 0
+  } else if (current.value > duration.value - visibleDuration.value / 2) {
+    offset = duration.value - visibleDuration.value
+  } else {
+    offset = current.value - visibleDuration.value / 2
+  }
+  current.value = offset + targetTime
+  audioElement.value.currentTime = current.value
+  playing.value = true
+  audioElement.value.play()
+}
+
+const handleVolumeChange = (value: number) => {
+  if (!audioElement.value) return
+  audioElement.value.volume = value / 2
 }
 
 const autoUpdateProgress = () => {
@@ -231,12 +261,13 @@ const displayTime = (time: number) => {
     flex: 1;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
   }
 
   .waveform {
     width: 100%;
     height: 100%;
-    transition: transform 0.2s linear;
+    transition: transform 0.1s linear;
   }
 
   .progress-cursor {
@@ -267,6 +298,7 @@ const displayTime = (time: number) => {
     align-items: center;
     padding: 10px 16px;
     gap: 10px;
+    user-select: none;
 
     .dumb-sound-player {
       width: 50px;
