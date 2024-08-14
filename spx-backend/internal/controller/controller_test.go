@@ -44,9 +44,9 @@ VTh1XIl/IELBoZ+rQXozGA==
 	t.Setenv("GOP_CASDOOR_ORGANIZATIONNAME", "fake-organization")
 	t.Setenv("GOP_CASDOOR_APPLICATONNAME", "fake-application")
 
-	t.Setenv("LLM_BASE_URL", "")
-	t.Setenv("LLM_API_KEY", "")
-	t.Setenv("LLM_MODEL", "")
+	t.Setenv("LLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
+	t.Setenv("LLM_API_KEY", "781f7b19d5e37d5b9b3546b6397fc2ea.MMvrnjr6AGnXYI2R")
+	t.Setenv("LLM_MODEL", "glm-4")
 	t.Setenv("LLM_BACKUP_URL", "")
 	t.Setenv("LLM_BACKUP_APIKEY", "")
 	t.Setenv("LLM_BACKUP_MODEL", "")

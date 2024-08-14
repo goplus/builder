@@ -59,6 +59,8 @@ jobs:
 
   spx-backend-test:
     runs-on: ubuntu-latest
+    env:
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
