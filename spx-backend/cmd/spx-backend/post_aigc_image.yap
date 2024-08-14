@@ -15,6 +15,9 @@ if !ok {
 }
 
 params := &controller.GenerateParams{}
+if !parseJSON(ctx, params) {
+return
+}
 result, err := ctrl.Generating(ctx.Context(), params)
 
 if err != nil {
