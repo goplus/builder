@@ -23,12 +23,18 @@ type GenerateParams struct {
 	Height  int    `json:"height"`
 }
 
-type GenerateSpriteParams struct {
-	ImageJobId string `json:"imageJobId"`
+type GetGenerateParams struct {
+	Category string `json:"category"`
+	Prompt   string `json:"prompt"`
 }
 
-type QueryParams struct {
-	JobId string `json:"jobId"`
+type GenerateSpriteParams struct {
+	// ImageUrl is the image URL to be generated as sprite.
+	ImageUrl string `json:"imageUrl"`
+}
+
+type GetGenerateSpriteParams struct {
+	ImageUrl string `json:"imageUrl"`
 }
 
 type GetEmbeddingParams struct {
@@ -126,18 +132,12 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 
 // Generating follow parameters to generating images.
 func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
-	// todo: implement aigc generating
-	return nil, nil
+	logger := log.GetReqLogger(ctx)
+	var generateResult GenerateResult
 }
 
 // GenerateSprite follow parameters to generating sprite.
 func (ctrl *Controller) GenerateSprite(ctx context.Context, param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
-	// todo: implement aigc generating
-	return nil, nil
-}
-
-// Query job status.
-func (ctrl *Controller) Query(ctx context.Context, param *QueryParams) (*QueryResult[QueryImageResult], error) {
 	// todo: implement aigc generating
 	return nil, nil
 }
