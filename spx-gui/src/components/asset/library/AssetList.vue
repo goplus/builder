@@ -204,11 +204,9 @@ function generateMultipleAIImages(count: number, append = true): () => void {
     generateAIImage({
       keyword: searchCtx.keyword,
       category: searchCtx.category,
-      assetType: searchCtx.type
     }).then((res) => {
       return {
         id: res.imageJobId,
-        assetType: searchCtx.type,
         cTime: new Date().toISOString(),
         status: AIGCStatus.Waiting
       }
@@ -220,6 +218,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
     }
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
+      assetType: searchCtx.type,
       [isAiAsset]: true as const,
       [isPreviewReady]: false,
       [isContentReady]: false
