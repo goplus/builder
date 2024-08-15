@@ -5,8 +5,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"time"
 )
 
 // llm max token limit
@@ -23,10 +26,11 @@ const (
 
 type Client struct {
 	Config Conf
+	Client *http.Client
 }
 
 func NewLLMClientWithConfig(config *Conf) *Client {
-	return &Client{Config: *config}
+	return &Client{Config: *config, Client: &http.Client{Timeout: 10 * time.Second}}
 }
 
 // LLM config
@@ -163,34 +167,33 @@ func (c *Client) CallLLM(llmChatMessage Messages) (responseBody LlmResponseBody,
 	body := c.createLLMRequestBody(llmChatMessage)
 	bodyJSON, err := json.Marshal(body)
 	if err != nil {
-		return
+		return LlmResponseBody{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 	req, err := http.NewRequest(llmMethodMap["chat"].method, c.Config.BaseUrl+llmMethodMap["chat"].endPoint, bytes.NewBuffer(bodyJSON))
 	if err != nil {
-		return
+		return LlmResponseBody{}, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.Config.ApiKey)
-	client := &http.Client{}
+	client := c.Client
 	resp, err := client.Do(req)
 	if err != nil {
-		return
+		return LlmResponseBody{}, fmt.Errorf("failed to send HTTP request: %w", err)
 	}
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic(err)
+		if cerr := Body.Close(); cerr != nil {
+			log.Printf("failed to close response body: %v", cerr)
 		}
 	}(resp.Body)
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return LlmResponseBody{}, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	err = json.Unmarshal(bodyBytes, &responseBody)
 	if err != nil {
-		return LlmResponseBody{}, err
+		return LlmResponseBody{}, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
 	return
 }
