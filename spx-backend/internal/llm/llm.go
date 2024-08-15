@@ -2,7 +2,9 @@ package llm
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -75,6 +77,23 @@ type Messages []MessageContent
 
 func CreateMessage() Messages {
 	return Messages{}
+}
+
+func (msgs *Messages) Scan(value interface{}) error {
+	var b []byte
+	switch v := value.(type) {
+	case []byte:
+		b = v
+	case string:
+		b = []byte(v)
+	default:
+		return errors.New("type assertion to []byte or string failed")
+	}
+	return json.Unmarshal(b, msgs)
+}
+
+func (msgs Messages) Value() (driver.Value, error) {
+	return json.Marshal(msgs)
 }
 
 func (msgs *Messages) PushMessages(role ChatMessageRole, prompt string) {
