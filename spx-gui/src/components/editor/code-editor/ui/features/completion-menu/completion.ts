@@ -23,7 +23,8 @@ export interface MonacoCompletionModelItem {
   score: FuzzyScore
 }
 
-export interface CompletionMenuItem {
+// this interface like `EditorUI.ts` interface CompletionItem, but add more property `matches` which can highlight completion menu item from monaco inner function
+export interface CompletionMenuFeatureItem {
   icon: Icon
   label: string
   desc: string

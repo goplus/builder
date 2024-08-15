@@ -5,7 +5,7 @@ import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 
-type Position = {
+type JumpPosition = {
   line: number
   column: number
   fileUri: string
@@ -21,5 +21,5 @@ export class Coordinator {
     project: Project
   ) {}
 
-  public jump(position: Position): void {}
+  public jump(position: JumpPosition): void {}
 }
