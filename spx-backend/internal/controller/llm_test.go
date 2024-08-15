@@ -317,6 +317,8 @@ ProjectCode:Code Type: Sprites, Name: Sprites1, Src: onStart => {
 
 func TestCallLLM(t *testing.T) {
 
+	// This test is third-party model test, test for llm clent.
+
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping test in CI environment")
 	}
