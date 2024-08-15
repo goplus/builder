@@ -27,6 +27,9 @@ function getDiagnostics (data)  {
     let fileName = data.in.name
     let res = getDiagnostics_GO(fileName, fileCode)
     let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get diagnostics")
+    }
     return json.content
 }
 
@@ -44,5 +47,8 @@ function getTypes(data) {
     let fileName = data.in.name
     let res = getTypes_GO(fileName, fileCode)
     let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get diagnostics")
+    }
     return json.content
 }

@@ -74,23 +74,32 @@
     })
 
     function runTypesInfo() {
-        let res = getIframe().contentWindow.getTypes({
-            in: {
-                name: "test.spx",
-                code: document.getElementById("codeInput").value
-            }
-        })
-        console.log(res)
+        try {
+            let res = getIframe().contentWindow.getTypes({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (err) {
+            console.error(err)
+        }
+
     }
 
     function runCodeDiagnostics() {
-        let res = getIframe().contentWindow.getDiagnostics({
-            in: {
-                name: "test.spx",
-                code: document.getElementById("codeInput").value
-            }
-        })
-        console.log(res)
+        try {
+            let res = getIframe().contentWindow.getDiagnostics({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (err) {
+            console.error(err)
+        }
     }
 
 </script>
