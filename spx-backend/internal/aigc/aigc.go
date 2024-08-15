@@ -46,11 +46,14 @@ func (c *AigcClient) Call(ctx context.Context, method, path string, body any, re
 		logger.Printf("failed to do request: %v", err)
 		return err
 	}
+	// Print the request body
+	logger.Printf("Request Body: %s", string(bodyByte))
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode != http.StatusOK {
 		logger.Printf("status not ok: %v", httpResp.StatusCode)
 		return fmt.Errorf("failed to request: %s", httpResp.Status)
 	}
+
 	if err := json.NewDecoder(httpResp.Body).Decode(responseBody); err != nil {
 		logger.Printf("failed to decode response body: %v", err)
 		return err

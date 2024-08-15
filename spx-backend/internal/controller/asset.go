@@ -44,6 +44,10 @@ var (
 	ClickCountDesc ListAssetsOrderBy = "clickCount"
 )
 
+type SearchSuggestionsResult struct {
+	Suggestions []string `json:"suggestions"`
+}
+
 // ListAssetsParams holds parameters for listing assets.
 type ListAssetsParams struct {
 	// Keyword is the keyword filter for the display name, applied only if non-empty.
@@ -303,7 +307,7 @@ func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
 }
 
 // GetSearchSuggestions returns search suggestions.
-func (ctrl *Controller) GetSearchSuggestions(ctx context.Context, keyword string, limit string) ([]string, error) {
+func (ctrl *Controller) GetSearchSuggestions(ctx context.Context, keyword string, limit string) (*SearchSuggestionsResult, error) {
 	logger := log.GetReqLogger(ctx)
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil {
@@ -324,5 +328,7 @@ func (ctrl *Controller) GetSearchSuggestions(ctx context.Context, keyword string
 		logger.Printf("failed to get search suggestions: %v", err)
 		return nil, err
 	}
-	return suggestions, nil
+	return &SearchSuggestionsResult{
+		Suggestions: suggestions,
+	}, nil
 }

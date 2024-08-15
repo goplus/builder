@@ -28,8 +28,11 @@ func NewCollection() {
 		Name:     "vector",
 		DataType: entity.FieldTypeFloatVector,
 		TypeParams: map[string]string{
-			"dim": "256",
+			"dim": "384",
 		},
+		//IndexParams: map[string]string{
+		//	"metric_type": "L2",
+		//},
 	}
 
 	assetIDField := &entity.Field{
