@@ -70,32 +70,27 @@
             }
             console.log(data)
         }
-        if (data.level === "wasm") {
-            console.log(data)
-        }
 
     })
 
     function runTypesInfo() {
-        getIframe().contentWindow.postMessage({
-            f: "getTypes",
-            info: "wasm",
+        let res = getIframe().contentWindow.getTypes({
             in: {
                 name: "test.spx",
                 code: document.getElementById("codeInput").value
             }
-        }, window.location.origin)
+        })
+        console.log(res)
     }
 
     function runCodeDiagnostics() {
-        getIframe().contentWindow.postMessage({
-            f: "getDiagnostics",
-            info: "wasm",
+        let res = getIframe().contentWindow.getDiagnostics({
             in: {
                 name: "test.spx",
                 code: document.getElementById("codeInput").value
             }
-        }, window.location.origin)
+        })
+        console.log(res)
     }
 
 </script>

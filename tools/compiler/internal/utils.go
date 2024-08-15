@@ -5,31 +5,18 @@ import (
 	"syscall/js"
 )
 
-type ResponseType string
-
-const (
-	Diagnostics   ResponseType = "diagnostics"
-	Definition    ResponseType = "definition"
-	InlayHint     ResponseType = "inlayHint"
-	CompleteItems ResponseType = "completeItems"
-	Types         ResponseType = "types"
-)
-
 type Reply struct {
-	Type    ResponseType `json:"type"`
-	OK      bool         `json:"ok"`
-	Content interface{}  `json:"content"`
+	OK      bool        `json:"ok"`
+	Content interface{} `json:"content"`
 }
 
-func NewReply(responseType ResponseType, content any) js.Value {
+func NewReply(content any) js.Value {
 	r := Reply{
-		Type:    responseType,
 		Content: content,
-		OK:      true,
 	}
 	value, err := Struct2JSValue(r)
 	if err != nil {
-		return js.ValueOf(`{"type":"","ok":"false","content":{}}`)
+		return js.ValueOf(`{"ok":"false","content":{}}`)
 	}
 	return value
 }

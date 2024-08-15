@@ -26,9 +26,9 @@ func getInlayHints(this js.Value, p []js.Value) interface{} {
 }
 
 func getDiagnostics(this js.Value, p []js.Value) interface{} {
-	fileName := p[1].String()
-	fileCode := p[2].String()
-	return internal.NewReply(internal.Diagnostics, internal.GetDiagnostics(fileName, fileCode))
+	fileName := p[0].String()
+	fileCode := p[1].String()
+	return internal.NewReply(internal.GetDiagnostics(fileName, fileCode))
 }
 
 func getDefinition(this js.Value, p []js.Value) interface{} {
@@ -36,9 +36,9 @@ func getDefinition(this js.Value, p []js.Value) interface{} {
 }
 
 func getTypes(this js.Value, p []js.Value) interface{} {
-	fileName := p[1].String()
-	fileCode := p[2].String()
-	return internal.NewReply(internal.Types, internal.GetSPXFileType(fileName, fileCode))
+	fileName := p[0].String()
+	fileCode := p[1].String()
+	return internal.NewReply(internal.GetSPXFileType(fileName, fileCode))
 }
 
 func getCompletionItems(this js.Value, p []js.Value) interface{} {
