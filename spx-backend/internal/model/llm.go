@@ -41,7 +41,7 @@ func ChatByID(ctx context.Context, db *sql.DB, id string) (*LLMChat, error) {
 }
 
 func CreateChat(ctx context.Context, db *sql.DB, c *LLMChat) error {
-	return CreateWithOutSkip(ctx, db, TableLLMChat, c)
+	return CreateWithoutSkip(ctx, db, TableLLMChat, c)
 }
 
 func UpdateChatMessageByID(ctx context.Context, db *sql.DB, c *LLMChat) (*LLMChat, error) {
