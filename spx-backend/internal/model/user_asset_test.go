@@ -12,38 +12,33 @@ import (
 
 func TestAddUserAsset(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		// 初始化 sqlmock
+
 		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 		require.NoError(t, err)
 		defer db.Close()
 
-		// 使用 gorm 的 mysql 驱动连接 mock 数据库
 		gdb, err := gorm.Open(mysql.New(mysql.Config{
 			Conn:                      db,
 			SkipInitializeWithVersion: true,
 		}), &gorm.Config{})
 		require.NoError(t, err)
 
-		// 设置预期的 SQL 执行
 		mock.ExpectBegin()
 		mock.ExpectExec("INSERT INTO `user_assets` (`owner`,`asset_id`,`relation_type`,`relation_timestamp`) VALUES (?,?,?,?)").
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectCommit()
 
-		// 构造测试数据
 		asset := &UserAsset{
 			AssetID:      1,
 			RelationType: "owned",
 			Owner:        "user1",
 		}
 
-		// 调用被测函数
 		err = AddUserAsset(context.Background(), gdb, asset)
 		require.NoError(t, err)
 		assert.Equal(t, 1, asset.ID)
 
-		// 验证预期的 SQL 调用确实发生了
 		err = mock.ExpectationsWereMet()
 		require.NoError(t, err)
 	})
@@ -87,16 +82,14 @@ func TestDeleteUserAsset(t *testing.T) {
 
 		gdb, err := gorm.Open(mysql.New(mysql.Config{
 			Conn:                      db,
-			SkipInitializeWithVersion: true,
-		}), &gorm.Config{})
+			SkipInitializeWithVersion: true}), &gorm.Config{})
 		require.NoError(t, err)
-
 		assetID := "1"
 		assetType := "owned"
 		owner := "user1"
 
 		mock.ExpectBegin()
-		mock.ExpectExec(`DELETE FROM "user_assets" WHERE asset_id = \? AND relation_type = \? AND owner = \?`).
+		mock.ExpectExec("DELETE FROM `user_assets` WHERE asset_id = ? AND relation_type = ? AND owner = ?").
 			WithArgs(1, assetType, owner).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		mock.ExpectCommit()
@@ -117,13 +110,12 @@ func TestDeleteUserAsset(t *testing.T) {
 			Conn:                      db,
 			SkipInitializeWithVersion: true}), &gorm.Config{})
 		require.NoError(t, err)
-
 		assetID := "1"
 		assetType := "owned"
 		owner := "user1"
 
 		mock.ExpectBegin()
-		mock.ExpectExec(`DELETE FROM "user_assets" WHERE asset_id = \? AND relation_type = \? AND owner = \?`).
+		mock.ExpectExec("DELETE FROM `user_assets` WHERE asset_id = ? AND relation_type = ? AND owner = ?").
 			WithArgs(1, assetType, owner).
 			WillReturnError(gorm.ErrInvalidDB)
 		mock.ExpectRollback()
