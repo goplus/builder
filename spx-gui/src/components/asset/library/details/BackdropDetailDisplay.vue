@@ -20,54 +20,12 @@
             '--translate-y': `${translateY}px`
           }"
         ></div>
-        <div class="preview-controller">
-          <NTooltip placement="right">
-            <template #trigger>
-              <div
-                role="button"
-                class="preview-action zoom-in"
-                aria-label="zoom in"
-                @click="handleZoomIn"
-              >
-                <NIcon :size="18">
-                  <ZoomInOutlined />
-                </NIcon>
-              </div>
-            </template>
-            <span>
-              {{ $t({ en: 'Zoom In', zh: '放大' }) }}
-            </span>
-          </NTooltip>
-          <NTooltip placement="right">
-            <template #trigger>
-              <div
-                role="button"
-                class="preview-action zoom-out"
-                aria-label="zoom out"
-                @click="handleZoomOut"
-              >
-                <NIcon :size="18">
-                  <ZoomOutOutlined />
-                </NIcon>
-              </div>
-            </template>
-            <span>
-              {{ $t({ en: 'Zoom Out', zh: '缩小' }) }}
-            </span>
-          </NTooltip>
-          <NTooltip placement="right">
-            <template #trigger>
-              <div role="button" class="preview-action fit" aria-label="fit" @click="handleFit">
-                <NIcon :size="18">
-                  <FullscreenOutlined />
-                </NIcon>
-              </div>
-            </template>
-            <span>
-              {{ $t({ en: 'Fit', zh: '适应' }) }}
-            </span>
-          </NTooltip>
-        </div>
+        <PreviewController
+          class="preview-controller"
+          @zoom-in="handleZoomIn"
+          @zoom-out="handleZoomOut"
+          @fit="handleFit"
+        />
         <div ref="scaleInfo" class="scale-info">
           {{ $t({ en: 'Scale', zh: '缩放' }) }}: {{ scale.toFixed(1) }}x
         </div>
@@ -83,10 +41,8 @@ import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData } from '@/models/common/asset'
 import { useFileUrl } from '@/utils/file'
 import { useAsyncComputed } from '@/utils/utils'
-import { NIcon, NTooltip } from 'naive-ui'
-import { ZoomInOutlined, ZoomOutOutlined } from '@vicons/antd'
-import { FullscreenOutlined } from '@vicons/material'
 import { onMounted, onUnmounted, ref } from 'vue'
+import PreviewController from './PreviewController.vue'
 
 const props = defineProps<{
   asset: AssetData<AssetType.Backdrop>
@@ -222,10 +178,7 @@ onUnmounted(() => {
 }
 
 .preview-controller {
-  display: flex;
-  gap: 10px;
   position: absolute;
-  flex-direction: column;
   bottom: 10px;
   right: 10px;
   opacity: 0;
@@ -234,25 +187,6 @@ onUnmounted(() => {
 
 .image-container:hover .preview-controller {
   opacity: 1;
-} 
-
-.preview-action {
-  cursor: pointer;
-  background-color: var(--ui-color-grey-100, #ffffff);
-  box-shadow: var(--ui-box-shadow-big);
-  opacity: 0.8;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s;
-
-  &:hover {
-    opacity: 1;
-  }
 }
 
 .backdrop-preview-img {

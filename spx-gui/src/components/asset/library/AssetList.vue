@@ -90,10 +90,7 @@ import { TipsAndUpdatesOutlined } from '@vicons/material'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
-  if (typeof searchCtx.category === 'string') {
-    return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.category)
-  }
-  return searchCtx.category.some((c) => FORBIDDEN_AI_CATEGORIES.includes(c))
+  return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.tabCategory)
 })
 
 const props = defineProps<{

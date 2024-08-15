@@ -12,6 +12,11 @@
           :asset="props.asset as AssetData<AssetType.Backdrop>"
           class="backdrop-detail"
         />
+        <SoundDetailDisplay
+          v-else-if="asset.assetType === AssetType.Sound"
+          :asset="props.asset as AssetData<AssetType.Sound>"
+          class="sound-detail"
+        />
       </div>
       <div class="detail">
       </div>
@@ -112,6 +117,7 @@ import { template } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
 import BackdropDetailDisplay from './BackdropDetailDisplay.vue'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
+import SoundDetailDisplay from './SoundDetailDisplay.vue'
 
 // Define component props
 const props = defineProps<{

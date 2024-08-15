@@ -150,10 +150,17 @@ watch(
 
 const waveformDataFromSrc = useAsyncComputed(async () => {
   if (!props.audioSrc) return null
-  const scale = 5
   const audioContext = getAudioContext()
   const arrayBuffer = await (await fetch(props.audioSrc)).arrayBuffer()
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+
+  return getWaveformData(audioBuffer)
+})
+</script>
+
+<script lang="ts">
+export function getWaveformData(audioBuffer: AudioBuffer, targetPointLength = 80) {
+  const scale = 5
   const channelData = audioBuffer.getChannelData(0)
 
   // First, we group the data into blocks by a fixed block size of 128 samples
@@ -168,8 +175,7 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
     preProcessedData[i] = sum / 128
   }
 
-  // We want the final waveform to have a length of about 80 points.
-  const targetPointLength = 80
+  // We want the final waveform to have a length of about `targetPointLength` points.
   // We use floor(x / 20) * 20 to make the block size a multiple of 20.
   // Thus it changes less frequently and the waveform is more stable.
   const blockSize = Math.max(Math.floor(preProcessedData.length / targetPointLength / 20) * 20, 10)
@@ -187,5 +193,5 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
     data: points,
     paddingRight: (preProcessedData.length % blockSize) / blockSize / points.length
   }
-})
+}
 </script>
