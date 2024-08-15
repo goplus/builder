@@ -174,8 +174,8 @@ func Create[T any](ctx context.Context, db *sql.DB, table string, item *T) (*T, 
 	return QueryByID[T](ctx, db, table, strconv.FormatInt(id, 10))
 }
 
-// CreateWithOutSkip created item in db without skip id, c_time, u_time, status.
-func CreateWithOutSkip[T any](ctx context.Context, db *sql.DB, table string, item *T) error {
+// CreateWithoutSkip created item in db without skip id, c_time, u_time, status.
+func CreateWithoutSkip[T any](ctx context.Context, db *sql.DB, table string, item *T) error {
 	logger := log.GetReqLogger(ctx)
 
 	itemValue, dbFields, err := reflectModelItem(item)

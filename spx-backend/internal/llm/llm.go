@@ -80,21 +80,16 @@ func CreateMessage() Messages {
 }
 
 func (msgs *Messages) Scan(value interface{}) error {
+	var b []byte
 	switch v := value.(type) {
 	case []byte:
-		// If the value is a []byte, unmarshal it directly
-		if err := json.Unmarshal(v, msgs); err != nil {
-			return err
-		}
+		b = b
 	case string:
-		// If the value is a string, convert it to []byte first
-		if err := json.Unmarshal([]byte(v), msgs); err != nil {
-			return err
-		}
+		b = []byte(v)
 	default:
 		return errors.New("type assertion to []byte or string failed")
 	}
-	return nil
+	return json.Unmarshal(b, msgs)
 }
 
 func (msgs Messages) Value() (driver.Value, error) {

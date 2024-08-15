@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/goplus/builder/spx-backend/internal/llm"
 	"github.com/goplus/builder/spx-backend/internal/model"
-	"time"
 )
 
 // max chat length
