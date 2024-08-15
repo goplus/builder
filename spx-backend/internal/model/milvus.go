@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
