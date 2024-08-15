@@ -46,12 +46,14 @@ func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
 
 	data, err := spx.Gopt_ParseSkeletonAnimData(fs, spriteName, animName)
 	if err != nil {
-		log.Fatalln("Failed to parse skeleton anim data:", err)
+		log.Println("Failed to parse skeleton anim data:", err)
+		return nil
 	}
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Fatalln("Failed to marshal skeleton anim data:", err)
+		log.Println("Failed to marshal skeleton anim data:", err)
+		return nil
 	}
 
 	return js.ValueOf(string(jsonData))
