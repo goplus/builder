@@ -81,7 +81,6 @@ export type AssetOrAIAsset = AssetData | TaggedAIAssetData
 export interface CreateAIImageParams {
   keyword: string
   category: string | string[]
-  assetType: AssetType
   width?: number
   height?: number
 }
@@ -109,20 +108,19 @@ const mockJobs: Map<string, 'image' | 'sprite'> = new Map()
 export async function generateAIImage({
   keyword,
   category,
-  assetType,
   width,
   height
 }: CreateAIImageParams) {
-  return new Promise<{ imageJobId: string }>((resolve) => {
-    setTimeout(() => {
-      const jobId = `mock-${keyword}-${Math.random().toString(36).slice(2)}`
-      mockJobs.set(jobId, 'image')
-      resolve({ imageJobId: jobId })
-    }, 1000)
-  })
+  // return new Promise<{ imageJobId: string }>((resolve) => {
+  //   setTimeout(() => {
+  //     const jobId = `mock-${keyword}-${Math.random().toString(36).slice(2)}`
+  //     mockJobs.set(jobId, 'image')
+  //     resolve({ imageJobId: jobId })
+  //   }, 1000)
+  // })
   const result = (await client.post(
     '/aigc/image',
-    { keyword, category, assetType, width, height },
+    { keyword, category, width, height },
     { timeout: 20 * 1000 }
   )) as {
     imageJobId: string
@@ -263,11 +261,11 @@ export async function getAIGCStatus(jobId: string) {
 export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(param: any) {
-  return new Promise<{ assetId: string }>((resolve) => {
-    setTimeout(() => {
-      resolve({ assetId: '21' })
-    }, 1000)
-  })
+  // return new Promise<{ assetId: string }>((resolve) => {
+  //   setTimeout(() => {
+  //     resolve({ assetId: '21' })
+  //   }, 1000)
+  // })
   const result = (await client.post(`/aigc/export`,
     typeof param === 'string' ? { jobId: param } : { ...param }
   )) as {
