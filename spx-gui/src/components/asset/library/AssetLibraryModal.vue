@@ -1,6 +1,6 @@
 <template>
   <SearchContextProvider :type="props.type" :owner="project.owner!">
-    <UIModal style="width: 1200px; max-width: 75vw; height: 75vh" :visible="props.visible" @update:visible="emit('cancelled')">
+    <UIModal style="width: 1200px; width: 100vw; height: 100vh" :visible="props.visible" @update:visible="emit('cancelled')">
       <AssetLibrary
         :project="props.project"
         @resolved="emit('resolved', $event)"
