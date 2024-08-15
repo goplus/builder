@@ -18,9 +18,8 @@ var spxProject = &modfile.Project{
 	Works:    []*modfile.Class{{Ext: ".spx", Class: "Sprite"}},
 	PkgPaths: []string{"github.com/goplus/spx", "math"}}
 
-// init function
+// init spx mod
 func initSPXMod() *gopmod.Module {
-	//init spxMod
 	var spxMod *gopmod.Module
 	spxMod = gopmod.New(modload.Default)
 	spxMod.Opt.Projects = append(spxMod.Opt.Projects, spxProject)

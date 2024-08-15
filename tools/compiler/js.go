@@ -22,6 +22,9 @@ func jsFuncRegister() {
 }
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
+	fileName := p[1].String()
+	fileCode := p[2].String()
+	internal.GetSPXFunctionsDecl(fileName, fileCode)
 	return nil
 }
 
