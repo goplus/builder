@@ -83,7 +83,7 @@ func (msgs *Messages) Scan(value interface{}) error {
 	var b []byte
 	switch v := value.(type) {
 	case []byte:
-		b = b
+		b = v
 	case string:
 		b = []byte(v)
 	default:

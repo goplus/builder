@@ -3,9 +3,10 @@ package model
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/goplus/builder/spx-backend/internal/llm"
 	"github.com/goplus/builder/spx-backend/internal/log"
-	"time"
 )
 
 // LLMChat is the model for every single chat.
