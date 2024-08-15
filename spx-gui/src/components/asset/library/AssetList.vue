@@ -114,7 +114,7 @@ const emit = defineEmits<{
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
-const COLUMN_COUNT = 4
+const COLUMN_COUNT = 6
 const assetList = ref<AssetData[]>([])
 const aiAssetTaskList = shallowRef<AIGCTask[]>([])
 const getAiAssetList = () => {

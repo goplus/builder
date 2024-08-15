@@ -230,7 +230,7 @@ const currentDotIndex = ref(0)
 
 <style lang="scss" scoped>
 .container {
-  --container-width: 95%;
+  --container-width: 85%;
   display: flex;
   flex-direction: column;
   align-items: center;

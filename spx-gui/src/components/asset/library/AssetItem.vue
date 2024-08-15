@@ -135,7 +135,7 @@ const handleAddToProject = () => {
 </script>
 
 <style lang="scss" scoped>
-$COLUMN_COUNT: 4;
+$COLUMN_COUNT: 6;
 $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
 
 .asset-item {
