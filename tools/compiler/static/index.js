@@ -16,29 +16,39 @@ window.addEventListener('message', function (event) {
     if (event.origin !== window.location.origin) {
         console.warn()
     }
-
-    var data = event.data
-    if (data.info === "wasm") {
-        let res = compilerDo(event.data)
-        window.parent.postMessage({log: "", level: "wasm", cont: res}, window.location.origin)
-    }
 })
 
-const compilerFnMap = {
-    'getInlayHints': getInlayHints = () => {},
-    'getDiagnostics': getDiagnostics = () => {},
-    'getCompletionItems': getCompletionItems = () => {},
-    'getDefinition': getDefinition = () => {},
-    'getTypes': getTypes = (data) => {
-        let fileCode = data.in.code
-        let fileName = data.in.name
-        let res = getTypes_GO("",fileName,fileCode)
-        return JSON.parse(res)
-    }
+function getInlayHints (data)  {
+
 }
 
-function compilerDo(data) {
-    if (compilerFnMap.hasOwnProperty(data.f)) {
-        return compilerFnMap[data.f](data)
+function getDiagnostics (data)  {
+    let fileCode = data.in.code
+    let fileName = data.in.name
+    let res = getDiagnostics_GO(fileName, fileCode)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get diagnostics")
     }
+    return json.content
+}
+
+
+function getCompletionItems (data)  {
+
+}
+
+function getDefinition (data)  {
+
+}
+
+function getTypes(data) {
+    let fileCode = data.in.code
+    let fileName = data.in.name
+    let res = getTypes_GO(fileName, fileCode)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get diagnostics")
+    }
+    return json.content
 }
