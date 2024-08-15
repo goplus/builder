@@ -230,9 +230,6 @@ func newChatMapManager() *chatMapManager {
 }
 
 func (m *chatMapManager) storeChat(chat *chat) error {
-	if value, ok := m.chatMap[chat.ID]; ok {
-		return fmt.Errorf("chat with id %s already exists", value.ID)
-	}
 	m.chatMap[chat.ID] = chat
 	return nil
 }
@@ -416,14 +413,9 @@ func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams)
 	if ok, msg := p.Validate(); !ok {
 		return ChatResp{}, errors.New(msg)
 	}
-	chat, ok := chatMapMgr.getChat(id)
+	chat, ok := findChat(ctx, ctrl.db, id)
 	if !ok {
-		if chatFromDB, ok := findChat(ctx, ctrl.db, id); ok {
-			chat = &chatFromDB
-		} else {
-			err = fmt.Errorf("no chat found with id: %s", id)
-		}
-		return
+		return ChatResp{}, errors.New("can't find chat")
 	}
 	chatUser := chat.User
 	_, err = EnsureUser(ctx, chatUser.Name)
@@ -431,7 +423,7 @@ func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams)
 		return ChatResp{}, err
 	}
 	chatResp, err = chat.nextInput(ctrl, p.UserInput)
-	err = updateChat(ctx, ctrl.db, *chat)
+	err = updateChat(ctx, ctrl.db, chat)
 	if err != nil {
 		return ChatResp{}, err
 	}
@@ -472,13 +464,12 @@ func chat2ModelChat(chat chat) *model.LLMChat {
 		CurrentChatLength: chat.CurrentChatLength,
 		Messages:          chat.Messages,
 		Owner:             chat.User.Name,
-		Status:            model.StatusDeleted,
+		Status:            model.StatusNormal,
 	}
 }
 
 func saveChat(ctx context.Context, db *sql.DB, chat chat) error {
-	_, err := model.CreateChat(ctx, db, chat2ModelChat(chat))
-	return err
+	return model.CreateChat(ctx, db, chat2ModelChat(chat))
 }
 
 func findChat(ctx context.Context, db *sql.DB, id string) (chat, bool) {

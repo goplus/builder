@@ -14,10 +14,10 @@ type LLMChat struct {
 	ID string `db:"id" json:"id"`
 
 	// CurrentChatLength record the current chat length.
-	CurrentChatLength int `db:"current_chat_length" json:"currentChatLength"`
+	CurrentChatLength int `db:"current_chat_length" json:"current_chat_length"`
 
 	// CTime is the creation time.
-	CTime time.Time `db:"c_time" json:"cTime"`
+	CTime time.Time `db:"c_time" json:"c_time"`
 
 	// Messages is a list contains every message.
 	Messages llm.Messages `db:"messages" json:"messages"`
@@ -40,13 +40,13 @@ func ChatByID(ctx context.Context, db *sql.DB, id string) (*LLMChat, error) {
 	return QueryByID[LLMChat](ctx, db, TableLLMChat, id)
 }
 
-func CreateChat(ctx context.Context, db *sql.DB, c *LLMChat) (*LLMChat, error) {
-	return Create(ctx, db, TableLLMChat, c)
+func CreateChat(ctx context.Context, db *sql.DB, c *LLMChat) error {
+	return CreateWithOutSkip(ctx, db, TableLLMChat, c)
 }
 
 func UpdateChatMessageByID(ctx context.Context, db *sql.DB, c *LLMChat) (*LLMChat, error) {
 	logger := log.GetReqLogger(ctx)
-	if err := UpdateByID(ctx, db, TableLLMChat, c.ID, c, "messages, current_chat_length"); err != nil {
+	if err := UpdateByIDWithoutUTime(ctx, db, TableLLMChat, c.ID, c, "messages", "current_chat_length"); err != nil {
 		logger.Printf("UpdateByID failed: %v", err)
 		return nil, err
 	}
@@ -54,5 +54,5 @@ func UpdateChatMessageByID(ctx context.Context, db *sql.DB, c *LLMChat) (*LLMCha
 }
 
 func DeleteChatByID(ctx context.Context, db *sql.DB, id string) error {
-	return UpdateByID(ctx, db, TableLLMChat, id, &LLMChat{Status: StatusDeleted}, "status")
+	return UpdateByIDWithoutUTime(ctx, db, TableLLMChat, id, &LLMChat{Status: StatusDeleted}, "status")
 }

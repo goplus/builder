@@ -174,6 +174,41 @@ func Create[T any](ctx context.Context, db *sql.DB, table string, item *T) (*T, 
 	return QueryByID[T](ctx, db, table, strconv.FormatInt(id, 10))
 }
 
+// CreateWithOutSkip created item in db without skip id, c_time, u_time, status.
+func CreateWithOutSkip[T any](ctx context.Context, db *sql.DB, table string, item *T) error {
+	logger := log.GetReqLogger(ctx)
+
+	itemValue, dbFields, err := reflectModelItem(item)
+	if err != nil {
+		logger.Printf("failed to reflect model item: %v", err)
+		return err
+	}
+	if len(dbFields) == 0 {
+		return errors.New("no db fields found")
+	}
+
+	columns := make([]string, 0, len(dbFields))
+	values := make([]any, 0, len(dbFields))
+	for dbTag, dbField := range dbFields {
+		var value any
+		value = itemValue.FieldByIndex(dbField.Index).Interface()
+		columns = append(columns, dbTag)
+		values = append(values, value)
+	}
+
+	joinedColumns := strings.Join(columns, ",")
+	joinedPlaceholders := strings.Repeat(",?", len(columns))[1:]
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, joinedColumns, joinedPlaceholders)
+
+	_, err = db.ExecContext(ctx, query, values...)
+	if err != nil {
+		logger.Printf("db.ExecContext failed: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 // UpdateByID updates an item by ID.
 func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string, item *T, columns ...string) error {
 	logger := log.GetReqLogger(ctx)
@@ -185,7 +220,7 @@ func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string,
 	}
 
 	exprs := make([]string, 1, len(columns)+1)
-	exprs[0] = "u_time=?"
+	exprs[0] = "u_time = ?"
 	args := make([]any, 1, len(columns)+1)
 	args[0] = time.Now().UTC()
 	for _, col := range columns {
@@ -197,12 +232,55 @@ func UpdateByID[T any](ctx context.Context, db *sql.DB, table string, id string,
 		case "id", "c_time", "u_time":
 			return fmt.Errorf("column %s is read-only", col)
 		}
-		exprs = append(exprs, fmt.Sprintf("%s=?", col))
+		exprs = append(exprs, fmt.Sprintf("%s = ?", col))
 		args = append(args, itemValue.FieldByIndex(dbField.Index).Interface())
 	}
 	args = append(args, id)
 
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE id=?", table, strings.Join(exprs, ","))
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE id = ?", table, strings.Join(exprs, ", "))
+	result, err := db.ExecContext(ctx, query, args...)
+	if err != nil {
+		logger.Printf("db.ExecContext failed: %v", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		logger.Printf("result.RowsAffected failed: %v", err)
+		return err
+	} else if rowsAffected == 0 {
+		return ErrNotExist
+	}
+	return nil
+}
+
+// UpdateByIDWithoutUTime update an item by ID, and skip auto update uTime.
+func UpdateByIDWithoutUTime[T any](ctx context.Context, db *sql.DB, table string, id string, item *T, columns ...string) error {
+	logger := log.GetReqLogger(ctx)
+
+	itemValue, dbFields, err := reflectModelItem(item)
+	if err != nil {
+		logger.Printf("failed to reflect model item: %v", err)
+		return err
+	}
+
+	exprs := make([]string, 0, len(columns))
+	args := make([]any, 0, len(columns))
+	for _, col := range columns {
+		dbField, ok := dbFields[col]
+		if !ok {
+			return fmt.Errorf("column %s does not exist in struct", col)
+		}
+		switch col {
+		case "id", "c_time":
+			return fmt.Errorf("column %s is read-only", col)
+		}
+		exprs = append(exprs, fmt.Sprintf("%s = ?", col))
+		args = append(args, itemValue.FieldByIndex(dbField.Index).Interface())
+	}
+	args = append(args, id)
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE id = ? ", table, strings.Join(exprs, ", "))
 	result, err := db.ExecContext(ctx, query, args...)
 	if err != nil {
 		logger.Printf("db.ExecContext failed: %v", err)
