@@ -3,10 +3,11 @@ package model
 import (
 	"context"
 	"database/sql"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"gorm.io/gorm"
 	"strconv"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"gorm.io/gorm"
 )
 
 type UserAsset struct {
