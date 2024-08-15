@@ -85,8 +85,8 @@ After adding a Widget, users can adjust its Name, Basic Config, Advanced Config,
 Both the code of the Stage and the Sprite can interact with the Widgets in the current Stage through the following interfaces:
 
 ```go
-scoreMonitor := getWidget("score").(Monitor)
-usernameInput := getWidget("usernameInput").(Input)
+scoreMonitor := getWidget(Monitor, "score")
+usernameInput := getWidget(Input, "usernameInput")
 
 // `show` & `setXYPos` are basic methods provided by all types of Widgets
 scoreMonitor.show

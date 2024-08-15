@@ -67,6 +67,7 @@ func init() {
 			"Gamer":   reflect.TypeOf((*q.Gamer)(nil)).Elem(),
 			"Shape":   reflect.TypeOf((*q.Shape)(nil)).Elem(),
 			"Spriter": reflect.TypeOf((*q.Spriter)(nil)).Elem(),
+			"Widget":  reflect.TypeOf((*q.Widget)(nil)).Elem(),
 		},
 		NamedTypes: map[string]reflect.Type{
 			"Camera":        reflect.TypeOf((*q.Camera)(nil)).Elem(),
@@ -74,6 +75,7 @@ func init() {
 			"EffectKind":    reflect.TypeOf((*q.EffectKind)(nil)).Elem(),
 			"Game":          reflect.TypeOf((*q.Game)(nil)).Elem(),
 			"List":          reflect.TypeOf((*q.List)(nil)).Elem(),
+			"Monitor":       reflect.TypeOf((*q.Monitor)(nil)).Elem(),
 			"MovingInfo":    reflect.TypeOf((*q.MovingInfo)(nil)).Elem(),
 			"PlayAction":    reflect.TypeOf((*q.PlayAction)(nil)).Elem(),
 			"PlayOptions":   reflect.TypeOf((*q.PlayOptions)(nil)).Elem(),

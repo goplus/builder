@@ -86,8 +86,8 @@ Widget 添加完成后，用户可以调整其 Name、Basic Config、Advanced Co
 Stage 与 Sprite 的代码均可以通过以下接口与当前 Stage 中的 Widget 进行交互：
 
 ```go
-scoreMonitor := getWidget("score").(Monitor)
-usernameInput := getWidget("usernameInput").(Input)
+scoreMonitor := getWidget(Monitor, "score")
+usernameInput := getWidget(Input, "usernameInput")
 
 // `show` & `setXYPos` 等是基础方法，所有类别的 Widget 都会提供
 scoreMonitor.show

@@ -45,6 +45,8 @@ export const stageCodeFilePaths = ['main.spx', 'index.spx', 'main.gmx', 'index.g
 const stageCodeFilePath = stageCodeFilePaths[0]
 const stageCodeFileName = filename(stageCodeFilePath)
 
+export const defaultMapSize: MapSize = { width: 480, height: 360 }
+
 export class Stage {
   code: string
   setCode(code: string) {
@@ -199,8 +201,8 @@ export class Stage {
     this.backdropIndex = inits?.backdropIndex ?? 0
     this.widgets = []
     this.widgetsZorder = []
-    this.mapWidth = inits?.mapWidth ?? 480
-    this.mapHeight = inits?.mapHeight ?? 360
+    this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
+    this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
     this.mapMode = getMapMode(inits?.mapMode)
     return reactive(this) as this
   }

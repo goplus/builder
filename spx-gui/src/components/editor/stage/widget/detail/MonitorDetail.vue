@@ -8,7 +8,11 @@
           <UITextInput class="input" :value="monitor.label" @update:value="handleLabelUpdate">
             <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}:</template>
           </UITextInput>
-          <UITextInput class="input" :value="monitor.value" @update:value="handleValueUpdate">
+          <UITextInput
+            class="input"
+            :value="monitor.variableName"
+            @update:value="handleValueUpdate"
+          >
             <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}:</template>
           </UITextInput>
         </div>
@@ -94,7 +98,10 @@ const handleRename = useMessageHandle(
 // 2. It's ok to omit the debounce for label / value update
 // TODO: we should make the behaviors of different inputs (`UINumberInput`, `UITextInput`, ...) consistent. Then remove differences here.
 const handleLabelUpdate = wrapUpdateHandler((label: string) => props.monitor.setLabel(label), false)
-const handleValueUpdate = wrapUpdateHandler((value: string) => props.monitor.setValue(value), false)
+const handleValueUpdate = wrapUpdateHandler(
+  (value: string) => props.monitor.setVariableName(value),
+  false
+)
 
 // TODO: common logic may be extracted when we have more widget types
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.monitor.setX(x ?? 0))

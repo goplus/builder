@@ -8,10 +8,10 @@ export type RawWidgetConfig = {
 
 export type Widget = Monitor // | ...
 
-export type WidgetType = 'MonitorWidget' // | ...
+export type WidgetType = 'monitor' // | ...
 
 /** Load different types of widget based on `type` */
 export function loadWidget(config: RawWidgetConfig) {
-  if (config.type === 'MonitorWidget') return Monitor.load({ ...config, type: 'MonitorWidget' })
+  if (config.type === 'monitor') return Monitor.load({ ...config, type: 'monitor' })
   throw new Error(`unknown widget type ${config.type}`)
 }

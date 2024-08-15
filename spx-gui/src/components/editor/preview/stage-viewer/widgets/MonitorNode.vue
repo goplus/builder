@@ -145,9 +145,9 @@ const valueRectConfig = computed<RectConfig>(() => {
 })
 
 const valueTextConfig = computed<TextConfig>(() => {
-  const { value } = props.monitor
+  const { variableName } = props.monitor
   return {
-    text: value === '' ? '   ' : `{${value}}`,
+    text: variableName === '' ? '   ' : `{${variableName}}`,
     x: paddingX[0] + labelTextWidth.value + labelValueGap + valuePaddingX,
     y: paddingY,
     lineHeight,
