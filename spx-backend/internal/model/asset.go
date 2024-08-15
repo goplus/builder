@@ -105,7 +105,7 @@ func extractAssetIDs(assets []Asset) []string {
 	return assetIDs
 }
 
-// fillLikedInfo 填充 Asset 数据的 IsLiked 和 LikeCount 属性
+// fillLikedInfo fills liked info into assets.
 func fillLikedInfo(assets []Asset, likedMap map[string]struct {
 	IsLiked   bool
 	LikeCount int

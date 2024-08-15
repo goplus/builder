@@ -20,7 +20,7 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 	logger := log.GetReqLogger(ctx)
 	fmt.Println("AddUserAsset, assetType: ", assetType)
 	assetId, err := strconv.Atoi(params.AssetID)
-	_, err = model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
+	err = model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
 		Owner:             owner,
 		AssetID:           assetId,
 		RelationType:      model.RelationType(assetType),
