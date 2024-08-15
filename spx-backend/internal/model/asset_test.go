@@ -221,3 +221,92 @@ func TestDeleteAssetByID(t *testing.T) {
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 	})
 }
+
+func TestExtractAssetIDs(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		assets := []Asset{
+			{ID: "1"},
+			{ID: "2"},
+			{ID: "3"},
+		}
+
+		expected := []string{"1", "2", "3"}
+		result := extractAssetIDs(assets)
+
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("EmptyAssets", func(t *testing.T) {
+		assets := []Asset{}
+
+		expected := []string{}
+		result := extractAssetIDs(assets)
+
+		assert.Equal(t, expected, result)
+	})
+}
+
+func TestFillLikedInfo(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		assets := []Asset{
+			{ID: "1"},
+			{ID: "2"},
+			{ID: "3"},
+		}
+
+		likedMap := map[string]struct {
+			IsLiked   bool
+			LikeCount int
+		}{
+			"1": {IsLiked: true, LikeCount: 5},
+			"3": {IsLiked: true, LikeCount: 10},
+		}
+
+		expected := []Asset{
+			{ID: "1", IsLiked: true, LikeCount: 5},
+			{ID: "2", IsLiked: false, LikeCount: 0},
+			{ID: "3", IsLiked: true, LikeCount: 10},
+		}
+
+		fillLikedInfo(assets, likedMap)
+
+		assert.Equal(t, expected, assets)
+	})
+
+	t.Run("NoLikedInfo", func(t *testing.T) {
+		assets := []Asset{
+			{ID: "1"},
+			{ID: "2"},
+		}
+
+		likedMap := map[string]struct {
+			IsLiked   bool
+			LikeCount int
+		}{}
+
+		expected := []Asset{
+			{ID: "1", IsLiked: false, LikeCount: 0},
+			{ID: "2", IsLiked: false, LikeCount: 0},
+		}
+
+		fillLikedInfo(assets, likedMap)
+
+		assert.Equal(t, expected, assets)
+	})
+
+	t.Run("EmptyAssets", func(t *testing.T) {
+		assets := []Asset{}
+		likedMap := map[string]struct {
+			IsLiked   bool
+			LikeCount int
+		}{
+			"1": {IsLiked: true, LikeCount: 5},
+		}
+
+		expected := []Asset{}
+
+		fillLikedInfo(assets, likedMap)
+
+		assert.Equal(t, expected, assets)
+	})
+}
