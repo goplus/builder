@@ -45,28 +45,6 @@ export async function initMonaco(
     id: LANGUAGE_NAME
   })
 
-  // monaco.editor.defineTheme(defaultThemeName, {
-  //   base: 'vs',
-  //   inherit: true,
-  //   rules: [
-  //     // TODO: review colors here
-  //     { token: 'comment', foreground: color.hint[2], fontStyle: 'italic' },
-  //     { token: 'string', foreground: color.green[300] },
-  //     { token: 'operator', foreground: color.blue.main },
-  //     { token: 'number', foreground: color.blue[600] },
-  //     { token: 'keyword', foreground: color.red[300] },
-  //     { token: 'typeKeywords', foreground: color.purple.main },
-  //     { token: 'brackets', foreground: color.title }
-  //   ],
-  //   colors: {
-  //     'editor.background': '#FFFFFF',
-  //     'scrollbar.shadow': '#FFFFFF00',
-  //     'scrollbarSlider.background': `${color.primary.main}50`,
-  //     'scrollbarSlider.hoverBackground': `${color.primary.main}80`,
-  //     'scrollbarSlider.activeBackground': color.primary.main
-  //   }
-  // })
-
   // keep this for auto match brackets when typing
   monaco.languages.setLanguageConfiguration(LANGUAGE_NAME, {
     // tokenize all words as identifiers
@@ -84,7 +62,6 @@ export async function initMonaco(
     ]
   })
 
-  // Code hint
   monacoProviderDisposes.completionProvider = monaco.languages.registerCompletionItemProvider(
     LANGUAGE_NAME,
     {

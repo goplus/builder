@@ -7,15 +7,15 @@ const props = defineProps<{
 </script>
 
 <template>
-  <article class="preview-card">
-    <header class="preview-card__header"></header>
+  <article class="markdown-preview">
+    <header class="markdown-preview__header"></header>
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <main class="preview-card__main preview-markdown" v-html="renderMarkdown(props.content)"></main>
-    <footer class="preview-card__footer"></footer>
+    <main class="markdown-preview__main" v-html="renderMarkdown(props.content)"></main>
+    <footer class="markdown-preview__footer"></footer>
   </article>
 </template>
 <style lang="scss">
-.preview-markdown {
+.markdown-preview__main {
   .code-block {
     position: relative;
   }
@@ -30,6 +30,7 @@ const props = defineProps<{
     cursor: pointer;
   }
 
+  .hljs,
   .shiki {
     padding: 8px;
     margin: 4px 0;
@@ -45,7 +46,7 @@ const props = defineProps<{
 </style>
 
 <style lang="scss">
-.preview-card {
+.markdown-preview {
   min-width: 400px;
   background: white;
   border-radius: 5px;
@@ -55,14 +56,14 @@ const props = defineProps<{
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.preview-card__header {
+.markdown-preview__header {
   display: none;
   padding: 8px 0 4px;
   margin: 0 8px;
   border-bottom: 1px solid #a6a6a6;
 }
 
-.preview-card__main {
+.markdown-preview__main {
   padding: 8px;
 }
 </style>

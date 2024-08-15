@@ -14,15 +14,14 @@ import SpxLightTheme from './spx-light.json'
 import markdownit from 'markdown-it'
 
 let highlighter: HighlighterGeneric<BundledLanguage, BundledTheme> | null = null
-
-createHighlighter({
+const highlighterPromise = createHighlighter({
   themes: [
-    // the same reason as lang property...
+    // the same reason as `lang` property...
     SpxLightTheme as unknown as ThemeInput
   ],
   langs: [
     // because shiki `LanguageInput` interface need textmate grammar file include property `$self` and `$base`
-    // `$base` or `$self` mean current language grammar root, exhibiting an effect similar to the for loop label syntax.
+    // `$base` or `$self` mean current language grammar match root, similar to the for loop label syntax.
     // current file doesn't have this property, but still working well and no effect, so here use force transformed type
     GOTextmate as unknown as LanguageInput,
     GOPTextmate as unknown as LanguageInput
@@ -34,34 +33,23 @@ createHighlighter({
     spx: 'Gop',
     'go+': 'Gop'
   }
-}).then((_highlighter) => {
-  highlighter = _highlighter
-})
-
-export async function injectMonacoHighlightTheme(monaco: typeof IMonaco) {
-  if (!highlighter) throw new Error('highlighter not ready')
-  shikiToMonaco(highlighter, monaco)
-}
+}).then((_highlighter) => (highlighter = _highlighter))
 
 const md = markdownit({
   highlight: function (str, lang): string {
-    if (lang && highlighter?.getLanguage(lang)) {
-      try {
-        return getLanguageHighlightHtml(str)
-      } catch (e) {
-        console.warn(e)
-      }
+    if (highlighter && lang && highlighter.getLanguage(lang)) {
+      return highlighter.codeToHtml(str, {
+        lang,
+        theme: 'spx-light'
+      })
+    } else {
+      return '<pre class="shiki"><code>' + md.utils.escapeHtml(str) + '</code></pre>'
     }
-    return '<pre class="shiki"><code>' + md.utils.escapeHtml(str) + '</code></pre>'
   }
 })
 
-function getLanguageHighlightHtml(code: string) {
-  if (!highlighter) throw new Error('highlighter not ready')
-  return highlighter.codeToHtml(code, {
-    lang: 'gop',
-    theme: 'spx-light'
-  })
+export async function injectMonacoHighlightTheme(monaco: typeof IMonaco) {
+  shikiToMonaco(await highlighterPromise, monaco)
 }
 
 export function renderMarkdown(content: string) {
