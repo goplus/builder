@@ -6,34 +6,15 @@
     </UIError>
     <UIEmpty v-else-if="searchResultCtx.assets?.data.length === 0" size="large" />
   </template>
-  <NVirtualList
-    v-else
-    ref="virtualList"
-    class="asset-list"
-    :items="groupedAssetItems"
-    :item-size="148"
-    :key-field="'id'"
-    :item-resizable="false"
-    :ignore-item-resize="true"
-    @scroll="handleScroll"
-    @wheel="handleScroll"
-  >
+  <NVirtualList v-else ref="virtualList" class="asset-list" :items="groupedAssetItems" :item-size="148"
+    :key-field="'id'" :item-resizable="false" :ignore-item-resize="true" @scroll="handleScroll" @wheel="handleScroll">
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <AIAssetItem
-            v-if="isAiAsset in asset"
-            :asset="asset"
-            @ready="asset[isPreviewReady] = true"
-            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)"
-          />
-          <AssetItem
-            v-else
-            :asset="asset"
-            :add-to-project-pending="props.addToProjectPending"
-            @add-to-project="(asset) => emit('addToProject', asset)"
-            @click="emit('select', asset)"
-          />
+          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" @ready="asset[isPreviewReady] = true"
+            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)" />
+          <AssetItem v-else :asset="asset" :add-to-project-pending="props.addToProjectPending"
+            @add-to-project="(asset) => emit('addToProject', asset)" @click="emit('select', asset)" />
         </template>
       </div>
       <div v-else-if="item.type === 'loading-more'" class="more-info loading-more">
@@ -44,11 +25,8 @@
         <img :src="emptyImg" alt="empty" />
         {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
         <Transition name="fade" mode="out-in" appear>
-          <NButton
-            v-if="!loadingAiAsset && !aiGenerationDisabled"
-            tertiary
-            @click="abortAIGeneration = generateMultipleAIImages(COLUMN_COUNT)"
-          >
+          <NButton v-if="!loadingAiAsset && !aiGenerationDisabled" tertiary
+            @click="abortAIGeneration = generateMultipleAIImages(COLUMN_COUNT)">
             <template #icon>
               <NIcon>
                 <TipsAndUpdatesOutlined />
@@ -87,6 +65,7 @@ import {
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
+import { createFileWithWebUrl } from '@/models/common/cloud'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
@@ -115,7 +94,7 @@ const hasMoreAssets = computed(
 
 const aiAssetPending = ref(false)
 const loadingAiAsset = computed(() =>
-    aiAssetPending.value || aiAssetList.value.some((a) => {
+  aiAssetPending.value || aiAssetList.value.some((a) => {
     if (isAiAsset in a) {
       return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
     }
@@ -125,23 +104,23 @@ const loadingAiAsset = computed(() =>
 
 type GroupedAssetItem =
   | {
-      id: string
-      type: 'asset-group'
-      assets: AssetOrAIAsset[]
-    }
+    id: string
+    type: 'asset-group'
+    assets: AssetOrAIAsset[]
+  }
   | {
-      id: string
-      type: 'loading-more'
-    }
+    id: string
+    type: 'loading-more'
+  }
   | {
-      id: string
-      type: 'no-more'
-    }
+    id: string
+    type: 'no-more'
+  }
   | {
-      id: string
-      type: 'loading-more-error'
-      error: ActionException
-    }
+    id: string
+    type: 'loading-more-error'
+    error: ActionException
+  }
 
 const groupedAssetItems = computed(() => {
   const list = [...assetList.value, ...aiAssetList.value]
@@ -206,7 +185,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
       category: searchCtx.category,
     }).then((res) => {
       return {
-        id: res.imageJobId,
+        image_url: res.image_url,
         cTime: new Date().toISOString(),
         status: AIGCStatus.Waiting
       }
@@ -218,7 +197,9 @@ function generateMultipleAIImages(count: number, append = true): () => void {
     }
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
+      id: r.image_url,
       assetType: searchCtx.type,
+      files: createFileWithWebUrl(r.image_url),
       [isAiAsset]: true as const,
       [isPreviewReady]: false,
       [isContentReady]: false
