@@ -20,6 +20,12 @@
                 goLoadData(view);
             }
 
+            const _goParseSkeletonAnimData = window.goParseSkeletonAnimData;
+            window.goParseSkeletonAnimData = (buffer, sprite, anim) => {
+                const view = new Uint8Array(buffer);
+                return _goParseSkeletonAnimData(view, sprite, anim);
+            }
+
             window.dispatchEvent(new Event('wasmReady'));
         })()
     </script>

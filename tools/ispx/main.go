@@ -6,6 +6,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"log"
 	"reflect"
 	"syscall/js"
@@ -23,28 +24,68 @@ import (
 
 var dataChannel = make(chan []byte)
 
+// LoadData loads spx project data to run game.
 func loadData(this js.Value, args []js.Value) interface{} {
+	go runGame()
 	inputArray := args[0]
 
-	// Convert Uint8Array to Go byte slice
-	length := inputArray.Get("length").Int()
-	goBytes := make([]byte, length)
-	js.CopyBytesToGo(goBytes, inputArray)
-
+	goBytes := convertToGoBytes(inputArray)
 	dataChannel <- goBytes
 	return nil
 }
 
+// ParseSkeletonAnimData parses skeleton animation data.
+// Returns JSON string of the parsed data.
+func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
+	spriteData := args[0]
+	spriteName := args[1].String()
+	animName := args[2].String()
+
+	goBytes := convertToGoBytes(spriteData)
+	fs := readZipData(goBytes)
+
+	data, err := spx.Gopt_ParseSkeletonAnimData(fs, spriteName, animName)
+	if err != nil {
+		log.Fatalln("Failed to parse skeleton anim data:", err)
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalln("Failed to marshal skeleton anim data:", err)
+	}
+
+	return js.ValueOf(string(jsonData))
+}
+
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
+	js.Global().Set("goParseSkeletonAnimData", js.FuncOf(parseSkeletonAnimData))
 
-	zipData := <-dataChannel
+	// Wait forever
+	select {}
+}
 
+// readZipData reads zip data bytes and returns a zip file system.
+func readZipData(zipData []byte) *zipfs.ZipFs {
 	zipReader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		log.Fatalln("Failed to read zip data:", err)
 	}
-	fs := zipfs.NewZipFsFromReader(zipReader)
+	return zipfs.NewZipFsFromReader(zipReader)
+}
+
+// convertToGoBytes converts JavaScript Uint8Array to Go bytes.
+func convertToGoBytes(inputArray js.Value) []byte {
+	length := inputArray.Get("length").Int()
+	goBytes := make([]byte, length)
+	js.CopyBytesToGo(goBytes, inputArray)
+	return goBytes
+}
+
+func runGame() {
+	zipData := <-dataChannel
+
+	fs := readZipData(zipData)
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
