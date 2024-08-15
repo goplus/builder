@@ -12,13 +12,14 @@ import {
   Range
 } from 'monaco-editor'
 import { reactive, type UnwrapNestedRefs } from 'vue'
-import type { CompletionMenuItem, MonacoCompletionModelItem } from './completion'
+import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { IconEnum, createMatches, type IMatch } from '../../common'
 import EditorOption = editor.EditorOption
+import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
 
 export interface CompletionMenuState {
   visible: boolean
-  suggestions: CompletionMenuItem[]
+  suggestions: CompletionMenuFeatureItem[]
   activeIdx: number
   position: {
     top: number
@@ -36,6 +37,7 @@ export class CompletionMenu implements IDisposable {
   private _onFocus = new Emitter<void>()
   private editor: IEditor.IStandaloneCodeEditor
   public completionMenuState: UnwrapNestedRefs<CompletionMenuState>
+  public completionItemCache = new CompletionItemCache()
   private suggestController: any
   private suggestControllerWidget: any
   private readonly TabSize: number
@@ -214,6 +216,7 @@ export class CompletionMenu implements IDisposable {
     this._onFocus.dispose()
     this._onShow.dispose()
     this._onHide.dispose()
+    this.completionItemCache.dispose()
     this.disposeCodePreview()
   }
 
@@ -254,7 +257,7 @@ export class CompletionMenu implements IDisposable {
 
   private completionModelItems2CompletionItems(
     completionModelItems: MonacoCompletionModelItem[]
-  ): CompletionMenuItem[] {
+  ): CompletionMenuFeatureItem[] {
     // todo: this is temp code, need to combine with other preview.
     return completionModelItems.map((completion) => {
       return {

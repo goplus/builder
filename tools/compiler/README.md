@@ -20,3 +20,30 @@ cp $GOROOT/misc/wasm/wasm_exec.js ./static/
 ## Run
 
 Serve directory `/tools/compiler/` with any HTTP server & open `index.html`
+
+
+## WASM Returns 
+
+The Reply struct shows the structure returned by the wasm function.   
+If the `ok` becomes `false`, which means there may be some internal issue with wasm.  
+The `content` contains any types of return.  
+The `type` shows the type of returned content.  
+
+```go
+type Reply struct {
+	Type    ResponseType `json:"type"`
+	OK      bool         `json:"ok"`
+	Content interface{}  `json:"content"`
+}
+
+```
+
+## Export functions 
+
+> GetDiagnostics   
+> This function use spx analyser to check if there is some problem of code, such as undefined, operator matches, etc.  
+> But lack of ability of check variable names.
+
+```go
+func GetDiagnostics(fileName, fileCode string) interface{}
+```

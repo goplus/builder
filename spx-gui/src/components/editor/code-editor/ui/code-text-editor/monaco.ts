@@ -3,11 +3,16 @@ import { keywords, typeKeywords } from '@/utils/spx'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { ToolType, getAllTools } from './tools'
+import { getAllTools, ToolType } from './tools'
 import { useUIVariables } from '@/components/ui'
-import type { IDisposable, IRange, languages } from 'monaco-editor'
+import type { IDisposable, IRange, languages, Position } from 'monaco-editor'
 import type { Project } from '@/models/project'
 import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
+import {
+  type CompletionItem,
+  EditorUI,
+  type TextModel
+} from '@/components/editor/code-editor/EditorUI'
 
 declare global {
   /** Notice: this is available only after `initFormatWasm()` */
@@ -21,7 +26,6 @@ async function initFormatWasm() {
   go.run(result.instance)
 }
 
-export const defaultThemeName = 'spx-default-theme'
 const monacoProviderDisposes: Record<string, IDisposable | null> = {
   completionProvider: null,
   hoverProvider: null
@@ -31,7 +35,8 @@ export async function initMonaco(
   monaco: typeof import('monaco-editor'),
   { color }: ReturnType<typeof useUIVariables>,
   i18n: I18n,
-  getProject: () => Project
+  getProject: () => Project,
+  ui: EditorUI
 ) {
   self.MonacoEnvironment = {
     getWorker() {
@@ -65,19 +70,22 @@ export async function initMonaco(
   monacoProviderDisposes.completionProvider = monaco.languages.registerCompletionItemProvider(
     LANGUAGE_NAME,
     {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model, position, _, cancelToken) => {
+        const suggestions = getPreDefinedCompletionItem(model, position, monaco, i18n, getProject)
         const word = model.getWordUntilPosition(position)
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn
-        }
-        const suggestions: languages.CompletionItem[] = getCompletionItems(
-          range,
-          monaco,
-          i18n,
-          getProject()
+        const abortController = new AbortController()
+
+        cancelToken.onCancellationRequested(() => abortController.abort())
+        ui.requestCompletionProviderResolve(
+          model,
+          {
+            position,
+            unitWord: word.word,
+            signal: abortController.signal
+          },
+          (items: CompletionItem[]) => {
+            ui.completionMenu?.completionItemCache.add(items)
+          }
         )
         return { suggestions }
       }
@@ -136,6 +144,23 @@ export function disposeMonacoProviders() {
     monacoProviderDisposes.hoverProvider.dispose()
     monacoProviderDisposes.hoverProvider = null
   }
+}
+
+function getPreDefinedCompletionItem(
+  model: TextModel,
+  position: Position,
+  monaco: typeof import('monaco-editor'),
+  i18n: I18n,
+  getProject: () => Project
+) {
+  const word = model.getWordUntilPosition(position)
+  const range = {
+    startLineNumber: position.lineNumber,
+    endLineNumber: position.lineNumber,
+    startColumn: word.startColumn,
+    endColumn: word.endColumn
+  }
+  return getCompletionItems(range, monaco, i18n, getProject())
 }
 
 function getCompletionItems(

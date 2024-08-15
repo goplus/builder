@@ -26,7 +26,14 @@ const editorMenuRef = ref<{
 }>()
 const cssLineHeight = computed(() => `${completionMenuState.lineHeight}px`)
 const cssFontSize = computed(() => `${completionMenuState.fontSize}px`)
-const itemHeight = computed(() => completionMenuState.fontSize * 1.57143 + 8)
+const itemHeight = computed(
+  () =>
+    completionMenuState.fontSize *
+      // fontSize * 1.57134 means line height, normally line height is set to 1.5, but in current ui config it was set 1.57134
+      // 8 means padding top 4 and padding bottom 4
+      1.57143 +
+    8
+)
 const menuItems = computed<CompletionMenuItem[]>(() =>
   props.completionMenu.completionMenuState.suggestions.map((item, i) => ({
     key: i,
@@ -81,8 +88,8 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
   >
     <template #default="{ items: { matches } }">
       <span
-        v-for="(match, j) in matches"
-        :key="j"
+        v-for="(match, i) in matches"
+        :key="i"
         class="completion-menu__label"
         :class="{ 'completion-menu__label-match': match.highlighted }"
       >
@@ -105,7 +112,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   font-size: var(--vscode-editorCodeLens-fontSize);
   line-height: var(--vscode-editorCodeLens-lineHeight);
   font-style: italic;
-  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-family: 'JetBrains MonoNL', Consolas, 'Courier New', monospace;
   animation: fade-in 150ms ease-in;
 }
 
