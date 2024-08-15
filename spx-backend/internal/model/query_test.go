@@ -397,3 +397,99 @@ func TestUpdateByID(t *testing.T) {
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 	})
 }
+
+func TestGetLikedInfo(t *testing.T) {
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		assetIDs := []string{"1", "2"}
+		query := `SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?,\?\) AND relation_type = 'liked' GROUP BY asset_id`
+
+		rows := sqlmock.NewRows([]string{"asset_id", "count"}).
+			AddRow("1", 5).
+			AddRow("2", 3)
+		mock.ExpectQuery(query).WithArgs("1", "2").WillReturnRows(rows)
+
+		ctx := context.Background()
+		result, err := getLikedInfo(ctx, db, assetIDs)
+		require.NoError(t, err)
+		expected := map[string]struct {
+			IsLiked   bool
+			LikeCount int
+		}{
+			"1": {IsLiked: true, LikeCount: 5},
+			"2": {IsLiked: true, LikeCount: 3},
+		}
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("EmptyAssetIDs", func(t *testing.T) {
+		db, _, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		ctx := context.Background()
+		result, err := getLikedInfo(ctx, db, []string{})
+		require.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("QueryFailure", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		assetIDs := []string{"1", "2"}
+		query := `SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?,\?\) AND relation_type = 'liked' GROUP BY asset_id`
+
+		mock.ExpectQuery(query).WithArgs("1", "2").WillReturnError(sql.ErrConnDone)
+
+		ctx := context.Background()
+		result, err := getLikedInfo(ctx, db, assetIDs)
+		require.Error(t, err)
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+
+	t.Run("ScanFailure", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		assetIDs := []string{"1", "2"}
+		query := `SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?,\?\) AND relation_type = 'liked' GROUP BY asset_id`
+
+		rows := sqlmock.NewRows([]string{"asset_id", "count"}).
+			AddRow("1", 5).
+			AddRow("2", "invalid count")
+		mock.ExpectQuery(query).WithArgs("1", "2").WillReturnRows(rows)
+
+		ctx := context.Background()
+		result, err := getLikedInfo(ctx, db, assetIDs)
+		require.Error(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("RowsError", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		require.NoError(t, err)
+		defer db.Close()
+
+		assetIDs := []string{"1", "2"}
+		query := `SELECT asset_id, COUNT\(\*\) as count FROM user_asset WHERE asset_id IN \(\?,\?\) AND relation_type = 'liked' GROUP BY asset_id`
+
+		rows := sqlmock.NewRows([]string{"asset_id", "count"}).
+			AddRow("1", 5).
+			AddRow("2", 3).
+			RowError(1, sql.ErrConnDone)
+		mock.ExpectQuery(query).WithArgs("1", "2").WillReturnRows(rows)
+
+		ctx := context.Background()
+		result, err := getLikedInfo(ctx, db, assetIDs)
+		require.Error(t, err)
+		assert.Nil(t, result)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+	})
+}
