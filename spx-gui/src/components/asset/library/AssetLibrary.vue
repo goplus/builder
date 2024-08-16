@@ -9,7 +9,7 @@
         </span>
       </h4>
       <h4 v-else-if="isAiAsset in selectedAsset" class="title">
-        <!-- {{ $t({ en: 'Preview: ', zh: `预览: ` }) }} -->
+        <!-- {{ $t({ en: 'Detail: ', zh: `详情: ` }) }} -->
         <NIcon size="14" color="var(--text-color)">
           <BulbOutlined />
         </NIcon>
@@ -18,7 +18,7 @@
         </span>
       </h4>
       <h4 v-else class="title">
-        {{ $t({ en: 'Preview: ', zh: `预览: ` }) }}
+        {{ $t({ en: 'Detail: ', zh: `详情: ` }) }}
         {{ selectedAsset?.displayName }}
       </h4>
       <NAutoComplete
