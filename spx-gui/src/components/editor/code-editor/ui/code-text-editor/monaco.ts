@@ -13,6 +13,7 @@ import {
   EditorUI,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
+import { Icon2CompletionItemKind } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 declare global {
   /** Notice: this is available only after `initFormatWasm()` */
@@ -74,8 +75,9 @@ export async function initMonaco(
         const suggestions = getPreDefinedCompletionItem(model, position, monaco, i18n, getProject)
         const word = model.getWordUntilPosition(position)
         const abortController = new AbortController()
-
         cancelToken.onCancellationRequested(() => abortController.abort())
+        const project = getProject()
+        const fileHash = project.currentFilesHash || ''
         ui.requestCompletionProviderResolve(
           model,
           {
@@ -84,10 +86,39 @@ export async function initMonaco(
             signal: abortController.signal
           },
           (items: CompletionItem[]) => {
-            ui.completionMenu?.completionItemCache.add(items)
+            ui.completionMenu?.completionItemCache.add(
+              {
+                id: fileHash,
+                lineNumber: position.lineNumber,
+                column: word.startColumn
+              },
+              items
+            )
+            // todo: first time can't reactive completion menu
+            ui.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
           }
         )
-        return { suggestions }
+        const cachedSuggestions =
+          ui.completionMenu?.completionItemCache
+            .getAll({
+              id: fileHash,
+              lineNumber: position.lineNumber,
+              column: word.startColumn
+            })
+            .map(
+              (item): languages.CompletionItem => ({
+                label: item.label,
+                kind: Icon2CompletionItemKind(item.icon),
+                insertText: item.insertText,
+                range: {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.startColumn,
+                  endColumn: word.endColumn
+                }
+              })
+            ) || []
+        return { suggestions: [...suggestions, ...cachedSuggestions] }
       }
     }
   )

@@ -2,11 +2,12 @@
 import { computed, ref, watchEffect } from 'vue'
 import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
 import EditorMenu from '../../EditorMenu.vue'
-import { determineClosestEdge, IconEnum, isElementInViewport } from '../../common'
+import { determineClosestEdge, isElementInViewport } from '../../common'
+import type { Icon } from '@/components/editor/code-editor/EditorUI'
 
 interface CompletionMenuItem {
   key: number
-  icon: IconEnum
+  icon: Icon
   label: string
   iconSize: number
   active: boolean
@@ -81,7 +82,7 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
       left: completionMenuState.position.left + 'px'
     }"
     :list-styles="{
-      maxHeight: 8 * itemHeight + 'px'
+      maxHeight: 10 * itemHeight + 'px'
     }"
     @select="handleMenuItemSelect"
     @active="(_, el) => handleActiveMenuItem(el)"
@@ -109,10 +110,9 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 
 .view-line .completion-menu__item-preview {
   color: grey;
-  font-size: var(--vscode-editorCodeLens-fontSize);
-  line-height: var(--vscode-editorCodeLens-lineHeight);
+  font-size: inherit;
+  line-height: inherit;
   font-style: italic;
-  font-family: 'JetBrains MonoNL', Consolas, 'Courier New', monospace;
   animation: fade-in 150ms ease-in;
 }
 

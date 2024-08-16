@@ -4,7 +4,7 @@ import type { CompletionMenu } from '@/components/editor/code-editor/ui/features
 
 export interface TextModel extends IEditor.ITextModel {}
 
-export enum IconEnum {
+export enum Icon {
   Function,
   Event,
   Prototype,
@@ -14,8 +14,6 @@ export enum IconEnum {
   Rename,
   Playlist
 }
-
-export type Icon = IconEnum
 
 export type Markdown = string
 

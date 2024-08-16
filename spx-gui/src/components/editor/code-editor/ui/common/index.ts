@@ -1,3 +1,5 @@
+import { Icon } from '@/components/editor/code-editor/EditorUI'
+
 export * from './monaco-editor-core'
 
 import IconListen from '../icons/listen.svg?raw'
@@ -6,37 +8,24 @@ import IconEffect from '../icons/effect.svg?raw'
 import IconCode from '../icons/code.svg?raw'
 import IconAIAbility from '../icons/ai-helper.svg?raw'
 
-export enum IconEnum {
-  Function,
-  Event,
-  Prototype,
-  Keywords,
-  AIAbility,
-  Document,
-  Rename,
-  List
-}
-
-export type Icon = IconEnum
-
 /** transform icon enum to raw svg html content */
 export function icon2SVG(icon: Icon): string {
   switch (icon) {
-    case IconEnum.Function:
+    case Icon.Function:
       return IconEffect
-    case IconEnum.Event:
+    case Icon.Event:
       return IconListen
-    case IconEnum.Prototype:
+    case Icon.Prototype:
       return IconRead
-    case IconEnum.Keywords:
+    case Icon.Keywords:
       return IconCode
-    case IconEnum.AIAbility:
+    case Icon.AIAbility:
       return IconAIAbility
-    case IconEnum.Document:
+    case Icon.Document:
       return IconEffect
-    case IconEnum.Rename:
+    case Icon.Rename:
       return IconEffect
-    case IconEnum.List:
+    case Icon.Playlist:
       return IconEffect
   }
 }

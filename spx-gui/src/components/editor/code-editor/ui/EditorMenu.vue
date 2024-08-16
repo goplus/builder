@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends EditorMenuItem">
-import { type Icon, icon2SVG, normalizeIconSize } from './common'
+import { icon2SVG, normalizeIconSize } from './common'
 import { type CSSProperties, ref } from 'vue'
+import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface EditorMenuItem {
   key: string | number
@@ -65,7 +66,7 @@ defineExpose({
   background-color: #fff;
   border: solid 1px var(--ui-color-grey-700);
   border-radius: 5px;
-  box-shadow: var(--ui-box-shadow-small);
+  box-shadow: var(--ui-box-shadow-big);
 }
 
 .editor-menu {

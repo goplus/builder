@@ -138,7 +138,7 @@ watchEffect(async (onCleanup) => {
   monacoEditor.value = editor
   onCleanup(() => {
     props.ui.completionMenu = null
-    completionMenu.value?.dispose()
+    completionMenu.value?.dispose?.()
     disposeMonacoProviders()
     editor.dispose()
   })
