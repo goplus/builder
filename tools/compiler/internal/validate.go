@@ -49,7 +49,8 @@ func (checker *StringChecker) checkPatter() (stringPatterns, bool) {
 }
 
 func (checker *StringChecker) splitStrings() {
-	
+
+ }
 }
 
 func (checker *StringChecker) CamelCase() string {
