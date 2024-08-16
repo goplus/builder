@@ -123,6 +123,13 @@ const slots = useSlots()
     margin-top: 24px;
     display: flex;
     gap: var(--ui-gap-large);
+
+    // TODO: more reliable approach?
+    :deep(.ui-button svg),
+    :deep(.ui-button img) {
+      width: 24px;
+      height: 24px;
+    }
   }
 }
 

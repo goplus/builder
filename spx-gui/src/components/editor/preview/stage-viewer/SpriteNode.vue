@@ -10,7 +10,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import type { ImageConfig } from 'konva/lib/shapes/Image'
+import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action } from '@/models/project'
 import {
   LeftRight,
@@ -23,23 +23,25 @@ import type { Size } from '@/models/common'
 import { nomalizeDegree, round } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
+import { getNodeName } from './node'
 
 const props = defineProps<{
   sprite: Sprite
   mapSize: Size
-  spritesReadyMap: Map<string, boolean>
+  nodeReadyMap: Map<string, boolean>
 }>()
 
-const nodeRef = ref<any>()
+const nodeRef = ref<KonvaNodeInstance<Image>>()
 const editorCtx = useEditorCtx()
 const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useFileImg(() => costume.value?.img)
 
+const nodeName = computed(() => getNodeName(props.sprite))
+
 watchEffect((onCleanup) => {
-  const spriteName = props.sprite.name
-  props.spritesReadyMap.set(spriteName, image.value != null)
-  onCleanup(() => props.spritesReadyMap.delete(spriteName))
+  props.nodeReadyMap.set(nodeName.value, image.value != null)
+  onCleanup(() => props.nodeReadyMap.delete(nodeName.value))
 })
 
 onMounted(() => {
@@ -70,10 +72,10 @@ function handleTransformed(e: KonvaEventObject<unknown>) {
 }
 
 const config = computed<ImageConfig>(() => {
-  const { name, visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
+  const { visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
   const scale = size / bitmapResolution.value
   const config = {
-    spriteName: name,
+    nodeName: nodeName.value,
     image: image.value ?? undefined,
     draggable: true,
     offsetX: 0,

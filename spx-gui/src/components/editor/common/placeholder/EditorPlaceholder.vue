@@ -13,7 +13,7 @@
         @click="handleAddFromLocalFile.fn"
       >
         <template #icon>
-          <img class="icon" :src="localFileImg" />
+          <img :src="localFileImg" />
         </template>
         {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
       </UIButton>
@@ -24,7 +24,7 @@
         @click="handleAddFromAssetLibrary.fn"
       >
         <template #icon>
-          <img class="icon" :src="assetLibraryImg" />
+          <img :src="assetLibraryImg" />
         </template>
         {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
       </UIButton>
@@ -55,10 +55,3 @@ const handleAddFromAssetLibrary = useMessageHandle(
   { en: 'Failed to add sprite from asset library', zh: '从素材库添加失败' }
 )
 </script>
-
-<style scoped lang="scss">
-.icon {
-  width: 24px;
-  height: 24px;
-}
-</style>

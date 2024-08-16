@@ -34,8 +34,8 @@ import { Backdrop } from '@/models/backdrop'
 import { stripExt } from '@/utils/path'
 import { useAddAssetFromLibrary } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import EditorList from '../common/EditorList.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import EditorList from '../../common/EditorList.vue'
 import BackdropItem from './BackdropItem.vue'
 import BackdropDetail from './BackdropDetail.vue'
 import { saveFiles } from '@/models/common/cloud'
@@ -67,7 +67,7 @@ const handleAddFromLocalFile = useMessageHandle(
       await m.withLoading(saveFiles(backdropFiles), t({ en: 'Uploading files', zh: '上传文件中' }))
     }
 
-    editorCtx.project.history.doAction(action, () => {
+    await editorCtx.project.history.doAction(action, () => {
       stage.value.addBackdrop(backdrop)
       stage.value.setDefaultBackdrop(backdrop.name)
     })

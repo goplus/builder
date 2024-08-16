@@ -12,8 +12,8 @@ import { useModal, UILoading } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useFileUrl } from '@/utils/file'
 import type { Backdrop } from '@/models/backdrop'
-import { useEditorCtx } from '../EditorContextProvider.vue'
-import EditorItemDetail from '../common/EditorItemDetail.vue'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import EditorItemDetail from '../../common/EditorItemDetail.vue'
 import BackdropRenameModal from './BackdropRenameModal.vue'
 
 const props = defineProps<{

@@ -1,4 +1,4 @@
-<!-- icon at the top-right corner of item -->
+<!-- icon at the top-right corner of block-item -->
 
 <template>
   <div class="ui-corner-icon" :style="cssVars" @click.stop="emit('click', $event)">
@@ -8,10 +8,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import UIIcon, { type Type as IconType } from './icons/UIIcon.vue'
-import type { Color } from './tokens/colors'
-import { useUIVariables } from './UIConfigProvider.vue'
-import { getCssVars } from './tokens/utils'
+import UIIcon, { type Type as IconType } from '../icons/UIIcon.vue'
+import type { Color } from '../tokens/colors'
+import { useUIVariables } from '../UIConfigProvider.vue'
+import { getCssVars } from '../tokens/utils'
 
 const props = withDefaults(
   defineProps<{

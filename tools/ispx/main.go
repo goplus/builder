@@ -53,8 +53,11 @@ func main() {
 		log.Fatalln("Failed to build Go+ source:", err)
 	}
 
+	// Definition of `Gamer` here should be the same as `Gamer` in `github.com/goplus/spx`
+	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
 	type Gamer interface {
 		initGame(sprites []spx.Spriter) *spx.Game
+		getGame() *spx.Game
 	}
 	gameRun := func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
 		path := resource.(string)
