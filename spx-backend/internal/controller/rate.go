@@ -13,6 +13,10 @@ type GetRateResponse struct {
 	Detail []model.RatingDistribution `json:"detail"`
 }
 
+type PostRateRequest struct {
+	Rate string `json:"rate"`
+}
+
 // GetRate gets the rate of an asset.
 func (ctrl *Controller) GetRate(ctx context.Context, assetId string, owner string) (*GetRateResponse, error) {
 	logger := log.GetReqLogger(ctx)
@@ -29,9 +33,9 @@ func (ctrl *Controller) GetRate(ctx context.Context, assetId string, owner strin
 }
 
 // InsertRate inserts a rate.
-func (ctrl *Controller) InsertRate(ctx context.Context, assetId string, owner string, score string) (int, error) {
+func (ctrl *Controller) InsertRate(ctx context.Context, assetId string, owner string, param *PostRateRequest) (int, error) {
 	logger := log.GetReqLogger(ctx)
-	scoreInt, err := strconv.Atoi(score)
+	scoreInt, err := strconv.Atoi(param.Rate)
 	if err != nil {
 		logger.Printf("failed to convert score to int: %v", err)
 		return -1, err

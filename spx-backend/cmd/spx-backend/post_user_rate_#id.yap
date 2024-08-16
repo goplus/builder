@@ -14,15 +14,15 @@ if !ok {
 return
 }
 
-var newRate string
+newRate := &controller.PostRateRequest{}
 if !parseJSON(ctx, newRate) {
 return
 }
 
 
-rate,err := ctrl.InsertRate(ctx.Context(), ${id},user.Name,newRate)
+rate, err := ctrl.InsertRate(ctx.Context(), ${id},user.Name,newRate)
 if err != nil {
-replyWithInnerError(ctx, err)
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json rate

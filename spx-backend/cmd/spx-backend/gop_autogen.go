@@ -1135,7 +1135,7 @@ func (this *post_user_rate_id) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_user_rate_#id.yap:17:1
-	var newRate string
+	newRate := &controller.PostRateRequest{}
 //line cmd/spx-backend/post_user_rate_#id.yap:18:1
 	if !parseJSON(ctx, newRate) {
 //line cmd/spx-backend/post_user_rate_#id.yap:19:1
