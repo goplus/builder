@@ -79,9 +79,6 @@ func (jp *astWalker) JSON(x reflect.Value) {
 				value := x.Field(i)
 				if jp.filter == nil || jp.filter(name, value) {
 					jp.buffer.WriteString(fmt.Sprintf("\"%s\": ", name))
-					if name == "Fun" {
-						jp.spxfunlist = append(jp.spxfunlist, createFunStruct(value))
-					}
 					jp.JSON(value)
 				}
 			}
@@ -154,7 +151,7 @@ func (jp *astWalker) WalkAST(x reflect.Value) {
 	}
 }
 
-// JSONPrint generates the JSON representation of x and writes it to w.
+// jsonPrint generates the JSON representation of x and writes it to w.
 func jsonPrint(fset *token.FileSet, x interface{}) error {
 	w := os.Stdout
 
