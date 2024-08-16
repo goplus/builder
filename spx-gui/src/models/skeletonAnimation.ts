@@ -2,8 +2,12 @@ import { join } from '@/utils/path'
 import { Disposable } from './common/disposable'
 import { File, toConfig, type Files } from './common/file'
 import type { Sprite } from './sprite'
+import '@/utils/ispxLoader'
+import { goParseSkeletonAnimData } from '@/utils/ispxLoader'
+import JSZip from 'jszip'
 
 export interface SkeletonAnimationInitConfig {
+  name: string
   animatorFilepath: string
   avatarFilepath: string
   prefix: string
@@ -28,21 +32,36 @@ export interface SkeletonAvatar {
   scale: { x: number; y: number }
   offset: { x: number; y: number }
 }
-
 export class SkeletonClip extends Disposable {
   readonly name: string
   readonly loop: boolean
   readonly frameRate: number
 
-  constructor(name: string, loop: boolean, frameRate: number) {
+  readonly animation: SkeletonAnimation
+
+  constructor(name: string, loop: boolean, frameRate: number, animation: SkeletonAnimation) {
     super()
     this.name = name
     this.loop = loop
     this.frameRate = frameRate
+    this.animation = animation
+  }
+
+  async loadAnimFrameData() {
+    const zipBlob = await this.animation.getFilesBlob()
+    const buffer = await zipBlob.arrayBuffer()
+    const data = await goParseSkeletonAnimData(
+      new Uint8Array(buffer),
+      this.animation.name,
+      this.name
+    )
+    return data
   }
 }
 
 export class SkeletonAnimation extends Disposable {
+  readonly name: string
+  
   private sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
@@ -55,19 +74,21 @@ export class SkeletonAnimation extends Disposable {
   avatar: File
   scale: { x: number; y: number } = { x: 1, y: 1 }
   offset: { x: number; y: number } = { x: 0, y: 0 }
-  
+
   constructor(
+    name: string,
     animator: SkeletonAnimator,
     avatar: SkeletonAvatar,
     files: Files,
     prefix: string
   ) {
     super()
+    this.name = name
     this.files = files
     this.prefix = prefix
 
     this.clips = animator.clips.map(({ name, loop, frameRate }) => {
-      const clip = new SkeletonClip(name, loop, frameRate)
+      const clip = new SkeletonClip(name, loop, frameRate, this)
       if (name === animator.defaultClip) this.defaultClip = clip
       return clip
     })
@@ -75,11 +96,12 @@ export class SkeletonAnimation extends Disposable {
     const avatarImage = this.files[join(this.prefix, avatar.image)]
     if (avatarImage === undefined) throw new Error(`avatar image not found: ${avatar.image}`)
     this.avatar = avatarImage
-	this.scale = avatar.scale
-	this.offset = avatar.offset
+    this.scale = avatar.scale
+    this.offset = avatar.offset
   }
 
   static async load({
+    name,
     animatorFilepath,
     avatarFilepath,
     prefix,
@@ -98,6 +120,27 @@ export class SkeletonAnimation extends Disposable {
       throw new Error(`invalid animator type: ${animator.type}`)
     }
 
-	return new SkeletonAnimation(animator, avatar, files, prefix)
+    return new SkeletonAnimation(name, animator, avatar, files, prefix)
+  }
+
+  private _filesBlob: Blob | null = null
+  async getFilesBlob() {
+    if (this._filesBlob === null) {
+      const zip = new JSZip()
+      await Promise.all(
+        Object.keys(this.files).map(async (path) => {
+          const content = await this.files[path]!.arrayBuffer()
+          // the spx wasm expects files relative to the assets folder
+          // so we need to remove the assets/ prefix
+          if (path.startsWith('assets/')) {
+            zip.file(path.slice(7), content)
+          } else {
+            zip.file(path, content)
+          }
+        })
+      )
+      this._filesBlob = await zip.generateAsync({ type: 'blob' })
+    }
+    return this._filesBlob
   }
 }

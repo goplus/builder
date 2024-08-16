@@ -356,6 +356,7 @@ export class Sprite extends Disposable {
     }
     if (skeletonAnimator != null && skeletonAvatar != null) {
       const skeletonAnimation = await SkeletonAnimation.load({
+        name,
         animatorFilepath: skeletonAnimator,
         avatarFilepath: skeletonAvatar,
         prefix: pathPrefix,

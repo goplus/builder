@@ -106,5 +106,7 @@ export async function goParseSkeletonAnimData(
   sprite: string,
   animName: string
 ): Promise<AnimExportData> {
-  return JSON.parse(await callGoWasmFunc('goParseSkeletonAnimData', resource, sprite, animName))
+  const json = await callGoWasmFunc('goParseSkeletonAnimData', resource, sprite, animName)
+  const result: AnimExportData = JSON.parse(json)
+  return result
 }
