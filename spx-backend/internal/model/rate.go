@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -11,7 +12,7 @@ import (
 type Ratings struct {
 	ID        int       `gorm:"primaryKey;autoIncrement" json:"id"`
 	AssetID   int       `gorm:"not null" json:"asset_id"`
-	Owner     int       `json:"owner"`
+	Owner     string    `json:"owner"`
 	Score     int       `gorm:"check:score >= 1 AND score <= 5" json:"score"`
 	CreatedAt time.Time `gorm:"default:current_timestamp" json:"created_at"`
 }
@@ -63,10 +64,14 @@ func CalculateAverageScore(distributions []RatingDistribution) float64 {
 
 func InsertRate(ctx context.Context, db *gorm.DB, assetId string, owner string, score int) error {
 	logger := log.GetReqLogger(ctx)
-
+	assetIdInt, err := strconv.Atoi(assetId)
+	if err != nil {
+		logger.Printf("failed to convert asset id to int: %v", err)
+		return err
+	}
 	// 创建一个 Ratings 实例
 	rate := Ratings{
-		AssetID: assetId,
+		AssetID: assetIdInt,
 		Owner:   owner,
 		Score:   score,
 	}

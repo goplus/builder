@@ -14,16 +14,15 @@ if !ok {
 return
 }
 
-var rate int
-owner := user.Name
-if !parseJSON(ctx, rate) {
+var newRate string
+if !parseJSON(ctx, newRate) {
 return
 }
 
 
-err := ctrl.AddUserAsset(ctx.Context(), ${id},user.Name,rate)
+rate,err := ctrl.InsertRate(ctx.Context(), ${id},user.Name,newRate)
 if err != nil {
 replyWithInnerError(ctx, err)
 return
 }
-json nil
+json rate
