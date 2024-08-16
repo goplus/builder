@@ -13,7 +13,6 @@
     raw
     @update:show="handleUpdateShow"
     @clickoutside="handleClickOutside"
-    @clickoutside="handleClickOutside"
   >
     <template #trigger>
       <slot name="trigger"></slot>
