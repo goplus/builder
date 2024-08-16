@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 
@@ -12,53 +11,17 @@ import (
 	"github.com/goplus/gop/token"
 )
 
-func GetSPXFunctionsDecl(fileName, fileCode string) []*fun {
-	fList, err := spxCodeFuncList(fileName, fileCode)
-	if err != nil {
-		return nil
-	}
-	return fList
-}
-
-type fun struct {
-	Name      string         `json:"name"`
-	Posn      token.Position `json:"posn"`
-	Pos       int            `json:"pos"`
-	Signature string         `json:"signature"`
-}
-
-func (f *fun) Pos2Posn(fset *token.FileSet) {
-	f.Posn = fset.Position(token.Pos(f.Pos))
-}
-
-func createFunStruct(value reflect.Value) *fun {
-	f := &fun{}
-	for j := 0; j < value.Elem().Elem().Type().NumField(); j++ {
-		name := value.Elem().Elem().Type().Field(j).Name
-		if token.IsExported(name) {
-			value := value.Elem().Elem().Field(j)
-			if name == "NamePos" {
-				f.Pos = int(value.Int())
-			}
-			if name == "Name" {
-				f.Name = value.String()
-			}
-		}
-	}
-	return f
-}
-
-// jsonPrinter is a structure for printing values as JSON
-type jsonPrinter struct {
+// astWalker is a structure for printing values as JSON
+type astWalker struct {
 	buffer     *bytes.Buffer
 	fset       *token.FileSet
 	filter     ast.FieldFilter
 	ptrmap     map[interface{}]int
 	line       int
-	spxfunlist []*fun
+	spxfunlist []*codeFunction
 }
 
-func (jp *jsonPrinter) printValue(x reflect.Value) {
+func (jp *astWalker) JSON(x reflect.Value) {
 	if !ast.NotNilFilter("", x) {
 		jp.buffer.WriteString("null")
 		return
@@ -66,7 +29,7 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 
 	switch x.Kind() {
 	case reflect.Interface:
-		jp.printValue(x.Elem())
+		jp.JSON(x.Elem())
 
 	case reflect.Map:
 		jp.buffer.WriteString("{")
@@ -76,9 +39,9 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 			if i > 0 {
 				jp.buffer.WriteString(", ")
 			}
-			jp.printValue(key)
+			jp.JSON(key)
 			jp.buffer.WriteString(": ")
-			jp.printValue(x.MapIndex(key))
+			jp.JSON(x.MapIndex(key))
 		}
 		jp.buffer.WriteString("}")
 
@@ -89,7 +52,7 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 			jp.buffer.WriteString(fmt.Sprintf("\"@%d\"", line))
 		} else {
 			jp.ptrmap[ptr] = jp.line
-			jp.printValue(x.Elem())
+			jp.JSON(x.Elem())
 		}
 
 	case reflect.Array, reflect.Slice:
@@ -99,8 +62,7 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 			if i > 0 {
 				jp.buffer.WriteString(", ")
 			}
-
-			jp.printValue(x.Index(i))
+			jp.JSON(x.Index(i))
 		}
 		jp.buffer.WriteString("]")
 
@@ -120,7 +82,7 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 					if name == "Fun" {
 						jp.spxfunlist = append(jp.spxfunlist, createFunStruct(value))
 					}
-					jp.printValue(value)
+					jp.JSON(value)
 				}
 			}
 		}
@@ -142,32 +104,61 @@ func (jp *jsonPrinter) printValue(x reflect.Value) {
 	}
 }
 
+func (jp *astWalker) WalkAST(x reflect.Value) {
+	if !ast.NotNilFilter("", x) {
+		return
+	}
+
+	switch x.Kind() {
+	case reflect.Interface:
+		jp.WalkAST(x.Elem())
+
+	case reflect.Map:
+		keys := x.MapKeys()
+		for _, key := range keys {
+			jp.WalkAST(key)
+			jp.WalkAST(x.MapIndex(key))
+		}
+
+	case reflect.Ptr:
+		ptr := x.Interface()
+		if _, exists := jp.ptrmap[ptr]; exists {
+		} else {
+			jp.ptrmap[ptr] = jp.line
+			jp.WalkAST(x.Elem())
+		}
+
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < x.Len(); i++ {
+			jp.WalkAST(x.Index(i))
+		}
+
+	case reflect.Struct:
+		t := x.Type()
+		for i := 0; i < t.NumField(); i++ {
+			name := t.Field(i).Name
+			if token.IsExported(name) {
+				value := x.Field(i)
+				if jp.filter == nil || jp.filter(name, value) {
+					if name == "Fun" {
+						jp.spxfunlist = append(jp.spxfunlist, createFunStruct(value))
+					}
+					jp.WalkAST(value)
+				}
+			}
+		}
+
+	default:
+		_ = x.Interface()
+
+	}
+}
+
 // JSONPrint generates the JSON representation of x and writes it to w.
-func JSONPrint(w io.Writer, fset *token.FileSet, x interface{}, f ast.FieldFilter) error {
-	jp := jsonPrinter{
-		buffer: new(bytes.Buffer),
-		fset:   fset,
-		filter: f,
-		ptrmap: make(map[interface{}]int),
-	}
+func jsonPrint(fset *token.FileSet, x interface{}) error {
+	w := os.Stdout
 
-	if x == nil {
-		jp.buffer.WriteString("null")
-	} else {
-		jp.printValue(reflect.ValueOf(x))
-	}
-
-	_, err := w.Write(jp.buffer.Bytes())
-	return err
-}
-
-// JSONPrintToStdout prints the JSON representation of x to standard output.
-func JSONPrintToStdout(fset *token.FileSet, x interface{}) error {
-	return JSONPrint(os.Stdout, fset, x, ast.NotNilFilter)
-}
-
-func GetCodeSPXFuncList(fset *token.FileSet, x interface{}) []*fun {
-	jp := jsonPrinter{
+	jp := astWalker{
 		buffer: new(bytes.Buffer),
 		fset:   fset,
 		filter: ast.NotNilFilter,
@@ -177,26 +168,69 @@ func GetCodeSPXFuncList(fset *token.FileSet, x interface{}) []*fun {
 	if x == nil {
 		jp.buffer.WriteString("null")
 	} else {
-		jp.printValue(reflect.ValueOf(x))
+		jp.JSON(reflect.ValueOf(x))
+	}
+
+	_, err := w.Write(jp.buffer.Bytes())
+	return err
+}
+
+type codeFunction struct {
+	Name      string         `json:"name"`
+	Position  token.Position `json:"posn"`
+	Pos       int            `json:"pos"`
+	Signature string         `json:"signature"`
+}
+
+func (f *codeFunction) Pos2Position(fset *token.FileSet) {
+	f.Position = fset.Position(token.Pos(f.Pos))
+}
+
+func createFunStruct(value reflect.Value) *codeFunction {
+	f := &codeFunction{}
+	for j := 0; j < value.Elem().Elem().Type().NumField(); j++ {
+		name := value.Elem().Elem().Type().Field(j).Name
+		if token.IsExported(name) {
+			value := value.Elem().Elem().Field(j)
+			if name == "NamePos" {
+				f.Pos = int(value.Int())
+			}
+			if name == "Name" {
+				f.Name = value.String()
+			}
+		}
+	}
+	return f
+}
+
+func getCodeSPXFuncList(fset *token.FileSet, x interface{}) []*codeFunction {
+	jp := astWalker{
+		buffer: new(bytes.Buffer),
+		fset:   fset,
+		filter: ast.NotNilFilter,
+		ptrmap: make(map[interface{}]int),
+	}
+
+	if x == nil {
+		jp.buffer.WriteString("null")
+	} else {
+		jp.WalkAST(reflect.ValueOf(x))
 	}
 
 	for _, f := range jp.spxfunlist {
-		f.Pos2Posn(jp.fset)
+		f.Pos2Position(jp.fset)
 	}
 
 	return jp.spxfunlist
 }
 
-func spxCodeFuncList(fileName, fileCode string) ([]*fun, error) {
-	//new file set
-	fset := token.NewFileSet()
-
+func spxCodeFuncList(fset *token.FileSet, fileName, fileCode string) ([]*codeFunction, error) {
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
 		return nil, err
 	}
 
-	fList := GetCodeSPXFuncList(fset, file)
+	fList := getCodeSPXFuncList(fset, file)
 
 	return fList, nil
 }

@@ -3,18 +3,20 @@ package internal
 import "github.com/goplus/gop/token"
 
 func GetDefinitionFromASTAndTypesInfo(fileName, fileCode string) interface{} {
-	fList, err := spxCodeFuncList(fileName, fileCode)
+	// new file set
+	fset := token.NewFileSet()
+	// get function list
+	fList, err := spxCodeFuncList(fset, fileName, fileCode)
 	if err != nil {
 		return nil
 	}
 
-	// new file set
-	fset := token.NewFileSet()
 	info, err := spxInfo(initSPXMod(), fset, fileName, fileCode)
 	if err != nil {
 	}
 	list := info2List(fset, info.Types)
 
+	// set function list signature
 	for _, fun := range fList {
 		fun.Signature = contains(list, fun.Name)
 	}
@@ -22,9 +24,9 @@ func GetDefinitionFromASTAndTypesInfo(fileName, fileCode string) interface{} {
 }
 
 func contains(list []tokenInfo, funName string) string {
-	for _, token := range list {
-		if token.ExprName == funName {
-			return token.Type
+	for _, t := range list {
+		if t.ExprName == funName {
+			return t.Type
 		}
 	}
 	return ""

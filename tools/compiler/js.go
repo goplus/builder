@@ -2,24 +2,39 @@ package main
 
 import (
 	"compiler/internal"
+	"reflect"
+	"runtime"
+	"strings"
 	"syscall/js"
 )
 
-type jsFuncName string
+// jsFuncBody is the type of jsFuncList item.
 type jsFuncBody func(this js.Value, p []js.Value) interface{}
 
-var jsFuncList = map[jsFuncName]jsFuncBody{
-	"getTypes_GO":       getTypes,
-	"getInlayHints_GO":  getInlayHints,
-	"getDiagnostics_GO": getDiagnostics,
-	"getDefinition_GO":  getDefinition,
+// jsFuncList contains every single function can call from js, by using `func name` + `_GO`
+var jsFuncList = []jsFuncBody{
+	getTypes,
+	getInlayHints,
+	getDiagnostics,
+	getDefinition,
+	getCompletionItems,
 }
 
+// This register can auto register any function form jsFuncList.
 func jsFuncRegister() {
-	for name, f := range jsFuncList {
-		js.Global().Set(string(name), js.FuncOf(f))
+	for _, f := range jsFuncList {
+		js.Global().Set(getFuncName(f)+"_GO", js.FuncOf(f))
 	}
 }
+
+// getFuncName can get a go function name.
+func getFuncName(i interface{}) string {
+	fullName := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	parts := strings.Split(fullName, ".")
+	return parts[len(parts)-1]
+}
+
+// Functions following below is the entry functions for js.
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
 	return nil

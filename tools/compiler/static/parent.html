@@ -8,16 +8,16 @@
 <div>
 
     <textarea id="codeInput" style="width: 400px;height: 500px">
-        onStart => {
-            flag := true
-            for flag {
-                onMsg "die", => {
-                    flag = false
-                }
-                glide -877, 180, 3
-                setXYpos -240, 180
-            }
+onStart => {
+    flag := true
+    for flag {
+        onMsg "die", => {
+            flag = false
         }
+        glide -877, 180, 3
+        setXYpos -240, 180
+    }
+}
     </textarea>
 
     <div>
@@ -35,15 +35,13 @@
 
 <script>
     const container = document.getElementById("compiler-iframe-container")
-    let currentIframe = 1
     createIframe()
 
     function createIframe() {
         const iframe = document.createElement("iframe")
-        iframe.id = "compiler-iframe" + currentIframe
+        iframe.id = "compiler-iframe"
         iframe.width = 0
         iframe.height = 0
-        currentIframe++
         iframe.src = "index.html"
         container.appendChild(iframe)
     }
@@ -67,6 +65,7 @@
         var data = event.data
         if (data.level === "log") {
             if (data.log[0] && data.log[0].includes("goroutine ")) {
+                // need to report detail for analyse
                 reloadIframe()
             }
             console.log(data)
@@ -86,7 +85,6 @@
         } catch (err) {
             console.error(err)
         }
-
     }
 
     function runCodeDiagnostics() {
