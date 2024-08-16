@@ -65,7 +65,7 @@ import {
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
-import { createFileWithWebUrl } from '@/models/common/cloud'
+import { createFileWithWebUrl, saveFiles } from '@/models/common/cloud'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
@@ -185,6 +185,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
       category: searchCtx.category,
     }).then((res) => {
       return {
+        id: res.asset_id,
         image_url: res.image_url,
         cTime: new Date().toISOString(),
         status: AIGCStatus.Waiting
@@ -197,10 +198,10 @@ function generateMultipleAIImages(count: number, append = true): () => void {
     }
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
-      id: r.image_url,
+      id: r.id,
       assetType: searchCtx.type,
-      files: createFileWithWebUrl(r.image_url),
-      [isAiAsset]: true as const,
+      //files: saveFiles(createFileWithWebUrl(r.image_url)), todo: saveFiles
+      [isAiAsset]: true as const, 
       [isPreviewReady]: false,
       [isContentReady]: false
     }))
