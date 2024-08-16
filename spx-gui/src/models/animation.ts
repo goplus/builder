@@ -1,11 +1,11 @@
 import { reactive } from 'vue'
 
+import { Disposable } from '@/utils/disposable'
 import {
   ensureValidCostumeName,
   getAnimationName,
   validateAnimationName
 } from './common/asset-name'
-import { Disposable } from '@/utils/disposable'
 import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
