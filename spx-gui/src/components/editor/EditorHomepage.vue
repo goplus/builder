@@ -38,21 +38,29 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, computed, watch } from 'vue'
+import { watchEffect, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
-import { Project } from '@/models/project'
+import { AutoSaveMode, Project } from '@/models/project'
 import TopNav from '@/components/top-nav/TopNav.vue'
 import ProjectList from '@/components/project/ProjectList.vue'
 import { useCreateProject } from '@/components/project'
 import { getProjectEditorRoute } from '@/router'
-import { useQuery } from '@/utils/exception'
+import { useMessageHandle, useQuery } from '@/utils/exception'
 import EditorContextProvider from './EditorContextProvider.vue'
 import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
-import { UIButton, UIDivider, UILoading, UIError, useConfirmDialog } from '@/components/ui'
+import {
+  UIButton,
+  UIDivider,
+  UILoading,
+  UIError,
+  useConfirmDialog,
+  useMessage
+} from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useNetwork } from '@/utils/network'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
@@ -70,6 +78,8 @@ const createProject = useCreateProject()
 
 const withConfirm = useConfirmDialog()
 const { t } = useI18n()
+const { isOnline } = useNetwork()
+const m = useMessage()
 
 const projectName = computed(
   () => router.currentRoute.value.params.projectName as string | undefined
@@ -200,9 +210,16 @@ async function loadProject(user: string | undefined, projectName: string | undef
     }
   }
 
+  setProjectAutoSaveMode(newProject)
   await newProject.startEditing(LOCAL_CACHE_KEY)
   return newProject
 }
+
+// watch for online <-> offline switches, and set autoSaveMode accordingly
+function setProjectAutoSaveMode(project: Project | null) {
+  project?.setAutoSaveMode(isOnline.value ? AutoSaveMode.Cloud : AutoSaveMode.LocalCache)
+}
+watch(isOnline, () => setProjectAutoSaveMode(project.value))
 
 watch(
   // https://vuejs.org/guide/essentials/watchers.html#deep-watchers
@@ -216,38 +233,54 @@ watch(
 )
 
 watchEffect((onCleanup) => {
-  const cleanup = router.beforeEach((to, from, next) => {
-    if (project.value?.hasUnsyncedChanges) {
-      withConfirm({
+  const cleanup = router.beforeEach(async () => {
+    if (!project.value?.hasUnsyncedChanges) return true
+    try {
+      await withConfirm({
         title: t({
-          en: 'Save changes?',
-          zh: '保存变更？'
+          en: 'Save changes',
+          zh: '保存变更'
         }),
         content: t({
-          en: 'There are changes not saved yet. Do you want to save them?',
-          zh: '存在未保存的变更，要保存吗？'
-        }),
-        cancelText: t({
-          en: 'Discard changes',
-          zh: '不保存'
+          en: 'There are changes not saved yet. You must save them to the cloud before leaving.',
+          zh: '存在未保存的变更，你必须先保存到云端才能离开。'
         }),
         confirmText: t({
           en: 'Save',
           zh: '保存'
         }),
         async confirmHandler() {
-          await project.value!.saveToCloud()
-        }
-      }).finally(async () => {
-        await clear(LOCAL_CACHE_KEY)
-        next()
+          try {
+            if (project.value?.hasUnsyncedChanges) await project.value!.saveToCloud()
+            await clear(LOCAL_CACHE_KEY)
+          } catch (e) {
+            m.error(t({ en: 'Failed to save changes', zh: '保存变更失败' }))
+            throw e
+          }
+        },
+        autoConfirm: true
       })
-    } else {
-      next()
+      return true
+    } catch {
+      return false
     }
   })
 
   onCleanup(cleanup)
+})
+
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if (project.value?.hasUnsyncedChanges) {
+    event.preventDefault()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 
 function openProject(projectName: string) {
@@ -258,10 +291,13 @@ function handleSelected(project: ProjectData) {
   openProject(project.name)
 }
 
-async function handleCreate() {
-  const newProject = await createProject()
-  openProject(newProject.name)
-}
+const handleCreate = useMessageHandle(
+  async () => {
+    const newProject = await createProject()
+    openProject(newProject.name)
+  },
+  { en: 'Failed to create project', zh: '创建项目失败' }
+).fn
 </script>
 
 <style scoped lang="scss">

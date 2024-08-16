@@ -6,11 +6,23 @@ set -ex
 
 echo "WORKSPACE: ${PWD}"
 
-PREVIEW_URL=http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local
+PREVIEW_URL="http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local"
 
-echo VITE_PUBLISH_BASE_URL="${PREVIEW_URL}"/ > spx-gui/.env.local
-CONTAINER_IMAGE=aslan-spock-register.qiniu.io/goplus/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}
-docker build -t "${CONTAINER_IMAGE}" --build-arg image_address=aslan-spock-register.qiniu.io/goplus/ -f ./Dockerfile . --builder="kube" --push
+echo "VITE_PUBLISH_BASE_URL=${PREVIEW_URL}/" > spx-gui/.env.local
+
+GOPLUS_REGISTRY_REPO=aslan-spock-register.qiniu.io/goplus
+CONTAINER_IMAGE="${GOPLUS_REGISTRY_REPO}/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}"
+docker build \
+	--builder kube \
+	--push \
+	-f ./Dockerfile \
+	-t "${CONTAINER_IMAGE}" \
+	--build-arg GOP_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/gop:1.2" \
+	--build-arg NODE_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/node:20.11.1" \
+	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27" \
+	--build-arg GOPROXY=https://goproxy.cn,direct \
+	--build-arg NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
+	.
 
 CURRENT_TIME="$(date "--iso-8601=seconds")"
 # generate kubernetes yaml with unique flag for PR

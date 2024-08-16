@@ -44,7 +44,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { type ProjectData, getProject, addProject as apiAddProject, IsPublic } from '@/apis/project'
+import { type ProjectData, getProject, addProject, IsPublic } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
@@ -52,7 +52,7 @@ import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
 import { Sprite } from '@/models/sprite'
 import { Costume } from '@/models/costume'
 import { File } from '@/models/common/file'
-import { uploadFiles } from '@/models/common/cloud'
+import { saveFiles } from '@/models/common/cloud'
 import { filename } from '@/utils/path'
 import defaultSpritePng from '@/assets/default-sprite.png'
 import defaultBackdropImg from '@/assets/default-backdrop.png'
@@ -74,12 +74,6 @@ const userStore = useUserStore()
 const form = useForm({
   name: ['', validateName]
 })
-
-const addProject = useMessageHandle(
-  apiAddProject,
-  { en: 'Failed to create project', zh: '创建失败' },
-  (project) => ({ en: `Project ${project.name} created`, zh: `项目 ${project.name} 创建成功` })
-).fn
 
 function handleCancel() {
   emit('cancelled')
@@ -106,15 +100,20 @@ const handleSubmit = useMessageHandle(
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
     const files = project.export()[1]
-    const { fileCollection } = await uploadFiles(files)
+    const { fileCollection } = await saveFiles(files)
     const projectData = await addProject({
       name: form.value.name,
       isPublic: IsPublic.personal,
       files: fileCollection
     })
     emit('resolved', projectData)
+    return projectData
   },
-  { en: 'Failed to create project', zh: '项目创建失败' }
+  { en: 'Failed to create project', zh: '项目创建失败' },
+  (projectData) => ({
+    en: `Project ${projectData.name} created`,
+    zh: `项目 ${projectData.name} 创建成功`
+  })
 )
 
 async function validateName(name: string): Promise<FormValidationResult> {

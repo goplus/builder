@@ -99,7 +99,10 @@ export function useMessageHandle<Args extends any[], T>(
   const { t } = useI18n()
   const action = useAction(fn, failureSummaryMessage)
 
-  function messageHandleFn(...args: Args) {
+  // Typically we should do message handling only in the very end of the action chain,
+  // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
+  // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
+  function messageHandleFn(...args: Args): Promise<void> {
     return action.fn(...args).then(
       (ret) => {
         if (successMessage != null) {
@@ -108,10 +111,19 @@ export function useMessageHandle<Args extends any[], T>(
           )
           m.success(successText)
         }
-        return ret
       },
       (e) => {
-        if (e instanceof ActionException) m.error(t(e.userMessage))
+        // For
+        // - `Cancelled` exceptions: nothing to do
+        // - `ActionException` exceptions: we will notify the user
+        // do `return` (which swallows the exception) instead of `throw`.
+        // It let the runtime (browser, vue, etc.) ignore such exceptions, which is intended.
+        if (e instanceof Cancelled) return
+        if (e instanceof ActionException) {
+          m.error(t(e.userMessage))
+          console.warn(e)
+          return
+        }
         throw e
       }
     )

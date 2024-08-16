@@ -11,51 +11,66 @@
         <v-rect v-if="konvaBackdropConfig" :config="konvaBackdropConfig"></v-rect>
       </v-layer>
       <v-layer>
-        <SpriteItem
+        <SpriteNode
           v-for="sprite in visibleSprites"
           :key="sprite.name"
           :sprite="sprite"
           :map-size="mapSize!"
-          :sprites-ready-map="spritesReadyMap"
+          :node-ready-map="nodeReadyMap"
         />
       </v-layer>
       <v-layer>
-        <SpriteTransformer :sprites-ready="(sprite) => !!spritesReadyMap.get(sprite.name)" />
+        <WidgetNode
+          v-for="widget in visibleWidgets"
+          :key="widget.name"
+          :widget="widget"
+          :map-size="mapSize!"
+          :node-ready-map="nodeReadyMap"
+        />
+      </v-layer>
+      <v-layer>
+        <NodeTransformer :node-ready-map="nodeReadyMap" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
       <UIMenu>
-        <UIMenuItem @click="moveSprite('up')">{{ $t(moveActionNames.up) }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('top')">{{ $t(moveActionNames.top) }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('down')">{{ $t(moveActionNames.down) }}</UIMenuItem>
-        <UIMenuItem @click="moveSprite('bottom')">{{ $t(moveActionNames.bottom) }}</UIMenuItem>
+        <UIMenuItem @click="moveZorder('up')">{{ $t(moveActionNames.up) }}</UIMenuItem>
+        <UIMenuItem @click="moveZorder('top')">{{ $t(moveActionNames.top) }}</UIMenuItem>
+        <UIMenuItem @click="moveZorder('down')">{{ $t(moveActionNames.down) }}</UIMenuItem>
+        <UIMenuItem @click="moveZorder('bottom')">{{ $t(moveActionNames.bottom) }}</UIMenuItem>
       </UIMenu>
     </UIDropdown>
-    <UILoading :visible="spritesAndBackdropLoading" cover />
+    <UILoading :visible="loading" cover />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watchEffect } from 'vue'
+import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import type { Sprite } from '@/models/sprite'
 import { useFileUrl } from '@/utils/file'
-import { useEditorCtx } from '../../EditorContextProvider.vue'
-import SpriteTransformer from './SpriteTransformer.vue'
-import SpriteItem from './SpriteItem.vue'
+import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
+import type { Widget } from '@/models/widget'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import NodeTransformer from './NodeTransformer.vue'
+import SpriteNode from './SpriteNode.vue'
+import WidgetNode from './widgets/WidgetNode.vue'
+import { getNodeName } from './node'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
-const stageRef = ref<any>()
+const stageRef = ref<{
+  getStage(): Konva.Stage
+}>()
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
-const spritesReadyMap = reactive(new Map<string, boolean>())
+const nodeReadyMap = reactive(new Map<string, boolean>())
 
 /** containerSize / mapSize */
 const scale = computed(() => {
@@ -143,9 +158,11 @@ const konvaBackdropConfig = computed(() => {
   return null
 })
 
-const spritesAndBackdropLoading = computed(() => {
+const loading = computed(() => {
   if (backdropSrcLoading.value || !backdropImg.value) return true
-  return editorCtx.project.sprites.some((s) => !spritesReadyMap.get(s.name))
+  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeName(s)))) return true
+  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeName(w)))) return true
+  return false
 })
 
 const visibleSprites = computed(() => {
@@ -153,11 +170,24 @@ const visibleSprites = computed(() => {
   return zorder.map((name) => sprites.find((s) => s.name === name)).filter(Boolean) as Sprite[]
 })
 
+const visibleWidgets = computed(() => {
+  const { widgetsZorder, widgets } = editorCtx.project.stage
+  return widgetsZorder
+    .map((name) => widgets.find((w) => w.name === name))
+    .filter(Boolean) as Widget[]
+})
+
 const menuVisible = ref(false)
 const menuPos = ref({ x: 0, y: 0 })
 
 function handleContextMenu(e: KonvaEventObject<MouseEvent>) {
   e.evt.preventDefault()
+
+  // Ignore right click on backdrop.
+  // Konva.Rect is a subclass of Konva.Shape.
+  // Currently we have all sprites as Konva.Shape and backdrop as Konva.Rect.
+  if (e.target instanceof Konva.Rect) return
+
   if (stageRef.value == null || e.target.parent == null) return
   const stage: Stage = stageRef.value.getStage()
   const pointerPos = stage.getPointerPosition()
@@ -182,20 +212,31 @@ const moveActionNames = {
   bottom: { en: 'Send to back', zh: '移到最后' }
 }
 
-function moveSprite(direction: 'up' | 'down' | 'top' | 'bottom') {
+async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   const project = editorCtx.project
   const selectedSprite = project.selectedSprite
-  if (selectedSprite == null) return
-  const action = { name: moveActionNames[direction] }
-  project.history.doAction(action, () => {
-    if (direction === 'up') {
-      project.upSpriteZorder(selectedSprite.name)
-    } else if (direction === 'down') {
-      project.downSpriteZorder(selectedSprite.name)
-    } else if (direction === 'top') {
-      project.topSpriteZorder(selectedSprite.name)
-    } else if (direction === 'bottom') {
-      project.bottomSpriteZorder(selectedSprite.name)
+  const selectedWidget = project.stage.selectedWidget
+  await project.history.doAction({ name: moveActionNames[direction] }, () => {
+    if (selectedSprite != null) {
+      if (direction === 'up') {
+        project.upSpriteZorder(selectedSprite.name)
+      } else if (direction === 'down') {
+        project.downSpriteZorder(selectedSprite.name)
+      } else if (direction === 'top') {
+        project.topSpriteZorder(selectedSprite.name)
+      } else if (direction === 'bottom') {
+        project.bottomSpriteZorder(selectedSprite.name)
+      }
+    } else if (selectedWidget != null) {
+      if (direction === 'up') {
+        project.stage.upWidgetZorder(selectedWidget.name)
+      } else if (direction === 'down') {
+        project.stage.downWidgetZorder(selectedWidget.name)
+      } else if (direction === 'top') {
+        project.stage.topWidgetZorder(selectedWidget.name)
+      } else if (direction === 'bottom') {
+        project.stage.bottomWidgetZorder(selectedWidget.name)
+      }
     }
   })
   menuVisible.value = false

@@ -1,7 +1,9 @@
+import type { LocaleMessage } from '@/utils/i18n'
 import { keywords, typeKeywords } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
+import type { Animation } from '../animation'
 
 function validateAssetName(name: string) {
   if (name === '') return { en: 'The name must not be blank', zh: '名字不可为空' }
@@ -10,6 +12,18 @@ function validateAssetName(name: string) {
       en: 'The name is too long (maximum is 100 characters)',
       zh: '名字长度超出限制（最多 100 个字符）'
     }
+}
+
+function getAssetNameTip(asset: LocaleMessage) {
+  return {
+    en: `The ${asset.en} name should be non-empty string with length no longer than 100.`,
+    zh: `${asset.zh}名称不可为空，长度不超过 100`
+  }
+}
+
+function validateGopIdentifierAssetName(name: string) {
+  const err = validateAssetName(name)
+  if (err != null) return err
   // spx code is go+ code, and the asset name will compiled to an identifier of go+
   // so asset name rules is depend on the identifier rules of go+.
   const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
@@ -18,13 +32,19 @@ function validateAssetName(name: string) {
   if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
 }
 
-export const spriteNameTip = {
-  en: 'The sprite name can only contain ASCII letters, digits, and the character _.',
-  zh: '精灵名称只能包含英文字母、数字及下划线'
+function getGopIdentifierAssetNameTip(asset: LocaleMessage) {
+  return {
+    en: `The ${asset.en} name can only contain Chineses / English letters, digits, and the character _.`,
+    zh: `${asset.zh}名称只能包含中英文字符、数字及下划线`
+  }
 }
 
+export const spriteNameTip = getGopIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })
+
 export function validateSpriteName(name: string, project: Project | null) {
-  const err = validateAssetName(name)
+  // spx will use the sprite's name as identifier for the sprite variable in compiled code,
+  // so it should obey the naming rule of gop identifier
+  const err = validateGopIdentifierAssetName(name)
   if (err != null) return err
   if (project != null) {
     if (project.sprites.find((s) => s.name === name))
@@ -34,32 +54,32 @@ export function validateSpriteName(name: string, project: Project | null) {
   }
 }
 
-export const costumeNameTip = {
-  en: 'The costume name can only contain ASCII letters, digits, and the character _.',
-  zh: '造型名称只能包含英文字母、数字及下划线'
-}
+export const costumeNameTip = getAssetNameTip({ en: 'costume', zh: '造型' })
 
-export function validateCostumeName(name: string, sprite: Sprite | null) {
+export function validateCostumeName(name: string, parent: Sprite | Animation | null) {
   const err = validateAssetName(name)
   if (err != null) return err
-  if (sprite != null && sprite.costumes.find((c) => c.name === name))
+  if (parent != null && parent.costumes.find((c) => c.name === name))
     return { en: `Costume with name ${name} already exists`, zh: '存在同名的造型' }
 }
 
-export const soundNameTip = {
-  en: 'The sound name can only contain ASCII letters, digits, and the character _.',
-  zh: '声音名称只能包含英文字母、数字及下划线'
+export const animationNameTip = getAssetNameTip({ en: 'animation', zh: '动画' })
+
+export function validateAnimationName(name: string, sprite: Sprite | null) {
+  const err = validateAssetName(name)
+  if (err != null) return err
+  if (sprite != null && sprite.animations.find((a) => a.name === name))
+    return { en: `Animation with name ${name} already exists`, zh: '存在同名的动画' }
 }
+
+export const soundNameTip = getGopIdentifierAssetNameTip({ en: 'sound', zh: '声音' })
 
 export function validateSoundName(name: string, project: Project | null) {
   // Now same validation logic for sprite & sound
   return validateSpriteName(name, project)
 }
 
-export const backdropNameTip = {
-  en: 'The backdrop name can only contain ASCII letters, digits, and the character _.',
-  zh: '背景名称只能包含英文字母、数字及下划线'
-}
+export const backdropNameTip = getAssetNameTip({ en: 'backdrop', zh: '背景' })
 
 export function validateBackdropName(name: string, stage: Stage | null) {
   const err = validateAssetName(name)
@@ -68,12 +88,31 @@ export function validateBackdropName(name: string, stage: Stage | null) {
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
+export const widgetNameTip = getAssetNameTip({ en: 'widget', zh: '控件' })
+
+export function validateWidgetName(name: string, stage: Stage | null) {
+  const err = validateAssetName(name)
+  if (err != null) return err
+  if (stage != null && stage.widgets.find((b) => b.name === name))
+    return { en: `Widget with name ${name} already exists`, zh: '存在同名的控件' }
+}
+
 function upFirst(str: string) {
   return str[0].toUpperCase() + str.slice(1)
 }
 
+function lowFirst(str: string) {
+  return str[0].toLowerCase() + str.slice(1)
+}
+
 /** Convert any string to valid asset name, empty string may be returned */
 export function normalizeAssetName(src: string, cas: 'camel' | 'pascal') {
+  if (src === '') return ''
+  const result = cas === 'pascal' ? upFirst(src) : lowFirst(src)
+  return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
+}
+
+export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pascal') {
   src = src
     .replace(/[^a-zA-Z0-9_]+/g, '_')
     .replace(/([A-Z])/g, '_$1')
@@ -99,7 +138,7 @@ function getValidName(base: string, isValid: (name: string) => boolean) {
 }
 
 export function getSpriteName(project: Project | null, base = '') {
-  base = normalizeAssetName(base, 'pascal') || 'Sprite'
+  base = normalizeGopIdentifierAssetName(base, 'pascal') || 'Sprite'
   return getValidName(base, (n) => validateSpriteName(n, project) == null)
 }
 
@@ -108,18 +147,28 @@ export function ensureValidSpriteName(name: string, project: Project | null) {
   return getSpriteName(project, name)
 }
 
-export function getCostumeName(sprite: Sprite | null, base = '') {
+export function getCostumeName(parent: Sprite | Animation | null, base = '') {
   base = normalizeAssetName(base, 'camel') || 'costume'
-  return getValidName(base, (n) => validateCostumeName(n, sprite) == null)
+  return getValidName(base, (n) => validateCostumeName(n, parent) == null)
 }
 
-export function ensureValidCostumeName(name: string, sprite: Sprite | null) {
-  if (validateCostumeName(name, sprite) == null) return name
-  return getCostumeName(sprite, name)
+export function ensureValidCostumeName(name: string, parent: Sprite | Animation | null) {
+  if (validateCostumeName(name, parent) == null) return name
+  return getCostumeName(parent, name)
+}
+
+export function getAnimationName(sprite: Sprite | null, base = '') {
+  base = normalizeAssetName(base, 'camel') || 'animation'
+  return getValidName(base, (n) => validateAnimationName(n, sprite) == null)
+}
+
+export function ensureValidAnimationName(name: string, sprite: Sprite | null) {
+  if (validateAnimationName(name, sprite) == null) return name
+  return getAnimationName(sprite, name)
 }
 
 export function getSoundName(project: Project | null, base = '') {
-  base = normalizeAssetName(base, 'camel') || 'sound'
+  base = normalizeGopIdentifierAssetName(base, 'camel') || 'sound'
   return getValidName(base, (n) => validateSoundName(n, project) == null)
 }
 
@@ -136,4 +185,14 @@ export function getBackdropName(stage: Stage | null, base = '') {
 export function ensureValidBackdropName(name: string, stage: Stage | null) {
   if (validateBackdropName(name, stage) == null) return name
   return getBackdropName(stage, name)
+}
+
+export function getWidgetName(stage: Stage | null, base = '') {
+  base = normalizeAssetName(base, 'camel') || 'widget'
+  return getValidName(base, (n) => validateWidgetName(n, stage) == null)
+}
+
+export function ensureValidWidgetName(name: string, stage: Stage | null) {
+  if (validateWidgetName(name, stage) == null) return name
+  return getWidgetName(stage, name)
 }

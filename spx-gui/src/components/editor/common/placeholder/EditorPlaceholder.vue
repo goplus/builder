@@ -1,13 +1,11 @@
 <!--
   Placeholder when no target (sprite/sound/stage) selected
-  TODO: extract as UI component when there is another similar case
 -->
 
 <template>
-  <div class="editor-placeholder">
-    <img :src="placeholderImg" />
-    <p class="text">{{ $t({ en: 'Add a sprite to start', zh: '添加一个精灵' }) }}</p>
-    <div class="op">
+  <UIEmpty size="extra-large">
+    {{ $t({ en: 'Add a sprite to start', zh: '添加一个精灵' }) }}
+    <template #op>
       <UIButton
         type="boring"
         size="large"
@@ -15,7 +13,7 @@
         @click="handleAddFromLocalFile.fn"
       >
         <template #icon>
-          <img class="icon" :src="localFileImg" />
+          <img :src="localFileImg" />
         </template>
         {{ $t({ en: 'Select local file', zh: '选择本地文件' }) }}
       </UIButton>
@@ -26,21 +24,20 @@
         @click="handleAddFromAssetLibrary.fn"
       >
         <template #icon>
-          <img class="icon" :src="assetLibraryImg" />
+          <img :src="assetLibraryImg" />
         </template>
         {{ $t({ en: 'Choose from asset library', zh: '从素材库选择' }) }}
       </UIButton>
-    </div>
-  </div>
+    </template>
+  </UIEmpty>
 </template>
 
 <script setup lang="ts">
-import { UIButton } from '@/components/ui'
+import { UIEmpty, UIButton } from '@/components/ui'
 import { useAddAssetFromLibrary, useAddSpriteFromLocalFile } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import placeholderImg from './placeholder.svg'
 import localFileImg from './local-file.svg'
 import assetLibraryImg from './asset-library.svg'
 
@@ -58,32 +55,3 @@ const handleAddFromAssetLibrary = useMessageHandle(
   { en: 'Failed to add sprite from asset library', zh: '从素材库添加失败' }
 )
 </script>
-
-<style scoped lang="scss">
-.editor-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.text {
-  margin-top: 4px;
-  color: var(--ui-color-grey-700);
-  font-size: 16px;
-  line-height: 26px;
-}
-
-.op {
-  margin-top: 32px;
-  display: flex;
-  gap: var(--ui-gap-large);
-}
-
-.icon {
-  width: 24px;
-  height: 24px;
-}
-</style>

@@ -10,6 +10,7 @@ import (
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/joho/godotenv"
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
@@ -33,6 +34,7 @@ type contextKey struct {
 type Controller struct {
 	db            *sql.DB
 	kodo          *kodoConfig
+	aigcClient    *aigc.AigcClient
 	casdoorClient *casdoorsdk.Client
 }
 
@@ -63,6 +65,8 @@ func New(ctx context.Context) (*Controller, error) {
 		baseUrl:      mustEnv(logger, "KODO_BASE_URL"),
 	}
 
+	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
+
 	casdoorAuthConfig := &casdoorsdk.AuthConfig{
 		Endpoint:         os.Getenv("GOP_CASDOOR_ENDPOINT"),
 		ClientId:         os.Getenv("GOP_CASDOOR_CLIENTID"),
@@ -76,6 +80,7 @@ func New(ctx context.Context) (*Controller, error) {
 	return &Controller{
 		db:            db,
 		kodo:          kodoConfig,
+		aigcClient:    aigcClient,
 		casdoorClient: casdoorClient,
 	}, nil
 }

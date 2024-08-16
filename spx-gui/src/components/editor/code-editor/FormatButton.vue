@@ -1,9 +1,5 @@
 <template>
-  <UIButton
-    type="boring"
-    :loading="handleFormat.isLoading.value"
-    @click="handleFormat.fn"
-  >
+  <UIButton type="boring" :loading="handleFormat.isLoading.value" @click="handleFormat.fn">
     {{ $t({ en: 'Format', zh: '格式化' }) }}
   </UIButton>
 </template>

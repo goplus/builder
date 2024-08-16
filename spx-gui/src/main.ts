@@ -1,11 +1,3 @@
-/*
- * @Author: Xu Ning
- * @Date: 2024-01-12 11:15:15
- * @LastEditors: Zhang Zhi Yang
- * @LastEditTime: 2024-03-06 14:38:25
- * @FilePath: \spx-gui\src\main.ts
- * @Description:
- */
 import { createApp } from 'vue'
 import VueKonva from 'vue-konva'
 import { VueQueryPlugin } from '@tanstack/vue-query'
@@ -15,6 +7,7 @@ import App from './App.vue'
 import { initRouter } from './router'
 import { initStore, useUserStore } from './stores'
 import { client } from './apis/common'
+import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 
 const initApiClient = async () => {
   const userStore = useUserStore()
@@ -29,10 +22,13 @@ async function initApp() {
   await initRouter(app)
   await initI18n(app)
 
-  app.use(VueKonva)
+  app.use(VueKonva as any, {
+    customNodes: { CustomTransformer }
+  })
 
   app.use(VueQueryPlugin)
 
   app.mount('#app')
 }
+
 initApp()

@@ -25,7 +25,7 @@ export const eventCategory: ToolCategory = {
     },
     {
       label: { en: 'Sensing Events', zh: '感知事件' },
-      tools: [spx.onClick, spx.onKey, spx.onAnyKey, spx.onTouched]
+      tools: [spx.onClick, spx.onKey, spx.onAnyKey]
     },
     {
       label: { en: 'Motion Events', zh: '运动事件' },
@@ -51,7 +51,7 @@ export const motionCategory: ToolCategory = {
   groups: [
     {
       label: { en: 'Move', zh: '移动' },
-      tools: [spx.move, spx.goto, spx.glide]
+      tools: [spx.step, spx.move, spx.goto, spx.glide]
     },
     {
       label: { en: 'Position', zh: '位置' },
@@ -65,6 +65,10 @@ export const motionCategory: ToolCategory = {
         spx.setYpos,
         spx.changeYpos
       ]
+    },
+    {
+      label: { en: 'Rotation', zh: '旋转' },
+      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
     },
     {
       label: { en: 'Heading', zh: '方向' },
@@ -103,7 +107,12 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Costume', zh: '造型' },
-      tools: [spx.costumeName, spx.costumeIndex, spx.setCostume, spx.nextCostume, spx.prevCostume]
+      // index-related tools are excluded, as they are not recommended to use (animation is prefered)
+      tools: [spx.costumeName, spx.setCostume]
+    },
+    {
+      label: { en: 'Animation', zh: '动画' },
+      tools: [spx.animate]
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
@@ -258,6 +267,25 @@ export function getVariableCategory(project: Project): ToolCategory {
   })
 
   if (project.selectedSprite != null) {
+    groups.push({
+      label: {
+        en: `Animations of "${project.selectedSprite.name}"`,
+        zh: `${project.selectedSprite.name} 的动画`
+      },
+      tools: project.selectedSprite.animations.map((animation) => {
+        const keyword = `"${animation.name}"`
+        return {
+          type: ToolType.variable,
+          target: ToolContext.sprite,
+          keyword,
+          desc: { en: `Animation "${animation.name}"`, zh: `动画 ${animation.name}` },
+          usage: {
+            sample: keyword,
+            insertText: keyword
+          }
+        }
+      })
+    })
     groups.push({
       label: {
         en: `Costumes of "${project.selectedSprite.name}"`,

@@ -11,6 +11,8 @@
     :show-arrow="false"
     :style="{ marginTop: offset.y + 'px', marginLeft: offset.x + 'px' }"
     raw
+    @update:show="handleUpdateShow"
+    @clickoutside="handleClickOutside"
   >
     <template #trigger>
       <slot name="trigger"></slot>
@@ -58,12 +60,32 @@ withDefaults(
   }
 )
 
+const emit = defineEmits<{
+  'update:visible': [boolean]
+  clickOutside: [MouseEvent]
+}>()
+
 const attachTo = usePopupContainer()
 
 const nPopoverRef = ref<InstanceType<typeof NPopover>>()
+
+function handleUpdateShow(show: boolean) {
+  emit('update:visible', show)
+}
+
+function handleClickOutside(e: MouseEvent) {
+  const triggerEl = nPopoverRef.value?.binderInstRef?.targetRef
+  // naive-ui triggers `clickoutside` event when trigger-element clicked, so we need to fix it
+  if (triggerEl != null && triggerEl.contains(e.target as Node)) return
+  emit('clickOutside', e)
+}
+
 provide(dropdownCtrlKey, {
   setVisible(visible) {
+    // `NPopover.setShow` sets show status in uncontrolled mode without triggering the `on-update:show` callback.
+    // So we need to manually trigger the `on-update:show` callback.
     nPopoverRef.value?.setShow(visible)
+    handleUpdateShow(visible)
   }
 })
 </script>

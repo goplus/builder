@@ -1,36 +1,46 @@
 <template>
-  <PanelItem
-    :active="active"
-    :name="props.sprite.name"
-    @remove="emit('remove')"
-    @add-to-asset-library="emit('addToAssetLibrary')"
+  <UIEditorSpriteItem
+    :img-src="imgSrc"
+    :img-loading="imgLoading"
+    :name="sprite.name"
+    :selected="selected"
   >
-    <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
-  </PanelItem>
+    <CornerMenu
+      :visible="selected"
+      color="sprite"
+      removable
+      :item="sprite"
+      @remove="handleRemove"
+    />
+  </UIEditorSpriteItem>
 </template>
 
 <script setup lang="ts">
-import { UIImg } from '@/components/ui'
+import { UIEditorSpriteItem } from '@/components/ui'
 import { useFileUrl } from '@/utils/file'
 import { Sprite } from '@/models/sprite'
-import PanelItem from '../common/PanelItem.vue'
+import { useMessageHandle } from '@/utils/exception'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import CornerMenu from '../../common/CornerMenu.vue'
 
 const props = defineProps<{
   sprite: Sprite
-  active: boolean
+  selected: boolean
 }>()
 
-const emit = defineEmits<{
-  remove: []
-  addToAssetLibrary: []
-}>()
+const editorCtx = useEditorCtx()
 
 const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
-</script>
 
-<style lang="scss" scoped>
-.img {
-  width: 60px;
-  height: 60px;
-}
-</style>
+const handleRemove = useMessageHandle(
+  async () => {
+    const sname = props.sprite.name
+    const action = { name: { en: `Remove sprite ${sname}`, zh: `删除精灵 ${sname}` } }
+    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(sname))
+  },
+  {
+    en: 'Failed to remove sprite',
+    zh: '删除精灵失败'
+  }
+).fn
+</script>

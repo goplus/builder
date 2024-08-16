@@ -8,6 +8,12 @@ declare global {
     mem: DataView
     run(instance: WebAssembly.Instance): Promise<void>
   }
+
+  // Typing for https://github.com/konvajs/vue-konva/blob/master/src/components/KonvaNode.ts
+  // TODO: it is better to import it from vue-konva, but it is not exported by vue-konva now
+  type KonvaNodeInstance<T> = {
+    getNode(): T
+  }
 }
 
 // This empty `export {}` is required for `declare` to work, because there's no other exports for this module.

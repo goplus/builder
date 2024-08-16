@@ -4,26 +4,19 @@
       <ul class="items">
         <slot></slot>
       </ul>
-      <UIDropdown trigger="click">
-        <template #trigger>
-          <!--
-            TODO:
-            1. dropdown & tooltip should not be both visible: when dropdown visible, hide the tooltip
-            2. the empty `div` should be avoided. It is now required due to `Runtime directive used on component with non-element root node. The directives will not function as intended.`
-           -->
-          <div>
-            <UITooltip>
-              <template #trigger>
-                <button class="add">
-                  <UIIcon class="icon" type="plus" />
-                </button>
-              </template>
-              {{ addText }}
-            </UITooltip>
-          </div>
+      <UIDropdownWithTooltip>
+        <template #dropdown-content>
+          <slot name="add-options"></slot>
         </template>
-        <slot name="add-options"></slot>
-      </UIDropdown>
+        <template #tooltip-content>
+          {{ addText }}
+        </template>
+        <template #trigger>
+          <button class="add">
+            <UIIcon class="icon" type="plus" />
+          </button>
+        </template>
+      </UIDropdownWithTooltip>
     </div>
     <slot name="detail"></slot>
   </div>
@@ -33,11 +26,10 @@
 import { computed } from 'vue'
 import {
   UIIcon,
-  UIDropdown,
-  UITooltip,
   type Color,
   useUIVariables,
-  getCssVars
+  getCssVars,
+  UIDropdownWithTooltip
 } from '@/components/ui'
 
 const props = defineProps<{

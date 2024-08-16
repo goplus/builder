@@ -27,9 +27,7 @@
           v-for="sound in sounds"
           :key="sound.name"
           :sound="sound"
-          :active="isSelected(sound)"
-          @remove="handleSoundRemove(sound)"
-          @add-to-asset-library="handleAddToAssetLibrary(sound)"
+          :selected="isSelected(sound)"
           @click="handleSoundClick(sound)"
         />
       </PanelList>
@@ -52,11 +50,7 @@ import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
 import SoundRecorderModal from '@/components/editor/sound/SoundRecorderModal.vue'
-import {
-  useAddAssetFromLibrary,
-  useAddAssetToLibrary,
-  useAddSoundFromLocalFile
-} from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSoundFromLocalFile } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
@@ -81,18 +75,6 @@ const summaryListData = useSummaryList(sounds, () => summaryList.value?.listWrap
 function isSelected(sound: Sound) {
   return sound.name === editorCtx.project.selectedSound?.name
 }
-
-function handleSoundRemove(sound: Sound) {
-  const name = sound.name
-  const action = { name: { en: `Remove sound ${name}`, zh: `删除声音 ${name}` } }
-  editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(name))
-}
-
-const addAssetToLibrary = useAddAssetToLibrary()
-const handleAddToAssetLibrary = useMessageHandle((sound: Sound) => addAssetToLibrary(sound), {
-  en: 'Failed to add sound to asset library',
-  zh: '添加素材库失败'
-}).fn
 
 function handleSoundClick(sound: Sound) {
   editorCtx.project.select({ type: 'sound', name: sound.name })

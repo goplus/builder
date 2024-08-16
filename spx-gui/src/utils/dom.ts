@@ -27,3 +27,17 @@ export function useContentSize(elSource: WatchSource<HTMLElement | null>) {
     height
   }
 }
+
+export function loadImg(src: string, timeout?: number) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new window.Image()
+    img.onload = () => resolve(img)
+    img.onerror = (e) => reject(new Error(`load image failed: ${e.toString()}`))
+    img.crossOrigin = 'anonymous'
+    img.alt = ''
+    img.src = src
+    if (timeout != null) {
+      setTimeout(() => reject(new Error('load image timeout')), timeout)
+    }
+  })
+}
