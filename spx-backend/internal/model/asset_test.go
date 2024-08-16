@@ -110,7 +110,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
@@ -127,7 +127,7 @@ func TestUpdateAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnError(sql.ErrConnDone)
 		asset, err := UpdateAssetByID(context.Background(), db, "1", &Asset{DisplayName: "foo"})
@@ -196,7 +196,7 @@ func TestDeleteAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = DeleteAssetByID(context.Background(), db, "1")
@@ -208,7 +208,7 @@ func TestDeleteAssetByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnError(sql.ErrConnDone)
 		err = DeleteAssetByID(context.Background(), db, "1")

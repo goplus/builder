@@ -1,5 +1,11 @@
 <template>
-  <div ref="editorElement" class="code-text-editor"></div>
+  <div class="code-text-editor-container">
+    <div ref="editorElement" class="code-text-editor"></div>
+    <completion-menu-component
+      v-if="completionMenu"
+      :completion-menu="completionMenu"
+    ></completion-menu-component>
+  </div>
 </template>
 <script lang="ts">
 let monaco: typeof import('monaco-editor')
@@ -12,12 +18,15 @@ import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../EditorContextProvider.vue'
-import { initMonaco, defaultThemeName } from './monaco'
+import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
+import { initMonaco, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
-
+import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 const props = defineProps<{
   value: string
+  ui: EditorUI
 }>()
 const emit = defineEmits<{
   'update:value': [string]
@@ -26,6 +35,7 @@ const emit = defineEmits<{
 const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
+const completionMenu = shallowRef<CompletionMenu>()
 
 const uiVariables = useUIVariables()
 const i18n = useI18n()
@@ -57,7 +67,7 @@ const getMonaco = async () => {
   if (monaco) return monaco
   const monaco_ = await loader.init()
   if (monaco) return monaco
-  initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
+  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
   monaco = monaco_
   return monaco
 }
@@ -65,11 +75,10 @@ const getMonaco = async () => {
 const initialFontSize = 14
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
-watchEffect(async (onClenaup) => {
+watchEffect(async (onCleanup) => {
   const monaco = await getMonaco()
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
-    theme: defaultThemeName,
     language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,
@@ -86,7 +95,11 @@ watchEffect(async (onClenaup) => {
     tabSize: 4,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
-    foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    foldingStrategy: 'indentation', // 折叠方式  auto | indentation,
+    fontWeight: '500', // slightly bold font to make it easier to read, and satisfy outer UI font.
+    fontFamily: `'JetBrains MonoNL', Consolas, 'Courier New', monospace`,
+    // Enable this option to avoid abnormal cursor display after using JetBrains MonoNL font.
+    fontLigatures: true,
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
@@ -126,9 +139,12 @@ watchEffect(async (onClenaup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  monacoEditor.value = editor
+  completionMenu.value = new CompletionMenu(editor)
 
-  onClenaup(() => {
+  monacoEditor.value = editor
+  onCleanup(() => {
+    completionMenu.value?.dispose()
+    disposeMonacoProviders()
     editor.dispose()
   })
 })
@@ -205,7 +221,9 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.code-text-editor {
+.code-text-editor,
+.code-text-editor-container {
+  position: relative;
   width: 100%;
   height: 100%;
 }

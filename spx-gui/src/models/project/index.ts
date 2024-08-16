@@ -103,6 +103,10 @@ export class Project extends Disposable {
     return this.lastSyncedFilesHash !== this.filesHash
   }
 
+  get currentFilesHash() {
+    return this.filesHash
+  }
+
   stage: Stage
   sprites: Sprite[]
   sounds: Sound[]
@@ -208,6 +212,16 @@ export class Project extends Disposable {
         }
       )
     )
+    sound.addDisposer(() => {
+      // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+      for (const sprite of this.sprites) {
+        for (const animation of sprite.animations) {
+          if (animation.sound === sound.name) {
+            animation.setSound(null)
+          }
+        }
+      }
+    })
   }
 
   setPublic(isPublic: IsPublic) {
@@ -445,6 +459,56 @@ export class Project extends Disposable {
         if (this.autoSaveMode === AutoSaveMode.Cloud) save()
       }
     })()
+    if (this.filesHash == null) {
+      this.filesHash = this.lastSyncedFilesHash
+    }
+
+    // watch for changes of game files, update filesHash, and auto save to cloud if hasUnsyncedChanges
+    let autoSaveToCloudRetryTimeoutId: ReturnType<typeof setTimeout> | null = null
+    const startAutoSaveToCloudRetry = () => {
+      if (autoSaveToCloudRetryTimeoutId == null) {
+        autoSaveToCloudRetryTimeoutId = setTimeout(() => {
+          autoSaveToCloudRetryTimeoutId = null
+          if (
+            this.autoSaveToCloudState === AutoSaveToCloudState.Failed &&
+            this.hasUnsyncedChanges
+          ) {
+            autoSaveToCloud()
+          }
+        }, 5000)
+      }
+    }
+    const stopAutoSaveToCloudRetry = () => {
+      if (autoSaveToCloudRetryTimeoutId != null) {
+        clearTimeout(autoSaveToCloudRetryTimeoutId)
+        autoSaveToCloudRetryTimeoutId = null
+      }
+    }
+    this.addDisposer(stopAutoSaveToCloudRetry)
+    const autoSaveToCloud = (() => {
+      const debounceSave = debounce(async () => {
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Pending) return
+        this.autoSaveToCloudState = AutoSaveToCloudState.Saving
+
+        try {
+          if (this.hasUnsyncedChanges) await this.saveToCloud()
+          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+          if (this.hasUnsyncedChanges) autoSaveToCloud()
+          else await localHelper.clear(localCacheKey)
+        } catch (e) {
+          await this.saveToLocalCache(localCacheKey) // prevent data loss
+          this.autoSaveToCloudState = AutoSaveToCloudState.Failed
+          startAutoSaveToCloudRetry()
+          throw e
+        }
+      }, 1500)
+      return () => {
+        stopAutoSaveToCloudRetry()
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
+          this.autoSaveToCloudState = AutoSaveToCloudState.Pending
+        if (this.autoSaveMode === AutoSaveMode.Cloud) debounceSave()
+      }
+    })()
     this.addDisposer(
       watch(
         () => this.exportGameFiles(),
@@ -476,6 +540,39 @@ export class Project extends Disposable {
       }
     })()
     this.addDisposer(watch(() => this.export(), autoSaveToLocalCache, { immediate: true }))
+
+    // watch for autoSaveMode switch, and trigger auto save accordingly
+    this.addDisposer(
+      watch(
+        () => this.autoSaveMode,
+        () => {
+          switch (this.autoSaveMode) {
+            case AutoSaveMode.Cloud:
+              if (this.hasUnsyncedChanges) autoSaveToCloud()
+              break
+            case AutoSaveMode.LocalCache:
+              autoSaveToLocalCache()
+              break
+          }
+        },
+        { immediate: true }
+      )
+    )
+
+    // watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory
+    const delazyLoadGameFiles = debounce(() => {
+      const files = this.exportGameFiles()
+      const fileList = Object.keys(files)
+      fileList.map((path) => files[path]!.arrayBuffer())
+    }, 1000)
+    const autoSaveToLocalCache = () => {
+      const debounceSave = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
+      return () => {
+        if (this.autoSaveMode === AutoSaveMode.LocalCache) debounceSave()
+        else delazyLoadGameFiles()
+      }
+    }
+    this.addDisposer(watch(() => this.export(), autoSaveToLocalCache(), { immediate: true }))
 
     // watch for autoSaveMode switch, and trigger auto save accordingly
     this.addDisposer(

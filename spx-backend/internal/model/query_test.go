@@ -315,7 +315,7 @@ func TestUpdateByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE user SET u_time = \?, name = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", "1").
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		mock.ExpectQuery(`SELECT \* FROM user WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
@@ -363,7 +363,7 @@ func TestUpdateByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE user SET u_time = \?, name = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", "1").
 			WillReturnResult(sqlmock.NewResult(0, 0))
 		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
@@ -376,7 +376,7 @@ func TestUpdateByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE user SET u_time = \?, name = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", "1").
 			WillReturnError(sql.ErrConnDone)
 		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
@@ -389,7 +389,7 @@ func TestUpdateByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE user SET u_time=\?,name=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE user SET u_time = \?, name = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), "foo", "1").
 			WillReturnResult(sqlmock.NewErrorResult(sql.ErrConnDone))
 		err = UpdateByID(context.Background(), db, "user", "1", &User{Name: "foo"}, "name")
