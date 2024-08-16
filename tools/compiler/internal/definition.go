@@ -6,7 +6,7 @@ func GetDefinitionFromASTAndTypesInfo(fileName, fileCode string) interface{} {
 	// new file set
 	fset := token.NewFileSet()
 	// get function list
-	fList, err := spxCodeFuncList(fset, fileName, fileCode)
+	fList, err := getCodeFunctionList(fset, fileName, fileCode)
 	if err != nil {
 		return nil
 	}

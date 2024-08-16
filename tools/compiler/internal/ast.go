@@ -13,15 +13,16 @@ import (
 
 // astWalker is a structure for printing values as JSON
 type astWalker struct {
-	buffer     *bytes.Buffer
-	fset       *token.FileSet
-	filter     ast.FieldFilter
-	ptrmap     map[interface{}]int
-	line       int
-	spxfunlist []*codeFunction
+	buffer          *bytes.Buffer
+	fileSet         *token.FileSet
+	filter          ast.FieldFilter
+	ptrMap          map[interface{}]int
+	line            int
+	spxFunctionList []*codeFunction
 }
 
-func (jp *astWalker) JSON(x reflect.Value) {
+// json can make astWalker in to buffer to print.
+func (jp *astWalker) json(x reflect.Value) {
 	if !ast.NotNilFilter("", x) {
 		jp.buffer.WriteString("null")
 		return
@@ -29,7 +30,7 @@ func (jp *astWalker) JSON(x reflect.Value) {
 
 	switch x.Kind() {
 	case reflect.Interface:
-		jp.JSON(x.Elem())
+		jp.json(x.Elem())
 
 	case reflect.Map:
 		jp.buffer.WriteString("{")
@@ -39,20 +40,20 @@ func (jp *astWalker) JSON(x reflect.Value) {
 			if i > 0 {
 				jp.buffer.WriteString(", ")
 			}
-			jp.JSON(key)
+			jp.json(key)
 			jp.buffer.WriteString(": ")
-			jp.JSON(x.MapIndex(key))
+			jp.json(x.MapIndex(key))
 		}
 		jp.buffer.WriteString("}")
 
 	case reflect.Ptr:
 		ptr := x.Interface()
 
-		if line, exists := jp.ptrmap[ptr]; exists {
+		if line, exists := jp.ptrMap[ptr]; exists {
 			jp.buffer.WriteString(fmt.Sprintf("\"@%d\"", line))
 		} else {
-			jp.ptrmap[ptr] = jp.line
-			jp.JSON(x.Elem())
+			jp.ptrMap[ptr] = jp.line
+			jp.json(x.Elem())
 		}
 
 	case reflect.Array, reflect.Slice:
@@ -62,7 +63,7 @@ func (jp *astWalker) JSON(x reflect.Value) {
 			if i > 0 {
 				jp.buffer.WriteString(", ")
 			}
-			jp.JSON(x.Index(i))
+			jp.json(x.Index(i))
 		}
 		jp.buffer.WriteString("]")
 
@@ -79,7 +80,7 @@ func (jp *astWalker) JSON(x reflect.Value) {
 				value := x.Field(i)
 				if jp.filter == nil || jp.filter(name, value) {
 					jp.buffer.WriteString(fmt.Sprintf("\"%s\": ", name))
-					jp.JSON(value)
+					jp.json(value)
 				}
 			}
 		}
@@ -101,6 +102,7 @@ func (jp *astWalker) JSON(x reflect.Value) {
 	}
 }
 
+// WalkAST is a function to get info from code.
 func (jp *astWalker) WalkAST(x reflect.Value) {
 	if !ast.NotNilFilter("", x) {
 		return
@@ -119,9 +121,9 @@ func (jp *astWalker) WalkAST(x reflect.Value) {
 
 	case reflect.Ptr:
 		ptr := x.Interface()
-		if _, exists := jp.ptrmap[ptr]; exists {
+		if _, exists := jp.ptrMap[ptr]; exists {
 		} else {
-			jp.ptrmap[ptr] = jp.line
+			jp.ptrMap[ptr] = jp.line
 			jp.WalkAST(x.Elem())
 		}
 
@@ -138,7 +140,7 @@ func (jp *astWalker) WalkAST(x reflect.Value) {
 				value := x.Field(i)
 				if jp.filter == nil || jp.filter(name, value) {
 					if name == "Fun" {
-						jp.spxfunlist = append(jp.spxfunlist, createFunStruct(value))
+						jp.spxFunctionList = append(jp.spxFunctionList, createFunStruct(value))
 					}
 					jp.WalkAST(value)
 				}
@@ -156,22 +158,23 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 	w := os.Stdout
 
 	jp := astWalker{
-		buffer: new(bytes.Buffer),
-		fset:   fset,
-		filter: ast.NotNilFilter,
-		ptrmap: make(map[interface{}]int),
+		buffer:  new(bytes.Buffer),
+		fileSet: fset,
+		filter:  ast.NotNilFilter,
+		ptrMap:  make(map[interface{}]int),
 	}
 
 	if x == nil {
 		jp.buffer.WriteString("null")
 	} else {
-		jp.JSON(reflect.ValueOf(x))
+		jp.json(reflect.ValueOf(x))
 	}
 
 	_, err := w.Write(jp.buffer.Bytes())
 	return err
 }
 
+// codeFunction is spx function called in code.
 type codeFunction struct {
 	Name      string         `json:"name"`
 	Position  token.Position `json:"posn"`
@@ -179,10 +182,12 @@ type codeFunction struct {
 	Signature string         `json:"signature"`
 }
 
+// Pos2Position can make Pos(int) into Position
 func (f *codeFunction) Pos2Position(fset *token.FileSet) {
 	f.Position = fset.Position(token.Pos(f.Pos))
 }
 
+// createFunStruct is able to make a code function struct.
 func createFunStruct(value reflect.Value) *codeFunction {
 	f := &codeFunction{}
 	for j := 0; j < value.Elem().Elem().Type().NumField(); j++ {
@@ -200,34 +205,29 @@ func createFunStruct(value reflect.Value) *codeFunction {
 	return f
 }
 
-func getCodeSPXFuncList(fset *token.FileSet, x interface{}) []*codeFunction {
-	jp := astWalker{
-		buffer: new(bytes.Buffer),
-		fset:   fset,
-		filter: ast.NotNilFilter,
-		ptrmap: make(map[interface{}]int),
-	}
-
-	if x == nil {
-		jp.buffer.WriteString("null")
-	} else {
-		jp.WalkAST(reflect.ValueOf(x))
-	}
-
-	for _, f := range jp.spxfunlist {
-		f.Pos2Position(jp.fset)
-	}
-
-	return jp.spxfunlist
-}
-
-func spxCodeFuncList(fset *token.FileSet, fileName, fileCode string) ([]*codeFunction, error) {
+func getCodeFunctionList(fset *token.FileSet, fileName, fileCode string) ([]*codeFunction, error) {
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
 		return nil, err
 	}
 
-	fList := getCodeSPXFuncList(fset, file)
+	jp := astWalker{
+		buffer:  new(bytes.Buffer),
+		fileSet: fset,
+		filter:  ast.NotNilFilter,
+		ptrMap:  make(map[interface{}]int),
+	}
 
-	return fList, nil
+	if file == nil {
+		jp.buffer.WriteString("null")
+	} else {
+		jp.WalkAST(reflect.ValueOf(file))
+	}
+
+	for _, f := range jp.spxFunctionList {
+		f.Pos2Position(jp.fileSet)
+	}
+
+	return jp.spxFunctionList, nil
+
 }
