@@ -1,10 +1,13 @@
+<!-- SkeletonAnimationRenderer.vue -->
+<!-- This is a WebGL renderer that renders the animation with playback control. -->
+<!-- Note: listen to the `ready` event to get the renderer instance. -->
 <template>
   <div>
     <canvas ref="canvasElement" width="800" height="600"></canvas>
   </div>
 </template>
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { type AnimExportData } from '@/utils/ispxLoader';
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
@@ -20,6 +23,10 @@ const props = withDefaults(defineProps<{
   autoplay: true
 })
 
+const emit = defineEmits<{
+  ready: [Renderer]
+}>()
+
 const resize = () => {
   const canvas = canvasElement.value!
   const { clientWidth, clientHeight } = canvas.parentElement!
@@ -28,20 +35,29 @@ const resize = () => {
   // content will be resized automatically when next frame is rendered
 }
 
+let renderer: Renderer
+let resizeTimer: any
+
 onMounted(async () => {
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
   const bufferInfos = getBufferInfo(gl, props.data)
 
-  const renderer = new Renderer(gl, bufferInfos, vs, fs, props.avatar, props.fps)
+  renderer = new Renderer(gl, bufferInfos, vs, fs, props.avatar, props.fps)
   if (props.autoplay) {
     renderer.start()
   }
 
   window.addEventListener('resize', resize)
-  setInterval(resize, 10000)
+  resizeTimer = setInterval(resize, 10000)
   resize()
+
+  setTimeout(() => emit('ready', renderer), 100)
 })
 
+onUnmounted(() => {
+  window.removeEventListener('resize', resize)
+  clearInterval(resizeTimer)
+})
 
 </script>
 <script lang="ts">
@@ -190,6 +206,21 @@ interface Uniforms {
 
   stop() {
     this._playing = false
+  }
+
+  getFrameImgAt(index: number) {
+    const savedIndex = this._frameIndex
+    const savedPlaying = this._playing
+    this.stop()
+    this._frameIndex = index
+    this.renderFrame()
+    const img = this.gl.canvas.toDataURL()
+
+    this._frameIndex = savedIndex
+    if (savedPlaying) {
+      this.start()
+    }
+    return img
   }
 }
 

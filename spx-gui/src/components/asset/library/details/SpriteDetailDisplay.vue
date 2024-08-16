@@ -10,6 +10,32 @@
         :current-index="currentIndex"
         @update:current-index="handleCarouselSwitch"
       >
+        <NCarouselItem v-for="anim in skeletonAnimations" :key="anim.name">
+          <SkeletonAnimationRenderer
+            v-if="anim.animData.value && skeletonTextures && skeletonTextures.url.value"
+            :data="anim.animData.value"
+            :avatar="skeletonTextures.url.value"
+            :fps="30"
+            :autoplay="true"
+            :style="{ width: '100%', height: '100%', position: 'relative' }"
+            @ready="(renderer) => loadPreviewForSkeleton(anim, renderer)"
+          />
+          <NSpin v-else :style="{ width: '100%', height: '100%', position: 'relative' }">
+            <template #description>
+              <Transition name="slide-fade" mode="out-in" appear>
+                <span v-if="skeletonTextures?.loading.value" class="generating-text">
+                  {{ $t({ en: `Loading textures...`, zh: `加载纹理中...` }) }}
+                </span>
+                <span v-else-if="anim.animLoading.value" class="generating-text">
+                  {{ $t({ en: `Loading animation...`, zh: `加载动画中...` }) }}
+                </span>
+                <span v-else class="generating-text">
+                  {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
+                </span>
+              </Transition>
+            </template>
+          </NSpin>
+        </NCarouselItem>
         <NCarouselItem v-for="anim in animations" :key="anim.name">
           <AnimationPlayer
             :costumes="anim.costumes"
@@ -106,11 +132,14 @@ import { useFileUrl } from '@/utils/file'
 import { cachedConvertAssetData } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import type { AssetData, AssetType } from '@/apis/asset'
-import { NImage, NCarousel, NCarouselItem, NTooltip, NIcon } from 'naive-ui'
+import { NImage, NCarousel, NCarouselItem, NTooltip, NIcon, NSpin, c } from 'naive-ui'
 import { ChevronLeftFilled, ChevronRightFilled } from '@vicons/material'
 import { UILoading } from '@/components/ui'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
+import type { AnimExportData } from '@/utils/ispxLoader'
+import SkeletonAnimationRenderer, { Renderer } from '../../animation/skeleton/SkeletonAnimationRenderer.vue'
+import type { SkeletonClip } from '@/models/skeletonAnimation'
 
 // The number of items in each snapped scroll group
 const COUNT_OF_GROUP = 4
@@ -182,6 +211,45 @@ const animations = computed(() => {
   )
 })
 
+const skeletonAnimations = shallowRef<ReturnType<typeof loadClip>[]>([])
+
+const loadClip = (clip: SkeletonClip, delay: number = 0) => {
+  let animLoading = ref(false)
+  let animData = ref<AnimExportData | null>(null)
+  setTimeout(async () => {
+    animLoading.value = true
+    animData.value = await clip.loadAnimFrameData()
+    animLoading.value = false
+  }, delay)
+  return { ...clip, animData, animLoading, [imgSrc]: ref<string | null>(null), [imgLoading]: ref(true) }
+}
+
+watch(
+  () => sprite.value?.skeletonAnimation,
+  () => {
+    if (!sprite.value?.skeletonAnimation) return
+    skeletonAnimations.value = sprite.value.skeletonAnimation.clips.map((clip, i) =>
+      loadClip(clip, i * 2000)
+    )
+  },
+  { immediate: true }
+)
+
+
+const skeletonTextures = computed(() => {
+  if (!sprite.value?.skeletonAnimation) return null
+  const [url, loading] = useFileUrl(() => sprite.value?.skeletonAnimation?.avatar)
+  return {
+    url,
+    loading
+  }
+})
+
+const loadPreviewForSkeleton = (anim: ReturnType<typeof loadClip>, renderer: Renderer) => {
+  anim[imgSrc].value = renderer.getFrameImgAt(0)
+  anim[imgLoading].value = false
+}
+
 // get customs that are not in the animations
 // and load the images
 const customs = computed(() => {
@@ -204,17 +272,25 @@ const customs = computed(() => {
 })
 
 const previews = computed(() => {
-  return animations.value
+  return skeletonAnimations.value
     .map((a) => ({
       name: a.name,
-      type: 'animation' as 'animation' | 'custom',
+      type: 'skeleton' as 'animation' | 'custom' | 'skeleton',
       img: a[imgSrc],
       loading: a[imgLoading]
     }))
     .concat(
+      animations.value.map((a) => ({
+        name: a.name,
+        type: 'animation',
+        img: a[imgSrc],
+        loading: a[imgLoading]
+      }))
+    )
+    .concat(
       customs.value.map((c) => ({
         name: c.name,
-        type: 'custom' as const,
+        type: 'custom',
         img: c[imgSrc],
         loading: c[imgLoading]
       }))
@@ -404,5 +480,23 @@ const currentDotIndex = ref(0)
     background-color: var(--ui-color-primary-main, #0bc0cf);
     width: 10px;
   }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-from {
+  transform: translateY(10px);
+}
+
+.slide-fade-leave-to {
+  transform: translateY(-10px);
 }
 </style>
