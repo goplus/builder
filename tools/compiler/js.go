@@ -22,9 +22,6 @@ func jsFuncRegister() {
 }
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
-	fileName := p[1].String()
-	fileCode := p[2].String()
-	internal.GetSPXFunctionsDecl(fileName, fileCode)
 	return nil
 }
 
@@ -35,7 +32,9 @@ func getDiagnostics(this js.Value, p []js.Value) interface{} {
 }
 
 func getDefinition(this js.Value, p []js.Value) interface{} {
-	return nil
+	fileName := p[0].String()
+	fileCode := p[1].String()
+	return internal.NewReply(internal.GetDefinitionFromASTAndTypesInfo(fileName, fileCode))
 }
 
 func getTypes(this js.Value, p []js.Value) interface{} {

@@ -19,7 +19,14 @@ window.addEventListener('message', function (event) {
 })
 
 function getInlayHints (data)  {
-
+    let fileCode = data.in.code
+    let fileName = data.in.name
+    let res = getInlayHints_GO(fileName, fileCode)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get inlay hints")
+    }
+    return json.content
 }
 
 function getDiagnostics (data)  {
@@ -39,7 +46,14 @@ function getCompletionItems (data)  {
 }
 
 function getDefinition (data)  {
-
+    let fileCode = data.in.code
+    let fileName = data.in.name
+    let res = getDefinition_GO(fileName, fileCode)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get diagnostics")
+    }
+    return json.content
 }
 
 function getTypes(data) {

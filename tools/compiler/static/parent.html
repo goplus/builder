@@ -26,7 +26,7 @@
 
     <button onclick="runTypesInfo()">runTypesInfo</button>
     <button onclick="runCodeDiagnostics()">runCodeDiagnostics</button>
-    <button onclick="runCodeInlayHint()">runCodeInlayHint</button>
+    <button onclick="runDefinition()">runDefinition</button>
 
     <div id="compiler-iframe-container">
     </div>
@@ -104,15 +104,18 @@
     }
 
 
-    function runCodeInlayHint() {
-        getIframe().contentWindow.postMessage({
-            f: "getInlayHints",
-            info: "wasm",
-            in: {
-                name: "test.spx",
-                code: document.getElementById("codeInput").value
-            }
-        }, window.location.origin)
+    function runDefinition() {
+        try {
+            let res = getIframe().contentWindow.getDefinition({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (err) {
+            console.error(err)
+        }
     }
 
 </script>
