@@ -1,7 +1,7 @@
 // Add an asset.
 //
 // Request:
-//   POST /user/liked
+//   POST /user/rate/:id
 
 import (
 "github.com/goplus/builder/spx-backend/internal/controller"
@@ -14,14 +14,14 @@ if !ok {
 return
 }
 
-params := &controller.AddUserAssetParams{}
+var rate int
 owner := user.Name
-if !parseJSON(ctx, params) {
+if !parseJSON(ctx, rate) {
 return
 }
 
 
-err := ctrl.AddUserAsset(ctx.Context(), params,"liked",owner)
+err := ctrl.AddUserAsset(ctx.Context(), ${id},user.Name,rate)
 if err != nil {
 replyWithInnerError(ctx, err)
 return

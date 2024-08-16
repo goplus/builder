@@ -5,9 +5,10 @@
 
 ctx := &Context
 
-project, err := ctrl.GetProject(ctx.Context(), ${owner}, ${name})
+user, ok := ensureUser(ctx)
+rate, err := ctrl.GetRate(ctx.Context(), ${id}, user.Name)
 if err != nil {
 replyWithInnerError(ctx, err)
 return
 }
-json project
+json rate
