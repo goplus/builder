@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	_ "image/png"
+	"io/fs"
+	"os"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	ormLogger "gorm.io/gorm/logger" // GORM 的 logger 包
 	"gorm.io/gorm/schema"
-	_ "image/png"
-	"io/fs"
-	"os"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
