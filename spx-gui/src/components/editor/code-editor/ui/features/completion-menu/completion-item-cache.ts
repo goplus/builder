@@ -14,33 +14,39 @@ export class CompletionItemCache extends Disposable {
     lineNumber: -1,
     column: -1
   }
+  private cacheLeftTime = 0
 
   constructor() {
     super()
+    // do not use `this.addDisposer(this.clear)` this will change `this` point to class `Disposable` instead of `CompletionItemCache`
+    // will throw undefined error.
     this.addDisposer(() => this.clear())
+  }
+
+  isCacheAvailable(position: CompletionItemCachePosition) {
+    if (!this.isSamePositionAndStorePosition(position)) this.clear()
+    return this.cache.length > 0
   }
 
   public add(position: CompletionItemCachePosition, item: CompletionItem[]) {
     if (!this.isSamePositionAndStorePosition(position)) this.clear()
+    this.cacheLeftTime++
     this.cache.push(...item)
   }
 
-  public set(position: CompletionItemCachePosition, item: CompletionItem[]) {
-    if (!this.isSamePositionAndStorePosition(position)) this.clear()
-    this.cache = item
-  }
-
   public getAll(position: CompletionItemCachePosition) {
+    if (this.cacheLeftTime <= 0) return []
     if (!this.isSamePositionAndStorePosition(position)) this.clear()
+    this.cacheLeftTime--
     return this.cache
   }
 
+  // consider using decoration syntax? current ts config is not allowed.
   isSamePositionAndStorePosition(position: CompletionItemCachePosition) {
     const isSamePosition =
       this.position.id === position.id &&
       this.position.lineNumber === position.lineNumber &&
       this.position.column === position.column
-    // sample object assignment to avoid potential pointer reference problem, instead of use `this.position = position`
     // deep clone.
     if (!isSamePosition) {
       this.position.column = position.column

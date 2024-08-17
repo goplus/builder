@@ -72,40 +72,45 @@ export async function initMonaco(
     LANGUAGE_NAME,
     {
       provideCompletionItems: (model, position, _, cancelToken) => {
+        // when AST and AI are ready, this line and reload functions will be removed.
         const suggestions = getPreDefinedCompletionItem(model, position, monaco, i18n, getProject)
+
+        // get current position id to determine if need to request completion provider resolve
         const word = model.getWordUntilPosition(position)
-        const abortController = new AbortController()
-        cancelToken.onCancellationRequested(() => abortController.abort())
         const project = getProject()
         const fileHash = project.currentFilesHash || ''
-        ui.requestCompletionProviderResolve(
-          model,
-          {
-            position,
-            unitWord: word.word,
-            signal: abortController.signal
-          },
-          (items: CompletionItem[]) => {
-            ui.completionMenu?.completionItemCache.add(
-              {
-                id: fileHash,
-                lineNumber: position.lineNumber,
-                column: word.startColumn
-              },
-              items
-            )
-            // todo: first time can't reactive completion menu
-            ui.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
-          }
-        )
-        const cachedSuggestions =
-          ui.completionMenu?.completionItemCache
-            .getAll({
-              id: fileHash,
-              lineNumber: position.lineNumber,
-              column: word.startColumn
-            })
-            .map(
+        const CompletionItemCacheID = {
+          id: fileHash,
+          lineNumber: position.lineNumber,
+          column: word.startColumn
+        }
+
+        // is position changed, inner cache will clean `cached data`
+        // in a word, if position changed will call `requestCompletionProviderResolve`
+        const isNeedRequestCompletionProviderResolve =
+          !ui.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
+
+        if (isNeedRequestCompletionProviderResolve) {
+          const abortController = new AbortController()
+          cancelToken.onCancellationRequested(() => abortController.abort())
+          ui.requestCompletionProviderResolve(
+            model,
+            {
+              position,
+              unitWord: word.word,
+              signal: abortController.signal
+            },
+            (items: CompletionItem[]) => {
+              ui.completionMenu?.completionItemCache.add(CompletionItemCacheID, items)
+              // if you need user immediately show updated completion items, we need close it and reopen it.
+              ui.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
+              ui.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+            }
+          )
+          return { suggestions }
+        } else {
+          const cachedSuggestions =
+            ui.completionMenu?.completionItemCache.getAll(CompletionItemCacheID).map(
               (item): languages.CompletionItem => ({
                 label: item.label,
                 kind: Icon2CompletionItemKind(item.icon),
@@ -118,7 +123,8 @@ export async function initMonaco(
                 }
               })
             ) || []
-        return { suggestions: [...suggestions, ...cachedSuggestions] }
+          return { suggestions: [...suggestions, ...cachedSuggestions] }
+        }
       }
     }
   )

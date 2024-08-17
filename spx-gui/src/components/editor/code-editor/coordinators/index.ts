@@ -40,19 +40,46 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    setTimeout(() => {
-      addItems([
-        {
-          label: 'test',
-          insertText: 'test',
-          desc: 'test',
-          preview: {
-            content: 'test'
-          },
-          icon: Icon.Document
-        }
-      ])
-    }, 1000)
+    // testing sample code:
+    // setTimeout(() => {
+    //   addItems([
+    //     {
+    //       label: 'test',
+    //       insertText: 'test',
+    //       desc: 'test',
+    //       preview: {
+    //         content: 'test'
+    //       },
+    //       icon: Icon.Document
+    //     }
+    //   ])
+    // }, 1000)
+    // setTimeout(() => {
+    //   addItems([
+    //     {
+    //       label: 'test23',
+    //       insertText: 'test23',
+    //       desc: 'test23',
+    //       preview: {
+    //         content: 'test'
+    //       },
+    //       icon: Icon.Document
+    //     }
+    //   ])
+    // }, 1300)
+    // setTimeout(() => {
+    //   addItems([
+    //     {
+    //       label: 'test33',
+    //       insertText: 'test33',
+    //       desc: 'test33',
+    //       preview: {
+    //         content: 'test'
+    //       },
+    //       icon: Icon.Document
+    //     }
+    //   ])
+    // }, 1500)
   }
 
   public jump(position: JumpPosition): void {}
