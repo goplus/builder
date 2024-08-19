@@ -1,6 +1,7 @@
 <template>
   <NInputNumber
     class="ui-number-input"
+    :placeholder="placeholder || ''"
     :show-button="false"
     :value="value"
     :disabled="disabled"
@@ -26,6 +27,7 @@ defineProps<{
   disabled?: boolean
   min?: number
   max?: number
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
