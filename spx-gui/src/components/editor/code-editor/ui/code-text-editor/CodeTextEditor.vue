@@ -48,18 +48,26 @@ const uiVariables = useUIVariables()
 const i18n = useI18n()
 editorCtx = useEditorCtx()
 
+const loaderConfig = {
+  paths: {
+    vs: '/monaco-editor-0.45.0/min/vs'
+  }
+}
 if (i18n.lang.value !== 'en') {
   const langOverride = {
     zh: 'zh-cn'
   }
   const locale = langOverride[i18n.lang.value] || i18n.lang.value
   loader.config({
+    ...loaderConfig,
     'vs/nls': {
       availableLanguages: {
         '*': locale
       }
     }
   })
+} else {
+  loader.config(loaderConfig)
 }
 
 const getMonaco = async () => {

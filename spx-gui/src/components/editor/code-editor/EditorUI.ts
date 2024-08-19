@@ -1,5 +1,5 @@
 import { editor as IEditor, Position, type IRange } from 'monaco-editor'
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 
 export interface TextModel extends IEditor.ITextModel {}
 

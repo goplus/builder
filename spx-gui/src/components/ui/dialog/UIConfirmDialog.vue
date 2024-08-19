@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useConfig } from '../UIConfigProvider.vue'
 import UIButton from '../UIButton.vue'
 import UIDialog from './UIDialog.vue'
@@ -33,14 +33,15 @@ export type Props = {
   cancelText?: string
   confirmText?: string
   confirmHandler?: () => unknown
+  autoConfirm?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'warning',
   cancelText: undefined,
   confirmText: undefined,
-  isConfirmLoading: false,
-  confirmHandler: undefined
+  confirmHandler: undefined,
+  autoConfirm: false
 })
 
 const config = useConfig().confirmDialog
@@ -61,6 +62,10 @@ async function handleConfirm() {
     isConfirmLoading.value = false
   }
 }
+
+onMounted(() => {
+  if (props.autoConfirm) handleConfirm()
+})
 </script>
 <style scoped lang="scss">
 .footer {

@@ -13,13 +13,13 @@ const backdropAssetPath = 'assets'
 
 // Backdrop is almost the same as Costume
 export class Backdrop extends Costume {
-  _stage: Stage | null = null
+  private stage: Stage | null = null
   setStage(stage: Stage | null) {
-    this._stage = stage
+    this.stage = stage
   }
 
   setName(name: string) {
-    const err = validateBackdropName(name, this._stage)
+    const err = validateBackdropName(name, this.stage)
     if (err != null) throw new Error(`invalid name ${name}: ${err.en}`)
     this.name = name
   }
