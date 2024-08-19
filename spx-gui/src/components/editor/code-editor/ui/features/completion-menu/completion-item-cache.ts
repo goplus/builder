@@ -1,4 +1,4 @@
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { CompletionItem } from '@/components/editor/code-editor/EditorUI'
 
 export interface CompletionItemCachePosition {
