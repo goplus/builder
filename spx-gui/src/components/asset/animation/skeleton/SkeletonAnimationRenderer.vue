@@ -8,20 +8,23 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { type AnimExportData } from '@/utils/ispxLoader';
+import { type AnimExportData } from '@/utils/ispxLoader'
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
 
 const canvasElement = ref<null | HTMLCanvasElement>(null)
-const props = withDefaults(defineProps<{
-  data: AnimExportData
-  avatar: string
-  fps?: number
-  autoplay?: boolean
-}>(), {
-  fps: 30,
-  autoplay: true
-})
+const props = withDefaults(
+  defineProps<{
+    data: AnimExportData
+    texture: string
+    fps?: number
+    autoplay?: boolean
+  }>(),
+  {
+    fps: 30,
+    autoplay: true
+  }
+)
 
 const emit = defineEmits<{
   ready: [Renderer]
@@ -42,7 +45,7 @@ onMounted(async () => {
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
   const bufferInfos = getBufferInfo(gl, props.data)
 
-  renderer = new Renderer(gl, bufferInfos, vs, fs, props.avatar, props.fps)
+  renderer = new Renderer(gl, bufferInfos, vs, fs, props.texture, props.fps)
   if (props.autoplay) {
     renderer.start()
   }
@@ -58,7 +61,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', resize)
   clearInterval(resizeTimer)
 })
-
 </script>
 <script lang="ts">
 import * as twgl from 'twgl.js'
@@ -99,7 +101,7 @@ interface Uniforms {
  * renderer.start();
  * ```
  */
- export class Renderer {
+export class Renderer {
   private gl: CanvasWebGLRenderingContext
   private programInfo: twgl.ProgramInfo
   private bufferInfos: twgl.BufferInfo[][] = []
@@ -147,6 +149,15 @@ interface Uniforms {
 
   get frameIndex() {
     return this._frameIndex
+  }
+  set frameIndex(index: number) {
+    const savedPlaying = this._playing
+    this.stop()
+    this._frameIndex = index
+    this.renderFrame()
+    if (savedPlaying) {
+      this.start()
+    }
   }
   get totalFrames() {
     return this.bufferInfos.length
@@ -230,14 +241,17 @@ interface Uniforms {
  * @param gl The WebGLRenderingContext
  * @param data The AnimExportData to convert
  */
- export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimExportData) {
+export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimExportData) {
   return data.Frames.map((frame) => {
     return frame.Meshes.map((mesh) => {
       const arrays = {
-        position: mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat(),
-        aUV: mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat(),
-        indices: mesh.Indices
-      }
+        position: {
+          data: mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat(),
+          drawType: gl.DYNAMIC_DRAW,
+        },
+        aUV: { data: mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat(), drawType: gl.STATIC_DRAW },
+        indices: { data: mesh.Indices, drawType: gl.STATIC_DRAW }
+      } satisfies twgl.Arrays
       return twgl.createBufferInfoFromArrays(gl, arrays)
     })
   })
@@ -250,7 +264,7 @@ interface Uniforms {
  * @param vs The vertex shader source code. It could be a code string or the id of a script tag.
  * @param fs The fragment shader source code. It could be a code string or the id of a script tag.
  */
- export function setupProgram(gl: CanvasWebGLRenderingContext, vs: string, fs: string) {
+export function setupProgram(gl: CanvasWebGLRenderingContext, vs: string, fs: string) {
   const programInfo = twgl.createProgramInfo(gl, [vs, fs])
 
   gl.useProgram(programInfo.program)
@@ -264,7 +278,7 @@ interface Uniforms {
  * @param cull Whether to cull the front or back face.
  *  	Note: culling the back face may cause the object to disappear with the default camera settings.
  */
- export function initScene(gl: CanvasWebGLRenderingContext, cull: false | 'front' | 'back' = false) {
+export function initScene(gl: CanvasWebGLRenderingContext, cull: false | 'front' | 'back' = false) {
   twgl.resizeCanvasToDisplaySize(gl.canvas)
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
@@ -290,7 +304,7 @@ interface Uniforms {
  * @param gl The WebGLRenderingContext
  * @param uniforms The uniforms to set the projection and view matrix
  */
- export function setupCamera(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>) {
+export function setupCamera(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>) {
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
   const zNear = 0
   const zFar = 2000
@@ -320,7 +334,7 @@ interface Uniforms {
  * @param uniforms The uniforms to set the texture
  * @param texSrc The texture img source url
  */
- export function setupTexture(
+export function setupTexture(
   gl: CanvasWebGLRenderingContext,
   uniforms: Partial<Uniforms>,
   texSrc: string
@@ -338,7 +352,7 @@ interface Uniforms {
  * @param programInfo The programInfo to set the uniforms
  * @param texSrc The texture img source url
  */
- export function setupUniforms(
+export function setupUniforms(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
   texSrc: string
@@ -355,7 +369,7 @@ interface Uniforms {
 /**
  * Updates the uniforms.
  */
- export function updateUniforms(
+export function updateUniforms(
   programInfo: twgl.ProgramInfo,
   uniforms: Partial<Uniforms>,
   newUniforms: Partial<Uniforms>
@@ -367,7 +381,7 @@ interface Uniforms {
 /**
  * Draws a element.
  */
- export function drawElement(
+export function drawElement(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
   bufferInfo: twgl.BufferInfo

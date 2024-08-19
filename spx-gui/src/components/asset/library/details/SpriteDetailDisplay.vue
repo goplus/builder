@@ -4,21 +4,23 @@
       <NCarousel
         show-arrow
         :show-dots="false"
-        autoplay
+        :autoplay="autoplay"
         class="carousel"
         :interval="5000"
         :current-index="currentIndex"
         @update:current-index="handleCarouselSwitch"
       >
         <NCarouselItem v-for="anim in skeletonAnimations" :key="anim.name">
-          <SkeletonAnimationRenderer
+          <SkeletonAnimationPlayer
             v-if="anim.animData.value && skeletonTextures && skeletonTextures.url.value"
             :data="anim.animData.value"
-            :avatar="skeletonTextures.url.value"
+            :texture="skeletonTextures.url.value"
             :fps="30"
             :autoplay="true"
             :style="{ width: '100%', height: '100%', position: 'relative' }"
             @ready="(renderer) => loadPreviewForSkeleton(anim, renderer)"
+            @pause-autoplay="autoplay = false"
+            @resume-autoplay="autoplay = true"
           />
           <NSpin v-else :style="{ width: '100%', height: '100%', position: 'relative' }">
             <template #description>
@@ -138,8 +140,9 @@ import { UILoading } from '@/components/ui'
 import { computed, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
 import type { AnimExportData } from '@/utils/ispxLoader'
-import SkeletonAnimationRenderer, { Renderer } from '../../animation/skeleton/SkeletonAnimationRenderer.vue'
+import { Renderer } from '../../animation/skeleton/SkeletonAnimationRenderer.vue'
 import type { SkeletonClip } from '@/models/skeletonAnimation'
+import SkeletonAnimationPlayer from '../../animation/skeleton/SkeletonAnimationPlayer.vue'
 
 // The number of items in each snapped scroll group
 const COUNT_OF_GROUP = 4
@@ -148,6 +151,7 @@ const props = defineProps<{
   asset: AssetData<AssetType.Sprite>
 }>()
 
+const autoplay = ref(true)
 const thumbnailContainer = ref<HTMLElement | null>(null)
 const thumbnail = ref<HTMLElement[]>([])
 
@@ -221,7 +225,13 @@ const loadClip = (clip: SkeletonClip, delay: number = 0) => {
     animData.value = await clip.loadAnimFrameData()
     animLoading.value = false
   }, delay)
-  return { ...clip, animData, animLoading, [imgSrc]: ref<string | null>(null), [imgLoading]: ref(true) }
+  return {
+    ...clip,
+    animData,
+    animLoading,
+    [imgSrc]: ref<string | null>(null),
+    [imgLoading]: ref(true)
+  }
 }
 
 watch(
@@ -234,7 +244,6 @@ watch(
   },
   { immediate: true }
 )
-
 
 const skeletonTextures = computed(() => {
   if (!sprite.value?.skeletonAnimation) return null
