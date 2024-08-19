@@ -1,4 +1,4 @@
-import { Disposable, type Disposer } from './common/disposable'
+import { Disposable, type Disposer } from '@/utils/disposable'
 
 export type Position = { line: number; column: number; fileUri: string }
 

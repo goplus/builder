@@ -88,6 +88,15 @@ export function validateBackdropName(name: string, stage: Stage | null) {
     return { en: `Backdrop with name ${name} already exists`, zh: '存在同名的背景' }
 }
 
+export const widgetNameTip = getAssetNameTip({ en: 'widget', zh: '控件' })
+
+export function validateWidgetName(name: string, stage: Stage | null) {
+  const err = validateAssetName(name)
+  if (err != null) return err
+  if (stage != null && stage.widgets.find((b) => b.name === name))
+    return { en: `Widget with name ${name} already exists`, zh: '存在同名的控件' }
+}
+
 function upFirst(str: string) {
   return str[0].toUpperCase() + str.slice(1)
 }
@@ -176,4 +185,14 @@ export function getBackdropName(stage: Stage | null, base = '') {
 export function ensureValidBackdropName(name: string, stage: Stage | null) {
   if (validateBackdropName(name, stage) == null) return name
   return getBackdropName(stage, name)
+}
+
+export function getWidgetName(stage: Stage | null, base = '') {
+  base = normalizeAssetName(base, 'camel') || 'widget'
+  return getValidName(base, (n) => validateWidgetName(n, stage) == null)
+}
+
+export function ensureValidWidgetName(name: string, stage: Stage | null) {
+  if (validateWidgetName(name, stage) == null) return name
+  return getWidgetName(stage, name)
 }

@@ -1,5 +1,5 @@
 import { editor as IEditor, Position, type IRange } from 'monaco-editor'
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 import type { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 export interface TextModel extends IEditor.ITextModel {}

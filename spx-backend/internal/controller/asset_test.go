@@ -652,7 +652,7 @@ func TestControllerUpdateAsset(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
 				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), params.DisplayName, params.Category, params.AssetType, []byte("{}"), params.FilesHash, params.Preview, params.IsPublic, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
@@ -747,7 +747,7 @@ func TestControllerUpdateAsset(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
 				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, display_name = \?, category = \?, asset_type = \?, files = \?, files_hash = \?, preview = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), params.DisplayName, params.Category, params.AssetType, []byte("{}"), params.FilesHash, params.Preview, params.IsPublic, "1").
 			WillReturnError(sql.ErrConnDone)
 		_, err = ctrl.UpdateAsset(ctx, "1", params)
@@ -836,7 +836,7 @@ func TestControllerDeleteAsset(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
 				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = ctrl.DeleteAsset(ctx, "1")
@@ -889,7 +889,7 @@ func TestControllerDeleteAsset(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
 				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE asset SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
 			WillReturnError(sql.ErrConnDone)
 		err = ctrl.DeleteAsset(ctx, "1")
