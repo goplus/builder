@@ -33,7 +33,7 @@ export type AIAssetData<T extends AssetType = AssetType> = {
   preview?: string
   /** Creation time */
   cTime: string
-  status: AIGCStatus
+  // status: AIGCStatus
 }
 
 /**
@@ -41,17 +41,6 @@ export type AIAssetData<T extends AssetType = AssetType> = {
  * It could be used to narrow down the `AssetOrAIAsset` type.
  */
 export const isAiAsset = Symbol('isAiAsset')
-
-/**
- * Flag to indicate the preview image of the asset is ready.
- */
-export const isPreviewReady = Symbol('isPreviewReady')
-
-/**
- * Flag to indicate the content of the asset is ready.
- * For sprite, it means the sprite has been generated from the preview image.
- */
-export const isContentReady = Symbol('isContentReady')
 
 /**
  * When the asset is exported, the backend will return an ID for the exported asset.
@@ -66,8 +55,6 @@ export const exportedId = Symbol('isExported')
  */
 export type TaggedAIAssetData<T extends AssetType = AssetType> = AIAssetData<T> & {
   [isAiAsset]: true
-  [isPreviewReady]: boolean
-  [isContentReady]: boolean
   [exportedId]?: string
 }
 
@@ -183,52 +170,6 @@ export interface AIGCStatusResponse {
     type: AIGCType
     files: AIGCFiles
   }
-}
-
-const mockAIGCStatusMap: Map<string, number> = new Map()
-
-/**
- * Get AI image generation status
- *
- * @param jobId The job ID returned by `generateAIXxx`
- * @returns
- *
- * WARNING: This API has not been implemented yet. It will return a mock result.
- */
-export async function getAIGCStatus(jobId: string) {
-  return new Promise<AIGCStatusResponse>((resolve) => {
-    setTimeout(() => {
-      const timestamp = mockAIGCStatusMap.get(jobId)
-      const random = Math.random()
-      if (timestamp === undefined) {
-        mockAIGCStatusMap.set(jobId, Date.now())
-        resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 1000 + random * 2000) {
-        resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 5000 + random * 5000) {
-        resolve({ status: AIGCStatus.Generating })
-      } else {
-        const resultType = mockJobs.get(jobId)
-        const result = resultType === 'image' ? 
-          { imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)] }:
-          mockAISprite[Math.floor(random * mockAISprite.length)].files
-        resolve({
-          status: AIGCStatus.Finished,
-          result: {
-            jobId,
-            type: AIGCType.Image,
-            files: result
-          }
-        })
-      }
-    }, 300)
-  })
-  const result = (await client.get(
-    `/aigc/status/${jobId}`,
-    {},
-    { timeout: 20 * 1000 }
-  )) as AIGCStatusResponse
-  return result
 }
 
 /**

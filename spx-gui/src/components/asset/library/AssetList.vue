@@ -11,8 +11,8 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" @ready="asset[isPreviewReady] = true"
-            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)" />
+          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" @ready="aiAssetPending = false"
+            @click="!aiAssetPending && emit('selectAi', asset, aiAssetList)" />
           <AssetItem v-else :asset="asset" :add-to-project-pending="props.addToProjectPending"
             @add-to-project="(asset) => emit('addToProject', asset)" @click="emit('select', asset)" />
         </template>
@@ -57,8 +57,6 @@ import {
   AIGCStatus,
   generateAIImage,
   isAiAsset,
-  isContentReady,
-  isPreviewReady,
   type AIAssetData,
   type AssetOrAIAsset,
   type TaggedAIAssetData
@@ -91,15 +89,10 @@ const aiAssetList = ref<TaggedAIAssetData[]>([])
 const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )
-
+// AI asset loading state
 const aiAssetPending = ref(false)
 const loadingAiAsset = computed(() =>
-  aiAssetPending.value || aiAssetList.value.some((a) => {
-    if (isAiAsset in a) {
-      return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
-    }
-    return false
-  })
+  aiAssetPending.value
 )
 
 type GroupedAssetItem =
@@ -187,7 +180,6 @@ function generateMultipleAIImages(count: number, append = true): () => void {
       return {
         image_url: res.image_url,
         cTime: new Date().toISOString(),
-        status: AIGCStatus.Waiting
       }
     })
   )
@@ -200,9 +192,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
       id: r.image_url,
       assetType: searchCtx.type,
       //files: saveFiles(createFileWithWebUrl(r.image_url)), todo: saveFiles
-      [isAiAsset]: true as const, 
-      [isPreviewReady]: false,
-      [isContentReady]: false
+      [isAiAsset]: true as const,
     }))
     if (append) {
       aiAssetList.value.push(...taggedRes)
