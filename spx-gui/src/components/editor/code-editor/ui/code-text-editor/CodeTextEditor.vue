@@ -5,6 +5,10 @@
       v-if="completionMenu"
       :completion-menu="completionMenu"
     ></completion-menu-component>
+    <HoverPreviewComponent
+      v-if="hoverPreview"
+      :hover-preview="hoverPreview"
+    ></HoverPreviewComponent>
   </div>
 </template>
 <script lang="ts">
@@ -21,9 +25,11 @@ import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco, disposeMonacoProviders } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
-import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
+import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
-import { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import { CompletionMenu } from '../features/completion-menu/completion-menu'
+import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
+import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 const props = defineProps<{
   value: string
   ui: EditorUI
@@ -36,6 +42,7 @@ const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
+const hoverPreview = shallowRef<HoverPreview>()
 
 const uiVariables = useUIVariables()
 const i18n = useI18n()
@@ -71,6 +78,7 @@ watchEffect(async (onCleanup) => {
   const monaco = await getMonaco()
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
+    theme: 'spx-light',
     language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,
@@ -132,10 +140,12 @@ watchEffect(async (onCleanup) => {
   })
 
   completionMenu.value = new CompletionMenu(editor)
+  hoverPreview.value = new HoverPreview(editor)
 
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()
+    hoverPreview.value?.dispose()
     disposeMonacoProviders()
     editor.dispose()
   })

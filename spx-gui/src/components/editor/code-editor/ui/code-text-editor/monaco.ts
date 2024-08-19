@@ -99,14 +99,20 @@ export async function initMonaco(
       if (tool == null) return
       let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
       if (tool.usage != null) {
-        text += ` \`${tool.usage.sample}\``
+        text += ` 
+\`\`\`gop
+${tool.usage.sample}
+\`\`\``
       } else {
         text = [
           text,
           ...tool.usages!.map((usage) => {
             const colon = i18n.t({ en: ': ', zh: '：' })
             const desc = i18n.t(usage.desc)
-            return `* ${desc}${colon}\`${usage.sample}\``
+            return `* ${desc}${colon}
+\`\`\`gop
+${usage.sample}
+\`\`\``
           })
         ].join('\n')
       }
