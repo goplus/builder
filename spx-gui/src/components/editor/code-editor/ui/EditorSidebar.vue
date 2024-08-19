@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import {
   controlCategory,
   eventCategory,
@@ -21,7 +21,8 @@ import iconControl from './icons/control.svg?raw'
 import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
 import iconVariable from './icons/variable.svg?raw'
-import { useUIVariables } from '@/components/ui'
+import IconCollapse from './icons/collapse.svg?raw'
+import { UITooltip, useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 defineEmits<{
@@ -30,6 +31,7 @@ defineEmits<{
 
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
+const collapsed = ref(false)
 
 const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
 
@@ -102,7 +104,12 @@ function handleCategoryClick(index: number) {
 
 <template>
   <!--  this ul element area is sidebar tab nav  -->
-  <ul class="categories-wrapper">
+  <ul
+    class="categories-wrapper"
+    :class="{
+      'divide-line': collapsed
+    }"
+  >
     <li
       v-for="(category, i) in categories"
       v-show="category.groups.length > 0"
@@ -116,9 +123,25 @@ function handleCategoryClick(index: number) {
       <div class="icon" v-html="category.icon"></div>
       <p class="label">{{ $t(category.label) }}</p>
     </li>
+    <li class="categories-tools">
+      <UITooltip>
+        {{ collapsed ? $t({ zh: '展开', en: 'Collapse' }) : $t({ zh: '折叠', en: 'Expand' }) }}
+        <template #trigger>
+          <span
+            class="collapse-button"
+            :class="{
+              collapsed: collapsed
+            }"
+            @click="collapsed = !collapsed"
+          >
+            <span class="icon" v-html="IconCollapse"></span>
+          </span>
+        </template>
+      </UITooltip>
+    </li>
   </ul>
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
-  <div class="tools-wrapper">
+  <div v-show="!collapsed" class="tools-wrapper">
     <h4 class="title">{{ $t(activeCategory.label) }}</h4>
     <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
       <h5 class="group-title">{{ $t(group.label) }}</h5>
@@ -140,6 +163,10 @@ function handleCategoryClick(index: number) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  &.divide-line {
+    border-right: 1px solid var(--ui-color-grey-300);
+  }
 }
 
 .category {
@@ -169,6 +196,34 @@ function handleCategoryClick(index: number) {
     text-align: center;
     font-size: 10px;
     line-height: 1.6;
+  }
+}
+
+.categories-tools {
+  margin-top: auto;
+}
+
+.collapse-button {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.3s;
+  transform: rotate(180deg);
+
+  &.collapsed {
+    transform: rotate(0);
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    background-color: #ededed;
+    border-radius: 999px;
   }
 }
 
