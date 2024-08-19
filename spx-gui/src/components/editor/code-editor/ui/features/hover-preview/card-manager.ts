@@ -1,4 +1,4 @@
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 import DocumentPreviewComponent from './DocumentPreview.vue'
 import { type CSSProperties, h, render } from 'vue'
 
