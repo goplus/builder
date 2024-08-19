@@ -1,4 +1,4 @@
-import { AssetType, type AssetData } from '@/apis/asset'
+import { addAsset, AssetType, IsPublic, type AssetData } from '@/apis/asset'
 import {
   isContentReady,
   isPreviewReady,
@@ -8,7 +8,10 @@ import { fromConfig, toConfig } from './file'
 import { Sound } from '../sound'
 import { Sprite } from '../sprite'
 import { Backdrop, backdropAssetPath, type BackdropInits, type RawBackdropConfig } from '../backdrop'
-import { getFiles, saveFiles } from './cloud'
+import { createFileWithWebUrl, getFiles, saveFiles } from './cloud'
+import { Costume } from '../costume'
+import { stripExt } from '@/utils/path'
+import { sprite } from '../../components/ui/tokens/colors';
 
 export type PartialAssetData<T extends AssetType = AssetType> = Pick<AssetData<T>, 'displayName' | 'assetType' | 'files' | 'filesHash'>
 
@@ -147,4 +150,24 @@ export async function convertAIAssetToBackdrop(asset: TaggedAIAssetData) {
   asset.filesHash = fileCollectionHash
   asset.displayName = config.name
   asset[isContentReady] = true
+}
+
+/**
+ * Convert a url to a asset data.
+ */
+export async function url2AssetData(url: string,name:string): Promise<AssetData> {
+  const file = createFileWithWebUrl(url)
+  // const { fileCollection, fileCollectionHash } = await saveFiles({ [file.name]: file })
+  const costumeFile = await Costume.create(stripExt(file.name), file)
+  const sprite = Sprite.create(stripExt(file.name))
+  sprite.addCostume(costumeFile)
+  let params = await sprite2Asset(sprite)
+  const assetData = await addAsset({
+    ...params,
+    displayName: name,
+    category: 'imported',
+    preview: 'TODO',
+    isPublic: IsPublic.public//TODO: if ai asset is public?
+  })
+  return assetData
 }
