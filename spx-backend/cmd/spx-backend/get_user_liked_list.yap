@@ -13,7 +13,7 @@ import (
 ctx := &Context
 
 user, _ := controller.UserFromContext(ctx.Context())
-params := &controller.ListAssetsParams{}
+params := &controller.ListUserAssetsParams{}
 
 params.Keyword = ${keyword}
 

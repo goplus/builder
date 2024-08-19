@@ -3,16 +3,29 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"strconv"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // AddUserAssetParams holds parameters for adding an user asset.
 type AddUserAssetParams struct {
 	// AssetID is the identifier for the asset.
 	AssetID string `json:"assetId"`
+}
+
+// ListUserAssetsParams holds parameters for listing assets.
+type ListUserAssetsParams struct {
+	// Owner is the owner filter, applied only if non-nil.
+	Owner *string
+
+	// OrderBy is the order by condition.
+	OrderBy ListAssetsOrderBy
+
+	// Pagination is the pagination information.
+	Pagination model.Pagination
 }
 
 // AddUserAsset adds an asset.
@@ -49,9 +62,6 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	}
 
 	// Apply additional filters based on parameters
-	if params.Keyword != "" {
-		wheres = append(wheres, model.FilterCondition{Column: "a.display_name", Operation: "LIKE", Value: "%" + params.Keyword + "%"})
-	}
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "a.owner", Operation: "=", Value: *params.Owner})
 		wheres = append(wheres, model.FilterCondition{Column: "ua.user_id", Operation: "=", Value: *params.Owner})
