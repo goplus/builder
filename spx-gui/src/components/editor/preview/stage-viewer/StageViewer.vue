@@ -41,19 +41,21 @@ import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
-import type { Sprite } from '@/models/sprite'
+import { type Sprite } from '@/models/sprite'
 import { useFileUrl } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import SpriteTransformer from './SpriteTransformer.vue'
 import SpriteItem from './SpriteItem.vue'
 import { MapMode } from '@/models/stage'
 import Konva from 'konva'
+import SpriteTransformer from './SpriteTransformer.vue'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
 const containerSize = useContentSize(conatiner)
 
-const stageRef = ref<any>()
+const stageRef = ref<{
+  getStage(): Konva.Stage
+}>()
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
 
 const spritesReadyMap = reactive(new Map<string, boolean>())

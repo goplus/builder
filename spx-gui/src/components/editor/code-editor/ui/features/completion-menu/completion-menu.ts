@@ -224,7 +224,7 @@ export class CompletionMenu implements IDisposable {
     if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
-    const fontSize = Number(this.editor.getOption(EditorOption.fontLigatures))
+    const fontSize = Number(this.editor.getOption(EditorOption.fontSize))
     const isMultiline = () => {
       const { suggestions, activeIdx } = this.completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false

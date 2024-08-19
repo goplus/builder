@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 import { useFileUrl } from '@/utils/file'
 import type { File } from '@/models/common/file'
 import type { Costume } from '@/models/costume'
