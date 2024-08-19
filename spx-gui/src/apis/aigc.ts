@@ -125,7 +125,6 @@ export async function generateAIImage({
     { timeout: 60 * 1000 }// may need more time
   )) as {
     image_url: string
-    asset_id: string
   }
   return result
 }
