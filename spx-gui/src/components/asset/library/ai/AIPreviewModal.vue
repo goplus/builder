@@ -10,12 +10,8 @@
         </div>
       </Transition>
       <div class="head-right">
-        <UIButton
-          size="large"
-          class="insert-button"
-          :disabled="!contentReady || addToProjectPending || exportPending"
-          @click="handleAddButton"
-        >
+        <UIButton size="large" class="insert-button" :disabled="!contentReady || addToProjectPending || exportPending"
+          @click="handleAddButton">
           <span style="white-space: nowrap">
             {{
               addToProjectPending || exportPending
@@ -49,10 +45,7 @@
                     <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                       {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                     </span>
-                    <span
-                      v-else-if="status === AIGCStatus.Finished && !contentReady"
-                      class="generating-text"
-                    >
+                    <span v-else-if="status === AIGCStatus.Finished && !contentReady" class="generating-text">
                       {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
                     </span>
                   </Transition>
@@ -74,41 +67,25 @@
             </div>
           </template>
           <template v-else>
-            <AISpriteEditor
-              v-if="asset.assetType === AssetType.Sprite"
-              :asset="asset as TaggedAIAssetData<AssetType.Sprite>"
-              class="asset-editor sprite-editor"
-            />
-            <AIBackdropEditor
-              v-else-if="asset.assetType === AssetType.Backdrop"
-              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
-              class="asset-editor backdrop-editor"
-            />
+            <AISpriteEditor v-if="asset.assetType === AssetType.Sprite"
+              :asset="asset as TaggedAIAssetData<AssetType.Sprite>" class="asset-editor sprite-editor" />
+            <AIBackdropEditor v-else-if="asset.assetType === AssetType.Backdrop"
+              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>" class="asset-editor backdrop-editor" />
             <AISoundEditor v-else-if="asset.assetType === AssetType.Sound" :asset="asset" />
           </template>
         </Transition>
       </main>
       <aside>
-        <NScrollbar
-          :content-style="{
-            paddingRight: '15px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px'
-          }"
-        >
-          <div
-            v-for="aiAsset in aiAssets"
-            :key="aiAsset.id"
-            class="ai-asset-wrapper"
-            :class="{ selected: aiAsset.id === asset.id }"
-          >
-            <AIAssetItem
-              :asset="aiAsset"
-              :show-ai-asset-tip="false"
-              @ready="aiAsset[isPreviewReady] = true"
-              @click="aiAsset[isPreviewReady] && emit('selectAi', aiAsset)"
-            />
+        <NScrollbar :content-style="{
+          paddingRight: '15px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }">
+          <div v-for="aiAsset in aiAssets" :key="aiAsset.id" class="ai-asset-wrapper"
+            :class="{ selected: aiAsset.id === asset.id }">
+            <AIAssetItem :asset="aiAsset" :show-ai-asset-tip="false" @ready="aiAsset[isPreviewReady] = true"
+              @click="aiAsset[isPreviewReady] && emit('selectAi', aiAsset)" />
           </div>
         </NScrollbar>
       </aside>
@@ -126,7 +103,6 @@ import { NScrollbar } from 'naive-ui'
 import {
   AIGCStatus,
   generateAISprite,
-  getAIGCStatus,
   type AIGCFiles,
   isContentReady,
   isPreviewReady,
@@ -157,8 +133,6 @@ const emit = defineEmits<{
   selectAi: [asset: TaggedAIAssetData]
 }>()
 
-const contentReady = ref(props.asset[isContentReady])
-const contentJobId = ref<string | null>(null)
 const status = ref<AIGCStatus>(AIGCStatus.Finished)
 
 const generateContent = async () => {
@@ -203,9 +177,6 @@ const POLLING_MAX_COUNT = (10 * 60 * 1000) / POLLING_INTERVAL
 let pollingCount = 0
 type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
 const pollStatus = async () => {
-  if (!contentJobId.value) {
-    return
-  }
   if (status.value === AIGCStatus.Finished) {
     return
   }
@@ -216,8 +187,6 @@ const pollStatus = async () => {
 
   pollingCount++
 
-  const newStatus = await getAIGCStatus(contentJobId.value)
-  status.value = newStatus.status
 
   if (newStatus.status === AIGCStatus.Finished) {
     const cloudFiles = newStatus.result?.files as RequiredAIGCFiles

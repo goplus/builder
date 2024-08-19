@@ -11,7 +11,7 @@
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
         <template v-for="asset in item.assets" :key="asset.id">
-          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" @ready="aiAssetPending = false"
+          <AIAssetItem v-if="isAiAsset in asset" :asset="asset" :isLoading="aiAssetPending"
             @click="!aiAssetPending && emit('selectAi', asset, aiAssetList)" />
           <AssetItem v-else :asset="asset" :add-to-project-pending="props.addToProjectPending"
             @add-to-project="(asset) => emit('addToProject', asset)" @click="emit('select', asset)" />
@@ -44,7 +44,7 @@
   </NVirtualList>
 </template>
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
@@ -54,16 +54,13 @@ import emptyImg from '@/components/ui/empty/empty.svg'
 import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import {
-  AIGCStatus,
   generateAIImage,
   isAiAsset,
-  type AIAssetData,
   type AssetOrAIAsset,
   type TaggedAIAssetData
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
-import { createFileWithWebUrl, saveFiles } from '@/models/common/cloud'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
@@ -190,6 +187,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
     const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
       ...r,
       id: r.image_url,
+      preview: r.image_url,
       assetType: searchCtx.type,
       //files: saveFiles(createFileWithWebUrl(r.image_url)), todo: saveFiles
       [isAiAsset]: true as const,

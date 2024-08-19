@@ -13,22 +13,17 @@
                   <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                     {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                   </span>
-                  <span
-                    v-else-if="status === AIGCStatus.Finished && previewImageLoading"
-                    class="generating-text"
-                  >
+                  <span v-else-if="status === AIGCStatus.Finished && previewImageLoading" class="generating-text">
                     {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
                   </span>
                 </Transition>
               </template>
             </NSpin>
           </template>
-          <template
-            v-else-if="
-              status === AIGCStatus.Failed ||
-              (previewImageLoading === false && previewImageSrc === null)
-            "
-          >
+          <template v-else-if="
+            status === AIGCStatus.Failed ||
+            (previewImageLoading === false && previewImageSrc === null)
+          ">
             <div class="failing-info">
               <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
                 <CancelOutlined />
@@ -42,12 +37,8 @@
             </div>
           </template>
           <template v-else>
-            <UIImg
-              class="preview"
-              :src="previewImageSrc"
-              :loading="previewImageLoading"
-              :size="asset.assetType === AssetType.Sprite ? 'contain' : 'cover'"
-            />
+            <UIImg class="preview" :src="previewImageSrc" :loading="previewImageLoading"
+              :size="asset.assetType === AssetType.Sprite ? 'contain' : 'cover'" />
           </template>
         </Transition>
       </div>
@@ -68,7 +59,7 @@ import { UIImg } from '@/components/ui'
 import { NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
 import { computed, ref } from 'vue'
-import { AIGCStatus, getAIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
+import { AIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
 import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
@@ -78,6 +69,7 @@ import { AssetType } from '@/apis/asset'
 const props = withDefaults(
   defineProps<{
     asset: AIAssetData
+    isLoading: boolean
     showAiAssetTip?: boolean
   }>(),
   {
@@ -89,13 +81,9 @@ const emit = defineEmits<{
   ready: [asset: AIAssetData]
 }>()
 
-const status = ref<AIGCStatus>(AIGCStatus.Waiting)
-
-let previewImageFile = ref<File | undefined>(undefined)
-const [previewImageSrc, previewImageLoading] = useFileUrl(() => previewImageFile.value as File)
-const readyForView = computed(
-  () => status.value === AIGCStatus.Finished && previewImageLoading.value === false
-)
+// const readyForView = computed(
+//   () => status.value === AIGCStatus.Finished && previewImageLoading.value === false
+// )
 
 const POLLING_INTERVAL = 500
 
@@ -103,46 +91,44 @@ const POLLING_MAX_COUNT = (5 * 60 * 1000) / POLLING_INTERVAL
 
 let pollingCount = 0
 type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
-const pollStatus = async () => {
-  if (status.value === AIGCStatus.Finished) {
-    return
-  }
-  if (pollingCount >= POLLING_MAX_COUNT) {
-    status.value = AIGCStatus.Failed
-    return
-  }
 
-  pollingCount++
+// const pollStatus = async () => {
+//   if (status.value === AIGCStatus.Finished) {
+//     return
+//   }
+//   if (pollingCount >= POLLING_MAX_COUNT) {
+//     status.value = AIGCStatus.Failed
+//     return
+//   }
 
-  const newStatus = await getAIGCStatus(props.asset.id)
-  status.value = newStatus.status
+//   pollingCount++
 
-  if (newStatus.status === AIGCStatus.Finished) {
-    const cloudFiles = newStatus.result?.files
-    if (!cloudFiles) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
-      [key in keyof AIGCFiles]: File
-    }
+//   if (newStatus.status === AIGCStatus.Finished) {
+//     const cloudFiles = newStatus.result?.files
+//     if (!cloudFiles) {
+//       status.value = AIGCStatus.Failed
+//       return
+//     }
+//     const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
+//       [key in keyof AIGCFiles]: File
+//     }
 
-    if (!files) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    props.asset.preview = cloudFiles.imageUrl
-    previewImageFile.value = files.imageUrl
-    emit('ready', props.asset)
-    return
-  }
+//     if (!files) {
+//       status.value = AIGCStatus.Failed
+//       return
+//     }
+//     props.asset.preview = cloudFiles.imageUrl
+//     previewImageFile.value = files.imageUrl
+//     emit('ready', props.asset)
+//     return
+//   }
 
-  if (newStatus.status !== AIGCStatus.Failed) {
-    setTimeout(pollStatus, POLLING_INTERVAL)
-  }
-}
+//   if (newStatus.status !== AIGCStatus.Failed) {
+//     setTimeout(pollStatus, POLLING_INTERVAL)
+//   }
+// }
 
-pollStatus()
+// pollStatus()
 </script>
 
 <style lang="scss" scoped>
@@ -194,7 +180,7 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   position: relative;
 }
 
-.asset-preview > * {
+.asset-preview>* {
   position: absolute;
   width: 100%;
   height: 100%;
