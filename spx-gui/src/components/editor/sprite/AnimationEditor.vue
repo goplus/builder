@@ -10,7 +10,7 @@
       </UIButton>
     </template>
   </UIEmpty>
-  <EditorList v-else color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
+  <EditorList v-else color="sprite" :add-text="$t({ en: 'Add animation', zh: '添加动画' })">
     <AnimationItem
       v-for="animation in sprite.animations"
       :key="animation.name"
