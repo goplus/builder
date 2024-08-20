@@ -2,6 +2,8 @@ package model
 
 import (
 	"context"
+	"errors"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -27,6 +29,13 @@ func GetRatingDistribution(ctx context.Context, db *gorm.DB, assetId string, own
 	logger := log.GetReqLogger(ctx)
 
 	var distributions []RatingDistribution
+	// avoid SQL injection,use regex to check if the assetId and owner is valid,assetId is number string,owner is string
+	isValidAssetId := regexp.MustCompile(`^\d+$`).MatchString(assetId)
+	isValidOwner := regexp.MustCompile(`^[\w-]{1,100}$`).MatchString(owner)
+	if !isValidAssetId || !isValidOwner {
+		logger.Printf("invalid asset id or owner")
+		return nil, errors.New("invalid asset id or owner")
+	}
 
 	result := db.Raw("SELECT score, COUNT(*) AS count FROM ratings WHERE asset_id = ? AND owner = ? GROUP BY score ORDER BY score", assetId, owner).Scan(&distributions)
 
