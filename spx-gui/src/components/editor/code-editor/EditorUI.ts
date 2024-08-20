@@ -1,6 +1,20 @@
-import { editor as IEditor, Position, type IRange } from 'monaco-editor'
+import {
+  editor as IEditor,
+  Position,
+  type IRange,
+  type languages,
+  type IDisposable
+} from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
-import type { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import {
+  type CompletionMenu,
+  Icon2CompletionItemKind
+} from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import loader from '@monaco-editor/loader'
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
+import type { Project } from '@/models/project'
+import type { I18n } from '@/utils/i18n'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -189,11 +203,22 @@ interface EditorUIRequestCallback {
 }
 
 export class EditorUI extends Disposable {
-  editorUIRequestCallback: EditorUIRequestCallback
+  i18n: I18n
+  getProject: () => Project
   completionMenu: CompletionMenu | null = null
+  editorUIRequestCallback: EditorUIRequestCallback
+  monaco: typeof import('monaco-editor') | null = null
+  monacoProviderDisposes: Record<string, IDisposable | null> = {
+    completionProvider: null,
+    hoverProvider: null
+  }
 
-  constructor() {
+  constructor(i18n: I18n, getProject: () => Project) {
     super()
+
+    this.i18n = i18n
+
+    this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: []
     }
@@ -203,6 +228,118 @@ export class EditorUI extends Disposable {
         this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback].length = 0
       }
     })
+  }
+
+  public async getMonaco() {
+    if (this.monaco) return this.monaco
+    const monaco_ = await loader.init()
+    if (this.monaco) return this.monaco
+    await this.initMonaco(monaco_, this.getProject)
+    this.monaco = monaco_
+    return this.monaco
+  }
+
+  async initMonaco(monaco: typeof import('monaco-editor'), getProject: () => Project) {
+    self.MonacoEnvironment = {
+      getWorker() {
+        return new EditorWorker()
+      }
+    }
+
+    const LANGUAGE_NAME = 'spx'
+    monaco.languages.register({
+      id: LANGUAGE_NAME
+    })
+
+    // keep this for auto match brackets when typing
+    monaco.languages.setLanguageConfiguration(LANGUAGE_NAME, {
+      // tokenize all words as identifiers
+      wordPattern: /(-?\d*\.\d\w*)|([^`~!@#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
+      comments: {
+        lineComment: '//',
+        blockComment: ['/*', '*/']
+      },
+      brackets: [
+        ['{', '}'],
+        ['[', ']'],
+        ['(', ')'],
+        ['"', '"'],
+        ["'", "'"]
+      ]
+    })
+
+    this.monacoProviderDisposes.completionProvider =
+      monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
+        provideCompletionItems: (model, position, _, cancelToken) => {
+          // get current position id to determine if need to request completion provider resolve
+          const word = model.getWordUntilPosition(position)
+          const project = getProject()
+          const fileHash = project.currentFilesHash || ''
+          const CompletionItemCacheID = {
+            id: fileHash,
+            lineNumber: position.lineNumber,
+            column: word.startColumn
+          }
+
+          // is position changed, inner cache will clean `cached data`
+          // in a word, if position changed will call `requestCompletionProviderResolve`
+          const isNeedRequestCompletionProviderResolve =
+            !this.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
+
+          if (isNeedRequestCompletionProviderResolve) {
+            const abortController = new AbortController()
+            cancelToken.onCancellationRequested(() => abortController.abort())
+            this.requestCompletionProviderResolve(
+              model,
+              {
+                position,
+                unitWord: word.word,
+                signal: abortController.signal
+              },
+              (items: CompletionItem[]) => {
+                this.completionMenu?.completionItemCache.add(CompletionItemCacheID, items)
+                // if you need user immediately show updated completion items, we need close it and reopen it.
+                this.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
+                this.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+              }
+            )
+            return { suggestions: [] }
+          } else {
+            const suggestions =
+              this.completionMenu?.completionItemCache.getAll(CompletionItemCacheID).map(
+                (item): languages.CompletionItem => ({
+                  label: item.label,
+                  kind: Icon2CompletionItemKind(item.icon),
+                  insertText: item.insertText,
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn
+                  }
+                })
+              ) || []
+            return { suggestions }
+          }
+        }
+      })
+
+    await injectMonacoHighlightTheme(monaco)
+  }
+
+  /**
+   * providers need to be disposed before the editor is destroyed.
+   * otherwise, in current file will cause duplicate completion items when HMR is triggered in development mode.
+   */
+  public disposeMonacoProviders() {
+    if (this.monacoProviderDisposes.completionProvider) {
+      this.monacoProviderDisposes.completionProvider.dispose()
+      this.monacoProviderDisposes.completionProvider = null
+    }
+    if (this.monacoProviderDisposes.hoverProvider) {
+      this.monacoProviderDisposes.hoverProvider.dispose()
+      this.monacoProviderDisposes.hoverProvider = null
+    }
   }
 
   public requestCompletionProviderResolve(

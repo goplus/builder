@@ -16,10 +16,9 @@ import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
-import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
-import { initMonaco, disposeMonacoProviders } from './monaco'
+import { initMonaco_ToBeRemoved, disposeMonacoProviders_ToBeRemoved } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
 import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
@@ -37,7 +36,6 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 
-const uiVariables = useUIVariables()
 const i18n = useI18n()
 editorCtx = useEditorCtx()
 
@@ -63,20 +61,12 @@ if (i18n.lang.value !== 'en') {
   loader.config(loaderConfig)
 }
 
-const getMonaco = async () => {
-  if (monaco) return monaco
-  const monaco_ = await loader.init()
-  if (monaco) return monaco
-  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project, props.ui)
-  monaco = monaco_
-  return monaco
-}
-
 const initialFontSize = 14
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
-  const monaco = await getMonaco()
+  const monaco = await props.ui.getMonaco()
+  await initMonaco_ToBeRemoved(monaco, i18n, () => editorCtx.project)
 
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
@@ -147,7 +137,8 @@ watchEffect(async (onCleanup) => {
   onCleanup(() => {
     props.ui.completionMenu = null
     completionMenu.value?.dispose?.()
-    disposeMonacoProviders()
+    props.ui.disposeMonacoProviders()
+    disposeMonacoProviders_ToBeRemoved()
     editor.dispose()
   })
 })
