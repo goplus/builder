@@ -3,11 +3,17 @@ import { keywords, typeKeywords } from '@/utils/spx'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { ToolType, getAllTools } from './tools'
+import { getAllTools, ToolType } from './tools'
 import { useUIVariables } from '@/components/ui'
-import type { IDisposable, IRange, languages } from 'monaco-editor'
+import type { IDisposable, IRange, languages, Position } from 'monaco-editor'
 import type { Project } from '@/models/project'
 import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
+import {
+  type CompletionItem,
+  EditorUI,
+  type TextModel
+} from '@/components/editor/code-editor/EditorUI'
+import { Icon2CompletionItemKind } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 declare global {
   /** Notice: this is available only after `initFormatWasm()` */
@@ -21,7 +27,6 @@ async function initFormatWasm() {
   go.run(result.instance)
 }
 
-export const defaultThemeName = 'spx-default-theme'
 const monacoProviderDisposes: Record<string, IDisposable | null> = {
   completionProvider: null,
   hoverProvider: null
@@ -31,7 +36,8 @@ export async function initMonaco(
   monaco: typeof import('monaco-editor'),
   { color }: ReturnType<typeof useUIVariables>,
   i18n: I18n,
-  getProject: () => Project
+  getProject: () => Project,
+  ui: EditorUI
 ) {
   self.MonacoEnvironment = {
     getWorker() {
@@ -65,21 +71,60 @@ export async function initMonaco(
   monacoProviderDisposes.completionProvider = monaco.languages.registerCompletionItemProvider(
     LANGUAGE_NAME,
     {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model, position, _, cancelToken) => {
+        // when AST and AI are ready, this line and reload functions will be removed.
+        const suggestions = getPreDefinedCompletionItem(model, position, monaco, i18n, getProject)
+
+        // get current position id to determine if need to request completion provider resolve
         const word = model.getWordUntilPosition(position)
-        const range = {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: word.startColumn,
-          endColumn: word.endColumn
+        const project = getProject()
+        const fileHash = project.currentFilesHash || ''
+        const CompletionItemCacheID = {
+          id: fileHash,
+          lineNumber: position.lineNumber,
+          column: word.startColumn
         }
-        const suggestions: languages.CompletionItem[] = getCompletionItems(
-          range,
-          monaco,
-          i18n,
-          getProject()
-        )
-        return { suggestions }
+
+        // is position changed, inner cache will clean `cached data`
+        // in a word, if position changed will call `requestCompletionProviderResolve`
+        const isNeedRequestCompletionProviderResolve =
+          !ui.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
+
+        if (isNeedRequestCompletionProviderResolve) {
+          const abortController = new AbortController()
+          cancelToken.onCancellationRequested(() => abortController.abort())
+          ui.requestCompletionProviderResolve(
+            model,
+            {
+              position,
+              unitWord: word.word,
+              signal: abortController.signal
+            },
+            (items: CompletionItem[]) => {
+              ui.completionMenu?.completionItemCache.add(CompletionItemCacheID, items)
+              // if you need user immediately show updated completion items, we need close it and reopen it.
+              ui.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
+              ui.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+            }
+          )
+          return { suggestions }
+        } else {
+          const cachedSuggestions =
+            ui.completionMenu?.completionItemCache.getAll(CompletionItemCacheID).map(
+              (item): languages.CompletionItem => ({
+                label: item.label,
+                kind: Icon2CompletionItemKind(item.icon),
+                insertText: item.insertText,
+                range: {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.startColumn,
+                  endColumn: word.endColumn
+                }
+              })
+            ) || []
+          return { suggestions: [...suggestions, ...cachedSuggestions] }
+        }
       }
     }
   )
@@ -142,6 +187,23 @@ export function disposeMonacoProviders() {
     monacoProviderDisposes.hoverProvider.dispose()
     monacoProviderDisposes.hoverProvider = null
   }
+}
+
+function getPreDefinedCompletionItem(
+  model: TextModel,
+  position: Position,
+  monaco: typeof import('monaco-editor'),
+  i18n: I18n,
+  getProject: () => Project
+) {
+  const word = model.getWordUntilPosition(position)
+  const range = {
+    startLineNumber: position.lineNumber,
+    endLineNumber: position.lineNumber,
+    startColumn: word.startColumn,
+    endColumn: word.endColumn
+  }
+  return getCompletionItems(range, monaco, i18n, getProject())
 }
 
 function getCompletionItems(

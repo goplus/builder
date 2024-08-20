@@ -1,9 +1,10 @@
 import { editor as IEditor, Position, type IRange } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
+import type { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 export interface TextModel extends IEditor.ITextModel {}
 
-export enum IconEnum {
+export enum Icon {
   Function,
   Event,
   Prototype,
@@ -13,8 +14,6 @@ export enum IconEnum {
   Rename,
   Playlist
 }
-
-export type Icon = IconEnum
 
 export type Markdown = string
 
@@ -185,9 +184,43 @@ export type AIChatModalOptions = {
   reply?: (userMessage: Markdown) => Promise<Reply>
 }
 
+interface EditorUIRequestCallback {
+  completion: CompletionProvider[]
+}
+
 export class EditorUI extends Disposable {
+  editorUIRequestCallback: EditorUIRequestCallback
+  completionMenu: CompletionMenu | null = null
+
+  constructor() {
+    super()
+    this.editorUIRequestCallback = {
+      completion: []
+    }
+
+    this.addDisposer(() => {
+      for (const callbackKey in this.editorUIRequestCallback) {
+        this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback].length = 0
+      }
+    })
+  }
+
+  public requestCompletionProviderResolve(
+    model: TextModel,
+    ctx: {
+      position: Position
+      unitWord: string
+      signal: AbortSignal
+    },
+    addItems: (items: CompletionItem[]) => void
+  ) {
+    this.editorUIRequestCallback.completion.forEach((item) =>
+      item.provideDynamicCompletionItems(model, ctx, addItems)
+    )
+  }
+
   public registerCompletionProvider(provider: CompletionProvider) {
-    // todo: to resolve fn `registerCompletionProvider`
+    this.editorUIRequestCallback.completion.push(provider)
   }
   public registerInlayHintsProvider(provider: InlayHintsProvider) {
     // todo: to resolve fn `registerInlayHintsProvider`
