@@ -161,7 +161,7 @@ export async function url2AssetData(url: string,name:string): Promise<AssetData>
   const costumeFile = await Costume.create(stripExt(file.name), file)
   const sprite = Sprite.create(stripExt(file.name))
   sprite.addCostume(costumeFile)
-  let params = await sprite2Asset(sprite)
+  const params = await sprite2Asset(sprite)
   const assetData = await addAsset({
     ...params,
     displayName: name,
