@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends EditorMenuItem">
-import { NScrollbar } from 'naive-ui'
-import { type Icon, Icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import { icon2SVG, normalizeIconSize } from './common'
 import { type CSSProperties, ref } from 'vue'
+import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface EditorMenuItem {
   key: string | number
@@ -25,18 +25,16 @@ defineEmits<{
   active: [item: T, element: HTMLLIElement]
 }>()
 
-const scrollbarRef = ref<InstanceType<typeof NScrollbar>>()
-const editorMenuElement = ref<HTMLElement>()
+const editorMenuElement = ref<HTMLUListElement>()
 
 defineExpose({
-  scrollbarRef,
   editorMenuElement
 })
 </script>
 
 <template>
-  <section ref="editorMenuElement" class="editor-menu">
-    <n-scrollbar ref="scrollbarRef" :style="listStyles">
+  <section class="editor-menu-container">
+    <ul ref="editorMenuElement" class="editor-menu" :style="listStyles">
       <li
         v-for="item in items"
         :key="item.key"
@@ -51,7 +49,7 @@ defineExpose({
         <span
           :ref="(el) => normalizeIconSize(el as HTMLElement, item.iconSize)"
           class="editor-menu__item-icon"
-          v-html="Icon2SVG(item.icon)"
+          v-html="icon2SVG(item.icon)"
         >
         </span>
 
@@ -59,17 +57,21 @@ defineExpose({
           <slot :items="item">{{ item.label }}</slot>
         </span>
       </li>
-    </n-scrollbar>
+    </ul>
   </section>
 </template>
 <style lang="scss">
-.editor-menu {
+.editor-menu-container {
   padding: 4px;
-  color: #808080;
   background-color: #fff;
   border: solid 1px var(--ui-color-grey-700);
   border-radius: 5px;
-  box-shadow: var(--ui-box-shadow-small);
+  box-shadow: var(--ui-box-shadow-big);
+}
+
+.editor-menu {
+  overflow-y: auto;
+  color: #808080;
 }
 
 .editor-menu__item {

@@ -21,10 +21,10 @@ export function useMessage() {
     },
     error(content: string) {
       nMessage.error(content, options)
+    },
+    async withLoading<T>(promise: Promise<T>, content: string): Promise<T> {
+      const reactive = nMessage.loading(content, { ...options, duration: 0 })
+      return promise.finally(() => reactive.destroy())
     }
-    // We do not provide loading message (which do loading-feedback globally),
-    // instead, we do loading-feedback in-place, with
-    // * component `UILoading`
-    // * prop `loading` for components like `UIButton`
   }
 }

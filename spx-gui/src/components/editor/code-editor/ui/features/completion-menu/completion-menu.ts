@@ -12,13 +12,15 @@ import {
   Range
 } from 'monaco-editor'
 import { reactive, type UnwrapNestedRefs } from 'vue'
-import type { CompletionMenuItem, MonacoCompletionModelItem } from './completion'
-import { IconEnum, createMatches, type IMatch } from '@/components/editor/code-editor/ui/common'
+import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
+import { createMatches, type IMatch } from '../../common'
 import EditorOption = editor.EditorOption
+import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
+import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface CompletionMenuState {
   visible: boolean
-  suggestions: CompletionMenuItem[]
+  suggestions: CompletionMenuFeatureItem[]
   activeIdx: number
   position: {
     top: number
@@ -34,8 +36,9 @@ export class CompletionMenu implements IDisposable {
   private _onHide = new Emitter<void>()
   private _onShow = new Emitter<void>()
   private _onFocus = new Emitter<void>()
-  private editor: IEditor.IStandaloneCodeEditor
+  public editor: IEditor.IStandaloneCodeEditor
   public completionMenuState: UnwrapNestedRefs<CompletionMenuState>
+  public completionItemCache = new CompletionItemCache()
   private suggestController: any
   private suggestControllerWidget: any
   private readonly TabSize: number
@@ -178,6 +181,8 @@ export class CompletionMenu implements IDisposable {
   }
 
   private syncCompletionMenuStateFromSuggestControllerWidget(activeIdx: number = 0) {
+    // when trigger by inner code, we need check `_completionModel` is not undefined
+    if (!this.suggestControllerWidget._completionModel) return
     if (activeIdx < 0 || activeIdx >= this.suggestControllerWidget._completionModel.items.length)
       return
     this.monacoCompletionModelItems = this.suggestControllerWidget._completionModel.items
@@ -214,6 +219,7 @@ export class CompletionMenu implements IDisposable {
     this._onFocus.dispose()
     this._onShow.dispose()
     this._onHide.dispose()
+    this.completionItemCache.dispose()
     this.disposeCodePreview()
   }
 
@@ -224,7 +230,7 @@ export class CompletionMenu implements IDisposable {
     if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
-    const fontSize = Number(this.editor.getOption(EditorOption.fontLigatures))
+    const fontSize = Number(this.editor.getOption(EditorOption.fontSize))
     const isMultiline = () => {
       const { suggestions, activeIdx } = this.completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false
@@ -254,7 +260,7 @@ export class CompletionMenu implements IDisposable {
 
   private completionModelItems2CompletionItems(
     completionModelItems: MonacoCompletionModelItem[]
-  ): CompletionMenuItem[] {
+  ): CompletionMenuFeatureItem[] {
     // todo: this is temp code, need to combine with other preview.
     return completionModelItems.map((completion) => {
       return {
@@ -272,18 +278,31 @@ export class CompletionMenu implements IDisposable {
 }
 
 // todo: add more case to satisfy completion item label content for better user understanding
-function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): IconEnum {
+function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): Icon {
   switch (completionIcon) {
     case languages.CompletionItemKind.Function:
-      return IconEnum.Function
+      return Icon.Function
     case languages.CompletionItemKind.Variable:
-      return IconEnum.Prototype
+      return Icon.Prototype
     case languages.CompletionItemKind.Constant:
-      return IconEnum.Prototype
+      return Icon.Prototype
     case languages.CompletionItemKind.Snippet:
-      return IconEnum.Function
+      return Icon.Function
     default:
-      return IconEnum.Prototype
+      return Icon.Prototype
+  }
+}
+
+export function Icon2CompletionItemKind(icon: Icon): languages.CompletionItemKind {
+  switch (icon) {
+    case Icon.Function:
+      return languages.CompletionItemKind.Function
+    case Icon.Prototype:
+      return languages.CompletionItemKind.Variable
+    case Icon.Keywords:
+      return languages.CompletionItemKind.Snippet
+    default:
+      return languages.CompletionItemKind.Variable
   }
 }
 

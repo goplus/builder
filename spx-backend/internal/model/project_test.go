@@ -170,7 +170,7 @@ func TestUpdateProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), 2, sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM project WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
@@ -187,7 +187,7 @@ func TestUpdateProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), 2, sqlmock.AnyArg(), sqlmock.AnyArg(), "1").
 			WillReturnError(sql.ErrConnDone)
 		project, err := UpdateProjectByID(context.Background(), db, "1", &Project{Version: 2})
@@ -203,7 +203,7 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = DeleteProjectByID(context.Background(), db, "1")
@@ -215,7 +215,7 @@ func TestDeleteProjectByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), StatusDeleted, "1").
 			WillReturnError(sql.ErrConnDone)
 		err = DeleteProjectByID(context.Background(), db, "1")

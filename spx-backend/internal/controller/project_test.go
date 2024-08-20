@@ -452,7 +452,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "owner", "files", "is_public"}).
 				AddRow(1, "fake-project", "fake-name", []byte("{}"), model.Personal))
-		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), model.Public, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		mock.ExpectQuery(`SELECT \* FROM project WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
@@ -527,7 +527,7 @@ func TestControllerUpdateProject(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "owner", "files", "is_public"}).
 				AddRow(1, "fake-project", "fake-name", []byte("{}"), model.Personal))
-		mock.ExpectExec(`UPDATE project SET u_time=\?,version=\?,files=\?,is_public=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, version = \?, files = \?, is_public = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), model.Public, "1").
 			WillReturnError(sql.ErrConnDone)
 		_, err = ctrl.UpdateProject(ctx, "fake-name", "fake-project", params)
@@ -545,7 +545,7 @@ func TestControllerDeleteProject(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "owner"}).
 				AddRow(1, "fake-project", "fake-name"))
-		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		err = ctrl.DeleteProject(ctx, "fake-name", "fake-project")
@@ -598,7 +598,7 @@ func TestControllerDeleteProject(t *testing.T) {
 		mock.ExpectQuery(`SELECT \* FROM project WHERE owner = \? AND name = \? AND status != \? ORDER BY id ASC LIMIT 1`).
 			WillReturnRows(mock.NewRows([]string{"id", "name", "owner"}).
 				AddRow(1, "fake-project", "fake-name"))
-		mock.ExpectExec(`UPDATE project SET u_time=\?,status=\? WHERE id=\?`).
+		mock.ExpectExec(`UPDATE project SET u_time = \?, status = \? WHERE id = \?`).
 			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
 			WillReturnError(sql.ErrConnDone)
 		err = ctrl.DeleteProject(ctx, "fake-name", "fake-project")

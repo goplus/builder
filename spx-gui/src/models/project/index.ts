@@ -7,18 +7,19 @@ import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
 import { debounce } from '@/utils/utils'
+import { Disposable } from '@/utils/disposable'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { Disposable } from '../common/disposable'
 import { toConfig, type Files, fromConfig } from '../common/file'
-import { Stage, type RawStageConfig } from '../stage'
-import { Sprite } from '../sprite'
-import { Sound } from '../sound'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
 import { hashFiles } from '../common/hash'
 import { assign } from '../common'
 import { ensureValidSpriteName, ensureValidSoundName } from '../common/asset-name'
+import { Stage, type RawStageConfig } from '../stage'
+import { Sprite } from '../sprite'
+import { Sound } from '../sound'
+import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 
 export type { Action } from './history'
@@ -70,10 +71,20 @@ export enum AutoSaveToCloudState {
   Failed
 }
 
+type ZorderItem = string | RawWidgetConfig
 type RawProjectConfig = RawStageConfig & {
-  // TODO: support other types in zorder
-  zorder?: string[]
+  zorder?: ZorderItem[]
   run?: RunConfig
+  /**
+   * Sprite order info, used by Go+ Builder to determine the order of sprites.
+   * `builderSpriteOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+   */
+  builder_spriteOrder?: string[]
+  /**
+   * Sound order info, used by Go+ Builder to determine the order of sounds.
+   * `builderSoundOrder` is [builder-only data](https://github.com/goplus/builder/issues/714#issuecomment-2274863055), whose name should be prefixed with `builder_` as a convention.
+   */
+  builder_soundOrder?: string[]
   // TODO: camera
 }
 
@@ -105,6 +116,7 @@ export class Project extends Disposable {
   removeSprite(name: string) {
     const idx = this.sprites.findIndex((s) => s.name === name)
     const [sprite] = this.sprites.splice(idx, 1)
+    this.zorder = this.zorder.filter((v) => v !== sprite.name)
     sprite.dispose()
     this.autoSelect()
   }
@@ -133,9 +145,6 @@ export class Project extends Disposable {
         }
       )
     )
-    sprite.addDisposer(() => {
-      this.zorder = this.zorder.filter((v) => v !== sprite.name)
-    })
   }
   private setSpriteZorderIdx(
     name: string,
@@ -164,6 +173,14 @@ export class Project extends Disposable {
   removeSound(name: string) {
     const idx = this.sounds.findIndex((s) => s.name === name)
     const [sound] = this.sounds.splice(idx, 1)
+    // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+    for (const sprite of this.sprites) {
+      for (const animation of sprite.animations) {
+        if (animation.sound === sound.name) {
+          animation.setSound(null)
+        }
+      }
+    }
     sound.dispose()
     this.autoSelect()
   }
@@ -196,16 +213,6 @@ export class Project extends Disposable {
         }
       )
     )
-    sound.addDisposer(() => {
-      // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
-      for (const sprite of this.sprites) {
-        for (const animation of sprite.animations) {
-          if (animation.sound === sound.name) {
-            animation.setSound(null)
-          }
-        }
-      }
-    })
   }
 
   setPublic(isPublic: IsPublic) {
@@ -234,7 +241,7 @@ export class Project extends Disposable {
    * Check if current selected target is valid. If not, select some target automatically.
    * Targets with the same type are preferred.
    */
-  autoSelect() {
+  private autoSelect() {
     const selected = this.selected
     if (selected?.type === 'sprite' && this.selectedSprite == null) {
       this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
@@ -272,7 +279,19 @@ export class Project extends Disposable {
     if (configFile != null) {
       Object.assign(config, await toConfig(configFile))
     }
-    const { zorder, ...stageConfig } = config
+    const {
+      zorder: rawZorder,
+      builder_spriteOrder: spriteOrder,
+      builder_soundOrder: soundOrder,
+      ...rawStageConfig
+    } = config
+    const widgets: RawWidgetConfig[] = []
+    const zorder: string[] = []
+    rawZorder?.forEach((item) => {
+      if (typeof item === 'string') zorder.push(item)
+      else widgets.push(item)
+    })
+    const stageConfig = { ...rawStageConfig, widgets }
     const [stage, sounds, sprites] = await Promise.all([
       Stage.load(stageConfig, files),
       Sound.loadAll(files),
@@ -280,9 +299,9 @@ export class Project extends Disposable {
     ])
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
-    sprites.forEach((s) => this.addSprite(s))
+    orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
     this.sounds.splice(0).forEach((s) => s.dispose())
-    sounds.forEach((s) => this.addSound(s))
+    orderBy(sounds, soundOrder).forEach((s) => this.addSound(s))
     this.zorder = zorder ?? []
     this.autoSelect()
   }
@@ -290,8 +309,9 @@ export class Project extends Disposable {
   exportGameFiles(): Files {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
+    const { widgets, ...restStageConfig } = stageConfig
     const config: RawProjectConfig = {
-      ...stageConfig,
+      ...restStageConfig,
       run: {
         // TODO: we should not hard code the width & height here,
         // instead we should use the runtime size of component `ProjectRunner`,
@@ -299,7 +319,9 @@ export class Project extends Disposable {
         width: stageConfig.map?.width,
         height: stageConfig.map?.height
       },
-      zorder: this.zorder
+      zorder: [...this.zorder, ...(widgets ?? [])],
+      builder_spriteOrder: this.sprites.map((s) => s.name),
+      builder_soundOrder: this.sounds.map((s) => s.name)
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
@@ -391,6 +413,7 @@ export class Project extends Disposable {
     if (this.lastSyncedFilesHash == null) {
       this.lastSyncedFilesHash = await hashFiles(this.exportGameFiles())
     }
+
     if (this.filesHash == null) {
       this.filesHash = this.lastSyncedFilesHash
     }
@@ -494,4 +517,11 @@ export class Project extends Disposable {
 /** Get full name for project, which stands for a globally unique identifier for the project */
 export function fullName(owner: string, name: string) {
   return `${owner}/${name}`
+}
+
+function orderBy<T extends Sprite | Sound>(list: T[], order: string[] | undefined) {
+  if (order == null) return list
+  return list.slice().sort((a, b) => {
+    return order.indexOf(a.name) - order.indexOf(b.name)
+  })
 }

@@ -1,4 +1,4 @@
-import { Disposable } from '@/models/common/disposable'
+import { Disposable } from '@/utils/disposable'
 
 /** Convert arbitrary-type (supported by current browser) image content to type-`image/jpeg` content. */
 export async function toJpeg(blob: Blob) {
