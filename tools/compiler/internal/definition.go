@@ -1,6 +1,13 @@
 package internal
 
-import "github.com/goplus/gop/token"
+import (
+	"github.com/goplus/gop/token"
+)
+
+type definition struct {
+	funList []*codeFunction
+	//declList []*declItem
+}
 
 func GetDefinitionFromASTAndTypesInfo(fileName, fileCode string) interface{} {
 	// new file set

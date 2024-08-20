@@ -8,8 +8,17 @@
 <div>
 
     <textarea id="codeInput" style="width: 400px;height: 500px">
+var a int
+
+func add(a,b int) int {
+    return a + b
+}
+
 onStart => {
     flag := true
+    sum := add(1,2)
+    sum = 3
+    a = 2
     for flag {
         onMsg "die", => {
             flag = false

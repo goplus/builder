@@ -2,6 +2,10 @@ package internal
 
 import (
 	"fmt"
+	"go/types"
+	"sort"
+	"strings"
+
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/format"
 	"github.com/goplus/gop/token"
@@ -9,9 +13,6 @@ import (
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
 	"github.com/goplus/mod/gopmod"
-	"go/types"
-	"sort"
-	"strings"
 )
 
 // GetSPXFileType return a json object with spx type info.
