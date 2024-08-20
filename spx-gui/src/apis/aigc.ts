@@ -83,11 +83,6 @@ export interface CreateAIImageParams {
   height?: number
 }
 
-export interface CreateAIImageResponse {
-  image_url: string
-  asset_id: string
-}
-
 const mockAIImage = {
   imageUri: [
     // ...
@@ -105,6 +100,8 @@ const mockJobs: Map<string, 'image' | 'sprite'> = new Map()
 
 /**
  * Generate AI image with given keyword and category
+ *
+ * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function generateAIImage({
   keyword,
@@ -122,9 +119,9 @@ export async function generateAIImage({
   const result = (await client.post(
     '/aigc/image',
     { keyword, category, width, height },
-    { timeout: 60 * 1000 }// may need more time
+    { timeout: 20 * 1000 }
   )) as {
-    image_url: string
+    imageJobId: string
   }
   return result
 }
