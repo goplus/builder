@@ -6,15 +6,23 @@
 export type Disposer = () => void
 
 export class Disposable {
-  _disposers: Disposer[] = []
+  private disposers: Disposer[] = []
+
+  private _isDisposed = false
+  get isDisposed() {
+    return this._isDisposed
+  }
 
   addDisposer = (disposer: Disposer) => {
-    this._disposers.push(disposer)
+    if (this._isDisposed) throw new Error('disposed')
+    this.disposers.push(disposer)
   }
 
   dispose = () => {
-    while (this._disposers.length > 0) {
-      this._disposers.pop()?.()
+    if (this._isDisposed) return
+    this._isDisposed = true
+    while (this.disposers.length > 0) {
+      this.disposers.pop()?.()
     }
   }
 }

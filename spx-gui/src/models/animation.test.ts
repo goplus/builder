@@ -85,7 +85,7 @@ describe('Animation', () => {
     const project = makeProject()
     project.sprites[0].animations[0].setSound(project.sounds[0].name)
 
-    const [metadata, files] = project.export()
+    const [metadata, files] = await project.export()
     const delayedFiles: Files = Object.fromEntries(
       Object.entries(files).map(([path, file]) => [path, delayFile(file!, 50)])
     )

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
@@ -123,5 +123,17 @@ describe('Project', () => {
 
     project.removeSprite('Sprite2')
     expect(project.selected).toBeNull()
+  })
+
+  it('should throw an error when saving a disposed project', async () => {
+    const project = makeProject()
+    const saveToLocalCacheMethod = vi.spyOn(project, 'saveToLocalCache' as any)
+
+    project.dispose()
+
+    await expect(project.saveToCloud()).rejects.toThrow('disposed')
+
+    await expect((project as any).saveToLocalCache('key')).rejects.toThrow('disposed')
+    expect(saveToLocalCacheMethod).toHaveBeenCalledWith('key')
   })
 })

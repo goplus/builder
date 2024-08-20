@@ -30,7 +30,7 @@ export class DefaultException extends Exception {
 }
 
 /**
- * Cancelled is a special exception, it stands for a "cancel operation" because of user ineraction.
+ * Cancelled is a special exception, it stands for a "cancel operation" because of user interaction.
  * Like other exceptions, it breaks normal flows, while it is supposed to be ignored by all user-feedback components,
  * so the user will not be notified of cancelled exceptions.
  */
