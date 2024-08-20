@@ -152,13 +152,20 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 // Generating follow parameters to generating images.
 func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
 	logger := log.GetReqLogger(ctx)
-
-	newAIAsset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{})
+	var assetType model.AssetType
+	if param.Height > 0 && param.Width > 0 {
+		assetType = model.AssetTypeBackdrop
+	} else {
+		assetType = model.AssetTypeSprite
+	}
+	newAIAsset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{
+		AssetType: assetType, //TODO: it like this have a bug.
+	})
 	if err != nil {
 		logger.Printf("failed to add asset: %v", err)
 		return nil, err
 	}
-	go func() {
+	go func(ctx context.Context) {
 		var generateResult GetGenerateResult
 		err = ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
 			Category: param.Category,
@@ -173,7 +180,7 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 		if err != nil {
 			logger.Printf("failed to update asset: %v", err)
 		}
-	}()
+	}(context.Background())
 
 	return &GenerateResult{
 		ImageJobId: newAIAsset.ID,
