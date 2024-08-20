@@ -63,6 +63,10 @@ type get_user_liked_list struct {
 	yap.Handler
 	*AppV2
 }
+type get_user_rate_id struct {
+	yap.Handler
+	*AppV2
+}
 type get_util_upinfo struct {
 	yap.Handler
 	*AppV2
@@ -105,6 +109,10 @@ type post_user_history struct {
 	*AppV2
 }
 type post_user_liked struct {
+	yap.Handler
+	*AppV2
+}
+type post_user_rate_id struct {
 	yap.Handler
 	*AppV2
 }
@@ -181,7 +189,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_util_upinfo), new(post_aigc_image), new(post_aigc_matting), new(post_aigc_sprite), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_user_rate_id), new(get_util_upinfo), new(post_aigc_image), new(post_aigc_matting), new(post_aigc_sprite), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_user_rate_id), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -627,6 +635,33 @@ func (this *get_user_liked_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_liked_list) Classfname() string {
 	return "get_user_liked_list"
 }
+//line cmd/spx-backend/get_user_rate_#id.yap:6
+func (this *get_user_rate_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_user_rate_#id.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_user_rate_#id.yap:8:1
+	user, ok := ensureUser(ctx)
+//line cmd/spx-backend/get_user_rate_#id.yap:9:1
+	if !ok {
+//line cmd/spx-backend/get_user_rate_#id.yap:10:1
+		return
+	}
+//line cmd/spx-backend/get_user_rate_#id.yap:12:1
+	rate, err := this.ctrl.GetRate(ctx.Context(), this.Gop_Env("id"), user.Name)
+//line cmd/spx-backend/get_user_rate_#id.yap:13:1
+	if err != nil {
+//line cmd/spx-backend/get_user_rate_#id.yap:14:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_user_rate_#id.yap:15:1
+		return
+	}
+//line cmd/spx-backend/get_user_rate_#id.yap:17:1
+	this.Json__1(rate)
+}
+func (this *get_user_rate_id) Classfname() string {
+	return "get_user_rate_#id"
+}
 //line cmd/spx-backend/get_util_upinfo.yap:6
 func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -964,6 +999,40 @@ func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 }
 func (this *post_user_liked) Classfname() string {
 	return "post_user_liked"
+}
+//line cmd/spx-backend/post_user_rate_#id.yap:10
+func (this *post_user_rate_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_user_rate_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_user_rate_#id.yap:12:1
+	user, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_user_rate_#id.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_user_rate_#id.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_user_rate_#id.yap:17:1
+	newRate := &controller.PostRateRequest{}
+//line cmd/spx-backend/post_user_rate_#id.yap:18:1
+	if !parseJSON(ctx, newRate) {
+//line cmd/spx-backend/post_user_rate_#id.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_user_rate_#id.yap:23:1
+	rate, err := this.ctrl.InsertRate(ctx.Context(), this.Gop_Env("id"), user.Name, newRate)
+//line cmd/spx-backend/post_user_rate_#id.yap:24:1
+	if err != nil {
+//line cmd/spx-backend/post_user_rate_#id.yap:25:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_user_rate_#id.yap:26:1
+		return
+	}
+//line cmd/spx-backend/post_user_rate_#id.yap:28:1
+	this.Json__1(rate)
+}
+func (this *post_user_rate_id) Classfname() string {
+	return "post_user_rate_#id"
 }
 //line cmd/spx-backend/post_util_fileurls.yap:10
 func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
