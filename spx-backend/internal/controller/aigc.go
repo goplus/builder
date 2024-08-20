@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 type MattingParams struct {
@@ -28,13 +29,17 @@ type GetGenerateParams struct {
 	Prompt   string `json:"prompt"`
 }
 
-type GenerateResult struct {
+type GetGenerateResult struct {
 	ImageUrl string `json:"image_url"`
+}
+
+type GenerateResult struct {
+	ImageJobId string `json:"imageJobId"`
 }
 
 type GenerateSpriteParams struct {
 	// ImageUrl is the image URL to be generated as sprite.
-	ImageUrl string `json:"imageUrl"`
+	ImageUrl string `json:"image_url"`
 }
 
 type GetGenerateSpriteParams struct {
@@ -53,6 +58,31 @@ type GetEmbeddingParams struct {
 type GetEmbeddingResult struct {
 	Embedding []float32 `json:"embedding"`
 	Desc      string    `json:"desc"`
+}
+
+type GetAIAssetStatusResult struct {
+	// Status is the status of the AI asset.
+	Status AssetStatus    `json:"status"`
+	Result AIStatusResult `json:"result"`
+}
+
+type AssetStatus int
+
+const (
+	waiting    AssetStatus = iota
+	generating             // 正在生成
+	finish                 // 已完成
+)
+
+type AIStatusResult struct {
+	JobId string          `json:"jobId"`
+	Type  model.AssetType `json:"type"`
+	Files AIStatusFiles   `json:"files"`
+}
+
+type AIStatusFiles struct {
+	ImageUrl    string `json:"imageUrl"`
+	SkeletonUrl string `json:"skeletonUrl"`
 }
 
 func (p *MattingParams) Validate() (ok bool, msg string) {
@@ -122,16 +152,32 @@ func (ctrl *Controller) Matting(ctx context.Context, params *MattingParams) (*Ma
 // Generating follow parameters to generating images.
 func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
 	logger := log.GetReqLogger(ctx)
-	var generateResult GenerateResult
-	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
-		Category: param.Category,
-		Prompt:   param.Keyword, // todo: more parameters
-	}, &generateResult)
+
+	newAIAsset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{})
 	if err != nil {
-		logger.Printf("failed to call: %v", err)
+		logger.Printf("failed to add asset: %v", err)
 		return nil, err
 	}
-	return &generateResult, nil
+	go func() {
+		var generateResult GetGenerateResult
+		err = ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
+			Category: param.Category,
+			Prompt:   param.Keyword, // todo: more parameters
+		}, &generateResult)
+		if err != nil {
+			logger.Printf("failed to call: %v", err)
+		}
+		_, err = model.UpdateAssetByID(ctx, ctrl.db, newAIAsset.ID, &model.Asset{
+			FilesHash: generateResult.ImageUrl,
+		})
+		if err != nil {
+			logger.Printf("failed to update asset: %v", err)
+		}
+	}()
+
+	return &GenerateResult{
+		ImageJobId: newAIAsset.ID,
+	}, nil
 }
 
 // GenerateSprite follow parameters to generating sprite.
@@ -158,4 +204,30 @@ func (ctrl *Controller) GetEmbedding(ctx context.Context, param *GetEmbeddingPar
 		return nil, err
 	}
 	return &embeddingResult, nil
+}
+
+// GetAIAssetStatus get AI asset status.
+func (ctrl *Controller) GetAIAssetStatus(ctx context.Context, id string) (*GetAIAssetStatusResult, error) {
+	logger := log.GetReqLogger(ctx)
+	result, err := model.CheckAssetFilesHashByID(ctx, ctrl.ormDb, id)
+	if err != nil {
+		logger.Printf("failed to get asset: %v", err)
+		return nil, err
+	}
+	var status AssetStatus
+	if result.FilesHash == "" {
+		status = generating
+	} else {
+		status = finish
+	}
+	return &GetAIAssetStatusResult{
+		Status: status,
+		Result: AIStatusResult{
+			JobId: id,
+			Type:  result.AssetType,
+			Files: AIStatusFiles{
+				ImageUrl: result.FilesHash,
+			},
+		},
+	}, nil
 }
