@@ -73,4 +73,55 @@ describe('Project', () => {
     expect(project.sprites.map((s) => s.name)).toEqual(['Sprite1', 'Sprite3', 'Sprite2'])
     expect(project.sounds.map((s) => s.name)).toEqual(['sound1', 'sound3', 'sound2'])
   })
+
+  it('should select correctly after sound removed', async () => {
+    const project = makeProject()
+    const sprite2 = new Sprite('Sprite2')
+    project.addSprite(sprite2)
+    const sound2 = new Sound('sound2', mockFile())
+    project.addSound(sound2)
+    const sound3 = new Sound('sound3', mockFile())
+    project.addSound(sound3)
+
+    project.select({ type: 'stage' })
+    project.removeSound('sound3')
+    expect(project.selected).toEqual({ type: 'stage' })
+
+    project.select({ type: 'sound', name: 'sound' })
+
+    project.removeSound('sound')
+    expect(project.selected).toEqual({
+      type: 'sound',
+      name: 'sound2'
+    })
+
+    project.removeSound('sound2')
+    expect(project.selected).toEqual({
+      type: 'sprite',
+      name: 'Sprite'
+    })
+  })
+
+  it('should select correctly after sprite removed', async () => {
+    const project = makeProject()
+    const sprite2 = new Sprite('Sprite2')
+    project.addSprite(sprite2)
+    const sprite3 = new Sprite('Sprite3')
+    project.addSprite(sprite3)
+
+    project.select({ type: 'stage' })
+    project.removeSprite('Sprite3')
+    expect(project.selected).toEqual({ type: 'stage' })
+
+    project.select({ type: 'sprite', name: 'Sprite' })
+
+    project.removeSprite('Sprite')
+    expect(project.selected).toEqual({
+      type: 'sprite',
+      name: 'Sprite2'
+    })
+
+    project.removeSprite('Sprite2')
+    expect(project.selected).toBeNull()
+  })
 })
