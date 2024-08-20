@@ -74,7 +74,8 @@ import { createFileWithWebUrl, saveFiles } from '@/models/common/cloud'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
-  return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.tabCategory)
+  // Disable AI generation for user's own assets and null search keyword with only on category
+  return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.tabCategory) || (searchCtx.keyword === '' && searchCtx.category.length === 1 && searchCtx.category[0] === '')
 })
 
 const props = defineProps<{
