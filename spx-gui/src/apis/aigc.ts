@@ -119,7 +119,7 @@ export async function generateAIImage({
   const result = (await client.post(
     '/aigc/image',
     { keyword, category, width, height },
-    { timeout: 20 * 1000 }
+    { timeout: 60 * 1000 }// 60s
   )) as {
     imageJobId: string
   }
@@ -193,37 +193,37 @@ const mockAIGCStatusMap: Map<string, number> = new Map()
  * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function getAIGCStatus(jobId: string) {
-  return new Promise<AIGCStatusResponse>((resolve) => {
-    setTimeout(() => {
-      const timestamp = mockAIGCStatusMap.get(jobId)
-      const random = Math.random()
-      if (timestamp === undefined) {
-        mockAIGCStatusMap.set(jobId, Date.now())
-        resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 1000 + random * 2000) {
-        resolve({ status: AIGCStatus.Waiting })
-      } else if (Date.now() - timestamp < 5000 + random * 5000) {
-        resolve({ status: AIGCStatus.Generating })
-      } else {
-        const resultType = mockJobs.get(jobId)
-        const result = resultType === 'image' ? 
-          { imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)] }:
-          mockAISprite[Math.floor(random * mockAISprite.length)].files
-        resolve({
-          status: AIGCStatus.Finished,
-          result: {
-            jobId,
-            type: AIGCType.Image,
-            files: result
-          }
-        })
-      }
-    }, 300)
-  })
+  // return new Promise<AIGCStatusResponse>((resolve) => {
+  //   setTimeout(() => {
+  //     const timestamp = mockAIGCStatusMap.get(jobId)
+  //     const random = Math.random()
+  //     if (timestamp === undefined) {
+  //       mockAIGCStatusMap.set(jobId, Date.now())
+  //       resolve({ status: AIGCStatus.Waiting })
+  //     } else if (Date.now() - timestamp < 1000 + random * 2000) {
+  //       resolve({ status: AIGCStatus.Waiting })
+  //     } else if (Date.now() - timestamp < 5000 + random * 5000) {
+  //       resolve({ status: AIGCStatus.Generating })
+  //     } else {
+  //       const resultType = mockJobs.get(jobId)
+  //       const result = resultType === 'image' ? 
+  //         { imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)] }:
+  //         mockAISprite[Math.floor(random * mockAISprite.length)].files
+  //       resolve({
+  //         status: AIGCStatus.Finished,
+  //         result: {
+  //           jobId,
+  //           type: AIGCType.Image,
+  //           files: result
+  //         }
+  //       })
+  //     }
+  //   }, 300)
+  // })
   const result = (await client.get(
     `/aigc/status/${jobId}`,
     {},
-    { timeout: 20 * 1000 }
+    { timeout: 60 * 1000 }
   )) as AIGCStatusResponse
   return result
 }
@@ -233,15 +233,17 @@ export async function getAIGCStatus(jobId: string) {
  * The parameter has not been determined yet.
  * As some ai-generated asset may be edited by user or js code, 
  * the backend may need to get the partial asset instead of the jobId.
+ * 
+ * This logic can use previous transfer method to export the asset,this api is not necessary.
  */
 export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(param: any) {
-  // return new Promise<{ assetId: string }>((resolve) => {
-  //   setTimeout(() => {
-  //     resolve({ assetId: '21' })
-  //   }, 1000)
-  // })
+  return new Promise<{ assetId: string }>((resolve) => {
+    setTimeout(() => {
+      resolve({ assetId: '21' })
+    }, 1000)
+  })
   const result = (await client.post(`/aigc/export`,
     typeof param === 'string' ? { jobId: param } : { ...param }
   )) as {
