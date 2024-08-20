@@ -67,7 +67,7 @@ const getMonaco = async () => {
   if (monaco) return monaco
   const monaco_ = await loader.init()
   if (monaco) return monaco
-  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project)
+  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project, props.ui)
   monaco = monaco_
   return monaco
 }
@@ -77,6 +77,7 @@ const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
   const monaco = await getMonaco()
+
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
     language: 'spx',
@@ -112,6 +113,9 @@ watchEffect(async (onCleanup) => {
       verticalScrollbarSize: 8
     }
   })
+  const _completionMenu = new CompletionMenu(editor)
+  completionMenu.value = _completionMenu
+  props.ui.completionMenu = _completionMenu
 
   editor.addAction({
     id: 'format',
@@ -139,11 +143,10 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  completionMenu.value = new CompletionMenu(editor)
-
   monacoEditor.value = editor
   onCleanup(() => {
-    completionMenu.value?.dispose()
+    props.ui.completionMenu = null
+    completionMenu.value?.dispose?.()
     disposeMonacoProviders()
     editor.dispose()
   })
