@@ -3,16 +3,29 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"strconv"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // AddUserAssetParams holds parameters for adding an user asset.
 type AddUserAssetParams struct {
 	// AssetID is the identifier for the asset.
 	AssetID string `json:"assetId"`
+}
+
+// ListUserAssetsParams holds parameters for listing assets.
+type ListUserAssetsParams struct {
+	// Owner is the owner filter, applied only if non-nil.
+	Owner *string
+
+	// OrderBy is the order by condition.
+	OrderBy ListAssetsOrderBy
+
+	// Pagination is the pagination information.
+	Pagination model.Pagination
 }
 
 // AddUserAsset adds an asset.
@@ -35,39 +48,17 @@ func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetPa
 }
 
 // ListUserAssets lists assets for a specific user with various filter and sort options.
-func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
+func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, params *ListUserAssetsParams) (*model.ByPage[model.Asset], error) {
 	logger := log.GetReqLogger(ctx)
 
 	// Initialize the filter conditions
 	var wheres []model.FilterCondition
-	wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: params.Owner}, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
-
-	// Check if the user is not the owner and restrict to public assets
-	if user, ok := UserFromContext(ctx); !ok || params.Owner == nil || user.Name != *params.Owner {
-		public := model.Public
-		params.IsPublic = &public
-	}
 
 	// Apply additional filters based on parameters
-	if params.Keyword != "" {
-		wheres = append(wheres, model.FilterCondition{Column: "a.display_name", Operation: "LIKE", Value: "%" + params.Keyword + "%"})
-	}
 	if params.Owner != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "a.owner", Operation: "=", Value: *params.Owner})
-		wheres = append(wheres, model.FilterCondition{Column: "ua.user_id", Operation: "=", Value: *params.Owner})
+		wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: *params.Owner})
 	}
-	if params.Category != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "a.category", Operation: "=", Value: *params.Category})
-	}
-	if params.AssetType != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "a.asset_type", Operation: "=", Value: *params.AssetType})
-	}
-	if params.FilesHash != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "a.files_hash", Operation: "=", Value: *params.FilesHash})
-	}
-	if params.IsPublic != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "a.is_public", Operation: "=", Value: *params.IsPublic})
-	}
+	wheres = append(wheres, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
 	// Define order conditions based on input
 	var orders []model.OrderByCondition
@@ -82,7 +73,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	query := `
 		SELECT a.*
 		FROM asset a
-		JOIN user_asset ua ON a.id = ua.asset_id
+		RIGHT JOIN user_asset ua ON a.id = ua.asset_id
 	`
 
 	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true)
