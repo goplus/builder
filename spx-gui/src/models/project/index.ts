@@ -240,11 +240,12 @@ export class Project extends Disposable {
    */
   private autoSelect() {
     const selected = this.selected
-    if (selected?.type === 'sprite' && this.selectedSprite == null) {
-      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
-    } else if (selected?.type === 'sound' && this.selectedSound == null) {
-      this.select(this.sounds[0] != null ? { type: 'sound', name: this.sounds[0].name } : null)
-    } else if (selected == null) {
+    if (selected?.type === 'stage') return
+    if (selected?.type === 'sound' && this.selectedSound == null && this.sounds[0] != null) {
+      this.select({ type: 'sound', name: this.sounds[0].name })
+      return
+    }
+    if (this.selectedSprite == null) {
       this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
     }
   }
