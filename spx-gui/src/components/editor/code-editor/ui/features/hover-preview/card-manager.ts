@@ -21,7 +21,7 @@ export class CardManager extends Disposable {
       onClose() {
         close()
       },
-      onMouseenter: onMouseenter
+      onMouseenter
     })
     render(vNode, this.cardContainer.containerElement)
 

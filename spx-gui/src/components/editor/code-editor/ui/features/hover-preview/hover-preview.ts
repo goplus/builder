@@ -27,13 +27,13 @@ export class HoverPreview implements IDisposable {
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
 
-    const HoverContribute: any = editor.getContribution('editor.contrib.hover')
-    const HoverContentWidget = HoverContribute._getOrCreateContentWidget()
-    const HoverContentWidgetOperation = HoverContentWidget._hoverOperation
-    const _result_fn =
-      HoverContentWidgetOperation._onResult._listeners.value.bind(HoverContentWidget)
-    const _hide_fn = HoverContentWidget.hide.bind(HoverContentWidget)
-    const _cancel_fn = HoverContentWidgetOperation.cancel.bind(HoverContentWidgetOperation)
+    const hoverContribution: any = editor.getContribution('editor.contrib.hover')
+    const hoverContentWidget = hoverContribution._getOrCreateContentWidget()
+    const hoverContentWidgetOperation = hoverContentWidget._hoverOperation
+    const rawResultFn =
+      hoverContentWidgetOperation._onResult._listeners.value.bind(hoverContentWidget)
+    const HideFn = hoverContentWidget.hide.bind(hoverContentWidget)
+    const CancelFn = hoverContentWidgetOperation.cancel.bind(hoverContentWidgetOperation)
 
     editor.onMouseMove((e) => {
       if (!this.editorDocumentRange || !e.target.range) return
@@ -49,8 +49,8 @@ export class HoverPreview implements IDisposable {
         this._onHide.fire(null)
       }
     })
-    HoverContentWidgetOperation.onResult((result: MonacoHoverResult) => {
-      _result_fn(result)
+    hoverContentWidgetOperation.onResult((result: MonacoHoverResult) => {
+      rawResultFn(result)
       const containerRect = editor.getContainerDomNode().getBoundingClientRect()
       const [hoverContent] = result.value
       if (!hoverContent) return
@@ -66,6 +66,7 @@ export class HoverPreview implements IDisposable {
           lineNumber: hoverContent.range.endLineNumber,
           column: hoverContent.range.startColumn
         })?.left || 0)
+
       const { close } = this.cardManager.renderDocument(
         hoverContent.contents.shift()?.value || '',
         {
@@ -85,15 +86,15 @@ export class HoverPreview implements IDisposable {
       })
     })
 
-    HoverContentWidget.hide = () => {
-      _hide_fn()
+    hoverContentWidget.hide = () => {
+      HideFn()
       this.editorDocumentTimer = setTimeout(() => {
         this._onHide.fire(null)
       }, 100) as unknown as number
     }
 
-    HoverContentWidgetOperation.cancel = () => {
-      _cancel_fn()
+    hoverContentWidgetOperation.cancel = () => {
+      CancelFn()
     }
   }
 

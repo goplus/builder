@@ -1,10 +1,10 @@
 <template>
   <div class="code-text-editor-container">
     <div ref="editorElement" class="code-text-editor"></div>
-    <completion-menu-component
+    <CompletionMenuComponent
       v-if="completionMenu"
       :completion-menu="completionMenu"
-    ></completion-menu-component>
+    ></CompletionMenuComponent>
     <HoverPreviewComponent
       v-if="hoverPreview"
       :hover-preview="hoverPreview"
