@@ -16,7 +16,7 @@ import (
 func Query[T any](ctx context.Context, db *sql.DB, table string, where []FilterCondition, orderBy []OrderByCondition) ([]T, error) {
 	logger := log.GetReqLogger(ctx)
 
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, "", nil)
 	orderByClause := buildOrderByClause(orderBy)
 
 	query := fmt.Sprintf("SELECT * FROM %s %s %s", table, whereClause, orderByClause)
@@ -60,11 +60,16 @@ func QueryByPage[T any](
 	where []FilterCondition,
 	orderBy []OrderByCondition,
 	isCustomQuery bool, // New parameter to indicate if tableOrQuery is a custom query
+	categoryList []any, // use OR to query category
 ) (*ByPage[T], error) {
 	logger := log.GetReqLogger(ctx)
 
+	if categoryList == nil {
+		categoryList = []any{}
+	}
+	orClause, orArgs := buildOrCondition("category", categoryList)
 	// Build the WHERE and ORDER BY clauses
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, orClause, orArgs)
 	orderByClause := buildOrderByClause(orderBy)
 
 	var countQuery, paginatedQuery string
@@ -119,7 +124,7 @@ func QueryByPage[T any](
 func QueryFirst[T any](ctx context.Context, db *sql.DB, table string, where []FilterCondition, orderBy []OrderByCondition) (*T, error) {
 	logger := log.GetReqLogger(ctx)
 
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, "", nil)
 	orderByClause := buildOrderByClause(orderBy)
 
 	query := fmt.Sprintf("SELECT * FROM %s %s %s LIMIT 1", table, whereClause, orderByClause)
