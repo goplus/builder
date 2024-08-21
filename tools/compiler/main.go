@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// wasm entry
 func main() {
 	// make channel
 	c := make(chan struct{})

@@ -2,9 +2,10 @@ package internal
 
 import (
 	"fmt"
-	"github.com/goplus/gop/token"
 	"regexp"
 	"strconv"
+
+	"github.com/goplus/gop/token"
 )
 
 type diagnostics struct {
@@ -19,10 +20,12 @@ func GetDiagnostics(fileName, fileCode string) interface{} {
 	// new file set
 	fset := token.NewFileSet()
 	_, err := spxInfo(initSPXMod(), fset, fileName, fileCode)
-	return parseErrorLines(error2List(err))
+	list := parseErrorLines(error2List(err))
+	return list
 }
 
-func parseErrorLines(sList []string) (diagList []diagnostics) {
+func parseErrorLines(sList []string) []diagnostics {
+	diagList := []diagnostics{}
 	for _, str := range sList {
 		diag, err := parseErrorLine(str)
 		if err != nil {
@@ -30,7 +33,7 @@ func parseErrorLines(sList []string) (diagList []diagnostics) {
 		}
 		diagList = append(diagList, diag)
 	}
-	return
+	return diagList
 }
 
 func parseErrorLine(str string) (diagnostics, error) {

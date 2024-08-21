@@ -1,10 +1,14 @@
 <template>
   <div class="code-text-editor-container">
     <div ref="editorElement" class="code-text-editor"></div>
-    <completion-menu-component
+    <CompletionMenuComponent
       v-if="completionMenu"
       :completion-menu="completionMenu"
-    ></completion-menu-component>
+    ></CompletionMenuComponent>
+    <HoverPreviewComponent
+      v-if="hoverPreview"
+      :hover-preview="hoverPreview"
+    ></HoverPreviewComponent>
   </div>
 </template>
 <script lang="ts">
@@ -20,9 +24,11 @@ import { useI18n } from '@/utils/i18n'
 import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
 import { initMonaco_ToBeRemoved, disposeMonacoProviders_ToBeRemoved } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
-import CompletionMenuComponent from '@/components/editor/code-editor/ui/features/completion-menu/CompletionMenuComponent.vue'
+import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
-import { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import { CompletionMenu } from '../features/completion-menu/completion-menu'
+import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
+import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 const props = defineProps<{
   value: string
   ui: EditorUI
@@ -35,6 +41,7 @@ const editorElement = ref<HTMLDivElement>()
 
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
+const hoverPreview = shallowRef<HoverPreview>()
 
 const i18n = useI18n()
 editorCtx = useEditorCtx()
@@ -70,6 +77,7 @@ watchEffect(async (onCleanup) => {
 
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
+    theme: 'spx-light',
     language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,
@@ -133,10 +141,14 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
+
+  completionMenu.value = new CompletionMenu(editor)
+  hoverPreview.value = new HoverPreview(editor)
+
   monacoEditor.value = editor
   onCleanup(() => {
-    props.ui.completionMenu = null
-    completionMenu.value?.dispose?.()
+    completionMenu.value?.dispose()
+    hoverPreview.value?.dispose()
     props.ui.disposeMonacoProviders()
     disposeMonacoProviders_ToBeRemoved()
     editor.dispose()
