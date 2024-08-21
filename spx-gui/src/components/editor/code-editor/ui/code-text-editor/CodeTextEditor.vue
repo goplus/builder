@@ -140,7 +140,6 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  completionMenu.value = new CompletionMenu(editor)
   hoverPreview.value = new HoverPreview(editor)
 
   monacoEditor.value = editor
