@@ -5,7 +5,6 @@
 
 import { shallowReactive } from 'vue'
 import type { LocaleMessage } from '@/utils/i18n'
-import Mutex from '@/utils/mutex'
 import type { Files } from '../common/file'
 import type { Project } from '.'
 
@@ -27,8 +26,6 @@ export type State = {
 }
 
 export class History {
-  private mutex = new Mutex()
-
   constructor(
     private project: Project,
     /**
@@ -71,7 +68,7 @@ export class History {
   }
 
   redo() {
-    return this.mutex.runExclusive(() => this.goto(this.index + 1))
+    return this.project.historyMutex.runExclusive(() => this.goto(this.index + 1))
   }
 
   getUndoAction() {
@@ -80,11 +77,11 @@ export class History {
   }
 
   undo() {
-    return this.mutex.runExclusive(() => this.goto(this.index - 1))
+    return this.project.historyMutex.runExclusive(() => this.goto(this.index - 1))
   }
 
   doAction<T>(action: Action, fn: () => T | Promise<T>): Promise<T> {
-    return this.mutex.runExclusive(async () => {
+    return this.project.historyMutex.runExclusive(async () => {
       // history after current state (for redo) will be discarded on any action
       this.states.splice(this.index)
 

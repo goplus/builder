@@ -21,6 +21,7 @@ import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
+import Mutex from '@/utils/mutex'
 
 export type { Action } from './history'
 
@@ -251,6 +252,7 @@ export class Project extends Disposable {
   }
 
   history: History
+  historyMutex = new Mutex()
 
   constructor() {
     super()
@@ -267,8 +269,22 @@ export class Project extends Disposable {
     return reactiveThis
   }
 
-  private applyMetadata(metadata: Metadata) {
+  private loadMetadata(metadata: Metadata) {
     assign<Project>(this, metadata)
+  }
+
+  private exportMetadata(): Metadata {
+    return {
+      id: this.id,
+      owner: this.owner,
+      name: this.name,
+      isPublic: this.isPublic,
+      version: this.version,
+      cTime: this.cTime,
+      uTime: this.uTime,
+      filesHash: this.filesHash,
+      lastSyncedFilesHash: this.lastSyncedFilesHash
+    }
   }
 
   async loadGameFiles(files: Files) {
@@ -330,25 +346,13 @@ export class Project extends Disposable {
 
   /** Load with metadata & game files */
   async load(metadata: Metadata, files: Files) {
-    this.applyMetadata(metadata)
+    this.loadMetadata(metadata)
     await this.loadGameFiles(files)
   }
 
   /** Export metadata & game files */
-  export(): [Metadata, Files] {
-    const metadata: Metadata = {
-      id: this.id,
-      owner: this.owner,
-      name: this.name,
-      isPublic: this.isPublic,
-      version: this.version,
-      cTime: this.cTime,
-      uTime: this.uTime,
-      filesHash: this.filesHash,
-      lastSyncedFilesHash: this.lastSyncedFilesHash
-    }
-    const files = this.exportGameFiles()
-    return [metadata, files]
+  async export(): Promise<[Metadata, Files]> {
+    return this.historyMutex.runExclusive(() => [this.exportMetadata(), this.exportGameFiles()])
   }
 
   async loadGbpFile(file: globalThis.File) {
@@ -363,7 +367,7 @@ export class Project extends Disposable {
   }
 
   async exportGbpFile() {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
     return await gbpHelper.save(metadata, files)
   }
 
@@ -380,9 +384,10 @@ export class Project extends Disposable {
 
   /** Save to cloud */
   async saveToCloud() {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
+    if (this.isDisposed) throw new Error('disposed')
     const saved = await cloudHelper.save(metadata, files)
-    this.applyMetadata(saved.metadata)
+    this.loadMetadata(saved.metadata)
     this.lastSyncedFilesHash = await hashFiles(files)
   }
 
@@ -396,7 +401,8 @@ export class Project extends Disposable {
 
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
+    if (this.isDisposed) throw new Error('disposed')
     await localHelper.save(key, metadata, files)
   }
 
@@ -486,7 +492,11 @@ export class Project extends Disposable {
         else delazyLoadGameFiles()
       }
     })()
-    this.addDisposer(watch(() => this.export(), autoSaveToLocalCache, { immediate: true }))
+    this.addDisposer(
+      watch(() => [this.exportMetadata(), this.exportGameFiles()], autoSaveToLocalCache, {
+        immediate: true
+      })
+    )
 
     // watch for autoSaveMode switch, and trigger auto save accordingly
     this.addDisposer(
