@@ -12,7 +12,7 @@ import { Project } from '@/models/project'
 import { type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
 import { keywords, typeKeywords } from '@/utils/spx'
-import { getAllTools, ToolType } from 'src/components/editor/code-editor/tools'
+import { getAllTools, ToolType } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
   line: number

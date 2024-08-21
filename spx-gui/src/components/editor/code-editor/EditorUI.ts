@@ -17,7 +17,7 @@ import type { Project } from '@/models/project'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { getAllTools } from 'src/components/editor/code-editor/tools'
+import { getAllTools } from '@/components/editor/code-editor/tools'
 
 export interface TextModel extends IEditor.ITextModel {}
 

@@ -45,7 +45,7 @@ import iconRead from './icons/read.svg?raw'
 import iconEffect from './icons/effect.svg?raw'
 import iconListen from './icons/listen.svg?raw'
 import iconCode from './icons/code.svg?raw'
-import { type Tool, ToolCallEffect, ToolType } from 'src/components/editor/code-editor/tools'
+import { type Tool, ToolCallEffect, ToolType } from '@/components/editor/code-editor/tools'
 
 defineProps<{
   tool: Tool
