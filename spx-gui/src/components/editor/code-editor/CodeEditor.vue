@@ -8,6 +8,8 @@ import { DocAbility } from '@/components/editor/code-editor/document'
 import { ChatBot } from '@/components/editor/code-editor/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { ref } from 'vue'
+import { useI18n } from '@/utils/i18n'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 defineEmits<{
   'update:value': [value: string]
@@ -23,12 +25,13 @@ withDefaults(
   }
 )
 
+const i18n = useI18n()
+const editorCtx = useEditorCtx()
 const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
-
 const { editorUI } = initCoordinator()
 
 function initCoordinator() {
-  const editorUI = new EditorUI()
+  const editorUI = new EditorUI(i18n, () => editorCtx.project)
   const compiler = new Compiler()
   const project = new Project()
   const runtime = new Runtime()

@@ -1,6 +1,23 @@
-import { editor as IEditor, Position, type IRange } from 'monaco-editor'
+import {
+  editor as IEditor,
+  Position,
+  type IRange,
+  type languages,
+  type IDisposable
+} from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
-import type { CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import {
+  type CompletionMenu,
+  Icon2CompletionItemKind
+} from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import loader from '@monaco-editor/loader'
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
+import type { Project } from '@/models/project'
+import type { I18n } from '@/utils/i18n'
+import type { FormatResponse } from '@/apis/util'
+import formatWasm from '@/assets/format.wasm?url'
+import { getAllTools } from '@/components/editor/code-editor/tools'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -188,12 +205,35 @@ interface EditorUIRequestCallback {
   completion: CompletionProvider[]
 }
 
-export class EditorUI extends Disposable {
-  editorUIRequestCallback: EditorUIRequestCallback
-  completionMenu: CompletionMenu | null = null
+declare global {
+  /** Notice: this is available only after `initFormatWasm()` */
+  function formatSPX(input: string): FormatResponse
+}
 
-  constructor() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function initFormatWasm() {
+  const go = new Go()
+  const result = await WebAssembly.instantiateStreaming(fetch(formatWasm), go.importObject)
+  go.run(result.instance)
+}
+
+export class EditorUI extends Disposable {
+  i18n: I18n
+  getProject: () => Project
+  completionMenu: CompletionMenu | null = null
+  editorUIRequestCallback: EditorUIRequestCallback
+  monaco: typeof import('monaco-editor') | null = null
+  monacoProviderDisposes: Record<string, IDisposable | null> = {
+    completionProvider: null,
+    hoverProvider: null
+  }
+
+  constructor(i18n: I18n, getProject: () => Project) {
     super()
+
+    this.i18n = i18n
+
+    this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: []
     }
@@ -203,6 +243,165 @@ export class EditorUI extends Disposable {
         this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback].length = 0
       }
     })
+  }
+
+  public async getMonaco() {
+    if (this.monaco) return this.monaco
+    const monaco_ = await loader.init()
+    if (this.monaco) return this.monaco
+    await this.initMonaco(monaco_, this.getProject)
+    this.monaco = monaco_
+    return this.monaco
+  }
+
+  async initMonaco(monaco: typeof import('monaco-editor'), getProject: () => Project) {
+    self.MonacoEnvironment = {
+      getWorker() {
+        return new EditorWorker()
+      }
+    }
+
+    const LANGUAGE_NAME = 'spx'
+    monaco.languages.register({
+      id: LANGUAGE_NAME
+    })
+
+    // keep this for auto match brackets when typing
+    monaco.languages.setLanguageConfiguration(LANGUAGE_NAME, {
+      // tokenize all words as identifiers
+      wordPattern: /(-?\d*\.\d\w*)|([^`~!@#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
+      comments: {
+        lineComment: '//',
+        blockComment: ['/*', '*/']
+      },
+      brackets: [
+        ['{', '}'],
+        ['[', ']'],
+        ['(', ')'],
+        ['"', '"'],
+        ["'", "'"]
+      ]
+    })
+
+    this.monacoProviderDisposes.completionProvider =
+      monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
+        provideCompletionItems: (model, position, _, cancelToken) => {
+          // get current position id to determine if need to request completion provider resolve
+          const word = model.getWordUntilPosition(position)
+          const project = getProject()
+          const fileHash = project.currentFilesHash || ''
+          const CompletionItemCacheID = {
+            id: fileHash,
+            lineNumber: position.lineNumber,
+            column: word.startColumn
+          }
+
+          // is CompletionItemCacheID changed, inner cache will clean `cached data`
+          // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
+          const isNeedRequestCompletionProviderResolve =
+            !this.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
+
+          if (isNeedRequestCompletionProviderResolve) {
+            const abortController = new AbortController()
+            cancelToken.onCancellationRequested(() => abortController.abort())
+            this.requestCompletionProviderResolve(
+              model,
+              {
+                position,
+                unitWord: word.word,
+                signal: abortController.signal
+              },
+              (items: CompletionItem[]) => {
+                this.completionMenu?.completionItemCache.add(CompletionItemCacheID, items)
+                // if you need user immediately show updated completion items, we need close it and reopen it.
+                this.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
+                this.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+              }
+            )
+            return { suggestions: [] }
+          } else {
+            const suggestions =
+              this.completionMenu?.completionItemCache.getAll(CompletionItemCacheID).map(
+                (item): languages.CompletionItem => ({
+                  label: item.label,
+                  kind: Icon2CompletionItemKind(item.icon),
+                  insertText: item.insertText,
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn
+                  }
+                })
+              ) || []
+            return { suggestions }
+          }
+        }
+      })
+
+    // temp region start ##
+    // the following code will be replaced after `document.ts` is ready
+    const i18n = this.i18n
+
+    this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
+      LANGUAGE_NAME,
+      {
+        provideHover(model, position) {
+          const word = model.getWordAtPosition(position)
+          if (word == null) return
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn
+          }
+          const tools = getAllTools(getProject())
+          const tool = tools.find((s) => s.keyword === word.word)
+          if (tool == null) return
+          let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
+          if (tool.usage != null) {
+            text += ` 
+\`\`\`gop
+${tool.usage.sample}
+\`\`\``
+          } else {
+            text = [
+              text,
+              ...tool.usages!.map((usage) => {
+                const colon = i18n.t({ en: ': ', zh: '：' })
+                const desc = i18n.t(usage.desc)
+                return `* ${desc}${colon}
+\`\`\`gop
+${usage.sample}
+\`\`\``
+              })
+            ].join('\n')
+          }
+          return {
+            range,
+            contents: [{ value: text }]
+          }
+        }
+      }
+    )
+    // temp region end ##
+
+    await injectMonacoHighlightTheme(monaco)
+  }
+
+  /**
+   * providers need to be disposed before the editor is destroyed.
+   * otherwise, it will cause duplicate completion items when HMR is triggered in development mode.
+   */
+  public disposeMonacoProviders() {
+    if (this.monacoProviderDisposes.completionProvider) {
+      this.monacoProviderDisposes.completionProvider.dispose()
+      this.monacoProviderDisposes.completionProvider = null
+    }
+    if (this.monacoProviderDisposes.hoverProvider) {
+      this.monacoProviderDisposes.hoverProvider.dispose()
+      this.monacoProviderDisposes.hoverProvider = null
+    }
   }
 
   public requestCompletionProviderResolve(

@@ -20,16 +20,16 @@ import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
-import { useUIVariables } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
-import { initMonaco, disposeMonacoProviders } from './monaco'
+import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import { useLocalStorage } from '@/utils/utils'
+import { useUIVariables } from '@/components/ui'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
 import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+
 const props = defineProps<{
   value: string
   ui: EditorUI
@@ -43,10 +43,8 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
-
-const uiVariables = useUIVariables()
 const i18n = useI18n()
-editorCtx = useEditorCtx()
+const uiVariables = useUIVariables()
 
 const loaderConfig = {
   paths: {
@@ -70,20 +68,11 @@ if (i18n.lang.value !== 'en') {
   loader.config(loaderConfig)
 }
 
-const getMonaco = async () => {
-  if (monaco) return monaco
-  const monaco_ = await loader.init()
-  if (monaco) return monaco
-  await initMonaco(monaco_, uiVariables, i18n, () => editorCtx.project, props.ui)
-  monaco = monaco_
-  return monaco
-}
-
 const initialFontSize = 14
 const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
-  const monaco = await getMonaco()
+  const monaco = await props.ui.getMonaco()
 
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
@@ -151,7 +140,6 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-
   completionMenu.value = new CompletionMenu(editor)
   hoverPreview.value = new HoverPreview(editor)
 
@@ -159,7 +147,7 @@ watchEffect(async (onCleanup) => {
   onCleanup(() => {
     completionMenu.value?.dispose()
     hoverPreview.value?.dispose()
-    disposeMonacoProviders()
+    props.ui.disposeMonacoProviders()
     editor.dispose()
   })
 })
@@ -269,9 +257,11 @@ defineExpose({
     ul {
       list-style: square;
     }
+
     ol {
       list-style: decimal;
     }
+
     code {
       // keep consistent with component `UICode`
       padding: 2px 4px;

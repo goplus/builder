@@ -60,10 +60,14 @@ function handleActiveMenuItem(menuItemElement: HTMLLIElement) {
   const editorMenuElement = editorMenuRef.value?.editorMenuElement
   if (!menuItemElement || !editorMenuElement) return
   if (isElementInViewport(editorMenuElement, menuItemElement)) return
+  // in `menuItemElement` we have padding top 4px and padding bottom 4px, so we need divide item by 4
   const top =
     determineClosestEdge(editorMenuElement, menuItemElement) === 'top'
-      ? menuItemElement.offsetTop
-      : menuItemElement.offsetTop - editorMenuElement.clientHeight + menuItemElement.clientHeight
+      ? menuItemElement.offsetTop - 4
+      : menuItemElement.offsetTop -
+        editorMenuElement.clientHeight +
+        menuItemElement.clientHeight -
+        4
   editorMenuRef.value?.editorMenuElement.scrollTo({ top })
 }
 
@@ -83,7 +87,7 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
       left: completionMenuState.position.left + 'px'
     }"
     :list-styles="{
-      maxHeight: 10 * itemHeight + 'px'
+      maxHeight: 8 * itemHeight + 'px'
     }"
     @select="handleMenuItemSelect"
     @active="(_, el) => handleActiveMenuItem(el)"
