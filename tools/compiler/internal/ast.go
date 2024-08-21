@@ -72,15 +72,13 @@ func (jp *astWalker) json(x reflect.Value) {
 		t := x.Type()
 
 		for i := 0; i < t.NumField(); i++ {
-			if i > 0 {
-				jp.buffer.WriteString(", ")
-			}
 			name := t.Field(i).Name
 			if token.IsExported(name) {
 				value := x.Field(i)
 				if jp.filter == nil || jp.filter(name, value) {
 					jp.buffer.WriteString(fmt.Sprintf("\"%s\": ", name))
 					jp.json(value)
+					jp.buffer.WriteString(", ")
 				}
 			}
 		}
@@ -170,16 +168,25 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 		jp.json(reflect.ValueOf(x))
 	}
 
+	fmt.Println(jp.buffer.String())
 	_, err := w.Write(jp.buffer.Bytes())
 	return err
 }
 
 // codeFunction is spx function called in code.
 type codeFunction struct {
-	Name      string         `json:"name"`
-	Position  token.Position `json:"posn"`
-	Pos       int            `json:"pos"`
-	Signature string         `json:"signature"`
+	Name       string         `json:"name"`
+	Position   token.Position `json:"posn"`
+	Pos        int            `json:"pos"`
+	Signature  string         `json:"signature"`
+	Parameters []parameter    `json:"parameters"`
+}
+
+type parameter struct {
+	Name     string   `json:"name"`
+	Type     string   `json:"type"`
+	Position position `json:"position"`
+	Unit     string   `json:"unit"`
 }
 
 // Pos2Position can make Pos(int) into Position
@@ -210,6 +217,12 @@ func getCodeFunctionList(fset *token.FileSet, fileName, fileCode string) ([]*cod
 	if err != nil {
 		return nil, err
 	}
+	//
+	//err = jsonPrint(fset, file)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return nil, err
+	//}
 
 	jp := astWalker{
 		buffer:  new(bytes.Buffer),
