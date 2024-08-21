@@ -24,6 +24,6 @@ require (
 )
 
 replace (
-	github.com/goplus/igop v0.25.0 => ../tiny-igop
+	github.com/goplus/igop => ../tiny-igop
 	github.com/goplus/mod v0.13.12 => github.com/nighca/mod v0.0.0-20240805065729-b50535825ae2
 )
