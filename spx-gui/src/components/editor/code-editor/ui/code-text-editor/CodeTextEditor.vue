@@ -23,11 +23,13 @@ import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-e
 import { useI18n } from '@/utils/i18n'
 import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import { useLocalStorage } from '@/utils/utils'
+import { useUIVariables } from '@/components/ui'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
 import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+
 const props = defineProps<{
   value: string
   ui: EditorUI
@@ -41,8 +43,8 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
-
 const i18n = useI18n()
+const uiVariables = useUIVariables()
 
 const loaderConfig = {
   paths: {
@@ -255,9 +257,11 @@ defineExpose({
     ul {
       list-style: square;
     }
+
     ol {
       list-style: decimal;
     }
+
     code {
       // keep consistent with component `UICode`
       padding: 2px 4px;
