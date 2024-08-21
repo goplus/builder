@@ -142,9 +142,9 @@ func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsPa
 	return fileURLs, nil
 }
 
-// StringArrayToString converts a string array to a single string, string use space as separator.
+// StringArrayToString converts a string array to a single string, string use comma as separator.
 func StringArrayToString(arr []string) string {
-	return strings.Join(arr, " ")
+	return strings.Join(arr, ",")
 }
 
 // StringToStringArray converts a single string to a string array, string use comma as separator.

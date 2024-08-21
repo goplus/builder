@@ -76,7 +76,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 		RIGHT JOIN user_asset ua ON a.id = ua.asset_id
 	`
 
-	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true)
+	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true, nil)
 	if err != nil {
 		logger.Printf("failed to list user assets: %v", err)
 		return nil, err

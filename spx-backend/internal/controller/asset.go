@@ -98,12 +98,25 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "owner", Operation: "=", Value: *params.Owner})
 	}
+	//use a list to filter duplicate leaf categories
+	var leafCategoriesListFilter map[string]bool
+	var leafCategoriesList []any
 	if params.Category != nil {
 		for _, category := range StringToStringArray(*params.Category) {
 			leafCategories := model.FindLeafCategories(category)
 			// If the category is not a leaf category, we need to search for all leaf categories under it.
 			for _, leaf := range leafCategories {
-				wheres = append(wheres, model.FilterCondition{Column: "category", Operation: "=", Value: leaf})
+
+				if leafCategoriesListFilter == nil {
+					leafCategoriesListFilter = make(map[string]bool)
+				}
+				if _, ok := leafCategoriesListFilter[leaf]; !ok {
+					leafCategoriesListFilter[leaf] = true
+
+					logger.Printf("leaf category: %s", leaf)
+
+					leafCategoriesList = append(leafCategoriesList, leaf)
+				}
 			}
 		}
 	}
@@ -125,7 +138,7 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
 	}
 
-	assets, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders)
+	assets, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders, leafCategoriesList)
 	if err != nil {
 		logger.Printf("failed to list assets : %v", err)
 		return nil, err
