@@ -251,6 +251,7 @@ export class CompletionMenu implements IDisposable {
     this.completionMenuState.lineHeight = pixelPosition.height
     this.completionMenuState.position.left = pixelPosition.left
     this.completionMenuState.position.top = cursorY + pixelPosition.height
+
     if (windowHeight - cursorY > completionMenuHeight && !isMultiline()) {
       completionMenuElement.classList.remove('completion-menu--reverse-up')
     } else {
