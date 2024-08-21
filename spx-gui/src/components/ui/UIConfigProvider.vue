@@ -139,7 +139,6 @@ const cssVariables = getCssVars('--ui-', uiVariables)
 <style lang="scss" scoped>
 .ui-config-provider {
   height: 100%;
-
   color: var(--ui-color-text);
   font-size: var(--ui-font-size-text);
   font-family: var(--ui-font-family-main);
