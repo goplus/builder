@@ -168,8 +168,8 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 	go func(ctx context.Context) {
 		var generateResult GetGenerateResult
 		err = ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
-			Category: param.Category,
-			Prompt:   param.Keyword, // todo: more parameters
+			Category: StringArrayToString(StringToStringArray(param.Category)), // different separator
+			Prompt:   param.Keyword,                                            // todo: more parameters
 		}, &generateResult)
 		if err != nil {
 			logger.Printf("failed to call: %v", err)

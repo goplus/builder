@@ -99,10 +99,12 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 		wheres = append(wheres, model.FilterCondition{Column: "owner", Operation: "=", Value: *params.Owner})
 	}
 	if params.Category != nil {
-		leafCategories := model.FindLeafCategories(*params.Category)
-		// If the category is not a leaf category, we need to search for all leaf categories under it.
-		for _, leaf := range leafCategories {
-			wheres = append(wheres, model.FilterCondition{Column: "category", Operation: "=", Value: leaf})
+		for _, category := range StringToStringArray(*params.Category) {
+			leafCategories := model.FindLeafCategories(category)
+			// If the category is not a leaf category, we need to search for all leaf categories under it.
+			for _, leaf := range leafCategories {
+				wheres = append(wheres, model.FilterCondition{Column: "category", Operation: "=", Value: leaf})
+			}
 		}
 	}
 	if params.AssetType != nil {
