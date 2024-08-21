@@ -24,6 +24,7 @@ const completionMenuState = props.completionMenu.completionMenuState
 // for using generic vue component can't use `InstanceType<type of someGenericComponent>` it will throw error. issue: https://github.com/vuejs/language-tools/issues/3206
 const editorMenuRef = ref<{
   editorMenuElement: HTMLUListElement
+  editorMenuContainerElement: HTMLElement
 }>()
 const cssLineHeight = computed(() => `${completionMenuState.lineHeight}px`)
 const cssFontSize = computed(() => `${completionMenuState.fontSize}px`)
@@ -50,7 +51,7 @@ const menuItems = computed<CompletionMenuItem[]>(() =>
 )
 
 watchEffect(() => {
-  const completionMenuElement = editorMenuRef.value?.editorMenuElement
+  const completionMenuElement = editorMenuRef.value?.editorMenuContainerElement
   if (!completionMenuElement) return
   props.completionMenu.completionMenuState.completionMenuElement = completionMenuElement
 })
@@ -117,6 +118,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   font-size: inherit;
   line-height: inherit;
   font-style: italic;
+  font-family: var(--ui-font-family-code);
   animation: fade-in 150ms ease-in;
 }
 

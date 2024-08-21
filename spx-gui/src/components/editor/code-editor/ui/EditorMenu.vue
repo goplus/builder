@@ -26,14 +26,16 @@ defineEmits<{
 }>()
 
 const editorMenuElement = ref<HTMLUListElement>()
+const editorMenuContainerElement = ref<HTMLElement>()
 
 defineExpose({
-  editorMenuElement
+  editorMenuElement,
+  editorMenuContainerElement
 })
 </script>
 
 <template>
-  <section class="editor-menu-container">
+  <section ref="editorMenuContainerElement" class="editor-menu-container">
     <ul ref="editorMenuElement" class="editor-menu" :style="listStyles">
       <li
         v-for="item in items"
