@@ -17,6 +17,7 @@ import { createMatches, type IMatch } from '../../common'
 import EditorOption = editor.EditorOption
 import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
 import { Icon } from '@/components/editor/code-editor/EditorUI'
+import { debounce } from '@/utils/utils'
 
 export interface CompletionMenuState {
   visible: boolean
@@ -49,6 +50,11 @@ export class CompletionMenu implements IDisposable {
   }
   private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
+  private showSingleCodePreview: (position: IPosition, word: string, line: string) => void
+  private previousData = {
+    line: -1,
+    columnNumber: -1
+  }
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
@@ -80,6 +86,8 @@ export class CompletionMenu implements IDisposable {
     this.completionMenuItemPreviewDecorationsCollection = editor.createDecorationsCollection([])
 
     this.initEventListeners()
+
+    this.showSingleCodePreview = debounce(this._showSingleCodePreview, 1000)
   }
 
   private initEventListeners() {
@@ -122,6 +130,7 @@ export class CompletionMenu implements IDisposable {
   }
 
   private disposeCodePreview() {
+    console.log('=>(completion-menu.ts:130) clean code preview')
     this.completionMenuItemPreviewDecorationsCollection.clear()
     this.editor.changeViewZones((changeAccessor) => {
       if (this.viewZoneChangeAccessorState.viewZoneId) {
@@ -133,9 +142,9 @@ export class CompletionMenu implements IDisposable {
 
   private createCodePreviewDomNode(codeLines: string[]) {
     const LINE_HEIGHT = this.completionMenuState.lineHeight
-    const $codeContainer = document.createElement('div')
-    $codeContainer.classList.add('view-lines')
-    $codeContainer.innerHTML = codeLines
+    const containerElement = document.createElement('div')
+    containerElement.classList.add('view-lines')
+    containerElement.innerHTML = codeLines
       .map(
         (line, i) =>
           `<div style="top: ${i * LINE_HEIGHT}px;" class="view-line">
@@ -143,7 +152,7 @@ export class CompletionMenu implements IDisposable {
            </div>`
       )
       .join('')
-    return $codeContainer
+    return containerElement
   }
 
   private showMultiCodePreview(position: IPosition, codeLines: string[]) {
@@ -161,12 +170,18 @@ export class CompletionMenu implements IDisposable {
     })
   }
 
-  private showSingleCodePreview(position: IPosition, word: string, line: string) {
+  private _showSingleCodePreview(position: IPosition, word: string, line: string) {
     const remainWords = line.substring(word.length)
     // Occasionally, a column may be slightly larger than the actual column by just one unit. This can prevent the inline code preview from displaying correctly.
     // To avoid this, we need to subtract 1 from the column value.
     const startColumn = position.column - 1
     const endColum = startColumn + word.length
+    console.log('=>(completion-menu.ts:175)', Date.now())
+    console.log(
+      '=>(completion-menu.ts:176) this.completionMenuItemPreviewDecorationsCollection.length',
+      this.completionMenuItemPreviewDecorationsCollection.length
+    )
+
     this.completionMenuItemPreviewDecorationsCollection.set([
       {
         range: new Range(position.lineNumber, startColumn, position.lineNumber, endColum),
@@ -206,6 +221,7 @@ export class CompletionMenu implements IDisposable {
     const isMultiLine = lines.length > 1
     if (!firstLine) return console.warn('completion menu item preview error: empty first line')
     if (isMultiLine) this.showMultiCodePreview(position, lines)
+    console.log('call single code preview')
     this.showSingleCodePreview(position, word, firstLine)
   }
 
@@ -216,6 +232,7 @@ export class CompletionMenu implements IDisposable {
   }
 
   dispose() {
+    console.log('=>(completion-menu.ts:246) clean completion menu')
     this._onFocus.dispose()
     this._onShow.dispose()
     this._onHide.dispose()

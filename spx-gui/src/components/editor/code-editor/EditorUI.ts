@@ -290,7 +290,7 @@ export class EditorUI extends Disposable {
           const word = model.getWordUntilPosition(position)
           const project = getProject()
           const fileHash = project.currentFilesHash || ''
-          const CompletionItemCacheID = {
+          const completionItemCacheID = {
             id: fileHash,
             lineNumber: position.lineNumber,
             column: word.startColumn
@@ -299,7 +299,7 @@ export class EditorUI extends Disposable {
           // is CompletionItemCacheID changed, inner cache will clean `cached data`
           // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
           const isNeedRequestCompletionProviderResolve =
-            !this.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
+            !this.completionMenu?.completionItemCache.isCacheAvailable(completionItemCacheID)
 
           if (isNeedRequestCompletionProviderResolve) {
             const abortController = new AbortController()
@@ -312,7 +312,7 @@ export class EditorUI extends Disposable {
                 signal: abortController.signal
               },
               (items: CompletionItem[]) => {
-                this.completionMenu?.completionItemCache.add(CompletionItemCacheID, items)
+                this.completionMenu?.completionItemCache.add(completionItemCacheID, items)
                 // if you need user immediately show updated completion items, we need close it and reopen it.
                 this.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
                 this.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
@@ -321,7 +321,7 @@ export class EditorUI extends Disposable {
             return { suggestions: [] }
           } else {
             const suggestions =
-              this.completionMenu?.completionItemCache.getAll(CompletionItemCacheID).map(
+              this.completionMenu?.completionItemCache.getAll(completionItemCacheID).map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: Icon2CompletionItemKind(item.icon),
