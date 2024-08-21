@@ -66,7 +66,7 @@ export function createI18n(config: I18nConfig) {
 
 export function useI18n() {
   const i18n = inject(injectKey)
-  if (i18n === undefined) throw new Error('i18n not used')
+  if (i18n == null) throw new Error('i18n not used')
   return i18n
 }
 

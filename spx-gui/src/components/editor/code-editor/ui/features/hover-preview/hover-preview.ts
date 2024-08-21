@@ -32,8 +32,8 @@ export class HoverPreview implements IDisposable {
     const hoverContentWidgetOperation = hoverContentWidget._hoverOperation
     const rawResultFn =
       hoverContentWidgetOperation._onResult._listeners.value.bind(hoverContentWidget)
-    const HideFn = hoverContentWidget.hide.bind(hoverContentWidget)
-    const CancelFn = hoverContentWidgetOperation.cancel.bind(hoverContentWidgetOperation)
+    const hideFn = hoverContentWidget.hide.bind(hoverContentWidget)
+    const cancelFn = hoverContentWidgetOperation.cancel.bind(hoverContentWidgetOperation)
 
     editor.onMouseMove((e) => {
       if (!this.editorDocumentRange || !e.target.range) return
@@ -87,14 +87,14 @@ export class HoverPreview implements IDisposable {
     })
 
     hoverContentWidget.hide = () => {
-      HideFn()
+      hideFn()
       this.editorDocumentTimer = setTimeout(() => {
         this._onHide.fire(null)
       }, 100) as unknown as number
     }
 
     hoverContentWidgetOperation.cancel = () => {
-      CancelFn()
+      cancelFn()
     }
   }
 

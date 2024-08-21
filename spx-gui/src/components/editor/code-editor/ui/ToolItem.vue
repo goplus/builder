@@ -40,11 +40,12 @@
 
 <script setup lang="ts">
 import { UITagButton, UITooltip, UIDropdown, UIMenu, UIMenuItem, UICode } from '@/components/ui'
-import { ToolType, ToolCallEffect, type Tool } from './code-text-editor'
+
 import iconRead from './icons/read.svg?raw'
 import iconEffect from './icons/effect.svg?raw'
 import iconListen from './icons/listen.svg?raw'
 import iconCode from './icons/code.svg?raw'
+import { type Tool, ToolCallEffect, ToolType } from 'src/components/editor/code-editor/tools'
 
 defineProps<{
   tool: Tool

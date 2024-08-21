@@ -21,8 +21,7 @@ import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useI18n } from '@/utils/i18n'
-import { useEditorCtx, type EditorCtx } from '../../../EditorContextProvider.vue'
-import { initMonaco_ToBeRemoved, disposeMonacoProviders_ToBeRemoved } from './monaco'
+import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import { useLocalStorage } from '@/utils/utils'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
@@ -44,7 +43,6 @@ const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
 
 const i18n = useI18n()
-editorCtx = useEditorCtx()
 
 const loaderConfig = {
   paths: {
@@ -73,7 +71,6 @@ const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
   const monaco = await props.ui.getMonaco()
-  await initMonaco_ToBeRemoved(monaco, i18n, () => editorCtx.project)
 
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
@@ -141,7 +138,6 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-
   completionMenu.value = new CompletionMenu(editor)
   hoverPreview.value = new HoverPreview(editor)
 
@@ -150,7 +146,6 @@ watchEffect(async (onCleanup) => {
     completionMenu.value?.dispose()
     hoverPreview.value?.dispose()
     props.ui.disposeMonacoProviders()
-    disposeMonacoProviders_ToBeRemoved()
     editor.dispose()
   })
 })

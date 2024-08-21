@@ -15,6 +15,9 @@ import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
 import type { Project } from '@/models/project'
 import type { I18n } from '@/utils/i18n'
+import type { FormatResponse } from '@/apis/util'
+import formatWasm from '@/assets/format.wasm?url'
+import { getAllTools } from 'src/components/editor/code-editor/tools'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -202,6 +205,18 @@ interface EditorUIRequestCallback {
   completion: CompletionProvider[]
 }
 
+declare global {
+  /** Notice: this is available only after `initFormatWasm()` */
+  function formatSPX(input: string): FormatResponse
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function initFormatWasm() {
+  const go = new Go()
+  const result = await WebAssembly.instantiateStreaming(fetch(formatWasm), go.importObject)
+  go.run(result.instance)
+}
+
 export class EditorUI extends Disposable {
   i18n: I18n
   getProject: () => Project
@@ -281,8 +296,8 @@ export class EditorUI extends Disposable {
             column: word.startColumn
           }
 
-          // is position changed, inner cache will clean `cached data`
-          // in a word, if position changed will call `requestCompletionProviderResolve`
+          // is CompletionItemCacheID changed, inner cache will clean `cached data`
+          // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
           const isNeedRequestCompletionProviderResolve =
             !this.completionMenu?.completionItemCache.isCacheAvailable(CompletionItemCacheID)
 
@@ -324,12 +339,59 @@ export class EditorUI extends Disposable {
         }
       })
 
+    // temp region start ##
+    // the following code will be replaced after `document.ts` is ready
+    const i18n = this.i18n
+
+    this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
+      LANGUAGE_NAME,
+      {
+        provideHover(model, position) {
+          const word = model.getWordAtPosition(position)
+          if (word == null) return
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn
+          }
+          const tools = getAllTools(getProject())
+          const tool = tools.find((s) => s.keyword === word.word)
+          if (tool == null) return
+          let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
+          if (tool.usage != null) {
+            text += ` 
+\`\`\`gop
+${tool.usage.sample}
+\`\`\``
+          } else {
+            text = [
+              text,
+              ...tool.usages!.map((usage) => {
+                const colon = i18n.t({ en: ': ', zh: '：' })
+                const desc = i18n.t(usage.desc)
+                return `* ${desc}${colon}
+\`\`\`gop
+${usage.sample}
+\`\`\``
+              })
+            ].join('\n')
+          }
+          return {
+            range,
+            contents: [{ value: text }]
+          }
+        }
+      }
+    )
+    // temp region end ##
+
     await injectMonacoHighlightTheme(monaco)
   }
 
   /**
    * providers need to be disposed before the editor is destroyed.
-   * otherwise, in current file will cause duplicate completion items when HMR is triggered in development mode.
+   * otherwise, it will cause duplicate completion items when HMR is triggered in development mode.
    */
   public disposeMonacoProviders() {
     if (this.monacoProviderDisposes.completionProvider) {
