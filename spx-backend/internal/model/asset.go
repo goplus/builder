@@ -76,9 +76,9 @@ func AssetByID(ctx context.Context, db *sql.DB, id string) (*Asset, error) {
 }
 
 // ListAssets lists assets with given pagination, where conditions and order by conditions.
-func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition) (*ByPage[Asset], error) {
+func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition, categoryList []any) (*ByPage[Asset], error) {
 	logger := log.GetReqLogger(ctx)
-	assets, err := QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false)
+	assets, err := QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false, categoryList)
 	if err != nil {
 		logger.Printf("QueryByPage failed: %v", err)
 		return nil, err
