@@ -13,6 +13,7 @@ type Reply struct {
 func NewReply(content any) js.Value {
 	r := Reply{
 		Content: content,
+		OK:      true,
 	}
 	value, err := Struct2JSValue(r)
 	if err != nil {

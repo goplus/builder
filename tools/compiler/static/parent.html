@@ -8,16 +8,25 @@
 <div>
 
     <textarea id="codeInput" style="width: 400px;height: 500px">
-        onStart => {
-            flag := true
-            for flag {
-                onMsg "die", => {
-                    flag = false
-                }
-                glide -877, 180, 3
-                setXYpos -240, 180
-            }
+var a int
+
+func add(a,b int) int {
+    return a + b
+}
+
+onStart => {
+    flag := true
+    sum := add(1,2)
+    sum = 3
+    a = 2
+    for flag {
+        onMsg "die", => {
+            flag = false
         }
+        glide -877, 180, 3
+        setXYpos -240, 180
+    }
+}
     </textarea>
 
     <div>
@@ -26,6 +35,7 @@
 
     <button onclick="runTypesInfo()">runTypesInfo</button>
     <button onclick="runCodeDiagnostics()">runCodeDiagnostics</button>
+    <button onclick="runDefinition()">runDefinition</button>
 
     <div id="compiler-iframe-container">
     </div>
@@ -34,15 +44,13 @@
 
 <script>
     const container = document.getElementById("compiler-iframe-container")
-    let currentIframe = 1
     createIframe()
 
     function createIframe() {
         const iframe = document.createElement("iframe")
-        iframe.id = "compiler-iframe" + currentIframe
+        iframe.id = "compiler-iframe"
         iframe.width = 0
         iframe.height = 0
-        currentIframe++
         iframe.src = "index.html"
         container.appendChild(iframe)
     }
@@ -66,6 +74,7 @@
         var data = event.data
         if (data.level === "log") {
             if (data.log[0] && data.log[0].includes("goroutine ")) {
+                // need to report detail for analyse
                 reloadIframe()
             }
             console.log(data)
@@ -85,12 +94,26 @@
         } catch (err) {
             console.error(err)
         }
-
     }
 
     function runCodeDiagnostics() {
         try {
             let res = getIframe().contentWindow.getDiagnostics({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+
+    function runDefinition() {
+        try {
+            let res = getIframe().contentWindow.getDefinition({
                 in: {
                     name: "test.spx",
                     code: document.getElementById("codeInput").value
