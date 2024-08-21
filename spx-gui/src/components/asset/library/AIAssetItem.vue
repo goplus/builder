@@ -46,7 +46,7 @@
               class="preview"
               :src="previewImageSrc"
               :loading="previewImageLoading"
-              :size="asset.assetType === AssetType.Sprite ? 'contain' : 'cover'"
+              :size="props.task.result!.assetType === AssetType.Sprite ? 'contain' : 'cover'"
             />
           </template>
         </Transition>
@@ -67,8 +67,8 @@
 import { UIImg } from '@/components/ui'
 import { NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
-import { computed, ref } from 'vue'
-import { AIGCStatus, getAIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
+import { computed, onMounted, ref, shallowRef } from 'vue'
+import { AIGCStatus, AIGCTask, getAIGCStatus, type AIAssetData, type AIGCFiles, type TaggedAIAssetData } from '@/apis/aigc'
 import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
@@ -77,7 +77,7 @@ import { AssetType } from '@/apis/asset'
 
 const props = withDefaults(
   defineProps<{
-    asset: AIAssetData
+    task: AIGCTask
     showAiAssetTip?: boolean
   }>(),
   {
@@ -97,52 +97,34 @@ const readyForView = computed(
   () => status.value === AIGCStatus.Finished && previewImageLoading.value === false
 )
 
-const POLLING_INTERVAL = 500
-
-const POLLING_MAX_COUNT = (5 * 60 * 1000) / POLLING_INTERVAL
-
-let pollingCount = 0
 type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
-const pollStatus = async () => {
-  if (status.value === AIGCStatus.Finished) {
-    return
-  }
-  if (pollingCount >= POLLING_MAX_COUNT) {
+
+onMounted(() => {
+  props.task.addEventListener('AIGCFinished', () => {
+    loadCloudFiles(props.task.result?.files!)
+  })
+  props.task.addEventListener('AIGCStatusChange', () => {
+    status.value = props.task.status
+  })
+})
+
+const loadCloudFiles = async (cloudFiles: AIGCFiles) => {
+  if (!cloudFiles) {
     status.value = AIGCStatus.Failed
     return
   }
+  const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
+    [key in keyof AIGCFiles]: File
+  }
 
-  pollingCount++
-
-  const newStatus = await getAIGCStatus(props.asset.id)
-  status.value = newStatus.status
-
-  if (newStatus.status === AIGCStatus.Finished) {
-    const cloudFiles = newStatus.result?.files
-    if (!cloudFiles) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
-      [key in keyof AIGCFiles]: File
-    }
-
-    if (!files) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    props.asset.preview = cloudFiles.imageUrl
-    previewImageFile.value = files.imageUrl
-    emit('ready', props.asset)
+  if (!files) {
+    status.value = AIGCStatus.Failed
     return
   }
-
-  if (newStatus.status !== AIGCStatus.Failed) {
-    setTimeout(pollStatus, POLLING_INTERVAL)
-  }
+  props.task.result!.preview = cloudFiles.imageUrl
+  previewImageFile.value = files.imageUrl
+  emit('ready', props.task.result!)
 }
-
-pollStatus()
 </script>
 
 <style lang="scss" scoped>

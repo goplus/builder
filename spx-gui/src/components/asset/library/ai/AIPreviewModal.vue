@@ -99,15 +99,15 @@
         >
           <div
             v-for="aiAsset in aiAssets"
-            :key="aiAsset.id"
+            :key="aiAsset.taskId"
             class="ai-asset-wrapper"
-            :class="{ selected: aiAsset.id === asset.id }"
+            :class="{ selected: aiAsset.result?.id === asset.id }"
           >
             <AIAssetItem
-              :asset="aiAsset"
+              :task="aiAsset"
               :show-ai-asset-tip="false"
-              @ready="aiAsset[isPreviewReady] = true"
-              @click="aiAsset[isPreviewReady] && emit('selectAi', aiAsset)"
+              @ready="(aiAsset as any)[isPreviewReady] = true"
+              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)"
             />
           </div>
         </NScrollbar>
@@ -132,7 +132,8 @@ import {
   isPreviewReady,
   type TaggedAIAssetData,
   exportAIGCAsset,
-  exportedId
+  exportedId,
+  AIGCTask
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -148,7 +149,7 @@ import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 // Define component props
 const props = defineProps<{
   asset: TaggedAIAssetData
-  aiAssets: TaggedAIAssetData[]
+  aiAssets: AIGCTask[]
   addToProjectPending: boolean
 }>()
 

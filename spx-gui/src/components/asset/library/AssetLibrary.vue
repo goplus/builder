@@ -93,7 +93,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
 import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
 import { debounce, useAsyncComputed } from '@/utils/utils'
@@ -109,7 +109,7 @@ import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
-import type { AIAssetData } from '@/apis/aigc'
+import type { AIAssetData, AIGCTask } from '@/apis/aigc'
 import AIPreviewModal from './ai/AIPreviewModal.vue'
 import { addAssetToHistory } from '@/apis/user'
 
@@ -125,7 +125,7 @@ const emit = defineEmits<{
 }>()
 
 const selectedAsset = ref<AssetOrAIAsset | null>(null)
-const currentAIAssetList = ref<TaggedAIAssetData[]>([])
+const currentAIAssetList = shallowRef<AIGCTask[]>([])
 
 const handleUpdateShow = (visible: boolean) => {
   emit('update:visible', visible)
@@ -182,7 +182,7 @@ function handleUserSelectCategory(c: string) {
   searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'
 }
 
-function handleSelectAiAsset(asset: TaggedAIAssetData, aiAssetList?: TaggedAIAssetData[]) {
+function handleSelectAiAsset(asset: TaggedAIAssetData, aiAssetList?: AIGCTask[]) {
   selectedAsset.value = asset
   if (aiAssetList) {
     currentAIAssetList.value = aiAssetList
