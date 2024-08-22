@@ -189,18 +189,17 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 
 // GeneratingSync follow parameters to generating images.
 func (ctrl *Controller) GeneratingSync(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
-		logger := log.GetReqLogger(ctx)
-		var generateResult GenerateResult
-		err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
-			Category: param.Category,
-			Prompt:   param.Keyword, // todo: more parameters
-		}, &generateResult)
-		if err != nil {
-			logger.Printf("failed to call: %v", err)
-			return nil, err
-		}
-		return &generateResult, nil
+	logger := log.GetReqLogger(ctx)
+	var generateResult GenerateResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
+		Category: param.Category,
+		Prompt:   param.Keyword, // todo: more parameters
+	}, &generateResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
 	}
+	return &generateResult, nil
 }
 
 // GenerateSprite follow parameters to generating sprite.
