@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -31,7 +30,6 @@ type ListUserAssetsParams struct {
 // AddUserAsset adds an asset.
 func (ctrl *Controller) AddUserAsset(ctx context.Context, params *AddUserAssetParams, assetType string, owner string) error {
 	logger := log.GetReqLogger(ctx)
-	fmt.Println("AddUserAsset, assetType: ", assetType)
 	assetId, err := strconv.Atoi(params.AssetID)
 	err = model.AddUserAsset(ctx, ctrl.ormDb, &model.UserAsset{
 		Owner:             owner,

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
@@ -14,7 +13,7 @@ type GetRateResponse struct {
 }
 
 type PostRateRequest struct {
-	Rate string `json:"rate"`
+	Rate int `json:"rate"`
 }
 
 // GetRate gets the rate of an asset.
@@ -35,12 +34,7 @@ func (ctrl *Controller) GetRate(ctx context.Context, assetId string, owner strin
 // InsertRate inserts a rate.
 func (ctrl *Controller) InsertRate(ctx context.Context, assetId string, owner string, param *PostRateRequest) (int, error) {
 	logger := log.GetReqLogger(ctx)
-	scoreInt, err := strconv.Atoi(param.Rate)
-	if err != nil {
-		logger.Printf("failed to convert score to int: %v", err)
-		return -1, err
-	}
-	err = model.InsertRate(ctx, ctrl.ormDb, assetId, owner, scoreInt)
+	err := model.InsertRate(ctx, ctrl.ormDb, assetId, owner, param.Rate)
 	if err != nil {
 		logger.Printf("failed to insert rate: %v", err)
 		return -1, err
