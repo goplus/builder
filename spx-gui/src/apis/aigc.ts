@@ -81,6 +81,7 @@ export type AssetOrAIAsset = AssetData | TaggedAIAssetData
 export interface CreateAIImageParams {
   keyword: string
   category: string | string[]
+  assetType: AssetType
   width?: number
   height?: number
 }
@@ -131,19 +132,18 @@ export async function generateAIImage({
 export async function syncGenerateAIImage({
   keyword,
   category,
-  assetType,
   width,
   height
 }: CreateAIImageParams) {
-  return new Promise<{ image_url: string }>((resolve) => {
-    setTimeout(() => {
-      const imageUrl = 'https://www-static.qbox.me/_next/static/media/entry.95de67c29a4d2d3dc5339a6bd4242604.png'
-      resolve({ image_url: imageUrl })
-    }, 1000)
-  });
+  // return new Promise<{ image_url: string }>((resolve) => {
+  //   setTimeout(() => {
+  //     const imageUrl = 'https://www-static.qbox.me/_next/static/media/entry.95de67c29a4d2d3dc5339a6bd4242604.png'
+  //     resolve({ image_url: imageUrl })
+  //   }, 1000)
+  // });
   const result = (await client.post(
     '/aigc/image',
-    { keyword, category, assetType, width, height },
+    { keyword, category, width, height },
     { timeout: 20 * 1000 }
   )) as {
     image_url: string

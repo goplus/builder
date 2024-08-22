@@ -44,7 +44,6 @@ func buildWhereClause(andConds []FilterCondition, orClause string, orArgs []any)
 	args = append(args, StatusDeleted)
 
 	whereClause := "WHERE " + strings.Join(exprs, " AND ")
-	fmt.Printf("whereClause: %s\n", whereClause)
 	return whereClause, args
 }
 

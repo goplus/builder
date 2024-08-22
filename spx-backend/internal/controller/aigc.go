@@ -17,7 +17,7 @@ type MattingParams struct {
 
 type GenerateParams struct {
 	// Category is the category of the image to be generated.
-	Category string `json:"category"`
+	Category []string `json:"category"`
 	// Keyword is the keyword of the image to be generated.
 	Keyword string `json:"keyword"`
 	Width   int    `json:"width"`
@@ -168,8 +168,8 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 	go func(ctx context.Context) {
 		var generateResult GetGenerateResult
 		err = ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
-			Category: StringArrayToString(StringToStringArray(param.Category)), // different separator
-			Prompt:   param.Keyword,                                            // todo: more parameters
+			Category: StringArrayToString(param.Category), // different separator
+			Prompt:   param.Keyword,                       // todo: more parameters
 		}, &generateResult)
 		if err != nil {
 			logger.Printf("failed to call: %v", err)
