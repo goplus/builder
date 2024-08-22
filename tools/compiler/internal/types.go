@@ -19,20 +19,25 @@ import (
 func GetSPXFileType(fileName, fileCode string) interface{} {
 	// new file set
 	fset := token.NewFileSet()
-	info, err := spxInfo(initSPXMod(), fset, fileName, fileCode)
+	info, err := codeInfo(initSPXMod(), fset, fileName, fileCode)
 	if err != nil {
-		return []tokenInfo{}
+		return []nodeItem{}
 	}
 	list := info2List(fset, info.Types)
-	return list
+	defs := def2List(fset, info.Defs)
+	m := make(map[string]interface{})
+	m["list"] = list
+	m["defs"] = defs
+	return m
 }
 
-// spxInfo is use igop to analyse spx code and get info.
-func spxInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileCode string) (*typesutil.Info, error) {
+// codeInfo is use igop to analyse spx code and get info.
+func codeInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileCode string) (*typesutil.Info, error) {
 	file, err := initParser(fileSet, fileName, fileCode)
 	if err != nil {
 		return nil, err
 	}
+
 	// init types conf
 	ctx := igop.NewContext(0)
 	c := gopbuild.NewContext(ctx)
@@ -41,6 +46,7 @@ func spxInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileCo
 	// replace it!
 	conf.Importer = c
 	chkOpts := initTypeConfig(file, fileSet, mod)
+
 	// init info
 	info := initTypeInfo()
 	check := typesutil.NewChecker(conf, chkOpts, nil, info)
@@ -48,32 +54,44 @@ func spxInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileCo
 	return info, err
 }
 
-type position struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
+// node item contains the ast node item info.
+type nodeItem struct {
+	Position token.Position `json:"position"`
+	ExprName string         `json:"exprName"`
+	ExprType string         `json:"exprType"`
+	Mode     string         `json:"mode"`
+	Type     string         `json:"type"`
 }
 
-type tokenInfo struct {
-	Position position `json:"position"`
-	ExprName string   `json:"exprName"`
-	ExprType string   `json:"exprType"`
-	Mode     string   `json:"mode"`
-	Type     string   `json:"type"`
+// def2List make defer to string list.
+func def2List(fset *token.FileSet, defs map[*ast.Ident]types.Object) []string {
+	var items []string
+	for expr, obj := range defs {
+		if obj == nil {
+			continue
+		}
+		var buf strings.Builder
+		posn := fset.Position(expr.Pos())
+		// line:col | expr | mode : type = value
+		fmt.Fprintf(&buf, "%2d:%2d | %-19s | %s",
+			posn.Line, posn.Column, expr,
+			obj)
+		items = append(items, buf.String())
+	}
+	sort.Strings(items)
+	return items
 }
 
-func info2List(fset *token.FileSet, types map[ast.Expr]types.TypeAndValue) []tokenInfo {
-	var items []tokenInfo
+func info2List(fset *token.FileSet, types map[ast.Expr]types.TypeAndValue) []nodeItem {
+	var items []nodeItem
 	for expr, tv := range types {
 		posn := fset.Position(expr.Pos())
 		tvstr := tv.Type.String()
 		if tv.Value != nil {
 			tvstr += " = " + tv.Value.String()
 		}
-		item := tokenInfo{
-			Position: position{
-				Line:   posn.Line,
-				Column: posn.Column,
-			},
+		item := nodeItem{
+			Position: posn,
 			ExprName: exprString(fset, expr),
 			ExprType: fmt.Sprintf("%T", expr),
 			Mode:     mode(tv),

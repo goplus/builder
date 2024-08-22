@@ -13,12 +13,12 @@ import (
 
 // astWalker is a structure for printing values as JSON
 type astWalker struct {
-	buffer          *bytes.Buffer
-	fileSet         *token.FileSet
-	filter          ast.FieldFilter
-	ptrMap          map[interface{}]int
-	line            int
-	spxFunctionList []*codeFunction
+	buffer       *bytes.Buffer
+	fileSet      *token.FileSet
+	filter       ast.FieldFilter
+	ptrMap       map[interface{}]int
+	line         int
+	functionList []*funcItem
 }
 
 // json can make astWalker in to buffer to print.
@@ -100,57 +100,6 @@ func (jp *astWalker) json(x reflect.Value) {
 	}
 }
 
-// WalkAST is a function to get info from code.
-func (jp *astWalker) WalkAST(x reflect.Value) {
-	if !ast.NotNilFilter("", x) {
-		return
-	}
-
-	switch x.Kind() {
-	case reflect.Interface:
-		jp.WalkAST(x.Elem())
-
-	case reflect.Map:
-		keys := x.MapKeys()
-		for _, key := range keys {
-			jp.WalkAST(key)
-			jp.WalkAST(x.MapIndex(key))
-		}
-
-	case reflect.Ptr:
-		ptr := x.Interface()
-		if _, exists := jp.ptrMap[ptr]; exists {
-		} else {
-			jp.ptrMap[ptr] = jp.line
-			jp.WalkAST(x.Elem())
-		}
-
-	case reflect.Array, reflect.Slice:
-		for i := 0; i < x.Len(); i++ {
-			jp.WalkAST(x.Index(i))
-		}
-
-	case reflect.Struct:
-		t := x.Type()
-		for i := 0; i < t.NumField(); i++ {
-			name := t.Field(i).Name
-			if token.IsExported(name) {
-				value := x.Field(i)
-				if jp.filter == nil || jp.filter(name, value) {
-					if name == "Fun" {
-						jp.spxFunctionList = append(jp.spxFunctionList, createFunStruct(value))
-					}
-					jp.WalkAST(value)
-				}
-			}
-		}
-
-	default:
-		_ = x.Interface()
-
-	}
-}
-
 // jsonPrint generates the JSON representation of x and writes it to w.
 func jsonPrint(fset *token.FileSet, x interface{}) error {
 	w := os.Stdout
@@ -168,79 +117,92 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 		jp.json(reflect.ValueOf(x))
 	}
 
-	fmt.Println(jp.buffer.String())
+	//fmt.Println(jp.buffer.String())
 	_, err := w.Write(jp.buffer.Bytes())
 	return err
 }
 
-// codeFunction is spx function called in code.
-type codeFunction struct {
-	Name       string         `json:"name"`
-	Position   token.Position `json:"posn"`
-	Pos        int            `json:"pos"`
-	Signature  string         `json:"signature"`
-	Parameters []parameter    `json:"parameters"`
+type funcItem struct {
+	Name          string           `json:"name"`
+	StartPos      int              `json:"start_pos"`
+	EndPos        int              `json:"end_pos"`
+	StartPosition token.Position   `json:"start_position"`
+	EndPosition   token.Position   `json:"end_position"`
+	Signature     string           `json:"signature"`
+	Parameters    []*funcParameter `json:"parameters"`
 }
 
-type parameter struct {
-	Name     string   `json:"name"`
-	Type     string   `json:"type"`
-	Position position `json:"position"`
-	Unit     string   `json:"unit"`
+type funcParameter struct {
+	Name          string         `json:"name"`
+	Type          string         `json:"type"`
+	StartPos      int            `json:"start_pos"`
+	EndPos        int            `json:"end_pos"`
+	StartPosition token.Position `json:"start_position"`
+	EndPosition   token.Position `json:"end_position"`
+	Unit          string         `json:"unit"`
 }
 
 // Pos2Position can make Pos(int) into Position
-func (f *codeFunction) Pos2Position(fset *token.FileSet) {
-	f.Position = fset.Position(token.Pos(f.Pos))
+func (f *funcItem) Pos2Position(fset *token.FileSet) {
+	f.StartPosition = fset.Position(token.Pos(f.StartPos))
+	f.EndPosition = fset.Position(token.Pos(f.EndPos))
 }
 
-// createFunStruct is able to make a code function struct.
-func createFunStruct(value reflect.Value) *codeFunction {
-	f := &codeFunction{}
-	for j := 0; j < value.Elem().Elem().Type().NumField(); j++ {
-		name := value.Elem().Elem().Type().Field(j).Name
-		if token.IsExported(name) {
-			value := value.Elem().Elem().Field(j)
-			if name == "NamePos" {
-				f.Pos = int(value.Int())
-			}
-			if name == "Name" {
-				f.Name = value.String()
-			}
+// Pos2Position can make Pos(int) into Position
+func (p *funcParameter) Pos2Position(fset *token.FileSet) {
+	p.StartPosition = fset.Position(token.Pos(p.StartPos))
+	p.EndPosition = fset.Position(token.Pos(p.EndPos))
+}
+
+type callExprVisitor struct {
+	funcList []*funcItem
+}
+
+func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
+	if callExpr, ok := node.(*ast.CallExpr); ok {
+		fun := &funcItem{}
+		if fn, ok := callExpr.Fun.(*ast.Ident); ok {
+			fun.Name = fn.Name
+			fun.StartPos = int(fn.Pos())
+			fun.EndPos = int(fn.End())
+		}
+		var params []*funcParameter
+		for _, item := range callExpr.Args {
+			funcParam := &funcParameter{}
+			funcParam.StartPos = int(item.Pos())
+			funcParam.EndPos = int(item.End())
+			params = append(params, funcParam)
+		}
+		fun.Parameters = params
+		v.funcList = append(v.funcList, fun)
+	}
+	return v
+}
+
+func (v *callExprVisitor) Position(fset *token.FileSet) {
+	for _, fun := range v.funcList {
+		fun.Pos2Position(fset)
+		for _, paramItem := range fun.Parameters {
+			paramItem.Pos2Position(fset)
 		}
 	}
-	return f
 }
 
-func getCodeFunctionList(fset *token.FileSet, fileName, fileCode string) ([]*codeFunction, error) {
+func (v *callExprVisitor) getFuncList() []*funcItem {
+	return v.funcList
+}
+
+func getCodeFunctionListWithArgs(fset *token.FileSet, fileName, fileCode string) ([]*funcItem, error) {
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
 		return nil, err
 	}
-	//
-	//err = jsonPrint(fset, file)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return nil, err
-	//}
 
-	jp := astWalker{
-		buffer:  new(bytes.Buffer),
-		fileSet: fset,
-		filter:  ast.NotNilFilter,
-		ptrMap:  make(map[interface{}]int),
-	}
+	fv := &callExprVisitor{}
 
-	if file == nil {
-		jp.buffer.WriteString("null")
-	} else {
-		jp.WalkAST(reflect.ValueOf(file))
-	}
+	ast.Walk(fv, file)
 
-	for _, f := range jp.spxFunctionList {
-		f.Pos2Position(jp.fileSet)
-	}
+	fv.Position(fset)
 
-	return jp.spxFunctionList, nil
-
+	return fv.getFuncList(), nil
 }

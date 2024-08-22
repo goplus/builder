@@ -8,6 +8,7 @@ import (
 	"github.com/goplus/gop/token"
 )
 
+// diagnostics contains error after analyse the code.
 type diagnostics struct {
 	FileName string `json:"fileName"`
 	Column   int    `json:"column"`
@@ -19,11 +20,12 @@ type diagnostics struct {
 func GetDiagnostics(fileName, fileCode string) interface{} {
 	// new file set
 	fset := token.NewFileSet()
-	_, err := spxInfo(initSPXMod(), fset, fileName, fileCode)
+	_, err := codeInfo(initSPXMod(), fset, fileName, fileCode)
 	list := parseErrorLines(error2List(err))
 	return list
 }
 
+// parseErrorLines make error info list to diagnostics list.
 func parseErrorLines(sList []string) []diagnostics {
 	diagList := []diagnostics{}
 	for _, str := range sList {
@@ -36,6 +38,7 @@ func parseErrorLines(sList []string) []diagnostics {
 	return diagList
 }
 
+// parseErrorLine make error info to diagnostics.
 func parseErrorLine(str string) (diagnostics, error) {
 	regex := regexp.MustCompile(`^(.*\.spx):(\d+):(\d+):\s*(.*)$`)
 

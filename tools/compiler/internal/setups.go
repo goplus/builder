@@ -57,6 +57,7 @@ func lookupClass(ext string) (c *modfile.Project, ok bool) {
 	return
 }
 
+// init type utils config.
 func initTypeConfig(file *ast.File, fileSet *token.FileSet, mod *gopmod.Module) *typesutil.Config {
 	return &typesutil.Config{
 		Types:                 types.NewPackage("main", file.Name.Name),
@@ -66,6 +67,7 @@ func initTypeConfig(file *ast.File, fileSet *token.FileSet, mod *gopmod.Module) 
 	}
 }
 
+// init type info
 func initTypeInfo() *typesutil.Info {
 	return &typesutil.Info{
 		Types:      make(map[ast.Expr]types.TypeAndValue),
@@ -78,11 +80,13 @@ func initTypeInfo() *typesutil.Info {
 	}
 }
 
+// init file parser
 func initParser(fileSet *token.FileSet, fileName string, fileCode string) (*ast.File, error) {
 	// new parser
 	return parser.ParseEntry(fileSet, fileName, fileCode, initSPXParserConf())
 }
 
+// init project parser
 func initProjectParser(fileSet *token.FileSet, fileNames []string) (map[string]*ast.Package, error) {
 	return parser.ParseFSFiles(fileSet, fsx.Local, fileNames, 0)
 }
