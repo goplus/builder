@@ -133,9 +133,9 @@ export class CompletionMenu implements IDisposable {
 
   private createCodePreviewDomNode(codeLines: string[]) {
     const LINE_HEIGHT = this.completionMenuState.lineHeight
-    const $codeContainer = document.createElement('div')
-    $codeContainer.classList.add('view-lines')
-    $codeContainer.innerHTML = codeLines
+    const containerElement = document.createElement('div')
+    containerElement.classList.add('view-lines')
+    containerElement.innerHTML = codeLines
       .map(
         (line, i) =>
           `<div style="top: ${i * LINE_HEIGHT}px;" class="view-line">
@@ -143,7 +143,7 @@ export class CompletionMenu implements IDisposable {
            </div>`
       )
       .join('')
-    return $codeContainer
+    return containerElement
   }
 
   private showMultiCodePreview(position: IPosition, codeLines: string[]) {
@@ -167,6 +167,7 @@ export class CompletionMenu implements IDisposable {
     // To avoid this, we need to subtract 1 from the column value.
     const startColumn = position.column - 1
     const endColum = startColumn + word.length
+
     this.completionMenuItemPreviewDecorationsCollection.set([
       {
         range: new Range(position.lineNumber, startColumn, position.lineNumber, endColum),
