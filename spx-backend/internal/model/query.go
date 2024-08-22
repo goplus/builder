@@ -300,12 +300,13 @@ func getLikedInfo(ctx context.Context, db *sql.DB, assetIDs []string) (map[strin
 			IsLiked:   true,
 			LikeCount: count,
 		}
+		logger.Printf("assetID: %s, count: %d", assetID, count)
 	}
 
 	if err := rows.Err(); err != nil {
 		logger.Printf("rows iteration error: %v", err)
 		return nil, err
 	}
-
+	logger.Printf("likedMap: %v", likedMap)
 	return likedMap, nil
 }
