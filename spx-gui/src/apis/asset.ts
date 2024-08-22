@@ -151,7 +151,7 @@ export function getAssetRate(id: string): Promise<AssetRate> {
   //     })
   //   }, 100)
   // })
-  return client.get(`/asset/${encodeURIComponent(id)}/rate`) as Promise<AssetRate>
+  return client.get(`/user/rate/${encodeURIComponent(id)}`) as Promise<AssetRate>
 }
 
 /**
@@ -166,5 +166,5 @@ export function rateAsset(id: string, rate: number) {
   if ([1, 2, 3, 4, 5].indexOf(rate) === -1) {
     throw new Error('Invalid rate value')
   }
-  return client.post(`/asset/${encodeURIComponent(id)}/rate`, { rate }) as Promise<void>
+  return client.post(`/user/rate/${encodeURIComponent(id)}`, { rate }) as Promise<void>
 }
