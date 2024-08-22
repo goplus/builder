@@ -71,7 +71,6 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         assetType: searchCtx.type,
         keyword: '',
         category: [''],
-        owner: '*',
         isPublic: undefined,
         orderBy: ListAssetParamOrderBy.TimeAsc
       })
@@ -82,7 +81,6 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         assetType: searchCtx.type,
         keyword: undefined,
         category: undefined,
-        owner: '*',
         isPublic: undefined,
         orderBy: ListAssetParamOrderBy.TimeAsc
       })

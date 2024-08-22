@@ -112,9 +112,6 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 				}
 				if _, ok := leafCategoriesListFilter[leaf]; !ok {
 					leafCategoriesListFilter[leaf] = true
-
-					logger.Printf("leaf category: %s", leaf)
-
 					leafCategoriesList = append(leafCategoriesList, leaf)
 				}
 			}

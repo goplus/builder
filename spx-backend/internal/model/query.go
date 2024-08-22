@@ -68,6 +68,7 @@ func QueryByPage[T any](
 		categoryList = []any{}
 	}
 	orClause, orArgs := buildOrCondition("category", categoryList)
+	logger.Printf("orClause: %s, orArgs: %v", orClause, orArgs)
 	// Build the WHERE and ORDER BY clauses
 	whereClause, whereArgs := buildWhereClause(where, orClause, orArgs)
 	orderByClause := buildOrderByClause(orderBy)
@@ -94,7 +95,7 @@ func QueryByPage[T any](
 	// Calculate offset for pagination
 	offset := (pagination.Index - 1) * pagination.Size
 	args := append(whereArgs, offset, pagination.Size)
-
+	logger.Printf("paginatedQuery: %s, args: %v", paginatedQuery, args)
 	// Execute paginated query
 	rows, err := db.QueryContext(ctx, paginatedQuery, args...)
 	if err != nil {
