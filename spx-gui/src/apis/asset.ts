@@ -119,7 +119,7 @@ export async function getAssetSearchSuggestion(keyword: string, count = 6) {
 
 export interface AssetRate {
   rate: number
-  detail: number[]
+  detail: { score: number, count: number }[]
 }
 
 /**
