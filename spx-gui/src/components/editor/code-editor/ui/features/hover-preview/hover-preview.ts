@@ -1,5 +1,6 @@
 import { type editor as IEditor, type IRange, Emitter, type IDisposable } from 'monaco-editor'
 import { CardManager } from './card-manager'
+import type { AppContext } from 'vue'
 // this type is generated from console.log(), not full types, only necessary for using
 export interface MonacoHoverResult {
   hasLoadingMessage: boolean
@@ -16,26 +17,38 @@ export interface MonacoHoverResult {
 
 export class HoverPreview implements IDisposable {
   private editor: IEditor.IStandaloneCodeEditor
+  private readonly appContext: AppContext
   private readonly _onHover = new Emitter<MonacoHoverResult>()
   private readonly _onHide = new Emitter<null>()
   public readonly onHover = this._onHover.event
   public readonly onHide = this._onHide.event
-  private cardManager = new CardManager()
+  private cardManager: CardManager
   private editorDocumentTimer: number | null = null
   private editorDocumentRange: IRange | null = null
 
-  constructor(editor: IEditor.IStandaloneCodeEditor) {
+  constructor(editor: IEditor.IStandaloneCodeEditor, appContext: AppContext) {
     this.editor = editor
-
+    this.appContext = appContext
+    this.cardManager = new CardManager(appContext)
     const hoverContribution: any = editor.getContribution('editor.contrib.hover')
     const hoverContentWidget = hoverContribution._getOrCreateContentWidget()
     const hoverContentWidgetOperation = hoverContentWidget._hoverOperation
     const rawResultFn =
       hoverContentWidgetOperation._onResult._listeners.value.bind(hoverContentWidget)
     const hideFn = hoverContentWidget.hide.bind(hoverContentWidget)
-    const cancelFn = hoverContentWidgetOperation.cancel.bind(hoverContentWidgetOperation)
 
     editor.onMouseMove((e) => {
+      if (!e.target.range) return
+      const word = this.editor.getModel()?.getWordAtPosition({
+        lineNumber: e.target.range.endLineNumber,
+        column: e.target.range.endColumn
+      })
+      if (word) {
+        if (word.startColumn < e.target.mouseColumn && word.endColumn > e.target.mouseColumn) {
+          // console.log('=>(hover-preview.ts:44) word', word)
+        }
+      }
+
       if (!this.editorDocumentRange || !e.target.range) return
       if (
         e.target.range.startColumn < this.editorDocumentRange.startColumn ||
@@ -51,8 +64,10 @@ export class HoverPreview implements IDisposable {
     })
     hoverContentWidgetOperation.onResult((result: MonacoHoverResult) => {
       rawResultFn(result)
+      // console.log('=>(hover-preview.ts:53) result', result)
+
       const containerRect = editor.getContainerDomNode().getBoundingClientRect()
-      const [hoverContent] = result.value
+      const hoverContent = result.value.shift()
       if (!hoverContent) return
       this.editorDocumentRange = hoverContent.range
       const top =
@@ -90,11 +105,7 @@ export class HoverPreview implements IDisposable {
       hideFn()
       this.editorDocumentTimer = setTimeout(() => {
         this._onHide.fire(null)
-      }, 100) as unknown as number
-    }
-
-    hoverContentWidgetOperation.cancel = () => {
-      cancelFn()
+      }, 500) as unknown as number
     }
   }
 

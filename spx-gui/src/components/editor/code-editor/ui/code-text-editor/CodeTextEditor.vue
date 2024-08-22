@@ -16,7 +16,7 @@ let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
-import { ref, shallowRef, watch, watchEffect } from 'vue'
+import { getCurrentInstance, ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
@@ -45,12 +45,15 @@ const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
+const appInstance = getCurrentInstance()
 
 const loaderConfig = {
   paths: {
-    vs: '/monaco-editor-0.45.0/min/vs'
+    // use remote monaco-editor package in dev mode for better debug track to hook inner controllers.
+    ...(import.meta.env.DEV ? {} : { vs: '/monaco-editor-0.45.0/min/vs' })
   }
 }
+
 if (i18n.lang.value !== 'en') {
   const langOverride = {
     zh: 'zh-cn'
@@ -140,13 +143,14 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  hoverPreview.value = new HoverPreview(editor)
+  if (!appInstance?.appContext) throw new Error("Can't get appContext")
+
+  hoverPreview.value = new HoverPreview(editor, appInstance?.appContext)
 
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()
     hoverPreview.value?.dispose()
-    props.ui.disposeMonacoProviders()
     editor.dispose()
   })
 })

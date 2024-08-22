@@ -1,17 +1,31 @@
 import { Disposable } from '@/utils/disposable'
 import DocumentPreviewComponent from './DocumentPreview.vue'
-import { type CSSProperties, h, render } from 'vue'
+import { type AppContext, type CSSProperties, h, render } from 'vue'
 
 export class CardManager extends Disposable {
   cardContainer = new CardContainer()
 
-  constructor() {
+  constructor(appContext: AppContext) {
     super()
     this.addDisposer(() => this.cardContainer.dispose())
+    this.appContext = appContext
+  }
+
+  private appContext: AppContext
+  setAppContext(appContext: AppContext) {
+    this.appContext = appContext
+  }
+
+  getAppContext() {
+    return this.appContext
   }
 
   renderDocument(content: string, style?: CSSProperties, onMouseenter?: () => void) {
-    const close = () => render(null, this.cardContainer.containerElement)
+    const cardContainer = document.createElement('div')
+    const close = () => {
+      render(null, cardContainer)
+      cardContainer.remove()
+    }
     const vNode = h(DocumentPreviewComponent, {
       content,
       style: {
@@ -23,10 +37,14 @@ export class CardManager extends Disposable {
       },
       onMouseenter
     })
-    render(vNode, this.cardContainer.containerElement)
+
+    vNode.appContext = this.appContext
+
+    render(vNode, cardContainer)
+    this.cardContainer.addCard(cardContainer)
 
     return {
-      close
+      close() {}
     }
   }
 }
@@ -50,5 +68,7 @@ class CardContainer extends Disposable {
     `
   }
 
-  addCard() {}
+  addCard(cardElement: HTMLElement) {
+    this.containerElement.appendChild(cardElement)
+  }
 }

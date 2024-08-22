@@ -2,6 +2,7 @@ import {
   type CompletionItem,
   type EditorUI,
   Icon,
+  type LayerContent,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
@@ -38,6 +39,10 @@ export class Coordinator {
       // and throw undefined error
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
     })
+
+    ui.registerHoverProvider({
+      provideHover: this.implementsPreDefinedHoverProvider.bind(this)
+    })
   }
 
   implementsPreDefinedCompletionProvider(
@@ -50,6 +55,19 @@ export class Coordinator {
     addItems: (items: CompletionItem[]) => void
   ) {
     addItems(getCompletionItems(this.ui.i18n, this.project))
+  }
+
+  async implementsPreDefinedHoverProvider(
+    model: TextModel,
+    ctx: {
+      position: Position
+      hoverUnitWord: string
+      signal: AbortSignal
+    }
+  ): Promise<LayerContent> {
+    return {
+      content: ''
+    }
   }
 
   public jump(position: JumpPosition): void {}

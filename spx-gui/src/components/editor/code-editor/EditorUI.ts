@@ -203,6 +203,7 @@ export type AIChatModalOptions = {
 
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
+  hover: HoverProvider[]
 }
 
 declare global {
@@ -235,7 +236,8 @@ export class EditorUI extends Disposable {
 
     this.getProject = getProject
     this.editorUIRequestCallback = {
-      completion: []
+      completion: [],
+      hover: []
     }
 
     this.addDisposer(() => {
@@ -249,6 +251,7 @@ export class EditorUI extends Disposable {
     if (this.monaco) return this.monaco
     const monaco_ = await loader.init()
     if (this.monaco) return this.monaco
+    this.disposeMonacoProviders()
     await this.initMonaco(monaco_, this.getProject)
     this.monaco = monaco_
     return this.monaco
@@ -342,7 +345,7 @@ export class EditorUI extends Disposable {
     // temp region start ##
     // the following code will be replaced after `document.ts` is ready
     const i18n = this.i18n
-
+    console.log('=>(EditorUI.ts:348) register hover provider')
     this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
       LANGUAGE_NAME,
       {
@@ -355,6 +358,7 @@ export class EditorUI extends Disposable {
             startColumn: word.startColumn,
             endColumn: word.endColumn
           }
+          console.log('=>(EditorUI.ts:359) content hover provider active')
           const tools = getAllTools(getProject())
           const tool = tools.find((s) => s.keyword === word.word)
           if (tool == null) return
@@ -393,7 +397,7 @@ ${usage.sample}
    * providers need to be disposed before the editor is destroyed.
    * otherwise, it will cause duplicate completion items when HMR is triggered in development mode.
    */
-  public disposeMonacoProviders() {
+  private disposeMonacoProviders() {
     if (this.monacoProviderDisposes.completionProvider) {
       this.monacoProviderDisposes.completionProvider.dispose()
       this.monacoProviderDisposes.completionProvider = null
@@ -428,7 +432,7 @@ ${usage.sample}
     // todo: to resolve fn `registerSelectionMenuProvider`
   }
   public registerHoverProvider(provider: HoverProvider) {
-    // todo: to resolve fn `registerHoverProvider`
+    this.editorUIRequestCallback.hover.push(provider)
   }
   public registerAttentionHintsProvider(provider: AttentionHintsProvider) {
     // todo: to resolve fn `registerAttentionHintsProvider`

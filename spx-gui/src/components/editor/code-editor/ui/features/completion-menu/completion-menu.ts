@@ -231,7 +231,12 @@ export class CompletionMenu implements IDisposable {
     if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
-    const fontSize = Number(this.editor.getOption(EditorOption.fontSize))
+    const fontSize = Number(
+      // for better dev debug and tracking, current in dev mode, we chose load remote CDN monaco editor.
+      // if we use `public` folder monaco editor file which means in `CodeTextEditor.vue` we use loader load local monaco file, this fontSize should be correct at `EditorOption.fontsize`
+      // otherwise, when using loader to load remote CDN monaco editor, `EditorOption.fontSize` should minus 1
+      this.editor.getOption(import.meta.env.DEV ? EditorOption.fontSize - 1 : EditorOption.fontSize)
+    )
     const isMultiline = () => {
       const { suggestions, activeIdx } = this.completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false
