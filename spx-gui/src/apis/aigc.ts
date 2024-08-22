@@ -142,7 +142,7 @@ export async function syncGenerateAIImage({
   //   }, 1000)
   // });
   const result = (await client.post(
-    '/aigc/image',
+    '/aigc/image/sync',
     { keyword, category, width, height },
     { timeout: 20 * 1000 }
   )) as {

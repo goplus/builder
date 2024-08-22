@@ -220,8 +220,9 @@ watch(
     assetList.value.push(...(result?.data ?? []))
     if (!hasMoreAssets.value) {
       // Fill the last row with AI assets
-      const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
+      let count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
       if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
+        count = 1
         abortAIGeneration = generateMultipleAIImages(count, false)
       }
     } else if (searchCtx.page === 1) {

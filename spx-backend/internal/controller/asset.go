@@ -41,8 +41,11 @@ type ListAssetsOrderBy string
 
 var (
 	DefaultOrder   ListAssetsOrderBy = "default"
-	TimeDesc       ListAssetsOrderBy = "time"
+	TimeDesc       ListAssetsOrderBy = "timeDesc"
 	ClickCountDesc ListAssetsOrderBy = "clickCount"
+	TimeAsc        ListAssetsOrderBy = "timeAsc"
+	NameAsc        ListAssetsOrderBy = "nameAsc"
+	NameDesc       ListAssetsOrderBy = "nameDesc"
 )
 
 type SearchSuggestionsResult struct {
@@ -129,8 +132,14 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 
 	var orders []model.OrderByCondition
 	switch params.OrderBy {
+	case TimeAsc:
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "ASC"})
 	case TimeDesc:
 		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "DESC"})
+	case NameAsc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "ASC"})
+	case NameDesc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "DESC"})
 	case ClickCountDesc:
 		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
 	}

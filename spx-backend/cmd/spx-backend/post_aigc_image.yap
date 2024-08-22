@@ -1,4 +1,4 @@
-// Get generate image from ai.
+// Get generate image from ai.（async）
 //
 // Request:
 //   POST /aigc/image
