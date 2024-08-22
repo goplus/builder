@@ -57,7 +57,6 @@ func main() {
 	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
 	type Gamer interface {
 		initGame(sprites []spx.Spriter) *spx.Game
-		getGame() *spx.Game
 	}
 	gameRun := func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
 		path := resource.(string)
@@ -78,6 +77,8 @@ func main() {
 	})
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", gameRun)
+
+	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Gopx_GetWidget[github.com/goplus/spx.Monitor]", spx.Gopt_Game_Gopx_GetWidget[spx.Monitor])
 
 	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {
