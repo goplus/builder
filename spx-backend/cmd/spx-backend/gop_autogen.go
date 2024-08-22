@@ -39,6 +39,10 @@ type get_aigc_status struct {
 	yap.Handler
 	*AppV2
 }
+type get_aigc_status struct {
+	yap.Handler
+	*AppV2
+}
 type get_asset_id struct {
 	yap.Handler
 	*AppV2

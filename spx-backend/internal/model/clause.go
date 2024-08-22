@@ -18,13 +18,20 @@ func (cond *FilterCondition) Expr() string {
 }
 
 // buildWhereClause builds a WHERE clause from the given AND conditions and optional OR conditions.
+// buildWhereClause builds a WHERE clause from the given AND conditions and optional OR conditions.
 //
 // The deleted items are filtered out by default.
+func buildWhereClause(andConds []FilterCondition, orClause string, orArgs []any) (string, []any) {
 func buildWhereClause(andConds []FilterCondition, orClause string, orArgs []any) (string, []any) {
 	var (
 		exprs = make([]string, 0, len(andConds)+2) // len + 2 to account for OR condition and status check
 		args  = make([]any, 0, len(andConds)+2)
+		exprs = make([]string, 0, len(andConds)+2) // len + 2 to account for OR condition and status check
+		args  = make([]any, 0, len(andConds)+2)
 	)
+
+	// Process AND conditions
+	for _, cond := range andConds {
 
 	// Process AND conditions
 	for _, cond := range andConds {
@@ -43,7 +50,29 @@ func buildWhereClause(andConds []FilterCondition, orClause string, orArgs []any)
 	args = append(args, StatusDeleted)
 
 	whereClause := "WHERE " + strings.Join(exprs, " AND ")
+	fmt.Printf("whereClause: %s\n", whereClause)
 	return whereClause, args
+}
+
+// buildOrCondition builds an OR condition for a list of categories.
+func buildOrCondition(column string, values []any) (string, []any) {
+	if len(values) == 0 {
+		return "", nil
+	}
+
+	var (
+		exprs = make([]string, 0, len(values))
+		args  = make([]any, 0, len(values))
+	)
+
+	for _, value := range values {
+		exprs = append(exprs, fmt.Sprintf("%s = ?", column))
+		args = append(args, value)
+	}
+
+	// Combine all expressions with OR
+	orClause := "(" + strings.Join(exprs, " OR ") + ")"
+	return orClause, args
 }
 
 // buildOrCondition builds an OR condition for a list of categories.

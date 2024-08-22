@@ -75,6 +75,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	`
 
 	assets, err := model.ListUserAssets(ctx, ctrl.db, params.Pagination, wheres, orders, query)
+	assets, err := model.ListUserAssets(ctx, ctrl.db, params.Pagination, wheres, orders, query)
 	if err != nil {
 		logger.Printf("failed to list user assets: %v", err)
 		return nil, err

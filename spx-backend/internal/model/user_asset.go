@@ -75,6 +75,28 @@ func ListUserAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filte
 
 }
 
+// ListUserAssets lists assets with given pagination, where conditions and order by conditions.
+func ListUserAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition, query string) (*ByPage[Asset], error) {
+	logger := log.GetReqLogger(ctx)
+	assets, err := QueryByPage[Asset](ctx, db, query, paginaton, filters, orderBy, true, nil)
+	if err != nil {
+		logger.Printf("QueryByPage failed: %v", err)
+		return nil, err
+	}
+	assetIDs := extractAssetIDs(assets.Data)
+
+	likedMap, err := getLikedInfo(ctx, db, assetIDs)
+	if err != nil {
+		logger.Printf("getLikedInfo failed: %v", err)
+		return nil, err
+	}
+
+	fillLikedInfo(assets.Data, likedMap)
+
+	return assets, nil
+
+}
+
 // UserAssetByOwner returns all the user assets by owner.
 func UserAssetByOwner(ctx context.Context, db *gorm.DB, owner string) (*UserAsset, error) {
 	logger := log.GetReqLogger(ctx)
