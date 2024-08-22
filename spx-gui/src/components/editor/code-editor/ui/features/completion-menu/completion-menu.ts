@@ -33,9 +33,6 @@ export interface CompletionMenuState {
 }
 
 export class CompletionMenu implements IDisposable {
-  private _onHide = new Emitter<void>()
-  private _onShow = new Emitter<void>()
-  private _onFocus = new Emitter<void>()
   public editor: IEditor.IStandaloneCodeEditor
   public completionMenuState: UnwrapNestedRefs<CompletionMenuState>
   public completionItemCache = new CompletionItemCache()
@@ -83,42 +80,32 @@ export class CompletionMenu implements IDisposable {
   }
 
   private initEventListeners() {
-    this._onHide.event(this.onHide, this)
-    this._onShow.event(this.onShow, this)
-    this._onFocus.event(this.onFocus, this)
-
-    this.suggestControllerWidget.onDidHide(() => this._onHide.fire())
-    this.suggestControllerWidget.onDidShow(() => this._onShow.fire())
-    this.suggestControllerWidget.onDidFocus(() => this._onFocus.fire())
-  }
-
-  private onShow() {
-    this.completionMenuState.visible = true
-    this.syncCompletionMenuStateFromSuggestControllerWidget(0)
-    // must be use next render time to update correct position
-    setTimeout(() => this.updateCompletionMenuPosition(), 0)
-  }
-
-  private onHide() {
-    this.completionMenuState.visible = false
-    this.completionMenuState.suggestions.length = 0
-    this.disposeCodePreview()
-  }
-
-  private onFocus() {
-    this.completionMenuState.visible = true
-    const focusedItem = this.suggestControllerWidget.getFocusedItem()
-    if (!focusedItem) return
-    this.completionMenuState.word = focusedItem.item.word
-    this.syncCompletionMenuStateFromSuggestControllerWidget(focusedItem.index)
-    const suggestItem: MonacoCompletionModelItem = focusedItem.item
-    this.disposeCodePreview()
-    this.showCodePreview(
-      suggestItem.position,
-      suggestItem.completion.insertText,
-      suggestItem.word.toLowerCase()
-    )
-    this.updateCompletionMenuPosition()
+    this.suggestControllerWidget.onDidHide(() => {
+      this.completionMenuState.visible = false
+      this.completionMenuState.suggestions.length = 0
+      this.disposeCodePreview()
+    })
+    this.suggestControllerWidget.onDidShow(() => {
+      this.completionMenuState.visible = true
+      this.syncCompletionMenuStateFromSuggestControllerWidget(0)
+      // must be use next render time to update correct position
+      setTimeout(() => this.updateCompletionMenuPosition(), 0)
+    })
+    this.suggestControllerWidget.onDidFocus(() => {
+      this.completionMenuState.visible = true
+      const focusedItem = this.suggestControllerWidget.getFocusedItem()
+      if (!focusedItem) return
+      this.completionMenuState.word = focusedItem.item.word
+      this.syncCompletionMenuStateFromSuggestControllerWidget(focusedItem.index)
+      const suggestItem: MonacoCompletionModelItem = focusedItem.item
+      this.disposeCodePreview()
+      this.showCodePreview(
+        suggestItem.position,
+        suggestItem.completion.insertText,
+        suggestItem.word.toLowerCase()
+      )
+      this.updateCompletionMenuPosition()
+    })
   }
 
   private disposeCodePreview() {
@@ -132,53 +119,17 @@ export class CompletionMenu implements IDisposable {
   }
 
   private createCodePreviewDomNode(codeLines: string[]) {
-    const LINE_HEIGHT = this.completionMenuState.lineHeight
     const containerElement = document.createElement('div')
     containerElement.classList.add('view-lines')
     containerElement.innerHTML = codeLines
       .map(
         (line, i) =>
-          `<div style="top: ${i * LINE_HEIGHT}px;" class="view-line">
+          `<div style="top: ${i * this.completionMenuState.lineHeight}px;" class="view-line">
               <span class="mtk1 completion-menu__item-preview">${line}</span>
            </div>`
       )
       .join('')
     return containerElement
-  }
-
-  private showMultiCodePreview(position: IPosition, codeLines: string[]) {
-    const _codeLines = codeLines.map((content) =>
-      content.replace(/* here replace `space` to html space(&nbsp;) */ / /g, '&nbsp;')
-    )
-    this.editor.changeViewZones((changeAccessor) => {
-      this.viewZoneChangeAccessorState.codePreviewElement =
-        this.createCodePreviewDomNode(_codeLines)
-      this.viewZoneChangeAccessorState.viewZoneId = changeAccessor.addZone({
-        afterLineNumber: position.lineNumber,
-        heightInLines: _codeLines.length,
-        domNode: this.viewZoneChangeAccessorState.codePreviewElement
-      })
-    })
-  }
-
-  private showSingleCodePreview(position: IPosition, word: string, line: string) {
-    const remainWords = line.substring(word.length)
-    // Occasionally, a column may be slightly larger than the actual column by just one unit. This can prevent the inline code preview from displaying correctly.
-    // To avoid this, we need to subtract 1 from the column value.
-    const startColumn = position.column - 1
-    const endColum = startColumn + word.length
-
-    this.completionMenuItemPreviewDecorationsCollection.set([
-      {
-        range: new Range(position.lineNumber, startColumn, position.lineNumber, endColum),
-        options: {
-          after: {
-            content: remainWords,
-            inlineClassName: 'completion-menu__item-preview'
-          }
-        }
-      }
-    ])
   }
 
   private syncCompletionMenuStateFromSuggestControllerWidget(activeIdx: number = 0) {
@@ -206,8 +157,39 @@ export class CompletionMenu implements IDisposable {
     const firstLine = lines.shift()
     const isMultiLine = lines.length > 1
     if (!firstLine) return console.warn('completion menu item preview error: empty first line')
-    if (isMultiLine) this.showMultiCodePreview(position, lines)
-    this.showSingleCodePreview(position, word, firstLine)
+
+    // single line code preview
+    const remainWords = firstLine.substring(word.length)
+    // Occasionally, a column may be slightly larger than the actual column by just one unit. This can prevent the inline code preview from displaying correctly.
+    // To avoid this, we need to subtract 1 from the column value.
+    const startColumn = position.column - 1
+    const endColum = startColumn + word.length
+
+    this.completionMenuItemPreviewDecorationsCollection.set([
+      {
+        range: new Range(position.lineNumber, startColumn, position.lineNumber, endColum),
+        options: {
+          after: {
+            content: remainWords,
+            inlineClassName: 'completion-menu__item-preview'
+          }
+        }
+      }
+    ])
+
+    if (!isMultiLine) return
+    // multi lines code preview
+    const _lines = lines.map((content) =>
+      content.replace(/* here replace `space` to html space(&nbsp;) */ / /g, '&nbsp;')
+    )
+    this.editor.changeViewZones((changeAccessor) => {
+      this.viewZoneChangeAccessorState.codePreviewElement = this.createCodePreviewDomNode(_lines)
+      this.viewZoneChangeAccessorState.viewZoneId = changeAccessor.addZone({
+        afterLineNumber: position.lineNumber,
+        heightInLines: _lines.length,
+        domNode: this.viewZoneChangeAccessorState.codePreviewElement
+      })
+    })
   }
 
   select(idx: number) {
@@ -217,9 +199,6 @@ export class CompletionMenu implements IDisposable {
   }
 
   dispose() {
-    this._onFocus.dispose()
-    this._onShow.dispose()
-    this._onHide.dispose()
     this.completionItemCache.dispose()
     this.disposeCodePreview()
   }
