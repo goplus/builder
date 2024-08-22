@@ -37,7 +37,9 @@ func getFuncName(i interface{}) string {
 // Functions following below is the entry functions for js.
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
-	return nil
+	fileName := p[0].String()
+	fileCode := p[1].String()
+	return internal.NewReply(internal.GetInlayHint(fileName, fileCode))
 }
 
 func getDiagnostics(this js.Value, p []js.Value) interface{} {
@@ -49,7 +51,7 @@ func getDiagnostics(this js.Value, p []js.Value) interface{} {
 func getDefinition(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
 	fileCode := p[1].String()
-	return internal.NewReply(internal.GetDefinitionFromASTAndTypesInfo(fileName, fileCode))
+	return internal.NewReply(internal.GetDefinition(fileName, fileCode))
 }
 
 func getTypes(this js.Value, p []js.Value) interface{} {
