@@ -46,7 +46,7 @@
   </NVirtualList>
 </template>
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
@@ -58,19 +58,13 @@ import AssetItem from './AssetItem.vue'
 import {
   AIGCStatus,
   AIGCTask,
-  AIImageTask,
-  generateAIImage,
   isAiAsset,
-  isContentReady,
   isPreviewReady,
   SyncAIImageTask,
-  type AIAssetData,
-  type AssetOrAIAsset,
   type TaggedAIAssetData
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
-import { createFileWithWebUrl, saveFiles } from '@/models/common/cloud'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
