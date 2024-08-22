@@ -22,8 +22,6 @@ case "":
 		return
 	}
 	params.Owner = &user.Name
-case "*":
-	params.Owner = nil
 default:
 	params.Owner = &owner
 }
