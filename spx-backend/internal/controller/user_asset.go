@@ -53,6 +53,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 
 	// Initialize the filter conditions
 	var wheres []model.FilterCondition
+	wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: *params.Owner}, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
 	// Apply additional filters based on parameters
 	if params.Owner != nil {
