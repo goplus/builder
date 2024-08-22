@@ -166,8 +166,6 @@ const status = ref<AIGCStatus>(AIGCStatus.Finished)
 
 const generateContent = async () => {
   if (props.asset.assetType === AssetType.Sprite) {
-    // contentJobId.value = (await generateAISprite(props.asset.id)).spriteJobId
-    // pollStatus()
     const generateTask = new AISpriteTask(props.asset.id)
     generateTask.addEventListener('AIGCStatusChange', () => {
       status.value = generateTask.status
