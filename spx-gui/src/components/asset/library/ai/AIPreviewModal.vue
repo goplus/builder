@@ -99,15 +99,15 @@
         >
           <div
             v-for="aiAsset in aiAssets"
-            :key="aiAsset.id"
+            :key="aiAsset.taskId"
             class="ai-asset-wrapper"
-            :class="{ selected: aiAsset.id === asset.id }"
+            :class="{ selected: aiAsset.result?.id === asset.id }"
           >
             <AIAssetItem
-              :asset="aiAsset"
+              :task="aiAsset"
               :show-ai-asset-tip="false"
-              @ready="aiAsset[isPreviewReady] = true"
-              @click="aiAsset[isPreviewReady] && emit('selectAi', aiAsset)"
+              @ready="(aiAsset as any)[isPreviewReady] = true"
+              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)"
             />
           </div>
         </NScrollbar>
@@ -132,7 +132,10 @@ import {
   isPreviewReady,
   type TaggedAIAssetData,
   exportAIGCAsset,
-  exportedId
+  exportedId,
+  AIGCTask,
+  type RequiredAIGCFiles,
+  AISpriteTask
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -148,7 +151,7 @@ import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 // Define component props
 const props = defineProps<{
   asset: TaggedAIAssetData
-  aiAssets: TaggedAIAssetData[]
+  aiAssets: AIGCTask[]
   addToProjectPending: boolean
 }>()
 
@@ -163,8 +166,17 @@ const status = ref<AIGCStatus>(AIGCStatus.Finished)
 
 const generateContent = async () => {
   if (props.asset.assetType === AssetType.Sprite) {
-    contentJobId.value = (await generateAISprite(props.asset.id)).spriteJobId
-    pollStatus()
+    const generateTask = new AISpriteTask(props.asset.id)
+    generateTask.addEventListener('AIGCStatusChange', () => {
+      status.value = generateTask.status
+    })
+    generateTask.addEventListener('AIGCFinished', () => {
+      contentReady.value = true
+      if (generateTask.result?.files) {
+        loadCloudFiles(generateTask.result.files)
+      }
+    })
+    generateTask.start()
   } else if (props.asset.assetType === AssetType.Backdrop) {
     convertAIAssetToBackdrop(props.asset)
     contentReady.value = true
@@ -196,54 +208,25 @@ watch(
   { immediate: true }
 )
 
-const POLLING_INTERVAL = 500
-
-const POLLING_MAX_COUNT = (10 * 60 * 1000) / POLLING_INTERVAL
-
-let pollingCount = 0
-type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
-const pollStatus = async () => {
-  if (!contentJobId.value) {
-    return
-  }
-  if (status.value === AIGCStatus.Finished) {
-    return
-  }
-  if (pollingCount >= POLLING_MAX_COUNT) {
+const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
+  if (!cloudFiles) {
     status.value = AIGCStatus.Failed
     return
   }
+  const files = (await getFiles(cloudFiles)) as {
+    [key in keyof AIGCFiles]: File
+  }
 
-  pollingCount++
-
-  const newStatus = await getAIGCStatus(contentJobId.value)
-  status.value = newStatus.status
-
-  if (newStatus.status === AIGCStatus.Finished) {
-    const cloudFiles = newStatus.result?.files as RequiredAIGCFiles
-    if (!cloudFiles) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    const files = (await getFiles(cloudFiles)) as {
-      [key in keyof AIGCFiles]: File
-    }
-
-    if (!files) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    props.asset.files = cloudFiles
-    props.asset.filesHash = await hashFileCollection(cloudFiles)
-    props.asset.displayName = props.asset.displayName ?? props.asset.id
-    props.asset[isContentReady] = true
-    contentReady.value = true
+  if (!files) {
+    status.value = AIGCStatus.Failed
     return
   }
-
-  if (newStatus.status !== AIGCStatus.Failed) {
-    setTimeout(pollStatus, POLLING_INTERVAL)
-  }
+  props.asset.files = cloudFiles
+  props.asset.filesHash = await hashFileCollection(cloudFiles)
+  props.asset.displayName = props.asset.displayName ?? props.asset.id
+  props.asset[isContentReady] = true
+  contentReady.value = true
+  return
 }
 
 const isFavorite = ref(false)

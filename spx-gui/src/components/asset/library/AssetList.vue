@@ -20,12 +20,17 @@
   >
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
-        <template v-for="asset in item.assets" :key="asset.id">
+        <template
+          v-for="asset in item.assets"
+          :key="(asset instanceof AIGCTask) ? asset.taskId : asset.id"
+        >
           <AIAssetItem
-            v-if="isAiAsset in asset"
-            :asset="asset"
-            @ready="asset[isPreviewReady] = true"
-            @click="asset[isPreviewReady] && emit('selectAi', asset, aiAssetList)"
+            v-if="(asset instanceof AIGCTask)"
+            :task="asset"
+            @ready="(asset as any)[isPreviewReady] = true"
+            @click="
+            (asset as any)[isPreviewReady] && emit('selectAi', asset.result!, aiAssetTaskList)
+            "
           />
           <AssetItem
             v-else
@@ -66,7 +71,7 @@
   </NVirtualList>
 </template>
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, watch } from 'vue'
+import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
@@ -77,10 +82,13 @@ import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import {
   AIGCStatus,
+  AIGCTask,
+  AIImageTask,
   generateAIImage,
   isAiAsset,
   isContentReady,
   isPreviewReady,
+  SyncAIImageTask,
   type AIAssetData,
   type AssetOrAIAsset,
   type TaggedAIAssetData
@@ -100,7 +108,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
   select: [asset: AssetData]
-  selectAi: [asset: TaggedAIAssetData, aiAssetList: TaggedAIAssetData[]]
+  selectAi: [asset: TaggedAIAssetData, aiAssetList: AIGCTask[]]
 }>()
 
 const searchCtx = useSearchCtx()
@@ -108,26 +116,31 @@ const searchResultCtx = useSearchResultCtx()
 
 const COLUMN_COUNT = 4
 const assetList = ref<AssetData[]>([])
-const aiAssetList = ref<TaggedAIAssetData[]>([])
+const aiAssetTaskList = shallowRef<AIGCTask[]>([])
+const getAiAssetList = () => {
+  return aiAssetTaskList.value.map((task) => task.result).filter((a) => a != null) as TaggedAIAssetData[]
+}
 const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )
 
 const aiAssetPending = ref(false)
-const loadingAiAsset = computed(() =>
-    aiAssetPending.value || aiAssetList.value.some((a) => {
-    if (isAiAsset in a) {
-      return !a[isPreviewReady] && a.status !== AIGCStatus.Failed
-    }
-    return false
-  })
+const loadingAiAsset = computed(
+  () =>
+    aiAssetPending.value ||
+    aiAssetTaskList.value.some((task: AIGCTask) => {
+      if (isAiAsset in task) {
+        return !task.result?.[isPreviewReady] && task.status !== AIGCStatus.Failed
+      }
+      return false
+    })
 )
 
 type GroupedAssetItem =
   | {
       id: string
       type: 'asset-group'
-      assets: AssetOrAIAsset[]
+      assets: (AssetData | AIGCTask)[]
     }
   | {
       id: string
@@ -144,7 +157,7 @@ type GroupedAssetItem =
     }
 
 const groupedAssetItems = computed(() => {
-  const list = [...assetList.value, ...aiAssetList.value]
+  const list = [...assetList.value, ...aiAssetTaskList.value]
   const result: GroupedAssetItem[] = []
 
   if (list.length === 0) {
@@ -155,7 +168,14 @@ const groupedAssetItems = computed(() => {
   for (let i = 0; i < list.length; i += COLUMN_COUNT) {
     const assets = list.slice(i, i + COLUMN_COUNT)
     result.push({
-      id: assets.map((a) => a.id).join(','),
+      id: assets
+        .map((a) => {
+          if (a instanceof AIGCTask) {
+            return a.taskId
+          }
+          return a.id
+        })
+        .join(','),
       type: 'asset-group',
       assets
     })
@@ -200,36 +220,20 @@ const handleScroll = (e: Event) => {
 function generateMultipleAIImages(count: number, append = true): () => void {
   let abortSignal = false
   aiAssetPending.value = true
-  const promises = Array.from({ length: count }, () =>
-    generateAIImage({
+  const tasks = Array.from({ length: count }, () => {
+    const task = new SyncAIImageTask({
       keyword: searchCtx.keyword,
       category: searchCtx.category,
       assetType: searchCtx.type
-    }).then((res) => {
-      return {
-        id: res.imageJobId,
-        assetType: searchCtx.type,
-        cTime: new Date().toISOString(),
-        status: AIGCStatus.Waiting
-      }
     })
-  )
-  Promise.all(promises).then((res) => {
-    if (abortSignal) {
-      return
-    }
-    const taggedRes: TaggedAIAssetData[] = res.map((r) => ({
-      ...r,
-      [isAiAsset]: true as const,
-      [isPreviewReady]: false,
-      [isContentReady]: false
-    }))
-    if (append) {
-      aiAssetList.value.push(...taggedRes)
-    } else {
-      aiAssetList.value = taggedRes
-    }
+    task.start()
+    return task
   })
+  if (append) {
+    aiAssetTaskList.value = [...aiAssetTaskList.value, ...tasks]
+  } else {
+    aiAssetTaskList.value = tasks
+  }
   aiAssetPending.value = false
   return () => {
     abortSignal = true
@@ -264,7 +268,7 @@ watch(
   () => {
     abortAIGeneration?.()
     assetList.value = []
-    aiAssetList.value = []
+    aiAssetTaskList.value = []
     searchCtx.page = 1
   }
 )
