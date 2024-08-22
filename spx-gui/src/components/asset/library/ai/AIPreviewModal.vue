@@ -133,7 +133,9 @@ import {
   type TaggedAIAssetData,
   exportAIGCAsset,
   exportedId,
-  AIGCTask
+  AIGCTask,
+  type RequiredAIGCFiles,
+  AISpriteTask
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -164,8 +166,19 @@ const status = ref<AIGCStatus>(AIGCStatus.Finished)
 
 const generateContent = async () => {
   if (props.asset.assetType === AssetType.Sprite) {
-    contentJobId.value = (await generateAISprite(props.asset.id)).spriteJobId
-    pollStatus()
+    // contentJobId.value = (await generateAISprite(props.asset.id)).spriteJobId
+    // pollStatus()
+    const generateTask = new AISpriteTask(props.asset.id)
+    generateTask.addEventListener('AIGCStatusChange', () => {
+      status.value = generateTask.status
+    })
+    generateTask.addEventListener('AIGCFinished', () => {
+      contentReady.value = true
+      if (generateTask.result?.files) {
+        loadCloudFiles(generateTask.result.files)
+      }
+    })
+    generateTask.start()
   } else if (props.asset.assetType === AssetType.Backdrop) {
     convertAIAssetToBackdrop(props.asset)
     contentReady.value = true
@@ -197,54 +210,25 @@ watch(
   { immediate: true }
 )
 
-const POLLING_INTERVAL = 500
-
-const POLLING_MAX_COUNT = (10 * 60 * 1000) / POLLING_INTERVAL
-
-let pollingCount = 0
-type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
-const pollStatus = async () => {
-  if (!contentJobId.value) {
-    return
-  }
-  if (status.value === AIGCStatus.Finished) {
-    return
-  }
-  if (pollingCount >= POLLING_MAX_COUNT) {
+const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
+  if (!cloudFiles) {
     status.value = AIGCStatus.Failed
     return
   }
+  const files = (await getFiles(cloudFiles)) as {
+    [key in keyof AIGCFiles]: File
+  }
 
-  pollingCount++
-
-  const newStatus = await getAIGCStatus(contentJobId.value)
-  status.value = newStatus.status
-
-  if (newStatus.status === AIGCStatus.Finished) {
-    const cloudFiles = newStatus.result?.files as RequiredAIGCFiles
-    if (!cloudFiles) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    const files = (await getFiles(cloudFiles)) as {
-      [key in keyof AIGCFiles]: File
-    }
-
-    if (!files) {
-      status.value = AIGCStatus.Failed
-      return
-    }
-    props.asset.files = cloudFiles
-    props.asset.filesHash = await hashFileCollection(cloudFiles)
-    props.asset.displayName = props.asset.displayName ?? props.asset.id
-    props.asset[isContentReady] = true
-    contentReady.value = true
+  if (!files) {
+    status.value = AIGCStatus.Failed
     return
   }
-
-  if (newStatus.status !== AIGCStatus.Failed) {
-    setTimeout(pollStatus, POLLING_INTERVAL)
-  }
+  props.asset.files = cloudFiles
+  props.asset.filesHash = await hashFileCollection(cloudFiles)
+  props.asset.displayName = props.asset.displayName ?? props.asset.id
+  props.asset[isContentReady] = true
+  contentReady.value = true
+  return
 }
 
 const isFavorite = ref(false)

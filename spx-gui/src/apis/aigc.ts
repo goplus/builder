@@ -164,10 +164,6 @@ export async function syncGenerateAIImage({
 export async function generateAISprite(imageJobId: string) {
   return new Promise<{ spriteJobId: string }>((resolve) => {
     setTimeout(() => {
-      const jobId = mockJobs.get(imageJobId)
-      if (jobId !== 'image') {
-        throw new Error(`Job ${imageJobId} is not an image job`)
-      }
       const spriteJobId = `mock-${imageJobId}-${Math.random().toString(36).slice(2)}`
       mockJobs.set(spriteJobId, 'sprite')
       resolve({ spriteJobId })
@@ -200,6 +196,8 @@ export type AIGCFiles = {
   backdropImageUrl?: string
   [key: string]: string | undefined
 }
+
+export type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
 
 export interface AIGCStatusResponse {
   status: AIGCStatus
@@ -280,6 +278,7 @@ export async function exportAIGCAsset(param: any) {
 
 type ActionFn = (...args: any[]) => Promise<any>
 type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise<R>
+type WithStatus<T = {}> = T & { status: AIGCStatus }
 
 /**
  * This is a task handler for requesting AI-generated content (and polling the status if needed).
@@ -337,7 +336,7 @@ type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise
  * ```
  */
 export class AIGCTask<
-  T extends { status: AIGCStatus } = TaggedAIAssetData,
+  T extends WithStatus = TaggedAIAssetData,
 > extends EventTarget {
   private static _taskId = 0
   readonly taskId = `AIGCTask-${AIGCTask._taskId++}`
@@ -499,5 +498,18 @@ export class AIImageTask extends AIGCTask<TaggedAIAssetData>{
       cTime: new Date().toISOString(),
       status: AIGCStatus.Waiting,
     }
+  }
+}
+
+
+export class AISpriteTask extends AIGCTask<WithStatus<{files: RequiredAIGCFiles}>> {
+  constructor(id: string) {
+    super(generateAISprite, [id], async ({spriteJobId: id}: {spriteJobId: string}) => {
+      const {status, result} = await getAIGCStatus(id)
+      return {
+        status,
+        files: result?.files as RequiredAIGCFiles,
+      }
+    })
   }
 }

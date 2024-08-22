@@ -221,7 +221,7 @@ function generateMultipleAIImages(count: number, append = true): () => void {
   let abortSignal = false
   aiAssetPending.value = true
   const tasks = Array.from({ length: count }, () => {
-    const task = new AIImageTask({
+    const task = new SyncAIImageTask({
       keyword: searchCtx.keyword,
       category: searchCtx.category,
       assetType: searchCtx.type
