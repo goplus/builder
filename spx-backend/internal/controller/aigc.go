@@ -170,7 +170,7 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 		err = ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
 			Category: StringArrayToString(param.Category), // different separator
 			Prompt:   param.Keyword,                       // todo: more parameters
-		}, &generateResult)
+		}, generateResult)
 		if err != nil {
 			logger.Printf("failed to call: %v", err)
 		}
@@ -188,11 +188,11 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 }
 
 // GeneratingSync follow parameters to generating images.
-func (ctrl *Controller) GeneratingSync(ctx context.Context, param *GenerateParams) (*GenerateResult, error) {
+func (ctrl *Controller) GeneratingSync(ctx context.Context, param *GenerateParams) (*GetGenerateResult, error) {
 	logger := log.GetReqLogger(ctx)
-	var generateResult GenerateResult
+	var generateResult GetGenerateResult
 	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &GetGenerateParams{
-		Category: param.Category,
+		Category: StringArrayToString(param.Category),
 		Prompt:   param.Keyword, // todo: more parameters
 	}, &generateResult)
 	if err != nil {
