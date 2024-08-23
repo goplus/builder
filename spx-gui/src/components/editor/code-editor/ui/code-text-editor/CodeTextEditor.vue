@@ -49,8 +49,7 @@ const appInstance = getCurrentInstance()
 
 const loaderConfig = {
   paths: {
-    // use remote monaco-editor package in dev mode for better debug track to hook inner controllers.
-    ...(import.meta.env.DEV ? {} : { vs: '/monaco-editor-0.45.0/min/vs' })
+    vs: '/monaco-editor-0.45.0/min/vs'
   }
 }
 
@@ -115,7 +114,7 @@ watchEffect(async (onCleanup) => {
   })
   const _completionMenu = new CompletionMenu(editor)
   completionMenu.value = _completionMenu
-  props.ui.completionMenu = _completionMenu
+  props.ui.setCompletionMenu(_completionMenu)
 
   editor.addAction({
     id: 'format',
@@ -145,7 +144,9 @@ watchEffect(async (onCleanup) => {
 
   if (!appInstance?.appContext) throw new Error("Can't get appContext")
 
-  hoverPreview.value = new HoverPreview(editor, appInstance?.appContext)
+  const _hoverPreview = new HoverPreview(editor, appInstance?.appContext)
+  hoverPreview.value = _hoverPreview
+  props.ui.setHoverPreview(_hoverPreview)
 
   monacoEditor.value = editor
   onCleanup(() => {

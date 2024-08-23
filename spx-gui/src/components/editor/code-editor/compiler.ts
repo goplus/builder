@@ -3,7 +3,10 @@ enum CodeEnum {
   Backdrop
 }
 
-enum TokenEnum {}
+export enum TokenEnum {
+  // todo: remove me after compiler has done! this is temp using to make ts compile pass.
+  ANY
+}
 
 enum TokenUsage {}
 
@@ -33,8 +36,10 @@ type CompletionItem = {
 }
 
 export type Token = {
-  module: string // "github.com/goplus/spx"
-  name: string // "Sprite.touching"
+  // "github.com/goplus/spx"
+  module: string
+  // "Sprite.touching"
+  name: string
   type: TokenEnum
   usages: TokenUsage[]
 }

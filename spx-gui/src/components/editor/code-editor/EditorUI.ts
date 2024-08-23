@@ -17,7 +17,7 @@ import type { Project } from '@/models/project'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { getAllTools } from '@/components/editor/code-editor/tools'
+import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -222,11 +222,28 @@ export class EditorUI extends Disposable {
   i18n: I18n
   getProject: () => Project
   completionMenu: CompletionMenu | null = null
+  hoverPreview: HoverPreview | null = null
   editorUIRequestCallback: EditorUIRequestCallback
   monaco: typeof import('monaco-editor') | null = null
   monacoProviderDisposes: Record<string, IDisposable | null> = {
     completionProvider: null,
     hoverProvider: null
+  }
+
+  setCompletionMenu(completionMenu: CompletionMenu) {
+    this.completionMenu = completionMenu
+  }
+
+  getCompletionMenu() {
+    return this.completionMenu
+  }
+
+  setHoverPreview(hoverPreview: HoverPreview) {
+    this.hoverPreview = hoverPreview
+  }
+
+  getHoverPreview() {
+    return this.hoverPreview
   }
 
   constructor(i18n: I18n, getProject: () => Project) {
@@ -342,53 +359,47 @@ export class EditorUI extends Disposable {
         }
       })
 
-    // temp region start ##
-    // the following code will be replaced after `document.ts` is ready
-    const i18n = this.i18n
-    console.log('=>(EditorUI.ts:348) register hover provider')
+    const isDocPreview = (layer: LayerContent): layer is DocPreview => 'content' in layer
+
+    const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
+      'src' in layer && 'duration' in layer
+
+    const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
+      'placeholder' in layer && 'onSubmit' in layer
+
     this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
       LANGUAGE_NAME,
       {
-        provideHover(model, position) {
+        provideHover: async (model, position, token) => {
           const word = model.getWordAtPosition(position)
           if (word == null) return
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn
-          }
-          console.log('=>(EditorUI.ts:359) content hover provider active')
-          const tools = getAllTools(getProject())
-          const tool = tools.find((s) => s.keyword === word.word)
-          if (tool == null) return
-          let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
-          if (tool.usage != null) {
-            text += ` 
-\`\`\`gop
-${tool.usage.sample}
-\`\`\``
-          } else {
-            text = [
-              text,
-              ...tool.usages!.map((usage) => {
-                const colon = i18n.t({ en: ': ', zh: '：' })
-                const desc = i18n.t(usage.desc)
-                return `* ${desc}${colon}
-\`\`\`gop
-${usage.sample}
-\`\`\``
+          const abortController = new AbortController()
+          token.onCancellationRequested(() => abortController.abort())
+          const result = await this.requestHoverProviderResolve(model, {
+            signal: abortController.signal,
+            hoverUnitWord: word.word,
+            position
+          })
+
+          for (let i = 0; i < result.length; i++) {
+            const layerContent = result[i]
+
+            if (isDocPreview(layerContent)) {
+              this.hoverPreview?.showDocument(layerContent, {
+                startLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: word.endColumn
               })
-            ].join('\n')
+            }
           }
+
           return {
-            range,
-            contents: [{ value: text }]
+            contents: []
           }
         }
       }
     )
-    // temp region end ##
 
     await injectMonacoHighlightTheme(monaco)
   }
@@ -420,6 +431,21 @@ ${usage.sample}
     this.editorUIRequestCallback.completion.forEach((item) =>
       item.provideDynamicCompletionItems(model, ctx, addItems)
     )
+  }
+
+  public async requestHoverProviderResolve(
+    model: TextModel,
+    ctx: {
+      position: Position
+      hoverUnitWord: string
+      signal: AbortSignal
+    }
+  ) {
+    const PromiseLayerContents = this.editorUIRequestCallback.hover.map((item) =>
+      item.provideHover(model, ctx)
+    )
+
+    return await Promise.all(PromiseLayerContents)
   }
 
   public registerCompletionProvider(provider: CompletionProvider) {

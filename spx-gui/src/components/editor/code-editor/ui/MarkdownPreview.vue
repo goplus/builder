@@ -3,12 +3,8 @@ import { renderMarkdown } from './common/languages'
 import CopyIcon from './icons/copy.svg'
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import type { Action, RecommendAction } from '@/components/editor/code-editor/EditorUI'
-import { icon2SVG } from '@/components/editor/code-editor/ui/common'
 defineProps<{
   content: string
-  recommendAction?: RecommendAction
-  moreActions?: Action[]
 }>()
 const i18n = useI18n()
 const copyIcon = computed(() => `url('${CopyIcon}')`)
@@ -16,37 +12,17 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
 </script>
 
 <template>
-  <article class="markdown-preview">
-    <header class="header"></header>
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <main class="main" v-html="renderMarkdown(content)"></main>
-    <footer class="footer">
-      <nav>
-        {{ recommendAction?.label }}
-        <button
-          v-if="recommendAction?.activeLabel"
-          class="highlight"
-          @click="recommendAction.onActiveLabelClick()"
-        >
-          {{ recommendAction.activeLabel }}
-        </button>
-      </nav>
-      <nav>
-        <!--  todo: when has 2 more we need pop out a menu instead of current flat all actions  -->
-        <button v-for="(action, i) in moreActions" :key="i" @click="action.onClick()">
-          <!-- eslint-disable vue/no-v-html -->
-          <span v-html="icon2SVG(action.icon)"></span>
-        </button>
-      </nav>
-    </footer>
-  </article>
+  <!-- eslint-disable-next-line vue/no-v-html -->
+  <article class="markdown-preview" v-html="renderMarkdown(content)"></article>
 </template>
 <style lang="scss">
-.markdown-preview .main {
-  .hljs,
+.markdown-preview {
   .shiki {
     padding: 8px;
     margin: 4px 0;
+    // because in textMate theme it bg color is white,
+    // however monaco editor use same textMate theme,
+    // so here we have to use important to change markdown render bg color.
     background-color: rgba(229, 229, 229, 0.4) !important;
     border-radius: 5px;
     font-family: 'JetBrains Mono NL', Consolas, 'Courier New', monospace;
@@ -56,6 +32,14 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
 
 .markdown-preview__wrapper {
   position: relative;
+
+  & .markdown-preview__copy-button {
+    opacity: 0;
+    transition: 0.15s;
+  }
+  &:hover .markdown-preview__copy-button {
+    opacity: 1;
+  }
 }
 
 .markdown-preview__copy-button {
@@ -68,6 +52,7 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   width: 22px;
   height: 22px;
   background-color: rgb(255, 255, 255);
+  font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB', monospace;
   border: none;
   outline: none;
   border-radius: 4px;
@@ -85,12 +70,14 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
 
   &.copied::before {
     content: v-bind(copyMessage);
+    white-space: nowrap;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     position: absolute;
     left: -4px;
     height: 100%;
+    font-size: 12px;
     padding: 2px 4px;
     background-color: #fff;
     border-radius: 4px;
@@ -102,15 +89,12 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
 </style>
 
 <style scoped lang="scss">
-// in most time, this component this will render under body element, so css variables is not available, here need set them(color, font, etc.) manually
+// in most time, this component will render directly to the body element instead of #app element,
+// so css variables is not available or make them deeper to :root,
+// here need set them(color, font, etc.) manually
 .markdown-preview {
-  min-width: 400px;
-  background: white;
-  border-radius: 5px;
-  color: black;
-  font-size: 14px;
-  border: 1px solid #a6a6a6;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  font-size: 13px;
   font-family:
     AlibabaHealthB,
     -apple-system,
@@ -126,33 +110,5 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
     'Segoe UI Symbol',
     'Noto Color Emoji';
   line-height: 2;
-
-  .main {
-    padding: 8px;
-  }
-
-  .footer {
-    display: flex;
-    justify-content: space-between;
-    min-height: 32px;
-    padding: 4px 12px;
-    color: #787878;
-    font-size: 12px;
-    background: #fafafa;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-
-    & button {
-      cursor: pointer;
-      font-size: inherit;
-      outline: none;
-      border: none;
-      background-color: transparent;
-    }
-
-    & .highlight {
-      color: #219ffc;
-    }
-  }
 }
 </style>
