@@ -310,7 +310,7 @@ const handleAddToProject = useMessageHandle(
   }
 
   .content {
-    height: 70vh;
+    height: 100%;
     padding: 8px 0 0 24px; // no right padding to allow optional scrollbar
     overflow-y: auto;
     overflow-x: visible;

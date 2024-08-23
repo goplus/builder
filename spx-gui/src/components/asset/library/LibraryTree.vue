@@ -5,6 +5,7 @@
     expand-on-click
     checkable
     cascade
+    default-expand-all
     @update:checked-keys="handleUpdateCheckedKeys"
   />
 </template>
