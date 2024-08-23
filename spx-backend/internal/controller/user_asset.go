@@ -69,10 +69,16 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	// Define order conditions based on input
 	var orders []model.OrderByCondition
 	switch params.OrderBy {
+	case TimeAsc:
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "ASC"})
 	case TimeDesc:
-		orders = append(orders, model.OrderByCondition{Column: "a.c_time", Direction: "DESC"})
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "DESC"})
+	case NameAsc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "ASC"})
+	case NameDesc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "DESC"})
 	case ClickCountDesc:
-		orders = append(orders, model.OrderByCondition{Column: "a.click_count", Direction: "DESC"})
+		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
 	}
 
 	// Use the QueryByPage function to get paginated results

@@ -12,10 +12,10 @@
 <script setup lang="ts">
 import { NTabPane,NTabs } from 'naive-ui';
 import { useI18n } from '@/utils/i18n'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useSearchCtx } from './SearchContextProvider.vue'
 import { AssetType } from '@/apis/asset'
-
+//this tab component is not used
 const { t } = useI18n()
 const searchCtx = useSearchCtx()
 const text = {
