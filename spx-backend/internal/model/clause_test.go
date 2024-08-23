@@ -20,7 +20,7 @@ func TestFilterConditionExpr(t *testing.T) {
 
 func TestBuildWhereClause(t *testing.T) {
 	t.Run("Nil", func(t *testing.T) {
-		clause, args := buildWhereClause(nil)
+		clause, args := buildWhereClause(nil, "", nil)
 		assert.Equal(t, "WHERE status != ?", clause)
 		assert.Equal(t, []any{StatusDeleted}, args)
 	})
@@ -28,7 +28,7 @@ func TestBuildWhereClause(t *testing.T) {
 	t.Run("OneCondition", func(t *testing.T) {
 		clause, args := buildWhereClause([]FilterCondition{
 			{"a", "=", 1},
-		})
+		}, "", nil)
 		assert.Equal(t, "WHERE a = ? AND status != ?", clause)
 		assert.Equal(t, []any{1, StatusDeleted}, args)
 	})
@@ -37,7 +37,7 @@ func TestBuildWhereClause(t *testing.T) {
 		clause, args := buildWhereClause([]FilterCondition{
 			{"a", "=", 1},
 			{"b", "!=", 2},
-		})
+		}, "", nil)
 		assert.Equal(t, "WHERE a = ? AND b != ? AND status != ?", clause)
 		assert.Equal(t, []any{1, 2, StatusDeleted}, args)
 	})
