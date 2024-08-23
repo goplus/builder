@@ -20,7 +20,7 @@ const cursorMap = {
   horizontal: 'ew-resize',
   vertical: 'ns-resize',
   free: 'move',
-  none: 'default'
+  none: 'unset'
 }
 
 const position = defineModel('position', {

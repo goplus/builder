@@ -1,6 +1,26 @@
 <template>
-  <div class="container">
-    <canvas ref="skeletonCanvas" class="skeleton-canvas" @mousedown="selectJoint"></canvas>
+  <div
+    class="container"
+    :style="{
+      cursor: (hoverJoint !== null) ? 'move' : 'unset'
+    }"
+    @mousedown="selectJoint"
+    @mousemove="handleMousemove"
+  >
+    <SkeletonAnimationRenderer
+      v-if="skeletonTextures?.url.value && idleAnim"
+      :data="idleAnim"
+      :texture="skeletonTextures.url.value"
+      :fps="30"
+      :autoplay="false"
+      class="texture-layer"
+      @ready="
+        (renderer) => {
+          renderer.frameIndex = 0
+        }
+      "
+    />
+    <canvas ref="skeletonCanvas" class="skeleton-canvas"></canvas>
     <EditorGizmo
       v-model:position="currentPosition"
       v-model:active="dragActive"
@@ -12,10 +32,21 @@
 <script lang="ts" setup>
 import type { SkeletonAnimation } from '@/models/skeletonAnimation'
 import type { Sprite } from '@/models/sprite'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import EditorGizmo from './EditorGizmo.vue'
+import SkeletonAnimationRenderer from './SkeletonAnimationRenderer.vue'
+import { useAsyncComputed } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
+
+const JOINT_COLOR = '#219ffc'
+const JOINT_HOVER_COLOR = '#0BC0CF'
+const LINE_COLOR = '#24292f'
+const focusDistLimit = 20
 
 const skeletonCanvas = ref<HTMLCanvasElement | null>(null)
+let ctx: CanvasRenderingContext2D
+let canvasWidth = 0
+let canvasHeight = 0
 
 const props = defineProps<{
   sprite: Sprite
@@ -23,42 +54,69 @@ const props = defineProps<{
 
 const currentPosition = ref({ x: 0, y: 0 })
 const draggingJoint = ref<number | null>(null)
+const hoverJoint = ref<number | null>(null)
 const dragActive = ref(false)
 
 const joints = ref(props.sprite.skeletonAnimation?.joints)
 const scale = 40
 
-const render = () => {
+const idleAnim = useAsyncComputed(() => {
+  const clip = props.sprite.skeletonAnimation?.clips.find((clip) => clip.name === 'idle')
+  if (clip) {
+    return clip.loadAnimFrameData()
+  }
+  return new Promise<undefined>((resolve) => resolve(undefined))
+})
+
+const skeletonTextures = computed(() => {
+  if (!props.sprite.skeletonAnimation) return null
+  const [url, loading] = useFileUrl(() => props.sprite.skeletonAnimation?.avatar)
+  return {
+    url,
+    loading
+  }
+})
+
+const initCanvas = () => {
   const canvas = skeletonCanvas.value!
   const { clientWidth, clientHeight } = canvas.parentElement!
+  canvasWidth = clientWidth
+  canvasHeight = clientHeight
   canvas.width = clientWidth
   canvas.height = clientHeight
-  const ctx = canvas.getContext('2d')!
-  ctx.clearRect(0, 0, clientWidth, clientHeight)
+  ctx = canvas.getContext('2d')!
+  render()
+}
+
+const render = () => {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
   renderJoints(ctx, joints.value)
 }
 
 onMounted(async () => {
-  window.addEventListener('resize', render)
-  render()
+  window.addEventListener('resize', initCanvas)
+  initCanvas()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', render)
+  window.removeEventListener('resize', initCanvas)
 })
 
 const renderJoints = (ctx: CanvasRenderingContext2D, joints?: SkeletonAnimation['joints']) => {
   if (!joints) return
   joints.forEach((joint) => {
     const { pos, parent } = joint
+    if (parent === -1) return
     const { x, y } = toCanvasCoord(pos)
-    const { x: parentX, y: parentY } = toCanvasCoord(joints[parent]?.pos ?? { x: 0, y: 0 })
-    drawLine(ctx, x, y, parentX, parentY, 'black', 2)
+    const parentPos = joints[parent].pos
+    const { x: parentX, y: parentY } = toCanvasCoord(parentPos)
+    drawLine(ctx, x, y, parentX, parentY, LINE_COLOR, 2)
   })
-  joints.forEach((joint) => {
+  joints.forEach((joint, i) => {
     const { pos } = joint
     const { x, y } = toCanvasCoord(pos)
-    drawJoint(ctx, x, y, 5, 'red')
+    // drawJoint(ctx, x, y, 5, JOINT_COLOR)
+    drawJoint(ctx, x, y, 5, hoverJoint.value === i ? JOINT_HOVER_COLOR : JOINT_COLOR)
   })
 }
 
@@ -107,29 +165,40 @@ const drawJoint = (
   ctx.restore()
 }
 
-const getCloserJoint = (x: number, y: number) => {
+const getCloseJoint = (x: number, y: number) => {
   if (!joints.value) return -1
-  const limit = 10
   return joints.value.findIndex((joint) => {
     const { pos } = joint
     const { x: jointX, y: jointY } = toCanvasCoord(pos)
-    return Math.abs(jointX - x) < limit && Math.abs(jointY - y) < limit
+    const dist = Math.hypot(jointX - x, jointY - y)
+    return dist < focusDistLimit
   })
 }
 
 const selectJoint = (e: MouseEvent) => {
   const { offsetX, offsetY } = e
-  const joint = getCloserJoint(offsetX, offsetY)
+  const joint = getCloseJoint(offsetX, offsetY)
   if (joint !== -1) {
     draggingJoint.value = joint
     currentPosition.value = toCanvasCoord(joints.value![joint].pos)
-    lastPosition.x = currentPosition.value.x
-    lastPosition.y = currentPosition.value.y
     dragActive.value = true
   }
 }
 
-let lastPosition = { x: 0, y: 0 }
+const handleMousemove = (e: MouseEvent) => {
+  const { offsetX, offsetY } = e
+  const joint = getCloseJoint(offsetX, offsetY)
+  const savedHoverJoint = hoverJoint.value
+  if (joint !== -1) {
+    hoverJoint.value = joint
+  } else {
+    hoverJoint.value = null
+  }
+  if (savedHoverJoint !== hoverJoint.value) {
+    render()
+  }
+}
+
 watch(
   () => [currentPosition.value.x, currentPosition.value.y],
   () => {
@@ -154,6 +223,17 @@ watch(
   width: 100%;
   position: relative;
   background-color: #ffffff;
+  z-index: 0;
+}
+
+.texture-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0.5;
 }
 
 .gizmo-layer {
