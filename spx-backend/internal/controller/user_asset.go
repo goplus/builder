@@ -21,6 +21,9 @@ type ListUserAssetsParams struct {
 	// Owner is the owner filter, applied only if non-nil.
 	Owner *string
 
+	// AccessType is the access type filter, applied only if non-nil.
+	AssetType *model.AssetType
+
 	// OrderBy is the order by condition.
 	OrderBy ListAssetsOrderBy
 
@@ -53,11 +56,13 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 
 	// Initialize the filter conditions
 	var wheres []model.FilterCondition
-	wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: *params.Owner}, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
 	// Apply additional filters based on parameters
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: *params.Owner})
+	}
+	if params.AssetType != nil {
+		wheres = append(wheres, model.FilterCondition{Column: "asset_type", Operation: "=", Value: *params.AssetType})
 	}
 	wheres = append(wheres, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
