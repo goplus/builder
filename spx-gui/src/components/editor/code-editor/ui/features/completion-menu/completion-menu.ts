@@ -179,14 +179,12 @@ export class CompletionMenu implements IDisposable {
 
     if (!isMultiLine) return
     // multi lines code preview
-    const _lines = lines.map((content) =>
-      content.replace(/* here replace `space` to html space(&nbsp;) */ / /g, '&nbsp;')
-    )
+
     this.editor.changeViewZones((changeAccessor) => {
-      this.viewZoneChangeAccessorState.codePreviewElement = this.createCodePreviewDomNode(_lines)
+      this.viewZoneChangeAccessorState.codePreviewElement = this.createCodePreviewDomNode(lines)
       this.viewZoneChangeAccessorState.viewZoneId = changeAccessor.addZone({
         afterLineNumber: position.lineNumber,
-        heightInLines: _lines.length,
+        heightInLines: lines.length,
         domNode: this.viewZoneChangeAccessorState.codePreviewElement
       })
     })
