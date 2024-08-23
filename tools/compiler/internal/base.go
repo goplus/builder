@@ -5,36 +5,79 @@ import (
 )
 
 // GetDiagnostics return error info list.
-func GetDiagnostics(fileName, fileCode string) interface{} {
+func GetDiagnostics(fileName, fileCode string) (interface{}, error) {
 	// new file set
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	_, err = codeInfo(initSPXMod(), file, fset)
 	list := parseErrorLines(error2List(err))
-	return list
+	return list, nil
 }
 
 // GetDefinition return user's code definition.
-func GetDefinition(fileName, fileCode string) interface{} {
+func GetDefinition(fileName, fileCode string) (interface{}, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		return nil
+		return nil, err
+	}
+
+	// get user code info
+	info, err := codeInfo(initSPXMod(), file, fset)
+	if err != nil {
+		return nil, err
+	}
+
+	definitionList := getDefinitionList(info)
+
+	definitionList.Position(fset)
+
+	return definitionList, nil
+}
+
+// GetSPXFileType return a json object with spx type info.
+func GetSPXFileType(fileName, fileCode string) (interface{}, error) {
+	// new file set
+	fset := token.NewFileSet()
+	file, err := initParser(fset, fileName, fileCode)
+	if err != nil {
+		return nil, err
+	}
+	info, err := codeInfo(initSPXMod(), file, fset)
+	if err != nil {
+		return nil, err
+	}
+	list := info2List(fset, info.Types)
+	defs := def2List(fset, info.Defs)
+	uses := usesList(fset, info.Uses)
+	m := make(map[string]interface{})
+	m["list"] = list
+	m["defs"] = defs
+	m["uses"] = uses
+	return m, nil
+}
+
+// GetInlayHint get hint for user code.
+func GetInlayHint(fileName, fileCode string) (interface{}, error) {
+	fset := token.NewFileSet()
+	file, err := initParser(fset, fileName, fileCode)
+	if err != nil {
+		return nil, err
 	}
 
 	// get function list
 	fnList, err := getCodeFunctionList(file)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	// get user code info
 	infoList, err := codeInfo(initSPXMod(), file, fset)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	// set function list signature
@@ -43,53 +86,20 @@ func GetDefinition(fileName, fileCode string) interface{} {
 	}
 	fnList.Position(fset)
 
-	// set return json
-	definition := make(map[string]interface{})
-	definition["functionList"] = fnList
-	return definition
-}
-
-// GetSPXFileType return a json object with spx type info.
-func GetSPXFileType(fileName, fileCode string) interface{} {
-	// new file set
-	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
-	if err != nil {
-		return nil
-	}
-	info, err := codeInfo(initSPXMod(), file, fset)
-	if err != nil {
-		return []nodeItem{}
-	}
-	list := info2List(fset, info.Types)
-	defs := def2List(fset, info.Defs)
-	m := make(map[string]interface{})
-	m["list"] = list
-	m["defs"] = defs
-	return m
-}
-
-// GetInlayHint get hint for user code.
-func GetInlayHint(fileName, fileCode string) interface{} {
-	definition, ok := GetDefinition(fileName, fileCode).(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	funcList := definition["functionList"].(funcList)
-
 	var inlayHintList []*inlayHint
 
-	for _, fun := range funcList {
-		if checkFuncNameInList(fun.Name) {
+	for _, fun := range fnList {
+		if isSpxPlay(fun.fnExpr, infoList.Uses) {
 			hint := &inlayHint{
 				funcParameter: &funcParameter{
-					Name:          fun.Name,
-					StartPos:      fun.StartPos,
-					EndPos:        fun.EndPos,
-					StartPosition: fun.StartPosition,
-					EndPosition:   fun.EndPosition,
+					Name: fun.Name,
+					BasePos: BasePos{
+						StartPos:      fun.StartPos,
+						EndPos:        fun.EndPos,
+						StartPosition: fun.StartPosition,
+						EndPosition:   fun.EndPosition},
 				},
-				Type: hintFunction,
+				Type: hintPlay,
 			}
 			inlayHintList = append(inlayHintList, hint)
 		}
@@ -107,5 +117,5 @@ func GetInlayHint(fileName, fileCode string) interface{} {
 		}
 	}
 
-	return inlayHintList
+	return inlayHintList, nil
 }

@@ -10,7 +10,10 @@ type Reply struct {
 	Content interface{} `json:"content"`
 }
 
-func NewReply(content any) js.Value {
+func NewReply(content any, err error) js.Value {
+	if err != nil {
+		return js.ValueOf(`{"ok":"false","content":{}}`)
+	}
 	r := Reply{
 		Content: content,
 		OK:      true,

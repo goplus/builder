@@ -122,16 +122,23 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 	return err
 }
 
+type BasePos struct {
+	StartPos      int            `json:"start_pos"`
+	EndPos        int            `json:"end_pos"`
+	StartPosition token.Position `json:"start_position"`
+	EndPosition   token.Position `json:"end_position"`
+}
+
 type funcItem struct {
-	Name          string           `json:"name"`
-	StartPos      int              `json:"start_pos"`
-	EndPos        int              `json:"end_pos"`
-	StartPosition token.Position   `json:"start_position"`
-	EndPosition   token.Position   `json:"end_position"`
-	Signature     string           `json:"signature"`
-	Parameters    []*funcParameter `json:"parameters"`
-	fnExpr        ast.Expr
-	argsExpr      []ast.Expr
+	BasePos
+	Name       string           `json:"name"`
+	Signature  string           `json:"signature"`
+	Parameters []*funcParameter `json:"parameters"`
+	Overload   string           `json:"overload"`
+	PkgName    string           `json:"pkg_name"`
+	PkgPath    string           `json:"pkg_path"`
+	fnExpr     ast.Expr
+	argsExpr   []ast.Expr
 }
 
 type funcList []*funcItem
@@ -146,13 +153,11 @@ func (l *funcList) Position(fset *token.FileSet) {
 }
 
 type funcParameter struct {
-	Name          string         `json:"name"`
-	Type          string         `json:"type"`
-	StartPos      int            `json:"start_pos"`
-	EndPos        int            `json:"end_pos"`
-	StartPosition token.Position `json:"start_position"`
-	EndPosition   token.Position `json:"end_position"`
-	Unit          string         `json:"unit"`
+	BasePos
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
+	Unit  string `json:"unit"`
 }
 
 // Pos2Position can make Pos(int) into Position
