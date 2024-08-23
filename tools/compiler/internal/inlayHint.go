@@ -1,12 +1,16 @@
 package internal
 
-var inlayHintFuncList = []string{"play"}
+import (
+	"go/types"
+
+	"github.com/goplus/gop/ast"
+)
 
 type inlayHintType string
 
 const (
 	hintParameter inlayHintType = "parameter"
-	hintFunction  inlayHintType = "function"
+	hintPlay      inlayHintType = "play"
 )
 
 type inlayHint struct {
@@ -14,11 +18,22 @@ type inlayHint struct {
 	Type inlayHintType `json:"type"`
 }
 
-func checkFuncNameInList(fnName string) bool {
-	for _, name := range inlayHintFuncList {
-		if fnName == name {
-			return true
-		}
+func isSpxPlay(fnExpr ast.Expr, uses map[*ast.Ident]types.Object) bool {
+	return isFuncExpected(fnExpr, uses, "play", "spx")
+}
+
+func isFuncExpected(fnExpr ast.Expr, uses map[*ast.Ident]types.Object, expectName, expectPkg string) bool {
+	fnIdent, ok := fnExpr.(*ast.Ident)
+	if !ok {
+		return false
 	}
-	return false
+
+	obj, ok := uses[fnIdent]
+	if !ok {
+		return false
+	}
+
+	isExpectFunctionName := fnIdent.Name == expectName
+	isExpectPkgName := obj.Pkg().Name() == expectPkg
+	return isExpectFunctionName && isExpectPkgName
 }

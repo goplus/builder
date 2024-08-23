@@ -53,9 +53,23 @@ func def2List(fset *token.FileSet, defs map[*ast.Ident]types.Object) []string {
 		var buf strings.Builder
 		posn := fset.Position(expr.Pos())
 		// line:col | expr | mode : type = value
-		fmt.Fprintf(&buf, "%2d:%2d | %-19s | %s",
+		fmt.Fprintf(&buf, "%2d:%2d | %-19s | %40s | %10s",
 			posn.Line, posn.Column, expr,
-			obj)
+			obj, obj.Parent())
+		items = append(items, buf.String())
+	}
+	sort.Strings(items)
+	return items
+}
+
+func usesList(fset *token.FileSet, uses map[*ast.Ident]types.Object) []string {
+	var items []string
+	for expr, obj := range uses {
+		var buf strings.Builder
+		posn := fset.Position(expr.Pos())
+		// line:col | expr | mode : type = value
+		fmt.Fprintf(&buf, "%2d:%2d | %-19s | %-20s | %10s | %10s | %10s ",
+			posn.Line, posn.Column, expr, obj, obj.Id(), obj.Parent(), obj.Pkg())
 		items = append(items, buf.String())
 	}
 	sort.Strings(items)
