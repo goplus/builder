@@ -181,9 +181,9 @@ const loadMore = () => {
   searchCtx.page++
 }
 
-const handleScroll = (e: Event) => {
+const handleScroll = (e: Event) => {//qus1:why both scroll and wheel?
   const target = e.target as HTMLElement
-  if (target.scrollHeight - target.scrollTop === target.clientHeight) {
+  if (target.scrollHeight - target.scrollTop === target.clientHeight) {//qus2: why this condition?is it correct?
     loadMore()
   }
 }

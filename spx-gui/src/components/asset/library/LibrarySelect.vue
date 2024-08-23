@@ -13,11 +13,11 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, watch } from 'vue'
 import { NSelect } from 'naive-ui'
 import { useSearchCtx } from './SearchContextProvider.vue'
 import { useI18n } from '@/utils/i18n'
-import { watch } from 'fs'
+import type { ListAssetParamOrderBy } from '@/apis/asset'
 
 const { t } = useI18n()
 const searchCtx = useSearchCtx()
@@ -41,8 +41,8 @@ const options = [
     value: 'nameDesc'
   }
 ]
-// watch(value, (newValue) => {
-//   searchCtx.sort = newValue
-// })
+watch(value, (newValue) => {
+  searchCtx.orderBy = newValue as ListAssetParamOrderBy
+})
 </script>
 <style lang="scss" scoped></style>
