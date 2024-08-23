@@ -159,7 +159,7 @@ func (ctrl *Controller) Generating(ctx context.Context, param *GenerateParams) (
 		assetType = model.AssetTypeSprite
 	}
 	newAIAsset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{
-		AssetType: assetType, //TODO: it like this have a bug.
+		AssetType: assetType, //TODO(Tsingper): it like this have a bug.
 	})
 	if err != nil {
 		logger.Printf("failed to add asset: %v", err)
