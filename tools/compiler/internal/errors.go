@@ -2,11 +2,13 @@ package internal
 
 import (
 	"errors"
+
 	"github.com/goplus/gogen"
 	"github.com/goplus/gop/scanner"
 	errors2 "github.com/qiniu/x/errors"
 )
 
+// error2List unpack error to string list.
 func error2List(err error) []string {
 	var stringList []string
 
