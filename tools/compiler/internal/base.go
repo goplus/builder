@@ -10,7 +10,7 @@ func GetDiagnostics(fileName, fileCode string) (interface{}, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	_, err = codeInfo(initSPXMod(), file, fset)
 	list := parseErrorLines(error2List(err))
