@@ -15,28 +15,8 @@ import (
 	"github.com/goplus/mod/gopmod"
 )
 
-// GetSPXFileType return a json object with spx type info.
-func GetSPXFileType(fileName, fileCode string) interface{} {
-	// new file set
-	fset := token.NewFileSet()
-	info, err := codeInfo(initSPXMod(), fset, fileName, fileCode)
-	if err != nil {
-		return []nodeItem{}
-	}
-	list := info2List(fset, info.Types)
-	defs := def2List(fset, info.Defs)
-	m := make(map[string]interface{})
-	m["list"] = list
-	m["defs"] = defs
-	return m
-}
-
 // codeInfo is use igop to analyse spx code and get info.
-func codeInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileCode string) (*typesutil.Info, error) {
-	file, err := initParser(fileSet, fileName, fileCode)
-	if err != nil {
-		return nil, err
-	}
+func codeInfo(mod *gopmod.Module, file *ast.File, fileSet *token.FileSet) (*typesutil.Info, error) {
 
 	// init types conf
 	ctx := igop.NewContext(0)
@@ -50,7 +30,7 @@ func codeInfo(mod *gopmod.Module, fileSet *token.FileSet, fileName string, fileC
 	// init info
 	info := initTypeInfo()
 	check := typesutil.NewChecker(conf, chkOpts, nil, info)
-	err = check.Files(nil, []*ast.File{file})
+	err := check.Files(nil, []*ast.File{file})
 	return info, err
 }
 

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-
-	"github.com/goplus/gop/token"
 )
 
 // diagnostics contains error after analyse the code.
@@ -14,15 +12,6 @@ type diagnostics struct {
 	Column   int    `json:"column"`
 	Line     int    `json:"line"`
 	Message  string `json:"message"`
-}
-
-// GetDiagnostics return a json object with error info.
-func GetDiagnostics(fileName, fileCode string) interface{} {
-	// new file set
-	fset := token.NewFileSet()
-	_, err := codeInfo(initSPXMod(), fset, fileName, fileCode)
-	list := parseErrorLines(error2List(err))
-	return list
 }
 
 // parseErrorLines make error info list to diagnostics list.

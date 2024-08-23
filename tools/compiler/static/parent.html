@@ -22,6 +22,7 @@ onStart => {
     play "sound1"
     flag := true
     sum := add(1,2)
+    test.move 10
     sum = 3
     a = 2
     for flag {
@@ -42,6 +43,7 @@ onStart => {
     <button onclick="runTypesInfo()">runTypesInfo</button>
     <button onclick="runCodeDiagnostics()">runCodeDiagnostics</button>
     <button onclick="runDefinition()">runDefinition</button>
+    <button onclick="runInlayHint()">runInlayHints</button>
 
     <div id="compiler-iframe-container">
     </div>
@@ -120,6 +122,20 @@ onStart => {
     function runDefinition() {
         try {
             let res = getIframe().contentWindow.getDefinition({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    function runInlayHint() {
+        try {
+            let res = getIframe().contentWindow.getInlayHints({
                 in: {
                     name: "test.spx",
                     code: document.getElementById("codeInput").value

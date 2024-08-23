@@ -130,6 +130,19 @@ type funcItem struct {
 	EndPosition   token.Position   `json:"end_position"`
 	Signature     string           `json:"signature"`
 	Parameters    []*funcParameter `json:"parameters"`
+	fnExpr        ast.Expr
+	argsExpr      []ast.Expr
+}
+
+type funcList []*funcItem
+
+func (l *funcList) Position(fset *token.FileSet) {
+	for _, fun := range *l {
+		fun.Pos2Position(fset)
+		for _, paramItem := range fun.Parameters {
+			paramItem.Pos2Position(fset)
+		}
+	}
 }
 
 type funcParameter struct {
@@ -155,54 +168,23 @@ func (p *funcParameter) Pos2Position(fset *token.FileSet) {
 }
 
 type callExprVisitor struct {
-	funcList []*funcItem
+	funcList funcList
 }
 
 func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 	if callExpr, ok := node.(*ast.CallExpr); ok {
 		fun := &funcItem{}
-		if fn, ok := callExpr.Fun.(*ast.Ident); ok {
-			fun.Name = fn.Name
-			fun.StartPos = int(fn.Pos())
-			fun.EndPos = int(fn.End())
-		}
-		var params []*funcParameter
-		for _, item := range callExpr.Args {
-			funcParam := &funcParameter{}
-			funcParam.StartPos = int(item.Pos())
-			funcParam.EndPos = int(item.End())
-			params = append(params, funcParam)
-		}
-		fun.Parameters = params
+		fun.fnExpr = callExpr.Fun
+		fun.argsExpr = callExpr.Args
 		v.funcList = append(v.funcList, fun)
 	}
 	return v
 }
 
-func (v *callExprVisitor) Position(fset *token.FileSet) {
-	for _, fun := range v.funcList {
-		fun.Pos2Position(fset)
-		for _, paramItem := range fun.Parameters {
-			paramItem.Pos2Position(fset)
-		}
-	}
-}
-
-func (v *callExprVisitor) getFuncList() []*funcItem {
-	return v.funcList
-}
-
-func getCodeFunctionListWithArgs(fset *token.FileSet, fileName, fileCode string) ([]*funcItem, error) {
-	file, err := initParser(fset, fileName, fileCode)
-	if err != nil {
-		return nil, err
-	}
-
+func getCodeFunctionList(file *ast.File) (funcList, error) {
 	fv := &callExprVisitor{}
 
 	ast.Walk(fv, file)
 
-	fv.Position(fset)
-
-	return fv.getFuncList(), nil
+	return fv.funcList, nil
 }
