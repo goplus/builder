@@ -5,6 +5,7 @@
       :texture="props.texture"
       :fps="30"
       :autoplay="true"
+      :scale="props.scale"
       :style="{ width: '100%', height: '100%', position: 'relative' }"
       @ready="(renderer) => handleReady(renderer)"
     />
@@ -35,11 +36,13 @@ const props = withDefaults(
     fps?: number
     autoplay?: boolean
     color?: Color
+    scale?: number
   }>(),
   {
     fps: 30,
     autoplay: true,
-    color: 'sprite'
+    color: 'sprite',
+    scale: 40
   }
 )
 

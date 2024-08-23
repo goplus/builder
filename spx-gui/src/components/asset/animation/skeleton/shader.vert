@@ -1,6 +1,6 @@
-uniform mat4 uProjectionMatrix;
-uniform mat4 uWorldTransformMatrix;
-uniform mat4 uTransformMatrix;
+uniform vec2 uResolution;
+uniform float uFlipY;
+uniform vec2 uTranslate;
 
 attribute vec4 position;
 attribute vec2 aUV;
@@ -8,7 +8,11 @@ attribute vec2 aUV;
 varying vec2 vUV;
 
 void main() {
-    mat4 mvp = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
-    gl_Position = mvp * position;
+    vec2 zeroToOne = position.xy / uResolution;
+    vec2 zeroToTwo = zeroToOne * 2.0;
+    vec2 clipSpace = zeroToTwo - 1.0;
+    clipSpace += uTranslate;
+    gl_Position = vec4(clipSpace * vec2(1, uFlipY), 0, 1);
+
     vUV = aUV;
 }
