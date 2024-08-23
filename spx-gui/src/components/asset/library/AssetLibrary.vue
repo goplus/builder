@@ -66,7 +66,6 @@
         <LibraryTree
           :type="type"
           style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
-          @update="handleSelectCategory"
         />
       </div>
     </section>
@@ -174,9 +173,9 @@ function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: string[]) {
-  searchCtx.category = c
-}
+// function handleSelectCategory(c: string[]) {
+//   searchCtx.category = c
+// }
 
 function handleUserSelectCategory(c: string) {
   searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'
