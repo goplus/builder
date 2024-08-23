@@ -67,7 +67,8 @@ import {
   UIButtonGroupItem,
   UIIcon
 } from '@/components/ui'
-import { debounce, round } from '@/utils/utils'
+import { round } from '@/utils/utils'
+import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/widget/monitor'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'

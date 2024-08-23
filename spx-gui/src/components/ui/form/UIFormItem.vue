@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { useSlots, computed } from 'vue'
 import { NFormItem } from 'naive-ui'
-import { debounce } from '@/utils/utils'
+import { debounce } from 'lodash'
 import UIFormItemInternal from './UIFormItemInternal.vue'
 import { useForm } from './UIForm.vue'
 

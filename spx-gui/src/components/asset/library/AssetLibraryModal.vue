@@ -107,7 +107,7 @@ import {
   UIDivider
 } from '@/components/ui'
 import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
-import { debounce } from '@/utils/utils'
+import { debounce } from 'lodash'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
 import { type Project } from '@/models/project'
