@@ -57,13 +57,12 @@ export function deleteAsset(id: string) {
   return client.delete(`/asset/${encodeURIComponent(id)}`) as Promise<void>
 }
 
-export enum ListAssetParamOrderBy {
-  Default = 'default',
+export enum ListAssetParamOrderBy {//todo: auto import in LibrarySelect
   TimeDesc = 'timeDesc',
   TimeAsc = 'timeAsc',
-  ClickCountDesc = 'clickCount',
   NameAsc = 'nameAsc',
   NameDesc = 'nameDesc'
+  //clickCountDesc,default
 }
 
 export type ListAssetParams = PaginationParams & {
