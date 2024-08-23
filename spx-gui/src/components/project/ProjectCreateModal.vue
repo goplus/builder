@@ -99,7 +99,7 @@ const handleSubmit = useMessageHandle(
     project.addSprite(sprite)
     await sprite.autoFit()
     // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
-    const files = project.export()[1]
+    const [, files] = await project.export()
     const { fileCollection } = await saveFiles(files)
     const projectData = await addProject({
       name: form.value.name,

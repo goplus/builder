@@ -6,7 +6,7 @@
 import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
-import { debounce } from '@/utils/utils'
+import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
 import { IsPublic, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig } from '../common/file'
@@ -21,6 +21,7 @@ import { Sprite } from '../sprite'
 import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
+import Mutex from '@/utils/mutex'
 
 export type { Action } from './history'
 
@@ -240,16 +241,18 @@ export class Project extends Disposable {
    */
   private autoSelect() {
     const selected = this.selected
-    if (selected?.type === 'sprite' && this.selectedSprite == null) {
-      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
-    } else if (selected?.type === 'sound' && this.selectedSound == null) {
-      this.select(this.sounds[0] != null ? { type: 'sound', name: this.sounds[0].name } : null)
-    } else if (selected == null) {
+    if (selected?.type === 'stage') return
+    if (selected?.type === 'sound' && this.selectedSound == null && this.sounds[0] != null) {
+      this.select({ type: 'sound', name: this.sounds[0].name })
+      return
+    }
+    if (this.selectedSprite == null) {
       this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
     }
   }
 
   history: History
+  historyMutex = new Mutex()
 
   constructor() {
     super()
@@ -266,8 +269,22 @@ export class Project extends Disposable {
     return reactiveThis
   }
 
-  private applyMetadata(metadata: Metadata) {
+  private loadMetadata(metadata: Metadata) {
     assign<Project>(this, metadata)
+  }
+
+  private exportMetadata(): Metadata {
+    return {
+      id: this.id,
+      owner: this.owner,
+      name: this.name,
+      isPublic: this.isPublic,
+      version: this.version,
+      cTime: this.cTime,
+      uTime: this.uTime,
+      filesHash: this.filesHash,
+      lastSyncedFilesHash: this.lastSyncedFilesHash
+    }
   }
 
   async loadGameFiles(files: Files) {
@@ -329,25 +346,13 @@ export class Project extends Disposable {
 
   /** Load with metadata & game files */
   async load(metadata: Metadata, files: Files) {
-    this.applyMetadata(metadata)
+    this.loadMetadata(metadata)
     await this.loadGameFiles(files)
   }
 
   /** Export metadata & game files */
-  export(): [Metadata, Files] {
-    const metadata: Metadata = {
-      id: this.id,
-      owner: this.owner,
-      name: this.name,
-      isPublic: this.isPublic,
-      version: this.version,
-      cTime: this.cTime,
-      uTime: this.uTime,
-      filesHash: this.filesHash,
-      lastSyncedFilesHash: this.lastSyncedFilesHash
-    }
-    const files = this.exportGameFiles()
-    return [metadata, files]
+  async export(): Promise<[Metadata, Files]> {
+    return this.historyMutex.runExclusive(() => [this.exportMetadata(), this.exportGameFiles()])
   }
 
   async loadGbpFile(file: globalThis.File) {
@@ -362,7 +367,7 @@ export class Project extends Disposable {
   }
 
   async exportGbpFile() {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
     return await gbpHelper.save(metadata, files)
   }
 
@@ -379,9 +384,10 @@ export class Project extends Disposable {
 
   /** Save to cloud */
   async saveToCloud() {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
+    if (this.isDisposed) throw new Error('disposed')
     const saved = await cloudHelper.save(metadata, files)
-    this.applyMetadata(saved.metadata)
+    this.loadMetadata(saved.metadata)
     this.lastSyncedFilesHash = await hashFiles(files)
   }
 
@@ -395,7 +401,8 @@ export class Project extends Disposable {
 
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
-    const [metadata, files] = this.export()
+    const [metadata, files] = await this.export()
+    if (this.isDisposed) throw new Error('disposed')
     await localHelper.save(key, metadata, files)
   }
 
@@ -423,33 +430,32 @@ export class Project extends Disposable {
         try {
           if (this.hasUnsyncedChanges) await this.saveToCloud()
           this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-          if (this.hasUnsyncedChanges) autoSaveToCloud()
-          else await localHelper.clear(localCacheKey)
         } catch (e) {
-          await this.saveToLocalCache(localCacheKey) // prevent data loss
           this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-          startRetry()
-          throw e
+          retryAutoSave()
+          await this.saveToLocalCache(localCacheKey) // prevent data loss
+          console.error('failed to auto save to cloud', e)
+          return
         }
-      }, 1500)
 
-      let retryTimeoutId: ReturnType<typeof setTimeout>
-      const startRetry = () => {
-        stopRetry()
-        retryTimeoutId = setTimeout(() => {
-          if (
-            this.autoSaveToCloudState === AutoSaveToCloudState.Failed &&
-            this.hasUnsyncedChanges
-          ) {
-            autoSaveToCloud()
-          }
-        }, 5000)
-      }
-      const stopRetry = () => clearTimeout(retryTimeoutId)
-      this.addDisposer(stopRetry)
+        if (this.hasUnsyncedChanges) autoSaveToCloud()
+        else await localHelper.clear(localCacheKey)
+      }, 1500)
+      this.addDisposer(save.cancel)
+
+      const retryAutoSave = debounce(async () => {
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
+        if (this.hasUnsyncedChanges) {
+          autoSaveToCloud()
+        } else {
+          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+          await localHelper.clear(localCacheKey)
+        }
+      }, 5000)
+      this.addDisposer(retryAutoSave.cancel)
 
       return () => {
-        stopRetry()
+        retryAutoSave.cancel()
         if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
           this.autoSaveToCloudState = AutoSaveToCloudState.Pending
         if (this.autoSaveMode === AutoSaveMode.Cloud) save()
@@ -473,19 +479,25 @@ export class Project extends Disposable {
     // watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory
     const autoSaveToLocalCache = (() => {
       const save = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
+      this.addDisposer(save.cancel)
 
       const delazyLoadGameFiles = debounce(() => {
         const files = this.exportGameFiles()
         const fileList = Object.keys(files)
         fileList.map((path) => files[path]!.arrayBuffer())
       }, 1000)
+      this.addDisposer(delazyLoadGameFiles.cancel)
 
       return () => {
         if (this.autoSaveMode === AutoSaveMode.LocalCache) save()
         else delazyLoadGameFiles()
       }
     })()
-    this.addDisposer(watch(() => this.export(), autoSaveToLocalCache, { immediate: true }))
+    this.addDisposer(
+      watch(() => [this.exportMetadata(), this.exportGameFiles()], autoSaveToLocalCache, {
+        immediate: true
+      })
+    )
 
     // watch for autoSaveMode switch, and trigger auto save accordingly
     this.addDisposer(

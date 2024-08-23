@@ -53,6 +53,7 @@ provide(panelColorKey, props.color)
 .common-panel {
   transition: 0.3s;
   flex: 0 0 auto;
+  overflow: hidden;
 
   &.expanded {
     flex: 1 1 0;

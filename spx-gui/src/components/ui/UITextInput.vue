@@ -1,6 +1,7 @@
 <template>
   <NInput
     class="ui-text-input"
+    :placeholder="placeholder || ''"
     :value="value"
     :disabled="disabled"
     @update:value="(v) => emit('update:value', v)"
@@ -36,6 +37,7 @@ defineProps<{
   value: string
   clearable?: boolean
   disabled?: boolean
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
