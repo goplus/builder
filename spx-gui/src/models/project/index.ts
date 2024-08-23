@@ -6,7 +6,7 @@
 import { reactive, watch } from 'vue'
 
 import { join } from '@/utils/path'
-import { debounce } from '@/utils/utils'
+import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
 import { IsPublic, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig } from '../common/file'
@@ -432,7 +432,7 @@ export class Project extends Disposable {
           this.autoSaveToCloudState = AutoSaveToCloudState.Saved
         } catch (e) {
           this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-          startRetry()
+          retryAutoSave()
           await this.saveToLocalCache(localCacheKey) // prevent data loss
           console.error('failed to auto save to cloud', e)
           return
@@ -441,25 +441,21 @@ export class Project extends Disposable {
         if (this.hasUnsyncedChanges) autoSaveToCloud()
         else await localHelper.clear(localCacheKey)
       }, 1500)
+      this.addDisposer(save.cancel)
 
-      let retryTimeoutId: ReturnType<typeof setTimeout>
-      const startRetry = () => {
-        stopRetry()
-        retryTimeoutId = setTimeout(async () => {
-          if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
-          if (this.hasUnsyncedChanges) {
-            autoSaveToCloud()
-          } else {
-            this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-            await localHelper.clear(localCacheKey)
-          }
-        }, 5000)
-      }
-      const stopRetry = () => clearTimeout(retryTimeoutId)
-      this.addDisposer(stopRetry)
+      const retryAutoSave = debounce(async () => {
+        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
+        if (this.hasUnsyncedChanges) {
+          autoSaveToCloud()
+        } else {
+          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+          await localHelper.clear(localCacheKey)
+        }
+      }, 5000)
+      this.addDisposer(retryAutoSave.cancel)
 
       return () => {
-        stopRetry()
+        retryAutoSave.cancel()
         if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
           this.autoSaveToCloudState = AutoSaveToCloudState.Pending
         if (this.autoSaveMode === AutoSaveMode.Cloud) save()
@@ -483,12 +479,14 @@ export class Project extends Disposable {
     // watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory
     const autoSaveToLocalCache = (() => {
       const save = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
+      this.addDisposer(save.cancel)
 
       const delazyLoadGameFiles = debounce(() => {
         const files = this.exportGameFiles()
         const fileList = Object.keys(files)
         fileList.map((path) => files[path]!.arrayBuffer())
       }, 1000)
+      this.addDisposer(delazyLoadGameFiles.cancel)
 
       return () => {
         if (this.autoSaveMode === AutoSaveMode.LocalCache) save()

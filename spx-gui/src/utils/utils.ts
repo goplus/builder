@@ -13,17 +13,6 @@ export const isSound = (url: string): boolean => {
   return ['wav', 'mp3', 'ogg'].includes(extension)
 }
 
-export function debounce<T extends (...args: any[]) => any>(func: T, delay: number = 300) {
-  let timeoutId: ReturnType<typeof setTimeout>
-  return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
-    const context = this
-    clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => {
-      func.apply(context, args)
-    }, delay)
-  }
-}
-
 /**
  * If add-to-public-library features are enabled.
  * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).

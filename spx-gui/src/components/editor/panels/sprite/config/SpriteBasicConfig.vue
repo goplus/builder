@@ -126,7 +126,8 @@ import {
   UIButtonGroupItem
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { debounce, round } from '@/utils/utils'
+import { round } from '@/utils/utils'
+import { debounce } from 'lodash'
 import {
   RotationStyle,
   LeftRight,
