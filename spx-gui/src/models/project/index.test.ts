@@ -1,10 +1,13 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { Sprite } from '../sprite'
 import { Animation } from '../animation'
 import { Sound } from '../sound'
 import { Costume } from '../costume'
 import { fromText, type Files } from '../common/file'
-import { Project } from '.'
+import { AutoSaveMode, AutoSaveToCloudState, Project } from '.'
+import * as cloudHelper from '../common/cloud'
+import * as localHelper from '../common/local'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -135,5 +138,56 @@ describe('Project', () => {
 
     await expect((project as any).saveToLocalCache('key')).rejects.toThrow('disposed')
     expect(saveToLocalCacheMethod).toHaveBeenCalledWith('key')
+  })
+})
+
+describe('ProjectAutoSave', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  // https://github.com/goplus/builder/pull/794#discussion_r1728120369
+  it('should handle failed auto-save correctly', async () => {
+    const project = makeProject()
+
+    const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockRejectedValue(new Error('save failed'))
+    const localSaveMock = vi.spyOn(localHelper, 'save').mockResolvedValue(undefined)
+    const localClearMock = vi.spyOn(localHelper, 'clear').mockResolvedValue(undefined)
+
+    await project.startEditing('localCacheKey')
+    project.setAutoSaveMode(AutoSaveMode.Cloud)
+
+    const newSprite = new Sprite('newSprite')
+    project.addSprite(newSprite)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
+    await flushPromises()
+    expect(project.hasUnsyncedChanges).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(1500) // wait for auto-save to trigger
+    await flushPromises()
+    expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Failed)
+    expect(project.hasUnsyncedChanges).toBe(true)
+    expect(cloudSaveMock).toHaveBeenCalledTimes(1)
+    expect(localSaveMock).toHaveBeenCalledTimes(1)
+
+    project.removeSprite(newSprite.name)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
+    await flushPromises()
+    expect(project.hasUnsyncedChanges).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(5000) // wait for auto-retry to trigger
+    await flushPromises()
+    expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Saved)
+    expect(project.hasUnsyncedChanges).toBe(false)
+    expect(cloudSaveMock).toHaveBeenCalledTimes(1)
+    expect(localSaveMock).toHaveBeenCalledTimes(1)
+    expect(localClearMock).toHaveBeenCalledTimes(1)
   })
 })

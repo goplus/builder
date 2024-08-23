@@ -430,25 +430,28 @@ export class Project extends Disposable {
         try {
           if (this.hasUnsyncedChanges) await this.saveToCloud()
           this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-          if (this.hasUnsyncedChanges) autoSaveToCloud()
-          else await localHelper.clear(localCacheKey)
         } catch (e) {
-          await this.saveToLocalCache(localCacheKey) // prevent data loss
           this.autoSaveToCloudState = AutoSaveToCloudState.Failed
           startRetry()
-          throw e
+          await this.saveToLocalCache(localCacheKey) // prevent data loss
+          console.error('failed to auto save to cloud', e)
+          return
         }
+
+        if (this.hasUnsyncedChanges) autoSaveToCloud()
+        else await localHelper.clear(localCacheKey)
       }, 1500)
 
       let retryTimeoutId: ReturnType<typeof setTimeout>
       const startRetry = () => {
         stopRetry()
-        retryTimeoutId = setTimeout(() => {
-          if (
-            this.autoSaveToCloudState === AutoSaveToCloudState.Failed &&
-            this.hasUnsyncedChanges
-          ) {
+        retryTimeoutId = setTimeout(async () => {
+          if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
+          if (this.hasUnsyncedChanges) {
             autoSaveToCloud()
+          } else {
+            this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+            await localHelper.clear(localCacheKey)
           }
         }, 5000)
       }
