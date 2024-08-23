@@ -77,7 +77,6 @@ import type { LocaleMessage } from '@/utils/i18n'
 import UIModal from '@/components/ui/modal/UIModal.vue'
 import UIModalClose from '@/components/ui/modal/UIModalClose.vue'
 import UIButton from '@/components/ui/UIButton.vue'
-import { n } from 'vitest/dist/reporters-P7C2ytIv.js'
 
 const props = defineProps<{
   asset: AssetData

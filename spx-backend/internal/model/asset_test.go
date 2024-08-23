@@ -56,7 +56,7 @@ func TestListAssets(t *testing.T) {
 			WithArgs("").
 			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
 
-		assets, err := ListAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil)
+		assets, err := ListAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil, nil)
 		require.NoError(t, err)
 		require.NotNil(t, assets)
 		assert.Equal(t, 1, assets.Total)
@@ -71,7 +71,7 @@ func TestListAssets(t *testing.T) {
 
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE status != \?`).
 			WillReturnError(sql.ErrConnDone)
-		assets, err := ListAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil)
+		assets, err := ListAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil, nil)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, sql.ErrConnDone)
 		assert.Nil(t, assets)
