@@ -120,6 +120,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   font-style: italic;
   font-family: var(--ui-font-family-code);
   animation: fade-in 150ms ease-in;
+  white-space: pre;
 }
 
 @keyframes fade-in {
