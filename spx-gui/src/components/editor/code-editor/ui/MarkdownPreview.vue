@@ -84,6 +84,13 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transform: translateX(-100%);
     pointer-events: none;
+    animation: MarkdownPreviewCopyButtonBounceOut 0.2s cubic-bezier(0.13, 1.24, 0.22, 1.16);
+  }
+}
+
+@keyframes MarkdownPreviewCopyButtonBounceOut {
+  from {
+    transform: scale(0.4) translateX(-100%);
   }
 }
 </style>
