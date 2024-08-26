@@ -85,6 +85,56 @@ export function useAction<Args extends any[], T>(
   return { fn: actionFn, isLoading }
 }
 
+type HandleMessageOptions<T> = {
+  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage),
+  onSuccess?: (result: T) => void,
+  onFail?: (error: ActionException) => void
+};
+  // Typically we should do message handling only in the very end of the action chain,
+  // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
+  // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
+async function handleMessage<T>(
+  action: () => Promise<T>,
+  options: HandleMessageOptions<T>,
+  t: (msg: LocaleMessage) => string,
+  m: { success: (msg: string) => void, error: (msg: string) => void }
+): Promise<void> {
+  try {
+    const result = await action();
+
+    if (options.onSuccess) {
+      options.onSuccess(result);
+    }
+
+    if (options.successMessage) {
+      const successText = t(
+        typeof options.successMessage === 'function' ? options.successMessage(result) : options.successMessage
+      );
+      m.success(successText);
+    }
+  } catch (e) {
+    // For
+    // - `Cancelled` exceptions: nothing to do
+    // - `ActionException` exceptions: we will notify the user
+    // do `return` (which swallows the exception) instead of `throw`.
+    // It let the runtime (browser, vue, etc.) ignore such exceptions, which is intended.
+    if (e instanceof Cancelled) return;
+
+    if (e instanceof ActionException) {
+      if (options.onFail) {
+        options.onFail(e);
+      }
+
+      m.error(t(e.userMessage));
+      console.warn(e);
+      return;
+    }
+
+    throw e; 
+  }
+}
+
+
 /**
  * `useMessageHandle`
  * - transforms exceptions like `useAction`
@@ -92,46 +142,60 @@ export function useAction<Args extends any[], T>(
  */
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
-  failureSummaryMessage: LocaleMessage, // TODO: the messages can be simplified if the messages' format is consistent
+  failureSummaryMessage: LocaleMessage,
   successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
 ) {
-  const m = useMessage()
-  const { t } = useI18n()
-  const action = useAction(fn, failureSummaryMessage)
+  const m = useMessage();
+  const { t } = useI18n();
+  const action = useAction(fn, failureSummaryMessage);
 
-  // Typically we should do message handling only in the very end of the action chain,
-  // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
-  // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
   function messageHandleFn(...args: Args): Promise<void> {
-    return action.fn(...args).then(
-      (ret) => {
-        if (successMessage != null) {
-          const successText = t(
-            typeof successMessage === 'function' ? successMessage(ret) : successMessage
-          )
-          m.success(successText)
-        }
-      },
-      (e) => {
-        // For
-        // - `Cancelled` exceptions: nothing to do
-        // - `ActionException` exceptions: we will notify the user
-        // do `return` (which swallows the exception) instead of `throw`.
-        // It let the runtime (browser, vue, etc.) ignore such exceptions, which is intended.
-        if (e instanceof Cancelled) return
-        if (e instanceof ActionException) {
-          m.error(t(e.userMessage))
-          console.warn(e)
-          return
-        }
-        throw e
-      }
-    )
+    return handleMessage(
+      () => action.fn(...args),
+      { successMessage },
+      t,
+      m
+    );
   }
   return {
     fn: messageHandleFn,
     isLoading: action.isLoading
+  };
+}
+
+/**
+ * `useEnhancedMessageHandle` is an enhanced version of `useMessageHandle`,allowing handling of success and failure
+ * @param fn function to handle
+ * @param failureSummaryMessage 
+ * @param successMessage 
+ * @param onSuccess function to handle success
+ * @param onFail function to handle failure
+ * @returns 
+ */
+export function useEnhancedMessageHandle<Args extends any[], T>(
+  fn: (...args: Args) => Promise<T>,
+  failureSummaryMessage: LocaleMessage,
+  successMessage?: LocaleMessage | ((ret: T) => LocaleMessage),
+  onSuccess?: (result: T) => void,
+  onFail?: (error: ActionException) => void
+) {
+  const m = useMessage();
+  const { t } = useI18n();
+  const action = useAction(fn, failureSummaryMessage);
+
+  function enhancedMessageHandleFn(...args: Args): Promise<void> {
+    return handleMessage(
+      () => action.fn(...args),
+      { successMessage, onSuccess, onFail },
+      t,
+      m
+    );
   }
+
+  return {
+    fn: enhancedMessageHandleFn,
+    isLoading: action.isLoading
+  };
 }
 
 export type QueryRet<T> = {

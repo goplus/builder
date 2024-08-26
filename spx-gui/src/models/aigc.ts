@@ -1,6 +1,7 @@
 import { AIGCStatus, generateAIImage, generateAISprite, getAIGCStatus, isAiAsset, isContentReady, isPreviewReady, syncGenerateAIImage, type AIGCFiles, type CreateAIImageParams, type RequiredAIGCFiles, type TaggedAIAssetData } from "@/apis/aigc"
 import { saveFiles } from "./common/cloud"
 import { fromBlob } from "./common/file"
+import { useMessageHandle } from "@/utils/exception"
 
 type ActionFn = (...args: any[]) => Promise<any>
 type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise<R>
@@ -67,8 +68,15 @@ export class AIGCTask<
     return this._status
   }
   private set status(value: AIGCStatus) {
-    this._status = value
-    this.dispatchEvent(new CustomEvent('AIGCStatusChange', { detail: value }))
+    if (this._status !== value) {
+      this._status = value;
+      this.dispatchEvent(new CustomEvent('AIGCStatusChange', { detail: value }));
+      if (value === AIGCStatus.Finished) {
+        this.dispatchEvent(new CustomEvent('AIGCFinished', { detail: this.result }));
+      } else if (value === AIGCStatus.Failed) {
+        this.dispatchEvent(new CustomEvent('AIGCFailed', { detail: this._failureMessage }));
+      }
+    }
   }
 
   private _failureMessage?: string
@@ -143,15 +151,6 @@ export class AIGCTask<
 
   addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
     super.addEventListener(type, callback, options)
-    // Dispatch the event immediately if the status has already changed
-    if (type === 'AIGCStatusChange' && this.status !== AIGCStatus.Waiting && callback) {
-      const cb = typeof callback === 'function' ? callback : callback.handleEvent
-      cb(new CustomEvent('AIGCStatusChange', { detail: this.status }))
-    }
-    if (type === 'AIGCFinished' && this.status === AIGCStatus.Finished && callback) {
-      const cb = typeof callback === 'function' ? callback : callback.handleEvent
-      cb(new CustomEvent('AIGCFinished', { detail: this.result }))
-    }
   }
 }
 
