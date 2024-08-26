@@ -69,8 +69,8 @@ func createStartChatParams(chatAction int, userInput string, userLang int) *AISt
 	}
 }
 
-func createChatParams(userInput string) AIChatParams {
-	return AIChatParams{UserInput: userInput}
+func createChatParams(userInput string) *AIChatParams {
+	return &AIChatParams{UserInput: userInput}
 }
 
 func createTaskParams(taskAction int, userCode string, userCursor Cursor) *AITaskParams {
