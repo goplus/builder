@@ -8,29 +8,13 @@ defineProps<{
   moreActions?: Action[]
 }>()
 
-const emits = defineEmits<{
+defineEmits<{
   close: []
 }>()
-let timer: number | null = null
-
-function handleMouseEnter() {
-  if (timer) {
-    clearTimeout(timer)
-    timer = null
-  }
-}
-
-function handleMouseLeave() {
-  // classic ts type matches error between Browser timer and Node.js timer, god knows why 2024 still has this problem.
-  // overview: https://stackoverflow.com/questions/45802988/typescript-use-correct-version-of-settimeout-node-vs-window
-  // here use force transformed type.
-  // or use `ReturnType<typeof setTimeout>`
-  timer = setTimeout(() => emits('close'), 500) as unknown as number
-}
 </script>
 
 <template>
-  <section class="document-preview" @mouseleave="handleMouseLeave" @mouseenter="handleMouseEnter">
+  <section class="document-preview" @mouseleave="$emit('close')">
     <MarkdownPreview class="markdown" :content></MarkdownPreview>
     <footer class="actions-footer">
       <nav class="recommend">
@@ -69,12 +53,18 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
   border: 1px solid #a6a6a6;
   color: black;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  animation: documentEnter 0.15s ease;
   transform-origin: left top;
+  transition: 0.15s;
 
-  // todo: make some way to trig this animation
-  &.leave-animate {
-    animation: documentLeave 0.15s ease;
+  &.v-enter-active,
+  &.v-leave-active {
+    transition: 0.15s cubic-bezier(0, 1.25, 1, 1);
+  }
+
+  &.v-enter-from,
+  &.v-leave-to {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
   }
 }
 
@@ -132,20 +122,6 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
     &:active {
       color: #1e9dff;
     }
-  }
-}
-
-@keyframes documentEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(20px);
-  }
-}
-
-@keyframes documentLeave {
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0px);
   }
 }
 </style>
