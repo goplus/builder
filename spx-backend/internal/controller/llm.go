@@ -393,7 +393,7 @@ func createLLMRequestBodyMessagesWithProjectCtx(sysInput, userInput string, proj
 	return msg
 }
 
-func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (ChatResp, error) {
+func (ctrl *Controller) StartChat(ctx context.Context, p *AIStartChatParams) (ChatResp, error) {
 	if ok, msg := p.Validate(); !ok {
 		return ChatResp{}, errors.New(msg)
 	}
@@ -418,7 +418,7 @@ func (ctrl *Controller) StartChat(ctx context.Context, p AIStartChatParams) (Cha
 	return newChatResp(resp, *chat), nil
 }
 
-func (ctrl *Controller) NextChat(ctx context.Context, id string, p AIChatParams) (chatResp ChatResp, err error) {
+func (ctrl *Controller) NextChat(ctx context.Context, id string, p *AIChatParams) (chatResp ChatResp, err error) {
 	if ok, msg := p.Validate(); !ok {
 		return ChatResp{}, errors.New(msg)
 	}
@@ -456,7 +456,7 @@ func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
 	}
 }
 
-func (ctrl *Controller) StartTask(ctx context.Context, p AITaskParams) (TaskResp, error) {
+func (ctrl *Controller) StartTask(ctx context.Context, p *AITaskParams) (TaskResp, error) {
 	if ok, msg := p.Validate(); !ok {
 		return TaskResp{}, errors.New(msg)
 	}
