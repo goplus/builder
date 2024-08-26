@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -62,8 +63,7 @@ func CalculateAverageScore(distributions []RatingDistribution) float64 {
 	}
 
 	averageScore := float64(totalScore) / float64(totalCount)
-
-	return float64(int(averageScore*10)) / 10
+	return math.Round(averageScore*10) / 10 //todo(tsingper):there maybe some error
 }
 
 // InsertRate inserts a rating for an asset.
