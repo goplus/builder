@@ -24,7 +24,8 @@ import iconVariable from './icons/variable.svg?raw'
 import IconCollapse from './icons/collapse.svg?raw'
 import { UITooltip, useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-
+import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
+import MarkdownContent from '../docs/zh/setYpos_detail.md?raw'
 defineEmits<{
   insertText: [insertText: string]
 }>()
@@ -141,19 +142,24 @@ function handleCategoryClick(index: number) {
     </li>
   </ul>
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
-  <div v-show="!collapsed" class="tools-wrapper">
-    <h4 class="title">{{ $t(activeCategory.label) }}</h4>
-    <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
-      <h5 class="group-title">{{ $t(group.label) }}</h5>
-      <div class="defs">
-        <ToolItem
-          v-for="(def, j) in group.tools"
-          :key="j"
-          :tool="def"
-          @use-snippet="$emit('insertText', $event)"
-        />
+  <div v-show="!collapsed" class="sidebar-container">
+    <section v-if="false" class="tools-wrapper">
+      <h4 class="title">{{ $t(activeCategory.label) }}</h4>
+      <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
+        <h5 class="group-title">{{ $t(group.label) }}</h5>
+        <div class="defs">
+          <ToolItem
+            v-for="(def, j) in group.tools"
+            :key="j"
+            :tool="def"
+            @use-snippet="$emit('insertText', $event)"
+          />
+        </div>
       </div>
-    </div>
+    </section>
+    <section v-if="true">
+      <MarkdownPreview theme="detail" :content="MarkdownContent"></MarkdownPreview>
+    </section>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -227,13 +233,17 @@ function handleCategoryClick(index: number) {
   }
 }
 
-.tools-wrapper {
+.sidebar-container {
   // 162px is the max width of def buttons, use 162px as base width
   // to keep tools-wrapper's width stable when switch among different def categories
   flex: 1 0 162px;
-  padding: 12px;
-  background-color: var(--ui-color-grey-300);
   overflow-y: auto;
+  //background-color: var(--ui-color-grey-300);
+  background-color: white;
+}
+
+.tools-wrapper {
+  padding: 12px;
 
   .title {
     font-size: var(--ui-font-size-text);

@@ -3,21 +3,32 @@ import { renderMarkdown } from './common/languages'
 import CopyIcon from './icons/copy.svg'
 import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-defineProps<{
-  content: string
-}>()
+withDefaults(
+  defineProps<{
+    content: string
+    theme?: 'simple' | 'detail'
+  }>(),
+  {
+    theme: 'simple'
+  }
+)
 const i18n = useI18n()
 const copyIcon = computed(() => `url('${CopyIcon}')`)
 const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })}'`)
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vue/no-v-html -->
-  <article class="markdown-preview" v-html="renderMarkdown(content)"></article>
+  <!-- eslint-disable vue/no-v-html -->
+  <article
+    class="markdown-preview"
+    :class="{ simple: theme === 'simple', detail: theme === 'detail' }"
+    v-html="renderMarkdown(content)"
+  ></article>
 </template>
 <style lang="scss">
 .markdown-preview {
   .shiki {
+    overflow: auto;
     padding: 8px;
     margin: 4px 0;
     // because in textMate theme it bg color is white,
@@ -117,5 +128,10 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
     'Segoe UI Symbol',
     'Noto Color Emoji';
   line-height: 2;
+
+  &.detail {
+    color: black;
+    line-height: 1.3;
+  }
 }
 </style>
