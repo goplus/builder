@@ -312,3 +312,7 @@ func lookupPackageFromLib(path string) (*types.Package, bool) {
 	}
 	return pkg, true
 }
+
+func GetSPXFunc() (*types.Package, bool) {
+	return lookupPackageFromLib("github.com/goplus/spx")
+}
