@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -110,5 +111,56 @@ func TestCalculateAverageScore(t *testing.T) {
 		average := CalculateAverageScore(distributions)
 
 		assert.Equal(t, expectedAverage, average)
+	})
+}
+
+func TestInsertRate(t *testing.T) {
+	t.Run("ValidInsert", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		gdb, err := gorm.Open(mysql.New(mysql.Config{
+			Conn:                      db,
+			SkipInitializeWithVersion: true,
+		}), &gorm.Config{})
+		require.NoError(t, err)
+
+		mock.ExpectBegin()
+		mock.ExpectExec("INSERT INTO `ratings` (`asset_id`,`owner`,`score`) VALUES (?,?,?)").
+			WithArgs(1, "user1", 5).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
+
+		err = InsertRate(context.Background(), gdb, "1", "user1", 5)
+		require.NoError(t, err)
+
+		err = mock.ExpectationsWereMet()
+		require.NoError(t, err)
+	})
+
+	t.Run("InsertError", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		gdb, err := gorm.Open(mysql.New(mysql.Config{
+			Conn:                      db,
+			SkipInitializeWithVersion: true,
+		}), &gorm.Config{})
+		require.NoError(t, err)
+
+		mock.ExpectBegin()
+		mock.ExpectExec("INSERT INTO `ratings` (`asset_id`,`owner`,`score`) VALUES (?,?,?)").
+			WithArgs(1, "user1", 5).
+			WillReturnError(fmt.Errorf("insert error"))
+		mock.ExpectRollback()
+
+		err = InsertRate(context.Background(), gdb, "1", "user1", 5)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "insert error")
+
+		err = mock.ExpectationsWereMet()
+		require.NoError(t, err)
 	})
 }

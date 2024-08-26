@@ -76,3 +76,75 @@ func TestBuildOrderByClause(t *testing.T) {
 		assert.Equal(t, "ORDER BY a ASC, b DESC", clause)
 	})
 }
+
+func TestBuildOrCondition(t *testing.T) {
+	t.Run("EmptyValues", func(t *testing.T) {
+		// 当输入为空时，应该返回空的条件和nil的参数列表
+		column := "status"
+		values := []any{}
+
+		expectedClause := ""
+		expectedArgs := []any(nil)
+
+		clause, args := buildOrCondition(column, values)
+
+		assert.Equal(t, expectedClause, clause)
+		assert.Equal(t, expectedArgs, args)
+	})
+
+	t.Run("SingleValue", func(t *testing.T) {
+		// 当只有一个值时，应该返回单个条件表达式
+		column := "status"
+		values := []any{"active"}
+
+		expectedClause := "(status = ?)"
+		expectedArgs := []any{"active"}
+
+		clause, args := buildOrCondition(column, values)
+
+		assert.Equal(t, expectedClause, clause)
+		assert.Equal(t, expectedArgs, args)
+	})
+
+	t.Run("MultipleValues", func(t *testing.T) {
+		// 当有多个值时，应该返回多个用 OR 连接的条件表达式
+		column := "status"
+		values := []any{"active", "inactive", "pending"}
+
+		expectedClause := "(status = ? OR status = ? OR status = ?)"
+		expectedArgs := []any{"active", "inactive", "pending"}
+
+		clause, args := buildOrCondition(column, values)
+
+		assert.Equal(t, expectedClause, clause)
+		assert.Equal(t, expectedArgs, args)
+	})
+
+	t.Run("NumericValues", func(t *testing.T) {
+		// 测试处理数字类型的值
+		column := "id"
+		values := []any{1, 2, 3}
+
+		expectedClause := "(id = ? OR id = ? OR id = ?)"
+		expectedArgs := []any{1, 2, 3}
+
+		clause, args := buildOrCondition(column, values)
+
+		assert.Equal(t, expectedClause, clause)
+		assert.Equal(t, expectedArgs, args)
+	})
+
+	t.Run("MixedValues", func(t *testing.T) {
+		// 测试处理混合类型的值
+		column := "attribute"
+		values := []any{"admin", 42, true}
+
+		expectedClause := "(attribute = ? OR attribute = ? OR attribute = ?)"
+		expectedArgs := []any{"admin", 42, true}
+
+		clause, args := buildOrCondition(column, values)
+
+		assert.Equal(t, expectedClause, clause)
+		assert.Equal(t, expectedArgs, args)
+	})
+}
