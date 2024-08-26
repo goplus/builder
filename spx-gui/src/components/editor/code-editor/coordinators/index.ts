@@ -6,7 +6,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { Compiler, TokenEnum } from '../compiler'
+import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -68,21 +68,23 @@ export class Coordinator {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent> {
-    const content =
-      this.docAbility.getNormalDoc({
-        module: '',
-        name: ctx.hoverUnitWord,
-        type: TokenEnum.ANY,
-        usages: []
-      })?.content || ''
-    return {
-      content: content,
+  ): Promise<LayerContent[] | null> {
+    const contents = this.docAbility.getNormalDoc({
+      module: '',
+      name: ctx.hoverUnitWord
+    })
+
+    if (!contents || contents.length === 0) {
+      return null
+    }
+
+    return contents.map((doc) => ({
+      content: doc.content,
       recommendAction: {
-        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'still in confusion? Ask for help' }),
+        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'Still in confusion? Ask for help' }),
         activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
         onActiveLabelClick() {
-          console.log('=>(index.ts:75) Ask for help')
+          // TODO: add some logic code here
         }
       },
       moreActions: [
@@ -90,11 +92,11 @@ export class Coordinator {
           icon: Icon.Document,
           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
           onClick() {
-            console.log('=>(index.ts:82) Document')
+            // TODO: add some logic code here
           }
         }
       ]
-    }
+    }))
   }
 
   public jump(position: JumpPosition): void {}

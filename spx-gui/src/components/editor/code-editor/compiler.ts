@@ -3,11 +3,6 @@ enum CodeEnum {
   Backdrop
 }
 
-export enum TokenEnum {
-  // todo: remove me after compiler has done! this is temp using to make ts compile pass.
-  ANY
-}
-
 enum TokenUsage {}
 
 enum CompletionItemEnum {}
@@ -40,8 +35,7 @@ export type Token = {
   module: string
   // "Sprite.touching"
   name: string
-  type: TokenEnum
-  usages: TokenUsage[]
+  usages?: TokenUsage[]
 }
 
 type Code = {

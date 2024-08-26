@@ -121,7 +121,7 @@ export interface HoverProvider {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent>
+  ): Promise<LayerContent[] | null>
 }
 
 export type InputItemUsage = {
@@ -375,15 +375,15 @@ export class EditorUI extends Disposable {
           if (word == null) return
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())
-          const result = await this.requestHoverProviderResolve(model, {
+          const result = (await this.requestHoverProviderResolve(model, {
             signal: abortController.signal,
             hoverUnitWord: word.word,
             position
-          })
+          })).flat()
 
           for (let i = 0; i < result.length; i++) {
             const layerContent = result[i]
-
+            if (layerContent == null) continue
             if (isDocPreview(layerContent)) {
               this.hoverPreview?.showDocument(layerContent, {
                 startLineNumber: position.lineNumber,
@@ -395,6 +395,8 @@ export class EditorUI extends Disposable {
           }
 
           return {
+            // we only need use to know when to trigger hover preview, no need to show raw content
+            // so here we return empty result
             contents: []
           }
         }
@@ -441,11 +443,10 @@ export class EditorUI extends Disposable {
       signal: AbortSignal
     }
   ) {
-    const PromiseLayerContents = this.editorUIRequestCallback.hover.map((item) =>
-      item.provideHover(model, ctx)
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.hover.map(item => item.provideHover(model, ctx))
     )
-
-    return await Promise.all(PromiseLayerContents)
+    return promiseResults.flat().filter(Boolean)
   }
 
   public registerCompletionProvider(provider: CompletionProvider) {

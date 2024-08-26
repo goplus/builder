@@ -19,10 +19,15 @@ export class DocAbility {
     this.project = getProject()
   }
 
-  public getNormalDoc(token: Token): Doc | null {
-    return {
-      content: getDocumentByKeywords(token.name, this.i18n, this.project) || '',
-      token
+  public getNormalDoc(token: Token): Doc[] | null {
+    const document = getDocumentByKeywords(token.name, this.i18n, this.project)
+    if (document == null) {
+      return []
+    } else {
+      return [{
+        content: document,
+        token
+      }]
     }
   }
   public getDetailDoc(token: Token): Doc | null {
