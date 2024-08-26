@@ -8,7 +8,7 @@ ctx := &Context
 
 assetsName, err := ctrl.GetSearchSuggestions(ctx.Context(), ${query}, ${limit})
 if err != nil {
-replyWithInnerError(ctx, err)
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json assetsName

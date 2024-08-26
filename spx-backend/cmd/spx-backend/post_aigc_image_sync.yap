@@ -11,17 +11,17 @@ ctx := &Context
 
 _, ok := ensureUser(ctx)
 if !ok {
-return
+	return
 }
 
 params := &controller.GenerateParams{}
 if !parseJSON(ctx, params) {
-return
+	return
 }
 result, err := ctrl.GeneratingSync(ctx.Context(), params)
 
 if err != nil {
 replyWithInnerError(ctx, err)
-return
+	return
 }
 json result

@@ -7,11 +7,11 @@ ctx := &Context
 
 user, ok := ensureUser(ctx)
 if !ok {
-return
+	return
 }
 rate, err := ctrl.GetRate(ctx.Context(), ${id}, user.Name)
 if err != nil {
-replyWithInnerError(ctx, err)
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json rate

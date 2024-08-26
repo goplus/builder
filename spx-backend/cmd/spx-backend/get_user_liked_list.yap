@@ -27,13 +27,13 @@ default:
 }
 
 if assetTypeParam := ${assetType}; assetTypeParam != "" {
-assetTypeInt, err := strconv.Atoi(assetTypeParam)
+	assetTypeInt, err := strconv.Atoi(assetTypeParam)
 if err != nil {
-replyWithCode(ctx, errorInvalidArgs)
-return
+	replyWithCode(ctx, errorInvalidArgs)
+	return
 }
-assetType := model.AssetType(assetTypeInt)
-params.AssetType = &assetType
+	assetType := model.AssetType(assetTypeInt)
+	params.AssetType = &assetType
 }
 
 if orderBy := ${orderBy}; orderBy != "" {

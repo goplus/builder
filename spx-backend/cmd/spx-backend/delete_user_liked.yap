@@ -11,7 +11,7 @@ if !ok {
 }
 
 if err := ctrl.DeleteUserAsset(ctx.Context(),"liked",${assetId},user.Name); err != nil {
-replyWithInnerError(ctx, err)
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json nil

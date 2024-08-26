@@ -7,7 +7,7 @@ ctx := &Context
 
 assetStatus, err := ctrl.GetAIAssetStatus(ctx.Context(), ${jobId})
 if err != nil {
-replyWithInnerError(ctx, err)
-return
+	replyWithInnerError(ctx, err)
+	return
 }
 json assetStatus
