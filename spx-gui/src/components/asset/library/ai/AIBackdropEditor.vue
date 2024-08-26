@@ -116,7 +116,16 @@ const resizeTransformerConfig = computed<TransformerConfig | null>(() => {
       }
     }) as TransformerConfig['anchorStyleFunc'],
     borderStroke: 'rgba(11, 192, 207, 1)',
-    rotateEnabled: false
+    rotateEnabled: false,
+    boundBoxFunc: function (oldBoundBox, newBoundBox) {
+      const MIN_WIDTH = 10
+      const MIN_HEIGHT = 10
+      if (newBoundBox.width < MIN_WIDTH || newBoundBox.height < MIN_HEIGHT) {
+        return oldBoundBox;
+      }
+
+      return newBoundBox;
+    },
   }
 })
 
@@ -154,8 +163,8 @@ const handleTransformEnd = () => {
   // so we need to remove it
   const scaleX = node.value.scaleX() / renderScale.value
   const scaleY = node.value.scaleY() / renderScale.value
-  const width = Math.max(1, Math.round(node.value.width() * scaleX))
-  const height = Math.max(1, Math.round(node.value.height() * scaleY))
+  const width = Math.max(10, Math.round(node.value.width() * scaleX))
+  const height = Math.max(10, Math.round(node.value.height() * scaleY))
   renderScale.value = 1
   node.value.scaleX(1)
   node.value.scaleY(1)
