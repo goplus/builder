@@ -125,8 +125,6 @@ import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
 import {
   AIGCStatus,
-  generateAISprite,
-  getAIGCStatus,
   type AIGCFiles,
   isContentReady,
   isPreviewReady,

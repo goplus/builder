@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { NSelect } from 'naive-ui'
 import { useSearchCtx } from './SearchContextProvider.vue'
 import { useI18n } from '@/utils/i18n'

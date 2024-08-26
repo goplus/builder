@@ -87,9 +87,6 @@ const searchResultCtx = useSearchResultCtx()
 const COLUMN_COUNT = 6
 const assetList = ref<AssetData[]>([])
 const aiAssetTaskList = shallowRef<AIGCTask[]>([])
-const getAiAssetList = () => {
-  return aiAssetTaskList.value.map((task) => task.result).filter((a) => a != null) as TaggedAIAssetData[]
-}
 const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )

@@ -7,59 +7,40 @@ type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise
 type WithStatus<T = {}> = T & { status: AIGCStatus }
 
 /**
- * This is a task handler for requesting AI-generated content (and polling the status if needed).
+ * Task handler for AI-generated content requests, supporting synchronous and asynchronous operations.
  * 
- * - To handle synchronous AI-generation, just pass the request function as the `action` and leave the `pollFn` empty.
- * - To handle asynchronous AI-generation, pass the request function as the `action` and the poll function as the `pollFn`.
+ * @param {Function} action - Function to request AI generation.
+ * @param {Array} args - Arguments for the `action`.
+ * @param {Function} [pollFn] - Optional function to poll the status of AI generation.
  * 
- * The result of the task will be stored in the `result` field.
+ * - **Synchronous**: Use `action` only, leave `pollFn` empty.
+ * - **Asynchronous**: Use `pollFn` to poll until completion.
  * 
- * Adjust the `pollingInterval` and `pollingLimit` to control the polling behavior.
+ * @property {any} result - Stores the task's result.
+ * @property {number} pollingInterval - Interval between polls (default adjustable).
+ * @property {number} pollingLimit - Maximum polls before stopping (default adjustable).
  * 
- * @param action The action to request AI-generation
- * @param args Arguments for the `action`
- * @param pollFn A function to poll the status of the AI-generation.
- *    - if `pollFn` is not provided, the task will be considered as finished after the `action` is done.
- *    - otherwise the result of the action will be passed to the `pollFn` and the `pollFn` will be called repeatedly 
- *      to poll the status of the AI-generation. The task will be considered as finished when the status is finished.
- *    - The `pollFn` should return a promise that resolves to an object with a status field.
+ * @fires AIGCStatusChange - When task status changes.
+ * @fires AIGCFinished - When the task completes.
+ * @fires AIGCFailed - When the task fails.
  * 
- * @event AIGCStatusChange The status of the task has changed.
- * @event AIGCFinished The task has finished.
- * @event AIGCFailed The task has failed.
- * 
- * @example async
- * ```ts
+ * @example Asynchronous task:
  * const task = new AIGCTask(
- *  (arg) => {
- *    return generateAIImage(arg) satisfies Promise<{ imageJobId: string }>
- *  }, 
- *  [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }], 
- *  (result: { imageJobId: string }) => {
- *    const result = getAIGCStatus(result.imageJobId) satisfies Promise<{ status: AIGCStatus, ...other fields}>
- *    // do something with the result
- *    return result
- *  })
- * ```
+ *   (arg) => generateAIImage(arg),
+ *   [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }],
+ *   (result) => getAIGCStatus(result.imageJobId)
+ * );
  * 
- * @example sync
- * ```ts
+ * @example Synchronous task:
  * const task = new AIGCTask(
- * (arg) => {
- *   const result = syncGenerateAIImage(arg) satisfies { image_url: string }
- *   // do something with the result
- *   return result
- * },
- * [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }]
- * )
- * ```
+ *   (arg) => syncGenerateAIImage(arg),
+ *   [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }]
+ * );
  * 
- * @example event
- * ```ts
+ * @example Event handling:
  * task.addEventListener('AIGCStatusChange', () => {
- *  console.log('Status changed:', task.status)
- * })
- * ```
+ *   console.log('Status changed:', task.status);
+ * });
  */
 export class AIGCTask<
   T extends WithStatus = TaggedAIAssetData,
