@@ -49,7 +49,7 @@
             :class="`message message-${type}`"
           >
             <span class="time">{{ time }}</span>
-            <span>{{ message }}</span>
+            <pre class="content">{{ message }}</pre>
           </div>
         </div>
       </div>
@@ -221,16 +221,20 @@ button {
 }
 
 .console {
-  padding-top: 8px;
+  padding: var(--ui-gap-middle);
   flex-direction: column-reverse;
   display: flex;
   .message {
-    font-family: monospace;
-    font-size: smaller;
+    display: flex;
+    gap: var(--ui-gap-middle);
+    font-family: var(--ui-font-family-code);
     .time {
+      flex: 0 0 auto;
       opacity: 0.5;
-      padding-left: 0.5em;
-      padding-right: 0.5em;
+    }
+    .content {
+      flex: 1 1 0;
+      text-wrap: wrap;
     }
   }
   .message-warn {
