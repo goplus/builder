@@ -84,8 +84,6 @@ export interface CreateAIImageParams {
   height?: number
 }
 
-const mockJobs: Map<string, 'image' | 'sprite'> = new Map()
-
 /**
  * Generate AI image with given keyword and category
  *
@@ -97,13 +95,6 @@ export async function generateAIImage({
   width,
   height
 }: CreateAIImageParams) {
-  // return new Promise<{ imageJobId: string }>((resolve) => {
-  //   setTimeout(() => {
-  //     const jobId = `mock-${keyword}-${Math.random().toString(36).slice(2)}`
-  //     mockJobs.set(jobId, 'image')
-  //     resolve({ imageJobId: jobId })
-  //   }, 1000)
-  // })
   const result = (await client.post(
     '/aigc/image',
     { keyword, category, width, height },
@@ -120,12 +111,6 @@ export async function syncGenerateAIImage({
   width,
   height
 }: CreateAIImageParams) {
-  // return new Promise<{ image_url: string }>((resolve) => {
-  //   setTimeout(() => {
-  //     const imageUrl = 'https://www-static.qbox.me/_next/static/media/entry.95de67c29a4d2d3dc5339a6bd4242604.png'
-  //     resolve({ image_url: imageUrl })
-  //   }, 1000)
-  // });
   const result = (await client.post(
     '/aigc/image/sync',
     { keyword, category, width, height },
@@ -145,13 +130,6 @@ export async function syncGenerateAIImage({
  * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function generateAISprite(imageJobId: string) {
-  return new Promise<{ spriteJobId: string }>((resolve) => {
-    setTimeout(() => {
-      const spriteJobId = `mock-${imageJobId}-${Math.random().toString(36).slice(2)}`
-      mockJobs.set(spriteJobId, 'sprite')
-      resolve({ spriteJobId })
-    }, 1000)
-  })
   const result = (await client.post('/aigc/sprite', { imageJobId }, { timeout: 20 * 1000 })) as {
     spriteJobId: string
   }
@@ -191,8 +169,6 @@ export interface AIGCStatusResponse {
   }
 }
 
-const mockAIGCStatusMap: Map<string, number> = new Map()
-
 /**
  * Get AI image generation status
  *
@@ -202,33 +178,6 @@ const mockAIGCStatusMap: Map<string, number> = new Map()
  * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function getAIGCStatus(jobId: string) {
-  // return new Promise<AIGCStatusResponse>((resolve) => {
-  //   setTimeout(() => {
-  //     const timestamp = mockAIGCStatusMap.get(jobId)
-  //     const random = Math.random()
-  //     if (timestamp === undefined) {
-  //       mockAIGCStatusMap.set(jobId, Date.now())
-  //       resolve({ status: AIGCStatus.Waiting })
-  //     } else if (Date.now() - timestamp < 1000 + random * 2000) {
-  //       resolve({ status: AIGCStatus.Waiting })
-  //     } else if (Date.now() - timestamp < 5000 + random * 5000) {
-  //       resolve({ status: AIGCStatus.Generating })
-  //     } else {
-  //       const resultType = mockJobs.get(jobId)
-  //       const result = resultType === 'image' ? 
-  //         { imageUrl: mockAIImage.imageUri[Math.floor(random * mockAIImage.imageUri.length)] }:
-  //         mockAISprite[Math.floor(random * mockAISprite.length)].files
-  //       resolve({
-  //         status: AIGCStatus.Finished,
-  //         result: {
-  //           jobId,
-  //           type: AIGCType.Image,
-  //           files: result
-  //         }
-  //       })
-  //     }
-  //   }, 300)
-  // })
   const result = (await client.get(
     `/aigc/status/${jobId}`,
     {},
