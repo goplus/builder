@@ -35,7 +35,7 @@ function initCoordinator() {
   const compiler = new Compiler()
   const project = new Project()
   const runtime = new Runtime()
-  const docAbility = new DocAbility()
+  const docAbility = new DocAbility(i18n, () => editorCtx.project)
   const chatBot = new ChatBot()
 
   const coordinator = new Coordinator(editorUI, runtime, compiler, chatBot, docAbility, project)

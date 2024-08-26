@@ -7,6 +7,9 @@ import IconRead from '../icons/read.svg?raw'
 import IconEffect from '../icons/effect.svg?raw'
 import IconCode from '../icons/code.svg?raw'
 import IconAIAbility from '../icons/ai-helper.svg?raw'
+import IconDocument from '../icons/document.svg?raw'
+import IconRename from '../icons/rename.svg?raw'
+import IconPlaylist from '../icons/playlist.svg?raw'
 
 /** transform icon enum to raw svg html content */
 export function icon2SVG(icon: Icon): string {
@@ -22,11 +25,11 @@ export function icon2SVG(icon: Icon): string {
     case Icon.AIAbility:
       return IconAIAbility
     case Icon.Document:
-      return IconEffect
+      return IconDocument
     case Icon.Rename:
-      return IconEffect
+      return IconRename
     case Icon.Playlist:
-      return IconEffect
+      return IconPlaylist
   }
 }
 
