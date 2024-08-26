@@ -119,3 +119,7 @@ func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 
 	return inlayHintList, nil
 }
+
+func GetCompletions(fileName, fileCode string) (interface{}, error) {
+	return getScopesItems(fileName, fileCode, 24)
+}

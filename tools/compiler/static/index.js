@@ -42,7 +42,14 @@ function getDiagnostics (data)  {
 
 
 function getCompletionItems (data)  {
-
+    let fileCode = data.in.code
+    let fileName = data.in.name
+    let res = getCompletionItems_GO(fileName, fileCode)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get completion items")
+    }
+    return json.content
 }
 
 function getDefinition (data)  {

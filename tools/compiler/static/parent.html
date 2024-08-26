@@ -44,6 +44,9 @@ onStart => {
     <button onclick="runCodeDiagnostics()">runCodeDiagnostics</button>
     <button onclick="runDefinition()">runDefinition</button>
     <button onclick="runInlayHint()">runInlayHints</button>
+    <br>
+    <button onclick="runCompletion()">runCompletion</button>
+
 
     <div id="compiler-iframe-container">
     </div>
@@ -144,6 +147,20 @@ onStart => {
             console.log(res)
         } catch (err) {
             console.error(err)
+        }
+    }
+
+    function runCompletion() {
+        try {
+            let res = getIframe().contentWindow.getCompletionItems({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value
+                }
+            })
+            console.log(res)
+        } catch (e) {
+            console.error(e)
         }
     }
 

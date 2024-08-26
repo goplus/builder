@@ -61,5 +61,7 @@ func getTypes(this js.Value, p []js.Value) interface{} {
 }
 
 func getCompletionItems(this js.Value, p []js.Value) interface{} {
-	return nil
+	fileName := p[0].String()
+	fileCode := p[1].String()
+	return internal.NewReply(internal.GetCompletions(fileName, fileCode))
 }
