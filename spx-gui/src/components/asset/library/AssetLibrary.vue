@@ -108,9 +108,9 @@ import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
-import type { AIAssetData, AIGCTask } from '@/apis/aigc'
 import AIPreviewModal from './ai/AIPreviewModal.vue'
 import { addAssetToHistory } from '@/apis/user'
+import type { AIGCTask } from '@/models/aigc'
 
 const props = defineProps<{
   visible?: boolean

@@ -57,14 +57,13 @@ import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import {
   AIGCStatus,
-  AIGCTask,
   isAiAsset,
   isPreviewReady,
-  SyncAIImageTask,
   type TaggedAIAssetData
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
+import { AIGCTask, SyncAIImageTask } from '@/models/aigc'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
