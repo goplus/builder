@@ -98,20 +98,20 @@ export async function getAssetSearchSuggestion(keyword: string, count = 6) {
   if (!keyword) {
     return { suggestions: [] }
   }
-  const assets = await listAsset({
-    keyword,
-    assetType: '' as any,
-    pageSize: count * 2,
-    pageIndex: 1,
-    category: [],
-    owner: '*',
-    isPublic: IsPublic.public,
-    orderBy: ListAssetParamOrderBy.TimeAsc
-  })
-  return {
-    suggestions: Array.from(new Set(assets.data.map((asset) => asset.displayName))).slice(0, count)
-  }
-  return client.get('/asset/suggest', { keyword, count }) as Promise<{
+  // const assets = await listAsset({
+  //   keyword,
+  //   assetType: '' as any,
+  //   pageSize: count * 2,
+  //   pageIndex: 1,
+  //   category: [],
+  //   owner: '*',
+  //   isPublic: IsPublic.public,
+  //   orderBy: ListAssetParamOrderBy.TimeAsc
+  // })
+  // return {
+  //   suggestions: Array.from(new Set(assets.data.map((asset) => asset.displayName))).slice(0, count)
+  // }
+  return client.get('/assets/list/suggestions', { query:keyword, limit:count }) as Promise<{
     suggestions: string[]
   }>
 }
