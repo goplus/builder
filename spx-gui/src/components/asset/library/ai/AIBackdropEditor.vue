@@ -22,7 +22,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { cachedConvertAssetData } from '@/models/common/asset'
+import { backdrop2Asset, cachedConvertAssetData } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import type { AssetType } from '@/apis/asset'
 import type { Backdrop } from '@/models/backdrop'
@@ -32,7 +32,9 @@ import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
-import { PhotoSizeSelectLargeFilled } from '@vicons/material'
+import { PhotoSizeSelectLargeFilled, SaveFilled } from '@vicons/material'
+import { fromBlob } from '@/models/common/file'
+import { ExportOutlined } from '@vicons/antd'
 
 // `vue-konva` does not provide types for ref to Konva nodes
 interface KonvaNode<T extends Konva.Node = Konva.Node> {
@@ -253,6 +255,53 @@ const config = computed<ImageConfig | null>(() => {
   return config
 })
 
+const saveChanges = () => {
+  if (!node.value) {
+    return
+  }
+  node.value.toImage({
+    callback: (img) => {
+      // img element to blob
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        return
+      }
+      ctx.drawImage(img, 0, 0)
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          return
+        }
+        // blob to file
+        const file = fromBlob(backdrop.value!.img.name, blob)
+        // save file
+        backdrop.value!.img = file
+        // backdrop to asset
+        const newAssetData = await backdrop2Asset(backdrop.value!)
+        // save asset
+        props.asset.files = newAssetData.files
+        props.asset.filesHash = newAssetData.filesHash
+      })
+    }
+  })
+}
+
+const exportImage = () => {
+  if (!node.value) {
+    return
+  }
+  node.value.toImage({
+    callback: (img) => {
+      const a = document.createElement('a')
+      a.href = img.src
+      a.download = 'backdrop.png'
+      a.click()
+    }
+  })
+}
+
 const actions = computed(
   () =>
     [
@@ -264,6 +313,20 @@ const actions = computed(
         action: () => {
           editMode.value = editMode.value === 'resize' ? 'preview' : 'resize'
         }
+      },
+      {
+        name: 'save',
+        label: { zh: '保存', en: 'Save' },
+        icon: SaveFilled,
+        type: 'secondary' satisfies ButtonType,
+        action: saveChanges
+      },
+      {
+        name: 'export',
+        label: { zh: '导出', en: 'Export' },
+        icon: ExportOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: exportImage
       }
     ] satisfies EditorAction[]
 )
