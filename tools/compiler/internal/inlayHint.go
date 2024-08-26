@@ -19,7 +19,7 @@ type inlayHint struct {
 }
 
 func isSpxPlay(fnExpr ast.Expr, uses map[*ast.Ident]types.Object) bool {
-	return isFuncExpected(fnExpr, uses, "play", "spx")
+	return isFuncExpected(fnExpr, uses, "play", "github.com/goplus/spx")
 }
 
 func isFuncExpected(fnExpr ast.Expr, uses map[*ast.Ident]types.Object, expectName, expectPkg string) bool {
@@ -34,6 +34,6 @@ func isFuncExpected(fnExpr ast.Expr, uses map[*ast.Ident]types.Object, expectNam
 	}
 
 	isExpectFunctionName := fnIdent.Name == expectName
-	isExpectPkgName := obj.Pkg().Name() == expectPkg
+	isExpectPkgName := obj.Pkg().Path() == expectPkg
 	return isExpectFunctionName && isExpectPkgName
 }
