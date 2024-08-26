@@ -2,10 +2,11 @@ import {
   type CompletionItem,
   type EditorUI,
   Icon,
+  type LayerContent,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { Compiler } from '../compiler'
+import { Compiler, TokenEnum } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -23,6 +24,8 @@ type JumpPosition = {
 export class Coordinator {
   project: Project
   ui: EditorUI
+  docAbility: DocAbility
+
   constructor(
     ui: EditorUI,
     runtime: Runtime,
@@ -33,10 +36,16 @@ export class Coordinator {
   ) {
     this.project = project
     this.ui = ui
+    this.docAbility = docAbility
+
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
       // and throw undefined error
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
+    })
+
+    ui.registerHoverProvider({
+      provideHover: this.implementsPreDefinedHoverProvider.bind(this)
     })
   }
 
@@ -50,6 +59,42 @@ export class Coordinator {
     addItems: (items: CompletionItem[]) => void
   ) {
     addItems(getCompletionItems(this.ui.i18n, this.project))
+  }
+
+  async implementsPreDefinedHoverProvider(
+    _model: TextModel,
+    ctx: {
+      position: Position
+      hoverUnitWord: string
+      signal: AbortSignal
+    }
+  ): Promise<LayerContent> {
+    const content =
+      this.docAbility.getNormalDoc({
+        module: '',
+        name: ctx.hoverUnitWord,
+        type: TokenEnum.ANY,
+        usages: []
+      })?.content || ''
+    return {
+      content: content,
+      recommendAction: {
+        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'still in confusion? Ask for help' }),
+        activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+        onActiveLabelClick() {
+          console.log('=>(index.ts:75) Ask for help')
+        }
+      },
+      moreActions: [
+        {
+          icon: Icon.Document,
+          label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+          onClick() {
+            console.log('=>(index.ts:82) Document')
+          }
+        }
+      ]
+    }
   }
 
   public jump(position: JumpPosition): void {}

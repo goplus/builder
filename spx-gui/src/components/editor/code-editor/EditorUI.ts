@@ -17,7 +17,7 @@ import type { Project } from '@/models/project'
 import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
-import { getAllTools } from '@/components/editor/code-editor/tools'
+import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -203,6 +203,7 @@ export type AIChatModalOptions = {
 
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
+  hover: HoverProvider[]
 }
 
 declare global {
@@ -221,11 +222,28 @@ export class EditorUI extends Disposable {
   i18n: I18n
   getProject: () => Project
   completionMenu: CompletionMenu | null = null
+  hoverPreview: HoverPreview | null = null
   editorUIRequestCallback: EditorUIRequestCallback
   monaco: typeof import('monaco-editor') | null = null
   monacoProviderDisposes: Record<string, IDisposable | null> = {
     completionProvider: null,
     hoverProvider: null
+  }
+
+  setCompletionMenu(completionMenu: CompletionMenu) {
+    this.completionMenu = completionMenu
+  }
+
+  getCompletionMenu() {
+    return this.completionMenu
+  }
+
+  setHoverPreview(hoverPreview: HoverPreview) {
+    this.hoverPreview = hoverPreview
+  }
+
+  getHoverPreview() {
+    return this.hoverPreview
   }
 
   constructor(i18n: I18n, getProject: () => Project) {
@@ -235,7 +253,8 @@ export class EditorUI extends Disposable {
 
     this.getProject = getProject
     this.editorUIRequestCallback = {
-      completion: []
+      completion: [],
+      hover: []
     }
 
     this.addDisposer(() => {
@@ -249,6 +268,7 @@ export class EditorUI extends Disposable {
     if (this.monaco) return this.monaco
     const monaco_ = await loader.init()
     if (this.monaco) return this.monaco
+    this.disposeMonacoProviders()
     await this.initMonaco(monaco_, this.getProject)
     this.monaco = monaco_
     return this.monaco
@@ -339,52 +359,47 @@ export class EditorUI extends Disposable {
         }
       })
 
-    // temp region start ##
-    // the following code will be replaced after `document.ts` is ready
-    const i18n = this.i18n
+    const isDocPreview = (layer: LayerContent): layer is DocPreview => 'content' in layer
+
+    const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
+      'src' in layer && 'duration' in layer
+
+    const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
+      'placeholder' in layer && 'onSubmit' in layer
 
     this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
       LANGUAGE_NAME,
       {
-        provideHover(model, position) {
+        provideHover: async (model, position, token) => {
           const word = model.getWordAtPosition(position)
           if (word == null) return
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn
-          }
-          const tools = getAllTools(getProject())
-          const tool = tools.find((s) => s.keyword === word.word)
-          if (tool == null) return
-          let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
-          if (tool.usage != null) {
-            text += ` 
-\`\`\`gop
-${tool.usage.sample}
-\`\`\``
-          } else {
-            text = [
-              text,
-              ...tool.usages!.map((usage) => {
-                const colon = i18n.t({ en: ': ', zh: '：' })
-                const desc = i18n.t(usage.desc)
-                return `* ${desc}${colon}
-\`\`\`gop
-${usage.sample}
-\`\`\``
+          const abortController = new AbortController()
+          token.onCancellationRequested(() => abortController.abort())
+          const result = await this.requestHoverProviderResolve(model, {
+            signal: abortController.signal,
+            hoverUnitWord: word.word,
+            position
+          })
+
+          for (let i = 0; i < result.length; i++) {
+            const layerContent = result[i]
+
+            if (isDocPreview(layerContent)) {
+              this.hoverPreview?.showDocument(layerContent, {
+                startLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: word.endColumn
               })
-            ].join('\n')
+            }
           }
+
           return {
-            range,
-            contents: [{ value: text }]
+            contents: []
           }
         }
       }
     )
-    // temp region end ##
 
     await injectMonacoHighlightTheme(monaco)
   }
@@ -393,7 +408,7 @@ ${usage.sample}
    * providers need to be disposed before the editor is destroyed.
    * otherwise, it will cause duplicate completion items when HMR is triggered in development mode.
    */
-  public disposeMonacoProviders() {
+  private disposeMonacoProviders() {
     if (this.monacoProviderDisposes.completionProvider) {
       this.monacoProviderDisposes.completionProvider.dispose()
       this.monacoProviderDisposes.completionProvider = null
@@ -418,6 +433,21 @@ ${usage.sample}
     )
   }
 
+  public async requestHoverProviderResolve(
+    model: TextModel,
+    ctx: {
+      position: Position
+      hoverUnitWord: string
+      signal: AbortSignal
+    }
+  ) {
+    const PromiseLayerContents = this.editorUIRequestCallback.hover.map((item) =>
+      item.provideHover(model, ctx)
+    )
+
+    return await Promise.all(PromiseLayerContents)
+  }
+
   public registerCompletionProvider(provider: CompletionProvider) {
     this.editorUIRequestCallback.completion.push(provider)
   }
@@ -428,7 +458,7 @@ ${usage.sample}
     // todo: to resolve fn `registerSelectionMenuProvider`
   }
   public registerHoverProvider(provider: HoverProvider) {
-    // todo: to resolve fn `registerHoverProvider`
+    this.editorUIRequestCallback.hover.push(provider)
   }
   public registerAttentionHintsProvider(provider: AttentionHintsProvider) {
     // todo: to resolve fn `registerAttentionHintsProvider`
