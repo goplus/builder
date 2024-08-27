@@ -192,16 +192,15 @@ export async function getAIGCStatus(jobId: string) {
  * As some ai-generated asset may be edited by user or js code, 
  * the backend may need to get the partial asset instead of the jobId.
  * 
- * This logic can use previous transfer method to export the asset,this api is not necessary.
  */
 export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(param: any) {
-  return new Promise<{ assetId: string }>((resolve) => {
-    setTimeout(() => {
-      resolve({ assetId: '21' })
-    }, 1000)
-  })
+  // return new Promise<{ assetId: string }>((resolve) => {
+  //   setTimeout(() => {
+  //     resolve({ assetId: '21' })
+  //   }, 1000)
+  // })
   const result = (await client.post(`/aigc/export`,
     typeof param === 'string' ? { jobId: param } : { ...param }
   )) as {
