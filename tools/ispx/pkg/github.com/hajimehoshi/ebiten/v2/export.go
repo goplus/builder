@@ -209,7 +209,6 @@ func init() {
 			"WindowSize":                          reflect.ValueOf(q.WindowSize),
 			"WindowSizeLimits":                    reflect.ValueOf(q.WindowSizeLimits),
 		},
-		GenericFuncTypeConstructors: map[string]igop.GenericFuncTypeConstructor{},
 		TypedConsts: map[string]igop.TypedConst{
 			"AddressClampToZero":                     {reflect.TypeOf(q.AddressClampToZero), constant.MakeInt64(int64(q.AddressClampToZero))},
 			"AddressRepeat":                          {reflect.TypeOf(q.AddressRepeat), constant.MakeInt64(int64(q.AddressRepeat))},

@@ -3,7 +3,7 @@ module github.com/goplus/builder/ispx
 go 1.21
 
 require (
-	github.com/goplus/igop v0.26.0
+	github.com/goplus/igop v0.27.0
 	github.com/goplus/reflectx v1.2.2
 	github.com/goplus/spx v1.0.1-0.20240815092545-3df776b555a0
 	github.com/hajimehoshi/ebiten/v2 v2.7.8
@@ -46,7 +46,6 @@ require (
 
 replace (
 	github.com/goplus/spx => ../../../spx
-	github.com/goplus/igop => ../../../igop
 	github.com/hajimehoshi/oto => github.com/hajimehoshi/oto v1.0.1
 	github.com/srwiley/oksvg => github.com/qiniu/oksvg v0.2.0-no-charset
 	golang.org/x/image => golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d

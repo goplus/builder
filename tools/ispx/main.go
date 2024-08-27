@@ -48,6 +48,22 @@ func main() {
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
+	gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
+package spx
+
+import (
+	. "github.com/goplus/spx"
+)
+
+func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
+	widget := GetWidget_(sg, name)
+	if result, ok := widget.(interface{}).(*T); ok {
+		return result
+	} else {
+		panic("GetWidget: type mismatch")
+	}
+}
+`)
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
@@ -77,8 +93,6 @@ func main() {
 	})
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", gameRun)
-
-	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Gopx_GetWidget[github.com/goplus/spx.Monitor]", spx.Gopt_Game_Gopx_GetWidget[spx.Monitor])
 
 	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {

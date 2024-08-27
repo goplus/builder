@@ -6,8 +6,6 @@ import (
 	q "github.com/goplus/spx"
 
 	"go/constant"
-	"go/token"
-	"go/types"
 	"reflect"
 
 	"github.com/goplus/igop"
@@ -98,6 +96,7 @@ func init() {
 		Funcs: map[string]reflect.Value{
 			"Exit__0":              reflect.ValueOf(q.Exit__0),
 			"Exit__1":              reflect.ValueOf(q.Exit__1),
+			"GetWidget_":           reflect.ValueOf(q.GetWidget_),
 			"Gopt_Game_Main":       reflect.ValueOf(q.Gopt_Game_Main),
 			"Gopt_Game_Reload":     reflect.ValueOf(q.Gopt_Game_Reload),
 			"Gopt_Game_Run":        reflect.ValueOf(q.Gopt_Game_Run),
@@ -111,23 +110,6 @@ func init() {
 			"Sched":                reflect.ValueOf(q.Sched),
 			"SchedNow":             reflect.ValueOf(q.SchedNow),
 			"SetDebug":             reflect.ValueOf(q.SetDebug),
-		},
-		GenericFuncTypeConstructors: map[string]igop.GenericFuncTypeConstructor{
-			"Gopt_Game_Gopx_GetWidget": func(tl *igop.TypesLoader, pkg *types.Package) *types.Func {
-				return types.NewFunc(token.NoPos, pkg, "Gopt_Game_Gopx_GetWidget", func() *types.Signature {
-					tp_1 := types.NewTypeParam(types.NewTypeName(token.NoPos, pkg, "T", nil), types.Universe.Lookup("any").Type())
-					p_1 := types.NewParam(token.NoPos, pkg, "sg", func() types.Type {
-						if pkg.Path() == "github.com/goplus/spx" {
-							return pkg.Scope().Lookup("ShapeGetter").Type()
-						} else {
-							return tl.GetPackage("github.com/goplus/spx").Scope().Lookup("ShapeGetter").Type()
-						}
-					}())
-					p_2 := types.NewParam(token.NoPos, pkg, "name", types.Typ[17])
-					r_0 := types.NewVar(token.NoPos, pkg, "", types.NewPointer(tp_1))
-					return types.NewSignatureType(nil, nil, []*types.TypeParam{tp_1}, types.NewTuple(p_1, p_2), types.NewTuple(r_0), false)
-				}())
-			},
 		},
 		TypedConsts: map[string]igop.TypedConst{
 			"AllOtherScripts":      {reflect.TypeOf(q.AllOtherScripts), constant.MakeInt64(int64(q.AllOtherScripts))},
