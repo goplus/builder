@@ -9,7 +9,7 @@ import (
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
+_, ok := ensureUser(ctx)
 if !ok {
 	return
 }
@@ -18,5 +18,5 @@ params := &controller.AIStartChatParams{}
 if !parseJSON(ctx, params) {
 	return
 }
-ctrl.DeleteChat(ctx, ${id})
+ctrl.DeleteChat(ctx.Context(), ${id})
 json {}

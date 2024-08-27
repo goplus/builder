@@ -27,6 +27,10 @@ type delete_asset_id struct {
 	yap.Handler
 	*AppV2
 }
+type delete_llm_chat_id struct {
+	yap.Handler
+	*AppV2
+}
 type delete_project_owner_name struct {
 	yap.Handler
 	*AppV2
@@ -65,6 +69,18 @@ type post_asset struct {
 	*AppV2
 }
 type post_asset_id_click struct {
+	yap.Handler
+	*AppV2
+}
+type post_llm_chat struct {
+	yap.Handler
+	*AppV2
+}
+type post_llm_chat_id struct {
+	yap.Handler
+	*AppV2
+}
+type post_llm_task struct {
 	yap.Handler
 	*AppV2
 }
@@ -145,7 +161,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(get_asset_id), new(get_assets_list), new(get_project_owner_name), new(get_projects_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_asset_id_click), new(post_project), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_llm_chat_id), new(delete_project_owner_name), new(get_asset_id), new(get_assets_list), new(get_project_owner_name), new(get_projects_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_asset_id_click), new(post_llm_chat), new(post_llm_chat_id), new(post_llm_task), new(post_project), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -166,6 +182,33 @@ func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
 }
 func (this *delete_asset_id) Classfname() string {
 	return "delete_asset_#id"
+}
+//line cmd/spx-backend/delete_llm_chat_#id.yap:10
+func (this *delete_llm_chat_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/delete_llm_chat_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/delete_llm_chat_#id.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/delete_llm_chat_#id.yap:13:1
+	if !ok {
+//line cmd/spx-backend/delete_llm_chat_#id.yap:14:1
+		return
+	}
+//line cmd/spx-backend/delete_llm_chat_#id.yap:17:1
+	params := &controller.AIStartChatParams{}
+//line cmd/spx-backend/delete_llm_chat_#id.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/delete_llm_chat_#id.yap:19:1
+		return
+	}
+//line cmd/spx-backend/delete_llm_chat_#id.yap:21:1
+	this.ctrl.DeleteChat(ctx.Context(), this.Gop_Env("id"))
+//line cmd/spx-backend/delete_llm_chat_#id.yap:22:1
+	this.Json__1(map[string]interface{}{})
+}
+func (this *delete_llm_chat_id) Classfname() string {
+	return "delete_llm_chat_#id"
 }
 //line cmd/spx-backend/delete_project_#owner_#name.yap:6
 func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
@@ -560,6 +603,108 @@ func (this *post_asset_id_click) Main(_gop_arg0 *yap.Context) {
 }
 func (this *post_asset_id_click) Classfname() string {
 	return "post_asset_#id_click"
+}
+//line cmd/spx-backend/post_llm_chat.yap:10
+func (this *post_llm_chat) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_llm_chat.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_llm_chat.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_llm_chat.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_llm_chat.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat.yap:17:1
+	params := &controller.AIStartChatParams{}
+//line cmd/spx-backend/post_llm_chat.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_llm_chat.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat.yap:21:1
+	resp, err := this.ctrl.StartChat(ctx.Context(), params)
+//line cmd/spx-backend/post_llm_chat.yap:22:1
+	if err != nil {
+//line cmd/spx-backend/post_llm_chat.yap:23:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_llm_chat.yap:24:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat.yap:26:1
+	this.Json__1(resp)
+}
+func (this *post_llm_chat) Classfname() string {
+	return "post_llm_chat"
+}
+//line cmd/spx-backend/post_llm_chat_#id.yap:10
+func (this *post_llm_chat_id) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_llm_chat_#id.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_llm_chat_#id.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_llm_chat_#id.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_llm_chat_#id.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat_#id.yap:17:1
+	params := &controller.AIChatParams{}
+//line cmd/spx-backend/post_llm_chat_#id.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_llm_chat_#id.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat_#id.yap:22:1
+	resp, err := this.ctrl.NextChat(ctx.Context(), this.Gop_Env("id"), params)
+//line cmd/spx-backend/post_llm_chat_#id.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_llm_chat_#id.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_llm_chat_#id.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_llm_chat_#id.yap:27:1
+	this.Json__1(resp)
+}
+func (this *post_llm_chat_id) Classfname() string {
+	return "post_llm_chat_#id"
+}
+//line cmd/spx-backend/post_llm_task.yap:10
+func (this *post_llm_task) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_llm_task.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_llm_task.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_llm_task.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_llm_task.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_llm_task.yap:17:1
+	params := &controller.AITaskParams{}
+//line cmd/spx-backend/post_llm_task.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_llm_task.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_llm_task.yap:22:1
+	resp, err := this.ctrl.StartTask(ctx.Context(), params)
+//line cmd/spx-backend/post_llm_task.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_llm_task.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_llm_task.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_llm_task.yap:27:1
+	this.Json__1(resp)
+}
+func (this *post_llm_task) Classfname() string {
+	return "post_llm_task"
 }
 //line cmd/spx-backend/post_project.yap:10
 func (this *post_project) Main(_gop_arg0 *yap.Context) {

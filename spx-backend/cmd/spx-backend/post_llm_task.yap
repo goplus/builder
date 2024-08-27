@@ -9,7 +9,7 @@ import (
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
+_, ok := ensureUser(ctx)
 if !ok {
 	return
 }
@@ -19,7 +19,7 @@ if !parseJSON(ctx, params) {
 	return
 }
 
-resp, err := ctrl.StartTask(ctx, params)
+resp, err := ctrl.StartTask(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
