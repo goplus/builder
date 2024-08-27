@@ -215,17 +215,25 @@ watch(
   (result) => {
     assetList.value.push(...(result?.data ?? []))
     if (!hasMoreAssets.value) {
-      // Fill the last row with AI assets
-      let count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
-      if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
-        count = 1
-        abortAIGeneration = generateMultipleAIImages(count, false)
-      }
+      handleNoMoreAssets()
     } else if (searchCtx.page === 1) {
       loadMore()
     }
   }
 )
+
+function handleNoMoreAssets() {
+  if (searchCtx.keyword !== '' || searchCtx.category.length !== 0) {
+    fillLastRowWithAIAssets()
+  }
+}
+
+function fillLastRowWithAIAssets() {
+  const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
+  if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
+    abortAIGeneration = generateMultipleAIImages(count, false)
+  }
+}
 
 // Reset assetList and page when searchCtx changes (except page itself)
 watch(
