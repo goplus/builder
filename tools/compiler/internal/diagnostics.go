@@ -2,8 +2,8 @@ package internal
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
 // diagnostics contains error after analyse the code.
@@ -16,7 +16,7 @@ type diagnostics struct {
 
 // parseErrorLines make error info list to diagnostics list.
 func parseErrorLines(sList []string) []diagnostics {
-	diagList := []diagnostics{}
+	var diagList []diagnostics
 	for _, str := range sList {
 		diag, err := parseErrorLine(str)
 		if err != nil {
@@ -29,27 +29,26 @@ func parseErrorLines(sList []string) []diagnostics {
 
 // parseErrorLine make error info to diagnostics.
 func parseErrorLine(str string) (diagnostics, error) {
-	regex := regexp.MustCompile(`^(.*\.spx):(\d+):(\d+):\s*(.*)$`)
+	strList := strings.Split(str, ":")
 
-	matches := regex.FindStringSubmatch(str)
-	if matches == nil || len(matches) != 5 {
+	if strList == nil || len(strList) < 4 {
 		return diagnostics{}, fmt.Errorf("invalid format: %s", str)
 	}
 
-	line, err := strconv.Atoi(matches[2])
+	line, err := strconv.Atoi(strList[1])
 	if err != nil {
-		return diagnostics{}, fmt.Errorf("invalid line number: %s", matches[2])
+		return diagnostics{}, fmt.Errorf("invalid line number: %s", strList[1])
 	}
-	column, err := strconv.Atoi(matches[3])
+	column, err := strconv.Atoi(strList[2])
 	if err != nil {
-		return diagnostics{}, fmt.Errorf("invalid column number: %s", matches[3])
+		return diagnostics{}, fmt.Errorf("invalid column number: %s", strList[2])
 	}
 
 	entry := diagnostics{
-		FileName: matches[1],
-		Column:   column,
+		FileName: strList[0],
 		Line:     line,
-		Message:  matches[4],
+		Column:   column,
+		Message:  strings.TrimSpace(strings.Join(strList[3:], "")),
 	}
 
 	return entry, nil
