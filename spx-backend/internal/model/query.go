@@ -16,7 +16,7 @@ import (
 func Query[T any](ctx context.Context, db *sql.DB, table string, where []FilterCondition, orderBy []OrderByCondition) ([]T, error) {
 	logger := log.GetReqLogger(ctx)
 
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, "", nil)
 	orderByClause := buildOrderByClause(orderBy)
 
 	query := fmt.Sprintf("SELECT * FROM %s %s %s", table, whereClause, orderByClause)
@@ -60,11 +60,17 @@ func QueryByPage[T any](
 	where []FilterCondition,
 	orderBy []OrderByCondition,
 	isCustomQuery bool, // New parameter to indicate if tableOrQuery is a custom query
+	categoryList []any, // use OR to query category
 ) (*ByPage[T], error) {
 	logger := log.GetReqLogger(ctx)
 
+	if categoryList == nil {
+		categoryList = []any{}
+	}
+	orClause, orArgs := buildOrCondition("category", categoryList)
+	logger.Printf("orClause: %s, orArgs: %v", orClause, orArgs)
 	// Build the WHERE and ORDER BY clauses
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, orClause, orArgs)
 	orderByClause := buildOrderByClause(orderBy)
 
 	var countQuery, paginatedQuery string
@@ -89,7 +95,7 @@ func QueryByPage[T any](
 	// Calculate offset for pagination
 	offset := (pagination.Index - 1) * pagination.Size
 	args := append(whereArgs, offset, pagination.Size)
-
+	logger.Printf("paginatedQuery: %s, args: %v", paginatedQuery, args)
 	// Execute paginated query
 	rows, err := db.QueryContext(ctx, paginatedQuery, args...)
 	if err != nil {
@@ -119,7 +125,7 @@ func QueryByPage[T any](
 func QueryFirst[T any](ctx context.Context, db *sql.DB, table string, where []FilterCondition, orderBy []OrderByCondition) (*T, error) {
 	logger := log.GetReqLogger(ctx)
 
-	whereClause, whereArgs := buildWhereClause(where)
+	whereClause, whereArgs := buildWhereClause(where, "", nil)
 	orderByClause := buildOrderByClause(orderBy)
 
 	query := fmt.Sprintf("SELECT * FROM %s %s %s LIMIT 1", table, whereClause, orderByClause)
@@ -294,12 +300,13 @@ func getLikedInfo(ctx context.Context, db *sql.DB, assetIDs []string) (map[strin
 			IsLiked:   true,
 			LikeCount: count,
 		}
+		logger.Printf("assetID: %s, count: %d", assetID, count)
 	}
 
 	if err := rows.Err(); err != nil {
 		logger.Printf("rows iteration error: %v", err)
 		return nil, err
 	}
-
+	logger.Printf("likedMap: %v", likedMap)
 	return likedMap, nil
 }

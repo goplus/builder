@@ -101,19 +101,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { NButton, NIcon, NTag, NTooltip } from 'naive-ui'
-import { UIModalClose } from '@/components/ui'
 import {
   AssetType,
   type AssetData
 } from '@/apis/asset'
 import UIButton from '@/components/ui/UIButton.vue'
-import LibraryTab from '../LibraryTab.vue'
 import SpriteDetailDisplay from './SpriteDetailDisplay.vue'
 import AssetRate from '../reviews/AssetRate.vue'
 import { StarOutlined, HeartOutlined, HeartFilled } from '@vicons/antd'
-import { template } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
 import BackdropDetailDisplay from './BackdropDetailDisplay.vue'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'

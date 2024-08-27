@@ -3,13 +3,7 @@
     <div class="left rate-summary">
       <div class="rate-avg">{{ rate.toFixed(1) ?? 'NaN' }}</div>
       <div class="rate-avg-star">
-        <NRate
-          :value="halfRoundedRate"
-          allow-half
-          readonly
-          :color="colorSet[halfRoundedRate * 2 - 2]"
-          size="small"
-        />
+        <NRate :value="halfRoundedRate" allow-half readonly :color="colorSet[halfRoundedRate * 2 - 2]" size="small" />
       </div>
       <div class="rate-count">
         {{
@@ -26,11 +20,8 @@
         <div class="rate-detail-bar">
           <NTooltip trigger="hover" placement="left">
             <template #trigger>
-              <NProgress
-                type="line"
-                :percentage="((rateData?.detail[idx] ?? 0) / rateCount) * 100"
-                :show-indicator="false"
-              />
+              <NProgress type="line" :percentage="((rateData?.detail[idx] ?? 0) / rateCount) * 100"
+                :show-indicator="false" />
             </template>
             <span>
               {{
@@ -78,7 +69,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getAssetRate, rateAsset, type AssetData } from '@/apis/asset'
+import { getAssetRate, rateAsset, type AssetData, type AssetRate } from '@/apis/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import { computed, ref } from 'vue'
 import { NRate, NProgress, NTooltip } from 'naive-ui'
@@ -92,8 +83,27 @@ const props = defineProps<{
 }>()
 
 const rateData = useAsyncComputed(async () => {
-  return await getAssetRate(props.asset.id)
+    //if be not found,only return 404
+    const res = await getAssetRate(props.asset.id)
+    if (res.detail === null) {
+      return {
+        rate: NaN,
+        detail: [0, 0, 0, 0, 0]
+      }
+    }
+    return formatRate(res)
+    
 })
+
+// format rate detail data to array like [0, 0, 0, 0, 0]
+const formatRate = (rate: AssetRate) => {
+  //rate.detail is an object like [{score: 1, count: 1}, {score: 3, count: 2}, {score: 4, count: 1}],it may less than 5,so we need to fill the array
+  const detail = Array.from({ length: 5 }, (_, i) => rate.detail.find((item) => item.score === i + 1)?.count ?? 0)
+  return {
+    rate: rate.rate,
+    detail
+  }
+}
 
 const rate = computed(() => {
   return rateData.value?.rate ?? NaN
@@ -112,12 +122,12 @@ const rateModalVisible = ref(false)
 const userRate = ref(5)
 
 const handleRate = () => {
-	rateAsset(props.asset.id, userRate.value)
-	if (rateData.value) {
-		rateData.value.detail[userRate.value - 1]++
-		rateData.value.rate = (rateData.value.rate * rateCount.value + userRate.value) / (rateCount.value + 1)
-	}
-	rateModalVisible.value = false
+  rateAsset(props.asset.id, userRate.value)
+  if (rateData.value) {
+    rateData.value.detail[userRate.value - 1]++
+    rateData.value.rate = (rateData.value.rate * rateCount.value + userRate.value) / (rateCount.value + 1)
+  }
+  rateModalVisible.value = false
 }
 
 const openRateModal = () => {

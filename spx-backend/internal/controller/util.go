@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/fmtcode"
@@ -139,4 +140,14 @@ func (ctrl *Controller) MakeFileURLs(ctx context.Context, params *MakeFileURLsPa
 		fileURLs.ObjectURLs[object] = objectURL
 	}
 	return fileURLs, nil
+}
+
+// StringArrayToString converts a string array to a single string, string use comma as separator.
+func StringArrayToString(arr []string) string {
+	return strings.Join(arr, ",")
+}
+
+// StringToStringArray converts a single string to a string array, string use comma as separator.
+func StringToStringArray(str string) []string {
+	return strings.Split(str, ",")
 }

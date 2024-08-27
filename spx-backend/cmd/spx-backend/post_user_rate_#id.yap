@@ -11,16 +11,16 @@ ctx := &Context
 
 user, ok := ensureUser(ctx)
 if !ok {
-return
+	return
 }
 
 newRate := &controller.PostRateRequest{}
 if !parseJSON(ctx, newRate) {
-return
+	return
 }
 
 
-rate, err := ctrl.InsertRate(ctx.Context(), ${id},user.Name,newRate)
+rate, err := ctrl.InsertRate(ctx.Context(), ${id}, user.Name, newRate)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

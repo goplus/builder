@@ -35,6 +35,10 @@ type delete_user_liked struct {
 	yap.Handler
 	*AppV2
 }
+type get_aigc_status struct {
+	yap.Handler
+	*AppV2
+}
 type get_asset_id struct {
 	yap.Handler
 	*AppV2
@@ -77,6 +81,10 @@ type AppV2 struct {
 	err  error
 }
 type post_aigc_image struct {
+	yap.Handler
+	*AppV2
+}
+type post_aigc_image_sync struct {
 	yap.Handler
 	*AppV2
 }
@@ -189,7 +197,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_user_rate_id), new(get_util_upinfo), new(post_aigc_image), new(post_aigc_matting), new(post_aigc_sprite), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_user_rate_id), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_aigc_status), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_user_rate_id), new(get_util_upinfo), new(post_aigc_image), new(post_aigc_image_sync), new(post_aigc_matting), new(post_aigc_sprite), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_user_rate_id), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -257,6 +265,26 @@ func (this *delete_user_liked) Main(_gop_arg0 *yap.Context) {
 }
 func (this *delete_user_liked) Classfname() string {
 	return "delete_user_liked"
+}
+//line cmd/spx-backend/get_aigc_status.yap:6
+func (this *get_aigc_status) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/get_aigc_status.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/get_aigc_status.yap:8:1
+	assetStatus, err := this.ctrl.GetAIAssetStatus(ctx.Context(), this.Gop_Env("jobId"))
+//line cmd/spx-backend/get_aigc_status.yap:9:1
+	if err != nil {
+//line cmd/spx-backend/get_aigc_status.yap:10:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/get_aigc_status.yap:11:1
+		return
+	}
+//line cmd/spx-backend/get_aigc_status.yap:13:1
+	this.Json__1(assetStatus)
+}
+func (this *get_aigc_status) Classfname() string {
+	return "get_aigc_status"
 }
 //line cmd/spx-backend/get_asset_#id.yap:6
 func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -542,35 +570,49 @@ func (this *get_user_history_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_user_history_list.yap:24:1
 		params.Owner = &user.Name
 //line cmd/spx-backend/get_user_history_list.yap:25:1
-	case "*":
-//line cmd/spx-backend/get_user_history_list.yap:26:1
-		params.Owner = nil
-//line cmd/spx-backend/get_user_history_list.yap:27:1
 	default:
-//line cmd/spx-backend/get_user_history_list.yap:28:1
+//line cmd/spx-backend/get_user_history_list.yap:26:1
 		params.Owner = &owner
 	}
-//line cmd/spx-backend/get_user_history_list.yap:32:1
+//line cmd/spx-backend/get_user_history_list.yap:29:1
 	if
+//line cmd/spx-backend/get_user_history_list.yap:29:1
+	assetTypeParam := this.Gop_Env("assetType"); assetTypeParam != "" {
+//line cmd/spx-backend/get_user_history_list.yap:30:1
+		assetTypeInt, err := strconv.Atoi(assetTypeParam)
+//line cmd/spx-backend/get_user_history_list.yap:31:1
+		if err != nil {
 //line cmd/spx-backend/get_user_history_list.yap:32:1
-	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+			replyWithCode(ctx, errorInvalidArgs)
 //line cmd/spx-backend/get_user_history_list.yap:33:1
+			return
+		}
+//line cmd/spx-backend/get_user_history_list.yap:35:1
+		assetType := model.AssetType(assetTypeInt)
+//line cmd/spx-backend/get_user_history_list.yap:36:1
+		params.AssetType = &assetType
+	}
+//line cmd/spx-backend/get_user_history_list.yap:39:1
+	if
+//line cmd/spx-backend/get_user_history_list.yap:39:1
+	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+//line cmd/spx-backend/get_user_history_list.yap:40:1
 		params.OrderBy = controller.ListAssetsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_user_history_list.yap:36:1
+//line cmd/spx-backend/get_user_history_list.yap:43:1
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_user_history_list.yap:37:1
+//line cmd/spx-backend/get_user_history_list.yap:44:1
 	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_user_history_list.yap:39:1
+//line cmd/spx-backend/get_user_history_list.yap:46:1
 	assets, err := this.ctrl.ListUserAssets(ctx.Context(), "history", params)
-//line cmd/spx-backend/get_user_history_list.yap:40:1
+//line cmd/spx-backend/get_user_history_list.yap:47:1
 	if err != nil {
-//line cmd/spx-backend/get_user_history_list.yap:41:1
+//line cmd/spx-backend/get_user_history_list.yap:48:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_user_history_list.yap:42:1
+//line cmd/spx-backend/get_user_history_list.yap:49:1
 		return
 	}
-//line cmd/spx-backend/get_user_history_list.yap:44:1
+//line cmd/spx-backend/get_user_history_list.yap:51:1
 	this.Json__1(assets)
 }
 func (this *get_user_history_list) Classfname() string {
@@ -601,35 +643,49 @@ func (this *get_user_liked_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_user_liked_list.yap:24:1
 		params.Owner = &user.Name
 //line cmd/spx-backend/get_user_liked_list.yap:25:1
-	case "*":
-//line cmd/spx-backend/get_user_liked_list.yap:26:1
-		params.Owner = nil
-//line cmd/spx-backend/get_user_liked_list.yap:27:1
 	default:
-//line cmd/spx-backend/get_user_liked_list.yap:28:1
+//line cmd/spx-backend/get_user_liked_list.yap:26:1
 		params.Owner = &owner
 	}
-//line cmd/spx-backend/get_user_liked_list.yap:31:1
+//line cmd/spx-backend/get_user_liked_list.yap:29:1
 	if
+//line cmd/spx-backend/get_user_liked_list.yap:29:1
+	assetTypeParam := this.Gop_Env("assetType"); assetTypeParam != "" {
+//line cmd/spx-backend/get_user_liked_list.yap:30:1
+		assetTypeInt, err := strconv.Atoi(assetTypeParam)
 //line cmd/spx-backend/get_user_liked_list.yap:31:1
-	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+		if err != nil {
 //line cmd/spx-backend/get_user_liked_list.yap:32:1
+			replyWithCode(ctx, errorInvalidArgs)
+//line cmd/spx-backend/get_user_liked_list.yap:33:1
+			return
+		}
+//line cmd/spx-backend/get_user_liked_list.yap:35:1
+		assetType := model.AssetType(assetTypeInt)
+//line cmd/spx-backend/get_user_liked_list.yap:36:1
+		params.AssetType = &assetType
+	}
+//line cmd/spx-backend/get_user_liked_list.yap:39:1
+	if
+//line cmd/spx-backend/get_user_liked_list.yap:39:1
+	orderBy := this.Gop_Env("orderBy"); orderBy != "" {
+//line cmd/spx-backend/get_user_liked_list.yap:40:1
 		params.OrderBy = controller.ListAssetsOrderBy(orderBy)
 	}
-//line cmd/spx-backend/get_user_liked_list.yap:35:1
+//line cmd/spx-backend/get_user_liked_list.yap:43:1
 	params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
-//line cmd/spx-backend/get_user_liked_list.yap:36:1
+//line cmd/spx-backend/get_user_liked_list.yap:44:1
 	params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)
-//line cmd/spx-backend/get_user_liked_list.yap:38:1
+//line cmd/spx-backend/get_user_liked_list.yap:46:1
 	assets, err := this.ctrl.ListUserAssets(ctx.Context(), "liked", params)
-//line cmd/spx-backend/get_user_liked_list.yap:39:1
+//line cmd/spx-backend/get_user_liked_list.yap:47:1
 	if err != nil {
-//line cmd/spx-backend/get_user_liked_list.yap:40:1
+//line cmd/spx-backend/get_user_liked_list.yap:48:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_user_liked_list.yap:41:1
+//line cmd/spx-backend/get_user_liked_list.yap:49:1
 		return
 	}
-//line cmd/spx-backend/get_user_liked_list.yap:43:1
+//line cmd/spx-backend/get_user_liked_list.yap:51:1
 	this.Json__1(assets)
 }
 func (this *get_user_liked_list) Classfname() string {
@@ -722,6 +778,40 @@ func (this *post_aigc_image) Main(_gop_arg0 *yap.Context) {
 }
 func (this *post_aigc_image) Classfname() string {
 	return "post_aigc_image"
+}
+//line cmd/spx-backend/post_aigc_image_sync.yap:10
+func (this *post_aigc_image_sync) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_aigc_image_sync.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_aigc_image_sync.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_aigc_image_sync.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_aigc_image_sync.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_image_sync.yap:17:1
+	params := &controller.GenerateParams{}
+//line cmd/spx-backend/post_aigc_image_sync.yap:18:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_aigc_image_sync.yap:19:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_image_sync.yap:21:1
+	result, err := this.ctrl.GeneratingSync(ctx.Context(), params)
+//line cmd/spx-backend/post_aigc_image_sync.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_aigc_image_sync.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_aigc_image_sync.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_image_sync.yap:27:1
+	this.Json__1(result)
+}
+func (this *post_aigc_image_sync) Classfname() string {
+	return "post_aigc_image_sync"
 }
 //line cmd/spx-backend/post_aigc_matting.yap:10
 func (this *post_aigc_matting) Main(_gop_arg0 *yap.Context) {

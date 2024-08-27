@@ -22,12 +22,19 @@ case "":
 		return
 	}
 	params.Owner = &user.Name
-case "*":
-	params.Owner = nil
 default:
 	params.Owner = &owner
 }
 
+if assetTypeParam := ${assetType}; assetTypeParam != "" {
+	assetTypeInt, err := strconv.Atoi(assetTypeParam)
+if err != nil {
+	replyWithCode(ctx, errorInvalidArgs)
+	return
+}
+assetType := model.AssetType(assetTypeInt)
+params.AssetType = &assetType
+}
 
 if orderBy := ${orderBy}; orderBy != "" {
 	params.OrderBy = controller.ListAssetsOrderBy(orderBy)

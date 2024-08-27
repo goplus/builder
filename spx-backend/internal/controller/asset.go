@@ -2,10 +2,11 @@ package controller
 
 import (
 	"context"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"regexp"
 	"strconv"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 // assetDisplayNameRE is the regular expression for asset display name.
@@ -40,8 +41,11 @@ type ListAssetsOrderBy string
 
 var (
 	DefaultOrder   ListAssetsOrderBy = "default"
-	TimeDesc       ListAssetsOrderBy = "time"
+	TimeDesc       ListAssetsOrderBy = "timeDesc"
 	ClickCountDesc ListAssetsOrderBy = "clickCount"
+	TimeAsc        ListAssetsOrderBy = "timeAsc"
+	NameAsc        ListAssetsOrderBy = "nameAsc"
+	NameDesc       ListAssetsOrderBy = "nameDesc"
 )
 
 type SearchSuggestionsResult struct {
@@ -97,11 +101,23 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "owner", Operation: "=", Value: *params.Owner})
 	}
+	//use a list to filter duplicate leaf categories
+	var leafCategoriesListFilter map[string]bool
+	var leafCategoriesList []any
 	if params.Category != nil {
-		leafCategories := model.FindLeafCategories(*params.Category)
-		// If the category is not a leaf category, we need to search for all leaf categories under it.
-		for _, leaf := range leafCategories {
-			wheres = append(wheres, model.FilterCondition{Column: "category", Operation: "=", Value: leaf})
+		for _, category := range StringToStringArray(*params.Category) {
+			leafCategories := model.FindLeafCategories(category)
+			// If the category is not a leaf category, we need to search for all leaf categories under it.
+			for _, leaf := range leafCategories {
+
+				if leafCategoriesListFilter == nil {
+					leafCategoriesListFilter = make(map[string]bool)
+				}
+				if _, ok := leafCategoriesListFilter[leaf]; !ok {
+					leafCategoriesListFilter[leaf] = true
+					leafCategoriesList = append(leafCategoriesList, leaf)
+				}
+			}
 		}
 	}
 	if params.AssetType != nil {
@@ -116,13 +132,19 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 
 	var orders []model.OrderByCondition
 	switch params.OrderBy {
+	case TimeAsc:
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "ASC"})
 	case TimeDesc:
 		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "DESC"})
+	case NameAsc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "ASC"})
+	case NameDesc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "DESC"})
 	case ClickCountDesc:
 		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
 	}
 
-	assets, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders)
+	assets, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders, leafCategoriesList)
 	if err != nil {
 		logger.Printf("failed to list assets : %v", err)
 		return nil, err
