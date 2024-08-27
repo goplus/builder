@@ -375,11 +375,13 @@ export class EditorUI extends Disposable {
           if (word == null) return
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())
-          const result = (await this.requestHoverProviderResolve(model, {
-            signal: abortController.signal,
-            hoverUnitWord: word.word,
-            position
-          })).flat()
+          const result = (
+            await this.requestHoverProviderResolve(model, {
+              signal: abortController.signal,
+              hoverUnitWord: word.word,
+              position
+            })
+          ).flat()
 
           for (let i = 0; i < result.length; i++) {
             const layerContent = result[i]
@@ -395,7 +397,7 @@ export class EditorUI extends Disposable {
           }
 
           return {
-            // we only need use to know when to trigger hover preview, no need to show raw content
+            // we only need to know when to trigger hover preview, no need to show raw content
             // so here we return empty result
             contents: []
           }
@@ -444,7 +446,7 @@ export class EditorUI extends Disposable {
     }
   ) {
     const promiseResults = await Promise.all(
-      this.editorUIRequestCallback.hover.map(item => item.provideHover(model, ctx))
+      this.editorUIRequestCallback.hover.map((item) => item.provideHover(model, ctx))
     )
     return promiseResults.flat().filter(Boolean)
   }

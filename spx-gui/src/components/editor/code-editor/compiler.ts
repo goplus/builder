@@ -6,7 +6,7 @@ enum CodeEnum {
 }
 
 type TokenUsage = {
-  // when don't hava markdown, here show declaration signature
+  // when don't have markdown, here show declaration signature
   desc: LocaleMessage
   insertText: string
 }
