@@ -11,7 +11,10 @@ defineProps<{
 
 <template>
   <section class="document-preview">
-    <MarkdownPreview class="markdown" :content></MarkdownPreview>
+    <header>
+      <!--  Todo: add header interface in props  -->
+    </header>
+    <MarkdownPreview class="markdown" :content="content"></MarkdownPreview>
     <footer class="actions-footer">
       <nav class="recommend">
         {{ recommendAction?.label }}

@@ -6,7 +6,7 @@ enum CodeEnum {
 }
 
 type TokenUsage = {
-  // when don't have markdown, here show declaration signature
+  // declaration signature
   desc: LocaleMessage
   insertText: string
 }
@@ -45,7 +45,7 @@ export type TokenId = {
 
 export type Token = {
   id: TokenId
-  usages: TokenUsage[]
+  usages: TokenUsage
 }
 
 type Code = {

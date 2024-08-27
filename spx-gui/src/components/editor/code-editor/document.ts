@@ -20,19 +20,23 @@ export class DocAbility {
   }
 
   public getNormalDoc(tokenId: TokenId): Doc[] | null {
-    const document = getDocumentByKeywords(tokenId.name, this.i18n, this.project)
-    if (document == null) {
+    const documents = getDocumentsByKeywords(tokenId.name, this.i18n, this.project)
+    if (documents == null) {
       return []
     } else {
-      return [
-        {
+      // todo: if necessary here need `usages` prototype
+      return documents.map(
+        (document): Doc => ({
           content: document,
           token: {
             id: tokenId,
-            usages: []
+            usages: {
+              insertText: '',
+              desc: { zh: '', en: '' }
+            }
           }
-        }
-      ]
+        })
+      )
     }
   }
   public getDetailDoc(token: Token): Doc | null {
@@ -40,28 +44,26 @@ export class DocAbility {
   }
 }
 
-function getDocumentByKeywords(keyword: string, i18n: I18n, project: Project) {
+function getDocumentsByKeywords(keyword: string, i18n: I18n, project: Project) {
   const tools = getAllTools(project)
   const tool = tools.find((s) => s.keyword === keyword)
   if (tool == null) return
   let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
+  const result: string[] = []
+
   if (tool.usage != null) {
-    text += ` 
-\`\`\`gop
-${tool.usage.sample}
-\`\`\``
+    text += '\n' + '```gop' + '\n' + tool.usage.sample + '\n' + '```'
+    result.push(text)
   } else {
-    text = [
-      text,
-      ...tool.usages!.map((usage) => {
+    tool
+      .usages!.map((usage) => {
         const colon = i18n.t({ en: ': ', zh: '：' })
         const desc = i18n.t(usage.desc)
-        return `* ${desc}${colon}
-\`\`\`gop
-${usage.sample}
-\`\`\``
+        return desc + colon + '\n' + '```gop' + '\n' + usage.sample + '\n' + '```'
       })
-    ].join('\n')
+      .forEach((item) => {
+        result.push(text + '\n' + item)
+      })
   }
-  return text
+  return result
 }

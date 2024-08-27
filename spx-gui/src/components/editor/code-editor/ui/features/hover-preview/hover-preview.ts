@@ -16,36 +16,29 @@ export class HoverPreview implements IDisposable {
   public onShowDocument = this._onShowDocument.event
   public hoverPreviewState = reactive<{
     visible: boolean
-    content: string
-    moreActions?: Action[]
-    recommendAction?: RecommendAction
-    style: {
-      position: 'absolute'
-      top: string
-      left: string
+    range: IRange
+    position: {
+      top: number
+      left: number
     }
-    range: {
-      startLineNumber: number
-      startColumn: number
-      endLineNumber: number
-      endColumn: number
-    }
+    docs: Array<{
+      content: string
+      moreActions?: Action[]
+      recommendAction?: RecommendAction
+    }>
   }>({
     visible: false,
-    content: '',
-    moreActions: undefined,
-    recommendAction: undefined,
-    style: {
-      position: 'absolute',
-      top: '0',
-      left: '0'
-    },
     range: {
       startLineNumber: 0,
       startColumn: 0,
       endLineNumber: 0,
       endColumn: 0
-    }
+    },
+    position: {
+      top: 0,
+      left: 0
+    },
+    docs: []
   })
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
@@ -55,11 +48,14 @@ export class HoverPreview implements IDisposable {
     })
   }
 
-  public showDocument(docPreview: DocPreview, range: IRange) {
-    if (!docPreview.content) return
-    this.hoverPreviewState.content = docPreview.content
-    this.hoverPreviewState.moreActions = docPreview.moreActions
-    this.hoverPreviewState.recommendAction = docPreview.recommendAction
+  public showDocuments(_docPreviews: DocPreview[], range: IRange) {
+    if (!_docPreviews.length) return
+    const docPreviews = _docPreviews.filter((docPreview) => Boolean(docPreview.content))
+    this.hoverPreviewState.docs = docPreviews.map((docPreview) => ({
+      content: docPreview.content,
+      moreActions: docPreview.moreActions,
+      recommendAction: docPreview.recommendAction
+    }))
     this._onShowDocument.fire(range)
   }
 
@@ -76,7 +72,6 @@ export class HoverPreview implements IDisposable {
 
   public tryToPreventHideDocument() {
     if (this.editorDocumentTimer) {
-      console.log('tryToPreventHideDocument')
       clearTimeout(this.editorDocumentTimer)
       this.editorDocumentTimer = null
     }

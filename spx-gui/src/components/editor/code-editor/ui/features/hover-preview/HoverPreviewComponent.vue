@@ -17,6 +17,7 @@ props.hoverPreview.onMousemove((e) => {
   if (!position || !position.word) return props.hoverPreview.hideDocument(true)
   const { startColumn, endColumn } = position
   const lineNumber = e.position.lineNumber
+  // determine weather current mouse is in doc word range, if not hide doc
   if (
     (lineNumber === hoverPreviewState.range.startLineNumber &&
       endColumn <= hoverPreviewState.range.startColumn) ||
@@ -39,10 +40,10 @@ props.hoverPreview.onShowDocument((range) => {
   props.hoverPreview.tryToPreventHideDocument()
   hoverPreviewState.visible = true
   hoverPreviewState.range = { ...range }
-  const top = containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
-  const left = containerRect.left + scrolledVisiblePosition.left
-  hoverPreviewState.style.top = `${top}px`
-  hoverPreviewState.style.left = `${left}px`
+  hoverPreviewState.position.top =
+    // here add `scrolledVisiblePosition.height` to make docPreview show under current code line
+    containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
+  hoverPreviewState.position.left = containerRect.left + scrolledVisiblePosition.left
 })
 </script>
 <template>
@@ -50,16 +51,27 @@ props.hoverPreview.onShowDocument((range) => {
   <teleport to="body">
     <div class="hover-preview-wrapper">
       <transition>
-        <DocumentPreview
+        <!--  TODO: here need to redesign UI to satisfy collapse mode  -->
+        <article
           v-show="hoverPreviewState.visible"
-          :style="hoverPreviewState.style"
-          :content="hoverPreviewState.content"
-          :more-actions="hoverPreviewState.moreActions"
-          :recommend-action="hoverPreviewState.recommendAction"
-          class="hover-document"
+          class="hover-preview-container"
+          style="position: absolute"
+          :style="{
+            top: hoverPreviewState.position.top + 'px',
+            left: hoverPreviewState.position.left + 'px'
+          }"
           @mouseleave="hoverPreview.hideDocument()"
           @mouseenter="hoverPreview.tryToPreventHideDocument()"
-        ></DocumentPreview>
+        >
+          <DocumentPreview
+            v-for="(doc, i) in hoverPreviewState.docs"
+            :key="i"
+            class="hover-document"
+            :content="doc.content"
+            :more-actions="doc.moreActions"
+            :recommend-action="doc.recommendAction"
+          ></DocumentPreview>
+        </article>
       </transition>
     </div>
   </teleport>
@@ -73,9 +85,9 @@ props.hoverPreview.onShowDocument((range) => {
   height: 0;
 }
 
-.hover-document {
+.hover-preview-container {
   position: absolute;
-  transform-origin: left top;
+  transform-origin: top left;
 
   &.v-enter-active,
   &.v-leave-active {
@@ -87,5 +99,9 @@ props.hoverPreview.onShowDocument((range) => {
     opacity: 0;
     transform: scale(0.8) translateY(20px);
   }
+}
+
+.hover-document + .hover-document {
+  margin-top: 4px;
 }
 </style>

@@ -34,7 +34,15 @@ export enum Icon {
 
 export type Markdown = string
 
+export enum DocPreviewLevel {
+  Nothing,
+  Normal,
+  Warning,
+  Error
+}
+
 export type DocPreview = {
+  level: DocPreviewLevel
   content: Markdown
   recommendAction?: RecommendAction | undefined
   moreActions?: Action[] | undefined
@@ -121,7 +129,7 @@ export interface HoverProvider {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent[] | null>
+  ): Promise<LayerContent[]>
 }
 
 export type InputItemUsage = {
@@ -359,7 +367,8 @@ export class EditorUI extends Disposable {
         }
       })
 
-    const isDocPreview = (layer: LayerContent): layer is DocPreview => 'content' in layer
+    const isDocPreview = (layer: LayerContent): layer is DocPreview =>
+      'content' in layer && 'level' in layer
 
     const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
       'src' in layer && 'duration' in layer
@@ -383,18 +392,13 @@ export class EditorUI extends Disposable {
             })
           ).flat()
 
-          for (let i = 0; i < result.length; i++) {
-            const layerContent = result[i]
-            if (layerContent == null) continue
-            if (isDocPreview(layerContent)) {
-              this.hoverPreview?.showDocument(layerContent, {
-                startLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: word.endColumn
-              })
-            }
-          }
+          // filter docPreview
+          this.hoverPreview?.showDocuments(result.filter(isDocPreview), {
+            startLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endLineNumber: position.lineNumber,
+            endColumn: word.endColumn
+          })
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content

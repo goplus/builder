@@ -1,5 +1,6 @@
 import {
   type CompletionItem,
+  DocPreviewLevel,
   type EditorUI,
   Icon,
   type LayerContent,
@@ -68,22 +69,23 @@ export class Coordinator {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent[] | null> {
+  ): Promise<LayerContent[]> {
     const contents = this.docAbility.getNormalDoc({
       module: '',
       name: ctx.hoverUnitWord
     })
 
     if (!contents || contents.length === 0) {
-      return null
+      return []
     }
 
     return contents.map((doc) => ({
+      level: DocPreviewLevel.Normal,
       content: doc.content,
       recommendAction: {
         label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'Still in confusion? Ask for help' }),
         activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick() {
+        onActiveLabelClick: () => {
           // TODO: add some logic code here
         }
       },
@@ -91,8 +93,10 @@ export class Coordinator {
         {
           icon: Icon.Document,
           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick() {
-            // TODO: add some logic code here
+          onClick: () => {
+            const detailDoc = this.docAbility.getDetailDoc(doc.token)
+            if (!detailDoc) return
+            this.ui.invokeDocumentDetail(detailDoc.content)
           }
         }
       ]
@@ -110,6 +114,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     })),
@@ -119,6 +124,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     }))
@@ -128,6 +134,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
       preview: {
+        level: 1,
         content: ''
       }
     }
