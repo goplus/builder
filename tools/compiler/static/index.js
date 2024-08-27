@@ -44,7 +44,8 @@ function getDiagnostics (data)  {
 function getCompletionItems (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getCompletionItems_GO(fileName, fileCode)
+    let lineNum = data.in.line
+    let res = getCompletionItems_GO(fileName, fileCode, lineNum)
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get completion items")
@@ -58,7 +59,7 @@ function getDefinition (data)  {
     let res = getDefinition_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get diagnostics")
+        throw new Error("can't get definition")
     }
     return json.content
 }
@@ -69,7 +70,7 @@ function getTypes(data) {
     let res = getTypes_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get diagnostics")
+        throw new Error("can't get types")
     }
     return json.content
 }
