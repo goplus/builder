@@ -240,11 +240,11 @@ const exportAssetDataToPublic = async () => {
   // let addAssetParam = props.asset
   let addAssetParam:AddAssetParams = {
     ...props.asset,
-    isPublic: IsPublic.personal,
+    isPublic: IsPublic.public,
     files: props.asset.files!,
     displayName: props.asset.displayName ?? props.asset.id,
     filesHash: props.asset.filesHash!,
-    preview: props.asset.preview!,
+    preview: "TODO",
     category: '*',
   }
   exportPending.value = true
