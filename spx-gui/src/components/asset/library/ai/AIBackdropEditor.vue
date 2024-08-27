@@ -18,6 +18,15 @@
       :height="mapHeight"
       :fill-percent="FILL_PERCENT"
     />
+    <ImageCrop
+      v-if="editMode === 'crop' && image !== null && stageConfig != null && !loading"
+      ref="imageCrop"
+      :image="image"
+      :stage-config="stageConfig"
+      :width="mapWidth"
+      :height="mapHeight"
+      :fill-percent="FILL_PERCENT"
+    />
     <CheckerboardBackground class="background" />
   </div>
 </template>
@@ -57,7 +66,13 @@ import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import CheckerboardBackground from '@/components/editor/sprite/CheckerboardBackground.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
-import { PhotoSizeSelectLargeFilled, SaveFilled } from '@vicons/material'
+import {
+  CancelOutlined,
+  CheckFilled,
+  CropFilled,
+  PhotoSizeSelectLargeFilled,
+  SaveFilled
+} from '@vicons/material'
 import { fromBlob } from '@/models/common/file'
 import { ExportOutlined } from '@vicons/antd'
 import ImageResize from './ImageEditor/ImageResize.vue'
@@ -66,6 +81,7 @@ import { useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useRenderScale } from './ImageEditor/useRenderScale'
 import { useAnimatedCenterPosition } from './ImageEditor/useCenterPosition'
+import ImageCrop from './ImageEditor/ImageCrop.vue'
 
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Backdrop>
@@ -86,14 +102,16 @@ const layer = ref<Konva.Layer>()
 const nodeRef = ref<KonvaNode<Konva.Image>>()
 const node = computed(() => nodeRef.value?.getNode())
 
-const editMode = ref<'resize' | 'preview'>('preview')
+const editMode = ref<'resize' | 'crop' | 'preview'>('preview')
 
 const imageResize = ref<InstanceType<typeof ImageResize> | null>(null)
+const imageCrop = ref<InstanceType<typeof ImageCrop> | null>(null)
 const activeEditor = computed(
   () =>
     ({
       preview: null,
-      resize: imageResize.value
+      resize: imageResize.value,
+      crop: imageCrop.value
     })[editMode.value]
 )
 
@@ -106,7 +124,6 @@ const updateMapSize = () => {
   }
   mapWidth.value = editorContainer.value.clientWidth
   mapHeight.value = editorContainer.value.clientHeight
-
 }
 
 onMounted(() => {
@@ -199,6 +216,7 @@ const saveChanges = async () => {
     return
   }
   const img = await activeEditor.value.getImage()
+  document.body.appendChild(img)
   // img element to blob
   const canvas = document.createElement('canvas')
   canvas.width = img.width
@@ -216,12 +234,15 @@ const saveChanges = async () => {
     const file = fromBlob(backdrop.value!.img.name, blob)
     // save file
     backdrop.value!.img = file
-    // backdrop to asset
-    const newAssetData = await backdrop2Asset(backdrop.value!)
-    // save asset
-    props.asset.files = newAssetData.files
-    props.asset.filesHash = newAssetData.filesHash
   })
+}
+
+const saveToAsset = async () => {
+  // backdrop to asset
+  const newAssetData = await backdrop2Asset(backdrop.value!)
+  // save asset
+  props.asset.files = newAssetData.files
+  props.asset.filesHash = newAssetData.filesHash
 }
 
 const exportImage = async () => {
@@ -237,56 +258,78 @@ const exportImage = async () => {
 
 const confirm = useConfirmDialog()
 const i18n = useI18n()
-
+// TODO: do not upload to kodo when switch mode?
 const actions = computed(
   () =>
-    [
+    ([
       {
         name: 'edit',
         label: { zh: '缩放', en: 'Resize' },
         icon: PhotoSizeSelectLargeFilled,
         type: (editMode.value === 'resize' ? 'primary' : 'secondary') satisfies ButtonType,
         action: async () => {
-          if (editMode.value === 'resize') {
-            confirm({
-              title: i18n.t({ zh: '提示', en: 'Warning' }),
-              content: i18n.t({
-                zh: '是否保存当前编辑？',
-                en: 'Do you want to save the current edit?'
-              }),
-              confirmText: i18n.t({ zh: '保存', en: 'Save' }),
-              cancelText: i18n.t({ zh: '不保存', en: "Don't Save" })
-            })
-              .then(() => {
-                saveChanges()
-              })
-              .catch(() => {})
-              .finally(() => {
-                editMode.value = 'preview'
-              })
-          } else {
-            editMode.value = 'resize'
-          }
+          saveChanges()
+          editMode.value = editMode.value === 'resize' ? 'preview' : 'resize'
         }
       },
       {
-        name: 'save',
-        label: { zh: '保存', en: 'Save' },
-        icon: SaveFilled,
+        name: 'crop',
+        label: { zh: '裁剪', en: 'Crop' },
+        icon: CropFilled,
+        type: (editMode.value === 'crop' ? 'primary' : 'secondary') satisfies ButtonType,
+        action: async () => {
+          saveChanges()
+          editMode.value = editMode.value === 'crop' ? 'preview' : 'crop'
+        }
+      },
+      editMode.value !== 'preview' && {
+        name: 'cancel',
+        label: { zh: '取消', en: 'Cancel' },
+        icon: CancelOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: async () => {
+          if (editMode.value !== 'preview') {
+            confirm({
+              content: i18n.t({ zh: '是否放弃当前编辑？', en: 'Discard current changes?' }),
+              title: i18n.t({ zh: '提示', en: 'Warning' }),
+              cancelText: i18n.t({ zh: '取消', en: 'Cancel' }),
+              confirmText: i18n.t({ zh: '确定', en: 'Confirm' })
+            })
+              .then(() => {
+                editMode.value = 'preview'
+              })
+              .catch(() => {})
+          }
+        }
+      },
+      editMode.value !== 'preview' && {
+        name: 'confirm',
+        label: { zh: '确定', en: 'Confirm' },
+        icon: CheckFilled,
         type: 'secondary' satisfies ButtonType,
         action: () => {
           saveChanges()
           editMode.value = 'preview'
         }
       },
-      {
+      editMode.value === 'preview' && {
+        name: 'save',
+        label: { zh: '保存', en: 'Save' },
+        icon: SaveFilled,
+        type: 'secondary' satisfies ButtonType,
+        action: () => {
+          saveToAsset()
+          editMode.value = 'preview'
+        }
+      },
+      editMode.value === 'preview' && {
         name: 'export',
         label: { zh: '导出', en: 'Export' },
         icon: ExportOutlined,
         type: 'secondary' satisfies ButtonType,
         action: exportImage
       }
-    ] satisfies EditorAction[]
+    ] satisfies (EditorAction | false)[]).filter(Boolean)
 )
 
 defineExpose({
