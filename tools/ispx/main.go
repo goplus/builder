@@ -44,7 +44,7 @@ func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
 	goBytes := convertToGoBytes(spriteData)
 	fs := readZipData(goBytes)
 
-	data, err := spx.Gopt_ParseSkeletonAnimData(fs, spriteName, animName)
+	data, err := spx.Editor_ParseSpriteAnimData(fs, spriteName, animName)
 	if err != nil {
 		log.Println("Failed to parse skeleton anim data:", err)
 		return nil
