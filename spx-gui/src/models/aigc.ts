@@ -177,7 +177,7 @@ export class SyncAIImageTask extends AIGCTask<TaggedAIAssetData> {
       id: fileCollectionHash, // or other identifier?
       assetType: params.assetType,
       cTime: new Date().toISOString(),
-      status: AIGCStatus.Waiting,
+      status: AIGCStatus.Finished,
       files: fileCollection,
       [isAiAsset]: true,
       [isPreviewReady]: true,

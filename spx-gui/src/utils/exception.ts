@@ -254,8 +254,8 @@ export function useQuery<T>(
  */
 export function useRetryHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
-  retries = 5, 
-  retryDelay = 1000 
+  retries = 10, 
+  retryDelay = 4000 
 ): { fn: (...args: Args) => Promise<T>, isLoading: Ref<boolean> } {
   const isLoading = ref(false);
 

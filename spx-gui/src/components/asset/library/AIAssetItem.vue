@@ -13,22 +13,17 @@
                   <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                     {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                   </span>
-                  <span
-                    v-else-if="status === AIGCStatus.Finished && previewImageLoading"
-                    class="generating-text"
-                  >
+                  <span v-else-if="status === AIGCStatus.Finished && previewImageLoading" class="generating-text">
                     {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
                   </span>
                 </Transition>
               </template>
             </NSpin>
           </template>
-          <template
-            v-else-if="
-              status === AIGCStatus.Failed ||
-              (previewImageLoading === false && previewImageSrc === null)
-            "
-          >
+          <template v-else-if="
+            status === AIGCStatus.Failed ||
+            (previewImageLoading === false && previewImageSrc === null)
+          ">
             <div class="failing-info">
               <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
                 <CancelOutlined />
@@ -42,12 +37,8 @@
             </div>
           </template>
           <template v-else>
-            <UIImg
-              class="preview"
-              :src="previewImageSrc"
-              :loading="previewImageLoading"
-              :size="props.task.result!.assetType === AssetType.Sprite ? 'contain' : 'cover'"
-            />
+            <UIImg class="preview" :src="previewImageSrc" :loading="previewImageLoading"
+              :size="props.task.result!.assetType === AssetType.Sprite ? 'contain' : 'cover'" />
           </template>
         </Transition>
       </div>
@@ -67,7 +58,7 @@
 import { UIImg } from '@/components/ui'
 import { NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { AIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
 import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
@@ -102,28 +93,35 @@ type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
 
 onMounted(() => {
   props.task.addEventListener('AIGCFinished', () => {
-    loadCloudFiles(props.task.result?.files!)
+    loadCloudFiles(props.task.result?.files)
   })
   props.task.addEventListener('AIGCStatusChange', () => {
     status.value = props.task.status
   })
+  status.value = props.task.status
+  loadPreview()
 })
 
-const loadCloudFiles = async (cloudFiles: AIGCFiles) => {
-  if (!cloudFiles) {
-    status.value = AIGCStatus.Failed
-    return
+const loadPreview = async () => {
+  if (props.task.result?.preview) {
+    const files = (await getFiles({ imageUrl: props.task.result!.preview })) as {
+      [key in keyof AIGCFiles]: File
+    }
+    if (!files) {
+      status.value = AIGCStatus.Failed
+      return
+    }
+    previewImageFile.value = files.imageUrl
   }
-  const files = (await getFiles(cloudFiles as RequiredAIGCFiles)) as {
-    [key in keyof AIGCFiles]: File
-  }
+}
 
-  if (!files) {
+const loadCloudFiles = async (cloudFiles?: AIGCFiles) => {
+  if (!cloudFiles || !cloudFiles.imageUrl) {
     status.value = AIGCStatus.Failed
     return
   }
   props.task.result!.preview = cloudFiles.imageUrl
-  previewImageFile.value = files.imageUrl
+  loadPreview()
   emit('ready', props.task.result!)
 }
 </script>
@@ -177,7 +175,7 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   position: relative;
 }
 
-.asset-preview > * {
+.asset-preview>* {
   position: absolute;
   width: 100%;
   height: 100%;
