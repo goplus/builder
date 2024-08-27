@@ -246,22 +246,25 @@ const saveToAsset = async () => {
 }
 
 const exportImage = async () => {
-  if (!activeEditor.value) {
+  if (!node.value) {
     return
   }
-  const img = await activeEditor.value.getImage()
-  const a = document.createElement('a')
-  a.href = img.src
-  a.download = 'backdrop.png'
-  a.click()
+  node.value.toImage({
+    callback: (img) => {
+      const a = document.createElement('a')
+      a.href = img.src
+      a.download = backdrop.value?.img.name ?? 'image.png'
+      a.click()
+    }
+  })
 }
 
 const confirm = useConfirmDialog()
 const i18n = useI18n()
 // TODO: do not upload to kodo when switch mode?
-const actions = computed(
-  () =>
-    ([
+const actions = computed(() =>
+  (
+    [
       {
         name: 'edit',
         label: { zh: '缩放', en: 'Resize' },
@@ -317,10 +320,7 @@ const actions = computed(
         label: { zh: '保存', en: 'Save' },
         icon: SaveFilled,
         type: 'secondary' satisfies ButtonType,
-        action: () => {
-          saveToAsset()
-          editMode.value = 'preview'
-        }
+        action: saveToAsset
       },
       editMode.value === 'preview' && {
         name: 'export',
@@ -329,7 +329,8 @@ const actions = computed(
         type: 'secondary' satisfies ButtonType,
         action: exportImage
       }
-    ] satisfies (EditorAction | false)[]).filter(Boolean)
+    ] satisfies (EditorAction | false)[]
+  ).filter(Boolean)
 )
 
 defineExpose({
