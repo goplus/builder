@@ -9,6 +9,7 @@ import {
 import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
+import { nanoid } from 'nanoid'
 
 type ActionConfig = {
   /** Sound name to play */
@@ -20,6 +21,8 @@ type ActionConfig = {
 export const defaultFps = 10
 
 export type AnimationInits = {
+  builder_id?: string
+
   /** Duration for animation to be played once */
   duration?: number
   onStart?: ActionConfig
@@ -43,6 +46,8 @@ export type RawAnimationConfig = Omit<AnimationInits, 'duration'> & {
 }
 
 export class Animation extends Disposable {
+  id: string
+
   private sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
@@ -102,6 +107,7 @@ export class Animation extends Disposable {
     this.costumes = []
     this.duration = inits?.duration ?? 0
     this.sound = inits?.onStart?.play ?? null
+    this.id = inits?.builder_id ?? nanoid()
 
     for (const field of ['isLoop', 'onPlay'] as const) {
       if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
@@ -154,12 +160,12 @@ export class Animation extends Disposable {
 
   export(
     /** Path of directory which contains the sprite's config file */
-    basePath: string
+    { basePath, includeId = true }: { basePath: string; includeId?: boolean }
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const costume of this.costumes) {
-      const [costumeConfig, costumeFiles] = costume.export(basePath)
+      const [costumeConfig, costumeFiles] = costume.export({ basePath, includeId })
       costumeConfigs.push(costumeConfig)
       Object.assign(files, costumeFiles)
     }
@@ -169,6 +175,7 @@ export class Animation extends Disposable {
       frameFps: Math.ceil(this.costumes.length / this.duration),
       onStart: this.sound == null ? undefined : { play: this.sound }
     }
+    if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]
   }
 }

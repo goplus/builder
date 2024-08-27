@@ -93,4 +93,31 @@ describe('Animation', () => {
     await newProject.load(metadata, delayedFiles)
     expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].name)
   })
+
+  it('should be able to keep the id upon export and import. if the id is not provided, it should be generated', async () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    const id = animation.id
+    // id should be not null and not empty
+    expect(id).not.toBeNull()
+
+    const [metadata, files] = await project.export()
+    const newProject = new Project()
+    await newProject.load(metadata, files)
+    const newSprite = newProject.sprites[0]
+    const newAnimation = newSprite.animations[0]
+    expect(newAnimation.id).toBe(id)
+  })
+  it('should not export id if includeId is false', async () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    const id = animation.id
+    // id should be not null and not empty
+    expect(id).not.toBeNull()
+
+    const exportedId = animation.export({ basePath: '', includeId: false })[0].builder_id
+    expect(exportedId).toBeUndefined()
+  })
 })

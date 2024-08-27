@@ -5,8 +5,10 @@ import { Disposable } from '@/utils/disposable'
 import { File, fromConfig, type Files, listDirs, toConfig } from './common/file'
 import { getSoundName, validateSoundName } from './common/asset-name'
 import type { Project } from './project'
+import { nanoid } from 'nanoid'
 
 export type SoundInits = {
+  builder_id?: string
   rate?: number
   sampleCount?: number
 }
@@ -19,6 +21,8 @@ export const soundAssetPath = 'assets/sounds'
 export const soundConfigFileName = 'index.json'
 
 export class Sound extends Disposable {
+  id: string
+
   _project: Project | null = null
   setProject(project: Project | null) {
     this._project = project
@@ -52,6 +56,7 @@ export class Sound extends Disposable {
     this.file = file
     this.rate = inits?.rate ?? 0
     this.sampleCount = inits?.sampleCount ?? 0
+    this.id = inits?.builder_id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -90,13 +95,14 @@ export class Sound extends Disposable {
   }
 
   // config is included in files
-  export(): Files {
+  export({ includeId = true }: { includeId?: boolean } = {}): Files {
     const filename = this.name + extname(this.file.name)
     const config: RawSoundConfig = {
       rate: this.rate,
       sampleCount: this.sampleCount,
       path: filename
     }
+    if (includeId) config.builder_id = this.id
     const files: Files = {}
     const assetPath = join(soundAssetPath, this.name)
     files[join(assetPath, soundConfigFileName)] = fromConfig(soundConfigFileName, config)

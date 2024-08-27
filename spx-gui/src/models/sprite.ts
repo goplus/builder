@@ -17,6 +17,7 @@ import {
 import { type RawCostumeConfig, Costume } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
+import { nanoid } from 'nanoid'
 
 export enum RotationStyle {
   none = 'none',
@@ -39,6 +40,7 @@ export type Pivot = {
 }
 
 export type SpriteInits = {
+  builder_id?: string
   heading?: number
   x?: number
   y?: number
@@ -76,6 +78,8 @@ function getSpriteCodeFileName(name: string) {
 export const spriteConfigFileName = 'index.json'
 
 export class Sprite extends Disposable {
+  id: string
+
   private project: Project | null = null
   setProject(project: Project | null) {
     this.project = project
@@ -242,6 +246,7 @@ export class Sprite extends Disposable {
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
     this.pivot = inits?.pivot ?? { x: 0, y: 0 }
+    this.id = inits?.builder_id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -342,18 +347,26 @@ export class Sprite extends Disposable {
     return sprites
   }
 
-  export(includeCode = true): Files {
+  export({
+    includeCode = true,
+    includeId = true
+  }: {
+    includeCode?: boolean
+    includeId?: boolean
+  } = {}): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const c of this.costumes) {
-      const [costumeConfig, costumeFiles] = c.export(assetPath)
+      const [costumeConfig, costumeFiles] = c.export({ basePath: assetPath })
       costumeConfigs.push(costumeConfig)
       Object.assign(files, costumeFiles)
     }
     const animationConfigs: Record<string, RawAnimationConfig> = {}
     for (const a of this.animations) {
-      const [animationConfig, animationCostumesConfigs, animationFiles] = a.export(assetPath)
+      const [animationConfig, animationCostumesConfigs, animationFiles] = a.export({
+        basePath: assetPath
+      })
       animationConfigs[a.name] = animationConfig
       costumeConfigs.push(...animationCostumesConfigs)
       Object.assign(files, animationFiles)
@@ -378,6 +391,7 @@ export class Sprite extends Disposable {
       const codeFileName = getSpriteCodeFileName(this.name)
       files[codeFileName] = fromText(codeFileName, this.code)
     }
+    if (includeId) config.builder_id = this.id
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)
     return files
   }
