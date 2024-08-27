@@ -2,10 +2,12 @@ package model
 
 import (
 	"context"
-	"github.com/goplus/builder/spx-backend/internal/log"
-	"gorm.io/gorm"
+	"database/sql"
 	"strconv"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"gorm.io/gorm"
 )
 
 type UserAsset struct {
@@ -43,9 +45,29 @@ func AddUserAsset(ctx context.Context, db *gorm.DB, p *UserAsset) error {
 		logger.Printf("failed to add asset: %v", result.Error)
 		return result.Error
 	}
-
-	logger.Printf("added asset: %v", p)
 	return nil
+}
+
+// ListUserAssets lists assets with given pagination, where conditions and order by conditions.
+func ListUserAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition, query string) (*ByPage[Asset], error) {
+	logger := log.GetReqLogger(ctx)
+	assets, err := QueryByPage[Asset](ctx, db, query, paginaton, filters, orderBy, true, nil)
+	if err != nil {
+		logger.Printf("QueryByPage failed: %v", err)
+		return nil, err
+	}
+	assetIDs := extractAssetIDs(assets.Data)
+
+	likedMap, err := getLikedInfo(ctx, db, assetIDs)
+	if err != nil {
+		logger.Printf("getLikedInfo failed: %v", err)
+		return nil, err
+	}
+
+	fillLikedInfo(assets.Data, likedMap)
+
+	return assets, nil
+
 }
 
 // DeleteUserAsset deletes an asset.

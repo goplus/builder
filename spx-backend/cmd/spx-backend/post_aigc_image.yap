@@ -1,4 +1,4 @@
-// Get generate image from ai.
+// Get generate image from ai.（async）
 //
 // Request:
 //   POST /aigc/image
@@ -16,7 +16,7 @@ if !ok {
 
 params := &controller.GenerateParams{}
 if !parseJSON(ctx, params) {
-return
+	return
 }
 result, err := ctrl.Generating(ctx.Context(), params)
 

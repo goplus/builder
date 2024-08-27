@@ -2,12 +2,14 @@ package model
 
 import (
 	"context"
+	"database/sql"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"testing"
 )
 
 func TestAddUserAsset(t *testing.T) {
@@ -126,5 +128,45 @@ func TestDeleteUserAsset(t *testing.T) {
 
 		err = mock.ExpectationsWereMet()
 		require.NoError(t, err)
+	})
+}
+
+func TestListUserAssets(t *testing.T) {
+	query := "SELECT a.* FROM asset RIGHT JOIN user_asset ua ON a.id = ua.asset_id"
+	t.Run("Normal", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectQuery(`SELECT COUNT(*) FROM (SELECT a.* FROM asset RIGHT JOIN user_asset ua ON a.id = ua.asset_id WHERE status != ?) AS subquery`).
+			WillReturnRows(mock.NewRows([]string{"COUNT(*)"}).
+				AddRow(1))
+		mock.ExpectQuery(`SELECT a.* FROM asset RIGHT JOIN user_asset ua ON a.id = ua.asset_id WHERE status != ? ORDER BY id ASC LIMIT ?, ?`).
+			WillReturnRows(mock.NewRows([]string{"display_name"}).
+				AddRow("foo"))
+		// Mock the additional query for user_asset table to get liked info
+		mock.ExpectQuery(`SELECT asset_id, COUNT(*) as count FROM user_asset WHERE asset_id IN (?) AND relation_type = 'liked' GROUP BY asset_id`).
+			WithArgs("").
+			WillReturnRows(mock.NewRows([]string{"asset_id", "count"}).AddRow(1, 5))
+
+		assets, err := ListUserAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil, query)
+		require.NoError(t, err)
+		require.NotNil(t, assets)
+		assert.Equal(t, 1, assets.Total)
+		assert.Len(t, assets.Data, 1)
+		assert.Equal(t, "foo", assets.Data[0].DisplayName)
+	})
+
+	t.Run("ClosedConnForCountQuery", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		mock.ExpectQuery(`SELECT COUNT(*) FROM (SELECT a.* FROM asset RIGHT JOIN user_asset ua ON a.id = ua.asset_id WHERE status != ?) AS subquery`).
+			WillReturnError(sql.ErrConnDone)
+		assets, err := ListUserAssets(context.Background(), db, Pagination{Index: 1, Size: 1}, nil, nil, query)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrConnDone)
+		assert.Nil(t, assets)
 	})
 }

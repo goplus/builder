@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/log"
+	"gorm.io/gorm"
 )
 
 // Asset is the model for an asset.
@@ -75,9 +76,9 @@ func AssetByID(ctx context.Context, db *sql.DB, id string) (*Asset, error) {
 }
 
 // ListAssets lists assets with given pagination, where conditions and order by conditions.
-func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition) (*ByPage[Asset], error) {
+func ListAssets(ctx context.Context, db *sql.DB, paginaton Pagination, filters []FilterCondition, orderBy []OrderByCondition, categoryList []any) (*ByPage[Asset], error) {
 	logger := log.GetReqLogger(ctx)
-	assets, err := QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false)
+	assets, err := QueryByPage[Asset](ctx, db, TableAsset, paginaton, filters, orderBy, false, categoryList)
 	if err != nil {
 		logger.Printf("QueryByPage failed: %v", err)
 		return nil, err
@@ -160,4 +161,15 @@ func IncreaseAssetClickCount(ctx context.Context, db *sql.DB, id string) error {
 // DeleteAssetByID deletes asset with given id.
 func DeleteAssetByID(ctx context.Context, db *sql.DB, id string) error {
 	return UpdateByID(ctx, db, TableAsset, id, &Asset{Status: StatusDeleted}, "status")
+}
+
+func CheckAssetFilesHashByID(ctx context.Context, db *gorm.DB, id string) (*Asset, error) {
+	logger := log.GetReqLogger(ctx)
+	var asset Asset
+	result := db.Where("id = ?", id).First(&asset) //SELECT * FROM asset WHERE id = ?
+	if result.Error != nil {
+		logger.Printf("failed to get asset by id: %v", result.Error)
+		return nil, result.Error
+	}
+	return &asset, nil
 }

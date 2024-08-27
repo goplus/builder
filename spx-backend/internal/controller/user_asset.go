@@ -21,6 +21,9 @@ type ListUserAssetsParams struct {
 	// Owner is the owner filter, applied only if non-nil.
 	Owner *string
 
+	// AccessType is the access type filter, applied only if non-nil.
+	AssetType *model.AssetType
+
 	// OrderBy is the order by condition.
 	OrderBy ListAssetsOrderBy
 
@@ -58,15 +61,24 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 	if params.Owner != nil {
 		wheres = append(wheres, model.FilterCondition{Column: "ua.owner", Operation: "=", Value: *params.Owner})
 	}
+	if params.AssetType != nil {
+		wheres = append(wheres, model.FilterCondition{Column: "asset_type", Operation: "=", Value: *params.AssetType})
+	}
 	wheres = append(wheres, model.FilterCondition{Column: "ua.relation_type", Operation: "=", Value: assetType})
 
 	// Define order conditions based on input
 	var orders []model.OrderByCondition
 	switch params.OrderBy {
+	case TimeAsc:
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "ASC"})
 	case TimeDesc:
-		orders = append(orders, model.OrderByCondition{Column: "a.c_time", Direction: "DESC"})
+		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "DESC"})
+	case NameAsc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "ASC"})
+	case NameDesc:
+		orders = append(orders, model.OrderByCondition{Column: "display_name", Direction: "DESC"})
 	case ClickCountDesc:
-		orders = append(orders, model.OrderByCondition{Column: "a.click_count", Direction: "DESC"})
+		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
 	}
 
 	// Use the QueryByPage function to get paginated results
@@ -76,7 +88,7 @@ func (ctrl *Controller) ListUserAssets(ctx context.Context, assetType string, pa
 		RIGHT JOIN user_asset ua ON a.id = ua.asset_id
 	`
 
-	assets, err := model.QueryByPage[model.Asset](ctx, ctrl.db, query, params.Pagination, wheres, orders, true)
+	assets, err := model.ListUserAssets(ctx, ctrl.db, params.Pagination, wheres, orders, query)
 	if err != nil {
 		logger.Printf("failed to list user assets: %v", err)
 		return nil, err

@@ -15,6 +15,7 @@ export type SearchCtx = {
   pageSize: number
   type: AssetType
   tabCategory: GetListAssetType
+  orderBy: ListAssetParamOrderBy
 }
 
 export type SearchResultCtx = {
@@ -57,7 +58,8 @@ const searchCtx = reactive<SearchCtx>({
   type: props.type,
   page: 1,
   pageSize: 12,
-  tabCategory: 'public'
+  tabCategory: 'public',
+  orderBy: ListAssetParamOrderBy.TimeAsc
 })
 
 provide(searchCtxKey, searchCtx)
@@ -71,9 +73,8 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         assetType: searchCtx.type,
         keyword: '',
         category: [''],
-        owner: '*',
         isPublic: undefined,
-        orderBy: ListAssetParamOrderBy.TimeAsc
+        orderBy: searchCtx.orderBy
       })
     case 'history':
     return listHistoryAsset({
@@ -82,9 +83,8 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         assetType: searchCtx.type,
         keyword: undefined,
         category: undefined,
-        owner: '*',
         isPublic: undefined,
-        orderBy: ListAssetParamOrderBy.TimeAsc
+        orderBy: searchCtx.orderBy
       })
     case 'imported'://when imported, the category,keyword is not needed
     return listAsset({
@@ -95,7 +95,7 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         category: undefined,
         owner: props.owner,//backend will automatically filter the owner
         isPublic: IsPublic.personal,
-        orderBy: ListAssetParamOrderBy.TimeAsc
+        orderBy: searchCtx.orderBy
       })
     default:
       return listAsset({
@@ -106,7 +106,7 @@ const getListAsset = (type: GetListAssetType,category:string[]) => {
         category: category,
         owner: '*',
         isPublic: IsPublic.public,
-        orderBy: ListAssetParamOrderBy.TimeAsc
+        orderBy: searchCtx.orderBy
       })
   }
 }

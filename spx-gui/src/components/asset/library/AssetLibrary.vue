@@ -66,7 +66,6 @@
         <LibraryTree
           :type="type"
           style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
-          @update="handleSelectCategory"
         />
       </div>
     </section>
@@ -109,9 +108,9 @@ import LibraryMenu from './LibraryMenu.vue'
 import LibraryTree from './LibraryTree.vue'
 import DetailModal from './details/DetailModal.vue'
 import LibrarySelect from './LibrarySelect.vue'
-import type { AIAssetData, AIGCTask } from '@/apis/aigc'
 import AIPreviewModal from './ai/AIPreviewModal.vue'
 import { addAssetToHistory } from '@/apis/user'
+import type { AIGCTask } from '@/models/aigc'
 
 const props = defineProps<{
   visible?: boolean
@@ -174,9 +173,9 @@ function handleSearch() {
   searchCtx.keyword = searchInput.value
 }
 
-function handleSelectCategory(c: string[]) {
-  searchCtx.category = c
-}
+// function handleSelectCategory(c: string[]) {
+//   searchCtx.category = c
+// }
 
 function handleUserSelectCategory(c: string) {
   searchCtx.tabCategory = c as 'liked' | 'history' | 'imported' | 'public'

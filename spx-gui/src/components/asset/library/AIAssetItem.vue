@@ -67,13 +67,14 @@
 import { UIImg } from '@/components/ui'
 import { NIcon, NSpin } from 'naive-ui'
 import { BulbOutlined } from '@vicons/antd'
-import { computed, onMounted, ref, shallowRef } from 'vue'
-import { AIGCStatus, AIGCTask, getAIGCStatus, type AIAssetData, type AIGCFiles, type TaggedAIAssetData } from '@/apis/aigc'
+import { computed, onMounted, ref } from 'vue'
+import { AIGCStatus, type AIAssetData, type AIGCFiles } from '@/apis/aigc'
 import { useFileUrl } from '@/utils/file'
 import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
 import { CancelOutlined } from '@vicons/material'
 import { AssetType } from '@/apis/asset'
+import type { AIGCTask } from '@/models/aigc'
 
 const props = withDefaults(
   defineProps<{
@@ -128,7 +129,7 @@ const loadCloudFiles = async (cloudFiles: AIGCFiles) => {
 </script>
 
 <style lang="scss" scoped>
-$COLUMN_COUNT: 4;
+$COLUMN_COUNT: 6;
 $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
 
 .asset-item {

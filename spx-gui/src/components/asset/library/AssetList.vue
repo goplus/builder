@@ -6,39 +6,17 @@
     </UIError>
     <UIEmpty v-else-if="searchResultCtx.assets?.data.length === 0" size="large" />
   </template>
-  <NVirtualList
-    v-else
-    ref="virtualList"
-    class="asset-list"
-    :items="groupedAssetItems"
-    :item-size="148"
-    :key-field="'id'"
-    :item-resizable="false"
-    :ignore-item-resize="true"
-    @scroll="handleScroll"
-    @wheel="handleScroll"
-  >
+  <NVirtualList v-else ref="virtualList" class="asset-list" :items="groupedAssetItems" :item-size="148"
+    :key-field="'id'" :item-resizable="false" :ignore-item-resize="true" @scroll="handleScroll" @wheel="handleScroll">
     <template #default="{ item }: { item: GroupedAssetItem }">
       <div v-if="item.type === 'asset-group'" class="asset-list-row">
-        <template
-          v-for="asset in item.assets"
-          :key="(asset instanceof AIGCTask) ? asset.taskId : asset.id"
-        >
-          <AIAssetItem
-            v-if="(asset instanceof AIGCTask)"
-            :task="asset"
-            @ready="(asset as any)[isPreviewReady] = true"
+        <template v-for="asset in item.assets" :key="(asset instanceof AIGCTask) ? asset.taskId : asset.id">
+          <AIAssetItem v-if="(asset instanceof AIGCTask)" :task="asset" @ready="(asset as any)[isPreviewReady] = true"
             @click="
-            (asset as any)[isPreviewReady] && emit('selectAi', asset.result!, aiAssetTaskList)
-            "
-          />
-          <AssetItem
-            v-else
-            :asset="asset"
-            :add-to-project-pending="props.addToProjectPending"
-            @add-to-project="(asset) => emit('addToProject', asset)"
-            @click="emit('select', asset)"
-          />
+              (asset as any)[isPreviewReady] && emit('selectAi', asset.result!, aiAssetTaskList)
+              " />
+          <AssetItem v-else :asset="asset" :add-to-project-pending="props.addToProjectPending"
+            @add-to-project="(asset) => emit('addToProject', asset)" @click="emit('select', asset)" />
         </template>
       </div>
       <div v-else-if="item.type === 'loading-more'" class="more-info loading-more">
@@ -49,11 +27,8 @@
         <img :src="emptyImg" alt="empty" />
         {{ $t({ en: 'No more assets', zh: '没有更多素材了' }) }}
         <Transition name="fade" mode="out-in" appear>
-          <NButton
-            v-if="!loadingAiAsset && !aiGenerationDisabled"
-            tertiary
-            @click="abortAIGeneration = generateMultipleAIImages(COLUMN_COUNT)"
-          >
+          <NButton v-if="!loadingAiAsset && !aiGenerationDisabled" tertiary
+            @click="abortAIGeneration = generateMultipleAIImages(COLUMN_COUNT)">
             <template #icon>
               <NIcon>
                 <TipsAndUpdatesOutlined />
@@ -71,7 +46,7 @@
   </NVirtualList>
 </template>
 <script lang="ts" setup>
-import { computed, ref, shallowReactive, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useSearchCtx, useSearchResultCtx, type SearchCtx } from './SearchContextProvider.vue'
 import { UILoading, UIEmpty, UIError } from '@/components/ui'
 import { NVirtualList, NSpin, NButton, NIcon } from 'naive-ui'
@@ -82,23 +57,18 @@ import errorImg from '@/components/ui/error/default-error.svg'
 import AssetItem from './AssetItem.vue'
 import {
   AIGCStatus,
-  AIGCTask,
-  AIImageTask,
-  generateAIImage,
   isAiAsset,
-  isContentReady,
   isPreviewReady,
-  SyncAIImageTask,
-  type AIAssetData,
-  type AssetOrAIAsset,
   type TaggedAIAssetData
 } from '@/apis/aigc'
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
+import { AIGCTask, SyncAIImageTask } from '@/models/aigc'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
-  return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.tabCategory)
+  // Disable AI generation for user's own assets and null search keyword with only on category
+  return FORBIDDEN_AI_CATEGORIES.includes(searchCtx.tabCategory) || (searchCtx.keyword === '' && searchCtx.category.length === 1 && searchCtx.category[0] === '')
 })
 
 const props = defineProps<{
@@ -114,12 +84,9 @@ const emit = defineEmits<{
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 
-const COLUMN_COUNT = 4
+const COLUMN_COUNT = 6
 const assetList = ref<AssetData[]>([])
 const aiAssetTaskList = shallowRef<AIGCTask[]>([])
-const getAiAssetList = () => {
-  return aiAssetTaskList.value.map((task) => task.result).filter((a) => a != null) as TaggedAIAssetData[]
-}
 const hasMoreAssets = computed(
   () => searchCtx.page * searchCtx.pageSize < (searchResultCtx.assets?.total ?? 0)
 )
@@ -138,23 +105,23 @@ const loadingAiAsset = computed(
 
 type GroupedAssetItem =
   | {
-      id: string
-      type: 'asset-group'
-      assets: (AssetData | AIGCTask)[]
-    }
+    id: string
+    type: 'asset-group'
+    assets: (AssetData | AIGCTask)[]
+  }
   | {
-      id: string
-      type: 'loading-more'
-    }
+    id: string
+    type: 'loading-more'
+  }
   | {
-      id: string
-      type: 'no-more'
-    }
+    id: string
+    type: 'no-more'
+  }
   | {
-      id: string
-      type: 'loading-more-error'
-      error: ActionException
-    }
+    id: string
+    type: 'loading-more-error'
+    error: ActionException
+  }
 
 const groupedAssetItems = computed(() => {
   const list = [...assetList.value, ...aiAssetTaskList.value]
@@ -210,9 +177,9 @@ const loadMore = () => {
   searchCtx.page++
 }
 
-const handleScroll = (e: Event) => {
+const handleScroll = (e: Event) => {//qus1:why both scroll and wheel?
   const target = e.target as HTMLElement
-  if (target.scrollHeight - target.scrollTop === target.clientHeight) {
+  if (target.scrollHeight - target.scrollTop === target.clientHeight) {//qus2: why this condition?is it correct?
     loadMore()
   }
 }
@@ -249,8 +216,9 @@ watch(
     assetList.value.push(...(result?.data ?? []))
     if (!hasMoreAssets.value) {
       // Fill the last row with AI assets
-      const count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
+      let count = COLUMN_COUNT - (assetList.value.length % COLUMN_COUNT)
       if (count <= COLUMN_COUNT && !aiGenerationDisabled.value) {
+        count = 1
         abortAIGeneration = generateMultipleAIImages(count, false)
       }
     } else if (searchCtx.page === 1) {

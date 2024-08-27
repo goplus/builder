@@ -6,11 +6,13 @@
 import { NMenu } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import { useI18n } from '@/utils/i18n'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useSearchCtx, type GetListAssetType } from './SearchContextProvider.vue'
 
 const { t } = useI18n()
 
 const emit = defineEmits(['update:value'])
+const searchCtx = useSearchCtx()
 
 const selectedValue = ref<string | null>(null)
 
@@ -22,7 +24,6 @@ function handleUpdateValue(key: string) {
     selectedValue.value = key
     emit('update:value', selectedValue.value)
   }
-  
 }
 
 const menuOptions: MenuOption[] = [
@@ -40,4 +41,12 @@ const menuOptions: MenuOption[] = [
   },
 ]
 
+// if category changes, reset tabCategory and selectedValue
+watch(
+  () => searchCtx.category,
+  () => {
+    searchCtx.tabCategory = 'public'
+    selectedValue.value = null
+  }
+)
 </script>

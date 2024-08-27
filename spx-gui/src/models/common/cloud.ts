@@ -93,6 +93,12 @@ export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   })
 }
 
+/**
+ * Saves a file for web URL.
+ * 
+ * @param file - The file to be saved.
+ * @returns The web URL of the saved file.
+ */
 export async function saveFileForWebUrl(file: File) {
   const universalUrl = await saveFile(file)
   return universalUrlToWebUrl(universalUrl)

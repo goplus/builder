@@ -57,13 +57,12 @@ export function deleteAsset(id: string) {
   return client.delete(`/asset/${encodeURIComponent(id)}`) as Promise<void>
 }
 
-export enum ListAssetParamOrderBy {
-  Default = 'default',
+export enum ListAssetParamOrderBy {//todo: auto import in LibrarySelect
   TimeDesc = 'timeDesc',
   TimeAsc = 'timeAsc',
-  ClickCountDesc = 'clickCount',
   NameAsc = 'nameAsc',
   NameDesc = 'nameDesc'
+  //clickCountDesc,default
 }
 
 export type ListAssetParams = PaginationParams & {
@@ -99,27 +98,27 @@ export async function getAssetSearchSuggestion(keyword: string, count = 6) {
   if (!keyword) {
     return { suggestions: [] }
   }
-  const assets = await listAsset({
-    keyword,
-    assetType: '' as any,
-    pageSize: count * 2,
-    pageIndex: 1,
-    category: [],
-    owner: '*',
-    isPublic: IsPublic.public,
-    orderBy: ListAssetParamOrderBy.TimeAsc
-  })
-  return {
-    suggestions: Array.from(new Set(assets.data.map((asset) => asset.displayName))).slice(0, count)
-  }
-  return client.get('/asset/suggest', { keyword, count }) as Promise<{
+  // const assets = await listAsset({
+  //   keyword,
+  //   assetType: '' as any,
+  //   pageSize: count * 2,
+  //   pageIndex: 1,
+  //   category: [],
+  //   owner: '*',
+  //   isPublic: IsPublic.public,
+  //   orderBy: ListAssetParamOrderBy.TimeAsc
+  // })
+  // return {
+  //   suggestions: Array.from(new Set(assets.data.map((asset) => asset.displayName))).slice(0, count)
+  // }
+  return client.get('/assets/list/suggestions', { query:keyword, limit:count }) as Promise<{
     suggestions: string[]
   }>
 }
 
 export interface AssetRate {
   rate: number
-  detail: number[]
+  detail: { score: number, count: number }[]
 }
 
 /**
@@ -132,26 +131,26 @@ export interface AssetRate {
  * @returns 
  */
 export function getAssetRate(id: string): Promise<AssetRate> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const rateCount = Math.floor(Math.random() * 10000)
-      const calcNormDist = (x: number, mean: number, std: number) => {
-        return Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(std, 2))) / (std * Math.sqrt(2 * Math.PI))
-      }
-      const targetRate = Math.random() * 4 + 1
-      const distribution = [1, 2, 3, 4, 5].map((rate) => calcNormDist(rate, targetRate, 1))
-      const rates = distribution.map((rate) => Math.floor(rate * rateCount))
-      if (targetRate > 2.5 && targetRate < 3.5 && Math.random() < 0.5) {
-        rates.unshift(rates.pop()!)
-        rates.unshift(rates.pop()!)
-      }
-      resolve({
-        rate: rates.reduce((acc, cur, i) => acc + cur * (i + 1), 0) / rateCount,
-        detail: rates
-      })
-    }, 100)
-  })
-  return client.get(`/asset/${encodeURIComponent(id)}/rate`) as Promise<AssetRate>
+  // return new Promise((resolve) => {
+  //   setTimeout(() => {
+  //     const rateCount = Math.floor(Math.random() * 10000)
+  //     const calcNormDist = (x: number, mean: number, std: number) => {
+  //       return Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(std, 2))) / (std * Math.sqrt(2 * Math.PI))
+  //     }
+  //     const targetRate = Math.random() * 4 + 1
+  //     const distribution = [1, 2, 3, 4, 5].map((rate) => calcNormDist(rate, targetRate, 1))
+  //     const rates = distribution.map((rate) => Math.floor(rate * rateCount))
+  //     if (targetRate > 2.5 && targetRate < 3.5 && Math.random() < 0.5) {
+  //       rates.unshift(rates.pop()!)
+  //       rates.unshift(rates.pop()!)
+  //     }
+  //     resolve({
+  //       rate: rates.reduce((acc, cur, i) => acc + cur * (i + 1), 0) / rateCount,
+  //       detail: rates
+  //     })
+  //   }, 100)
+  // })
+  return client.get(`/user/rate/${encodeURIComponent(id)}`) as Promise<AssetRate>
 }
 
 /**
@@ -166,5 +165,5 @@ export function rateAsset(id: string, rate: number) {
   if ([1, 2, 3, 4, 5].indexOf(rate) === -1) {
     throw new Error('Invalid rate value')
   }
-  return client.post(`/asset/${encodeURIComponent(id)}/rate`, { rate }) as Promise<void>
+  return client.post(`/user/rate/${encodeURIComponent(id)}`, { rate }) as Promise<void>
 }

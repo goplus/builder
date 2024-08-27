@@ -125,17 +125,13 @@ import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
 import {
   AIGCStatus,
-  generateAISprite,
-  getAIGCStatus,
   type AIGCFiles,
   isContentReady,
   isPreviewReady,
   type TaggedAIAssetData,
   exportAIGCAsset,
   exportedId,
-  AIGCTask,
   type RequiredAIGCFiles,
-  AISpriteTask
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -147,6 +143,7 @@ import AISoundEditor from './AISoundEditor.vue'
 import { convertAIAssetToBackdrop } from '@/models/common/asset'
 import { hashFileCollection } from '@/models/common/hash'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
+import { AIGCTask, AISpriteTask } from '@/models/aigc'
 
 // Define component props
 const props = defineProps<{
