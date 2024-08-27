@@ -1,22 +1,47 @@
 <template>
   <div ref="editorContainer" class="container">
-    <v-stage v-if="stageConfig != null && !loading" ref="stage" :config="stageConfig">
+    <v-stage
+      v-if="editMode === 'preview' && stageConfig != null && !loading"
+      ref="stage"
+      :config="stageConfig"
+    >
       <v-layer ref="layer">
-        <v-image
-          ref="nodeRef"
-          :config="config"
-          @transformend="handleTransformEnd"
-          @dragend="handleDragEnd"
-        />
-        <v-transformer ref="resizeTransformerRef" :config="resizeTransformerConfig" />
+        <v-image ref="nodeRef" :config="config" @dragend="handleDragEnd" />
       </v-layer>
     </v-stage>
-    <div v-if="editMode === 'resize'" class="resize-info info-tip">
-      <span>{{ resizedImageSize?.width }} x {{ resizedImageSize?.height }}</span>
-    </div>
+    <ImageResize
+      v-if="editMode === 'resize' && image !== null && stageConfig != null && !loading"
+      ref="imageResize"
+      :image="image"
+      :stage-config="stageConfig"
+      :width="mapWidth"
+      :height="mapHeight"
+      :fill-percent="FILL_PERCENT"
+    />
     <CheckerboardBackground class="background" />
   </div>
 </template>
+
+<script lang="ts">
+/**
+ * `vue-konva` does not provide types for ref to Konva nodes,
+ * so we define a type to workaround this
+ *
+ * @example
+ * ```html
+ * <v-image ref="imageRef" />
+ * ```
+ * ...
+ * ```ts
+ * const imageRef = ref<KonvaNode<Konva.Image>>()
+ * imageRef.value.getNode() // returns Konva.Image instance
+ * ```
+ */
+export interface KonvaNode<T extends Konva.Node = Konva.Node> {
+  getNode(): T
+  getStage(): Konva.Stage
+}
+</script>
 
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue'
@@ -35,12 +60,12 @@ import type { ButtonType } from '@/components/ui/UIButton.vue'
 import { PhotoSizeSelectLargeFilled, SaveFilled } from '@vicons/material'
 import { fromBlob } from '@/models/common/file'
 import { ExportOutlined } from '@vicons/antd'
-
-// `vue-konva` does not provide types for ref to Konva nodes
-interface KonvaNode<T extends Konva.Node = Konva.Node> {
-  getNode(): T
-  getStage(): Konva.Stage
-}
+import ImageResize from './ImageEditor/ImageResize.vue'
+import type { StageConfig } from 'konva/lib/Stage'
+import { useConfirmDialog } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
+import { useRenderScale } from './ImageEditor/useRenderScale'
+import { useAnimatedCenterPosition } from './ImageEditor/useCenterPosition'
 
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Backdrop>
@@ -59,10 +84,18 @@ const editorContainer = ref<HTMLElement>()
 const stage = ref<Konva.Stage>()
 const layer = ref<Konva.Layer>()
 const nodeRef = ref<KonvaNode<Konva.Image>>()
-const resizeTransformerRef = ref<KonvaNode<Konva.Transformer>>()
 const node = computed(() => nodeRef.value?.getNode())
-const resizeTransformer = computed(() => resizeTransformerRef.value?.getNode())
+
 const editMode = ref<'resize' | 'preview'>('preview')
+
+const imageResize = ref<InstanceType<typeof ImageResize> | null>(null)
+const activeEditor = computed(
+  () =>
+    ({
+      preview: null,
+      resize: imageResize.value
+    })[editMode.value]
+)
 
 const mapWidth = ref(800)
 const mapHeight = ref(600)
@@ -73,6 +106,7 @@ const updateMapSize = () => {
   }
   mapWidth.value = editorContainer.value.clientWidth
   mapHeight.value = editorContainer.value.clientHeight
+
 }
 
 onMounted(() => {
@@ -80,110 +114,23 @@ onMounted(() => {
   window.addEventListener('resize', updateMapSize)
 })
 
-const stageConfig = computed(() => {
-  if (!editorContainer.value) {
-    return null
-  }
-  return {
-    width: mapWidth.value,
-    height: mapHeight.value,
-    scale: {
-      x: 1,
-      y: 1
-    }
-  }
-})
-
-const resizeTransformerConfig = computed<TransformerConfig | null>(() => {
-  if (!config.value) {
-    return null
-  }
-  return {
-    anchorStyleFunc: ((anchor: Konva.Rect) => {
-      anchor.cornerRadius(10)
-      anchor.stroke('rgba(11, 192, 207, 1)')
-      if (anchor.hasName('top-center') || anchor.hasName('bottom-center')) {
-        anchor.height(6)
-        anchor.offsetY(3)
-        anchor.width(30)
-        anchor.offsetX(15)
-      }
-      if (anchor.hasName('middle-left') || anchor.hasName('middle-right')) {
-        anchor.height(30)
-        anchor.offsetY(15)
-        anchor.width(6)
-        anchor.offsetX(3)
-      }
-    }) as TransformerConfig['anchorStyleFunc'],
-    borderStroke: 'rgba(11, 192, 207, 1)',
-    rotateEnabled: false,
-    boundBoxFunc: function (oldBoundBox, newBoundBox) {
-      const MIN_WIDTH = 10
-      const MIN_HEIGHT = 10
-      if (newBoundBox.width < MIN_WIDTH || newBoundBox.height < MIN_HEIGHT) {
-        return oldBoundBox;
-      }
-
-      return newBoundBox;
-    },
-  }
-})
-
-const showTransformer = () => {
-  if (!resizeTransformer.value) {
-    return
-  }
-  if (!nodeRef.value) {
-    return
-  }
-  if (editMode.value === 'resize') {
-    resizeTransformer.value.visible(true)
-    resizeTransformer.value.nodes([nodeRef.value.getNode()])
-    return
-  }
-  resizeTransformer.value.visible(false)
-}
-
-watch(editMode, () => {
-  showTransformer()
-})
-
 const FILL_PERCENT = 0.8
-// renderScale is used to scale the image to fit the map
-// so that the image is always visible and user can still resize the image 
-// even if it is larger than the map
-const renderScale = ref(1)
-const handleTransformEnd = () => {
-  if (!node.value) {
-    return
-  }
-  // since we are resizing the image, we need to apply the scale to the size
-  // and reset the scale to 1;
-  // the scaleX() and scaleY() contains the renderScale factor,
-  // so we need to remove it
-  const scaleX = node.value.scaleX() / renderScale.value
-  const scaleY = node.value.scaleY() / renderScale.value
-  const width = Math.max(10, Math.round(node.value.width() * scaleX))
-  const height = Math.max(10, Math.round(node.value.height() * scaleY))
-  renderScale.value = 1
-  node.value.scaleX(1)
-  node.value.scaleY(1)
-  resizedImageSize.value = {
-    width: width,
-    height: height
-  }
-  currentPos.value = { x: node.value.x(), y: node.value.y() }
-}
+
+const { renderScale, updateRenderScale } = useRenderScale({
+  width: mapWidth,
+  height: mapHeight,
+  fillPercent: FILL_PERCENT
+})
 
 const handleDragEnd = () => {
-  if (!node.value || !resizedImageSize.value) {
+  if (!node.value || !initialImageSize.value) {
     return
   }
-  currentPos.value = { x: node.value.x(), y: node.value.y() }
-  // trigger a re-render to update the target position
-  resizedImageSize.value = {
-    ...resizedImageSize.value
-  }
+  immediateUpdatePosition(node.value.x(), node.value.y())
+  updateCenterPosition(
+    initialImageSize.value.width * renderScale.value,
+    initialImageSize.value.height * renderScale.value
+  )
 }
 
 const initialImageSize = computed(() => {
@@ -195,50 +142,33 @@ const initialImageSize = computed(() => {
   return { width: width, height: height }
 })
 
-const resizedImageSize = ref(initialImageSize.value)
-
-watch(
-  initialImageSize,
-  () => {
-    resizedImageSize.value = initialImageSize.value
-  },
-  { immediate: true }
-)
-
-watch(resizedImageSize, () => {
-  const { width, height } = resizedImageSize.value ?? { width: 0, height: 0 }
-  const scale = Math.min(mapWidth.value / width, mapHeight.value / height) * FILL_PERCENT
-  if (scale < 1) {
-    renderScale.value = scale
-  }
+const {
+  currentPos: centerPos,
+  updateCenterPosition,
+  immediateUpdatePosition
+} = useAnimatedCenterPosition({
+  width: mapWidth,
+  height: mapHeight
 })
 
-const currentPos = ref({ x: 0, y: 0 })
+watch(initialImageSize, () => {
+  const { width, height } = initialImageSize.value ?? { width: 0, height: 0 }
+  updateRenderScale(width, height)
+  updateCenterPosition(width * renderScale.value, height * renderScale.value)
+})
 
-const targetPos = computed(() => {
-  const { width, height } = resizedImageSize.value ??
-    initialImageSize.value ?? { width: 0, height: 0 }
+const stageConfig = computed<StageConfig | null>(() => {
+  if (!editorContainer.value) {
+    return null
+  }
   return {
-    x: mapWidth.value / 2 - (width * renderScale.value) / 2,
-    y: mapHeight.value / 2 - (height * renderScale.value) / 2
-  }
-})
-
-const animateToTarget = () => {
-  const step = 0.1
-  currentPos.value.x += (targetPos.value.x - currentPos.value.x) * step
-  currentPos.value.y += (targetPos.value.y - currentPos.value.y) * step
-
-  if (
-    Math.abs(targetPos.value.x - currentPos.value.x) >= step ||
-    Math.abs(targetPos.value.y - currentPos.value.y) >= step
-  ) {
-    requestAnimationFrame(animateToTarget)
-  }
-}
-
-watch(targetPos, () => {
-  animateToTarget()
+    width: mapWidth.value,
+    height: mapHeight.value,
+    scale: {
+      x: 1,
+      y: 1
+    }
+  } as StageConfig
 })
 
 const config = computed<ImageConfig | null>(() => {
@@ -253,63 +183,60 @@ const config = computed<ImageConfig | null>(() => {
     offsetX: 0,
     offsetY: 0,
     visible: true,
-    x: currentPos.value.x,
-    y: currentPos.value.y,
+    x: centerPos.value.x,
+    y: centerPos.value.y,
     rotation: 0,
-    width: resizedImageSize.value?.width ?? 0,
-    height: resizedImageSize.value?.height ?? 0,
+    width: initialImageSize.value?.width ?? 0,
+    height: initialImageSize.value?.height ?? 0,
     scaleX: renderScale.value ?? 1,
     scaleY: renderScale.value ?? 1
   } satisfies ImageConfig
   return config
 })
 
-const saveChanges = () => {
-  if (!node.value) {
+const saveChanges = async () => {
+  if (!activeEditor.value) {
     return
   }
-  node.value.toImage({
-    callback: (img) => {
-      // img element to blob
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        return
-      }
-      ctx.drawImage(img, 0, 0)
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          return
-        }
-        // blob to file
-        const file = fromBlob(backdrop.value!.img.name, blob)
-        // save file
-        backdrop.value!.img = file
-        // backdrop to asset
-        const newAssetData = await backdrop2Asset(backdrop.value!)
-        // save asset
-        props.asset.files = newAssetData.files
-        props.asset.filesHash = newAssetData.filesHash
-      })
+  const img = await activeEditor.value.getImage()
+  // img element to blob
+  const canvas = document.createElement('canvas')
+  canvas.width = img.width
+  canvas.height = img.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    return
+  }
+  ctx.drawImage(img, 0, 0, img.width, img.height)
+  canvas.toBlob(async (blob) => {
+    if (!blob) {
+      return
     }
+    // blob to file
+    const file = fromBlob(backdrop.value!.img.name, blob)
+    // save file
+    backdrop.value!.img = file
+    // backdrop to asset
+    const newAssetData = await backdrop2Asset(backdrop.value!)
+    // save asset
+    props.asset.files = newAssetData.files
+    props.asset.filesHash = newAssetData.filesHash
   })
 }
 
-const exportImage = () => {
-  if (!node.value) {
+const exportImage = async () => {
+  if (!activeEditor.value) {
     return
   }
-  node.value.toImage({
-    callback: (img) => {
-      const a = document.createElement('a')
-      a.href = img.src
-      a.download = 'backdrop.png'
-      a.click()
-    }
-  })
+  const img = await activeEditor.value.getImage()
+  const a = document.createElement('a')
+  a.href = img.src
+  a.download = 'backdrop.png'
+  a.click()
 }
+
+const confirm = useConfirmDialog()
+const i18n = useI18n()
 
 const actions = computed(
   () =>
@@ -319,8 +246,27 @@ const actions = computed(
         label: { zh: '缩放', en: 'Resize' },
         icon: PhotoSizeSelectLargeFilled,
         type: (editMode.value === 'resize' ? 'primary' : 'secondary') satisfies ButtonType,
-        action: () => {
-          editMode.value = editMode.value === 'resize' ? 'preview' : 'resize'
+        action: async () => {
+          if (editMode.value === 'resize') {
+            confirm({
+              title: i18n.t({ zh: '提示', en: 'Warning' }),
+              content: i18n.t({
+                zh: '是否保存当前编辑？',
+                en: 'Do you want to save the current edit?'
+              }),
+              confirmText: i18n.t({ zh: '保存', en: 'Save' }),
+              cancelText: i18n.t({ zh: '不保存', en: "Don't Save" })
+            })
+              .then(() => {
+                saveChanges()
+              })
+              .catch(() => {})
+              .finally(() => {
+                editMode.value = 'preview'
+              })
+          } else {
+            editMode.value = 'resize'
+          }
         }
       },
       {
@@ -328,7 +274,10 @@ const actions = computed(
         label: { zh: '保存', en: 'Save' },
         icon: SaveFilled,
         type: 'secondary' satisfies ButtonType,
-        action: saveChanges
+        action: () => {
+          saveChanges()
+          editMode.value = 'preview'
+        }
       },
       {
         name: 'export',
@@ -353,7 +302,7 @@ defineExpose({
   z-index: 0;
 }
 
-.background {
+:deep(.background) {
   position: absolute;
   top: 0;
   left: 0;
@@ -362,7 +311,7 @@ defineExpose({
   z-index: -1;
 }
 
-.info-tip {
+:deep(.info-tip) {
   position: absolute;
   top: 10px;
   left: 10px;
