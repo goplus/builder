@@ -26,7 +26,8 @@ func error2List(err error) []string {
 
 	var codeError *gogen.CodeError
 	if errors.As(err, &codeError) {
-		return []string{codeError.Error()}
+		stringList = append(stringList, codeError.Error())
+		return stringList
 	}
 
 	var codeErrorList errors2.List
