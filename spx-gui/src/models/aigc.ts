@@ -1,7 +1,7 @@
 import { AIGCStatus, generateAIImage, generateAISprite, getAIGCStatus, isAiAsset, isContentReady, isPreviewReady, syncGenerateAIImage, type AIGCFiles, type CreateAIImageParams, type RequiredAIGCFiles, type TaggedAIAssetData } from "@/apis/aigc"
 import { saveFiles } from "./common/cloud"
 import { fromBlob } from "./common/file"
-import { useMessageHandle } from "@/utils/exception"
+import { useRetryHandle } from "@/utils/exception"
 
 type ActionFn = (...args: any[]) => Promise<any>
 type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise<R>
@@ -42,6 +42,8 @@ type WithStatus<T = {}> = T & { status: AIGCStatus }
  * task.addEventListener('AIGCStatusChange', () => {
  *   console.log('Status changed:', task.status);
  * });
+ * 
+ * Note: You can't use `t`(i18n) in this class.
  */
 export class AIGCTask<
   T extends WithStatus = TaggedAIAssetData,
@@ -159,8 +161,10 @@ export class SyncAIImageTask extends AIGCTask<TaggedAIAssetData> {
     super(SyncAIImageTask.request, [params])
   }
   private static async request(params: CreateAIImageParams): Promise<TaggedAIAssetData> {
-    const res = await syncGenerateAIImage(params)
-
+    const requestAIGC = useRetryHandle(
+      async () => syncGenerateAIImage(params),
+    ).fn
+    const res = await requestAIGC()
     // http files to kodo files
     const imageUrl = res.image_url
     const blob = await fetch(imageUrl).then(res => res.blob())

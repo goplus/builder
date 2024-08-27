@@ -249,3 +249,42 @@ export function useQuery<T>(
 
   return { isLoading: action.isLoading, data, error, refetch: fetch }
 }
+/**
+ * `useRetryMessageHandle` allowing retrying a failed action,not throw message when cancelled
+ */
+export function useRetryHandle<Args extends any[], T>(
+  fn: (...args: Args) => Promise<T>,
+  retries = 5, 
+  retryDelay = 1000 
+): { fn: (...args: Args) => Promise<T>, isLoading: Ref<boolean> } {
+  const isLoading = ref(false);
+
+  async function retryingMessageHandleFn(...args: Args): Promise<T> {
+    isLoading.value = true;
+    let attempts = 0;
+
+    while (attempts < retries) {
+      try {
+        const result = await fn(...args);
+        isLoading.value = false;
+        return result;
+      } catch (e) {
+        attempts++;
+        if (attempts >= retries || e instanceof Cancelled) {
+          isLoading.value = false;
+          throw e;
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+
+    throw new Error('Exceeded maximum retry attempts');
+  }
+
+  return {
+    fn: retryingMessageHandleFn,
+    isLoading,
+  };
+}
+
+
