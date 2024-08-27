@@ -1,4 +1,4 @@
-import type { Token } from '@/components/editor/code-editor/compiler'
+import type { Token, TokenId } from '@/components/editor/code-editor/compiler'
 import type { I18n } from '@/utils/i18n'
 import { Project } from '@/models/project'
 import { getAllTools } from '@/components/editor/code-editor/tools'
@@ -19,15 +19,20 @@ export class DocAbility {
     this.project = getProject()
   }
 
-  public getNormalDoc(token: Token): Doc[] | null {
-    const document = getDocumentByKeywords(token.name, this.i18n, this.project)
+  public getNormalDoc(tokenId: TokenId): Doc[] | null {
+    const document = getDocumentByKeywords(tokenId.name, this.i18n, this.project)
     if (document == null) {
       return []
     } else {
-      return [{
-        content: document,
-        token
-      }]
+      return [
+        {
+          content: document,
+          token: {
+            id: tokenId,
+            usages: []
+          }
+        }
+      ]
     }
   }
   public getDetailDoc(token: Token): Doc | null {

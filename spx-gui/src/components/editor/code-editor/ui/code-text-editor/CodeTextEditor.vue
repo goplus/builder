@@ -16,7 +16,7 @@ let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
-import { getCurrentInstance, ref, shallowRef, watch, watchEffect } from 'vue'
+import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
@@ -45,7 +45,6 @@ const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
-const appInstance = getCurrentInstance()
 
 const loaderConfig = {
   paths: {
@@ -142,9 +141,7 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  if (!appInstance?.appContext) throw new Error("Can't get appContext")
-
-  const _hoverPreview = new HoverPreview(editor, appInstance?.appContext)
+  const _hoverPreview = new HoverPreview(editor)
   hoverPreview.value = _hoverPreview
   props.ui.setHoverPreview(_hoverPreview)
 

@@ -7,14 +7,10 @@ defineProps<{
   recommendAction?: RecommendAction
   moreActions?: Action[]
 }>()
-
-defineEmits<{
-  close: []
-}>()
 </script>
 
 <template>
-  <section class="document-preview" @mouseleave="$emit('close')">
+  <section class="document-preview">
     <MarkdownPreview class="markdown" :content></MarkdownPreview>
     <footer class="actions-footer">
       <nav class="recommend">
@@ -53,19 +49,7 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
   border: 1px solid #a6a6a6;
   color: black;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transform-origin: left top;
   transition: 0.15s;
-
-  &.v-enter-active,
-  &.v-leave-active {
-    transition: 0.15s cubic-bezier(0, 1.25, 1, 1);
-  }
-
-  &.v-enter-from,
-  &.v-leave-to {
-    opacity: 0;
-    transform: scale(0.8) translateY(20px);
-  }
 }
 
 .actions-footer {

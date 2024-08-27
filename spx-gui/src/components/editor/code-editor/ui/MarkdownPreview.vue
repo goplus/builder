@@ -69,7 +69,6 @@ window.addEventListener('click', (e) => {
     timeoutIdMap.set(el, timeoutId as unknown as number)
   })
 })
-
 </script>
 <script setup lang="ts">
 import { renderMarkdown } from './common/languages'

@@ -1,9 +1,15 @@
+import type { LocaleMessage } from '@/utils/i18n'
+
 enum CodeEnum {
   Sprite,
   Backdrop
 }
 
-enum TokenUsage {}
+type TokenUsage = {
+  // when don't hava markdown, here show declaration signature
+  desc: LocaleMessage
+  insertText: string
+}
 
 enum CompletionItemEnum {}
 
@@ -30,12 +36,16 @@ type CompletionItem = {
   insertText: string
 }
 
-export type Token = {
+export type TokenId = {
   // "github.com/goplus/spx"
   module: string
   // "Sprite.touching"
   name: string
-  usages?: TokenUsage[]
+}
+
+export type Token = {
+  id: TokenId
+  usages: TokenUsage[]
 }
 
 type Code = {
