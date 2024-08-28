@@ -2,11 +2,11 @@
 import MarkdownPreview from '../../MarkdownPreview.vue';
 import ChatAvator from './ChatAvator.vue';
 import ChatSuggestItem from './ChatSuggestItem.vue';
-import type { ChatAction, ChatMessage } from './chat-bot';
+import type { ChatMessage, ContinueAction } from '../../../chat-bot';
 
 defineProps<{message: ChatMessage}>()
 
-const nextMessage = (q: ChatAction) => {
+const nextMessage = (q: ContinueAction) => {
     q.click(q.action)
 }
 

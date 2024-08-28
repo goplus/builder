@@ -27,7 +27,12 @@
     </div>
     <UILoading :visible="loading" cover />
   </div>
-  <ChatBotModal :visible="ui.chatBotModal.state.visible" @cancelled="ui.chatBotModal.setVisible(false)" ></ChatBotModal>
+  <ChatBotModal
+    v-if="ui.chatBotModal.state.chat"
+    :visible="ui.chatBotModal.state.visible"
+    :chat="ui.chatBotModal.state.chat"
+    @cancelled="ui.chatBotModal.setVisible(false)"
+  ></ChatBotModal>
 </template>
 
 <script setup lang="ts">
@@ -45,7 +50,7 @@ import iconZoomReset from './icons/zoom-reset.svg?raw'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 import EditorSidebar from './EditorSidebar.vue'
-import ChatBotModal from './features/chat-bot/ChatBotModal.vue'
+import ChatBotModal from './features/chat-bot/ChatBotModalComponent.vue'
 
 withDefaults(
   defineProps<{

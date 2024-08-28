@@ -18,7 +18,7 @@ import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
-import { ChatBotModal } from './ui/features/chat-bot/chat-bot'
+import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -470,8 +470,8 @@ export class EditorUI extends Disposable {
   public registerInputAssistantProvider(provider: InputAssistantProvider) {
     // todo: to resolve fn `registerInputAssistantProvider`
   }
-  public invokeAIChatModal(options: AIChatModalOptions) {
-    // todo: to resolve fn `invokeAIChatModal`
+  public invokeAIChatModal() {
+    this.chatBotModal.setVisible(true)
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
     // todo: to resolve fn `invokeDocumentDetail`

@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import UIFormModal from '@/components/ui/modal/UIFormModal.vue'
 import ChatBubble from './ChatBubble.vue'
-import type { Chat, ChatMessage } from './chat-bot'
+import { Chat } from '../../../chat-bot'
 
 const emit = defineEmits<{
   cancelled: []
 }>()
-
-const messages: ChatMessage[] = []
-
-const pushMessage = (message: ChatMessage) => {
-  messages.push(message)
-}
 
 defineProps<{
   visible: boolean
@@ -29,7 +23,7 @@ defineProps<{
   >
     <div class="container">
       <ChatBubble
-        v-for="message in messages"
+        v-for="message in chat.messages"
         :key="message.content"
         :message="message"
       ></ChatBubble>

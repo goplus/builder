@@ -7,7 +7,7 @@ import {
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler, TokenEnum } from '../compiler'
-import { ChatBot } from '../ui/features/chat-bot/chat-bot'
+import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type Position } from 'monaco-editor'
@@ -24,6 +24,7 @@ type JumpPosition = {
 export class Coordinator {
   project: Project
   ui: EditorUI
+  chatBot: ChatBot
   docAbility: DocAbility
 
   constructor(
@@ -37,6 +38,7 @@ export class Coordinator {
     this.project = project
     this.ui = ui
     this.docAbility = docAbility
+    this.chatBot = chatBot
 
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
