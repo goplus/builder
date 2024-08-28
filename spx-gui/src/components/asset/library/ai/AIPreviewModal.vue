@@ -145,7 +145,7 @@ export interface EditorAction {
 import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
 import { addAsset, AssetType, getAsset, IsPublic, type AddAssetParams, type AssetData } from '@/apis/asset'
-import UIButton from '@/components/ui/UIButton.vue'
+import UIButton, { type ButtonType } from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
 import {
