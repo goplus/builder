@@ -36,7 +36,7 @@
             }}
           </span>
         </UIButton>
-        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleToggleFav">
+        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleRename">
           <span style="white-space: nowrap">
             {{
               isFavorite
@@ -172,6 +172,7 @@ import { hashFileCollection } from '@/models/common/hash'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
+import { useRenameAsset } from '../..'
 
 // Define component props
 const props = defineProps<{
@@ -273,30 +274,6 @@ const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
 
 const isFavorite = ref(false)
 const exportPending = ref(false)
-/**
- * Get the public asset data from the asset data
- * If the asset data is not exported, export it first
- */
-const exportAssetDataToPublic = async () => {
-  if (!props.asset[isContentReady]) {
-    throw new Error('Could not export an incomplete asset')
-  }
-  // let addAssetParam = props.asset
-  let addAssetParam:AddAssetParams = {
-    ...props.asset,
-    isPublic: IsPublic.public,
-    files: props.asset.files!,
-    displayName: props.asset.displayName ?? props.asset.id,
-    filesHash: props.asset.filesHash!,
-    preview: "TODO",
-    category: '*',
-  }
-  exportPending.value = true
-  const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
-  const publicAsset = await getAsset(assetId)
-  exportPending.value = false
-  return publicAsset
-}
 
 const publicAsset = ref<AssetData | null>(null)
 
@@ -304,24 +281,18 @@ const handleAddButton = async () => {
   if (props.addToProjectPending) {
     return
   }
-  if (!publicAsset.value) {
-    const exportedAsset = await exportAssetDataToPublic()
-    publicAsset.value = exportedAsset
-  }
-  emit('addToProject', publicAsset.value)
+  // if (!publicAsset.value) {
+  //   const exportedAsset = await exportAssetDataToPublic()
+  //   publicAsset.value = exportedAsset
+  // }
+  // emit('addToProject', publicAsset.value)
 }
 
-const handleToggleFav = async () => {
-  if (!publicAsset.value) {
-    const exportedAsset = await exportAssetDataToPublic()
-    publicAsset.value = exportedAsset
-  }
-  isFavorite.value = !isFavorite.value
-  if (isFavorite.value) {
-    removeAssetFromFavorites(props.asset.id)
-  } else {
-    addAssetToFavorites(props.asset.id)
-  }
+
+
+const renameAsset = useRenameAsset()
+const handleRename = async () => {
+  await renameAsset(props.asset, isFavorite.value)
 }
 
 const displayTime = computed(() => {

@@ -33,10 +33,15 @@ import {
   useForm} from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { categoryAll } from './category'
+import { exportedId, isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
+import { addAsset, getAsset, IsPublic, type AddAssetParams, type AssetData } from '@/apis/asset'
+import { ref } from 'vue'
+import { removeAssetFromFavorites, addAssetToFavorites } from '@/apis/user'
 
 const props = defineProps<{
   visible: boolean
-  displayName: string
+  asset: TaggedAIAssetData
+  isFavorite: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,11 +51,11 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const publicAsset = ref<AssetData | null>(null)
 
 const form = useForm({
-  name: [props.displayName, validateName],
+  name: [props.asset.displayName!, validateName],
   category: [categoryAll.value],
-  isPublic: [false]
 })
 
 
@@ -59,13 +64,47 @@ const nameTip = {
   zh: '起一个准确的名字，可以帮助你下次更快地找到它'
 }
 
-const handleSubmit = ()=>{
-  if(form.value.name !== props.displayName){
-    emit('changed', form.value.name)
+const handleSubmit = async()=>{
+  if(form.value.name !== props.asset.displayName){
+    const handleToggleFav = async () => {
+  if (!publicAsset.value) {
+    const exportedAsset = await exportAssetDataToPublic()
+    publicAsset.value = exportedAsset
+  }
+  if (props.isFavorite) {
+    removeAssetFromFavorites(props.asset.id)
+  } else {
+    addAssetToFavorites(props.asset.id)
+  }
+}
+await handleToggleFav()
     emit('resolved')
   }else{
     emit('cancelled')
   }
+}
+
+/**
+ * Get the public asset data from the asset data
+ * If the asset data is not exported, export it first
+ */
+ const exportAssetDataToPublic = async () => {
+  if (!props.asset[isContentReady]) {
+    throw new Error('Could not export an incomplete asset')
+  }
+  // let addAssetParam = props.asset
+  let addAssetParam:AddAssetParams = {
+    ...props.asset,
+    isPublic: IsPublic.public,
+    files: props.asset.files!,
+    displayName: props.asset.displayName ?? props.asset.id,
+    filesHash: props.asset.filesHash!,
+    preview: "TODO",
+    category: '*',
+  }
+  const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
+  const publicAsset = await getAsset(assetId)
+  return publicAsset
 }
 
 function validateName(name: string) {
