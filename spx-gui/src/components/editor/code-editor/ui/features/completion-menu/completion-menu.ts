@@ -13,9 +13,9 @@ import {
 import { reactive, type UnwrapNestedRefs } from 'vue'
 import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { createMatches, type IMatch } from '../../common'
-import EditorOption = editor.EditorOption
 import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
-import { Icon } from '@/components/editor/code-editor/EditorUI'
+import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
+import EditorOption = editor.EditorOption
 
 export interface CompletionMenuState {
   visible: boolean
@@ -245,6 +245,7 @@ export class CompletionMenu implements IDisposable {
         icon: completionItemKind2Icon(completion.completion.kind),
         label: completion.completion.label as string,
         preview: {
+          level: DocPreviewLevel.Normal,
           content: ''
         },
         insertText: completion.completion.insertText,

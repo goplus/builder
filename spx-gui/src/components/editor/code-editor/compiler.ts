@@ -1,14 +1,15 @@
+import type { LocaleMessage } from '@/utils/i18n'
+
 enum CodeEnum {
   Sprite,
   Backdrop
 }
 
-export enum TokenEnum {
-  // todo: remove me after compiler has done! this is temp using to make ts compile pass.
-  ANY
+type TokenUsage = {
+  // declaration signature
+  desc: string
+  insertText: string
 }
-
-enum TokenUsage {}
 
 enum CompletionItemEnum {}
 
@@ -35,13 +36,16 @@ type CompletionItem = {
   insertText: string
 }
 
-export type Token = {
+export type TokenId = {
   // "github.com/goplus/spx"
   module: string
   // "Sprite.touching"
   name: string
-  type: TokenEnum
-  usages: TokenUsage[]
+}
+
+export type Token = {
+  id: TokenId
+  usages: TokenUsage
 }
 
 type Code = {
