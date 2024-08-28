@@ -4,6 +4,9 @@ import {
   type EditorUI,
   Icon,
   type LayerContent,
+  type Markdown,
+  type Reply,
+  type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
@@ -11,7 +14,7 @@ import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
-import { type Position } from 'monaco-editor'
+import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
 import { keywords, typeKeywords } from '@/utils/spx'
 import { getAllTools, ToolType } from '@/components/editor/code-editor/tools'
@@ -47,6 +50,10 @@ export class Coordinator {
 
     ui.registerHoverProvider({
       provideHover: this.implementsPreDefinedHoverProvider.bind(this)
+    })
+
+    ui.registerSelectionMenuProvider({
+      provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
     })
   }
 
@@ -101,6 +108,38 @@ export class Coordinator {
         }
       ]
     }))
+  }
+
+  async implementsSelectionMenuProvider(
+    model: TextModel,
+    ctx: {
+      selection: IRange
+      selectContent: string
+    }
+  ): Promise<SelectionMenuItem[]> {
+    return [
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '对这段代码有疑惑', en: 'Suspect this code' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      },
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '这段代码无法正常运行', en: 'This code cannot run properly' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      },
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '给这段代码添加注释', en: 'Add explanation to this code' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      }
+    ]
   }
 
   public jump(position: JumpPosition): void {}
