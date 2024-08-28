@@ -48,6 +48,25 @@ func main() {
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
+	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
+package spx
+
+import (
+	. "github.com/goplus/spx"
+)
+
+func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
+	widget := GetWidget_(sg, name)
+	if result, ok := widget.(interface{}).(*T); ok {
+		return result
+	} else {
+		panic("GetWidget: type mismatch")
+	}
+}
+`)
+	if err != nil {
+		log.Fatalln("Failed to register package patch:", err)
+	}
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
@@ -57,7 +76,6 @@ func main() {
 	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
 	type Gamer interface {
 		initGame(sprites []spx.Spriter) *spx.Game
-		getGame() *spx.Game
 	}
 	gameRun := func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
 		path := resource.(string)

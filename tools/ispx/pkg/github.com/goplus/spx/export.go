@@ -64,10 +64,11 @@ func init() {
 			"unsafe":                                     "unsafe",
 		},
 		Interfaces: map[string]reflect.Type{
-			"Gamer":   reflect.TypeOf((*q.Gamer)(nil)).Elem(),
-			"Shape":   reflect.TypeOf((*q.Shape)(nil)).Elem(),
-			"Spriter": reflect.TypeOf((*q.Spriter)(nil)).Elem(),
-			"Widget":  reflect.TypeOf((*q.Widget)(nil)).Elem(),
+			"Gamer":       reflect.TypeOf((*q.Gamer)(nil)).Elem(),
+			"Shape":       reflect.TypeOf((*q.Shape)(nil)).Elem(),
+			"ShapeGetter": reflect.TypeOf((*q.ShapeGetter)(nil)).Elem(),
+			"Spriter":     reflect.TypeOf((*q.Spriter)(nil)).Elem(),
+			"Widget":      reflect.TypeOf((*q.Widget)(nil)).Elem(),
 		},
 		NamedTypes: map[string]reflect.Type{
 			"Camera":        reflect.TypeOf((*q.Camera)(nil)).Elem(),
@@ -95,6 +96,7 @@ func init() {
 		Funcs: map[string]reflect.Value{
 			"Exit__0":              reflect.ValueOf(q.Exit__0),
 			"Exit__1":              reflect.ValueOf(q.Exit__1),
+			"GetWidget_":           reflect.ValueOf(q.GetWidget_),
 			"Gopt_Game_Main":       reflect.ValueOf(q.Gopt_Game_Main),
 			"Gopt_Game_Reload":     reflect.ValueOf(q.Gopt_Game_Reload),
 			"Gopt_Game_Run":        reflect.ValueOf(q.Gopt_Game_Run),
