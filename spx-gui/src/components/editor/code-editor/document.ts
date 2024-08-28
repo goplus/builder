@@ -32,7 +32,7 @@ export class DocAbility {
             id: tokenId,
             usages: {
               insertText: '',
-              desc: { zh: '', en: '' }
+              desc: ''
             }
           }
         })
