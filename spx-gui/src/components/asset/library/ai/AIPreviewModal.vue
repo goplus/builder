@@ -3,7 +3,18 @@
     <div class="head head-actions">
       <Transition name="slide-fade" mode="out-in" appear>
         <div v-if="contentReady" class="head-left">
-          <!-- Maybe we could put actions of inner editors here? -->
+          <UIButton
+            v-for="action in currentActions"
+            :key="action.name"
+            size="large"
+            :type="action.type"
+            @click="action.action"
+          >
+            <NIcon v-if="action.icon">
+              <component :is="action.icon" />
+            </NIcon>
+            {{ $t(action.label) }}
+          </UIButton>
         </div>
         <div v-else class="head-left">
           {{ $t({ zh: '正在进一步生成素材...', en: 'Further generating assets...' }) }}
@@ -76,15 +87,21 @@
           <template v-else>
             <AISpriteEditor
               v-if="asset.assetType === AssetType.Sprite"
+              ref="spriteEditor"
               :asset="asset as TaggedAIAssetData<AssetType.Sprite>"
               class="asset-editor sprite-editor"
             />
             <AIBackdropEditor
               v-else-if="asset.assetType === AssetType.Backdrop"
+              ref="backdropEditor"
               :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
               class="asset-editor backdrop-editor"
             />
-            <AISoundEditor v-else-if="asset.assetType === AssetType.Sound" :asset="asset" />
+            <AISoundEditor
+              v-else-if="asset.assetType === AssetType.Sound"
+              ref="soundEditor"
+              :asset="asset"
+            />
           </template>
         </Transition>
       </main>
@@ -115,12 +132,20 @@
     </div>
   </div>
 </template>
-
+<script lang="ts">
+export interface EditorAction {
+  name: string
+  label: LocaleMessage
+  type: ButtonType
+  icon?: any
+  action: () => void
+}
+</script>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
 import { AssetType, getAsset, type AssetData } from '@/apis/asset'
-import UIButton from '@/components/ui/UIButton.vue'
+import UIButton, { type ButtonType } from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
 import {
@@ -143,6 +168,7 @@ import AISoundEditor from './AISoundEditor.vue'
 import { convertAIAssetToBackdrop } from '@/models/common/asset'
 import { hashFileCollection } from '@/models/common/hash'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
+import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
 
 // Define component props
@@ -156,6 +182,23 @@ const emit = defineEmits<{
   addToProject: [asset: AssetData]
   selectAi: [asset: TaggedAIAssetData]
 }>()
+
+const spriteEditor = ref<InstanceType<typeof AISpriteEditor> | null>(null)
+const backdropEditor = ref<InstanceType<typeof AIBackdropEditor> | null>(null)
+const soundEditor = ref<InstanceType<typeof AISoundEditor> | null>(null)
+
+const currentActions = computed<EditorAction[]>(() => {
+  if (props.asset.assetType === AssetType.Sprite && spriteEditor.value && 'actions' in spriteEditor.value) {
+    return spriteEditor?.value?.actions as EditorAction[]
+  }
+  if (props.asset.assetType === AssetType.Backdrop && backdropEditor.value && 'actions' in backdropEditor.value) {
+    return backdropEditor?.value?.actions as EditorAction[]
+  }
+  if (props.asset.assetType === AssetType.Sound && soundEditor.value && 'actions' in soundEditor.value) {
+    return soundEditor?.value?.actions as EditorAction[]
+  }
+  return []
+})
 
 const contentReady = ref(props.asset[isContentReady])
 const contentJobId = ref<string | null>(null)
@@ -293,6 +336,9 @@ const displayTime = computed(() => {
 
 .head-left {
   flex: 1;
+  display: flex;
+  gap: 10px;
+  flex-direction: row;
 }
 
 .head-right {
