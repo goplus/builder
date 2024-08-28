@@ -90,12 +90,12 @@ export function useAnimatedCenterPosition(props: {
     y: 0
   })
   let init = true
-  const updateCenterPosition = (width: number, height: number) => {
+  const updateCenterPosition = (width: number, height: number, anim = true) => {
     const containerWidth = typeof props.width === 'number' ? props.width : props.width.value
     const containerHeight = typeof props.height === 'number' ? props.height : props.height.value
     const targetX = (containerWidth - width) / 2
     const targetY = (containerHeight - height) / 2
-    if (init) {
+	if (init || !anim) {
       // avoid animation on first render. And thus the object will be centered immediately on show up.
       init = false
       immediateUpdatePosition(targetX, targetY)

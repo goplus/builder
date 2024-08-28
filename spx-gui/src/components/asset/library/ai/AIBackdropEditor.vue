@@ -27,6 +27,7 @@
       :height="mapHeight"
       :fill-percent="FILL_PERCENT"
     />
+    <UILoading v-if="savingChanges" :mask="true" :cover="true"/>
     <CheckerboardBackground class="background" />
   </div>
 </template>
@@ -53,7 +54,7 @@ export interface KonvaNode<T extends Konva.Node = Konva.Node> {
 </script>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
 import { backdrop2Asset, cachedConvertAssetData } from '@/models/common/asset'
@@ -79,7 +80,7 @@ import { File, fromBlob } from '@/models/common/file'
 import { ExportOutlined } from '@vicons/antd'
 import ImageResize from './ImageEditor/ImageResize.vue'
 import type { StageConfig } from 'konva/lib/Stage'
-import { useConfirmDialog } from '@/components/ui'
+import { UILoading, useConfirmDialog } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useRenderScale } from './ImageEditor/useRenderScale'
 import { useAnimatedCenterPosition } from './ImageEditor/useCenterPosition'
@@ -95,6 +96,8 @@ const backdrop = useAsyncComputed<Backdrop | undefined>(() => {
   }
   return cachedConvertAssetData(props.asset as Required<TaggedAIAssetData<AssetType.Backdrop>>)
 })
+
+let originalFile: File | null = null
 
 const [image, loading] = useFileImg(() => backdrop.value?.img)
 
@@ -131,6 +134,13 @@ const updateMapSize = () => {
 onMounted(() => {
   updateMapSize()
   window.addEventListener('resize', updateMapSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateMapSize)
+  if (originalFile) {
+    backdrop.value!.img = originalFile
+  }
 })
 
 const FILL_PERCENT = 0.8
@@ -173,7 +183,7 @@ const {
 watch(initialImageSize, () => {
   const { width, height } = initialImageSize.value ?? { width: 0, height: 0 }
   updateRenderScale(width, height)
-  updateCenterPosition(width * renderScale.value, height * renderScale.value)
+  updateCenterPosition(width * renderScale.value, height * renderScale.value, false)
 })
 
 const stageConfig = computed<StageConfig | null>(() => {
@@ -244,13 +254,13 @@ const recordFile = (file: File) => {
   redoStack.value.length = 0
   redoStackLength.value = 0
 }
-
+const savingChanges = ref(false)
 const saveChanges = async () => {
   if (!activeEditor.value) {
     return
   }
+  savingChanges.value = true
   const img = await activeEditor.value.getImage()
-  document.body.appendChild(img)
   // img element to blob
   const canvas = document.createElement('canvas')
   canvas.width = img.width
@@ -266,8 +276,12 @@ const saveChanges = async () => {
     }
     // blob to file
     const file = fromBlob(backdrop.value!.img.name, blob)
+    if (!originalFile) {
+      originalFile = backdrop.value!.img
+    }
     recordFile(backdrop.value!.img)
     backdrop.value!.img = file
+    savingChanges.value = false
   })
 }
 
@@ -277,6 +291,7 @@ const saveToAsset = async () => {
   // save asset
   props.asset.files = newAssetData.files
   props.asset.filesHash = newAssetData.filesHash
+  originalFile = null
 }
 
 const exportImage = async () => {
@@ -370,6 +385,7 @@ const actions = computed(() =>
         label: { zh: '保存', en: 'Save' },
         icon: SaveFilled,
         type: 'secondary' satisfies ButtonType,
+        disabled: !originalFile || originalFile === backdrop.value?.img,
         action: saveToAsset
       },
       editMode.value === 'preview' && {
