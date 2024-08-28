@@ -9,6 +9,11 @@
       v-if="hoverPreview"
       :hover-preview="hoverPreview"
     ></HoverPreviewComponent>
+    <SelectionMenuComponent
+      v-if="selectionMenu"
+      :ui="ui"
+      :selection-menu="selectionMenu"
+    ></SelectionMenuComponent>
   </div>
 </template>
 <script lang="ts">
@@ -29,6 +34,8 @@ import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
 import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
+import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
 
 const props = defineProps<{
   value: string
@@ -43,6 +50,7 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
+const selectionMenu = shallowRef<SelectionMenu>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
 
@@ -144,6 +152,8 @@ watchEffect(async (onCleanup) => {
   const _hoverPreview = new HoverPreview(editor)
   hoverPreview.value = _hoverPreview
   props.ui.setHoverPreview(_hoverPreview)
+
+  selectionMenu.value = new SelectionMenu(editor)
 
   monacoEditor.value = editor
   onCleanup(() => {
