@@ -48,7 +48,7 @@ func main() {
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
-	gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
+	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
 package spx
 
 import (
@@ -64,6 +64,9 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 	}
 }
 `)
+	if err != nil {
+		log.Fatalln("Failed to register package patch:", err)
+	}
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
