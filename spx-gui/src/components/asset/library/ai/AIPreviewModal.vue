@@ -3,14 +3,8 @@
     <div class="head head-actions">
       <Transition name="slide-fade" mode="out-in" appear>
         <div v-if="contentReady" class="head-left">
-          <UIButton
-            v-for="action in currentActions"
-            :key="action.name"
-            size="large"
-            :type="action.type"
-            :disabled="action.disabled"
-            @click="action.action"
-          >
+          <UIButton v-for="action in currentActions" :key="action.name" size="large" :type="action.type"
+            :disabled="action.disabled" @click="action.action">
             <NIcon v-if="action.icon">
               <component :is="action.icon" />
             </NIcon>
@@ -22,12 +16,8 @@
         </div>
       </Transition>
       <div class="head-right">
-        <UIButton
-          size="large"
-          class="insert-button"
-          :disabled="!contentReady || addToProjectPending || exportPending"
-          @click="handleAddButton"
-        >
+        <UIButton size="large" class="insert-button" :disabled="!contentReady || addToProjectPending || exportPending"
+          @click="handleAddButton">
           <span style="white-space: nowrap">
             {{
               addToProjectPending || exportPending
@@ -61,10 +51,7 @@
                     <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                       {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                     </span>
-                    <span
-                      v-else-if="status === AIGCStatus.Finished && !contentReady"
-                      class="generating-text"
-                    >
+                    <span v-else-if="status === AIGCStatus.Finished && !contentReady" class="generating-text">
                       {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
                     </span>
                   </Transition>
@@ -86,47 +73,25 @@
             </div>
           </template>
           <template v-else>
-            <AISpriteEditor
-              v-if="asset.assetType === AssetType.Sprite"
-              ref="spriteEditor"
-              :asset="asset as TaggedAIAssetData<AssetType.Sprite>"
-              class="asset-editor sprite-editor"
-            />
-            <AIBackdropEditor
-              v-else-if="asset.assetType === AssetType.Backdrop"
-              ref="backdropEditor"
-              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
-              class="asset-editor backdrop-editor"
-            />
-            <AISoundEditor
-              v-else-if="asset.assetType === AssetType.Sound"
-              ref="soundEditor"
-              :asset="asset"
-            />
+            <AISpriteEditor v-if="asset.assetType === AssetType.Sprite" ref="spriteEditor"
+              :asset="asset as TaggedAIAssetData<AssetType.Sprite>" class="asset-editor sprite-editor" />
+            <AIBackdropEditor v-else-if="asset.assetType === AssetType.Backdrop" ref="backdropEditor"
+              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>" class="asset-editor backdrop-editor" />
+            <AISoundEditor v-else-if="asset.assetType === AssetType.Sound" ref="soundEditor" :asset="asset" />
           </template>
         </Transition>
       </main>
       <aside>
-        <NScrollbar
-          :content-style="{
-            paddingRight: '15px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px'
-          }"
-        >
-          <div
-            v-for="aiAsset in aiAssets"
-            :key="aiAsset.taskId"
-            class="ai-asset-wrapper"
-            :class="{ selected: aiAsset.result?.id === asset.id }"
-          >
-            <AIAssetItem
-              :task="aiAsset"
-              :show-ai-asset-tip="false"
-              @ready="(aiAsset as any)[isPreviewReady] = true"
-              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)"
-            />
+        <NScrollbar :content-style="{
+          paddingRight: '15px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }">
+          <div v-for="aiAsset in aiAssets" :key="aiAsset.taskId" class="ai-asset-wrapper"
+            :class="{ selected: aiAsset.result?.id === asset.id }">
+            <AIAssetItem :task="aiAsset" :show-ai-asset-tip="false" @ready="(aiAsset as any)[isPreviewReady] = true"
+              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)" />
           </div>
         </NScrollbar>
       </aside>
@@ -282,7 +247,7 @@ const exportAssetDataToPublic = async () => {
     throw new Error('Could not export an incomplete asset')
   }
   // let addAssetParam = props.asset
-  let addAssetParam:AddAssetParams = {
+  let addAssetParam: AddAssetParams = {
     ...props.asset,
     isPublic: IsPublic.public,
     files: props.asset.files!,
@@ -311,16 +276,24 @@ const handleAddButton = async () => {
   emit('addToProject', publicAsset.value)
 }
 
-const handleToggleFav = async () => {
-  if (!publicAsset.value) {
-    const exportedAsset = await exportAssetDataToPublic()
-    publicAsset.value = exportedAsset
-  }
-  isFavorite.value = !isFavorite.value
-  if (isFavorite.value) {
-    removeAssetFromFavorites(props.asset.id)
-  } else {
-    addAssetToFavorites(props.asset.id)
+
+
+const renameAsset = useRenameAsset()
+const handleRename = useMessageHandle(
+  // TODO: handle unFav
+  async () => {
+    isFavorite.value = !isFavorite.value
+    exportPending.value = true
+    await renameAsset(props.asset, isFavorite.value)
+    exportPending.value = false
+  },
+  {
+    en: 'Failed to rename asset',
+    zh: '收藏失败'
+  },
+  {
+    en: 'Successfully renamed asset',
+    zh: '收藏成功'
   }
 }
 
