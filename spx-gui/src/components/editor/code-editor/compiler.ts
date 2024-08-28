@@ -7,7 +7,7 @@ enum CodeEnum {
 
 type TokenUsage = {
   // declaration signature
-  desc: LocaleMessage
+  desc: string
   insertText: string
 }
 
