@@ -211,6 +211,10 @@ export type AIChatModalOptions = {
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
   hover: HoverProvider[]
+  selectionMenu: SelectionMenuProvider[]
+  inlayHints: InlayHintsProvider[]
+  inputAssistant: InputAssistantProvider[]
+  attentionHints: AttentionHintsProvider[]
   invokeDocument: Array<(content: string) => void>
 }
 
@@ -263,6 +267,10 @@ export class EditorUI extends Disposable {
     this.editorUIRequestCallback = {
       completion: [],
       hover: [],
+      selectionMenu: [],
+      inlayHints: [],
+      inputAssistant: [],
+      attentionHints: [],
       invokeDocument: [invokeDocument]
     }
 
@@ -456,23 +464,38 @@ export class EditorUI extends Disposable {
     return promiseResults.flat().filter(Boolean)
   }
 
+  public async requestSelectionMenuProviderResolve(
+    model: TextModel,
+    ctx: {
+      selection: IRange
+      selectContent: string
+    }
+  ) {
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.selectionMenu.map((item) =>
+        item.provideSelectionMenuItems(model, ctx)
+      )
+    )
+    return promiseResults.flat().filter(Boolean)
+  }
+
   public registerCompletionProvider(provider: CompletionProvider) {
     this.editorUIRequestCallback.completion.push(provider)
   }
   public registerInlayHintsProvider(provider: InlayHintsProvider) {
-    // todo: to resolve fn `registerInlayHintsProvider`
+    this.editorUIRequestCallback.inlayHints.push(provider)
   }
   public registerSelectionMenuProvider(provider: SelectionMenuProvider) {
-    // todo: to resolve fn `registerSelectionMenuProvider`
+    this.editorUIRequestCallback.selectionMenu.push(provider)
   }
   public registerHoverProvider(provider: HoverProvider) {
     this.editorUIRequestCallback.hover.push(provider)
   }
   public registerAttentionHintsProvider(provider: AttentionHintsProvider) {
-    // todo: to resolve fn `registerAttentionHintsProvider`
+    this.editorUIRequestCallback.attentionHints.push(provider)
   }
   public registerInputAssistantProvider(provider: InputAssistantProvider) {
-    // todo: to resolve fn `registerInputAssistantProvider`
+    this.editorUIRequestCallback.inputAssistant.push(provider)
   }
   public invokeAIChatModal(options: AIChatModalOptions) {
     // todo: to resolve fn `invokeAIChatModal`
