@@ -14,6 +14,7 @@ import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import AssetRenameModal from './library/AssetRenameModal.vue'
+import type { TaggedAIAssetData } from '@/apis/aigc'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
@@ -42,8 +43,8 @@ export function useAddAssetToLibrary() {
 
 export function useRenameAsset(){
   const invokeRenameAssetModal = useModal(AssetRenameModal)
-  return function renameAsset(displayName: string){
-    return invokeRenameAssetModal({displayName})
+  return function renameAsset(asset: TaggedAIAssetData,isFavorite: boolean){
+    return invokeRenameAssetModal({asset,isFavorite})
   }
 }
 

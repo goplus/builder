@@ -52,6 +52,7 @@
       </span>
     </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
@@ -66,6 +67,8 @@ import type { File } from '@/models/common/file'
 import { CancelOutlined } from '@vicons/material'
 import { AssetType } from '@/apis/asset'
 import type { AIGCTask } from '@/models/aigc'
+import AssetRenameModal from './AssetRenameModal.vue'
+import { useRenameAsset } from '..'
 
 const props = withDefaults(
   defineProps<{
@@ -91,7 +94,7 @@ const readyForView = computed(
 
 type RequiredAIGCFiles = Required<AIGCFiles> & { [key: string]: string }
 
-onMounted(() => {
+  onMounted(() => {
   props.task.addEventListener('AIGCFinished', () => {
     loadCloudFiles(props.task.result?.files)
   })
