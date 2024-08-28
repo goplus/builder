@@ -14,6 +14,9 @@ export interface EditorMenuItem {
 defineProps<{
   listStyles?: CSSProperties
   items: Array<T>
+  // If true, it means that the highlight style will only be displayed
+  //                  when hovering over or when `EditorMenuItem.active = true`.
+  // If false, it means that the highlight style will always be displayed.
   onlyFocusActive?: boolean
 }>()
 
