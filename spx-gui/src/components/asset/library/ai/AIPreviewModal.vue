@@ -231,7 +231,6 @@ const exportPending = ref(false)
 /**
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
- * TODO: change exportAIGCAsset to AddAsset. isPublic?id?
  */
 const exportAssetDataToPublic = async () => {
   if (!props.asset[isContentReady]) {

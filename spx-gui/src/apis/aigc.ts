@@ -196,11 +196,6 @@ export async function getAIGCStatus(jobId: string) {
 export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>;
 export async function exportAIGCAsset(param: any) {
-  // return new Promise<{ assetId: string }>((resolve) => {
-  //   setTimeout(() => {
-  //     resolve({ assetId: '21' })
-  //   }, 1000)
-  // })
   const result = (await client.post(`/aigc/export`,
     typeof param === 'string' ? { jobId: param } : { ...param }
   )) as {
