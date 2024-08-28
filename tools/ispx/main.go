@@ -7,7 +7,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"log"
-	"reflect"
 	"syscall/js"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
@@ -48,6 +47,9 @@ func main() {
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
+
+	// Register patch for spx to support functions with generic type like `Gopt_Game_Gopx_GetWidget`.
+	// See details in https://github.com/goplus/builder/issues/765#issuecomment-2313915805
 	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
 package spx
 
@@ -67,6 +69,7 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 	if err != nil {
 		log.Fatalln("Failed to register package patch:", err)
 	}
+
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
@@ -84,15 +87,15 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 	}
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Main", func(game Gamer, sprites ...spx.Spriter) {
-		g := game.initGame(sprites)
+		game.initGame(sprites)
 		if me, ok := game.(interface{ MainEntry() }); ok {
 			me.MainEntry()
 		}
-		v := reflect.ValueOf(g).Elem().FieldByName("isRunned")
-		if v.IsValid() && v.Bool() {
-			return
+		if me, ok := game.(interface{ IsRunned() bool }); ok {
+			if !me.IsRunned() {
+				gameRun(game.(spx.Gamer), "assets")
+			}
 		}
-		gameRun(game.(spx.Gamer), "assets")
 	})
 
 	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", gameRun)
