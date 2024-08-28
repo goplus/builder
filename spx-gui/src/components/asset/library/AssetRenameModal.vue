@@ -68,7 +68,7 @@ const handleSubmit = async()=>{
   if(form.value.name !== props.asset.displayName){
     const handleToggleFav = async () => {
   if (!publicAsset.value) {
-    const exportedAsset = await exportAssetDataToPublic()
+    const exportedAsset = await exportAssetDataToPublic(form.value.name)
     publicAsset.value = exportedAsset
   }
   if (props.isFavorite) {
@@ -88,7 +88,7 @@ await handleToggleFav()
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
  */
- const exportAssetDataToPublic = async () => {
+ const exportAssetDataToPublic = async (name:string) => {
   if (!props.asset[isContentReady]) {
     throw new Error('Could not export an incomplete asset')
   }
@@ -97,7 +97,7 @@ await handleToggleFav()
     ...props.asset,
     isPublic: IsPublic.public,
     files: props.asset.files!,
-    displayName: props.asset.displayName ?? props.asset.id,
+    displayName: name,
     filesHash: props.asset.filesHash!,
     preview: "TODO",
     category: '*',

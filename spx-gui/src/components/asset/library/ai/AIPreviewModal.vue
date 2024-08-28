@@ -35,7 +35,7 @@
             }}
           </span>
         </UIButton>
-        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleRename">
+        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleRename.fn">
           <span style="white-space: nowrap">
             {{
               isFavorite
@@ -171,6 +171,7 @@ import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
 import { useRenameAsset } from '../..'
+import { useMessageHandle } from '@/utils/exception'
 
 // Define component props
 const props = defineProps<{
@@ -275,23 +276,63 @@ const exportPending = ref(false)
 
 const publicAsset = ref<AssetData | null>(null)
 
+/**
+ * Get the public asset data from the asset data
+ * If the asset data is not exported, export it first
+ */
+ const exportAssetDataToPublic = async () => {
+  if (!props.asset[isContentReady]) {
+    throw new Error('Could not export an incomplete asset')
+  }
+  // let addAssetParam = props.asset
+  let addAssetParam:AddAssetParams = {
+    ...props.asset,
+    isPublic: IsPublic.public,
+    files: props.asset.files!,
+    displayName: props.asset.displayName ?? props.asset.id,
+    filesHash: props.asset.filesHash!,
+    preview: "TODO",
+    category: '*',
+  }
+  exportPending.value = true
+  const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
+  const publicAsset = await getAsset(assetId)
+  exportPending.value = false
+  return publicAsset
+}
+
+
 const handleAddButton = async () => {
   if (props.addToProjectPending) {
     return
   }
-  // if (!publicAsset.value) {
-  //   const exportedAsset = await exportAssetDataToPublic()
-  //   publicAsset.value = exportedAsset
-  // }
-  // emit('addToProject', publicAsset.value)
+  
+  if (!publicAsset.value) {
+    const exportedAsset = await exportAssetDataToPublic()
+    publicAsset.value = exportedAsset
+  }
+  emit('addToProject', publicAsset.value)
 }
 
 
 
 const renameAsset = useRenameAsset()
-const handleRename = async () => {
-  await renameAsset(props.asset, isFavorite.value)
-}
+const handleRename = useMessageHandle(
+  async () => {
+    isFavorite.value = !isFavorite.value
+    exportPending.value = true
+    await renameAsset(props.asset, isFavorite.value)
+    exportPending.value = false
+  },
+  {
+    en: 'Failed to rename asset',
+    zh: '收藏失败'
+  },
+  {
+    en: 'Successfully renamed asset',
+    zh: '收藏成功'
+  }
+)
 
 const displayTime = computed(() => {
   return new Date(props.asset.cTime).toLocaleString()
