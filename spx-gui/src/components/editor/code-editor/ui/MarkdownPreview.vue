@@ -1,29 +1,19 @@
 <script setup lang="ts">
 import { renderMarkdown } from './common/languages'
 import CopyIcon from './icons/copy.svg'
-import { computed, h } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from '@/utils/i18n'
-withDefaults(
-  defineProps<{
-    content: string
-    theme?: 'simple' | 'detail'
-  }>(),
-  {
-    theme: 'simple'
-  }
-)
+defineProps<{
+  content: string
+}>()
 const i18n = useI18n()
 const copyIcon = computed(() => `url('${CopyIcon}')`)
 const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })}'`)
 </script>
 
 <template>
-  <!-- eslint-disable vue/no-v-html -->
-  <article
-    class="markdown-preview"
-    :class="{ simple: theme === 'simple', detail: theme === 'detail' }"
-    v-html="renderMarkdown(content)"
-  ></article>
+  <!-- eslint-disable-next-line vue/no-v-html -->
+  <article class="markdown-preview" v-html="renderMarkdown(content)"></article>
 </template>
 <style lang="scss">
 .markdown-preview {
@@ -53,6 +43,70 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   div,
   p {
     margin-bottom: 0.5em;
+  }
+}
+
+.markdown-preview__wrapper {
+  position: relative;
+
+  & .markdown-preview__copy-button {
+    opacity: 0;
+    transition: 0.15s;
+  }
+  &:hover .markdown-preview__copy-button {
+    opacity: 1;
+  }
+}
+
+.markdown-preview__copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  background-color: rgb(255, 255, 255);
+  font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB', monospace;
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+  &:active {
+    background-color: rgb(250, 250, 250);
+  }
+
+  &::after {
+    content: v-bind(copyIcon);
+    transform: translateY(1px);
+  }
+
+  &.copied::before {
+    content: v-bind(copyMessage);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: -4px;
+    height: 100%;
+    font-size: 12px;
+    padding: 2px 4px;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+    pointer-events: none;
+    animation: MarkdownPreviewCopyButtonBounceOut 0.2s cubic-bezier(0.13, 1.24, 0.22, 1.16);
+  }
+}
+
+@keyframes MarkdownPreviewCopyButtonBounceOut {
+  from {
+    transform: scale(0.4) translateX(-100%);
   }
 }
 

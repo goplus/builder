@@ -2,12 +2,13 @@ package controller
 
 import (
 	"context"
-	"github.com/goplus/builder/spx-backend/internal/llm"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/goplus/builder/spx-backend/internal/llm"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func createFullProjectContext() ProjectContext {
@@ -59,8 +60,8 @@ func createFullChat(chatAction ChatActions, ctx ProjectContext, lang int, uid st
 	return c
 }
 
-func createStartChatParams(chatAction int, userInput string, userLang int) AIStartChatParams {
-	return AIStartChatParams{
+func createStartChatParams(chatAction int, userInput string, userLang int) *AIStartChatParams {
+	return &AIStartChatParams{
 		ChatAction:     chatAction,
 		ProjectContext: createFullProjectContext(),
 		UserInput:      userInput,
@@ -68,12 +69,12 @@ func createStartChatParams(chatAction int, userInput string, userLang int) AISta
 	}
 }
 
-func createChatParams(userInput string) AIChatParams {
-	return AIChatParams{UserInput: userInput}
+func createChatParams(userInput string) *AIChatParams {
+	return &AIChatParams{UserInput: userInput}
 }
 
-func createTaskParams(taskAction int, userCode string, userCursor Cursor) AITaskParams {
-	return AITaskParams{
+func createTaskParams(taskAction int, userCode string, userCursor Cursor) *AITaskParams {
+	return &AITaskParams{
 		TaskAction:     taskAction,
 		ProjectContext: createFullProjectContext(),
 		UserCode:       userCode,

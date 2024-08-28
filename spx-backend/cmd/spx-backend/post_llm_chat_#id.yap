@@ -9,17 +9,17 @@ import (
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
+_, ok := ensureUser(ctx)
 if !ok {
 	return
 }
 
-params := &contriller.AIChatParams{}
+params := &controller.AIChatParams{}
 if !parseJSON(ctx, params) {
 	return
 }
 
-resp, err := ctrl.NextChat(ctx, ${id}, params.UserInput)
+resp, err := ctrl.NextChat(ctx.Context(), ${id}, params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
