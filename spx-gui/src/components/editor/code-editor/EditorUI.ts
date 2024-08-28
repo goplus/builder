@@ -211,6 +211,7 @@ export type AIChatModalOptions = {
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
   hover: HoverProvider[]
+  invokeDocument: Array<(content: string) => void>
 }
 
 declare global {
@@ -253,7 +254,7 @@ export class EditorUI extends Disposable {
     return this.hoverPreview
   }
 
-  constructor(i18n: I18n, getProject: () => Project) {
+  constructor(i18n: I18n, getProject: () => Project, invokeDocument: (content: string) => void) {
     super()
 
     this.i18n = i18n
@@ -261,7 +262,8 @@ export class EditorUI extends Disposable {
     this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: [],
-      hover: []
+      hover: [],
+      invokeDocument: [invokeDocument]
     }
 
     this.addDisposer(() => {
@@ -476,6 +478,8 @@ export class EditorUI extends Disposable {
     // todo: to resolve fn `invokeAIChatModal`
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
-    // todo: to resolve fn `invokeDocumentDetail`
+    this.editorUIRequestCallback.invokeDocument.forEach((invokeDocumentFn) =>
+      invokeDocumentFn(docDetail)
+    )
   }
 }

@@ -134,7 +134,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
       preview: {
-        level: 1,
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     }
