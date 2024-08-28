@@ -8,7 +8,7 @@ import {
 import { Disposable } from '@/utils/disposable'
 import {
   type CompletionMenu,
-  Icon2CompletionItemKind
+  icon2CompletionItemKind
 } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
@@ -35,7 +35,6 @@ export enum Icon {
 export type Markdown = string
 
 export enum DocPreviewLevel {
-  Nothing,
   Normal,
   Warning,
   Error
@@ -352,7 +351,7 @@ export class EditorUI extends Disposable {
               this.completionMenu?.completionItemCache.getAll(completionItemCacheID).map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
-                  kind: Icon2CompletionItemKind(item.icon),
+                  kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
                   range: {
                     startLineNumber: position.lineNumber,
