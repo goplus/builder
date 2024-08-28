@@ -318,6 +318,7 @@ const handleAddButton = async () => {
 
 const renameAsset = useRenameAsset()
 const handleRename = useMessageHandle(
+  // TODO: handle unFav
   async () => {
     isFavorite.value = !isFavorite.value
     exportPending.value = true
