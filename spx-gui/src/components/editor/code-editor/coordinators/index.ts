@@ -89,8 +89,8 @@ export class Coordinator {
         {
           icon: Icon.Document,
           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick() {
-            console.log('=>(index.ts:82) Document')
+          onClick: () => {
+            this.ui.invokeDocumentDetail(content)
           }
         }
       ]

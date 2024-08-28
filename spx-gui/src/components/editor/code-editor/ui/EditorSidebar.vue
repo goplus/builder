@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
+import { computed, reactive, ref, shallowRef } from 'vue'
 import {
   controlCategory,
   eventCategory,
@@ -22,10 +22,11 @@ import iconGame from './icons/game.svg?raw'
 import iconSensing from './icons/sensing.svg?raw'
 import iconVariable from './icons/variable.svg?raw'
 import IconCollapse from './icons/collapse.svg?raw'
+import IconOverview from './icons/overview.svg?raw'
 import { UITooltip, useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
-import MarkdownContent from '../docs/zh/setYpos_detail.md?raw'
+import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 defineEmits<{
   insertText: [insertText: string]
 }>()
@@ -33,6 +34,10 @@ defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 const collapsed = ref(false)
+const documentState = reactive({
+  visible: false,
+  document: ''
+})
 
 const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
 
@@ -99,8 +104,21 @@ const activeCategoryIndex = shallowRef(0)
 const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
 
 function handleCategoryClick(index: number) {
+  hideDocument()
   activeCategoryIndex.value = index
 }
+
+// if necessary to declare a function to make better understanding
+function hideDocument() {
+  documentState.visible = false
+}
+
+defineExpose({
+  showDocument(content: string) {
+    documentState.visible = true
+    documentState.document = content
+  }
+})
 </script>
 
 <template>
@@ -143,7 +161,7 @@ function handleCategoryClick(index: number) {
   </ul>
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
   <div v-show="!collapsed" class="sidebar-container">
-    <section v-if="false" class="tools-wrapper">
+    <section v-if="!documentState.visible" class="tools-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
         <h5 class="group-title">{{ $t(group.label) }}</h5>
@@ -157,8 +175,20 @@ function handleCategoryClick(index: number) {
         </div>
       </div>
     </section>
-    <section v-if="true">
-      <MarkdownPreview theme="detail" :content="MarkdownContent"></MarkdownPreview>
+    <section v-else class="document-wrapper">
+      <header class="header">
+        <span
+          :ref="(el) => normalizeIconSize(el as Element, 28)"
+          class="icon"
+          v-html="IconOverview"
+        ></span>
+        <span class="title"> OVERVIEW </span>
+      </header>
+      <MarkdownPreview
+        class="detail"
+        theme="detail"
+        :content="documentState.document"
+      ></MarkdownPreview>
     </section>
   </div>
 </template>
@@ -272,6 +302,47 @@ function handleCategoryClick(index: number) {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+  }
+}
+
+.document-wrapper {
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    color: #0bc0cf;
+
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+
+    .title {
+      width: 100%;
+      font-size: 20px;
+      border-bottom: 1px solid #0bc0cf;
+    }
+  }
+
+  .detail {
+    font-size: 14px;
+    font-family:
+      'JetBrains Mono NL',
+      AlibabaHealthB,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      'Noto Sans',
+      sans-serif,
+      'Apple Color Emoji',
+      'Segoe UI Emoji',
+      'Segoe UI Symbol',
+      'Noto Color Emoji';
   }
 }
 </style>

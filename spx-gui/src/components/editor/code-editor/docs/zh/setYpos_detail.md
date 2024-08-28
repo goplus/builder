@@ -10,4 +10,4 @@ onTouched "柱子" => {
 ```
 效果示例
 
-![onTouched GIF](../setYpos.gif)
+![onTouched GIF]($picPath$)

@@ -8,7 +8,7 @@ import {
 import { Disposable } from '@/utils/disposable'
 import {
   type CompletionMenu,
-  Icon2CompletionItemKind
+  icon2CompletionItemKind
 } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
@@ -204,6 +204,7 @@ export type AIChatModalOptions = {
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
   hover: HoverProvider[]
+  invokeDocument: Array<(content: string) => void>
 }
 
 declare global {
@@ -246,7 +247,7 @@ export class EditorUI extends Disposable {
     return this.hoverPreview
   }
 
-  constructor(i18n: I18n, getProject: () => Project) {
+  constructor(i18n: I18n, getProject: () => Project, invokeDocument: (content: string) => void) {
     super()
 
     this.i18n = i18n
@@ -254,7 +255,8 @@ export class EditorUI extends Disposable {
     this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: [],
-      hover: []
+      hover: [],
+      invokeDocument: [invokeDocument]
     }
 
     this.addDisposer(() => {
@@ -344,7 +346,7 @@ export class EditorUI extends Disposable {
               this.completionMenu?.completionItemCache.getAll(completionItemCacheID).map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
-                  kind: Icon2CompletionItemKind(item.icon),
+                  kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
                   range: {
                     startLineNumber: position.lineNumber,
@@ -470,6 +472,8 @@ export class EditorUI extends Disposable {
     // todo: to resolve fn `invokeAIChatModal`
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
-    // todo: to resolve fn `invokeDocumentDetail`
+    this.editorUIRequestCallback.invokeDocument.forEach((invokeDocumentFn) =>
+      invokeDocumentFn(docDetail)
+    )
   }
 }

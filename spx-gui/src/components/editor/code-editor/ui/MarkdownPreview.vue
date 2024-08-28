@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { renderMarkdown } from './common/languages'
 import CopyIcon from './icons/copy.svg'
-import { computed } from 'vue'
+import { computed, h } from 'vue'
 import { useI18n } from '@/utils/i18n'
 withDefaults(
   defineProps<{
@@ -37,7 +37,22 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
     background-color: rgba(229, 229, 229, 0.4) !important;
     border-radius: 5px;
     font-family: 'JetBrains Mono NL', Consolas, 'Courier New', monospace;
-    line-height: 1.3;
+    code {
+      padding: initial;
+      border-radius: initial;
+      background-color: initial;
+    }
+  }
+
+  code {
+    padding: 2px 4px;
+    border-radius: 4px;
+    background-color: rgba(229, 229, 229, 0.4);
+  }
+
+  div,
+  p {
+    margin-bottom: 0.5em;
   }
 }
 

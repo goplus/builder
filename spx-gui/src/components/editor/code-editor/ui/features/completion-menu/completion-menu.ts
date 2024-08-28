@@ -271,7 +271,7 @@ function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): 
   }
 }
 
-export function Icon2CompletionItemKind(icon: Icon): languages.CompletionItemKind {
+export function icon2CompletionItemKind(icon: Icon): languages.CompletionItemKind {
   switch (icon) {
     case Icon.Function:
       return languages.CompletionItemKind.Function
