@@ -34,9 +34,35 @@ func loadData(this js.Value, args []js.Value) interface{} {
 	return nil
 }
 
-// ParseSkeletonAnimData parses skeleton animation data.
-// Returns JSON string of the parsed data.
-func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
+// Editor_ParseSpriteAnimator parses sprite animator data.
+// It takes sprite data in zip format and sprite name as arguments,
+// and returns sprite animator data like clips list and avatar info.
+func Editor_ParseSpriteAnimator(this js.Value, args []js.Value) interface{} {
+	resource := args[0]
+	sprite := args[1].String()
+
+	goBytes := convertToGoBytes(resource)
+	fs := readZipData(goBytes)
+
+	data, err := spx.Editor_ParseSpriteAnimator(fs, sprite)
+	if err != nil {
+		log.Println("Failed to parse sprite animator:", err)
+		return nil
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Println("Failed to marshal sprite animator data:", err)
+		return nil
+	}
+
+	return js.ValueOf(string(jsonData))
+}
+
+// Editor_ParseSpriteAnimation parses sprite animation data.
+// It takes sprite data in zip format, sprite name and animation name as arguments,
+// and returns mesh data of each frame in the animation.
+func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 	spriteData := args[0]
 	spriteName := args[1].String()
 	animName := args[2].String()
@@ -44,15 +70,15 @@ func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
 	goBytes := convertToGoBytes(spriteData)
 	fs := readZipData(goBytes)
 
-	data, err := spx.Editor_ParseSpriteAnimData(fs, spriteName, animName)
+	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
 	if err != nil {
-		log.Println("Failed to parse skeleton anim data:", err)
+		log.Println("Failed to parse sprite animation:", err)
 		return nil
 	}
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Println("Failed to marshal skeleton anim data:", err)
+		log.Println("Failed to marshal sprite animation data:", err)
 		return nil
 	}
 
@@ -61,7 +87,8 @@ func parseSkeletonAnimData(this js.Value, args []js.Value) interface{} {
 
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
-	js.Global().Set("goParseSkeletonAnimData", js.FuncOf(parseSkeletonAnimData))
+	js.Global().Set("goEditorParseSpriteAnimation", js.FuncOf(Editor_ParseSpriteAnimation))
+	js.Global().Set("goEditorParseSpriteAnimator", js.FuncOf(Editor_ParseSpriteAnimator))
 
 	// Wait forever
 	select {}

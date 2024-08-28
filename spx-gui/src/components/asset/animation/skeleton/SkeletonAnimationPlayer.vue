@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AnimExportData } from '@/utils/ispxLoader'
+import type { AnimationExportData } from '@/utils/ispxLoader'
 import { computed, ref, shallowReactive, type ShallowReactive } from 'vue'
 import type { Renderer } from './SkeletonAnimationRenderer.vue'
 import SkeletonAnimationRenderer from './SkeletonAnimationRenderer.vue'
@@ -30,7 +30,7 @@ import { UIIcon, useUIVariables, type Color } from '@/components/ui'
 import { debounce } from '@/utils/utils'
 const props = withDefaults(
   defineProps<{
-    data: AnimExportData
+    data: AnimationExportData
     texture: string
     fps?: number
     autoplay?: boolean

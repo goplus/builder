@@ -355,13 +355,7 @@ export class Sprite extends Disposable {
       }
     }
     if (skeletonAnimator != null && skeletonAvatar != null) {
-      const skeletonAnimation = await SkeletonAnimation.load({
-        name,
-        animatorFilepath: skeletonAnimator,
-        avatarFilepath: skeletonAvatar,
-        prefix: pathPrefix,
-        files: files
-      })
+      const skeletonAnimation = await SkeletonAnimation.load(name, pathPrefix, files)
       sprite.addSkeletonAnimation(skeletonAnimation)
     }
     if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)

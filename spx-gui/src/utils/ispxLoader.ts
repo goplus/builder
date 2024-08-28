@@ -8,7 +8,12 @@ import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
 
 interface IframeWindow extends Window {
-  goParseSkeletonAnimData: (resource: Uint8Array, sprite: string, animName: string) => any
+  goEditorParseSpriteAnimator: (resource: Uint8Array | ArrayBuffer, sprite: string) => string
+  goEditorParseSpriteAnimation: (
+    resource: Uint8Array | ArrayBuffer,
+    sprite: string,
+    animName: string
+  ) => string
 }
 
 const WASM_EXEC_JS = '/wasm_exec.js'
@@ -54,7 +59,10 @@ const ispxWasmInitPromise = initIspxWasm()
  * @param args Arguments to pass to the function
  * @returns The return value of the function
  */
-async function callGoWasmFunc(funcName: keyof IframeWindow, ...args: any[]) {
+async function callGoWasmFunc<T extends keyof IframeWindow>(
+  funcName: T,
+  ...args: Parameters<IframeWindow[T]>
+): Promise<ReturnType<IframeWindow[T]>> {
   try {
     const iframe = await ispxWasmInitPromise
     const result = iframe[funcName](...args)
@@ -65,15 +73,20 @@ async function callGoWasmFunc(funcName: keyof IframeWindow, ...args: any[]) {
   }
 }
 
-export interface AnimExportData {
-  Frames: AnimExportFrame[]
+export interface AnimatorExportData {
+  ClipsNames: string[]
+  AvatarImage: string
 }
 
-export interface AnimExportFrame {
-  Meshes: AnimExportMesh[]
+export interface AnimationExportData {
+  Frames: AnimationExportFrame[]
 }
 
-export interface AnimExportMesh {
+export interface AnimationExportFrame {
+  Meshes: AnimationExportMesh[]
+}
+
+export interface AnimationExportMesh {
   Indices: number[]
   Uvs: Point2D[]
   Vertices: Point3D[]
@@ -84,16 +97,34 @@ export interface Point2D {
   y: number
 }
 
-export interface Point3D {
-  x: number
-  y: number
+export interface Point3D extends Point2D {
   z: number
+}
+
+/**
+ * Get animator data from a sprite file.
+ * 
+ * This function calls the Editor_ParseSpriteAnimator function from the ispx wasm module.
+ * Currently, it returns the clips names and the avatar image.
+ * 
+ * @param resource The sprite data in zip format. Filepaths are relative to the assets folder
+ *                  (e.g. 'assets/sprites/sprite.zip' => 'sprites/sprite.zip')
+ * @param sprite 
+ * @returns 
+ */
+export async function goEditorParseSpriteAnimator(
+  resource: Uint8Array,
+  sprite: string
+): Promise<AnimatorExportData> {
+  const json = await callGoWasmFunc('goEditorParseSpriteAnimator', resource, sprite)
+  const result: AnimatorExportData = JSON.parse(json)
+  return result
 }
 
 /**
  * parses skeleton animation data to frames.
  *
- * This function calls the Gopt_ParseSkeletonAnimData function from the ispx wasm module.
+ * This function calls the Editor_ParseSpriteAnimation function from the ispx wasm module.
  *
  * @param resource The sprite data in zip format. Filepaths are relative to the assets folder
  *                  (e.g. 'assets/sprites/sprite.zip' => 'sprites/sprite.zip')
@@ -101,12 +132,12 @@ export interface Point3D {
  * @param animName
  * @returns
  */
-export async function goParseSkeletonAnimData(
+export async function goEditorParseSpriteAnimation(
   resource: Uint8Array | ArrayBuffer,
   sprite: string,
   animName: string
-): Promise<AnimExportData> {
-  const json = await callGoWasmFunc('goParseSkeletonAnimData', resource, sprite, animName)
-  const result: AnimExportData = JSON.parse(json)
+): Promise<AnimationExportData> {
+  const json = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
+  const result: AnimationExportData = JSON.parse(json)
   return result
 }

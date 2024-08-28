@@ -139,7 +139,7 @@ import { ChevronLeftFilled, ChevronRightFilled } from '@vicons/material'
 import { UILoading } from '@/components/ui'
 import { computed, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlayer.vue'
-import type { AnimExportData } from '@/utils/ispxLoader'
+import type { AnimationExportData } from '@/utils/ispxLoader'
 import { Renderer } from '../../animation/skeleton/SkeletonAnimationRenderer.vue'
 import type { SkeletonClip } from '@/models/skeletonAnimation'
 import SkeletonAnimationPlayer from '../../animation/skeleton/SkeletonAnimationPlayer.vue'
@@ -219,7 +219,7 @@ const skeletonAnimations = shallowRef<ReturnType<typeof loadClip>[]>([])
 
 const loadClip = (clip: SkeletonClip, delay: number = 0) => {
   let animLoading = ref(false)
-  let animData = ref<AnimExportData | null>(null)
+  let animData = ref<AnimationExportData | null>(null)
   setTimeout(async () => {
     animLoading.value = true
     animData.value = await clip.loadAnimFrameData()

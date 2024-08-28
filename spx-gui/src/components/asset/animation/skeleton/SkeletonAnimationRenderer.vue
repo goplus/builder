@@ -8,14 +8,14 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { type AnimExportData } from '@/utils/ispxLoader'
+import { type AnimationExportData } from '@/utils/ispxLoader'
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
 
 const canvasElement = ref<null | HTMLCanvasElement>(null)
 const props = withDefaults(
   defineProps<{
-    data: AnimExportData
+    data: AnimationExportData
     texture: string
     fps?: number
     autoplay?: boolean
@@ -241,7 +241,7 @@ export class Renderer {
  * @param gl The WebGLRenderingContext
  * @param data The AnimExportData to convert
  */
-export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimExportData) {
+export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationExportData) {
   return data.Frames.map((frame) => {
     return frame.Meshes.map((mesh) => {
       const arrays = {
