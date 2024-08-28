@@ -1,16 +1,20 @@
 import {
   type CompletionItem,
+  DocPreviewLevel,
   type EditorUI,
   Icon,
   type LayerContent,
+  type Markdown,
+  type Reply,
+  type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { Compiler, TokenEnum } from '../compiler'
+import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
-import { type Position } from 'monaco-editor'
+import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
 import { keywords, typeKeywords } from '@/utils/spx'
 import { getAllTools, ToolType } from '@/components/editor/code-editor/tools'
@@ -49,6 +53,10 @@ export class Coordinator {
     ui.registerHoverProvider({
       provideHover: this.implementsPreDefinedHoverProvider.bind(this)
     })
+
+    ui.registerSelectionMenuProvider({
+      provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
+    })
   }
 
   implementsPreDefinedCompletionProvider(
@@ -70,33 +78,70 @@ export class Coordinator {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent> {
-    const content =
-      this.docAbility.getNormalDoc({
-        module: '',
-        name: ctx.hoverUnitWord,
-        type: TokenEnum.ANY,
-        usages: []
-      })?.content || ''
-    return {
-      content: content,
+  ): Promise<LayerContent[]> {
+    const contents = this.docAbility.getNormalDoc({
+      module: '',
+      name: ctx.hoverUnitWord
+    })
+
+    if (!contents || contents.length === 0) {
+      return []
+    }
+
+    return contents.map((doc) => ({
+      level: DocPreviewLevel.Normal,
+      content: doc.content,
       recommendAction: {
-        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'still in confusion? Ask for help' }),
+        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'Still in confusion? Ask for help' }),
         activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick() {
-          console.log('=>(index.ts:75) Ask for help')
+        onActiveLabelClick: () => {
+          // TODO: add some logic code here
         }
       },
       moreActions: [
         {
           icon: Icon.Document,
           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick() {
-            console.log('=>(index.ts:82) Document')
+          onClick: () => {
+            const detailDoc = this.docAbility.getDetailDoc(doc.token)
+            if (!detailDoc) return
+            this.ui.invokeDocumentDetail(detailDoc.content)
           }
         }
       ]
+    }))
+  }
+
+  async implementsSelectionMenuProvider(
+    model: TextModel,
+    ctx: {
+      selection: IRange
+      selectContent: string
     }
+  ): Promise<SelectionMenuItem[]> {
+    return [
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '对这段代码有疑惑', en: 'Suspect this code' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      },
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '这段代码无法正常运行', en: 'This code cannot run properly' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      },
+      {
+        icon: Icon.AIAbility,
+        label: this.ui.i18n.t({ zh: '给这段代码添加注释', en: 'Add explanation to this code' }),
+        action: () => {
+          // TODO: implements logic code
+        }
+      }
+    ]
   }
 
   public jump(position: JumpPosition): void {}
@@ -110,6 +155,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     })),
@@ -119,6 +165,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     }))
@@ -128,6 +175,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
       preview: {
+        level: DocPreviewLevel.Normal,
         content: ''
       }
     }

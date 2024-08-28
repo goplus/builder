@@ -14,6 +14,7 @@ export interface EditorMenuItem {
 defineProps<{
   listStyles?: CSSProperties
   items: Array<T>
+  onlyFocusActive?: boolean
 }>()
 
 defineSlots<{
@@ -35,8 +36,15 @@ defineExpose({
 </script>
 
 <template>
-  <section ref="editorMenuContainerElement" class="editor-menu-container">
-    <ul ref="editorMenuElement" class="editor-menu" :style="listStyles">
+  <section ref="editorMenuContainerElement" class="editor-menu-wrapper">
+    <ul
+      ref="editorMenuElement"
+      class="editor-menu"
+      :class="{
+        'editor-menu--only-focus-active': onlyFocusActive
+      }"
+      :style="listStyles"
+    >
       <li
         v-for="item in items"
         :key="item.key"
@@ -63,7 +71,7 @@ defineExpose({
   </section>
 </template>
 <style lang="scss">
-.editor-menu-container {
+.editor-menu-wrapper {
   padding: 4px;
   background-color: #fff;
   border: solid 1px var(--ui-color-grey-700);
@@ -89,23 +97,46 @@ defineExpose({
   border-radius: 5px;
 }
 
+.editor-menu--only-focus-active {
+  .editor-menu__item {
+    color: var(--ui-text-grey-900);
+
+    .editor-menu__item-icon {
+      color: var(--ui-color-grey-800);
+    }
+
+    &:hover {
+      color: black;
+      background-color: rgba(42, 130, 228, 0.15);
+
+      .editor-menu__item-icon {
+        color: #faa135;
+      }
+    }
+  }
+}
+
 .editor-menu__item:hover {
   background-color: rgba(141, 141, 141, 0.05);
 }
 
-.editor-menu__item--active {
+.editor-menu .editor-menu__item--active {
   color: black;
   background-color: rgba(42, 130, 228, 0.15);
-}
 
-.editor-menu__item--active:hover {
-  background-color: rgba(42, 130, 228, 0.15);
+  .editor-menu__item-icon {
+    color: #faa135;
+  }
 }
 
 .editor-menu__item-icon {
   display: inline-flex;
   margin-right: 4px;
   color: #faa135;
+}
+
+.editor-menu__item--active:hover {
+  background-color: rgba(42, 130, 228, 0.15);
 }
 
 .editor-menu__item-label {
