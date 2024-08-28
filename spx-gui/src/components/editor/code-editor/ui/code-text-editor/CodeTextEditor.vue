@@ -18,17 +18,20 @@ let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMona
 <script setup lang="ts">
 import { getCurrentInstance, ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
-import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useI18n } from '@/utils/i18n'
-import { type EditorCtx } from '../../../EditorContextProvider.vue'
+import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 import { useLocalStorage } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
-import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
-import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
+
+import loader from '@monaco-editor/loader'
+import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
-import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+
+import { type EditorCtx } from '../../../EditorContextProvider.vue'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+
 
 const props = defineProps<{
   value: string

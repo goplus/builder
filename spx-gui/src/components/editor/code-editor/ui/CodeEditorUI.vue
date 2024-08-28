@@ -27,19 +27,25 @@
     </div>
     <UILoading :visible="loading" cover />
   </div>
+  <ChatBotModal :visible="ui.chatBotModal.state.visible" @cancelled="ui.chatBotModal.setVisible(false)" ></ChatBotModal>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import { UIImg, UILoading } from '@/components/ui'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { CodeTextEditor } from './code-text-editor'
+import { useFileUrl } from '@/utils/file'
+
 import iconZoomIn from './icons/zoom-in.svg?raw'
 import iconZoomOut from './icons/zoom-out.svg?raw'
 import iconZoomReset from './icons/zoom-reset.svg?raw'
-import { useFileUrl } from '@/utils/file'
-import EditorSidebar from './EditorSidebar.vue'
+
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+
+import EditorSidebar from './EditorSidebar.vue'
+import ChatBotModal from './features/chat-bot/ChatBotModal.vue'
 
 withDefaults(
   defineProps<{

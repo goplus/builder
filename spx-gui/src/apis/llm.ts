@@ -71,7 +71,6 @@ export type ChatResp = {
 export type TaskResp = {
     taskAction   :number
     codeSuggests :CodeSuggest
-    // ...
 }
 
 export type CodeSuggest = {

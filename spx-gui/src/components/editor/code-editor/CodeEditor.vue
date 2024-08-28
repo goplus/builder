@@ -5,7 +5,7 @@ import { Compiler } from '@/components/editor/code-editor/compiler'
 import { Project } from '@/models/project'
 import { Runtime } from '@/components/editor/code-editor/runtime'
 import { DocAbility } from '@/components/editor/code-editor/document'
-import { ChatBot } from '@/components/editor/code-editor/chat-bot'
+import { ChatBot } from '@/components/editor/code-editor/ui/features/chat-bot/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { ref } from 'vue'
 import { useI18n } from '@/utils/i18n'
@@ -36,7 +36,7 @@ function initCoordinator() {
   const project = new Project()
   const runtime = new Runtime()
   const docAbility = new DocAbility(i18n, () => editorCtx.project)
-  const chatBot = new ChatBot()
+  const chatBot = new ChatBot(i18n)
 
   const coordinator = new Coordinator(editorUI, runtime, compiler, chatBot, docAbility, project)
   return { coordinator, compiler, project, runtime, docAbility, chatBot, editorUI }

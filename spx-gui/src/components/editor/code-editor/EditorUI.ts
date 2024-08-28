@@ -18,6 +18,7 @@ import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import { ChatBotModal } from './ui/features/chat-bot/chat-bot'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -229,6 +230,7 @@ export class EditorUI extends Disposable {
     completionProvider: null,
     hoverProvider: null
   }
+  chatBotModal: ChatBotModal
 
   setCompletionMenu(completionMenu: CompletionMenu) {
     this.completionMenu = completionMenu
@@ -256,6 +258,8 @@ export class EditorUI extends Disposable {
       completion: [],
       hover: []
     }
+
+    this.chatBotModal = new ChatBotModal()
 
     this.addDisposer(() => {
       for (const callbackKey in this.editorUIRequestCallback) {

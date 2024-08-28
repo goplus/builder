@@ -7,7 +7,7 @@ import {
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler, TokenEnum } from '../compiler'
-import { ChatBot } from '../chat-bot'
+import { ChatBot } from '../ui/features/chat-bot/chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type Position } from 'monaco-editor'
