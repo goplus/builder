@@ -40,7 +40,9 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.backdrop.name
     const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(name))
+    await editorCtx.project.history.doAction(action, () =>
+      props.stage.removeBackdrop(props.backdrop.id)
+    )
   },
   {
     en: 'Failed to remove backdrop',

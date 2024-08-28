@@ -33,7 +33,7 @@
           >
             <UIIcon type="sound" />
             {{ $t({ en: 'Sound', zh: '声音' }) }}
-            <span class="value">{{ animation.sound }}</span>
+            <span class="value">{{ soundName }}</span>
           </li>
         </ul>
       </template>
@@ -66,11 +66,15 @@ import { UIDropdown, UIIcon, isInPopup } from '@/components/ui'
 import DurationEditor from './DurationEditor.vue'
 import BoundStateEditor from './state/BoundStateEditor.vue'
 import SoundEditor from './sound/SoundEditor.vue'
+import type { Sound } from '@/models/sound'
 
 const props = defineProps<{
   sprite: Sprite
   animation: Animation
+  sounds: Sound[]
 }>()
+
+const soundName = computed(() => props.sounds.find((s) => s.id === props.animation.soundId)?.name)
 
 type Setting = 'duration' | 'bound-state' | 'sound'
 

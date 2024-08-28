@@ -219,13 +219,13 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   await project.history.doAction({ name: moveActionNames[direction] }, () => {
     if (selectedSprite != null) {
       if (direction === 'up') {
-        project.upSpriteZorder(selectedSprite.name)
+        project.upSpriteZorder(selectedSprite.id)
       } else if (direction === 'down') {
-        project.downSpriteZorder(selectedSprite.name)
+        project.downSpriteZorder(selectedSprite.id)
       } else if (direction === 'top') {
-        project.topSpriteZorder(selectedSprite.name)
+        project.topSpriteZorder(selectedSprite.id)
       } else if (direction === 'bottom') {
-        project.bottomSpriteZorder(selectedSprite.name)
+        project.bottomSpriteZorder(selectedSprite.id)
       }
     } else if (selectedWidget != null) {
       if (direction === 'up') {

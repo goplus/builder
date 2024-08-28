@@ -15,15 +15,16 @@ function mockFile(name = 'mocked') {
 
 function makeProject() {
   const project = new Project()
+  const sound = new Sound('sound', mockFile())
+  project.addSound(sound)
+
   const sprite = new Sprite('Sprite')
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
-  const animation = Animation.create('default', animationCostumes)
+  const animation = Animation.create('default', animationCostumes, project.sounds)
   sprite.addAnimation(animation)
-  const sound = new Sound('sound', mockFile())
   project.addSprite(sprite)
-  project.addSound(sound)
   return project
 }
 
@@ -32,11 +33,11 @@ describe('Project', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].name)
+    animation.setSoundId(project.sounds[0].id)
 
     const files = project.exportGameFiles()
     await project.loadGameFiles(files)
-    expect(project.sprites[0].animations[0].sound).toBe(project.sounds[0].name)
+    expect(project.sprites[0].animations[0].soundId).toBe(project.sounds[0].id)
   })
 
   it('should preserve order for sprites & sounds however files are sorted', async () => {
@@ -87,21 +88,27 @@ describe('Project', () => {
     project.addSound(sound3)
 
     project.select({ type: 'stage' })
-    project.removeSound('sound3')
+    project.removeSound(sound3.id)
     expect(project.selected).toEqual({ type: 'stage' })
 
-    project.select({ type: 'sound', name: 'sound' })
+    project.select({ type: 'sound', id: project.sounds[0].id })
 
-    project.removeSound('sound')
+    project.removeSound(project.sounds[0].id)
+    const sound2Id = project.sounds.find((s) => s.name === 'sound2')?.id
+    expect(sound2Id).toBeTruthy()
+    expect(sound2Id).toEqual(sound2.id)
     expect(project.selected).toEqual({
       type: 'sound',
-      name: 'sound2'
+      id: sound2Id
     })
 
-    project.removeSound('sound2')
+    project.removeSound(sound2.id)
+
+    const spriteId = project.sprites.find((s) => s.name === 'Sprite')?.id
+    expect(spriteId).toBeTruthy()
     expect(project.selected).toEqual({
       type: 'sprite',
-      name: 'Sprite'
+      id: spriteId
     })
   })
 
@@ -116,13 +123,12 @@ describe('Project', () => {
     project.removeSprite('Sprite3')
     expect(project.selected).toEqual({ type: 'stage' })
 
-    project.select({ type: 'sprite', name: 'Sprite' })
+    project.select({ type: 'sprite', id: project.sprites[0].id })
 
-    project.removeSprite('Sprite')
-    expect(project.selected).toEqual({
-      type: 'sprite',
-      name: 'Sprite2'
-    })
+    project.removeSprite(project.sprites[0].id)
+    const nextId: string = (project.selected as any).id
+    expect(nextId).toBeTruthy()
+    expect(nextId).toEqual(project.sprites.find((s) => s.name === 'Sprite2')?.id)
 
     project.removeSprite('Sprite2')
     expect(project.selected).toBeNull()

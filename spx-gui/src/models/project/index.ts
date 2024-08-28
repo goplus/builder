@@ -43,11 +43,11 @@ const projectConfigFilePath = join('assets', projectConfigFileName)
 export type Selected =
   | {
       type: 'sprite'
-      name: string
+      id: string
     }
   | {
       type: 'sound'
-      name: string
+      id: string
     }
   | {
       type: 'stage'
@@ -111,10 +111,11 @@ export class Project extends Disposable {
   sounds: Sound[]
   zorder: string[]
 
-  removeSprite(name: string) {
-    const idx = this.sprites.findIndex((s) => s.name === name)
+  removeSprite(id: string) {
+    const idx = this.sprites.findIndex((s) => s.id === id)
+    if (idx < 0) throw new Error(`sprite ${id} not found`)
     const [sprite] = this.sprites.splice(idx, 1)
-    this.zorder = this.zorder.filter((v) => v !== sprite.name)
+    this.zorder = this.zorder.filter((v) => v !== sprite.id)
     sprite.dispose()
     this.autoSelect()
   }
@@ -128,54 +129,44 @@ export class Project extends Disposable {
     sprite.setProject(this)
     sprite.addDisposer(() => sprite.setProject(null))
     this.sprites.push(sprite)
-    if (!this.zorder.includes(sprite.name)) {
-      this.zorder = [...this.zorder, sprite.name]
+    if (!this.zorder.includes(sprite.id)) {
+      this.zorder = [...this.zorder, sprite.id]
     }
-    sprite.addDisposer(
-      // update zorder & selected when sprite renamed
-      watch(
-        () => sprite.name,
-        (newName, originalName) => {
-          this.zorder = this.zorder.map((v) => (v === originalName ? newName : v))
-          if (this.selected?.type === 'sprite' && this.selected.name === originalName) {
-            this.select({ type: 'sprite', name: newName })
-          }
-        }
-      )
-    )
   }
+  // TODO: Test this method
   private setSpriteZorderIdx(
-    name: string,
+    id: string,
     newIdx: number | ((idx: number, length: number) => number)
   ) {
-    const idx = this.zorder.findIndex((v) => v === name)
-    if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
+    const idx = this.zorder.findIndex((v) => v === id)
+    if (idx < 0) throw new Error(`sprite ${id} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
-    const newZorder = this.zorder.filter((v) => v !== name)
-    newZorder.splice(newIdxVal, 0, name)
+    const newZorder = this.zorder.filter((v) => v !== id)
+    newZorder.splice(newIdxVal, 0, id)
     this.zorder = newZorder
   }
-  upSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i, len) => Math.min(i + 1, len - 1))
+  upSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (i, len) => Math.min(i + 1, len - 1))
   }
-  downSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i) => Math.max(i - 1, 0))
+  downSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (i) => Math.max(i - 1, 0))
   }
-  topSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (_, len) => len - 1)
+  topSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (_, len) => len - 1)
   }
-  bottomSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, 0)
+  bottomSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, 0)
   }
 
-  removeSound(name: string) {
-    const idx = this.sounds.findIndex((s) => s.name === name)
+  removeSound(id: string) {
+    const idx = this.sounds.findIndex((s) => s.id === id)
+    if (idx < 0) throw new Error(`sound ${id} not found`)
     const [sound] = this.sounds.splice(idx, 1)
-    // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+    // TODO: it may be better to do `setSoundId(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
     for (const sprite of this.sprites) {
       for (const animation of sprite.animations) {
-        if (animation.sound === sound.name) {
-          animation.setSound(null)
+        if (animation.soundId === sound.id) {
+          animation.setSoundId(null)
         }
       }
     }
@@ -192,25 +183,6 @@ export class Project extends Disposable {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
-    sound.addDisposer(
-      // update animation.sound & selected when sound renamed
-      // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
-      watch(
-        () => sound.name,
-        (newName, originalName) => {
-          for (const sprite of this.sprites) {
-            for (const animation of sprite.animations) {
-              if (animation.sound === originalName) {
-                animation.setSound(newName)
-              }
-            }
-          }
-          if (this.selected?.type === 'sound' && this.selected.name === originalName) {
-            this.select({ type: 'sound', name: newName })
-          }
-        }
-      )
-    )
   }
 
   setPublic(isPublic: IsPublic) {
@@ -222,13 +194,13 @@ export class Project extends Disposable {
   get selectedSprite() {
     const { selected, sprites } = this
     if (selected?.type !== 'sprite') return null
-    return sprites.find((s) => s.name === selected.name) ?? null
+    return sprites.find((s) => s.id === selected.id) ?? null
   }
 
   get selectedSound() {
     const { selected, sounds } = this
     if (selected?.type !== 'sound') return null
-    return sounds.find((s) => s.name === selected.name) ?? null
+    return sounds.find((s) => s.id === selected.id) ?? null
   }
 
   select(selected: Selected) {
@@ -243,11 +215,11 @@ export class Project extends Disposable {
     const selected = this.selected
     if (selected?.type === 'stage') return
     if (selected?.type === 'sound' && this.selectedSound == null && this.sounds[0] != null) {
-      this.select({ type: 'sound', name: this.sounds[0].name })
+      this.select({ type: 'sound', id: this.sounds[0].id })
       return
     }
     if (this.selectedSprite == null) {
-      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
+      this.select(this.sprites[0] != null ? { type: 'sprite', id: this.sprites[0].id } : null)
     }
   }
 
@@ -306,11 +278,9 @@ export class Project extends Disposable {
       else widgets.push(item)
     })
     const stageConfig = { ...rawStageConfig, widgets }
-    const [stage, sounds, sprites] = await Promise.all([
-      Stage.load(stageConfig, files),
-      Sound.loadAll(files),
-      Sprite.loadAll(files)
-    ])
+    const stage = await Stage.load(stageConfig, files)
+    const sounds = await Sound.loadAll(files)
+    const sprites = await Sprite.loadAll(files, sounds)
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
@@ -334,12 +304,12 @@ export class Project extends Disposable {
         height: stageConfig.map?.height
       },
       zorder: [...this.zorder, ...(widgets ?? [])],
-      builder_spriteOrder: this.sprites.map((s) => s.name),
-      builder_soundOrder: this.sounds.map((s) => s.name)
+      builder_spriteOrder: this.sprites.map((s) => s.id),
+      builder_soundOrder: this.sounds.map((s) => s.id)
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
-    Object.assign(files, ...this.sprites.map((s) => s.export()))
+    Object.assign(files, ...this.sprites.map((s) => s.export({ sounds: this.sounds })))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
     return files
   }
@@ -527,6 +497,6 @@ export function fullName(owner: string, name: string) {
 function orderBy<T extends Sprite | Sound>(list: T[], order: string[] | undefined) {
   if (order == null) return list
   return list.slice().sort((a, b) => {
-    return order.indexOf(a.name) - order.indexOf(b.name)
+    return order.indexOf(a.id) - order.indexOf(b.id)
   })
 }

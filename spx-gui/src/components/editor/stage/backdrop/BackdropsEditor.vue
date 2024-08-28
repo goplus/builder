@@ -2,10 +2,10 @@
   <EditorList color="stage" :add-text="$t({ en: 'Add backdrop', zh: '添加背景' })">
     <BackdropItem
       v-for="backdrop in stage.backdrops"
-      :key="backdrop.name"
+      :key="backdrop.id"
       :stage="stage"
       :backdrop="backdrop"
-      :selected="selected?.name === backdrop.name"
+      :selected="selected?.id === backdrop.id"
       @click="handleSelect(backdrop)"
     />
     <template #add-options>
@@ -52,7 +52,7 @@ const selected = computed(() => stage.value.defaultBackdrop)
 
 function handleSelect(backdrop: Backdrop) {
   const action = { name: { en: 'Set default backdrop', zh: '设置默认背景' } }
-  editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.name))
+  editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
 }
 
 const handleAddFromLocalFile = useMessageHandle(
@@ -69,7 +69,7 @@ const handleAddFromLocalFile = useMessageHandle(
 
     await editorCtx.project.history.doAction(action, () => {
       stage.value.addBackdrop(backdrop)
-      stage.value.setDefaultBackdrop(backdrop.name)
+      stage.value.setDefaultBackdrop(backdrop.id)
     })
   },
   { en: 'Failed to add from local file', zh: '从本地文件添加失败' }

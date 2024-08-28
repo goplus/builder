@@ -10,6 +10,7 @@ import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
 import { nanoid } from 'nanoid'
+import type { Sound } from './sound'
 
 type ActionConfig = {
   /** Sound name to play */
@@ -96,17 +97,22 @@ export class Animation extends Disposable {
     this.duration = duration
   }
 
-  sound: string | null
-  setSound(sound: string | null) {
-    this.sound = sound
+  soundId: string | null
+  setSoundId(soundId: string | null) {
+    this.soundId = soundId
   }
 
-  constructor(name: string, inits?: AnimationInits) {
+  constructor(name: string, sounds: Sound[], inits?: AnimationInits) {
     super()
     this.name = name
     this.costumes = []
     this.duration = inits?.duration ?? 0
-    this.sound = inits?.onStart?.play ?? null
+    const soundId =
+      inits?.onStart?.play == null ? null : sounds.find((s) => s.name === inits?.onStart?.play)?.id
+    if (soundId === undefined) {
+      console.warn(`Sound ${inits?.onStart?.play} not found when creating animation ${name}`)
+    }
+    this.soundId = soundId ?? null
     this.id = inits?.builder_id ?? nanoid()
 
     for (const field of ['isLoop', 'onPlay'] as const) {
@@ -120,8 +126,8 @@ export class Animation extends Disposable {
    * Create instance with default inits
    * Note that the "default" means default behavior for builder, not the default behavior of spx
    */
-  static create(nameBase: string, costumes: Costume[], inits?: AnimationInits) {
-    const animation = new Animation(getAnimationName(null, nameBase), inits)
+  static create(nameBase: string, costumes: Costume[], sounds: Sound[], inits?: AnimationInits) {
+    const animation = new Animation(getAnimationName(null, nameBase), sounds, inits)
     animation.setCostumes(costumes)
     return animation
   }
@@ -139,7 +145,8 @@ export class Animation extends Disposable {
       duration: _spxDuration, // drop spx `duration`, which is different from ours
       ...inits
     }: RawAnimationConfig,
-    sprite: Sprite
+    sprite: Sprite,
+    sounds: Sound[]
   ) {
     frameFrom = frameFrom ?? from
     frameTo = frameTo ?? to
@@ -150,17 +157,21 @@ export class Animation extends Disposable {
     const toIndex = getCostumeIndex(sprite.costumes, frameTo)
     const costumes = sprite.costumes.slice(fromIndex, toIndex + 1)
     const duration = costumes.length / (frameFps ?? defaultFps)
-    const animation = new Animation(name, { ...inits, duration })
+    const animation = new Animation(name, sounds, { ...inits, duration })
     animation.setCostumes(costumes.map((costume) => costume.clone()))
     for (const costume of costumes) {
-      sprite.removeCostume(costume.name)
+      sprite.removeCostume(costume.id)
     }
     return animation
   }
 
   export(
     /** Path of directory which contains the sprite's config file */
-    { basePath, includeId = true }: { basePath: string; includeId?: boolean }
+    {
+      basePath,
+      sounds,
+      includeId = true
+    }: { basePath: string; includeId?: boolean; sounds: Sound[] }
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -172,8 +183,11 @@ export class Animation extends Disposable {
     const config: RawAnimationConfig = {
       frameFrom: costumeConfigs[0]?.name,
       frameTo: costumeConfigs[costumeConfigs.length - 1]?.name,
-      frameFps: Math.ceil(this.costumes.length / this.duration),
-      onStart: this.sound == null ? undefined : { play: this.sound }
+      frameFps: Math.ceil(this.costumes.length / this.duration)
+    }
+    const soundName = sounds.find((s) => s.id === this.soundId)?.name
+    if (soundName) {
+      config.onStart = { play: soundName }
     }
     if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]

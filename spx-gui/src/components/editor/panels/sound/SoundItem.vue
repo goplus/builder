@@ -37,7 +37,9 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.sound.name
     const action = { name: { en: `Remove sound ${name}`, zh: `删除声音 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSound(name))
+    await editorCtx.project.history.doAction(action, () =>
+      editorCtx.project.removeSound(props.sound.id)
+    )
   },
   {
     en: 'Failed to remove sound',

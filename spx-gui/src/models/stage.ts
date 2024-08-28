@@ -58,9 +58,9 @@ export class Stage {
   get defaultBackdrop(): Backdrop | null {
     return this.backdrops[this.backdropIndex] ?? null
   }
-  setDefaultBackdrop(name: string) {
-    const idx = this.backdrops.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`backdrop ${name} not found`)
+  setDefaultBackdrop(id: string) {
+    const idx = this.backdrops.findIndex((s) => s.id === id)
+    if (idx === -1) throw new Error(`backdrop ${id} not found`)
     this.backdropIndex = idx
   }
 
@@ -75,8 +75,8 @@ export class Stage {
     this.backdrops.push(backdrop)
   }
 
-  removeBackdrop(name: string): void {
-    const idx = this.backdrops.findIndex((s) => s.name === name)
+  removeBackdrop(id: string): void {
+    const idx = this.backdrops.findIndex((s) => s.id === id)
     if (idx === -1) {
       throw new Error(`backdrop ${name} not found`)
     }

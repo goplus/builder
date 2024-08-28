@@ -63,7 +63,7 @@ const handleConfirm = async () => {
       }
     },
     () => {
-      props.sprite.removeAnimation(props.animation.name)
+      props.sprite.removeAnimation(props.animation.id)
       if (preserveCostumes.value) {
         for (const costume of props.animation.costumes) {
           const clonedCostume = costume.clone()

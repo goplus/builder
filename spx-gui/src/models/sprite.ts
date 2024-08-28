@@ -18,6 +18,7 @@ import { type RawCostumeConfig, Costume } from './costume'
 import { Animation, type RawAnimationConfig } from './animation'
 import type { Project } from './project'
 import { nanoid } from 'nanoid'
+import type { Sound } from './sound'
 
 export enum RotationStyle {
   none = 'none',
@@ -102,14 +103,14 @@ export class Sprite extends Disposable {
   get defaultCostume(): Costume | null {
     return this.costumes[this.costumeIndex] ?? null
   }
-  setDefaultCostume(name: string) {
-    const idx = this.costumes.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`costume ${name} not found`)
+  setDefaultCostume(id: string) {
+    const idx = this.costumes.findIndex((s) => s.id === id)
+    if (idx === -1) throw new Error(`costume ${id} not found`)
     this.costumeIndex = idx
   }
-  removeCostume(name: string) {
-    const idx = this.costumes.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`costume ${name} not found`)
+  removeCostume(id: string) {
+    const idx = this.costumes.findIndex((s) => s.id === id)
+    if (idx === -1) throw new Error(`costume ${id} not found`)
     const [constume] = this.costumes.splice(idx, 1)
     constume.setParent(null)
 
@@ -134,9 +135,9 @@ export class Sprite extends Disposable {
   }
 
   animations: Animation[]
-  removeAnimation(name: string) {
-    const idx = this.animations.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`animation ${name} not found`)
+  removeAnimation(id: string) {
+    const idx = this.animations.findIndex((s) => s.id === id)
+    if (idx === -1) throw new Error(`animation ${id} not found`)
     const [animation] = this.animations.splice(idx, 1)
     Object.entries(this.animationBindings).forEach(([state, name]) => {
       if (name === animation.name) this.animationBindings[state as State] = undefined
@@ -293,7 +294,7 @@ export class Sprite extends Disposable {
     })
   }
 
-  static async load(name: string, files: Files) {
+  static async load(name: string, files: Files, sounds: Sound[]) {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
@@ -322,7 +323,7 @@ export class Sprite extends Disposable {
     }
     if (animationConfigs != null) {
       const animations = Object.entries(animationConfigs).map(([name, config]) =>
-        Animation.load(name, config!, sprite)
+        Animation.load(name, config!, sprite, sounds)
       )
       for (const animation of animations) {
         sprite.addAnimation(animation)
@@ -333,12 +334,12 @@ export class Sprite extends Disposable {
     return sprite
   }
 
-  static async loadAll(files: Files) {
+  static async loadAll(files: Files, sounds: Sound[]) {
     const spriteNames = listDirs(files, spriteAssetPath)
     const sprites = (
       await Promise.all(
         spriteNames.map(async (spriteName) => {
-          const sprite = await Sprite.load(spriteName, files)
+          const sprite = await Sprite.load(spriteName, files, sounds)
           if (sprite == null) console.warn('failed to load sprite:', spriteName)
           return sprite
         })
@@ -349,11 +350,13 @@ export class Sprite extends Disposable {
 
   export({
     includeCode = true,
-    includeId = true
+    includeId = true,
+    sounds
   }: {
     includeCode?: boolean
     includeId?: boolean
-  } = {}): Files {
+    sounds: Sound[]
+  }): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -365,7 +368,8 @@ export class Sprite extends Disposable {
     const animationConfigs: Record<string, RawAnimationConfig> = {}
     for (const a of this.animations) {
       const [animationConfig, animationCostumesConfigs, animationFiles] = a.export({
-        basePath: assetPath
+        basePath: assetPath,
+        sounds
       })
       animationConfigs[a.name] = animationConfig
       costumeConfigs.push(...animationCostumesConfigs)

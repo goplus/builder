@@ -34,9 +34,10 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.sprite.defaultCostume?.img)
 
 const handleRemove = useMessageHandle(
   async () => {
-    const sname = props.sprite.name
-    const action = { name: { en: `Remove sprite ${sname}`, zh: `删除精灵 ${sname}` } }
-    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(sname))
+    const spriteId = props.sprite.id
+    const spriteName = props.sprite.name
+    const action = { name: { en: `Remove sprite ${spriteName}`, zh: `删除精灵 ${spriteName}` } }
+    await editorCtx.project.history.doAction(action, () => editorCtx.project.removeSprite(spriteId))
   },
   {
     en: 'Failed to remove sprite',
