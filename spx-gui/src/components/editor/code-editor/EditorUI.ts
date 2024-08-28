@@ -18,6 +18,7 @@ import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import { reactive } from 'vue'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -211,7 +212,6 @@ export type AIChatModalOptions = {
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
   hover: HoverProvider[]
-  invokeDocument: Array<(content: string) => void>
 }
 
 declare global {
@@ -237,6 +237,13 @@ export class EditorUI extends Disposable {
     completionProvider: null,
     hoverProvider: null
   }
+  documentDetailState = reactive<{
+    visible: boolean
+    document: DocDetail
+  }>({
+    visible: false,
+    document: ''
+  })
 
   setCompletionMenu(completionMenu: CompletionMenu) {
     this.completionMenu = completionMenu
@@ -254,7 +261,7 @@ export class EditorUI extends Disposable {
     return this.hoverPreview
   }
 
-  constructor(i18n: I18n, getProject: () => Project, invokeDocument: (content: string) => void) {
+  constructor(i18n: I18n, getProject: () => Project) {
     super()
 
     this.i18n = i18n
@@ -262,8 +269,7 @@ export class EditorUI extends Disposable {
     this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: [],
-      hover: [],
-      invokeDocument: [invokeDocument]
+      hover: []
     }
 
     this.addDisposer(() => {
@@ -478,8 +484,7 @@ export class EditorUI extends Disposable {
     // todo: to resolve fn `invokeAIChatModal`
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
-    this.editorUIRequestCallback.invokeDocument.forEach((invokeDocumentFn) =>
-      invokeDocumentFn(docDetail)
-    )
+    this.documentDetailState.visible = true
+    this.documentDetailState.document = docDetail
   }
 }

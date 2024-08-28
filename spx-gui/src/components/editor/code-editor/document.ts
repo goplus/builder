@@ -39,6 +39,7 @@ export class DocAbility {
       )
     }
   }
+
   public getDetailDoc(token: Token): Doc | null {
     return null
   }

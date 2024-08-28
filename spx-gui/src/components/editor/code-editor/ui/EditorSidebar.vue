@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import {
   controlCategory,
   eventCategory,
@@ -27,6 +27,12 @@ import { UITooltip, useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
 import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+
+const props = defineProps<{
+  ui: EditorUI
+}>()
+
 defineEmits<{
   insertText: [insertText: string]
 }>()
@@ -34,10 +40,6 @@ defineEmits<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 const collapsed = ref(false)
-const documentState = reactive({
-  visible: false,
-  document: ''
-})
 
 const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
 
@@ -104,21 +106,9 @@ const activeCategoryIndex = shallowRef(0)
 const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
 
 function handleCategoryClick(index: number) {
-  hideDocument()
+  props.ui.documentDetailState.visible = false
   activeCategoryIndex.value = index
 }
-
-// if necessary to declare a function to make better understanding
-function hideDocument() {
-  documentState.visible = false
-}
-
-defineExpose({
-  showDocument(content: string) {
-    documentState.visible = true
-    documentState.document = content
-  }
-})
 </script>
 
 <template>
@@ -161,7 +151,7 @@ defineExpose({
   </ul>
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
   <div v-show="!collapsed" class="sidebar-container">
-    <section v-if="!documentState.visible" class="tools-wrapper">
+    <section v-if="!ui.documentDetailState.visible" class="tools-wrapper">
       <h4 class="title">{{ $t(activeCategory.label) }}</h4>
       <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
         <h5 class="group-title">{{ $t(group.label) }}</h5>
@@ -187,7 +177,7 @@ defineExpose({
       <MarkdownPreview
         class="detail"
         theme="detail"
-        :content="documentState.document"
+        :content="ui.documentDetailState.document"
       ></MarkdownPreview>
     </section>
   </div>
