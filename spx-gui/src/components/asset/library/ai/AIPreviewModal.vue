@@ -8,6 +8,7 @@
             :key="action.name"
             size="large"
             :type="action.type"
+            :disabled="action.disabled"
             @click="action.action"
           >
             <NIcon v-if="action.icon">
@@ -137,6 +138,7 @@ export interface EditorAction {
   name: string
   label: LocaleMessage
   type: ButtonType
+  disabled?: boolean
   icon?: any
   action: () => void
 }
