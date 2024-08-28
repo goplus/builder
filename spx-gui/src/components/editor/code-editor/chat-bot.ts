@@ -1,6 +1,6 @@
 import type { AIChatParams, AIStartChatParams } from '@/apis/llm'
 import { ChatAction, deleteChat, nextChat, startChat, UserLang } from '@/apis/llm'
-import type { I18n } from '@/utils/i18n'
+import { I18n } from '@/utils/i18n'
 
 export type ChatRole = 'user' | 'assistant'
 
@@ -22,13 +22,29 @@ export class ChatBot {
   }
 
   startExplainChat(input: string): Chat {
-    return new Chat(input, this.getUserLanguage(), ChatAction.explain)
+    return new Chat(input, this.i18nInputWithAction(input,ChatAction.explain), this.getUserLanguage(), ChatAction.explain)
   }
   startCommentChat(input: string): Chat {
-    return new Chat(input, this.getUserLanguage(), ChatAction.comment)
+    return new Chat(input, this.i18nInputWithAction(input,ChatAction.comment), this.getUserLanguage(), ChatAction.comment)
   }
   startFixCodeChat(input: string): Chat {
-    return new Chat(input, this.getUserLanguage(), ChatAction.fixCode)
+    return new Chat(input, this.i18nInputWithAction(input,ChatAction.fixCode), this.getUserLanguage(), ChatAction.fixCode)
+  }
+
+  private i18nInputWithAction(input: string, action: ChatAction): string {
+    switch (action) {
+      case ChatAction.explain:
+        return (
+          this.i18n.t({ en: 'Explain the code: \n', zh: '解释一下这段代码: \n' }) + input
+        )
+      case ChatAction.comment:
+        return (
+          this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + input
+        )
+      case ChatAction.fixCode:
+        this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + input
+    }
+    return ''
   }
 
   private getUserLanguage(): UserLang {
@@ -49,14 +65,15 @@ export class Chat {
   userLanguage: UserLang
   loading: boolean = true
 
-  constructor(firstMessage: string, userLanguage: UserLang, action: ChatAction) {
+  constructor(firstMessage: string,showMessage :string, userLanguage: UserLang, action: ChatAction) {
     this.messages.push({
-      content: firstMessage,
+      content: showMessage ,
       role: 'user',
       actions: []
     })
     this.action = action
     this.userLanguage = userLanguage
+    this.sendFirstMessage(firstMessage)
   }
 
   async sendFirstMessage(input: string) {
