@@ -137,6 +137,8 @@ import { hashFileCollection } from '@/models/common/hash'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
+import { useMessageHandle } from '@/utils/exception'
+import { emit } from 'process'
 
 // Define component props
 const props = defineProps<{
@@ -278,22 +280,16 @@ const handleAddButton = async () => {
 
 
 
-const renameAsset = useRenameAsset()
-const handleRename = useMessageHandle(
-  // TODO: handle unFav
-  async () => {
-    isFavorite.value = !isFavorite.value
-    exportPending.value = true
-    await renameAsset(props.asset, isFavorite.value)
-    exportPending.value = false
-  },
-  {
-    en: 'Failed to rename asset',
-    zh: '收藏失败'
-  },
-  {
-    en: 'Successfully renamed asset',
-    zh: '收藏成功'
+const handleToggleFav = async () => {
+  if (!publicAsset.value) {
+    const exportedAsset = await exportAssetDataToPublic()
+    publicAsset.value = exportedAsset
+  }
+  isFavorite.value = !isFavorite.value
+  if (isFavorite.value) {
+    removeAssetFromFavorites(props.asset.id)
+  } else {
+    addAssetToFavorites(props.asset.id)
   }
 }
 
