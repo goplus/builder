@@ -17,7 +17,7 @@ import (
 	_ "github.com/goplus/igop/pkg/fmt"
 	_ "github.com/goplus/igop/pkg/math"
 	_ "github.com/goplus/reflectx/icall/icall8192"
-	"github.com/goplus/spx"
+	spxfs "github.com/goplus/spx/fs"
 )
 
 var dataChannel = make(chan []byte)
@@ -44,6 +44,10 @@ func main() {
 		log.Fatalln("Failed to read zip data:", err)
 	}
 	fs := zipfs.NewZipFsFromReader(zipReader)
+	// Configure spx to load project files from zip-based file system.
+	spxfs.RegisterSchema("", func(path string) (spxfs.Dir, error) {
+		return fs.Chrooted(path), nil
+	})
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
@@ -74,32 +78,6 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
 	}
-
-	// Definition of `Gamer` here should be the same as `Gamer` in `github.com/goplus/spx`
-	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
-	// TODO: consider better solution to avoid replacing `Gopy_Game_Main` and `Gopy_Game_Run`, see details in https://github.com/goplus/builder/issues/824
-	type Gamer interface {
-		initGame(sprites []spx.Spriter) *spx.Game
-	}
-	gameRun := func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
-		path := resource.(string)
-		gameFs := fs.Chrooted(path)
-		spx.Gopt_Game_Run(game, gameFs, gameConf...)
-	}
-
-	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Main", func(game Gamer, sprites ...spx.Spriter) {
-		game.initGame(sprites)
-		if me, ok := game.(interface{ MainEntry() }); ok {
-			me.MainEntry()
-		}
-		if me, ok := game.(interface{ IsRunned() bool }); ok {
-			if !me.IsRunned() {
-				gameRun(game.(spx.Gamer), "assets")
-			}
-		}
-	})
-
-	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", gameRun)
 
 	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {
