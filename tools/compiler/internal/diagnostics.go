@@ -16,7 +16,7 @@ type diagnostics struct {
 
 // parseErrorLines make error info list to diagnostics list.
 func parseErrorLines(sList []string) []diagnostics {
-	var diagList []diagnostics
+	diagList := []diagnostics{}
 	for _, str := range sList {
 		diag, err := parseErrorLine(str)
 		if err != nil {

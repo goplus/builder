@@ -21,14 +21,23 @@ type scopeItem struct {
 
 type scopeItems []*scopeItem
 
-func getScopesItems(fileName, fileCode string, cursorLine int) (scopeItems, error) {
+func (s *scopeItems) Contains(name string) bool {
+	for _, item := range *s {
+		if item.Label == name {
+			return true
+		}
+	}
+	return false
+}
+
+func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
 		return nil, err
 	}
 
-	cursorPos := fset.File(file.Pos()).LineStart(cursorLine)
+	cursorPos := fset.File(file.Pos()).Pos(cursor)
 
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)
@@ -43,19 +52,55 @@ func getScopesItems(fileName, fileCode string, cursorLine int) (scopeItems, erro
 
 	items := &scopeItems{}
 
+	smallScope := findSmallestScopeAtPosition(info, cursorPos)
+	traverseToRoot(smallScope, items, info)
 	extractFileScopeItems(info, items, file)
 
-	for n, scope := range info.Scopes {
-		if n.Pos() == 0 {
-			continue
-		}
+	return *items, nil
+}
 
-		if scope.Contains(cursorPos) {
-			extractScopeItems(scope, items, info)
+func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Scope {
+	var scopeList []*types.Scope
+
+	for _, scope := range info.Scopes {
+		if scope.Contains(pos) {
+			scopeList = append(scopeList, scope)
 		}
 	}
 
-	return *items, nil
+	smallestScope := scopeList[0]
+	for _, scope := range scopeList {
+		if scope.Pos() > smallestScope.Pos() && scope.End() < smallestScope.End() {
+			smallestScope = scope
+		}
+	}
+
+	return smallestScope
+}
+
+func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info) {
+	for _, name := range scope.Names() {
+		if scope.Pos() == 0 {
+			break
+		}
+		obj := scope.Lookup(name)
+		fmt.Printf("%T \n", obj)
+		scopeItem := &scopeItem{
+			Label: name,
+			Type:  obj.Type().String(),
+		}
+		if strings.HasPrefix(obj.Type().String(), "func") {
+			scopeItem.InsertText = convertFuncToInsertText(obj.Type().String())
+		} else {
+			scopeItem.InsertText = name
+		}
+		if !items.Contains(name) {
+			*items = append(*items, scopeItem)
+		}
+	}
+	if scope.Parent() != nil {
+		traverseToRoot(scope.Parent(), items, info)
+	}
 }
 
 func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *ast.File) {
@@ -71,7 +116,9 @@ func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *a
 					InsertText: convertFuncToInsertText(def.Type().String()),
 					Type:       "func",
 				}
-				*scopeItems = append(*scopeItems, scopeItem)
+				if !scopeItems.Contains(def.Name()) {
+					*scopeItems = append(*scopeItems, scopeItem)
+				}
 				continue
 			case *types.Var:
 				scopeItem := &scopeItem{
@@ -79,7 +126,9 @@ func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *a
 					InsertText: def.Name(),
 					Type:       "var",
 				}
-				*scopeItems = append(*scopeItems, scopeItem)
+				if !scopeItems.Contains(def.Name()) {
+					*scopeItems = append(*scopeItems, scopeItem)
+				}
 				continue
 			}
 		}
@@ -108,29 +157,4 @@ func convertFuncToInsertText(funcSignature string) string {
 	}
 
 	return funcSignature
-}
-
-func extractScopeItems(scope *types.Scope, scopeItems *scopeItems, info *typesutil.Info) {
-	for _, name := range scope.Names() {
-		obj := scope.Lookup(name)
-		if name == "this" && obj.Type().String() == "*main.test" {
-			continue
-		}
-		ident, defObj := lookupDefs(info.Defs, obj.Id())
-		scopeItem := &scopeItem{
-			Label:      ident.Name,
-			InsertText: defObj.Name(),
-			Type:       convertFuncToInsertText(defObj.Type().String()),
-		}
-		*scopeItems = append(*scopeItems, scopeItem)
-	}
-}
-
-func lookupDefs(defs map[*ast.Ident]types.Object, Id string) (*ast.Ident, types.Object) {
-	for ident, obj := range defs {
-		if obj.Id() == Id {
-			return ident, obj
-		}
-	}
-	return nil, nil
 }
