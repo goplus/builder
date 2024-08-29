@@ -144,7 +144,7 @@ export interface EditorAction {
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
-import { AssetType, getAsset, type AssetData } from '@/apis/asset'
+import { addAsset, AssetType, getAsset, IsPublic, type AddAssetParams, type AssetData } from '@/apis/asset'
 import UIButton, { type ButtonType } from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
@@ -279,8 +279,18 @@ const exportAssetDataToPublic = async () => {
   if (!props.asset[isContentReady]) {
     throw new Error('Could not export an incomplete asset')
   }
+  // let addAssetParam = props.asset
+  let addAssetParam:AddAssetParams = {
+    ...props.asset,
+    isPublic: IsPublic.public,
+    files: props.asset.files!,
+    displayName: props.asset.displayName ?? props.asset.id,
+    filesHash: props.asset.filesHash!,
+    preview: "TODO",
+    category: '*',
+  }
   exportPending.value = true
-  const assetId = props.asset[exportedId] ?? (await exportAIGCAsset(props.asset)).assetId
+  const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
   const publicAsset = await getAsset(assetId)
   exportPending.value = false
   return publicAsset
