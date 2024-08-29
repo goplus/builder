@@ -77,6 +77,7 @@ func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
 
 	// Definition of `Gamer` here should be the same as `Gamer` in `github.com/goplus/spx`
 	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
+	// TODO: consider better solution to avoid replacing `Gopy_Game_Main` and `Gopy_Game_Run`, see details in https://github.com/goplus/builder/issues/824
 	type Gamer interface {
 		initGame(sprites []spx.Spriter) *spx.Game
 	}
