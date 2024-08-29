@@ -31,13 +31,7 @@ const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
 const { editorUI } = initCoordinator()
 
 function initCoordinator() {
-  const editorUI = new EditorUI(
-    i18n,
-    () => editorCtx.project,
-    (document: string) => {
-      codeEditorUI.value?.showDocument(document)
-    }
-  )
+  const editorUI = new EditorUI(i18n, () => editorCtx.project)
   const compiler = new Compiler()
   const project = new Project()
   const runtime = new Runtime()

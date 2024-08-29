@@ -244,6 +244,7 @@ defineExpose({
 </style>
 
 <style lang="scss">
+// todo: remove old markdown css, for new markdown css is in `MarkdownPreview.vue`
 .code-text-editor .monaco-editor .monaco-hover {
   // keep consistent with component `UITooltip`
   width: auto !important;
