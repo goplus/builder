@@ -18,7 +18,7 @@ import AnimationPlayer from '@/components/editor/sprite/animation/AnimationPlaye
 import { cachedConvertAssetData } from '@/models/common/asset'
 import type { SkeletonClip } from '@/models/skeletonAnimation'
 import type { Sprite } from '@/models/sprite'
-import type { AnimExportData } from '@/utils/ispxLoader'
+import type { AnimationExportData } from '@/utils/ispxLoader'
 import { useAsyncComputed } from '@/utils/utils'
 import { computed, ref, shallowRef, watch } from 'vue'
 import SkeletonEditor from '@/components/asset/animation/skeleton/SkeletonEditor.vue'
