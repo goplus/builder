@@ -6,7 +6,7 @@ require (
 	github.com/goplus/igop v0.24.0
 	github.com/goplus/reflectx v1.2.2
 	github.com/goplus/spx v1.0.1-0.20240708105507-8f9159acc876
-	github.com/hajimehoshi/ebiten/v2 v2.7.7
+	github.com/hajimehoshi/ebiten/v2 v2.7.8
 )
 
 require (
@@ -45,7 +45,7 @@ require (
 )
 
 replace (
-	github.com/goplus/spx => github.com/JiepengTan/spx v0.0.0-20240719133620-feffaabdead7
+	github.com/goplus/spx => github.com/JiepengTan/spx v0.0.0-20240828092527-761916baddd3
 	github.com/hajimehoshi/oto => github.com/hajimehoshi/oto v1.0.1
 	github.com/srwiley/oksvg => github.com/qiniu/oksvg v0.2.0-no-charset
 	golang.org/x/image => golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d

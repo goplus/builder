@@ -20,6 +20,14 @@
                 goLoadData(view);
             }
 
+            const withUint8Array = (fn) => (buffer, ...args) => {
+                const view = new Uint8Array(buffer);
+                return fn(view, ...args);
+            }
+
+            window.goEditorParseSpriteAnimation = withUint8Array(window.goEditorParseSpriteAnimation);
+            window.goEditorParseSpriteAnimator = withUint8Array(window.goEditorParseSpriteAnimator);
+
             window.dispatchEvent(new Event('wasmReady'));
         })()
     </script>

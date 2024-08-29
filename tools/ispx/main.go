@@ -6,6 +6,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"log"
 	"reflect"
 	"syscall/js"
@@ -23,28 +24,97 @@ import (
 
 var dataChannel = make(chan []byte)
 
+// LoadData loads spx project data to run game.
 func loadData(this js.Value, args []js.Value) interface{} {
+	go runGame()
 	inputArray := args[0]
 
-	// Convert Uint8Array to Go byte slice
-	length := inputArray.Get("length").Int()
-	goBytes := make([]byte, length)
-	js.CopyBytesToGo(goBytes, inputArray)
-
+	goBytes := convertToGoBytes(inputArray)
 	dataChannel <- goBytes
 	return nil
 }
 
+// Editor_ParseSpriteAnimator parses sprite animator data.
+// It takes sprite data in zip format and sprite name as arguments,
+// and returns sprite animator data like clips list and avatar info.
+func Editor_ParseSpriteAnimator(this js.Value, args []js.Value) interface{} {
+	resource := args[0]
+	sprite := args[1].String()
+
+	goBytes := convertToGoBytes(resource)
+	fs := readZipData(goBytes)
+
+	data, err := spx.Editor_ParseSpriteAnimator(fs, sprite)
+	if err != nil {
+		log.Println("Failed to parse sprite animator:", err)
+		return nil
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Println("Failed to marshal sprite animator data:", err)
+		return nil
+	}
+
+	return js.ValueOf(string(jsonData))
+}
+
+// Editor_ParseSpriteAnimation parses sprite animation data.
+// It takes sprite data in zip format, sprite name and animation name as arguments,
+// and returns mesh data of each frame in the animation.
+func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
+	spriteData := args[0]
+	spriteName := args[1].String()
+	animName := args[2].String()
+
+	goBytes := convertToGoBytes(spriteData)
+	fs := readZipData(goBytes)
+
+	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
+	if err != nil {
+		log.Println("Failed to parse sprite animation:", err)
+		return nil
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Println("Failed to marshal sprite animation data:", err)
+		return nil
+	}
+
+	return js.ValueOf(string(jsonData))
+}
+
 func main() {
 	js.Global().Set("goLoadData", js.FuncOf(loadData))
+	js.Global().Set("goEditorParseSpriteAnimation", js.FuncOf(Editor_ParseSpriteAnimation))
+	js.Global().Set("goEditorParseSpriteAnimator", js.FuncOf(Editor_ParseSpriteAnimator))
 
-	zipData := <-dataChannel
+	// Wait forever
+	select {}
+}
 
+// readZipData reads zip data bytes and returns a zip file system.
+func readZipData(zipData []byte) *zipfs.ZipFs {
 	zipReader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
 	if err != nil {
 		log.Fatalln("Failed to read zip data:", err)
 	}
-	fs := zipfs.NewZipFsFromReader(zipReader)
+	return zipfs.NewZipFsFromReader(zipReader)
+}
+
+// convertToGoBytes converts JavaScript Uint8Array to Go bytes.
+func convertToGoBytes(inputArray js.Value) []byte {
+	length := inputArray.Get("length").Int()
+	goBytes := make([]byte, length)
+	js.CopyBytesToGo(goBytes, inputArray)
+	return goBytes
+}
+
+func runGame() {
+	zipData := <-dataChannel
+
+	fs := readZipData(zipData)
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
