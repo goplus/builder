@@ -60,18 +60,18 @@ export class ChatBot {
     const [metadata] = project.export()
     const projectContext: ProjectContext = {
       projectName: metadata.name,
-      projectVariable: [],
+      projectVariables: [],
       projectCode: []
     }
     for (const sound of project.sounds) {
-      projectContext.projectVariable.push({
-        type: 'Sounds',
+      projectContext.projectVariables.push({
+        type: 'Sound',
         name: sound.name
       })
     }
     for (const sprite of project.sprites) {
-      projectContext.projectVariable.push({
-        type: 'Sprites',
+      projectContext.projectVariables.push({
+        type: 'Sprite',
         name: sprite.name
       })
       projectContext.projectCode.push({

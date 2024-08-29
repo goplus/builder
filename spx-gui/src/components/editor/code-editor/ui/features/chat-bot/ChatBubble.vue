@@ -4,7 +4,7 @@ import ChatAvator from './ChatAvator.vue';
 import ChatSuggestItem from './ChatSuggestItem.vue';
 import type { ChatMessage, ContinueAction } from '../../../chat-bot';
 
-defineProps<{ message: ChatMessage }>()
+defineProps<{ message: ChatMessage, loading: boolean }>()
 
 const nextMessage = (q: ContinueAction) => {
     q.click()
@@ -16,7 +16,7 @@ const nextMessage = (q: ContinueAction) => {
     <div class="container" :style="{ alignItems: message.role === 'assistant' ? 'flex-start' : 'flex-end' }">
         <ChatAvator :role="message.role"></ChatAvator>
         <MarkdownPreview class="bubble" :content="message.content"></MarkdownPreview>
-        <div v-if="message.role === 'assistant' && message.actions" class="suggestions">
+        <div v-if="message.role === 'assistant' && message.actions && loading === false" class="suggestions">
             <ChatSuggestItem
                 v-for="a, index in message.actions" :key="index" :content="a.action"
                 @click="nextMessage(a)">
@@ -33,6 +33,10 @@ const nextMessage = (q: ContinueAction) => {
     margin-bottom: 10px;
 }
 
+.container:last-child .suggestions {
+    display: flex;
+}
+
 .bubble {
     max-width: 80%;
     overflow: auto;
@@ -42,7 +46,7 @@ const nextMessage = (q: ContinueAction) => {
 }
 
 .suggestions {
-    display: flex;
+    display: none;
     flex-direction: row;
     gap: 5px;
     margin: 6px 0 0 2px;

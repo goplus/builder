@@ -20,6 +20,7 @@ import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
+import type { Chat } from './chat-bot'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -244,7 +245,7 @@ export class EditorUI extends Disposable {
   }
 
   chatBotModal: ChatBotModal
-  
+
   documentDetailState = reactive<{
     visible: boolean
     document: DocDetail
@@ -281,7 +282,7 @@ export class EditorUI extends Disposable {
       selectionMenu: [],
       inlayHints: [],
       inputAssistant: [],
-      attentionHints: [],
+      attentionHints: []
     }
 
     this.chatBotModal = new ChatBotModal()
@@ -509,7 +510,8 @@ export class EditorUI extends Disposable {
   public registerInputAssistantProvider(provider: InputAssistantProvider) {
     this.editorUIRequestCallback.inputAssistant.push(provider)
   }
-  public invokeAIChatModal() {
+  public invokeAIChatModal(chat: Chat) {
+    this.chatBotModal.setChat(chat)
     this.chatBotModal.setVisible(true)
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
