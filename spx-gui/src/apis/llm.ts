@@ -6,7 +6,7 @@ import {client} from './common'
 
 export type ProjectContext = {
     projectName?: string
-    projectVariable: ProjectVariable[]
+    projectVariables: ProjectVariable[]
     projectCode: Code[]
 }
 

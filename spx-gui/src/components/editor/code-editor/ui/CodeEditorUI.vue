@@ -26,13 +26,13 @@
       </div>
     </div>
     <UILoading :visible="loading" cover />
+    <ChatBotModal
+      v-if="ui.chatBotModal.state.chat"
+      :visible="ui.chatBotModal.state.visible"
+      :chat="ui.chatBotModal.state.chat"
+      @cancelled="ui.chatBotModal.setVisible(false)"
+    ></ChatBotModal>
   </div>
-  <ChatBotModal
-    v-if="ui.chatBotModal.state.chat"
-    :visible="ui.chatBotModal.state.visible"
-    :chat="ui.chatBotModal.state.chat"
-    @cancelled="ui.chatBotModal.setVisible(false)"
-  ></ChatBotModal>
 </template>
 
 <script setup lang="ts">

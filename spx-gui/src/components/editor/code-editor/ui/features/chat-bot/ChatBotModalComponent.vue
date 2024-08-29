@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UIFormModal from '@/components/ui/modal/UIFormModal.vue'
 import ChatBubble from './ChatBubble.vue'
+import ChatLoading from './ChatLoading.vue'
 import { Chat } from '../../../chat-bot'
 
 const emit = defineEmits<{
@@ -28,6 +29,7 @@ defineProps<{
         :message="message"
         :loading="chat.loading"
       ></ChatBubble>
+      <ChatLoading v-if="chat.loading"></ChatLoading>
     </div>
   </UIFormModal>
 </template>
