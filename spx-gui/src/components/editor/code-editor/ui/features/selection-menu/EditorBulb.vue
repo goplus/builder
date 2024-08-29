@@ -8,6 +8,7 @@ defineProps<{
 </script>
 
 <template>
+  <!-- eslint-disable vue/no-v-html -->
   <span
     class="bulb-wrapper"
     :class="{
@@ -29,7 +30,7 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   padding: 2px 4px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 
   .bulb,
   .arrow {
@@ -48,7 +49,7 @@ defineProps<{
 
   &:hover,
   &.show-border {
-    border: 2px solid var(--ui-color-grey-600);
+    border: 1px solid #a6a6a6;
 
     .arrow {
       visibility: visible;
