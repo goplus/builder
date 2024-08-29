@@ -26,6 +26,7 @@ defineProps<{
         v-for="message in chat.messages"
         :key="message.content"
         :message="message"
+        :loading="chat.loading"
       ></ChatBubble>
     </div>
   </UIFormModal>

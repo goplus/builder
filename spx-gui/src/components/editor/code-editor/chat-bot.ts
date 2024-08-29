@@ -1,5 +1,6 @@
-import type { AIChatParams, AIStartChatParams } from '@/apis/llm'
+import type { AIChatParams, AIStartChatParams, ProjectContext } from '@/apis/llm'
 import { ChatAction, deleteChat, nextChat, startChat, UserLang } from '@/apis/llm'
+import type { Project } from '@/models/project'
 import { I18n } from '@/utils/i18n'
 
 export type ChatRole = 'user' | 'assistant'
@@ -12,7 +13,7 @@ export type ChatMessage = {
 
 export type ContinueAction = {
   action: string
-  click: (action: string) => Promise<void>
+  click: () => Promise<boolean>
 }
 
 export class ChatBot {
@@ -21,22 +22,76 @@ export class ChatBot {
     this.i18n = i18n
   }
 
-  startExplainChat(input: string): Chat {
-    return new Chat(input, this.i18nInputWithAction(input,ChatAction.explain), this.getUserLanguage(), ChatAction.explain)
+  startExplainChat(input: string, project: Project): Chat {
+    return new Chat(
+      this.createParams(ChatAction.explain, input, this.getUserLanguage(), project),
+      this.i18nInputWithAction(input, ChatAction.explain)
+    )
   }
-  startCommentChat(input: string): Chat {
-    return new Chat(input, this.i18nInputWithAction(input,ChatAction.comment), this.getUserLanguage(), ChatAction.comment)
+  startCommentChat(input: string, project: Project): Chat {
+    return new Chat(
+      this.createParams(ChatAction.comment, input, this.getUserLanguage(), project),
+      this.i18nInputWithAction(input, ChatAction.comment)
+    )
   }
-  startFixCodeChat(input: string): Chat {
-    return new Chat(input, this.i18nInputWithAction(input,ChatAction.fixCode), this.getUserLanguage(), ChatAction.fixCode)
+  startFixCodeChat(input: string, project: Project): Chat {
+    return new Chat(
+      this.createParams(ChatAction.fixCode, input, this.getUserLanguage(), project),
+      this.i18nInputWithAction(input, ChatAction.fixCode)
+    )
+  }
+
+  private createParams(
+    action: ChatAction,
+    input: string,
+    userLanguage: UserLang,
+    project: Project
+  ): AIStartChatParams {
+    const params: AIStartChatParams = {
+      chatAction: action,
+      projectContext: this.createProjectContext(project),
+      userInput: input,
+      userLang: userLanguage
+    }
+    return params
+  }
+
+  private createProjectContext(project: Project): ProjectContext {
+    const [metadata] = project.export()
+    const projectContext: ProjectContext = {
+      projectName: metadata.name,
+      projectVariable: [],
+      projectCode: []
+    }
+    for (const sound of project.sounds) {
+      projectContext.projectVariable.push({
+        type: 'Sounds',
+        name: sound.name
+      })
+    }
+    for (const sprite of project.sprites) {
+      projectContext.projectVariable.push({
+        type: 'Sprites',
+        name: sprite.name
+      })
+      projectContext.projectCode.push({
+        type: 'Sprite',
+        name: sprite.name,
+        src: sprite.code
+      })
+    }
+    projectContext.projectCode.push({
+      type: 'Stage',
+      name: 'Stage',
+      src: project.stage.code
+    })
+    return projectContext
   }
 
   private i18nInputWithAction(input: string, action: ChatAction): string {
     switch (action) {
       case ChatAction.explain:
-        return (
-          this.i18n.t({ en: 'Explain the code: \n', zh: '解释一下这段代码: \n' }) + input
-        )
+        return this.i18n.t({ en: 'Explain the code: \n', zh: '解释一下这段代码: \n' }) + input
       case ChatAction.comment:
         return (
           this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + input
@@ -61,35 +116,20 @@ export class Chat {
   chatID: string = ''
   messages: ChatMessage[] = []
   length: number = 0
-  action: ChatAction
-  userLanguage: UserLang
   loading: boolean = true
 
-  constructor(firstMessage: string,showMessage :string, userLanguage: UserLang, action: ChatAction) {
+  constructor(params: AIStartChatParams, showMessage: string) {
+    this.loading = true
     this.messages.push({
-      content: showMessage ,
+      content: showMessage,
       role: 'user',
       actions: []
     })
-    this.action = action
-    this.userLanguage = userLanguage
-    this.sendFirstMessage(firstMessage)
+    this.sendFirstMessage(params)
   }
 
-  async sendFirstMessage(input: string) {
-    const params: AIStartChatParams = {
-      chatAction: this.action,
-      projectContext: {
-        projectName: '',
-        projectVariable: {
-          type: '',
-          name: ''
-        },
-        projectCode: []
-      },
-      userInput: input,
-      userLang: this.userLanguage
-    }
+  async sendFirstMessage(params: AIStartChatParams) {
+    this.length++
     const res = await startChat(params)
     this.loading = false
     const content = res.respMessage
@@ -99,14 +139,17 @@ export class Chat {
       role: 'assistant',
       actions: questions.map((question) => ({
         action: question,
-        click: this.nextMessage
+        click: () => this.nextMessage(question)
       }))
     }
     this.chatID = res.id
     this.messages.push(messages)
   }
 
-  async nextMessage(msg: string) {
+  async nextMessage(msg: string): Promise<boolean> {
+    if (this.length > 20) {
+      return false
+    }
     this.loading = true
     const userMessage: ChatMessage = {
       content: msg,
@@ -118,6 +161,7 @@ export class Chat {
       userInput: msg
     }
     const res = await nextChat(this.chatID, params)
+    this.length++
     this.loading = false
     const content = res.respMessage
     const questions = res.respQuestions
@@ -126,10 +170,11 @@ export class Chat {
       role: 'assistant',
       actions: questions.map((question) => ({
         action: question,
-        click: this.nextMessage
+        click: () => this.nextMessage(question)
       }))
     }
     this.messages.push(assistantMessage)
+    return true
   }
 
   async deleteChat() {

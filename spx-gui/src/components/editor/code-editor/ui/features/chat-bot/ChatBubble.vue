@@ -4,10 +4,10 @@ import ChatAvator from './ChatAvator.vue';
 import ChatSuggestItem from './ChatSuggestItem.vue';
 import type { ChatMessage, ContinueAction } from '../../../chat-bot';
 
-defineProps<{message: ChatMessage}>()
+defineProps<{ message: ChatMessage }>()
 
 const nextMessage = (q: ContinueAction) => {
-    q.click(q.action)
+    q.click()
 }
 
 </script>
@@ -17,7 +17,9 @@ const nextMessage = (q: ContinueAction) => {
         <ChatAvator :role="message.role"></ChatAvator>
         <MarkdownPreview class="bubble" :content="message.content"></MarkdownPreview>
         <div v-if="message.role === 'assistant' && message.actions" class="suggestions">
-            <ChatSuggestItem v-for="a, index in message.actions" :key="index" :content="a.action" @click="nextMessage(a)">
+            <ChatSuggestItem
+                v-for="a, index in message.actions" :key="index" :content="a.action"
+                @click="nextMessage(a)">
             </ChatSuggestItem>
         </div>
     </div>

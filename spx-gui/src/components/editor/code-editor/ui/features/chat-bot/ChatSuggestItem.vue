@@ -11,7 +11,7 @@ defineProps<{
 </template>
 
 <style scoped lang="scss">
-.item-container{
+.item-container {
     cursor: pointer;
     background: var(--ui-color-grey-400);
     padding: 4px 8px;
@@ -27,6 +27,4 @@ defineProps<{
         background: var(--ui-color-grey-600);
     }
 }
-
-
 </style>
