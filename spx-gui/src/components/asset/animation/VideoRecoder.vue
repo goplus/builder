@@ -12,23 +12,23 @@
     </div>
 
     <!-- 显示录制的视频 -->
-    <video ref="recordedVideo" controls v-if="recordedBlobUrl"></video>
+    <video v-if="recordedBlobUrl" ref="recordedVideo" controls></video>
 
     <!-- 下载按钮 -->
     <a :href="recordedBlobUrl" download="recorded-video.webm" v-if="recordedBlobUrl">下载视频</a>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+<script lang="ts" setup>
+import { ref, onMounted, onBeforeUnmount, type Ref} from 'vue';
 
 // 定义响应式变量和引用
-const mediaStream = ref(null);
-const mediaRecorder = ref(null);
-const recordedChunks = ref([]);
-const recordedBlobUrl = ref(null);
-const videoRef = ref(null);
-const recordedVideoRef = ref(null);
+const mediaStream: Ref<MediaStream | null> = ref(null);
+const mediaRecorder: Ref<MediaRecorder | null> = ref(null);
+const recordedChunks: Ref<Blob[]> = ref([]);
+const recordedBlobUrl: Ref<string | null> = ref(null);
+const videoRef = ref<HTMLVideoElement | null>(null);
+const recordedVideoRef = ref<HTMLVideoElement | null>(null);
 
 // 启动摄像头并显示实时视频
 const startCamera = async () => {
@@ -37,7 +37,9 @@ const startCamera = async () => {
       video: true, // 启用摄像头
       audio: true, // 启用麦克风（可选）
     });
-    videoRef.value.srcObject = mediaStream.value;
+    if (videoRef.value) {
+      videoRef.value.srcObject = mediaStream.value;
+    }
   } catch (error) {
     console.error('无法访问摄像头:', error);
   }
@@ -50,7 +52,7 @@ const startRecording = () => {
     mediaRecorder.value = new MediaRecorder(mediaStream.value);
 
     // 当有数据可用时，向 recordedChunks 数组推入数据
-    mediaRecorder.value.ondataavailable = (event) => {
+    mediaRecorder.value.ondataavailable = (event: BlobEvent) => {
       if (event.data.size > 0) {
         recordedChunks.value.push(event.data);
       }
@@ -60,7 +62,9 @@ const startRecording = () => {
     mediaRecorder.value.onstop = () => {
       const recordedBlob = new Blob(recordedChunks.value, { type: 'video/webm' });
       recordedBlobUrl.value = URL.createObjectURL(recordedBlob);
-      recordedVideoRef.value.src = recordedBlobUrl.value;
+      if (recordedVideoRef.value) {
+        recordedVideoRef.value.src = recordedBlobUrl.value;
+      }
     };
 
     // 开始录制
