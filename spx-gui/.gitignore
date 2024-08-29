@@ -41,3 +41,4 @@ tsconfig.tsbuildinfo
 !.yarn/versions
 
 .env.local
+.vercel

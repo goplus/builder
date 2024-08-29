@@ -1,32 +1,5 @@
 {
   "framework": "vite",
   "installCommand": "source ../scripts/install-golang.sh && npm install",
-  "buildCommand": "export PATH=$PATH:/usr/local/go/bin && sh build-wasm.sh && npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/widgets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300"
-        }
-      ]
-    }
-  ]
+  "buildCommand": "export PATH=$PATH:/usr/local/go/bin && sh build-wasm.sh && npm run build"
 }
