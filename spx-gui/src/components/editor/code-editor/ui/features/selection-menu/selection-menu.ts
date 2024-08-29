@@ -3,12 +3,16 @@ import { reactive } from 'vue'
 import type { EditorMenuItem } from '@/components/editor/code-editor/ui/EditorMenu.vue'
 import { debounce } from '@/utils/utils'
 
+interface SelectionMenuItem extends EditorMenuItem {
+  action: () => void
+}
+
 export class SelectionMenu implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
   private _onSelection = new Emitter<{ selection: Selection; content: string }>()
   public onSelection = this._onSelection.event
   public SelectionMenuState = reactive<{
-    menuItems: Array<EditorMenuItem>
+    menuItems: Array<SelectionMenuItem>
     visible: boolean
     menuVisible: boolean
     position: {
@@ -38,7 +42,7 @@ export class SelectionMenu implements IDisposable {
       if (!selection || !model) return
       this.hideMenu()
       const selectedContent = model.getValueInRange(selection)
-      if (!selectedContent) return
+      if (!selectedContent || !selectedContent.trim()) return
       this.setSelectedContent(selection, selectedContent)
     })
 

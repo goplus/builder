@@ -29,7 +29,8 @@ props.selectionMenu.onSelection(({ selection, content }) => {
         key: i,
         icon: Icon.AIAbility,
         // todo: computed from editor font size, or just keep 20
-        iconSize: 20
+        iconSize: 20,
+        action: () => item.action()
       }))
     })
   const currentCursorPosition = props.selectionMenu.editor.getPosition()
@@ -63,7 +64,7 @@ props.selectionMenu.onSelection(({ selection, content }) => {
       v-show="selectionMenuState.menuVisible"
       class="selection-menu"
       :items="selectionMenuState.menuItems"
-      :only-focus-active="true"
+      @select="(item) => item.action()"
     ></EditorMenu>
   </section>
 </template>
