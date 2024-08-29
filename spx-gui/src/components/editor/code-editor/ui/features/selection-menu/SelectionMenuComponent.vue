@@ -72,4 +72,8 @@ props.selectionMenu.onSelection(({ selection, content }) => {
 .selection-menu {
   position: absolute;
 }
+
+.selection-menu :deep(.editor-menu__item:hover) {
+  background-color: rgba(42, 130, 228, 0.15);
+}
 </style>

@@ -143,11 +143,16 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   transition: 150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5);
 }
 
+.completion-menu :deep(.editor-menu__item-icon) {
+  color: #faa135;
+}
+
 .completion-menu--reverse-up {
   transform: translateY(calc(-100% - v-bind(cssLineHeight)));
 }
 
 .completion-menu__label {
+  color: black;
   font-size: v-bind(cssFontSize);
 }
 
