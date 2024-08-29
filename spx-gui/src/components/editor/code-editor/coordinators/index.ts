@@ -28,6 +28,7 @@ type JumpPosition = {
 export class Coordinator {
   project: Project
   ui: EditorUI
+  chatBot: ChatBot
   docAbility: DocAbility
 
   constructor(
@@ -41,6 +42,7 @@ export class Coordinator {
     this.project = project
     this.ui = ui
     this.docAbility = docAbility
+    this.chatBot = chatBot
 
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`

@@ -23,19 +23,21 @@ let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMona
 <script setup lang="ts">
 import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
-import loader from '@monaco-editor/loader'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useI18n } from '@/utils/i18n'
-import { type EditorCtx } from '../../../EditorContextProvider.vue'
+import { CompletionMenu } from '../features/completion-menu/completion-menu'
+import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
 import { useLocalStorage } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
+
+import loader from '@monaco-editor/loader'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
-import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
-import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
-import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
-import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
+
+import { type EditorCtx } from '../../../EditorContextProvider.vue'
+import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
   value: string

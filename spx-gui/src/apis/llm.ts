@@ -5,8 +5,8 @@
 import {client} from './common'
 
 export type ProjectContext = {
-    projectName: string
-    projectVariable: ProjectVariable
+    projectName?: string
+    projectVariable: ProjectVariable[]
     projectCode: Code[]
 }
 
@@ -71,7 +71,6 @@ export type ChatResp = {
 export type TaskResp = {
     taskAction   :number
     codeSuggests :CodeSuggest
-    // ...
 }
 
 export type CodeSuggest = {
@@ -87,8 +86,8 @@ export async function nextChat(chatID: string,params: AIChatParams) {
     return client.post('/llm/chat/'+ chatID,params) as Promise<ChatResp>
 }
 
-export async function deleteChat(chatID: string,params: AIChatParams) {
-    return client.delete('/llm/chat/'+ chatID,params) as Promise<void>
+export async function deleteChat(chatID: string) {
+    return client.delete('/llm/chat/'+ chatID) as Promise<void>
 }
 
 export async function startTask(params: AITaskParams) {

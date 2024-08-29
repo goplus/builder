@@ -18,6 +18,7 @@ import type { I18n } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 
 export interface TextModel extends IEditor.ITextModel {}
@@ -241,6 +242,9 @@ export class EditorUI extends Disposable {
     completionProvider: null,
     hoverProvider: null
   }
+
+  chatBotModal: ChatBotModal
+  
   documentDetailState = reactive<{
     visible: boolean
     document: DocDetail
@@ -279,6 +283,8 @@ export class EditorUI extends Disposable {
       inputAssistant: [],
       attentionHints: [],
     }
+
+    this.chatBotModal = new ChatBotModal()
 
     this.addDisposer(() => {
       for (const callbackKey in this.editorUIRequestCallback) {
@@ -503,8 +509,8 @@ export class EditorUI extends Disposable {
   public registerInputAssistantProvider(provider: InputAssistantProvider) {
     this.editorUIRequestCallback.inputAssistant.push(provider)
   }
-  public invokeAIChatModal(options: AIChatModalOptions) {
-    // todo: to resolve fn `invokeAIChatModal`
+  public invokeAIChatModal() {
+    this.chatBotModal.setVisible(true)
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
     this.documentDetailState.visible = true
