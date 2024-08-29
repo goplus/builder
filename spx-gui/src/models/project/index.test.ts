@@ -120,7 +120,7 @@ describe('Project', () => {
     project.addSprite(sprite3)
 
     project.select({ type: 'stage' })
-    project.removeSprite('Sprite3')
+    project.removeSprite(sprite3.id)
     expect(project.selected).toEqual({ type: 'stage' })
 
     project.select({ type: 'sprite', id: project.sprites[0].id })
@@ -130,7 +130,7 @@ describe('Project', () => {
     expect(nextId).toBeTruthy()
     expect(nextId).toEqual(project.sprites.find((s) => s.name === 'Sprite2')?.id)
 
-    project.removeSprite('Sprite2')
+    project.removeSprite(sprite2.id)
     expect(project.selected).toBeNull()
   })
 

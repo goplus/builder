@@ -17,7 +17,7 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   const { fileCollection, fileCollectionHash } = await saveFiles(
-    sprite.export({ includeId: false, sounds: [] }) // animation sound is not preserved when saving as assets
+    sprite.export({ includeId: false, sounds: [], includeCode: false }) // animation sound is not preserved when saving as assets
   )
   return {
     displayName: sprite.name,

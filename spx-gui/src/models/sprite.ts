@@ -3,7 +3,7 @@
  * @desc Object-model definition for Sprite & Costume
  */
 
-import { reactive, watch } from 'vue'
+import { reactive } from 'vue'
 import { nomalizeDegree } from '@/utils/utils'
 import { join } from '@/utils/path'
 import { Disposable } from '@/utils/disposable'
@@ -139,8 +139,8 @@ export class Sprite extends Disposable {
     const idx = this.animations.findIndex((s) => s.id === id)
     if (idx === -1) throw new Error(`animation ${id} not found`)
     const [animation] = this.animations.splice(idx, 1)
-    Object.entries(this.animationBindings).forEach(([state, name]) => {
-      if (name === animation.name) this.animationBindings[state as State] = undefined
+    Object.entries(this.animationBindings).forEach(([state, id]) => {
+      if (id === animation.id) this.animationBindings[state as State] = undefined
     })
     animation.setSprite(null)
     animation.dispose()
@@ -154,31 +154,20 @@ export class Sprite extends Disposable {
     animation.setName(newAnimationName)
     animation.setSprite(this)
     this.animations.push(animation)
-    animation.addDisposer(
-      // update animationBindings when sprite renamed
-      watch(
-        () => animation.name,
-        (newName, originalName) => {
-          Object.entries(this.animationBindings).forEach(([state, name]) => {
-            if (name === originalName) this.animationBindings[state as State] = newName
-          })
-        }
-      )
-    )
   }
 
   private animationBindings: Record<State, string | undefined>
-  getAnimationBoundStates(animationName: string) {
+  getAnimationBoundStates(animationId: string) {
     const states: State[] = []
-    Object.entries(this.animationBindings).forEach(([state, name]) => {
-      if (name === animationName) states.push(state as State)
+    Object.entries(this.animationBindings).forEach(([state, id]) => {
+      if (id === animationId) states.push(state as State)
     })
     return states
   }
-  setAnimationBoundStates(animationName: string, states: State[]) {
+  setAnimationBoundStates(animationId: string, states: State[]) {
     Object.entries(this.animationBindings).forEach(([state, bound]) => {
-      if (states.includes(state as State)) this.animationBindings[state as State] = animationName
-      else if (bound === animationName) this.animationBindings[state as State] = undefined
+      if (states.includes(state as State)) this.animationBindings[state as State] = animationId
+      else if (bound === animationId) this.animationBindings[state as State] = undefined
     })
   }
 
@@ -231,12 +220,13 @@ export class Sprite extends Disposable {
     this.addDisposer(() => {
       this.animations.splice(0).forEach((a) => a.dispose())
     })
+    // This should be set after the animations are created
     this.animationBindings = {
-      [State.default]: inits?.defaultAnimation,
-      [State.die]: inits?.animBindings?.[State.die],
-      [State.step]: inits?.animBindings?.[State.step],
-      [State.turn]: inits?.animBindings?.[State.turn],
-      [State.glide]: inits?.animBindings?.[State.glide]
+      [State.default]: undefined,
+      [State.die]: undefined,
+      [State.step]: undefined,
+      [State.turn]: undefined,
+      [State.glide]: undefined
     }
     this.heading = inits?.heading ?? 0
     this.x = inits?.x ?? 0
@@ -325,6 +315,15 @@ export class Sprite extends Disposable {
       const animations = Object.entries(animationConfigs).map(([name, config]) =>
         Animation.load(name, config!, sprite, sounds)
       )
+      const animationNameToId = (name?: string) =>
+        name && animations.find((a) => a.name === name)?.id
+      sprite.animationBindings = {
+        [State.default]: animationNameToId(inits?.defaultAnimation),
+        [State.die]: animationNameToId(inits?.animBindings?.[State.die]),
+        [State.step]: animationNameToId(inits?.animBindings?.[State.step]),
+        [State.turn]: animationNameToId(inits?.animBindings?.[State.turn]),
+        [State.glide]: animationNameToId(inits?.animBindings?.[State.glide])
+      }
       for (const animation of animations) {
         sprite.addAnimation(animation)
       }
@@ -376,6 +375,17 @@ export class Sprite extends Disposable {
       Object.assign(files, animationFiles)
     }
     const { [State.default]: defaultAnimation, ...animBindings } = this.animationBindings
+    const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimation)?.name
+    if (defaultAnimationName == null)
+      console.warn('default animation', defaultAnimation, 'not found for sprite:', this.name)
+    const animationBindingsNames = Object.entries(animBindings).reduce<
+      Record<string, string | undefined>
+    >((acc, [state, id]) => {
+      const name = this.animations.find((a) => a.id === id)?.name
+      if (name == null) console.warn('animation', id, 'not found for sprite:', this.name)
+      acc[state] = name
+      return acc
+    }, {})
     const config: RawSpriteConfig = {
       heading: this.heading,
       x: this.x,
@@ -388,8 +398,8 @@ export class Sprite extends Disposable {
       pivot: this.pivot,
       costumes: costumeConfigs,
       fAnimations: animationConfigs,
-      defaultAnimation: defaultAnimation,
-      animBindings: animBindings
+      defaultAnimation: defaultAnimationName,
+      animBindings: animationBindingsNames
     }
     if (includeCode) {
       const codeFileName = getSpriteCodeFileName(this.name)

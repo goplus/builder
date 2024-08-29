@@ -89,7 +89,7 @@ function handleEditorClose() {
 }
 
 const boundStateNum = computed(
-  () => props.sprite.getAnimationBoundStates(props.animation.name).length
+  () => props.sprite.getAnimationBoundStates(props.animation.id).length
 )
 
 function handleClickOutside(e: MouseEvent) {

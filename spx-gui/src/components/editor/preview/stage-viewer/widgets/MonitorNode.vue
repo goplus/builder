@@ -67,7 +67,7 @@ onMounted(() => {
   // Konva warning: Node has no parent. zIndex parameter is ignored.
   // Konva warning: Unexpected value 2 for zIndex property. zIndex is just index of a node in children of its parent. Expected value is from 0 to 1.
   // ```
-  const zIndex = editorCtx.project.stage.widgetsZorder.indexOf(props.monitor.name)
+  const zIndex = editorCtx.project.stage.widgetsZorder.indexOf(props.monitor.id)
   if (zIndex >= 0) {
     labelTextRef.value!.getNode().zIndex(zIndex)
   }
@@ -170,6 +170,6 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
 
 function handleMousedown() {
   editorCtx.project.select({ type: 'stage' })
-  editorCtx.project.stage.selectWidget(props.monitor.name)
+  editorCtx.project.stage.selectWidget(props.monitor.id)
 }
 </script>
