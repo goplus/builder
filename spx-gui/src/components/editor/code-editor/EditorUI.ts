@@ -8,7 +8,7 @@ import {
 import { Disposable } from '@/utils/disposable'
 import {
   type CompletionMenu,
-  Icon2CompletionItemKind
+  icon2CompletionItemKind
 } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
@@ -35,7 +35,14 @@ export enum Icon {
 
 export type Markdown = string
 
+export enum DocPreviewLevel {
+  Normal,
+  Warning,
+  Error
+}
+
 export type DocPreview = {
+  level: DocPreviewLevel
   content: Markdown
   recommendAction?: RecommendAction | undefined
   moreActions?: Action[] | undefined
@@ -122,7 +129,7 @@ export interface HoverProvider {
       hoverUnitWord: string
       signal: AbortSignal
     }
-  ): Promise<LayerContent>
+  ): Promise<LayerContent[]>
 }
 
 export type InputItemUsage = {
@@ -205,6 +212,11 @@ export type AIChatModalOptions = {
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
   hover: HoverProvider[]
+  selectionMenu: SelectionMenuProvider[]
+  inlayHints: InlayHintsProvider[]
+  inputAssistant: InputAssistantProvider[]
+  attentionHints: AttentionHintsProvider[]
+  invokeDocument: Array<(content: string) => void>
 }
 
 declare global {
@@ -248,7 +260,7 @@ export class EditorUI extends Disposable {
     return this.hoverPreview
   }
 
-  constructor(i18n: I18n, getProject: () => Project) {
+  constructor(i18n: I18n, getProject: () => Project, invokeDocument: (content: string) => void) {
     super()
 
     this.i18n = i18n
@@ -256,7 +268,12 @@ export class EditorUI extends Disposable {
     this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: [],
-      hover: []
+      hover: [],
+      selectionMenu: [],
+      inlayHints: [],
+      inputAssistant: [],
+      attentionHints: [],
+      invokeDocument: [invokeDocument]
     }
 
     this.chatBotModal = new ChatBotModal()
@@ -348,7 +365,7 @@ export class EditorUI extends Disposable {
               this.completionMenu?.completionItemCache.getAll(completionItemCacheID).map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
-                  kind: Icon2CompletionItemKind(item.icon),
+                  kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
                   range: {
                     startLineNumber: position.lineNumber,
@@ -363,7 +380,8 @@ export class EditorUI extends Disposable {
         }
       })
 
-    const isDocPreview = (layer: LayerContent): layer is DocPreview => 'content' in layer
+    const isDocPreview = (layer: LayerContent): layer is DocPreview =>
+      'content' in layer && 'level' in layer
 
     const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
       'src' in layer && 'duration' in layer
@@ -379,26 +397,25 @@ export class EditorUI extends Disposable {
           if (word == null) return
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())
-          const result = await this.requestHoverProviderResolve(model, {
-            signal: abortController.signal,
-            hoverUnitWord: word.word,
-            position
+          const result = (
+            await this.requestHoverProviderResolve(model, {
+              signal: abortController.signal,
+              hoverUnitWord: word.word,
+              position
+            })
+          ).flat()
+
+          // filter docPreview
+          this.hoverPreview?.showDocuments(result.filter(isDocPreview), {
+            startLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endLineNumber: position.lineNumber,
+            endColumn: word.endColumn
           })
 
-          for (let i = 0; i < result.length; i++) {
-            const layerContent = result[i]
-
-            if (isDocPreview(layerContent)) {
-              this.hoverPreview?.showDocument(layerContent, {
-                startLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: word.endColumn
-              })
-            }
-          }
-
           return {
+            // we only need to know when to trigger hover preview, no need to show raw content
+            // so here we return empty result
             contents: []
           }
         }
@@ -445,35 +462,51 @@ export class EditorUI extends Disposable {
       signal: AbortSignal
     }
   ) {
-    const PromiseLayerContents = this.editorUIRequestCallback.hover.map((item) =>
-      item.provideHover(model, ctx)
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.hover.map((item) => item.provideHover(model, ctx))
     )
+    return promiseResults.flat().filter(Boolean)
+  }
 
-    return await Promise.all(PromiseLayerContents)
+  public async requestSelectionMenuProviderResolve(
+    model: TextModel,
+    ctx: {
+      selection: IRange
+      selectContent: string
+    }
+  ) {
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.selectionMenu.map((item) =>
+        item.provideSelectionMenuItems(model, ctx)
+      )
+    )
+    return promiseResults.flat().filter(Boolean)
   }
 
   public registerCompletionProvider(provider: CompletionProvider) {
     this.editorUIRequestCallback.completion.push(provider)
   }
   public registerInlayHintsProvider(provider: InlayHintsProvider) {
-    // todo: to resolve fn `registerInlayHintsProvider`
+    this.editorUIRequestCallback.inlayHints.push(provider)
   }
   public registerSelectionMenuProvider(provider: SelectionMenuProvider) {
-    // todo: to resolve fn `registerSelectionMenuProvider`
+    this.editorUIRequestCallback.selectionMenu.push(provider)
   }
   public registerHoverProvider(provider: HoverProvider) {
     this.editorUIRequestCallback.hover.push(provider)
   }
   public registerAttentionHintsProvider(provider: AttentionHintsProvider) {
-    // todo: to resolve fn `registerAttentionHintsProvider`
+    this.editorUIRequestCallback.attentionHints.push(provider)
   }
   public registerInputAssistantProvider(provider: InputAssistantProvider) {
-    // todo: to resolve fn `registerInputAssistantProvider`
+    this.editorUIRequestCallback.inputAssistant.push(provider)
   }
   public invokeAIChatModal() {
     this.chatBotModal.setVisible(true)
   }
   public invokeDocumentDetail(docDetail: DocDetail) {
-    // todo: to resolve fn `invokeDocumentDetail`
+    this.editorUIRequestCallback.invokeDocument.forEach((invokeDocumentFn) =>
+      invokeDocumentFn(docDetail)
+    )
   }
 }

@@ -9,6 +9,11 @@
       v-if="hoverPreview"
       :hover-preview="hoverPreview"
     ></HoverPreviewComponent>
+    <SelectionMenuComponent
+      v-if="selectionMenu"
+      :ui="ui"
+      :selection-menu="selectionMenu"
+    ></SelectionMenuComponent>
   </div>
 </template>
 <script lang="ts">
@@ -16,22 +21,23 @@ let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
 </script>
 <script setup lang="ts">
-import { getCurrentInstance, ref, shallowRef, watch, watchEffect } from 'vue'
+import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useI18n } from '@/utils/i18n'
+import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
+import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
 import { useLocalStorage } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
-import { CompletionMenu } from '../features/completion-menu/completion-menu'
 
 import loader from '@monaco-editor/loader'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
+import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
 
 import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
-
 
 const props = defineProps<{
   value: string
@@ -46,9 +52,9 @@ const editorElement = ref<HTMLDivElement>()
 const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
+const selectionMenu = shallowRef<SelectionMenu>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
-const appInstance = getCurrentInstance()
 
 const loaderConfig = {
   paths: {
@@ -145,11 +151,11 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
-  if (!appInstance?.appContext) throw new Error("Can't get appContext")
-
-  const _hoverPreview = new HoverPreview(editor, appInstance?.appContext)
+  const _hoverPreview = new HoverPreview(editor)
   hoverPreview.value = _hoverPreview
   props.ui.setHoverPreview(_hoverPreview)
+
+  selectionMenu.value = new SelectionMenu(editor)
 
   monacoEditor.value = editor
   onCleanup(() => {

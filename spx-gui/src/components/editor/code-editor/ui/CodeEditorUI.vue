@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="code-editor">
-    <EditorSidebar @insert-text="handleUseSnippet"></EditorSidebar>
+    <EditorSidebar ref="editorSidebar" @insert-text="handleUseSnippet"></EditorSidebar>
     <!--  this is core coding input area  -->
     <div class="code-text-editor-wrapper">
       <CodeTextEditor
@@ -70,6 +70,7 @@ const emit = defineEmits<{
 const editorCtx = useEditorCtx()
 
 const codeTextEditor = ref<InstanceType<typeof CodeTextEditor>>()
+const editorSidebar = ref<InstanceType<typeof EditorSidebar>>()
 
 function handleZoom(action: 'in' | 'out' | 'initial') {
   codeTextEditor.value?.zoomFont(action)
@@ -88,6 +89,9 @@ function handleUseSnippet(insertText: string) {
 defineExpose({
   async format() {
     await codeTextEditor.value?.format()
+  },
+  showDocument(document: string) {
+    editorSidebar.value?.showDocument(document)
   }
 })
 </script>
