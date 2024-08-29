@@ -3,7 +3,7 @@
     <h2>摄像头视频录制</h2>
 
     <!-- 显示摄像头实时视频 -->
-    <video ref="video" autoplay></video>
+    <video ref="videoRef" autoplay></video>
 
     <!-- 控制按钮 -->
     <div>
@@ -12,7 +12,7 @@
     </div>
 
     <!-- 显示录制的视频 -->
-    <video v-if="recordedBlobUrl" ref="recordedVideo" controls></video>
+    <video v-if="recordedBlobUrl" ref="recordedVideo" controls :src="recordedBlobUrl"></video>
 
     <!-- 下载按钮 -->
     <a :href="recordedBlobUrl" download="recorded-video.webm" v-if="recordedBlobUrl">下载视频</a>
@@ -37,9 +37,12 @@ const startCamera = async () => {
       video: true, // 启用摄像头
       audio: true, // 启用麦克风（可选）
     });
+    
     if (videoRef.value) {
       videoRef.value.srcObject = mediaStream.value;
+      console.log(videoRef.value)
     }
+    console.log(videoRef.value)
   } catch (error) {
     console.error('无法访问摄像头:', error);
   }
@@ -50,9 +53,11 @@ const startRecording = () => {
   if (mediaStream.value) {
     recordedChunks.value = []; // 清空已录制的数据块
     mediaRecorder.value = new MediaRecorder(mediaStream.value);
+    console.log(mediaRecorder.value)
 
     // 当有数据可用时，向 recordedChunks 数组推入数据
     mediaRecorder.value.ondataavailable = (event: BlobEvent) => {
+      console.log(event.data)
       if (event.data.size > 0) {
         recordedChunks.value.push(event.data);
       }
@@ -62,6 +67,7 @@ const startRecording = () => {
     mediaRecorder.value.onstop = () => {
       const recordedBlob = new Blob(recordedChunks.value, { type: 'video/webm' });
       recordedBlobUrl.value = URL.createObjectURL(recordedBlob);
+      console.log(recordedBlobUrl.value)
       if (recordedVideoRef.value) {
         recordedVideoRef.value.src = recordedBlobUrl.value;
       }
