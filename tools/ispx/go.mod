@@ -3,7 +3,7 @@ module github.com/goplus/builder/ispx
 go 1.21
 
 require (
-	github.com/goplus/igop v0.27.0
+	github.com/goplus/igop v0.27.1
 	github.com/goplus/reflectx v1.2.2
 	github.com/goplus/spx v1.0.1-0.20240828022121-d1b083ef69a3
 	github.com/hajimehoshi/ebiten/v2 v2.7.8
