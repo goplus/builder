@@ -56,7 +56,95 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	smallScope := findSmallestScopeAtPosition(info, cursorPos)
 	traverseToRoot(smallScope, items, info)
 
-	return *items, nil
+	smallestScope := scopeList[0]
+	for _, scope := range scopeList {
+		if scope.Pos() > smallestScope.Pos() && scope.End() < smallestScope.End() {
+			smallestScope = scope
+		}
+	}
+
+	return smallestScope
+}
+
+func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info) {
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+
+		if name == "this" {
+			varObj := obj.(*types.Var)
+			pointerType := varObj.Type().Underlying().(*types.Pointer)
+			structType := pointerType.Elem().Underlying().(*types.Struct)
+
+			for i := 0; i < structType.NumFields(); i++ {
+				named, ok := structType.Field(i).Type().(*types.Named)
+				if !ok {
+					continue
+				}
+
+				for i := 0; i < named.NumMethods(); i++ {
+					method := named.Method(i)
+					if !method.Exported() {
+						continue
+					}
+					mname, _ := convertOverloadToSimple(method.Name())
+					scopeItem := &scopeItem{
+						Label: mname,
+						Type:  "func",
+					}
+					sign := method.Type().(*types.Signature)
+					signList := []string{}
+					for j := range sign.Params().Len() {
+						signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+					}
+					scopeItem.InsertText = mname + " " + strings.Join(signList, ", ")
+					*items = append(*items, scopeItem)
+				}
+
+			}
+		}
+
+		if named, ok := obj.Type().(*types.Named); ok {
+			for i := 0; i < named.NumMethods(); i++ {
+				method := named.Method(i)
+				if method.Name() == "Main" || method.Name() == "Classfname" {
+					continue
+				}
+				scopeItem := &scopeItem{
+					Label: method.Name(),
+					Type:  "func",
+				}
+				sign := method.Type().(*types.Signature)
+				signList := []string{}
+				for j := range sign.Params().Len() {
+					signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+				}
+				scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+			}
+		}
+
+		scopeItem := &scopeItem{
+			Label: name,
+			Type:  obj.Type().String(),
+		}
+
+		if strings.HasPrefix(obj.Type().String(), "func") {
+			sign := obj.Type().(*types.Signature)
+			signList := []string{}
+			for j := range sign.Params().Len() {
+				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+			}
+			scopeItem.Type = "func"
+			scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+		} else {
+			scopeItem.InsertText = name
+		}
+		if !items.Contains(name) {
+			*items = append(*items, scopeItem)
+		}
+	}
+	if scope.Parent() != nil {
+		traverseToRoot(scope.Parent(), items, info)
+	}
 }
 
 func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Scope {
@@ -157,6 +245,15 @@ func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info)
 	if scope.Parent() != nil {
 		traverseToRoot(scope.Parent(), items, info)
 	}
+	overload := strings.Split(overloadName, "__")
+	simpleName, overloadIDStr := overload[0], overload[1]
+
+	runeSimpleName := []rune(simpleName)
+	runeSimpleName[0] = unicode.ToLower(runeSimpleName[0])
+
+	overloadID, _ := strconv.Atoi(overloadIDStr)
+
+	return string(runeSimpleName), overloadID
 }
 
 func convertOverloadToSimple(overloadName string) (string, int) {
