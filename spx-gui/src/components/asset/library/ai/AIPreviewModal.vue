@@ -26,7 +26,7 @@
             }}
           </span>
         </UIButton>
-        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleToggleFav">
+        <UIButton size="large" :disabled="!contentReady || exportPending" @click="handleRename.fn">
           <span style="white-space: nowrap">
             {{
               isFavorite
@@ -137,6 +137,7 @@ import { hashFileCollection } from '@/models/common/hash'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
+import { useRenameAsset } from '../..'
 import { useMessageHandle } from '@/utils/exception'
 
 // Define component props
@@ -239,11 +240,14 @@ const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
 
 const isFavorite = ref(false)
 const exportPending = ref(false)
+
+const publicAsset = ref<AssetData | null>(null)
+
 /**
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
  */
-const exportAssetDataToPublic = async () => {
+ const exportAssetDataToPublic = async () => {
   if (!props.asset[isContentReady]) {
     throw new Error('Could not export an incomplete asset')
   }
@@ -264,12 +268,12 @@ const exportAssetDataToPublic = async () => {
   return publicAsset
 }
 
-const publicAsset = ref<AssetData | null>(null)
 
 const handleAddButton = async () => {
   if (props.addToProjectPending) {
     return
   }
+  
   if (!publicAsset.value) {
     const exportedAsset = await exportAssetDataToPublic()
     publicAsset.value = exportedAsset
@@ -279,18 +283,23 @@ const handleAddButton = async () => {
 
 
 
-const handleToggleFav = async () => {
-  if (!publicAsset.value) {
-    const exportedAsset = await exportAssetDataToPublic()
-    publicAsset.value = exportedAsset
+const renameAsset = useRenameAsset()
+const handleRename = useMessageHandle(
+  async () => {
+    isFavorite.value = !isFavorite.value
+    exportPending.value = true
+    await renameAsset(props.asset, isFavorite.value)
+    exportPending.value = false
+  },
+  {
+    en: 'Failed to rename asset',
+    zh: '收藏失败'
+  },
+  {
+    en: 'Successfully renamed asset',
+    zh: '收藏成功'
   }
-  isFavorite.value = !isFavorite.value
-  if (isFavorite.value) {
-    removeAssetFromFavorites(props.asset.id)
-  } else {
-    addAssetToFavorites(props.asset.id)
-  }
-}
+)
 
 const displayTime = computed(() => {
   return new Date(props.asset.cTime).toLocaleString()

@@ -7,7 +7,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { type AnimationExportData } from '@/utils/ispxLoader'
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
@@ -19,10 +19,12 @@ const props = withDefaults(
     texture: string
     fps?: number
     autoplay?: boolean
+    scale?: number
   }>(),
   {
     fps: 30,
-    autoplay: true
+    autoplay: true,
+    scale: 40
   }
 )
 
@@ -35,7 +37,8 @@ const resize = () => {
   const { clientWidth, clientHeight } = canvas.parentElement!
   canvas.width = clientWidth
   canvas.height = clientHeight
-  // content will be resized automatically when next frame is rendered
+  renderer.resize()
+  renderer.frameIndex = renderer?.frameIndex ?? 0
 }
 
 let renderer: Renderer
@@ -45,7 +48,7 @@ onMounted(async () => {
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
   const bufferInfos = getBufferInfo(gl, props.data)
 
-  renderer = new Renderer(gl, bufferInfos, vs, fs, props.texture, props.fps)
+  renderer = new Renderer(gl, bufferInfos, vs, fs, props.texture, props.fps, props.scale)
   if (props.autoplay) {
     renderer.start()
   }
@@ -55,6 +58,10 @@ onMounted(async () => {
   resize()
 
   setTimeout(() => emit('ready', renderer), 100)
+})
+
+watch(() => props.scale, () => {
+  renderer.scale = props.scale
 })
 
 onUnmounted(() => {
@@ -71,10 +78,10 @@ type CanvasWebGLRenderingContext = WebGLRenderingContext & {
 }
 
 interface Uniforms {
-  uProjectionMatrix: twgl.m4.Mat4
-  uWorldTransformMatrix: twgl.m4.Mat4
-  uTransformMatrix: twgl.m4.Mat4
   uTexture: WebGLTexture
+  uResolution: [number, number]
+  uFlipY: 1 | -1
+  uTranslate: [number, number]
 }
 
 /**
@@ -84,7 +91,7 @@ interface Uniforms {
  * @param bufferInfos The bufferInfos to render,
  * 		each bufferInfo[] represents a frame containing multiple meshes.
  * 		A bufferInfo represents a mesh containing position, uv, and indices.
- * 		Use `getBufferInfo` to get the bufferInfos from the `AnimExportData`.
+ * 		Use `getBufferInfo` to get the bufferInfos from the `AnimationExportData`.
  * @param vs The vertex shader source code. It could be a code string or the id of a script tag.
  * @param fs The fragment shader source code. It could be a code string or the id of a script tag.
  * @param texSrc The texture source url.
@@ -113,13 +120,15 @@ export class Renderer {
     vs: string,
     fs: string,
     texSrc: string,
-    fps: number = 30
+    fps: number = 30,
+    scale: number = 40
   ) {
     this.gl = gl
     this.programInfo = setupProgram(gl, vs, fs)
     this.bufferInfos = bufferInfos
-    this.uniforms = setupUniforms(gl, this.programInfo, texSrc)
+    this.uniforms = setupUniforms(gl, this.programInfo, texSrc, scale)
     this.fps = fps
+    this.scale = scale
   }
 
   // playback control
@@ -233,13 +242,27 @@ export class Renderer {
     }
     return img
   }
+
+  private _scale: number = 40
+  get scale() {
+    return this._scale
+  }
+  set scale(scale: number) {
+    this._scale = scale
+    this.resize()
+  }
+  resize() {
+    const newUniforms = {} as Partial<Uniforms>
+    setupResolutionMap(this.gl, newUniforms, this.scale)
+    updateUniforms(this.programInfo, this.uniforms, newUniforms)
+  }
 }
 
 /**
- * Converts the AnimExportData to bufferInfos.
+ * Converts the AnimationExportData to bufferInfos.
  *
  * @param gl The WebGLRenderingContext
- * @param data The AnimExportData to convert
+ * @param data The AnimationExportData to convert
  */
 export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationExportData) {
   return data.Frames.map((frame) => {
@@ -247,7 +270,7 @@ export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationEx
       const arrays = {
         position: {
           data: mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat(),
-          drawType: gl.DYNAMIC_DRAW,
+          drawType: gl.DYNAMIC_DRAW
         },
         aUV: { data: mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat(), drawType: gl.STATIC_DRAW },
         indices: { data: mesh.Indices, drawType: gl.STATIC_DRAW }
@@ -279,7 +302,7 @@ export function setupProgram(gl: CanvasWebGLRenderingContext, vs: string, fs: st
  *  	Note: culling the back face may cause the object to disappear with the default camera settings.
  */
 export function initScene(gl: CanvasWebGLRenderingContext, cull: false | 'front' | 'back' = false) {
-  twgl.resizeCanvasToDisplaySize(gl.canvas)
+  // twgl.resizeCanvasToDisplaySize(gl.canvas)
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
   if (cull) {
@@ -291,40 +314,19 @@ export function initScene(gl: CanvasWebGLRenderingContext, cull: false | 'front'
 }
 
 /**
- * Sets up the camera.
- *
- * set the projection matrix and the view matrix in the uniforms.
- * The uniforms should be passed to the shader program later.
- *
- * Note: the camera is flipped on the y-axis
- *  by standing at the negative z-axis, looking at the positive z-axis
- *  and heading towards the negative y-axis.
- * So we are looking at the back face of the elements.
+ * Sets up the resolution.
+ * 
+ * It will map the canvas coordinate (0, 0) ~ (canvas.width, canvas.height) to 
+ * WebGL clip space coordinate (-1, -1) ~ (1, 1).
  *
  * @param gl The WebGLRenderingContext
  * @param uniforms The uniforms to set the projection and view matrix
+ * @param scale
  */
-export function setupCamera(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>) {
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
-  const zNear = 0
-  const zFar = 2000
-  const viewSize = 10
-  const projection = m4.ortho(
-    -viewSize * aspect,
-    viewSize * aspect,
-    viewSize,
-    -viewSize,
-    zNear,
-    zFar
-  )
-  const eye = [0, 0, -(zFar - zNear) / 2]
-  const target = [0, 0, 0]
-  const up = [0, -1, 0]
-
-  const camera = m4.lookAt(eye, target, up)
-  const view = m4.inverse(camera)
-  uniforms.uProjectionMatrix = projection
-  uniforms.uWorldTransformMatrix = view
+export function setupResolutionMap(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>, scale: number = 40) {
+  uniforms.uResolution = [gl.canvas.width / scale, gl.canvas.height / scale]
+  uniforms.uTranslate = [1, 1]
+  uniforms.uFlipY = 1
 }
 
 /**
@@ -355,12 +357,12 @@ export function setupTexture(
 export function setupUniforms(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
-  texSrc: string
+  texSrc: string,
+  scale: number = 40
 ) {
   const uniforms = {} as Partial<Uniforms>
   setupTexture(gl, uniforms, texSrc)
-  setupCamera(gl, uniforms)
-  uniforms.uTransformMatrix = m4.identity()
+  setupResolutionMap(gl, uniforms, scale)
 
   twgl.setUniforms(programInfo, uniforms)
   return uniforms as Uniforms
