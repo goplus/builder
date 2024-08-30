@@ -78,8 +78,7 @@ const handleGroupCostumes = useMessageHandle(
       () => {
         const animation = Animation.create(
           '',
-          selectedCostumes.map((costume) => costume.clone()),
-          editorCtx.project.sounds
+          selectedCostumes.map((costume) => costume.clone())
         )
         props.sprite.addAnimation(animation)
         if (removeCostumes) {

@@ -64,7 +64,7 @@ const emit = defineEmits<{
 const editorCtx = useEditorCtx()
 
 const actionName = { en: 'Select sound', zh: '选择声音' }
-const selected = ref(props.animation.soundId)
+const selected = ref(props.animation.sound)
 async function handleSoundClick(sound: string) {
   selected.value = selected.value === sound ? null : sound
 }
@@ -100,7 +100,7 @@ function handleRecorded(sound: Sound) {
 
 async function handleConfirm() {
   await editorCtx.project.history.doAction({ name: actionName }, () =>
-    props.animation.setSoundId(selected.value)
+    props.animation.setSound(selected.value)
   )
   emit('close')
 }

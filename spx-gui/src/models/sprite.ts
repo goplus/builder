@@ -374,15 +374,17 @@ export class Sprite extends Disposable {
       costumeConfigs.push(...animationCostumesConfigs)
       Object.assign(files, animationFiles)
     }
-    const { [State.default]: defaultAnimation, ...animBindings } = this.animationBindings
-    const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimation)?.name
-    if (defaultAnimationName == null)
-      console.warn('default animation', defaultAnimation, 'not found for sprite:', this.name)
+    const { [State.default]: defaultAnimationId, ...animBindings } = this.animationBindings
+    const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
+    if (defaultAnimationId && !defaultAnimationName)
+      console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
     const animationBindingsNames = Object.entries(animBindings).reduce<
       Record<string, string | undefined>
     >((acc, [state, id]) => {
       const name = this.animations.find((a) => a.id === id)?.name
-      if (name == null) console.warn('animation', id, 'not found for sprite:', this.name)
+      if (id && !name) {
+        console.warn('animation', id, 'not found for sprite:', this.name)
+      }
       acc[state] = name
       return acc
     }, {})

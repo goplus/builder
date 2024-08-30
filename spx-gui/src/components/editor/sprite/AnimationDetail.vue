@@ -30,7 +30,7 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const renameCostume = useModal(AnimationRenameModal)
 const sound = computed(
-  () => editorCtx.project.sounds.find((sound) => sound.id === props.animation.soundId) ?? null
+  () => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null
 )
 
 const handleRename = useMessageHandle(

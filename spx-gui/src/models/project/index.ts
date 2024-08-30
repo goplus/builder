@@ -165,8 +165,8 @@ export class Project extends Disposable {
     // TODO: it may be better to do `setSoundId(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
     for (const sprite of this.sprites) {
       for (const animation of sprite.animations) {
-        if (animation.soundId === sound.id) {
-          animation.setSoundId(null)
+        if (animation.sound === sound.id) {
+          animation.setSound(null)
         }
       }
     }

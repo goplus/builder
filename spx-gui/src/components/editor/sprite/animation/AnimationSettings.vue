@@ -74,7 +74,7 @@ const props = defineProps<{
   sounds: Sound[]
 }>()
 
-const soundName = computed(() => props.sounds.find((s) => s.id === props.animation.soundId)?.name)
+const soundName = computed(() => props.sounds.find((s) => s.id === props.animation.sound)?.name)
 
 type Setting = 'duration' | 'bound-state' | 'sound'
 

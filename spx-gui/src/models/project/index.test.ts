@@ -22,7 +22,7 @@ function makeProject() {
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
-  const animation = Animation.create('default', animationCostumes, project.sounds)
+  const animation = Animation.create('default', animationCostumes)
   sprite.addAnimation(animation)
   project.addSprite(sprite)
   return project
@@ -33,11 +33,11 @@ describe('Project', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSoundId(project.sounds[0].id)
+    animation.setSound(project.sounds[0].id)
 
     const files = project.exportGameFiles()
     await project.loadGameFiles(files)
-    expect(project.sprites[0].animations[0].soundId).toBe(project.sounds[0].id)
+    expect(project.sprites[0].animations[0].sound).toBe(project.sounds[0].id)
   })
 
   it('should preserve order for sprites & sounds however files are sorted', async () => {
