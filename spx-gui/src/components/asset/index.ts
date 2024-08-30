@@ -13,6 +13,8 @@ import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
+import AssetRenameModal from './library/AssetRenameModal.vue'
+import type { TaggedAIAssetData } from '@/apis/aigc'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
@@ -36,6 +38,13 @@ export function useAddAssetToLibrary() {
   const invokeAddAssetModal = useModal(AssetAddModal)
   return function addAssetToLibrary(asset: Backdrop | Sound | Sprite) {
     return invokeAddAssetModal({ asset })
+  }
+}
+
+export function useRenameAsset(){
+  const invokeRenameAssetModal = useModal(AssetRenameModal)
+  return function renameAsset(asset: TaggedAIAssetData,isFavorite: boolean){
+    return invokeRenameAssetModal({asset,isFavorite})
   }
 }
 
