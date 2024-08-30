@@ -1,14 +1,20 @@
 <template>
   <div class="video-recorder">
-    <h2>摄像头视频录制</h2>
+    <h2>
+      {{ $t({ en: 'Video Recorder', zh: '视频录制' }) }}
+    </h2>
 
     <!-- 显示摄像头实时视频 -->
     <video ref="videoRef" autoplay></video>
 
     <!-- 控制按钮 -->
-    <div>
-      <button @click="startRecording">开始录制</button>
-      <button @click="stopRecording">停止录制</button>
+    <div class="controlBtn">
+      <UIButton size="large" @click="startRecording">
+        {{ $t({ en: 'start recording', zh: '开始录制' }) }}
+      </UIButton>
+      <UIButton size="large" @click="stopRecording">
+        {{ $t({ en: 'stop recording', zh: '停止录制' }) }}
+      </UIButton>
     </div>
 
     <!-- 显示录制的视频 -->
@@ -21,6 +27,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount, type Ref} from 'vue';
+import { UIButton } from '@/components/ui';
 
 // 定义响应式变量和引用
 const mediaStream: Ref<MediaStream | null> = ref(null);
@@ -40,9 +47,7 @@ const startCamera = async () => {
     
     if (videoRef.value) {
       videoRef.value.srcObject = mediaStream.value;
-      console.log(videoRef.value)
     }
-    console.log(videoRef.value)
   } catch (error) {
     console.error('无法访问摄像头:', error);
   }
@@ -53,11 +58,9 @@ const startRecording = () => {
   if (mediaStream.value) {
     recordedChunks.value = []; // 清空已录制的数据块
     mediaRecorder.value = new MediaRecorder(mediaStream.value);
-    console.log(mediaRecorder.value)
 
     // 当有数据可用时，向 recordedChunks 数组推入数据
     mediaRecorder.value.ondataavailable = (event: BlobEvent) => {
-      console.log(event.data)
       if (event.data.size > 0) {
         recordedChunks.value.push(event.data);
       }
@@ -67,7 +70,6 @@ const startRecording = () => {
     mediaRecorder.value.onstop = () => {
       const recordedBlob = new Blob(recordedChunks.value, { type: 'video/webm' });
       recordedBlobUrl.value = URL.createObjectURL(recordedBlob);
-      console.log(recordedBlobUrl.value)
       if (recordedVideoRef.value) {
         recordedVideoRef.value.src = recordedBlobUrl.value;
       }
@@ -75,7 +77,6 @@ const startRecording = () => {
 
     // 开始录制
     mediaRecorder.value.start();
-    console.log('开始录制...');
   }
 };
 
@@ -83,7 +84,6 @@ const startRecording = () => {
 const stopRecording = () => {
   if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
     mediaRecorder.value.stop();
-    console.log('停止录制');
   }
 };
 
@@ -104,6 +104,11 @@ onBeforeUnmount(() => {
 .video-recorder {
   text-align: center;
   margin-top: 20px;
+}
+.controlBtn {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
 }
 video {
   width: 80%;
