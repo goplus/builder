@@ -3,9 +3,9 @@ module github.com/goplus/builder/ispx
 go 1.21
 
 require (
-	github.com/goplus/igop v0.24.0
+	github.com/goplus/igop v0.27.1
 	github.com/goplus/reflectx v1.2.2
-	github.com/goplus/spx v1.0.1-0.20240815092545-3df776b555a0
+	github.com/goplus/spx v1.0.1-0.20240828022121-d1b083ef69a3
 	github.com/hajimehoshi/ebiten/v2 v2.7.8
 )
 
@@ -19,9 +19,9 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/goplus/canvas v0.1.0 // indirect
-	github.com/goplus/gogen v1.15.1 // indirect
-	github.com/goplus/gop v1.2.5 // indirect
-	github.com/goplus/mod v0.13.9 // indirect
+	github.com/goplus/gogen v1.15.2 // indirect
+	github.com/goplus/gop v1.2.6 // indirect
+	github.com/goplus/mod v0.13.10 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

@@ -7,7 +7,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"log"
-	"reflect"
 	"syscall/js"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
@@ -18,7 +17,7 @@ import (
 	_ "github.com/goplus/igop/pkg/fmt"
 	_ "github.com/goplus/igop/pkg/math"
 	_ "github.com/goplus/reflectx/icall/icall8192"
-	"github.com/goplus/spx"
+	spxfs "github.com/goplus/spx/fs"
 )
 
 var dataChannel = make(chan []byte)
@@ -45,39 +44,40 @@ func main() {
 		log.Fatalln("Failed to read zip data:", err)
 	}
 	fs := zipfs.NewZipFsFromReader(zipReader)
+	// Configure spx to load project files from zip-based file system.
+	spxfs.RegisterSchema("", func(path string) (spxfs.Dir, error) {
+		return fs.Chrooted(path), nil
+	})
 
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
+
+	// Register patch for spx to support functions with generic type like `Gopt_Game_Gopx_GetWidget`.
+	// See details in https://github.com/goplus/builder/issues/765#issuecomment-2313915805
+	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
+package spx
+
+import (
+	. "github.com/goplus/spx"
+)
+
+func Gopt_Game_Gopx_GetWidget[T any](sg ShapeGetter, name string) *T {
+	widget := GetWidget_(sg, name)
+	if result, ok := widget.(interface{}).(*T); ok {
+		return result
+	} else {
+		panic("GetWidget: type mismatch")
+	}
+}
+`)
+	if err != nil {
+		log.Fatalln("Failed to register package patch:", err)
+	}
+
 	source, err := gopbuild.BuildFSDir(ctx, fs, "")
 	if err != nil {
 		log.Fatalln("Failed to build Go+ source:", err)
 	}
-
-	// Definition of `Gamer` here should be the same as `Gamer` in `github.com/goplus/spx`
-	// otherwise, it produces: "fatal error: unreachable method called. linker bug?"
-	type Gamer interface {
-		initGame(sprites []spx.Spriter) *spx.Game
-		getGame() *spx.Game
-	}
-	gameRun := func(game spx.Gamer, resource interface{}, gameConf ...*spx.Config) {
-		path := resource.(string)
-		gameFs := fs.Chrooted(path)
-		spx.Gopt_Game_Run(game, gameFs, gameConf...)
-	}
-
-	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Main", func(game Gamer, sprites ...spx.Spriter) {
-		g := game.initGame(sprites)
-		if me, ok := game.(interface{ MainEntry() }); ok {
-			me.MainEntry()
-		}
-		v := reflect.ValueOf(g).Elem().FieldByName("isRunned")
-		if v.IsValid() && v.Bool() {
-			return
-		}
-		gameRun(game.(spx.Gamer), "assets")
-	})
-
-	igop.RegisterExternal("github.com/goplus/spx.Gopt_Game_Run", gameRun)
 
 	code, err := ctx.RunFile("main.go", source, nil)
 	if err != nil {
