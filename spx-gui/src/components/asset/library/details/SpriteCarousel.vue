@@ -230,7 +230,7 @@ const skeletonAnimations = shallowRef<ReturnType<typeof loadClip>[]>([])
 
 const loadClip = (clip: SkeletonClip, delay: number = 0) => {
   let animLoading = ref(false)
-  let animData = ref<AnimationExportData | null>(null)
+  let animData = shallowRef<AnimationExportData | null>(null)
   setTimeout(async () => {
     animLoading.value = true
     animData.value = await clip.loadAnimFrameData()
