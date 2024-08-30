@@ -184,7 +184,30 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       items.push({
         ...basics,
         insertText: tool.usage.insertText,
-        desc: i18n.t(tool.desc)
+        desc: i18n.t(tool.desc),
+        preview: {
+          level: DocPreviewLevel.Normal,
+          content: i18n.t(tool.desc) + '\n```gop\n' + tool.usage.sample + '\n```',
+          recommendAction: {
+            label: i18n.t({
+              zh: '还有疑惑？场外求助',
+              en: 'Still in confusion? Ask for help'
+            }),
+            activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+            onActiveLabelClick: () => {
+              // TODO: add some logic code here
+            }
+          },
+          moreActions: [
+            {
+              icon: Icon.Document,
+              label: i18n.t({ zh: '查看文档', en: 'Document' }),
+              onClick: () => {
+                // TODO: add some logic code here
+              }
+            }
+          ]
+        }
       })
       continue
     }
@@ -192,7 +215,34 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       items.push({
         ...basics,
         insertText: usage.insertText,
-        desc: [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ')
+        desc: i18n.t(tool.desc),
+        preview: {
+          level: DocPreviewLevel.Normal,
+          content:
+            [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ') +
+            '\n```gop\n' +
+            usage.sample +
+            '\n```',
+          recommendAction: {
+            label: i18n.t({
+              zh: '还有疑惑？场外求助',
+              en: 'Still in confusion? Ask for help'
+            }),
+            activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+            onActiveLabelClick: () => {
+              // TODO: add some logic code here
+            }
+          },
+          moreActions: [
+            {
+              icon: Icon.Document,
+              label: i18n.t({ zh: '查看文档', en: 'Document' }),
+              onClick: () => {
+                // TODO: add some logic code here
+              }
+            }
+          ]
+        }
       })
     }
   }

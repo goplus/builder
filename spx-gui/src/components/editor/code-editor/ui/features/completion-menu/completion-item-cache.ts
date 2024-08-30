@@ -36,14 +36,20 @@ export class CompletionItemCache extends Disposable {
     })
   }
 
+  // todo: a temporary solution, figure out what is the completion menu item id
   // a temporary solution, not addressing the root of the problem
   // this can avoid duplicate items in completion menu.
   public has(item: CompletionItem) {
     return this.cache.some(
-      (cacheItem) =>
-        cacheItem.label === item.label &&
-        cacheItem.insertText === item.insertText &&
-        cacheItem.desc === item.desc
+      (cacheItem) => cacheItem.label === item.label && cacheItem.insertText === item.insertText
+    )
+  }
+
+  // todo: a temporary solution, figure out what is the completion menu item id
+  // this can get the item from cache to render preview component.
+  public getOneByCompletionItemProps(item: Pick<CompletionItem, 'insertText' | 'label'>) {
+    return this.cache.find(
+      (cacheItem) => cacheItem.label === item.label && cacheItem.insertText === item.insertText
     )
   }
 

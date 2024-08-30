@@ -1,9 +1,9 @@
 import {
   editor as IEditor,
-  Position,
+  type IDisposable,
   type IRange,
-  type languages,
-  type IDisposable
+  languages,
+  Position
 } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
 import {
@@ -21,6 +21,8 @@ import type { HoverPreview } from '@/components/editor/code-editor/ui/features/h
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
+import CompletionItemInsertTextRule = languages.CompletionItemInsertTextRule
+import { isDocPreview } from '@/components/editor/code-editor/ui/common'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -348,7 +350,7 @@ export class EditorUI extends Disposable {
           // get current position id to determine if need to request completion provider resolve
           const word = model.getWordUntilPosition(position)
           const project = getProject()
-          const fileHash = project.currentFilesHash || ''
+          const fileHash = project.selectedSprite?.name || ''
           const completionItemCacheID = {
             id: fileHash,
             lineNumber: position.lineNumber,
@@ -390,7 +392,9 @@ export class EditorUI extends Disposable {
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
+                  insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
                   insertText: item.insertText,
+                  detail: isDocPreview(item.preview) ? item.preview.content : '',
                   range: {
                     startLineNumber: position.lineNumber,
                     endLineNumber: position.lineNumber,
@@ -403,15 +407,6 @@ export class EditorUI extends Disposable {
           }
         }
       })
-
-    const isDocPreview = (layer: LayerContent): layer is DocPreview =>
-      'content' in layer && 'level' in layer
-
-    const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
-      'src' in layer && 'duration' in layer
-
-    const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
-      'placeholder' in layer && 'onSubmit' in layer
 
     this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
       LANGUAGE_NAME,

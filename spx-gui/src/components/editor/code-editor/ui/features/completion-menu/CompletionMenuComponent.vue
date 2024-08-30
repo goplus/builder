@@ -2,8 +2,9 @@
 import { computed, ref, watchEffect } from 'vue'
 import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
 import EditorMenu from '../../EditorMenu.vue'
-import { determineClosestEdge, isElementInViewport } from '../../common'
+import { determineClosestEdge, isDocPreview, isElementInViewport } from '../../common'
 import type { Icon } from '@/components/editor/code-editor/EditorUI'
+import DocumentPreview from '@/components/editor/code-editor/ui/features/hover-preview/DocumentPreview.vue'
 
 interface CompletionMenuItem {
   key: number
@@ -50,6 +51,18 @@ const menuItems = computed<CompletionMenuItem[]>(() =>
   }))
 )
 
+const docPreviewProps = computed<InstanceType<typeof DocumentPreview>['$props'] | void>(() => {
+  const _currentCompletionItem = completionMenuState.suggestions[completionMenuState.activeIdx]
+  // here may be undefined if you directly get member from an array.
+  if (!_currentCompletionItem) return
+  const preview = props.completionMenu.completionItemCache.getOneByCompletionItemProps({
+    label: _currentCompletionItem.label,
+    insertText: _currentCompletionItem.insertText
+  })?.preview
+  if (!preview || !isDocPreview(preview)) return
+  return preview
+})
+
 watchEffect(() => {
   const completionMenuElement = editorMenuRef.value?.editorMenuContainerElement
   if (!completionMenuElement) return
@@ -77,32 +90,42 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
 </script>
 
 <template>
-  <editor-menu
-    v-show="completionMenuState.visible"
-    ref="editorMenuRef"
-    class="completion-menu"
-    :items="menuItems"
+  <div
+    class="completion-menu-container"
     :style="{
       top: completionMenuState.position.top + 'px',
-      left: completionMenuState.position.left + 'px'
+      left: completionMenuState.position.left + 'px',
+      visibility: completionMenuState.suggestions.length ? 'visible' : 'hidden'
     }"
-    :list-styles="{
-      maxHeight: 8 * itemHeight + 'px'
-    }"
-    @select="handleMenuItemSelect"
-    @active="(_, el) => handleActiveMenuItem(el)"
   >
-    <template #default="{ items: { matches } }">
-      <span
-        v-for="(match, i) in matches"
-        :key="i"
-        class="completion-menu__label"
-        :class="{ 'completion-menu__label-match': match.highlighted }"
-      >
-        {{ match.text }}
-      </span>
-    </template>
-  </editor-menu>
+    <EditorMenu
+      v-show="completionMenuState.visible"
+      ref="editorMenuRef"
+      class="completion-menu"
+      :items="menuItems"
+      :list-styles="{
+        maxHeight: 8 * itemHeight + 'px'
+      }"
+      @select="handleMenuItemSelect"
+      @active="(_, el) => handleActiveMenuItem(el)"
+    >
+      <template #default="{ items: { matches } }">
+        <span
+          v-for="(match, i) in matches"
+          :key="i"
+          class="completion-menu__label"
+          :class="{ 'completion-menu__label-match': match.highlighted }"
+        >
+          {{ match.text }}
+        </span>
+      </template>
+    </EditorMenu>
+    <DocumentPreview
+      v-if="docPreviewProps && docPreviewProps.content"
+      class="completion-document"
+      v-bind="docPreviewProps"
+    ></DocumentPreview>
+  </div>
 </template>
 <style lang="scss">
 // hidden monaco suggest widget
@@ -130,13 +153,11 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 }
 </style>
 <style scoped lang="scss">
-.completion-menu {
+.completion-menu-container {
   z-index: 999;
   position: absolute;
-  top: 0;
-  right: 0;
-  max-width: 430px;
-  transform: translateY(0);
+  // todo: if necessary to set accurate width.
+  width: 430px;
   transition: 150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5);
 }
 
@@ -155,5 +176,12 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 
 .completion-menu__label-match {
   color: var(--ui-color-blue-500);
+}
+
+.completion-document {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  transform: translateX(100%);
 }
 </style>
