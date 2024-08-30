@@ -8,7 +8,7 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { type AnimationExportData } from '@/utils/ispxLoader'
+import { type Point3D, type AnimationExportData, type Point2D, type AnimationExportMesh } from '@/utils/ispxLoader'
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
 
@@ -43,12 +43,21 @@ const resize = () => {
 
 let renderer: Renderer
 let resizeTimer: any
+let dynamicBuffers: twgl.BufferInfo[][]
+let staticBuffer: twgl.BufferInfo
 
 onMounted(async () => {
+  console.log('mounted')
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
-  const bufferInfos = getBufferInfo(gl, props.data)
+  console.time('TIME: getBufferInfo')
+  if (!dynamicBuffers || !staticBuffer) {
+    const [ _dynamicBuffers, _staticBuffer ] = getBufferInfo(gl, props.data)
+    dynamicBuffers = _dynamicBuffers
+    staticBuffer = _staticBuffer
+  }
+  console.timeEnd('TIME: getBufferInfo')
 
-  renderer = new Renderer(gl, bufferInfos, vs, fs, props.texture, props.fps, props.scale)
+  renderer = new Renderer(gl, dynamicBuffers, staticBuffer, vs, fs, props.texture, props.fps, props.scale)
   if (props.autoplay) {
     renderer.start()
   }
@@ -111,12 +120,14 @@ interface Uniforms {
 export class Renderer {
   private gl: CanvasWebGLRenderingContext
   private programInfo: twgl.ProgramInfo
-  private bufferInfos: twgl.BufferInfo[][] = []
+  private dynamicBuffers: twgl.BufferInfo[][]
+  private staticBuffer: twgl.BufferInfo
   private uniforms: Partial<Uniforms>
 
   constructor(
     gl: CanvasWebGLRenderingContext,
-    bufferInfos: twgl.BufferInfo[][],
+    dynamicBuffers: twgl.BufferInfo[][],
+    staticBuffer: twgl.BufferInfo,
     vs: string,
     fs: string,
     texSrc: string,
@@ -125,7 +136,8 @@ export class Renderer {
   ) {
     this.gl = gl
     this.programInfo = setupProgram(gl, vs, fs)
-    this.bufferInfos = bufferInfos
+    this.dynamicBuffers = dynamicBuffers
+    this.staticBuffer = staticBuffer
     this.uniforms = setupUniforms(gl, this.programInfo, texSrc, scale)
     this.fps = fps
     this.scale = scale
@@ -169,7 +181,7 @@ export class Renderer {
     }
   }
   get totalFrames() {
-    return this.bufferInfos.length
+    return this.dynamicBuffers.length
   }
   private _currentFps = 0
   get currentFps() {
@@ -182,9 +194,9 @@ export class Renderer {
 
   private renderFrame() {
     initScene(this.gl)
-    const bufferInfos = this.bufferInfos[this.frameIndex]
+    const bufferInfos = this.dynamicBuffers[this.frameIndex]
     for (let i = 0; i < bufferInfos.length; i++) {
-      drawElement(this.gl, this.programInfo, bufferInfos[i])
+      drawElement(this.gl, this.programInfo, bufferInfos[i], this.staticBuffer)
     }
   }
 
@@ -199,7 +211,7 @@ export class Renderer {
 
     // calc frame index based on time
     const elapsed = time - this.startTimeStamp
-    this._frameIndex = Math.floor(elapsed / this.frameDuration) % this.bufferInfos.length
+    this._frameIndex = Math.floor(elapsed / this.frameDuration) % this.dynamicBuffers.length
 
     this._currentFps = Math.round(1000 / (time - this.previousTimeStamp))
     if (this.frameIndex !== this.previousFrameIndex) {
@@ -265,19 +277,45 @@ export class Renderer {
  * @param data The AnimationExportData to convert
  */
 export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationExportData) {
-  return data.Frames.map((frame) => {
+  // cache the vertices and uvs to reduce the repeated conversion for vert anim
+  const weakVertMap = new WeakMap<Point3D[], number[]>()
+  const weakUVMap = new WeakMap<Point2D[], number[]>()
+
+  function getBufferInfoFromMesh(gl: CanvasWebGLRenderingContext, mesh: AnimationExportMesh) {
+    const positions = (() => {
+      if (!mesh.Vertices) return null
+      const verts = weakVertMap.get(mesh.Vertices) ?? mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat()
+      weakVertMap.set(mesh.Vertices, verts)
+      return { data: verts, drawType: gl.DYNAMIC_DRAW }
+    })()
+    
+    const aUV = (() => {
+      if (!mesh.Uvs) return null
+      const uvs = weakUVMap.get(mesh.Uvs) ?? mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat()
+      weakUVMap.set(mesh.Uvs, uvs)
+      return { data: uvs, drawType: gl.STATIC_DRAW }
+    })()
+
+    const arrays = {
+      position: positions ?? undefined,
+      aUV: aUV ?? undefined,
+      indices: { data: mesh.Indices, drawType: gl.STATIC_DRAW }
+    } as twgl.Arrays
+
+    if (!positions) delete arrays.position
+    if (!aUV) delete arrays.aUV
+
+    return twgl.createBufferInfoFromArrays(gl, arrays)
+  }
+
+  const dynamicBuffers = data.Frames.map((frame) => {
     return frame.Meshes.map((mesh) => {
-      const arrays = {
-        position: {
-          data: mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat(),
-          drawType: gl.DYNAMIC_DRAW
-        },
-        aUV: { data: mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat(), drawType: gl.STATIC_DRAW },
-        indices: { data: mesh.Indices, drawType: gl.STATIC_DRAW }
-      } satisfies twgl.Arrays
-      return twgl.createBufferInfoFromArrays(gl, arrays)
+      return getBufferInfoFromMesh(gl, mesh)
     })
   })
+
+  const staticBuffer = getBufferInfoFromMesh(gl, data.Frames[0].Meshes[0])
+  return [dynamicBuffers, staticBuffer] as const
 }
 
 /**
@@ -386,10 +424,17 @@ export function updateUniforms(
 export function drawElement(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
-  bufferInfo: twgl.BufferInfo
+  dynamicBuffer: twgl.BufferInfo,
+  staticBuffer?: twgl.BufferInfo
 ) {
-  twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo)
-  gl.drawElements(gl.TRIANGLES, bufferInfo.numElements, gl.UNSIGNED_SHORT, 0)
+  // twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo)
+  // gl.drawElements(gl.TRIANGLES, bufferInfo.numElements, gl.UNSIGNED_SHORT, 0)
+  if (staticBuffer) {
+    twgl.setBuffersAndAttributes(gl, programInfo, staticBuffer)
+  }
+  twgl.setBuffersAndAttributes(gl, programInfo, dynamicBuffer)
+  gl.drawElements(gl.TRIANGLES, dynamicBuffer.numElements, gl.UNSIGNED_SHORT, 0)
+
 }
 </script>
 <style scoped></style>
