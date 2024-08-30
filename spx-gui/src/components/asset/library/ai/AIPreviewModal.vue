@@ -138,7 +138,6 @@ import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
 import { useMessageHandle } from '@/utils/exception'
-import { emit } from 'process'
 
 // Define component props
 const props = defineProps<{
