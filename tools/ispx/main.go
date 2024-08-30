@@ -10,6 +10,7 @@ import (
 	"log"
 	"reflect"
 	"syscall/js"
+	"unsafe"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
 	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
@@ -71,10 +72,13 @@ func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 	fs := readZipData(goBytes)
 
 	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
+	println("================")
 	if err != nil {
 		log.Println("Failed to parse sprite animation:", err)
 		return nil
 	}
+
+	println("sizeof", unsafe.Sizeof(*data))
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -82,6 +86,8 @@ func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 		return nil
 	}
 
+
+	println("done")
 	return js.ValueOf(string(jsonData))
 }
 

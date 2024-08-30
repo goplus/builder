@@ -41,7 +41,8 @@ export class SkeletonClip extends Disposable {
     const data = await goEditorParseSpriteAnimation(
       new Uint8Array(buffer),
       this.animation.name,
-      this.name
+      this.name,
+      this.animation.type
     )
     return data
   }
@@ -62,6 +63,7 @@ export class SkeletonAnimation extends Disposable {
   avatar: File
   scale: { x: number; y: number } = { x: 1, y: 1 }
   offset: { x: number; y: number } = { x: 0, y: 0 }
+  type: 'skeleton' | 'vertex' = 'skeleton'
 
   constructor(name: string, clips: string[], avatar: string, files: Files, prefix: string) {
     super()
@@ -100,6 +102,8 @@ export class SkeletonAnimation extends Disposable {
       if (animatorFile === undefined) throw new Error(`animator file not found: ${animatorFilePath}`)
       const avatar = (await toConfig(avatarFile)) as SkeletonAvatar
       const animator = (await toConfig(animatorFile)) as SkeletonAnimator
+
+      skeletonAnim.type = avatar.type as 'skeleton' | 'vertex'
       
       if (avatar.type === 'skeleton') {       
         // load skeleton hierarchy from mesh file

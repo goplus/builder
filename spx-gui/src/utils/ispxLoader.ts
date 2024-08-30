@@ -84,13 +84,14 @@ export interface AnimationExportData {
 }
 
 export interface AnimationExportFrame {
+	RederOrder: number[]
   Meshes: AnimationExportMesh[]
 }
 
 export interface AnimationExportMesh {
   Indices: number[]
-  Uvs: Point2D[]
-  Vertices: Point3D[]
+  Uvs?: Point2D[]
+  Vertices?: Point3D[]
 }
 
 export interface Point2D {
@@ -136,9 +137,35 @@ export async function goEditorParseSpriteAnimator(
 export async function goEditorParseSpriteAnimation(
   resource: Uint8Array | ArrayBuffer,
   sprite: string,
-  animName: string
+  animName: string,
+  type: string = 'skeleton'
 ): Promise<AnimationExportData> {
+  console.time("TIME: call goEditorParseSpriteAnimation")
   const json = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
+  console.timeEnd("TIME: call goEditorParseSpriteAnimation")
+  
+  console.time("TIME: parse json goEditorParseSpriteAnimation")
   const result: AnimationExportData = JSON.parse(json)
+  console.timeEnd("TIME: parse json goEditorParseSpriteAnimation")
+
+  console.time("TIME: convert goEditorParseSpriteAnimation")
+
+  if (type === 'vertex') {
+    const frame0 = result.Frames[0]
+    for (let i = 0; i < result.Frames.length; i++) {
+      const frame = result.Frames[i];
+      for (let j = 0; j < frame.RederOrder.length; j++) {
+        const i = frame.RederOrder[j]
+        const mesh = frame.Meshes[i]
+        mesh.Indices = frame0.Meshes[i].Indices
+        // mesh.Uvs = frame0.Meshes[0].Uvs
+        mesh.Vertices = frame.Meshes[0].Vertices
+      } 
+    }
+  }
+  console.log('result', result)
+
+  console.timeEnd("TIME: convert goEditorParseSpriteAnimation")
+
   return result
 }
