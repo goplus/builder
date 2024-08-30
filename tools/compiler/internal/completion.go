@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/token"
@@ -34,7 +36,7 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		return nil, err
+		//return nil, err
 	}
 
 	cursorPos := fset.File(file.Pos()).Pos(cursor)
@@ -47,14 +49,14 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	info := initTypeInfo()
 	checker := typesutil.NewChecker(conf, chkOpts, nil, info)
 	if err = checker.Files(nil, []*ast.File{file}); err != nil {
-		return nil, err
+		//return nil, err
 	}
 
 	items := &scopeItems{}
 
 	smallScope := findSmallestScopeAtPosition(info, cursorPos)
 	traverseToRoot(smallScope, items, info)
-	extractFileScopeItems(info, items, file)
+	//extractFileScopeItems(info, items, file)
 
 	return *items, nil
 }
@@ -80,17 +82,73 @@ func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Sco
 
 func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info) {
 	for _, name := range scope.Names() {
-		if scope.Pos() == 0 {
-			break
-		}
 		obj := scope.Lookup(name)
-		fmt.Printf("%T \n", obj)
+
+		if name == "this" {
+			varObj := obj.(*types.Var)
+			pointerType := varObj.Type().Underlying().(*types.Pointer)
+			structType := pointerType.Elem().Underlying().(*types.Struct)
+
+			for i := 0; i < structType.NumFields(); i++ {
+				named, ok := structType.Field(i).Type().(*types.Named)
+				if !ok {
+					continue
+				}
+
+				for i := 0; i < named.NumMethods(); i++ {
+					method := named.Method(i)
+					if !method.Exported() {
+						continue
+					}
+					mname, _ := convertOverloadToSimple(method.Name())
+					scopeItem := &scopeItem{
+						Label: mname,
+						Type:  "func",
+					}
+					sign := method.Type().(*types.Signature)
+					signList := []string{}
+					for j := range sign.Params().Len() {
+						signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+					}
+					scopeItem.InsertText = mname + " " + strings.Join(signList, ", ")
+					*items = append(*items, scopeItem)
+				}
+
+			}
+		}
+
+		if named, ok := obj.Type().(*types.Named); ok {
+			for i := 0; i < named.NumMethods(); i++ {
+				method := named.Method(i)
+				if method.Name() == "Main" || method.Name() == "Classfname" {
+					continue
+				}
+				scopeItem := &scopeItem{
+					Label: method.Name(),
+					Type:  "func",
+				}
+				sign := method.Type().(*types.Signature)
+				signList := []string{}
+				for j := range sign.Params().Len() {
+					signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+				}
+				scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+			}
+		}
+
 		scopeItem := &scopeItem{
 			Label: name,
 			Type:  obj.Type().String(),
 		}
+
 		if strings.HasPrefix(obj.Type().String(), "func") {
-			scopeItem.InsertText = convertFuncToInsertText(obj.Type().String())
+			sign := obj.Type().(*types.Signature)
+			signList := []string{}
+			for j := range sign.Params().Len() {
+				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+			}
+			scopeItem.Type = "func"
+			scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
 		} else {
 			scopeItem.InsertText = name
 		}
@@ -149,12 +207,41 @@ func convertFuncToInsertText(funcSignature string) string {
 			paramParts[i] = strings.TrimSpace(strings.Split(trimParam, " ")[0])
 		}
 
-		insertText := fmt.Sprintf("func(%s)", strings.Join(paramParts, ", "))
-
-		insertText += "{\n\n}"
+		insertText := fmt.Sprintf("%s", strings.Join(paramParts, ", "))
 
 		return insertText
 	}
 
 	return funcSignature
+}
+
+func convertOverloadToSimple(overloadName string) (string, int) {
+	if !strings.Contains(overloadName, "__") {
+		runeSimpleName := []rune(overloadName)
+		runeSimpleName[0] = unicode.ToLower(runeSimpleName[0])
+		return string(runeSimpleName), 0
+	}
+	overload := strings.Split(overloadName, "__")
+	simpleName, overloadIDStr := overload[0], overload[1]
+
+	runeSimpleName := []rune(simpleName)
+	runeSimpleName[0] = unicode.ToLower(runeSimpleName[0])
+
+	overloadID, _ := strconv.Atoi(overloadIDStr)
+
+	return string(runeSimpleName), overloadID
+}
+
+func convertSimpleToOverload(simpleName string, overloadID int) string {
+	if strings.Contains(simpleName, "__") {
+		return simpleName
+	}
+
+	overLoadNameRune := []rune(simpleName)
+	overLoadNameRune[0] = unicode.ToUpper(overLoadNameRune[0])
+
+	overloadName := string(overLoadNameRune)
+	overloadName += "__" + strconv.Itoa(overloadID)
+
+	return overloadName
 }

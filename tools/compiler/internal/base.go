@@ -20,16 +20,16 @@ func GetDiagnostics(fileName, fileCode string) (interface{}, error) {
 // GetDefinition return user's code definition.
 func GetDefinition(fileName, fileCode string) (interface{}, error) {
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
-	if err != nil {
-		return nil, err
-	}
+	file, _ := initParser(fset, fileName, fileCode)
+	//if err != nil {
+	//	return nil, nil
+	//}
 
 	// get user code info
-	info, err := codeInfo(initSPXMod(), file, fset)
-	if err != nil {
-		return nil, err
-	}
+	info, _ := codeInfo(initSPXMod(), file, fset)
+	//if err != nil {
+	//	return nil, nil
+	//}
 
 	definitionList := getDefinitionList(info)
 
