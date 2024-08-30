@@ -8,9 +8,14 @@
 <div>
 
     <textarea id="codeInput" style="width: 400px;height: 500px">
-var a int
+var (
+    x int
+    y int
+)
 
-var this bool
+var a int
+var b int
+var c int
 
 func add(a,b int) int {
     a = a + 1
@@ -39,7 +44,6 @@ onStart => {
     }
     myFn()
 }
-
     </textarea>
 
     <input type="number" id="line" value="8" >

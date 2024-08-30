@@ -11,11 +11,24 @@ import (
 
 type definitionItem struct {
 	BasePos
-	PkgName string `json:"pkg_name"`
-	PkgPath string `json:"pkg_path"`
-	Name    string `json:"name"`
-	Content string `json:"content"`
+	PkgName string  `json:"pkg_name"`
+	PkgPath string  `json:"pkg_path"`
+	Name    string  `json:"name"` // This is the token name
+	Content string  `json:"content"`
+	Usages  []usage `json:"usages"` // contains 1 or n usage for matches.
 	From    BasePos
+}
+
+type usage struct {
+	Declaration string  `json:"declaration"`
+	Params      []param `json:"samples"`
+	Type        string  `json:"type"`
+}
+
+type param struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
+	Type string `json:"type"`
 }
 
 type definitions []*definitionItem

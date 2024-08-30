@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/token"
@@ -21,14 +23,23 @@ type scopeItem struct {
 
 type scopeItems []*scopeItem
 
-func getScopesItems(fileName, fileCode string, cursorLine int) (scopeItems, error) {
+func (s *scopeItems) Contains(name string) bool {
+	for _, item := range *s {
+		if item.Label == name {
+			return true
+		}
+	}
+	return false
+}
+
+func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		return nil, err
+		//return nil, err
 	}
 
-	cursorPos := fset.File(file.Pos()).LineStart(cursorLine)
+	cursorPos := fset.File(file.Pos()).Pos(cursor)
 
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)
@@ -38,24 +49,116 @@ func getScopesItems(fileName, fileCode string, cursorLine int) (scopeItems, erro
 	info := initTypeInfo()
 	checker := typesutil.NewChecker(conf, chkOpts, nil, info)
 	if err = checker.Files(nil, []*ast.File{file}); err != nil {
-		return nil, err
+		//return nil, err
 	}
 
 	items := &scopeItems{}
 
-	extractFileScopeItems(info, items, file)
+	smallScope := findSmallestScopeAtPosition(info, cursorPos)
+	traverseToRoot(smallScope, items, info)
+	//extractFileScopeItems(info, items, file)
 
-	for n, scope := range info.Scopes {
-		if n.Pos() == 0 {
-			continue
-		}
+	return *items, nil
+}
 
-		if scope.Contains(cursorPos) {
-			extractScopeItems(scope, items, info)
+func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Scope {
+	var scopeList []*types.Scope
+
+	for _, scope := range info.Scopes {
+		if scope.Contains(pos) {
+			scopeList = append(scopeList, scope)
 		}
 	}
 
-	return *items, nil
+	smallestScope := scopeList[0]
+	for _, scope := range scopeList {
+		if scope.Pos() > smallestScope.Pos() && scope.End() < smallestScope.End() {
+			smallestScope = scope
+		}
+	}
+
+	return smallestScope
+}
+
+func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info) {
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+
+		if name == "this" {
+			varObj := obj.(*types.Var)
+			pointerType := varObj.Type().Underlying().(*types.Pointer)
+			structType := pointerType.Elem().Underlying().(*types.Struct)
+
+			for i := 0; i < structType.NumFields(); i++ {
+				named, ok := structType.Field(i).Type().(*types.Named)
+				if !ok {
+					continue
+				}
+
+				for i := 0; i < named.NumMethods(); i++ {
+					method := named.Method(i)
+					if !method.Exported() {
+						continue
+					}
+					mname, _ := convertOverloadToSimple(method.Name())
+					scopeItem := &scopeItem{
+						Label: mname,
+						Type:  "func",
+					}
+					sign := method.Type().(*types.Signature)
+					signList := []string{}
+					for j := range sign.Params().Len() {
+						signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+					}
+					scopeItem.InsertText = mname + " " + strings.Join(signList, ", ")
+					*items = append(*items, scopeItem)
+				}
+
+			}
+		}
+
+		if named, ok := obj.Type().(*types.Named); ok {
+			for i := 0; i < named.NumMethods(); i++ {
+				method := named.Method(i)
+				if method.Name() == "Main" || method.Name() == "Classfname" {
+					continue
+				}
+				scopeItem := &scopeItem{
+					Label: method.Name(),
+					Type:  "func",
+				}
+				sign := method.Type().(*types.Signature)
+				signList := []string{}
+				for j := range sign.Params().Len() {
+					signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+				}
+				scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+			}
+		}
+
+		scopeItem := &scopeItem{
+			Label: name,
+			Type:  obj.Type().String(),
+		}
+
+		if strings.HasPrefix(obj.Type().String(), "func") {
+			sign := obj.Type().(*types.Signature)
+			signList := []string{}
+			for j := range sign.Params().Len() {
+				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
+			}
+			scopeItem.Type = "func"
+			scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+		} else {
+			scopeItem.InsertText = name
+		}
+		if !items.Contains(name) {
+			*items = append(*items, scopeItem)
+		}
+	}
+	if scope.Parent() != nil {
+		traverseToRoot(scope.Parent(), items, info)
+	}
 }
 
 func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *ast.File) {
@@ -71,7 +174,9 @@ func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *a
 					InsertText: convertFuncToInsertText(def.Type().String()),
 					Type:       "func",
 				}
-				*scopeItems = append(*scopeItems, scopeItem)
+				if !scopeItems.Contains(def.Name()) {
+					*scopeItems = append(*scopeItems, scopeItem)
+				}
 				continue
 			case *types.Var:
 				scopeItem := &scopeItem{
@@ -79,7 +184,9 @@ func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *a
 					InsertText: def.Name(),
 					Type:       "var",
 				}
-				*scopeItems = append(*scopeItems, scopeItem)
+				if !scopeItems.Contains(def.Name()) {
+					*scopeItems = append(*scopeItems, scopeItem)
+				}
 				continue
 			}
 		}
@@ -100,9 +207,7 @@ func convertFuncToInsertText(funcSignature string) string {
 			paramParts[i] = strings.TrimSpace(strings.Split(trimParam, " ")[0])
 		}
 
-		insertText := fmt.Sprintf("func(%s)", strings.Join(paramParts, ", "))
-
-		insertText += "{\n\n}"
+		insertText := fmt.Sprintf("%s", strings.Join(paramParts, ", "))
 
 		return insertText
 	}
@@ -110,27 +215,33 @@ func convertFuncToInsertText(funcSignature string) string {
 	return funcSignature
 }
 
-func extractScopeItems(scope *types.Scope, scopeItems *scopeItems, info *typesutil.Info) {
-	for _, name := range scope.Names() {
-		obj := scope.Lookup(name)
-		if name == "this" && obj.Type().String() == "*main.test" {
-			continue
-		}
-		ident, defObj := lookupDefs(info.Defs, obj.Id())
-		scopeItem := &scopeItem{
-			Label:      ident.Name,
-			InsertText: defObj.Name(),
-			Type:       convertFuncToInsertText(defObj.Type().String()),
-		}
-		*scopeItems = append(*scopeItems, scopeItem)
+func convertOverloadToSimple(overloadName string) (string, int) {
+	if !strings.Contains(overloadName, "__") {
+		runeSimpleName := []rune(overloadName)
+		runeSimpleName[0] = unicode.ToLower(runeSimpleName[0])
+		return string(runeSimpleName), 0
 	}
+	overload := strings.Split(overloadName, "__")
+	simpleName, overloadIDStr := overload[0], overload[1]
+
+	runeSimpleName := []rune(simpleName)
+	runeSimpleName[0] = unicode.ToLower(runeSimpleName[0])
+
+	overloadID, _ := strconv.Atoi(overloadIDStr)
+
+	return string(runeSimpleName), overloadID
 }
 
-func lookupDefs(defs map[*ast.Ident]types.Object, Id string) (*ast.Ident, types.Object) {
-	for ident, obj := range defs {
-		if obj.Id() == Id {
-			return ident, obj
-		}
+func convertSimpleToOverload(simpleName string, overloadID int) string {
+	if strings.Contains(simpleName, "__") {
+		return simpleName
 	}
-	return nil, nil
+
+	overLoadNameRune := []rune(simpleName)
+	overLoadNameRune[0] = unicode.ToUpper(overLoadNameRune[0])
+
+	overloadName := string(overLoadNameRune)
+	overloadName += "__" + strconv.Itoa(overloadID)
+
+	return overloadName
 }
