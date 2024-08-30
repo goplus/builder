@@ -8,6 +8,8 @@ import { fromText, type Files } from '../common/file'
 import { AutoSaveMode, AutoSaveToCloudState, Project } from '.'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
+import type { ProjectData } from '@/apis/project'
+import { Cancelled } from '@/utils/exception'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -28,6 +30,15 @@ function makeProject() {
 }
 
 describe('Project', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
   it('should preserve animation sound with exportGameFiles & loadGameFiles', async () => {
     const project = makeProject()
     const sprite = project.sprites[0]
@@ -139,16 +150,54 @@ describe('Project', () => {
     await expect((project as any).saveToLocalCache('key')).rejects.toThrow('disposed')
     expect(saveToLocalCacheMethod).toHaveBeenCalledWith('key')
   })
-})
 
-describe('ProjectAutoSave', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
+  it('should abort previous saveToCloud call when a new one is initiated', async () => {
+    const project = makeProject()
+
+    const cloudSaveMock = vi
+      .spyOn(cloudHelper, 'save')
+      .mockImplementation((metadata, files, signal) => {
+        return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            resolve({ metadata: metadata as ProjectData, files })
+          }, 1000)
+
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              clearTimeout(timeoutId)
+              reject(signal.reason)
+            })
+          }
+        })
+      })
+
+    const firstSavePromise = project.saveToCloud()
+    await vi.advanceTimersByTimeAsync(500)
+
+    const secondSavePromise = project.saveToCloud()
+    vi.runAllTimersAsync()
+
+    await expect(firstSavePromise).rejects.toThrow(Cancelled)
+    await expect(secondSavePromise).resolves.not.toThrow()
+    expect(cloudSaveMock).toHaveBeenCalledTimes(2)
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-    vi.restoreAllMocks()
+  it('should not abort saveToCloud call if it completes before a new one is initiated', async () => {
+    const project = makeProject()
+
+    const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files) => {
+      return new Promise((resolve) => {
+        resolve({ metadata: metadata as ProjectData, files })
+      })
+    })
+
+    const firstSavePromise = project.saveToCloud()
+    await expect(firstSavePromise).resolves.not.toThrow()
+
+    const secondSavePromise = project.saveToCloud()
+    await expect(secondSavePromise).resolves.not.toThrow()
+
+    expect(cloudSaveMock).toHaveBeenCalledTimes(2)
   })
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
