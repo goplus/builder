@@ -23,7 +23,6 @@ import type { HoverPreview } from '@/components/editor/code-editor/ui/features/h
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
-import CompletionItemInsertTextRule = languages.CompletionItemInsertTextRule
 import { isDocPreview } from '@/components/editor/code-editor/ui/common'
 
 export interface TextModel extends IEditor.ITextModel {}
@@ -352,11 +351,23 @@ export class EditorUI extends Disposable {
       ]
     })
 
-    // TODO: monaco editor completion is not fully match our features, we need implement it by self, we may need do following,
-    //  trigger completion menu by handle listen keyboard down, up, shortcut, mouse down up, focus, blur, and custom fuzzy search to match completion item.
-    // current bug is when you type same code remove it then type it, it will show duplicate completion items depends on how many times you repeat it.
-    // because our completionMenuCache use { lineNumber: number, column: number, fileId: string  } to make completionMenuCacheID，thus, we can not recognize the difference between old typing and new typing and typing code is same.
-    // in `completionItemCache` i try to add function `has` to force avoid duplicate item in `completionItemCache`
+    /**
+     * TODO: The current implementation of the Monaco editor's completion feature does not fully align with our requirements.
+     * Therefore, we need to develop a custom solution. This involves handling various events such as key down, key up,
+     * shortcuts, mouse down/up, focus, and blur to effectively trigger the completion menu. Moreover, we should implement
+     * a custom fuzzy search algorithm to accurately match completion items.
+     *
+     * Current Issue: A bug exists where typing a piece of code, deleting it, and typing it again results in duplicate
+     * completion items. This duplication is contingent upon the number of times the code is retyped.
+     *
+     * Cause: The issue arises because our `completionMenuCache` utilizes an identifier composed of
+     * { lineNumber: number, column: number, fileId: string } to create a `completionMenuCacheID`. This approach fails to
+     * distinguish between repeated instances of identical code typing, treating them as the same.
+     *
+     * Solution Attempt: To address this, I've introduced a `has` function within the `completionItemCache` to explicitly
+     * prevent the storage of duplicate items in the `completionItemCache`.
+     */
+
     this.monacoProviderDisposes.completionProvider =
       monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
         provideCompletionItems: (model, position) => {
@@ -365,9 +376,10 @@ export class EditorUI extends Disposable {
           // get current position id to determine if need to request completion provider resolve
           const word = model.getWordUntilPosition(position)
           const project = getProject()
-          const fileHash = project.selectedSprite?.name || ''
+          // for spriteName is unique, we can treat it as file code id
+          const spriteName = project.selectedSprite?.name || ''
           const completionItemCacheID = {
-            id: fileHash,
+            id: spriteName,
             lineNumber: position.lineNumber,
             column: word.startColumn
           }
