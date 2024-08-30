@@ -292,6 +292,8 @@ export class EditorUI extends Disposable {
         this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback].length = 0
       }
     })
+
+    this.addDisposer(() => this.disposeMonacoProviders())
   }
 
   public async getMonaco() {
@@ -333,9 +335,16 @@ export class EditorUI extends Disposable {
       ]
     })
 
+    // TODO: monaco editor completion is not fully match our features, we need implement it by self, we may need do following,
+    //  trigger completion menu by handle listen keyboard down, up, shortcut, mouse down up, focus, blur, and custom fuzzy search to match completion item.
+    // current bug is when you type same code remove it then type it, it will show duplicate completion items depends on how many times you repeat it.
+    // because our completionMenuCache use { lineNumber: number, column: number, fileId: string  } to make completionMenuCacheID，thus, we can not recognize the difference between old typing and new typing and typing code is same.
+    // in `completionItemCache` i try to add function `has` to force avoid duplicate item in `completionItemCache`
     this.monacoProviderDisposes.completionProvider =
       monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
-        provideCompletionItems: (model, position, _, cancelToken) => {
+        provideCompletionItems: (model, position) => {
+          if (!this.completionMenu) throw new Error('completionMenu is null')
+
           // get current position id to determine if need to request completion provider resolve
           const word = model.getWordUntilPosition(position)
           const project = getProject()
@@ -345,15 +354,16 @@ export class EditorUI extends Disposable {
             lineNumber: position.lineNumber,
             column: word.startColumn
           }
-
-          // is CompletionItemCacheID changed, inner cache will clean `cached data`
+          if (!word.word) {
+            this.completionMenu.hideCompletionMenu()
+            return { suggestions: [] }
+          }
+          // if completionItemCacheID changed, inner cache will clean `cached data`
           // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
           const isNeedRequestCompletionProviderResolve =
-            !this.completionMenu?.completionItemCache.isCacheAvailable(completionItemCacheID)
-
+            !this.completionMenu.completionItemCache.isCacheAvailable(completionItemCacheID)
           if (isNeedRequestCompletionProviderResolve) {
             const abortController = new AbortController()
-            cancelToken.onCancellationRequested(() => abortController.abort())
             this.requestCompletionProviderResolve(
               model,
               {
@@ -362,16 +372,21 @@ export class EditorUI extends Disposable {
                 signal: abortController.signal
               },
               (items: CompletionItem[]) => {
-                this.completionMenu?.completionItemCache.add(completionItemCacheID, items)
+                if (!this.completionMenu) return console.warn('completionMenu is null')
+                const isSamePosition =
+                  this.completionMenu.completionItemCache.isSamePosition(completionItemCacheID)
+                if (!isSamePosition) return abortController.abort()
+
+                this.completionMenu.completionItemCache.add(completionItemCacheID, items)
                 // if you need user immediately show updated completion items, we need close it and reopen it.
-                this.completionMenu?.editor.trigger('editor', 'hideSuggestWidget', {})
-                this.completionMenu?.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+                this.completionMenu.hideCompletionMenu()
+                this.completionMenu.showCompletionMenu()
               }
             )
             return { suggestions: [] }
           } else {
             const suggestions =
-              this.completionMenu?.completionItemCache.getAll(completionItemCacheID).map(
+              this.completionMenu.completionItemCache.getAll(completionItemCacheID).map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
