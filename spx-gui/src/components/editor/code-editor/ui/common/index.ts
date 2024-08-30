@@ -1,4 +1,10 @@
-import { Icon } from '@/components/editor/code-editor/EditorUI'
+import {
+  type AudioPlayer,
+  type DocPreview,
+  Icon,
+  type LayerContent,
+  type RenamePreview
+} from '@/components/editor/code-editor/EditorUI'
 
 export * from './monaco-editor-core'
 
@@ -57,6 +63,20 @@ export function icon2SVG(icon: Icon): string {
     default:
       return IconEffect
   }
+}
+/** quick determine preview object belongs DocPreview */
+export function isDocPreview(layer: LayerContent): layer is DocPreview {
+  return 'content' in layer && 'level' in layer
+}
+
+/** quick determine preview object belongs AudioPlayer */
+export function isAudioPlayer(layer: LayerContent): layer is AudioPlayer {
+  return 'src' in layer && 'duration' in layer
+}
+
+/** quick determine preview object belongs RenamePreview */
+export function isRenamePreview(layer: LayerContent): layer is RenamePreview {
+  return 'placeholder' in layer && 'onSubmit' in layer
 }
 
 /** Determine whether checkElement is closer to the top or bottom of containerElement */

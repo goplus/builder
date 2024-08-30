@@ -257,10 +257,10 @@ export class CompletionMenu implements IDisposable {
         label: completion.completion.label as string,
         preview: {
           level: DocPreviewLevel.Normal,
-          content: ''
+          content: completion.completion.detail || ''
         },
         insertText: completion.completion.insertText,
-        desc: completion.completion.detail || '',
+        desc: '',
         matches: createMatches(completion.score)
       }
     })

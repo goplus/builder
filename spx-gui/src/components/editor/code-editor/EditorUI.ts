@@ -23,6 +23,8 @@ import type { HoverPreview } from '@/components/editor/code-editor/ui/features/h
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
+import CompletionItemInsertTextRule = languages.CompletionItemInsertTextRule
+import { isDocPreview } from '@/components/editor/code-editor/ui/common'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -363,7 +365,7 @@ export class EditorUI extends Disposable {
           // get current position id to determine if need to request completion provider resolve
           const word = model.getWordUntilPosition(position)
           const project = getProject()
-          const fileHash = project.currentFilesHash || ''
+          const fileHash = project.selectedSprite?.name || ''
           const completionItemCacheID = {
             id: fileHash,
             lineNumber: position.lineNumber,
@@ -407,6 +409,7 @@ export class EditorUI extends Disposable {
                   kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
                   insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                  detail: isDocPreview(item.preview) ? item.preview.content : '',
                   range: {
                     startLineNumber: position.lineNumber,
                     endLineNumber: position.lineNumber,
