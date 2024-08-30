@@ -24,39 +24,53 @@ export class CompletionItemCache extends Disposable {
   }
 
   isCacheAvailable(position: CompletionItemCachePosition) {
-    if (!this.isSamePositionAndStorePosition(position)) this.clear()
-    return this.cache.length > 0
+    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
+    return this.cacheLeftTime > 0
   }
 
-  public add(position: CompletionItemCachePosition, item: CompletionItem[]) {
-    if (!this.isSamePositionAndStorePosition(position)) this.clear()
+  public add(position: CompletionItemCachePosition, items: CompletionItem[]) {
+    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
     this.cacheLeftTime++
-    this.cache.push(...item)
+    items.forEach((item) => {
+      if (!this.has(item)) this.cache.push(item)
+    })
+  }
+
+  // a temporary solution, not addressing the root of the problem
+  // this can avoid duplicate items in completion menu.
+  public has(item: CompletionItem) {
+    return this.cache.some(
+      (cacheItem) =>
+        cacheItem.label === item.label &&
+        cacheItem.insertText === item.insertText &&
+        cacheItem.desc === item.desc
+    )
   }
 
   public getAll(position: CompletionItemCachePosition) {
     if (this.cacheLeftTime <= 0) return []
-    if (!this.isSamePositionAndStorePosition(position)) this.clear()
+    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
     this.cacheLeftTime--
-    const result = this.cache
-    if (this.cacheLeftTime <= 0) this.cache = []
-    return result
+    return this.cache
   }
 
   // consider using decoration syntax? current ts config is not allowed.
-  isSamePositionAndStorePosition(position: CompletionItemCachePosition) {
-    const isSamePosition =
-      this.position.id === position.id &&
-      this.position.lineNumber === position.lineNumber &&
-      this.position.column === position.column
+  isSamePositionOtherwiseStorePosition(position: CompletionItemCachePosition) {
+    const isSamePosition = this.isSamePosition(position)
     // deep clone.
     if (!isSamePosition) {
-      this.position.column = position.column
-      this.position.lineNumber = position.lineNumber
-      this.position.id = position.id
+      this.position = { ...position }
       this.cacheLeftTime = 0
     }
     return isSamePosition
+  }
+
+  public isSamePosition(position: CompletionItemCachePosition) {
+    return (
+      this.position.id === position.id &&
+      this.position.lineNumber === position.lineNumber &&
+      this.position.column === position.column
+    )
   }
 
   public clear() {

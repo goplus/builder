@@ -99,6 +99,7 @@ watchEffect(async (onCleanup) => {
     useTabStops: false, // use tab key
     renderControlCharacters: false,
     fontSize: fontSize.value,
+    wordBasedSuggestions: 'off', // set off means only show completion items form completion providers instead of matching words in current code.
     quickSuggestionsDelay: 100,
     wordWrapColumn: 40,
     tabSize: 4,

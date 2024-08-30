@@ -107,10 +107,7 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
 <style lang="scss">
 // hidden monaco suggest widget
 div[widgetid='editor.widget.suggestWidget'].suggest-widget {
-  z-index: -999;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
 }
 
 .view-line .completion-menu__item-preview {
