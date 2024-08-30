@@ -141,6 +141,7 @@ export class CompletionMenu implements IDisposable {
     this.completionMenuState.suggestions = this.completionModelItems2CompletionItems(
       this.monacoCompletionModelItems
     )
+    if (this.completionMenuState.suggestions.length === 0) this.hideCompletionMenu()
   }
 
   private showCodePreview(position: IPosition, insertText: string, word: string) {
@@ -159,8 +160,8 @@ export class CompletionMenu implements IDisposable {
 
     // single line code preview
     const remainWords = firstLine.substring(word.length)
-    // Occasionally, a column may be slightly larger than the actual column by just one unit. This can prevent the inline code preview from displaying correctly.
-    // To avoid this, we need to subtract 1 from the column value.
+    // occasionally, a column may be slightly larger than the actual column by just one unit. This can prevent the inline code preview from displaying correctly.
+    // to avoid this, we need to subtract 1 from the column value.
     const startColumn = position.column - 1
     const endColum = startColumn + word.length
 
@@ -187,6 +188,16 @@ export class CompletionMenu implements IDisposable {
         domNode: this.viewZoneChangeAccessorState.codePreviewElement
       })
     })
+  }
+
+  public showCompletionMenu() {
+    this.completionMenuState.visible = true
+    this.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+  }
+
+  public hideCompletionMenu() {
+    this.completionMenuState.visible = false
+    this.editor.trigger('editor', 'hideSuggestWidget', {})
   }
 
   select(idx: number) {

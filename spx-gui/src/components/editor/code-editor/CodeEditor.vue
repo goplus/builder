@@ -7,7 +7,7 @@ import { Runtime } from '@/components/editor/code-editor/runtime'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import { ChatBot } from '@/components/editor/code-editor/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -29,6 +29,11 @@ const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
 const { editorUI } = initCoordinator()
+
+onUnmounted(() => {
+  // for vite HMR, we have to dispose editorUI when HMR triggered
+  editorUI.dispose()
+})
 
 function initCoordinator() {
   const editorUI = new EditorUI(i18n, () => editorCtx.project)

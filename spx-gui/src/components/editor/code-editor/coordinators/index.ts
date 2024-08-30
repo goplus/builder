@@ -4,8 +4,6 @@ import {
   type EditorUI,
   Icon,
   type LayerContent,
-  type Markdown,
-  type Reply,
   type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
