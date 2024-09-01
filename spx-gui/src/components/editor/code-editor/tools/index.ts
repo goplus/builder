@@ -179,7 +179,7 @@ export const controlCategory: ToolCategory = {
     },
     {
       label: { en: 'Flow Control', zh: '流程控制' },
-      tools: [gop.ifStatemeent, gop.forLoop]
+      tools: [gop.ifStatement, gop.forLoop]
     },
     {
       label: { en: 'Function', zh: '函数' },

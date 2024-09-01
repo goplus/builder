@@ -1,33 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watchEffect } from 'vue'
 import {
-  controlCategory,
-  eventCategory,
-  gameCategory,
-  getVariableCategory,
-  lookCategory,
-  motionCategory,
-  sensingCategory,
-  soundCategory,
-  ToolContext,
-  type ToolGroup
 } from '@/components/editor/code-editor/tools'
 import ToolItem from './ToolItem.vue'
-import iconEvent from './icons/event.svg?raw'
-import iconLook from './icons/look.svg?raw'
-import iconMotion from './icons/motion.svg?raw'
-import iconSound from './icons/sound.svg?raw'
-import iconControl from './icons/control.svg?raw'
-import iconGame from './icons/game.svg?raw'
-import iconSensing from './icons/sensing.svg?raw'
-import iconVariable from './icons/variable.svg?raw'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
-import { UITooltip, useUIVariables } from '@/components/ui'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
 import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
-import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
   ui: EditorUI
@@ -37,70 +18,18 @@ defineEmits<{
   insertText: [insertText: string]
 }>()
 
-const uiVariables = useUIVariables()
-const editorCtx = useEditorCtx()
 const collapsed = ref(false)
+const categories = ref<InputItemCategory[]>([])
 
-const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
-
-const categories = computed(() => {
-  return [
-    {
-      icon: iconEvent,
-      color: '#fabd2c',
-      ...eventCategory
-    },
-    {
-      icon: iconLook,
-      color: '#fd8d60',
-      ...lookCategory
-    },
-    {
-      icon: iconMotion,
-      color: '#91d644',
-      ...motionCategory
-    },
-    {
-      icon: iconControl,
-      color: '#3fcdd9',
-      ...controlCategory
-    },
-    {
-      icon: iconSensing,
-      color: '#4fc2f8',
-      ...sensingCategory
-    },
-    {
-      icon: iconSound,
-      color: uiVariables.color.sound.main,
-      ...soundCategory
-    },
-    {
-      icon: iconVariable,
-      color: '#5a7afe',
-      ...variablesDefs.value
-    },
-    {
-      icon: iconGame,
-      color: '#e14e9f',
-      ...gameCategory
-    }
-  ].map((c) => ({ ...c, groups: filterGroups(c.groups) }))
+watchEffect(async () => {
+  const controller = new AbortController()
+  categories.value = await props.ui.requestInputAssistantProviderResolve({ signal: controller.signal })
+  return () => {
+    controller.abort()
+  }
 })
 
-function filterGroups(groups: ToolGroup[]) {
-  const isSprite = editorCtx.project.selected?.type === 'sprite'
-  return groups
-    .map((g) => ({
-      ...g,
-      tools: g.tools.filter((d) => {
-        if (d.target === ToolContext.all) return true
-        const target = isSprite ? ToolContext.sprite : ToolContext.stage
-        return d.target === target
-      })
-    }))
-    .filter((g) => g.tools.length > 0)
-}
+
 
 const activeCategoryIndex = shallowRef(0)
 const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
@@ -157,9 +86,9 @@ function handleCategoryClick(index: number) {
         <h5 class="group-title">{{ $t(group.label) }}</h5>
         <div class="defs">
           <ToolItem
-            v-for="(def, j) in group.tools"
+            v-for="(def, j) in group.inputItems"
             :key="j"
-            :tool="def"
+            :input-item="def"
             @use-snippet="$emit('insertText', $event)"
           />
         </div>
@@ -258,7 +187,6 @@ function handleCategoryClick(index: number) {
   // to keep tools-wrapper's width stable when switch among different def categories
   flex: 1 0 162px;
   overflow-y: auto;
-  //background-color: var(--ui-color-grey-300);
   background-color: white;
 }
 

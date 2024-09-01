@@ -1,14 +1,8 @@
-import type { LocaleMessage } from '@/utils/i18n'
+import type { Markdown } from "./EditorUI"
 
 enum CodeEnum {
   Sprite,
   Backdrop
-}
-
-type TokenUsage = {
-  // declaration signature
-  desc: string
-  insertText: string
 }
 
 enum CompletionItemEnum {}
@@ -42,6 +36,23 @@ export type TokenId = {
   // "Sprite.touching"
   name: string
 }
+
+type UsageId = string
+
+type TokenUsage = {
+  id: UsageId
+  effect: string
+  declaration: string
+  sample: string
+  insertText: string
+}
+
+export type UsageDoc = Markdown
+
+export type TokenDoc = Array<{
+  id: UsageId
+  doc: UsageDoc
+}>
 
 export type Token = {
   id: TokenId

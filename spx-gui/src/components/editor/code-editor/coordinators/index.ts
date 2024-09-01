@@ -3,6 +3,8 @@ import {
   DocPreviewLevel,
   type EditorUI,
   Icon,
+  type InputItem,
+  type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
   type TextModel
@@ -15,7 +17,20 @@ import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
 import { keywords, typeKeywords } from '@/utils/spx'
-import { getAllTools, ToolType } from '@/components/editor/code-editor/tools'
+import {
+  controlCategory,
+  eventCategory,
+  gameCategory,
+  lookCategory,
+  motionCategory,
+  sensingCategory,
+  soundCategory,
+  getAllTools,
+  getVariableCategory,
+  ToolType,
+  type ToolCategory
+} from '@/components/editor/code-editor/tools'
+
 
 type JumpPosition = {
   line: number
@@ -54,6 +69,10 @@ export class Coordinator {
 
     ui.registerSelectionMenuProvider({
       provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
+    })
+
+    ui.registerInputAssistantProvider({
+      provideInputAssistant: this.implementsInputAssistantProvider.bind(this)
     })
   }
 
@@ -145,7 +164,15 @@ export class Coordinator {
     ]
   }
 
-  public jump(position: JumpPosition): void {}
+  async implementsInputAssistantProvider(
+    _ctx: {
+      signal: AbortSignal
+    }
+  ): Promise<InputItemCategory[]> {
+    return getInputItemCategories(this.project)
+  }
+
+  public jump(position: JumpPosition): void { }
 }
 
 function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
@@ -212,4 +239,57 @@ function getCompletionItemKind(type: ToolType): Icon {
     case ToolType.variable:
       return Icon.Prototype
   }
+}
+
+
+function toolCategory2InputItemCategory(category: ToolCategory, icon: Icon, color: string): InputItemCategory {
+  return {
+    icon,
+    color,
+    label: category.label,
+    groups: category.groups.map((group) => ({
+      label: group.label,
+      inputItems: group.tools.flatMap((tool): InputItem[] => {
+        if (tool.usage) {
+          return [{
+            icon: getCompletionItemKind(tool.type),
+            label: tool.keyword,
+            desc: {
+              level: DocPreviewLevel.Normal,
+              content: ''
+            },
+            sample: '',
+            insertText: tool.usage.insertText
+          }]
+        } else if (Array.isArray(tool.usages)) {
+          return tool.usages.map((usage) => ({
+            icon: getCompletionItemKind(tool.type),
+            label: tool.keyword,
+            desc: {
+              level: DocPreviewLevel.Normal,
+              content: ''
+            },
+            sample: '',
+            insertText: usage.insertText
+          }))
+        }
+        return []
+      })
+    }))
+  }
+}
+
+
+function getInputItemCategories(project: Project): InputItemCategory[] {
+
+  return [
+    toolCategory2InputItemCategory(eventCategory, Icon.Event, '#fabd2c'),
+    toolCategory2InputItemCategory(lookCategory, Icon.Look, '#fd8d60'),
+    toolCategory2InputItemCategory(motionCategory, Icon.Motion, '#91d644'),
+    toolCategory2InputItemCategory(controlCategory, Icon.Control, '#3fcdd9'),
+    toolCategory2InputItemCategory(sensingCategory, Icon.Sensing, '#4fc2f8'),
+    toolCategory2InputItemCategory(soundCategory, Icon.Sound, '#a074ff'),
+    toolCategory2InputItemCategory(getVariableCategory(project), Icon.Variable, '#5a7afe'),
+    toolCategory2InputItemCategory(gameCategory, Icon.Game, '#e14e9f')
+  ]
 }
