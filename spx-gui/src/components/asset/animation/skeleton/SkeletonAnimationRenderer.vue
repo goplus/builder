@@ -277,23 +277,23 @@ export class Renderer {
  * @param data The AnimationExportData to convert
  */
 export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationExportData) {
-  // cache the vertices and uvs to reduce the repeated conversion for vert anim
-  const weakVertMap = new WeakMap<Point3D[], number[]>()
-  const weakUVMap = new WeakMap<Point2D[], number[]>()
-
   function getBufferInfoFromMesh(gl: CanvasWebGLRenderingContext, mesh: AnimationExportMesh) {
     const positions = (() => {
       if (!mesh.Vertices) return null
-      const verts = weakVertMap.get(mesh.Vertices) ?? mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat()
-      weakVertMap.set(mesh.Vertices, verts)
-      return { data: verts, drawType: gl.DYNAMIC_DRAW }
+      return {
+        data: new Float32Array(mesh.Vertices.data.buffer),
+        numComponents: 3,
+        drawType: gl.DYNAMIC_DRAW,
+      }
     })()
     
     const aUV = (() => {
       if (!mesh.Uvs) return null
-      const uvs = weakUVMap.get(mesh.Uvs) ?? mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat()
-      weakUVMap.set(mesh.Uvs, uvs)
-      return { data: uvs, drawType: gl.STATIC_DRAW }
+      return {
+        data: new Float32Array(mesh.Uvs.data.buffer),
+        numComponents: 2,
+        drawType: gl.STATIC_DRAW,
+      }
     })()
 
     const arrays = {

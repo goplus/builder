@@ -13,7 +13,7 @@ interface IframeWindow extends Window {
     resource: Uint8Array | ArrayBuffer,
     sprite: string,
     animName: string
-  ) => string
+  ) => AnimationExportData
 }
 
 const WASM_EXEC_JS = '/wasm_exec.js'
@@ -90,8 +90,12 @@ export interface AnimationExportFrame {
 
 export interface AnimationExportMesh {
   Indices: number[]
-  Uvs?: Point2D[]
-  Vertices?: Point3D[]
+  Uvs?: FlatBuffer<2>
+  Vertices?: FlatBuffer<3>
+}
+export interface FlatBuffer<N extends number = 2 | 3> {
+  numComponents: N
+  data: Uint8Array
 }
 
 export interface Point2D {
