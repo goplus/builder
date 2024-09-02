@@ -1,72 +1,31 @@
 import { type editor as IEditor, type IDisposable, Range } from 'monaco-editor'
-import { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 export class InlayHint implements IDisposable {
   editor: IEditor.IStandaloneCodeEditor
-  editorUI: EditorUI
   styleElement: HTMLStyleElement
   styleMap: Map<string, string>
   abortController = new AbortController()
-  textDecorationsCollection: IEditor.IEditorDecorationsCollection
+  public textDecorationsCollection: IEditor.IEditorDecorationsCollection
 
-  constructor(editor: IEditor.IStandaloneCodeEditor, ui: EditorUI) {
+  constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
-    this.editorUI = ui
     this.styleElement = document.createElement('style')
     this.styleMap = new Map()
     this.textDecorationsCollection = editor.createDecorationsCollection([])
     document.head.appendChild(this.styleElement)
 
-    this.editor.onDidChangeModelContent(() => {
-      void this.updateInlayHint()
-    })
-
     // todo: trigger completion menu
   }
 
-  public async updateInlayHint() {
-    const model = this.editor.getModel()
-    if (!model) return
-    this.abortController.abort()
-    this.abortController = new AbortController()
-    const inlayHints = await this.editorUI.requestInlayHintProviderResolve(model, {
-      signal: this.abortController.signal
-    })
-
-    this.textDecorationsCollection.clear()
-    this.textDecorationsCollection.set(
-      inlayHints
-        .filter(
-          (inlayHint) =>
-            // filter special param like playlist icon param
-            !(typeof inlayHint.content === 'string' && ['mediaName'].includes(inlayHint.content))
-        )
-        .map((inlayHint): IEditor.IModelDeltaDecoration => {
-          if (typeof inlayHint.content === 'string') {
-            return this.createParamDecoration(
-              inlayHint.position.lineNumber,
-              inlayHint.position.column,
-              inlayHint.content + ':'
-            )
-          } else {
-            return this.createIconDecoration(
-              inlayHint.position.lineNumber,
-              inlayHint.position.column
-            )
-          }
-        })
-    )
-  }
-
-  createParamDecoration(
+  public createParamDecoration(
     line: number,
     column: number,
     content: string
   ): IEditor.IModelDeltaDecoration {
-    const contentClassname = `inlay-hint__content-${this.hash(content)}`
-    const className = 'inlay-hint__param ' + contentClassname
+    const contentClassName = `inlay-hint__content-${this.hash(content)}`
+    const className = 'inlay-hint__param ' + contentClassName
 
-    this.addStyle(contentClassname, content)
+    this.addStyle(contentClassName, content)
     return {
       range: new Range(line, column - 1, line, column),
       options: {
@@ -76,14 +35,14 @@ export class InlayHint implements IDisposable {
     }
   }
 
-  createTagDecoration(
+  public createTagDecoration(
     line: number,
     column: number,
     content: string
   ): IEditor.IModelDeltaDecoration {
-    const contentClassname = `inlay-hint__content-${this.hash(content)}`
+    const contentClassName = `inlay-hint__content-${this.hash(content)}`
     const className = 'inlay-hint__tag'
-    this.addStyle(contentClassname, content)
+    this.addStyle(contentClassName, content)
     return {
       range: {
         startLineNumber: line,
@@ -98,10 +57,10 @@ export class InlayHint implements IDisposable {
     }
   }
 
-  createIconDecoration(line: number, column: number): IEditor.IModelDeltaDecoration {
+  public createIconDecoration(line: number, column: number): IEditor.IModelDeltaDecoration {
     return {
       range: {
-        startLineNumber: 1,
+        startLineNumber: line,
         endLineNumber: line,
         startColumn: column,
         endColumn: column
@@ -109,6 +68,7 @@ export class InlayHint implements IDisposable {
       options: {
         after: {
           inlineClassName: 'inlay-hint__icon-playlist',
+          // must add a space after the icon, otherwise the icon will not be displayed
           content: ' ',
           inlineClassNameAffectsLetterSpacing: true
         }

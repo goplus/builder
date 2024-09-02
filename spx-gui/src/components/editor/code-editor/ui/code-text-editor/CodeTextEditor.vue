@@ -20,13 +20,9 @@
       :ui="ui"
       :selection-menu="selectionMenu"
     ></SelectionMenuComponent>
-    <InlayHintComponent v-if="inlayHint" :inlay-hint="inlayHint"></InlayHintComponent>
+    <InlayHintComponent v-if="inlayHint" :ui="ui" :inlay-hint="inlayHint"></InlayHintComponent>
   </div>
 </template>
-<script lang="ts">
-let monaco: typeof import('monaco-editor')
-let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
-</script>
 <script setup lang="ts">
 import { ref, shallowRef, watch, watchEffect } from 'vue'
 import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
@@ -47,7 +43,6 @@ import HoverPreviewComponent from '../features/hover-preview/HoverPreviewCompone
 import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
 import InlayHintComponent from '@/components/editor/code-editor/ui/features/inlay-hint/InlayHintComponent.vue'
 
-import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
@@ -96,7 +91,7 @@ const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
   const monaco = await props.ui.getMonaco()
-
+  
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
     theme: 'spx-light',
@@ -171,8 +166,7 @@ watchEffect(async (onCleanup) => {
 
   selectionMenu.value = new SelectionMenu(editor)
 
-  inlayHint.value = new InlayHint(editor, props.ui)
-  inlayHint.value.updateInlayHint()
+  inlayHint.value = new InlayHint(editor)
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()
@@ -185,12 +179,10 @@ watchEffect(async (onCleanup) => {
 watch(
   () => props.value,
   (val) => {
-    if (monaco && monacoEditor.value) {
+    if (monacoEditor.value) {
       const editorValue = monacoEditor.value.getValue()
       if (val !== editorValue) {
         monacoEditor.value.setValue(val)
-
-        inlayHint.value?.updateInlayHint()
       }
     }
   }
@@ -217,7 +209,8 @@ async function format() {
 
   const res = await onlineFormatSpxCode(editorValue)
   if (res.error) {
-    monaco?.editor.setModelMarkers(editor.getModel()!, 'owner', [
+    const monaco = await props.ui.getMonaco()
+    monaco.editor.setModelMarkers(editor.getModel()!, 'owner', [
       {
         message: res.error.msg,
         severity: MarkerSeverity.Warning,

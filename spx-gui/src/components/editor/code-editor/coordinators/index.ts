@@ -175,53 +175,55 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): Promise<InlayHint[]> {
-    const MAX_RETRIES = 3
-    const RETRY_DELAY = 2000 // 2 seconds
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      if (this.compiler.isWasmInit) {
-        const inlayHints = this.compiler.getInlayHints([
+    const inlayHints = await this.compiler.getInlayHints([
+      {
+        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+        content: model.getValue()
+      }
+    ])
+
+    console.log('inlayHints', inlayHints)
+
+    return inlayHints.flatMap((inlayHint): InlayHint[] => {
+      // from compiler has two type of inlay hint, so here use if else to distinguish
+      if (inlayHint.type === 'play') {
+        return [
           {
-            type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
-            content: model.getValue()
-          }
-        ])
-
-        return inlayHints.map((inlayHint): InlayHint => {
-          if (inlayHint.type === 'play') {
-            return {
-              content: Icon.Playlist,
-              style: 'icon',
-              behavior: 'triggerCompletion',
-              position: {
-                lineNumber: inlayHint.end_position.Line,
-                column: inlayHint.end_position.Column
-              }
-            }
-          } else {
-            /* todo: add more case to set inlay hint style */
-            return {
-              content: inlayHint.name,
-              style: 'text',
-              behavior: 'none',
-              position: {
-                lineNumber: inlayHint.start_position.Line,
-                column: inlayHint.start_position.Column
-              }
+            content: Icon.Playlist,
+            style: 'icon',
+            behavior: 'triggerCompletion',
+            position: {
+              lineNumber: inlayHint.end_position.Line,
+              column: inlayHint.end_position.Column
             }
           }
-        })
+        ]
+      } else {
+        const hints: InlayHint[] = [
+          {
+            content: inlayHint.name + ':',
+            style: 'text',
+            behavior: 'none',
+            position: {
+              lineNumber: inlayHint.start_position.Line,
+              column: inlayHint.start_position.Column
+            }
+          }
+        ]
+        if (inlayHint.unit) {
+          hints.push({
+            content: inlayHint.name,
+            style: 'tag',
+            behavior: 'none',
+            position: {
+              lineNumber: inlayHint.end_position.Line,
+              column: inlayHint.end_position.Column
+            }
+          })
+        }
+        return hints
       }
-
-      if (attempt < MAX_RETRIES - 1) {
-        // Wait for 2 seconds before the next attempt
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY))
-        if (ctx.signal.aborted) return []
-      }
-    }
-
-    // If wasm init is still false after retries, return an empty array
-    console.warn('Wasm initialization failed after maximum retries')
-    return []
+    })
   }
 
   async implementsInputAssistantProvider(_ctx: {

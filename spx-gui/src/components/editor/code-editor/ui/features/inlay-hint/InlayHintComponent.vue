@@ -1,9 +1,63 @@
 <script setup lang="ts">
+import { debounce } from '@/utils/utils';
+import { EditorUI } from '../../../EditorUI';
 import { InlayHint } from './inlay-hint'
+import { onMounted } from 'vue';
 
-defineProps<{
-  inlayHint: InlayHint
+const props = defineProps<{
+  inlayHint: InlayHint,
+  ui: EditorUI
 }>()
+
+const updateInlayHint = debounce(async () => {
+  const model = props.inlayHint.editor.getModel()
+  if (!model) return
+  props.inlayHint.abortController.abort()
+  props.inlayHint.abortController = new AbortController()
+  const inlayHints = await props.ui.requestInlayHintProviderResolve(model, {
+    signal: props.inlayHint.abortController.signal
+  })
+
+  props.inlayHint.textDecorationsCollection.clear()
+  props.inlayHint.textDecorationsCollection.set(
+    inlayHints
+      .filter(
+        (inlayHint) =>
+          // filter special param like playlist icon param
+          !(typeof inlayHint.content === 'string' && ['mediaName'].includes(inlayHint.content))
+          )
+      .map((inlayHint) => {
+        switch (inlayHint.style) {
+          case 'icon':
+            return props.inlayHint.createIconDecoration(
+              inlayHint.position.lineNumber,
+              inlayHint.position.column
+            )
+          case 'tag':
+            return props.inlayHint.createTagDecoration(
+              inlayHint.position.lineNumber,
+              inlayHint.position.column,
+              // we know content is string when style is tag, here use force type
+              inlayHint.content as string
+            )
+          case 'text':
+            return props.inlayHint.createParamDecoration(
+              inlayHint.position.lineNumber,
+              inlayHint.position.column,
+              // we know content is string when style is text, here use force type
+              inlayHint.content as string
+            )
+        }
+      })
+  )
+}, 300)
+
+props.inlayHint.editor.onDidChangeModelContent(updateInlayHint)
+
+onMounted(() => {
+  updateInlayHint()
+})
+
 </script>
 
 <template>
@@ -11,7 +65,6 @@ defineProps<{
 </template>
 
 <style lang="scss">
-//.view-line .inlay-hint__param,
 .view-line {
   .inlay-hint__param {
     font-size: 0.8em;

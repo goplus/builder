@@ -14,7 +14,7 @@ export enum CodeEnum {
   Backdrop
 }
 
-enum CompletionItemEnum {}
+enum CompletionItemEnum { }
 
 // generated from wasm `console.log`
 export interface Hint {
@@ -83,6 +83,8 @@ type Code = {
 export class Compiler extends Disposable {
   containerElement: HTMLElement | null = null
   public isWasmInit = false
+  private executionQueue: (() => void)[] = []
+  private lastExecutionTime: number = 0
 
   createIframe() {
     if (!this.containerElement) return
@@ -133,45 +135,111 @@ export class Compiler extends Disposable {
         const [message] = data.log || []
         if (!message) return
         if (message.includes('goroutine ')) this.reloadIframe()
-        if (message === 'WASM Init') this.isWasmInit = true
+        if (message === 'WASM Init') {
+          this.isWasmInit = true
+          this.executeQueue()
+        }
       }
     }
   }
 
-  public getContainerElement() {
-    return this.containerElement
+  private executeQueue() {
+    while (this.executionQueue.length > 0) {
+      const task = this.executionQueue.shift()
+      if (task) task()
+    }
   }
 
-  public getInlayHints(codes: Code[]): Hint[] {
-    const iframe = this.getIframe()
-    if (iframe == null) return []
+  private addToQueue(task: () => void) {
+    const now = Date.now()
+    if (now - this.lastExecutionTime > 5000) {
+      this.executionQueue = []
+    }
+    this.executionQueue = [task]
+    this.lastExecutionTime = now
+    this.executeQueue()
+  }
 
-    const tempCodes = codes.map((code) => code.content).join('\r\n')
-    // todo: only one file allow, should allow multi files
-    try {
-      const res = iframe.contentWindow?.getInlayHints({
-        in: {
-          name: 'test.spx',
-          code: tempCodes
-        }
-      })
-      return Array.isArray(res) ? res : []
-    } catch (err) {
-      console.error(err)
+  private async waitForWasmInit() {
+    const MAX_WAIT_TIME = 30000
+    const CHECK_INTERVAL = 100
+
+    const startTime = Date.now()
+    while (!this.isWasmInit && Date.now() - startTime < MAX_WAIT_TIME) {
+      await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL))
     }
 
-    return []
+    if (!this.isWasmInit) {
+      console.warn('WASM initialization timed out')
+    }
   }
-  public getDiagnostics(codes: Code[]): AttentionHint[] {
+
+  public async getInlayHints(codes: Code[]): Promise<Hint[]> {
     if (!this.containerElement) return []
-    return []
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        const iframe = this.getIframe()
+        if (iframe == null) return resolve([])
+
+        const tempCodes = codes.map((code) => code.content).join('\r\n')
+        try {
+          const res = iframe.contentWindow?.getInlayHints({
+            in: {
+              name: 'test.spx',
+              code: tempCodes
+            }
+          })
+          resolve(Array.isArray(res) ? res : [])
+        } catch (err) {
+          console.error(err)
+          resolve([])
+        }
+      })
+    })
   }
-  public getCompletionItems(codes: Code[], position: Position): CompletionItem[] {
+
+  public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
     if (!this.containerElement) return []
-    return []
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve([])
+      })
+    })
   }
-  public getDefinition(codes: Code[], position: Position): Token | null {
+
+  public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
+    if (!this.containerElement) return []
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve([])
+      })
+    })
+  }
+
+  public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {
     if (!this.containerElement) return null
-    return null
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return null
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve(null)
+      })
+    })
   }
 }
