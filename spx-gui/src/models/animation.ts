@@ -157,7 +157,11 @@ export class Animation extends Disposable {
     if (soundId === undefined) {
       console.warn(`Sound ${inits?.onStart?.play} not found when creating animation ${name}`)
     }
-    const animation = new Animation(name, { ...inits, duration })
+    const animation = new Animation(name, {
+      ...inits,
+      duration,
+      onStart: { play: soundId ?? undefined }
+    })
     animation.setCostumes(costumes.map((costume) => costume.clone()))
     for (const costume of costumes) {
       sprite.removeCostume(costume.id)
