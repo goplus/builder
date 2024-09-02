@@ -1,5 +1,6 @@
 import {
   editor as IEditor,
+  type IPosition,
   Position,
   type IRange,
   type languages,
@@ -83,7 +84,7 @@ export type InlayHint = {
   content: string | Icon
   style: InlayHintStyle
   behavior: InlayHintBehavior
-  position: Position
+  position: IPosition
 }
 
 export interface InlayHintsProvider {
@@ -503,6 +504,18 @@ export class EditorUI extends Disposable {
       this.editorUIRequestCallback.selectionMenu.map((item) =>
         item.provideSelectionMenuItems(model, ctx)
       )
+    )
+    return promiseResults.flat().filter(Boolean)
+  }
+
+  public async requestInlayHintProviderResolve(
+    model: TextModel,
+    ctx: {
+      signal: AbortSignal
+    }
+  ) {
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.inlayHints.map((item) => item.provideInlayHints(model, ctx))
     )
     return promiseResults.flat().filter(Boolean)
   }

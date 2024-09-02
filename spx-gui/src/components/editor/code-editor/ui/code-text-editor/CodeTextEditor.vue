@@ -1,6 +1,12 @@
 <template>
   <div class="code-text-editor-container">
-    <div ref="editorElement" class="code-text-editor"></div>
+    <div
+      ref="editorElement"
+      class="code-text-editor"
+      :style="{
+        '--monaco-editor-icon-playlist': `url('${IconPlayList}')`
+      }"
+    ></div>
     <CompletionMenuComponent
       v-if="completionMenu"
       :completion-menu="completionMenu"
@@ -14,6 +20,7 @@
       :ui="ui"
       :selection-menu="selectionMenu"
     ></SelectionMenuComponent>
+    <InlayHintComponent v-if="inlayHint" :inlay-hint="inlayHint"></InlayHintComponent>
   </div>
 </template>
 <script lang="ts">
@@ -26,15 +33,19 @@ import { formatSpxCode as onlineFormatSpxCode } from '@/apis/util'
 import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-editor'
 import { useI18n } from '@/utils/i18n'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
+import { InlayHint } from '../features/inlay-hint/inlay-hint'
 import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
 import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
 import { useLocalStorage } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
 
+import IconPlayList from '../icons/playlist.svg'
+
 import loader from '@monaco-editor/loader'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
 import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
+import InlayHintComponent from '@/components/editor/code-editor/ui/features/inlay-hint/InlayHintComponent.vue'
 
 import { type EditorCtx } from '../../../EditorContextProvider.vue'
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
@@ -53,6 +64,7 @@ const monacoEditor = shallowRef<editor.IStandaloneCodeEditor>()
 const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
 const selectionMenu = shallowRef<SelectionMenu>()
+const inlayHint = shallowRef<InlayHint>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
 
@@ -122,9 +134,6 @@ watchEffect(async (onCleanup) => {
       verticalScrollbarSize: 8
     }
   })
-  const _completionMenu = new CompletionMenu(editor)
-  completionMenu.value = _completionMenu
-  props.ui.setCompletionMenu(_completionMenu)
 
   editor.addAction({
     id: 'format',
@@ -152,16 +161,23 @@ watchEffect(async (onCleanup) => {
     // Note that it is not appropriate to call global undo here, because global undo/redo merges code changes, it is not expected for Cmd+Z.
   })
 
+  const _completionMenu = new CompletionMenu(editor)
+  completionMenu.value = _completionMenu
+  props.ui.setCompletionMenu(_completionMenu)
+
   const _hoverPreview = new HoverPreview(editor)
   hoverPreview.value = _hoverPreview
   props.ui.setHoverPreview(_hoverPreview)
 
   selectionMenu.value = new SelectionMenu(editor)
 
+  inlayHint.value = new InlayHint(editor, props.ui)
+  inlayHint.value.updateInlayHint()
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()
     hoverPreview.value?.dispose()
+    inlayHint.value?.dispose()
     editor.dispose()
   })
 })
@@ -173,6 +189,8 @@ watch(
       const editorValue = monacoEditor.value.getValue()
       if (val !== editorValue) {
         monacoEditor.value.setValue(val)
+
+        inlayHint.value?.updateInlayHint()
       }
     }
   }

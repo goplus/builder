@@ -5,10 +5,11 @@ import {
   Icon,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel
+  type TextModel,
+  type InlayHint
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { Compiler } from '../compiler'
+import { CodeEnum, Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -28,6 +29,7 @@ export class Coordinator {
   ui: EditorUI
   chatBot: ChatBot
   docAbility: DocAbility
+  compiler: Compiler
 
   constructor(
     ui: EditorUI,
@@ -41,6 +43,7 @@ export class Coordinator {
     this.ui = ui
     this.docAbility = docAbility
     this.chatBot = chatBot
+    this.compiler = compiler
 
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
@@ -54,6 +57,10 @@ export class Coordinator {
 
     ui.registerSelectionMenuProvider({
       provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
+    })
+
+    ui.registerInlayHintsProvider({
+      provideInlayHints: this.implementsInlayHintsProvider.bind(this)
     })
   }
 
@@ -143,6 +150,60 @@ export class Coordinator {
         }
       }
     ]
+  }
+  async implementsInlayHintsProvider(
+    model: TextModel,
+    ctx: {
+      signal: AbortSignal
+    }
+  ): Promise<InlayHint[]> {
+    const MAX_RETRIES = 3
+    const RETRY_DELAY = 2000 // 2 seconds
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (this.compiler.isWasmInit) {
+        const inlayHints = this.compiler.getInlayHints([
+          {
+            type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+            content: model.getValue()
+          }
+        ])
+
+        return inlayHints.map((inlayHint): InlayHint => {
+          if (inlayHint.type === 'play') {
+            return {
+              content: Icon.Playlist,
+              style: 'icon',
+              behavior: 'triggerCompletion',
+              position: {
+                lineNumber: inlayHint.end_position.Line,
+                column: inlayHint.end_position.Column
+              }
+            }
+          } else {
+            /* todo: add more case to set inlay hint style */
+            return {
+              content: inlayHint.name,
+              style: 'text',
+              behavior: 'none',
+              position: {
+                lineNumber: inlayHint.start_position.Line,
+                column: inlayHint.start_position.Column
+              }
+            }
+          }
+        })
+      }
+
+      if (attempt < MAX_RETRIES - 1) {
+        // Wait for 2 seconds before the next attempt
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY))
+        if (ctx.signal.aborted) return []
+      }
+    }
+
+    // If wasm init is still false after retries, return an empty array
+    console.warn('Wasm initialization failed after maximum retries')
+    return []
   }
 
   public jump(position: JumpPosition): void {}
