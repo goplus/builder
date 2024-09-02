@@ -12,7 +12,7 @@ import type { Size } from '@/models/common'
 import type { Widget } from '@/models/widget'
 import MonitorNode from './MonitorNode.vue'
 import { Monitor } from '@/models/widget/monitor'
-import { getNodeName } from '../node'
+import { getNodeId } from '../node'
 
 const props = defineProps<{
   widget: Widget
@@ -22,8 +22,8 @@ const props = defineProps<{
 
 // TODO: when there are more widget types, we may extract more common logic for reuse
 watchEffect((onCleanup) => {
-  const nodeName = getNodeName(props.widget)
-  props.nodeReadyMap.set(nodeName, true)
-  onCleanup(() => props.nodeReadyMap.delete(nodeName))
+  const nodeId = getNodeId(props.widget)
+  props.nodeReadyMap.set(nodeId, true)
+  onCleanup(() => props.nodeReadyMap.delete(nodeId))
 })
 </script>

@@ -23,7 +23,7 @@ import { round } from '@/utils/utils'
 import type { Monitor } from '@/models/widget/monitor'
 import { useUIVariables } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { getNodeName } from '../node'
+import { getNodeId } from '../node'
 
 const props = defineProps<{
   monitor: Monitor
@@ -34,7 +34,7 @@ const props = defineProps<{
 const uiVariables = useUIVariables()
 const editorCtx = useEditorCtx()
 
-const nodeName = computed(() => getNodeName(props.monitor))
+const nodeId = computed(() => getNodeId(props.monitor))
 const labelTextRef = ref<KonvaNodeInstance<Text>>()
 const valueTextRef = ref<KonvaNodeInstance<Text>>()
 const labelTextWidth = ref(0)
@@ -47,9 +47,9 @@ async function updateTextWidth() {
 
   // text change triggers node-size change, we need to trigger transformer update manually.
   // It's a Transformer bug that it doesn't update correctly when attached node size changed causing by text content change
-  props.nodeReadyMap.set(nodeName.value, false)
+  props.nodeReadyMap.set(nodeId.value, false)
   await nextTick()
-  props.nodeReadyMap.set(nodeName.value, true)
+  props.nodeReadyMap.set(nodeId.value, true)
 }
 
 watch(
@@ -100,7 +100,7 @@ const valueWidth = computed(() => valueTextWidth.value + valuePaddingX * 2)
 const groupConfig = computed<GroupConfig>(() => {
   const { visible, x, y, size } = props.monitor
   return {
-    nodeName: nodeName.value,
+    nodeId: nodeId.value,
     visible,
     draggable: true,
     x: props.mapSize.width / 2 + x,

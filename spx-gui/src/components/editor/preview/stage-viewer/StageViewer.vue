@@ -59,7 +59,7 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 import NodeTransformer from './NodeTransformer.vue'
 import SpriteNode from './SpriteNode.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import { getNodeName } from './node'
+import { getNodeId } from './node'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
@@ -160,8 +160,8 @@ const konvaBackdropConfig = computed(() => {
 
 const loading = computed(() => {
   if (backdropSrcLoading.value || !backdropImg.value) return true
-  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeName(s)))) return true
-  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeName(w)))) return true
+  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
+  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false
 })
 

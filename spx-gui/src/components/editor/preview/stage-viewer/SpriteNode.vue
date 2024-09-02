@@ -23,7 +23,7 @@ import type { Size } from '@/models/common'
 import { nomalizeDegree, round } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import { getNodeName } from './node'
+import { getNodeId } from './node'
 
 const props = defineProps<{
   sprite: Sprite
@@ -37,11 +37,11 @@ const costume = computed(() => props.sprite.defaultCostume)
 const bitmapResolution = computed(() => costume.value?.bitmapResolution ?? 1)
 const [image] = useFileImg(() => costume.value?.img)
 
-const nodeName = computed(() => getNodeName(props.sprite))
+const nodeId = computed(() => getNodeId(props.sprite))
 
 watchEffect((onCleanup) => {
-  props.nodeReadyMap.set(nodeName.value, image.value != null)
-  onCleanup(() => props.nodeReadyMap.delete(nodeName.value))
+  props.nodeReadyMap.set(nodeId.value, image.value != null)
+  onCleanup(() => props.nodeReadyMap.delete(nodeId.value))
 })
 
 onMounted(() => {
@@ -75,7 +75,7 @@ const config = computed<ImageConfig>(() => {
   const { visible, x, y, rotationStyle, heading, size, pivot } = props.sprite
   const scale = size / bitmapResolution.value
   const config = {
-    nodeName: nodeName.value,
+    nodeId: nodeId.value,
     image: image.value ?? undefined,
     draggable: true,
     offsetX: 0,
