@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import ToolItem from './ToolItem.vue'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
@@ -9,6 +9,7 @@ import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/
 import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
+  value: string
   ui: EditorUI
 }>()
 
@@ -18,14 +19,29 @@ defineEmits<{
 
 const collapsed = ref(false)
 const categories = ref<InputItemCategory[]>([])
+const controller = ref<AbortController | null>(null)
 
-onMounted(async () => {
-  const controller = new AbortController()
-  categories.value = await props.ui.requestInputAssistantProviderResolve({
-    signal: controller.signal
-  })
-  return () => {
-    controller.abort()
+watch(
+  () => props.value,
+  () => {
+    if (controller.value) {
+      controller.value.abort()
+    }
+    
+    controller.value = new AbortController()
+
+    props.ui.requestInputAssistantProviderResolve({
+      signal: controller.value.signal
+    }).then(result => {
+      categories.value = result
+    })
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  if (controller.value) {
+    controller.value.abort()
   }
 })
 
@@ -101,7 +117,11 @@ function handleCategoryClick(index: number) {
           <div v-for="i in 3" :key="i" class="skeleton-group">
             <h5 class="skeleton-group-title"></h5>
             <div class="skeleton-items">
-              <div v-for="j in Math.floor(Math.random() * 5) + 3" :key="j" class="skeleton-item"></div>
+              <div
+                v-for="j in Math.floor(Math.random() * 5) + 3"
+                :key="j"
+                class="skeleton-item"
+              ></div>
             </div>
           </div>
         </div>
