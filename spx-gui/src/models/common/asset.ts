@@ -38,7 +38,7 @@ export async function asset2Sprite(assetData: PartialAssetData) {
 const virtualBackdropConfigFileName = 'assets/__backdrop__.json'
 
 export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetData> {
-  const [config, files] = backdrop.export()
+  const [config, files] = backdrop.export({ includeId: false })
   files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
   const { fileCollection, fileCollectionHash } = await saveFiles(files)
   return {

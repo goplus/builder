@@ -360,7 +360,7 @@ export class Sprite extends Disposable {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const c of this.costumes) {
-      const [costumeConfig, costumeFiles] = c.export({ basePath: assetPath })
+      const [costumeConfig, costumeFiles] = c.export({ basePath: assetPath, includeId })
       costumeConfigs.push(costumeConfig)
       Object.assign(files, costumeFiles)
     }
@@ -376,13 +376,13 @@ export class Sprite extends Disposable {
     }
     const { [State.default]: defaultAnimationId, ...animBindings } = this.animationBindings
     const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
-    if (defaultAnimationId && !defaultAnimationName)
+    if (defaultAnimationId && defaultAnimationName === undefined)
       console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
     const animationBindingsNames = Object.entries(animBindings).reduce<
       Record<string, string | undefined>
     >((acc, [state, id]) => {
       const name = this.animations.find((a) => a.id === id)?.name
-      if (id && !name) {
+      if (id && name === undefined) {
         console.warn('animation', id, 'not found for sprite:', this.name)
       }
       acc[state] = name
