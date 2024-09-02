@@ -30,7 +30,7 @@ export const forLoop: Tool = {
   ]
 }
 
-export const ifStatemeent: Tool = {
+export const ifStatement: Tool = {
   type: ToolType.keyword,
   target: ToolContext.all,
   keyword: 'if',

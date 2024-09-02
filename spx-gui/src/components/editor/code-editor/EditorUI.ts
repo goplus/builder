@@ -15,7 +15,7 @@ import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
 import type { Project } from '@/models/project'
-import type { I18n } from '@/utils/i18n'
+import type { I18n, LocaleMessage } from '@/utils/i18n'
 import type { FormatResponse } from '@/apis/util'
 import formatWasm from '@/assets/format.wasm?url'
 import type { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
@@ -33,7 +33,15 @@ export enum Icon {
   AIAbility,
   Document,
   Rename,
-  Playlist
+  Playlist,
+  Look,
+  Motion,
+  Sound,
+  Control,
+  Sensing,
+  Game,
+  Variable,
+  Listen
 }
 
 export type Markdown = string
@@ -135,25 +143,21 @@ export interface HoverProvider {
   ): Promise<LayerContent[]>
 }
 
-export type InputItemUsage = {
-  desc: LayerContent
-  insertText: string
-}
-
 export type InputItem = {
   icon: Icon
   label: string
-  desc: string
-  usages: InputItemUsage[]
+  desc: LayerContent
+  sample: string
+  insertText: string
 }
 
 export type InputItemGroup = {
-  label: string
+  label: LocaleMessage
   inputItems: InputItem[]
 }
 
 export type InputItemCategory = {
-  label: string
+  label: LocaleMessage
   icon: Icon
   color: string
   groups: InputItemGroup[]
@@ -520,6 +524,14 @@ export class EditorUI extends Disposable {
     return promiseResults.flat().filter(Boolean)
   }
 
+  public async requestInputAssistantProviderResolve(ctx: {
+    signal: AbortSignal
+  }): Promise<InputItemCategory[]> {
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.inputAssistant.map((item) => item.provideInputAssistant(ctx))
+    )
+    return promiseResults.flat().filter(Boolean)
+  }
   public registerCompletionProvider(provider: CompletionProvider) {
     this.editorUIRequestCallback.completion.push(provider)
   }

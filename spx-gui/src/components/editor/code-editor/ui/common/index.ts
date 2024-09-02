@@ -10,6 +10,14 @@ import IconAIAbility from '../icons/ai-helper.svg?raw'
 import IconDocument from '../icons/document.svg?raw'
 import IconRename from '../icons/rename.svg?raw'
 import IconPlaylist from '../icons/playlist.svg?raw'
+import iconEvent from '../icons/event.svg?raw'
+import iconLook from '../icons/look.svg?raw'
+import iconMotion from '../icons/motion.svg?raw'
+import iconSound from '../icons/sound.svg?raw'
+import iconControl from '../icons/control.svg?raw'
+import iconGame from '../icons/game.svg?raw'
+import iconSensing from '../icons/sensing.svg?raw'
+import iconVariable from '../icons/variable.svg?raw'
 
 /** transform icon enum to raw svg html content */
 export function icon2SVG(icon: Icon): string {
@@ -17,6 +25,8 @@ export function icon2SVG(icon: Icon): string {
     case Icon.Function:
       return IconEffect
     case Icon.Event:
+      return iconEvent
+    case Icon.Listen:
       return IconListen
     case Icon.Prototype:
       return IconRead
@@ -30,6 +40,22 @@ export function icon2SVG(icon: Icon): string {
       return IconRename
     case Icon.Playlist:
       return IconPlaylist
+    case Icon.Look:
+      return iconLook
+    case Icon.Motion:
+      return iconMotion
+    case Icon.Sound:
+      return iconSound
+    case Icon.Control:
+      return iconControl
+    case Icon.Sensing:
+      return iconSensing
+    case Icon.Game:
+      return iconGame
+    case Icon.Variable:
+      return iconVariable
+    default:
+      return IconEffect
   }
 }
 
@@ -55,9 +81,9 @@ export function isElementInViewport(containerElement: Element, checkElement: Ele
 }
 
 /** normalize icon size to static size, like npm package XIcon component */
-export function normalizeIconSize(targetElement: Element | null, size: number): undefined {
+export function normalizeIconSize(targetElement: Element | null, size: number, height = size): undefined {
   const innerSvgElement = targetElement?.firstElementChild
   if (!innerSvgElement) return
-  innerSvgElement.setAttribute('height', String(size))
+  innerSvgElement.setAttribute('height', String(height))
   innerSvgElement.setAttribute('width', String(size))
 }
