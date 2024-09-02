@@ -39,6 +39,7 @@ const [imgSrc, imgLoading] = useFileUrl(() => props.backdrop.img)
 .img-wrapper {
   width: 100%;
   flex: 1 1 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
