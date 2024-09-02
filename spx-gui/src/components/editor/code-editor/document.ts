@@ -31,8 +31,11 @@ export class DocAbility {
           token: {
             id: tokenId,
             usages: {
+              id: '',
               insertText: '',
-              desc: ''
+              effect: '',
+              declaration: '',
+              sample: ''
             }
           }
         })

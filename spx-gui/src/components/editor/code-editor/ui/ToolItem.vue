@@ -1,83 +1,63 @@
 <template>
-  <UIDropdown v-if="tool.usage == null" trigger="click" placement="top-start">
+  <UITooltip placement="bottom-start" :raw="true" :show-arrow="false">
+    <!-- this is temp type force transformed, when completion hover preview merged, this will have common function and here will be removed -->
+    <DocumentPreview :content="(inputItem.desc as DocPreview).content"></DocumentPreview>
     <template #trigger>
-      <div>
-        <UITooltip placement="top-start">
-          {{ $t(tool.desc) }}
-          <template #trigger>
-            <UITagButton>
-              <!-- eslint-disable-next-line vue/no-v-html -->
-              <div class="icon" v-html="getIcon(tool)"></div>
-              <span class="text">{{ tool.keyword }}</span>
-            </UITagButton>
-          </template>
-        </UITooltip>
-      </div>
-    </template>
-    <UIMenu>
-      <UIMenuItem
-        v-for="(usage, k) in tool.usages"
-        :key="k"
-        @click="emit('useSnippet', usage.insertText)"
-      >
-        {{ $t(usage.desc) + $t({ en: ': ', zh: '：' }) }}
-        <UICode>{{ usage.sample }}</UICode>
-      </UIMenuItem>
-    </UIMenu>
-  </UIDropdown>
-  <UITooltip v-else placement="top-start">
-    {{ $t(tool.desc) + $t({ en: ', e.g.', zh: '，示例：' }) }}
-    <UICode>{{ tool.usage.sample }}</UICode>
-    <template #trigger>
-      <UITagButton @click="emit('useSnippet', tool.usage.insertText)">
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="icon" v-html="getIcon(tool)"></div>
-        <span class="text">{{ tool.keyword }}</span>
+      <UITagButton class="button" @click="emit('useSnippet', inputItem.insertText)">
+        <!-- eslint-disable vue/no-v-html -->
+        <span class="icon" v-html="icon2SVG(inputItem.icon)"></span>
+        <span class="text">{{ inputItem.label }}</span>
+        <span class="sample">{{ inputItem.sample }}</span>
       </UITagButton>
     </template>
   </UITooltip>
 </template>
 
 <script setup lang="ts">
-import { UITagButton, UITooltip, UIDropdown, UIMenu, UIMenuItem, UICode } from '@/components/ui'
-
-import iconRead from './icons/read.svg?raw'
-import iconEffect from './icons/effect.svg?raw'
-import iconListen from './icons/listen.svg?raw'
-import iconCode from './icons/code.svg?raw'
-import { type Tool, ToolCallEffect, ToolType } from '@/components/editor/code-editor/tools'
+import { UITagButton, UITooltip } from '@/components/ui'
+import type { InputItem } from '../EditorUI'
+import DocumentPreview from './features/hover-preview/DocumentPreview.vue'
+import { icon2SVG } from './common'
+import type { DocPreview } from '../EditorUI'
 
 defineProps<{
-  tool: Tool
+  inputItem: InputItem
 }>()
 
 const emit = defineEmits<{
   useSnippet: [insertText: string]
 }>()
-
-function getIcon(tool: Tool) {
-  if ([ToolType.constant, ToolType.variable].includes(tool.type)) return iconRead
-  if ([ToolType.function, ToolType.method].includes(tool.type)) {
-    if (tool.callEffect === ToolCallEffect.listen) return iconListen
-    if (tool.callEffect === ToolCallEffect.read) return iconRead
-    if (tool.callEffect === ToolCallEffect.write) return iconEffect
-  }
-  return iconCode
-}
 </script>
 
 <style scoped lang="scss">
+.button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 4px 1px rgba(0, 0, 0, 0.1);
+  font-family: var(--ui-font-family-code);
+}
+
 .icon {
   margin-right: 4px;
   width: 16px;
   height: 16px;
   color: var(--ui-color-yellow-main);
 }
+
 .text {
-  max-width: 9em;
+  overflow-x: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 1em;
+  color: black;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.sample {
   overflow-x: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 13px;
 }
 </style>

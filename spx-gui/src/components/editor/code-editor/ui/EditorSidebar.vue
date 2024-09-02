@@ -1,35 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
-import {
-  controlCategory,
-  eventCategory,
-  gameCategory,
-  getVariableCategory,
-  lookCategory,
-  motionCategory,
-  sensingCategory,
-  soundCategory,
-  ToolContext,
-  type ToolGroup
-} from '@/components/editor/code-editor/tools'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import ToolItem from './ToolItem.vue'
-import iconEvent from './icons/event.svg?raw'
-import iconLook from './icons/look.svg?raw'
-import iconMotion from './icons/motion.svg?raw'
-import iconSound from './icons/sound.svg?raw'
-import iconControl from './icons/control.svg?raw'
-import iconGame from './icons/game.svg?raw'
-import iconSensing from './icons/sensing.svg?raw'
-import iconVariable from './icons/variable.svg?raw'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
-import { UITooltip, useUIVariables } from '@/components/ui'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
-import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
-import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
+  value: string
   ui: EditorUI
 }>()
 
@@ -37,73 +17,38 @@ defineEmits<{
   insertText: [insertText: string]
 }>()
 
-const uiVariables = useUIVariables()
-const editorCtx = useEditorCtx()
 const collapsed = ref(false)
+const categories = ref<InputItemCategory[]>([])
+const controller = ref<AbortController | null>(null)
 
-const variablesDefs = computed(() => getVariableCategory(editorCtx.project))
-
-const categories = computed(() => {
-  return [
-    {
-      icon: iconEvent,
-      color: '#fabd2c',
-      ...eventCategory
-    },
-    {
-      icon: iconLook,
-      color: '#fd8d60',
-      ...lookCategory
-    },
-    {
-      icon: iconMotion,
-      color: '#91d644',
-      ...motionCategory
-    },
-    {
-      icon: iconControl,
-      color: '#3fcdd9',
-      ...controlCategory
-    },
-    {
-      icon: iconSensing,
-      color: '#4fc2f8',
-      ...sensingCategory
-    },
-    {
-      icon: iconSound,
-      color: uiVariables.color.sound.main,
-      ...soundCategory
-    },
-    {
-      icon: iconVariable,
-      color: '#5a7afe',
-      ...variablesDefs.value
-    },
-    {
-      icon: iconGame,
-      color: '#e14e9f',
-      ...gameCategory
+watch(
+  () => props.value,
+  () => {
+    if (controller.value) {
+      controller.value.abort()
     }
-  ].map((c) => ({ ...c, groups: filterGroups(c.groups) }))
+
+    controller.value = new AbortController()
+
+    props.ui.requestInputAssistantProviderResolve({
+      signal: controller.value.signal
+    }).then(result => {
+      categories.value = result
+    })
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  if (controller.value) {
+    controller.value.abort()
+  }
 })
 
-function filterGroups(groups: ToolGroup[]) {
-  const isSprite = editorCtx.project.selected?.type === 'sprite'
-  return groups
-    .map((g) => ({
-      ...g,
-      tools: g.tools.filter((d) => {
-        if (d.target === ToolContext.all) return true
-        const target = isSprite ? ToolContext.sprite : ToolContext.stage
-        return d.target === target
-      })
-    }))
-    .filter((g) => g.tools.length > 0)
-}
-
 const activeCategoryIndex = shallowRef(0)
-const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
+const activeCategory = computed<InputItemCategory | undefined>(
+  () => categories.value[activeCategoryIndex.value]
+)
 
 function handleCategoryClick(index: number) {
   props.ui.documentDetailState.visible = false
@@ -129,7 +74,7 @@ function handleCategoryClick(index: number) {
       @click="handleCategoryClick(i)"
     >
       <!-- eslint-disable vue/no-v-html -->
-      <div class="icon" v-html="category.icon"></div>
+      <div class="icon" v-html="icon2SVG(category.icon)"></div>
       <p class="label">{{ $t(category.label) }}</p>
     </li>
     <li class="categories-tools">
@@ -152,18 +97,35 @@ function handleCategoryClick(index: number) {
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
   <div v-show="!collapsed" class="sidebar-container">
     <section v-if="!ui.documentDetailState.visible" class="tools-wrapper">
-      <h4 class="title">{{ $t(activeCategory.label) }}</h4>
-      <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
-        <h5 class="group-title">{{ $t(group.label) }}</h5>
-        <div class="defs">
-          <ToolItem
-            v-for="(def, j) in group.tools"
-            :key="j"
-            :tool="def"
-            @use-snippet="$emit('insertText', $event)"
-          />
+      <template v-if="activeCategory">
+        <h4 class="title">{{ $t(activeCategory.label) }}</h4>
+        <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
+          <h5 class="group-title">{{ $t(group.label) }}</h5>
+          <div class="defs">
+            <ToolItem
+              v-for="(def, j) in group.inputItems"
+              :key="j"
+              :input-item="def"
+              @use-snippet="$emit('insertText', $event)"
+            />
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="skeleton-wrapper">
+          <h4 class="skeleton-title"></h4>
+          <div v-for="i in 3" :key="i" class="skeleton-group">
+            <h5 class="skeleton-group-title"></h5>
+            <div class="skeleton-items">
+              <div
+                v-for="j in Math.floor(Math.random() * 5) + 3"
+                :key="j"
+                class="skeleton-item"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </template>
     </section>
     <section v-else class="document-wrapper">
       <header class="header">
@@ -256,9 +218,8 @@ function handleCategoryClick(index: number) {
 .sidebar-container {
   // 162px is the max width of def buttons, use 162px as base width
   // to keep tools-wrapper's width stable when switch among different def categories
-  flex: 1 0 162px;
+  flex: 1 0 256px;
   overflow-y: auto;
-  //background-color: var(--ui-color-grey-300);
   background-color: white;
 }
 
@@ -293,6 +254,56 @@ function handleCategoryClick(index: number) {
     gap: 12px;
     flex-wrap: wrap;
   }
+}
+
+.skeleton-wrapper {
+  .skeleton-title {
+    height: 24px;
+    width: 80%;
+    background-color: #f0f0f0;
+    margin-bottom: 20px;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  .skeleton-group {
+    margin-bottom: 20px;
+
+    .skeleton-group-title {
+      height: 24px;
+      width: 60%;
+      background-color: #f0f0f0;
+      margin-bottom: 12px;
+      animation: skeleton-loading 1.5s infinite;
+    }
+
+    .skeleton-items {
+      gap: 12px;
+
+      .skeleton-item {
+        height: 32px;
+        margin-bottom: 12px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        animation: skeleton-loading 1.5s infinite;
+      }
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-title,
+.skeleton-group-title,
+.skeleton-item {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
 }
 
 .document-wrapper {
