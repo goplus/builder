@@ -1,3 +1,5 @@
+//go:build wasm
+
 package main
 
 //go:generate qexp -outdir pkg github.com/goplus/spx
@@ -7,10 +9,10 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"reflect"
 	"syscall/js"
-	"unsafe"
 
 	_ "github.com/goplus/builder/ispx/pkg/github.com/goplus/spx"
 	_ "github.com/goplus/builder/ispx/pkg/github.com/hajimehoshi/ebiten/v2"
@@ -71,24 +73,14 @@ func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 	goBytes := convertToGoBytes(spriteData)
 	fs := readZipData(goBytes)
 
+	println("parsing sprite animation...")
 	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
-	println("================")
 	if err != nil {
 		log.Println("Failed to parse sprite animation:", err)
 		return nil
 	}
-
-	println("sizeof", unsafe.Sizeof(*data))
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Println("Failed to marshal sprite animation data:", err)
-		return nil
-	}
-
-
 	println("done")
-	return js.ValueOf(string(jsonData))
+	return structToJSObject(data)
 }
 
 func main() {
@@ -115,6 +107,55 @@ func convertToGoBytes(inputArray js.Value) []byte {
 	goBytes := make([]byte, length)
 	js.CopyBytesToGo(goBytes, inputArray)
 	return goBytes
+}
+
+// recursive function to convert struct to js value
+func structToJSObject(data interface{}) js.Value {
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+	// for object, create a new js object, and set each field with recursive call
+	if t.Kind() == reflect.Struct {
+		jsObj := js.Global().Get("Object").New()
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			name := f.Tag.Get("json")
+			if name == "" {
+				name = f.Name
+			}
+			jsObj.Set(name, structToJSObject(v.Field(i).Interface()))
+		}
+		return jsObj
+	}
+	// for array, create a new js array, and set each element with recursive call
+	if t.Kind() == reflect.Slice {
+		jsArr := js.Global().Get("Array").New()
+		for i := 0; i < v.Len(); i++ {
+			jsArr.SetIndex(i, structToJSObject(v.Index(i).Interface()))
+		}
+		return jsArr
+	}
+	// for other types, convert to JS value directly
+	val, err := guardedJSValueOf(data)
+	if err != nil {
+		log.Println("Failed to convert to JS value:", err)
+	}
+	return val
+}
+
+// guardedJSValueOf catches panic when converting Go value to JS value.
+// For a failed conversion, it will return a `null`
+func guardedJSValueOf(data interface{}) (val js.Value, err error) {
+	defer func() {
+		if recover() != nil {
+			val = js.ValueOf(nil)
+			err = errors.New("Failed to convert data to JS value: " + reflect.TypeOf(data).String())
+		}
+	}()
+	val = js.ValueOf(data)
+	return val, nil
 }
 
 func runGame() {

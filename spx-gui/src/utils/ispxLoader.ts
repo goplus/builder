@@ -141,12 +141,8 @@ export async function goEditorParseSpriteAnimation(
   type: string = 'skeleton'
 ): Promise<AnimationExportData> {
   console.time("TIME: call goEditorParseSpriteAnimation")
-  const json = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
+  const result = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
   console.timeEnd("TIME: call goEditorParseSpriteAnimation")
-  
-  console.time("TIME: parse json goEditorParseSpriteAnimation")
-  const result: AnimationExportData = JSON.parse(json)
-  console.timeEnd("TIME: parse json goEditorParseSpriteAnimation")
 
   console.time("TIME: convert goEditorParseSpriteAnimation")
 
@@ -158,7 +154,7 @@ export async function goEditorParseSpriteAnimation(
         const i = frame.RederOrder[j]
         const mesh = frame.Meshes[i]
         mesh.Indices = frame0.Meshes[i].Indices
-        // mesh.Uvs = frame0.Meshes[0].Uvs
+        mesh.Uvs = frame0.Meshes[0].Uvs
         mesh.Vertices = frame.Meshes[0].Vertices
       } 
     }
