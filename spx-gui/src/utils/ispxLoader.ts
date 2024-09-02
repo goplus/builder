@@ -90,8 +90,8 @@ export interface AnimationExportFrame {
 
 export interface AnimationExportMesh {
   Indices: number[]
-  Uvs?: FlatBuffer<2>
-  Vertices?: FlatBuffer<3>
+  Uvs: FlatBuffer<2>
+  Vertices: FlatBuffer<3>
 }
 export interface FlatBuffer<N extends number = 2 | 3> {
   numComponents: N
