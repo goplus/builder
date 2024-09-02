@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import ToolItem from './ToolItem.vue'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
@@ -18,15 +18,17 @@ defineEmits<{
 
 const collapsed = ref(false)
 const categories = ref<InputItemCategory[]>([])
+// todo: listen sprite change
+const controller = new AbortController()
 
 onMounted(async () => {
-  const controller = new AbortController()
   categories.value = await props.ui.requestInputAssistantProviderResolve({
     signal: controller.signal
   })
-  return () => {
-    controller.abort()
-  }
+})
+
+onUnmounted(() => {
+  controller.abort()
 })
 
 const activeCategoryIndex = shallowRef(0)
@@ -101,7 +103,11 @@ function handleCategoryClick(index: number) {
           <div v-for="i in 3" :key="i" class="skeleton-group">
             <h5 class="skeleton-group-title"></h5>
             <div class="skeleton-items">
-              <div v-for="j in Math.floor(Math.random() * 5) + 3" :key="j" class="skeleton-item"></div>
+              <div
+                v-for="j in Math.floor(Math.random() * 5) + 3"
+                :key="j"
+                class="skeleton-item"
+              ></div>
             </div>
           </div>
         </div>
