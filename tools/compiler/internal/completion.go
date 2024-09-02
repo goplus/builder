@@ -3,7 +3,6 @@ package internal
 import (
 	"fmt"
 	"go/types"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
@@ -36,7 +35,7 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
-		//return nil, err
+		fmt.Println("Compiler error: ", err)
 	}
 
 	cursorPos := fset.File(file.Pos()).Pos(cursor)
@@ -49,14 +48,13 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 	info := initTypeInfo()
 	checker := typesutil.NewChecker(conf, chkOpts, nil, info)
 	if err = checker.Files(nil, []*ast.File{file}); err != nil {
-		//return nil, err
+		fmt.Println("Compiler error: ", err)
 	}
 
 	items := &scopeItems{}
 
 	smallScope := findSmallestScopeAtPosition(info, cursorPos)
 	traverseToRoot(smallScope, items, info)
-	//extractFileScopeItems(info, items, file)
 
 	return *items, nil
 }
@@ -159,60 +157,6 @@ func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info)
 	if scope.Parent() != nil {
 		traverseToRoot(scope.Parent(), items, info)
 	}
-}
-
-func extractFileScopeItems(info *typesutil.Info, scopeItems *scopeItems, file *ast.File) {
-	for _, def := range info.Defs {
-		if def.Pos() == 0 || def.Name() == "Main" {
-			continue
-		}
-		if def.Parent() == nil || def.Parent() == info.Scopes[file] {
-			switch def.(type) {
-			case *types.Func:
-				scopeItem := &scopeItem{
-					Label:      def.Name(),
-					InsertText: convertFuncToInsertText(def.Type().String()),
-					Type:       "func",
-				}
-				if !scopeItems.Contains(def.Name()) {
-					*scopeItems = append(*scopeItems, scopeItem)
-				}
-				continue
-			case *types.Var:
-				scopeItem := &scopeItem{
-					Label:      def.Name(),
-					InsertText: def.Name(),
-					Type:       "var",
-				}
-				if !scopeItems.Contains(def.Name()) {
-					*scopeItems = append(*scopeItems, scopeItem)
-				}
-				continue
-			}
-		}
-	}
-}
-
-func convertFuncToInsertText(funcSignature string) string {
-	re := regexp.MustCompile(`\((.*?)\)\s*(.*)`)
-
-	matches := re.FindStringSubmatch(funcSignature)
-
-	if len(matches) > 1 {
-		params := matches[1]
-
-		paramParts := strings.Split(params, ",")
-		for i, param := range paramParts {
-			trimParam := strings.TrimSpace(param)
-			paramParts[i] = strings.TrimSpace(strings.Split(trimParam, " ")[0])
-		}
-
-		insertText := fmt.Sprintf("%s", strings.Join(paramParts, ", "))
-
-		return insertText
-	}
-
-	return funcSignature
 }
 
 func convertOverloadToSimple(overloadName string) (string, int) {

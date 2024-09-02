@@ -21,18 +21,10 @@ func GetDiagnostics(fileName, fileCode string) (interface{}, error) {
 func GetDefinition(fileName, fileCode string) (interface{}, error) {
 	fset := token.NewFileSet()
 	file, _ := initParser(fset, fileName, fileCode)
-	//if err != nil {
-	//	return nil, nil
-	//}
 
 	// get user code info
 	info, _ := codeInfo(initSPXMod(), file, fset)
-	//if err != nil {
-	//	return nil, nil
-	//}
-
 	definitionList := getDefinitionList(info)
-
 	definitionList.Position(fset)
 
 	return definitionList, nil
@@ -63,22 +55,13 @@ func GetSPXFileType(fileName, fileCode string) (interface{}, error) {
 // GetInlayHint get hint for user code.
 func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
-	if err != nil {
-		return nil, err
-	}
+	file, _ := initParser(fset, fileName, fileCode)
 
 	// get function list
-	fnList, err := getCodeFunctionList(file)
-	if err != nil {
-		return nil, err
-	}
+	fnList, _ := getCodeFunctionList(file)
 
 	// get user code info
-	infoList, err := codeInfo(initSPXMod(), file, fset)
-	if err != nil {
-		return nil, err
-	}
+	infoList, _ := codeInfo(initSPXMod(), file, fset)
 
 	// set function list signature
 	for _, fun := range fnList {
