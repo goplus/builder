@@ -97,7 +97,6 @@ import { NIcon } from 'naive-ui'
 import { HeartOutlined, HeartFilled, PlusOutlined /** , StarOutlined */ } from '@vicons/antd'
 import { ref } from 'vue'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
-import { useMessageHandle } from '@/utils/exception'
 
 
 const props = defineProps<{

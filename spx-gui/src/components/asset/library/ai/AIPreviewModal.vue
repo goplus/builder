@@ -121,7 +121,6 @@ import {
   isContentReady,
   isPreviewReady,
   type TaggedAIAssetData,
-  exportAIGCAsset,
   exportedId,
   type RequiredAIGCFiles,
 } from '@/apis/aigc'
@@ -134,7 +133,6 @@ import AIBackdropEditor from './AIBackdropEditor.vue'
 import AISoundEditor from './AISoundEditor.vue'
 import { convertAIAssetToBackdrop } from '@/models/common/asset'
 import { hashFileCollection } from '@/models/common/hash'
-import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
 import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
 import { useRenameAsset } from '../..'
