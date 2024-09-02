@@ -45,13 +45,10 @@ let renderer: Renderer
 let resizeTimer: any
 let buffers: BuffersFrame[][]
 onMounted(async () => {
-  console.log('mounted')
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
-  console.time('TIME: getBufferInfo')
   if (!buffers) {
     buffers = getBufferInfo(gl, props.data)
   }
-  console.timeEnd('TIME: getBufferInfo')
 
   renderer = new Renderer(gl, buffers, vs, fs, props.texture, props.fps, props.scale)
   if (props.autoplay) {
