@@ -10,6 +10,9 @@
         show-arrow
         :show-dots="false"
         :autoplay="play && autoplay"
+        :effect="'card' /** use card instead of slide to prevent duplicate carousel items */"
+        :prev-slide-style="{ transform: 'translateX(-200%)', opacity: 0 }"
+        :next-slide-style="{ transform: 'translateX(100%)', opacity: 0 }"
         class="carousel"
         :interval="5000"
         :current-index="currentIndex"
