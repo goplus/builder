@@ -3,6 +3,8 @@ package internal
 import (
 	"go/types"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/token"
@@ -13,21 +15,22 @@ type definitionItem struct {
 	BasePos
 	PkgName string  `json:"pkg_name"`
 	PkgPath string  `json:"pkg_path"`
-	Name    string  `json:"name"` // This is the token name
-	Content string  `json:"content"`
+	Name    string  `json:"name"`   // This is the token name
 	Usages  []usage `json:"usages"` // contains 1 or n usage for matches.
 	From    BasePos
 }
 
 type usage struct {
+	UsageID     string  `json:"usageID"`
 	Declaration string  `json:"declaration"`
-	Params      []param `json:"samples"`
+	Sample      string  `json:"sample"`
+	InsertText  string  `json:"insertText"`
+	Params      []param `json:"params"`
 	Type        string  `json:"type"`
 }
 
 type param struct {
 	Name string `json:"name"`
-	Kind string `json:"kind"`
 	Type string `json:"type"`
 }
 
@@ -78,7 +81,6 @@ func (d definitions) Position(fset *token.FileSet) {
 		def.From.EndPosition = fset.Position(token.Pos(def.From.EndPos))
 	}
 }
-
 func getDefinitionList(info *typesutil.Info) definitions {
 	var definitionList definitions
 
@@ -89,16 +91,8 @@ func getDefinitionList(info *typesutil.Info) definitions {
 		if ident.Pos() == 0 || ident.Obj == nil {
 			continue
 		}
-		definition := &definitionItem{
-			BasePos: BasePos{
-				StartPos: int(ident.Pos()),
-				EndPos:   int(ident.End()),
-			},
-			PkgName: obj.Pkg().Name(),
-			PkgPath: obj.Pkg().Path(),
-			Name:    ident.Name,
-			Content: obj.String(),
-		}
+		definition := createDefinitionItem(ident, obj)
+		definition.Usages = createUsages(obj, ident.Name)
 		definitionList = append(definitionList, definition)
 	}
 
@@ -106,17 +100,18 @@ func getDefinitionList(info *typesutil.Info) definitions {
 		if ident.Pos() == 0 || obj.Pkg() == nil {
 			continue
 		}
-		definition := &definitionItem{
-			BasePos: BasePos{
-				StartPos: int(ident.Pos()),
-				EndPos:   int(ident.End()),
-			},
-			PkgName: obj.Pkg().Name(),
-			PkgPath: obj.Pkg().Path(),
-			Name:    ident.Name,
-			Content: obj.String(),
-		}
+
+		definition := createDefinitionItem(ident, obj)
 		definition.From.StartPos, definition.From.EndPos = findDef(defs, obj)
+
+		// Check for overloads
+		if strings.Contains(obj.String(), "_overload_args_") {
+			overloads := info.Overloads[ident]
+			definition.Usages = createOverloadedUsages(overloads)
+		} else {
+			definition.Usages = createUsages(obj, ident.Name)
+		}
+
 		definitionList = append(definitionList, definition)
 	}
 
@@ -124,6 +119,75 @@ func getDefinitionList(info *typesutil.Info) definitions {
 		return definitionList[i].StartPos < definitionList[j].StartPos
 	})
 	return definitionList
+}
+
+// createDefinitionItem creates a definitionItem from an ident and obj.
+func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
+	return &definitionItem{
+		BasePos: BasePos{
+			StartPos: int(ident.Pos()),
+			EndPos:   int(ident.End()),
+		},
+		PkgName: obj.Pkg().Name(),
+		PkgPath: obj.Pkg().Path(),
+		Name:    ident.Name,
+	}
+}
+
+// createUsages creates a slice of usage based on the type of obj.
+func createUsages(obj types.Object, name string) []usage {
+	switch t := obj.Type().(type) {
+	case *types.Basic:
+		return []usage{{
+			UsageID:     "0",
+			Declaration: obj.String(),
+			Sample:      obj.String(),
+			InsertText:  name,
+			Params:      []param{},
+			Type:        t.String(),
+		}}
+	case *types.Signature:
+		return []usage{createSignatureUsage(obj, t)}
+	default:
+		return nil
+	}
+}
+
+// createOverloadedUsages creates usages for overloaded functions.
+func createOverloadedUsages(overloads []types.Object) []usage {
+	var usages []usage
+	for _, overload := range overloads {
+		us := createSignatureUsage(overload, overload.Type().(*types.Signature))
+		usages = append(usages, us)
+	}
+	return usages
+}
+
+// createSignatureUsage creates a usage for a function signature.
+func createSignatureUsage(obj types.Object, signature *types.Signature) usage {
+	use := usage{
+		Declaration: obj.String(),
+		Type:        "func",
+	}
+	name, idx := convertOverloadToSimple(obj.Name())
+	use.UsageID = strconv.Itoa(idx)
+	var params []param
+	var signList []string
+	var sampleList []string
+	for i := 0; i < signature.Params().Len(); i++ {
+		paramName := signature.Params().At(i).Name()
+		paramType := signature.Params().At(i).Type().String()
+		params = append(params, param{
+			Name: paramName,
+			Type: paramType,
+		})
+		signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
+		sampleList = append(sampleList, paramName)
+	}
+	use.Params = params
+	use.Sample = strings.Join(sampleList, " ")
+	use.InsertText = name + " " + strings.Join(signList, ", ")
+	return use
 }
 
 func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
