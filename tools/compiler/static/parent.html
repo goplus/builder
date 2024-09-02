@@ -50,6 +50,8 @@ onStart => {
 
     </input>
 
+    <input type="text" id="token" value="step"/>
+
     <div>
 
     </div>
@@ -60,6 +62,7 @@ onStart => {
     <button onclick="runInlayHint()">runInlayHints</button>
     <br>
     <button onclick="runCompletion()">runCompletion</button>
+    <button onclick="runTokenDetail()">runTokenDetail</button>
 
 
     <div id="compiler-iframe-container">
@@ -171,6 +174,23 @@ onStart => {
                     name: "test.spx",
                     code: document.getElementById("codeInput").value,
                     line: Number(document.getElementById("line").value)
+                }
+            })
+            console.log(res)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    function runTokenDetail() {
+        try {
+            let res = getIframe().contentWindow.getTokenDetail({
+                in: {
+                    name: "test.spx",
+                    code: document.getElementById("codeInput").value,
+                    line: Number(document.getElementById("line").value),
+                    pkgPath:"github.com/goplus/spx",
+                    token: document.getElementById("token").value
                 }
             })
             console.log(res)

@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"fmt"
+
 	"github.com/goplus/gop/token"
+	"github.com/goplus/igop/gopbuild"
 )
 
 // GetDiagnostics return error info list.
@@ -105,4 +108,12 @@ func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 
 func GetCompletions(fileName, fileCode string, line int) (interface{}, error) {
 	return getScopesItems(fileName, fileCode, line)
+}
+
+func GetTokenDetail(token string) (interface{}, error) {
+	pkg, ok := gopbuild.LookupPackageFromLib("github.com/goplus/spx")
+	if !ok {
+		return nil, fmt.Errorf("can't find lib")
+	}
+	return tokenDetail(pkg, token), nil
 }

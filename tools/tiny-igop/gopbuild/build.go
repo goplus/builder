@@ -183,7 +183,7 @@ func isGopPackage(path string) bool {
 }
 
 func (c *Context) Import(path string) (*types.Package, error) {
-	if pkg, ok := lookupPackageFromLib(path); ok {
+	if pkg, ok := LookupPackageFromLib(path); ok {
 		return pkg, nil
 	}
 	if isGopPackage(path) {
@@ -292,7 +292,7 @@ func (c *Context) loadPackage(srcDir string, pkgs map[string]*ast.Package) (*Pac
 	return &Package{c.FileSet, out}, nil
 }
 
-func lookupPackageFromLib(path string) (*types.Package, bool) {
+func LookupPackageFromLib(path string) (*types.Package, bool) {
 	file, err := lib.Open("lib/" + path + ".a")
 	if err != nil {
 		return nil, false
