@@ -22,6 +22,8 @@ import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
+import { Cancelled } from '@/utils/exception'
+import { untilConditionMet } from '@/utils/utils'
 
 export type { Action } from './history'
 
@@ -383,12 +385,28 @@ export class Project extends Disposable {
   }
 
   /** Save to cloud */
+  private saveToCloudAbortController: AbortController | null = null
+  private get isSavingToCloud() {
+    return this.saveToCloudAbortController != null
+  }
   async saveToCloud() {
-    const [metadata, files] = await this.export()
-    if (this.isDisposed) throw new Error('disposed')
-    const saved = await cloudHelper.save(metadata, files)
-    this.loadMetadata(saved.metadata)
-    this.lastSyncedFilesHash = await hashFiles(files)
+    if (this.saveToCloudAbortController != null) {
+      this.saveToCloudAbortController.abort(new Cancelled('aborted'))
+    }
+    const abortController = new AbortController()
+    this.saveToCloudAbortController = abortController
+
+    try {
+      const [metadata, files] = await this.export()
+      if (this.isDisposed) throw new Error('disposed')
+      const saved = await cloudHelper.save(metadata, files, abortController.signal)
+      this.loadMetadata(saved.metadata)
+      this.lastSyncedFilesHash = await hashFiles(files)
+    } finally {
+      if (this.saveToCloudAbortController === abortController) {
+        this.saveToCloudAbortController = null
+      }
+    }
   }
 
   /** Load from local cache */
@@ -428,13 +446,25 @@ export class Project extends Disposable {
         this.autoSaveToCloudState = AutoSaveToCloudState.Saving
 
         try {
+          if (this.isSavingToCloud) {
+            await untilConditionMet(
+              () => this.isSavingToCloud,
+              () => !this.isSavingToCloud
+            )
+          }
+
           if (this.hasUnsyncedChanges) await this.saveToCloud()
           this.autoSaveToCloudState = AutoSaveToCloudState.Saved
         } catch (e) {
           this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-          retryAutoSave()
-          await this.saveToLocalCache(localCacheKey) // prevent data loss
-          console.error('failed to auto save to cloud', e)
+          if (e instanceof Cancelled) {
+            autoSaveToCloud()
+            save.flush()
+          } else {
+            retryAutoSave()
+            await this.saveToLocalCache(localCacheKey) // prevent data loss
+            console.error('failed to auto save to cloud', e)
+          }
           return
         }
 
@@ -453,6 +483,20 @@ export class Project extends Disposable {
         }
       }, 5000)
       this.addDisposer(retryAutoSave.cancel)
+
+      // fire pending or retryable auto saves immediately when a new save occurs, making autoSaveToCloudState more responsive
+      this.addDisposer(
+        watch(
+          () => this.isSavingToCloud,
+          async () => {
+            if (this.isSavingToCloud) {
+              await retryAutoSave.flush()
+              save.flush()
+            }
+          },
+          { immediate: true }
+        )
+      )
 
       return () => {
         retryAutoSave.cancel()

@@ -11,6 +11,7 @@ export type RequestOptions = {
   headers?: Headers
   /** Timeout duration in milisecond, from request-sent to server-response-got */
   timeout?: number
+  signal?: AbortSignal
 }
 
 /** Response body when exception encountered for API calling */
@@ -74,6 +75,11 @@ export class Client {
     const req = await this.prepareRequest(url, payload, options)
     const timeout = options?.timeout ?? defaultTimeout
     const ctrl = new AbortController()
+    if (options?.signal != null) {
+      // TODO: Reimplement this using `AbortSignal.any()` once it is widely supported.
+      options.signal.throwIfAborted()
+      options.signal.addEventListener('abort', () => ctrl.abort(options.signal?.reason))
+    }
     const resp = await Promise.race([
       fetch(req, { signal: ctrl.signal }),
       new Promise<never>((_, reject) => setTimeout(() => reject(new TimeoutException()), timeout))

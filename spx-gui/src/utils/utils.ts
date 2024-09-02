@@ -84,12 +84,29 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * ```
  */
 export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) {
+  return untilConditionMet(
+    valueSource as WatchSource<T | null | undefined>,
+    (value): value is NonNullable<T> => value != null
+  ) as Promise<NonNullable<T>>
+}
+
+/**
+ * Wait until a given condition is met for a (reactive) value.
+ * ```ts
+ * const foo = await untilConditionMet(fooRef, (value) => value !== null)
+ * const bar = await untilConditionMet(() => getBar(), (value) => value > 10)
+ * ```
+ */
+export function untilConditionMet<T>(
+  valueSource: WatchSource<T>,
+  condition: (value: T) => boolean
+): Promise<T> {
   return new Promise<T>((resolve) => {
     let stopWatch: (() => void) | null = null
     stopWatch = watch(
       valueSource,
       (value) => {
-        if (value == null) return
+        if (!condition(value)) return
         resolve(value)
         stopWatch?.()
       },
