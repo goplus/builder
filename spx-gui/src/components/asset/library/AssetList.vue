@@ -44,7 +44,6 @@
       </div>
     </template>
   </NVirtualList>
-  <VideoRecoder></VideoRecoder>
 </template>
 <script lang="ts" setup>
 import { computed, ref, shallowRef, watch } from 'vue'
@@ -65,7 +64,6 @@ import {
 import AIAssetItem from './AIAssetItem.vue'
 import { TipsAndUpdatesOutlined } from '@vicons/material'
 import { AIGCTask, SyncAIImageTask } from '@/models/aigc'
-import VideoRecoder from '../animation/VideoRecoder.vue'
 
 const FORBIDDEN_AI_CATEGORIES = ['liked', 'history', 'imported']
 const aiGenerationDisabled = computed(() => {
