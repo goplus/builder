@@ -183,7 +183,7 @@ describe('ProjectAutoSave', () => {
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
     expect(localSaveMock).toHaveBeenCalledTimes(1)
 
-    project.removeSprite(newSprite.name)
+    project.removeSprite(newSprite.id)
     await flushPromises()
     await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
     await flushPromises()
