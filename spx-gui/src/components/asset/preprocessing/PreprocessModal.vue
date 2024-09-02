@@ -191,14 +191,14 @@ function handleMethodApplied(method: Method, output: File[]) {
   const idx = supportedMethods.value.findIndex((m) => m.value === method)
   // methods are applied in order, so we need to unapply the following methods, as thier inputs have changed
   outputs.splice(idx)
-  outputs.push(output)
+  outputs[idx] = output
   updateCostumes(output)
 }
 
 function handleMethodCancel(method: Method) {
   const idx = supportedMethods.value.findIndex((m) => m.value === method)
   outputs.splice(idx)
-  outputs.push(null)
+  outputs[idx] = null
   updateCostumes(getMethodInput(method))
 }
 
