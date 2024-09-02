@@ -253,7 +253,7 @@ watch(
   () => {
     if (!props.sprite.skeletonAnimation) return
     skeletonAnimations.value = props.sprite.skeletonAnimation.clips.map((clip, i) =>
-      loadClip(clip, i * 2000)
+      loadClip(clip, i * 100)
     )
   },
   { immediate: true }
