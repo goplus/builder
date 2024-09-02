@@ -27,7 +27,7 @@ watch(
     if (controller.value) {
       controller.value.abort()
     }
-    
+
     controller.value = new AbortController()
 
     props.ui.requestInputAssistantProviderResolve({
