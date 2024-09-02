@@ -1,13 +1,13 @@
 <template>
-  <UITooltip placement="bottom-start" :raw="true" :no-arrow="true">
+  <UITooltip placement="bottom-start" :raw="true" :show-arrow="false">
     <!-- this is temp type force transformed, when completion hover preview merged, this will have common function and here will be removed -->
     <DocumentPreview :content="(inputItem.desc as DocPreview).content"></DocumentPreview>
     <template #trigger>
-      <UITagButton @click="emit('useSnippet', inputItem.insertText)">
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <span :ref="el => normalizeIconSize(el as Element, 16)" v-html="icon2SVG(inputItem.icon)"></span>
+      <UITagButton class="button" @click="emit('useSnippet', inputItem.insertText)">
+        <!-- eslint-disable vue/no-v-html -->
+        <span class="icon" v-html="icon2SVG(inputItem.icon)"></span>
         <span class="text">{{ inputItem.label }}</span>
-        <span>{{ inputItem.sample }}</span>
+        <span class="sample">{{ inputItem.sample }}</span>
       </UITagButton>
     </template>
   </UITooltip>
@@ -17,7 +17,7 @@
 import { UITagButton, UITooltip } from '@/components/ui'
 import type { InputItem } from '../EditorUI'
 import DocumentPreview from './features/hover-preview/DocumentPreview.vue'
-import { icon2SVG, normalizeIconSize } from './common'
+import { icon2SVG } from './common'
 import type { DocPreview } from '../EditorUI'
 
 defineProps<{
@@ -27,14 +27,37 @@ defineProps<{
 const emit = defineEmits<{
   useSnippet: [insertText: string]
 }>()
-
 </script>
 
 <style scoped lang="scss">
+.button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 4px 1px rgba(0, 0, 0, 0.1);
+  font-family: var(--ui-font-family-code);
+}
+
+.icon {
+  margin-right: 4px;
+  width: 16px;
+  height: 16px;
+  color: var(--ui-color-yellow-main);
+}
+
 .text {
   overflow-x: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
+  margin-right: 1em;
+  color: black;
+  font-weight: 500;
   font-size: 13px;
+}
+
+.sample {
+  overflow-x: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>

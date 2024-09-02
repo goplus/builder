@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watchEffect } from 'vue'
-import {
-} from '@/components/editor/code-editor/tools'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import ToolItem from './ToolItem.vue'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
 import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
-import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
 
 const props = defineProps<{
@@ -21,18 +19,20 @@ defineEmits<{
 const collapsed = ref(false)
 const categories = ref<InputItemCategory[]>([])
 
-watchEffect(async () => {
+onMounted(async () => {
   const controller = new AbortController()
-  categories.value = await props.ui.requestInputAssistantProviderResolve({ signal: controller.signal })
+  categories.value = await props.ui.requestInputAssistantProviderResolve({
+    signal: controller.signal
+  })
   return () => {
     controller.abort()
   }
 })
 
-
-
 const activeCategoryIndex = shallowRef(0)
-const activeCategory = computed(() => categories.value[activeCategoryIndex.value])
+const activeCategory = computed<InputItemCategory | undefined>(
+  () => categories.value[activeCategoryIndex.value]
+)
 
 function handleCategoryClick(index: number) {
   props.ui.documentDetailState.visible = false
@@ -58,7 +58,7 @@ function handleCategoryClick(index: number) {
       @click="handleCategoryClick(i)"
     >
       <!-- eslint-disable vue/no-v-html -->
-      <div class="icon" v-html="category.icon"></div>
+      <div class="icon" v-html="icon2SVG(category.icon)"></div>
       <p class="label">{{ $t(category.label) }}</p>
     </li>
     <li class="categories-tools">
@@ -81,18 +81,31 @@ function handleCategoryClick(index: number) {
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
   <div v-show="!collapsed" class="sidebar-container">
     <section v-if="!ui.documentDetailState.visible" class="tools-wrapper">
-      <h4 class="title">{{ $t(activeCategory.label) }}</h4>
-      <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
-        <h5 class="group-title">{{ $t(group.label) }}</h5>
-        <div class="defs">
-          <ToolItem
-            v-for="(def, j) in group.inputItems"
-            :key="j"
-            :input-item="def"
-            @use-snippet="$emit('insertText', $event)"
-          />
+      <template v-if="activeCategory">
+        <h4 class="title">{{ $t(activeCategory.label) }}</h4>
+        <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
+          <h5 class="group-title">{{ $t(group.label) }}</h5>
+          <div class="defs">
+            <ToolItem
+              v-for="(def, j) in group.inputItems"
+              :key="j"
+              :input-item="def"
+              @use-snippet="$emit('insertText', $event)"
+            />
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="skeleton-wrapper">
+          <h4 class="skeleton-title"></h4>
+          <div v-for="i in 3" :key="i" class="skeleton-group">
+            <h5 class="skeleton-group-title"></h5>
+            <div class="skeleton-items">
+              <div v-for="j in Math.floor(Math.random() * 5) + 3" :key="j" class="skeleton-item"></div>
+            </div>
+          </div>
+        </div>
+      </template>
     </section>
     <section v-else class="document-wrapper">
       <header class="header">
@@ -185,7 +198,7 @@ function handleCategoryClick(index: number) {
 .sidebar-container {
   // 162px is the max width of def buttons, use 162px as base width
   // to keep tools-wrapper's width stable when switch among different def categories
-  flex: 1 0 162px;
+  flex: 1 0 256px;
   overflow-y: auto;
   background-color: white;
 }
@@ -221,6 +234,56 @@ function handleCategoryClick(index: number) {
     gap: 12px;
     flex-wrap: wrap;
   }
+}
+
+.skeleton-wrapper {
+  .skeleton-title {
+    height: 24px;
+    width: 80%;
+    background-color: #f0f0f0;
+    margin-bottom: 20px;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  .skeleton-group {
+    margin-bottom: 20px;
+
+    .skeleton-group-title {
+      height: 24px;
+      width: 60%;
+      background-color: #f0f0f0;
+      margin-bottom: 12px;
+      animation: skeleton-loading 1.5s infinite;
+    }
+
+    .skeleton-items {
+      gap: 12px;
+
+      .skeleton-item {
+        height: 32px;
+        margin-bottom: 12px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        animation: skeleton-loading 1.5s infinite;
+      }
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-title,
+.skeleton-group-title,
+.skeleton-item {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
 }
 
 .document-wrapper {

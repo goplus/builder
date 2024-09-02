@@ -31,7 +31,6 @@ import {
   type ToolCategory
 } from '@/components/editor/code-editor/tools'
 
-
 type JumpPosition = {
   line: number
   column: number
@@ -164,11 +163,9 @@ export class Coordinator {
     ]
   }
 
-  async implementsInputAssistantProvider(
-    _ctx: {
-      signal: AbortSignal
-    }
-  ): Promise<InputItemCategory[]> {
+  async implementsInputAssistantProvider(_ctx: {
+    signal: AbortSignal
+  }): Promise<InputItemCategory[]> {
     return getInputItemCategories(this.project)
   }
 
@@ -241,8 +238,11 @@ function getCompletionItemKind(type: ToolType): Icon {
   }
 }
 
-
-function toolCategory2InputItemCategory(category: ToolCategory, icon: Icon, color: string): InputItemCategory {
+function toolCategory2InputItemCategory(
+  category: ToolCategory,
+  icon: Icon,
+  color: string
+): InputItemCategory {
   return {
     icon,
     color,
@@ -251,27 +251,41 @@ function toolCategory2InputItemCategory(category: ToolCategory, icon: Icon, colo
       label: group.label,
       inputItems: group.tools.flatMap((tool): InputItem[] => {
         if (tool.usage) {
-          return [{
-            icon: getCompletionItemKind(tool.type),
-            label: tool.keyword,
-            desc: {
-              level: DocPreviewLevel.Normal,
-              content: ''
-            },
-            sample: '',
-            insertText: tool.usage.insertText
-          }]
+          let sample = tool.usage.insertText.split(' ').slice(1).join()
+          sample = sample.replace(
+            /\$\{\d+:?(.*?)}/g,
+            (_, placeholderContent: string) => placeholderContent || ''
+          )
+          return [
+            {
+              icon: getCompletionItemKind(tool.type),
+              label: tool.keyword,
+              desc: {
+                level: DocPreviewLevel.Normal,
+                content: ''
+              },
+              sample: sample,
+              insertText: tool.usage.insertText
+            }
+          ]
         } else if (Array.isArray(tool.usages)) {
-          return tool.usages.map((usage) => ({
-            icon: getCompletionItemKind(tool.type),
-            label: tool.keyword,
-            desc: {
-              level: DocPreviewLevel.Normal,
-              content: ''
-            },
-            sample: '',
-            insertText: usage.insertText
-          }))
+          return tool.usages.map((usage) => {
+            let sample = usage.insertText.split(' ').slice(1).join(' ')
+            sample = sample.replace(
+              /\$\{\d+:?(.*?)}/g,
+              (_, placeholderContent: string) => placeholderContent || ''
+            )
+            return {
+              icon: getCompletionItemKind(tool.type),
+              label: tool.keyword,
+              desc: {
+                level: DocPreviewLevel.Normal,
+                content: ''
+              },
+              sample: sample,
+              insertText: usage.insertText
+            }
+          })
         }
         return []
       })
@@ -279,9 +293,7 @@ function toolCategory2InputItemCategory(category: ToolCategory, icon: Icon, colo
   }
 }
 
-
 function getInputItemCategories(project: Project): InputItemCategory[] {
-
   return [
     toolCategory2InputItemCategory(eventCategory, Icon.Event, '#fabd2c'),
     toolCategory2InputItemCategory(lookCategory, Icon.Look, '#fd8d60'),
