@@ -34,7 +34,7 @@ func TestGetRatingDistribution(t *testing.T) {
 			WithArgs("1", "user1").
 			WillReturnRows(rows)
 
-		distributions, err := GetRatingDistribution(context.Background(), gdb, "1", "user1")
+		distributions, err := GetRatingDistribution(context.Background(), gdb, "1")
 		require.NoError(t, err)
 		assert.Len(t, distributions, 3)
 		assert.Equal(t, int(10), distributions[0].Count)
@@ -57,7 +57,7 @@ func TestGetRatingDistribution(t *testing.T) {
 		}), &gorm.Config{})
 		require.NoError(t, err)
 
-		_, err = GetRatingDistribution(context.Background(), gdb, "invalid-id", "user1")
+		_, err = GetRatingDistribution(context.Background(), gdb, "invalid-id")
 		require.Error(t, err)
 		assert.Equal(t, "invalid asset id or owner", err.Error())
 	})
