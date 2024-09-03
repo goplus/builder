@@ -273,16 +273,30 @@ export class Project extends Disposable {
       builder_soundOrder: soundOrder,
       ...rawStageConfig
     } = config
+
+    const sounds = await Sound.loadAll(files)
+    const sprites = await Sprite.loadAll(files, sounds)
+
     const widgets: RawWidgetConfig[] = []
     const zorder: string[] = []
     rawZorder?.forEach((item) => {
-      if (typeof item === 'string') zorder.push(item)
-      else widgets.push(item)
+      if (typeof item === 'string') {
+        // `item` is a sprite name
+        const id = sprites.find((s) => s.name === item)?.id
+        if (id == null) {
+          console.warn(`sprite ${item} not found`)
+          return
+        }
+        zorder.push(id)
+      } else {
+        // `item` is a widget config
+        widgets.push(item)
+      }
     })
+
     const stageConfig = { ...rawStageConfig, widgets }
     const stage = await Stage.load(stageConfig, files)
-    const sounds = await Sound.loadAll(files)
-    const sprites = await Sprite.loadAll(files, sounds)
+
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
@@ -296,6 +310,11 @@ export class Project extends Disposable {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
+    const zorderNames = this.zorder.map((id) => {
+      const sprite = this.sprites.find((s) => s.id === id)
+      if (sprite == null) throw new Error(`sprite ${id} not found`)
+      return sprite.name
+    })
     const config: RawProjectConfig = {
       ...restStageConfig,
       run: {
@@ -305,7 +324,7 @@ export class Project extends Disposable {
         width: stageConfig.map?.width,
         height: stageConfig.map?.height
       },
-      zorder: [...this.zorder, ...(widgets ?? [])],
+      zorder: [...zorderNames, ...(widgets ?? [])],
       builder_spriteOrder: this.sprites.map((s) => s.id),
       builder_soundOrder: this.sounds.map((s) => s.id)
     }
@@ -367,8 +386,8 @@ export class Project extends Disposable {
     this.saveToCloudAbortController = abortController
 
     try {
-      const [metadata, files] = await this.export()
       if (this.isDisposed) throw new Error('disposed')
+      const [metadata, files] = await this.export()
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
       this.lastSyncedFilesHash = await hashFiles(files)
@@ -389,8 +408,8 @@ export class Project extends Disposable {
 
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
-    const [metadata, files] = await this.export()
     if (this.isDisposed) throw new Error('disposed')
+    const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
   }
 
