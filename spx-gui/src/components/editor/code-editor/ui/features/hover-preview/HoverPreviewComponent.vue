@@ -10,21 +10,34 @@ const hoverPreviewState = props.hoverPreview.hoverPreviewState
 props.hoverPreview.onMousemove((e) => {
   if (e.type !== IEditor.MouseTargetType.CONTENT_TEXT) return props.hoverPreview.hideDocument(true)
 
+  const mouseColumn = e.position.column
+  const mouseLineNumber = e.position.lineNumber
+
   const position = props.hoverPreview.editor.getModel()?.getWordAtPosition({
     column: e.range.startColumn,
     lineNumber: e.range.startLineNumber
   })
   if (!position || !position.word) return props.hoverPreview.hideDocument(true)
+
   const { startColumn, endColumn } = position
   const lineNumber = e.position.lineNumber
-  // determine weather current mouse is in doc word range, if not hide doc
+  // check if the word or mouse position is outside the allowed range
   if (
+    // word is outside the range on the start or end line
     (lineNumber === hoverPreviewState.range.startLineNumber &&
       endColumn <= hoverPreviewState.range.startColumn) ||
     (lineNumber === hoverPreviewState.range.endLineNumber &&
       startColumn >= hoverPreviewState.range.endColumn) ||
+    // word or mouse is on a line outside the allowed range
     lineNumber < hoverPreviewState.range.startLineNumber ||
-    lineNumber > hoverPreviewState.range.endLineNumber
+    lineNumber > hoverPreviewState.range.endLineNumber ||
+    mouseLineNumber < hoverPreviewState.range.startLineNumber ||
+    mouseLineNumber > hoverPreviewState.range.endLineNumber ||
+    // mouse is outside the column range on the start or end line
+    (mouseLineNumber === hoverPreviewState.range.startLineNumber &&
+      mouseColumn < hoverPreviewState.range.startColumn) ||
+    (mouseLineNumber === hoverPreviewState.range.endLineNumber &&
+      mouseColumn > hoverPreviewState.range.endColumn)
   ) {
     return props.hoverPreview.hideDocument(true)
   }

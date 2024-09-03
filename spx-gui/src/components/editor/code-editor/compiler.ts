@@ -1,22 +1,38 @@
+import gopWasmIndexHtml from '@/assets/gop/index.html?url'
+import { Disposable } from '@/utils/disposable'
 import type { Markdown } from "./EditorUI"
 
-enum CodeEnum {
+// todo: consider moving into compiler.d.ts
+declare global {
+  interface Window {
+    getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  }
+}
+
+export enum CodeEnum {
   Sprite,
   Backdrop
 }
 
-enum CompletionItemEnum {}
+enum CompletionItemEnum { }
 
-enum HintEnum {}
+// generated from wasm `console.log`
+export interface Hint {
+  start_pos: number
+  end_pos: number
+  start_position: Position
+  end_position: Position
+  name: string
+  value: string
+  unit: string
+  type: 'play' | 'parameter'
+}
 
-type Position = {}
-
-type Range = {}
-
-type Hint = {
-  type: HintEnum
-  content: string
-  position: Position
+export interface Position {
+  Filename: string
+  Offset: number
+  Line: number
+  Column: number
 }
 
 type AttentionHint = {
@@ -64,17 +80,166 @@ type Code = {
   content: string
 }
 
-export class Compiler {
-  getInlayHints(codes: Code[]): Hint[] {
-    return []
+export class Compiler extends Disposable {
+  containerElement: HTMLElement | null = null
+  public isWasmInit = false
+  private executionQueue: (() => void)[] = []
+  private lastExecutionTime: number = 0
+
+  createIframe() {
+    if (!this.containerElement) return
+    const iframe = document.createElement('iframe')
+    iframe.width = '0'
+    iframe.height = '0'
+    iframe.src = gopWasmIndexHtml
+    this.containerElement.appendChild(iframe)
+
+    this.addDisposer(() => {
+      this.containerElement?.remove()
+      this.isWasmInit = false
+      window.removeEventListener('message', this.handleWindowMessage)
+    })
   }
-  getDiagnostics(codes: Code[]): AttentionHint[] {
-    return []
+
+  reloadIframe() {
+    const iframe = this.getIframe()
+    if (iframe) {
+      iframe.contentWindow?.location.reload()
+    }
   }
-  getCompletionItems(codes: Code[], position: Position): CompletionItem[] {
-    return []
+
+  getIframe() {
+    // this container element only append iframe element, so here we force transform type to HTMLIFrameElement
+    return this.containerElement?.firstElementChild as HTMLIFrameElement | null | undefined
   }
-  getDefinition(codes: Code[], position: Position): Token | null {
-    return null
+
+  public setContainerElement(containerElement: HTMLElement) {
+    if (this.containerElement) {
+      window.removeEventListener('message', this.handleWindowMessage)
+      this.containerElement.remove()
+      this.isWasmInit = false
+    }
+    this.containerElement = containerElement
+    window.addEventListener('message', this.handleWindowMessage.bind(this))
+    this.createIframe()
+  }
+
+  public handleWindowMessage(event: MessageEvent<{ log: any[]; level: string }>) {
+    if (event.origin !== window.location.origin) {
+      return
+    }
+
+    const data = event.data
+    switch (data.level) {
+      case 'log': {
+        const [message] = data.log || []
+        if (!message) return
+        if (message.includes('goroutine ')) this.reloadIframe()
+        if (message === 'WASM Init') {
+          this.isWasmInit = true
+          this.executeQueue()
+        }
+      }
+    }
+  }
+
+  private executeQueue() {
+    while (this.executionQueue.length > 0) {
+      const task = this.executionQueue.shift()
+      if (task) task()
+    }
+  }
+
+  private addToQueue(task: () => void) {
+    const now = Date.now()
+    if (now - this.lastExecutionTime > 5000) {
+      this.executionQueue = []
+    }
+    this.executionQueue = [task]
+    this.lastExecutionTime = now
+    this.executeQueue()
+  }
+
+  private async waitForWasmInit() {
+    const MAX_WAIT_TIME = 30000
+    const CHECK_INTERVAL = 100
+
+    const startTime = Date.now()
+    while (!this.isWasmInit && Date.now() - startTime < MAX_WAIT_TIME) {
+      await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL))
+    }
+
+    if (!this.isWasmInit) {
+      console.warn('WASM initialization timed out')
+    }
+  }
+
+  public async getInlayHints(codes: Code[]): Promise<Hint[]> {
+    if (!this.containerElement) return []
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        const iframe = this.getIframe()
+        if (iframe == null) return resolve([])
+
+        const tempCodes = codes.map((code) => code.content).join('\r\n')
+        try {
+          const res = iframe.contentWindow?.getInlayHints({
+            in: {
+              name: 'test.spx',
+              code: tempCodes
+            }
+          })
+          resolve(Array.isArray(res) ? res : [])
+        } catch (err) {
+          console.error(err)
+          resolve([])
+        }
+      })
+    })
+  }
+
+  public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
+    if (!this.containerElement) return []
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve([])
+      })
+    })
+  }
+
+  public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
+    if (!this.containerElement) return []
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return []
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve([])
+      })
+    })
+  }
+
+  public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {
+    if (!this.containerElement) return null
+
+    await this.waitForWasmInit()
+    if (!this.isWasmInit) return null
+
+    return new Promise((resolve) => {
+      this.addToQueue(() => {
+        // implement logic here
+        resolve(null)
+      })
+    })
   }
 }

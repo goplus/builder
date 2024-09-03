@@ -11,7 +11,6 @@ onStart => {
 }
 
 play "background"
-on
 
 onStart => {
     for {

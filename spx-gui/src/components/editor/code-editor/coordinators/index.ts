@@ -7,10 +7,11 @@ import {
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel
+  type TextModel,
+  type InlayHintType
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { Compiler } from '../compiler'
+import { CodeEnum, Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -42,6 +43,7 @@ export class Coordinator {
   ui: EditorUI
   chatBot: ChatBot
   docAbility: DocAbility
+  compiler: Compiler
 
   constructor(
     ui: EditorUI,
@@ -55,6 +57,7 @@ export class Coordinator {
     this.ui = ui
     this.docAbility = docAbility
     this.chatBot = chatBot
+    this.compiler = compiler
 
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
@@ -68,6 +71,10 @@ export class Coordinator {
 
     ui.registerSelectionMenuProvider({
       provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
+    })
+
+    ui.registerInlayHintsProvider({
+      provideInlayHints: this.implementsInlayHintsProvider.bind(this)
     })
 
     ui.registerInputAssistantProvider({
@@ -162,6 +169,60 @@ export class Coordinator {
       }
     ]
   }
+  async implementsInlayHintsProvider(
+    model: TextModel,
+    ctx: {
+      signal: AbortSignal
+    }
+  ): Promise<InlayHintType[]> {
+    const inlayHints = await this.compiler.getInlayHints([
+      {
+        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+        content: model.getValue()
+      }
+    ])
+
+    return inlayHints.flatMap((inlayHint): InlayHintType[] => {
+      // from compiler has two type of inlay hint, so here use if else to distinguish
+      if (inlayHint.type === 'play') {
+        return [
+          {
+            content: Icon.Playlist,
+            style: 'icon',
+            behavior: 'triggerCompletion',
+            position: {
+              lineNumber: inlayHint.end_position.Line,
+              column: inlayHint.end_position.Column
+            }
+          }
+        ]
+      } else {
+        const hints: InlayHintType[] = [
+          {
+            content: inlayHint.name,
+            style: 'text',
+            behavior: 'none',
+            position: {
+              lineNumber: inlayHint.start_position.Line,
+              column: inlayHint.start_position.Column
+            }
+          }
+        ]
+        if (inlayHint.unit) {
+          hints.push({
+            content: inlayHint.name,
+            style: 'tag',
+            behavior: 'none',
+            position: {
+              lineNumber: inlayHint.end_position.Line,
+              column: inlayHint.end_position.Column
+            }
+          })
+        }
+        return hints
+      }
+    })
+  }
 
   async implementsInputAssistantProvider(_ctx: {
     signal: AbortSignal
@@ -169,7 +230,7 @@ export class Coordinator {
     return getInputItemCategories(this.project)
   }
 
-  public jump(position: JumpPosition): void { }
+  public jump(position: JumpPosition): void {}
 }
 
 function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {

@@ -7,7 +7,7 @@ import { Runtime } from '@/components/editor/code-editor/runtime'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import { ChatBot } from '@/components/editor/code-editor/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
-import { onUnmounted, ref } from 'vue'
+import { onUnmounted, ref, watchEffect } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -28,11 +28,16 @@ withDefaults(
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
-const { editorUI } = initCoordinator()
+const { editorUI, compiler } = initCoordinator()
+const wasmContainer = ref<HTMLElement>()
 
 onUnmounted(() => {
   // for vite HMR, we have to dispose editorUI when HMR triggered
   editorUI.dispose()
+})
+
+watchEffect(() => {
+  if (wasmContainer.value) compiler.setContainerElement(wasmContainer.value)
 })
 
 function initCoordinator() {
@@ -56,11 +61,28 @@ defineExpose({
 </script>
 
 <template>
-  <CodeEditorUI
-    ref="codeEditorUI"
-    :loading="loading"
-    :value="value"
-    :ui="editorUI"
-    @update:value="$emit('update:value', $event)"
-  ></CodeEditorUI>
+  <div class="code-editor">
+    <CodeEditorUI
+      ref="codeEditorUI"
+      :loading="loading"
+      :value="value"
+      :ui="editorUI"
+      @update:value="$emit('update:value', $event)"
+    ></CodeEditorUI>
+    <teleport to="body">
+      <!--  this element used for contain iframe, and load wasm in iframe which allow auto reload when wasm error  -->
+      <!--  set id for devtools better check, no other use  -->
+      <div id="wasmContainer" ref="wasmContainer"></div>
+    </teleport>
+  </div>
 </template>
+
+<style scoped lang="scss">
+.code-editor {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  justify-content: stretch;
+}
+</style>

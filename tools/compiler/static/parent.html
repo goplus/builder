@@ -88,7 +88,7 @@ onStart => {
     }
 
     function getIframe() {
-        return document.getElementById("compiler-iframe-container").children[0]
+        return document.getElementById("compiler-iframe-container").firstElementChild
     }
 
     window.addEventListener("message", function (event) {
