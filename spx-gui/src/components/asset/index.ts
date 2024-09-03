@@ -71,6 +71,7 @@ export function useAddSpriteFromLocalFile() {
     }
     await project.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
+      await sprite.autoFitCostumes()
       await sprite.autoFit()
     })
     selectAsset(project, sprite)
@@ -89,8 +90,9 @@ export function useAddCostumeFromLocalFile() {
       title: actionMessage,
       confirmText: { en: 'Add', zh: '添加' }
     })
-    await project.history.doAction({ name: actionMessage }, () => {
+    await project.history.doAction({ name: actionMessage }, async () => {
       for (const costume of costumes) sprite.addCostume(costume)
+      await sprite.autoFitCostumes(costumes)
       sprite.setDefaultCostume(costumes[0].id)
     })
   }

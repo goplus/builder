@@ -272,6 +272,10 @@ export class Sprite extends Disposable {
     }
   }
 
+  async autoFitCostumes(costumes = this.costumes) {
+    await Promise.all(costumes.map((c) => c.autoFit()))
+  }
+
   /** Create sprite within builder (by user actions) */
   static create(nameBase: string, code?: string, inits?: SpriteInits) {
     return new Sprite(getSpriteName(null, nameBase), code, {
