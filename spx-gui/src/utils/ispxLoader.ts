@@ -13,7 +13,7 @@ interface IframeWindow extends Window {
     resource: Uint8Array | ArrayBuffer,
     sprite: string,
     animName: string
-  ) => string
+  ) => AnimationExportData
 }
 
 const WASM_EXEC_JS = '/wasm_exec.js'
@@ -84,13 +84,18 @@ export interface AnimationExportData {
 }
 
 export interface AnimationExportFrame {
+	RederOrder: number[]
   Meshes: AnimationExportMesh[]
 }
 
 export interface AnimationExportMesh {
   Indices: number[]
-  Uvs: Point2D[]
-  Vertices: Point3D[]
+  Uvs: FlatBuffer<2>
+  Vertices: FlatBuffer<3>
+}
+export interface FlatBuffer<N extends number = 2 | 3> {
+  numComponents: N
+  data: Uint8Array
 }
 
 export interface Point2D {
@@ -136,9 +141,24 @@ export async function goEditorParseSpriteAnimator(
 export async function goEditorParseSpriteAnimation(
   resource: Uint8Array | ArrayBuffer,
   sprite: string,
-  animName: string
+  animName: string,
+  type: string = 'skeleton'
 ): Promise<AnimationExportData> {
-  const json = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
-  const result: AnimationExportData = JSON.parse(json)
+  const result = await callGoWasmFunc('goEditorParseSpriteAnimation', resource, sprite, animName)
+
+  if (type === 'vertex') {
+    const frame0 = result.Frames[0]
+    for (let i = 0; i < result.Frames.length; i++) {
+      const frame = result.Frames[i];
+      for (let j = 0; j < frame.RederOrder.length; j++) {
+        const i = frame.RederOrder[j]
+        const mesh = frame.Meshes[i]
+        mesh.Indices = frame0.Meshes[i].Indices
+        mesh.Uvs = frame0.Meshes[0].Uvs
+        mesh.Vertices = frame.Meshes[0].Vertices
+      } 
+    }
+  }
+
   return result
 }

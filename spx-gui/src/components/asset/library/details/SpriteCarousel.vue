@@ -10,6 +10,9 @@
         show-arrow
         :show-dots="false"
         :autoplay="play && autoplay"
+        :effect="'card' /** use card instead of slide to prevent duplicate carousel items */"
+        :prev-slide-style="{ transform: 'translateX(-200%)', opacity: 0 }"
+        :next-slide-style="{ transform: 'translateX(100%)', opacity: 0 }"
         class="carousel"
         :interval="5000"
         :current-index="currentIndex"
@@ -230,7 +233,7 @@ const skeletonAnimations = shallowRef<ReturnType<typeof loadClip>[]>([])
 
 const loadClip = (clip: SkeletonClip, delay: number = 0) => {
   let animLoading = ref(false)
-  let animData = ref<AnimationExportData | null>(null)
+  let animData = shallowRef<AnimationExportData | null>(null)
   setTimeout(async () => {
     animLoading.value = true
     animData.value = await clip.loadAnimFrameData()
@@ -250,7 +253,7 @@ watch(
   () => {
     if (!props.sprite.skeletonAnimation) return
     skeletonAnimations.value = props.sprite.skeletonAnimation.clips.map((clip, i) =>
-      loadClip(clip, i * 2000)
+      loadClip(clip, i * 100)
     )
   },
   { immediate: true }

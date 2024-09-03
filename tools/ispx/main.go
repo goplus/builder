@@ -1,3 +1,5 @@
+//go:build wasm
+
 package main
 
 //go:generate qexp -outdir pkg github.com/goplus/spx
@@ -6,7 +8,9 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"log"
 	"reflect"
 	"syscall/js"
@@ -70,19 +74,14 @@ func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 	goBytes := convertToGoBytes(spriteData)
 	fs := readZipData(goBytes)
 
+	println("parsing sprite animation...")
 	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
 	if err != nil {
 		log.Println("Failed to parse sprite animation:", err)
 		return nil
 	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Println("Failed to marshal sprite animation data:", err)
-		return nil
-	}
-
-	return js.ValueOf(string(jsonData))
+	println("done")
+	return convertStructToJSObject(data)
 }
 
 func main() {
@@ -109,6 +108,109 @@ func convertToGoBytes(inputArray js.Value) []byte {
 	goBytes := make([]byte, length)
 	js.CopyBytesToGo(goBytes, inputArray)
 	return goBytes
+}
+
+// convertStructToJSObject converts a Go struct to a JavaScript object.
+// It recursively converts fields of the struct to JS object.
+func convertStructToJSObject(data interface{}) js.Value {
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+	if t.Kind() == reflect.Struct {
+		jsObj := js.Global().Get("Object").New()
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			name := f.Tag.Get("json")
+			if name == "" {
+				name = f.Name
+			}
+			jsObj.Set(name, convertStructToJSObject(v.Field(i).Interface()))
+		}
+		return jsObj
+	}
+	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
+		return flattenVectorArray(data)
+	}
+	// for other types, convert to JS value directly
+	val, err := guardedJSValueOf(data)
+	if err != nil {
+		log.Println("Failed to convert to JS value:", err)
+	}
+	return val
+}
+
+// guardedJSValueOf catches panic when converting Go value to JS value.
+// For a failed conversion, it will return a `null`
+func guardedJSValueOf(data interface{}) (val js.Value, err error) {
+	defer func() {
+		if recover() != nil {
+			val = js.ValueOf(nil)
+			err = errors.New("Failed to convert data to JS value: " + reflect.TypeOf(data).String())
+		}
+	}()
+	val = js.ValueOf(data)
+	return val, nil
+}
+
+// converts a slice of Vector2 or Vector3 to a flat buffer array.
+// It returns a JS object with `data` field as Uint8Array and `numComponents` field as number of components.
+// If the input data is not a slice of Vector2 or Vector3, it will return the original data as a JS array.
+func flattenVectorArray(data interface{}) js.Value {
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+	if (t.Kind() == reflect.Slice || t.Kind() == reflect.Array) && v.Len() > 0 {
+		numComponents := 0
+		if v.Index(0).Type().String() == "math32.Vector2" {
+			numComponents = 2
+		} else if v.Index(0).Type().String() == "math32.Vector3" {
+			numComponents = 3
+		} else {
+			// do not flatten
+			jsArr := js.Global().Get("Array").New()
+			for i := 0; i < v.Len(); i++ {
+				jsArr.SetIndex(i, convertStructToJSObject(v.Index(i).Interface()))
+			}
+			return jsArr
+		}
+
+		converted := make([]float32, 0, v.Len()*numComponents)
+		for i := 0; i < v.Len(); i++ {
+			vec := v.Index(i)
+			for j := 0; j < numComponents; j++ {
+				converted = append(converted, float32(vec.Field(j).Float()))
+			}
+		}
+
+		jsArr := js.Global().Get("Uint8Array").New(len(converted) * 4)
+		byteArr, err := float32ArrayToByteArray(converted)
+		if err != nil {
+			log.Println("Failed to convert float32 array to byte array:", err)
+			return jsArr
+		}
+		js.CopyBytesToJS(jsArr, byteArr)
+
+		return js.ValueOf(map[string]interface{}{
+			"data":          jsArr,
+			"numComponents": numComponents,
+		})
+	}
+
+	jsArr := js.Global().Get("Array").New()
+	return jsArr
+}
+
+func float32ArrayToByteArray(floatArray []float32) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binary.LittleEndian, floatArray)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func runGame() {

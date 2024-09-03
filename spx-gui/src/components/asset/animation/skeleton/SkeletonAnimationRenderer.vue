@@ -8,7 +8,7 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { type AnimationExportData } from '@/utils/ispxLoader'
+import { type Point3D, type AnimationExportData, type Point2D, type AnimationExportMesh, type FlatBuffer } from '@/utils/ispxLoader'
 import vs from './shader.vert?raw'
 import fs from './shader.frag?raw'
 
@@ -43,12 +43,14 @@ const resize = () => {
 
 let renderer: Renderer
 let resizeTimer: any
-
+let buffers: BuffersFrame[][]
 onMounted(async () => {
   const gl = canvasElement.value!.getContext('webgl')! as CanvasWebGLRenderingContext
-  const bufferInfos = getBufferInfo(gl, props.data)
+  if (!buffers) {
+    buffers = getBufferInfo(gl, props.data)
+  }
 
-  renderer = new Renderer(gl, bufferInfos, vs, fs, props.texture, props.fps, props.scale)
+  renderer = new Renderer(gl, buffers, vs, fs, props.texture, props.fps, props.scale)
   if (props.autoplay) {
     renderer.start()
   }
@@ -65,6 +67,7 @@ watch(() => props.scale, () => {
 })
 
 onUnmounted(() => {
+  console.log('unmounted')
   window.removeEventListener('resize', resize)
   clearInterval(resizeTimer)
 })
@@ -72,6 +75,11 @@ onUnmounted(() => {
 <script lang="ts">
 import * as twgl from 'twgl.js'
 const m4 = twgl.m4
+type BuffersFrame = [
+  position: twgl.BufferInfo,
+  uv: twgl.BufferInfo,
+  indices: twgl.BufferInfo
+]
 
 type CanvasWebGLRenderingContext = WebGLRenderingContext & {
   canvas: HTMLCanvasElement
@@ -111,12 +119,12 @@ interface Uniforms {
 export class Renderer {
   private gl: CanvasWebGLRenderingContext
   private programInfo: twgl.ProgramInfo
-  private bufferInfos: twgl.BufferInfo[][] = []
+  private buffers: BuffersFrame[][]
   private uniforms: Partial<Uniforms>
 
   constructor(
     gl: CanvasWebGLRenderingContext,
-    bufferInfos: twgl.BufferInfo[][],
+    buffers: BuffersFrame[][],
     vs: string,
     fs: string,
     texSrc: string,
@@ -125,10 +133,11 @@ export class Renderer {
   ) {
     this.gl = gl
     this.programInfo = setupProgram(gl, vs, fs)
-    this.bufferInfos = bufferInfos
+    this.buffers = buffers
     this.uniforms = setupUniforms(gl, this.programInfo, texSrc, scale)
     this.fps = fps
     this.scale = scale
+    this.renderFrame()
   }
 
   // playback control
@@ -169,7 +178,7 @@ export class Renderer {
     }
   }
   get totalFrames() {
-    return this.bufferInfos.length
+    return this.buffers.length
   }
   private _currentFps = 0
   get currentFps() {
@@ -182,7 +191,7 @@ export class Renderer {
 
   private renderFrame() {
     initScene(this.gl)
-    const bufferInfos = this.bufferInfos[this.frameIndex]
+    const bufferInfos = this.buffers[this.frameIndex]
     for (let i = 0; i < bufferInfos.length; i++) {
       drawElement(this.gl, this.programInfo, bufferInfos[i])
     }
@@ -199,7 +208,7 @@ export class Renderer {
 
     // calc frame index based on time
     const elapsed = time - this.startTimeStamp
-    this._frameIndex = Math.floor(elapsed / this.frameDuration) % this.bufferInfos.length
+    this._frameIndex = Math.floor(elapsed / this.frameDuration) % this.buffers.length
 
     this._currentFps = Math.round(1000 / (time - this.previousTimeStamp))
     if (this.frameIndex !== this.previousFrameIndex) {
@@ -258,6 +267,10 @@ export class Renderer {
   }
 }
 
+const weakVertMap = new WeakMap<FlatBuffer<3>, twgl.BufferInfo>()
+const weakUVMap = new WeakMap<FlatBuffer<2>, twgl.BufferInfo>()
+const weakIndexMap = new WeakMap<number[], twgl.BufferInfo>()
+
 /**
  * Converts the AnimationExportData to bufferInfos.
  *
@@ -265,17 +278,57 @@ export class Renderer {
  * @param data The AnimationExportData to convert
  */
 export function getBufferInfo(gl: CanvasWebGLRenderingContext, data: AnimationExportData) {
+  function getBufferInfoFromMesh(gl: CanvasWebGLRenderingContext, mesh: AnimationExportMesh) {
+    const positions = (() => {
+      if (weakVertMap.has(mesh.Vertices)) {
+        return weakVertMap.get(mesh.Vertices)!
+      }
+      const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+        position: {
+          data: new Float32Array(mesh.Vertices.data.buffer),
+          numComponents: 3,
+          drawType: gl.DYNAMIC_DRAW,
+        } 
+      })
+      weakVertMap.set(mesh.Vertices, bufferInfo)
+      return bufferInfo
+    })()
+    
+    const aUV = (() => {
+      if (weakUVMap.has(mesh.Uvs)) {
+        return weakUVMap.get(mesh.Uvs)!
+      }
+      const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+        aUV: {
+          data: new Float32Array(mesh.Uvs.data.buffer),
+          numComponents: 2,
+          drawType: gl.STATIC_DRAW,
+        } 
+      })
+      weakUVMap.set(mesh.Uvs, bufferInfo)
+      return bufferInfo
+    })()
+
+    const indices = (() => {
+      if (weakIndexMap.has(mesh.Indices)) {
+        return weakIndexMap.get(mesh.Indices)!
+      }
+      const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+        indices: {
+          data: mesh.Indices,
+          drawType: gl.STATIC_DRAW,
+        } 
+      })
+      weakIndexMap.set(mesh.Indices, bufferInfo)
+      return bufferInfo
+    })()
+
+    return [positions, aUV, indices] satisfies BuffersFrame
+  }
+
   return data.Frames.map((frame) => {
     return frame.Meshes.map((mesh) => {
-      const arrays = {
-        position: {
-          data: mesh.Vertices.map(({ x, y, z }) => [x, y, z]).flat(),
-          drawType: gl.DYNAMIC_DRAW
-        },
-        aUV: { data: mesh.Uvs.map(({ x, y }) => [x, y, 0]).flat(), drawType: gl.STATIC_DRAW },
-        indices: { data: mesh.Indices, drawType: gl.STATIC_DRAW }
-      } satisfies twgl.Arrays
-      return twgl.createBufferInfoFromArrays(gl, arrays)
+      return getBufferInfoFromMesh(gl, mesh)
     })
   })
 }
@@ -386,10 +439,13 @@ export function updateUniforms(
 export function drawElement(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
-  bufferInfo: twgl.BufferInfo
+  buffers: BuffersFrame
 ) {
-  twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo)
-  gl.drawElements(gl.TRIANGLES, bufferInfo.numElements, gl.UNSIGNED_SHORT, 0)
+  const [position, uv, indices] = buffers
+  twgl.setBuffersAndAttributes(gl, programInfo, position)
+  twgl.setBuffersAndAttributes(gl, programInfo, uv)
+  twgl.setBuffersAndAttributes(gl, programInfo, indices)
+  gl.drawElements(gl.TRIANGLES, indices.numElements, gl.UNSIGNED_SHORT, 0)
 }
 </script>
 <style scoped></style>
