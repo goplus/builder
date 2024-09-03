@@ -3,28 +3,16 @@
 echo "Run this script from 'spx-gui' directory"
 
 cd ../tools/fmt || exit
-if [[ -f ./build.sh ]]; then
-    source ./build.sh
-else
-    echo "Error: ../tools/fmt/build.sh not found."
-    exit 1
-fi
+# shellcheck disable=SC1091
+source ./build.sh
 
 cd ../ispx || exit
-if [[ -f ./build.sh ]]; then
-    source ./build.sh
-else
-    echo "Error: ../ispx/build.sh not found."
-    exit 1
-fi
+# shellcheck disable=SC1091
+source ./build.sh
 
 cd ../compiler || exit
-if [[ -f ./build.sh ]]; then
-    source ./build.sh
-else
-    echo "Error: ../compiler/build.sh not found."
-    exit 1
-fi
+# shellcheck disable=SC1091
+source ./build.sh
 
 cd ..
 
