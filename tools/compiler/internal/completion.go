@@ -151,9 +151,9 @@ var goKeywords = completionList{
 	},
 }
 
-func (list *completionList) Contains(name string) bool {
+func (list *completionList) Contains(text string) bool {
 	for _, item := range *list {
-		if item.Label == name {
+		if item.InsertText == text {
 			return true
 		}
 	}
@@ -183,12 +183,14 @@ func getScopesItems(fileName, fileCode string, cursor int) (completionList, erro
 	items := &completionList{}
 
 	smallScope := findSmallestScopeAtPosition(info, cursorPos)
-	traverseToRoot(smallScope, items, info)
+	for _, scope := range smallScope {
+		traverseToRoot(scope, items, info)
+	}
 
 	return *items, nil
 }
 
-func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Scope {
+func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) []*types.Scope {
 	var scopeList []*types.Scope
 
 	for _, scope := range info.Scopes {
@@ -202,10 +204,34 @@ func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Sco
 	}
 
 	sort.Slice(scopeList, func(i, j int) bool {
-		return scopeList[i].Pos() < scopeList[j].Pos() && scopeList[i].End() > scopeList[j].End()
+		return scopeList[i].Pos() >= scopeList[j].Pos() && scopeList[i].End() <= scopeList[j].End()
 	})
 
-	return scopeList[0]
+	return traverseFindParent(scopeList)
+}
+
+func traverseFindParent(scopeList []*types.Scope) []*types.Scope {
+	deep := make(map[*types.Scope]int)
+	maxDeep := 0
+	for _, scope := range scopeList {
+		temp := *scope
+		for {
+			if temp.Parent() != nil {
+				temp = *temp.Parent()
+				deep[scope]++
+				maxDeep = max(maxDeep, deep[scope])
+			} else {
+				break
+			}
+		}
+	}
+	filter := []*types.Scope{}
+	for _, scope := range scopeList {
+		if deep[scope] == maxDeep {
+			filter = append(filter, scope)
+		}
+	}
+	return filter
 }
 
 func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.Info) {
@@ -258,12 +284,24 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 	} else {
 		scopeItem.InsertText = name
 	}
-	if !items.Contains(name) {
+	if !items.Contains(scopeItem.InsertText) {
 		*items = append(*items, scopeItem)
 	}
 }
 
 func handleType(obj types.Object, name string, items *completionList) {
+	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
+		for i := 0; i < structType.NumFields(); i++ {
+			pointer, ok := structType.Field(i).Type().(*types.Pointer)
+			if ok {
+				stru, ok := pointer.Elem().Underlying().(*types.Struct)
+				if ok {
+					structMethodsToCompletion(stru, items)
+				}
+			}
+		}
+		structMethodsToCompletion(structType, items)
+	}
 	if named, ok := obj.Type().(*types.Named); ok {
 		for i := 0; i < named.NumMethods(); i++ {
 			method := named.Method(i)
@@ -276,9 +314,10 @@ func handleType(obj types.Object, name string, items *completionList) {
 			}
 			signature := method.Type().(*types.Signature)
 			signList, _, _ := extractParams(signature)
-			item.InsertText = name + " " + strings.Join(signList, ", ")
-			*items = append(*items, item)
-
+			item.InsertText = method.Name() + " " + strings.Join(signList, ", ")
+			if !items.Contains(item.InsertText) {
+				*items = append(*items, item)
+			}
 		}
 	}
 }
@@ -303,7 +342,9 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 			signature := method.Type().(*types.Signature)
 			signList, _, _ := extractParams(signature)
 			item.InsertText = methodName + " " + strings.Join(signList, ", ")
-			*items = append(*items, item)
+			if !items.Contains(item.InsertText) {
+				*items = append(*items, item)
+			}
 		}
 	}
 }
