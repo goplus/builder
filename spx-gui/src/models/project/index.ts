@@ -239,6 +239,8 @@ export class Project extends Disposable {
     this.addDisposer(() => {
       this.sprites.splice(0).forEach((s) => s.dispose())
       this.sounds.splice(0).forEach((s) => s.dispose())
+      this.zorder = []
+      this.stage.dispose()
     })
     return reactiveThis
   }
