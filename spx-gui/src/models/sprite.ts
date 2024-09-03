@@ -376,13 +376,13 @@ export class Sprite extends Disposable {
     }
     const { [State.default]: defaultAnimationId, ...animBindings } = this.animationBindings
     const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
-    if (defaultAnimationId && defaultAnimationName === undefined)
+    if (defaultAnimationId && defaultAnimationName == null)
       console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
     const animationBindingsNames = Object.entries(animBindings).reduce<
       Record<string, string | undefined>
     >((acc, [state, id]) => {
       const name = this.animations.find((a) => a.id === id)?.name
-      if (id && name === undefined) {
+      if (id && name == null) {
         console.warn('animation', id, 'not found for sprite:', this.name)
       }
       acc[state] = name
