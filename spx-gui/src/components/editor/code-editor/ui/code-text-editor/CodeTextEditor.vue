@@ -91,7 +91,7 @@ const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
 
 watchEffect(async (onCleanup) => {
   const monaco = await props.ui.getMonaco()
-  
+
   const editor = monaco.editor.create(editorElement.value!, {
     value: props.value,
     theme: 'spx-light',
@@ -166,7 +166,10 @@ watchEffect(async (onCleanup) => {
 
   selectionMenu.value = new SelectionMenu(editor)
 
-  inlayHint.value = new InlayHint(editor)
+  const _inlayHint = new InlayHint(editor)
+  inlayHint.value = _inlayHint
+  props.ui.setInlayHint(_inlayHint)
+
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()

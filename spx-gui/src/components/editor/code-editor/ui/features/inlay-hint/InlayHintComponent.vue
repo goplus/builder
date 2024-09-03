@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { debounce } from '@/utils/utils';
-import { EditorUI } from '../../../EditorUI';
+import { debounce } from '@/utils/utils'
+import { EditorUI } from '../../../EditorUI'
 import { InlayHint } from './inlay-hint'
-import { onMounted } from 'vue';
+import { onMounted } from 'vue'
 
 const props = defineProps<{
-  inlayHint: InlayHint,
+  inlayHint: InlayHint
   ui: EditorUI
 }>()
 
@@ -25,10 +25,11 @@ const updateInlayHint = debounce(async () => {
         (inlayHint) =>
           // filter special param like playlist icon param
           !(typeof inlayHint.content === 'string' && ['mediaName'].includes(inlayHint.content))
-          )
+      )
       .map((inlayHint) => {
         switch (inlayHint.style) {
           case 'icon':
+            console.log(inlayHint)
             return props.inlayHint.createIconDecoration(
               inlayHint.position.lineNumber,
               inlayHint.position.column
@@ -45,7 +46,7 @@ const updateInlayHint = debounce(async () => {
               inlayHint.position.lineNumber,
               inlayHint.position.column,
               // we know content is string when style is text, here use force type
-              inlayHint.content as string
+              inlayHint.content + ':'
             )
         }
       })
@@ -57,7 +58,6 @@ props.inlayHint.editor.onDidChangeModelContent(updateInlayHint)
 onMounted(() => {
   updateInlayHint()
 })
-
 </script>
 
 <template>

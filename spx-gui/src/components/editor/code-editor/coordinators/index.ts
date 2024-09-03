@@ -8,7 +8,7 @@ import {
   type LayerContent,
   type SelectionMenuItem,
   type TextModel,
-  type InlayHint
+  type InlayHintType
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { CodeEnum, Compiler } from '../compiler'
@@ -174,7 +174,7 @@ export class Coordinator {
     ctx: {
       signal: AbortSignal
     }
-  ): Promise<InlayHint[]> {
+  ): Promise<InlayHintType[]> {
     const inlayHints = await this.compiler.getInlayHints([
       {
         type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
@@ -182,9 +182,7 @@ export class Coordinator {
       }
     ])
 
-    console.log('inlayHints', inlayHints)
-
-    return inlayHints.flatMap((inlayHint): InlayHint[] => {
+    return inlayHints.flatMap((inlayHint): InlayHintType[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
       if (inlayHint.type === 'play') {
         return [
@@ -199,9 +197,9 @@ export class Coordinator {
           }
         ]
       } else {
-        const hints: InlayHint[] = [
+        const hints: InlayHintType[] = [
           {
-            content: inlayHint.name + ':',
+            content: inlayHint.name,
             style: 'text',
             behavior: 'none',
             position: {
@@ -232,7 +230,7 @@ export class Coordinator {
     return getInputItemCategories(this.project)
   }
 
-  public jump(position: JumpPosition): void { }
+  public jump(position: JumpPosition): void {}
 }
 
 function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {

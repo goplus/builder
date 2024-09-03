@@ -1,16 +1,17 @@
 import {
   editor as IEditor,
+  type IDisposable,
   type IPosition,
-  Position,
   type IRange,
-  type languages,
-  type IDisposable
+  languages,
+  Position
 } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
 import {
   type CompletionMenu,
   icon2CompletionItemKind
 } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import { InlayHint } from '@/components/editor/code-editor/ui/features/inlay-hint/inlay-hint'
 import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import { injectMonacoHighlightTheme } from '@/components/editor/code-editor/ui/common/languages'
@@ -88,7 +89,8 @@ export interface CompletionItem {
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
 export type InlayHintStyle = 'tag' | 'text' | 'icon'
 
-export type InlayHint = {
+// for we already have class InlayHint
+export type InlayHintType = {
   content: string | Icon
   style: InlayHintStyle
   behavior: InlayHintBehavior
@@ -101,7 +103,7 @@ export interface InlayHintsProvider {
     ctx: {
       signal: AbortSignal
     }
-  ): Promise<InlayHint[]>
+  ): Promise<InlayHintType[]>
 }
 
 export type SelectionMenuItem = {
@@ -242,6 +244,7 @@ export class EditorUI extends Disposable {
   getProject: () => Project
   completionMenu: CompletionMenu | null = null
   hoverPreview: HoverPreview | null = null
+  inlayHint: InlayHint | null = null
   editorUIRequestCallback: EditorUIRequestCallback
   monaco: typeof import('monaco-editor') | null = null
   monacoProviderDisposes: Record<string, IDisposable | null> = {
@@ -272,6 +275,14 @@ export class EditorUI extends Disposable {
   }
 
   getHoverPreview() {
+    return this.hoverPreview
+  }
+
+  setInlayHint(inlayHint: InlayHint) {
+    this.inlayHint = inlayHint
+  }
+
+  getInlayHint() {
     return this.hoverPreview
   }
 
@@ -396,6 +407,7 @@ export class EditorUI extends Disposable {
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
+                  insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
                   range: {
                     startLineNumber: position.lineNumber,
                     endLineNumber: position.lineNumber,
@@ -418,12 +430,22 @@ export class EditorUI extends Disposable {
     const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
       'placeholder' in layer && 'onSubmit' in layer
 
+    const isMouseColumnInWordRange = (startColumn: number, endColumn: number) => {
+      if (!this.inlayHint) return false
+      const mouseColumn = this.inlayHint.mouseColumn
+      return mouseColumn >= startColumn && mouseColumn <= endColumn
+    }
+
     this.monacoProviderDisposes.hoverProvider = monaco.languages.registerHoverProvider(
       LANGUAGE_NAME,
       {
         provideHover: async (model, position, token) => {
           const word = model.getWordAtPosition(position)
           if (word == null) return
+
+          // this used for inlay hint, when mouse hover function param tag, hover provider should not work
+          if (!isMouseColumnInWordRange(word.startColumn, word.endColumn)) return
+
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())
           const result = (

@@ -6,6 +6,7 @@ export class InlayHint implements IDisposable {
   styleMap: Map<string, string>
   abortController = new AbortController()
   public textDecorationsCollection: IEditor.IEditorDecorationsCollection
+  public mouseColumn = 0
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
@@ -13,6 +14,9 @@ export class InlayHint implements IDisposable {
     this.styleMap = new Map()
     this.textDecorationsCollection = editor.createDecorationsCollection([])
     document.head.appendChild(this.styleElement)
+    this.editor.onMouseMove((e) => {
+      this.mouseColumn = e.target.mouseColumn
+    })
 
     // todo: trigger completion menu
   }
@@ -23,13 +27,12 @@ export class InlayHint implements IDisposable {
     content: string
   ): IEditor.IModelDeltaDecoration {
     const contentClassName = `inlay-hint__content-${this.hash(content)}`
-    const className = 'inlay-hint__param ' + contentClassName
 
     this.addStyle(contentClassName, content)
     return {
       range: new Range(line, column - 1, line, column),
       options: {
-        inlineClassName: className,
+        inlineClassName: `inlay-hint__param ${contentClassName}`,
         inlineClassNameAffectsLetterSpacing: true
       }
     }
@@ -41,7 +44,6 @@ export class InlayHint implements IDisposable {
     content: string
   ): IEditor.IModelDeltaDecoration {
     const contentClassName = `inlay-hint__content-${this.hash(content)}`
-    const className = 'inlay-hint__tag'
     this.addStyle(contentClassName, content)
     return {
       range: {
@@ -51,7 +53,7 @@ export class InlayHint implements IDisposable {
         endColumn: column
       },
       options: {
-        inlineClassName: className,
+        inlineClassName: `inlay-hint__tag ${contentClassName}`,
         inlineClassNameAffectsLetterSpacing: true
       }
     }
@@ -60,7 +62,7 @@ export class InlayHint implements IDisposable {
   public createIconDecoration(line: number, column: number): IEditor.IModelDeltaDecoration {
     return {
       range: {
-        startLineNumber: line,
+        startLineNumber: 1,
         endLineNumber: line,
         startColumn: column,
         endColumn: column
@@ -68,7 +70,7 @@ export class InlayHint implements IDisposable {
       options: {
         after: {
           inlineClassName: 'inlay-hint__icon-playlist',
-          // must add a space after the icon, otherwise the icon will not be displayed
+          // must add a word in content property, here use space, otherwise the icon will not be displayed
           content: ' ',
           inlineClassNameAffectsLetterSpacing: true
         }
