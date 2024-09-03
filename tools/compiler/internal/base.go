@@ -110,7 +110,13 @@ func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 }
 
 func GetCompletions(fileName, fileCode string, line int) (interface{}, error) {
-	return getScopesItems(fileName, fileCode, line)
+	list, err := getScopesItems(fileName, fileCode, line)
+	if err != nil {
+		return nil, err
+	}
+	items := goKeywords
+	items = append(items, list...)
+	return items, nil
 }
 
 func GetTokenDetail(token string) (interface{}, error) {

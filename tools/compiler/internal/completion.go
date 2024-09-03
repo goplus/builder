@@ -23,6 +23,134 @@ type completionItem struct {
 
 type completionList []*completionItem
 
+var goKeywords = completionList{
+	{
+		Label:      "break",
+		InsertText: "break",
+		Type:       "keyword",
+	}, {
+		Label:      "case",
+		InsertText: "case ${1}:",
+		Type:       "keyword",
+	}, {
+		Label:      "chan",
+		InsertText: "chan ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "const",
+		InsertText: "const ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "continue",
+		InsertText: "continue",
+		Type:       "keyword",
+	}, {
+		Label:      "default",
+		InsertText: "default:",
+		Type:       "keyword",
+	}, {
+		Label:      "defer",
+		InsertText: "defer ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "else",
+		InsertText: "else",
+		Type:       "keyword",
+	}, {
+		Label:      "fallthrough",
+		InsertText: "fallthrough",
+		Type:       "keyword",
+	}, {
+		Label:      "for",
+		InsertText: "for",
+		Type:       "keyword",
+	}, {
+		Label:      "for condition",
+		InsertText: "for ${1:condition} {\n\t${2}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "for with range",
+		InsertText: "for ${1:i} <- ${2:start}:${3:end} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "for range",
+		InsertText: "for ${1:i}, ${2:v} := range ${3:set} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "func",
+		InsertText: "func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "go",
+		InsertText: "go ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "goto",
+		InsertText: "goto ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "if",
+		InsertText: "if",
+		Type:       "keyword",
+	}, {
+		Label:      "if statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "if else if statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n} else if ${3:condition} {\n\t${4}\n} ",
+		Type:       "keyword",
+	}, {
+		Label:      "if else statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n} else {\n\t${3}\n} ",
+		Type:       "keyword",
+	}, {
+		Label:      "import",
+		InsertText: "import \"${1}\"",
+		Type:       "keyword",
+	}, {
+		Label:      "interface",
+		InsertText: "interface {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "map",
+		InsertText: "map[${1}]${2}",
+		Type:       "keyword",
+	}, {
+		Label:      "package",
+		InsertText: "package ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "range",
+		InsertText: "range ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "return",
+		InsertText: "return ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "select",
+		InsertText: "select {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "struct",
+		InsertText: "struct {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "switch",
+		InsertText: "switch ${1} {\n\tcase ${2}:\n\t\t${3}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "type",
+		InsertText: "type ${1} ${2}",
+		Type:       "keyword",
+	}, {
+		Label:      "var",
+		InsertText: "var ${1:name} ${2:type}",
+		Type:       "keyword",
+	},
+}
+
 func (list *completionList) Contains(name string) bool {
 	for _, item := range *list {
 		if item.Label == name {
