@@ -1,14 +1,16 @@
 import {
+  type AttentionHintDecoration,
+  AttentionHintLevelEnum,
   type CompletionItem,
   DocPreviewLevel,
   type EditorUI,
   Icon,
+  type InlayHintType,
   type InputItem,
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel,
-  type InlayHintType
+  type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { CodeEnum, Compiler } from '../compiler'
@@ -22,14 +24,14 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
+  getAllTools,
+  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
-  getAllTools,
-  getVariableCategory,
-  ToolType,
-  type ToolCategory
+  type ToolCategory,
+  ToolType
 } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
@@ -79,6 +81,10 @@ export class Coordinator {
 
     ui.registerInputAssistantProvider({
       provideInputAssistant: this.implementsInputAssistantProvider.bind(this)
+    })
+
+    ui.registerAttentionHintsProvider({
+      provideAttentionHints: this.implementsAttentionHintProvider.bind(this)
     })
   }
 
@@ -222,6 +228,42 @@ export class Coordinator {
         return hints
       }
     })
+  }
+
+  implementsAttentionHintProvider(
+    model: TextModel,
+    setHints: (hints: AttentionHintDecoration[]) => void,
+    ctx: {
+      signal: AbortSignal
+    }
+  ): void {
+    this.compiler
+      .getDiagnostics([
+        {
+          type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+          content: model.getValue()
+        }
+      ])
+      .then((hints) => {
+        setHints(
+          hints.map((hint) => {
+            return {
+              level: AttentionHintLevelEnum.ERROR,
+              message: hint.message,
+              range: {
+                startColumn: hint.column,
+                startLineNumber: hint.line,
+                endColumn: hint.column,
+                endLineNumber: hint.line
+              },
+              hoverContent: {
+                level: DocPreviewLevel.Error,
+                content: ''
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsInputAssistantProvider(_ctx: {

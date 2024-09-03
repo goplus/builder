@@ -1,11 +1,12 @@
 import gopWasmIndexHtml from '@/assets/gop/index.html?url'
 import { Disposable } from '@/utils/disposable'
-import type { Markdown } from "./EditorUI"
+import type { Markdown } from './EditorUI'
 
 // todo: consider moving into compiler.d.ts
 declare global {
   interface Window {
     getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+    getDiagnostics: (params: { in: { name: string; code: string } }) => Hint[] | {}
   }
 }
 
@@ -14,7 +15,7 @@ export enum CodeEnum {
   Backdrop
 }
 
-enum CompletionItemEnum { }
+enum CompletionItemEnum {}
 
 // generated from wasm `console.log`
 export interface Hint {
@@ -35,8 +36,10 @@ export interface Position {
   Column: number
 }
 
-type AttentionHint = {
-  range: Range
+export type AttentionHint = {
+  fileName: string
+  column: number
+  line: number
   message: string
 }
 
@@ -209,8 +212,22 @@ export class Compiler extends Disposable {
 
     return new Promise((resolve) => {
       this.addToQueue(() => {
-        // implement logic here
-        resolve([])
+        const iframe = this.getIframe()
+        if (iframe == null) return resolve([])
+
+        const tempCodes = codes.map((code) => code.content).join('\r\n')
+        try {
+          const res = iframe.contentWindow?.getDiagnostics({
+            in: {
+              name: 'test.spx',
+              code: tempCodes
+            }
+          })
+          resolve(Array.isArray(res) ? res : [])
+        } catch (err) {
+          console.error(err)
+          resolve([])
+        }
       })
     })
   }

@@ -1,19 +1,16 @@
 import { type editor as IEditor, type IDisposable, Range } from 'monaco-editor'
+import { StyleSheetContent } from '@/components/editor/code-editor/ui/common/style-sheet-content'
 
-export class InlayHint implements IDisposable {
+export class InlayHint extends StyleSheetContent implements IDisposable {
   editor: IEditor.IStandaloneCodeEditor
-  styleElement: HTMLStyleElement
-  styleMap: Map<string, string>
   abortController = new AbortController()
   public textDecorationsCollection: IEditor.IEditorDecorationsCollection
   public mouseColumn = 0
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
+    super()
     this.editor = editor
-    this.styleElement = document.createElement('style')
-    this.styleMap = new Map()
     this.textDecorationsCollection = editor.createDecorationsCollection([])
-    document.head.appendChild(this.styleElement)
     this.editor.onMouseMove((e) => {
       this.mouseColumn = e.target.mouseColumn
     })
@@ -26,13 +23,10 @@ export class InlayHint implements IDisposable {
     column: number,
     content: string
   ): IEditor.IModelDeltaDecoration {
-    const contentClassName = `inlay-hint__content-${this.hash(content)}`
-
-    this.addStyle(contentClassName, content)
     return {
       range: new Range(line, column - 1, line, column),
       options: {
-        inlineClassName: `inlay-hint__param ${contentClassName}`,
+        inlineClassName: `inlay-hint__param ${this.addPseudoElementClassNameWithHashContent(content)}`,
         inlineClassNameAffectsLetterSpacing: true
       }
     }
@@ -43,8 +37,6 @@ export class InlayHint implements IDisposable {
     column: number,
     content: string
   ): IEditor.IModelDeltaDecoration {
-    const contentClassName = `inlay-hint__content-${this.hash(content)}`
-    this.addStyle(contentClassName, content)
     return {
       range: {
         startLineNumber: line,
@@ -53,7 +45,7 @@ export class InlayHint implements IDisposable {
         endColumn: column
       },
       options: {
-        inlineClassName: `inlay-hint__tag ${contentClassName}`,
+        inlineClassName: `inlay-hint__tag ${this.addPseudoElementClassNameWithHashContent(content)}`,
         inlineClassNameAffectsLetterSpacing: true
       }
     }
@@ -78,28 +70,9 @@ export class InlayHint implements IDisposable {
     }
   }
 
-  addStyle(className: string, content: string) {
-    if (!this.styleMap.has(className)) {
-      const css = `.${className}::after { content: "${content}"; }`
-      this.styleElement.appendChild(document.createTextNode(css))
-      this.styleMap.set(className, css)
-    }
-  }
-
-  hash(content: string): string {
-    let hash = 0
-    for (let i = 0; i < content.length; i++) {
-      const char = content.charCodeAt(i)
-      hash = (hash << 5) - hash + char
-      hash |= 0 // Convert to 32bit integer
-    }
-    return hash.toString(36)
-  }
-
   dispose() {
     this.textDecorationsCollection.clear()
     this.abortController.abort()
-    this.styleElement.remove()
-    this.styleMap.clear()
+    super.dispose()
   }
 }
