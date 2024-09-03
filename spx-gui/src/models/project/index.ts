@@ -386,8 +386,8 @@ export class Project extends Disposable {
     this.saveToCloudAbortController = abortController
 
     try {
-      const [metadata, files] = await this.export()
       if (this.isDisposed) throw new Error('disposed')
+      const [metadata, files] = await this.export()
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
       this.lastSyncedFilesHash = await hashFiles(files)
@@ -408,8 +408,8 @@ export class Project extends Disposable {
 
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
-    const [metadata, files] = await this.export()
     if (this.isDisposed) throw new Error('disposed')
+    const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
   }
 
