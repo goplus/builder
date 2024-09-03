@@ -10,6 +10,7 @@ import { ensureValidBackdropName, ensureValidWidgetName } from './common/asset-n
 import type { Size } from './common'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type RawWidgetConfig, type Widget, loadWidget } from './widget'
+import { Disposable } from '@/utils/disposable'
 
 export type StageInits = {
   backdropIndex: number
@@ -47,7 +48,7 @@ const stageCodeFileName = filename(stageCodeFilePath)
 
 export const defaultMapSize: MapSize = { width: 480, height: 360 }
 
-export class Stage {
+export class Stage extends Disposable {
   code: string
   setCode(code: string) {
     this.code = code
@@ -180,10 +181,15 @@ export class Stage {
   }
 
   constructor(code: string = '', inits?: Partial<StageInits>) {
+    super()
     this.code = code
     this.backdrops = []
     this.backdropIndex = inits?.backdropIndex ?? 0
     this.widgets = []
+    this.addDisposer(() => {
+      this.widgets.splice(0).forEach((w) => w.dispose())
+      this.widgetsZorder = []
+    })
     this.widgetsZorder = []
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
