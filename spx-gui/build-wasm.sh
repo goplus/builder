@@ -1,13 +1,13 @@
 #!/bin/bash
 echo Run this script from 'spx-gui' directory
 
-cd ../tools/fmt
+cd ../tools/fmt || exit
 source ./build.sh
 
-cd ../ispx
+cd ../ispx || exit
 source ./build.sh
 
-cd ../compiler
+cd ../compiler || exit
 source ./build.sh
 
 cd ..
