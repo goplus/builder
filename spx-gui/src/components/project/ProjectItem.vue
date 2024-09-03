@@ -137,6 +137,7 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
   }
 }
 
@@ -147,10 +148,13 @@ const creationTime = computed(() => dayjs(props.projectData.cTime).format('YYYY.
     padding: 10px 10px 8px;
   }
 
+  .name-container {
+    margin-bottom: 4px;
+  }
+
   .name {
     font-size: 16px;
     line-height: 24px;
-    margin-bottom: 4px;
   }
 
   .creation-time {
