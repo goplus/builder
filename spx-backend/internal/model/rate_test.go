@@ -30,8 +30,8 @@ func TestGetRatingDistribution(t *testing.T) {
 			AddRow(4, 20).
 			AddRow(3, 30)
 
-		mock.ExpectQuery("SELECT score, COUNT(*) AS count FROM ratings WHERE asset_id = ? AND owner = ? GROUP BY score ORDER BY score").
-			WithArgs("1", "user1").
+		mock.ExpectQuery("SELECT score, COUNT(*) AS count FROM ratings WHERE asset_id = ? GROUP BY score ORDER BY score").
+			WithArgs("1").
 			WillReturnRows(rows)
 
 		distributions, err := GetRatingDistribution(context.Background(), gdb, "1")
@@ -59,7 +59,7 @@ func TestGetRatingDistribution(t *testing.T) {
 
 		_, err = GetRatingDistribution(context.Background(), gdb, "invalid-id")
 		require.Error(t, err)
-		assert.Equal(t, "invalid asset id or owner", err.Error())
+		assert.Equal(t, "invalid asset id", err.Error())
 	})
 }
 
@@ -126,6 +126,9 @@ func TestInsertRate(t *testing.T) {
 		}), &gorm.Config{})
 		require.NoError(t, err)
 
+		mock.ExpectQuery("SELECT * FROM `ratings` WHERE asset_id = ? AND owner = ? ORDER BY `ratings`.`id` LIMIT ?").
+			WithArgs(1, "user1", 1).
+			WillReturnError(gorm.ErrRecordNotFound)
 		mock.ExpectBegin()
 		mock.ExpectExec("INSERT INTO `ratings` (`asset_id`,`owner`,`score`) VALUES (?,?,?)").
 			WithArgs(1, "user1", 5).
@@ -150,6 +153,10 @@ func TestInsertRate(t *testing.T) {
 		}), &gorm.Config{})
 		require.NoError(t, err)
 
+		mock.ExpectQuery("SELECT * FROM `ratings` WHERE asset_id = ? AND owner = ? ORDER BY `ratings`.`id` LIMIT ?").
+			WithArgs(1, "user1", 1).
+			WillReturnError(gorm.ErrRecordNotFound)
+
 		mock.ExpectBegin()
 		mock.ExpectExec("INSERT INTO `ratings` (`asset_id`,`owner`,`score`) VALUES (?,?,?)").
 			WithArgs(1, "user1", 5).
@@ -159,6 +166,36 @@ func TestInsertRate(t *testing.T) {
 		err = InsertRate(context.Background(), gdb, "1", "user1", 5)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "insert error")
+
+		err = mock.ExpectationsWereMet()
+		require.NoError(t, err)
+	})
+
+	t.Run("RecordExistsAndUpdate", func(t *testing.T) {
+		db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+		require.NoError(t, err)
+		defer db.Close()
+
+		gdb, err := gorm.Open(mysql.New(mysql.Config{
+			Conn:                      db,
+			SkipInitializeWithVersion: true,
+		}), &gorm.Config{})
+		require.NoError(t, err)
+
+		mock.ExpectQuery("SELECT * FROM `ratings` WHERE asset_id = ? AND owner = ? ORDER BY `ratings`.`id` LIMIT ?").
+			WithArgs(1, "user1", 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+		mock.ExpectBegin()
+
+		mock.ExpectExec("UPDATE `ratings` SET `asset_id`=?,`owner`=?,`score`=?,`c_time`=?,`u_time`=? WHERE `id` = ?").
+			WithArgs(0, "", 5, sqlmock.AnyArg(), sqlmock.AnyArg(), 1).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		mock.ExpectCommit()
+
+		err = InsertRate(context.Background(), gdb, "1", "user1", 5)
+		require.NoError(t, err)
 
 		err = mock.ExpectationsWereMet()
 		require.NoError(t, err)

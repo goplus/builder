@@ -8,7 +8,7 @@ import (
 )
 
 type GetRateResponse struct {
-	Rate   float64                        `json:"rate"`
+	Rate   float64                    `json:"rate"`
 	Detail []model.RatingDistribution `json:"detail"`
 }
 
