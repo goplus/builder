@@ -5,7 +5,6 @@ import { Disposable } from '@/utils/disposable'
 import type { Markdown } from './EditorUI'
 import { shallowRef } from 'vue'
 import { untilNotNull } from '@/utils/utils'
-import type { HTMLIFrameElement } from 'happy-dom'
 
 interface WasmHandler extends Window {
   console: typeof console

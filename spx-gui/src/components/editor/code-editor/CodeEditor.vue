@@ -10,7 +10,6 @@ import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { onUnmounted, ref, watchEffect } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { HTMLIFrameElement } from 'happy-dom'
 
 defineEmits<{
   'update:value': [value: string]
