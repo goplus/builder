@@ -39,17 +39,16 @@ const style = computed(() => ({
 
 <style lang="scss" scoped>
 .block-item {
+  width: var(--block-item-size);
+  height: var(--block-item-size);
+  // it may shrink without min-width / min-height
+  min-width: var(--block-item-size);
+  min-height: var(--block-item-size);
   &.block-item-medium {
-    width: 88px;
-    height: 88px;
-    min-height: 88px;
-    // Without min-height, the height of the element can be smaller than 88px
-    // in editor sider list.
+    --block-item-size: 88px;
   }
   &.block-item-large {
-    width: 140px;
-    height: 140px;
-    min-height: 140px;
+    --block-item-size: 140px;
   }
   display: flex;
   flex-direction: column;
