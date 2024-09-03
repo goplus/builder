@@ -13,7 +13,7 @@
       <v-layer>
         <SpriteNode
           v-for="sprite in visibleSprites"
-          :key="sprite.name"
+          :key="sprite.id"
           :sprite="sprite"
           :map-size="mapSize!"
           :node-ready-map="nodeReadyMap"
@@ -22,7 +22,7 @@
       <v-layer>
         <WidgetNode
           v-for="widget in visibleWidgets"
-          :key="widget.name"
+          :key="widget.id"
           :widget="widget"
           :map-size="mapSize!"
           :node-ready-map="nodeReadyMap"
@@ -59,7 +59,7 @@ import { useEditorCtx } from '../../EditorContextProvider.vue'
 import NodeTransformer from './NodeTransformer.vue'
 import SpriteNode from './SpriteNode.vue'
 import WidgetNode from './widgets/WidgetNode.vue'
-import { getNodeName } from './node'
+import { getNodeId } from './node'
 
 const editorCtx = useEditorCtx()
 const conatiner = ref<HTMLElement | null>(null)
@@ -160,21 +160,19 @@ const konvaBackdropConfig = computed(() => {
 
 const loading = computed(() => {
   if (backdropSrcLoading.value || !backdropImg.value) return true
-  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeName(s)))) return true
-  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeName(w)))) return true
+  if (editorCtx.project.sprites.some((s) => !nodeReadyMap.get(getNodeId(s)))) return true
+  if (editorCtx.project.stage.widgets.some((w) => !nodeReadyMap.get(getNodeId(w)))) return true
   return false
 })
 
 const visibleSprites = computed(() => {
   const { zorder, sprites } = editorCtx.project
-  return zorder.map((name) => sprites.find((s) => s.name === name)).filter(Boolean) as Sprite[]
+  return zorder.map((id) => sprites.find((s) => s.id === id)).filter(Boolean) as Sprite[]
 })
 
 const visibleWidgets = computed(() => {
   const { widgetsZorder, widgets } = editorCtx.project.stage
-  return widgetsZorder
-    .map((name) => widgets.find((w) => w.name === name))
-    .filter(Boolean) as Widget[]
+  return widgetsZorder.map((id) => widgets.find((w) => w.id === id)).filter(Boolean) as Widget[]
 })
 
 const menuVisible = ref(false)
@@ -219,23 +217,23 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   await project.history.doAction({ name: moveActionNames[direction] }, () => {
     if (selectedSprite != null) {
       if (direction === 'up') {
-        project.upSpriteZorder(selectedSprite.name)
+        project.upSpriteZorder(selectedSprite.id)
       } else if (direction === 'down') {
-        project.downSpriteZorder(selectedSprite.name)
+        project.downSpriteZorder(selectedSprite.id)
       } else if (direction === 'top') {
-        project.topSpriteZorder(selectedSprite.name)
+        project.topSpriteZorder(selectedSprite.id)
       } else if (direction === 'bottom') {
-        project.bottomSpriteZorder(selectedSprite.name)
+        project.bottomSpriteZorder(selectedSprite.id)
       }
     } else if (selectedWidget != null) {
       if (direction === 'up') {
-        project.stage.upWidgetZorder(selectedWidget.name)
+        project.stage.upWidgetZorder(selectedWidget.id)
       } else if (direction === 'down') {
-        project.stage.downWidgetZorder(selectedWidget.name)
+        project.stage.downWidgetZorder(selectedWidget.id)
       } else if (direction === 'top') {
-        project.stage.topWidgetZorder(selectedWidget.name)
+        project.stage.topWidgetZorder(selectedWidget.id)
       } else if (direction === 'bottom') {
-        project.stage.bottomWidgetZorder(selectedWidget.name)
+        project.stage.bottomWidgetZorder(selectedWidget.id)
       }
     }
   })

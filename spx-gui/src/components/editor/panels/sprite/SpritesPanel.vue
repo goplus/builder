@@ -23,7 +23,7 @@
         </UIEmpty>
         <SpriteItem
           v-for="sprite in sprites"
-          :key="sprite.name"
+          :key="sprite.id"
           :sprite="sprite"
           :selected="isSelected(sprite)"
           @click="handleSpriteClick(sprite)"
@@ -52,7 +52,7 @@
         </UIEmpty>
         <SpriteSummaryItem
           v-for="sprite in summaryListData.list"
-          :key="sprite.name"
+          :key="sprite.id"
           :sprite="sprite"
         />
       </PanelSummaryList>
@@ -93,11 +93,11 @@ const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sprites, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sprite: Sprite) {
-  return sprite.name === editorCtx.project.selectedSprite?.name
+  return sprite.id === editorCtx.project.selectedSprite?.id
 }
 
 function handleSpriteClick(sprite: Sprite) {
-  editorCtx.project.select({ type: 'sprite', name: sprite.name })
+  editorCtx.project.select({ type: 'sprite', id: sprite.id })
 }
 
 const addFromLocalFile = useAddSpriteFromLocalFile()

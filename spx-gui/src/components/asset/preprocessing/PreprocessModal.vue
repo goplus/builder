@@ -56,7 +56,7 @@
           <ul class="costume-list">
             <CostumeItem
               v-for="costume in costumes"
-              :key="costume.name"
+              :key="costume.id"
               :costume="costume"
               :selected="isCostumeSelected(costume)"
               @click="handleCostumeClick(costume)"
@@ -220,11 +220,11 @@ async function updateCostumes(files: File[]) {
 }
 
 function isCostumeSelected(costume: Costume) {
-  return selectedCostumes.some((a) => a.name === costume.name)
+  return selectedCostumes.some((a) => a.id === costume.id)
 }
 
 async function handleCostumeClick(costume: Costume) {
-  const index = selectedCostumes.findIndex((c) => c.name === costume.name)
+  const index = selectedCostumes.findIndex((c) => c.id === costume.id)
   if (index < 0) selectedCostumes.push(costume)
   else selectedCostumes.splice(index, 1)
 }
@@ -233,7 +233,11 @@ const handleConfirm = useMessageHandle(
   async () => {
     if (isOnline.value) {
       const files = selectedCostumes
-        .map((costume) => costume.export(''))
+        .map((costume) =>
+          costume.export({
+            basePath: ''
+          })
+        )
         .reduce((acc, [, files]) => ({ ...acc, ...files }), {})
       await saveFiles(files)
     }

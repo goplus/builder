@@ -13,11 +13,11 @@
   <EditorList v-else color="sprite" :add-text="$t({ en: 'Add animation', zh: '添加动画' })">
     <AnimationItem
       v-for="animation in sprite.animations"
-      :key="animation.name"
+      :key="animation.id"
       :sprite="sprite"
       :animation="animation"
-      :selected="selectedAnimation === animation"
-      @click="selectedAnimation = animation"
+      :selected="selectedAnimationId === animation.id"
+      @click="selectedAnimationId = animation.id"
     />
     <template #add-options>
       <UIMenu>
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
 import { UIMenu, UIMenuItem, useModal, UIEmpty, UIButton } from '@/components/ui'
@@ -51,14 +51,15 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 
-const selectedAnimation = shallowRef<Animation | null>(props.sprite.animations[0] || null)
+const selectedAnimationId = ref<string | null>(props.sprite.animations[0]?.id || null)
+const selectedAnimation = computed(
+  () =>
+    props.sprite.animations.find((animation) => animation.id === selectedAnimationId.value) ?? null
+)
 
 watchEffect(() => {
-  if (
-    selectedAnimation.value == null ||
-    !props.sprite.animations.includes(selectedAnimation.value)
-  ) {
-    selectedAnimation.value = props.sprite.animations[0] ?? null
+  if (selectedAnimationId.value == null || !selectedAnimation.value) {
+    selectedAnimationId.value = props.sprite.animations[0]?.id ?? null
   }
 })
 
@@ -84,10 +85,10 @@ const handleGroupCostumes = useMessageHandle(
           for (let i = selectedCostumes.length - 1; i >= 0; i--) {
             // Do not remove the last costume
             if (props.sprite.costumes.length <= 1) break
-            props.sprite.removeCostume(selectedCostumes[i].name)
+            props.sprite.removeCostume(selectedCostumes[i].id)
           }
         }
-        selectedAnimation.value = animation
+        selectedAnimationId.value = animation.id
       }
     )
   },

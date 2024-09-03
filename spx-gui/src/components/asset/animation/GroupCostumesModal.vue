@@ -15,7 +15,7 @@
       <ul class="costume-list">
         <CostumeItem
           v-for="costume in props.sprite.costumes"
-          :key="costume.name"
+          :key="costume.id"
           :costume="costume"
           :selected="selectedCostumeSet.has(costume)"
           @click="handleCostumeClick(costume)"

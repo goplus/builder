@@ -60,7 +60,7 @@ const emit = defineEmits<{
 
 const editorCtx = useEditorCtx()
 const actionName = { en: 'Bind state', zh: '绑定状态' }
-const boundStates = ref(props.sprite.getAnimationBoundStates(props.animation.name))
+const boundStates = ref(props.sprite.getAnimationBoundStates(props.animation.id))
 
 function isBound(state: State) {
   return boundStates.value.includes(state)
@@ -74,7 +74,7 @@ function handleStateItemClick(state: State) {
 
 async function handleConfirm() {
   await editorCtx.project.history.doAction({ name: actionName }, () => {
-    props.sprite.setAnimationBoundStates(props.animation.name, boundStates.value)
+    props.sprite.setAnimationBoundStates(props.animation.id, boundStates.value)
   })
   emit('close')
 }

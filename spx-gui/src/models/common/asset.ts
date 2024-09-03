@@ -16,7 +16,9 @@ export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.So
       : never
 
 export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
-  const { fileCollection, fileCollectionHash } = await saveFiles(sprite.export(false))
+  const { fileCollection, fileCollectionHash } = await saveFiles(
+    sprite.export({ includeId: false, sounds: [], includeCode: false }) // animation sound is not preserved when saving as assets
+  )
   return {
     displayName: sprite.name,
     assetType: AssetType.Sprite,
@@ -27,7 +29,7 @@ export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
 
 export async function asset2Sprite(assetData: PartialAssetData) {
   const files = await getFiles(assetData.files)
-  const sprites = await Sprite.loadAll(files)
+  const sprites = await Sprite.loadAll(files, [])
   if (sprites.length === 0) throw new Error('no sprite loaded')
   return sprites[0]
 }
@@ -36,7 +38,7 @@ export async function asset2Sprite(assetData: PartialAssetData) {
 const virtualBackdropConfigFileName = 'assets/__backdrop__.json'
 
 export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetData> {
-  const [config, files] = backdrop.export()
+  const [config, files] = backdrop.export({ includeId: false })
   files[virtualBackdropConfigFileName] = fromConfig(virtualBackdropConfigFileName, config)
   const { fileCollection, fileCollectionHash } = await saveFiles(files)
   return {
@@ -56,7 +58,7 @@ export async function asset2Backdrop(assetData: PartialAssetData) {
 }
 
 export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
-  const { fileCollection, fileCollectionHash } = await saveFiles(sound.export())
+  const { fileCollection, fileCollectionHash } = await saveFiles(sound.export({ includeId: false }))
   return {
     displayName: sound.name,
     assetType: AssetType.Sound,

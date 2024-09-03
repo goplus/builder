@@ -6,7 +6,7 @@
       :duration="animation.duration"
       class="animation-player"
     />
-    <AnimationSettings :animation="animation" :sprite="sprite" />
+    <AnimationSettings :animation="animation" :sprite="sprite" :sounds="editorCtx.project.sounds" />
   </EditorItemDetail>
 </template>
 
@@ -30,7 +30,7 @@ const props = defineProps<{
 const editorCtx = useEditorCtx()
 const renameCostume = useModal(AnimationRenameModal)
 const sound = computed(
-  () => editorCtx.project.sounds.find((sound) => sound.name === props.animation.sound) ?? null
+  () => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null
 )
 
 const handleRename = useMessageHandle(

@@ -18,11 +18,11 @@ import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
-  if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
-  else if (asset instanceof Sound) project.select({ type: 'sound', name: asset.name })
+  if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
+  else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
   else if (asset instanceof Backdrop) {
     project.select({ type: 'stage' })
-    project.stage.setDefaultBackdrop(asset.name)
+    project.stage.setDefaultBackdrop(asset.id)
   }
 }
 
@@ -91,7 +91,7 @@ export function useAddCostumeFromLocalFile() {
     })
     await project.history.doAction({ name: actionMessage }, () => {
       for (const costume of costumes) sprite.addCostume(costume)
-      sprite.setDefaultCostume(costumes[0].name)
+      sprite.setDefaultCostume(costumes[0].id)
     })
   }
 }

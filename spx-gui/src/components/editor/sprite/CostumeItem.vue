@@ -33,7 +33,9 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.costume.name
     const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
-    await editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(name))
+    await editorCtx.project.history.doAction(action, () =>
+      props.sprite.removeCostume(props.costume.id)
+    )
   },
   {
     en: 'Failed to remove costume',

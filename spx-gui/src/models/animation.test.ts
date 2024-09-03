@@ -44,46 +44,47 @@ describe('Animation', () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].name)
-    expect(animation.sound).toBe(project.sounds[0].name)
+    animation.setSound(project.sounds[0].id)
+    expect(animation.sound).toBe(project.sounds[0].id)
 
     const sound2 = new Sound('sound2', mockFile())
     project.addSound(sound2)
-    animation.setSound(sound2.name)
-    expect(animation.sound).toBe(sound2.name)
+    animation.setSound(sound2.id)
+    expect(animation.sound).toBe(sound2.id)
 
     animation.setSound(null)
     expect(animation.sound).toBeNull()
 
-    animation.setSound(project.sounds[0].name)
-    expect(animation.sound).toBe(project.sounds[0].name)
+    animation.setSound(project.sounds[0].id)
+    expect(animation.sound).toBe(project.sounds[0].id)
   })
 
   it('should work well with sound renaming', async () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].name)
+    animation.setSound(project.sounds[0].id)
     await nextTick()
     project.sounds[0].setName('newSound')
     await nextTick()
-    expect(animation.sound).toBe('newSound')
+    const newSound = project.sounds.find((s) => s.id === animation.sound)
+    expect(newSound?.name).toBe('newSound')
   })
 
   it('should work well with sound deletion', async () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].name)
+    animation.setSound(project.sounds[0].id)
     await nextTick()
-    project.removeSound(project.sounds[0].name)
+    project.removeSound(project.sounds[0].id)
     await nextTick()
     expect(animation.sound).toBeNull()
   })
 
   it('should work correctly while project loads', async () => {
     const project = makeProject()
-    project.sprites[0].animations[0].setSound(project.sounds[0].name)
+    project.sprites[0].animations[0].setSound(project.sounds[0].id)
 
     const [metadata, files] = await project.export()
     const delayedFiles: Files = Object.fromEntries(
@@ -91,6 +92,37 @@ describe('Animation', () => {
     )
     const newProject = new Project()
     await newProject.load(metadata, delayedFiles)
-    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].name)
+    expect(newProject.sprites[0].animations[0].sound).toBe(newProject.sounds[0].id)
+  })
+
+  it('should be able to keep the id upon export and import. if the id is not provided, it should be generated', async () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    const id = animation.id
+    // id should be not null and not empty
+    expect(id).not.toBeNull()
+
+    const [metadata, files] = await project.export()
+    const newProject = new Project()
+    await newProject.load(metadata, files)
+    const newSprite = newProject.sprites[0]
+    const newAnimation = newSprite.animations[0]
+    expect(newAnimation.id).toBe(id)
+  })
+  it('should not export id if includeId is false', async () => {
+    const project = makeProject()
+    const sprite = project.sprites[0]
+    const animation = sprite.animations[0]
+    const id = animation.id
+    // id should be not null and not empty
+    expect(id).not.toBeNull()
+
+    const exportedId = animation.export({
+      basePath: '',
+      includeId: false,
+      sounds: project.sounds
+    })[0].builder_id
+    expect(exportedId).toBeUndefined()
   })
 })

@@ -8,10 +8,10 @@
     <ul class="sound-items">
       <SoundItem
         v-for="sound in editorCtx.project.sounds"
-        :key="sound.name"
+        :key="sound.id"
         :sound="sound"
-        :selected="sound.name === selected"
-        @click="handleSoundClick(sound.name)"
+        :selected="sound.id === selected"
+        @click="handleSoundClick(sound.id)"
       />
       <UIDropdown trigger="click" placement="top">
         <template #trigger>
@@ -73,7 +73,7 @@ const addFromLocalFile = useAddSoundFromLocalFile(false)
 const handleAddFromLocalFile = useMessageHandle(
   async () => {
     const sound = await addFromLocalFile(editorCtx.project)
-    selected.value = sound.name
+    selected.value = sound.id
   },
   {
     en: 'Failed to add sound from local file',
@@ -85,7 +85,7 @@ const addAssetFromLibrary = useAddAssetFromLibrary(false)
 const handleAddFromAssetLibrary = useMessageHandle(
   async () => {
     const sounds = await addAssetFromLibrary(editorCtx.project, AssetType.Sound)
-    selected.value = sounds[0].name
+    selected.value = sounds[0].id
   },
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
@@ -95,7 +95,7 @@ function handleRecord() {
   recorderVisible.value = true
 }
 function handleRecorded(sound: Sound) {
-  selected.value = sound.name
+  selected.value = sound.id
 }
 
 async function handleConfirm() {

@@ -8,8 +8,10 @@ import { type Size } from './common'
 import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import { Animation } from './animation'
+import { nanoid } from 'nanoid'
 
 export type CostumeInits = {
+  builder_id?: string
   x?: number
   y?: number
   faceRight?: number
@@ -22,6 +24,8 @@ export type RawCostumeConfig = CostumeInits & {
 }
 
 export class Costume {
+  id: string
+
   private parent: Sprite | Animation | null = null
   setParent(parent: Sprite | Animation | null) {
     this.parent = parent
@@ -86,6 +90,7 @@ export class Costume {
     this.y = inits?.y ?? 0
     this.faceRight = inits?.faceRight ?? 0
     this.bitmapResolution = inits?.bitmapResolution ?? 1
+    this.id = inits?.builder_id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -123,10 +128,14 @@ export class Costume {
     return new Costume(name, file, inits)
   }
 
-  export(
+  export({
+    basePath,
+    includeId = true
+  }: {
     /** Path of directory which contains the sprite's config file */
     basePath: string
-  ): [RawCostumeConfig, Files] {
+    includeId?: boolean
+  }): [RawCostumeConfig, Files] {
     const name =
       this.parent instanceof Animation ? this.parent.withCostumeNamePrefix(this.name) : this.name
     const filename = name + extname(this.img.name)
@@ -138,6 +147,7 @@ export class Costume {
       name,
       path: filename
     }
+    if (includeId) config.builder_id = this.id
     const files = {
       [resolve(basePath, filename)]: this.img
     }

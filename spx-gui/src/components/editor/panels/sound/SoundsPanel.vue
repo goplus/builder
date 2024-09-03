@@ -25,7 +25,7 @@
         </UIEmpty>
         <SoundItem
           v-for="sound in sounds"
-          :key="sound.name"
+          :key="sound.id"
           :sound="sound"
           :selected="isSelected(sound)"
           @click="handleSoundClick(sound)"
@@ -37,7 +37,7 @@
         <UIEmpty v-if="sounds.length === 0" size="small">
           {{ $t({ en: 'Empty', zh: '无' }) }}
         </UIEmpty>
-        <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.name" :sound="sound" />
+        <SoundSummaryItem v-for="sound in summaryListData.list" :key="sound.id" :sound="sound" />
       </PanelSummaryList>
     </template>
   </CommonPanel>
@@ -73,11 +73,11 @@ const summaryList = ref<InstanceType<typeof PanelSummaryList>>()
 const summaryListData = useSummaryList(sounds, () => summaryList.value?.listWrapper ?? null)
 
 function isSelected(sound: Sound) {
-  return sound.name === editorCtx.project.selectedSound?.name
+  return sound.id === editorCtx.project.selectedSound?.id
 }
 
 function handleSoundClick(sound: Sound) {
-  editorCtx.project.select({ type: 'sound', name: sound.name })
+  editorCtx.project.select({ type: 'sound', id: sound.id })
 }
 
 const addFromLocalFile = useAddSoundFromLocalFile()
@@ -99,7 +99,7 @@ function handleRecord() {
 }
 
 function handleRecorded(sound: Sound) {
-  editorCtx.project.select({ type: 'sound', name: sound.name })
+  editorCtx.project.select({ type: 'sound', id: sound.id })
 }
 </script>
 
