@@ -18,10 +18,8 @@ import { categories, type Category } from './category'
 import { type LocaleMessage, useI18n } from '@/utils/i18n'
 import { NIcon, NTree } from 'naive-ui'
 import { AssetType } from '@/apis/asset'
-import { useSearchCtx, useSearchResultCtx } from './SearchContextProvider.vue'
+import { useSearchCtx } from './SearchContextProvider.vue'
 import { ArrowForwardIosRound } from '@vicons/material'
-import { BulbOutlined } from '@vicons/antd'
-import { transform } from 'lodash'
 
 const props = defineProps<{
   type: AssetType
