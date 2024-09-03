@@ -16,7 +16,7 @@ export type StageInits = {
   backdropIndex: number
   mapWidth?: number
   mapHeight?: number
-  mapMode: MapMode
+  mapMode?: MapMode
 }
 
 export type RawMapConfig = {
@@ -186,14 +186,14 @@ export class Stage extends Disposable {
     this.backdrops = []
     this.backdropIndex = inits?.backdropIndex ?? 0
     this.widgets = []
+    this.widgetsZorder = []
     this.addDisposer(() => {
       this.widgets.splice(0).forEach((w) => w.dispose())
       this.widgetsZorder = []
     })
-    this.widgetsZorder = []
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
-    this.mapMode = getMapMode(inits?.mapMode)
+    this.mapMode = inits?.mapMode ?? MapMode.fillRatio
     return reactive(this) as this
   }
 

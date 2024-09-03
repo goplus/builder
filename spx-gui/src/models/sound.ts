@@ -8,12 +8,13 @@ import type { Project } from './project'
 import { nanoid } from 'nanoid'
 
 export type SoundInits = {
-  builder_id?: string
+  id?: string
   rate?: number
   sampleCount?: number
 }
 
-export type RawSoundConfig = SoundInits & {
+export type RawSoundConfig = Omit<SoundInits, 'id'> & {
+  builder_id?: string
   path?: string
 }
 
@@ -56,7 +57,7 @@ export class Sound extends Disposable {
     this.file = file
     this.rate = inits?.rate ?? 0
     this.sampleCount = inits?.sampleCount ?? 0
-    this.id = inits?.builder_id ?? nanoid()
+    this.id = inits?.id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -73,11 +74,11 @@ export class Sound extends Disposable {
     const pathPrefix = join(soundAssetPath, name)
     const configFile = files[join(pathPrefix, soundConfigFileName)]
     if (configFile == null) return null
-    const { path, ...inits } = (await toConfig(configFile)) as RawSoundConfig
+    const { builder_id: id, path, ...inits } = (await toConfig(configFile)) as RawSoundConfig
     if (path == null) throw new Error(`path expected for sound ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
-    return new Sound(name, file, inits)
+    return new Sound(name, file, { ...inits, id })
   }
 
   static async loadAll(files: Files) {
