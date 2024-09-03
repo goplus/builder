@@ -69,7 +69,7 @@
             <NIcon color="#ffffff" :size="12">
               <StarRound />
             </NIcon>
-            {{ 0 }}
+            {{ rate }}
           </div>
         </div>
         <!-- Maybe we will introduce a marketplace in the future -->
@@ -86,7 +86,7 @@
 import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData, type AssetModel } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
-import { type AssetData, AssetType } from '@/apis/asset'
+import { type AssetData, AssetType, getAssetRate } from '@/apis/asset'
 import SpritePreview from './SpritePreview.vue'
 import BackdropPreview from './BackdropPreview.vue'
 import SoundPreview from './SoundPreview.vue'
@@ -115,6 +115,20 @@ const assetModel = useAsyncComputed(() => cachedConvertAssetData(props.asset))
 
 const isFavorite = ref(props.asset.isLiked ?? false)
 const favoriteCount = ref(props.asset.likeCount ?? 0)
+const rate = useAsyncComputed(async () => {
+    let res = props.asset.rate
+    if (res === undefined) {
+      const rateData = await getAssetRate(props.asset.id)
+      if (rateData.detail === null) {
+        res = 0
+      } else {
+        res = rateData.rate
+      }
+    }
+    props.asset.rate = res
+    return res.toFixed(1)
+})
+
 
 const handleFavorite = () => {
   isFavorite.value = !isFavorite.value
