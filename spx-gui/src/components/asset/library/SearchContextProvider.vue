@@ -57,7 +57,7 @@ const searchCtx = reactive<SearchCtx>({
   category: [''],
   type: props.type,
   page: 1,
-  pageSize: 12,
+  pageSize: 15,
   tabCategory: 'public',
   orderBy: ListAssetParamOrderBy.TimeAsc
 })

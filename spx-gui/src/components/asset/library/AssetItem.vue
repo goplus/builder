@@ -2,7 +2,7 @@
   <!-- <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100px; height: 100px">
   <SpritePreview v-if="sprite" :sprite="sprite" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100px; height: 100px"/>
   </div> -->
-  <div class="asset-item">
+  <div class="asset-item" :style="{ '--column-count': props.columnCount }">
     <div class="asset-preview-container">
       <div class="asset-preview">
         <UILoading v-if="!assetModel" cover :mask="false" />
@@ -59,18 +59,18 @@
       <div class="asset-info">
         <div class="asset-info-left">
           <div class="asset-info-item">
-            <NIcon color="#ffffff">
+            <NIcon color="#ffffff" :size="10">
               <HeartFilled />
             </NIcon>
             {{ favoriteCount }}
           </div>
           <!-- Rating is not implemented yet -->
-          <!-- <div class="asset-info-item">
-            <NIcon color="#ffffff">
-              <StarOutlined />
+          <div class="asset-info-item">
+            <NIcon color="#ffffff" :size="12">
+              <StarRound />
             </NIcon>
             {{ 0 }}
-          </div> -->
+          </div>
         </div>
         <!-- Maybe we will introduce a marketplace in the future -->
         <!-- <div class="asset-info-right">{{ $t({ en: `FREE`, zh: `免费` }) }}</div> -->
@@ -86,23 +86,26 @@
 import { UILoading } from '@/components/ui'
 import { cachedConvertAssetData, type AssetModel } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
-import {
-  type AssetData,
-  AssetType,
-} from '@/apis/asset'
+import { type AssetData, AssetType } from '@/apis/asset'
 import SpritePreview from './SpritePreview.vue'
 import BackdropPreview from './BackdropPreview.vue'
 import SoundPreview from './SoundPreview.vue'
 import { NIcon } from 'naive-ui'
-import { HeartOutlined, HeartFilled, PlusOutlined /** , StarOutlined */ } from '@vicons/antd'
+import { HeartOutlined, HeartFilled, PlusOutlined } from '@vicons/antd'
 import { ref } from 'vue'
 import { addAssetToFavorites, removeAssetFromFavorites } from '@/apis/user'
+import { StarRound } from '@vicons/material'
 
-
-const props = defineProps<{
-  asset: AssetData
-  addToProjectPending: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    asset: AssetData
+    addToProjectPending: boolean
+    columnCount?: number
+  }>(),
+  {
+    columnCount: 5
+  }
+)
 
 const emit = defineEmits<{
   addToProject: [asset: AssetData]
@@ -134,11 +137,9 @@ const handleAddToProject = () => {
 </script>
 
 <style lang="scss" scoped>
-$COLUMN_COUNT: 6;
-$FLEX_BASIS: calc(90% / $COLUMN_COUNT);
-
 .asset-item {
-  flex: 0 1 $FLEX_BASIS;
+  --flex-basis: calc(90% / var(--column-count, 5));
+  flex: 0 1 var(--flex-basis);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -247,24 +248,23 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   display: flex;
   flex-direction: row;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  bottom: 8px;
+  right: 8px;
   align-items: flex-end;
   justify-content: space-between;
   z-index: 0;
   color: #ffffff;
-  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.4);
   opacity: 1;
   transition: opacity 0.25s ease;
   // pointer-events: auto;
   pointer-events: none;
+  padding: 1px 4px;
+  border-radius: 4px;
 }
 
 .asset-info-right,
 .asset-info-left {
-  height: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -274,21 +274,6 @@ $FLEX_BASIS: calc(90% / $COLUMN_COUNT);
   display: flex;
   align-items: center;
   gap: 0.25rem;
-}
-
-.asset-info::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0) calc(100% - 1rem - 16px),
-    rgba(0, 0, 0, 0.5) 100%
-  );
-  z-index: -1;
 }
 
 .asset-item:hover .asset-info {
