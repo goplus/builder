@@ -91,7 +91,10 @@ func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 		}
 		if len(fun.Parameters) != 0 {
 			for _, param := range fun.Parameters {
-				if param.Type == "func()" {
+				if param == nil {
+					continue
+				}
+				if param.Type == "func()" || param.Name == "__gop_overload_args__" {
 					continue
 				}
 				hint := &inlayHint{

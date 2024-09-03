@@ -63,8 +63,10 @@ func extractFuncDetails(fun *funcItem, infoList *typesutil.Info) {
 }
 
 func extractParameters(signature *types.Signature, argsExpr []ast.Expr) []*funcParameter {
+	length := min(len(argsExpr), signature.Params().Len())
 	params := make([]*funcParameter, signature.Params().Len())
-	for i := 0; i < signature.Params().Len(); i++ {
+
+	for i := 0; i < length; i++ {
 		param := signature.Params().At(i)
 		paramName := param.Name()
 		paramType := param.Type().String()
@@ -219,51 +221,79 @@ func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
 }
 
 func tokenDetail(pkg *types.Package, token string) definitionItem {
-	sprite := pkg.Scope().Lookup("Sprite")
+	names := pkg.Scope().Names()
 
 	definitionItem := definitionItem{
-		PkgName: sprite.Pkg().Name(),
-		PkgPath: sprite.Pkg().Path(),
+		PkgName: pkg.Name(),
+		PkgPath: pkg.Path(),
 		Name:    token,
 	}
 
-	if named, ok := sprite.Type().(*types.Named); ok {
-		for i := 0; i < named.NumMethods(); i++ {
-			method := named.Method(i)
-
-			signature := method.Type().(*types.Signature)
-
-			var signList, sampleList []string
-			params := make([]param, signature.Params().Len())
-
-			for i := 0; i < signature.Params().Len(); i++ {
-				p := signature.Params().At(i)
-				paramName := p.Name()
-				paramType := p.Type().String()
-
-				params[i] = param{
-					Name: paramName,
-					Type: paramType,
-				}
-
-				signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
-				sampleList = append(sampleList, paramName)
-			}
-
-			simpleName, idx := convertOverloadToSimple(method.Name())
-			if simpleName == token {
-				use := usage{
-					UsageID:     strconv.Itoa(idx),
-					Declaration: simpleName,
-					Sample:      strings.Join(sampleList, " "),
-					InsertText:  simpleName + " " + strings.Join(signList, ", "),
-					Params:      params,
-					Type:        "func",
-				}
-				definitionItem.Usages = append(definitionItem.Usages, use)
-			}
+	for _, name := range names {
+		obj := pkg.Scope().Lookup(name)
+		uses := extractUsages(obj, token)
+		if uses == nil {
+			continue
 		}
+		definitionItem.Usages = uses
 	}
 
 	return definitionItem
+}
+
+func extractUsages(obj types.Object, token string) []usage {
+	named, ok := obj.Type().(*types.Named)
+	if !ok {
+		return nil
+	}
+
+	var uses []usage
+
+	for i := 0; i < named.NumMethods(); i++ {
+		method := named.Method(i)
+
+		simpleName, idx := convertOverloadToSimple(method.Name())
+
+		if simpleName != token {
+			continue
+		}
+
+		signature, ok := method.Type().(*types.Signature)
+		if !ok {
+			return nil
+		}
+
+		signList, sampleList, params := extractParams(signature)
+
+		use := usage{
+			UsageID:     strconv.Itoa(idx),
+			Declaration: simpleName,
+			Sample:      strings.Join(sampleList, " "),
+			InsertText:  simpleName + " " + strings.Join(signList, ", "),
+			Params:      params,
+			Type:        "func",
+		}
+		uses = append(uses, use)
+	}
+
+	return uses
+}
+
+func extractParams(signature *types.Signature) (signList []string, sampleList []string, params []param) {
+	params = make([]param, signature.Params().Len())
+
+	for i := 0; i < signature.Params().Len(); i++ {
+		p := signature.Params().At(i)
+		paramName := p.Name()
+		paramType := p.Type().String()
+
+		params[i] = param{
+			Name: paramName,
+			Type: paramType,
+		}
+
+		signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
+		sampleList = append(sampleList, paramName)
+	}
+	return
 }

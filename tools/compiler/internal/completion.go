@@ -123,11 +123,8 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 	}
 
 	if strings.HasPrefix(obj.Type().String(), "func") {
-		sign := obj.Type().(*types.Signature)
-		signList := []string{}
-		for j := range sign.Params().Len() {
-			signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-		}
+		signature := obj.Type().(*types.Signature)
+		signList, _, _ := extractParams(signature)
 		scopeItem.Type = "func"
 		scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
 	} else {
@@ -149,11 +146,8 @@ func handleType(obj types.Object, name string, items *completionList) {
 				Label: method.Name(),
 				Type:  "func",
 			}
-			sign := method.Type().(*types.Signature)
-			signList := []string{}
-			for j := range sign.Params().Len() {
-				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-			}
+			signature := method.Type().(*types.Signature)
+			signList, _, _ := extractParams(signature)
 			item.InsertText = name + " " + strings.Join(signList, ", ")
 			*items = append(*items, item)
 
@@ -178,11 +172,8 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 				Label: methodName,
 				Type:  "func",
 			}
-			sign := method.Type().(*types.Signature)
-			signList := []string{}
-			for j := range sign.Params().Len() {
-				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-			}
+			signature := method.Type().(*types.Signature)
+			signList, _, _ := extractParams(signature)
 			item.InsertText = methodName + " " + strings.Join(signList, ", ")
 			*items = append(*items, item)
 		}
