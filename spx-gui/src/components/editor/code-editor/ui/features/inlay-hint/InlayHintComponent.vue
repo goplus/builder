@@ -29,7 +29,6 @@ const updateInlayHint = debounce(async () => {
       .map((inlayHint) => {
         switch (inlayHint.style) {
           case 'icon':
-            console.log(inlayHint)
             return props.inlayHint.createIconDecoration(
               inlayHint.position.lineNumber,
               inlayHint.position.column
