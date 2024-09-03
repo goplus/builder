@@ -89,8 +89,7 @@ export interface CompletionItem {
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
 export type InlayHintStyle = 'tag' | 'text' | 'icon'
 
-// for we already have class InlayHint
-export type InlayHintType = {
+export type InlayHintDecoration = {
   content: string | Icon
   style: InlayHintStyle
   behavior: InlayHintBehavior
@@ -103,7 +102,7 @@ export interface InlayHintsProvider {
     ctx: {
       signal: AbortSignal
     }
-  ): Promise<InlayHintType[]>
+  ): Promise<InlayHintDecoration[]>
 }
 
 export type SelectionMenuItem = {
