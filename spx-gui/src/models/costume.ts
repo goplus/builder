@@ -4,7 +4,7 @@ import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
 import { Disposable } from '@/utils/disposable'
 import { File, type Files } from './common/file'
-import { type Size } from './common'
+import type { Size } from './common'
 import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import { Animation } from './animation'
@@ -63,7 +63,7 @@ export class Costume {
     this.bitmapResolution = bitmapResolution
   }
 
-  async getSize() {
+  private async getRawSize() {
     const d = new Disposable()
     const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
     return new Promise<Size>((resolve, reject) => {
@@ -71,8 +71,8 @@ export class Costume {
       img.src = imgUrl
       img.onload = () => {
         resolve({
-          width: img.width / this.bitmapResolution,
-          height: img.height / this.bitmapResolution
+          width: img.width,
+          height: img.height
         })
       }
       img.onerror = (e) => {
@@ -81,6 +81,14 @@ export class Costume {
     }).finally(() => {
       d.dispose()
     })
+  }
+
+  async getSize() {
+    const rawSize = await this.getRawSize()
+    return {
+      width: rawSize.width / this.bitmapResolution,
+      height: rawSize.height / this.bitmapResolution
+    }
   }
 
   constructor(name: string, file: File, inits?: CostumeInits) {
@@ -101,6 +109,19 @@ export class Costume {
       faceRight: this.faceRight,
       bitmapResolution: this.bitmapResolution
     })
+  }
+
+  /**
+   * Adjust position to fit current sprite
+   * TODO: review the relation between `autoFit` & `Costume.create` / `Sprite addCostume`
+   */
+  async autoFit() {
+    if (this.parent == null) throw new Error(`parent required to autoFit costume ${this.name}`)
+    const reference = this.parent.costumes[0]
+    if (reference == null || reference === this) return
+    const [referenceSize, size] = await Promise.all([reference.getRawSize(), this.getRawSize()])
+    this.setX(reference.x + (size.width - referenceSize.width) / 2)
+    this.setY(reference.y + (size.height - referenceSize.height) / 2)
   }
 
   /**
