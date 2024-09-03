@@ -430,9 +430,11 @@ export class EditorUI extends Disposable {
     const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
       'placeholder' in layer && 'onSubmit' in layer
 
-    const isMouseColumnInWordRange = (startColumn: number, endColumn: number) => {
-      if (!this.inlayHint) return false
-      const mouseColumn = this.inlayHint.mouseColumn
+    const isMouseColumnInWordRange = (
+      mouseColumn: number,
+      startColumn: number,
+      endColumn: number
+    ) => {
       return mouseColumn >= startColumn && mouseColumn <= endColumn
     }
 
@@ -444,7 +446,12 @@ export class EditorUI extends Disposable {
           if (word == null) return
 
           // this used for inlay hint, when mouse hover function param tag, hover provider should not work
-          if (!isMouseColumnInWordRange(word.startColumn, word.endColumn)) return
+          if (
+            this.inlayHint &&
+            !isMouseColumnInWordRange(this.inlayHint.mouseColumn, word.startColumn, word.endColumn)
+          ) {
+            return
+          }
 
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())

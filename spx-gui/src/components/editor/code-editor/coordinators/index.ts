@@ -177,7 +177,7 @@ export class Coordinator {
   ): Promise<InlayHintType[]> {
     const inlayHints = await this.compiler.getInlayHints([
       {
-        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
         content: model.getValue()
       }
     ])
