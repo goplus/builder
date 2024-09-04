@@ -9,7 +9,7 @@ import { untilNotNull } from '@/utils/utils'
 interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
-  getDiagnostics: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  getDiagnostics: (params: { in: { name: string; code: string } }) => AttentionHint[] | {}
 }
 
 export enum CodeEnum {

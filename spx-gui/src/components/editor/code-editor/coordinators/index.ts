@@ -244,23 +244,26 @@ export class Coordinator {
           content: model.getValue()
         }
       ])
-      .then((hints) => {
+      .then((attentionHints) => {
         setHints(
-          hints.map((hint) => {
-            const word = model.getWordAtPosition({ lineNumber: hint.line, column: hint.column })
+          attentionHints.map((attentionHint) => {
+            const word = model.getWordAtPosition({
+              lineNumber: attentionHint.line,
+              column: attentionHint.column
+            })
 
             return {
               level: AttentionHintLevelEnum.ERROR,
-              message: hint.message,
+              message: attentionHint.message,
               range: {
-                startColumn: hint.column,
-                startLineNumber: hint.line,
-                endColumn: word?.endColumn ?? hint.column,
-                endLineNumber: hint.line
+                startColumn: attentionHint.column,
+                startLineNumber: attentionHint.line,
+                endColumn: word?.endColumn ?? attentionHint.column,
+                endLineNumber: attentionHint.line
               },
               hoverContent: {
                 level: DocPreviewLevel.Error,
-                content: hint.message
+                content: attentionHint.message
               }
             }
           })
