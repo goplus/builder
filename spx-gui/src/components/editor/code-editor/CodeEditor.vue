@@ -70,8 +70,8 @@ defineExpose({
       @update:value="$emit('update:value', $event)"
     ></CodeEditorUI>
     <teleport to="body">
-      <!--  this element used for contain iframe, and load wasm in iframe which allow auto reload when wasm error  -->
-      <!--  set id for devtools better check, no other use  -->
+      <!-- load wasm in iframe allow auto reload when wasm error  -->
+      <!-- set id for devtool better check, and hide iframe in viewport by css  -->
       <iframe
         id="wasmContainer"
         ref="wasmContainer"

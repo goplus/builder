@@ -84,7 +84,6 @@ type Code = {
 
 export class Compiler extends Disposable {
   containerElement: HTMLIFrameElement | null = null
-  public isWasmInit = false
   private wasmHandlerRef = shallowRef<WasmHandler | null>()
 
   private initIframe() {
@@ -96,13 +95,11 @@ export class Compiler extends Disposable {
         .replace('../wasm_exec.js', compilerWasmExec)
     )
 
-    contentWindow.console.log = (...data) => {
-      this.handleConsoleLog(data)
-    }
+    contentWindow.console.log = this.handleConsoleLog.bind(this)
 
     this.addDisposer(() => {
-      this.containerElement?.remove()
-      this.isWasmInit = false
+      // this element is from vue ref, vue will auto remove element.
+      contentWindow.location.reload()
     })
   }
 
@@ -111,19 +108,14 @@ export class Compiler extends Disposable {
   }
 
   public setContainerElement(containerElement: HTMLIFrameElement) {
-    this.isWasmInit = false
     this.containerElement = containerElement
     this.initIframe()
   }
 
-  public handleConsoleLog(data: any[]) {
-    const [message] = data || []
+  public handleConsoleLog(message: any) {
     if (!message) return
     if (message.includes('goroutine ')) this.reloadIframe()
-    if (message === 'WASM Init') {
-      this.isWasmInit = true
-      this.handleWasmReady()
-    }
+    if (message === 'WASM Init') this.handleWasmReady()
   }
 
   private handleWasmReady() {
@@ -138,8 +130,6 @@ export class Compiler extends Disposable {
   }
 
   public async getInlayHints(codes: Code[]): Promise<Hint[]> {
-    if (!this.containerElement || !this.isWasmInit) return []
-
     const wasmHandler = await this.waitForWasmInit()
 
     const tempCodes = codes.map((code) => code.content).join('\r\n')
@@ -153,16 +143,12 @@ export class Compiler extends Disposable {
   }
 
   public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
-    if (!this.containerElement || !this.isWasmInit) return []
-
     await this.waitForWasmInit()
     // implement logic here
     return []
   }
 
   public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
-    if (!this.containerElement || !this.isWasmInit) return []
-
     await this.waitForWasmInit()
 
     // implement logic here
@@ -170,8 +156,6 @@ export class Compiler extends Disposable {
   }
 
   public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {
-    if (!this.containerElement || !this.isWasmInit) return null
-
     await this.waitForWasmInit()
 
     // implement logic here
