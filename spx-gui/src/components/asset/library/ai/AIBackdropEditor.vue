@@ -57,7 +57,7 @@ export interface KonvaNode<T extends Konva.Node = Konva.Node> {
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { backdrop2Asset, cachedConvertAssetData } from '@/models/common/asset'
+import { backdrop2Asset, cachedConvertAssetData, convertAIAssetToBackdrop } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import type { AssetType } from '@/apis/asset'
 import type { Backdrop } from '@/models/backdrop'
@@ -89,6 +89,18 @@ import ImageCrop from './ImageEditor/ImageCrop.vue'
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Backdrop>
 }>()
+
+const emit = defineEmits<{
+  contentReady: []
+}>()
+
+const contentReady = ref(props.asset[isContentReady])
+const generateContent = async () => {
+  await convertAIAssetToBackdrop(props.asset)
+  contentReady.value = true
+  emit('contentReady')
+}
+
 
 const backdrop = useAsyncComputed<Backdrop | undefined>(() => {
   if (!props.asset[isContentReady]) {
@@ -132,6 +144,9 @@ const updateMapSize = () => {
 }
 
 onMounted(() => {
+  if (!contentReady.value) {
+    generateContent()
+  }
   updateMapSize()
   window.addEventListener('resize', updateMapSize)
 })
