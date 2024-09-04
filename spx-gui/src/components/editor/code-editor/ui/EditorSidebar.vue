@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import ToolItem from './ToolItem.vue'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
@@ -30,11 +30,13 @@ watch(
 
     controller.value = new AbortController()
 
-    props.ui.requestInputAssistantProviderResolve({
-      signal: controller.value.signal
-    }).then(result => {
-      categories.value = result
-    })
+    props.ui
+      .requestInputAssistantProviderResolve({
+        signal: controller.value.signal
+      })
+      .then((result) => {
+        categories.value = result
+      })
   },
   { immediate: true }
 )

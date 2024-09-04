@@ -2,21 +2,22 @@ import { type editor as IEditor, type IDisposable, Range } from 'monaco-editor'
 
 export class InlayHint implements IDisposable {
   editor: IEditor.IStandaloneCodeEditor
-  styleElement: HTMLStyleElement
-  styleMap: Map<string, string>
+  styleElement: HTMLStyleElement = document.createElement('style')
+  styleMap: Map<string, string> = new Map()
   abortController = new AbortController()
+  eventDisposeHandler: Record<string, (() => void) | null> = {
+    mouseDown: null
+  }
   public textDecorationsCollection: IEditor.IEditorDecorationsCollection
   public mouseColumn = 0
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
-    this.styleElement = document.createElement('style')
-    this.styleMap = new Map()
     this.textDecorationsCollection = editor.createDecorationsCollection([])
     document.head.appendChild(this.styleElement)
-    this.editor.onMouseMove((e) => {
-      this.mouseColumn = e.target.mouseColumn
-    })
+    this.eventDisposeHandler.mouseDown = this.editor.onMouseMove((e) => {
+      this.mouseColumn = e.target.range?.startColumn || e.target.mouseColumn
+    }).dispose
 
     // todo: trigger completion menu
   }
@@ -97,6 +98,10 @@ export class InlayHint implements IDisposable {
   }
 
   dispose() {
+    for (const event in this.eventDisposeHandler) {
+      this.eventDisposeHandler[event]?.()
+    }
+
     this.textDecorationsCollection.clear()
     this.abortController.abort()
     this.styleElement.remove()
