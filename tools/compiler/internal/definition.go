@@ -40,37 +40,54 @@ func extractFuncDetails(fun *funcItem, infoList *typesutil.Info) {
 	fun.Name = exprString(token.NewFileSet(), fun.fnExpr)
 	fun.StartPos = int(fun.fnExpr.Pos())
 	fun.EndPos = int(fun.fnExpr.End())
-	if tv, ok := infoList.Types[fun.fnExpr]; ok {
-		if obj, ok := fun.fnExpr.(*ast.Ident); ok {
-			fun.Overload = obj.Name
-			fun.PkgName = infoList.Uses[obj].Pkg().Name()
-			fun.PkgPath = infoList.Uses[obj].Pkg().Path()
-		}
-		if selectExpr, ok := fun.fnExpr.(*ast.SelectorExpr); ok {
-			obj := selectExpr.Sel
-			fun.Overload = obj.Name
-			fun.PkgName = infoList.Uses[obj].Pkg().Name()
-			fun.PkgPath = infoList.Uses[obj].Pkg().Path()
-		}
-		signature := tv.Type.(*types.Signature)
-		parameters := make([]*funcParameter, signature.Params().Len())
-		for i := 0; i < signature.Params().Len(); i++ {
-			parameter := &funcParameter{
-				Name: signature.Params().At(i).Name(),
-				Type: signature.Params().At(i).Type().String(),
-				BasePos: BasePos{
-					StartPos: int(fun.argsExpr[i].Pos()),
-					EndPos:   int(fun.argsExpr[i].End())},
-			}
-			basicLit, ok := fun.argsExpr[i].(*ast.BasicLit)
-			if ok {
-				parameter.Value = basicLit.Value
-			}
-			parameters[i] = parameter
-		}
-		fun.Parameters = parameters
-		fun.Signature = signature.String()
+
+	tv, ok := infoList.Types[fun.fnExpr]
+	if !ok {
+		return
 	}
+
+	switch obj := fun.fnExpr.(type) {
+	case *ast.Ident:
+		fun.Overload = obj.Name
+		fun.PkgName = infoList.Uses[obj].Pkg().Name()
+		fun.PkgPath = infoList.Uses[obj].Pkg().Path()
+	case *ast.SelectorExpr:
+		fun.Overload = obj.Sel.Name
+		fun.PkgName = infoList.Uses[obj.Sel].Pkg().Name()
+		fun.PkgPath = infoList.Uses[obj.Sel].Pkg().Path()
+	}
+
+	signature := tv.Type.(*types.Signature)
+	fun.Parameters = extractParameters(signature, fun.argsExpr)
+	fun.Signature = signature.String()
+}
+
+func extractParameters(signature *types.Signature, argsExpr []ast.Expr) []*funcParameter {
+	length := min(len(argsExpr), signature.Params().Len())
+	params := make([]*funcParameter, signature.Params().Len())
+
+	for i := 0; i < length; i++ {
+		param := signature.Params().At(i)
+		paramName := param.Name()
+		paramType := param.Type().String()
+
+		basicLit, ok := argsExpr[i].(*ast.BasicLit)
+		paramValue := ""
+		if ok {
+			paramValue = basicLit.Value
+		}
+
+		params[i] = &funcParameter{
+			Name:  paramName,
+			Type:  paramType,
+			Value: paramValue,
+			BasePos: BasePos{
+				StartPos: int(argsExpr[i].Pos()),
+				EndPos:   int(argsExpr[i].End()),
+			},
+		}
+	}
+	return params
 }
 
 func (d definitions) Position(fset *token.FileSet) {
@@ -165,29 +182,33 @@ func createOverloadedUsages(overloads []types.Object) []usage {
 
 // createSignatureUsage creates a usage for a function signature.
 func createSignatureUsage(obj types.Object, signature *types.Signature) usage {
-	use := usage{
-		Declaration: obj.String(),
-		Type:        "func",
-	}
-	name, idx := convertOverloadToSimple(obj.Name())
-	use.UsageID = strconv.Itoa(idx)
-	var params []param
-	var signList []string
-	var sampleList []string
+	name, usageID := convertOverloadToSimple(obj.Name())
+
+	var signList, sampleList []string
+	params := make([]param, signature.Params().Len())
+
 	for i := 0; i < signature.Params().Len(); i++ {
-		paramName := signature.Params().At(i).Name()
-		paramType := signature.Params().At(i).Type().String()
-		params = append(params, param{
+		p := signature.Params().At(i)
+		paramName := p.Name()
+		paramType := p.Type().String()
+
+		params[i] = param{
 			Name: paramName,
 			Type: paramType,
-		})
+		}
+
 		signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
 		sampleList = append(sampleList, paramName)
 	}
-	use.Params = params
-	use.Sample = strings.Join(sampleList, " ")
-	use.InsertText = name + " " + strings.Join(signList, ", ")
-	return use
+
+	return usage{
+		UsageID:     strconv.Itoa(usageID),
+		Declaration: obj.String(),
+		Sample:      strings.Join(sampleList, " "),
+		InsertText:  name + " " + strings.Join(signList, ", "),
+		Params:      params,
+		Type:        "func",
+	}
 }
 
 func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
@@ -197,4 +218,82 @@ func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
 		}
 	}
 	return 0, 0
+}
+
+func tokenDetail(pkg *types.Package, token string) definitionItem {
+	names := pkg.Scope().Names()
+
+	definitionItem := definitionItem{
+		PkgName: pkg.Name(),
+		PkgPath: pkg.Path(),
+		Name:    token,
+	}
+
+	for _, name := range names {
+		obj := pkg.Scope().Lookup(name)
+		uses := extractUsages(obj, token)
+		if uses == nil {
+			continue
+		}
+		definitionItem.Usages = uses
+	}
+
+	return definitionItem
+}
+
+func extractUsages(obj types.Object, token string) []usage {
+	named, ok := obj.Type().(*types.Named)
+	if !ok {
+		return nil
+	}
+
+	var uses []usage
+
+	for i := 0; i < named.NumMethods(); i++ {
+		method := named.Method(i)
+
+		simpleName, idx := convertOverloadToSimple(method.Name())
+
+		if simpleName != token {
+			continue
+		}
+
+		signature, ok := method.Type().(*types.Signature)
+		if !ok {
+			return nil
+		}
+
+		signList, sampleList, params := extractParams(signature)
+
+		use := usage{
+			UsageID:     strconv.Itoa(idx),
+			Declaration: simpleName,
+			Sample:      strings.Join(sampleList, " "),
+			InsertText:  simpleName + " " + strings.Join(signList, ", "),
+			Params:      params,
+			Type:        "func",
+		}
+		uses = append(uses, use)
+	}
+
+	return uses
+}
+
+func extractParams(signature *types.Signature) (signList []string, sampleList []string, params []param) {
+	params = make([]param, signature.Params().Len())
+
+	for i := 0; i < signature.Params().Len(); i++ {
+		p := signature.Params().At(i)
+		paramName := p.Name()
+		paramType := p.Type().String()
+
+		params[i] = param{
+			Name: paramName,
+			Type: paramType,
+		}
+
+		signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
+		sampleList = append(sampleList, paramName)
+	}
+	return
 }

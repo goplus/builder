@@ -18,6 +18,7 @@ var jsFuncList = []jsFuncBody{
 	getDiagnostics,
 	getDefinition,
 	getCompletionItems,
+	getTokenDetail,
 }
 
 // This register can auto register any function form jsFuncList.
@@ -65,4 +66,9 @@ func getCompletionItems(this js.Value, p []js.Value) interface{} {
 	fileCode := p[1].String()
 	cursorLine := p[2].Int()
 	return internal.NewReply(internal.GetCompletions(fileName, fileCode, cursorLine))
+}
+
+func getTokenDetail(this js.Value, p []js.Value) interface{} {
+	tokenName := p[0].String()
+	return internal.NewReply(internal.GetTokenDetail(tokenName))
 }
