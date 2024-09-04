@@ -419,8 +419,8 @@ export class EditorUI extends Disposable {
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
-                  insertText: item.insertText,
                   insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                  insertText: item.insertText,
                   detail: isDocPreview(item.preview) ? item.preview.content : '',
                   range: {
                     startLineNumber: position.lineNumber,
