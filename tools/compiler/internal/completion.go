@@ -160,14 +160,16 @@ func (list *completionList) Contains(text string) bool {
 	return false
 }
 
-func getScopesItems(fileName, fileCode string, cursor int) (completionList, error) {
+func getScopesItems(fileName string, fileMap map[string]string, line, column int) (completionList, error) {
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
+	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
 		fmt.Println("Compiler error: ", err)
 	}
+	file := pkg[PKG].Files[fileName]
 
-	cursorPos := fset.File(file.Pos()).Pos(cursor)
+	cursorOffset := int(fset.File(file.Pos()).LineStart(line)) + column - 1
+	cursorPos := token.Pos(cursorOffset)
 
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)

@@ -50,6 +50,10 @@ onStart => {
 
     </input>
 
+    <input type="number" id="column" value="8" >
+
+    </input>
+
     <input type="text" id="token" value="step"/>
 
     <div>
@@ -173,7 +177,8 @@ onStart => {
                 in: {
                     name: "test.spx",
                     code: document.getElementById("codeInput").value,
-                    line: Number(document.getElementById("line").value)
+                    line: Number(document.getElementById("line").value),
+                    column: Number(document.getElementById("column").value)
                 }
             })
             console.log(res)
