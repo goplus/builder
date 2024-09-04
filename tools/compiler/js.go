@@ -70,6 +70,6 @@ func getCompletionItems(this js.Value, p []js.Value) interface{} {
 
 func getTokenDetail(this js.Value, p []js.Value) interface{} {
 	tokenName := p[0].String()
-	pkgPath := p[0].String()
+	pkgPath := p[1].String()
 	return internal.NewReply(internal.GetTokenDetail(tokenName, pkgPath))
 }
