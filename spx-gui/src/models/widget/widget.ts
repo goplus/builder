@@ -5,14 +5,15 @@ import type { Stage } from '../stage'
 import { nanoid } from 'nanoid'
 
 export type BaseWidgetInits = {
+  id?: string
   x?: number
   y?: number
   size?: number
   visible?: boolean
-  builder_id?: string
 }
 
-export type BaseRawWidgetConfig = BaseWidgetInits & {
+export type BaseRawWidgetConfig = Omit<BaseWidgetInits, 'id'> & {
+  builder_id?: string
   name?: string
 }
 
@@ -58,13 +59,13 @@ export class BaseWidget extends Disposable {
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 1
     this.visible = inits?.visible ?? false
-    this.id = inits?.builder_id ?? nanoid()
+    this.id = inits?.id ?? nanoid()
     return reactive(this) as this
   }
 
-  static load({ name, ...inits }: BaseRawWidgetConfig) {
+  static load({ builder_id: id, name, ...inits }: BaseRawWidgetConfig) {
     if (name == null) throw new Error('name expected for widget')
-    return new BaseWidget(name, inits)
+    return new BaseWidget(name, { ...inits, id })
   }
 
   export(): BaseRawWidgetConfig {

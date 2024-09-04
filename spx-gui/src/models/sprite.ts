@@ -41,24 +41,27 @@ export type Pivot = {
 }
 
 export type SpriteInits = {
-  builder_id?: string
+  id?: string
   heading?: number
   x?: number
   y?: number
   size?: number
   rotationStyle?: string
   costumeIndex?: number
-  currentCostumeIndex?: number // For compatibility
   visible?: boolean
   isDraggable?: boolean
-  defaultAnimation?: string
-  animBindings?: Record<string, string | undefined>
+  animationBindings?: Record<State, string | undefined>
   pivot?: Pivot
 }
 
-export type RawSpriteConfig = SpriteInits & {
+export type RawSpriteConfig = Omit<SpriteInits, 'id' | 'animationBindings'> & {
+  builder_id?: string
+  /** Same as costumeIndex, for compatibility only */
+  currentCostumeIndex?: number
   costumes?: RawCostumeConfig[]
   fAnimations?: Record<string, RawAnimationConfig | undefined>
+  defaultAnimation?: string
+  animBindings?: Record<string, string | undefined>
   // Not supported by builder:
   costumeSet?: unknown
   costumeMPSet?: unknown
@@ -220,8 +223,7 @@ export class Sprite extends Disposable {
     this.addDisposer(() => {
       this.animations.splice(0).forEach((a) => a.dispose())
     })
-    // This should be set after the animations are created
-    this.animationBindings = {
+    this.animationBindings = inits?.animationBindings ?? {
       [State.default]: undefined,
       [State.die]: undefined,
       [State.step]: undefined,
@@ -233,11 +235,11 @@ export class Sprite extends Disposable {
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 0
     this.rotationStyle = getRotationStyle(inits?.rotationStyle)
-    this.costumeIndex = inits?.costumeIndex ?? inits?.currentCostumeIndex ?? 0
+    this.costumeIndex = inits?.costumeIndex ?? 0
     this.visible = inits?.visible ?? false
     this.isDraggable = inits?.isDraggable ?? false
     this.pivot = inits?.pivot ?? { x: 0, y: 0 }
-    this.id = inits?.builder_id ?? nanoid()
+    this.id = inits?.id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -293,21 +295,25 @@ export class Sprite extends Disposable {
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
     const {
+      builder_id: id,
+      currentCostumeIndex,
       costumes: costumeConfigs,
       costumeSet,
       costumeMPSet,
       fAnimations: animationConfigs,
       mAnimations,
       tAnimations,
+      defaultAnimation,
+      animBindings,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
     const codeFile = files[getSpriteCodeFileName(name)]
     const code = codeFile != null ? await toText(codeFile) : ''
-    const sprite = new Sprite(name, code, inits)
+
+    const costumes: Costume[] = []
     if (costumeConfigs != null) {
-      const costumes = (costumeConfigs ?? []).map((c) => Costume.load(c, files, pathPrefix))
-      for (const costume of costumes) {
-        sprite.addCostume(costume)
+      for (const config of costumeConfigs) {
+        costumes.push(Costume.load(config, files, pathPrefix))
       }
     } else {
       if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
@@ -315,25 +321,41 @@ export class Sprite extends Disposable {
         console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
       else console.warn(`no costume found for sprite: ${name}`)
     }
+
+    const animationCostumeSet = new Set<string>()
+    const animations: Animation[] = []
     if (animationConfigs != null) {
-      const animations = Object.entries(animationConfigs).map(([name, config]) =>
-        Animation.load(name, config!, sprite, sounds)
-      )
-      const animationNameToId = (name?: string) =>
-        name && animations.find((a) => a.name === name)?.id
-      sprite.animationBindings = {
-        [State.default]: animationNameToId(inits?.defaultAnimation),
-        [State.die]: animationNameToId(inits?.animBindings?.[State.die]),
-        [State.step]: animationNameToId(inits?.animBindings?.[State.step]),
-        [State.turn]: animationNameToId(inits?.animBindings?.[State.turn]),
-        [State.glide]: animationNameToId(inits?.animBindings?.[State.glide])
-      }
-      for (const animation of animations) {
-        sprite.addAnimation(animation)
+      for (const [name, config] of Object.entries(animationConfigs)) {
+        const [animation, animationCostumes] = Animation.load(name, config!, costumes, sounds)
+        animations.push(animation)
+        for (const c of animationCostumes) animationCostumeSet.add(c)
       }
     }
     if (mAnimations != null) console.warn(`unsupported field: mAnimations for sprite ${name}`)
     if (tAnimations != null) console.warn(`unsupported field: tAnimations for sprite ${name}`)
+
+    const animationNameToId = (name?: string) => name && animations.find((a) => a.name === name)?.id
+
+    const sprite = new Sprite(name, code, {
+      ...inits,
+      id,
+      costumeIndex: inits.costumeIndex ?? currentCostumeIndex,
+      animationBindings: {
+        [State.default]: animationNameToId(defaultAnimation),
+        [State.die]: animationNameToId(animBindings?.[State.die]),
+        [State.step]: animationNameToId(animBindings?.[State.step]),
+        [State.turn]: animationNameToId(animBindings?.[State.turn]),
+        [State.glide]: animationNameToId(animBindings?.[State.glide])
+      }
+    })
+    for (const costume of costumes) {
+      // If this costume is included by any animation, exclude it from sprite's costume list
+      if (animationCostumeSet.has(costume.name)) continue
+      sprite.addCostume(costume)
+    }
+    for (const animation of animations) {
+      sprite.addAnimation(animation)
+    }
     return sprite
   }
 

@@ -1,24 +1,25 @@
 import { reactive } from 'vue'
+import { nanoid } from 'nanoid'
 
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
 import { Disposable } from '@/utils/disposable'
 import { File, type Files } from './common/file'
 import type { Size } from './common'
-import type { Sprite } from './sprite'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
-import { Animation } from './animation'
-import { nanoid } from 'nanoid'
+import type { Sprite } from './sprite'
+import type { Animation } from './animation'
 
 export type CostumeInits = {
-  builder_id?: string
+  id?: string
   x?: number
   y?: number
   faceRight?: number
   bitmapResolution?: number
 }
 
-export type RawCostumeConfig = CostumeInits & {
+export type RawCostumeConfig = Omit<CostumeInits, 'id'> & {
+  builder_id?: string
   name?: string
   path?: string
 }
@@ -98,7 +99,7 @@ export class Costume {
     this.y = inits?.y ?? 0
     this.faceRight = inits?.faceRight ?? 0
     this.bitmapResolution = inits?.bitmapResolution ?? 1
-    this.id = inits?.builder_id ?? nanoid()
+    this.id = inits?.id ?? nanoid()
     return reactive(this) as this
   }
 
@@ -137,7 +138,7 @@ export class Costume {
   }
 
   static load(
-    { name, path, ...inits }: RawCostumeConfig,
+    { builder_id: id, name, path, ...inits }: RawCostumeConfig,
     files: Files,
     /** Path of directory which contains the sprite's config file */
     basePath: string
@@ -146,19 +147,20 @@ export class Costume {
     if (path == null) throw new Error(`path expected for costume ${name}`)
     const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
-    return new Costume(name, file, inits)
+    return new Costume(name, file, { ...inits, id })
   }
 
   export({
     basePath,
-    includeId = true
+    includeId = true,
+    namePrefix = ''
   }: {
     /** Path of directory which contains the sprite's config file */
     basePath: string
     includeId?: boolean
+    namePrefix?: string
   }): [RawCostumeConfig, Files] {
-    const name =
-      this.parent instanceof Animation ? this.parent.withCostumeNamePrefix(this.name) : this.name
+    const name = namePrefix + this.name
     const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {
       x: this.x,
