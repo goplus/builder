@@ -247,18 +247,20 @@ export class Coordinator {
       .then((hints) => {
         setHints(
           hints.map((hint) => {
+            const word = model.getWordAtPosition({ lineNumber: hint.line, column: hint.column })
+
             return {
               level: AttentionHintLevelEnum.ERROR,
               message: hint.message,
               range: {
                 startColumn: hint.column,
                 startLineNumber: hint.line,
-                endColumn: hint.column,
+                endColumn: word?.endColumn ?? hint.column,
                 endLineNumber: hint.line
               },
               hoverContent: {
                 level: DocPreviewLevel.Error,
-                content: ''
+                content: hint.message
               }
             }
           })
