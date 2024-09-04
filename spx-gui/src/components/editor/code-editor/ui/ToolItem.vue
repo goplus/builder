@@ -1,7 +1,10 @@
 <template>
   <UITooltip placement="bottom-start" :raw="true" :show-arrow="false">
     <!-- this is temp type force transformed, when completion hover preview merged, this will have common function and here will be removed -->
-    <DocumentPreview :content="(inputItem.desc as DocPreview).content"></DocumentPreview>
+    <DocumentPreview
+      v-if="inputItem.desc.type === 'doc'"
+      :content="inputItem.desc.layer.content"
+    ></DocumentPreview>
     <template #trigger>
       <UITagButton class="button" @click="emit('useSnippet', inputItem.insertText)">
         <!-- eslint-disable vue/no-v-html -->

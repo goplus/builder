@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
-import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
+import { type CompletionMenu } from './completion-menu'
 import EditorMenu from '../../EditorMenu.vue'
-import { determineClosestEdge, isDocPreview, isElementInViewport } from '../../common'
-import type { Icon } from '@/components/editor/code-editor/EditorUI'
+import { determineClosestEdge, isElementInViewport } from '../../common'
+import { EditorUI, type Icon } from '@/components/editor/code-editor/EditorUI'
 import DocumentPreview from '@/components/editor/code-editor/ui/features/hover-preview/DocumentPreview.vue'
+import { KeyCode } from 'monaco-editor'
+import { debounce } from '@/utils/utils'
 
 interface CompletionMenuItem {
   key: number
@@ -20,6 +22,7 @@ interface CompletionMenuItem {
 
 const props = defineProps<{
   completionMenu: CompletionMenu
+  ui: EditorUI
 }>()
 const completionMenuState = props.completionMenu.completionMenuState
 // for using generic vue component can't use `InstanceType<type of someGenericComponent>` it will throw error. issue: https://github.com/vuejs/language-tools/issues/3206
@@ -38,35 +41,93 @@ const itemHeight = computed(
     8
 )
 const menuItems = computed<CompletionMenuItem[]>(() =>
-  props.completionMenu.completionMenuState.suggestions.map((item, i) => ({
-    key: i,
-    icon: item.icon,
-    label: item.label,
-    // make menu icon slightly larger than fontSize for better display
-    iconSize: completionMenuState.fontSize * 1.1,
-    active: completionMenuState.activeIdx === i,
-    // `matches` is not required in `EditorMenu.vue`, but required in `CompletionMenuComponent.vue`.
-    // `EditorMenu.vue` can pass any data to default slot if you set, so here we need pass `matches`
-    matches: resolveSuggestMatches2Highlight(item.label, item.matches)
-  }))
+  props.completionMenu.completionMenuState.suggestions
+    .filter(
+      (suggest) =>
+        props.completionMenu.getMatchSegments(completionMenuState.word, suggest.label).length
+    )
+    .map((item, i) => ({
+      key: i,
+      icon: item.icon,
+      label: item.label,
+      // make menu icon slightly larger than fontSize for better display
+      iconSize: completionMenuState.fontSize * 1.1,
+      active: completionMenuState.activeIdx === i,
+      // `matches` is not required in `EditorMenu.vue`, but required in `CompletionMenuComponent.vue`.
+      // `EditorMenu.vue` can pass any data to default slot if you set, so here we need pass `matches`
+      matches: [
+        {
+          highlighted: false,
+          text: item.label
+        }
+      ]
+    }))
 )
 
 const docPreviewProps = computed<InstanceType<typeof DocumentPreview>['$props'] | void>(() => {
   const _currentCompletionItem = completionMenuState.suggestions[completionMenuState.activeIdx]
   // here may be undefined if you directly get member from an array.
   if (!_currentCompletionItem) return
-  const preview = props.completionMenu.completionItemCache.getOneByCompletionItemProps({
-    label: _currentCompletionItem.label,
-    insertText: _currentCompletionItem.insertText
-  })?.preview
-  if (!preview || !isDocPreview(preview)) return
-  return preview
+  return
 })
 
 watchEffect(() => {
   const completionMenuElement = editorMenuRef.value?.editorMenuContainerElement
   if (!completionMenuElement) return
   props.completionMenu.completionMenuState.completionMenuElement = completionMenuElement
+})
+
+const closeCompletionMenu = () => {
+  props.completionMenu.hideCompletionMenu()
+  props.completionMenu.refreshAbortController()
+  props.completionMenu.resetSuggestions()
+}
+
+const shouldTriggerCompletionMenu = (char: string, code: KeyCode) => {
+  const triggerChars = ['.', '_']
+  if (triggerChars.includes(char)) return true
+  if (code >= KeyCode.KeyA && code <= KeyCode.KeyZ) return true
+}
+
+const { dispose: onKeyUpDispose } = props.completionMenu.editor.onKeyUp(
+  debounce((e) => {
+    const code = e.keyCode
+    const model = props.completionMenu.editor.getModel()
+    const position = props.completionMenu.editor.getPosition()
+    if (!model || !position) return
+
+    const word = model.getWordAtPosition(position)
+    if (!word || !word.word) return closeCompletionMenu()
+    if (code === KeyCode.Escape) return closeCompletionMenu()
+    if (shouldTriggerCompletionMenu(e.code, code)) {
+      props.completionMenu.refreshAbortController()
+      props.completionMenu.resetSuggestions()
+      completionMenuState.word = word.word
+
+      props.ui.requestCompletionProviderResolve(
+        model,
+        {
+          position,
+          unitWord: word.word,
+          signal: props.completionMenu.abortController.signal
+        },
+        (completionItems) => {
+          props.completionMenu.completionMenuState.suggestions.push(...completionItems)
+          console.log(
+            '=>(CompletionMenuComponent.vue:91) props.completionMenu.completionMenuState.suggestions.length',
+            props.completionMenu.completionMenuState.suggestions.length
+          )
+          props.completionMenu.showCompletionMenu()
+          props.completionMenu.updateCompletionMenuPosition()
+        }
+      )
+    }
+  }),
+  100
+)
+
+onUnmounted(() => {
+  onKeyUpDispose()
 })
 
 function handleActiveMenuItem(menuItemElement: HTMLLIElement) {

@@ -9,14 +9,15 @@ import { untilNotNull } from '@/utils/utils'
 interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  getCompletionItems: (params: {
+    in: { name: string; code: string; line: number }
+  }) => SuggestionItem[] | {}
 }
 
 export enum CodeEnum {
   Sprite,
   Stage
 }
-
-enum CompletionItemEnum {}
 
 // generated from wasm `console.log`
 export interface Hint {
@@ -42,8 +43,8 @@ type AttentionHint = {
   message: string
 }
 
-type CompletionItem = {
-  type: CompletionItemEnum
+export type SuggestionItem = {
+  type: string
   label: string
   insertText: string
 }
@@ -148,11 +149,18 @@ export class Compiler extends Disposable {
     return []
   }
 
-  public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
-    await this.waitForWasmInit()
-
-    // implement logic here
-    return []
+  /* todo: this is for single file. refactor it to multi files */
+  public async getCompletionItems(codes: Code[], offset: number): Promise<SuggestionItem[]> {
+    const wasmHandler = await this.waitForWasmInit()
+    const tempCodes = codes.map((code) => code.content).join('\r\n')
+    const res = wasmHandler.getCompletionItems({
+      in: {
+        name: 'test.spx',
+        code: tempCodes,
+        line: offset
+      }
+    })
+    return Array.isArray(res) ? res : []
   }
 
   public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {

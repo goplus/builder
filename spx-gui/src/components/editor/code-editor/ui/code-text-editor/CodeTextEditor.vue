@@ -9,6 +9,7 @@
     ></div>
     <CompletionMenuComponent
       v-if="completionMenu"
+      :ui="ui"
       :completion-menu="completionMenu"
     ></CompletionMenuComponent>
     <HoverPreviewComponent

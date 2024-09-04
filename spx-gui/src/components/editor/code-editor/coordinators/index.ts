@@ -1,14 +1,15 @@
 import {
   type CompletionItem,
+  type DocPreview,
   DocPreviewLevel,
   type EditorUI,
   Icon,
+  type InlayHintDecoration,
   type InputItem,
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel,
-  type InlayHintDecoration
+  type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { CodeEnum, Compiler } from '../compiler'
@@ -22,15 +23,16 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
+  getAllTools,
+  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
-  getAllTools,
-  getVariableCategory,
-  ToolType,
-  type ToolCategory
+  type ToolCategory,
+  ToolType
 } from '@/components/editor/code-editor/tools'
+import { suggestType2Icon } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
 type JumpPosition = {
   line: number
@@ -62,7 +64,7 @@ export class Coordinator {
     ui.registerCompletionProvider({
       // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
       // and throw undefined error
-      provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
+      provideDynamicCompletionItems: this.implementsCompletionProvider.bind(this)
     })
 
     ui.registerHoverProvider({
@@ -82,16 +84,45 @@ export class Coordinator {
     })
   }
 
-  implementsPreDefinedCompletionProvider(
-    _model: TextModel,
-    _ctx: {
+  implementsCompletionProvider(
+    model: TextModel,
+    ctx: {
       position: Position
       unitWord: string
       signal: AbortSignal
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    addItems(getCompletionItems(this.ui.i18n, this.project))
+    this.compiler
+      .getCompletionItems(
+        [
+          {
+            type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
+            content: model.getValue()
+          }
+        ],
+        model.getOffsetAt(ctx.position)
+      )
+      .then((suggestions) => {
+        if (ctx.signal.aborted) return
+        addItems(
+          suggestions.map((suggest): CompletionItem => {
+            return {
+              desc: '',
+              icon: suggestType2Icon(suggest.type),
+              insertText: suggest.insertText,
+              label: suggest.label,
+              preview: {
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsPreDefinedHoverProvider(
@@ -112,26 +143,32 @@ export class Coordinator {
     }
 
     return contents.map((doc) => ({
-      level: DocPreviewLevel.Normal,
-      content: doc.content,
-      recommendAction: {
-        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'Still in confusion? Ask for help' }),
-        activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick: () => {
-          // TODO: add some logic code here
-        }
-      },
-      moreActions: [
-        {
-          icon: Icon.Document,
-          label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick: () => {
-            const detailDoc = this.docAbility.getDetailDoc(doc.token)
-            if (!detailDoc) return
-            this.ui.invokeDocumentDetail(detailDoc.content)
+      type: 'doc',
+      layer: {
+        level: DocPreviewLevel.Normal,
+        content: doc.content,
+        recommendAction: {
+          label: this.ui.i18n.t({
+            zh: '还有疑惑？场外求助',
+            en: 'Still in confusion? Ask for help'
+          }),
+          activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+          onActiveLabelClick: () => {
+            // TODO: add some logic code here
           }
-        }
-      ]
+        },
+        moreActions: [
+          {
+            icon: Icon.Document,
+            label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+            onClick: () => {
+              const detailDoc = this.docAbility.getDetailDoc(doc.token)
+              if (!detailDoc) return
+              this.ui.invokeDocumentDetail(detailDoc.content)
+            }
+          }
+        ]
+      }
     }))
   }
 
@@ -241,9 +278,12 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
-      }
+        type: 'doc',
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
+      } as unknown as { type: 'doc'; layer: DocPreview }
     })),
     ...typeKeywords.map((typeKeyword) => ({
       label: typeKeyword,
@@ -251,9 +291,12 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
-      }
+        type: 'doc',
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
+      } as unknown as { type: 'doc'; layer: DocPreview }
     }))
   ]
   for (const tool of getAllTools(project)) {
@@ -271,27 +314,30 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
         insertText: tool.usage.insertText,
         desc: i18n.t(tool.desc),
         preview: {
-          level: DocPreviewLevel.Normal,
-          content: i18n.t(tool.desc) + '\n```gop\n' + tool.usage.sample + '\n```',
-          recommendAction: {
-            label: i18n.t({
-              zh: '还有疑惑？场外求助',
-              en: 'Still in confusion? Ask for help'
-            }),
-            activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-            onActiveLabelClick: () => {
-              // TODO: add some logic code here
-            }
-          },
-          moreActions: [
-            {
-              icon: Icon.Document,
-              label: i18n.t({ zh: '查看文档', en: 'Document' }),
-              onClick: () => {
+          type: 'doc',
+          layer: {
+            level: DocPreviewLevel.Normal,
+            content: i18n.t(tool.desc) + '\n```gop\n' + tool.usage.sample + '\n```',
+            recommendAction: {
+              label: i18n.t({
+                zh: '还有疑惑？场外求助',
+                en: 'Still in confusion? Ask for help'
+              }),
+              activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+              onActiveLabelClick: () => {
                 // TODO: add some logic code here
               }
-            }
-          ]
+            },
+            moreActions: [
+              {
+                icon: Icon.Document,
+                label: i18n.t({ zh: '查看文档', en: 'Document' }),
+                onClick: () => {
+                  // TODO: add some logic code here
+                }
+              }
+            ]
+          }
         }
       })
       continue
@@ -302,31 +348,34 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
         insertText: usage.insertText,
         desc: i18n.t(tool.desc),
         preview: {
-          level: DocPreviewLevel.Normal,
-          content:
-            [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ') +
-            '\n```gop\n' +
-            usage.sample +
-            '\n```',
-          recommendAction: {
-            label: i18n.t({
-              zh: '还有疑惑？场外求助',
-              en: 'Still in confusion? Ask for help'
-            }),
-            activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-            onActiveLabelClick: () => {
-              // TODO: add some logic code here
-            }
-          },
-          moreActions: [
-            {
-              icon: Icon.Document,
-              label: i18n.t({ zh: '查看文档', en: 'Document' }),
-              onClick: () => {
+          type: 'doc',
+          layer: {
+            level: DocPreviewLevel.Normal,
+            content:
+              [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ') +
+              '\n```gop\n' +
+              usage.sample +
+              '\n```',
+            recommendAction: {
+              label: i18n.t({
+                zh: '还有疑惑？场外求助',
+                en: 'Still in confusion? Ask for help'
+              }),
+              activeLabel: i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+              onActiveLabelClick: () => {
                 // TODO: add some logic code here
               }
-            }
-          ]
+            },
+            moreActions: [
+              {
+                icon: Icon.Document,
+                label: i18n.t({ zh: '查看文档', en: 'Document' }),
+                onClick: () => {
+                  // TODO: add some logic code here
+                }
+              }
+            ]
+          }
         }
       })
     }
@@ -372,8 +421,11 @@ function toolCategory2InputItemCategory(
               icon: getCompletionItemKind(tool.type),
               label: tool.keyword,
               desc: {
-                level: DocPreviewLevel.Normal,
-                content: ''
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
               },
               sample: sample,
               insertText: tool.usage.insertText
@@ -390,8 +442,11 @@ function toolCategory2InputItemCategory(
               icon: getCompletionItemKind(tool.type),
               label: tool.keyword,
               desc: {
-                level: DocPreviewLevel.Normal,
-                content: ''
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
               },
               sample: sample,
               insertText: usage.insertText

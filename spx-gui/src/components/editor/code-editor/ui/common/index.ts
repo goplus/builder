@@ -64,20 +64,6 @@ export function icon2SVG(icon: Icon): string {
       return IconEffect
   }
 }
-/** quick determine preview object belongs DocPreview */
-export function isDocPreview(layer: LayerContent): layer is DocPreview {
-  return 'content' in layer && 'level' in layer
-}
-
-/** quick determine preview object belongs AudioPlayer */
-export function isAudioPlayer(layer: LayerContent): layer is AudioPlayer {
-  return 'src' in layer && 'duration' in layer
-}
-
-/** quick determine preview object belongs RenamePreview */
-export function isRenamePreview(layer: LayerContent): layer is RenamePreview {
-  return 'placeholder' in layer && 'onSubmit' in layer
-}
 
 /** Determine whether checkElement is closer to the top or bottom of containerElement */
 export function determineClosestEdge(
@@ -101,7 +87,11 @@ export function isElementInViewport(containerElement: Element, checkElement: Ele
 }
 
 /** normalize icon size to static size, like npm package XIcon component */
-export function normalizeIconSize(targetElement: Element | null, size: number, height = size): undefined {
+export function normalizeIconSize(
+  targetElement: Element | null,
+  size: number,
+  height = size
+): undefined {
   const innerSvgElement = targetElement?.firstElementChild
   if (!innerSvgElement) return
   innerSvgElement.setAttribute('height', String(height))

@@ -2,24 +2,15 @@
 // whole type need from monaco-editor repo to generate new type definition, update all private type to public type to each file for every class.
 // todo: generate monaco.all.ts type from https://github.com/microsoft/vscode
 
-import {
-  editor as IEditor,
-  editor,
-  type IDisposable,
-  type IPosition,
-  languages,
-  Range
-} from 'monaco-editor'
-import { reactive, type UnwrapNestedRefs } from 'vue'
-import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
-import { createMatches, type IMatch } from '../../common'
-import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
-import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
-import EditorOption = editor.EditorOption
+import { editor as IEditor, editor, type IPosition, languages, Range } from 'monaco-editor'
+import { reactive } from 'vue'
+import { type FuzzyScore, type IMatch } from '../../common'
+import { type CompletionItem, Icon } from '@/components/editor/code-editor/EditorUI'
+import { Disposable } from '@/utils/disposable'
 
 export interface CompletionMenuState {
   visible: boolean
-  suggestions: CompletionMenuFeatureItem[]
+  suggestions: CompletionItem[]
   activeIdx: number
   position: {
     top: number
@@ -31,10 +22,21 @@ export interface CompletionMenuState {
   completionMenuElement?: HTMLElement
 }
 
-export class CompletionMenu implements IDisposable {
+export class CompletionMenu extends Disposable {
   public editor: IEditor.IStandaloneCodeEditor
-  public completionMenuState: UnwrapNestedRefs<CompletionMenuState>
-  public completionItemCache = new CompletionItemCache()
+  public completionMenuState: CompletionMenuState = reactive({
+    visible: false,
+    suggestions: [],
+    activeIdx: 0,
+    position: {
+      top: 0,
+      left: 0
+    },
+    fontSize: 14,
+    lineHeight: 19,
+    word: ''
+  })
+  public abortController = new AbortController()
   private suggestController: any
   private suggestControllerWidget: any
   private readonly TabSize: number
@@ -42,69 +44,28 @@ export class CompletionMenu implements IDisposable {
   private viewZoneChangeAccessorState: {
     viewZoneId: string | null
     codePreviewElement: HTMLElement | null
+  } = {
+    viewZoneId: null,
+    // no need to remove this element by self, because it will be removed by monaco editor.
+    codePreviewElement: null
   }
-  private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
+    super()
     this.editor = editor
     this.suggestController = editor.getContribution('editor.contrib.suggestController')
     if (!this.suggestController) throw new Error("can't find suggestController")
     this.suggestControllerWidget = this.suggestController.widget.value
 
-    this.completionMenuState = reactive({
-      visible: false,
-      suggestions: [],
-      activeIdx: 0,
-      position: {
-        top: 0,
-        left: 0
-      },
-      fontSize: 14,
-      lineHeight: 19,
-      word: ''
-    })
-
     this.TabSize = editor.getModel()?.getOptions().tabSize || 4
     this.indentSymbolBySpace = ' '.repeat(this.TabSize)
 
-    this.viewZoneChangeAccessorState = {
-      viewZoneId: null,
-      // no need to remove this element by self, because it will be removed by monaco editor.
-      codePreviewElement: null
-    }
     this.completionMenuItemPreviewDecorationsCollection = editor.createDecorationsCollection([])
 
-    this.initEventListeners()
-  }
-
-  private initEventListeners() {
-    this.suggestControllerWidget.onDidHide(() => {
-      this.completionMenuState.visible = false
-      this.completionMenuState.suggestions.length = 0
-      this.disposeCodePreview()
-    })
-    this.suggestControllerWidget.onDidShow(() => {
-      this.completionMenuState.visible = true
-      this.syncCompletionMenuStateFromSuggestControllerWidget(0)
-      // must be use next render time to update correct position
-      setTimeout(() => this.updateCompletionMenuPosition(), 0)
-    })
-    this.suggestControllerWidget.onDidFocus(() => {
-      this.completionMenuState.visible = true
-      const focusedItem = this.suggestControllerWidget.getFocusedItem()
-      if (!focusedItem) return
-      this.completionMenuState.word = focusedItem.item.word
-      this.syncCompletionMenuStateFromSuggestControllerWidget(focusedItem.index)
-      const suggestItem: MonacoCompletionModelItem = focusedItem.item
-      this.disposeCodePreview()
-      this.showCodePreview(
-        suggestItem.position,
-        suggestItem.completion.insertText,
-        suggestItem.word.toLowerCase()
-      )
-      this.updateCompletionMenuPosition()
-    })
+    this.addDisposer(() => this.disposeCodePreview())
+    this.addDisposer(() => this.abortController.abort())
+    this.addDisposer(() => this.resetSuggestions())
   }
 
   private disposeCodePreview() {
@@ -131,25 +92,12 @@ export class CompletionMenu implements IDisposable {
     return containerElement
   }
 
-  private syncCompletionMenuStateFromSuggestControllerWidget(activeIdx: number = 0) {
-    // when trigger by inner code, we need check `_completionModel` is not undefined
-    if (!this.suggestControllerWidget._completionModel) return
-    if (activeIdx < 0 || activeIdx >= this.suggestControllerWidget._completionModel.items.length)
-      return
-    this.monacoCompletionModelItems = this.suggestControllerWidget._completionModel.items
-    this.completionMenuState.activeIdx = activeIdx
-    this.completionMenuState.suggestions = this.completionModelItems2CompletionItems(
-      this.monacoCompletionModelItems
-    )
-    if (this.completionMenuState.suggestions.length === 0) this.hideCompletionMenu()
-  }
-
   private showCodePreview(position: IPosition, insertText: string, word: string) {
     if (!word || !insertText) return
     if (!insertText.toLowerCase().startsWith(word)) return
     const resolvedInsertText = insertText
       // replace placeholder with inside content. like: ${1:message} => message for better user experience
-      .replace(/\$\{\d+:(.*?)}/g, (_, placeholderContent: string) => placeholderContent)
+      .replace(/\$\{\d+:?(.*?)}/g, (_, placeholderContent: string) => placeholderContent)
       // replace tab with space
       .replace(/\t/g, this.indentSymbolBySpace)
 
@@ -190,35 +138,32 @@ export class CompletionMenu implements IDisposable {
     })
   }
 
+  public resetSuggestions() {
+    this.completionMenuState.suggestions.length = 0
+  }
+
+  public refreshAbortController() {
+    this.abortController.abort()
+    this.abortController = new AbortController()
+  }
+
   public showCompletionMenu() {
     this.completionMenuState.visible = true
-    this.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
   }
 
   public hideCompletionMenu() {
     this.completionMenuState.visible = false
-    this.editor.trigger('editor', 'hideSuggestWidget', {})
   }
 
-  select(idx: number) {
-    const completionItems: MonacoCompletionModelItem[] = this.monacoCompletionModelItems
-    if (!completionItems.length || idx < 0 || idx >= completionItems.length) return
-    this.suggestControllerWidget._select(completionItems[idx], idx)
-  }
+  select(idx: number) {}
 
-  dispose() {
-    this.completionItemCache.dispose()
-    this.disposeCodePreview()
-  }
-
-  private updateCompletionMenuPosition() {
+  public updateCompletionMenuPosition() {
     const position = this.editor.getPosition()
     if (!position) return
     const completionMenuElement = this.completionMenuState.completionMenuElement
-    if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
-    if (!pixelPosition) return
-    const fontSize = this.editor.getOption(EditorOption.fontSize)
+    if (!completionMenuElement || !pixelPosition) return
+    const fontSize = this.editor.getOption(editor.EditorOption.fontSize)
     const isMultiline = () => {
       const { suggestions, activeIdx } = this.completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false
@@ -247,52 +192,47 @@ export class CompletionMenu implements IDisposable {
     }
   }
 
-  private completionModelItems2CompletionItems(
-    completionModelItems: MonacoCompletionModelItem[]
-  ): CompletionMenuFeatureItem[] {
-    // todo: this is temp code, need to combine with other preview.
-    return completionModelItems.map((completion) => {
-      return {
-        icon: completionItemKind2Icon(completion.completion.kind),
-        label: completion.completion.label as string,
-        preview: {
-          level: DocPreviewLevel.Normal,
-          content: completion.completion.detail || ''
-        },
-        insertText: completion.completion.insertText,
-        desc: '',
-        matches: createMatches(completion.score)
+  public getMatchSegments(input: string, suggestion: string) {
+    const lowerInput = input.toLowerCase()
+    const lowerSuggestion = suggestion.toLowerCase()
+
+    let inputIndex = 0
+    let suggestionIndex = 0
+    const matchSegments: Array<{
+      start: number
+      length: number
+    }> = []
+
+    while (inputIndex < lowerInput.length && suggestionIndex < lowerSuggestion.length) {
+      if (lowerInput[inputIndex] === lowerSuggestion[suggestionIndex]) {
+        const start = suggestionIndex
+        while (
+          inputIndex < lowerInput.length &&
+          suggestionIndex < lowerSuggestion.length &&
+          lowerInput[inputIndex] === lowerSuggestion[suggestionIndex]
+        ) {
+          inputIndex++
+          suggestionIndex++
+        }
+        const length = suggestionIndex - start
+        matchSegments.push({ start, length })
+      } else {
+        suggestionIndex++
       }
-    })
+    }
+
+    return matchSegments
   }
 }
 
-// todo: add more case to satisfy completion item label content for better user understanding
-function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): Icon {
-  switch (completionIcon) {
-    case languages.CompletionItemKind.Function:
-      return Icon.Function
-    case languages.CompletionItemKind.Variable:
+export function suggestType2Icon(suggestType: string): Icon {
+  switch (suggestType) {
+    case 'keyword':
       return Icon.Prototype
-    case languages.CompletionItemKind.Constant:
-      return Icon.Prototype
-    case languages.CompletionItemKind.Snippet:
+    case 'func':
       return Icon.Function
     default:
       return Icon.Prototype
-  }
-}
-
-export function icon2CompletionItemKind(icon: Icon): languages.CompletionItemKind {
-  switch (icon) {
-    case Icon.Function:
-      return languages.CompletionItemKind.Function
-    case Icon.Prototype:
-      return languages.CompletionItemKind.Variable
-    case Icon.Keywords:
-      return languages.CompletionItemKind.Snippet
-    default:
-      return languages.CompletionItemKind.Variable
   }
 }
 

@@ -3,14 +3,10 @@ import {
   type IDisposable,
   type IPosition,
   type IRange,
-  languages,
   Position
 } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
-import {
-  type CompletionMenu,
-  icon2CompletionItemKind
-} from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
+import { type CompletionMenu } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 import { InlayHint } from '@/components/editor/code-editor/ui/features/inlay-hint/inlay-hint'
 import loader from '@monaco-editor/loader'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
@@ -23,7 +19,6 @@ import type { HoverPreview } from '@/components/editor/code-editor/ui/features/h
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
-import { isDocPreview } from '@/components/editor/code-editor/ui/common'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -77,7 +72,10 @@ export interface RenamePreview {
   ): Promise<void>
 }
 
-export type LayerContent = DocPreview | AudioPlayer | RenamePreview
+export type LayerContent =
+  | { type: 'doc'; layer: DocPreview }
+  | { type: 'audio'; layer: AudioPlayer }
+  | { type: 'rename'; layer: RenamePreview }
 
 export interface CompletionItem {
   icon: Icon
@@ -248,7 +246,6 @@ export class EditorUI extends Disposable {
   editorUIRequestCallback: EditorUIRequestCallback
   monaco: typeof import('monaco-editor') | null = null
   monacoProviderDisposes: Record<string, IDisposable | null> = {
-    completionProvider: null,
     hoverProvider: null
   }
 
@@ -317,12 +314,12 @@ export class EditorUI extends Disposable {
     const monaco_ = await loader.init()
     if (this.monaco) return this.monaco
     this.disposeMonacoProviders()
-    await this.initMonaco(monaco_, this.getProject)
+    await this.initMonaco(monaco_)
     this.monaco = monaco_
     return this.monaco
   }
 
-  async initMonaco(monaco: typeof import('monaco-editor'), getProject: () => Project) {
+  async initMonaco(monaco: typeof import('monaco-editor')) {
     self.MonacoEnvironment = {
       getWorker() {
         return new EditorWorker()
@@ -350,99 +347,6 @@ export class EditorUI extends Disposable {
         ["'", "'"]
       ]
     })
-
-    /**
-     * TODO: The current implementation of the Monaco editor's completion feature does not fully align with our requirements.
-     * Therefore, we need to develop a custom solution. This involves handling various events such as key down, key up,
-     * shortcuts, mouse down/up, focus, and blur to effectively trigger the completion menu. Moreover, we should implement
-     * a custom fuzzy search algorithm to accurately match completion items.
-     *
-     * Current Issue: A bug exists where typing a piece of code, deleting it, and typing it again results in duplicate
-     * completion items. This duplication is contingent upon the number of times the code is retyped.
-     *
-     * Cause: The issue arises because our `completionMenuCache` utilizes an identifier composed of
-     * { lineNumber: number, column: number, fileId: string } to create a `completionMenuCacheID`. This approach fails to
-     * distinguish between repeated instances of identical code typing, treating them as the same.
-     *
-     * Solution Attempt: To address this, I've introduced a `has` function within the `completionItemCache` to explicitly
-     * prevent the storage of duplicate items in the `completionItemCache`.
-     */
-
-    this.monacoProviderDisposes.completionProvider =
-      monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
-        provideCompletionItems: (model, position) => {
-          if (!this.completionMenu) throw new Error('completionMenu is null')
-
-          // get current position id to determine if need to request completion provider resolve
-          const word = model.getWordUntilPosition(position)
-          const project = getProject()
-          // for spriteName is unique, we can treat it as file code id
-          const spriteName = project.selectedSprite?.name || ''
-          const completionItemCacheID = {
-            id: spriteName,
-            lineNumber: position.lineNumber,
-            column: word.startColumn
-          }
-          if (!word.word) {
-            this.completionMenu.hideCompletionMenu()
-            return { suggestions: [] }
-          }
-          // if completionItemCacheID changed, inner cache will clean `cached data`
-          // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
-          const isNeedRequestCompletionProviderResolve =
-            !this.completionMenu.completionItemCache.isCacheAvailable(completionItemCacheID)
-          if (isNeedRequestCompletionProviderResolve) {
-            const abortController = new AbortController()
-            this.requestCompletionProviderResolve(
-              model,
-              {
-                position,
-                unitWord: word.word,
-                signal: abortController.signal
-              },
-              (items: CompletionItem[]) => {
-                if (!this.completionMenu) return console.warn('completionMenu is null')
-                const isSamePosition =
-                  this.completionMenu.completionItemCache.isSamePosition(completionItemCacheID)
-                if (!isSamePosition) return abortController.abort()
-
-                this.completionMenu.completionItemCache.add(completionItemCacheID, items)
-                // if you need user immediately show updated completion items, we need close it and reopen it.
-                this.completionMenu.hideCompletionMenu()
-                this.completionMenu.showCompletionMenu()
-              }
-            )
-            return { suggestions: [] }
-          } else {
-            const suggestions =
-              this.completionMenu.completionItemCache.getAll(completionItemCacheID).map(
-                (item): languages.CompletionItem => ({
-                  label: item.label,
-                  kind: icon2CompletionItemKind(item.icon),
-                  insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                  insertText: item.insertText,
-                  detail: isDocPreview(item.preview) ? item.preview.content : '',
-                  range: {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: word.startColumn,
-                    endColumn: word.endColumn
-                  }
-                })
-              ) || []
-            return { suggestions }
-          }
-        }
-      })
-
-    const isDocPreview = (layer: LayerContent): layer is DocPreview =>
-      'content' in layer && 'level' in layer
-
-    const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
-      'src' in layer && 'duration' in layer
-
-    const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
-      'placeholder' in layer && 'onSubmit' in layer
 
     const isMouseColumnInWordRange = (
       mouseColumn: number,
@@ -478,12 +382,18 @@ export class EditorUI extends Disposable {
           ).flat()
 
           // filter docPreview
-          this.hoverPreview?.showDocuments(result.filter(isDocPreview), {
-            startLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endLineNumber: position.lineNumber,
-            endColumn: word.endColumn
-          })
+          this.hoverPreview?.showDocuments(
+            result
+              .filter((layerContent) => layerContent.type === 'doc')
+              // we already filter doc out, so here use force transform type
+              .map((layerContent) => layerContent.layer as DocPreview),
+            {
+              startLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endLineNumber: position.lineNumber,
+              endColumn: word.endColumn
+            }
+          )
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content
@@ -502,10 +412,6 @@ export class EditorUI extends Disposable {
    * otherwise, it will cause duplicate completion items when HMR is triggered in development mode.
    */
   private disposeMonacoProviders() {
-    if (this.monacoProviderDisposes.completionProvider) {
-      this.monacoProviderDisposes.completionProvider.dispose()
-      this.monacoProviderDisposes.completionProvider = null
-    }
     if (this.monacoProviderDisposes.hoverProvider) {
       this.monacoProviderDisposes.hoverProvider.dispose()
       this.monacoProviderDisposes.hoverProvider = null
