@@ -1,76 +1,80 @@
-// rewrite console log
-(function () {
-    const originalLog = console.log
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compiler</title>
+</head>
+<script src="../wasm_exec.js"></script>
+<script>
+  const go = new Go()
 
-    console.log = function (...message) {
-        // call original function
-        originalLog.apply(console, arguments)
-
-        // send log msg
-        window.parent.postMessage({log: message, level: "log"}, window.location.origin)
-    }
-})();
-
-window.addEventListener('message', function (event) {
-    // prevent event source
-    if (event.origin !== window.location.origin) {
-        console.warn()
-    }
-})
-
-function getInlayHints (data)  {
+  WebAssembly.instantiateStreaming(
+    fetch("main.wasm"),
+    go.importObject
+  ).then((result) => {
+    go.run(result.instance)
+  })
+</script>
+<script>
+  function getInlayHints (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
     let res = getInlayHints_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get inlay hints")
+      throw new Error("can't get inlay hints")
     }
     return json.content
-}
+  }
 
-function getDiagnostics (data)  {
+  function getDiagnostics (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
     let res = getDiagnostics_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get diagnostics")
+      throw new Error("can't get diagnostics")
     }
     return json.content
-}
+  }
 
 
-function getCompletionItems (data)  {
+  function getCompletionItems (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
     let lineNum = data.in.line
     let res = getCompletionItems_GO(fileName, fileCode, lineNum)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get completion items")
+      throw new Error("can't get completion items")
     }
     return json.content
-}
+  }
 
-function getDefinition (data)  {
+  function getDefinition (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
     let res = getDefinition_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get definition")
+      throw new Error("can't get definition")
     }
     return json.content
-}
+  }
 
-function getTypes(data) {
+  function getTypes(data) {
     let fileCode = data.in.code
     let fileName = data.in.name
     let res = getTypes_GO(fileName, fileCode)
     let json = JSON.parse(res)
     if(!json.ok) {
-        throw new Error("can't get types")
+      throw new Error("can't get types")
     }
     return json.content
-}
+  }
+
+</script>
+
+<body>
+</body>
+</html>

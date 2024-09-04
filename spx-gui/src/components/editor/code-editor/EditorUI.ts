@@ -89,8 +89,7 @@ export interface CompletionItem {
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
 export type InlayHintStyle = 'tag' | 'text' | 'icon'
 
-// for we already have class InlayHint
-export type InlayHintType = {
+export type InlayHintDecoration = {
   content: string | Icon
   style: InlayHintStyle
   behavior: InlayHintBehavior
@@ -103,7 +102,7 @@ export interface InlayHintsProvider {
     ctx: {
       signal: AbortSignal
     }
-  ): Promise<InlayHintType[]>
+  ): Promise<InlayHintDecoration[]>
 }
 
 export type SelectionMenuItem = {
@@ -430,9 +429,11 @@ export class EditorUI extends Disposable {
     const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
       'placeholder' in layer && 'onSubmit' in layer
 
-    const isMouseColumnInWordRange = (startColumn: number, endColumn: number) => {
-      if (!this.inlayHint) return false
-      const mouseColumn = this.inlayHint.mouseColumn
+    const isMouseColumnInWordRange = (
+      mouseColumn: number,
+      startColumn: number,
+      endColumn: number
+    ) => {
       return mouseColumn >= startColumn && mouseColumn <= endColumn
     }
 
@@ -444,7 +445,12 @@ export class EditorUI extends Disposable {
           if (word == null) return
 
           // this used for inlay hint, when mouse hover function param tag, hover provider should not work
-          if (!isMouseColumnInWordRange(word.startColumn, word.endColumn)) return
+          if (
+            this.inlayHint &&
+            !isMouseColumnInWordRange(this.inlayHint.mouseColumn, word.startColumn, word.endColumn)
+          ) {
+            return
+          }
 
           const abortController = new AbortController()
           token.onCancellationRequested(() => abortController.abort())

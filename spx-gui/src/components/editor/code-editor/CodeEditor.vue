@@ -29,7 +29,7 @@ const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
 const { editorUI, compiler } = initCoordinator()
-const wasmContainer = ref<HTMLElement>()
+const wasmContainer = ref<HTMLIFrameElement>()
 
 onUnmounted(() => {
   // for vite HMR, we have to dispose editorUI when HMR triggered
@@ -70,9 +70,15 @@ defineExpose({
       @update:value="$emit('update:value', $event)"
     ></CodeEditorUI>
     <teleport to="body">
-      <!--  this element used for contain iframe, and load wasm in iframe which allow auto reload when wasm error  -->
-      <!--  set id for devtools better check, no other use  -->
-      <div id="wasmContainer" ref="wasmContainer"></div>
+      <!-- load wasm in iframe allow auto reload when wasm error  -->
+      <!-- set id for devtool better check, and hide iframe in viewport by css  -->
+      <iframe
+        id="wasmContainer"
+        ref="wasmContainer"
+        width="0"
+        height="0"
+        src="about:blank"
+      ></iframe>
     </teleport>
   </div>
 </template>
@@ -84,5 +90,10 @@ defineExpose({
   min-height: 0;
   display: flex;
   justify-content: stretch;
+}
+
+#wasmContainer {
+  overflow: hidden;
+  height: 0;
 }
 </style>
