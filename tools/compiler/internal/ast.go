@@ -147,7 +147,9 @@ func (l *funcList) Position(fset *token.FileSet) {
 	for _, fun := range *l {
 		fun.Pos2Position(fset)
 		for _, paramItem := range fun.Parameters {
-			paramItem.Pos2Position(fset)
+			if paramItem != nil {
+				paramItem.Pos2Position(fset)
+			}
 		}
 	}
 }

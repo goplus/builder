@@ -71,6 +71,10 @@ export class InlayHint extends StyleSheetContent implements IDisposable {
   }
 
   dispose() {
+    for (const event in this.eventDisposeHandler) {
+      this.eventDisposeHandler[event]?.()
+    }
+
     this.textDecorationsCollection.clear()
     this.abortController.abort()
     super.dispose()

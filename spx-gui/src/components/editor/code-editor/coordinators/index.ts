@@ -5,12 +5,12 @@ import {
   DocPreviewLevel,
   type EditorUI,
   Icon,
-  type InlayHintType,
   type InputItem,
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel
+  type TextModel,
+  type InlayHintDecoration
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { CodeEnum, Compiler } from '../compiler'
@@ -180,15 +180,15 @@ export class Coordinator {
     ctx: {
       signal: AbortSignal
     }
-  ): Promise<InlayHintType[]> {
+  ): Promise<InlayHintDecoration[]> {
     const inlayHints = await this.compiler.getInlayHints([
       {
-        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
         content: model.getValue()
       }
     ])
 
-    return inlayHints.flatMap((inlayHint): InlayHintType[] => {
+    return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
       if (inlayHint.type === 'play') {
         return [
@@ -203,7 +203,7 @@ export class Coordinator {
           }
         ]
       } else {
-        const hints: InlayHintType[] = [
+        const hints: InlayHintDecoration[] = [
           {
             content: inlayHint.name,
             style: 'text',

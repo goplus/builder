@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"go/types"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -14,24 +15,152 @@ import (
 	"github.com/goplus/igop/gopbuild"
 )
 
-type scopeItem struct {
+type completionItem struct {
 	Label      string `json:"label"`
 	InsertText string `json:"insertText"`
 	Type       string `json:"type"`
 }
 
-type scopeItems []*scopeItem
+type completionList []*completionItem
 
-func (s *scopeItems) Contains(name string) bool {
-	for _, item := range *s {
-		if item.Label == name {
+var goKeywords = completionList{
+	{
+		Label:      "break",
+		InsertText: "break",
+		Type:       "keyword",
+	}, {
+		Label:      "case",
+		InsertText: "case ${1}:",
+		Type:       "keyword",
+	}, {
+		Label:      "chan",
+		InsertText: "chan ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "const",
+		InsertText: "const ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "continue",
+		InsertText: "continue",
+		Type:       "keyword",
+	}, {
+		Label:      "default",
+		InsertText: "default:",
+		Type:       "keyword",
+	}, {
+		Label:      "defer",
+		InsertText: "defer ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "else",
+		InsertText: "else",
+		Type:       "keyword",
+	}, {
+		Label:      "fallthrough",
+		InsertText: "fallthrough",
+		Type:       "keyword",
+	}, {
+		Label:      "for",
+		InsertText: "for",
+		Type:       "keyword",
+	}, {
+		Label:      "for condition",
+		InsertText: "for ${1:condition} {\n\t${2}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "for with range",
+		InsertText: "for ${1:i} <- ${2:start}:${3:end} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "for range",
+		InsertText: "for ${1:i}, ${2:v} := range ${3:set} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "func",
+		InsertText: "func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "go",
+		InsertText: "go ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "goto",
+		InsertText: "goto ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "if",
+		InsertText: "if",
+		Type:       "keyword",
+	}, {
+		Label:      "if statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "if else if statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n} else if ${3:condition} {\n\t${4}\n} ",
+		Type:       "keyword",
+	}, {
+		Label:      "if else statement",
+		InsertText: "if ${1:condition} {\n\t${2}\n} else {\n\t${3}\n} ",
+		Type:       "keyword",
+	}, {
+		Label:      "import",
+		InsertText: "import \"${1}\"",
+		Type:       "keyword",
+	}, {
+		Label:      "interface",
+		InsertText: "interface {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "map",
+		InsertText: "map[${1}]${2}",
+		Type:       "keyword",
+	}, {
+		Label:      "package",
+		InsertText: "package ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "range",
+		InsertText: "range ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "return",
+		InsertText: "return ${1}",
+		Type:       "keyword",
+	}, {
+		Label:      "select",
+		InsertText: "select {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "struct",
+		InsertText: "struct {\n\t${1}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "switch",
+		InsertText: "switch ${1} {\n\tcase ${2}:\n\t\t${3}\n}",
+		Type:       "keyword",
+	}, {
+		Label:      "type",
+		InsertText: "type ${1} ${2}",
+		Type:       "keyword",
+	}, {
+		Label:      "var",
+		InsertText: "var ${1:name} ${2:type}",
+		Type:       "keyword",
+	},
+}
+
+func (list *completionList) Contains(text string) bool {
+	for _, item := range *list {
+		if item.InsertText == text {
 			return true
 		}
 	}
 	return false
 }
 
-func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
+func getScopesItems(fileName, fileCode string, cursor int) (completionList, error) {
 	fset := token.NewFileSet()
 	file, err := initParser(fset, fileName, fileCode)
 	if err != nil {
@@ -51,15 +180,17 @@ func getScopesItems(fileName, fileCode string, cursor int) (scopeItems, error) {
 		fmt.Println("Compiler error: ", err)
 	}
 
-	items := &scopeItems{}
+	items := &completionList{}
 
 	smallScope := findSmallestScopeAtPosition(info, cursorPos)
-	traverseToRoot(smallScope, items, info)
+	for _, scope := range smallScope {
+		traverseToRoot(scope, items, info)
+	}
 
 	return *items, nil
 }
 
-func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Scope {
+func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) []*types.Scope {
 	var scopeList []*types.Scope
 
 	for _, scope := range info.Scopes {
@@ -68,94 +199,153 @@ func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) *types.Sco
 		}
 	}
 
-	smallestScope := scopeList[0]
-	for _, scope := range scopeList {
-		if scope.Pos() > smallestScope.Pos() && scope.End() < smallestScope.End() {
-			smallestScope = scope
-		}
+	if len(scopeList) == 0 {
+		return nil
 	}
 
-	return smallestScope
+	sort.Slice(scopeList, func(i, j int) bool {
+		return scopeList[i].Pos() >= scopeList[j].Pos() && scopeList[i].End() <= scopeList[j].End()
+	})
+
+	return traverseFindParent(scopeList)
 }
 
-func traverseToRoot(scope *types.Scope, items *scopeItems, info *typesutil.Info) {
-	for _, name := range scope.Names() {
-		obj := scope.Lookup(name)
-
-		if name == "this" {
-			varObj := obj.(*types.Var)
-			pointerType := varObj.Type().Underlying().(*types.Pointer)
-			structType := pointerType.Elem().Underlying().(*types.Struct)
-
-			for i := 0; i < structType.NumFields(); i++ {
-				named, ok := structType.Field(i).Type().(*types.Named)
-				if !ok {
-					continue
-				}
-
-				for i := 0; i < named.NumMethods(); i++ {
-					method := named.Method(i)
-					if !method.Exported() {
-						continue
-					}
-					mname, _ := convertOverloadToSimple(method.Name())
-					scopeItem := &scopeItem{
-						Label: mname,
-						Type:  "func",
-					}
-					sign := method.Type().(*types.Signature)
-					signList := []string{}
-					for j := range sign.Params().Len() {
-						signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-					}
-					scopeItem.InsertText = mname + " " + strings.Join(signList, ", ")
-					*items = append(*items, scopeItem)
-				}
-
+func traverseFindParent(scopeList []*types.Scope) []*types.Scope {
+	deep := make(map[*types.Scope]int)
+	maxDeep := 0
+	for _, scope := range scopeList {
+		temp := *scope
+		for {
+			if temp.Parent() != nil {
+				temp = *temp.Parent()
+				deep[scope]++
+				maxDeep = max(maxDeep, deep[scope])
+			} else {
+				break
 			}
-		}
-
-		if named, ok := obj.Type().(*types.Named); ok {
-			for i := 0; i < named.NumMethods(); i++ {
-				method := named.Method(i)
-				if method.Name() == "Main" || method.Name() == "Classfname" {
-					continue
-				}
-				scopeItem := &scopeItem{
-					Label: method.Name(),
-					Type:  "func",
-				}
-				sign := method.Type().(*types.Signature)
-				signList := []string{}
-				for j := range sign.Params().Len() {
-					signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-				}
-				scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
-			}
-		}
-
-		scopeItem := &scopeItem{
-			Label: name,
-			Type:  obj.Type().String(),
-		}
-
-		if strings.HasPrefix(obj.Type().String(), "func") {
-			sign := obj.Type().(*types.Signature)
-			signList := []string{}
-			for j := range sign.Params().Len() {
-				signList = append(signList, "${"+strconv.Itoa(j+1)+":"+sign.Params().At(j).Name()+"}")
-			}
-			scopeItem.Type = "func"
-			scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
-		} else {
-			scopeItem.InsertText = name
-		}
-		if !items.Contains(name) {
-			*items = append(*items, scopeItem)
 		}
 	}
+	filter := []*types.Scope{}
+	for _, scope := range scopeList {
+		if deep[scope] == maxDeep {
+			filter = append(filter, scope)
+		}
+	}
+	return filter
+}
+
+func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.Info) {
+	for _, name := range scope.Names() {
+		obj := scope.Lookup(name)
+		handleObject(obj, name, items)
+	}
+
 	if scope.Parent() != nil {
 		traverseToRoot(scope.Parent(), items, info)
+	}
+}
+
+func handleObject(obj types.Object, name string, items *completionList) {
+	handleThis(obj, name, items)
+	handleFunc(obj, name, items)
+	handleType(obj, name, items)
+}
+
+func handleThis(obj types.Object, name string, items *completionList) {
+	if name != "this" {
+		return
+	}
+
+	variable, ok := obj.(*types.Var)
+	if !ok {
+		return
+	}
+
+	structType, ok := variable.Type().Underlying().(*types.Pointer).Elem().Underlying().(*types.Struct)
+	if !ok {
+		return
+	}
+
+	structMethodsToCompletion(structType, items)
+
+}
+
+func handleFunc(obj types.Object, name string, items *completionList) {
+	scopeItem := &completionItem{
+		Label: name,
+		Type:  obj.Type().String(),
+	}
+
+	if strings.HasPrefix(obj.Type().String(), "func") {
+		signature := obj.Type().(*types.Signature)
+		signList, _, _ := extractParams(signature)
+		scopeItem.Type = "func"
+		scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+	} else {
+		scopeItem.InsertText = name
+	}
+	if !items.Contains(scopeItem.InsertText) {
+		*items = append(*items, scopeItem)
+	}
+}
+
+func handleType(obj types.Object, name string, items *completionList) {
+	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
+		for i := 0; i < structType.NumFields(); i++ {
+			pointer, ok := structType.Field(i).Type().(*types.Pointer)
+			if ok {
+				stru, ok := pointer.Elem().Underlying().(*types.Struct)
+				if ok {
+					structMethodsToCompletion(stru, items)
+				}
+			}
+		}
+		structMethodsToCompletion(structType, items)
+	}
+	if named, ok := obj.Type().(*types.Named); ok {
+		for i := 0; i < named.NumMethods(); i++ {
+			method := named.Method(i)
+			if method.Name() == "Main" || method.Name() == "Classfname" {
+				continue
+			}
+			item := &completionItem{
+				Label: method.Name(),
+				Type:  "func",
+			}
+			signature := method.Type().(*types.Signature)
+			signList, _, _ := extractParams(signature)
+			item.InsertText = method.Name() + " " + strings.Join(signList, ", ")
+			if !items.Contains(item.InsertText) {
+				*items = append(*items, item)
+			}
+		}
+	}
+}
+
+func structMethodsToCompletion(structType *types.Struct, items *completionList) {
+	for i := 0; i < structType.NumFields(); i++ {
+		named, ok := structType.Field(i).Type().(*types.Named)
+		if !ok {
+			continue
+		}
+
+		for i := 0; i < named.NumMethods(); i++ {
+			method := named.Method(i)
+			if !method.Exported() {
+				continue
+			}
+			methodName, _ := convertOverloadToSimple(method.Name())
+			item := &completionItem{
+				Label: methodName,
+				Type:  "func",
+			}
+			signature := method.Type().(*types.Signature)
+			signList, _, _ := extractParams(signature)
+			item.InsertText = methodName + " " + strings.Join(signList, ", ")
+			if !items.Contains(item.InsertText) {
+				*items = append(*items, item)
+			}
+		}
 	}
 }
 

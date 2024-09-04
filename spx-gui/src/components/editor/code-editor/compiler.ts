@@ -1,18 +1,20 @@
-import gopWasmIndexHtml from '@/assets/gop/index.html?url'
+import compilerWasmHtml from '@/assets/compiler/index.html?raw'
+import compilerWasm from '@/assets/compiler/main.wasm?url'
+import compilerWasmExec from '@/assets/wasm_exec.js?url'
 import { Disposable } from '@/utils/disposable'
 import type { Markdown } from './EditorUI'
+import { shallowRef } from 'vue'
+import { untilNotNull } from '@/utils/utils'
 
-// todo: consider moving into compiler.d.ts
-declare global {
-  interface Window {
-    getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
-    getDiagnostics: (params: { in: { name: string; code: string } }) => Hint[] | {}
-  }
+interface WasmHandler extends Window {
+  console: typeof console
+  getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  getDiagnostics: (params: { in: { name: string; code: string } }) => Hint[] | {}
 }
 
 export enum CodeEnum {
   Sprite,
-  Backdrop
+  Stage
 }
 
 enum CompletionItemEnum {}
@@ -84,179 +86,89 @@ type Code = {
 }
 
 export class Compiler extends Disposable {
-  containerElement: HTMLElement | null = null
-  public isWasmInit = false
-  private executionQueue: (() => void)[] = []
-  private lastExecutionTime: number = 0
+  containerElement: HTMLIFrameElement | null = null
+  private wasmHandlerRef = shallowRef<WasmHandler | null>()
 
-  createIframe() {
-    if (!this.containerElement) return
-    const iframe = document.createElement('iframe')
-    iframe.width = '0'
-    iframe.height = '0'
-    iframe.src = gopWasmIndexHtml
-    this.containerElement.appendChild(iframe)
+  private initIframe() {
+    if (!this.containerElement?.contentWindow) return
+    const contentWindow = this.containerElement.contentWindow as unknown as WasmHandler
+    contentWindow.document.write(
+      compilerWasmHtml
+        .replace('main.wasm', compilerWasm)
+        .replace('../wasm_exec.js', compilerWasmExec)
+    )
+
+    contentWindow.console.log = this.handleConsoleLog.bind(this)
 
     this.addDisposer(() => {
-      this.containerElement?.remove()
-      this.isWasmInit = false
-      window.removeEventListener('message', this.handleWindowMessage)
+      // this element is from vue ref, vue will auto remove element.
+      contentWindow.location.reload()
     })
   }
 
-  reloadIframe() {
-    const iframe = this.getIframe()
-    if (iframe) {
-      iframe.contentWindow?.location.reload()
-    }
+  private reloadIframe() {
+    this.containerElement?.contentWindow?.location.reload()
   }
 
-  getIframe() {
-    // this container element only append iframe element, so here we force transform type to HTMLIFrameElement
-    return this.containerElement?.firstElementChild as HTMLIFrameElement | null | undefined
-  }
-
-  public setContainerElement(containerElement: HTMLElement) {
-    if (this.containerElement) {
-      window.removeEventListener('message', this.handleWindowMessage)
-      this.containerElement.remove()
-      this.isWasmInit = false
-    }
+  public setContainerElement(containerElement: HTMLIFrameElement) {
     this.containerElement = containerElement
-    window.addEventListener('message', this.handleWindowMessage.bind(this))
-    this.createIframe()
+    this.initIframe()
   }
 
-  public handleWindowMessage(event: MessageEvent<{ log: any[]; level: string }>) {
-    if (event.origin !== window.location.origin) {
-      return
-    }
-
-    const data = event.data
-    switch (data.level) {
-      case 'log': {
-        const [message] = data.log || []
-        if (!message) return
-        if (message.includes('goroutine ')) this.reloadIframe()
-        if (message === 'WASM Init') {
-          this.isWasmInit = true
-          this.executeQueue()
-        }
-      }
-    }
+  public handleConsoleLog(message: any) {
+    if (!message) return
+    if (message.includes('goroutine ')) this.reloadIframe()
+    if (message === 'WASM Init') this.handleWasmReady()
   }
 
-  private executeQueue() {
-    while (this.executionQueue.length > 0) {
-      const task = this.executionQueue.shift()
-      if (task) task()
-    }
+  private handleWasmReady() {
+    this.wasmHandlerRef.value = this.containerElement?.contentWindow as
+      | WasmHandler
+      | null
+      | undefined
   }
 
-  private addToQueue(task: () => void) {
-    const now = Date.now()
-    if (now - this.lastExecutionTime > 5000) {
-      this.executionQueue = []
-    }
-    this.executionQueue = [task]
-    this.lastExecutionTime = now
-    this.executeQueue()
-  }
-
-  private async waitForWasmInit() {
-    const MAX_WAIT_TIME = 30000
-    const CHECK_INTERVAL = 100
-
-    const startTime = Date.now()
-    while (!this.isWasmInit && Date.now() - startTime < MAX_WAIT_TIME) {
-      await new Promise((resolve) => setTimeout(resolve, CHECK_INTERVAL))
-    }
-
-    if (!this.isWasmInit) {
-      console.warn('WASM initialization timed out')
-    }
+  private async waitForWasmInit(): Promise<WasmHandler> {
+    return untilNotNull(this.wasmHandlerRef)
   }
 
   public async getInlayHints(codes: Code[]): Promise<Hint[]> {
-    if (!this.containerElement) return []
-    await this.waitForWasmInit()
-    if (!this.isWasmInit) return []
+    const wasmHandler = await this.waitForWasmInit()
 
-    return new Promise((resolve) => {
-      this.addToQueue(() => {
-        const iframe = this.getIframe()
-        if (iframe == null) return resolve([])
-
-        const tempCodes = codes.map((code) => code.content).join('\r\n')
-        try {
-          const res = iframe.contentWindow?.getInlayHints({
-            in: {
-              name: 'test.spx',
-              code: tempCodes
-            }
-          })
-          resolve(Array.isArray(res) ? res : [])
-        } catch (err) {
-          console.error(err)
-          resolve([])
-        }
-      })
+    const tempCodes = codes.map((code) => code.content).join('\r\n')
+    const res = wasmHandler.getInlayHints({
+      in: {
+        name: 'test.spx',
+        code: tempCodes
+      }
     })
+    return Array.isArray(res) ? res : []
   }
 
   public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
-    if (!this.containerElement) return []
+    const wasmHandler = await this.waitForWasmInit()
 
-    await this.waitForWasmInit()
-    if (!this.isWasmInit) return []
-
-    return new Promise((resolve) => {
-      this.addToQueue(() => {
-        const iframe = this.getIframe()
-        if (iframe == null) return resolve([])
-
-        const tempCodes = codes.map((code) => code.content).join('\r\n')
-        try {
-          const res = iframe.contentWindow?.getDiagnostics({
-            in: {
-              name: 'test.spx',
-              code: tempCodes
-            }
-          })
-          resolve(Array.isArray(res) ? res : [])
-        } catch (err) {
-          console.error(err)
-          resolve([])
-        }
-      })
+    const tempCodes = codes.map((code) => code.content).join('\r\n')
+    const res = wasmHandler.getDiagnostics({
+      in: {
+        name: 'test.spx',
+        code: tempCodes
+      }
     })
+    return Array.isArray(res) ? res : []
   }
 
   public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
-    if (!this.containerElement) return []
-
     await this.waitForWasmInit()
-    if (!this.isWasmInit) return []
 
-    return new Promise((resolve) => {
-      this.addToQueue(() => {
-        // implement logic here
-        resolve([])
-      })
-    })
+    // implement logic here
+    return []
   }
 
   public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {
-    if (!this.containerElement) return null
-
     await this.waitForWasmInit()
-    if (!this.isWasmInit) return null
 
-    return new Promise((resolve) => {
-      this.addToQueue(() => {
-        // implement logic here
-        resolve(null)
-      })
-    })
+    // implement logic here
+    return null
   }
 }
