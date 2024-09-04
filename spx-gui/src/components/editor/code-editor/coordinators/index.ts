@@ -28,8 +28,8 @@ import {
   soundCategory,
   getAllTools,
   getVariableCategory,
-  ToolType,
-  type ToolCategory
+  TokenType,
+  type TokenCategory
 } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
@@ -284,23 +284,23 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
   return items
 }
 
-function getCompletionItemKind(type: ToolType): Icon {
+function getCompletionItemKind(type: TokenType): Icon {
   switch (type) {
-    case ToolType.method:
+    case TokenType.method:
       return Icon.Function
-    case ToolType.function:
+    case TokenType.function:
       return Icon.Function
-    case ToolType.constant:
+    case TokenType.constant:
       return Icon.Prototype
-    case ToolType.keyword:
+    case TokenType.keyword:
       return Icon.Keywords
-    case ToolType.variable:
+    case TokenType.variable:
       return Icon.Prototype
   }
 }
 
 function toolCategory2InputItemCategory(
-  category: ToolCategory,
+  category: TokenCategory,
   icon: Icon,
   color: string
 ): InputItemCategory {

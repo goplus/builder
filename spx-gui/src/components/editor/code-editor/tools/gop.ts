@@ -2,13 +2,13 @@
  * @file Tools from gop
  */
 
-import { type Tool, ToolType, ToolContext } from './common'
+import { type Token, TokenType, TokenContext } from './common'
 
 // TODO: more frequently-used tools for gop
 
-export const forLoop: Tool = {
-  type: ToolType.keyword,
-  target: ToolContext.all,
+export const forLoop: Token = {
+  type: TokenType.keyword,
+  target: TokenContext.all,
   keyword: 'for',
   desc: { en: 'For loop', zh: '循环' },
   usages: [
@@ -30,9 +30,9 @@ export const forLoop: Tool = {
   ]
 }
 
-export const ifStatement: Tool = {
-  type: ToolType.keyword,
-  target: ToolContext.all,
+export const ifStatement: Token = {
+  type: TokenType.keyword,
+  target: TokenContext.all,
   keyword: 'if',
   desc: { en: 'If statement', zh: '条件语句' },
   usages: [
@@ -49,9 +49,9 @@ export const ifStatement: Tool = {
   ]
 }
 
-export const varDefinition: Tool = {
-  type: ToolType.keyword,
-  target: ToolContext.all,
+export const varDefinition: Token = {
+  type: TokenType.keyword,
+  target: TokenContext.all,
   keyword: 'var',
   desc: { en: 'Define a variable', zh: '变量定义' },
   usage: {
@@ -60,9 +60,9 @@ export const varDefinition: Tool = {
   }
 }
 
-export const functionDefinition: Tool = {
-  type: ToolType.keyword,
-  target: ToolContext.stage,
+export const functionDefinition: Token = {
+  type: TokenType.keyword,
+  target: TokenContext.stage,
   keyword: 'func',
   desc: { en: 'Function definition', zh: '函数定义' },
   usage: {
@@ -71,9 +71,9 @@ export const functionDefinition: Tool = {
   }
 }
 
-export const println: Tool = {
-  type: ToolType.function,
-  target: ToolContext.all,
+export const println: Token = {
+  type: TokenType.function,
+  target: TokenContext.all,
   keyword: 'println',
   desc: { en: 'Print line', zh: '打印行' },
   usage: {
