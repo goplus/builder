@@ -15,7 +15,7 @@ export class InlayHint extends StyleSheetContent implements IDisposable {
     this.editor = editor
     this.textDecorationsCollection = editor.createDecorationsCollection([])
     this.editor.onMouseMove((e) => {
-      this.mouseColumn = e.target.mouseColumn
+      this.mouseColumn = e.target.range?.startColumn || e.target.mouseColumn
     })
 
     // todo: trigger completion menu
