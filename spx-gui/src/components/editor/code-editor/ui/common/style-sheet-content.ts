@@ -6,15 +6,23 @@ export class StyleSheetContent {
     document.head.appendChild(this.styleElement)
   }
 
-  public addPseudoElementClassNameWithHashContent(content: string) {
+  public addPseudoElementClassNameWithHashContent(_content: string) {
+    const content = _content.split('\n').shift()
+    if (!content) return
+    // add prefix '_' to avoid illegal class name declare
     const className = `_${this.hash(content)}`
     if (!this.styleMap.has(className)) {
-      const css = `.${className}::after { content: "${content}"; }`
+      const escapedContent = this.escapeContent(content)
+      const css = `.${className}::after { content: "${escapedContent}"; }`
       this.styleElement.appendChild(document.createTextNode(css))
       this.styleMap.set(className, css)
     }
 
     return className
+  }
+
+  private escapeContent(content: string): string {
+    return content.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
   }
 
   private hash(content: string): string {

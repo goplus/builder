@@ -240,7 +240,7 @@ export class Coordinator {
     this.compiler
       .getDiagnostics([
         {
-          type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Backdrop,
+          type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
           content: model.getValue()
         }
       ])
