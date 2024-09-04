@@ -119,8 +119,8 @@ func GetCompletions(fileName, fileCode string, line int) (interface{}, error) {
 	return items, nil
 }
 
-func GetTokenDetail(token string) (interface{}, error) {
-	pkg, ok := gopbuild.LookupPackageFromLib("github.com/goplus/spx")
+func GetTokenDetail(token, pkgPath string) (interface{}, error) {
+	pkg, ok := gopbuild.LookupPackageFromLib(pkgPath)
 	if !ok {
 		return nil, fmt.Errorf("can't find lib")
 	}
