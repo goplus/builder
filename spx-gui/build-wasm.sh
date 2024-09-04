@@ -1,17 +1,16 @@
 #!/bin/bash
 
+set -e
+
 echo "Run this script from 'spx-gui' directory"
 
-cd ../tools/fmt || exit
-# shellcheck disable=SC1091
+cd ../tools/fmt
 source ./build.sh
 
-cd ../ispx || exit
-# shellcheck disable=SC1091
+cd ../ispx
 source ./build.sh
 
-cd ../compiler || exit
-# shellcheck disable=SC1091
+cd ../compiler
 source ./build.sh
 
 cd ..
