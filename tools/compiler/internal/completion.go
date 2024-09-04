@@ -272,7 +272,10 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 		signature := obj.Type().(*types.Signature)
 		signList, _, _ := extractParams(signature)
 		scopeItem.Type = "func"
-		scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+		scopeItem.InsertText = name
+		if len(signList) != 0 {
+			scopeItem.InsertText += " " + strings.Join(signList, ", ")
+		}
 	} else {
 		scopeItem.InsertText = name
 	}
@@ -314,7 +317,10 @@ func handleType(obj types.Object, name string, items *completionList) {
 			if listContains(sampleList, "__gop_overload_args__") {
 				continue
 			}
-			item.InsertText = method.Name() + " " + strings.Join(signList, ", ")
+			item.InsertText = name
+			if len(signList) != 0 {
+				item.InsertText += " " + strings.Join(signList, ", ")
+			}
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)
 			}
@@ -362,7 +368,10 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 			if listContains(sampleList, "__gop_overload_args__") {
 				continue
 			}
-			item.InsertText = methodName + " " + strings.Join(signList, ", ")
+			item.InsertText = methodName
+			if len(signList) != 0 {
+				item.InsertText += " " + strings.Join(signList, ", ")
+			}
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)
 			}

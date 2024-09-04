@@ -269,9 +269,12 @@ func extractUsages(obj types.Object, token string) []usage {
 			UsageID:     strconv.Itoa(idx),
 			Declaration: simpleName,
 			Sample:      strings.Join(sampleList, " "),
-			InsertText:  simpleName + " " + strings.Join(signList, ", "),
 			Params:      params,
 			Type:        "func",
+		}
+		use.InsertText = simpleName
+		if len(signList) != 0 {
+			use.InsertText += " " + strings.Join(signList, ", ")
 		}
 		uses = append(uses, use)
 	}
@@ -292,7 +295,11 @@ func extractParams(signature *types.Signature) (signList []string, sampleList []
 			Type: paramType,
 		}
 
-		signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
+		if strings.Contains(paramType, "func") {
+			signList = append(signList, "=> {\n\t${"+strconv.Itoa(i+1)+"}\n}")
+		} else {
+			signList = append(signList, "${"+strconv.Itoa(i+1)+":"+paramName+"}")
+		}
 		sampleList = append(sampleList, paramName)
 	}
 	return

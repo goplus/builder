@@ -311,6 +311,8 @@ function toolCategory2InputItemCategory(
     groups: category.groups.map((group) => ({
       label: group.label,
       inputItems: group.tools.flatMap((tool): InputItem[] => {
+        //TODO: get token detail from compiler
+        //TODO: get token detail from doc
         if (tool.usage) {
           let sample = tool.usage.insertText.split(' ').slice(1).join()
           sample = sample.replace(

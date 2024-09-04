@@ -33,6 +33,8 @@ export type ToolUsage = {
    * Same with `languages.CompletionItem.insertText`.
    */
   insertText: string
+  /** Usage ID of Token */
+  usageId?: string
 }
 
 export type Tool = {
@@ -48,4 +50,6 @@ export type Tool = {
   desc: LocaleMessage
   usage?: Omit<ToolUsage, 'desc'>
   usages?: ToolUsage[]
+  tokenId?: string
+  tokenPkg?: string
 }
