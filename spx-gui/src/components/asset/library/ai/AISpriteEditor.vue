@@ -22,13 +22,18 @@
           <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
             <CancelOutlined />
           </NIcon>
-          <span class="failing-text">
-            {{ $t({ en: `Generation failed`, zh: `生成失败` }) }}
-          </span>
+          <span class="failing-text"> {{ failInfoText }} </span>
         </div>
       </template>
     </Transition>
+
     <div class="container">
+      <NImage
+        v-if="editMode === 'preview' && previewImageSrc"
+        :src="previewImageSrc"
+        size="contain"
+        class="preview"
+      />
       <SpriteCarousel
         v-if="contentReady && editMode === 'anim' && sprite"
         :sprite="sprite"
@@ -64,7 +69,7 @@ import { useAsyncComputed } from '@/utils/utils'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import SkeletonEditor from '@/components/asset/animation/skeleton/SkeletonEditor.vue'
 import { useFileUrl } from '@/utils/file'
-import { NEmpty, NIcon, NSpin } from 'naive-ui'
+import { NEmpty, NIcon, NImage, NSpin } from 'naive-ui'
 import SpriteCarousel from '../details/SpriteCarousel.vue'
 import { EditOutlined } from '@vicons/antd'
 import { AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
@@ -91,10 +96,11 @@ const contentReady = ref(props.asset[isContentReady])
 
 const loadingVisible = computed(() => {
   return (
-    status.value !== null &&
-    (status.value === AIGCStatus.Waiting ||
-      status.value === AIGCStatus.Generating ||
-      (!contentReady.value && status.value === AIGCStatus.Finished))
+    (status.value !== null &&
+      (status.value === AIGCStatus.Waiting ||
+        status.value === AIGCStatus.Generating ||
+        (!contentReady.value && status.value === AIGCStatus.Finished))) ||
+    previewImageLoading.value
   )
 })
 
@@ -105,9 +111,28 @@ const loadingInfoText = computed(() => {
     return t({ en: `Generating...`, zh: `生成中...` })
   } else if (status.value === AIGCStatus.Finished && !contentReady.value) {
     return t({ en: `Loading...`, zh: `加载中...` })
+  } else if (previewImageLoading.value) {
+    return t({ en: `Loading preview...`, zh: `加载预览...` })
   }
   return ''
 })
+
+const failInfoText = ref(t({ en: `Generation failed`, zh: `生成失败` }))
+
+let previewImageFile = useAsyncComputed<File | undefined>(async () => {
+  if (props.asset.files?.imageUrl) {
+    const files = await getFiles({ imageUrl: props.asset.files.imageUrl })
+    if (files) {
+      return files.imageUrl
+    } else {
+      status.value = AIGCStatus.Failed
+      failInfoText.value = t({ en: `Failed to load preview`, zh: `加载预览失败` })
+    }
+  }
+  return new Promise((resolve) => resolve(undefined))
+})
+
+const [previewImageSrc, previewImageLoading] = useFileUrl(() => previewImageFile.value)
 
 /**
  * Generate content like animation from AI-generated sprite preview
@@ -120,9 +145,12 @@ const generateContent = async () => {
     status.value = generateTask.status
   })
   generateTask.addEventListener('AIGCFinished', () => {
-    contentReady.value = true
     if (generateTask.result?.files) {
+      contentReady.value = true
       loadCloudFiles(generateTask.result.files)
+    } else {
+      status.value = AIGCStatus.Failed
+      failInfoText.value = t({ en: `Failed to generate content`, zh: `生成内容失败` })
     }
   })
   generateTask.start()
@@ -207,6 +235,9 @@ defineExpose({
   position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .skeleton-editor {
