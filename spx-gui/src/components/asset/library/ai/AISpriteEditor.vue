@@ -1,53 +1,49 @@
 <template>
-  <Transition name="slide-fade" mode="out-in" appear>
-    <template v-if="!contentReady">
-      <div class="generating-info">
-        <NSpin :size="64">
-          <template #description>
-            <Transition name="slide-fade" mode="out-in" appear>
-              <span v-if="status === AIGCStatus.Waiting" class="generating-text">
-                {{ $t({ en: `Pending...`, zh: `排队中...` }) }}
-              </span>
-              <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
-                {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
-              </span>
-              <span
-                v-else-if="status === AIGCStatus.Finished && !contentReady"
-                class="generating-text"
-              >
-                {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
-              </span>
-            </Transition>
-          </template>
-        </NSpin>
-      </div>
-    </template>
-    <template v-else-if="status === AIGCStatus.Failed">
-      <div class="failing-info">
-        <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
-          <CancelOutlined />
-        </NIcon>
-        <span v-if="status === AIGCStatus.Failed" class="failing-text">
-          {{ $t({ en: `Generation failed`, zh: `生成失败` }) }}
-        </span>
-        <span v-else class="failing-text">
-          {{ $t({ en: `Loading failed`, zh: `加载失败` }) }}
-        </span>
-      </div>
-    </template>
-    <template v-else>
-      <div class="container">
-        <SpriteCarousel v-if="sprite" :sprite="sprite" class="sprite-carousel" width="75%" />
-        <Transition name="slide-fade" mode="out-in" appear>
-          <SkeletonEditor
-            v-if="editing && sprite && hasSkeletonAnimation"
-            :sprite="sprite"
-            class="skeleton-editor"
-          />
-        </Transition>
-      </div>
-    </template>
-  </Transition>
+  <div class="editor-container">
+    <Transition name="slide-fade" mode="out-in" appear>
+      <template v-if="loadingVisible">
+        <div class="generating-info">
+          <NSpin :size="64">
+            <template #description>
+              <Transition name="slide-fade" mode="out-in" appear>
+                <span :key="loadingInfoText" class="generating-text">
+                  {{ loadingInfoText }}
+                </span>
+              </Transition>
+            </template>
+          </NSpin>
+        </div>
+      </template>
+    </Transition>
+
+    <Transition name="slide-fade" mode="out-in" appear>
+      <template v-if="status === AIGCStatus.Failed">
+        <div class="failing-info">
+          <NIcon color="var(--ui-color-danger-main, #ef4149)" :size="32">
+            <CancelOutlined />
+          </NIcon>
+          <span class="failing-text">
+            {{ $t({ en: `Generation failed`, zh: `生成失败` }) }}
+          </span>
+        </div>
+      </template>
+    </Transition>
+    <div class="container">
+      <SpriteCarousel
+        v-if="contentReady && editMode === 'anim' && sprite"
+        :sprite="sprite"
+        class="sprite-carousel"
+        width="75%"
+      />
+      <Transition name="slide-fade" mode="out-in" appear>
+        <SkeletonEditor
+          v-if="contentReady && editMode === 'skeleton' && sprite && hasSkeletonAnimation"
+          :sprite="sprite"
+          class="skeleton-editor"
+        />
+      </Transition>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -71,6 +67,7 @@ import { useFileUrl } from '@/utils/file'
 import { NEmpty, NIcon, NSpin } from 'naive-ui'
 import SpriteCarousel from '../details/SpriteCarousel.vue'
 import { EditOutlined } from '@vicons/antd'
+import { AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import { AISpriteTask } from '@/models/aigc'
@@ -78,6 +75,8 @@ import { getFiles } from '@/models/common/cloud'
 import type { File } from '@/models/common/file'
 import { hashFileCollection } from '@/models/common/hash'
 import { CancelOutlined } from '@vicons/material'
+import { useI18n } from '@/utils/i18n'
+const { t } = useI18n()
 
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Sprite>
@@ -89,6 +88,26 @@ const emit = defineEmits<{
 
 const status = ref<AIGCStatus | null>(null)
 const contentReady = ref(props.asset[isContentReady])
+
+const loadingVisible = computed(() => {
+  return (
+    status.value !== null &&
+    (status.value === AIGCStatus.Waiting ||
+      status.value === AIGCStatus.Generating ||
+      (!contentReady.value && status.value === AIGCStatus.Finished))
+  )
+})
+
+const loadingInfoText = computed(() => {
+  if (status.value === AIGCStatus.Waiting) {
+    return t({ en: `Pending...`, zh: `排队中...` })
+  } else if (status.value === AIGCStatus.Generating) {
+    return t({ en: `Generating...`, zh: `生成中...` })
+  } else if (status.value === AIGCStatus.Finished && !contentReady.value) {
+    return t({ en: `Loading...`, zh: `加载中...` })
+  }
+  return ''
+})
 
 /**
  * Generate content like animation from AI-generated sprite preview
@@ -131,12 +150,6 @@ const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
   return
 }
 
-onMounted(() => {
-  if (!contentReady.value) {
-    generateContent()
-  }
-})
-
 const sprite = useAsyncComputed<Sprite | undefined>(() => {
   if (!props.asset[isContentReady]) {
     return new Promise((resolve) => resolve(undefined))
@@ -144,22 +157,38 @@ const sprite = useAsyncComputed<Sprite | undefined>(() => {
   return cachedConvertAssetData(props.asset as Required<TaggedAIAssetData<AssetType.Sprite>>)
 })
 
-const editing = ref(false)
+// preview : view preview image
+// repaint : repaint preview image
+// view : view sprite
+// edit : edit skeleton animation
+type EditMode = 'preview' | 'repaint' | 'anim' | 'skeleton'
+const editMode = ref<EditMode>('preview')
 const hasSkeletonAnimation = computed(() => !!sprite.value?.skeletonAnimation)
 
-const actions = computed(
-  () =>
+const actions = computed(() =>
+  (
     [
       {
+        name: 'generate-anim',
+        label: { zh: '动画', en: 'Animation' },
+        icon: DirectionsRunRound,
+        type: 'secondary' satisfies ButtonType,
+        action: async () => {
+          await generateContent()
+          editMode.value = 'anim'
+        }
+      },
+      contentReady.value && {
         name: 'edit',
         label: { zh: '编辑', en: 'Edit' },
         icon: EditOutlined,
-        type: (editing.value ? 'primary' : 'secondary') satisfies ButtonType,
+        type: (editMode.value === 'skeleton' ? 'primary' : 'secondary') satisfies ButtonType,
         action: () => {
-          editing.value = !editing.value
+          editMode.value = editMode.value === 'skeleton' ? 'anim' : 'skeleton'
         }
       }
-    ] satisfies EditorAction[]
+    ] satisfies (EditorAction | false)[]
+  ).filter(Boolean)
 )
 
 defineExpose({
@@ -168,6 +197,12 @@ defineExpose({
 </script>
 
 <style scoped>
+.editor-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .container {
   position: relative;
   width: 100%;
@@ -182,15 +217,20 @@ defineExpose({
   height: 100%;
 }
 
-
-
 .generating-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
 }
 
 .generating-text {
