@@ -1,15 +1,11 @@
-// Get project by owner and name.
+// Get asset rate.
 //
 // Request:
 //   GET /user/rate/:id
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
-if !ok {
-	return
-}
-rate, err := ctrl.GetRate(ctx.Context(), ${id}, user.Name)
+rate, err := ctrl.GetRate(ctx.Context(), ${id})
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

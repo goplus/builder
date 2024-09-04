@@ -20,7 +20,7 @@ if !parseJSON(ctx, newRate) {
 }
 
 
-rate, err := ctrl.InsertRate(ctx.Context(), ${id}, user.Name, newRate)
+rate, err := ctrl.InsertRate(ctx.Context(), ${id}, user.Id, newRate)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return

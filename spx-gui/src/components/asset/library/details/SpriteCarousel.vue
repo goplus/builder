@@ -11,14 +11,14 @@
         :show-dots="false"
         :autoplay="play && autoplay"
         :effect="'card' /** use card instead of slide to prevent duplicate carousel items */"
-        :prev-slide-style="{ transform: 'translateX(-200%)', opacity: 0 }"
-        :next-slide-style="{ transform: 'translateX(100%)', opacity: 0 }"
+        :prev-slide-style="previews.length > 1 ? { transform: 'translateX(-200%)', opacity: 0 } : {transform: 'none', opacity: 1, left: 0 }"
+        :next-slide-style="previews.length > 1 ? { transform: 'translateX(100%)', opacity: 0 } : {transform: 'none', opacity: 1, left: 0 }"
         class="carousel"
         :interval="5000"
         :current-index="currentIndex"
         @update:current-index="handleCarouselSwitch"
       >
-        <NCarouselItem v-for="anim in skeletonAnimations" :key="anim.name">
+        <NCarouselItem v-for="anim in skeletonAnimations" :key="anim.name" class="carousel-item skeleton-carousel-item">
           <SkeletonAnimationPlayer
             v-if="anim.animData.value && skeletonTextures && skeletonTextures.url.value"
             :data="anim.animData.value"
@@ -47,7 +47,7 @@
             </template>
           </NSpin>
         </NCarouselItem>
-        <NCarouselItem v-for="anim in animations" :key="anim.name">
+        <NCarouselItem v-for="anim in animations" :key="anim.name" class="carousel-item animation-carousel-item">
           <AnimationPlayer
             :costumes="anim.costumes"
             :duration="anim.duration"
@@ -55,7 +55,7 @@
             :style="{ width: '100%', height: '100%' }"
           />
         </NCarouselItem>
-        <NCarouselItem v-for="custom in customs" :key="custom.name">
+        <NCarouselItem v-for="custom in customs" :key="custom.name" class="carousel-item custom-carousel-item">
           <NImage
             v-if="custom[imgSrc].value"
             :src="custom[imgSrc].value ?? undefined"

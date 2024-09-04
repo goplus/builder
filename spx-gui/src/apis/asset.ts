@@ -36,6 +36,7 @@ export type AssetData<T extends AssetType = AssetType> = {
   isLiked: boolean
   /** Favorite count */
   likeCount: number
+  rate?: number
 }
 
 export type AddAssetParams = Pick<

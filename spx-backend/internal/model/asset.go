@@ -55,7 +55,7 @@ type Asset struct {
 	IsLiked bool `json:"isLiked"`
 
 	// LikeCount is the number of likes on the asset.
-	LikeCount int `json:"likedCount"`
+	LikeCount int `json:"likeCount"`
 }
 
 // TableAsset is the table name of [Asset] in database.

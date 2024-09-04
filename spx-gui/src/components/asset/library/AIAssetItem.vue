@@ -1,5 +1,8 @@
 <template>
-  <div class="asset-item ai-asset-item">
+  <div 
+    class="asset-item ai-asset-item"
+    :style="{ '--column-count': props.columnCount }"
+  >
     <div class="asset-preview-container">
       <div class="asset-preview">
         <Transition name="slide-fade" mode="out-in" appear>
@@ -74,9 +77,11 @@ const props = withDefaults(
   defineProps<{
     task: AIGCTask
     showAiAssetTip?: boolean
+    columnCount?: number
   }>(),
   {
-    showAiAssetTip: true
+    showAiAssetTip: true,
+    columnCount: 5
   }
 )
 
@@ -130,11 +135,9 @@ const loadCloudFiles = async (cloudFiles?: AIGCFiles) => {
 </script>
 
 <style lang="scss" scoped>
-$COLUMN_COUNT: 6;
-$FLEX_BASIS: calc(90% / $COLUMN_COUNT);
-
 .asset-item {
-  flex: 0 1 $FLEX_BASIS;
+  --flex-basis: calc(90% / var(--column-count, 5));
+  flex: 0 1 var(--flex-basis);
   display: flex;
   flex-direction: column;
   align-items: flex-start;

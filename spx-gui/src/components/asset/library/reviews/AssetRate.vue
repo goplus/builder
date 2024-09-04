@@ -92,7 +92,6 @@ const rateData = useAsyncComputed(async () => {
       }
     }
     return formatRate(res)
-    
 })
 
 // format rate detail data to array like [0, 0, 0, 0, 0]

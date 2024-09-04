@@ -697,22 +697,15 @@ func (this *get_user_rate_id) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_user_rate_#id.yap:6:1
 	ctx := &this.Context
 //line cmd/spx-backend/get_user_rate_#id.yap:8:1
-	user, ok := ensureUser(ctx)
+	rate, err := this.ctrl.GetRate(ctx.Context(), this.Gop_Env("id"))
 //line cmd/spx-backend/get_user_rate_#id.yap:9:1
-	if !ok {
-//line cmd/spx-backend/get_user_rate_#id.yap:10:1
-		return
-	}
-//line cmd/spx-backend/get_user_rate_#id.yap:12:1
-	rate, err := this.ctrl.GetRate(ctx.Context(), this.Gop_Env("id"), user.Name)
-//line cmd/spx-backend/get_user_rate_#id.yap:13:1
 	if err != nil {
-//line cmd/spx-backend/get_user_rate_#id.yap:14:1
+//line cmd/spx-backend/get_user_rate_#id.yap:10:1
 		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/get_user_rate_#id.yap:15:1
+//line cmd/spx-backend/get_user_rate_#id.yap:11:1
 		return
 	}
-//line cmd/spx-backend/get_user_rate_#id.yap:17:1
+//line cmd/spx-backend/get_user_rate_#id.yap:13:1
 	this.Json__1(rate)
 }
 func (this *get_user_rate_id) Classfname() string {
@@ -1110,7 +1103,7 @@ func (this *post_user_rate_id) Main(_gop_arg0 *yap.Context) {
 		return
 	}
 //line cmd/spx-backend/post_user_rate_#id.yap:23:1
-	rate, err := this.ctrl.InsertRate(ctx.Context(), this.Gop_Env("id"), user.Name, newRate)
+	rate, err := this.ctrl.InsertRate(ctx.Context(), this.Gop_Env("id"), user.Id, newRate)
 //line cmd/spx-backend/post_user_rate_#id.yap:24:1
 	if err != nil {
 //line cmd/spx-backend/post_user_rate_#id.yap:25:1
