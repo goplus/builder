@@ -182,16 +182,17 @@ func getScopesItems(fileName, fileCode string, cursor int) (completionList, erro
 
 	items := &completionList{}
 
-	smallScope := findSmallestScopeAtPosition(info, cursorPos)
-	for _, scope := range smallScope {
+	smallScopes := findSmallestScopesAtPosition(info, cursorPos)
+	for _, scope := range smallScopes {
 		traverseToRoot(scope, items, info)
 	}
 
 	return *items, nil
 }
 
-func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) []*types.Scope {
+func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos) []*types.Scope {
 	var scopeList []*types.Scope
+	var smallList []*types.Scope
 
 	for _, scope := range info.Scopes {
 		if scope.Contains(pos) {
@@ -207,31 +208,22 @@ func findSmallestScopeAtPosition(info *typesutil.Info, pos token.Pos) []*types.S
 		return scopeList[i].Pos() >= scopeList[j].Pos() && scopeList[i].End() <= scopeList[j].End()
 	})
 
-	return traverseFindParent(scopeList)
+	for _, scope := range scopeList {
+		if !checkScopeChildrenContainsPos(scope, pos) {
+			smallList = append(smallList, scope)
+		}
+	}
+
+	return smallList
 }
 
-func traverseFindParent(scopeList []*types.Scope) []*types.Scope {
-	deep := make(map[*types.Scope]int)
-	maxDeep := 0
-	for _, scope := range scopeList {
-		temp := *scope
-		for {
-			if temp.Parent() != nil {
-				temp = *temp.Parent()
-				deep[scope]++
-				maxDeep = max(maxDeep, deep[scope])
-			} else {
-				break
-			}
+func checkScopeChildrenContainsPos(scope *types.Scope, pos token.Pos) bool {
+	for i := range scope.NumChildren() {
+		if scope.Child(i).Contains(pos) {
+			return true
 		}
 	}
-	filter := []*types.Scope{}
-	for _, scope := range scopeList {
-		if deep[scope] == maxDeep {
-			filter = append(filter, scope)
-		}
-	}
-	return filter
+	return false
 }
 
 func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.Info) {
@@ -292,6 +284,9 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 func handleType(obj types.Object, name string, items *completionList) {
 	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
 		for i := 0; i < structType.NumFields(); i++ {
+			if structType.Field(i).Type().String() != "*github.com/goplus/spx.Game" {
+				continue
+			}
 			pointer, ok := structType.Field(i).Type().(*types.Pointer)
 			if ok {
 				stru, ok := pointer.Elem().Underlying().(*types.Struct)
@@ -300,7 +295,9 @@ func handleType(obj types.Object, name string, items *completionList) {
 				}
 			}
 		}
-		structMethodsToCompletion(structType, items)
+		if checkFieldExist(structType, "github.com/goplus/spx.Sprite") {
+			structMethodsToCompletion(structType, items)
+		}
 	}
 	if named, ok := obj.Type().(*types.Named); ok {
 		for i := 0; i < named.NumMethods(); i++ {
@@ -313,13 +310,34 @@ func handleType(obj types.Object, name string, items *completionList) {
 				Type:  "func",
 			}
 			signature := method.Type().(*types.Signature)
-			signList, _, _ := extractParams(signature)
+			signList, sampleList, _ := extractParams(signature)
+			if listContains(sampleList, "__gop_overload_args__") {
+				continue
+			}
 			item.InsertText = method.Name() + " " + strings.Join(signList, ", ")
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)
 			}
 		}
 	}
+}
+
+func listContains(signList []string, target string) bool {
+	for _, s := range signList {
+		if s == target {
+			return true
+		}
+	}
+	return false
+}
+
+func checkFieldExist(structType *types.Struct, field string) bool {
+	for i := range structType.NumFields() {
+		if structType.Field(i).Type().String() == field {
+			return true
+		}
+	}
+	return false
 }
 
 func structMethodsToCompletion(structType *types.Struct, items *completionList) {
@@ -340,7 +358,10 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 				Type:  "func",
 			}
 			signature := method.Type().(*types.Signature)
-			signList, _, _ := extractParams(signature)
+			signList, sampleList, _ := extractParams(signature)
+			if listContains(sampleList, "__gop_overload_args__") {
+				continue
+			}
 			item.InsertText = methodName + " " + strings.Join(signList, ", ")
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)

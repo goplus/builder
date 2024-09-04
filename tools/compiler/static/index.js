@@ -78,7 +78,7 @@ function getTypes(data) {
 function getTokenDetail(data) {
     let pkgPath = data.in.pkgPath
     let token = data.in.token
-    let res = getTokenDetail_GO(token)
+    let res = getTokenDetail_GO(token, pkgPath)
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get token detail")
