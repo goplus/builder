@@ -13,7 +13,7 @@ import {
   type InlayHintDecoration
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { CodeEnum, Compiler } from '../compiler'
+import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -29,10 +29,10 @@ import {
   motionCategory,
   sensingCategory,
   soundCategory,
+  getVariableCategory,
   TokenType,
   type TokenCategory
 } from '@/components/editor/code-editor/tools'
-import { sprite } from '@/components/ui/tokens/colors'
 
 type JumpPosition = {
   line: number
