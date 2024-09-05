@@ -60,6 +60,21 @@ type GetEmbeddingResult struct {
 	Desc      string    `json:"desc"`
 }
 
+type GenerateInpaintingParams struct {
+	Prompt          string `json:"prompt"`
+	Category        string `json:"category"`
+	Type            int    `json:"type"`
+	ModelName       string `json:"model_name"`
+	ImageUrl        string `json:"image_url"`
+	ControlImageUrl string `json:"control_image_url"`
+	CallbackUrl     string `json:"callback_url"`
+}
+
+type GenerateInpaintingResult struct {
+	ImageUrl string `json:"image_url"`
+	Desc     string `json:"desc"`
+}
+
 type GetAIAssetStatusResult struct {
 	// Status is the status of the AI asset.
 	Status AssetStatus    `json:"status"`
@@ -226,6 +241,20 @@ func (ctrl *Controller) GetEmbedding(ctx context.Context, param *GetEmbeddingPar
 		return nil, err
 	}
 	return &embeddingResult, nil
+}
+
+// GenerateInpainting call AIGC service to inpainting image with control image.
+func (ctrl *Controller) GenerateInpainting(ctx context.Context, param *GenerateInpaintingParams) (*GenerateInpaintingResult, error) {
+	logger := log.GetReqLogger(ctx)
+	var generateInpaintingResult GenerateInpaintingResult
+	// print param.ControlImageUrl
+	logger.Printf("ControlImageUrl: %s", param.ControlImageUrl)
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/generate", &param, &generateInpaintingResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
+	}
+	return &generateInpaintingResult, nil
 }
 
 // GetAIAssetStatus get AI asset status.
