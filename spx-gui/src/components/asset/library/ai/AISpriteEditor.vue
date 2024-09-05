@@ -37,6 +37,7 @@
         />
         <ImageRepaint
           v-else-if="editMode === 'repaint' && previewImageSrc"
+          ref="imageRepaint"
           :image-src="previewImageSrc"
           class="repaint"
         />
@@ -96,6 +97,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   contentReady: []
 }>()
+
+const imageRepaint = ref<InstanceType<typeof ImageRepaint> | null>(null)
+const activeEditor = computed(
+  () =>
+    ({
+      preview: null,
+      repaint: imageRepaint.value,
+      anim: null,
+      skeleton: null,
+    })[editMode.value]
+)
 
 const status = ref<AIGCStatus | null>(null)
 const contentReady = ref(props.asset[isContentReady])
@@ -202,13 +214,22 @@ const hasSkeletonAnimation = computed(() => !!sprite.value?.skeletonAnimation)
 const actions = computed(() =>
   (
     [
-      {
+      editMode.value === 'preview' && {
         name: 'repaint',
         label: { zh: '重绘', en: 'Repaint' },
         icon: AutoFixHighOutlined,
-        type: (editMode.value === 'repaint' ? 'primary' : 'secondary') satisfies ButtonType,
+        type: 'secondary' satisfies ButtonType,
         action: () => {
           editMode.value = editMode.value === 'repaint' ? 'preview' : 'repaint'
+        }
+      },
+      editMode.value === 'repaint' && {
+        name: 'repaint',
+        label: { zh: '重绘', en: 'Repaint' },
+        icon: AutoFixHighOutlined,
+        type: 'primary' satisfies ButtonType,
+        action: () => {
+          activeEditor.value?.inpaint()
         }
       },
       {

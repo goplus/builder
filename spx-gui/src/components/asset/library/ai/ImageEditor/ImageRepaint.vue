@@ -11,7 +11,13 @@
 </template>
 
 <script lang="ts" setup>
+import { saveFiles } from '@/models/common/cloud';
+import { Disposable } from '@/models/common/disposable';
+import { fromBlob } from '@/models/common/file';
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useSearchCtx } from '../../SearchContextProvider.vue';
+import { InpaintingTask } from '@/models/aigc';
+import { client, type UniversalToWebUrlMap } from '@/apis/common';
 
 const props = defineProps<{
   imageSrc: string
@@ -62,7 +68,7 @@ const drawImage = (src: string) => {
   }
 }
 
-const brushSize = 16
+const brushSize = 32
 const brushColor = '#EF4149'
 let isDrawing = false
 
@@ -89,6 +95,19 @@ const endDraw = () => {
   drawCtx.closePath()
 }
 
+const inpaint = async () => {
+  const controlImg = await exportMaskedImage()
+  if (!controlImg) return
+  const url = await requestInpainting(controlImg, 'a blue hair girl')
+  if (!url) return
+  const img = new Image()
+  img.src = url
+  await asyncOnload(img)
+  imageCtx.drawImage(img, 0, 0, img.width, img.height, 0, 0, imageCtx.canvas.width, imageCtx.canvas.height)
+  // clear the draw canvas
+  drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
+}
+
 onMounted(() => {
   if (!container.value || !drawCanvas.value || !imageCanvas.value) return
   drawCtx = drawCanvas.value.getContext('2d') as CanvasRenderingContext2D
@@ -106,7 +125,6 @@ onUnmounted(() => {
 
 const exportMaskedImage = async () => {
   if (!drawCanvas.value || !imageCanvas.value) return
-  console.log('exporting masked image')
   const tempCanvas = document.createElement('canvas')
   const baseImg = new Image()
   baseImg.src = props.imageSrc
@@ -122,12 +140,8 @@ const exportMaskedImage = async () => {
   tempCtx.globalCompositeOperation = 'destination-out'
   tempCtx.drawImage(drawImg, 0, 0, baseImg.width, baseImg.height)
   tempCtx.globalCompositeOperation = 'source-over'
-  return tempCanvas.toDataURL()
-// download the image
-//   const a = document.createElement('a')
-//   a.href = tempCanvas.toDataURL()
-//   a.download = 'maskedImage.png'
-//   a.click()
+
+  return tempCanvas
 }
 
 const asyncOnload = (img: HTMLImageElement) => {
@@ -135,6 +149,50 @@ const asyncOnload = (img: HTMLImageElement) => {
 	img.onload = () => resolve()
   })
 }
+
+const searchCtx = useSearchCtx()
+
+const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string) => {
+  const d = new Disposable()
+  // img to blob
+  const imgBlob = await (async function() {
+    return new Promise<Blob>((resolve, reject) => {
+      controlImg.toBlob((blob) => {
+        if (!blob) {
+          reject('failed to convert canvas to blob')
+          return
+        }
+        resolve(blob)
+      })
+    })
+  })()
+
+  // blob to file url
+  const file = fromBlob('control.png', imgBlob)
+  const { fileCollection } = await saveFiles({ 'control.png': file })
+  const urlMap = (await client.post('/util/fileurls', { objects: [fileCollection['control.png']] })) as { objectUrls: UniversalToWebUrlMap}
+  const url = urlMap.objectUrls[fileCollection['control.png']]
+
+  const task = new InpaintingTask({
+    prompt: prompt ?? searchCtx.keyword,
+    category: searchCtx.category.join(','),
+    type: 1,
+    model_name: '',
+    control_image_url: url,
+    image_url: url,
+    callback_url: '',
+  })
+
+  await task.start()
+
+  d.dispose()
+
+  return task.result?.imageUrl
+}
+
+defineExpose({
+  inpaint,
+})
 </script>
 
 <style scoped>
