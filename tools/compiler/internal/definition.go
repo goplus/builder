@@ -13,18 +13,19 @@ import (
 
 type definitionItem struct {
 	BasePos
-	PkgName string  `json:"pkg_name"`
-	PkgPath string  `json:"pkg_path"`
-	Name    string  `json:"name"`   // This is the token name
-	Usages  []usage `json:"usages"` // contains 1 or n usage for matches.
-	From    BasePos
+	PkgName    string  `json:"pkg_name"`
+	PkgPath    string  `json:"pkg_path"`
+	Name       string  `json:"name"`   // This is the token name
+	Usages     []usage `json:"usages"` // contains 1 or n usage for matches.
+	StructName string  `json:"struct_name"`
+	From       BasePos
 }
 
 type usage struct {
 	UsageID     string  `json:"usageID"`
 	Declaration string  `json:"declaration"`
 	Sample      string  `json:"sample"`
-	InsertText  string  `json:"insertText"`
+	InsertText  string  `json:"insert_text"`
 	Params      []param `json:"params"`
 	Type        string  `json:"type"`
 }
@@ -32,6 +33,11 @@ type usage struct {
 type param struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
+}
+
+type TokenID struct {
+	TokenName string `json:"token_name"`
+	TokenPkg  string `json:"token_pkg"`
 }
 
 type definitions []*definitionItem
@@ -140,7 +146,7 @@ func getDefinitionList(info *typesutil.Info) definitions {
 
 // createDefinitionItem creates a definitionItem from an ident and obj.
 func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
-	return &definitionItem{
+	define := &definitionItem{
 		BasePos: BasePos{
 			StartPos: int(ident.Pos()),
 			EndPos:   int(ident.End()),
@@ -149,6 +155,21 @@ func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
 		PkgPath: obj.Pkg().Path(),
 		Name:    ident.Name,
 	}
+	if fn, ok := obj.(*types.Func); ok {
+		sign := fn.Type().(*types.Signature)
+		recv := sign.Recv()
+		if recv != nil {
+			recvType := recv.Type()
+			if ptrType, ok := recvType.(*types.Pointer); ok {
+				recvType = ptrType.Elem()
+			}
+			if named, ok := recvType.(*types.Named); ok {
+				define.StructName = named.Obj().Name()
+			}
+		}
+	}
+
+	return define
 }
 
 // createUsages creates a slice of usage based on the type of obj.
@@ -236,6 +257,7 @@ func tokenDetail(pkg *types.Package, token string) definitionItem {
 			continue
 		}
 		definitionItem.Usages = uses
+		definitionItem.StructName = obj.Name()
 	}
 
 	return definitionItem
@@ -267,7 +289,7 @@ func extractUsages(obj types.Object, token string) []usage {
 
 		use := usage{
 			UsageID:     strconv.Itoa(idx),
-			Declaration: simpleName,
+			Declaration: method.Type().String(),
 			Sample:      strings.Join(sampleList, " "),
 			Params:      params,
 			Type:        "func",

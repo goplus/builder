@@ -86,3 +86,13 @@ function getTokenDetail(data) {
     }
     return json.content
 }
+
+function getTokensDetail(data) {
+    let tokens = data.in.tokens
+    let res = getTokensDetail_GO(tokens)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+        throw new Error("can't get token detail")
+    }
+    return json.content
+}

@@ -19,6 +19,7 @@ var jsFuncList = []jsFuncBody{
 	getDefinition,
 	getCompletionItems,
 	getTokenDetail,
+	getTokensDetail,
 }
 
 // This register can auto register any function form jsFuncList.
@@ -46,6 +47,19 @@ func jsValue2Map(value js.Value) map[string]string {
 		fileMap[k] = v
 	}
 	return fileMap
+}
+
+// turn js list into list
+func jsValue2List(value js.Value) (result []internal.TokenID) {
+	for i := range value.Length() {
+		elem := value.Index(i)
+		token := internal.TokenID{
+			TokenName: elem.Get("TokenName").String(),
+			TokenPkg:  elem.Get("TokenPkg").String(),
+		}
+		result = append(result, token)
+	}
+	return
 }
 
 // Functions following below is the entry functions for js.
@@ -86,4 +100,9 @@ func getTokenDetail(this js.Value, p []js.Value) interface{} {
 	tokenName := p[0].String()
 	pkgPath := p[1].String()
 	return internal.NewReply(internal.GetTokenDetail(tokenName, pkgPath))
+}
+
+func getTokensDetail(this js.Value, p []js.Value) interface{} {
+	tokens := p[0]
+	return internal.NewReply(internal.GetTokensDetail(jsValue2List(tokens)))
 }

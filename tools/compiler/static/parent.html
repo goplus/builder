@@ -69,6 +69,8 @@ onStart => {
     <button onclick="runInlayHint()">runInlayHints</button>
     <button onclick="runCompletion()">runCompletion</button>
     <button onclick="runTokenDetail()">runTokenDetail</button>
+    <br>
+    <button onclick="runTokensDetail()">runTokensDetail</button>
 
 
     <div id="compiler-iframe-container">
@@ -198,6 +200,24 @@ onStart => {
                     line: Number(document.getElementById("line").value),
                     pkgPath: "github.com/goplus/spx",
                     token: document.getElementById("token").value
+                }
+            })
+            console.log(res)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    function runTokensDetail() {
+        try {
+            let res = getIframe().contentWindow.getTokensDetail({
+                in: {
+                    tokens: [
+                        {
+                            TokenName:"step",
+                            TokenPkg:"github.com/goplus/spx"
+                        }
+                    ]
                 }
             })
             console.log(res)
