@@ -26,7 +26,6 @@ func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, er
 func GetDefinition(fileName string, fileMap map[string]string) (interface{}, error) {
 	fset := token.NewFileSet()
 	pkg, _ := initProjectParser(fset, fileMap)
-
 	// get user code info
 	info, _ := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
 	definitionList := getDefinitionList(info)

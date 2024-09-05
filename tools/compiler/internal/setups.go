@@ -93,5 +93,5 @@ func initProjectParser(fileSet *token.FileSet, files map[string]string) (map[str
 		fileNames = append(fileNames, fileName)
 		vfs.AddFile(fileName, fileCode)
 	}
-	return parser.ParseFSFiles(fileSet, vfs, fileNames, 0)
+	return parser.ParseFSEntries(fileSet, vfs, fileNames, initSPXParserConf())
 }

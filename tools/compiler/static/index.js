@@ -45,7 +45,8 @@ function getCompletionItems (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
     let lineNum = data.in.line
-    let res = getCompletionItems_GO(fileName, {[fileName]:fileCode}, lineNum)
+    let colNum = data.in.column
+    let res = getCompletionItems_GO(fileName, {[fileName]:fileCode}, lineNum, colNum)
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get completion items")
