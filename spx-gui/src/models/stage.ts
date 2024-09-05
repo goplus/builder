@@ -53,6 +53,7 @@ export class Stage extends Disposable {
   setCode(code: string) {
     this.code = code
   }
+  codeFilePath = stageCodeFilePath
 
   backdrops: Backdrop[]
   private backdropIndex: number

@@ -16,6 +16,7 @@
     v-show="selectedTab === 'code'"
     ref="codeEditor"
     :loading="code == null"
+    :file="sprite.codeFilePath"
     :value="code ?? ''"
     @update:value="handleCodeUpdate"
   />
