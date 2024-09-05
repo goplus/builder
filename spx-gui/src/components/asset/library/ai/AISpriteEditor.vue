@@ -28,21 +28,26 @@
     </Transition>
 
     <div class="container">
-      <NImage
-        v-if="editMode === 'preview' && previewImageSrc"
-        :src="previewImageSrc"
-        size="contain"
-        class="preview"
-      />
-      <SpriteCarousel
-        v-if="contentReady && editMode === 'anim' && sprite"
-        :sprite="sprite"
-        class="sprite-carousel"
-        width="75%"
-      />
       <Transition name="slide-fade" mode="out-in" appear>
+        <NImage
+          v-if="editMode === 'preview' && previewImageSrc"
+          :src="previewImageSrc"
+          size="contain"
+          class="preview"
+        />
+        <ImageRepaint
+          v-else-if="editMode === 'repaint' && previewImageSrc"
+          :image-src="previewImageSrc"
+          class="repaint"
+        />
+        <SpriteCarousel
+          v-else-if="contentReady && editMode === 'anim' && sprite"
+          :sprite="sprite"
+          class="sprite-carousel"
+          width="75%"
+        />
         <SkeletonEditor
-          v-if="contentReady && editMode === 'skeleton' && sprite && hasSkeletonAnimation"
+          v-else-if="contentReady && editMode === 'skeleton' && sprite && hasSkeletonAnimation"
           :sprite="sprite"
           class="skeleton-editor"
         />
@@ -81,6 +86,7 @@ import type { File } from '@/models/common/file'
 import { hashFileCollection } from '@/models/common/hash'
 import { CancelOutlined } from '@vicons/material'
 import { useI18n } from '@/utils/i18n'
+import ImageRepaint from './ImageEditor/ImageRepaint.vue'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -196,6 +202,15 @@ const hasSkeletonAnimation = computed(() => !!sprite.value?.skeletonAnimation)
 const actions = computed(() =>
   (
     [
+      {
+        name: 'repaint',
+        label: { zh: '重绘', en: 'Repaint' },
+        icon: AutoFixHighOutlined,
+        type: (editMode.value === 'repaint' ? 'primary' : 'secondary') satisfies ButtonType,
+        action: () => {
+          editMode.value = editMode.value === 'repaint' ? 'preview' : 'repaint'
+        }
+      },
       {
         name: 'generate-anim',
         label: { zh: '动画', en: 'Animation' },
