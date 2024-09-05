@@ -1,3 +1,8 @@
+/**
+ * used for dynamic stylesheet management in inlayHint, attentionHint, etc.
+ * by hash content to generate cssText: .[hashContent]::after { content: 'xxx' }
+ * insert this into stylesheet
+ */
 export class StyleSheetContent {
   private styleElement = document.createElement('style')
   private styleMap = new Map<string, string>()
