@@ -64,6 +64,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
+// this is global css and active in monaco editor code line, add `.view-line` to avoid style override by monaco editor
 .view-line {
   .inlay-hint__param {
     font-size: 0.8em;

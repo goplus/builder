@@ -25,7 +25,6 @@ import {
   eventCategory,
   gameCategory,
   getAllTools,
-  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
@@ -34,6 +33,7 @@ import {
   TokenType,
   type TokenCategory
 } from '@/components/editor/code-editor/tools'
+import { sprite } from '@/components/ui/tokens/colors'
 
 type JumpPosition = {
   line: number
@@ -182,12 +182,17 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): Promise<InlayHintDecoration[]> {
-    const inlayHints = await this.compiler.getInlayHints([
-      {
-        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
-        content: model.getValue()
-      }
-    ])
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    const inlayHints = await this.compiler.getInlayHints(
+      (this.project.selectedSprite?.name ?? 'main') + '.spx',
+      [...spritesCodes, ...stageCodes]
+    )
 
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
@@ -238,12 +243,17 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): void {
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
     this.compiler
-      .getDiagnostics([
-        {
-          type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
-          content: model.getValue()
-        }
+      .getDiagnostics((this.project.selectedSprite?.name ?? 'main') + '.spx', [
+        ...spritesCodes,
+        ...stageCodes
       ])
       .then((attentionHints) => {
         setHints(

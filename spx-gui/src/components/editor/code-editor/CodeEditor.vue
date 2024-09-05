@@ -43,7 +43,7 @@ watchEffect(() => {
 function initCoordinator() {
   const editorUI = new EditorUI(i18n, () => editorCtx.project)
   const compiler = new Compiler()
-  const project = new Project()
+  const project = editorCtx.project
   const runtime = new Runtime()
   const docAbility = new DocAbility(i18n, () => editorCtx.project)
   const chatBot = new ChatBot(i18n)

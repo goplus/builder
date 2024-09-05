@@ -43,7 +43,8 @@
     let fileCode = data.in.code
     let fileName = data.in.name
     let lineNum = data.in.line
-    let res = getCompletionItems_GO(fileName, fileCode, lineNum)
+    let colNum = data.in.column
+    let res = getCompletionItems_GO(fileName, fileCode, lineNum, colNum)
     let json = JSON.parse(res)
     if(!json.ok) {
       throw new Error("can't get completion items")
@@ -69,6 +70,17 @@
     let json = JSON.parse(res)
     if(!json.ok) {
       throw new Error("can't get types")
+    }
+    return json.content
+  }
+
+  function getTokenDetail(data) {
+    let pkgPath = data.in.pkgPath
+    let token = data.in.token
+    let res = getTokenDetail_GO(token, pkgPath)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+      throw new Error("can't get token detail")
     }
     return json.content
   }
