@@ -24,12 +24,12 @@ defineProps<{
   >
     <div class="container">
       <ChatBubble
-        v-for="message in chat.messages"
+        v-for="message in chat.chatState.messages"
         :key="message.content"
         :message="message"
-        :loading="chat.loading"
+        :loading="chat.chatState.loading"
       ></ChatBubble>
-      <ChatLoading v-if="chat.loading"></ChatLoading>
+      <ChatLoading v-if="chat.chatState.loading"></ChatLoading>
     </div>
   </UIFormModal>
 </template>
@@ -49,4 +49,5 @@ defineProps<{
   background: var(--ui-color-grey-500);
   border-radius: 4px;
 }
+
 </style>

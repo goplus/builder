@@ -115,9 +115,9 @@ type AITaskParams struct {
 }
 
 type ProjectContext struct {
-	ProjectName     string            `json:"projectName"`
-	ProjectVariable []ProjectVariable `json:"projectVariable"`
-	ProjectCode     []Code            `json:"projectCode"`
+	ProjectName      string            `json:"projectName"`
+	ProjectVariables []ProjectVariable `json:"projectVariables"`
+	ProjectCode      []Code            `json:"projectCode"`
 }
 
 type ProjectVariable struct {
@@ -174,8 +174,8 @@ type CodeSuggest struct {
 func (projCtx ProjectContext) String() string {
 	str := "ProjectName:" + projCtx.ProjectName + "\n"
 
-	str += "ProjectVariable:"
-	for _, variable := range projCtx.ProjectVariable {
+	str += "ProjectVariables:"
+	for _, variable := range projCtx.ProjectVariables {
 		str += fmt.Sprintf("Variable Type: %s, Name: %s\n", variable.Type, variable.Name)
 	}
 
@@ -203,7 +203,7 @@ func (params *AIStartChatParams) Validate() (bool, string) {
 	if params.UserInput == "" {
 		return false, "no input"
 	}
-	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariable) == 0 {
+	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariables) == 0 {
 		return false, "project check failed"
 	}
 	return ChatActions(params.ChatAction).Validate()
@@ -217,7 +217,7 @@ func (params *AIChatParams) Validate() (bool, string) {
 }
 
 func (params *AITaskParams) Validate() (bool, string) {
-	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariable) == 0 {
+	if params.ProjectContext.ProjectName == "" || len(params.ProjectContext.ProjectCode) == 0 || len(params.ProjectContext.ProjectVariables) == 0 {
 		return false, "project check failed"
 	}
 	if ok, msg := TaskActions(params.TaskAction).Validate(); !ok {
@@ -415,6 +415,10 @@ func (ctrl *Controller) StartChat(ctx context.Context, p *AIStartChatParams) (Ch
 	if err != nil {
 		return ChatResp{}, err
 	}
+	err = saveChat(ctx, ctrl.db, *chat)
+	if err != nil {
+		return ChatResp{}, err
+	}
 	return newChatResp(resp, *chat), nil
 }
 
@@ -477,6 +481,7 @@ func chat2ModelChat(chat chat) *model.LLMChat {
 		Messages:          chat.Messages,
 		Owner:             chat.User.Name,
 		Status:            model.StatusNormal,
+		CTime:             time.Now(),
 	}
 }
 

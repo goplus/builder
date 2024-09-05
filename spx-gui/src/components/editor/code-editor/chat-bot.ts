@@ -1,5 +1,6 @@
-import type { AIChatParams, AIStartChatParams, ProjectContext } from '@/apis/llm'
-import { ChatAction, deleteChat, nextChat, startChat, UserLang } from '@/apis/llm'
+import { reactive } from "vue";
+import type { AIChatParams, AIStartChatParams, AITaskParams, ProjectContext } from '@/apis/llm'
+import { ChatAction, deleteChat, nextChat, startChat, startTask, TaskAction, UserLang } from '@/apis/llm'
 import type { Project } from '@/models/project'
 import { I18n } from '@/utils/i18n'
 
@@ -18,26 +19,34 @@ export type ContinueAction = {
 
 export class ChatBot {
   private i18n: I18n
-  constructor(i18n: I18n) {
+  getProject: () => Project
+  constructor(i18n: I18n, getProject: () => Project) {
     this.i18n = i18n
+    this.getProject = getProject
   }
 
-  startExplainChat(input: string, project: Project): Chat {
-    return new Chat(
-      this.createParams(ChatAction.explain, input, this.getUserLanguage(), project),
-      this.i18nInputWithAction(input, ChatAction.explain)
+  startExplainChat(input: string): Chat {
+    return reactive(
+      new Chat(
+        this.createParams(ChatAction.explain, input, this.getUserLanguage(), this.getProject()),
+        this.i18nInputWithAction(input, ChatAction.explain)
+      )
     )
   }
-  startCommentChat(input: string, project: Project): Chat {
-    return new Chat(
-      this.createParams(ChatAction.comment, input, this.getUserLanguage(), project),
-      this.i18nInputWithAction(input, ChatAction.comment)
+  startCommentChat(input: string): Chat {
+    return reactive(
+      new Chat(
+        this.createParams(ChatAction.comment, input, this.getUserLanguage(),  this.getProject()),
+        this.i18nInputWithAction(input, ChatAction.comment)
+      )
     )
   }
-  startFixCodeChat(input: string, project: Project): Chat {
-    return new Chat(
-      this.createParams(ChatAction.fixCode, input, this.getUserLanguage(), project),
-      this.i18nInputWithAction(input, ChatAction.fixCode)
+  startFixCodeChat(input: string): Chat {
+    return reactive(
+      new Chat(
+        this.createParams(ChatAction.fixCode, input, this.getUserLanguage(),  this.getProject()),
+        this.i18nInputWithAction(input, ChatAction.fixCode)
+      )
     )
   }
 
@@ -49,43 +58,11 @@ export class ChatBot {
   ): AIStartChatParams {
     const params: AIStartChatParams = {
       chatAction: action,
-      projectContext: this.createProjectContext(project),
+      projectContext: createProjectContext(project),
       userInput: input,
       userLang: userLanguage
     }
     return params
-  }
-
-  private createProjectContext(project: Project): ProjectContext {
-    const [metadata] = project.export()
-    const projectContext: ProjectContext = {
-      projectName: metadata.name,
-      projectVariables: [],
-      projectCode: []
-    }
-    for (const sound of project.sounds) {
-      projectContext.projectVariables.push({
-        type: 'Sound',
-        name: sound.name
-      })
-    }
-    for (const sprite of project.sprites) {
-      projectContext.projectVariables.push({
-        type: 'Sprite',
-        name: sprite.name
-      })
-      projectContext.projectCode.push({
-        type: 'Sprite',
-        name: sprite.name,
-        src: sprite.code
-      })
-    }
-    projectContext.projectCode.push({
-      type: 'Stage',
-      name: 'Stage',
-      src: project.stage.code
-    })
-    return projectContext
   }
 
   private i18nInputWithAction(input: string, action: ChatAction): string {
@@ -113,14 +90,16 @@ export class ChatBot {
 }
 
 export class Chat {
-  chatID: string = ''
-  messages: ChatMessage[] = []
-  length: number = 0
-  loading: boolean = true
+  chatState = reactive<{chatID: string, messages: ChatMessage[], length: number, loading: boolean}>({
+    chatID:  '',
+    messages:  [],
+    length: 0,
+    loading: true,
+  })
 
   constructor(params: AIStartChatParams, showMessage: string) {
-    this.loading = true
-    this.messages.push({
+    this.chatState.loading = true
+    this.chatState.messages.push({
       content: showMessage,
       role: 'user',
       actions: []
@@ -129,11 +108,11 @@ export class Chat {
   }
 
   async sendFirstMessage(params: AIStartChatParams) {
-    this.length++
+    this.chatState.length++
     const res = await startChat(params)
-    this.loading = false
-    const content = res.respMessage
-    const questions = res.respQuestions
+    this.chatState.loading = false
+    const content = res.resp_message
+    const questions = res.resp_questions
     const messages: ChatMessage = {
       content: content,
       role: 'assistant',
@@ -142,29 +121,29 @@ export class Chat {
         click: () => this.nextMessage(question)
       }))
     }
-    this.chatID = res.id
-    this.messages.push(messages)
+    this.chatState.chatID = res.id
+    this.chatState.messages.push(messages)
   }
 
   async nextMessage(msg: string): Promise<boolean> {
-    if (this.length > 20) {
+    if (this.chatState.length > 20) {
       return false
     }
-    this.loading = true
+    this.chatState.loading = true
     const userMessage: ChatMessage = {
       content: msg,
       role: 'user',
       actions: []
     }
-    this.messages.push(userMessage)
+    this.chatState.messages.push(userMessage)
     const params: AIChatParams = {
       userInput: msg
     }
-    const res = await nextChat(this.chatID, params)
-    this.length++
-    this.loading = false
-    const content = res.respMessage
-    const questions = res.respQuestions
+    const res = await nextChat(this.chatState.chatID, params)
+    this.chatState.length++
+    this.chatState.loading = false
+    const content = res.resp_message
+    const questions = res.resp_questions
     const assistantMessage: ChatMessage = {
       content: content,
       role: 'assistant',
@@ -173,17 +152,69 @@ export class Chat {
         click: () => this.nextMessage(question)
       }))
     }
-    this.messages.push(assistantMessage)
+    this.chatState.messages.push(assistantMessage)
     return true
   }
 
   async deleteChat() {
-    await deleteChat(this.chatID)
+    await deleteChat(this.chatState.chatID)
   }
 }
 
-interface Suggest {
-  startSuggestTask(input: CodeInput): SuggestItem[]
+function createProjectContext(project: Project): ProjectContext {
+  const [metadata] = project.export()
+  const projectContext: ProjectContext = {
+    projectName: metadata.name,
+    projectVariables: [],
+    projectCode: []
+  }
+  for (const sound of project.sounds) {
+    projectContext.projectVariables.push({
+      type: 'Sound',
+      name: sound.name
+    })
+  }
+  for (const sprite of project.sprites) {
+    projectContext.projectVariables.push({
+      type: 'Sprite',
+      name: sprite.name
+    })
+    projectContext.projectCode.push({
+      type: 'Sprite',
+      name: sprite.name,
+      src: sprite.code
+    })
+  }
+  projectContext.projectCode.push({
+    type: 'Stage',
+    name: 'Stage',
+    src: project.stage.code
+  })
+  return projectContext
+}
+
+export class Suggest {
+  getProject: () => Project
+
+  constructor(getProject: () => Project) {
+    this.getProject = getProject
+  }
+
+  async startSuggestTask(input: CodeInput): Promise<SuggestItem[]> {
+    const params: AITaskParams = {
+      taskAction: TaskAction.suggest,
+      projectContext: createProjectContext(this.getProject()),
+      userCode: input.code,
+      userCursor: input.position
+    }
+    const res = await startTask(params)
+    const suggests = res.codeSuggests
+    return suggests.map((suggest) => ({
+      label: suggest.label,
+      desc: suggest.label,
+      insertText: suggest.insertText
+    }))
+  }
 }
 
 type CodeInput = {
