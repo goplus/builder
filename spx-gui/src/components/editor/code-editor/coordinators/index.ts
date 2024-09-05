@@ -30,8 +30,9 @@ import {
   motionCategory,
   sensingCategory,
   soundCategory,
-  type ToolCategory,
-  ToolType
+  getVariableCategory,
+  TokenType,
+  type TokenCategory
 } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
@@ -331,23 +332,23 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
   return items
 }
 
-function getCompletionItemKind(type: ToolType): Icon {
+function getCompletionItemKind(type: TokenType): Icon {
   switch (type) {
-    case ToolType.method:
+    case TokenType.method:
       return Icon.Function
-    case ToolType.function:
+    case TokenType.function:
       return Icon.Function
-    case ToolType.constant:
+    case TokenType.constant:
       return Icon.Prototype
-    case ToolType.keyword:
+    case TokenType.keyword:
       return Icon.Keywords
-    case ToolType.variable:
+    case TokenType.variable:
       return Icon.Prototype
   }
 }
 
 function toolCategory2InputItemCategory(
-  category: ToolCategory,
+  category: TokenCategory,
   icon: Icon,
   color: string
 ): InputItemCategory {
@@ -358,6 +359,8 @@ function toolCategory2InputItemCategory(
     groups: category.groups.map((group) => ({
       label: group.label,
       inputItems: group.tools.flatMap((tool): InputItem[] => {
+        //TODO: get token detail from compiler
+        //TODO: get token detail from doc
         if (tool.usage) {
           let sample = tool.usage.insertText.split(' ').slice(1).join()
           sample = sample.replace(

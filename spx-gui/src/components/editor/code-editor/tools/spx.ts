@@ -3,30 +3,36 @@
  */
 
 import type { LocaleMessage } from '@/utils/i18n'
-import { type Tool, ToolType, ToolContext, ToolCallEffect } from './common'
+import { type Token, TokenType, TokenContext, TokenCallEffect } from './common'
 
-export const clone: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const clone: Token = {
+  tokenId: 'clone',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'clone',
   desc: {
     en: 'Make a clone of current sprite, with optional data (for `OnCloned` callback)',
     zh: '复制当前精灵，可传递数据给 `OnCloned` 回调'
   },
   usage: {
+    usageId: '0',
     sample: 'clone',
     insertText: 'clone'
   }
 }
 
-export const onCloned: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.sprite,
+export const onCloned: Token = {
+  tokenId: 'onCloned',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.sprite,
   keyword: 'onCloned',
   desc: { en: 'Listen to current sprite cloned', zh: '当前精灵被复制时执行' },
   usage: {
+    usageId: '1',
     sample: 'onCloned => {}',
     insertText: 'onCloned => {\n\t${1}\n}'
   }
@@ -34,10 +40,12 @@ export const onCloned: Tool = {
 
 // For now `onTouched` is not exposed to the user
 // As it behaves strangely in the current implementation, see details in https://github.com/goplus/spx/issues/298
-export const onTouched: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.sprite,
+export const onTouched: Token = {
+  tokenId: 'onTouched',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.sprite,
   keyword: 'onTouched',
   desc: {
     en: 'Listen to current sprite touched by other sprites',
@@ -45,16 +53,19 @@ export const onTouched: Tool = {
   },
   usages: [
     {
+      usageId: '1',
       desc: { en: 'By any other sprites', zh: '任意精灵' },
       sample: 'onTouched target => {}',
       insertText: 'onTouched target => {\n\t${1}\n}'
     },
     {
+      usageId: '3',
       desc: { en: 'By the given sprite', zh: '指定精灵' },
       sample: 'onTouched S1, => {}',
       insertText: 'onTouched ${1:sprite}, => {\n\t${2}\n}'
     },
     {
+      usageId: '5',
       desc: { en: 'By some given sprites', zh: '指定的某些精灵' },
       sample: 'onTouched [S1, S2], => {}',
       insertText: 'onTouched [${1:}], => {\n\t${2}\n}'
@@ -62,115 +73,141 @@ export const onTouched: Tool = {
   ]
 }
 
-export const onMoving: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.sprite,
+export const onMoving: Token = {
+  tokenId: 'onMoving',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.sprite,
   keyword: 'onMoving',
   desc: {
     en: 'Listen to current sprite moving (position change)',
     zh: '当前精灵移动（位置改变）时执行'
   },
   usage: {
+    usageId: '0',
     sample: 'onMoving => {}',
     insertText: 'onMoving => {\n\t${1}\n}'
   }
 }
 
-export const onTurning: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.sprite,
+export const onTurning: Token = {
+  tokenId: 'onTurning',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.sprite,
   keyword: 'onTurning',
   desc: {
     en: 'Listen to current sprite turning (heading change)',
     zh: '当前精灵转向（朝向改变）时执行'
   },
   usage: {
+    usageId: '0',
     sample: 'onTurning => {}',
     insertText: 'onTurning => {\n\t${1}\n}'
   }
 }
 
-export const die: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const die: Token = {
+  tokenId: 'die',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'die',
   desc: {
     en: 'Let current sprite die. Animation bound to state "die" will be played.',
     zh: '让当前精灵死亡，绑定到“死亡”状态的动画会被播放'
   },
   usage: {
+    usageId: '0',
     sample: 'die',
     insertText: 'die'
   }
 }
 
-export const hide: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const hide: Token = {
+  tokenId: 'hide',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'hide',
   desc: { en: 'Make current sprite invisible', zh: '使当前精灵不可见' },
   usage: {
+    usageId: '0',
     sample: 'hide',
     insertText: 'hide'
   }
 }
 
-export const show: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const show: Token = {
+  tokenId: 'show',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'show',
   desc: { en: 'Make current sprite visible', zh: '使当前精灵可见' },
   usage: {
+    usageId: '0',
     sample: 'show',
     insertText: 'show'
   }
 }
 
-export const visible: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const visible: Token = {
+  tokenId: 'visible',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'visible',
   desc: { en: 'If current sprite visible', zh: '当前精灵是否可见' },
   usage: {
+    usageId: '0',
     sample: 'visible',
     insertText: 'visible'
   }
 }
 
-export const costumeName: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const costumeName: Token = {
+  tokenId: 'costumeName',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'costumeName',
   desc: { en: 'The name of the current costume', zh: '当前造型的名称' },
   usage: {
+    usageId: '0',
     sample: 'costumeName',
     insertText: 'costumeName'
   }
 }
 
-export const costumeIndex: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const costumeIndex: Token = {
+  tokenId: 'costumeIndex',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'costumeIndex',
   desc: { en: 'The index of the current costume', zh: '当前造型的索引' },
   usage: {
+    usageId: '0',
     sample: 'costumeIndex',
     insertText: 'costumeIndex'
   }
 }
 
-export const setCostume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setCostume: Token = {
+  tokenId: 'setCostume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setCostume',
   desc: {
     en: 'Set the current costume by specifying name',
@@ -178,51 +215,63 @@ export const setCostume: Tool = {
   },
   // index-related usages are excluded, as they are not recommended to use (animation is prefered)
   usage: {
+    usageId: '0',
     sample: 'setCostume "happy"',
     insertText: 'setCostume ${1:name}'
   }
 }
 
-export const nextCostume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const nextCostume: Token = {
+  tokenId: 'nextCostume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'nextCostume',
   desc: { en: 'Switch to the next costume', zh: '切换到下一个造型' },
   usage: {
+    usageId: '0',
     sample: 'nextCostume',
     insertText: 'nextCostume'
   }
 }
 
-export const prevCostume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const prevCostume: Token = {
+  tokenId: 'prevCostume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'prevCostume',
   desc: { en: 'Switch to the previous costume', zh: '切换到上一个造型' },
   usage: {
+    usageId: '0',
     sample: 'prevCostume',
     insertText: 'prevCostume'
   }
 }
 
-export const animate: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const animate: Token = {
+  tokenId: 'animate',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'animate',
   desc: { en: 'Play animation with given name', zh: '通过指定名称播放动画' },
   usage: {
+    usageId: '0',
     sample: 'animate "jump"',
     insertText: 'animate ${1:name}'
   }
 }
 
-export const say: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const say: Token = {
+  tokenId: 'say',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'say',
   desc: { en: 'Make the sprite say some word', zh: '使精灵说出一些话' },
   usages: [
@@ -232,6 +281,7 @@ export const say: Tool = {
       insertText: 'say ${1:""}'
     },
     {
+      usageId: '0',
       desc: { en: 'With duration', zh: '指定持续时间' },
       sample: 'say "Hello!", 2',
       insertText: 'say ${1:""}, ${2:seconds}'
@@ -239,10 +289,12 @@ export const say: Tool = {
   ]
 }
 
-export const think: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const think: Token = {
+  tokenId: 'think',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'think',
   desc: { en: 'Make the sprite think of some word', zh: '使精灵思考一些内容' },
   usages: [
@@ -252,6 +304,7 @@ export const think: Tool = {
       insertText: 'think ${1:""}'
     },
     {
+      usageId: '0',
       desc: { en: 'With duration', zh: '指定持续时间' },
       sample: 'think "Wow!", 2',
       insertText: 'think ${1:""}, ${2:seconds}'
@@ -259,64 +312,78 @@ export const think: Tool = {
   ]
 }
 
-export const distanceTo: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const distanceTo: Token = {
+  tokenId: 'distanceTo',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'distanceTo',
   desc: {
     en: 'Get the distance from current sprite to given target',
     zh: '获取当前精灵到指定目标的距离'
   },
   usage: {
+    usageId: '0',
     sample: 'distanceTo Sprite1',
     insertText: 'distanceTo(${1:target})'
   }
 }
 
-export const move: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const move: Token = {
+  tokenId: 'move',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'move',
   desc: { en: 'Move given distance, toward current heading', zh: '向当前朝向移动指定的距离' },
   usage: {
+    usageId: '0',
     sample: 'move 10',
     insertText: 'move ${1:distance}'
   }
 }
 
-export const step: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const step: Token = {
+  tokenId: 'step',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'step',
   desc: {
     en: 'Step given distance, toward current heading. Animation bound to state "step" will be played',
     zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
   },
   usage: {
+    usageId: '0',
     sample: 'step 10',
     insertText: 'step ${1:distance}'
   }
 }
 
-export const goto: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const goto: Token = {
+  tokenId: 'goto',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'goto',
   desc: { en: 'Move to given target', zh: '移动到指定目标' },
   usage: {
+    usageId: '0',
     sample: 'goto Sprite1',
     insertText: 'goto ${1:target}'
   }
 }
 
-export const glide: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const glide: Token = {
+  tokenId: 'glide',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'glide',
   desc: {
     en: 'Move to given position or target, with glide animation',
@@ -324,11 +391,13 @@ export const glide: Tool = {
   },
   usages: [
     {
+      usageId: '0',
       desc: { en: 'To position (X, Y)', zh: '指定位置（X，Y）' },
       sample: 'glide 50, -50, 2',
       insertText: 'glide ${1:X}, ${2:Y}, ${3:seconds}'
     },
     {
+      usageId: '1',
       desc: { en: 'To target', zh: '指定目标' },
       sample: 'glide Sprite1, 2',
       insertText: 'glide ${1:target}, ${2:seconds}'
@@ -336,130 +405,162 @@ export const glide: Tool = {
   ]
 }
 
-export const setXYpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setXYpos: Token = {
+  tokenId: 'setXYpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setXYpos',
   desc: { en: 'Move to given position', zh: '移动到指定位置' },
   usage: {
+    usageId: '0',
     sample: 'setXYpos 0, 0',
     insertText: 'setXYpos ${1:X}, ${2:Y}'
   }
 }
 
-export const changeXYpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const changeXYpos: Token = {
+  tokenId: 'changeXYpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'changeXYpos',
   desc: { en: 'Move with given position (X, Y) change', zh: '以指定的位置偏移移动（X，Y）' },
   usage: {
+    usageId: '0',
     sample: 'changeXYpos 10, 10',
     insertText: 'changeXYpos ${1:dX}, ${2:dY}'
   }
 }
 
-export const xpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const xpos: Token = {
+  tokenId: 'xpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'xpos',
   desc: { en: 'Get current X position', zh: '获取当前水平位置' },
   usage: {
+    usageId: '0',
     sample: 'xpos',
     insertText: 'xpos'
   }
 }
 
-export const setXpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setXpos: Token = {
+  tokenId: 'setXpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setXpos',
   desc: { en: 'Move to given X position', zh: '移动到指定的水平位置' },
   usage: {
+    usageId: '0',
     sample: 'setXpos 100',
     insertText: 'setXpos ${1:X}'
   }
 }
 
-export const changeXpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const changeXpos: Token = {
+  tokenId: 'changeXpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'changeXpos',
   desc: { en: 'Move with given X position change', zh: '指定水平方向偏移移动' },
   usage: {
+    usageId: '0',
     sample: 'changeXpos 10',
     insertText: 'changeXpos ${1:dX}'
   }
 }
 
-export const ypos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const ypos: Token = {
+  tokenId: 'ypos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'ypos',
   desc: { en: 'Get current Y position', zh: '获取当前垂直位置' },
   usage: {
+    usageId: '0',
     sample: 'ypos',
     insertText: 'ypos'
   }
 }
 
-export const setYpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setYpos: Token = {
+  tokenId: 'setYpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setYpos',
   desc: { en: 'Move to given Y position', zh: '移动到指定的垂直位置' },
   usage: {
+    usageId: '0',
     sample: 'setYpos 100',
     insertText: 'setYpos ${1:Y}'
   }
 }
 
-export const changeYpos: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const changeYpos: Token = {
+  tokenId: 'changeYpos',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'changeYpos',
   desc: { en: 'Move with given Y position change', zh: '指定垂直方向偏移移动' },
   usage: {
+    usageId: '0',
     sample: 'changeYpos 10',
     insertText: 'changeYpos ${1:dY}'
   }
 }
 
-export const setRotationStyle: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setRotationStyle: Token = {
+  tokenId: 'setRotationStyle',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setRotationStyle',
   desc: { en: 'Set the rotation style of the sprite', zh: '设置精灵的旋转方式' },
   usage: {
+    usageId: '0',
     sample: 'setRotationStyle LeftRight',
     insertText: 'setRotationStyle ${1:style}'
   }
 }
 
-export const heading: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const heading: Token = {
+  tokenId: 'heading',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'heading',
   desc: { en: 'Get current heading direction', zh: '获取当前朝向' },
   usage: {
+    usageId: '0',
     sample: 'heading',
     insertText: 'heading'
   }
 }
 
-export const turnTo: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const turnTo: Token = {
+  tokenId: 'turnTo',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'turnTo',
   desc: { en: 'Turn heading to given direction or target', zh: '将朝向转到指定方向或目标' },
   usages: [
@@ -469,6 +570,7 @@ export const turnTo: Tool = {
       insertText: 'turnTo ${1:direction}'
     },
     {
+      usageId: '0',
       desc: { en: 'To target', zh: '指定目标' },
       sample: 'turnTo target',
       insertText: 'turnTo ${1:target}'
@@ -476,136 +578,168 @@ export const turnTo: Tool = {
   ]
 }
 
-export const setHeading: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setHeading: Token = {
+  tokenId: 'setHeading',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setHeading',
   desc: { en: 'Set heading to given value', zh: '设置朝向为给定值' },
   usage: {
+    usageId: '0',
     sample: 'setHeading Up',
     insertText: 'setHeading ${1:direction}'
   }
 }
 
-export const changeHeading: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const changeHeading: Token = {
+  tokenId: 'changeHeading',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'changeHeading',
   desc: { en: 'Change heading with given direction change', zh: '以给定的偏移值改变朝向' },
   usage: {
+    usageId: '0',
     sample: 'changeHeading 90',
     insertText: 'changeHeading ${1:dDirection}'
   }
 }
 
-export const size: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const size: Token = {
+  tokenId: 'size',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'size',
   desc: { en: 'Get the size of current sprite', zh: '获取当前精灵的大小' },
   usage: {
+    usageId: '0',
     sample: 'size',
     insertText: 'size'
   }
 }
 
-export const setSize: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const setSize: Token = {
+  tokenId: 'setSize',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'setSize',
   desc: { en: 'Set the size of current sprite', zh: '设置当前精灵的大小' },
   usage: {
+    usageId: '0',
     sample: 'setSize 2',
     insertText: 'setSize ${1:size}'
   }
 }
 
-export const changeSize: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const changeSize: Token = {
+  tokenId: 'changeSize',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'changeSize',
   desc: { en: 'Change the size of current sprite', zh: '改变当前精灵的大小' },
   usage: {
+    usageId: '0',
     sample: 'changeSize 1',
     insertText: 'changeSize ${1:dSize}'
   }
 }
 
-export const touching: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.sprite,
+export const touching: Token = {
+  tokenId: 'touching',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.sprite,
   keyword: 'touching',
   desc: {
     en: 'Check if current sprite touching specified touching target',
     zh: '检查当前精灵是否与指定目标接触'
   },
   usage: {
+    usageId: '0',
     sample: 'touching Edge',
     insertText: 'touching(${1:target})'
   }
 }
 
-export const bounceOffEdge: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.sprite,
+export const bounceOffEdge: Token = {
+  tokenId: 'bounceOffEdge',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.sprite,
   keyword: 'bounceOffEdge',
   desc: {
     en: 'Check & bounce off current sprite if touching the edge',
     zh: '如果当前精灵接触到边缘，则反弹'
   },
   usage: {
+    usageId: '0',
     sample: 'bounceOffEdge',
     insertText: 'bounceOffEdge'
   }
 }
 
-export const mouseHitItem: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const mouseHitItem: Token = {
+  tokenId: 'mouseHitItem',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'mouseHitItem',
   desc: { en: 'Get the topmost sprite which is hit by mouse', zh: '获取鼠标点击的最上层精灵' },
   usage: {
+    usageId: '0',
     sample: 'hitSprite, ok := mouseHitItem',
     insertText: '${1:sprite}, ${2:ok} := mouseHitItem'
   }
 }
 
-export const backdropName: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const backdropName: Token = {
+  tokenId: 'backdropName',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'backdropName',
   desc: { en: 'Get the name of the current backdrop', zh: '获取当前背景的名称' },
   usage: {
+    usageId: '0',
     sample: 'backdropName',
     insertText: 'backdropName'
   }
 }
 
-export const backdropIndex: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const backdropIndex: Token = {
+  tokenId: 'backdropIndex',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'backdropIndex',
   desc: { en: 'Get the index of the current backdrop', zh: '获取当前背景的索引' },
   usage: {
+    usageId: '0',
     sample: 'backdropIndex',
     insertText: 'backdropIndex'
   }
 }
 
-export const startBackdrop: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const startBackdrop: Token = {
+  tokenId: 'startBackdrop',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'startBackdrop',
   desc: {
     en: 'Set the current backdrop by specifying name or index',
@@ -618,6 +752,7 @@ export const startBackdrop: Tool = {
       insertText: 'startBackdrop ${1:nameOrIndex}'
     },
     {
+      usageId: '0',
       desc: { en: 'With waiting', zh: '等待背景切换完成' },
       sample: 'startBackdrop "backdrop1", true',
       insertText: 'startBackdrop ${1:nameOrIndex}, true'
@@ -625,10 +760,12 @@ export const startBackdrop: Tool = {
   ]
 }
 
-export const nextBackdrop: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const nextBackdrop: Token = {
+  tokenId: 'nextBackdrop',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'nextBackdrop',
   desc: { en: 'Switch to the next backdrop', zh: '切换到下一个背景' },
   usages: [
@@ -638,6 +775,7 @@ export const nextBackdrop: Tool = {
       insertText: 'nextBackdrop'
     },
     {
+      usageId: '0',
       desc: { en: 'With waiting', zh: '等待背景切换完成' },
       sample: 'nextBackdrop true',
       insertText: 'nextBackdrop true'
@@ -645,10 +783,12 @@ export const nextBackdrop: Tool = {
   ]
 }
 
-export const prevBackdrop: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const prevBackdrop: Token = {
+  tokenId: 'prevBackdrop',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'prevBackdrop',
   desc: { en: 'Switch to the previous backdrop', zh: '切换到上一个背景' },
   usages: [
@@ -658,6 +798,7 @@ export const prevBackdrop: Tool = {
       insertText: 'prevBackdrop'
     },
     {
+      usageId: '0',
       desc: { en: 'With waiting', zh: '等待背景切换完成' },
       sample: 'prevBackdrop true',
       insertText: 'prevBackdrop true'
@@ -665,73 +806,90 @@ export const prevBackdrop: Tool = {
   ]
 }
 
-export const keyPressed: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const keyPressed: Token = {
+  tokenId: 'keyPressed',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'keyPressed',
   desc: { en: 'Check if given key is currently pressed', zh: '检查给定的按键当前是否被按下' },
   usage: {
+    usageId: '0',
     sample: 'keyPressed KeyA',
     insertText: 'keyPressed(${1:key})'
   }
 }
 
-export const mouseX: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const mouseX: Token = {
+  tokenId: 'mouseX',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'mouseX',
   desc: { en: 'Get X position of the mouse', zh: '获取鼠标的水平位置' },
   usage: {
+    usageId: '0',
     sample: 'mouseX',
     insertText: 'mouseX'
   }
 }
 
-export const mouseY: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const mouseY: Token = {
+  tokenId: 'mouseY',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'mouseY',
   desc: { en: 'Get Y position of the mouse', zh: '获取鼠标的垂直位置' },
   usage: {
+    usageId: '0',
     sample: 'mouseY',
     insertText: 'mouseY'
   }
 }
 
-export const mousePressed: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const mousePressed: Token = {
+  tokenId: 'mousePressed',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'mousePressed',
   desc: { en: 'Check if the mouse is currently pressed', zh: '检查鼠标当前是否被按下' },
   usage: {
+    usageId: '0',
     sample: 'mousePressed',
     insertText: 'mousePressed'
   }
 }
 
-export const wait: Tool = {
-  type: ToolType.method,
+export const wait: Token = {
+  tokenId: 'wait',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
   callEffect: undefined,
-  target: ToolContext.all,
+  target: TokenContext.all,
   keyword: 'wait',
   desc: {
     en: 'Block current execution (coroutine) for given seconds',
     zh: '阻塞当前的执行，并指定阻塞的秒数'
   },
   usage: {
+    usageId: '0',
     sample: 'wait 0.5',
     insertText: 'wait ${1:seconds}'
   }
 }
 
-export const play: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const play: Token = {
+  tokenId: 'play',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'play',
   desc: { en: 'Play sound with given name', zh: '播放声音（指定名字）' },
   usages: [
@@ -749,61 +907,75 @@ export const play: Tool = {
   ]
 }
 
-export const stopAllSounds: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const stopAllSounds: Token = {
+  tokenId: 'stopAllSounds',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'stopAllSounds',
   desc: { en: 'Stop all playing sounds', zh: '停止所有正在播放的声音' },
   usage: {
+    usageId: '0',
     sample: 'stopAllSounds',
     insertText: 'stopAllSounds'
   }
 }
 
-export const volume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const volume: Token = {
+  tokenId: 'volume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'volume',
   desc: { en: 'Get the volume for sounds', zh: '获取声音的音量' },
   usage: {
+    usageId: '0',
     sample: 'volume',
     insertText: 'volume'
   }
 }
 
-export const setVolume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const setVolume: Token = {
+  tokenId: 'setVolume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'setVolume',
   desc: { en: 'Set the volume for sounds', zh: '设置声音的音量' },
   usage: {
+    usageId: '0',
     sample: 'setVolume 100',
     insertText: 'setVolume ${1:volume}'
   }
 }
 
-export const changeVolume: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const changeVolume: Token = {
+  tokenId: 'changeVolume',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'changeVolume',
   desc: {
     en: 'Change the volume for sounds with given volume change',
     zh: '根据给定的音量变化改变声音的音量'
   },
   usage: {
+    usageId: '0',
     sample: 'changeVolume 100',
     insertText: 'changeVolume ${1:dVolume}'
   }
 }
 
-export const broadcast: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.write,
-  target: ToolContext.all,
+export const broadcast: Token = {
+  tokenId: 'broadcast',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.write,
+  target: TokenContext.all,
   keyword: 'broadcast',
   desc: {
     en: 'Broadcast a message',
@@ -811,80 +983,91 @@ export const broadcast: Tool = {
   },
   usages: [
     {
+      usageId: '0',
       desc: { en: 'Without waiting', zh: '不等待' },
       sample: 'broadcast "message"',
       insertText: 'broadcast ${1:"message"}'
     },
     {
+      usageId: '1',
       desc: { en: 'With waiting', zh: '等待' },
       sample: 'broadcast "message", true',
       insertText: 'broadcast ${1:"message"}, true'
     },
     {
+      usageId: '2',
       desc: { en: 'With data', zh: '带有数据' },
       sample: 'broadcast "message", data, false',
       insertText: 'broadcast ${1:"message"}, ${2:data}, false'
-    },
-    {
-      desc: { en: 'With data and waiting', zh: '带有数据并等待' },
-      sample: 'broadcast "message", data, true',
-      insertText: 'broadcast ${1:"message"}, ${2:data}, true'
     }
   ]
 }
 
-export const onStart: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onStart: Token = {
+  tokenId: 'onStart',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onStart',
   desc: { en: 'Listen to game start', zh: '游戏开始时执行' },
   usage: {
+    usageId: '0',
     sample: 'onStart => {}',
     insertText: 'onStart => {\n\t${1}\n}'
   }
 }
 
-export const onClick: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onClick: Token = {
+  tokenId: 'onClick',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onClick',
   desc: {
     en: 'Listen to current target (sprite / stage) clicked',
     zh: '当前目标（精灵/舞台）被点击时执行'
   },
   usage: {
+    usageId: '0',
     sample: 'onClick => {}',
     insertText: 'onClick => {\n\t${1}\n}'
   }
 }
 
-export const onAnyKey: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onAnyKey: Token = {
+  tokenId: 'onAnyKey',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onAnyKey',
   desc: { en: 'Listen to any key pressed', zh: '任意按键被按下时执行' },
   usage: {
+    usageId: '0',
     sample: 'onAnyKey key => {}',
     insertText: 'onAnyKey key => {\n\t${1}\n}'
   }
 }
 
-export const onKey: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onKey: Token = {
+  tokenId: 'onKey',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onKey',
   desc: { en: 'Listen to given key(s) pressed', zh: '按键被按下时执行' },
   usages: [
     {
+      usageId: '0',
       desc: { en: 'Single key', zh: '单个按键' },
       sample: 'onKey Key1, => {}',
       insertText: 'onKey ${1:key}, => {\n\t${2}\n}'
     },
     {
+      usageId: '1',
       desc: { en: 'Multiple keys', zh: '多个按键' },
       sample: 'onKey [Key1, Key2], => {}',
       insertText: 'onKey [${1:}], key => {\n\t${2}\n}'
@@ -892,19 +1075,23 @@ export const onKey: Tool = {
   ]
 }
 
-export const onMsg: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onMsg: Token = {
+  tokenId: 'onMsg',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onMsg',
   desc: { en: 'Listen to message broadcasted', zh: '消息被广播时执行' },
   usages: [
     {
+      usageId: '0',
       desc: { en: 'Any message', zh: '任意消息' },
       sample: 'onMsg (message, data) => {}',
       insertText: 'onMsg (message, data) => {\n\t${1}\n}'
     },
     {
+      usageId: '1',
       desc: { en: 'Specific message', zh: '指定消息' },
       sample: 'onMsg "message", => {}',
       insertText: 'onMsg ${1:message}, => {\n\t${2}\n}'
@@ -912,19 +1099,23 @@ export const onMsg: Tool = {
   ]
 }
 
-export const onBackdrop: Tool = {
-  type: ToolType.method,
-  callEffect: ToolCallEffect.listen,
-  target: ToolContext.all,
+export const onBackdrop: Token = {
+  tokenId: 'onBackdrop',
+  tokenPkg: 'github.com/goplus/spx',
+  type: TokenType.method,
+  callEffect: TokenCallEffect.listen,
+  target: TokenContext.all,
   keyword: 'onBackdrop',
   desc: { en: 'Listen to backdrop switching', zh: '背景切换时执行' },
   usages: [
     {
+      usageId: '0',
       desc: { en: 'Any backdrop', zh: '任意背景' },
       sample: 'onBackdrop backdrop => {}',
       insertText: 'onBackdrop backdrop => {\n\t${1}\n}'
     },
     {
+      usageId: '1',
       desc: { en: 'Specific backdrop', zh: '指定背景' },
       sample: 'onBackdrop "backdrop1", => {}',
       insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}'
@@ -932,10 +1123,10 @@ export const onBackdrop: Tool = {
   ]
 }
 
-export const rand: Tool = {
-  type: ToolType.function,
-  callEffect: ToolCallEffect.read,
-  target: ToolContext.all,
+export const rand: Token = {
+  type: TokenType.function,
+  callEffect: TokenCallEffect.read,
+  target: TokenContext.all,
   keyword: 'rand',
   desc: { en: 'Generate a random number', zh: '生成一个随机数' },
   usage: {
@@ -944,10 +1135,10 @@ export const rand: Tool = {
   }
 }
 
-export const exit: Tool = {
-  type: ToolType.function,
+export const exit: Token = {
+  type: TokenType.function,
   callEffect: undefined,
-  target: ToolContext.all,
+  target: TokenContext.all,
   keyword: 'exit',
   desc: { en: 'Exit the game', zh: '退出游戏' },
   usage: {
@@ -956,11 +1147,11 @@ export const exit: Tool = {
   }
 }
 
-function defineConst(name: string, desc: LocaleMessage): Tool {
+function defineConst(name: string, desc: LocaleMessage): Token {
   name = name[0].toUpperCase() + name.slice(1) // it's strange, but required
   return {
-    type: ToolType.constant,
-    target: ToolContext.all,
+    type: TokenType.constant,
+    target: TokenContext.all,
     keyword: name,
     desc,
     usage: {
