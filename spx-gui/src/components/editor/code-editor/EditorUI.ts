@@ -173,7 +173,7 @@ export enum AttentionHintLevelEnum {
   ERROR
 }
 
-export type AttentionHint = {
+export type AttentionHintDecoration = {
   level: AttentionHintLevelEnum
   range: IRange
   message: string
@@ -182,7 +182,8 @@ export type AttentionHint = {
 
 export interface AttentionHintsProvider {
   provideAttentionHints(
-    setHints: (hints: AttentionHint[]) => void,
+    model: TextModel,
+    setHints: (hints: AttentionHintDecoration[]) => void,
     ctx: {
       signal: AbortSignal
     }
@@ -550,6 +551,18 @@ export class EditorUI extends Disposable {
       this.editorUIRequestCallback.inlayHints.map((item) => item.provideInlayHints(model, ctx))
     )
     return promiseResults.flat().filter(Boolean)
+  }
+
+  public requestAttentionHintsProviderResolve(
+    model: TextModel,
+    setHints: (hints: AttentionHintDecoration[]) => void,
+    ctx: {
+      signal: AbortSignal
+    }
+  ) {
+    this.editorUIRequestCallback.attentionHints.forEach((item) =>
+      item.provideAttentionHints(model, setHints, ctx)
+    )
   }
 
   public async requestInputAssistantProviderResolve(ctx: {

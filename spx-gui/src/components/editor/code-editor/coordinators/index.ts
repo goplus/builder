@@ -1,4 +1,6 @@
 import {
+  type AttentionHintDecoration,
+  AttentionHintLevelEnum,
   type CompletionItem,
   DocPreviewLevel,
   type EditorUI,
@@ -22,14 +24,14 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
+  getAllTools,
+  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
-  getAllTools,
-  getVariableCategory,
-  ToolType,
-  type ToolCategory
+  type ToolCategory,
+  ToolType
 } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
@@ -79,6 +81,10 @@ export class Coordinator {
 
     ui.registerInputAssistantProvider({
       provideInputAssistant: this.implementsInputAssistantProvider.bind(this)
+    })
+
+    ui.registerAttentionHintsProvider({
+      provideAttentionHints: this.implementsAttentionHintProvider.bind(this)
     })
   }
 
@@ -222,6 +228,47 @@ export class Coordinator {
         return hints
       }
     })
+  }
+
+  implementsAttentionHintProvider(
+    model: TextModel,
+    setHints: (hints: AttentionHintDecoration[]) => void,
+    ctx: {
+      signal: AbortSignal
+    }
+  ): void {
+    this.compiler
+      .getDiagnostics([
+        {
+          type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
+          content: model.getValue()
+        }
+      ])
+      .then((attentionHints) => {
+        setHints(
+          attentionHints.map((attentionHint) => {
+            const word = model.getWordAtPosition({
+              lineNumber: attentionHint.line,
+              column: attentionHint.column
+            })
+
+            return {
+              level: AttentionHintLevelEnum.ERROR,
+              message: attentionHint.message,
+              range: {
+                startColumn: attentionHint.column,
+                startLineNumber: attentionHint.line,
+                endColumn: word?.endColumn ?? attentionHint.column,
+                endLineNumber: attentionHint.line
+              },
+              hoverContent: {
+                level: DocPreviewLevel.Error,
+                content: attentionHint.message
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsInputAssistantProvider(_ctx: {
