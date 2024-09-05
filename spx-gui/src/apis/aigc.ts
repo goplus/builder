@@ -87,7 +87,6 @@ export interface CreateAIImageParams {
 /**
  * Generate AI image with given keyword and category
  *
- * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function generateAIImage({
   keyword,
@@ -136,6 +135,26 @@ export async function generateAISprite(imageJobId: string) {
   return result
 }
 
+export interface GenerateInpaintingParams {
+  prompt: string
+  category: string
+  type: number
+  model_name: string
+  image_url: string
+  control_image_url: string
+  callback_url: string
+}
+
+export interface GenerateInpaintingResult {
+  image_url: string
+  desc: string
+}
+
+export async function generateInpainting(params: GenerateInpaintingParams) {
+  const result = (await client.post('/aigc/inpainting', params, { timeout: 60 * 1000 })) as GenerateInpaintingResult
+  return result
+}
+
 export enum AIGCType {
   Image,
   Sprite,
@@ -175,7 +194,6 @@ export interface AIGCStatusResponse {
  * @param jobId The job ID returned by `generateAIXxx`
  * @returns
  *
- * WARNING: This API has not been implemented yet. It will return a mock result.
  */
 export async function getAIGCStatus(jobId: string) {
   const result = (await client.get(
@@ -187,7 +205,6 @@ export async function getAIGCStatus(jobId: string) {
 }
 
 /**
- * WARNING: This API is not implemented in the backend yet.
  * The parameter has not been determined yet.
  * As some ai-generated asset may be edited by user or js code, 
  * the backend may need to get the partial asset instead of the jobId.

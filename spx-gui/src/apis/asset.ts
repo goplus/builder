@@ -89,8 +89,6 @@ export function increaseAssetClickCount(id: string) {
 }
 
 /**
- * WARNING: This API is not implemented in the backend yet.
- * Currently, it searches for assets with the given keyword and returns the first `count` unique display names.
  * @param keyword 
  * @param count 
  * @returns 
@@ -112,9 +110,6 @@ export interface AssetRate {
 /**
  * Get the rate of an asset
  * 
- * WARNING: This API is not implemented in the backend yet. 
- * Currently, it returns a random rate that follows a normal distribution.
- * 
  * @param id 
  * @returns 
  */
@@ -125,7 +120,6 @@ export function getAssetRate(id: string): Promise<AssetRate> {
 /**
  * Rate an asset
  * 
- * WARNING: This API is not implemented in the backend yet.
  * @param id asset id
  * @param rate rate value, 1-5
  * @returns
