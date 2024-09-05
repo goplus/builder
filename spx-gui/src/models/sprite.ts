@@ -75,7 +75,7 @@ export function getSpriteAssetPath(name: string) {
   return join(spriteAssetPath, name)
 }
 
-function getSpriteCodeFileName(name: string) {
+function getSpriteCodeFilePath(name: string) {
   return `${name}.spx`
 }
 
@@ -99,6 +99,9 @@ export class Sprite extends Disposable {
   code: string
   setCode(code: string) {
     this.code = code
+  }
+  get codeFilePath() {
+    return getSpriteCodeFilePath(this.name)
   }
 
   costumes: Costume[]
@@ -307,7 +310,7 @@ export class Sprite extends Disposable {
       animBindings,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
-    const codeFile = files[getSpriteCodeFileName(name)]
+    const codeFile = files[getSpriteCodeFilePath(name)]
     const code = codeFile != null ? await toText(codeFile) : ''
 
     const costumes: Costume[] = []
@@ -430,8 +433,8 @@ export class Sprite extends Disposable {
       animBindings: animationBindingsNames
     }
     if (includeCode) {
-      const codeFileName = getSpriteCodeFileName(this.name)
-      files[codeFileName] = fromText(codeFileName, this.code)
+      const codeFilePath = getSpriteCodeFilePath(this.name)
+      files[codeFilePath] = fromText(codeFilePath, this.code)
     }
     if (includeId) config.builder_id = this.id
     files[`${assetPath}/${spriteConfigFileName}`] = fromConfig(spriteConfigFileName, config)

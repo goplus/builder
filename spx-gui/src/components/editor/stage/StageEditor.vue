@@ -17,6 +17,7 @@
     v-show="selectedTab === 'code'"
     ref="codeEditor"
     :loading="code == null"
+    :file="stage.codeFilePath"
     :value="code ?? ''"
     @update:value="handleCodeUpdate"
   />

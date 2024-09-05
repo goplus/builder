@@ -32,6 +32,7 @@
     <div class="code-text-editor-wrapper">
       <CodeTextEditor
         ref="codeTextEditor"
+        :file="file"
         :value="value"
         @update:value="(v) => emit('update:value', v)"
       />
@@ -87,6 +88,7 @@ import { useFileUrl } from '@/utils/file'
 withDefaults(
   defineProps<{
     loading?: boolean
+    file: string
     value: string
   }>(),
   {

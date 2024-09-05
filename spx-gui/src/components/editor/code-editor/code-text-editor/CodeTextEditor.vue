@@ -4,6 +4,29 @@
 <script lang="ts">
 let monaco: typeof import('monaco-editor')
 let editorCtx: EditorCtx // define `editorCtx` here so `getProject` in `initMonaco` can get the right `editorCtx.project`
+
+type EditorState = {
+  scrollLeft: number
+  scrollTop: number
+}
+
+/** Map from file-path to editor-state */
+const editorStates = new Map<string, EditorState>()
+
+function saveEditorState(file: string, editor: editor.IStandaloneCodeEditor) {
+  editorStates.set(file, {
+    scrollLeft: editor.getScrollLeft(),
+    scrollTop: editor.getScrollTop()
+  })
+}
+
+function resumeEditorState(file: string, editor: editor.IStandaloneCodeEditor) {
+  const state = editorStates.get(file)
+  editorStates.delete(file)
+  if (state == null) return
+  editor.setScrollLeft(state.scrollLeft)
+  editor.setScrollTop(state.scrollTop)
+}
 </script>
 <script setup lang="ts">
 import { ref, shallowRef, watch, watchEffect } from 'vue'
@@ -17,6 +40,7 @@ import { initMonaco, defaultThemeName } from './monaco'
 import { useLocalStorage } from '@/utils/utils'
 
 const props = defineProps<{
+  file: string
   value: string
 }>()
 const emit = defineEmits<{
@@ -127,21 +151,22 @@ watchEffect(async (onClenaup) => {
   })
 
   monacoEditor.value = editor
+  resumeEditorState(props.file, editor)
 
   onClenaup(() => {
+    saveEditorState(props.file, editor)
     editor.dispose()
   })
 })
 
 watch(
-  () => props.value,
-  (val) => {
-    if (monaco && monacoEditor.value) {
-      const editorValue = monacoEditor.value.getValue()
-      if (val !== editorValue) {
-        monacoEditor.value.setValue(val)
-      }
-    }
+  () => [props.file, props.value],
+  ([file, value], [oldFile]) => {
+    const editor = monacoEditor.value
+    if (editor == null) return
+    if (file !== oldFile) saveEditorState(oldFile, editor)
+    if (value !== editor.getValue()) editor.setValue(value)
+    if (file !== oldFile) resumeEditorState(file, editor)
   }
 )
 
