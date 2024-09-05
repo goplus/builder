@@ -9,6 +9,7 @@ import { untilNotNull } from '@/utils/utils'
 interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  getDiagnostics: (params: { in: { name: string; code: string } }) => AttentionHint[] | {}
 }
 
 export enum CodeEnum {
@@ -37,8 +38,10 @@ export interface Position {
   Column: number
 }
 
-type AttentionHint = {
-  range: Range
+export type AttentionHint = {
+  fileName: string
+  column: number
+  line: number
   message: string
 }
 
@@ -143,9 +146,16 @@ export class Compiler extends Disposable {
   }
 
   public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
-    await this.waitForWasmInit()
-    // implement logic here
-    return []
+    const wasmHandler = await this.waitForWasmInit()
+
+    const tempCodes = codes.map((code) => code.content).join('\r\n')
+    const res = wasmHandler.getDiagnostics({
+      in: {
+        name: 'test.spx',
+        code: tempCodes
+      }
+    })
+    return Array.isArray(res) ? res : []
   }
 
   public async getCompletionItems(codes: Code[], position: Position): Promise<CompletionItem[]> {
