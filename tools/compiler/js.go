@@ -35,37 +35,51 @@ func getFuncName(i interface{}) string {
 	return parts[len(parts)-1]
 }
 
+// turn js json into map
+func jsValue2Map(value js.Value) map[string]string {
+	fileMap := make(map[string]string)
+
+	keys := js.Global().Get("Object").Call("keys", value)
+	for i := range keys.Length() {
+		k := keys.Index(i).String()
+		v := value.Get(k).String()
+		fileMap[k] = v
+	}
+	return fileMap
+}
+
 // Functions following below is the entry functions for js.
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
-	fileCode := p[1].String()
-	return internal.NewReply(internal.GetInlayHint(fileName, fileCode))
+	fileMap := p[1]
+	return internal.NewReply(internal.GetInlayHint(fileName, jsValue2Map(fileMap)))
 }
 
 func getDiagnostics(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
-	fileCode := p[1].String()
-	return internal.NewReply(internal.GetDiagnostics(fileName, fileCode))
+	fileMap := p[1]
+	return internal.NewReply(internal.GetDiagnostics(fileName, jsValue2Map(fileMap)))
 }
 
 func getDefinition(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
-	fileCode := p[1].String()
-	return internal.NewReply(internal.GetDefinition(fileName, fileCode))
+	fileMap := p[1]
+	return internal.NewReply(internal.GetDefinition(fileName, jsValue2Map(fileMap)))
 }
 
 func getTypes(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
-	fileCode := p[1].String()
-	return internal.NewReply(internal.GetSPXFileType(fileName, fileCode))
+	fileMap := p[1]
+	return internal.NewReply(internal.GetSPXFileType(fileName, jsValue2Map(fileMap)))
 }
 
 func getCompletionItems(this js.Value, p []js.Value) interface{} {
 	fileName := p[0].String()
-	fileCode := p[1].String()
+	fileMap := p[1]
 	cursorLine := p[2].Int()
-	return internal.NewReply(internal.GetCompletions(fileName, fileCode, cursorLine))
+	cursorColumn := p[3].Int()
+	return internal.NewReply(internal.GetCompletions(fileName, jsValue2Map(fileMap), cursorLine, cursorColumn))
 }
 
 func getTokenDetail(this js.Value, p []js.Value) interface{} {
