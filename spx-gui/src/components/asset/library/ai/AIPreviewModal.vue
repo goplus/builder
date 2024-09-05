@@ -3,19 +3,21 @@
     <div class="head head-actions">
       <Transition name="slide-fade" mode="out-in" appear>
         <div class="head-left">
-          <UIButton
-            v-for="action in currentActions"
-            :key="action.name"
-            size="large"
-            :type="action.type"
-            :disabled="action.disabled"
-            @click="action.action"
-          >
-            <NIcon v-if="action.icon">
-              <component :is="action.icon" />
-            </NIcon>
-            {{ $t(action.label) }}
-          </UIButton>
+          <template v-for="action in currentActions" :key="action.name">
+            <component :is="action.component" v-if="'component' in action" />
+            <UIButton
+              v-else
+              size="large"
+              :type="action.type"
+              :disabled="action.disabled"
+              @click="action.action"
+            >
+              <NIcon v-if="action.icon">
+                <component :is="action.icon" />
+              </NIcon>
+              {{ $t(action.label) }}
+            </UIButton>
+          </template>
         </div>
       </Transition>
       <div class="head-right">
@@ -95,17 +97,22 @@
   </div>
 </template>
 <script lang="ts">
-export interface EditorAction {
-  name: string
-  label: LocaleMessage
-  type: ButtonType
-  disabled?: boolean
-  icon?: any
-  action: () => void
-}
+export type EditorAction =
+  | {
+      name: string
+      label: LocaleMessage
+      type: ButtonType
+      disabled?: boolean
+      icon?: any
+      action: () => void
+    }
+  | {
+      name: string
+      component: Component
+    }
 </script>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import { NIcon } from 'naive-ui'
 import {
   addAsset,
@@ -118,11 +125,7 @@ import {
 import UIButton, { type ButtonType } from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
-import {
-  isContentReady,
-  isPreviewReady,
-  type TaggedAIAssetData,
-  exportedId} from '@/apis/aigc'
+import { isContentReady, isPreviewReady, type TaggedAIAssetData, exportedId } from '@/apis/aigc'
 import AISpriteEditor from './AISpriteEditor.vue'
 import AIBackdropEditor from './AIBackdropEditor.vue'
 import AISoundEditor from './AISoundEditor.vue'
@@ -253,6 +256,7 @@ const displayTime = computed(() => {
   align-items: center;
   padding: 10px;
   padding-top: 0;
+  gap: 4rem;
   border-bottom: 1px solid var(--ui-color-dividing-line-2, #cbd2d8);
 }
 

@@ -40,6 +40,8 @@
           ref="imageRepaint"
           :image-src="previewImageSrc"
           class="repaint"
+          @cancel="editMode = 'preview'"
+          @resolve="handleRepaintResolve" 
         />
         <SpriteCarousel
           v-else-if="contentReady && editMode === 'anim' && sprite"
@@ -88,6 +90,7 @@ import { hashFileCollection } from '@/models/common/hash'
 import { CancelOutlined } from '@vicons/material'
 import { useI18n } from '@/utils/i18n'
 import ImageRepaint from './ImageEditor/ImageRepaint.vue'
+import { h } from 'vue'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -105,7 +108,7 @@ const activeEditor = computed(
       preview: null,
       repaint: imageRepaint.value,
       anim: null,
-      skeleton: null,
+      skeleton: null
     })[editMode.value]
 )
 
@@ -211,25 +214,23 @@ type EditMode = 'preview' | 'repaint' | 'anim' | 'skeleton'
 const editMode = ref<EditMode>('preview')
 const hasSkeletonAnimation = computed(() => !!sprite.value?.skeletonAnimation)
 
-const actions = computed(() =>
-  (
+const handleRepaintResolve = async (imgDataUrl: string) => {
+  if (!imgDataUrl) {
+    return
+  }
+  editMode.value = 'preview'
+  // TODO: update preview image
+}
+const previewActions = computed(
+  () =>
     [
-      editMode.value === 'preview' && {
+      {
         name: 'repaint',
         label: { zh: '重绘', en: 'Repaint' },
         icon: AutoFixHighOutlined,
         type: 'secondary' satisfies ButtonType,
         action: () => {
           editMode.value = editMode.value === 'repaint' ? 'preview' : 'repaint'
-        }
-      },
-      editMode.value === 'repaint' && {
-        name: 'repaint',
-        label: { zh: '重绘', en: 'Repaint' },
-        icon: AutoFixHighOutlined,
-        type: 'primary' satisfies ButtonType,
-        action: () => {
-          activeEditor.value?.inpaint()
         }
       },
       {
@@ -241,18 +242,32 @@ const actions = computed(() =>
           await generateContent()
           editMode.value = 'anim'
         }
-      },
-      contentReady.value && {
+      }
+    ] satisfies EditorAction[]
+)
+
+const viewActions = computed(
+  () =>
+    [
+      {
         name: 'edit',
         label: { zh: '编辑', en: 'Edit' },
         icon: EditOutlined,
-        type: (editMode.value === 'skeleton' ? 'primary' : 'secondary') satisfies ButtonType,
+        type: 'secondary' satisfies ButtonType,
         action: () => {
           editMode.value = editMode.value === 'skeleton' ? 'anim' : 'skeleton'
         }
       }
-    ] satisfies (EditorAction | false)[]
-  ).filter(Boolean)
+    ] satisfies EditorAction[]
+)
+
+const actions = computed(
+  () =>
+    [
+      ...(editMode.value === 'preview' ? previewActions.value : []),
+      ...(activeEditor.value?.actions ?? []),
+      ...(editMode.value === 'anim' ? viewActions.value : [])
+    ] satisfies EditorAction[]
 )
 
 defineExpose({

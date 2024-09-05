@@ -11,16 +11,24 @@
 </template>
 
 <script lang="ts" setup>
-import { saveFiles } from '@/models/common/cloud';
-import { Disposable } from '@/models/common/disposable';
-import { fromBlob } from '@/models/common/file';
-import { onMounted, onUnmounted, ref } from 'vue'
-import { useSearchCtx } from '../../SearchContextProvider.vue';
-import { InpaintingTask } from '@/models/aigc';
-import { client, type UniversalToWebUrlMap } from '@/apis/common';
+import { saveFiles } from '@/models/common/cloud'
+import { Disposable } from '@/models/common/disposable'
+import { fromBlob } from '@/models/common/file'
+import { h, onMounted, onUnmounted, ref } from 'vue'
+import { useSearchCtx } from '../../SearchContextProvider.vue'
+import { InpaintingTask } from '@/models/aigc'
+import { client, type UniversalToWebUrlMap } from '@/apis/common'
+import { AutoFixHighOutlined, CancelOutlined, CheckFilled } from '@vicons/material'
+import type { ButtonType } from '@/components/ui/UIButton.vue'
+import type { EditorAction } from '../AIPreviewModal.vue'
 
 const props = defineProps<{
   imageSrc: string
+}>()
+
+const emit = defineEmits<{
+  cancel: []
+  resolve: [dataUrl: string]
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -29,6 +37,8 @@ const imageCanvas = ref<HTMLCanvasElement | null>(null)
 
 let drawCtx: CanvasRenderingContext2D
 let imageCtx: CanvasRenderingContext2D
+
+const currentImgData = ref<string>(props.imageSrc)
 
 const resizeCanvas = () => {
   if (!container.value || !drawCanvas.value || !imageCanvas.value) return
@@ -42,7 +52,7 @@ const resizeCanvas = () => {
   drawCanvas.value.height = height
   imageCanvas.value.width = width
   imageCanvas.value.height = height
-  drawImage(props.imageSrc)
+  drawImage(currentImgData.value)
 
   drawImg.onload = () => {
     setTimeout(() => {
@@ -103,7 +113,18 @@ const inpaint = async () => {
   const img = new Image()
   img.src = url
   await asyncOnload(img)
-  imageCtx.drawImage(img, 0, 0, img.width, img.height, 0, 0, imageCtx.canvas.width, imageCtx.canvas.height)
+  currentImgData.value = url
+  imageCtx.drawImage(
+    img,
+    0,
+    0,
+    img.width,
+    img.height,
+    0,
+    0,
+    imageCtx.canvas.width,
+    imageCtx.canvas.height
+  )
   // clear the draw canvas
   drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
 }
@@ -113,7 +134,7 @@ onMounted(() => {
   drawCtx = drawCanvas.value.getContext('2d') as CanvasRenderingContext2D
   imageCtx = imageCanvas.value.getContext('2d') as CanvasRenderingContext2D
   resizeCanvas()
-  drawImage(props.imageSrc)
+  drawImage(currentImgData.value)
   window.addEventListener('resize', resizeCanvas)
   document.addEventListener('mouseup', endDraw)
 })
@@ -127,7 +148,7 @@ const exportMaskedImage = async () => {
   if (!drawCanvas.value || !imageCanvas.value) return
   const tempCanvas = document.createElement('canvas')
   const baseImg = new Image()
-  baseImg.src = props.imageSrc
+  baseImg.src = currentImgData.value
   const drawImg = new Image()
   drawImg.src = drawCanvas.value.toDataURL()
   await asyncOnload(baseImg)
@@ -146,7 +167,7 @@ const exportMaskedImage = async () => {
 
 const asyncOnload = (img: HTMLImageElement) => {
   return new Promise<void>((resolve) => {
-	img.onload = () => resolve()
+    img.onload = () => resolve()
   })
 }
 
@@ -155,7 +176,7 @@ const searchCtx = useSearchCtx()
 const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string) => {
   const d = new Disposable()
   // img to blob
-  const imgBlob = await (async function() {
+  const imgBlob = await (async function () {
     return new Promise<Blob>((resolve, reject) => {
       controlImg.toBlob((blob) => {
         if (!blob) {
@@ -170,7 +191,9 @@ const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string)
   // blob to file url
   const file = fromBlob('control.png', imgBlob)
   const { fileCollection } = await saveFiles({ 'control.png': file })
-  const urlMap = (await client.post('/util/fileurls', { objects: [fileCollection['control.png']] })) as { objectUrls: UniversalToWebUrlMap}
+  const urlMap = (await client.post('/util/fileurls', {
+    objects: [fileCollection['control.png']]
+  })) as { objectUrls: UniversalToWebUrlMap }
   const url = urlMap.objectUrls[fileCollection['control.png']]
 
   const task = new InpaintingTask({
@@ -180,7 +203,7 @@ const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string)
     model_name: '',
     control_image_url: url,
     image_url: url,
-    callback_url: '',
+    callback_url: ''
   })
 
   await task.start()
@@ -192,6 +215,41 @@ const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string)
 
 defineExpose({
   inpaint,
+  actions: [
+    {
+      name: 'cancel',
+      label: { zh: '取消', en: 'Cancel' },
+      icon: CancelOutlined,
+      type: 'secondary' satisfies ButtonType,
+      action: () => {
+        emit('cancel')
+      }
+    },
+    {
+      name: 'resolve',
+      label: { zh: '确定', en: 'Confirm' },
+      icon: CheckFilled,
+      type: 'secondary' satisfies ButtonType,
+      action: async () => {
+        emit('resolve', currentImgData.value)
+      }
+    },
+    {
+      name: '__separator__',
+      component: () => {
+        return h('div', { style: {flex: 1 } })
+      }
+    },
+    {
+      name: 'repaint',
+      label: { zh: '重绘', en: 'Repaint' },
+      icon: AutoFixHighOutlined,
+      type: 'primary' satisfies ButtonType,
+      action: () => {
+        inpaint()
+      }
+    }
+  ] satisfies EditorAction[]
 })
 </script>
 
