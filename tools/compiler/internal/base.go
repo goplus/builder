@@ -25,9 +25,15 @@ func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, er
 // GetDefinition return user's code definition.
 func GetDefinition(fileName string, fileMap map[string]string) (interface{}, error) {
 	fset := token.NewFileSet()
-	pkg, _ := initProjectParser(fset, fileMap)
+	pkg, err := initProjectParser(fset, fileMap)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 	// get user code info
-	info, _ := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
+	info, err := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 	definitionList := getDefinitionList(info)
 	definitionList.Position(fset)
 
@@ -59,13 +65,22 @@ func GetSPXFileType(fileName string, fileMap map[string]string) (interface{}, er
 // GetInlayHint get hint for user code.
 func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{}, error) {
 	fset := token.NewFileSet()
-	pkg, _ := initProjectParser(fset, fileMap)
+	pkg, err := initProjectParser(fset, fileMap)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// get function list
-	fnList, _ := getCodeFunctionList(pkg[PKG].Files[currentFileName])
+	fnList, err := getCodeFunctionList(pkg[PKG].Files[currentFileName])
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// get user code info
-	infoList, _ := codeInfo(initSPXMod(), pkg[PKG].Files[currentFileName], fset)
+	infoList, err := codeInfo(initSPXMod(), pkg[PKG].Files[currentFileName], fset)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// set function list signature
 	for _, fun := range fnList {
@@ -111,7 +126,10 @@ func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{
 }
 
 func GetCompletions(fileName string, fileMap map[string]string, line, column int) (interface{}, error) {
-	list, _ := getScopesItems(fileName, fileMap, line, column)
+	list, err := getScopesItems(fileName, fileMap, line, column)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 	items := goKeywords
 	items = append(items, list...)
 	return items, nil

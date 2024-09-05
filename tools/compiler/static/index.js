@@ -21,7 +21,7 @@ window.addEventListener('message', function (event) {
 function getInlayHints (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getInlayHints_GO(fileName,  {[fileName]:fileCode})
+    let res = getInlayHints_GO(fileName, {[fileName]:fileCode})
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get inlay hints")

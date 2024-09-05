@@ -29,7 +29,6 @@ import {
   motionCategory,
   sensingCategory,
   soundCategory,
-  getVariableCategory,
   TokenType,
   type TokenCategory
 } from '@/components/editor/code-editor/tools'
