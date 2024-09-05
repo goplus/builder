@@ -185,16 +185,6 @@ export class Compiler extends Disposable {
     return null
   }
 
-  public async getTypes(
-    currentFilename: string,
-    codes: Code[]
-  ): Promise</* temp return null */ null> {
-    await this.waitForWasmInit()
-
-    // implement logic here
-    return null
-  }
-
   public async getTokenDetail(
     tokenName: string,
     tokenPath: string
