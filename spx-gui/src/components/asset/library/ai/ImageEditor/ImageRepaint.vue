@@ -20,8 +20,10 @@ import { InpaintingTask } from '@/models/aigc'
 import { client, type UniversalToWebUrlMap } from '@/apis/common'
 import {
   AutoFixHighOutlined,
+  BackspaceOutlined,
   CancelOutlined,
   CheckFilled,
+  DrawOutlined,
   RedoFilled,
   UndoFilled
 } from '@vicons/material'
@@ -30,6 +32,9 @@ import type { EditorAction } from '../AIPreviewModal.vue'
 import { UITextInput, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useUndoRedo } from './useUndoRedo'
+import BrushSize from './BrushSize.vue'
+import { NIcon } from 'naive-ui'
+import Erase from '@/components/ui/icons/erase.svg?raw'
 
 const { t } = useI18n()
 
@@ -52,12 +57,15 @@ let imageCtx: CanvasRenderingContext2D
 
 const currentImgData = ref<string>(props.imageSrc)
 
-watch(() => props.imageSrc, (newSrc) => {
-  currentImgData.value = newSrc
-  undoRedo.clear()
-  undoRedo.setInitial({ img: newSrc })
-  drawImage(newSrc)
-})
+watch(
+  () => props.imageSrc,
+  (newSrc) => {
+    currentImgData.value = newSrc
+    undoRedo.clear()
+    undoRedo.setInitial({ img: newSrc })
+    drawImage(newSrc)
+  }
+)
 
 const undoRedo = useUndoRedo<{ img?: string; draw?: string }>()
 
@@ -119,13 +127,42 @@ const drawImage = (src: string) => {
   }
 }
 
-const brushSize = 32
+const brushSize = ref(28)
 const brushColor = '#EF4149'
+const brushCursorColor = '#EF414999'
+const eraserCursorColor = '#0BC0CF99'
+
 let isDrawing = false
+const drawMode = ref<'draw' | 'erase'>('draw')
+
+const handleBrushSizeChange = (size: number) => {
+  brushSize.value = size
+
+  setCursors()
+}
+
+const setCursors = () => {
+  const cursorImg = document.createElement('canvas')
+  cursorImg.width = brushSize.value
+  cursorImg.height = brushSize.value
+  const cursorCtx = cursorImg.getContext('2d') as CanvasRenderingContext2D
+  cursorCtx.beginPath()
+  cursorCtx.arc(brushSize.value / 2, brushSize.value / 2, brushSize.value / 2, 0, Math.PI * 2)
+  cursorCtx.fillStyle = drawMode.value === 'draw' ? brushCursorColor : eraserCursorColor
+  cursorCtx.fill()
+  cursorCtx.closePath()
+  const cursor = cursorImg.toDataURL()
+  drawCtx.canvas.style.cursor = `url(${cursor}) ${brushSize.value / 2} ${brushSize.value / 2}, auto`
+}
 
 const startDraw = (e: MouseEvent) => {
   if (!drawCtx) return
   drawCtx.beginPath()
+  if (drawMode.value === 'draw') {
+    drawCtx.globalCompositeOperation = 'source-over'
+  } else {
+    drawCtx.globalCompositeOperation = 'destination-out'
+  }
   drawCtx.moveTo(e.offsetX, e.offsetY)
   isDrawing = true
 }
@@ -135,7 +172,7 @@ const drawing = (e: MouseEvent) => {
   drawCtx.lineTo(e.offsetX, e.offsetY)
   drawCtx.lineCap = 'round'
   drawCtx.lineJoin = 'round'
-  drawCtx.lineWidth = brushSize
+  drawCtx.lineWidth = brushSize.value
   drawCtx.strokeStyle = brushColor
   drawCtx.stroke()
 }
@@ -145,6 +182,7 @@ const endDraw = () => {
   isDrawing = false
   drawCtx.closePath()
   undoRedo.record({ draw: drawCtx.canvas.toDataURL() })
+  drawCtx.globalCompositeOperation = 'source-over'
 }
 
 const inpaint = async () => {
@@ -189,6 +227,7 @@ onMounted(() => {
   undoRedo.setInitial({ img: currentImgData.value })
   window.addEventListener('resize', resizeCanvas)
   document.addEventListener('mouseup', endDraw)
+  handleBrushSizeChange(brushSize.value)
 })
 
 onUnmounted(() => {
@@ -328,11 +367,47 @@ const actions = computed(
           return h('div', { style: { flex: 1 } })
         }
       },
+      {
+        name: 'brush-type',
+        component: () => {
+          return h('div', { class: 'image-repaint-tool-container' }, [
+            h('span', t({ zh: '切换: ', en: 'Switch: ' })),
+            h(
+              'div',
+              { class: 'brush-type-switch' },
+              h(
+                NIcon,
+                {
+                  style: { cursor: 'pointer' },
+                  size: '20px',
+                  onClick: () => {
+                    drawMode.value = drawMode.value === 'draw' ? 'erase' : 'draw'
+                    setCursors()
+                  }
+                },
+                drawMode.value === 'draw' ? h(DrawOutlined) : h('svg', { innerHTML: Erase })
+              )
+            )
+          ])
+        }
+      },
+      {
+        name: 'brush-size',
+        component: () => {
+          return h('div', { class: 'image-repaint-tool-container', style: 'margin-right: 1rem' }, [
+            h('span', t({ zh: '画笔大小: ', en: 'Brush size: ' })),
+            h(BrushSize, {
+              brushSize: brushSize.value,
+              'onUpdate:brushSize': handleBrushSizeChange
+            })
+          ])
+        }
+      },
       // prompt
       {
         name: 'prompt',
         component: () => {
-          return h('div', { class: 'prompt-container' }, [
+          return h('div', { class: 'image-repaint-tool-container' }, [
             h('span', t({ zh: '提示: ', en: 'Prompt: ' })),
             h(UITextInput, {
               value: prompt.value,
@@ -391,11 +466,24 @@ defineExpose({
 .image-canvas {
   z-index: 1;
 }
+</style>
+<style>
+.brush-type-switch {
+  box-shadow: 0px 3px 8px 0px rgba(51, 51, 51, 0.48);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.prompt-container {
+.image-repaint-tool-container {
+  user-select: none;
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 14px;
+  flex-wrap: nowrap;
 }
 </style>

@@ -265,6 +265,7 @@ const displayTime = computed(() => {
   display: flex;
   gap: 10px;
   flex-direction: row;
+  align-items: center;
 }
 
 .head-right {
