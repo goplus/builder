@@ -21,6 +21,10 @@ import { client, type UniversalToWebUrlMap } from '@/apis/common'
 import { AutoFixHighOutlined, CancelOutlined, CheckFilled } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from '../AIPreviewModal.vue'
+import { UITextInput } from '@/components/ui'
+import { useI18n } from '@/utils/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   imageSrc: string
@@ -108,7 +112,7 @@ const endDraw = () => {
 const inpaint = async () => {
   const controlImg = await exportMaskedImage()
   if (!controlImg) return
-  const url = await requestInpainting(controlImg, 'a blue hair girl')
+  const url = await requestInpainting(controlImg, prompt.value)
   if (!url) return
   const img = new Image()
   img.src = url
@@ -172,6 +176,8 @@ const asyncOnload = (img: HTMLImageElement) => {
 }
 
 const searchCtx = useSearchCtx()
+
+const prompt = ref<string>(searchCtx.keyword)
 
 const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string) => {
   const d = new Disposable()
@@ -237,7 +243,23 @@ defineExpose({
     {
       name: '__separator__',
       component: () => {
-        return h('div', { style: {flex: 1 } })
+        return h('div', { style: { flex: 1 } })
+      }
+    },
+    // prompt
+    {
+      name: 'prompt',
+      component: () => {
+        return h('div', { class: 'prompt-container' }, [
+          h('span', t({ zh: '提示: ', en: 'Prompt: ' })),
+          h(UITextInput, {
+            value: prompt.value,
+            style: { width: '200px' },
+            'onUpdate:value': (value: string) => {
+              prompt.value = value
+            }
+          })
+        ])
       }
     },
     {
@@ -274,5 +296,12 @@ defineExpose({
 
 .image-canvas {
   z-index: 1;
+}
+
+.prompt-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
 }
 </style>
