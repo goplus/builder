@@ -14,7 +14,7 @@
 import { saveFiles } from '@/models/common/cloud'
 import { Disposable } from '@/models/common/disposable'
 import { fromBlob } from '@/models/common/file'
-import { computed, h, onMounted, onUnmounted, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useSearchCtx } from '../../SearchContextProvider.vue'
 import { InpaintingTask } from '@/models/aigc'
 import { client, type UniversalToWebUrlMap } from '@/apis/common'
@@ -52,6 +52,13 @@ let imageCtx: CanvasRenderingContext2D
 
 const currentImgData = ref<string>(props.imageSrc)
 
+watch(() => props.imageSrc, (newSrc) => {
+  currentImgData.value = newSrc
+  undoRedo.clear()
+  undoRedo.setInitial({ img: newSrc })
+  drawImage(newSrc)
+})
+
 const undoRedo = useUndoRedo<{ img?: string; draw?: string }>()
 
 const resizeCanvas = () => {
@@ -78,6 +85,7 @@ const resizeCanvas = () => {
 const applyUndoRedo = (data: { img?: string; draw?: string }) => {
   if (!drawCtx || !imageCtx) return
   if (data.img) {
+    currentImgData.value = data.img
     drawImage(data.img)
   }
   if (data.draw) {
