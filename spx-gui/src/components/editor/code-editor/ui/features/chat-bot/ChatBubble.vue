@@ -33,7 +33,7 @@ const nextMessage = (q: ContinueAction) => {
     margin-bottom: 10px;
 }
 
-.container:last-child .suggestions {
+.container:last-of-type > .suggestions {
     display: flex;
 }
 
@@ -45,7 +45,7 @@ const nextMessage = (q: ContinueAction) => {
     background-color: var(--ui-color-grey-100);
 }
 
-.suggestions {
+.container .suggestions {
     display: none;
     flex-direction: row;
     gap: 5px;

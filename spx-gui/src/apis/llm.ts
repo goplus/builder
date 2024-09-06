@@ -64,13 +64,13 @@ export type Cursor = {
 
 export type ChatResp = {
   id: string
-  respMessage: string
-  respQuestions: string[]
+  resp_message: string
+  resp_questions: string[]
 }
 
 export type TaskResp = {
   taskAction: number
-  codeSuggests: CodeSuggest
+  codeSuggests: CodeSuggest[]
 }
 
 export type CodeSuggest = {
@@ -79,12 +79,12 @@ export type CodeSuggest = {
 }
 
 export async function startChat(params: AIStartChatParams) {
-  return client.post('/llm/chat', params) as Promise<ChatResp>
+  return client.post('/llm/chat', params, {timeout: 20000}) as Promise<ChatResp>
 }
 
 export async function nextChat(chatID: string, params: AIChatParams) {
   const encodedChatID = encodeURIComponent(chatID)
-  return client.post(`/llm/chat/${encodedChatID}`, params) as Promise<ChatResp>
+  return client.post(`/llm/chat/${encodedChatID}`, params, {timeout: 20000}) as Promise<ChatResp>
 }
 
 export async function deleteChat(chatID: string) {
@@ -93,5 +93,5 @@ export async function deleteChat(chatID: string) {
 }
 
 export async function startTask(params: AITaskParams) {
-  return client.post('/llm/task', params) as Promise<TaskResp>
+  return client.post('/llm/task', params, {timeout: 20000}) as Promise<TaskResp>
 }

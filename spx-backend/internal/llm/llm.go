@@ -30,7 +30,7 @@ type Client struct {
 }
 
 func NewLLMClientWithConfig(config *Conf) *Client {
-	return &Client{Config: *config, Client: &http.Client{Timeout: 10 * time.Second}}
+	return &Client{Config: *config, Client: &http.Client{Timeout: 20 * time.Second}}
 }
 
 // LLM config
@@ -59,9 +59,13 @@ var llmMethodMap = map[LLMMethods]apiEndPoint{
 	LLMChatMethod: {"/chat/completions", POST},
 }
 
+type llmChatRequestBase struct {
+	Messages Messages `json:"messages"`
+	Model    string   `json:"model"`
+}
+
 type llmChatRequestBody struct {
-	Messages       Messages          `json:"messages"`
-	Model          string            `json:"model"`
+	llmChatRequestBase
 	MaxToken       int               `json:"max_token"`
 	ResponseFormat llmResponseFormat `json:"response_format"`
 	Stream         bool              `json:"stream"`
@@ -147,8 +151,10 @@ const (
 
 func (c *Client) createLLMRequestBody(llmChatMessage []MessageContent) llmChatRequestBody {
 	return llmChatRequestBody{
-		Messages: llmChatMessage,
-		Model:    c.Config.Model,
+		llmChatRequestBase: llmChatRequestBase{
+			Messages: llmChatMessage,
+			Model:    c.Config.Model,
+		},
 		MaxToken: maxToken,
 		ResponseFormat: llmResponseFormat{
 			Type: "json_object",
@@ -158,8 +164,15 @@ func (c *Client) createLLMRequestBody(llmChatMessage []MessageContent) llmChatRe
 	}
 }
 
+func (c *Client) createLLMRequestBase(llmChatMessage []MessageContent) llmChatRequestBase {
+	return llmChatRequestBase{
+		Messages: llmChatMessage,
+		Model:    c.Config.Model,
+	}
+}
+
 func (c *Client) CallLLM(llmChatMessage Messages) (responseBody LlmResponseBody, err error) {
-	body := c.createLLMRequestBody(llmChatMessage)
+	body := c.createLLMRequestBase(llmChatMessage)
 	bodyJSON, err := json.Marshal(body)
 	if err != nil {
 		return LlmResponseBody{}, fmt.Errorf("failed to marshal request body: %w", err)

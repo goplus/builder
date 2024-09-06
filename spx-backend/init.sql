@@ -49,6 +49,7 @@ CREATE TABLE `llm_chat` (
                             `c_time` datetime NULL DEFAULT NULL,
                             `messages` json NOT NULL ,
                             `owner` varchar(255) NOT NULL,
+                            `status` int NULL DEFAULT NULL,
                             PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = DYNAMIC;
 

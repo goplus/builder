@@ -153,7 +153,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '对这段代码有疑惑', en: 'Suspect this code' }),
         action: () => {
-          const chat = this.chatBot.startExplainChat(ctx.selectContent, this.project)
+          const chat = this.chatBot.startExplainChat(ctx.selectContent)
           this.ui.invokeAIChatModal(chat)
         }
       },
@@ -161,7 +161,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '这段代码无法正常运行', en: 'This code cannot run properly' }),
         action: () => {
-          const chat = this.chatBot.startFixCodeChat(ctx.selectContent, this.project)
+          const chat = this.chatBot.startFixCodeChat(ctx.selectContent)
           this.ui.invokeAIChatModal(chat)
         }
       },
@@ -169,7 +169,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '给这段代码添加注释', en: 'Add explanation to this code' }),
         action: () => {
-          const chat = this.chatBot.startCommentChat(ctx.selectContent, this.project)
+          const chat = this.chatBot.startCommentChat(ctx.selectContent)
           this.ui.invokeAIChatModal(chat)
         }
       }
