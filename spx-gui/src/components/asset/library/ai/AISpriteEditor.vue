@@ -42,6 +42,7 @@
           class="repaint"
           @cancel="editMode = 'preview'"
           @resolve="handleRepaintResolve" 
+          @loading="loading => inpaintingLoading = loading"
         />
         <SpriteCarousel
           v-else-if="contentReady && editMode === 'anim' && sprite"
@@ -115,13 +116,16 @@ const activeEditor = computed(
 const status = ref<AIGCStatus | null>(null)
 const contentReady = ref(props.asset[isContentReady])
 
+const inpaintingLoading = ref(false)
+
 const loadingVisible = computed(() => {
   return (
     (status.value !== null &&
       (status.value === AIGCStatus.Waiting ||
         status.value === AIGCStatus.Generating ||
         (!contentReady.value && status.value === AIGCStatus.Finished))) ||
-    previewImageLoading.value
+    previewImageLoading.value ||
+    inpaintingLoading.value
   )
 })
 
@@ -134,6 +138,8 @@ const loadingInfoText = computed(() => {
     return t({ en: `Loading...`, zh: `加载中...` })
   } else if (previewImageLoading.value) {
     return t({ en: `Loading preview...`, zh: `加载预览...` })
+  } else if (inpaintingLoading.value) {
+    return t({ en: `Inpainting...`, zh: `重绘中...` })
   }
   return ''
 })

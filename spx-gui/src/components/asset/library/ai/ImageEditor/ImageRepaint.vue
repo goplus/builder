@@ -21,7 +21,7 @@ import { client, type UniversalToWebUrlMap } from '@/apis/common'
 import { AutoFixHighOutlined, CancelOutlined, CheckFilled } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from '../AIPreviewModal.vue'
-import { UITextInput } from '@/components/ui'
+import { UITextInput, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 
 const { t } = useI18n()
@@ -33,6 +33,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   cancel: []
   resolve: [dataUrl: string]
+  loading: [loading: boolean]
 }>()
 
 const container = ref<HTMLDivElement | null>(null)
@@ -212,12 +213,20 @@ const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string)
     callback_url: ''
   })
 
-  await task.start()
-
-  d.dispose()
-
-  return task.result?.imageUrl
+  return new Promise<string>((resolve, reject) => {
+    task.start()
+    task.addEventListener('AIGCFinished', () => {
+      resolve(task.result?.imageUrl ?? '')
+      d.dispose()
+    })
+    task.addEventListener('AIGCFailed', () => {
+      reject(task.failureMessage ?? t({ en: 'Failed to inpaint', zh: '重绘失败' }))
+      d.dispose()
+    })
+  })
 }
+
+const errorMessage = useMessage()
 
 defineExpose({
   inpaint,
@@ -268,7 +277,14 @@ defineExpose({
       icon: AutoFixHighOutlined,
       type: 'primary' satisfies ButtonType,
       action: () => {
+        emit('loading', true)
         inpaint()
+        .catch((e) => {
+          errorMessage.error(e)
+        })
+        .finally(() => {
+          emit('loading', false)
+        })
       }
     }
   ] satisfies EditorAction[]
@@ -290,7 +306,7 @@ defineExpose({
 }
 
 .draw-canvas {
-  z-index: 100;
+  z-index: 10;
   opacity: 0.6;
 }
 
