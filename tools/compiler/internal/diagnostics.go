@@ -8,7 +8,7 @@ import (
 
 // diagnostics contains error after analyse the code.
 type diagnostics struct {
-	FileName string `json:"fileName"`
+	FileName string `json:"file_name"`
 	Column   int    `json:"column"`
 	Line     int    `json:"line"`
 	Message  string `json:"message"`
