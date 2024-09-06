@@ -5,12 +5,12 @@ import {
   DocPreviewLevel,
   type EditorUI,
   Icon,
+  type InlayHintDecoration,
   type InputItem,
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel,
-  type InlayHintDecoration
+  type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
@@ -25,13 +25,13 @@ import {
   eventCategory,
   gameCategory,
   getAllTools,
+  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
-  getVariableCategory,
-  TokenType,
-  type TokenCategory
+  type TokenCategory,
+  TokenType
 } from '@/components/editor/code-editor/tools'
 
 type JumpPosition = {
@@ -98,6 +98,49 @@ export class Coordinator {
     addItems: (items: CompletionItem[]) => void
   ) {
     addItems(getCompletionItems(this.ui.i18n, this.project))
+
+    setTimeout(() => {
+      addItems([
+        {
+          icon: Icon.Keywords,
+          label: 'a',
+          desc: 'a',
+          insertText: 'a',
+          preview: {
+            content: '',
+            level: DocPreviewLevel.Normal
+          }
+        }
+      ])
+    }, 1000)
+    setTimeout(() => {
+      addItems([
+        {
+          icon: Icon.Keywords,
+          label: 'ab',
+          desc: 'ab',
+          insertText: 'ab',
+          preview: {
+            content: '',
+            level: DocPreviewLevel.Normal
+          }
+        }
+      ])
+    }, 2000)
+    setTimeout(() => {
+      addItems([
+        {
+          icon: Icon.Keywords,
+          label: 'abc',
+          desc: 'abc',
+          insertText: 'abc',
+          preview: {
+            content: '',
+            level: DocPreviewLevel.Normal
+          }
+        }
+      ])
+    }, 3000)
   }
 
   async implementsPreDefinedHoverProvider(

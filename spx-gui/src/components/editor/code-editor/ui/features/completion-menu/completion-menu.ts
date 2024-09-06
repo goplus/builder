@@ -4,18 +4,17 @@
 
 import {
   editor as IEditor,
-  editor,
   type IDisposable,
   type IPosition,
+  KeyCode,
   languages,
   Range
 } from 'monaco-editor'
-import { reactive, type UnwrapNestedRefs } from 'vue'
+import { reactive } from 'vue'
 import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { createMatches, type IMatch } from '../../common'
 import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
 import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
-import EditorOption = editor.EditorOption
 
 export interface CompletionMenuState {
   visible: boolean
@@ -33,8 +32,20 @@ export interface CompletionMenuState {
 
 export class CompletionMenu implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
-  public completionMenuState: UnwrapNestedRefs<CompletionMenuState>
+  public completionMenuState = reactive<CompletionMenuState>({
+    visible: false,
+    suggestions: [],
+    activeIdx: 0,
+    position: {
+      top: 0,
+      left: 0
+    },
+    fontSize: 14,
+    lineHeight: 19,
+    word: ''
+  })
   public completionItemCache = new CompletionItemCache()
+  public abortController = new AbortController()
   private suggestController: any
   private suggestControllerWidget: any
   private readonly TabSize: number
@@ -42,9 +53,15 @@ export class CompletionMenu implements IDisposable {
   private viewZoneChangeAccessorState: {
     viewZoneId: string | null
     codePreviewElement: HTMLElement | null
+  } = {
+    viewZoneId: null,
+    // no need to remove this element by self, because it will be removed by monaco editor.
+    codePreviewElement: null
   }
   private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
+
+  private eventsDisposers: Record<string, null | (() => void)> = {}
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
@@ -52,45 +69,27 @@ export class CompletionMenu implements IDisposable {
     if (!this.suggestController) throw new Error("can't find suggestController")
     this.suggestControllerWidget = this.suggestController.widget.value
 
-    this.completionMenuState = reactive({
-      visible: false,
-      suggestions: [],
-      activeIdx: 0,
-      position: {
-        top: 0,
-        left: 0
-      },
-      fontSize: 14,
-      lineHeight: 19,
-      word: ''
-    })
-
     this.TabSize = editor.getModel()?.getOptions().tabSize || 4
     this.indentSymbolBySpace = ' '.repeat(this.TabSize)
 
-    this.viewZoneChangeAccessorState = {
-      viewZoneId: null,
-      // no need to remove this element by self, because it will be removed by monaco editor.
-      codePreviewElement: null
-    }
     this.completionMenuItemPreviewDecorationsCollection = editor.createDecorationsCollection([])
 
     this.initEventListeners()
   }
 
   private initEventListeners() {
-    this.suggestControllerWidget.onDidHide(() => {
+    const { dispose: didHideDispose } = this.suggestControllerWidget.onDidHide(() => {
       this.completionMenuState.visible = false
       this.completionMenuState.suggestions.length = 0
       this.disposeCodePreview()
     })
-    this.suggestControllerWidget.onDidShow(() => {
+    const { dispose: didShowDispose } = this.suggestControllerWidget.onDidShow(() => {
       this.completionMenuState.visible = true
       this.syncCompletionMenuStateFromSuggestControllerWidget(0)
       // must be use next render time to update correct position
       setTimeout(() => this.updateCompletionMenuPosition(), 0)
     })
-    this.suggestControllerWidget.onDidFocus(() => {
+    const { dispose: didFocusDispose } = this.suggestControllerWidget.onDidFocus(() => {
       this.completionMenuState.visible = true
       const focusedItem = this.suggestControllerWidget.getFocusedItem()
       if (!focusedItem) return
@@ -105,6 +104,18 @@ export class CompletionMenu implements IDisposable {
       )
       this.updateCompletionMenuPosition()
     })
+
+    const { dispose: keyDownDispose } = this.editor.onKeyDown((e) => {
+      if (e.keyCode === KeyCode.Escape) {
+        console.log('中断')
+        this.abortController.abort()
+      }
+    })
+
+    this.eventsDisposers.didHideDispose = didHideDispose
+    this.eventsDisposers.didShowDispose = didShowDispose
+    this.eventsDisposers.didFocusDispose = didFocusDispose
+    this.eventsDisposers.keyDownDispose = keyDownDispose
   }
 
   private disposeCodePreview() {
@@ -190,27 +201,6 @@ export class CompletionMenu implements IDisposable {
     })
   }
 
-  public showCompletionMenu() {
-    this.completionMenuState.visible = true
-    this.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
-  }
-
-  public hideCompletionMenu() {
-    this.completionMenuState.visible = false
-    this.editor.trigger('editor', 'hideSuggestWidget', {})
-  }
-
-  select(idx: number) {
-    const completionItems: MonacoCompletionModelItem[] = this.monacoCompletionModelItems
-    if (!completionItems.length || idx < 0 || idx >= completionItems.length) return
-    this.suggestControllerWidget._select(completionItems[idx], idx)
-  }
-
-  dispose() {
-    this.completionItemCache.dispose()
-    this.disposeCodePreview()
-  }
-
   private updateCompletionMenuPosition() {
     const position = this.editor.getPosition()
     if (!position) return
@@ -218,7 +208,7 @@ export class CompletionMenu implements IDisposable {
     if (!completionMenuElement) return
     const pixelPosition = this.editor.getScrolledVisiblePosition(position)
     if (!pixelPosition) return
-    const fontSize = this.editor.getOption(EditorOption.fontSize)
+    const fontSize = this.editor.getOption(IEditor.EditorOption.fontSize)
     const isMultiline = () => {
       const { suggestions, activeIdx } = this.completionMenuState
       if (activeIdx < 0 || activeIdx >= suggestions.length) return false
@@ -264,6 +254,38 @@ export class CompletionMenu implements IDisposable {
         matches: createMatches(completion.score)
       }
     })
+  }
+
+  public refreshAbortController() {
+    this.abortController.abort()
+    this.abortController = new AbortController()
+    return this.abortController
+  }
+
+  public showCompletionMenu() {
+    this.completionMenuState.visible = true
+    this.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
+  }
+
+  public hideCompletionMenu() {
+    this.completionMenuState.visible = false
+    this.editor.trigger('editor', 'hideSuggestWidget', {})
+  }
+
+  public select(idx: number) {
+    const completionItems: MonacoCompletionModelItem[] = this.monacoCompletionModelItems
+    if (!completionItems.length || idx < 0 || idx >= completionItems.length) return
+    this.suggestControllerWidget._select(completionItems[idx], idx)
+  }
+
+  public dispose() {
+    for (const key in this.eventsDisposers) {
+      this.eventsDisposers[key]?.()
+    }
+
+    this.completionItemCache.dispose()
+    this.disposeCodePreview()
+    this.abortController.abort()
   }
 }
 
