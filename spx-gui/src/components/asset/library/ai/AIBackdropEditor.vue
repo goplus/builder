@@ -382,7 +382,6 @@ const actions = computed(() =>
         type: 'secondary' satisfies ButtonType,
         disabled: redoStackLength.value === 0,
         action: () => {
-          // redo()
           const current = redo()
           if (current) {
             backdrop.value!.img = current

@@ -14,15 +14,22 @@
 import { saveFiles } from '@/models/common/cloud'
 import { Disposable } from '@/models/common/disposable'
 import { fromBlob } from '@/models/common/file'
-import { h, onMounted, onUnmounted, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref } from 'vue'
 import { useSearchCtx } from '../../SearchContextProvider.vue'
 import { InpaintingTask } from '@/models/aigc'
 import { client, type UniversalToWebUrlMap } from '@/apis/common'
-import { AutoFixHighOutlined, CancelOutlined, CheckFilled } from '@vicons/material'
+import {
+  AutoFixHighOutlined,
+  CancelOutlined,
+  CheckFilled,
+  RedoFilled,
+  UndoFilled
+} from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from '../AIPreviewModal.vue'
 import { UITextInput, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
+import { useUndoRedo } from './useUndoRedo'
 
 const { t } = useI18n()
 
@@ -45,6 +52,8 @@ let imageCtx: CanvasRenderingContext2D
 
 const currentImgData = ref<string>(props.imageSrc)
 
+const undoRedo = useUndoRedo<{ img?: string; draw?: string }>()
+
 const resizeCanvas = () => {
   if (!container.value || !drawCanvas.value || !imageCanvas.value) return
   // save and restore the canvas content
@@ -63,6 +72,25 @@ const resizeCanvas = () => {
     setTimeout(() => {
       drawCtx.drawImage(drawImg, 0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
     }, 0)
+  }
+}
+
+const applyUndoRedo = (data: { img?: string; draw?: string }) => {
+  if (!drawCtx || !imageCtx) return
+  if (data.img) {
+    drawImage(data.img)
+  }
+  if (data.draw) {
+    applyDraw(data.draw)
+  }
+}
+
+const applyDraw = (src: string) => {
+  const img = new Image()
+  img.src = src
+  img.onload = () => {
+    drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
+    drawCtx.drawImage(img, 0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
   }
 }
 
@@ -108,6 +136,7 @@ const endDraw = () => {
   if (!drawCtx || !isDrawing) return
   isDrawing = false
   drawCtx.closePath()
+  undoRedo.record({ draw: drawCtx.canvas.toDataURL() })
 }
 
 const inpaint = async () => {
@@ -115,6 +144,13 @@ const inpaint = async () => {
   if (!controlImg) return
   const url = await requestInpainting(controlImg, prompt.value)
   if (!url) return
+
+  // save the current image data to undo stack
+  const current = undoRedo.current()
+  if (current) {
+    current.img = currentImgData.value
+  }
+
   const img = new Image()
   img.src = url
   await asyncOnload(img)
@@ -132,6 +168,8 @@ const inpaint = async () => {
   )
   // clear the draw canvas
   drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height)
+
+  undoRedo.record({ img: currentImgData.value })
 }
 
 onMounted(() => {
@@ -140,6 +178,7 @@ onMounted(() => {
   imageCtx = imageCanvas.value.getContext('2d') as CanvasRenderingContext2D
   resizeCanvas()
   drawImage(currentImgData.value)
+  undoRedo.setInitial({ img: currentImgData.value })
   window.addEventListener('resize', resizeCanvas)
   document.addEventListener('mouseup', endDraw)
 })
@@ -228,66 +267,97 @@ const requestInpainting = async (controlImg: HTMLCanvasElement, prompt?: string)
 
 const errorMessage = useMessage()
 
+const actions = computed(
+  () =>
+    [
+      {
+        name: 'undo',
+        label: { zh: '撤销', en: 'Undo' },
+        icon: UndoFilled,
+        type: 'secondary' satisfies ButtonType,
+        disabled: undoRedo.undoStackLength.value === 0,
+        action: () => {
+          const current = undoRedo.undo()
+          if (current) {
+            applyUndoRedo(current)
+          }
+        }
+      },
+      {
+        name: 'redo',
+        label: { zh: '重做', en: 'Redo' },
+        icon: RedoFilled,
+        type: 'secondary' satisfies ButtonType,
+        disabled: undoRedo.redoStackLength.value === 0,
+        action: () => {
+          const current = undoRedo.redo()
+          if (current) {
+            applyUndoRedo(current)
+          }
+        }
+      },
+      {
+        name: 'cancel',
+        label: { zh: '取消', en: 'Cancel' },
+        icon: CancelOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: () => {
+          emit('cancel')
+        }
+      },
+      {
+        name: 'resolve',
+        label: { zh: '确定', en: 'Confirm' },
+        icon: CheckFilled,
+        type: 'secondary' satisfies ButtonType,
+        action: async () => {
+          emit('resolve', currentImgData.value)
+        }
+      },
+      {
+        name: '__separator__',
+        component: () => {
+          return h('div', { style: { flex: 1 } })
+        }
+      },
+      // prompt
+      {
+        name: 'prompt',
+        component: () => {
+          return h('div', { class: 'prompt-container' }, [
+            h('span', t({ zh: '提示: ', en: 'Prompt: ' })),
+            h(UITextInput, {
+              value: prompt.value,
+              style: { width: '200px' },
+              'onUpdate:value': (value: string) => {
+                prompt.value = value
+              }
+            })
+          ])
+        }
+      },
+      {
+        name: 'repaint',
+        label: { zh: '重绘', en: 'Repaint' },
+        icon: AutoFixHighOutlined,
+        type: 'primary' satisfies ButtonType,
+        action: () => {
+          emit('loading', true)
+          inpaint()
+            .catch((e) => {
+              errorMessage.error(e)
+            })
+            .finally(() => {
+              emit('loading', false)
+            })
+        }
+      }
+    ] satisfies EditorAction[]
+)
+
 defineExpose({
   inpaint,
-  actions: [
-    {
-      name: 'cancel',
-      label: { zh: '取消', en: 'Cancel' },
-      icon: CancelOutlined,
-      type: 'secondary' satisfies ButtonType,
-      action: () => {
-        emit('cancel')
-      }
-    },
-    {
-      name: 'resolve',
-      label: { zh: '确定', en: 'Confirm' },
-      icon: CheckFilled,
-      type: 'secondary' satisfies ButtonType,
-      action: async () => {
-        emit('resolve', currentImgData.value)
-      }
-    },
-    {
-      name: '__separator__',
-      component: () => {
-        return h('div', { style: { flex: 1 } })
-      }
-    },
-    // prompt
-    {
-      name: 'prompt',
-      component: () => {
-        return h('div', { class: 'prompt-container' }, [
-          h('span', t({ zh: '提示: ', en: 'Prompt: ' })),
-          h(UITextInput, {
-            value: prompt.value,
-            style: { width: '200px' },
-            'onUpdate:value': (value: string) => {
-              prompt.value = value
-            }
-          })
-        ])
-      }
-    },
-    {
-      name: 'repaint',
-      label: { zh: '重绘', en: 'Repaint' },
-      icon: AutoFixHighOutlined,
-      type: 'primary' satisfies ButtonType,
-      action: () => {
-        emit('loading', true)
-        inpaint()
-        .catch((e) => {
-          errorMessage.error(e)
-        })
-        .finally(() => {
-          emit('loading', false)
-        })
-      }
-    }
-  ] satisfies EditorAction[]
+  actions: actions
 })
 </script>
 

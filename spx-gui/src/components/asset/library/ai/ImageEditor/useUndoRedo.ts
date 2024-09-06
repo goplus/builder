@@ -21,9 +21,9 @@ export function useUndoRedo<T>(initial: T | null = null, limit: number = Infinit
   return {
     undoStackLength,
     redoStackLength,
-	setInitial: (_initial: T) => {
-		initial = _initial
-	},
+    setInitial: (_initial: T) => {
+      initial = _initial
+    },
     /**
      * undo the last action
      * @returns the current item after undo
