@@ -7,26 +7,33 @@ import (
 	"github.com/goplus/igop/gopbuild"
 )
 
+const PKG = "main"
+
 // GetDiagnostics return error info list.
-func GetDiagnostics(fileName, fileCode string) (interface{}, error) {
+func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, error) {
 	// new file set
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
+	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
 		return nil, err
 	}
-	_, err = codeInfo(initSPXMod(), file, fset)
+	_, err = codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
 	list := parseErrorLines(error2List(err))
 	return list, nil
 }
 
 // GetDefinition return user's code definition.
-func GetDefinition(fileName, fileCode string) (interface{}, error) {
+func GetDefinition(fileName string, fileMap map[string]string) (interface{}, error) {
 	fset := token.NewFileSet()
-	file, _ := initParser(fset, fileName, fileCode)
-
+	pkg, err := initProjectParser(fset, fileMap)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 	// get user code info
-	info, _ := codeInfo(initSPXMod(), file, fset)
+	info, err := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 	definitionList := getDefinitionList(info)
 	definitionList.Position(fset)
 
@@ -34,14 +41,14 @@ func GetDefinition(fileName, fileCode string) (interface{}, error) {
 }
 
 // GetSPXFileType return a json object with spx type info.
-func GetSPXFileType(fileName, fileCode string) (interface{}, error) {
+func GetSPXFileType(fileName string, fileMap map[string]string) (interface{}, error) {
 	// new file set
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
+	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
 		return nil, err
 	}
-	info, err := codeInfo(initSPXMod(), file, fset)
+	info, err := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
 	if err != nil {
 		return nil, err
 	}
@@ -56,15 +63,24 @@ func GetSPXFileType(fileName, fileCode string) (interface{}, error) {
 }
 
 // GetInlayHint get hint for user code.
-func GetInlayHint(fileName, fileCode string) (interface{}, error) {
+func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{}, error) {
 	fset := token.NewFileSet()
-	file, _ := initParser(fset, fileName, fileCode)
+	pkg, err := initProjectParser(fset, fileMap)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// get function list
-	fnList, _ := getCodeFunctionList(file)
+	fnList, err := getCodeFunctionList(pkg[PKG].Files[currentFileName])
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// get user code info
-	infoList, _ := codeInfo(initSPXMod(), file, fset)
+	infoList, err := codeInfo(initSPXMod(), pkg[PKG].Files[currentFileName], fset)
+	if err != nil {
+		fmt.Println("Internal error: ", err)
+	}
 
 	// set function list signature
 	for _, fun := range fnList {
@@ -109,10 +125,10 @@ func GetInlayHint(fileName, fileCode string) (interface{}, error) {
 	return inlayHintList, nil
 }
 
-func GetCompletions(fileName, fileCode string, line int) (interface{}, error) {
-	list, err := getScopesItems(fileName, fileCode, line)
+func GetCompletions(fileName string, fileMap map[string]string, line, column int) (interface{}, error) {
+	list, err := getScopesItems(fileName, fileMap, line, column)
 	if err != nil {
-		return nil, err
+		fmt.Println("Internal error: ", err)
 	}
 	items := goKeywords
 	items = append(items, list...)

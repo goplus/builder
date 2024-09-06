@@ -6,7 +6,6 @@ import (
 
 	"github.com/goplus/gop/ast"
 	"github.com/goplus/gop/parser"
-	"github.com/goplus/gop/parser/fsx"
 	"github.com/goplus/gop/token"
 	"github.com/goplus/gop/x/typesutil"
 	"github.com/goplus/mod/gopmod"
@@ -87,6 +86,12 @@ func initParser(fileSet *token.FileSet, fileName string, fileCode string) (*ast.
 }
 
 // init project parser
-func initProjectParser(fileSet *token.FileSet, fileNames []string) (map[string]*ast.Package, error) {
-	return parser.ParseFSFiles(fileSet, fsx.Local, fileNames, 0)
+func initProjectParser(fileSet *token.FileSet, files map[string]string) (map[string]*ast.Package, error) {
+	var fileNames []string
+	vfs := NewVFS()
+	for fileName, fileCode := range files {
+		fileNames = append(fileNames, fileName)
+		vfs.AddFile(fileName, fileCode)
+	}
+	return parser.ParseFSEntries(fileSet, vfs, fileNames, initSPXParserConf())
 }

@@ -17,7 +17,6 @@ import (
 
 // codeInfo is use igop to analyse spx code and get info.
 func codeInfo(mod *gopmod.Module, file *ast.File, fileSet *token.FileSet) (*typesutil.Info, error) {
-
 	// init types conf
 	ctx := igop.NewContext(0)
 	c := gopbuild.NewContext(ctx)

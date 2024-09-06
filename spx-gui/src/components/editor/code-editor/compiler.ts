@@ -6,11 +6,14 @@ import type { Markdown } from './EditorUI'
 import { shallowRef } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 
+export type CompilerCodes = { [k: string]: string }
+
 interface WasmHandler extends Window {
   console: typeof console
-  getInlayHints: (params: { in: { name: string; code: string } }) => Hint[] | {}
+  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
+  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostics[] | {}
   getCompletionItems: (params: {
-    in: { name: string; code: string; line: number }
+    in: { name: string; code: CompilerCodes; line: number, column: number }
   }) => SuggestionItem[] | {}
 }
 
@@ -18,6 +21,8 @@ export enum CodeEnum {
   Sprite,
   Stage
 }
+
+enum CompletionItemEnum {}
 
 // generated from wasm `console.log`
 export interface Hint {
@@ -38,8 +43,10 @@ export interface Position {
   Column: number
 }
 
-type AttentionHint = {
-  range: Range
+export type Diagnostics = {
+  filename: string
+  column: number
+  line: number
   message: string
 }
 
@@ -79,7 +86,7 @@ export type Token = {
 }
 
 type Code = {
-  type: CodeEnum
+  filename: string
   content: string
 }
 
@@ -108,6 +115,15 @@ export class Compiler extends Disposable {
     this.containerElement?.contentWindow?.location.reload()
   }
 
+  private codes2CompileCode(codes: Code[]): CompilerCodes {
+    const compilerCodes: Record<string, string> = {}
+    codes.forEach((code) => {
+      const filename = code.filename
+      compilerCodes[filename] = code.content
+    })
+    return compilerCodes
+  }
+
   public setContainerElement(containerElement: HTMLIFrameElement) {
     this.containerElement = containerElement
     this.initIframe()
@@ -130,40 +146,61 @@ export class Compiler extends Disposable {
     return untilNotNull(this.wasmHandlerRef)
   }
 
-  public async getInlayHints(codes: Code[]): Promise<Hint[]> {
+  public async getInlayHints(currentFilename: string, codes: Code[]): Promise<Hint[]> {
     const wasmHandler = await this.waitForWasmInit()
-
-    const tempCodes = codes.map((code) => code.content).join('\r\n')
     const res = wasmHandler.getInlayHints({
       in: {
-        name: 'test.spx',
-        code: tempCodes
+        name: currentFilename,
+        code: this.codes2CompileCode(codes)
       }
     })
     return Array.isArray(res) ? res : []
   }
 
-  public async getDiagnostics(codes: Code[]): Promise<AttentionHint[]> {
-    await this.waitForWasmInit()
-    // implement logic here
-    return []
+  public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostics[]> {
+    const wasmHandler = await this.waitForWasmInit()
+    const res = wasmHandler.getDiagnostics({
+      in: {
+        name: currentFilename,
+        code: this.codes2CompileCode(codes)
+      }
+    })
+    return Array.isArray(res) ? res : []
   }
 
-  /* todo: this is for single file. refactor it to multi files */
-  public async getCompletionItems(codes: Code[], offset: number): Promise<SuggestionItem[]> {
+  public async getCompletionItems(
+    currentFilename: string,
+    codes: Code[],
+    line: number,
+    column: number
+  ): Promise<SuggestionItem[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const tempCodes = codes.map((code) => code.content).join('\r\n')
     const res = wasmHandler.getCompletionItems({
       in: {
-        name: 'test.spx',
-        code: tempCodes,
-        line: offset
+        name: currentFilename,
+        code: this.codes2CompileCode(codes),
+        line: line,
+        column: column
       }
     })
     return Array.isArray(res) ? res : []
+
   }
 
-  public async getDefinition(codes: Code[], position: Position): Promise<Token | null> {
+  public async getDefinition(
+    currentFilename: string,
+    codes: Code[]
+  ): Promise</* temp return null */ null> {
+    await this.waitForWasmInit()
+
+    // implement logic here
+    return null
+  }
+
+  public async getTokenDetail(
+    tokenName: string,
+    tokenPath: string
+  ): Promise</* temp return null */ null> {
     await this.waitForWasmInit()
 
     // implement logic here

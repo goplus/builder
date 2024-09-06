@@ -194,6 +194,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   display: none !important;
 }
 
+// this is global css and active in monaco editor code line, add `.view-line` to avoid style override by monaco editor
 .view-line .completion-menu__item-preview {
   color: grey;
   font-size: inherit;

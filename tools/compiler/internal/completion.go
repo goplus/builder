@@ -160,14 +160,16 @@ func (list *completionList) Contains(text string) bool {
 	return false
 }
 
-func getScopesItems(fileName, fileCode string, cursor int) (completionList, error) {
+func getScopesItems(fileName string, fileMap map[string]string, line, column int) (completionList, error) {
 	fset := token.NewFileSet()
-	file, err := initParser(fset, fileName, fileCode)
+	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
 		fmt.Println("Compiler error: ", err)
 	}
+	file := pkg[PKG].Files[fileName]
 
-	cursorPos := fset.File(file.Pos()).Pos(cursor)
+	cursorOffset := int(fset.File(file.Pos()).LineStart(line)) + column - 1
+	cursorPos := token.Pos(cursorOffset)
 
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)
@@ -272,7 +274,10 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 		signature := obj.Type().(*types.Signature)
 		signList, _, _ := extractParams(signature)
 		scopeItem.Type = "func"
-		scopeItem.InsertText = name + " " + strings.Join(signList, ", ")
+		scopeItem.InsertText = name
+		if len(signList) != 0 {
+			scopeItem.InsertText += " " + strings.Join(signList, ", ")
+		}
 	} else {
 		scopeItem.InsertText = name
 	}
@@ -314,7 +319,10 @@ func handleType(obj types.Object, name string, items *completionList) {
 			if listContains(sampleList, "__gop_overload_args__") {
 				continue
 			}
-			item.InsertText = method.Name() + " " + strings.Join(signList, ", ")
+			item.InsertText = name
+			if len(signList) != 0 {
+				item.InsertText += " " + strings.Join(signList, ", ")
+			}
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)
 			}
@@ -362,7 +370,10 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 			if listContains(sampleList, "__gop_overload_args__") {
 				continue
 			}
-			item.InsertText = methodName + " " + strings.Join(signList, ", ")
+			item.InsertText = methodName
+			if len(signList) != 0 {
+				item.InsertText += " " + strings.Join(signList, ", ")
+			}
 			if !items.Contains(item.InsertText) {
 				*items = append(*items, item)
 			}

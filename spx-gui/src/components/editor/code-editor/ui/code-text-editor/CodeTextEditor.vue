@@ -22,6 +22,11 @@
       :selection-menu="selectionMenu"
     ></SelectionMenuComponent>
     <InlayHintComponent v-if="inlayHint" :ui="ui" :inlay-hint="inlayHint"></InlayHintComponent>
+    <AttentionHintComponent
+      v-if="attentionHint"
+      :ui="ui"
+      :attention-hint="attentionHint"
+    ></AttentionHintComponent>
   </div>
 </template>
 <script setup lang="ts">
@@ -31,8 +36,9 @@ import { KeyCode, type editor, Position, MarkerSeverity, KeyMod } from 'monaco-e
 import { useI18n } from '@/utils/i18n'
 import { CompletionMenu } from '../features/completion-menu/completion-menu'
 import { InlayHint } from '../features/inlay-hint/inlay-hint'
-import { HoverPreview } from '@/components/editor/code-editor/ui/features/hover-preview/hover-preview'
-import { SelectionMenu } from '@/components/editor/code-editor/ui/features/selection-menu/selection-menu'
+import { AttentionHint } from '../features/attention-hint/attention-hint'
+import { HoverPreview } from '../features/hover-preview/hover-preview'
+import { SelectionMenu } from '../features/selection-menu/selection-menu'
 import { useLocalStorage } from '@/utils/utils'
 import { useUIVariables } from '@/components/ui'
 
@@ -41,10 +47,11 @@ import IconPlayList from '../icons/playlist.svg'
 import loader from '@monaco-editor/loader'
 import CompletionMenuComponent from '../features/completion-menu/CompletionMenuComponent.vue'
 import HoverPreviewComponent from '../features/hover-preview/HoverPreviewComponent.vue'
-import SelectionMenuComponent from '@/components/editor/code-editor/ui/features/selection-menu/SelectionMenuComponent.vue'
-import InlayHintComponent from '@/components/editor/code-editor/ui/features/inlay-hint/InlayHintComponent.vue'
+import SelectionMenuComponent from '../features/selection-menu/SelectionMenuComponent.vue'
+import InlayHintComponent from '../features/inlay-hint/InlayHintComponent.vue'
 
 import type { EditorUI } from '@/components/editor/code-editor/EditorUI'
+import AttentionHintComponent from '@/components/editor/code-editor/ui/features/attention-hint/AttentionHintComponent.vue'
 
 const props = defineProps<{
   value: string
@@ -61,6 +68,7 @@ const completionMenu = shallowRef<CompletionMenu>()
 const hoverPreview = shallowRef<HoverPreview>()
 const selectionMenu = shallowRef<SelectionMenu>()
 const inlayHint = shallowRef<InlayHint>()
+const attentionHint = shallowRef<AttentionHint>()
 const i18n = useI18n()
 const uiVariables = useUIVariables()
 
@@ -171,11 +179,14 @@ watchEffect(async (onCleanup) => {
   inlayHint.value = _inlayHint
   props.ui.setInlayHint(_inlayHint)
 
+  attentionHint.value = new AttentionHint(editor)
+
   monacoEditor.value = editor
   onCleanup(() => {
     completionMenu.value?.dispose()
     hoverPreview.value?.dispose()
     inlayHint.value?.dispose()
+    attentionHint.value?.dispose()
     editor.dispose()
   })
 })

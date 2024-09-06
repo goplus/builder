@@ -1,6 +1,6 @@
 import type { LocaleMessage } from '@/utils/i18n'
 
-export enum ToolType {
+export enum TokenType {
   method,
   function,
   constant,
@@ -8,13 +8,13 @@ export enum ToolType {
   variable
 }
 
-export enum ToolCallEffect {
+export enum TokenCallEffect {
   read,
   write,
   listen
 }
 
-export enum ToolContext {
+export enum TokenContext {
   /** Availible only in sprite code files */
   sprite,
   /** Availible only in stage code files */
@@ -23,7 +23,7 @@ export enum ToolContext {
   all
 }
 
-export type ToolUsage = {
+export type TokenUsage = {
   /** Description for usage, without tailing dot */
   desc: LocaleMessage
   /** Code sample, usually it's similar while sightly different with `insertText` */
@@ -33,19 +33,23 @@ export type ToolUsage = {
    * Same with `languages.CompletionItem.insertText`.
    */
   insertText: string
+  /** Usage ID of Token */
+  usageId?: string
 }
 
-export type Tool = {
-  type: ToolType
+export type Token = {
+  type: TokenType
   /**
    * The calling effect, only exists for function & method tool.
    * `undefined` means no effect.
    */
-  callEffect?: ToolCallEffect
-  target: ToolContext
+  callEffect?: TokenCallEffect
+  target: TokenContext
   keyword: string
   /** Description, without tailing dot */
   desc: LocaleMessage
-  usage?: Omit<ToolUsage, 'desc'>
-  usages?: ToolUsage[]
+  usage?: Omit<TokenUsage, 'desc'>
+  usages?: TokenUsage[]
+  tokenId?: string
+  tokenPkg?: string
 }

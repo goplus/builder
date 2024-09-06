@@ -1,4 +1,6 @@
 import {
+  type AttentionHintDecoration,
+  AttentionHintLevelEnum,
   type CompletionItem,
   type DocPreview,
   DocPreviewLevel,
@@ -12,7 +14,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import { CodeEnum, Compiler } from '../compiler'
+import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
@@ -24,13 +26,15 @@ import {
   eventCategory,
   gameCategory,
   getAllTools,
-  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
   type ToolCategory,
-  ToolType
+  ToolType,
+  getVariableCategory,
+  TokenType,
+  type TokenCategory
 } from '@/components/editor/code-editor/tools'
 import { suggestType2Icon } from '@/components/editor/code-editor/ui/features/completion-menu/completion-menu'
 
@@ -81,6 +85,10 @@ export class Coordinator {
 
     ui.registerInputAssistantProvider({
       provideInputAssistant: this.implementsInputAssistantProvider.bind(this)
+    })
+
+    ui.registerAttentionHintsProvider({
+      provideAttentionHints: this.implementsAttentionHintProvider.bind(this)
     })
   }
 
@@ -212,12 +220,17 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): Promise<InlayHintDecoration[]> {
-    const inlayHints = await this.compiler.getInlayHints([
-      {
-        type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
-        content: model.getValue()
-      }
-    ])
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    const inlayHints = await this.compiler.getInlayHints(
+      (this.project.selectedSprite?.name ?? 'main') + '.spx',
+      [...spritesCodes, ...stageCodes]
+    )
 
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
@@ -259,6 +272,52 @@ export class Coordinator {
         return hints
       }
     })
+  }
+
+  implementsAttentionHintProvider(
+    model: TextModel,
+    setHints: (hints: AttentionHintDecoration[]) => void,
+    ctx: {
+      signal: AbortSignal
+    }
+  ): void {
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    this.compiler
+      .getDiagnostics((this.project.selectedSprite?.name ?? 'main') + '.spx', [
+        ...spritesCodes,
+        ...stageCodes
+      ])
+      .then((attentionHints) => {
+        setHints(
+          attentionHints.map((attentionHint) => {
+            const word = model.getWordAtPosition({
+              lineNumber: attentionHint.line,
+              column: attentionHint.column
+            })
+
+            return {
+              level: AttentionHintLevelEnum.ERROR,
+              message: attentionHint.message,
+              range: {
+                startColumn: attentionHint.column,
+                startLineNumber: attentionHint.line,
+                endColumn: word?.endColumn ?? attentionHint.column,
+                endLineNumber: attentionHint.line
+              },
+              hoverContent: {
+                level: DocPreviewLevel.Error,
+                content: attentionHint.message
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsInputAssistantProvider(_ctx: {
@@ -383,23 +442,23 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
   return items
 }
 
-function getCompletionItemKind(type: ToolType): Icon {
+function getCompletionItemKind(type: TokenType): Icon {
   switch (type) {
-    case ToolType.method:
+    case TokenType.method:
       return Icon.Function
-    case ToolType.function:
+    case TokenType.function:
       return Icon.Function
-    case ToolType.constant:
+    case TokenType.constant:
       return Icon.Prototype
-    case ToolType.keyword:
+    case TokenType.keyword:
       return Icon.Keywords
-    case ToolType.variable:
+    case TokenType.variable:
       return Icon.Prototype
   }
 }
 
 function toolCategory2InputItemCategory(
-  category: ToolCategory,
+  category: TokenCategory,
   icon: Icon,
   color: string
 ): InputItemCategory {
@@ -410,6 +469,8 @@ function toolCategory2InputItemCategory(
     groups: category.groups.map((group) => ({
       label: group.label,
       inputItems: group.tools.flatMap((tool): InputItem[] => {
+        //TODO: get token detail from compiler
+        //TODO: get token detail from doc
         if (tool.usage) {
           let sample = tool.usage.insertText.split(' ').slice(1).join()
           sample = sample.replace(

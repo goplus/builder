@@ -1,22 +1,22 @@
 import type { LocaleMessage } from '@/utils/i18n'
 import type { Project } from '@/models/project'
-import { type Tool, ToolContext, ToolType } from './common'
+import { type Token, TokenContext, TokenType } from './common'
 import * as gop from './gop'
 import * as spx from './spx'
 
 export * from './common'
 
-export type ToolGroup = {
+export type TokenGroup = {
   label: LocaleMessage
-  tools: Tool[]
+  tools: Token[]
 }
 
-export type ToolCategory = {
+export type TokenCategory = {
   label: LocaleMessage
-  groups: ToolGroup[]
+  groups: TokenGroup[]
 }
 
-export const eventCategory: ToolCategory = {
+export const eventCategory: TokenCategory = {
   label: { en: 'Event', zh: '事件' },
   groups: [
     {
@@ -46,7 +46,7 @@ export const eventCategory: ToolCategory = {
   ]
 }
 
-export const motionCategory: ToolCategory = {
+export const motionCategory: TokenCategory = {
   label: { en: 'Motion', zh: '运动' },
   groups: [
     {
@@ -94,7 +94,7 @@ export const motionCategory: ToolCategory = {
   ]
 }
 
-export const lookCategory: ToolCategory = {
+export const lookCategory: TokenCategory = {
   label: { en: 'Look', zh: '外观' },
   groups: [
     {
@@ -127,7 +127,7 @@ export const lookCategory: ToolCategory = {
   ]
 }
 
-export const sensingCategory: ToolCategory = {
+export const sensingCategory: TokenCategory = {
   label: { en: 'Sensing', zh: '感知' },
   groups: [
     {
@@ -156,7 +156,7 @@ export const sensingCategory: ToolCategory = {
   ]
 }
 
-export const soundCategory: ToolCategory = {
+export const soundCategory: TokenCategory = {
   label: { en: 'Sound', zh: '声音' },
   groups: [
     {
@@ -170,7 +170,7 @@ export const soundCategory: ToolCategory = {
   ]
 }
 
-export const controlCategory: ToolCategory = {
+export const controlCategory: TokenCategory = {
   label: { en: 'Control', zh: '控制' },
   groups: [
     {
@@ -188,7 +188,7 @@ export const controlCategory: ToolCategory = {
   ]
 }
 
-export const gameCategory: ToolCategory = {
+export const gameCategory: TokenCategory = {
   label: { en: 'Game', zh: '游戏' },
   groups: [
     {
@@ -206,9 +206,9 @@ export const gameCategory: ToolCategory = {
   ]
 }
 
-export function getVariableCategory(project: Project): ToolCategory {
+export function getVariableCategory(project: Project): TokenCategory {
   const { sprites, sounds } = project
-  const groups: ToolGroup[] = [
+  const groups: TokenGroup[] = [
     {
       label: { en: 'Variable Definition', zh: '变量定义' },
       tools: [gop.varDefinition]
@@ -220,8 +220,8 @@ export function getVariableCategory(project: Project): ToolCategory {
     tools: sprites.map((sprite) => {
       const keyword = `"${sprite.name}"`
       return {
-        type: ToolType.variable,
-        target: ToolContext.all,
+        type: TokenType.variable,
+        target: TokenContext.all,
         keyword,
         desc: { en: `Sprite "${sprite.name}"`, zh: `精灵 ${sprite.name}` },
         usage: {
@@ -237,8 +237,8 @@ export function getVariableCategory(project: Project): ToolCategory {
     tools: sounds.map((sound) => {
       const keyword = `"${sound.name}"`
       return {
-        type: ToolType.variable,
-        target: ToolContext.all,
+        type: TokenType.variable,
+        target: TokenContext.all,
         keyword,
         desc: { en: `Sound "${sound.name}"`, zh: `声音 ${sound.name}` },
         usage: {
@@ -254,8 +254,8 @@ export function getVariableCategory(project: Project): ToolCategory {
     tools: project.stage.backdrops.map((backdrop) => {
       const keyword = `"${backdrop.name}"`
       return {
-        type: ToolType.variable,
-        target: ToolContext.all,
+        type: TokenType.variable,
+        target: TokenContext.all,
         keyword,
         desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
         usage: {
@@ -275,8 +275,8 @@ export function getVariableCategory(project: Project): ToolCategory {
       tools: project.selectedSprite.animations.map((animation) => {
         const keyword = `"${animation.name}"`
         return {
-          type: ToolType.variable,
-          target: ToolContext.sprite,
+          type: TokenType.variable,
+          target: TokenContext.sprite,
           keyword,
           desc: { en: `Animation "${animation.name}"`, zh: `动画 ${animation.name}` },
           usage: {
@@ -294,8 +294,8 @@ export function getVariableCategory(project: Project): ToolCategory {
       tools: project.selectedSprite.costumes.map((costume) => {
         const keyword = `"${costume.name}"`
         return {
-          type: ToolType.variable,
-          target: ToolContext.sprite,
+          type: TokenType.variable,
+          target: TokenContext.sprite,
           keyword,
           desc: { en: `Costume "${costume.name}"`, zh: `造型 ${costume.name}` },
           usage: {
@@ -313,7 +313,7 @@ export function getVariableCategory(project: Project): ToolCategory {
   }
 }
 
-export function getAllTools(project: Project): Tool[] {
+export function getAllTools(project: Project): Token[] {
   return [
     eventCategory,
     motionCategory,
