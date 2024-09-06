@@ -104,6 +104,36 @@ export class Coordinator {
 
     const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
 
+    // add project variables
+    const { sprites, sounds, stage, selectedSprite } = this.project
+
+    const createCompletionItem = (name: string) => ({
+      icon: Icon.Variable,
+      insertText: `"${name}"`,
+      label: `"${name}"`,
+      desc: '',
+      preview: {
+        level: DocPreviewLevel.Normal,
+        content: ''
+      }
+    })
+
+    const items = [
+      ...sprites.map(sprite => createCompletionItem(sprite.name)),
+      ...sounds.map(sound => createCompletionItem(sound.name)),
+      ...stage.backdrops.map(backdrop => createCompletionItem(backdrop.name))
+    ]
+
+    if (selectedSprite) {
+      const { animations, costumes } = selectedSprite
+      items.push(
+        ...animations.map(animation => createCompletionItem(animation.name)),
+        ...costumes.map(costume => createCompletionItem(costume.name))
+      )
+    }
+
+    addItems(items)
+
     this.compiler
       .getCompletionItems(
         (this.project.selectedSprite?.name ?? 'main') + '.spx',
@@ -118,7 +148,7 @@ export class Coordinator {
               icon: completionItemType2Icon(completionItem.type),
               insertText: completionItem.insert_text,
               label: completionItem.label,
-              desc: completionItem.token_pkg,
+              desc: '',
               preview: {
                 level: DocPreviewLevel.Normal,
                 content: '' /* todo: get content with docAbility */
@@ -316,7 +346,7 @@ export class Coordinator {
     return getInputItemCategories(this.project)
   }
 
-  public jump(position: JumpPosition): void {}
+  public jump(position: JumpPosition): void { }
 }
 
 function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {

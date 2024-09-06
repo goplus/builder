@@ -107,7 +107,6 @@ export class CompletionMenu implements IDisposable {
 
     const { dispose: keyDownDispose } = this.editor.onKeyDown((e) => {
       if (e.keyCode === KeyCode.Escape) {
-        console.log('中断')
         this.abortController.abort()
       }
     })
