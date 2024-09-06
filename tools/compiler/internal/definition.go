@@ -25,7 +25,7 @@ type usage struct {
 	UsageID     string  `json:"usageID"`
 	Declaration string  `json:"declaration"`
 	Sample      string  `json:"sample"`
-	InsertText  string  `json:"insertRext"`
+	InsertText  string  `json:"insertText"`
 	Params      []param `json:"params"`
 	Type        string  `json:"type"`
 }
