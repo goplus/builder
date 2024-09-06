@@ -30,8 +30,6 @@ import {
   motionCategory,
   sensingCategory,
   soundCategory,
-  type ToolCategory,
-  ToolType,
   getVariableCategory,
   TokenType,
   type TokenCategory
@@ -101,15 +99,19 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
     this.compiler
       .getCompletionItems(
-        [
-          {
-            type: this.project.selectedSprite ? CodeEnum.Sprite : CodeEnum.Stage,
-            content: model.getValue()
-          }
-        ],
-        model.getOffsetAt(ctx.position)
+        (this.project.selectedSprite?.name ?? 'main') + '.spx',
+        [...spritesCodes, ...stageCodes],
+        ctx.position.lineNumber,
+        ctx.position.column
       )
       .then((suggestions) => {
         if (ctx.signal.aborted) return
@@ -311,8 +313,11 @@ export class Coordinator {
                 endLineNumber: attentionHint.line
               },
               hoverContent: {
-                level: DocPreviewLevel.Error,
-                content: attentionHint.message
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Error,
+                  content: attentionHint.message
+                }
               }
             }
           })

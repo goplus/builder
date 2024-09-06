@@ -203,6 +203,8 @@ export class CompletionMenu extends Disposable {
       length: number
     }> = []
 
+    // onAnyKey => on Key => 'on' - Any - 'Key'
+    // const,   => on => [o, n]
     while (inputIndex < lowerInput.length && suggestionIndex < lowerSuggestion.length) {
       if (lowerInput[inputIndex] === lowerSuggestion[suggestionIndex]) {
         const start = suggestionIndex
