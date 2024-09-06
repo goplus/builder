@@ -17,7 +17,7 @@ import (
 
 type completionItem struct {
 	Label      string `json:"label"`
-	InsertText string `json:"insert_text"`
+	InsertText string `json:"insertText"`
 	Type       string `json:"type"`
 	TokenID
 }

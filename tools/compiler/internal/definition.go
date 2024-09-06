@@ -13,11 +13,11 @@ import (
 
 type definitionItem struct {
 	BasePos
-	PkgName    string  `json:"pkg_name"`
-	PkgPath    string  `json:"pkg_path"`
+	PkgName    string  `json:"pkgName"`
+	PkgPath    string  `json:"pkgPath"`
 	Name       string  `json:"name"`   // This is the token name
 	Usages     []usage `json:"usages"` // contains 1 or n usage for matches.
-	StructName string  `json:"struct_name"`
+	StructName string  `json:"structName"`
 	From       BasePos
 }
 
@@ -25,7 +25,7 @@ type usage struct {
 	UsageID     string  `json:"usageID"`
 	Declaration string  `json:"declaration"`
 	Sample      string  `json:"sample"`
-	InsertText  string  `json:"insert_text"`
+	InsertText  string  `json:"insertRext"`
 	Params      []param `json:"params"`
 	Type        string  `json:"type"`
 }
@@ -36,8 +36,8 @@ type param struct {
 }
 
 type TokenID struct {
-	TokenName string `json:"token_name"`
-	TokenPkg  string `json:"token_pkg"`
+	TokenName string `json:"tokenName"`
+	TokenPkg  string `json:"tokenPkg"`
 }
 
 type definitions []*definitionItem
