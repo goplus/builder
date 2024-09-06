@@ -129,7 +129,13 @@ export class Compiler extends Disposable {
 
   public setContainerElement(containerElement: HTMLIFrameElement) {
     this.containerElement = containerElement
-    containerElement.addEventListener('load', this.initIframe.bind(this))
+    if (containerElement.contentDocument?.readyState === 'complete') {
+      // If the iframe is already loaded, call initIframe directly
+      this.initIframe()
+    } else {
+      // If not, add the load event listener
+      containerElement.addEventListener('load', this.initIframe.bind(this))
+    }
   }
 
   public handleConsoleLog(message: any) {
