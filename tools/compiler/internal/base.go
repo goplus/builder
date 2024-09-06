@@ -16,7 +16,8 @@ func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, er
 	fset := token.NewFileSet()
 	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
-		return nil, err
+		list := parseErrorLines(error2List(err))
+		return list, nil
 	}
 	_, err = codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset)
 	list := parseErrorLines(error2List(err))

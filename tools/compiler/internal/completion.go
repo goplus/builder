@@ -269,6 +269,13 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 	scopeItem := &completionItem{
 		Label: name,
 		Type:  obj.Type().String(),
+		TokenID: TokenID{
+			TokenName: name,
+		},
+	}
+
+	if obj.Pkg() != nil {
+		scopeItem.TokenPkg = obj.Pkg().Path()
 	}
 
 	if strings.HasPrefix(obj.Type().String(), "func") {
@@ -314,6 +321,10 @@ func handleType(obj types.Object, name string, items *completionList) {
 			item := &completionItem{
 				Label: method.Name(),
 				Type:  "func",
+				TokenID: TokenID{
+					TokenName: method.Name(),
+					TokenPkg:  method.Pkg().Path(),
+				},
 			}
 			signature := method.Type().(*types.Signature)
 			signList, sampleList, _ := extractParams(signature)
@@ -365,6 +376,10 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 			item := &completionItem{
 				Label: methodName,
 				Type:  "func",
+				TokenID: TokenID{
+					TokenName: methodName,
+					TokenPkg:  method.Pkg().Path(),
+				},
 			}
 			signature := method.Type().(*types.Signature)
 			signList, sampleList, _ := extractParams(signature)
