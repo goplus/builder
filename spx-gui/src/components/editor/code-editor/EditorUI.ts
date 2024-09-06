@@ -29,7 +29,7 @@ export interface TextModel extends IEditor.ITextModel {}
 export enum Icon {
   Function,
   Event,
-  Prototype,
+  Property,
   Keywords,
   AIAbility,
   Document,

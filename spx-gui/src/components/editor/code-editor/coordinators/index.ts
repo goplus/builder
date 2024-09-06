@@ -90,57 +90,43 @@ export class Coordinator {
 
   implementsPreDefinedCompletionProvider(
     _model: TextModel,
-    _ctx: {
+    ctx: {
       position: Position
       unitWord: string
       signal: AbortSignal
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    addItems(getCompletionItems(this.ui.i18n, this.project))
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
 
-    setTimeout(() => {
-      addItems([
-        {
-          icon: Icon.Keywords,
-          label: 'a',
-          desc: 'a',
-          insertText: 'a',
-          preview: {
-            content: '',
-            level: DocPreviewLevel.Normal
-          }
-        }
-      ])
-    }, 1000)
-    setTimeout(() => {
-      addItems([
-        {
-          icon: Icon.Keywords,
-          label: 'ab',
-          desc: 'ab',
-          insertText: 'ab',
-          preview: {
-            content: '',
-            level: DocPreviewLevel.Normal
-          }
-        }
-      ])
-    }, 2000)
-    setTimeout(() => {
-      addItems([
-        {
-          icon: Icon.Keywords,
-          label: 'abc',
-          desc: 'abc',
-          insertText: 'abc',
-          preview: {
-            content: '',
-            level: DocPreviewLevel.Normal
-          }
-        }
-      ])
-    }, 3000)
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    this.compiler
+      .getCompletionItems(
+        (this.project.selectedSprite?.name ?? 'main') + '.spx',
+        [...spritesCodes, ...stageCodes],
+        ctx.position.lineNumber,
+        ctx.position.column
+      )
+      .then((completionItems) => {
+        addItems(
+          completionItems.map((completionItem) => {
+            return {
+              icon: completionItemType2Icon(completionItem.type),
+              insertText: completionItem.insert_text,
+              label: completionItem.label,
+              desc: completionItem.token_pkg,
+              preview: {
+                level: DocPreviewLevel.Normal,
+                content: '' /* todo: get content with docAbility */
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsPreDefinedHoverProvider(
@@ -391,11 +377,11 @@ function getCompletionItemKind(type: TokenType): Icon {
     case TokenType.function:
       return Icon.Function
     case TokenType.constant:
-      return Icon.Prototype
+      return Icon.Property
     case TokenType.keyword:
       return Icon.Keywords
     case TokenType.variable:
-      return Icon.Prototype
+      return Icon.Property
   }
 }
 
@@ -467,4 +453,19 @@ function getInputItemCategories(project: Project): InputItemCategory[] {
     toolCategory2InputItemCategory(getVariableCategory(project), Icon.Variable, '#5a7afe'),
     toolCategory2InputItemCategory(gameCategory, Icon.Game, '#e14e9f')
   ]
+}
+
+/** transform from wasm completion item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
+// todo: add more case type transform to type
+function completionItemType2Icon(type: string): Icon {
+  switch (type) {
+    case 'func':
+      return Icon.Function
+    case 'keyword':
+      return Icon.Property
+    case 'bool':
+      return Icon.Property
+    default:
+      return Icon.Property
+  }
 }

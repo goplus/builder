@@ -12,6 +12,9 @@ interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
   getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostics[] | {}
+  getCompletionItems: (params: {
+    in: { name: string; code: CompilerCodes; line: number; column: number }
+  }) => CompletionItem[] | {}
 }
 
 export enum CodeEnum {
@@ -47,9 +50,11 @@ export type Diagnostics = {
 }
 
 type CompletionItem = {
-  type: CompletionItemEnum
   label: string
-  insertText: string
+  insert_text: string
+  type: string
+  token_name: string
+  token_pkg: string
 }
 
 export type TokenId = {
@@ -144,35 +149,42 @@ export class Compiler extends Disposable {
 
   public async getInlayHints(currentFilename: string, codes: Code[]): Promise<Hint[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getInlayHints({
+    const inlayHints = wasmHandler.getInlayHints({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(res) ? res : []
+    return Array.isArray(inlayHints) ? inlayHints : []
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostics[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getDiagnostics({
+    const diagnostics = wasmHandler.getDiagnostics({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(res) ? res : []
+    return Array.isArray(diagnostics) ? diagnostics : []
   }
 
   public async getCompletionItems(
     currentFilename: string,
     codes: Code[],
-    position: Position
+    line: number,
+    column: number
   ): Promise<CompletionItem[]> {
-    await this.waitForWasmInit()
-
-    // implement logic here
-    return []
+    const wasmHandler = await this.waitForWasmInit()
+    const completionItems = wasmHandler.getCompletionItems({
+      in: {
+        line,
+        column,
+        code: this.codes2CompileCode(codes),
+        name: currentFilename
+      }
+    })
+    return Array.isArray(completionItems) ? completionItems : []
   }
 
   public async getDefinition(

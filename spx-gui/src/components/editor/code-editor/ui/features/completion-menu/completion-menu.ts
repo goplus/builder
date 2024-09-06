@@ -295,13 +295,13 @@ function completionItemKind2Icon(completionIcon: languages.CompletionItemKind): 
     case languages.CompletionItemKind.Function:
       return Icon.Function
     case languages.CompletionItemKind.Variable:
-      return Icon.Prototype
+      return Icon.Property
     case languages.CompletionItemKind.Constant:
-      return Icon.Prototype
+      return Icon.Property
     case languages.CompletionItemKind.Snippet:
       return Icon.Function
     default:
-      return Icon.Prototype
+      return Icon.Property
   }
 }
 
@@ -309,7 +309,7 @@ export function icon2CompletionItemKind(icon: Icon): languages.CompletionItemKin
   switch (icon) {
     case Icon.Function:
       return languages.CompletionItemKind.Function
-    case Icon.Prototype:
+    case Icon.Property:
       return languages.CompletionItemKind.Variable
     case Icon.Keywords:
       return languages.CompletionItemKind.Snippet
