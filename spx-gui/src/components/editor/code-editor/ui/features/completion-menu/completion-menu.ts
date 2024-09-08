@@ -256,8 +256,11 @@ export class CompletionMenu implements IDisposable {
         icon: completionItemKind2Icon(completion.completion.kind),
         label: completion.completion.label as string,
         preview: {
-          level: DocPreviewLevel.Normal,
-          content: ''
+          type: 'doc',
+          layer: {
+            level: DocPreviewLevel.Normal,
+            content: ''
+          }
         },
         insertText: completion.completion.insertText,
         desc: completion.completion.detail || '',

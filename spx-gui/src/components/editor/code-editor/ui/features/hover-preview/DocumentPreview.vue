@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
-import { icon2SVG } from '@/components/editor/code-editor/ui/common'
-import type { Action, RecommendAction } from '@/components/editor/code-editor/EditorUI'
+import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import { type Action, Icon, type RecommendAction } from '@/components/editor/code-editor/EditorUI'
+import { renderMarkdown } from '../../common/languages'
+
+defineEmits<{
+  'action-click': [action: Action]
+}>()
+
 defineProps<{
-  content: string
+  header?: {
+    icon: Icon
+    declaration: string
+  }
+  content?: string
   recommendAction?: RecommendAction
   moreActions?: Action[]
 }>()
@@ -11,10 +21,19 @@ defineProps<{
 
 <template>
   <section class="document-preview">
-    <header>
-      <!--  Todo: add header interface in props  -->
+    <header v-if="header" class="declaration-wrapper">
+      <!-- eslint-disable vue/no-v-html -->
+      <span
+        :ref="(el) => normalizeIconSize(el as Element, 18)"
+        class="icon"
+        v-html="icon2SVG(Icon.Function)"
+      ></span>
+      <span
+        class="declaration"
+        v-html="renderMarkdown('```gop pure\n' + header.declaration + '\n```')"
+      ></span>
     </header>
-    <MarkdownPreview class="markdown" :content="content"></MarkdownPreview>
+    <MarkdownPreview v-if="content" class="markdown" :content="content"></MarkdownPreview>
     <footer class="actions-footer">
       <nav class="recommend">
         {{ recommendAction?.label }}
@@ -32,7 +51,7 @@ defineProps<{
         <button
           v-for="(action, i) in moreActions"
           :key="i"
-          @click="action.onClick()"
+          @click="$emit('action-click', action)"
           v-html="icon2SVG(action.icon)"
         ></button>
       </nav>
@@ -45,14 +64,37 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
 }
 </style>
 <style lang="scss" scoped>
+// for here is under body, not in #app, so can't use var(--ui-font-family-main)
 .document-preview {
-  min-width: 400px;
+  min-width: 370px;
   background: white;
   border-radius: 5px;
   border: 1px solid #a6a6a6;
   color: black;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   transition: 0.15s;
+}
+
+.declaration-wrapper {
+  display: flex;
+  align-items: center;
+  margin: 10px 8px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 14px;
+  font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB', monospace;
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 4px;
+    color: #faa135;
+  }
+}
+
+.markdown {
+  padding-top: 4px;
 }
 
 .actions-footer {

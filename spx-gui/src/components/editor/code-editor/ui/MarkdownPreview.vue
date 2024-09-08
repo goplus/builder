@@ -2,8 +2,19 @@
 import type MarkdownIt from 'markdown-it'
 export function preWrapperPlugin(md: MarkdownIt) {
   const fence = md.renderer.rules.fence!
-  md.renderer.rules.fence = (...args) => {
-    return `<div class="markdown-preview__wrapper"><button class="markdown-preview__copy-button"></button>${fence(...args)}</div>`
+  md.renderer.rules.fence = (tokens, currentTokenIndex, ...args) => {
+    const token = tokens[currentTokenIndex]
+    const [language, ...languageParams] = token.info.split(' ')
+    if (languageParams.includes('pure')) {
+      // here only one token so index is 0
+      let renderedCode = fence([token], 0, ...args)
+
+      renderedCode = renderedCode.replace(/<pre[^>]*>([\s\S]*)<\/pre>/i, '$1').trim()
+
+      return renderedCode
+    }
+
+    return `<div class="markdown-preview__wrapper"><button class="markdown-preview__copy-button"></button>${fence(tokens, currentTokenIndex, ...args)}</div>`
   }
 }
 
@@ -88,6 +99,9 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   <article class="markdown-preview" v-html="renderMarkdown(content)"></article>
 </template>
 <style lang="scss">
+$markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB',
+  monospace;
+
 .markdown-preview {
   .shiki {
     overflow: auto;
@@ -98,7 +112,7 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
     // so here we have to use important to change markdown render bg color.
     background-color: rgba(229, 229, 229, 0.4) !important;
     border-radius: 5px;
-    font-family: 'JetBrains Mono NL', Consolas, 'Courier New', monospace;
+    font-family: $markdown-code-font-family;
     code {
       padding: initial;
       border-radius: initial;
@@ -107,14 +121,119 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   }
 
   code {
-    padding: 2px 4px;
-    border-radius: 4px;
-    background-color: rgba(229, 229, 229, 0.4);
+    padding: 0.2em 0.4em;
+    margin: 0;
+    background-color: rgba(27, 31, 35, 0.05);
+    border-radius: 3px;
   }
 
-  div,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+  h2 {
+    font-size: 1.5em;
+  }
+  h3 {
+    font-size: 1.25em;
+  }
+  h4 {
+    font-size: 1em;
+  }
+  h5 {
+    font-size: 0.875em;
+  }
+  h6 {
+    font-size: 0.85em;
+  }
+
   p {
+    margin-top: 0;
     margin-bottom: 0.5em;
+  }
+
+  a {
+    color: #0366d6;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  ul,
+  ol {
+    padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  li {
+    margin-bottom: 0.25em;
+  }
+
+  blockquote {
+    padding: 0 1em;
+    color: #6a737d;
+    border-left: 0.25em solid #dfe2e5;
+    margin: 0 0 16px 0;
+  }
+
+  pre {
+    padding: 16px;
+    overflow: auto;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 3px;
+  }
+
+  img {
+    max-width: 100%;
+    box-sizing: content-box;
+  }
+
+  hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e1e4e8;
+    border: 0;
+  }
+
+  table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+  }
+
+  td,
+  th {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+  }
+
+  th {
+    font-weight: 600;
+  }
+
+  tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+  }
+
+  tr:nth-child(2n) {
+    background-color: #f6f8fa;
   }
 }
 
@@ -140,7 +259,7 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   width: 22px;
   height: 22px;
   background-color: rgb(255, 255, 255);
-  font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB', monospace;
+  font-family: $markdown-code-font-family;
   border: none;
   outline: none;
   border-radius: 4px;
@@ -204,7 +323,7 @@ const copyMessage = computed(() => `'${i18n.t({ zh: '已复制', en: 'Copied' })
   width: 22px;
   height: 22px;
   background-color: rgb(255, 255, 255);
-  font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'AlibabaHealthB', monospace;
+  font-family: $markdown-code-font-family;
   border: none;
   outline: none;
   border-radius: 4px;
