@@ -8,22 +8,14 @@ import (
 	"github.com/goplus/gop/parser"
 	"github.com/goplus/gop/token"
 	"github.com/goplus/gop/x/typesutil"
+	"github.com/goplus/igop/gopbuild"
 	"github.com/goplus/mod/gopmod"
-	"github.com/goplus/mod/modfile"
 	"github.com/goplus/mod/modload"
 )
 
-// default spx project mod file
-var spxProject = &modfile.Project{
-	Ext: ".gmx", Class: "*Game",
-	Works:    []*modfile.Class{{Ext: ".spx", Class: "Sprite"}},
-	PkgPaths: []string{"github.com/goplus/spx", "math"}}
-
 // init spx mod
 func initSPXMod() *gopmod.Module {
-	var spxMod *gopmod.Module
-	spxMod = gopmod.New(modload.Default)
-	spxMod.Opt.Projects = append(spxMod.Opt.Projects, spxProject)
+	spxMod := gopmod.New(modload.Default)
 	err := spxMod.ImportClasses()
 	if err != nil {
 		fmt.Println(err)
@@ -35,33 +27,17 @@ func initSPXMod() *gopmod.Module {
 // init function
 func initSPXParserConf() parser.Config {
 	return parser.Config{
-		ClassKind: func(fname string) (isProj bool, ok bool) {
-			ext := modfile.ClassExt(fname)
-			c, ok := lookupClass(ext)
-			if ok {
-				isProj = c.IsProj(ext, fname)
-			}
-			return
-		},
-		Mode: parser.DeclarationErrors,
+		ClassKind: gopbuild.ClassKind,
+		Mode:      parser.DeclarationErrors,
 	}
-}
-
-// check function
-func lookupClass(ext string) (c *modfile.Project, ok bool) {
-	switch ext {
-	case ".gmx", ".spx":
-		return spxProject, true
-	}
-	return
 }
 
 // init type utils config.
-func initTypeConfig(file *ast.File, fileSet *token.FileSet, mod *gopmod.Module) *typesutil.Config {
+func initTypeConfig(file *ast.File, fileSet *token.FileSet) *typesutil.Config {
 	return &typesutil.Config{
 		Types:                 types.NewPackage("main", file.Name.Name),
 		Fset:                  fileSet,
-		Mod:                   mod,
+		Mod:                   initSPXMod(),
 		UpdateGoTypesOverload: false,
 	}
 }

@@ -24,6 +24,7 @@ func add(a,b int) int {
 }
 
 onStart => {
+    Hi()
     play "sound1"
     flag := true
     sum := add(1,2)
@@ -44,6 +45,12 @@ onStart => {
     }
     myFn()
 }
+    </textarea>
+
+    <textarea id="mainCode" style="width: 400px;height: 100px">
+        func Hi() string {
+            return "Hi"
+        }
     </textarea>
 
     <br>
@@ -123,7 +130,8 @@ onStart => {
             let res = getIframe().contentWindow.getTypes({
                 in: {
                     name: "test.spx",
-                    code: document.getElementById("codeInput").value
+                    code: document.getElementById("codeInput").value,
+                    mainCode: document.getElementById("mainCode").value
                 }
             })
             console.log(res)
@@ -137,7 +145,8 @@ onStart => {
             let res = getIframe().contentWindow.getDiagnostics({
                 in: {
                     name: "test.spx",
-                    code: document.getElementById("codeInput").value
+                    code: document.getElementById("codeInput").value,
+                    mainCode: document.getElementById("mainCode").value,
                 }
             })
             console.log(res)
@@ -152,7 +161,8 @@ onStart => {
             let res = getIframe().contentWindow.getDefinition({
                 in: {
                     name: "test.spx",
-                    code: document.getElementById("codeInput").value
+                    code: document.getElementById("codeInput").value,
+                    mainCode: document.getElementById("mainCode").value,
                 }
             })
             console.log(res)
@@ -166,7 +176,8 @@ onStart => {
             let res = getIframe().contentWindow.getInlayHints({
                 in: {
                     name: "test.spx",
-                    code: document.getElementById("codeInput").value
+                    code: document.getElementById("codeInput").value,
+                    mainCode: document.getElementById("mainCode").value,
                 }
             })
             console.log(res)
@@ -182,7 +193,8 @@ onStart => {
                     name: "test.spx",
                     code: document.getElementById("codeInput").value,
                     line: Number(document.getElementById("line").value),
-                    column: Number(document.getElementById("column").value)
+                    column: Number(document.getElementById("column").value),
+                    mainCode: document.getElementById("mainCode").value,
                 }
             })
             console.log(res)
@@ -199,7 +211,8 @@ onStart => {
                     code: document.getElementById("codeInput").value,
                     line: Number(document.getElementById("line").value),
                     pkgPath: "github.com/goplus/spx",
-                    token: document.getElementById("token").value
+                    token: document.getElementById("token").value,
+                    mainCode: document.getElementById("mainCode").value,
                 }
             })
             console.log(res)
