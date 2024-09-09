@@ -128,9 +128,9 @@ export async function syncGenerateAIImage({
  *
  * WARNING: This API has not been implemented yet. It will return a mock result.
  */
-export async function generateAISprite(imageJobId: string) {
-  const result = (await client.post('/aigc/sprite', { imageJobId }, { timeout: 20 * 1000 })) as {
-    spriteJobId: string
+export async function generateAISprite(imageUrl: string) {
+  const result = (await client.post('/aigc/sprite', { image_url: imageUrl }, { timeout: 20 * 1000 })) as {
+    material_url: string
   }
   return result
 }

@@ -213,14 +213,17 @@ export class AIImageTask extends AIGCTask<TaggedAIAssetData>{
 
 
 export class AISpriteTask extends AIGCTask<WithStatus<{files: RequiredAIGCFiles}>> {
-  constructor(id: string) {
-    super(generateAISprite, [id], async ({spriteJobId: id}: {spriteJobId: string}) => {
-      const {status, result} = await getAIGCStatus(id)
-      return {
-        status,
-        files: result?.files as RequiredAIGCFiles,
-      }
-    })
+  constructor(imageUrl: string) {
+    super(AISpriteTask.request, [imageUrl])
+  }
+
+  private static async request(imageUrl: string) {
+    const res = await generateAISprite(imageUrl)
+    return {
+      spriteUrl: (res as any).material_url,
+      ...res,
+      status: AIGCStatus.Finished
+    }
   }
 }
 
