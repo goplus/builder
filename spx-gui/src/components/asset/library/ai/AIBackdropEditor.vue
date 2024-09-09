@@ -21,6 +21,7 @@
     <ImageCrop
       v-if="editMode === 'crop' && image !== null && stageConfig != null && !loading"
       ref="imageCrop"
+      :initial-crop="props.defaultRatio"
       :image="image"
       :stage-config="stageConfig"
       :width="mapWidth"
@@ -88,6 +89,7 @@ import ImageCrop from './ImageEditor/ImageCrop.vue'
 
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Backdrop>
+  defaultRatio: number
 }>()
 
 const backdrop = useAsyncComputed<Backdrop | undefined>(() => {
@@ -107,7 +109,7 @@ const layer = ref<Konva.Layer>()
 const nodeRef = ref<KonvaNode<Konva.Image>>()
 const node = computed(() => nodeRef.value?.getNode())
 
-const editMode = ref<'resize' | 'crop' | 'preview'>('preview')
+const editMode = ref<'resize' | 'crop' | 'preview'>('crop')
 
 const imageResize = ref<InstanceType<typeof ImageResize> | null>(null)
 const imageCrop = ref<InstanceType<typeof ImageCrop> | null>(null)
