@@ -2,7 +2,6 @@ import compilerWasmHtml from '@/assets/compiler/index.html?raw'
 import compilerWasm from '@/assets/compiler/main.wasm?url'
 import compilerWasmExec from '@/assets/wasm_exec.js?url'
 import { Disposable } from '@/utils/disposable'
-import type { Markdown } from './EditorUI'
 import { shallowRef } from 'vue'
 import { untilNotNull } from '@/utils/utils'
 
@@ -25,10 +24,10 @@ export enum CodeEnum {
 enum CompletionItemEnum {}
 
 export interface Hint {
-  start_pos: number
-  end_pos: number
-  start_position: Position
-  end_position: Position
+  startPos: number
+  endPos: number
+  startPosition: Position
+  endPosition: Position
   name: string
   value: string
   unit: string
@@ -51,10 +50,10 @@ export type Diagnostics = {
 
 type CompletionItem = {
   label: string
-  insert_text: string
+  insertText: string
   type: string
-  token_name: string
-  token_pkg: string
+  tokenName: string
+  tokenPkg: string
 }
 
 export type TokenId = {
@@ -66,7 +65,7 @@ export type TokenId = {
 
 type UsageId = string
 
-type TokenUsage = {
+export type TokenUsage = {
   id: UsageId
   effect: string
   declaration: string
@@ -74,16 +73,9 @@ type TokenUsage = {
   insertText: string
 }
 
-export type UsageDoc = Markdown
-
-export type TokenDoc = Array<{
-  id: UsageId
-  doc: UsageDoc
-}>
-
 export type Token = {
   id: TokenId
-  usages: TokenUsage
+  usages: TokenUsage[]
 }
 
 type Code = {

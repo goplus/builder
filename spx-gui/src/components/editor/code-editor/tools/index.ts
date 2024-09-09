@@ -313,7 +313,7 @@ export function getVariableCategory(project: Project): TokenCategory {
   }
 }
 
-export function getAllTools(project: Project): Token[] {
+export function getAllTokens(project: Project): Token[] {
   return [
     eventCategory,
     motionCategory,

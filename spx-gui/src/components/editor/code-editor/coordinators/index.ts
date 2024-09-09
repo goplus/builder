@@ -24,7 +24,7 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
-  getAllTools,
+  getAllTokens,
   getVariableCategory,
   lookCategory,
   motionCategory,
@@ -67,9 +67,9 @@ export class Coordinator {
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
     })
 
-    ui.registerHoverProvider({
-      provideHover: this.implementsPreDefinedHoverProvider.bind(this)
-    })
+    // ui.registerHoverProvider({
+    // provideHover: this.implementsPreDefinedHoverProvider.bind(this)
+    // })
 
     ui.registerSelectionMenuProvider({
       provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
@@ -119,16 +119,16 @@ export class Coordinator {
     })
 
     const items = [
-      ...sprites.map(sprite => createCompletionItem(sprite.name)),
-      ...sounds.map(sound => createCompletionItem(sound.name)),
-      ...stage.backdrops.map(backdrop => createCompletionItem(backdrop.name))
+      ...sprites.map((sprite) => createCompletionItem(sprite.name)),
+      ...sounds.map((sound) => createCompletionItem(sound.name)),
+      ...stage.backdrops.map((backdrop) => createCompletionItem(backdrop.name))
     ]
 
     if (selectedSprite) {
       const { animations, costumes } = selectedSprite
       items.push(
-        ...animations.map(animation => createCompletionItem(animation.name)),
-        ...costumes.map(costume => createCompletionItem(costume.name))
+        ...animations.map((animation) => createCompletionItem(animation.name)),
+        ...costumes.map((costume) => createCompletionItem(costume.name))
       )
     }
 
@@ -146,7 +146,7 @@ export class Coordinator {
           completionItems.map((completionItem) => {
             return {
               icon: completionItemType2Icon(completionItem.type),
-              insertText: completionItem.insert_text,
+              insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
               preview: {
@@ -159,46 +159,7 @@ export class Coordinator {
       })
   }
 
-  async implementsPreDefinedHoverProvider(
-    _model: TextModel,
-    ctx: {
-      position: Position
-      hoverUnitWord: string
-      signal: AbortSignal
-    }
-  ): Promise<LayerContent[]> {
-    const contents = this.docAbility.getNormalDoc({
-      module: '',
-      name: ctx.hoverUnitWord
-    })
-
-    if (!contents || contents.length === 0) {
-      return []
-    }
-
-    return contents.map((doc) => ({
-      level: DocPreviewLevel.Normal,
-      content: doc.content,
-      recommendAction: {
-        label: this.ui.i18n.t({ zh: '还有疑惑？场外求助', en: 'Still in confusion? Ask for help' }),
-        activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick: () => {
-          // TODO: add some logic code here
-        }
-      },
-      moreActions: [
-        {
-          icon: Icon.Document,
-          label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick: () => {
-            const detailDoc = this.docAbility.getDetailDoc(doc.token)
-            if (!detailDoc) return
-            this.ui.invokeDocumentDetail(detailDoc.content)
-          }
-        }
-      ]
-    }))
-  }
+  //delete: wait to implement
 
   async implementsSelectionMenuProvider(
     model: TextModel,
@@ -261,8 +222,8 @@ export class Coordinator {
             style: 'icon',
             behavior: 'triggerCompletion',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           }
         ]
@@ -273,8 +234,8 @@ export class Coordinator {
             style: 'text',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.start_position.Line,
-              column: inlayHint.start_position.Column
+              lineNumber: inlayHint.startPosition.Line,
+              column: inlayHint.startPosition.Column
             }
           }
         ]
@@ -284,8 +245,8 @@ export class Coordinator {
             style: 'tag',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           })
         }
@@ -346,7 +307,7 @@ export class Coordinator {
     return getInputItemCategories(this.project)
   }
 
-  public jump(position: JumpPosition): void { }
+  public jump(position: JumpPosition): void {}
 }
 
 function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
@@ -372,7 +333,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       }
     }))
   ]
-  for (const tool of getAllTools(project)) {
+  for (const tool of getAllTokens(project)) {
     const basics = {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
