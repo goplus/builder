@@ -344,13 +344,6 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    const spritesCodes = this.project.sprites.map((sprite) => ({
-      filename: sprite.name + '.spx',
-      content: sprite.code
-    }))
-
-    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
-
     // add project variables
     const { sprites, sounds, stage, selectedSprite } = this.project
 
@@ -360,22 +353,25 @@ export class Coordinator {
       label: `"${name}"`,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
+        type: 'doc' as const,
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
       }
     })
 
     const items = [
-      ...sprites.map(sprite => createCompletionItem(sprite.name)),
-      ...sounds.map(sound => createCompletionItem(sound.name)),
-      ...stage.backdrops.map(backdrop => createCompletionItem(backdrop.name))
+      ...sprites.map((sprite) => createCompletionItem(sprite.name)),
+      ...sounds.map((sound) => createCompletionItem(sound.name)),
+      ...stage.backdrops.map((backdrop) => createCompletionItem(backdrop.name))
     ]
 
     if (selectedSprite) {
       const { animations, costumes } = selectedSprite
       items.push(
-        ...animations.map(animation => createCompletionItem(animation.name)),
-        ...costumes.map(costume => createCompletionItem(costume.name))
+        ...animations.map((animation) => createCompletionItem(animation.name)),
+        ...costumes.map((costume) => createCompletionItem(costume.name))
       )
     }
 
@@ -384,7 +380,7 @@ export class Coordinator {
     this.compiler
       .getCompletionItems(
         (this.project.selectedSprite?.name ?? 'main') + '.spx',
-        [...spritesCodes, ...stageCodes],
+        this.getProjectAllCodes(),
         ctx.position.lineNumber,
         ctx.position.column
       )

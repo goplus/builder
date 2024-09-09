@@ -51,9 +51,11 @@ export type Diagnostic = {
 }
 
 type CompletionItem = {
-  type: CompletionItemEnum
   label: string
-  insertText: string
+  insert_text: string
+  type: string
+  token_name: string
+  token_pkg: string
 }
 
 export type TokenId = {

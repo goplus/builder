@@ -103,6 +103,7 @@ defineExpose({
 
 #wasmContainer {
   overflow: hidden;
+  display: block;
   height: 0;
 }
 </style>

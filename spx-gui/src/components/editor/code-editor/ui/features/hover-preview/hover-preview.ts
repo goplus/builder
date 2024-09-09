@@ -64,12 +64,14 @@ export class HoverPreview implements IDisposable {
     const docPreviews = _docPreviews.filter(
       (docPreview) => Boolean(docPreview.content) || Boolean(docPreview.header)
     )
-    this.hoverPreviewState.docs = docPreviews.map((docPreview) => ({
-      header: docPreview.header,
-      content: docPreview.content,
-      moreActions: docPreview.moreActions,
-      recommendAction: docPreview.recommendAction
-    }))
+    this.hoverPreviewState.docs = docPreviews
+      .sort((a, b) => b.level - a.level)
+      .map((docPreview) => ({
+        header: docPreview.header,
+        content: docPreview.content,
+        moreActions: docPreview.moreActions,
+        recommendAction: docPreview.recommendAction
+      }))
     this._onShowDocument.fire(range)
   }
 

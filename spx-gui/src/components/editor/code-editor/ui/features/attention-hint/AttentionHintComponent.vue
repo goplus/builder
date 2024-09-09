@@ -61,6 +61,7 @@ onUnmounted(() => {
     width: 0;
     color: #948500;
     font-size: 0.8em;
+    font-style: italic;
     padding-left: 2em;
     user-select: none;
     background: none;
@@ -71,6 +72,7 @@ onUnmounted(() => {
     width: 0;
     color: #b3070d;
     font-size: 0.8em;
+    font-style: italic;
     padding-left: 2em;
     user-select: none;
     background: none;
