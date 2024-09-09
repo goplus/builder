@@ -5,7 +5,7 @@ import { getAllTools } from '@/components/editor/code-editor/tools'
 
 type MarkDown = string
 
-type Doc = {
+export type Doc = {
   content: MarkDown
   token: Token
 }

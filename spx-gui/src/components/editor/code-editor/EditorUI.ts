@@ -55,7 +55,12 @@ export enum DocPreviewLevel {
 
 export type DocPreview = {
   level: DocPreviewLevel
-  content: Markdown
+  header?: {
+    icon: Icon
+    // only for code declaration
+    declaration: string
+  }
+  content?: Markdown
   recommendAction?: RecommendAction | undefined
   moreActions?: Action[] | undefined
 }
@@ -76,7 +81,10 @@ export interface RenamePreview {
   ): Promise<void>
 }
 
-export type LayerContent = DocPreview | AudioPlayer | RenamePreview
+export type LayerContent =
+  | { type: 'doc'; layer: DocPreview }
+  | { type: 'audio'; layer: AudioPlayer }
+  | { type: 'rename'; layer: RenamePreview }
 
 export interface CompletionItem {
   icon: Icon
@@ -415,15 +423,6 @@ export class EditorUI extends Disposable {
         }
       })
 
-    const isDocPreview = (layer: LayerContent): layer is DocPreview =>
-      'content' in layer && 'level' in layer
-
-    const isAudioPlayer = (layer: LayerContent): layer is AudioPlayer =>
-      'src' in layer && 'duration' in layer
-
-    const isRenamePreview = (layer: LayerContent): layer is RenamePreview =>
-      'placeholder' in layer && 'onSubmit' in layer
-
     const isMouseColumnInWordRange = (
       mouseColumn: number,
       startColumn: number,
@@ -458,12 +457,18 @@ export class EditorUI extends Disposable {
           ).flat()
 
           // filter docPreview
-          this.hoverPreview?.showDocuments(result.filter(isDocPreview), {
-            startLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endLineNumber: position.lineNumber,
-            endColumn: word.endColumn
-          })
+          this.hoverPreview?.showDocuments(
+            result
+              // add `item is { type: 'doc'; layer: DocPreview }` to pass npm script type-check
+              .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
+              .map((item) => item.layer),
+            {
+              startLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endLineNumber: position.lineNumber,
+              endColumn: word.endColumn
+            }
+          )
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content

@@ -11,10 +11,11 @@ export type CompilerCodes = { [k: string]: string }
 interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
-  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostics[] | {}
   getCompletionItems: (params: {
     in: { name: string; code: CompilerCodes; line: number; column: number }
   }) => CompletionItem[] | {}
+  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | {}
+  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
 }
 
 export enum CodeEnum {
@@ -42,7 +43,7 @@ export interface Position {
   Column: number
 }
 
-export type Diagnostics = {
+export type Diagnostic = {
   filename: string
   column: number
   line: number
@@ -89,6 +90,34 @@ export type Token = {
 type Code = {
   filename: string
   content: string
+}
+
+export interface Definition {
+  // `start_pos` and `end_pos` is file offset, not compatible with monaco api `getOffset` return offset
+  start_pos: number
+  end_pos: number
+  start_position: Position
+  // `end_position` is no use for it is same as `start_position` no difference
+  end_position: Position
+  pkg_name: string
+  // `name` and `pkg_path` can transfer to `module` and `name` for type `TokenId`
+  pkg_path: string
+  name: string
+  usages: DefinitionUsage[]
+  struct_name: string
+}
+
+// todo: this is same as function `getTokens.TokenUsage` result, need be updated when `getTokens` is declared
+export interface DefinitionUsage {
+  usageID: string
+  declaration: string
+  sample: string
+  insert_text: string
+  params: Array<{
+    name: string
+    type: string
+  }>
+  type: string
 }
 
 export class Compiler extends Disposable {
@@ -168,7 +197,7 @@ export class Compiler extends Disposable {
     return Array.isArray(inlayHints) ? inlayHints : []
   }
 
-  public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostics[]> {
+  public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {
     const wasmHandler = await this.waitForWasmInit()
     const diagnostics = wasmHandler.getDiagnostics({
       in: {
@@ -197,14 +226,16 @@ export class Compiler extends Disposable {
     return Array.isArray(completionItems) ? completionItems : []
   }
 
-  public async getDefinition(
-    currentFilename: string,
-    codes: Code[]
-  ): Promise</* temp return null */ null> {
-    await this.waitForWasmInit()
+  public async getDefinition(currentFilename: string, codes: Code[]): Promise<Definition[]> {
+    const wasmHandler = await this.waitForWasmInit()
+    const res = wasmHandler.getDefinition({
+      in: {
+        name: currentFilename,
+        code: this.codes2CompileCode(codes)
+      }
+    })
 
-    // implement logic here
-    return null
+    return Array.isArray(res) ? res : []
   }
 
   public async getTokenDetail(
