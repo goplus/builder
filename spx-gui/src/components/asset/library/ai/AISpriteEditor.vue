@@ -81,7 +81,7 @@ import { useFileUrl } from '@/utils/file'
 import { NEmpty, NIcon, NImage, NSpin } from 'naive-ui'
 import SpriteCarousel from '../details/SpriteCarousel.vue'
 import { EditOutlined } from '@vicons/antd'
-import { AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
+import { ArrowBackOutlined, AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import { AISpriteTask } from '@/models/aigc'
@@ -93,6 +93,7 @@ import { useI18n } from '@/utils/i18n'
 import ImageRepaint from './ImageEditor/ImageRepaint.vue'
 import { h } from 'vue'
 import { getWebUrl } from '@/apis/util'
+import { useConfirmDialog } from '@/components/ui'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -176,7 +177,12 @@ const [previewImageSrc, previewImageLoading] = useFileUrl(() => previewImageFile
 const generateContent = async () => {
   status.value = AIGCStatus.Waiting
   contentReady.value = props.asset[isContentReady]
-  const generateTask = new AISpriteTask(props.asset.id)
+  if (!previewImageFile.value?.meta.universalUrl) {
+    status.value = AIGCStatus.Failed
+    failInfoText.value = t({ en: `Failed to load preview`, zh: `加载预览失败` })
+    return
+  }
+  const generateTask = new AISpriteTask(await getWebUrl(previewImageFile.value?.meta.universalUrl))
   generateTask.addEventListener('AIGCStatusChange', () => {
     status.value = generateTask.status
   })
@@ -249,6 +255,8 @@ const handleRepaintResolve = async (imgDataUrl: string) => {
   props.asset.preview = universalUrl
 }
 
+const confirm = useConfirmDialog()
+
 const previewActions = computed(
   () =>
     [
@@ -274,9 +282,53 @@ const previewActions = computed(
     ] satisfies EditorAction[]
 )
 
-const viewActions = computed(
+const skeletonActions = computed(
   () =>
     [
+      {
+        name: 'cancel',
+        label: { zh: '取消', en: 'Cancel' },
+        icon: CancelOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: () => {
+          editMode.value = 'anim'
+        }
+      },
+      {
+        name: 'confirm',
+        label: { zh: '确定', en: 'Confirm' },
+        icon: EditOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: () => {
+          editMode.value = 'anim'
+        }
+      }
+    ] satisfies EditorAction[]
+)
+
+const animActions = computed(
+  () =>
+    [
+      {
+        name: 'return',
+        label: { zh: '返回', en: 'Return' },
+        icon: ArrowBackOutlined,
+        type: 'secondary' satisfies ButtonType,
+        action: () => {
+          // editMode.value = 'preview'
+          confirm({
+            title: t({ en: 'Return to preview', zh: '返回预览' }),
+            content: t({
+              en: 'Are you sure you want to return to preview? All changes will be lost.',
+              zh: '确定要返回预览吗？所有更改将丢失。'
+            })
+          })
+            .then(() => {
+              editMode.value = 'preview'
+            })
+            .catch(() => {})
+        }
+      },
       {
         name: 'edit',
         label: { zh: '编辑', en: 'Edit' },
@@ -294,7 +346,8 @@ const actions = computed(
     [
       ...(editMode.value === 'preview' ? previewActions.value : []),
       ...(activeEditor.value?.actions ?? []),
-      ...(editMode.value === 'anim' ? viewActions.value : [])
+      ...(editMode.value === 'anim' ? animActions.value : []),
+      ...(editMode.value === 'skeleton' ? skeletonActions.value : [])
     ] satisfies EditorAction[]
 )
 
