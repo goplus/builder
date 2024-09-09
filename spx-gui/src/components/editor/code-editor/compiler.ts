@@ -11,6 +11,9 @@ export type CompilerCodes = { [k: string]: string }
 interface WasmHandler extends Window {
   console: typeof console
   getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
+  getCompletionItems: (params: {
+    in: { name: string; code: CompilerCodes; line: number; column: number }
+  }) => CompletionItem[] | {}
   getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | {}
   getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
 }
@@ -116,8 +119,13 @@ export interface DefinitionUsage {
 }
 
 export class Compiler extends Disposable {
-  containerElement: HTMLIFrameElement | null = null
+  containerElement?: HTMLIFrameElement
   private wasmHandlerRef = shallowRef<WasmHandler | null>()
+
+  constructor() {
+    super()
+    this.addDisposer(() => this.containerElement?.removeEventListener('load', this.initIframe))
+  }
 
   private initIframe() {
     if (!this.containerElement?.contentWindow) return
@@ -137,7 +145,9 @@ export class Compiler extends Disposable {
   }
 
   private reloadIframe() {
+    // each load will emit 'load' event, after 'load', will trigger `initIframe` function
     this.containerElement?.contentWindow?.location.reload()
+    this.wasmHandlerRef.value = null
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
@@ -151,20 +161,23 @@ export class Compiler extends Disposable {
 
   public setContainerElement(containerElement: HTMLIFrameElement) {
     this.containerElement = containerElement
-    this.initIframe()
+    if (containerElement.contentDocument?.readyState === 'complete') {
+      // If the iframe is already loaded, call initIframe directly
+      this.initIframe()
+    } else {
+      // If not, add the load event listener
+      containerElement.addEventListener('load', this.initIframe.bind(this))
+    }
   }
 
   public handleConsoleLog(message: any) {
     if (!message) return
     if (message.includes('goroutine ')) this.reloadIframe()
-    if (message === 'WASM Init') this.handleWasmReady()
-  }
-
-  private handleWasmReady() {
-    this.wasmHandlerRef.value = this.containerElement?.contentWindow as
-      | WasmHandler
-      | null
-      | undefined
+    if (message === 'WASM Init')
+      this.wasmHandlerRef.value = this.containerElement?.contentWindow as
+        | WasmHandler
+        | null
+        | undefined
   }
 
   private async waitForWasmInit(): Promise<WasmHandler> {
@@ -173,35 +186,42 @@ export class Compiler extends Disposable {
 
   public async getInlayHints(currentFilename: string, codes: Code[]): Promise<Hint[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getInlayHints({
+    const inlayHints = wasmHandler.getInlayHints({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(res) ? res : []
+    return Array.isArray(inlayHints) ? inlayHints : []
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getDiagnostics({
+    const diagnostics = wasmHandler.getDiagnostics({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(res) ? res : []
+    return Array.isArray(diagnostics) ? diagnostics : []
   }
 
   public async getCompletionItems(
     currentFilename: string,
     codes: Code[],
-    position: Position
+    line: number,
+    column: number
   ): Promise<CompletionItem[]> {
-    await this.waitForWasmInit()
-
-    // implement logic here
-    return []
+    const wasmHandler = await this.waitForWasmInit()
+    const completionItems = wasmHandler.getCompletionItems({
+      in: {
+        line,
+        column,
+        code: this.codes2CompileCode(codes),
+        name: currentFilename
+      }
+    })
+    return Array.isArray(completionItems) ? completionItems : []
   }
 
   public async getDefinition(currentFilename: string, codes: Code[]): Promise<Definition[]> {

@@ -29,7 +29,7 @@ export interface TextModel extends IEditor.ITextModel {}
 export enum Icon {
   Function,
   Event,
-  Prototype,
+  Property,
   Keywords,
   AIAbility,
   Document,
@@ -359,11 +359,6 @@ export class EditorUI extends Disposable {
       ]
     })
 
-    // TODO: monaco editor completion is not fully match our features, we need implement it by self, we may need do following,
-    //  trigger completion menu by handle listen keyboard down, up, shortcut, mouse down up, focus, blur, and custom fuzzy search to match completion item.
-    // current bug is when you type same code remove it then type it, it will show duplicate completion items depends on how many times you repeat it.
-    // because our completionMenuCache use { lineNumber: number, column: number, fileId: string  } to make completionMenuCacheID，thus, we can not recognize the difference between old typing and new typing and typing code is same.
-    // in `completionItemCache` i try to add function `has` to force avoid duplicate item in `completionItemCache`
     this.monacoProviderDisposes.completionProvider =
       monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
         provideCompletionItems: (model, position) => {
@@ -382,12 +377,11 @@ export class EditorUI extends Disposable {
             this.completionMenu.hideCompletionMenu()
             return { suggestions: [] }
           }
-          // if completionItemCacheID changed, inner cache will clean `cached data`
-          // in a word, if CompletionItemCacheID changed will call `requestCompletionProviderResolve`
-          const isNeedRequestCompletionProviderResolve =
-            !this.completionMenu.completionItemCache.isCacheAvailable(completionItemCacheID)
-          if (isNeedRequestCompletionProviderResolve) {
-            const abortController = new AbortController()
+          const cachedItems = this.completionMenu.completionItemCache.get(completionItemCacheID)
+          if (cachedItems == null) {
+            const completionItems: CompletionItem[] = []
+            this.completionMenu.completionItemCache.set(completionItemCacheID, completionItems)
+            const abortController = this.completionMenu.refreshAbortController()
             this.requestCompletionProviderResolve(
               model,
               {
@@ -400,8 +394,8 @@ export class EditorUI extends Disposable {
                 const isSamePosition =
                   this.completionMenu.completionItemCache.isSamePosition(completionItemCacheID)
                 if (!isSamePosition) return abortController.abort()
-
-                this.completionMenu.completionItemCache.add(completionItemCacheID, items)
+                if (this.completionMenu.abortController !== abortController) return
+                completionItems.push(...items)
                 // if you need user immediately show updated completion items, we need close it and reopen it.
                 this.completionMenu.hideCompletionMenu()
                 this.completionMenu.showCompletionMenu()
@@ -410,7 +404,7 @@ export class EditorUI extends Disposable {
             return { suggestions: [] }
           } else {
             const suggestions =
-              this.completionMenu.completionItemCache.getAll(completionItemCacheID).map(
+              this.completionMenu.completionItemCache.get(completionItemCacheID)?.map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),

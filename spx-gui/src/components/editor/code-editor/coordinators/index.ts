@@ -5,12 +5,12 @@ import {
   DocPreviewLevel,
   type EditorUI,
   Icon,
+  type InlayHintDecoration,
   type InputItem,
   type InputItemCategory,
   type LayerContent,
   type SelectionMenuItem,
-  type TextModel,
-  type InlayHintDecoration
+  type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
@@ -25,13 +25,13 @@ import {
   eventCategory,
   gameCategory,
   getAllTools,
+  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
   soundCategory,
-  getVariableCategory,
-  TokenType,
-  type TokenCategory
+  type TokenCategory,
+  TokenType
 } from '@/components/editor/code-editor/tools'
 import { debounce } from '@/utils/utils'
 import type { Definition, DefinitionUsage, Diagnostic } from '../compiler'
@@ -337,14 +337,76 @@ export class Coordinator {
 
   implementsPreDefinedCompletionProvider(
     _model: TextModel,
-    _ctx: {
+    ctx: {
       position: Position
       unitWord: string
       signal: AbortSignal
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    addItems(getCompletionItems(this.ui.i18n, this.project))
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    // add project variables
+    const { sprites, sounds, stage, selectedSprite } = this.project
+
+    const createCompletionItem = (name: string) => ({
+      icon: Icon.Variable,
+      insertText: `"${name}"`,
+      label: `"${name}"`,
+      desc: '',
+      preview: {
+        level: DocPreviewLevel.Normal,
+        content: ''
+      }
+    })
+
+    const items = [
+      ...sprites.map(sprite => createCompletionItem(sprite.name)),
+      ...sounds.map(sound => createCompletionItem(sound.name)),
+      ...stage.backdrops.map(backdrop => createCompletionItem(backdrop.name))
+    ]
+
+    if (selectedSprite) {
+      const { animations, costumes } = selectedSprite
+      items.push(
+        ...animations.map(animation => createCompletionItem(animation.name)),
+        ...costumes.map(costume => createCompletionItem(costume.name))
+      )
+    }
+
+    addItems(items)
+
+    this.compiler
+      .getCompletionItems(
+        (this.project.selectedSprite?.name ?? 'main') + '.spx',
+        [...spritesCodes, ...stageCodes],
+        ctx.position.lineNumber,
+        ctx.position.column
+      )
+      .then((completionItems) => {
+        addItems(
+          completionItems.map((completionItem) => {
+            return {
+              icon: completionItemType2Icon(completionItem.type),
+              insertText: completionItem.insert_text,
+              label: completionItem.label,
+              desc: '',
+              preview: {
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: '' /* todo: get content with docAbility */
+                }
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsSelectionMenuProvider(
@@ -570,11 +632,11 @@ function getCompletionItemKind(type: TokenType): Icon {
     case TokenType.function:
       return Icon.Function
     case TokenType.constant:
-      return Icon.Prototype
+      return Icon.Property
     case TokenType.keyword:
       return Icon.Keywords
     case TokenType.variable:
-      return Icon.Prototype
+      return Icon.Property
   }
 }
 
@@ -652,4 +714,19 @@ function getInputItemCategories(project: Project): InputItemCategory[] {
     toolCategory2InputItemCategory(getVariableCategory(project), Icon.Variable, '#5a7afe'),
     toolCategory2InputItemCategory(gameCategory, Icon.Game, '#e14e9f')
   ]
+}
+
+/** transform from wasm completion item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
+// todo: add more case type transform to type
+function completionItemType2Icon(type: string): Icon {
+  switch (type) {
+    case 'func':
+      return Icon.Function
+    case 'keyword':
+      return Icon.Property
+    case 'bool':
+      return Icon.Property
+    default:
+      return Icon.Property
+  }
 }
