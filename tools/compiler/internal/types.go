@@ -12,11 +12,10 @@ import (
 	"github.com/goplus/gop/x/typesutil"
 	"github.com/goplus/igop"
 	"github.com/goplus/igop/gopbuild"
-	"github.com/goplus/mod/gopmod"
 )
 
 // codeInfo is use igop to analyse spx code and get info.
-func codeInfo(mod *gopmod.Module, file *ast.File, fileSet *token.FileSet, pkg map[string]*ast.Package) (*typesutil.Info, error) {
+func codeInfo(file *ast.File, fileSet *token.FileSet, pkg map[string]*ast.Package) (*typesutil.Info, error) {
 	// init types conf
 	ctx := igop.NewContext(0)
 	c := gopbuild.NewContext(ctx)
@@ -24,7 +23,7 @@ func codeInfo(mod *gopmod.Module, file *ast.File, fileSet *token.FileSet, pkg ma
 	conf := &types.Config{}
 	// replace it!
 	conf.Importer = c
-	chkOpts := initTypeConfig(file, fileSet, mod)
+	chkOpts := initTypeConfig(file, fileSet)
 
 	// init info
 	info := initTypeInfo()

@@ -19,7 +19,7 @@ func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, er
 		list := parseErrorLines(error2List(err))
 		return list, nil
 	}
-	_, err = codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset, pkg)
+	_, err = codeInfo(pkg[PKG].Files[fileName], fset, pkg)
 	list := parseErrorLines(error2List(err))
 	return list, nil
 }
@@ -32,7 +32,7 @@ func GetDefinition(fileName string, fileMap map[string]string) (interface{}, err
 		fmt.Println("Internal error: ", err)
 	}
 	// get user code info
-	info, err := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset, pkg)
+	info, err := codeInfo(pkg[PKG].Files[fileName], fset, pkg)
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}
@@ -50,7 +50,7 @@ func GetSPXFileType(fileName string, fileMap map[string]string) (interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	info, err := codeInfo(initSPXMod(), pkg[PKG].Files[fileName], fset, pkg)
+	info, err := codeInfo(pkg[PKG].Files[fileName], fset, pkg)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{
 	}
 
 	// get user code info
-	infoList, err := codeInfo(initSPXMod(), pkg[PKG].Files[currentFileName], fset, pkg)
+	infoList, err := codeInfo(pkg[PKG].Files[currentFileName], fset, pkg)
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}

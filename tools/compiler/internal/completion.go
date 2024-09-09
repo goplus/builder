@@ -175,7 +175,7 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)
 	conf := &types.Config{Importer: gopCtx}
-	chkOpts := initTypeConfig(file, fset, initSPXMod())
+	chkOpts := initTypeConfig(file, fset)
 
 	info := initTypeInfo()
 	checker := typesutil.NewChecker(conf, chkOpts, nil, info)
