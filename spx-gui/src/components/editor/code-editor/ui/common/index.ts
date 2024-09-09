@@ -28,7 +28,7 @@ export function icon2SVG(icon: Icon): string {
       return iconEvent
     case Icon.Listen:
       return IconListen
-    case Icon.Prototype:
+    case Icon.Property:
       return IconRead
     case Icon.Keywords:
       return IconCode
@@ -81,7 +81,11 @@ export function isElementInViewport(containerElement: Element, checkElement: Ele
 }
 
 /** normalize icon size to static size, like npm package XIcon component */
-export function normalizeIconSize(targetElement: Element | null, size: number, height = size): undefined {
+export function normalizeIconSize(
+  targetElement: Element | null,
+  size: number,
+  height = size
+): undefined {
   const innerSvgElement = targetElement?.firstElementChild
   if (!innerSvgElement) return
   innerSvgElement.setAttribute('height', String(height))

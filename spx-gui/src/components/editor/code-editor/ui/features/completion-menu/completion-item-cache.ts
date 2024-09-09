@@ -8,61 +8,42 @@ export interface CompletionItemCachePosition {
 }
 
 export class CompletionItemCache extends Disposable {
-  private cache: CompletionItem[] = []
+  private cache: CompletionItem[] | null = null
   private position: CompletionItemCachePosition = {
     id: '',
     lineNumber: -1,
     column: -1
   }
-  private cacheLeftTime = 0
 
   constructor() {
     super()
     // do not use `this.addDisposer(this.clear)` this will change `this` point to class `Disposable` instead of `CompletionItemCache`
     // will throw undefined error.
-    this.addDisposer(() => this.clear())
-  }
-
-  isCacheAvailable(position: CompletionItemCachePosition) {
-    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
-    return this.cacheLeftTime > 0
-  }
-
-  public add(position: CompletionItemCachePosition, items: CompletionItem[]) {
-    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
-    this.cacheLeftTime++
-    items.forEach((item) => {
-      if (!this.has(item)) this.cache.push(item)
+    this.addDisposer(() => {
+      this.clear()
+      this.position = {
+        id: '',
+        lineNumber: -1,
+        column: -1
+      }
     })
   }
 
-  // a temporary solution, not addressing the root of the problem
-  // this can avoid duplicate items in completion menu.
-  public has(item: CompletionItem) {
-    return this.cache.some(
-      (cacheItem) =>
-        cacheItem.label === item.label &&
-        cacheItem.insertText === item.insertText &&
-        cacheItem.desc === item.desc
-    )
+  public set(position: CompletionItemCachePosition, items: CompletionItem[]) {
+    this.position = { ...position }
+    this.cache = items
   }
 
-  public getAll(position: CompletionItemCachePosition) {
-    if (this.cacheLeftTime <= 0) return []
-    if (!this.isSamePositionOtherwiseStorePosition(position)) this.clear()
-    this.cacheLeftTime--
-    return this.cache
+  public clear() {
+    this.cache = []
   }
 
-  // consider using decoration syntax? current ts config is not allowed.
-  isSamePositionOtherwiseStorePosition(position: CompletionItemCachePosition) {
-    const isSamePosition = this.isSamePosition(position)
-    // deep clone.
-    if (!isSamePosition) {
-      this.position = { ...position }
-      this.cacheLeftTime = 0
+  public get(completionItemCacheID: CompletionItemCachePosition) {
+    if (this.isSamePosition(completionItemCacheID)) {
+      return this.cache
+    } else {
+      return null
     }
-    return isSamePosition
   }
 
   public isSamePosition(position: CompletionItemCachePosition) {
@@ -71,9 +52,5 @@ export class CompletionItemCache extends Disposable {
       this.position.lineNumber === position.lineNumber &&
       this.position.column === position.column
     )
-  }
-
-  public clear() {
-    this.cache = []
   }
 }
