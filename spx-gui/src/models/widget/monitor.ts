@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { getWidgetName } from '../common/asset-name'
-import { BaseWidget, type BaseWidgetInits } from './widget'
+import { BaseWidget, type BaseWidgetInits, type BaseRawWidgetConfig } from './widget'
 import { defaultMapSize } from '../stage'
 
 export type MonitorInits = BaseWidgetInits & {
@@ -9,13 +9,12 @@ export type MonitorInits = BaseWidgetInits & {
   variableName?: string
 }
 
-export type RawMonitorConfig = Omit<MonitorInits, 'variableName'> & {
+export type RawMonitorConfig = BaseRawWidgetConfig & {
   type: 'monitor'
-  name?: string
   mode?: number
+  label?: string
   target?: string
   val?: string
-  color?: number // TODO: remove me
 }
 
 // There are different modes for monitor, but only `mode: 1` is supported
@@ -60,8 +59,8 @@ export class Monitor extends BaseWidget {
     })
   }
 
-  static load({ type, name, mode, target, val, ...inits }: RawMonitorConfig) {
-    if (type !== 'monitor') throw new Error(`unexoected type ${type}`)
+  static load({ builder_id: id, type, name, mode, target, val, ...inits }: RawMonitorConfig) {
+    if (type !== 'monitor') throw new Error(`unexpected type ${type}`)
     if (name == null) throw new Error('name expected for monitor')
     if (mode !== supportedMode) throw new Error(`unsupported mode: ${mode} for monitor ${name}`)
     if (target !== supportedTarget)
@@ -70,7 +69,7 @@ export class Monitor extends BaseWidget {
     if (!val.startsWith(prefixForVariable))
       throw new Error(`unexpected val: ${val} for monitor ${name}`)
     const variableName = val.slice(prefixForVariable.length)
-    return new Monitor(name, { ...inits, variableName })
+    return new Monitor(name, { ...inits, id, variableName })
   }
 
   export(): RawMonitorConfig {
@@ -80,8 +79,7 @@ export class Monitor extends BaseWidget {
       label: this.label,
       val: `${prefixForVariable}${this.variableName}`,
       mode: supportedMode,
-      target: supportedTarget,
-      color: 15629590 // TODO: remove me
+      target: supportedTarget
     }
   }
 }

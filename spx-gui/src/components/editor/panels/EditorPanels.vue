@@ -34,18 +34,18 @@ watch(
   { immediate: true }
 )
 
-const lastSelectedSprite = shallowRef<string | null>(null)
-const lastSelectedSound = shallowRef<string | null>(null)
+const lastSelectedSpriteId = shallowRef<string | null>(null)
+const lastSelectedSoundId = shallowRef<string | null>(null)
 watch(
   () => [editorCtx.project, editorCtx.project.selected] as const,
   ([project], [lastProject, lastSelected]) => {
     if (project !== lastProject) {
-      lastSelectedSprite.value = null
-      lastSelectedSound.value = null
+      lastSelectedSpriteId.value = null
+      lastSelectedSoundId.value = null
       return
     }
-    if (lastSelected?.type === 'sprite') lastSelectedSprite.value = lastSelected.name
-    else if (lastSelected?.type === 'sound') lastSelectedSound.value = lastSelected.name
+    if (lastSelected?.type === 'sprite') lastSelectedSpriteId.value = lastSelected.id
+    else if (lastSelected?.type === 'sound') lastSelectedSoundId.value = lastSelected.id
   }
 )
 
@@ -60,7 +60,7 @@ watch(
     ) {
       project.select({
         type: 'sprite',
-        name: lastSelectedSprite.value ?? project.sprites[0].name
+        id: lastSelectedSpriteId.value ?? project.sprites[0].id
       })
     } else if (
       expanded === 'sounds' &&
@@ -69,7 +69,7 @@ watch(
     ) {
       project.select({
         type: 'sound',
-        name: lastSelectedSound.value ?? editorCtx.project.sounds[0].name
+        id: lastSelectedSoundId.value ?? editorCtx.project.sounds[0].id
       })
     }
   }

@@ -49,7 +49,7 @@ export class Backdrop extends Costume {
     return new Backdrop(name, file, inits)
   }
 
-  export(): [RawBackdropConfig, Files] {
-    return super.export(backdropAssetPath)
+  export({ includeId = true }: { includeId?: boolean } = {}): [RawBackdropConfig, Files] {
+    return super.export({ basePath: backdropAssetPath, includeId })
   }
 }

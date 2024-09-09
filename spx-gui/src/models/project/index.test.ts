@@ -8,6 +8,8 @@ import { fromText, type Files } from '../common/file'
 import { AutoSaveMode, AutoSaveToCloudState, Project } from '.'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
+import type { ProjectData } from '@/apis/project'
+import { Cancelled } from '@/utils/exception'
 
 function mockFile(name = 'mocked') {
   return fromText(name, Math.random() + '')
@@ -15,28 +17,38 @@ function mockFile(name = 'mocked') {
 
 function makeProject() {
   const project = new Project()
+  const sound = new Sound('sound', mockFile())
+  project.addSound(sound)
+
   const sprite = new Sprite('Sprite')
   const costume = new Costume('default', mockFile())
   sprite.addCostume(costume)
   const animationCostumes = Array.from({ length: 3 }, (_, i) => new Costume(`a${i}`, mockFile()))
   const animation = Animation.create('default', animationCostumes)
   sprite.addAnimation(animation)
-  const sound = new Sound('sound', mockFile())
   project.addSprite(sprite)
-  project.addSound(sound)
   return project
 }
 
 describe('Project', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
   it('should preserve animation sound with exportGameFiles & loadGameFiles', async () => {
     const project = makeProject()
     const sprite = project.sprites[0]
     const animation = sprite.animations[0]
-    animation.setSound(project.sounds[0].name)
+    animation.setSound(project.sounds[0].id)
 
     const files = project.exportGameFiles()
     await project.loadGameFiles(files)
-    expect(project.sprites[0].animations[0].sound).toBe(project.sounds[0].name)
+    expect(project.sprites[0].animations[0].sound).toBe(project.sounds[0].id)
   })
 
   it('should preserve order for sprites & sounds however files are sorted', async () => {
@@ -87,21 +99,27 @@ describe('Project', () => {
     project.addSound(sound3)
 
     project.select({ type: 'stage' })
-    project.removeSound('sound3')
+    project.removeSound(sound3.id)
     expect(project.selected).toEqual({ type: 'stage' })
 
-    project.select({ type: 'sound', name: 'sound' })
+    project.select({ type: 'sound', id: project.sounds[0].id })
 
-    project.removeSound('sound')
+    project.removeSound(project.sounds[0].id)
+    const sound2Id = project.sounds.find((s) => s.name === 'sound2')?.id
+    expect(sound2Id).toBeTruthy()
+    expect(sound2Id).toEqual(sound2.id)
     expect(project.selected).toEqual({
       type: 'sound',
-      name: 'sound2'
+      id: sound2Id
     })
 
-    project.removeSound('sound2')
+    project.removeSound(sound2.id)
+
+    const spriteId = project.sprites.find((s) => s.name === 'Sprite')?.id
+    expect(spriteId).toBeTruthy()
     expect(project.selected).toEqual({
       type: 'sprite',
-      name: 'Sprite'
+      id: spriteId
     })
   })
 
@@ -113,18 +131,17 @@ describe('Project', () => {
     project.addSprite(sprite3)
 
     project.select({ type: 'stage' })
-    project.removeSprite('Sprite3')
+    project.removeSprite(sprite3.id)
     expect(project.selected).toEqual({ type: 'stage' })
 
-    project.select({ type: 'sprite', name: 'Sprite' })
+    project.select({ type: 'sprite', id: project.sprites[0].id })
 
-    project.removeSprite('Sprite')
-    expect(project.selected).toEqual({
-      type: 'sprite',
-      name: 'Sprite2'
-    })
+    project.removeSprite(project.sprites[0].id)
+    const nextId: string = (project.selected as any).id
+    expect(nextId).toBeTruthy()
+    expect(nextId).toEqual(project.sprites.find((s) => s.name === 'Sprite2')?.id)
 
-    project.removeSprite('Sprite2')
+    project.removeSprite(sprite2.id)
     expect(project.selected).toBeNull()
   })
 
@@ -139,16 +156,54 @@ describe('Project', () => {
     await expect((project as any).saveToLocalCache('key')).rejects.toThrow('disposed')
     expect(saveToLocalCacheMethod).toHaveBeenCalledWith('key')
   })
-})
 
-describe('ProjectAutoSave', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
+  it('should abort previous saveToCloud call when a new one is initiated', async () => {
+    const project = makeProject()
+
+    const cloudSaveMock = vi
+      .spyOn(cloudHelper, 'save')
+      .mockImplementation((metadata, files, signal) => {
+        return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            resolve({ metadata: metadata as ProjectData, files })
+          }, 1000)
+
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              clearTimeout(timeoutId)
+              reject(signal.reason)
+            })
+          }
+        })
+      })
+
+    const firstSavePromise = project.saveToCloud()
+    await vi.advanceTimersByTimeAsync(500)
+
+    const secondSavePromise = project.saveToCloud()
+    vi.runAllTimersAsync()
+
+    await expect(firstSavePromise).rejects.toThrow(Cancelled)
+    await expect(secondSavePromise).resolves.not.toThrow()
+    expect(cloudSaveMock).toHaveBeenCalledTimes(2)
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-    vi.restoreAllMocks()
+  it('should not abort saveToCloud call if it completes before a new one is initiated', async () => {
+    const project = makeProject()
+
+    const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files) => {
+      return new Promise((resolve) => {
+        resolve({ metadata: metadata as ProjectData, files })
+      })
+    })
+
+    const firstSavePromise = project.saveToCloud()
+    await expect(firstSavePromise).resolves.not.toThrow()
+
+    const secondSavePromise = project.saveToCloud()
+    await expect(secondSavePromise).resolves.not.toThrow()
+
+    expect(cloudSaveMock).toHaveBeenCalledTimes(2)
   })
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
@@ -177,7 +232,7 @@ describe('ProjectAutoSave', () => {
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
     expect(localSaveMock).toHaveBeenCalledTimes(1)
 
-    project.removeSprite(newSprite.name)
+    project.removeSprite(newSprite.id)
     await flushPromises()
     await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
     await flushPromises()

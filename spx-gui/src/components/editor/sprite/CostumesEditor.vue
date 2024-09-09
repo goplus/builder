@@ -2,10 +2,10 @@
   <EditorList color="sprite" :add-text="$t({ en: 'Add costume', zh: '添加造型' })">
     <CostumeItem
       v-for="costume in sprite.costumes"
-      :key="costume.name"
+      :key="costume.id"
       :sprite="sprite"
       :costume="costume"
-      :selected="selected?.name === costume.name"
+      :selected="selected?.id === costume.id"
       @click="handleSelect(costume)"
     />
     <template #add-options>
@@ -42,7 +42,7 @@ const selected = computed(() => props.sprite.defaultCostume)
 
 function handleSelect(costume: Costume) {
   const action = { name: { en: 'Set default costume', zh: '设置默认造型' } }
-  editorCtx.project.history.doAction(action, () => props.sprite.setDefaultCostume(costume.name))
+  editorCtx.project.history.doAction(action, () => props.sprite.setDefaultCostume(costume.id))
 }
 
 const addFromLocalFile = useAddCostumeFromLocalFile()

@@ -9,6 +9,8 @@ import {
 import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
+import { nanoid } from 'nanoid'
+import type { Sound } from './sound'
 
 type ActionConfig = {
   /** Sound name to play */
@@ -20,29 +22,34 @@ type ActionConfig = {
 export const defaultFps = 10
 
 export type AnimationInits = {
+  id?: string
   /** Duration for animation to be played once */
   duration?: number
-  onStart?: ActionConfig
-
-  // not supported by builder:
-  isLoop?: boolean // TODO
-  onPlay?: ActionConfig
+  sound?: string
 }
 
-export type RawAnimationConfig = Omit<AnimationInits, 'duration'> & {
-  anitype?: number
+export type RawAnimationConfig = {
+  builder_id?: string
   frameFrom?: number | string
   frameTo?: number | string
   frameFps?: number
+  onStart?: ActionConfig
 
   // legacy APIs, for compatibility only:
   from?: number | string
   to?: number | string
   fps?: number
+
+  // not supported by builder:
   duration?: number
+  anitype?: number
+  isLoop?: boolean
+  onPlay?: ActionConfig
 }
 
 export class Animation extends Disposable {
+  id: string
+
   private sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
@@ -62,21 +69,11 @@ export class Animation extends Disposable {
     return `__animation_${this.name}_`
   }
 
-  withCostumeNamePrefix(name: string) {
-    return this.costumeNamePrefix + name
-  }
-
-  private stripCostumeNamePrefix(name: string) {
-    if (!name.startsWith(this.costumeNamePrefix)) return name
-    return name.slice(this.costumeNamePrefix.length)
-  }
-
   costumes: Costume[]
   // For now, detailed methods to manipulate costumes are not needed, we may implement them later
   setCostumes(costumes: Costume[]) {
     for (const costume of costumes) {
-      let costumeName = this.stripCostumeNamePrefix(costume.name)
-      costumeName = ensureValidCostumeName(costumeName, this)
+      const costumeName = ensureValidCostumeName(costume.name, this)
       costume.setParent(this)
       costume.setName(costumeName)
     }
@@ -92,8 +89,8 @@ export class Animation extends Disposable {
   }
 
   sound: string | null
-  setSound(sound: string | null) {
-    this.sound = sound
+  setSound(soundId: string | null) {
+    this.sound = soundId
   }
 
   constructor(name: string, inits?: AnimationInits) {
@@ -101,11 +98,8 @@ export class Animation extends Disposable {
     this.name = name
     this.costumes = []
     this.duration = inits?.duration ?? 0
-    this.sound = inits?.onStart?.play ?? null
-
-    for (const field of ['isLoop', 'onPlay'] as const) {
-      if (inits?.[field] != null) console.warn(`unsupported field: ${field} for sprite ${name}`)
-    }
+    this.sound = inits?.sound ?? null
+    this.id = inits?.id ?? nanoid()
 
     return reactive(this) as this
   }
@@ -123,52 +117,87 @@ export class Animation extends Disposable {
   static load(
     name: string,
     {
+      builder_id: id,
       frameFrom,
       frameTo,
       frameFps,
       from,
       to,
       fps,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      duration: _spxDuration, // drop spx `duration`, which is different from ours
-      ...inits
+      onStart,
+      duration: spxDuration,
+      isLoop,
+      onPlay,
+      anitype
     }: RawAnimationConfig,
-    sprite: Sprite
-  ) {
+    costumes: Costume[],
+    sounds: Sound[]
+  ): [animation: Animation, animationCostumeNames: string[]] {
     frameFrom = frameFrom ?? from
     frameTo = frameTo ?? to
     frameFps = frameFps ?? fps
     if (frameFrom == null || frameTo == null)
       throw new Error(`from and to expected for Animation ${name}`)
-    const fromIndex = getCostumeIndex(sprite.costumes, frameFrom)
-    const toIndex = getCostumeIndex(sprite.costumes, frameTo)
-    const costumes = sprite.costumes.slice(fromIndex, toIndex + 1)
-    const duration = costumes.length / (frameFps ?? defaultFps)
-    const animation = new Animation(name, { ...inits, duration })
-    animation.setCostumes(costumes.map((costume) => costume.clone()))
-    for (const costume of costumes) {
-      sprite.removeCostume(costume.name)
+    const fromIndex = getCostumeIndex(costumes, frameFrom)
+    const toIndex = getCostumeIndex(costumes, frameTo)
+    const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone())
+    const duration = animationCostumes.length / (frameFps ?? defaultFps)
+    // drop spx `duration`, which is different from ours
+    if (spxDuration != null) console.warn(`unsupported field: duration for animation ${name}`)
+    if (isLoop != null) console.warn(`unsupported field: isLoop for animation ${name}`)
+    if (onPlay != null) console.warn(`unsupported field: onPlay for animation ${name}`)
+    if (anitype != null) console.warn(`unsupported field: anitype for animation ${name}`)
+    let soundId: string | undefined = undefined
+    if (onStart?.play != null) {
+      const sound = sounds.find((s) => s.name === onStart.play)
+      if (sound == null)
+        console.warn(`Sound ${onStart.play} not found when creating animation ${name}`)
+      else soundId = sound.id
     }
-    return animation
+    const animation = new Animation(name, {
+      id,
+      duration,
+      sound: soundId
+    })
+    const animationCostumeNames = animationCostumes.map((c) => c.name)
+    for (const costume of animationCostumes) {
+      if (costume.name.startsWith(animation.costumeNamePrefix)) {
+        costume.setName(costume.name.slice(animation.costumeNamePrefix.length))
+      }
+    }
+    animation.setCostumes(animationCostumes)
+    return [animation, animationCostumeNames]
   }
 
   export(
     /** Path of directory which contains the sprite's config file */
-    basePath: string
+    {
+      basePath,
+      sounds,
+      includeId = true
+    }: { basePath: string; includeId?: boolean; sounds: Sound[] }
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
     for (const costume of this.costumes) {
-      const [costumeConfig, costumeFiles] = costume.export(basePath)
+      const [costumeConfig, costumeFiles] = costume.export({
+        basePath,
+        includeId,
+        namePrefix: this.costumeNamePrefix
+      })
       costumeConfigs.push(costumeConfig)
       Object.assign(files, costumeFiles)
     }
     const config: RawAnimationConfig = {
       frameFrom: costumeConfigs[0]?.name,
       frameTo: costumeConfigs[costumeConfigs.length - 1]?.name,
-      frameFps: Math.ceil(this.costumes.length / this.duration),
-      onStart: this.sound == null ? undefined : { play: this.sound }
+      frameFps: Math.ceil(this.costumes.length / this.duration)
     }
+    const soundName = sounds.find((s) => s.id === this.sound)?.name
+    if (soundName) {
+      config.onStart = { play: soundName }
+    }
+    if (includeId) config.builder_id = this.id
     return [config, costumeConfigs, files]
   }
 }

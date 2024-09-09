@@ -7,12 +7,13 @@
     :color="color"
     :play-handler="handlePlay"
     :loading="loading"
-    @stop="handleStop"
+    @stop="stop"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onUnmounted, reactive, ref } from 'vue'
+import { registerPlayer } from '@/utils/player-registry'
 import type { Color } from '@/components/ui'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
 
@@ -27,10 +28,12 @@ type Playing = {
 }
 
 const playing = ref<Playing | null>(null)
+const registered = registerPlayer(stop)
 
 async function handlePlay() {
   if (props.src == null) return
   playing.value = makePlaying(props.src)
+  registered.onStart()
   await playing.value.audio.play()
 }
 
@@ -42,19 +45,22 @@ function makePlaying(src: string) {
   })
   audio.addEventListener('error', (e) => {
     console.warn('audio error:', e)
-    handleStop()
+    stop()
   })
   audio.addEventListener('ended', () => {
     // delay to make the animation more natural
-    setTimeout(handleStop, 400)
+    setTimeout(stop, 400)
   })
   return p
 }
 
 const loading = computed(() => props.src == null) // TODO: seeking?
 
-function handleStop() {
+function stop() {
   playing.value?.audio.pause()
   playing.value = null
+  registered.onStopped()
 }
+
+onUnmounted(stop)
 </script>

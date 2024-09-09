@@ -24,15 +24,20 @@ export async function load(owner: string, name: string) {
   return await parseProjectData(projectData)
 }
 
-export async function save(metadata: Metadata, files: Files) {
+export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
   const { owner, name, id } = metadata
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
-  const { fileCollection } = await saveFiles(files)
+
+  const { fileCollection } = await saveFiles(files, signal)
+  signal?.throwIfAborted()
+
   const isPublic = metadata.isPublic ?? IsPublic.personal
   const projectData = await (id != null
-    ? updateProject(owner, name, { isPublic, files: fileCollection })
-    : addProject({ name, isPublic, files: fileCollection }))
+    ? updateProject(owner, name, { isPublic, files: fileCollection }, signal)
+    : addProject({ name, isPublic, files: fileCollection }, signal))
+  signal?.throwIfAborted()
+
   return { metadata: projectData, files }
 }
 
@@ -42,11 +47,12 @@ export async function parseProjectData({ files: fileCollection, ...metadata }: P
 }
 
 export async function saveFiles(
-  files: Files
+  files: Files,
+  signal?: AbortSignal
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const fileCollection = Object.fromEntries(
     await Promise.all(
-      Object.keys(files).map(async (path) => [path, await saveFile(files[path]!)] as const)
+      Object.keys(files).map(async (path) => [path, await saveFile(files[path]!, signal)] as const)
     )
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
@@ -90,8 +96,8 @@ export function createFileWithWebUrl(url: WebUrl, name = filename(url)) {
   })
 }
 
-export async function saveFileForWebUrl(file: File) {
-  const universalUrl = await saveFile(file)
+export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
+  const universalUrl = await saveFile(file, signal)
   return universalUrlToWebUrl(universalUrl)
 }
 
@@ -102,11 +108,11 @@ async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
   return map[universalUrl]
 }
 
-async function saveFile(file: File) {
+async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 
-  const url = await (isInlineable(file) ? inlineFile(file) : uploadToKodo(file))
+  const url = await (isInlineable(file) ? inlineFile(file) : uploadToKodo(file, signal))
   setUniversalUrl(file, url)
   return url
 }
@@ -135,7 +141,7 @@ type KodoUploadRes = {
   hash: string
 }
 
-async function uploadToKodo(file: File): Promise<UniversalUrl> {
+async function uploadToKodo(file: File, signal?: AbortSignal): Promise<UniversalUrl> {
   const nativeFile = await toNativeFile(file)
   const { token, maxSize, bucket, region } = await getUpInfo()
   if (nativeFile.size > maxSize) throw new Error(`file size exceeds the limit (${maxSize} bytes)`)
@@ -150,13 +156,21 @@ async function uploadToKodo(file: File): Promise<UniversalUrl> {
     { region: region as any }
   )
   const { key } = await new Promise<KodoUploadRes>((resolve, reject) => {
-    observable.subscribe({
+    if (signal?.aborted) {
+      reject(signal.reason)
+      return
+    }
+    const subscription = observable.subscribe({
       error(e) {
         reject(e)
       },
       complete(res) {
         resolve(res)
       }
+    })
+    signal?.addEventListener('abort', () => {
+      subscription.unsubscribe()
+      reject(signal.reason)
     })
   })
   return `${fileUniversalUrlSchemes.kodo}//${bucket}/${key}`

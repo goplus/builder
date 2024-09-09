@@ -13,10 +13,10 @@
   <EditorList v-else color="stage" :add-text="$t({ en: 'Add widget', zh: '添加控件' })">
     <WidgetItem
       v-for="widget in stage.widgets"
-      :key="widget.name"
+      :key="widget.id"
       :stage="stage"
       :widget="widget"
-      :selected="selected?.name === widget.name"
+      :selected="selected?.id === widget.id"
       @click="handleSelect(widget)"
     />
     <template #add-options>
@@ -47,7 +47,7 @@ const stage = computed(() => editorCtx.project.stage)
 const selected = computed(() => stage.value.selectedWidget)
 
 function handleSelect(widget: Widget) {
-  stage.value.selectWidget(widget.name)
+  stage.value.selectWidget(widget.id)
 }
 
 const handleAddMonitor = useMessageHandle(
@@ -56,7 +56,7 @@ const handleAddMonitor = useMessageHandle(
     const action = { name: { en: 'Add widget', zh: '添加控件' } }
     await editorCtx.project.history.doAction(action, () => {
       stage.value.addWidget(monitor)
-      stage.value.selectWidget(monitor.name)
+      stage.value.selectWidget(monitor.id)
     })
   },
   {

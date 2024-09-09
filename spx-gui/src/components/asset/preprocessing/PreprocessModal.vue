@@ -56,7 +56,7 @@
           <ul class="costume-list">
             <CostumeItem
               v-for="costume in costumes"
-              :key="costume.name"
+              :key="costume.id"
               :costume="costume"
               :selected="isCostumeSelected(costume)"
               @click="handleCostumeClick(costume)"
@@ -191,14 +191,14 @@ function handleMethodApplied(method: Method, output: File[]) {
   const idx = supportedMethods.value.findIndex((m) => m.value === method)
   // methods are applied in order, so we need to unapply the following methods, as thier inputs have changed
   outputs.splice(idx)
-  outputs.push(output)
+  outputs[idx] = output
   updateCostumes(output)
 }
 
 function handleMethodCancel(method: Method) {
   const idx = supportedMethods.value.findIndex((m) => m.value === method)
   outputs.splice(idx)
-  outputs.push(null)
+  outputs[idx] = null
   updateCostumes(getMethodInput(method))
 }
 
@@ -220,11 +220,11 @@ async function updateCostumes(files: File[]) {
 }
 
 function isCostumeSelected(costume: Costume) {
-  return selectedCostumes.some((a) => a.name === costume.name)
+  return selectedCostumes.some((a) => a.id === costume.id)
 }
 
 async function handleCostumeClick(costume: Costume) {
-  const index = selectedCostumes.findIndex((c) => c.name === costume.name)
+  const index = selectedCostumes.findIndex((c) => c.id === costume.id)
   if (index < 0) selectedCostumes.push(costume)
   else selectedCostumes.splice(index, 1)
 }
@@ -233,7 +233,11 @@ const handleConfirm = useMessageHandle(
   async () => {
     if (isOnline.value) {
       const files = selectedCostumes
-        .map((costume) => costume.export(''))
+        .map((costume) =>
+          costume.export({
+            basePath: ''
+          })
+        )
         .reduce((acc, [, files]) => ({ ...acc, ...files }), {})
       await saveFiles(files)
     }
@@ -288,7 +292,7 @@ watch(
   margin-bottom: -16px;
 }
 .footer-title {
-  color: --ui-color-title;
+  color: var(--ui-color-title);
 }
 .costume-wrapper {
   width: 100%;

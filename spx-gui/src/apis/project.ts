@@ -30,8 +30,8 @@ export type ProjectData = {
 
 export type AddProjectParams = Pick<ProjectData, 'name' | 'isPublic' | 'files'>
 
-export function addProject(params: AddProjectParams) {
-  return client.post('/project', params) as Promise<ProjectData>
+export function addProject(params: AddProjectParams, signal?: AbortSignal) {
+  return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
 export type UpdateProjectParams = Pick<ProjectData, 'isPublic' | 'files'>
@@ -40,8 +40,13 @@ function encode(owner: string, name: string) {
   return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
 }
 
-export function updateProject(owner: string, name: string, params: UpdateProjectParams) {
-  return client.put(`/project/${encode(owner, name)}`, params) as Promise<ProjectData>
+export function updateProject(
+  owner: string,
+  name: string,
+  params: UpdateProjectParams,
+  signal?: AbortSignal
+) {
+  return client.put(`/project/${encode(owner, name)}`, params, { signal }) as Promise<ProjectData>
 }
 
 export function deleteProject(owner: string, name: string) {

@@ -46,11 +46,11 @@ describe('Stage', () => {
     const [stageConfig] = stage.export()
     expect(stageConfig.widgets!.length).toBe(2)
     expect(stageConfig.widgets![0]).toEqual({
+      builder_id: monitor1.id,
       type: 'monitor',
       name: 'monitor',
       mode: 1,
       target: '',
-      color: 15629590,
       label: 'label1',
       val: 'getVar:value1',
       x: 10,
@@ -59,11 +59,11 @@ describe('Stage', () => {
       visible: true
     })
     expect(stageConfig.widgets![1]).toEqual({
+      builder_id: monitor2.id,
       type: 'monitor',
       name: 'monitor2',
       mode: 1,
       target: '',
-      color: 15629590,
       label: 'label2',
       val: 'getVar:value2',
       x: 0,
@@ -75,7 +75,7 @@ describe('Stage', () => {
 
   it('should work well with zorder', async () => {
     const stage = new Stage()
-    const monitor1 = new Monitor('monitor', {
+    const monitor = new Monitor('monitor', {
       label: 'label1',
       variableName: 'value1',
       x: 10,
@@ -83,7 +83,7 @@ describe('Stage', () => {
       size: 2,
       visible: true
     })
-    stage.addWidget(monitor1)
+    stage.addWidget(monitor)
     const monitor2 = new Monitor('monitor2', {
       label: 'label2',
       variableName: 'value2',
@@ -93,32 +93,32 @@ describe('Stage', () => {
       visible: false
     })
     stage.addWidget(monitor2)
-    stage.upWidgetZorder('monitor')
-    expect(stage.widgetsZorder).toEqual(['monitor2', 'monitor'])
-    stage.upWidgetZorder('monitor')
-    expect(stage.widgetsZorder).toEqual(['monitor2', 'monitor'])
-    stage.downWidgetZorder('monitor')
-    expect(stage.widgetsZorder).toEqual(['monitor', 'monitor2'])
-    stage.topWidgetZorder('monitor')
-    expect(stage.widgetsZorder).toEqual(['monitor2', 'monitor'])
-    stage.bottomWidgetZorder('monitor')
-    expect(stage.widgetsZorder).toEqual(['monitor', 'monitor2'])
-    stage.bottomWidgetZorder('monitor2')
-    expect(stage.widgetsZorder).toEqual(['monitor2', 'monitor'])
+    stage.upWidgetZorder(monitor.id)
+    expect(stage.widgetsZorder).toEqual([monitor2.id, monitor.id])
+    stage.upWidgetZorder(monitor.id)
+    expect(stage.widgetsZorder).toEqual([monitor2.id, monitor.id])
+    stage.downWidgetZorder(monitor.id)
+    expect(stage.widgetsZorder).toEqual([monitor.id, monitor2.id])
+    stage.topWidgetZorder(monitor.id)
+    expect(stage.widgetsZorder).toEqual([monitor2.id, monitor.id])
+    stage.bottomWidgetZorder(monitor.id)
+    expect(stage.widgetsZorder).toEqual([monitor.id, monitor2.id])
+    stage.bottomWidgetZorder(monitor2.id)
+    expect(stage.widgetsZorder).toEqual([monitor2.id, monitor.id])
 
     const [stageConfig] = stage.export()
     expect(stageConfig.widgets!.length).toBe(2)
-    expect(stageConfig.widgets![0].name).toBe('monitor2')
-    expect(stageConfig.widgets![1].name).toBe('monitor')
+    expect(stageConfig.widgets![0].builder_id).toBe(monitor2.id)
+    expect(stageConfig.widgets![1].builder_id).toBe(monitor.id)
 
-    monitor1.setName('monitor1')
+    monitor.setName('monitor1')
     await nextTick()
-    expect(stage.widgetsZorder).toEqual(['monitor2', 'monitor1'])
+    expect(stage.widgetsZorder).toEqual([monitor2.id, monitor.id])
 
-    stage.removeWidget('monitor2')
+    stage.removeWidget(monitor2.id)
     expect(stage.widgets.length).toBe(1)
     expect(stage.widgets[0].name).toBe('monitor1')
-    expect(stage.widgetsZorder).toEqual(['monitor1'])
+    expect(stage.widgetsZorder).toEqual([monitor.id])
   })
 
   it('should work well with load', async () => {
@@ -126,11 +126,11 @@ describe('Stage', () => {
       {
         widgets: [
           {
+            builder_id: 'monitor#1111',
             type: 'monitor',
             name: 'monitor',
             mode: 1,
             target: '',
-            color: 15629590,
             label: 'label1',
             val: 'getVar:value1',
             x: 10,
@@ -139,11 +139,11 @@ describe('Stage', () => {
             visible: true
           },
           {
+            builder_id: 'monitor#2222',
             type: 'monitor',
             name: 'monitor2',
             mode: 1,
             target: '',
-            color: 15629590,
             label: 'label2',
             val: 'getVar:value2',
             x: 0,
@@ -168,11 +168,11 @@ describe('Stage', () => {
     const [stageConfig] = stage.export()
     expect(stageConfig.widgets!.length).toBe(2)
     expect(stageConfig.widgets![0]).toEqual({
+      builder_id: 'monitor#1111',
       type: 'monitor',
       name: 'monitor',
       mode: 1,
       target: '',
-      color: 15629590,
       label: 'label1',
       val: 'getVar:value1',
       x: 10,
@@ -181,11 +181,11 @@ describe('Stage', () => {
       visible: true
     })
     expect(stageConfig.widgets![1]).toEqual({
+      builder_id: 'monitor#2222',
       type: 'monitor',
       name: 'monitor2',
       mode: 1,
       target: '',
-      color: 15629590,
       label: 'label2',
       val: 'getVar:value2',
       x: 0,

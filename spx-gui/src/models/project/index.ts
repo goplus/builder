@@ -22,6 +22,8 @@ import { Sound } from '../sound'
 import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
+import { Cancelled } from '@/utils/exception'
+import { untilConditionMet } from '@/utils/utils'
 
 export type { Action } from './history'
 
@@ -43,11 +45,11 @@ const projectConfigFilePath = join('assets', projectConfigFileName)
 export type Selected =
   | {
       type: 'sprite'
-      name: string
+      id: string
     }
   | {
       type: 'sound'
-      name: string
+      id: string
     }
   | {
       type: 'stage'
@@ -111,10 +113,11 @@ export class Project extends Disposable {
   sounds: Sound[]
   zorder: string[]
 
-  removeSprite(name: string) {
-    const idx = this.sprites.findIndex((s) => s.name === name)
+  removeSprite(id: string) {
+    const idx = this.sprites.findIndex((s) => s.id === id)
+    if (idx < 0) throw new Error(`sprite ${id} not found`)
     const [sprite] = this.sprites.splice(idx, 1)
-    this.zorder = this.zorder.filter((v) => v !== sprite.name)
+    this.zorder = this.zorder.filter((v) => v !== sprite.id)
     sprite.dispose()
     this.autoSelect()
   }
@@ -128,53 +131,43 @@ export class Project extends Disposable {
     sprite.setProject(this)
     sprite.addDisposer(() => sprite.setProject(null))
     this.sprites.push(sprite)
-    if (!this.zorder.includes(sprite.name)) {
-      this.zorder = [...this.zorder, sprite.name]
+    if (!this.zorder.includes(sprite.id)) {
+      this.zorder = [...this.zorder, sprite.id]
     }
-    sprite.addDisposer(
-      // update zorder & selected when sprite renamed
-      watch(
-        () => sprite.name,
-        (newName, originalName) => {
-          this.zorder = this.zorder.map((v) => (v === originalName ? newName : v))
-          if (this.selected?.type === 'sprite' && this.selected.name === originalName) {
-            this.select({ type: 'sprite', name: newName })
-          }
-        }
-      )
-    )
   }
+  // TODO: Test this method
   private setSpriteZorderIdx(
-    name: string,
+    id: string,
     newIdx: number | ((idx: number, length: number) => number)
   ) {
-    const idx = this.zorder.findIndex((v) => v === name)
-    if (idx < 0) throw new Error(`sprite ${name} not found in zorder`)
+    const idx = this.zorder.findIndex((v) => v === id)
+    if (idx < 0) throw new Error(`sprite ${id} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx
-    const newZorder = this.zorder.filter((v) => v !== name)
-    newZorder.splice(newIdxVal, 0, name)
+    const newZorder = this.zorder.filter((v) => v !== id)
+    newZorder.splice(newIdxVal, 0, id)
     this.zorder = newZorder
   }
-  upSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i, len) => Math.min(i + 1, len - 1))
+  upSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (i, len) => Math.min(i + 1, len - 1))
   }
-  downSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (i) => Math.max(i - 1, 0))
+  downSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (i) => Math.max(i - 1, 0))
   }
-  topSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, (_, len) => len - 1)
+  topSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, (_, len) => len - 1)
   }
-  bottomSpriteZorder(name: string) {
-    this.setSpriteZorderIdx(name, 0)
+  bottomSpriteZorder(id: string) {
+    this.setSpriteZorderIdx(id, 0)
   }
 
-  removeSound(name: string) {
-    const idx = this.sounds.findIndex((s) => s.name === name)
+  removeSound(id: string) {
+    const idx = this.sounds.findIndex((s) => s.id === id)
+    if (idx < 0) throw new Error(`sound ${id} not found`)
     const [sound] = this.sounds.splice(idx, 1)
-    // TODO: it may be better to do `setSound(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
+    // TODO: it may be better to do `setSoundId(null)` in `Animation`, but for now it is difficult for `Animation` to know when sound is removed
     for (const sprite of this.sprites) {
       for (const animation of sprite.animations) {
-        if (animation.sound === sound.name) {
+        if (animation.sound === sound.id) {
           animation.setSound(null)
         }
       }
@@ -192,25 +185,6 @@ export class Project extends Disposable {
     sound.setProject(this)
     sound.addDisposer(() => sound.setProject(null))
     this.sounds.push(sound)
-    sound.addDisposer(
-      // update animation.sound & selected when sound renamed
-      // TODO: there are quite some similar logic to deal with such references among models, we may introduce model `ID` to simplify that
-      watch(
-        () => sound.name,
-        (newName, originalName) => {
-          for (const sprite of this.sprites) {
-            for (const animation of sprite.animations) {
-              if (animation.sound === originalName) {
-                animation.setSound(newName)
-              }
-            }
-          }
-          if (this.selected?.type === 'sound' && this.selected.name === originalName) {
-            this.select({ type: 'sound', name: newName })
-          }
-        }
-      )
-    )
   }
 
   setPublic(isPublic: IsPublic) {
@@ -222,13 +196,13 @@ export class Project extends Disposable {
   get selectedSprite() {
     const { selected, sprites } = this
     if (selected?.type !== 'sprite') return null
-    return sprites.find((s) => s.name === selected.name) ?? null
+    return sprites.find((s) => s.id === selected.id) ?? null
   }
 
   get selectedSound() {
     const { selected, sounds } = this
     if (selected?.type !== 'sound') return null
-    return sounds.find((s) => s.name === selected.name) ?? null
+    return sounds.find((s) => s.id === selected.id) ?? null
   }
 
   select(selected: Selected) {
@@ -243,11 +217,11 @@ export class Project extends Disposable {
     const selected = this.selected
     if (selected?.type === 'stage') return
     if (selected?.type === 'sound' && this.selectedSound == null && this.sounds[0] != null) {
-      this.select({ type: 'sound', name: this.sounds[0].name })
+      this.select({ type: 'sound', id: this.sounds[0].id })
       return
     }
     if (this.selectedSprite == null) {
-      this.select(this.sprites[0] != null ? { type: 'sprite', name: this.sprites[0].name } : null)
+      this.select(this.sprites[0] != null ? { type: 'sprite', id: this.sprites[0].id } : null)
     }
   }
 
@@ -265,6 +239,8 @@ export class Project extends Disposable {
     this.addDisposer(() => {
       this.sprites.splice(0).forEach((s) => s.dispose())
       this.sounds.splice(0).forEach((s) => s.dispose())
+      this.zorder = []
+      this.stage.dispose()
     })
     return reactiveThis
   }
@@ -299,18 +275,30 @@ export class Project extends Disposable {
       builder_soundOrder: soundOrder,
       ...rawStageConfig
     } = config
+
+    const sounds = await Sound.loadAll(files)
+    const sprites = await Sprite.loadAll(files, sounds)
+
     const widgets: RawWidgetConfig[] = []
     const zorder: string[] = []
     rawZorder?.forEach((item) => {
-      if (typeof item === 'string') zorder.push(item)
-      else widgets.push(item)
+      if (typeof item === 'string') {
+        // `item` is a sprite name
+        const id = sprites.find((s) => s.name === item)?.id
+        if (id == null) {
+          console.warn(`sprite ${item} not found`)
+          return
+        }
+        zorder.push(id)
+      } else {
+        // `item` is a widget config
+        widgets.push(item)
+      }
     })
+
     const stageConfig = { ...rawStageConfig, widgets }
-    const [stage, sounds, sprites] = await Promise.all([
-      Stage.load(stageConfig, files),
-      Sound.loadAll(files),
-      Sprite.loadAll(files)
-    ])
+    const stage = await Stage.load(stageConfig, files)
+
     this.stage = stage
     this.sprites.splice(0).forEach((s) => s.dispose())
     orderBy(sprites, spriteOrder).forEach((s) => this.addSprite(s))
@@ -324,6 +312,11 @@ export class Project extends Disposable {
     const files: Files = {}
     const [stageConfig, stageFiles] = this.stage.export()
     const { widgets, ...restStageConfig } = stageConfig
+    const zorderNames = this.zorder.map((id) => {
+      const sprite = this.sprites.find((s) => s.id === id)
+      if (sprite == null) throw new Error(`sprite ${id} not found`)
+      return sprite.name
+    })
     const config: RawProjectConfig = {
       ...restStageConfig,
       run: {
@@ -333,13 +326,13 @@ export class Project extends Disposable {
         width: stageConfig.map?.width,
         height: stageConfig.map?.height
       },
-      zorder: [...this.zorder, ...(widgets ?? [])],
-      builder_spriteOrder: this.sprites.map((s) => s.name),
-      builder_soundOrder: this.sounds.map((s) => s.name)
+      zorder: [...zorderNames, ...(widgets ?? [])],
+      builder_spriteOrder: this.sprites.map((s) => s.id),
+      builder_soundOrder: this.sounds.map((s) => s.id)
     }
     files[projectConfigFilePath] = fromConfig(projectConfigFileName, config)
     Object.assign(files, stageFiles)
-    Object.assign(files, ...this.sprites.map((s) => s.export()))
+    Object.assign(files, ...this.sprites.map((s) => s.export({ sounds: this.sounds })))
     Object.assign(files, ...this.sounds.map((s) => s.export()))
     return files
   }
@@ -383,12 +376,28 @@ export class Project extends Disposable {
   }
 
   /** Save to cloud */
+  private saveToCloudAbortController: AbortController | null = null
+  private get isSavingToCloud() {
+    return this.saveToCloudAbortController != null
+  }
   async saveToCloud() {
-    const [metadata, files] = await this.export()
-    if (this.isDisposed) throw new Error('disposed')
-    const saved = await cloudHelper.save(metadata, files)
-    this.loadMetadata(saved.metadata)
-    this.lastSyncedFilesHash = await hashFiles(files)
+    if (this.saveToCloudAbortController != null) {
+      this.saveToCloudAbortController.abort(new Cancelled('aborted'))
+    }
+    const abortController = new AbortController()
+    this.saveToCloudAbortController = abortController
+
+    try {
+      if (this.isDisposed) throw new Error('disposed')
+      const [metadata, files] = await this.export()
+      const saved = await cloudHelper.save(metadata, files, abortController.signal)
+      this.loadMetadata(saved.metadata)
+      this.lastSyncedFilesHash = await hashFiles(files)
+    } finally {
+      if (this.saveToCloudAbortController === abortController) {
+        this.saveToCloudAbortController = null
+      }
+    }
   }
 
   /** Load from local cache */
@@ -401,8 +410,8 @@ export class Project extends Disposable {
 
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
-    const [metadata, files] = await this.export()
     if (this.isDisposed) throw new Error('disposed')
+    const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
   }
 
@@ -428,13 +437,25 @@ export class Project extends Disposable {
         this.autoSaveToCloudState = AutoSaveToCloudState.Saving
 
         try {
+          if (this.isSavingToCloud) {
+            await untilConditionMet(
+              () => this.isSavingToCloud,
+              () => !this.isSavingToCloud
+            )
+          }
+
           if (this.hasUnsyncedChanges) await this.saveToCloud()
           this.autoSaveToCloudState = AutoSaveToCloudState.Saved
         } catch (e) {
           this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-          retryAutoSave()
-          await this.saveToLocalCache(localCacheKey) // prevent data loss
-          console.error('failed to auto save to cloud', e)
+          if (e instanceof Cancelled) {
+            autoSaveToCloud()
+            save.flush()
+          } else {
+            retryAutoSave()
+            await this.saveToLocalCache(localCacheKey) // prevent data loss
+            console.error('failed to auto save to cloud', e)
+          }
           return
         }
 
@@ -453,6 +474,20 @@ export class Project extends Disposable {
         }
       }, 5000)
       this.addDisposer(retryAutoSave.cancel)
+
+      // fire pending or retryable auto saves immediately when a new save occurs, making autoSaveToCloudState more responsive
+      this.addDisposer(
+        watch(
+          () => this.isSavingToCloud,
+          async () => {
+            if (this.isSavingToCloud) {
+              await retryAutoSave.flush()
+              save.flush()
+            }
+          },
+          { immediate: true }
+        )
+      )
 
       return () => {
         retryAutoSave.cancel()
@@ -527,6 +562,6 @@ export function fullName(owner: string, name: string) {
 function orderBy<T extends Sprite | Sound>(list: T[], order: string[] | undefined) {
   if (order == null) return list
   return list.slice().sort((a, b) => {
-    return order.indexOf(a.name) - order.indexOf(b.name)
+    return order.indexOf(a.id) - order.indexOf(b.id)
   })
 }

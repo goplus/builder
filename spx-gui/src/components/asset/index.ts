@@ -18,11 +18,11 @@ import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
-  if (asset instanceof Sprite) project.select({ type: 'sprite', name: asset.name })
-  else if (asset instanceof Sound) project.select({ type: 'sound', name: asset.name })
+  if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
+  else if (asset instanceof Sound) project.select({ type: 'sound', id: asset.id })
   else if (asset instanceof Backdrop) {
     project.select({ type: 'stage' })
-    project.stage.setDefaultBackdrop(asset.name)
+    project.stage.setDefaultBackdrop(asset.id)
   }
 }
 
@@ -71,6 +71,7 @@ export function useAddSpriteFromLocalFile() {
     }
     await project.history.doAction({ name: actionMessage }, async () => {
       project.addSprite(sprite)
+      await sprite.autoFitCostumes()
       await sprite.autoFit()
     })
     selectAsset(project, sprite)
@@ -89,9 +90,10 @@ export function useAddCostumeFromLocalFile() {
       title: actionMessage,
       confirmText: { en: 'Add', zh: '添加' }
     })
-    await project.history.doAction({ name: actionMessage }, () => {
+    await project.history.doAction({ name: actionMessage }, async () => {
       for (const costume of costumes) sprite.addCostume(costume)
-      sprite.setDefaultCostume(costumes[0].name)
+      await sprite.autoFitCostumes(costumes)
+      sprite.setDefaultCostume(costumes[0].id)
     })
   }
 }

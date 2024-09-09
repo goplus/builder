@@ -3,19 +3,20 @@
  * @desc Object-model definition for Stage & Costume
  */
 
-import { reactive, watch } from 'vue'
+import { reactive } from 'vue'
 import { filename } from '@/utils/path'
 import { toText, type Files, fromText } from './common/file'
 import { ensureValidBackdropName, ensureValidWidgetName } from './common/asset-name'
 import type { Size } from './common'
 import { Backdrop, type RawBackdropConfig } from './backdrop'
 import { type RawWidgetConfig, type Widget, loadWidget } from './widget'
+import { Disposable } from '@/utils/disposable'
 
 export type StageInits = {
   backdropIndex: number
   mapWidth?: number
   mapHeight?: number
-  mapMode: MapMode
+  mapMode?: MapMode
 }
 
 export type RawMapConfig = {
@@ -47,20 +48,21 @@ const stageCodeFileName = filename(stageCodeFilePath)
 
 export const defaultMapSize: MapSize = { width: 480, height: 360 }
 
-export class Stage {
+export class Stage extends Disposable {
   code: string
   setCode(code: string) {
     this.code = code
   }
+  codeFilePath = stageCodeFilePath
 
   backdrops: Backdrop[]
   private backdropIndex: number
   get defaultBackdrop(): Backdrop | null {
     return this.backdrops[this.backdropIndex] ?? null
   }
-  setDefaultBackdrop(name: string) {
-    const idx = this.backdrops.findIndex((s) => s.name === name)
-    if (idx === -1) throw new Error(`backdrop ${name} not found`)
+  setDefaultBackdrop(id: string) {
+    const idx = this.backdrops.findIndex((s) => s.id === id)
+    if (idx === -1) throw new Error(`backdrop ${id} not found`)
     this.backdropIndex = idx
   }
 
@@ -75,8 +77,8 @@ export class Stage {
     this.backdrops.push(backdrop)
   }
 
-  removeBackdrop(name: string): void {
-    const idx = this.backdrops.findIndex((s) => s.name === name)
+  removeBackdrop(id: string): void {
+    const idx = this.backdrops.findIndex((s) => s.id === id)
     if (idx === -1) {
       throw new Error(`backdrop ${name} not found`)
     }
@@ -109,71 +111,55 @@ export class Stage {
     widget.addDisposer(() => widget.setStage(null))
     this.widgets.push(widget)
 
-    if (!this.widgetsZorder.includes(widget.name)) {
-      this.widgetsZorder = [...this.widgetsZorder, widget.name]
+    if (!this.widgetsZorder.includes(widget.id)) {
+      this.widgetsZorder = [...this.widgetsZorder, widget.id]
     }
-    widget.addDisposer(
-      // update zorder & selected when widget renamed
-      watch(
-        () => widget.name,
-        (newName, originalName) => {
-          this.widgetsZorder = this.widgetsZorder.map((v) => (v === originalName ? newName : v))
-          if (this.selectedWidgetName === originalName) {
-            this.selectedWidgetName = newName
-          }
-        }
-      )
-    )
-    widget.addDisposer(() => {
-      this.widgetsZorder = this.widgetsZorder.filter((v) => v !== widget.name)
-      if (this.selectedWidgetName === widget.name) {
-        this.selectedWidgetName = null
-      }
-    })
   }
-  removeWidget(name: string): void {
-    const idx = this.widgets.findIndex((s) => s.name === name)
+  removeWidget(id: string): void {
+    const idx = this.widgets.findIndex((s) => s.id === id)
     if (idx === -1) {
-      throw new Error(`widget ${name} not found`)
+      throw new Error(`widget ${id} not found`)
     }
 
     const [widget] = this.widgets.splice(idx, 1)
     widget.dispose()
+
+    this.widgetsZorder = this.widgetsZorder.filter((v) => v !== id)
   }
   private setWidgetZorderIdx(
-    name: string,
+    id: string,
     newIdx: number | ((idx: number, length: number) => number)
   ) {
-    const idx = this.widgetsZorder.findIndex((v) => v === name)
-    if (idx < 0) throw new Error(`widget ${name} not found in zorder`)
+    const idx = this.widgetsZorder.findIndex((v) => v === id)
+    if (idx < 0) throw new Error(`widget ${id} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.widgetsZorder.length) : newIdx
-    const newZorder = this.widgetsZorder.filter((v) => v !== name)
-    newZorder.splice(newIdxVal, 0, name)
+    const newZorder = this.widgetsZorder.filter((v) => v !== id)
+    newZorder.splice(newIdxVal, 0, id)
     this.widgetsZorder = newZorder
   }
-  upWidgetZorder(name: string) {
-    this.setWidgetZorderIdx(name, (i, len) => Math.min(i + 1, len - 1))
+  upWidgetZorder(id: string) {
+    this.setWidgetZorderIdx(id, (i, len) => Math.min(i + 1, len - 1))
   }
-  downWidgetZorder(name: string) {
-    this.setWidgetZorderIdx(name, (i) => Math.max(i - 1, 0))
+  downWidgetZorder(id: string) {
+    this.setWidgetZorderIdx(id, (i) => Math.max(i - 1, 0))
   }
-  topWidgetZorder(name: string) {
-    this.setWidgetZorderIdx(name, (_, len) => len - 1)
+  topWidgetZorder(id: string) {
+    this.setWidgetZorderIdx(id, (_, len) => len - 1)
   }
-  bottomWidgetZorder(name: string) {
-    this.setWidgetZorderIdx(name, 0)
+  bottomWidgetZorder(id: string) {
+    this.setWidgetZorderIdx(id, 0)
   }
 
-  private selectedWidgetName: string | null = null
-  selectWidget(name: string | null) {
-    this.selectedWidgetName = name
+  private selectedWidgetId: string | null = null
+  selectWidget(id: string | null) {
+    this.selectedWidgetId = id
   }
   get selectedWidget(): Widget | null {
-    return this.widgets.find((w) => w.name === this.selectedWidgetName) ?? null
+    return this.widgets.find((w) => w.id === this.selectedWidgetId) ?? null
   }
   autoSelectWidget() {
     if (this.selectedWidget != null) return
-    this.selectWidget(this.widgets[0]?.name)
+    this.selectWidget(this.widgets[0]?.id)
   }
 
   mapWidth: number
@@ -196,14 +182,19 @@ export class Stage {
   }
 
   constructor(code: string = '', inits?: Partial<StageInits>) {
+    super()
     this.code = code
     this.backdrops = []
     this.backdropIndex = inits?.backdropIndex ?? 0
     this.widgets = []
     this.widgetsZorder = []
+    this.addDisposer(() => {
+      this.widgets.splice(0).forEach((w) => w.dispose())
+      this.widgetsZorder = []
+    })
     this.mapWidth = inits?.mapWidth ?? defaultMapSize.width
     this.mapHeight = inits?.mapHeight ?? defaultMapSize.height
-    this.mapMode = getMapMode(inits?.mapMode)
+    this.mapMode = inits?.mapMode ?? MapMode.fillRatio
     return reactive(this) as this
   }
 
@@ -252,9 +243,9 @@ export class Stage {
       Object.assign(files, backdropFiles)
     }
     const { backdropIndex, mapWidth, mapHeight, mapMode } = this
-    const widgetsConfig: RawWidgetConfig[] = this.widgetsZorder.map((widgetName) => {
-      const widget = this.widgets.find((w) => w.name === widgetName)
-      if (widget == null) throw new Error(`widget ${widgetName} not found`)
+    const widgetsConfig: RawWidgetConfig[] = this.widgetsZorder.map((id) => {
+      const widget = this.widgets.find((w) => w.id === id)
+      if (widget == null) throw new Error(`widget ${id} not found`)
       return widget.export()
     })
     const config: RawStageConfig = {

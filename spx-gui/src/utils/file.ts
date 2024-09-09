@@ -140,6 +140,10 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
         .then((url) => {
           urlRef.value = url
         })
+        .catch((e) => {
+          if (e instanceof Cancelled) return
+          throw e
+        })
         .finally(() => {
           loadingRef.value = false
         })

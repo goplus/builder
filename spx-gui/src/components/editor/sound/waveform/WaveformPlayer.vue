@@ -18,6 +18,7 @@ import { ref, watch } from 'vue'
 import WaveformWithControls from './WaveformWithControls.vue'
 import { getAudioContext, trimAndApplyGainToWavBlob } from '@/utils/audio'
 import { useAsyncComputed } from '@/utils/utils'
+import { registerPlayer } from '@/utils/player-registry'
 
 const props = defineProps<{
   audioSrc?: string
@@ -25,6 +26,8 @@ const props = defineProps<{
   range: { left: number; right: number }
   gain: number
 }>()
+
+const registered = registerPlayer(stop)
 
 const play = async () => {
   if (!audioElement.value) return
@@ -36,20 +39,24 @@ const play = async () => {
     return
   }
   audioElement.value.currentTime = audioElement.value.duration * props.range.left
+  registered.onStart()
   await audioElement.value.play()
   emit('play')
 }
 
+function stop() {
+  if (!audioElement.value) return
+  audioElement.value.pause()
+  audioElement.value.currentTime = Number.isFinite(audioElement.value.duration)
+    ? audioElement.value.duration * props.range.left
+    : 0
+  progress.value = 0
+  registered.onStopped()
+}
+
 defineExpose({
   play,
-  stop: () => {
-    if (!audioElement.value) return
-    audioElement.value.pause()
-    audioElement.value.currentTime = Number.isFinite(audioElement.value.duration)
-      ? audioElement.value.duration * props.range.left
-      : 0
-    progress.value = 0
-  },
+  stop,
   exportWav: async (): Promise<Blob> => {
     if (!props.audioSrc) throw new Error('audioSrc is not provided')
     const audio = audioElement.value

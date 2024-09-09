@@ -3,8 +3,9 @@
 </template>
 
 <script lang="ts" setup>
+import { onUnmounted, ref } from 'vue'
+import { registerPlayer } from '@/utils/player-registry'
 import { Project } from '@/models/project'
-import { ref } from 'vue'
 import IframeDisplay from './IframeDisplay.vue'
 
 const props = defineProps<{ project: Project }>()
@@ -19,13 +20,26 @@ const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
   emit('console', type, args)
 }
 
+const registered = registerPlayer(() => {
+  // For now we don't need to implement stop handler here because there's no chance for
+  // the user to activate another audio player when `ProjectRunner` visible.
+  // If you see this warning in console, you need to think what the proper behavior is.
+  console.warn('unexpected call')
+})
+
+onUnmounted(() => {
+  registered.onStopped()
+})
+
 defineExpose({
   run: async () => {
+    registered.onStart()
     const gbpFile = await props.project.exportGbpFile()
     zipData.value = await gbpFile.arrayBuffer()
   },
   stop: () => {
     zipData.value = null
+    registered.onStopped()
   }
 })
 </script>
