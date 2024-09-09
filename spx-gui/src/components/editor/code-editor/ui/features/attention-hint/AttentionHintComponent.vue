@@ -3,6 +3,7 @@ import { AttentionHint } from './attention-hint'
 import {
   type AttentionHintDecoration,
   AttentionHintLevelEnum,
+  type DocPreview,
   EditorUI
 } from '@/components/editor/code-editor/EditorUI'
 import { onMounted, onUnmounted } from 'vue'
@@ -19,6 +20,7 @@ const updateAttentionHint = debounce(async () => {
   props.ui.requestAttentionHintsProviderResolve(
     model,
     (hints: AttentionHintDecoration[]) => {
+      props.attentionHint.setAttentionHintDecorations(hints)
       props.attentionHint.attentionHintDecoration.clear()
       props.attentionHint.attentionHintDecoration.set(
         hints.map((hint) => {

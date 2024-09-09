@@ -1,9 +1,11 @@
 import { editor as IEditor, type IDisposable, type IRange, Range } from 'monaco-editor'
 import { StyleSheetContent } from '@/components/editor/code-editor/ui/common/style-sheet-content'
+import type { AttentionHintDecoration } from '@/components/editor/code-editor/EditorUI'
 
 export class AttentionHint extends StyleSheetContent implements IDisposable {
   editor: IEditor.IStandaloneCodeEditor
   attentionHintDecoration: IEditor.IEditorDecorationsCollection
+  attentionHintDecorations: AttentionHintDecoration[] = []
   abortController = new AbortController()
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
@@ -12,7 +14,11 @@ export class AttentionHint extends StyleSheetContent implements IDisposable {
     this.attentionHintDecoration = this.editor.createDecorationsCollection()
   }
 
-  createWarningAttentionHint(range: IRange, content: string) {
+  public setAttentionHintDecorations(attentionHintDecorations: AttentionHintDecoration[]) {
+    this.attentionHintDecorations = attentionHintDecorations
+  }
+
+  public createWarningAttentionHint(range: IRange, content: string) {
     return {
       range: new Range(range.startLineNumber, 1, range.startLineNumber, 1),
       options: {
@@ -23,9 +29,9 @@ export class AttentionHint extends StyleSheetContent implements IDisposable {
     }
   }
 
-  createErrorAttentionHint(range: IRange, content: string) {
+  public createErrorAttentionHint(range: IRange, content: string) {
     return {
-      range: new Range(range.startLineNumber, 1, range.startLineNumber, 100),
+      range: new Range(range.startLineNumber, 1, range.startLineNumber, 1),
       options: {
         className: 'attention-hint__error',
         isWholeLine: true,
@@ -37,6 +43,7 @@ export class AttentionHint extends StyleSheetContent implements IDisposable {
   dispose() {
     this.attentionHintDecoration.clear()
     this.abortController.abort()
+    this.attentionHintDecorations = []
     super.dispose()
   }
 }
