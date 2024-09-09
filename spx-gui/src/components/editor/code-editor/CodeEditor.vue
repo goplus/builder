@@ -2,12 +2,11 @@
 import CodeEditorUI from './ui/CodeEditorUI.vue'
 import { EditorUI } from '@/components/editor/code-editor/EditorUI'
 import { Compiler } from '@/components/editor/code-editor/compiler'
-import { Project } from '@/models/project'
 import { Runtime } from '@/components/editor/code-editor/runtime'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import { ChatBot } from '@/components/editor/code-editor/chat-bot'
 import { Coordinator } from '@/components/editor/code-editor/coordinators'
-import { onUnmounted, ref, watchEffect } from 'vue'
+import { onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
@@ -15,7 +14,7 @@ defineEmits<{
   'update:value': [value: string]
 }>()
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     loading?: boolean
     value: string
@@ -28,7 +27,7 @@ withDefaults(
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorUI = ref<InstanceType<typeof CodeEditorUI>>()
-const { editorUI, compiler } = initCoordinator()
+const { editorUI, compiler, coordinator } = initCoordinator()
 const wasmContainer = ref<HTMLIFrameElement>()
 
 onUnmounted(() => {
@@ -39,6 +38,16 @@ onUnmounted(() => {
 watchEffect(() => {
   if (wasmContainer.value) compiler.setContainerElement(wasmContainer.value)
 })
+
+watch(
+  () => props.value,
+  () => {
+    coordinator.updateDefinition()
+  },
+  {
+    immediate: true
+  }
+)
 
 function initCoordinator() {
   const editorUI = new EditorUI(i18n, () => editorCtx.project)
@@ -94,6 +103,7 @@ defineExpose({
 
 #wasmContainer {
   overflow: hidden;
+  display: block;
   height: 0;
 }
 </style>

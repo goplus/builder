@@ -15,7 +15,7 @@ import {
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
-import { DocAbility } from '../document'
+import { DocAbility, type Doc } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
@@ -33,11 +33,254 @@ import {
   type TokenCategory,
   TokenType
 } from '@/components/editor/code-editor/tools'
+import { debounce } from '@/utils/utils'
+import type { Definition, DefinitionUsage, Diagnostic } from '../compiler'
 
 type JumpPosition = {
   line: number
   column: number
   fileUri: string
+}
+
+const VariableDefinitionType = [
+  'bool',
+  'int',
+  'int8',
+  'int16',
+  'int32',
+  'int64',
+  'uint',
+  'uint8',
+  'uint16',
+  'uint32',
+  'uint64',
+  'uintptr',
+  'float32',
+  'float64',
+  'complex64',
+  'complex128',
+  'string',
+  'byte',
+  'rune'
+]
+
+type CoordinatorState = {
+  definitions: Definition[]
+  diagnostics: Diagnostic[]
+}
+
+class HoverProvider {
+  private ui: EditorUI
+  private docAbility: DocAbility
+  private state: CoordinatorState
+
+  constructor(ui: EditorUI, docAbility: DocAbility, state: CoordinatorState) {
+    this.ui = ui
+    this.docAbility = docAbility
+    this.state = state
+  }
+
+  async provideHover(
+    _model: TextModel,
+    ctx: {
+      position: Position
+      hoverUnitWord: string
+      signal: AbortSignal
+    }
+  ): Promise<LayerContent[]> {
+    //TODO(callme-taota): fix this
+    // const contents = this.docAbility.getNormalDoc({
+    //   module: '',
+    //   name: ctx.hoverUnitWord
+    // })
+
+    // const definition = this.findDefinition(ctx.position)
+    // const diagnostic = this.findDiagnostic(ctx.position.lineNumber)
+    // const matchedContent = this.findMatchedContent(contents, definition)
+    // const layerContents: LayerContent[] = []
+
+    // if (diagnostic) layerContents.push(this.createDiagnosticContent(diagnostic))
+
+    // if (contents && contents.length > 0) {
+    //   layerContents.push(...this.createDocContents(contents))
+    // } else if (definition && definition.usages.length > 0) {
+    //   // in definition, usages have only one usage
+    //   const [usage] = definition.usages
+    //   const content = VariableDefinitionType.includes(usage.type)
+    //     ? this.createVariableRenameContent(usage)
+    //     : this.createDefinitionContent(usage, matchedContent)
+    //   layerContents.push(content)
+    // }
+
+    return []
+  }
+
+  private findDefinition(position: Position): Definition | undefined {
+    return this.state.definitions.find((def) => {
+      const tokenLen = def.end_pos - def.start_pos
+      const line = def.start_position.Line
+      const startColumn = def.start_position.Column
+      const endColumn = startColumn + tokenLen
+      return (
+        position.lineNumber === line &&
+        position.column >= startColumn &&
+        position.column <= endColumn
+      )
+    })
+  }
+
+  private findDiagnostic(lineNumber: number): Diagnostic | undefined {
+    return this.state.diagnostics.find((diag) => diag.line === lineNumber)
+  }
+
+  //TODO(callme-taota): fix this
+  // private findMatchedContent(contents: Doc[] | null, definition: Definition | undefined) {
+  //   return contents?.find(
+  //     (content) =>
+  //       definition &&
+  //       content.token.id.name === definition.pkg_name &&
+  //       content.token.id.module === definition.pkg_path
+  //   )
+  // }
+
+  private createDiagnosticContent(diagnostic: Diagnostic): LayerContent {
+    return {
+      type: 'doc',
+      layer: {
+        level: DocPreviewLevel.Error,
+        content: diagnostic.message,
+        recommendAction: {
+          label: this.ui.i18n.t({
+            zh: '没看明白？场外求助',
+            en: 'Not clear? Ask for help'
+          }),
+          activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+          onActiveLabelClick: () => {
+            // TODO: Add some logic code
+          }
+        }
+      }
+    }
+  }
+
+  private createVariableRenameContent(usage: DefinitionUsage): LayerContent {
+    return {
+      type: 'doc',
+      layer: {
+        level: DocPreviewLevel.Normal,
+        header: {
+          icon: Icon.Variable,
+          declaration: usage.declaration
+        },
+        content: '',
+        moreActions: [
+          {
+            icon: Icon.Rename,
+            label: this.ui.i18n.t({ zh: '重命名', en: 'Rename' }),
+            onClick: () => ({
+              type: 'rename',
+              layer: {
+                placeholder: this.ui.i18n.t({
+                  zh: '请输入新名称',
+                  en: 'Please enter a new name'
+                }),
+                onSubmit: async (
+                  newName: string,
+                  ctx: { signal: AbortSignal },
+                  setError: (message: string) => void
+                ) => {
+                  // TODO: Add some logic code
+                }
+              }
+            })
+          }
+        ]
+      }
+    }
+  }
+
+  //TODO(callme-taota): fix this
+  // private createDefinitionContent(
+  //   usage: DefinitionUsage,
+  //   matchedContent: Doc | undefined
+  // ): LayerContent {
+  //   const actions = matchedContent ? this.createActions(matchedContent) : {}
+  //   return {
+  //     type: 'doc',
+  //     layer: {
+  //       level: DocPreviewLevel.Normal,
+  //       content: matchedContent?.content,
+  //       header: {
+  //         icon: Icon.Function,
+  //         declaration: usage.declaration
+  //       },
+  //       ...actions
+  //     }
+  //   }
+  // }
+
+  //TODO(callme-taota): fix this
+  // private createActions(matchedContent: Doc) {
+  //   return {
+  //     recommendAction: {
+  //       label: this.ui.i18n.t({
+  //         zh: '还有疑惑？场外求助',
+  //         en: 'Still in confusion? Ask for help'
+  //       }),
+  //       activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+  //       onActiveLabelClick: () => {
+  //         // TODO: Add some logic code
+  //       }
+  //     },
+  //     moreActions: [
+  //       {
+  //         icon: Icon.Document,
+  //         label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+  //         onClick: () => {
+  //           const detailDoc = this.docAbility.getDetailDoc(matchedContent.token)
+  //           if (!detailDoc) return
+  //           this.ui.invokeDocumentDetail(detailDoc.content)
+  //         }
+  //       }
+  //     ]
+  //   }
+  // }
+
+  //TODO(callme-taota): fix this
+  // private createDocContents(contents: any[]): LayerContent[] {
+  //   return contents.map((doc) => ({
+  //     type: 'doc',
+  //     layer: {
+  //       level: DocPreviewLevel.Normal,
+  //       header: {
+  //         icon: Icon.Function,
+  //         declaration: '' // TODO: implement document struct and set declaration
+  //       },
+  //       content: doc.content,
+  //       recommendAction: {
+  //         label: this.ui.i18n.t({
+  //           zh: '还有疑惑？场外求助',
+  //           en: 'Still in confusion? Ask for help'
+  //         }),
+  //         activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+  //         onActiveLabelClick: () => {
+  //           // TODO: add some logic code here
+  //         }
+  //       },
+  //       moreActions: [
+  //         {
+  //           icon: Icon.Document,
+  //           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+  //           onClick: () => {
+  //             const detailDoc = this.docAbility.getDetailDoc(doc.token)
+  //             if (!detailDoc) return
+  //             this.ui.invokeDocumentDetail(detailDoc.content)
+  //           }
+  //         }
+  //       ]
+  //     }
+  //   }))
+  // }
 }
 
 export class Coordinator {
@@ -46,6 +289,12 @@ export class Coordinator {
   chatBot: ChatBot
   docAbility: DocAbility
   compiler: Compiler
+  public updateDefinition = debounce(this._updateDefinition, 300)
+  private state: CoordinatorState = {
+    definitions: [],
+    diagnostics: []
+  }
+  private hoverProvider: HoverProvider
 
   constructor(
     ui: EditorUI,
@@ -60,10 +309,9 @@ export class Coordinator {
     this.docAbility = docAbility
     this.chatBot = chatBot
     this.compiler = compiler
+    this.hoverProvider = new HoverProvider(ui, docAbility, this.state)
 
     ui.registerCompletionProvider({
-      // do not use `provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider` this will change `this` pointer to `{provideDynamicCompletionItems: ()=> void}`
-      // and throw undefined error
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
     })
 
@@ -88,6 +336,10 @@ export class Coordinator {
     })
   }
 
+  get currentFilename() {
+    return (this.project.selectedSprite?.name ?? 'main') + '.spx'
+  }
+
   implementsPreDefinedCompletionProvider(
     _model: TextModel,
     ctx: {
@@ -97,13 +349,6 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
-    const spritesCodes = this.project.sprites.map((sprite) => ({
-      filename: sprite.name + '.spx',
-      content: sprite.code
-    }))
-
-    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
-
     // add project variables
     const { sprites, sounds, stage, selectedSprite } = this.project
 
@@ -113,8 +358,11 @@ export class Coordinator {
       label: `"${name}"`,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
+        type: 'doc' as const,
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
       }
     })
 
@@ -137,7 +385,7 @@ export class Coordinator {
     this.compiler
       .getCompletionItems(
         (this.project.selectedSprite?.name ?? 'main') + '.spx',
-        [...spritesCodes, ...stageCodes],
+        this.getProjectAllCodes(),
         ctx.position.lineNumber,
         ctx.position.column
       )
@@ -150,8 +398,11 @@ export class Coordinator {
               label: completionItem.label,
               desc: '',
               preview: {
-                level: DocPreviewLevel.Normal,
-                content: '' /* todo: get content with docAbility */
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: '' /* todo: get content with docAbility */
+                }
               }
             }
           })
@@ -201,16 +452,9 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): Promise<InlayHintDecoration[]> {
-    const spritesCodes = this.project.sprites.map((sprite) => ({
-      filename: sprite.name + '.spx',
-      content: sprite.code
-    }))
-
-    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
-
     const inlayHints = await this.compiler.getInlayHints(
-      (this.project.selectedSprite?.name ?? 'main') + '.spx',
-      [...spritesCodes, ...stageCodes]
+      this.currentFilename,
+      this.getProjectAllCodes()
     )
 
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
@@ -262,38 +506,33 @@ export class Coordinator {
       signal: AbortSignal
     }
   ): void {
-    const spritesCodes = this.project.sprites.map((sprite) => ({
-      filename: sprite.name + '.spx',
-      content: sprite.code
-    }))
-
-    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
-
     this.compiler
-      .getDiagnostics((this.project.selectedSprite?.name ?? 'main') + '.spx', [
-        ...spritesCodes,
-        ...stageCodes
-      ])
-      .then((attentionHints) => {
+      .getDiagnostics(this.currentFilename, this.getProjectAllCodes())
+      .then((diagnostics) => {
+        if (ctx.signal.aborted) return
+        this.state.diagnostics = diagnostics
         setHints(
-          attentionHints.map((attentionHint) => {
+          diagnostics.map((diagnostic) => {
             const word = model.getWordAtPosition({
-              lineNumber: attentionHint.line,
-              column: attentionHint.column
+              lineNumber: diagnostic.line,
+              column: diagnostic.column
             })
 
             return {
               level: AttentionHintLevelEnum.ERROR,
-              message: attentionHint.message,
+              message: diagnostic.message,
               range: {
-                startColumn: attentionHint.column,
-                startLineNumber: attentionHint.line,
-                endColumn: word?.endColumn ?? attentionHint.column,
-                endLineNumber: attentionHint.line
+                startColumn: diagnostic.column,
+                startLineNumber: diagnostic.line,
+                endColumn: word?.endColumn ?? diagnostic.column,
+                endLineNumber: diagnostic.line
               },
               hoverContent: {
-                level: DocPreviewLevel.Error,
-                content: attentionHint.message
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Error,
+                  content: diagnostic.message
+                }
               }
             }
           })
@@ -301,10 +540,29 @@ export class Coordinator {
       })
   }
 
+  getProjectAllCodes() {
+    const spritesCodes = this.project.sprites.map((sprite) => ({
+      filename: sprite.name + '.spx',
+      content: sprite.code
+    }))
+
+    const stageCodes = [{ filename: 'main.spx', content: this.project.stage.code }]
+
+    return [...spritesCodes, ...stageCodes]
+  }
+
   async implementsInputAssistantProvider(_ctx: {
     signal: AbortSignal
   }): Promise<InputItemCategory[]> {
     return getInputItemCategories(this.project)
+  }
+
+  private async _updateDefinition() {
+    const definition = await this.compiler.getDefinition(
+      this.currentFilename,
+      this.getProjectAllCodes()
+    )
+    this.state.definitions = definition
   }
 
   public jump(position: JumpPosition): void {}
@@ -318,8 +576,11 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
+        type: 'doc' as const,
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
       }
     })),
     ...typeKeywords.map((typeKeyword) => ({
@@ -328,8 +589,11 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       icon: Icon.Keywords,
       desc: '',
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
+        type: 'doc' as const,
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
       }
     }))
   ]
@@ -338,8 +602,11 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
       preview: {
-        level: DocPreviewLevel.Normal,
-        content: ''
+        type: 'doc' as const,
+        layer: {
+          level: DocPreviewLevel.Normal,
+          content: ''
+        }
       }
     }
     if (tool.usage != null) {
@@ -401,8 +668,11 @@ function toolCategory2InputItemCategory(
               icon: getCompletionItemKind(tool.type),
               label: tool.keyword,
               desc: {
-                level: DocPreviewLevel.Normal,
-                content: ''
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
               },
               sample: sample,
               insertText: tool.usage.insertText
@@ -419,8 +689,11 @@ function toolCategory2InputItemCategory(
               icon: getCompletionItemKind(tool.type),
               label: tool.keyword,
               desc: {
-                level: DocPreviewLevel.Normal,
-                content: ''
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
               },
               sample: sample,
               insertText: usage.insertText

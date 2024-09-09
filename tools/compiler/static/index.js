@@ -21,7 +21,8 @@ window.addEventListener('message', function (event) {
 function getInlayHints (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getInlayHints_GO(fileName, {[fileName]:fileCode})
+    let mainCode = data.in.mainCode
+    let res = getInlayHints_GO(fileName, {[fileName]:fileCode, "main.spx": mainCode})
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get inlay hints")
@@ -32,7 +33,8 @@ function getInlayHints (data)  {
 function getDiagnostics (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getDiagnostics_GO(fileName,  {[fileName]:fileCode})
+    let mainCode = data.in.mainCode
+    let res = getDiagnostics_GO(fileName,  {[fileName]:fileCode, "main.spx": mainCode})
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get diagnostics")
@@ -46,7 +48,8 @@ function getCompletionItems (data)  {
     let fileName = data.in.name
     let lineNum = data.in.line
     let colNum = data.in.column
-    let res = getCompletionItems_GO(fileName, {[fileName]:fileCode}, lineNum, colNum)
+    let mainCode = data.in.mainCode
+    let res = getCompletionItems_GO(fileName, {[fileName]:fileCode, "main.spx": mainCode}, lineNum, colNum)
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get completion items")
@@ -57,7 +60,8 @@ function getCompletionItems (data)  {
 function getDefinition (data)  {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getDefinition_GO(fileName,  {[fileName]:fileCode})
+    let mainCode = data.in.mainCode
+    let res = getDefinition_GO(fileName,  {[fileName]:fileCode, "main.spx": mainCode})
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get definition")
@@ -68,7 +72,8 @@ function getDefinition (data)  {
 function getTypes(data) {
     let fileCode = data.in.code
     let fileName = data.in.name
-    let res = getTypes_GO(fileName, {[fileName]:fileCode})
+    let mainCode = data.in.mainCode
+    let res = getTypes_GO(fileName, {[fileName]:fileCode, "main.spx": mainCode})
     let json = JSON.parse(res)
     if(!json.ok) {
         throw new Error("can't get types")

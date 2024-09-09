@@ -17,7 +17,7 @@ export class StyleSheetContent {
     // add prefix '_' to avoid illegal class name declare
     const className = `_${this.hash(content)}`
     if (!this.styleMap.has(className)) {
-      const escapedContent = this.escapeContent(content)
+      const escapedContent = this.toUnicodeEscape(content)
       const css = `.${className}::after { content: "${escapedContent}"; }`
       this.styleElement.appendChild(document.createTextNode(css))
       this.styleMap.set(className, css)
@@ -26,8 +26,14 @@ export class StyleSheetContent {
     return className
   }
 
-  private escapeContent(content: string): string {
-    return content.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  private toUnicodeEscape(str: string) {
+    return str
+      .split('')
+      .map((char) => {
+        const code = char.charCodeAt(0).toString(16).padStart(4, '0')
+        return `\\${code}`
+      })
+      .join('')
   }
 
   private hash(content: string): string {

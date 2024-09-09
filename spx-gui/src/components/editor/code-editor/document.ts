@@ -8,7 +8,7 @@ export type UsageDocumentContent = Markdown
 
 export type TokenDetail = Token & Doc
 
-type Doc = Token & {
+export type Doc = Token & {
   usages: usageWithDoc[]
 }
 
