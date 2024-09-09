@@ -42,6 +42,10 @@ type JumpPosition = {
   fileUri: string
 }
 
+export type CoordinatorState = {
+  definitions: Definition[]
+}
+
 export class Coordinator {
   project: Project
   ui: EditorUI
@@ -49,7 +53,9 @@ export class Coordinator {
   docAbility: DocAbility
   compiler: Compiler
   public updateDefinition = debounce(this._updateDefinition, 300)
-  private definitions: Definition[] = []
+  private coordinatorState: CoordinatorState = {
+    definitions: []
+  }
   private hoverProvider: HoverProvider
 
   constructor(
@@ -65,7 +71,7 @@ export class Coordinator {
     this.docAbility = docAbility
     this.chatBot = chatBot
     this.compiler = compiler
-    this.hoverProvider = new HoverProvider(ui, docAbility, this.definitions)
+    this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState)
 
     ui.registerCompletionProvider({
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
@@ -321,7 +327,7 @@ export class Coordinator {
   }
 
   private async _updateDefinition() {
-    this.definitions = await this.compiler.getDefinition(
+    this.coordinatorState.definitions = await this.compiler.getDefinition(
       this.currentFilename,
       this.getProjectAllCodes()
     )

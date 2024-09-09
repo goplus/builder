@@ -3,16 +3,17 @@ import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
 import { type Doc, DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
+import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
 
 export class HoverProvider {
   private ui: EditorUI
   private docAbility: DocAbility
-  private definitions: Definition[]
+  private coordinatorState: CoordinatorState
 
-  constructor(ui: EditorUI, docAbility: DocAbility, definitions: Definition[]) {
+  constructor(ui: EditorUI, docAbility: DocAbility, coordinatorState: CoordinatorState) {
     this.ui = ui
     this.docAbility = docAbility
-    this.definitions = definitions
+    this.coordinatorState = coordinatorState
   }
 
   async provideHover(
@@ -24,7 +25,6 @@ export class HoverProvider {
     }
   ): Promise<LayerContent[]> {
     const definition = this.findDefinition(ctx.position)
-
     if (!definition) return []
 
     const contents = this.docAbility.getNormalDoc({
@@ -33,7 +33,6 @@ export class HoverProvider {
     })
     const matchedContent = this.findMatchedContent(contents, definition)
     // todo: refactor these code
-    if (matchedContent) return this.createDocContents([matchedContent])
 
     const layerContents: LayerContent[] = []
 
@@ -42,7 +41,7 @@ export class HoverProvider {
     } else if (definition.usages.length > 0) {
       // in definition, usages have only one usage
       const [usage] = definition.usages
-      const content = this.canBeRenamed()
+      const content = this.canBeRenamed(definition)
         ? this.createVariableRenameContent(usage)
         : this.createDefinitionContent(usage, matchedContent)
       layerContents.push(content)
@@ -51,12 +50,12 @@ export class HoverProvider {
     return layerContents
   }
 
-  private canBeRenamed() {
-    return false
+  private canBeRenamed(definition: Definition) {
+    return definition.pkg_name === 'main' && definition.pkg_name === 'main'
   }
 
   private findDefinition(position: Position): Definition | undefined {
-    return this.definitions.find((definition) => {
+    return this.coordinatorState.definitions.find((definition) => {
       const tokenLen = definition.end_pos - definition.start_pos
       const line = definition.start_position.Line
       const startColumn = definition.start_position.Column
