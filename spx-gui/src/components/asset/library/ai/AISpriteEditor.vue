@@ -41,8 +41,8 @@
           :image-src="previewImageSrc"
           class="repaint"
           @cancel="editMode = 'preview'"
-          @resolve="handleRepaintResolve" 
-          @loading="loading => inpaintingLoading = loading"
+          @resolve="handleRepaintResolve"
+          @loading="(loading) => (inpaintingLoading = loading)"
         />
         <SpriteCarousel
           v-else-if="contentReady && editMode === 'anim' && sprite"
@@ -85,13 +85,14 @@ import { AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import { AISpriteTask } from '@/models/aigc'
-import { getFiles } from '@/models/common/cloud'
-import type { File } from '@/models/common/file'
+import { getFiles, saveFiles } from '@/models/common/cloud'
+import { fromBlob, type File } from '@/models/common/file'
 import { hashFileCollection } from '@/models/common/hash'
 import { CancelOutlined } from '@vicons/material'
 import { useI18n } from '@/utils/i18n'
 import ImageRepaint from './ImageEditor/ImageRepaint.vue'
 import { h } from 'vue'
+import { getWebUrl } from '@/apis/util'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -146,9 +147,17 @@ const loadingInfoText = computed(() => {
 
 const failInfoText = ref(t({ en: `Generation failed`, zh: `生成失败` }))
 
+const previewImageUrl = ref(props.asset.preview)
+watch(
+  () => props.asset.preview,
+  () => {
+    previewImageUrl.value = props.asset.preview
+  }
+)
+
 let previewImageFile = useAsyncComputed<File | undefined>(async () => {
-  if (props.asset.files?.imageUrl) {
-    const files = await getFiles({ imageUrl: props.asset.files.imageUrl })
+  if (previewImageUrl.value) {
+    const files = await getFiles({ imageUrl: previewImageUrl.value })
     if (files) {
       return files.imageUrl
     } else {
@@ -225,8 +234,21 @@ const handleRepaintResolve = async (imgDataUrl: string) => {
     return
   }
   editMode.value = 'preview'
-  // TODO: update preview image
+  previewImageLoading.value = true
+  // save repaint image to preview as a new kodo file
+  const blob = await fetch(imgDataUrl).then((res) => res.blob())
+  const file = fromBlob('repaint.png', blob)
+  const { fileCollection } = await saveFiles({ 'repaint.png': file })
+  const universalUrl = fileCollection['repaint.png']
+  if (!universalUrl) {
+    status.value = AIGCStatus.Failed
+    failInfoText.value = t({ en: `Failed to save repaint`, zh: `保存重绘失败` })
+    previewImageLoading.value = false
+    return
+  }
+  props.asset.preview = universalUrl
 }
+
 const previewActions = computed(
   () =>
     [

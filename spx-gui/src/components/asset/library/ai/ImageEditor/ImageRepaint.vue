@@ -385,7 +385,7 @@ const actions = computed(
                     setCursors()
                   }
                 },
-                drawMode.value === 'draw' ? h(DrawOutlined) : h('svg', { innerHTML: Erase })
+                () => drawMode.value === 'draw' ? h(DrawOutlined) : h('svg', { innerHTML: Erase })
               )
             )
           ])

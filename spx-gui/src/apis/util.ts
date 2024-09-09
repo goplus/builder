@@ -64,3 +64,16 @@ export const makeObjectUrls = (() => {
     return Object.fromEntries(objects.map((url) => [url, objectUrls[url]]))
   }
 })()
+
+/**
+ * Get the web URL(https://) of the given universal URL(kodo://)
+ * 
+ * @param universalUrl 
+ * @returns 
+ */
+export async function getWebUrl (universalUrl: UniversalUrl) {
+  const webUrls = await client.post('/util/fileurls', { objects: [universalUrl] }) as {
+    objectUrls: UniversalToWebUrlMap
+  }
+  return webUrls.objectUrls[universalUrl]
+}
