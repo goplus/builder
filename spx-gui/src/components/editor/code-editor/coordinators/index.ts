@@ -154,7 +154,7 @@ export class Coordinator {
         addItems(
           completionItems.map((completionItem) => {
             return {
-              icon: completionItemType2Icon(completionItem.type),
+              icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
@@ -357,7 +357,7 @@ function toolCategory2InputItemCategory(
               (_, placeholderContent: string) => placeholderContent || ''
             )
             return {
-              icon: completionItemType2Icon(usage.effect),
+              icon: usageType2Icon(usage.effect),
               label: tool.id.name,
               desc: {
                 type: 'doc',
@@ -390,9 +390,9 @@ function getInputItemCategories(project: Project): InputItemCategory[] {
   ]
 }
 
-/** transform from wasm completion item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
+/** transform from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
 // todo: add more case type transform to type
-function completionItemType2Icon(type: string): Icon {
+export function usageType2Icon(type: string): Icon {
   switch (type) {
     case 'func':
       return Icon.Function

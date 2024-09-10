@@ -3,7 +3,7 @@ import type { HoverPreview } from './hover-preview'
 import DocumentPreview from './DocumentPreview.vue'
 import { editor as IEditor } from 'monaco-editor'
 import RenameComponent from '@/components/editor/code-editor/ui/features/hover-preview/RenameComponent.vue'
-import { onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { type Action, DocPreviewLevel, type RenamePreview } from '../../../EditorUI'
 
 const props = defineProps<{
@@ -133,6 +133,10 @@ function handleEscape(e: KeyboardEvent) {
 const hoverPreviewContainerElement = ref<HTMLElement>()
 const activeIdx = ref(0)
 
+const firstDocumentIndex = computed(() =>
+  hoverPreviewState.docs.findIndex((doc) => doc.level === DocPreviewLevel.Normal)
+)
+
 watch(activeIdx, () => {
   updateDocumentCardPosition()
 })
@@ -173,7 +177,7 @@ function updateDocumentCardPosition() {
   let totalHeaderHeight = documentRects[0].top || 0
   let beforeActiveElementBaseOffset = 0
   const documentGap = 4 // from css
-  const currentIdx = activeIdx.value
+  const currentIdx = activeIdx.value - firstDocumentIndex.value
   documentElements.forEach((element, i) => {
     let offset = -documentRects[i].top + totalHeaderHeight
     totalHeaderHeight += headerRects[i].height + documentGap

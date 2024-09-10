@@ -4,7 +4,8 @@ import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
-import type { Doc, TokenUsage } from '@/components/editor/code-editor/tokens/common'
+import type { Doc, TokenUsage, usageWithDoc } from '@/components/editor/code-editor/tokens/common'
+import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
 
 export class HoverProvider {
   private ui: EditorUI
@@ -43,27 +44,25 @@ export class HoverProvider {
         })
       )
     })
-    const matchedContent = this.findMatchedContent(content, definition)
-    // todo: refactor these code
 
     const layerContents: LayerContent[] = []
-
-    if (content && content.length > 0) {
-      layerContents.push(...this.createDocContents(content))
-    } else if (definition.usages.length > 0) {
-      // in definition, usages have only one usage
+    if (this.isDefinitionCanBeRenamed(definition)) {
       const [usage] = definition.usages
-      const content = this.canBeRenamed(definition)
-        ? this.createVariableRenameContent(usage)
-        : this.createDefinitionContent(usage, matchedContent)
-      layerContents.push(content)
+      if (!usage) throw new Error('definition should have one usage!')
+      layerContents.push(this.createVariableRenameContent(usage))
+    } else {
+      layerContents.push(...this.createDocContents(content, definition))
     }
 
     return layerContents
   }
 
-  private canBeRenamed(definition: Definition) {
-    return definition.pkg_name === 'main' && definition.pkg_name === 'main'
+  private isDefinitionCanBeRenamed(definition: Definition) {
+    return (
+      definition.pkg_name === 'main' &&
+      definition.pkg_path === 'main' &&
+      definition.usages.length === 1
+    )
   }
 
   private findDefinition(position: Position): Definition | undefined {
@@ -80,22 +79,13 @@ export class HoverProvider {
     })
   }
 
-  private findMatchedContent(content: Doc | null, definition: Definition | undefined) {
-    return content?.usages.find(
-      (content) =>
-        definition &&
-        content.token.id.name === definition.pkg_name &&
-        content.token.id.module === definition.pkg_path
-    )
-  }
-
   private createVariableRenameContent(usage: DefinitionUsage): LayerContent {
     return {
       type: 'doc',
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
-          icon: Icon.Variable,
+          icon: usageType2Icon(usage.type),
           declaration: usage.declaration
         },
         content: '',
@@ -125,61 +115,17 @@ export class HoverProvider {
     }
   }
 
-  private createDefinitionContent(
-    usage: DefinitionUsage,
-    matchedContent: Doc | undefined
-  ): LayerContent {
-    const actions = matchedContent ? this.createActions(matchedContent) : {}
-    return {
-      type: 'doc',
-      layer: {
-        level: DocPreviewLevel.Normal,
-        content: matchedContent?.content,
-        header: {
-          icon: Icon.Function,
-          declaration: usage.declaration
-        },
-        ...actions
-      }
-    }
-  }
-
-  private createActions(matchedContent: Doc) {
-    return {
-      recommendAction: {
-        label: this.ui.i18n.t({
-          zh: '还有疑惑？场外求助',
-          en: 'Still in confusion? Ask for help'
-        }),
-        activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick: () => {
-          // TODO: Add some logic code
-        }
-      },
-      moreActions: [
-        {
-          icon: Icon.Document,
-          label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick: () => {
-            const detailDoc = this.docAbility.getDetailDoc(matchedContent.token)
-            if (!detailDoc) return
-            this.ui.invokeDocumentDetail(detailDoc.content)
-          }
-        }
-      ]
-    }
-  }
-
-  private createDocContents(contents: Doc[]): LayerContent[] {
-    return contents.map((doc) => ({
+  private createDocContents(doc: Doc, definition: Definition): LayerContent[] {
+    const declarations = this.createDefinitionDeclaration(definition)
+    return doc.usages.map((usage: usageWithDoc) => ({
       type: 'doc',
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
-          icon: Icon.Function,
-          declaration: '' // TODO: implement document struct and set declaration
+          icon: usageType2Icon(usage.effect),
+          declaration: declarations[usage.id] || usage.declaration
         },
-        content: doc.content,
+        content: usage.doc,
         recommendAction: {
           label: this.ui.i18n.t({
             zh: '还有疑惑？场外求助',
@@ -190,19 +136,51 @@ export class HoverProvider {
             // TODO: add some logic code here
           }
         },
-        moreActions: [
-          {
-            icon: Icon.Document,
-            label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-            onClick: () => {
-              this.docAbility.getDetailDoc(doc).then((detailDoc) => {
-                if (!detailDoc) return
-                this.ui.invokeDocumentDetail(detailDoc)
-              })
-            }
-          }
-        ]
+        moreActions: [...this.createDocDetailAction(doc, definition)]
       }
     }))
+  }
+
+  /** this declaration only for mapping function params */
+  private createDefinitionDeclaration(definition: Definition) {
+    const usageDeclaration: Record<string, string> = {}
+    definition.usages.forEach((usage) => {
+      const params = usage.params
+        .map((param) => param.name + ' ' + param.type.split('.').pop())
+        .join(', ')
+      if (usage.type === 'func') usageDeclaration[usage.usageID] = `${definition.name} (${params})`
+    })
+    return usageDeclaration
+  }
+
+  private createDocDetailAction(doc: Doc, definition: Definition) {
+    if (definition.usages.length !== 1) return []
+    return [
+      {
+        icon: Icon.Document,
+        label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+        onClick: () => {
+          const usageId = definition.usages.shift()?.usageID
+          if (!usageId)
+            throw new Error(
+              'definition usage is empty when search for doc detail. tokenId: ' +
+                JSON.stringify(doc.id)
+            )
+          this.docAbility.getDetailDoc(doc).then((detailDoc) => {
+            const usageDetailDoc = detailDoc.usages.find(
+              (usage: usageWithDoc) => usage.id === usageId
+            )?.doc
+            if (!usageDetailDoc)
+              return console.warn(
+                'usageDetailDoc not found. tokenId: ' +
+                  JSON.stringify(doc.id) +
+                  ' usageId: ' +
+                  usageId
+              )
+            this.ui.invokeDocumentDetail(usageDetailDoc)
+          })
+        }
+      }
+    ]
   }
 }
