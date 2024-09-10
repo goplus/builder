@@ -64,8 +64,8 @@ export type Cursor = {
 
 export type ChatResp = {
   id: string
-  resp_message: string
-  resp_questions: string[]
+  respMessage: string
+  respQuestions: string[]
 }
 
 export type TaskResp = {

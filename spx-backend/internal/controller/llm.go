@@ -137,6 +137,12 @@ type ChatResp struct {
 	RespQuestions []string `json:"resp_questions"`
 }
 
+type ChatResponse struct {
+	ID            string   `json:"id"`
+	RespMessage   string   `json:"respMessage"`
+	RespQuestions []string `json:"respQuestions"`
+}
+
 func newChatResp(resp llm.LlmResponseBody, chat chat) ChatResp {
 	responseContent := resp.Choices[0].Message.Content
 	var chatResp ChatResp
@@ -153,6 +159,11 @@ type TaskResp struct {
 	TaskAction   int           `json:"task_action"`
 	CodeSuggests []CodeSuggest `json:"suggestions"`
 	// ...
+}
+
+type TaskResponse struct {
+	TaskAction   int           `json:"taskAction"`
+	CodeSuggests []CodeSuggest `json:"suggestions"`
 }
 
 func newSuggestTaskResp(resp llm.LlmResponseBody) TaskResp {
@@ -393,52 +404,53 @@ func createLLMRequestBodyMessagesWithProjectCtx(sysInput, userInput string, proj
 	return msg
 }
 
-func (ctrl *Controller) StartChat(ctx context.Context, p *AIStartChatParams) (ChatResp, error) {
+func (ctrl *Controller) StartChat(ctx context.Context, p *AIStartChatParams) (ChatResponse, error) {
 	if ok, msg := p.Validate(); !ok {
-		return ChatResp{}, errors.New(msg)
+		return ChatResponse{}, errors.New(msg)
 	}
 	chat := newChat(ChatActions(p.ChatAction), p.ProjectContext, p.UserLang)
 	user, ok := UserFromContext(ctx)
 	if !ok {
-		return ChatResp{}, ErrForbidden
+		return ChatResponse{}, ErrForbidden
 	}
 	chat.User = user
 	systemPrompt := chatPromptGenerator(*chat)
 	chat.Messages = createLLMRequestBodyMessagesWithProjectCtx(systemPrompt, p.UserInput, p.ProjectContext)
 	resp, err := ctrl.llm.CallLLM(chat.getMessages())
 	if err != nil {
-		return ChatResp{}, err
+		return ChatResponse{}, err
 	}
 	chat.ID = resp.ID
 	chat.pushMessage(llm.ChatRequestBodyMessagesRoleAssistant, resp.Choices[0].Message.Content)
 	err = chatMapMgr.storeChat(chat)
 	if err != nil {
-		return ChatResp{}, err
+		return ChatResponse{}, err
 	}
 	err = saveChat(ctx, ctrl.db, *chat)
 	if err != nil {
-		return ChatResp{}, err
+		return ChatResponse{}, err
 	}
-	return newChatResp(resp, *chat), nil
+	return ChatResponse(newChatResp(resp, *chat)), nil
 }
 
-func (ctrl *Controller) NextChat(ctx context.Context, id string, p *AIChatParams) (chatResp ChatResp, err error) {
+func (ctrl *Controller) NextChat(ctx context.Context, id string, p *AIChatParams) (chatResp ChatResponse, err error) {
 	if ok, msg := p.Validate(); !ok {
-		return ChatResp{}, errors.New(msg)
+		return ChatResponse{}, errors.New(msg)
 	}
 	chat, ok := findChat(ctx, ctrl.db, id)
 	if !ok {
-		return ChatResp{}, errors.New("can't find chat")
+		return ChatResponse{}, errors.New("can't find chat")
 	}
 	chatUser := chat.User
 	_, err = EnsureUser(ctx, chatUser.Name)
 	if err != nil {
-		return ChatResp{}, err
+		return ChatResponse{}, err
 	}
-	chatResp, err = chat.nextInput(ctrl, p.UserInput)
+	resp, err := chat.nextInput(ctrl, p.UserInput)
+	chatResp = ChatResponse(resp)
 	err = updateChat(ctx, ctrl.db, chat)
 	if err != nil {
-		return ChatResp{}, err
+		return ChatResponse{}, err
 	}
 	return
 }
@@ -460,18 +472,18 @@ func (ctrl *Controller) DeleteChat(ctx context.Context, id string) {
 	}
 }
 
-func (ctrl *Controller) StartTask(ctx context.Context, p *AITaskParams) (TaskResp, error) {
+func (ctrl *Controller) StartTask(ctx context.Context, p *AITaskParams) (TaskResponse, error) {
 	if ok, msg := p.Validate(); !ok {
-		return TaskResp{}, errors.New(msg)
+		return TaskResponse{}, errors.New(msg)
 	}
 	resp, err := ctrl.llm.CallLLM(createLLMRequestBodyMessages(p.taskPromptGenerator()))
 	if err != nil {
-		return TaskResp{}, err
+		return TaskResponse{}, err
 	}
 	if p.TaskAction == int(SuggestTask) {
-		return newSuggestTaskResp(resp), nil
+		return TaskResponse(newSuggestTaskResp(resp)), nil
 	}
-	return TaskResp{}, nil
+	return TaskResponse{}, nil
 }
 
 func chat2ModelChat(chat chat) *model.LLMChat {
