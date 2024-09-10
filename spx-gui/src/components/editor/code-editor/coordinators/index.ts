@@ -15,7 +15,7 @@ import {
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
-import { DocAbility, type Doc } from '../document'
+import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
@@ -24,15 +24,13 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
-  getAllTools,
+  getAllTokens,
   getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
-  soundCategory,
-  type TokenCategory,
-  TokenType
-} from '@/components/editor/code-editor/tools'
+  soundCategory
+} from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import type { Definition, DefinitionUsage, Diagnostic } from '../compiler'
 
@@ -85,12 +83,16 @@ class HoverProvider {
     ctx: {
       position: Position
       hoverUnitWord: string
+      module: string
       signal: AbortSignal
     }
   ): Promise<LayerContent[]> {
     const contents = this.docAbility.getNormalDoc({
-      module: '',
-      name: ctx.hoverUnitWord
+      id: {
+        module: ctx.module,
+        name: ctx.hoverUnitWord
+      },
+      usages: []
     })
 
     const definition = this.findDefinition(ctx.position)
@@ -111,7 +113,7 @@ class HoverProvider {
       layerContents.push(content)
     }
 
-    return layerContents
+    return []
   }
 
   private findDefinition(position: Position): Definition | undefined {
@@ -132,14 +134,15 @@ class HoverProvider {
     return this.state.diagnostics.find((diag) => diag.line === lineNumber)
   }
 
-  private findMatchedContent(contents: Doc[] | null, definition: Definition | undefined) {
-    return contents?.find(
-      (content) =>
-        definition &&
-        content.token.id.name === definition.pkg_name &&
-        content.token.id.module === definition.pkg_path
-    )
-  }
+  //TODO(callme-taota): fix this
+  // private findMatchedContent(contents: Doc[] | null, definition: Definition | undefined) {
+  //   return contents?.find(
+  //     (content) =>
+  //       definition &&
+  //       content.token.id.name === definition.pkg_name &&
+  //       content.token.id.module === definition.pkg_path
+  //   )
+  // }
 
   private createDiagnosticContent(diagnostic: Diagnostic): LayerContent {
     return {
@@ -197,85 +200,88 @@ class HoverProvider {
     }
   }
 
-  private createDefinitionContent(
-    usage: DefinitionUsage,
-    matchedContent: Doc | undefined
-  ): LayerContent {
-    const actions = matchedContent ? this.createActions(matchedContent) : {}
-    return {
-      type: 'doc',
-      layer: {
-        level: DocPreviewLevel.Normal,
-        content: matchedContent?.content,
-        header: {
-          icon: Icon.Function,
-          declaration: usage.declaration
-        },
-        ...actions
-      }
-    }
-  }
+  //TODO(callme-taota): fix this
+  // private createDefinitionContent(
+  //   usage: DefinitionUsage,
+  //   matchedContent: Doc | undefined
+  // ): LayerContent {
+  //   const actions = matchedContent ? this.createActions(matchedContent) : {}
+  //   return {
+  //     type: 'doc',
+  //     layer: {
+  //       level: DocPreviewLevel.Normal,
+  //       content: matchedContent?.content,
+  //       header: {
+  //         icon: Icon.Function,
+  //         declaration: usage.declaration
+  //       },
+  //       ...actions
+  //     }
+  //   }
+  // }
 
-  private createActions(matchedContent: Doc) {
-    return {
-      recommendAction: {
-        label: this.ui.i18n.t({
-          zh: '还有疑惑？场外求助',
-          en: 'Still in confusion? Ask for help'
-        }),
-        activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-        onActiveLabelClick: () => {
-          // TODO: Add some logic code
-        }
-      },
-      moreActions: [
-        {
-          icon: Icon.Document,
-          label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-          onClick: () => {
-            const detailDoc = this.docAbility.getDetailDoc(matchedContent.token)
-            if (!detailDoc) return
-            this.ui.invokeDocumentDetail(detailDoc.content)
-          }
-        }
-      ]
-    }
-  }
+  //TODO(callme-taota): fix this
+  // private createActions(matchedContent: Doc) {
+  //   return {
+  //     recommendAction: {
+  //       label: this.ui.i18n.t({
+  //         zh: '还有疑惑？场外求助',
+  //         en: 'Still in confusion? Ask for help'
+  //       }),
+  //       activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+  //       onActiveLabelClick: () => {
+  //         // TODO: Add some logic code
+  //       }
+  //     },
+  //     moreActions: [
+  //       {
+  //         icon: Icon.Document,
+  //         label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+  //         onClick: () => {
+  //           const detailDoc = this.docAbility.getDetailDoc(matchedContent.token)
+  //           if (!detailDoc) return
+  //           this.ui.invokeDocumentDetail(detailDoc.content)
+  //         }
+  //       }
+  //     ]
+  //   }
+  // }
 
-  private createDocContents(contents: any[]): LayerContent[] {
-    return contents.map((doc) => ({
-      type: 'doc',
-      layer: {
-        level: DocPreviewLevel.Normal,
-        header: {
-          icon: Icon.Function,
-          declaration: '' // TODO: implement document struct and set declaration
-        },
-        content: doc.content,
-        recommendAction: {
-          label: this.ui.i18n.t({
-            zh: '还有疑惑？场外求助',
-            en: 'Still in confusion? Ask for help'
-          }),
-          activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-          onActiveLabelClick: () => {
-            // TODO: add some logic code here
-          }
-        },
-        moreActions: [
-          {
-            icon: Icon.Document,
-            label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-            onClick: () => {
-              const detailDoc = this.docAbility.getDetailDoc(doc.token)
-              if (!detailDoc) return
-              this.ui.invokeDocumentDetail(detailDoc.content)
-            }
-          }
-        ]
-      }
-    }))
-  }
+  //TODO(callme-taota): fix this
+  // private createDocContents(contents: any[]): LayerContent[] {
+  //   return contents.map((doc) => ({
+  //     type: 'doc',
+  //     layer: {
+  //       level: DocPreviewLevel.Normal,
+  //       header: {
+  //         icon: Icon.Function,
+  //         declaration: '' // TODO: implement document struct and set declaration
+  //       },
+  //       content: doc.content,
+  //       recommendAction: {
+  //         label: this.ui.i18n.t({
+  //           zh: '还有疑惑？场外求助',
+  //           en: 'Still in confusion? Ask for help'
+  //         }),
+  //         activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+  //         onActiveLabelClick: () => {
+  //           // TODO: add some logic code here
+  //         }
+  //       },
+  //       moreActions: [
+  //         {
+  //           icon: Icon.Document,
+  //           label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+  //           onClick: () => {
+  //             const detailDoc = this.docAbility.getDetailDoc(doc.token)
+  //             if (!detailDoc) return
+  //             this.ui.invokeDocumentDetail(detailDoc.content)
+  //           }
+  //         }
+  //       ]
+  //     }
+  //   }))
+  // }
 }
 
 export class Coordinator {
@@ -310,9 +316,9 @@ export class Coordinator {
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
     })
 
-    ui.registerHoverProvider({
-      provideHover: this.hoverProvider.provideHover.bind(this.hoverProvider)
-    })
+    // ui.registerHoverProvider({
+    // provideHover: this.implementsPreDefinedHoverProvider.bind(this)
+    // })
 
     ui.registerSelectionMenuProvider({
       provideSelectionMenuItems: this.implementsSelectionMenuProvider.bind(this)
@@ -389,7 +395,7 @@ export class Coordinator {
           completionItems.map((completionItem) => {
             return {
               icon: completionItemType2Icon(completionItem.type),
-              insertText: completionItem.insert_text,
+              insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
               preview: {
@@ -404,6 +410,8 @@ export class Coordinator {
         )
       })
   }
+
+  //delete: wait to implement
 
   async implementsSelectionMenuProvider(
     model: TextModel,
@@ -459,8 +467,8 @@ export class Coordinator {
             style: 'icon',
             behavior: 'triggerCompletion',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           }
         ]
@@ -471,8 +479,8 @@ export class Coordinator {
             style: 'text',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.start_position.Line,
-              column: inlayHint.start_position.Column
+              lineNumber: inlayHint.startPosition.Line,
+              column: inlayHint.startPosition.Column
             }
           }
         ]
@@ -482,8 +490,8 @@ export class Coordinator {
             style: 'tag',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           })
         }
@@ -590,7 +598,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       }
     }))
   ]
-  for (const tool of getAllTools(project)) {
+  for (const tool of getAllTokens(project)) {
     const basics = {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
@@ -647,7 +655,7 @@ function toolCategory2InputItemCategory(
     label: category.label,
     groups: category.groups.map((group) => ({
       label: group.label,
-      inputItems: group.tools.flatMap((tool): InputItem[] => {
+      inputItems: group.tokens.flatMap((tool): InputItem[] => {
         //TODO: get token detail from compiler
         //TODO: get token detail from doc
         if (tool.usage) {
