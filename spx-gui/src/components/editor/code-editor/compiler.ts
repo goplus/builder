@@ -17,10 +17,6 @@ interface WasmHandler extends Window {
   getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
 }
 
-export enum CodeEnum {
-  Sprite,
-  Stage
-}
 
 enum CompletionItemEnum {}
 
@@ -55,28 +51,6 @@ type CompletionItem = {
   type: string
   tokenName: string
   tokenPkg: string
-}
-
-export type TokenId = {
-  // "github.com/goplus/spx"
-  module: string
-  // "Sprite.touching"
-  name: string
-}
-
-type UsageId = string
-
-export type TokenUsage = {
-  id: UsageId
-  effect: string
-  declaration: string
-  sample: string
-  insertText: string
-}
-
-export type Token = {
-  id: TokenId
-  usages: TokenUsage[]
 }
 
 type Code = {

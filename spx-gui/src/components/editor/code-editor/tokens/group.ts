@@ -1,47 +1,35 @@
-import type { LocaleMessage } from '@/utils/i18n'
-import type { Project } from '@/models/project'
-import { type Token, TokenContext, TokenType } from './common'
-import * as gop from './gop'
+import type { Token, TokenCategory, TokenGroup } from './common'
+import { defineConst } from './spx'
 import * as spx from './spx'
-
-export * from './common'
-
-export type TokenGroup = {
-  label: LocaleMessage
-  tools: Token[]
-}
-
-export type TokenCategory = {
-  label: LocaleMessage
-  groups: TokenGroup[]
-}
+import * as gop from './gop'
+import type { Project } from '@/models/project'
 
 export const eventCategory: TokenCategory = {
   label: { en: 'Event', zh: '事件' },
   groups: [
     {
       label: { en: 'Game Events', zh: '游戏事件' },
-      tools: [spx.onStart]
+      tokens: [spx.onStart]
     },
     {
       label: { en: 'Sensing Events', zh: '感知事件' },
-      tools: [spx.onClick, spx.onKey, spx.onAnyKey]
+      tokens: [spx.onClick, spx.onKey, spx.onAnyKey]
     },
     {
       label: { en: 'Motion Events', zh: '运动事件' },
-      tools: [spx.onMoving, spx.onTurning]
+      tokens: [spx.onMoving, spx.onTurning]
     },
     {
       label: { en: 'Message Events', zh: '消息事件' },
-      tools: [spx.onMsg, spx.broadcast]
+      tokens: [spx.onMsg, spx.broadcast]
     },
     {
       label: { en: 'Sprite Events', zh: '精灵事件' },
-      tools: [spx.onCloned]
+      tokens: [spx.onCloned]
     },
     {
       label: { en: 'Stage Events', zh: '舞台事件' },
-      tools: [spx.onBackdrop]
+      tokens: [spx.onBackdrop]
     }
   ]
 }
@@ -51,11 +39,11 @@ export const motionCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Move', zh: '移动' },
-      tools: [spx.step, spx.move, spx.goto, spx.glide]
+      tokens: [spx.step, spx.move, spx.goto, spx.glide]
     },
     {
       label: { en: 'Position', zh: '位置' },
-      tools: [
+      tokens: [
         spx.xpos,
         spx.ypos,
         spx.setXYpos,
@@ -68,11 +56,11 @@ export const motionCategory: TokenCategory = {
     },
     {
       label: { en: 'Rotation', zh: '旋转' },
-      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
+      tokens: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
     },
     {
       label: { en: 'Heading', zh: '方向' },
-      tools: [
+      tokens: [
         spx.heading,
         spx.turnTo,
         spx.setHeading,
@@ -85,11 +73,11 @@ export const motionCategory: TokenCategory = {
     },
     {
       label: { en: 'Size', zh: '大小' },
-      tools: [spx.size, spx.setSize, spx.changeSize]
+      tokens: [spx.size, spx.setSize, spx.changeSize]
     },
     {
       label: { en: 'Others', zh: '其他' },
-      tools: [spx.bounceOffEdge]
+      tokens: [spx.bounceOffEdge]
     }
   ]
 }
@@ -99,24 +87,24 @@ export const lookCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Visibility', zh: '显示/隐藏' },
-      tools: [spx.visible, spx.hide, spx.show]
+      tokens: [spx.visible, spx.hide, spx.show]
     },
     {
       label: { en: 'Behavior', zh: '行为' },
-      tools: [spx.say, spx.think]
+      tokens: [spx.say, spx.think]
     },
     {
       label: { en: 'Costume', zh: '造型' },
       // index-related tools are excluded, as they are not recommended to use (animation is prefered)
-      tools: [spx.costumeName, spx.setCostume]
+      tokens: [spx.costumeName, spx.setCostume]
     },
     {
       label: { en: 'Animation', zh: '动画' },
-      tools: [spx.animate]
+      tokens: [spx.animate]
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
-      tools: [
+      tokens: [
         spx.backdropName,
         spx.backdropIndex,
         spx.startBackdrop,
@@ -132,7 +120,7 @@ export const sensingCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Distance', zh: '距离' },
-      tools: [
+      tokens: [
         spx.touching,
         spx.distanceTo,
         spx.edge,
@@ -144,11 +132,11 @@ export const sensingCategory: TokenCategory = {
     },
     {
       label: { en: 'Mouse', zh: '鼠标' },
-      tools: [spx.mouseX, spx.mouseY, spx.mousePressed, spx.mouseHitItem, spx.mouse]
+      tokens: [spx.mouseX, spx.mouseY, spx.mousePressed, spx.mouseHitItem, spx.mouse]
     },
     {
       label: { en: 'Keyboard', zh: '键盘' },
-      tools: [
+      tokens: [
         spx.keyPressed
         // ...spx.keys // TODO
       ]
@@ -161,11 +149,11 @@ export const soundCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Play / Stop', zh: '播放/停止' },
-      tools: [spx.play, spx.stopAllSounds]
+      tokens: [spx.play, spx.stopAllSounds]
     },
     {
       label: { en: 'Volume', zh: '音量' },
-      tools: [spx.volume, spx.setVolume, spx.changeVolume]
+      tokens: [spx.volume, spx.setVolume, spx.changeVolume]
     }
   ]
 }
@@ -175,15 +163,15 @@ export const controlCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Time', zh: '时间' },
-      tools: [spx.wait]
+      tokens: [spx.wait]
     },
     {
       label: { en: 'Flow Control', zh: '流程控制' },
-      tools: [gop.ifStatement, gop.forLoop]
+      tokens: [gop.ifStatement, gop.forLoop]
     },
     {
       label: { en: 'Function', zh: '函数' },
-      tools: [gop.functionDefinition]
+      tokens: [gop.functionDefinition]
     }
   ]
 }
@@ -193,15 +181,15 @@ export const gameCategory: TokenCategory = {
   groups: [
     {
       label: { en: 'Start / Stop', zh: '开始/停止' },
-      tools: [spx.exit]
+      tokens: [spx.exit]
     },
     {
       label: { en: 'Sprite', zh: '精灵' },
-      tools: [spx.clone, spx.die]
+      tokens: [spx.clone, spx.die]
     },
     {
       label: { en: 'Others', zh: '其他' },
-      tools: [spx.rand, gop.println]
+      tokens: [spx.rand, gop.println]
     }
   ]
 }
@@ -211,58 +199,31 @@ export function getVariableCategory(project: Project): TokenCategory {
   const groups: TokenGroup[] = [
     {
       label: { en: 'Variable Definition', zh: '变量定义' },
-      tools: [gop.varDefinition]
+      tokens: [gop.varDefinition]
     }
   ]
 
   groups.push({
     label: { en: 'Sprites', zh: '精灵' },
-    tools: sprites.map((sprite) => {
+    tokens: sprites.map((sprite) => {
       const keyword = `"${sprite.name}"`
-      return {
-        type: TokenType.variable,
-        target: TokenContext.all,
-        keyword,
-        desc: { en: `Sprite "${sprite.name}"`, zh: `精灵 ${sprite.name}` },
-        usage: {
-          sample: keyword,
-          insertText: keyword
-        }
-      }
+      return defineConst(keyword, 'main')
     })
   })
 
   groups.push({
     label: { en: 'Sounds', zh: '声音' },
-    tools: sounds.map((sound) => {
+    tokens: sounds.map((sound) => {
       const keyword = `"${sound.name}"`
-      return {
-        type: TokenType.variable,
-        target: TokenContext.all,
-        keyword,
-        desc: { en: `Sound "${sound.name}"`, zh: `声音 ${sound.name}` },
-        usage: {
-          sample: keyword,
-          insertText: keyword
-        }
-      }
+      return defineConst(keyword, 'main')
     })
   })
 
   groups.push({
     label: { en: 'Backdrops', zh: '背景' },
-    tools: project.stage.backdrops.map((backdrop) => {
+    tokens: project.stage.backdrops.map((backdrop) => {
       const keyword = `"${backdrop.name}"`
-      return {
-        type: TokenType.variable,
-        target: TokenContext.all,
-        keyword,
-        desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
-        usage: {
-          sample: keyword,
-          insertText: keyword
-        }
-      }
+      return defineConst(keyword, 'main')
     })
   })
 
@@ -272,18 +233,9 @@ export function getVariableCategory(project: Project): TokenCategory {
         en: `Animations of "${project.selectedSprite.name}"`,
         zh: `${project.selectedSprite.name} 的动画`
       },
-      tools: project.selectedSprite.animations.map((animation) => {
+      tokens: project.selectedSprite.animations.map((animation) => {
         const keyword = `"${animation.name}"`
-        return {
-          type: TokenType.variable,
-          target: TokenContext.sprite,
-          keyword,
-          desc: { en: `Animation "${animation.name}"`, zh: `动画 ${animation.name}` },
-          usage: {
-            sample: keyword,
-            insertText: keyword
-          }
-        }
+        return defineConst(keyword, 'main')
       })
     })
     groups.push({
@@ -291,18 +243,9 @@ export function getVariableCategory(project: Project): TokenCategory {
         en: `Costumes of "${project.selectedSprite.name}"`,
         zh: `${project.selectedSprite.name} 的造型`
       },
-      tools: project.selectedSprite.costumes.map((costume) => {
+      tokens: project.selectedSprite.costumes.map((costume) => {
         const keyword = `"${costume.name}"`
-        return {
-          type: TokenType.variable,
-          target: TokenContext.sprite,
-          keyword,
-          desc: { en: `Costume "${costume.name}"`, zh: `造型 ${costume.name}` },
-          usage: {
-            sample: keyword,
-            insertText: keyword
-          }
-        }
+        return defineConst(keyword, 'main')
       })
     })
   }
@@ -324,7 +267,7 @@ export function getAllTokens(project: Project): Token[] {
     gameCategory,
     getVariableCategory(project)
   ]
-    .map((c) => c.groups.map((g) => g.tools))
+    .map((c) => c.groups.map((g) => g.tokens))
     .flat(2)
     .concat(...spx.keys)
 }

@@ -15,7 +15,7 @@ import {
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
 import { ChatBot } from '../chat-bot'
-import { DocAbility, type Doc } from '../document'
+import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
 import type { I18n } from '@/utils/i18n'
@@ -29,10 +29,8 @@ import {
   lookCategory,
   motionCategory,
   sensingCategory,
-  soundCategory,
-  type TokenCategory,
-  TokenType
-} from '@/components/editor/code-editor/tools'
+  soundCategory
+} from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import type { Definition, DefinitionUsage, Diagnostic } from '../compiler'
 
@@ -85,32 +83,35 @@ class HoverProvider {
     ctx: {
       position: Position
       hoverUnitWord: string
+      module: string
       signal: AbortSignal
     }
   ): Promise<LayerContent[]> {
-    //TODO(callme-taota): fix this
-    // const contents = this.docAbility.getNormalDoc({
-    //   module: '',
-    //   name: ctx.hoverUnitWord
-    // })
+    const contents = this.docAbility.getNormalDoc({
+      id: {
+        module: ctx.module,
+        name: ctx.hoverUnitWord
+      },
+      usages: []
+    })
 
-    // const definition = this.findDefinition(ctx.position)
-    // const diagnostic = this.findDiagnostic(ctx.position.lineNumber)
-    // const matchedContent = this.findMatchedContent(contents, definition)
-    // const layerContents: LayerContent[] = []
+    const definition = this.findDefinition(ctx.position)
+    const diagnostic = this.findDiagnostic(ctx.position.lineNumber)
+    const matchedContent = this.findMatchedContent(contents, definition)
+    const layerContents: LayerContent[] = []
 
-    // if (diagnostic) layerContents.push(this.createDiagnosticContent(diagnostic))
+    if (diagnostic) layerContents.push(this.createDiagnosticContent(diagnostic))
 
-    // if (contents && contents.length > 0) {
-    //   layerContents.push(...this.createDocContents(contents))
-    // } else if (definition && definition.usages.length > 0) {
-    //   // in definition, usages have only one usage
-    //   const [usage] = definition.usages
-    //   const content = VariableDefinitionType.includes(usage.type)
-    //     ? this.createVariableRenameContent(usage)
-    //     : this.createDefinitionContent(usage, matchedContent)
-    //   layerContents.push(content)
-    // }
+    if (contents && contents.length > 0) {
+      layerContents.push(...this.createDocContents(contents))
+    } else if (definition && definition.usages.length > 0) {
+      // in definition, usages have only one usage
+      const [usage] = definition.usages
+      const content = VariableDefinitionType.includes(usage.type)
+        ? this.createVariableRenameContent(usage)
+        : this.createDefinitionContent(usage, matchedContent)
+      layerContents.push(content)
+    }
 
     return []
   }
@@ -654,7 +655,7 @@ function toolCategory2InputItemCategory(
     label: category.label,
     groups: category.groups.map((group) => ({
       label: group.label,
-      inputItems: group.tools.flatMap((tool): InputItem[] => {
+      inputItems: group.tokens.flatMap((tool): InputItem[] => {
         //TODO: get token detail from compiler
         //TODO: get token detail from doc
         if (tool.usage) {

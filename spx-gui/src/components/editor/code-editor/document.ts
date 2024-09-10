@@ -1,20 +1,7 @@
-import type { Token, TokenId, TokenUsage } from '@/components/editor/code-editor/compiler'
 import type { I18n } from '@/utils/i18n'
 import { Project } from '@/models/project'
-import { getAllTokens } from '@/components/editor/code-editor/tools'
-import type { Markdown } from './EditorUI'
-
-export type UsageDocumentContent = Markdown
-
-export type TokenDetail = Token & Doc
-
-export type Doc = Token & {
-  usages: usageWithDoc[]
-}
-
-type usageWithDoc = {
-  doc: UsageDocumentContent
-} & TokenUsage
+import type { Token, Doc, usageWithDoc, TokenId, TokenUsage } from './tokens/common'
+import { getAllTokens } from './tokens/group'
 
 export class DocAbility {
   private readonly i18n: I18n
@@ -26,7 +13,7 @@ export class DocAbility {
   }
 
   public async getNormalDoc(token: Token): Promise<Doc> {
-    const usages: usageWithDoc[] = token.usages.map(usage => ({ ...usage, doc: '' }));
+    const usages: usageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
       const content = await getUsageDocumentFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
@@ -41,7 +28,7 @@ export class DocAbility {
   }
 
   public async getDetailDoc(token: Token): Promise<Doc> {
-    const usages: usageWithDoc[] = token.usages.map(usage => ({ ...usage, doc: '' }));
+    const usages: usageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
       const content = await getUsageDocumentDetailFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
@@ -158,26 +145,26 @@ function markdownFilenameExtract(fullName: string): object {
   return obj
 }
 
-function getDocumentsByKeywords(keyword: string, i18n: I18n, project: Project) {
-  const tools = getAllTokens(project)
-  const tool = tools.find((s) => s.keyword === keyword)
-  if (tool == null) return
-  let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
-  const result: string[] = []
+// function getDocumentsByKeywords(keyword: string, i18n: I18n, project: Project) {
+//   const tools = getAllTokens(project)
+//   const tool = tools.find((s) => s.id.name === keyword)
+//   if (tool == null) return
+//   let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
+//   const result: string[] = []
 
-  if (tool.usage != null) {
-    text += '\n' + '```gop' + '\n' + tool.usage.sample + '\n' + '```'
-    result.push(text)
-  } else {
-    tool
-      .usages!.map((usage) => {
-        const colon = i18n.t({ en: ': ', zh: '：' })
-        const desc = i18n.t(usage.desc)
-        return desc + colon + '\n' + '```gop' + '\n' + usage.sample + '\n' + '```'
-      })
-      .forEach((item) => {
-        result.push(text + '\n' + item)
-      })
-  }
-  return result
-}
+//   if (tool.usage != null) {
+//     text += '\n' + '```gop' + '\n' + tool.usage.sample + '\n' + '```'
+//     result.push(text)
+//   } else {
+//     tool
+//       .usages!.map((usage) => {
+//         const colon = i18n.t({ en: ': ', zh: '：' })
+//         const desc = i18n.t(usage.desc)
+//         return desc + colon + '\n' + '```gop' + '\n' + usage.sample + '\n' + '```'
+//       })
+//       .forEach((item) => {
+//         result.push(text + '\n' + item)
+//       })
+//   }
+//   return result
+// }
