@@ -4,6 +4,7 @@
     :placeholder="placeholder || ''"
     :value="value"
     :disabled="disabled"
+    :readonly="readonly"
     @update:value="(v) => emit('update:value', v)"
   >
     <template v-if="!!slots.prefix" #prefix>
@@ -37,6 +38,7 @@ defineProps<{
   value: string
   clearable?: boolean
   disabled?: boolean
+  readonly?: boolean
   placeholder?: string
 }>()
 

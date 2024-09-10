@@ -159,7 +159,7 @@ import {
   useCreateProject,
   useOpenProject,
   useRemoveProject,
-  useSaveAndShareProject,
+  useShareProject,
   useStopSharingProject
 } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
@@ -240,7 +240,7 @@ const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(prop
   zh: '从 Scratch 项目文件导入失败'
 }).fn
 
-const shareProject = useSaveAndShareProject()
+const shareProject = useShareProject()
 const handleShareProject = useMessageHandle(() => shareProject(props.project!), {
   en: 'Failed to share project',
   zh: '分享项目失败'

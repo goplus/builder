@@ -11,6 +11,7 @@
     </div>
   </NModal>
 </template>
+
 <script setup lang="ts">
 import { NModal } from 'naive-ui'
 import { usePopupContainer } from '../utils'
@@ -33,6 +34,7 @@ const handleUpdateShow = (visible: boolean) => {
 
 const attachTo = usePopupContainer()
 </script>
+
 <style lang="scss" scoped>
 .container {
   display: flex;
@@ -58,13 +60,5 @@ const attachTo = usePopupContainer()
 .size-full {
   width: 100%;
   margin: 16px;
-}
-
-.divider {
-  margin: 0;
-}
-
-.main {
-  padding: 16px;
 }
 </style>
