@@ -1,9 +1,10 @@
 import type { EditorUI, LayerContent, TextModel } from '@/components/editor/code-editor/EditorUI'
 import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
-import { type Doc, DocAbility } from '@/components/editor/code-editor/document'
+import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
+import type { Doc, TokenUsage } from '@/components/editor/code-editor/tokens/common'
 
 export class HoverProvider {
   private ui: EditorUI
@@ -27,17 +28,28 @@ export class HoverProvider {
     const definition = this.findDefinition(ctx.position)
     if (!definition) return []
 
-    const contents = this.docAbility.getNormalDoc({
-      module: definition.pkg_path,
-      name: definition.name
+    const content = await this.docAbility.getNormalDoc({
+      id: {
+        module: definition.pkg_path,
+        name: definition.name
+      },
+      usages: definition.usages.map(
+        (usage): TokenUsage => ({
+          id: usage.usageID,
+          effect: usage.type,
+          declaration: usage.declaration,
+          sample: usage.sample,
+          insertText: usage.insert_text
+        })
+      )
     })
-    const matchedContent = this.findMatchedContent(contents, definition)
+    const matchedContent = this.findMatchedContent(content, definition)
     // todo: refactor these code
 
     const layerContents: LayerContent[] = []
 
-    if (contents && contents.length > 0) {
-      layerContents.push(...this.createDocContents(contents))
+    if (content && content.length > 0) {
+      layerContents.push(...this.createDocContents(content))
     } else if (definition.usages.length > 0) {
       // in definition, usages have only one usage
       const [usage] = definition.usages
@@ -68,8 +80,8 @@ export class HoverProvider {
     })
   }
 
-  private findMatchedContent(contents: Doc[] | null, definition: Definition | undefined) {
-    return contents?.find(
+  private findMatchedContent(content: Doc | null, definition: Definition | undefined) {
+    return content?.usages.find(
       (content) =>
         definition &&
         content.token.id.name === definition.pkg_name &&
@@ -183,9 +195,10 @@ export class HoverProvider {
             icon: Icon.Document,
             label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
             onClick: () => {
-              const detailDoc = this.docAbility.getDetailDoc(doc.token)
-              if (!detailDoc) return
-              this.ui.invokeDocumentDetail(detailDoc.content)
+              this.docAbility.getDetailDoc(doc).then((detailDoc) => {
+                if (!detailDoc) return
+                this.ui.invokeDocumentDetail(detailDoc)
+              })
             }
           }
         ]

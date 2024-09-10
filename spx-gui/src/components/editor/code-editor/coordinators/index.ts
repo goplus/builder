@@ -33,6 +33,7 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
+import type { TokenCategory } from '@/components/editor/code-editor/tokens/common'
 
 type JumpPosition = {
   line: number
@@ -54,7 +55,7 @@ export class Coordinator {
   private coordinatorState: CoordinatorState = {
     definitions: []
   }
-  private hoverProvider: HoverProvider
+  private readonly hoverProvider: HoverProvider
 
   constructor(
     ui: EditorUI,
@@ -224,8 +225,8 @@ export class Coordinator {
             style: 'icon',
             behavior: 'triggerCompletion',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           }
         ]
@@ -236,8 +237,8 @@ export class Coordinator {
             style: 'text',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.start_position.Line,
-              column: inlayHint.start_position.Column
+              lineNumber: inlayHint.startPosition.Line,
+              column: inlayHint.startPosition.Column
             }
           }
         ]
@@ -247,8 +248,8 @@ export class Coordinator {
             style: 'tag',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.end_position.Line,
-              column: inlayHint.end_position.Column
+              lineNumber: inlayHint.endPosition.Line,
+              column: inlayHint.endPosition.Column
             }
           })
         }
@@ -334,81 +335,6 @@ export class Coordinator {
   public jump(position: JumpPosition): void {}
 }
 
-function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
-  const items: CompletionItem[] = [
-    ...keywords.map((keyword) => ({
-      label: keyword,
-      insertText: keyword,
-      icon: Icon.Keywords,
-      desc: '',
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
-    })),
-    ...typeKeywords.map((typeKeyword) => ({
-      label: typeKeyword,
-      insertText: typeKeyword,
-      icon: Icon.Keywords,
-      desc: '',
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
-    }))
-  ]
-  for (const tool of getAllTokens(project)) {
-    const basics = {
-      label: tool.keyword,
-      icon: getCompletionItemKind(tool.type),
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
-    }
-    if (tool.usage != null) {
-      items.push({
-        ...basics,
-        insertText: tool.usage.insertText,
-        desc: i18n.t(tool.desc)
-      })
-      continue
-    }
-    for (const usage of tool.usages!) {
-      items.push({
-        ...basics,
-        insertText: usage.insertText,
-        desc: [i18n.t(tool.desc), i18n.t(usage.desc)].join(' - ')
-      })
-    }
-  }
-  return items
-}
-
-function getCompletionItemKind(type: TokenType): Icon {
-  switch (type) {
-    case TokenType.method:
-      return Icon.Function
-    case TokenType.function:
-      return Icon.Function
-    case TokenType.constant:
-      return Icon.Property
-    case TokenType.keyword:
-      return Icon.Keywords
-    case TokenType.variable:
-      return Icon.Property
-  }
-}
-
 function toolCategory2InputItemCategory(
   category: TokenCategory,
   icon: Icon,
@@ -423,28 +349,7 @@ function toolCategory2InputItemCategory(
       inputItems: group.tokens.flatMap((tool): InputItem[] => {
         //TODO: get token detail from compiler
         //TODO: get token detail from doc
-        if (tool.usage) {
-          let sample = tool.usage.insertText.split(' ').slice(1).join()
-          sample = sample.replace(
-            /\$\{\d+:?(.*?)}/g,
-            (_, placeholderContent: string) => placeholderContent || ''
-          )
-          return [
-            {
-              icon: getCompletionItemKind(tool.type),
-              label: tool.keyword,
-              desc: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Normal,
-                  content: ''
-                }
-              },
-              sample: sample,
-              insertText: tool.usage.insertText
-            }
-          ]
-        } else if (Array.isArray(tool.usages)) {
+        if (Array.isArray(tool.usages)) {
           return tool.usages.map((usage) => {
             let sample = usage.insertText.split(' ').slice(1).join(' ')
             sample = sample.replace(
@@ -452,8 +357,8 @@ function toolCategory2InputItemCategory(
               (_, placeholderContent: string) => placeholderContent || ''
             )
             return {
-              icon: getCompletionItemKind(tool.type),
-              label: tool.keyword,
+              icon: completionItemType2Icon(usage.effect),
+              label: tool.id.name,
               desc: {
                 type: 'doc',
                 layer: {

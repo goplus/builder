@@ -1,7 +1,6 @@
 import type { I18n } from '@/utils/i18n'
 import { Project } from '@/models/project'
 import type { Token, Doc, usageWithDoc, TokenId, TokenUsage } from './tokens/common'
-import { getAllTokens } from './tokens/group'
 
 export class DocAbility {
   private readonly i18n: I18n

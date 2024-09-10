@@ -17,14 +17,13 @@ interface WasmHandler extends Window {
   getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
 }
 
-
-enum CompletionItemEnum {}
-
 export interface Hint {
   startPos: number
   endPos: number
   startPosition: Position
   endPosition: Position
+  start_position: Position
+  end_position: Position
   name: string
   value: string
   unit: string
@@ -160,7 +159,15 @@ export class Compiler extends Disposable {
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(inlayHints) ? inlayHints : []
+    if (Array.isArray(inlayHints)) {
+      return inlayHints.map((hint) => ({
+        ...hint,
+        startPosition: hint.start_position,
+        endPosition: hint.end_position
+      }))
+    } else {
+      return []
+    }
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {
