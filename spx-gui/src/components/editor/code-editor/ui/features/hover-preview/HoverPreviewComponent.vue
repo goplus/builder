@@ -4,7 +4,7 @@ import DocumentPreview from './DocumentPreview.vue'
 import { editor as IEditor } from 'monaco-editor'
 import RenameComponent from '@/components/editor/code-editor/ui/features/hover-preview/RenameComponent.vue'
 import { onUnmounted, ref, shallowRef, watch } from 'vue'
-import type { Action, RenamePreview } from '../../../EditorUI'
+import { type Action, DocPreviewLevel, type RenamePreview } from '../../../EditorUI'
 
 const props = defineProps<{
   hoverPreview: HoverPreview
@@ -75,15 +75,12 @@ const cleanUp = () => {
 watch(
   () => hoverPreviewState.visible,
   (visible) => {
-    if (!visible) {
-      cleanUp()
-    }
+    if (!visible) cleanUp()
   }
 )
 
 onUnmounted(() => {
   cleanUp()
-  removeEventListener('keyup', handleEscape)
 })
 
 function handleActionClick(action: Action) {
@@ -120,6 +117,9 @@ function handleMouseLeave() {
 
 // equal `window.addEventListener('keyup', handleEscape)`
 addEventListener('keyup', handleEscape)
+onUnmounted(() => {
+  removeEventListener('keyup', handleEscape)
+})
 
 function handleEscape(e: KeyboardEvent) {
   if (e.key !== 'Escape') return
@@ -129,17 +129,77 @@ function handleEscape(e: KeyboardEvent) {
     props.hoverPreview.hideDocument(true)
   }
 }
+
+const hoverPreviewContainerElement = ref<HTMLElement>()
+const activeIdx = ref(0)
+
+watch(activeIdx, () => {
+  updateDocumentCardPosition()
+})
+
+function updateDocumentCardPosition() {
+  const containerElement = hoverPreviewContainerElement.value
+  if (!containerElement || hoverPreviewState.docs.length <= 0) return
+  const documentElements = Array.from(containerElement.children).filter(
+    (documentContainer) =>
+      documentContainer.classList.contains('hover-document') &&
+      Number(documentContainer.getAttribute('data-level')) === DocPreviewLevel.Normal
+  ) as HTMLElement[]
+  if (documentElements.length < 2) return
+  const headerElements: Element[] = documentElements
+    .map((documentContainer) => documentContainer.firstElementChild)
+    .filter(
+      // add `headerElement is Element` to pass ts check
+      (headerElement): headerElement is Element =>
+        // add `headerElement != null` to pass ts check
+        headerElement != null && headerElement.classList.contains('declaration-wrapper')
+    )
+  if (documentElements.length !== headerElements.length)
+    return console.warn('not all documents contains header')
+  const documentRects = documentElements.map((element) => {
+    const rect = element.getBoundingClientRect()
+    return {
+      // this top and left is related to its parent node, not viewport
+      top: element.offsetTop,
+      left: element.offsetLeft,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height
+    }
+  })
+  const headerRects = headerElements.map((element) => element.getBoundingClientRect())
+
+  let totalHeaderHeight = documentRects[0].top || 0
+  let beforeActiveElementBaseOffset = 0
+  const documentGap = 4 // from css
+  const currentIdx = activeIdx.value
+  documentElements.forEach((element, i) => {
+    let offset = -documentRects[i].top + totalHeaderHeight
+    totalHeaderHeight += headerRects[i].height + documentGap
+
+    if (i === currentIdx) {
+      beforeActiveElementBaseOffset =
+        totalHeaderHeight + documentRects[i].height - headerRects[i].height
+      // rest previous all header height
+      totalHeaderHeight = 0
+    }
+
+    if (i > currentIdx) offset += beforeActiveElementBaseOffset
+
+    element.style.transform = `translateY(${offset}px)`
+  })
+}
 </script>
 <template>
   <slot></slot>
   <teleport to="body">
     <div class="hover-preview-wrapper">
-      <transition>
-        <!--  TODO: here need to redesign UI to satisfy collapse mode  -->
+      <transition @after-enter="updateDocumentCardPosition">
         <article
           v-show="hoverPreviewState.visible"
+          ref="hoverPreviewContainerElement"
           class="hover-preview-container"
-          style="position: absolute"
           :style="{
             top: hoverPreviewState.position.top + 'px',
             left: hoverPreviewState.position.left + 'px'
@@ -150,12 +210,14 @@ function handleEscape(e: KeyboardEvent) {
           <DocumentPreview
             v-for="(doc, i) in hoverPreviewState.docs"
             :key="i"
+            :data-level="doc.level"
             class="hover-document"
             :header="doc.header"
             :content="doc.content"
             :more-actions="doc.moreActions"
             :recommend-action="doc.recommendAction"
             @action-click="handleActionClick"
+            @mouseenter="activeIdx = i"
           ></DocumentPreview>
           <div class="extra-layer-wrapper">
             <transition name="slide">

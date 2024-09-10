@@ -24,15 +24,13 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
-  getAllTools,
+  getAllTokens,
   getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
-  soundCategory,
-  type TokenCategory,
-  TokenType
-} from '@/components/editor/code-editor/tools'
+  soundCategory
+} from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
 
@@ -156,7 +154,7 @@ export class Coordinator {
           completionItems.map((completionItem) => {
             return {
               icon: completionItemType2Icon(completionItem.type),
-              insertText: completionItem.insert_text,
+              insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
               preview: {
@@ -365,7 +363,7 @@ function getCompletionItems(i18n: I18n, project: Project): CompletionItem[] {
       }
     }))
   ]
-  for (const tool of getAllTools(project)) {
+  for (const tool of getAllTokens(project)) {
     const basics = {
       label: tool.keyword,
       icon: getCompletionItemKind(tool.type),
@@ -422,7 +420,7 @@ function toolCategory2InputItemCategory(
     label: category.label,
     groups: category.groups.map((group) => ({
       label: group.label,
-      inputItems: group.tools.flatMap((tool): InputItem[] => {
+      inputItems: group.tokens.flatMap((tool): InputItem[] => {
         //TODO: get token detail from compiler
         //TODO: get token detail from doc
         if (tool.usage) {
