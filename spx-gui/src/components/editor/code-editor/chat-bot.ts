@@ -208,7 +208,7 @@ export class Suggest {
       userCursor: input.position
     }
     const res = await startTask(params)
-    const suggests = res.codeSuggests
+    const suggests = res.suggestions
     return suggests.map((suggest) => ({
       label: suggest.label,
       desc: suggest.label,

@@ -14,7 +14,7 @@ import {
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
 import { Compiler } from '../compiler'
-import { ChatBot } from '../chat-bot'
+import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility, type Doc } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
@@ -290,6 +290,7 @@ export class Coordinator {
     diagnostics: []
   }
   private hoverProvider: HoverProvider
+  private suggest: Suggest
 
   constructor(
     ui: EditorUI,
@@ -305,6 +306,7 @@ export class Coordinator {
     this.chatBot = chatBot
     this.compiler = compiler
     this.hoverProvider = new HoverProvider(ui, docAbility, this.state)
+    this.suggest = new Suggest(() => project)
 
     ui.registerCompletionProvider({
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
@@ -336,7 +338,7 @@ export class Coordinator {
   }
 
   implementsPreDefinedCompletionProvider(
-    _model: TextModel,
+    model: TextModel,
     ctx: {
       position: Position
       unitWord: string
@@ -397,6 +399,34 @@ export class Coordinator {
                 layer: {
                   level: DocPreviewLevel.Normal,
                   content: '' /* todo: get content with docAbility */
+                }
+              }
+            }
+          })
+        )
+      })
+
+    this.suggest
+      .startSuggestTask({
+        code: model.getValue(),
+        position: {
+          line: ctx.position.lineNumber,
+          column: ctx.position.column
+        }
+      })
+      .then((items) => {
+        addItems(
+          items.map((item) => {
+            return {
+              icon: Icon.AIAbility,
+              insertText: ctx.unitWord + item.insertText,
+              label: ctx.unitWord + item.label,
+              desc: ctx.unitWord + item.label,
+              preview: {
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
                 }
               }
             }

@@ -70,7 +70,7 @@ export type ChatResp = {
 
 export type TaskResp = {
   taskAction: number
-  codeSuggests: CodeSuggest[]
+  suggestions: CodeSuggest[]
 }
 
 export type CodeSuggest = {

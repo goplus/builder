@@ -162,8 +162,8 @@ type TaskResp struct {
 }
 
 type TaskResponse struct {
-	TaskAction   int           `json:"taskAction"`
-	CodeSuggests []CodeSuggest `json:"suggestions"`
+	TaskAction   int                   `json:"taskAction"`
+	CodeSuggests []CodeSuggestResponse `json:"suggestions"`
 }
 
 func newSuggestTaskResp(resp llm.LlmResponseBody) TaskResp {
@@ -180,6 +180,22 @@ func newSuggestTaskResp(resp llm.LlmResponseBody) TaskResp {
 type CodeSuggest struct {
 	Label      string `json:"label"`
 	InsertText string `json:"insert_text"`
+}
+
+type CodeSuggestResponse struct {
+	Label      string `json:"label"`
+	InsertText string `json:"insertText"`
+}
+
+func ConvertToCodeSuggestResponse(suggests []CodeSuggest) []CodeSuggestResponse {
+	responses := make([]CodeSuggestResponse, len(suggests))
+	for i, suggest := range suggests {
+		responses[i] = CodeSuggestResponse{
+			Label:      suggest.Label,
+			InsertText: suggest.InsertText,
+		}
+	}
+	return responses
 }
 
 func (projCtx ProjectContext) String() string {
@@ -481,7 +497,11 @@ func (ctrl *Controller) StartTask(ctx context.Context, p *AITaskParams) (TaskRes
 		return TaskResponse{}, err
 	}
 	if p.TaskAction == int(SuggestTask) {
-		return TaskResponse(newSuggestTaskResp(resp)), nil
+		response := newSuggestTaskResp(resp)
+		return TaskResponse{
+			TaskAction:   response.TaskAction,
+			CodeSuggests: ConvertToCodeSuggestResponse(response.CodeSuggests),
+		}, nil
 	}
 	return TaskResponse{}, nil
 }
