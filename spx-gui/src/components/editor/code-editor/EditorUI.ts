@@ -441,7 +441,11 @@ export class EditorUI extends Disposable {
           // this used for inlay hint, when mouse hover function param tag, hover provider should not work
           if (
             this.inlayHint &&
-            !isMouseColumnInWordRange(this.inlayHint.mouseColumn, word.startColumn, word.endColumn)
+            !isMouseColumnInWordRange(
+              this.inlayHint.mouseColumn,
+              word.startColumn,
+              word.endColumn - 1
+            )
           ) {
             return
           }

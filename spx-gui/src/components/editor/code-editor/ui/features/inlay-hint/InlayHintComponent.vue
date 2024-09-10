@@ -54,6 +54,15 @@ const updateInlayHint = debounce(async () => {
 
 props.inlayHint.editor.onDidChangeModelContent(updateInlayHint)
 
+props.inlayHint.eventDisposeHandler.push(
+  props.inlayHint.editor.onMouseDown((e) => {
+    const element = e.target.element
+    if (element?.classList.contains('inlay-hint__icon-playlist')) {
+      props.ui.completionMenu?.showCompletionMenu()
+    }
+  }).dispose
+)
+
 onMounted(() => {
   updateInlayHint()
 })

@@ -4,9 +4,7 @@ import { StyleSheetContent } from '@/components/editor/code-editor/ui/common/sty
 export class InlayHint extends StyleSheetContent implements IDisposable {
   editor: IEditor.IStandaloneCodeEditor
   abortController = new AbortController()
-  eventDisposeHandler: Record<string, (() => void) | null> = {
-    mouseDown: null
-  }
+  public eventDisposeHandler: Array<() => void> = []
   public textDecorationsCollection: IEditor.IEditorDecorationsCollection
   public mouseColumn = 0
 
@@ -14,11 +12,11 @@ export class InlayHint extends StyleSheetContent implements IDisposable {
     super()
     this.editor = editor
     this.textDecorationsCollection = editor.createDecorationsCollection([])
-    this.editor.onMouseMove((e) => {
-      this.mouseColumn = e.target.range?.startColumn || e.target.mouseColumn
-    })
-
-    // todo: trigger completion menu
+    this.eventDisposeHandler.push(
+      this.editor.onMouseMove((e) => {
+        this.mouseColumn = e.target.range?.startColumn || e.target.mouseColumn
+      }).dispose
+    )
   }
 
   public createParamDecoration(
@@ -74,9 +72,7 @@ export class InlayHint extends StyleSheetContent implements IDisposable {
   }
 
   dispose() {
-    for (const event in this.eventDisposeHandler) {
-      this.eventDisposeHandler[event]?.()
-    }
+    this.eventDisposeHandler.forEach((dispose) => dispose())
 
     this.textDecorationsCollection.clear()
     this.abortController.abort()

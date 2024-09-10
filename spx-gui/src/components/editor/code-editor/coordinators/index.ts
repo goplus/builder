@@ -307,7 +307,7 @@ export class Coordinator {
     this.hoverProvider = new HoverProvider(ui, docAbility, this.state)
 
     ui.registerCompletionProvider({
-      provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
+      provideDynamicCompletionItems: this.implementsCompletionProvider.bind(this)
     })
 
     ui.registerHoverProvider({
@@ -335,7 +335,7 @@ export class Coordinator {
     return (this.project.selectedSprite?.name ?? 'main') + '.spx'
   }
 
-  implementsPreDefinedCompletionProvider(
+  implementsCompletionProvider(
     _model: TextModel,
     ctx: {
       position: Position
@@ -344,6 +344,8 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
+    // todo: check is typing play function params
+
     // add project variables
     const { sprites, sounds, stage, selectedSprite } = this.project
 

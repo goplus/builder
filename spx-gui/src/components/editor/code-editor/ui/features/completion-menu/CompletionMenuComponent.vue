@@ -78,7 +78,7 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
 
 <template>
   <editor-menu
-    v-show="completionMenuState.visible"
+    v-show="completionMenuState.visible && menuItems.length"
     ref="editorMenuRef"
     class="completion-menu"
     :items="menuItems"
