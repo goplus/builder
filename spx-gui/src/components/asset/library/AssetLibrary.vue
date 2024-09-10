@@ -64,7 +64,7 @@
         <LibraryMenu @update:value="handleUserSelectCategory" />
         <UIDivider />
         <LibraryTree
-          :type="type"
+          :type="assetType"
           style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
         />
       </div>
@@ -92,7 +92,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
 import { UITextInput, UIIcon, UIModalClose, UIDivider } from '@/components/ui'
 import { AssetType, getAssetSearchSuggestion, type AssetData } from '@/apis/asset'
 import { debounce, useAsyncComputed } from '@/utils/utils'
@@ -154,12 +154,18 @@ const searchInput = ref('')
 const searchCtx = useSearchCtx()
 const searchResultCtx = useSearchResultCtx()
 const entityMessage = computed(() => entityMessages[searchCtx.type])
-const type = ref(searchCtx.type) //just for display
+
+const assetType = ref(searchCtx.type ?? AssetType.Sprite)
+watchEffect(() => {
+    assetType.value = searchCtx.type
+})
 
 const suggestions = useAsyncComputed(async () => {
   return (await getAssetSearchSuggestion(searchCtx.keyword)).suggestions
 })
-const suggestionsOptions = computed(() => suggestions.value?.map((s) => ({ label: s, value: s })) ?? [])
+const suggestionsOptions = computed(
+  () => suggestions.value?.map((s) => ({ label: s, value: s })) ?? []
+)
 
 // do search (with a delay) when search-input changed
 watch(
