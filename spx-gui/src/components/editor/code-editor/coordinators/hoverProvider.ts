@@ -4,7 +4,7 @@ import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
-import type { Doc, TokenUsage, UsageWithDoc } from '@/components/editor/code-editor/tokens/common'
+import type { TokenWithDoc, TokenUsage, UsageWithDoc } from '@/components/editor/code-editor/tokens/common'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
 
 export class HoverProvider {
@@ -31,7 +31,7 @@ export class HoverProvider {
 
     const content = await this.docAbility.getNormalDoc({
       id: {
-        module: definition.pkg_path,
+        module: definition.pkgPath,
         name: definition.name
       },
       usages: definition.usages.map(
@@ -40,7 +40,7 @@ export class HoverProvider {
           effect: usage.type,
           declaration: usage.declaration,
           sample: usage.sample,
-          insertText: usage.insert_text
+          insertText: usage.insertText
         })
       )
     })
@@ -59,17 +59,17 @@ export class HoverProvider {
 
   private isDefinitionCanBeRenamed(definition: Definition) {
     return (
-      definition.pkg_name === 'main' &&
-      definition.pkg_path === 'main' &&
+      definition.pkgName === 'main' &&
+      definition.pkgPath === 'main' &&
       definition.usages.length === 1
     )
   }
 
   private findDefinition(position: Position): Definition | undefined {
     return this.coordinatorState.definitions.find((definition) => {
-      const tokenLen = definition.end_pos - definition.start_pos
-      const line = definition.start_position.Line
-      const startColumn = definition.start_position.Column
+      const tokenLen = definition.endPos - definition.startPos
+      const line = definition.startPosition.Line
+      const startColumn = definition.startPosition.Column
       const endColumn = startColumn + tokenLen
       return (
         position.lineNumber === line &&
@@ -115,7 +115,7 @@ export class HoverProvider {
     }
   }
 
-  private createDocContents(doc: Doc, definition: Definition): LayerContent[] {
+  private createDocContents(doc: TokenWithDoc, definition: Definition): LayerContent[] {
     const declarations = this.createDefinitionDeclaration(definition)
     return doc.usages.map((usage: UsageWithDoc) => ({
       type: 'doc',
@@ -153,7 +153,7 @@ export class HoverProvider {
     return usageDeclaration
   }
 
-  private createDocDetailAction(doc: Doc, definition: Definition) {
+  private createDocDetailAction(doc: TokenWithDoc, definition: Definition) {
     if (definition.usages.length !== 1) return []
     return [
       {
