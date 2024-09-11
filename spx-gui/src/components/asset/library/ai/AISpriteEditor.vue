@@ -58,6 +58,15 @@
       </Transition>
     </div>
   </div>
+  <Transition name="slide-fade" mode="out-in" appear>
+    <UIFormModal
+      v-model:visible="motionRecordVisible"
+      :title="$t({ en: 'Record Motion', zh: '录制动作' })"
+      :center-title="true"
+    >
+      <VideoRecorder class="motion-recorder" />
+    </UIFormModal>
+  </Transition>
 </template>
 
 <script lang="ts" setup>
@@ -81,7 +90,12 @@ import { useFileUrl } from '@/utils/file'
 import { NEmpty, NIcon, NImage, NSpin } from 'naive-ui'
 import SpriteCarousel from '../details/SpriteCarousel.vue'
 import { EditOutlined } from '@vicons/antd'
-import { ArrowBackOutlined, AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
+import {
+  ArrowBackOutlined,
+  AutoFixHighOutlined,
+  CameraAltOutlined,
+  DirectionsRunRound
+} from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
 import { AISpriteTask } from '@/models/aigc'
@@ -93,7 +107,8 @@ import { useI18n } from '@/utils/i18n'
 import ImageRepaint from './ImageEditor/ImageRepaint.vue'
 import { h } from 'vue'
 import { getWebUrl } from '@/apis/util'
-import { useConfirmDialog } from '@/components/ui'
+import { UIFormModal, useConfirmDialog } from '@/components/ui'
+import VideoRecorder from '../../animation/VideoRecorder.vue'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -255,6 +270,8 @@ const handleRepaintResolve = async (imgDataUrl: string) => {
   props.asset.preview = universalUrl
 }
 
+const motionRecordVisible = ref(false)
+
 const confirm = useConfirmDialog()
 
 const previewActions = computed(
@@ -327,6 +344,15 @@ const animActions = computed(
               editMode.value = 'preview'
             })
             .catch(() => {})
+        }
+      },
+      {
+        name: 'record-motion',
+        label: { zh: '录制动作', en: 'Record Motion' },
+        icon: CameraAltOutlined,
+        type: motionRecordVisible.value ? 'primary' : ('secondary' satisfies ButtonType),
+        action: () => {
+          motionRecordVisible.value = !motionRecordVisible.value
         }
       },
       {
