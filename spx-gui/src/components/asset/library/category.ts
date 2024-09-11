@@ -1,6 +1,8 @@
+import { AssetType } from '@/apis/asset'
 import type { LocaleMessage } from '@/utils/i18n'
 
 export type Category = {
+  type?: AssetType
   value: string
   message: LocaleMessage
   children?: Category[]
@@ -8,6 +10,7 @@ export type Category = {
 
 export const categories: Category[] = [
   {
+    type: AssetType.Sprite,
     value: 'sprite',
     message: { en: 'Sprite', zh: '精灵' },
     children: [
@@ -58,6 +61,7 @@ export const categories: Category[] = [
     ]
   },
   {
+    type: AssetType.Backdrop,
     value: 'backdrop',
     message: { en: 'Backdrop', zh: '背景' },
     children: [
@@ -108,6 +112,7 @@ export const categories: Category[] = [
     ]
   },
   {
+    type: AssetType.Sound,
     value: 'sound',
     message: { en: 'Sound', zh: '音频' },
     children: [

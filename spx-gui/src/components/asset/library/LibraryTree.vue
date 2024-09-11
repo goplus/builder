@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, watch } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 import type { TreeOption } from 'naive-ui'
 import { categories, type Category } from './category'
 import { type LocaleMessage, useI18n } from '@/utils/i18n'
@@ -41,7 +41,7 @@ function createData(categories: Category[], t: (key: LocaleMessage) => string): 
             {
               color: 'var(--text-color)',
               style: {
-                paddingRight: '10px',
+                paddingRight: '10px'
               }
             },
             {
@@ -62,12 +62,8 @@ function createData(categories: Category[], t: (key: LocaleMessage) => string): 
 }
 
 const { t } = useI18n()
-const data = ref<TreeOption[]>(
-  createData(
-    categories.find((category) => category.value === AssetType[props.type].toLowerCase())
-      ?.children!,
-    t
-  )
+const data = computed<TreeOption[]>(() =>
+  createData(categories.find((category) => category.type === props.type)?.children!, t)
 )
 
 watch(
