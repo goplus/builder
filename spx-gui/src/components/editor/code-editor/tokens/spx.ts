@@ -2,7 +2,7 @@
  * @file Tokens from spx
  */
 
-import { type Token } from './common'
+import { type Token } from './types'
 
 export const clone: Token = {
   id: {

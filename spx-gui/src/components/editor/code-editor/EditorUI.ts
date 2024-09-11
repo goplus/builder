@@ -23,6 +23,7 @@ import type { HoverPreview } from '@/components/editor/code-editor/ui/features/h
 import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
+import type { AttentionHint } from '@/components/editor/code-editor/ui/features/attention-hint/attention-hint'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -253,6 +254,7 @@ export class EditorUI extends Disposable {
   completionMenu: CompletionMenu | null = null
   hoverPreview: HoverPreview | null = null
   inlayHint: InlayHint | null = null
+  attentionHint: AttentionHint | null = null
   editorUIRequestCallback: EditorUIRequestCallback
   monaco: typeof import('monaco-editor') | null = null
   monacoProviderDisposes: Record<string, IDisposable | null> = {
@@ -291,7 +293,15 @@ export class EditorUI extends Disposable {
   }
 
   getInlayHint() {
-    return this.hoverPreview
+    return this.inlayHint
+  }
+
+  setAttentionHint(attentionHint: AttentionHint) {
+    this.attentionHint = attentionHint
+  }
+
+  getAttentionHint() {
+    return this.attentionHint
   }
 
   constructor(i18n: I18n, getProject: () => Project) {
@@ -456,19 +466,32 @@ export class EditorUI extends Disposable {
             })
           ).flat()
 
-          // filter docPreview
-          this.hoverPreview?.showDocuments(
-            result
-              // add `item is { type: 'doc'; layer: DocPreview }` to pass npm script type-check
-              .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
-              .map((item) => item.layer),
-            {
-              startLineNumber: position.lineNumber,
-              startColumn: word.startColumn,
-              endLineNumber: position.lineNumber,
-              endColumn: word.endColumn
-            }
+          const documents = result
+            // add `item is { type: 'doc'; layer: DocPreview }` to pass npm script type-check
+            .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
+            .map((item) => item.layer)
+
+          const attentionHintDecorations = this.attentionHint?.attentionHintDecorations.filter(
+            (item) => item.range.startLineNumber === position.lineNumber
           )
+          if (attentionHintDecorations) {
+            const attentionHintPreviews = attentionHintDecorations
+              .map((item) => item.hoverContent)
+              .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
+              .map((item) => item.layer)
+            // showDocuments will sort card by level
+            documents.push(...attentionHintPreviews)
+          }
+
+          // filter docPreview
+          this.hoverPreview?.showDocuments(documents, {
+            startLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endLineNumber: position.lineNumber,
+            endColumn: word.endColumn
+          })
+
+          // todo: when show audio preview, add code `item is { type: 'audio'; layer: AudioPlayer }` to pass npm script type-check
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content

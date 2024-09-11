@@ -1,4 +1,4 @@
-import type { Token, TokenCategory, TokenGroup } from './common'
+import type { Token, TokenCategory, TokenGroup } from './types'
 import { defineConst } from './spx'
 import * as spx from './spx'
 import * as gop from './gop'
@@ -256,7 +256,7 @@ export function getVariableCategory(project: Project): TokenCategory {
   }
 }
 
-export function getAllTokens(project: Project): Token[] {
+export function getGroupTokens(project: Project): Token[] {
   return [
     eventCategory,
     motionCategory,

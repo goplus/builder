@@ -25,13 +25,11 @@ export type Token = {
 
 export type UsageDocumentContent = Markdown
 
-export type TokenDetail = Token & Doc
-
-export type Doc = Token & {
-  usages: usageWithDoc[]
+export type TokenWithDoc = Token & {
+  usages: UsageWithDoc[]
 }
 
-export type usageWithDoc = {
+export type UsageWithDoc = {
   doc: UsageDocumentContent
 } & TokenUsage
 

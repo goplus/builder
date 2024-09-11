@@ -17,9 +17,6 @@ interface WasmHandler extends Window {
   getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
 }
 
-
-enum CompletionItemEnum {}
-
 export interface Hint {
   startPos: number
   endPos: number
@@ -32,10 +29,10 @@ export interface Hint {
 }
 
 export interface Position {
-  Filename: string
-  Offset: number
-  Line: number
-  Column: number
+  filename: string
+  offset: number
+  line: number
+  column: number
 }
 
 export type Diagnostic = {
@@ -60,17 +57,17 @@ type Code = {
 
 export interface Definition {
   // `start_pos` and `end_pos` is file offset, not compatible with monaco api `getOffset` return offset
-  start_pos: number
-  end_pos: number
-  start_position: Position
+  startPos: number
+  endPos: number
+  startPosition: Position
   // `end_position` is no use for it is same as `start_position` no difference
-  end_position: Position
-  pkg_name: string
+  endPosition: Position
+  pkgName: string
   // `name` and `pkg_path` can transfer to `module` and `name` for type `TokenId`
-  pkg_path: string
+  pkgPath: string
   name: string
   usages: DefinitionUsage[]
-  struct_name: string
+  structName: string
 }
 
 // todo: this is same as function `getTokens.TokenUsage` result, need be updated when `getTokens` is declared
@@ -78,7 +75,7 @@ export interface DefinitionUsage {
   usageID: string
   declaration: string
   sample: string
-  insert_text: string
+  insertText: string
   params: Array<{
     name: string
     type: string
