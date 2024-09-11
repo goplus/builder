@@ -1,5 +1,5 @@
 <template>
-  <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" />
+  <IframeDisplay :zip-data="zipData" @console="handleConsole" />
 </template>
 
 <script lang="ts" setup>
