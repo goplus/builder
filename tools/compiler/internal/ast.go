@@ -123,10 +123,17 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 }
 
 type BasePos struct {
-	StartPos      int            `json:"startPos"`
-	EndPos        int            `json:"endPos"`
-	StartPosition token.Position `json:"startPosition"`
-	EndPosition   token.Position `json:"endPosition"`
+	StartPos      int      `json:"startPos"`
+	EndPos        int      `json:"endPos"`
+	StartPosition Position `json:"startPosition"`
+	EndPosition   Position `json:"endPosition"`
+}
+
+type Position struct {
+	Filename string `json:"filename"`
+	Offset   int    `json:"offset"`
+	Line     int    `json:"line"`
+	Column   int    `json:"column"`
 }
 
 type funcItem struct {
@@ -164,14 +171,14 @@ type funcParameter struct {
 
 // Pos2Position can make Pos(int) into Position
 func (f *funcItem) Pos2Position(fset *token.FileSet) {
-	f.StartPosition = fset.Position(token.Pos(f.StartPos))
-	f.EndPosition = fset.Position(token.Pos(f.EndPos))
+	f.StartPosition = Position(fset.Position(token.Pos(f.StartPos)))
+	f.EndPosition = Position(fset.Position(token.Pos(f.EndPos)))
 }
 
 // Pos2Position can make Pos(int) into Position
 func (p *funcParameter) Pos2Position(fset *token.FileSet) {
-	p.StartPosition = fset.Position(token.Pos(p.StartPos))
-	p.EndPosition = fset.Position(token.Pos(p.EndPos))
+	p.StartPosition = Position(fset.Position(token.Pos(p.StartPos)))
+	p.EndPosition = Position(fset.Position(token.Pos(p.EndPos)))
 }
 
 type callExprVisitor struct {

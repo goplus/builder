@@ -68,8 +68,8 @@ export class HoverProvider {
   private findDefinition(position: Position): Definition | undefined {
     return this.coordinatorState.definitions.find((definition) => {
       const tokenLen = definition.endPos - definition.startPos
-      const line = definition.startPosition.Line
-      const startColumn = definition.startPosition.Column
+      const line = definition.startPosition.line
+      const startColumn = definition.startPosition.column
       const endColumn = startColumn + tokenLen
       return (
         position.lineNumber === line &&

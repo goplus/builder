@@ -29,10 +29,10 @@ export interface Hint {
 }
 
 export interface Position {
-  Filename: string
-  Offset: number
-  Line: number
-  Column: number
+  filename: string
+  offset: number
+  line: number
+  column: number
 }
 
 export type Diagnostic = {
