@@ -74,6 +74,7 @@
         <AIPreviewModal
           :asset="selectedAsset"
           :ai-assets="currentAIAssetList"
+          :project="props.project"
           class="asset-page"
           :add-to-project-pending="handleAddToProject.isLoading.value"
           @add-to-project="handleAddToProject.fn"

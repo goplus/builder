@@ -26,7 +26,6 @@ import type { KonvaNode } from '../AIBackdropEditor.vue'
 import type { TransformerConfig } from 'konva/lib/shapes/Transformer'
 import { useRenderScale } from './useRenderScale'
 import { useCenterPosition } from './useCenterPosition'
-import { c } from 'naive-ui'
 
 const nodeRef = ref<KonvaNode<Konva.Image>>()
 const rectRef = ref<KonvaNode<Konva.Rect>>()
@@ -43,6 +42,11 @@ const props = defineProps<{
   width: number
   height: number
   fillPercent: number
+  /**
+   * Initial crop position
+   * or a number representing the ratio of the cropped area
+   */
+  initialCrop?: { x: number; y: number; width: number; height: number } | number
 }>()
 
 const { renderScale, updateRenderScale } = useRenderScale(props, false)
@@ -65,14 +69,33 @@ const crop = ref({
 
 watch(
   imageSize,
-  (newSize) => {
+  (newSize, oldSize) => {
     const { width, height } = newSize ?? { width: 0, height: 0 }
     updateRenderScale(width, height)
     updateCenterPosition(width * renderScale.value, height * renderScale.value)
-    crop.value.width = width
-    crop.value.height = height
-    crop.value.x = centerPos.value.x
-    crop.value.y = centerPos.value.y
+    if (oldSize || !props.initialCrop) {
+      crop.value.width = width
+      crop.value.height = height
+      crop.value.x = centerPos.value.x
+      crop.value.y = centerPos.value.y
+    }
+    else if (typeof props.initialCrop === 'number') {
+      const expectRatio = props.initialCrop
+      const ratio = width / height
+      if (ratio > expectRatio) {
+        crop.value.width = height * expectRatio
+        crop.value.height = height
+        crop.value.x = centerPos.value.x + (width - crop.value.width) / 2
+        crop.value.y = centerPos.value.y
+      } else {
+        crop.value.width = width
+        crop.value.height = width / expectRatio
+        crop.value.x = centerPos.value.x
+        crop.value.y = centerPos.value.y + (height - crop.value.height) / 2
+      }
+    } else {
+      crop.value = props.initialCrop
+    }
   },
   { immediate: true }
 )

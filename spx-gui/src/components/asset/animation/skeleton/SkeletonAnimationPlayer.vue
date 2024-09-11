@@ -36,13 +36,13 @@ const props = withDefaults(
     fps?: number
     autoplay?: boolean
     color?: Color
-    scale?: number
+    scale?: [number, number]
   }>(),
   {
     fps: 30,
     autoplay: true,
     color: 'sprite',
-    scale: 40
+    scale: () => [40, 40]
   }
 )
 
