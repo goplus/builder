@@ -18,13 +18,10 @@ import { ChatBot } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
-import type { I18n } from '@/utils/i18n'
-import { keywords, typeKeywords } from '@/utils/spx'
 import {
   controlCategory,
   eventCategory,
   gameCategory,
-  getAllTokens,
   getVariableCategory,
   lookCategory,
   motionCategory,
@@ -56,6 +53,7 @@ export class Coordinator {
     definitions: []
   }
   private readonly hoverProvider: HoverProvider
+  private suggest: Suggest
 
   constructor(
     ui: EditorUI,
@@ -71,6 +69,7 @@ export class Coordinator {
     this.chatBot = chatBot
     this.compiler = compiler
     this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState)
+    this.suggest = new Suggest(() => project)
 
     ui.registerCompletionProvider({
       provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
@@ -102,7 +101,7 @@ export class Coordinator {
   }
 
   implementsPreDefinedCompletionProvider(
-    _model: TextModel,
+    model: TextModel,
     ctx: {
       position: Position
       unitWord: string
@@ -163,6 +162,34 @@ export class Coordinator {
                 layer: {
                   level: DocPreviewLevel.Normal,
                   content: '' /* todo: get content with docAbility */
+                }
+              }
+            }
+          })
+        )
+      })
+
+    this.suggest
+      .startSuggestTask({
+        code: model.getValue(),
+        position: {
+          line: ctx.position.lineNumber,
+          column: ctx.position.column
+        }
+      })
+      .then((items) => {
+        addItems(
+          items.map((item) => {
+            return {
+              icon: Icon.AIAbility,
+              insertText: ctx.unitWord + item.insertText,
+              label: ctx.unitWord + item.label,
+              desc: ctx.unitWord + item.label,
+              preview: {
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
                 }
               }
             }
