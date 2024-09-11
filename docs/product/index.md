@@ -158,9 +158,7 @@ When saving, the changes made this time should be appended to the existing Proje
 
 ### Editing Based on Public Projects of Others
 
-Users can view and filter all public Projects saved by others, and continue editing based on them. It should be noted that when users edit based on public Projects of others, they are not actually modifying the Projects of others, and cannot modify them.
-
-From a theoretical point of view, this process should be: create a new Project and copy the Game of the target Project. Therefore, when saving, the changes made this time should not be appended to the existing Project in the cloud, but a new Project should be added to the cloud.
+See "Remix" in the [Community](./community.md) section for more details.
 
 ### Importing and Exporting Projects
 
@@ -209,23 +207,9 @@ Users can choose to import a Scratch project file (obtained from the export func
 
 The subsequent editing of Assets is the same as normal editing and will not be repeated here.
 
-### Sharing Links
+### Sharing Projects
 
-In the editor, we will guide users to share their Projects with others. Only saved and public Projects can be shared.
-
-The complete process when the owner A of a certain Project shares the Project with another user B is as follows:
-
-1. A has already opened a certain Project in the editor and can obtain a sharing link through a button or guidance.
-2. If the Project currently has unsaved changes or is not public, guide A to save the changes to the Project and make it public before obtaining a meaningful sharing link.
-3. A sends the link to B through other channels (such as IM, email, QR code, etc.).
-4. B opens the link in a browser, and the link corresponds to an independent game running page (unrelated to the editor). The page will load the shared Project and run it.
-
-	Please note that users can only run the game through this interface or see some basic information about the Project (such as the owner, creation time, update time, etc.). These actions are for reading Project information, not for editing. Therefore, opening the game running page does not require the current user to log in.
-
-5. In addition to allowing B to play the game, we guide B to add their own changes based on the current Project.
-6. The guided link will enter the editor, and the subsequent process is the same as "Editing Based on Public Projects of Others" mentioned above.
-
-	Note that because the editor does not currently support unauthenticated users to perform operations through the editor, we will check the user's login status. The logic is the same as mentioned in "Editing in Unauthenticated State".
+See [Community](./community.md) for more details.
 
 ### Embedding in Third-Party Websites
 
