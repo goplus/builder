@@ -43,6 +43,7 @@ onUnmounted(() => {
 
 defineExpose({
   run: async () => {
+    loading.value = true
     registered.onStart()
     const gbpFile = await props.project.exportGbpFile()
     zipData.value = await gbpFile.arrayBuffer()
