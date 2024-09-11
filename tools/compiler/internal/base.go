@@ -159,7 +159,7 @@ func GetTokensDetail(tokenMap []TokenID) (interface{}, error) {
 		} else {
 			pkg, ok := gopbuild.LookupPackageFromLib(tok.TokenPkg)
 			if !ok {
-				return nil, fmt.Errorf("can't find lib %s", tok.TokenPkg)
+				continue
 			}
 			pkgMap[tok.TokenPkg] = pkg
 			detailList = append(detailList, tokenDetail(pkg, tok.TokenName))

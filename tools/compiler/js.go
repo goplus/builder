@@ -55,7 +55,7 @@ func jsValue2List(value js.Value) (result []internal.TokenID) {
 		elem := value.Index(i)
 		token := internal.TokenID{
 			TokenName: elem.Get("name").String(),
-			TokenPkg:  elem.Get("module").String(),
+			TokenPkg:  elem.Get("pkgPath").String(),
 		}
 		result = append(result, token)
 	}
@@ -65,30 +65,35 @@ func jsValue2List(value js.Value) (result []internal.TokenID) {
 // Functions following below is the entry functions for js.
 
 func getInlayHints(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetInlayHint(fileName, jsValue2Map(fileMap)))
 }
 
 func getDiagnostics(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetDiagnostics(fileName, jsValue2Map(fileMap)))
 }
 
 func getDefinition(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetDefinition(fileName, jsValue2Map(fileMap)))
 }
 
 func getTypes(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetSPXFileType(fileName, jsValue2Map(fileMap)))
 }
 
 func getCompletionItems(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	fileName := p[0].String()
 	fileMap := p[1]
 	cursorLine := p[2].Int()
@@ -97,12 +102,14 @@ func getCompletionItems(this js.Value, p []js.Value) interface{} {
 }
 
 func getTokenDetail(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	name := p[0].String()
-	module := p[1].String()
-	return internal.NewReply(internal.GetTokenDetail(name, module))
+	pkgPath := p[1].String()
+	return internal.NewReply(internal.GetTokenDetail(name, pkgPath))
 }
 
 func getTokensDetail(this js.Value, p []js.Value) interface{} {
+	defer handlePanic()
 	tokens := p[0]
 	return internal.NewReply(internal.GetTokensDetail(jsValue2List(tokens)))
 }

@@ -171,15 +171,6 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 
 	fileObj := fset.File(file.Pos())
 	cursorOffset := int(fileObj.LineStart(line)) + column - 1
-	totalLine := fileObj.LineCount()
-
-	if line+1 <= totalLine {
-		nextLineOffset := int(fileObj.LineStart(line + 1))
-		if cursorOffset > nextLineOffset {
-			cursorOffset = int(fileObj.LineStart(line))
-		}
-	}
-
 	cursorPos := token.Pos(cursorOffset)
 
 	ctx := igop.NewContext(0)
@@ -222,6 +213,7 @@ func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos, fset *tok
 
 	if len(scopeList) == 0 {
 		for _, scope := range info.Scopes {
+			// If user cursor is out for file's scope(the blank line at the end of the file), the return will be the file's scope.
 			if strings.Contains(scope.String(), fset.Position(pos).Filename) {
 				return []*types.Scope{scope}
 			}
@@ -369,7 +361,10 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 func extractMethodsFromNamed(named *types.Named, items *completionList, export bool) {
 	for i := 0; i < named.NumMethods(); i++ {
 		method := named.Method(i)
-		if method.Exported() == export || method.Name() == "Main" || method.Name() == "Classfname" {
+		if method.Name() == "Main" || method.Name() == "Classfname" {
+			continue
+		}
+		if export || !method.Exported() {
 			continue
 		}
 		methodName, _ := convertOverloadToSimple(method.Name())
