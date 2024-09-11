@@ -58,7 +58,7 @@ export interface KonvaNode<T extends Konva.Node = Konva.Node> {
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { isContentReady, type TaggedAIAssetData } from '@/apis/aigc'
 import type { ImageConfig } from 'konva/lib/shapes/Image'
-import { backdrop2Asset, cachedConvertAssetData } from '@/models/common/asset'
+import { backdrop2Asset, cachedConvertAssetData, convertAIAssetToBackdrop } from '@/models/common/asset'
 import { useAsyncComputed } from '@/utils/utils'
 import type { AssetType } from '@/apis/asset'
 import type { Backdrop } from '@/models/backdrop'
@@ -86,11 +86,24 @@ import { useI18n } from '@/utils/i18n'
 import { useRenderScale } from './ImageEditor/useRenderScale'
 import { useAnimatedCenterPosition } from './ImageEditor/useCenterPosition'
 import ImageCrop from './ImageEditor/ImageCrop.vue'
+import { useUndoRedo } from './ImageEditor/useUndoRedo'
 
 const props = defineProps<{
   asset: TaggedAIAssetData<AssetType.Backdrop>
   defaultRatio: number
 }>()
+
+const emit = defineEmits<{
+  contentReady: []
+}>()
+
+const contentReady = ref(props.asset[isContentReady])
+const generateContent = async () => {
+  await convertAIAssetToBackdrop(props.asset)
+  contentReady.value = true
+  emit('contentReady')
+}
+
 
 const backdrop = useAsyncComputed<Backdrop | undefined>(() => {
   if (!props.asset[isContentReady]) {
@@ -144,6 +157,13 @@ onUnmounted(() => {
     backdrop.value!.img = originalFile
   }
 })
+
+watch(() => props.asset.id, () => {
+  contentReady.value = props.asset[isContentReady]
+  if (!props.asset[isContentReady]) {
+    generateContent()
+  }
+}, {immediate: true})
 
 const FILL_PERCENT = 0.8
 
@@ -225,37 +245,15 @@ const config = computed<ImageConfig | null>(() => {
   return config
 })
 
-const undoStack = shallowRef<File[]>([])
-const redoStack = shallowRef<File[]>([])
-const undoStackLength = ref(0)
-const redoStackLength = ref(0)
+const { undoStackLength, redoStackLength, undo, redo, record, setInitial, clear: clearUndoRedo } = useUndoRedo<File>()
 
-const undo = () => {
-  if (!backdrop.value || undoStack.value.length === 0) {
-    return
+watch(() => backdrop.value?.name, () => {
+  if (backdrop.value) {
+    clearUndoRedo()
+    setInitial(backdrop.value.img)
   }
-  redoStack.value.push(backdrop.value.img)
-  redoStackLength.value = redoStack.value.length
-  backdrop.value.img = undoStack.value.pop()!
-  undoStackLength.value = undoStack.value.length
-}
+})
 
-const redo = () => {
-  if (!backdrop.value || redoStack.value.length === 0) {
-    return
-  }
-  undoStack.value.push(backdrop.value.img)
-  undoStackLength.value = undoStack.value.length
-  backdrop.value.img = redoStack.value.pop()!
-  redoStackLength.value = redoStack.value.length
-}
-
-const recordFile = (file: File) => {
-  undoStack.value.push(file)
-  undoStackLength.value = undoStack.value.length
-  redoStack.value.length = 0
-  redoStackLength.value = 0
-}
 const savingChanges = ref(false)
 const saveChanges = async () => {
   if (!activeEditor.value) {
@@ -281,8 +279,8 @@ const saveChanges = async () => {
     if (!originalFile) {
       originalFile = backdrop.value!.img
     }
-    recordFile(backdrop.value!.img)
     backdrop.value!.img = file
+    record(file)
     savingChanges.value = false
   })
 }
@@ -372,7 +370,12 @@ const actions = computed(() =>
         icon: UndoFilled,
         type: 'secondary' satisfies ButtonType,
         disabled: undoStackLength.value === 0,
-        action: undo
+        action: () => {
+          const current = undo()
+          if (current) {
+            backdrop.value!.img = current
+          }
+        }
       },
       editMode.value === 'preview' && {
         name: 'redo',
@@ -380,7 +383,12 @@ const actions = computed(() =>
         icon: RedoFilled,
         type: 'secondary' satisfies ButtonType,
         disabled: redoStackLength.value === 0,
-        action: redo
+        action: () => {
+          const current = redo()
+          if (current) {
+            backdrop.value!.img = current
+          }
+        }
       },
       editMode.value === 'preview' && {
         name: 'save',
