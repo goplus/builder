@@ -8,11 +8,12 @@ import {
   type InlayHintDecoration,
   type InputItem,
   type InputItemCategory,
+  type InputItemGroup,
   type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition } from '../compiler'
+import type { Definition, TokenDetail } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -22,7 +23,6 @@ import {
   controlCategory,
   eventCategory,
   gameCategory,
-  getVariableCategory,
   lookCategory,
   motionCategory,
   sensingCategory,
@@ -30,7 +30,8 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type { TokenCategory } from '@/components/editor/code-editor/tokens/types'
+import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
+import { getAllTokens } from '@/components/editor/code-editor/tokens'
 
 type JumpPosition = {
   line: number
@@ -169,33 +170,33 @@ export class Coordinator {
         )
       })
 
-    this.suggest
-      .startSuggestTask({
-        code: model.getValue(),
-        position: {
-          line: ctx.position.lineNumber,
-          column: ctx.position.column
-        }
-      })
-      .then((items) => {
-        addItems(
-          items.map((item) => {
-            return {
-              icon: Icon.AIAbility,
-              insertText: ctx.unitWord + item.insertText,
-              label: ctx.unitWord + item.label,
-              desc: ctx.unitWord + item.label,
-              preview: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Normal,
-                  content: ''
-                }
-              }
-            }
-          })
-        )
-      })
+    // this.suggest
+    //   .startSuggestTask({
+    //     code: model.getValue(),
+    //     position: {
+    //       line: ctx.position.lineNumber,
+    //       column: ctx.position.column
+    //     }
+    //   })
+    //   .then((items) => {
+    //     addItems(
+    //       items.map((item) => {
+    //         return {
+    //           icon: Icon.AIAbility,
+    //           insertText: ctx.unitWord + item.insertText,
+    //           label: ctx.unitWord + item.label,
+    //           desc: ctx.unitWord + item.label,
+    //           preview: {
+    //             type: 'doc',
+    //             layer: {
+    //               level: DocPreviewLevel.Normal,
+    //               content: ''
+    //             }
+    //           }
+    //         }
+    //       })
+    //     )
+    //   })
   }
 
   async implementsSelectionMenuProvider(
@@ -350,10 +351,43 @@ export class Coordinator {
     return [...spritesCodes, ...stageCodes]
   }
 
-  async implementsInputAssistantProvider(_ctx: {
+  async implementsInputAssistantProvider(ctx: {
     signal: AbortSignal
   }): Promise<InputItemCategory[]> {
-    return getInputItemCategories(this.project)
+    const categories = [
+      { category: eventCategory, icon: Icon.Event, color: '#fabd2c' },
+      { category: lookCategory, icon: Icon.Look, color: '#fd8d60' },
+      { category: motionCategory, icon: Icon.Motion, color: '#91d644' },
+      { category: controlCategory, icon: Icon.Control, color: '#3fcdd9' },
+      { category: sensingCategory, icon: Icon.Sensing, color: '#4fc2f8' },
+      { category: soundCategory, icon: Icon.Sound, color: '#a074ff' },
+      { category: gameCategory, icon: Icon.Game, color: '#e14e9f' }
+    ]
+
+    const tokenList = Object.values(getAllTokens())
+    const tokenDetails = await this.compiler.getTokensDetail(tokenList.map((token) => token.id))
+    const tokenDetailsMap: Record<string, TokenDetail> = {}
+    tokenDetails.forEach((tokenDetail) => {
+      const key = `${tokenDetail.pkgPath}/${tokenDetail.name}`
+      tokenDetailsMap[key] = tokenDetail
+    })
+
+    if (ctx.signal.aborted) return []
+    const inputAssistant: InputItemCategory[] = new Array(categories.length)
+
+    for (let i = 0; i < categories.length; i++) {
+      if (ctx.signal.aborted) return []
+      const { category, icon, color } = categories[i]
+      inputAssistant[i] = await toolCategory2InputItemCategory(
+        category,
+        icon,
+        color,
+        this.docAbility,
+        tokenDetailsMap
+      )
+    }
+
+    return inputAssistant
   }
 
   private async _updateDefinition() {
@@ -366,59 +400,60 @@ export class Coordinator {
   public jump(position: JumpPosition): void {}
 }
 
-function toolCategory2InputItemCategory(
+async function toolCategory2InputItemCategory(
   category: TokenCategory,
   icon: Icon,
-  color: string
-): InputItemCategory {
+  color: string,
+  docAbility: DocAbility,
+  tokenDetailsMap: Record<string, TokenDetail>
+): Promise<InputItemCategory> {
+  const inputItemGroups: InputItemGroup[] = []
+
+  for (const group of category.groups) {
+    const inputItems: InputItem[] = []
+
+    for (const token of group.tokens) {
+      const tokenWithDoc = await docAbility.getNormalDoc(token.id)
+      const key = `${token.id.pkgPath}/${token.id.name}`
+      const tokenDetail: TokenDetail | undefined = tokenDetailsMap[key]
+      const tokenUsages = tokenDetail?.usages || []
+      const docUsages = tokenWithDoc.usages
+      const docUsageIds = new Set<string>()
+      docUsages.forEach((usage) => docUsageIds.add(usage.id))
+      const finalUsages: UsageWithDoc[] = docUsages
+      tokenUsages
+        .filter((usage) => !docUsageIds.has(usage.usageID))
+        .forEach((usage) => {
+          finalUsages.push({ ...usage, id: usage.usageID, effect: tokenDetail.structName, doc: '' })
+        })
+      finalUsages.forEach((usage) => {
+        inputItems.push({
+          icon: usageType2Icon(usage.effect),
+          label: token.id.name,
+          sample: usage.sample,
+          insertText: usage.insertText,
+          desc: {
+            type: 'doc',
+            layer: {
+              level: DocPreviewLevel.Normal,
+              content: usage.doc
+            }
+          }
+        })
+      })
+    }
+
+    inputItemGroups.push({
+      label: group.label,
+      inputItems: inputItems
+    })
+  }
   return {
     icon,
     color,
     label: category.label,
-    groups: category.groups.map((group) => ({
-      label: group.label,
-      inputItems: group.tokens.flatMap((tool): InputItem[] => {
-        //TODO: get token detail from compiler
-        //TODO: get token detail from doc
-        if (Array.isArray(tool.usages)) {
-          return tool.usages.map((usage) => {
-            let sample = usage.insertText.split(' ').slice(1).join(' ')
-            sample = sample.replace(
-              /\$\{\d+:?(.*?)}/g,
-              (_, placeholderContent: string) => placeholderContent || ''
-            )
-            return {
-              icon: usageType2Icon(usage.effect),
-              label: tool.id.name,
-              desc: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Normal,
-                  content: ''
-                }
-              },
-              sample: sample,
-              insertText: usage.insertText
-            }
-          })
-        }
-        return []
-      })
-    }))
+    groups: inputItemGroups
   }
-}
-
-function getInputItemCategories(project: Project): InputItemCategory[] {
-  return [
-    toolCategory2InputItemCategory(eventCategory, Icon.Event, '#fabd2c'),
-    toolCategory2InputItemCategory(lookCategory, Icon.Look, '#fd8d60'),
-    toolCategory2InputItemCategory(motionCategory, Icon.Motion, '#91d644'),
-    toolCategory2InputItemCategory(controlCategory, Icon.Control, '#3fcdd9'),
-    toolCategory2InputItemCategory(sensingCategory, Icon.Sensing, '#4fc2f8'),
-    toolCategory2InputItemCategory(soundCategory, Icon.Sound, '#a074ff'),
-    toolCategory2InputItemCategory(getVariableCategory(project), Icon.Variable, '#5a7afe'),
-    toolCategory2InputItemCategory(gameCategory, Icon.Game, '#e14e9f')
-  ]
 }
 
 /** transform from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */

@@ -2,7 +2,7 @@ import type { EditorUI, LayerContent, TextModel } from '@/components/editor/code
 import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
-import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
+import type { Definition, TokenUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
 import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
@@ -30,7 +30,7 @@ export class HoverProvider {
     if (!definition) return []
 
     const content = await this.docAbility.getNormalDoc({
-      module: definition.pkgPath,
+      pkgPath: definition.pkgPath,
       name: definition.name
     })
 
@@ -64,7 +64,7 @@ export class HoverProvider {
     })
   }
 
-  private createVariableRenameContent(usage: DefinitionUsage): LayerContent {
+  private createVariableRenameContent(usage: TokenUsage): LayerContent {
     return {
       type: 'doc',
       layer: {

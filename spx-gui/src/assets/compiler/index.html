@@ -76,8 +76,18 @@
 
   function getTokenDetail(data) {
     let pkgPath = data.in.pkgPath
-    let token = data.in.token
-    let res = getTokenDetail_GO(token, pkgPath)
+    let name = data.in.name
+    let res = getTokenDetail_GO(name, pkgPath)
+    let json = JSON.parse(res)
+    if(!json.ok) {
+      throw new Error("can't get token detail")
+    }
+    return json.content
+  }
+
+  function getTokensDetail(data) {
+    let tokens = data.in.tokens
+    let res = getTokensDetail_GO(tokens)
     let json = JSON.parse(res)
     if(!json.ok) {
       throw new Error("can't get token detail")

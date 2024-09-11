@@ -11,7 +11,7 @@ export class DocAbility {
   }
 
   private getTokenMapKey(tokenId: TokenId) {
-    return `${tokenId.module}/${tokenId.name}`
+    return `${tokenId.pkgPath}/${tokenId.name}`
   }
 
   public async getNormalDoc(tokenId: TokenId): Promise<TokenWithDoc> {
@@ -23,7 +23,7 @@ export class DocAbility {
       if (content?.includes('$picPath$')) {
         content = content.replace(
           '$picPath$',
-          await getGIFFromPath(`${token.id.module}/${token.id.name}`)
+          await getGIFFromPath(`${token.id.pkgPath}/${token.id.name}`)
         )
       }
       if (content != null) {
@@ -43,7 +43,7 @@ export class DocAbility {
       if (content?.includes('$picPath$')) {
         content = content.replace(
           '$picPath$',
-          await getGIFFromPath(`${token.id.module}/${token.id.name}`)
+          await getGIFFromPath(`${token.id.pkgPath}/${token.id.name}`)
         )
       }
       if (content != null) {
@@ -65,13 +65,13 @@ async function getUsageDocumentFromDir(
   }
   if (
     await checkDocumentOverloadExistence(
-      `${token.module}/${token.name}__${usage.id}`,
+      `${token.pkgPath}/${token.name}__${usage.id}`,
       i18n.lang.value
     )
   ) {
-    return await readDir(`${token.module}/${token.name}__${usage.id}`, i18n.lang.value)
+    return await readDir(`${token.pkgPath}/${token.name}__${usage.id}`, i18n.lang.value)
   } else {
-    return await readDir(`${token.module}/${token.name}`, i18n.lang.value)
+    return await readDir(`${token.pkgPath}/${token.name}`, i18n.lang.value)
   }
 }
 
@@ -84,9 +84,9 @@ async function getUsageDocumentDetailFromDir(
     return null
   }
   if (await checkDocumentOverloadExistence(`${token.name}__${usage.id}`, i18n.lang.value)) {
-    return await readDir(`${token.module}/${token.name}__${usage.id}_detail`, i18n.lang.value)
+    return await readDir(`${token.pkgPath}/${token.name}__${usage.id}_detail`, i18n.lang.value)
   } else {
-    return await readDir(`${token.module}/${token.name}_detail`, i18n.lang.value)
+    return await readDir(`${token.pkgPath}/${token.name}_detail`, i18n.lang.value)
   }
 }
 
@@ -106,7 +106,7 @@ async function checkDocumentExistence(token: TokenId, locale: string): Promise<b
   const markdownModules = import.meta.glob(`./docs/**/*.md`, { as: 'raw' })
 
   for (const path in markdownModules) {
-    if (path.includes(`/${locale}/`) && path.includes(token.name) && path.includes(token.module)) {
+    if (path.includes(`/${locale}/`) && path.includes(token.name) && path.includes(token.pkgPath)) {
       return true
     }
   }

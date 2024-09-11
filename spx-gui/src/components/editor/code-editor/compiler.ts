@@ -15,34 +15,32 @@ interface WasmHandler extends Window {
   }) => CompletionItem[] | {}
   getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | {}
   getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
+  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail
+  getTokensDetail: (params: {
+    in: { tokens: Array<{ name: string; pkgPath: string }> }
+  }) => TokenDetail[] | {}
 }
 
 export interface Hint {
   startPos: number
   endPos: number
-  startPosition: Position
-  endPosition: Position
+  startPosition: TokenPosition
+  endPosition: TokenPosition
   name: string
   value: string
   unit: string
   type: 'play' | 'parameter'
+  from: any
 }
 
-export interface Position {
-  filename: string
-  offset: number
-  line: number
-  column: number
-}
-
-export type Diagnostic = {
+export interface Diagnostic {
   filename: string
   column: number
   line: number
   message: string
 }
 
-type CompletionItem = {
+interface CompletionItem {
   label: string
   insertText: string
   type: string
@@ -50,28 +48,41 @@ type CompletionItem = {
   tokenPkg: string
 }
 
-type Code = {
+interface Code {
   filename: string
   content: string
 }
 
-export interface Definition {
-  // `start_pos` and `end_pos` is file offset, not compatible with monaco api `getOffset` return offset
+export interface TokenPosition {
+  filename: string
+  offset: number
+  line: number
+  column: number
+}
+
+interface TokenSourcePosition {
   startPos: number
   endPos: number
-  startPosition: Position
+  startPosition: TokenPosition
   // `end_position` is no use for it is same as `start_position` no difference
-  endPosition: Position
+  endPosition: TokenPosition
+}
+
+export interface Definition extends TokenSourcePosition, TokenDetail {
+  // if in 'main.spx' defined a func name 'sayHi', user use this in 'SpriteA.spx', this property 'from' will lead to 'main.spx' and which column and line it is.
+  from: TokenSourcePosition
+}
+
+export interface TokenDetail {
+  // `pkgName` and `pkgPath` can transfer to `module` and `name` for type `TokenId`
   pkgName: string
-  // `name` and `pkg_path` can transfer to `module` and `name` for type `TokenId`
   pkgPath: string
   name: string
-  usages: DefinitionUsage[]
+  usages: TokenUsage[]
   structName: string
 }
 
-// todo: this is same as function `getTokens.TokenUsage` result, need be updated when `getTokens` is declared
-export interface DefinitionUsage {
+export interface TokenUsage {
   usageID: string
   declaration: string
   sample: string
@@ -111,8 +122,8 @@ export class Compiler extends Disposable {
 
   private reloadIframe() {
     // each load will emit 'load' event, after 'load', will trigger `initIframe` function
-    this.containerElement?.contentWindow?.location.reload()
-    this.wasmHandlerRef.value = null
+    // this.containerElement?.contentWindow?.location.reload()
+    // this.wasmHandlerRef.value = null
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
@@ -191,23 +202,33 @@ export class Compiler extends Disposable {
 
   public async getDefinition(currentFilename: string, codes: Code[]): Promise<Definition[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getDefinition({
+    const definitions = wasmHandler.getDefinition({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-
-    return Array.isArray(res) ? res : []
+    return Array.isArray(definitions) ? definitions : []
   }
 
-  public async getTokenDetail(
-    tokenName: string,
-    tokenPath: string
-  ): Promise</* temp return null */ null> {
-    await this.waitForWasmInit()
+  public async getTokenDetail(name: string, pkgPath: string): Promise<TokenDetail | null> {
+    const wasmHandler = await this.waitForWasmInit()
+    const tokenDetail = wasmHandler.getTokenDetail({
+      in: {
+        name,
+        pkgPath
+      }
+    })
+    return Object.keys(tokenDetail).length ? tokenDetail : null
+  }
 
-    // implement logic here
-    return null
+  public async getTokensDetail(
+    tokens: Array<{ name: string; pkgPath: string }>
+  ): Promise<TokenDetail[]> {
+    const wasmHandler = await this.waitForWasmInit()
+    const tokensDetail = wasmHandler.getTokensDetail({
+      in: { tokens }
+    })
+    return Array.isArray(tokensDetail) ? tokensDetail : []
   }
 }
