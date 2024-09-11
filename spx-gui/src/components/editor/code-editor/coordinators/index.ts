@@ -14,7 +14,7 @@ import {
 import { Runtime } from '../runtime'
 import type { Definition } from '../compiler'
 import { Compiler } from '../compiler'
-import { ChatBot } from '../chat-bot'
+import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
@@ -242,6 +242,8 @@ export class Coordinator {
       this.currentFilename,
       this.getProjectAllCodes()
     )
+
+    if (ctx.signal.aborted) return []
 
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
