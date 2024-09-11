@@ -63,10 +63,7 @@
       <div class="sider">
         <LibraryMenu @update:value="handleUserSelectCategory" />
         <UIDivider />
-        <LibraryTree
-          :type="type"
-          style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin"
-        />
+        <LibraryTree :type="type" style="flex: 1 1 0%; overflow: auto; scrollbar-width: thin;" />
       </div>
     </section>
     <Transition name="fade" mode="out-in" appear>
@@ -74,6 +71,7 @@
         <AIPreviewModal
           :asset="selectedAsset"
           :ai-assets="currentAIAssetList"
+          :project="props.project"
           class="asset-page"
           :add-to-project-pending="handleAddToProject.isLoading.value"
           @add-to-project="handleAddToProject.fn"

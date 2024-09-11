@@ -104,6 +104,7 @@ export class SkeletonAnimation extends Disposable {
       const animator = (await toConfig(animatorFile)) as SkeletonAnimator
 
       skeletonAnim.type = avatar.type as 'skeleton' | 'vertex'
+      skeletonAnim.scale = avatar.scale
       
       if (avatar.type === 'skeleton') {       
         // load skeleton hierarchy from mesh file

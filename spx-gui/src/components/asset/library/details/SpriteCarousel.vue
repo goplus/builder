@@ -26,7 +26,7 @@
             :fps="30"
             :autoplay="true"
             :style="{ width: '100%', height: '100%', position: 'relative' }"
-            :scale="30"
+            :scale="[anim.animation.scale.x, anim.animation.scale.y]"
             @ready="(renderer) => loadPreviewForSkeleton(anim, renderer)"
             @pause-autoplay="autoplay = false"
             @resume-autoplay="autoplay = true"

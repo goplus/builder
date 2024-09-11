@@ -58,6 +58,7 @@
         <AIBackdropEditor
           v-else-if="asset.assetType === AssetType.Backdrop"
           ref="backdropEditor"
+          :default-ratio="props.project.stage.mapWidth / props.project.stage.mapHeight"
           :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
           class="asset-editor backdrop-editor"
           @content-ready="contentReady = true"
@@ -133,12 +134,14 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask } from '@/models/aigc'
 import { useRenameAsset } from '../..'
 import { useMessageHandle } from '@/utils/exception'
+import type { Project } from '@/models/project'
 
 // Define component props
 const props = defineProps<{
   asset: TaggedAIAssetData
   aiAssets: AIGCTask[]
   addToProjectPending: boolean
+  project: Project
 }>()
 
 const emit = defineEmits<{
