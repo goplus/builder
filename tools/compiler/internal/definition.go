@@ -13,12 +13,16 @@ import (
 
 type definitionItem struct {
 	BasePos
+	baseToken
+	From BasePos `json:"from"`
+}
+
+type baseToken struct {
 	PkgName    string  `json:"pkgName"`
 	PkgPath    string  `json:"pkgPath"`
 	Name       string  `json:"name"`   // This is the token name
 	Usages     []usage `json:"usages"` // contains 1 or n usage for matches.
 	StructName string  `json:"structName"`
-	From       BasePos
 }
 
 type usage struct {
@@ -151,9 +155,11 @@ func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
 			StartPos: int(ident.Pos()),
 			EndPos:   int(ident.End()),
 		},
-		PkgName: obj.Pkg().Name(),
-		PkgPath: obj.Pkg().Path(),
-		Name:    ident.Name,
+		baseToken: baseToken{
+			PkgName: obj.Pkg().Name(),
+			PkgPath: obj.Pkg().Path(),
+			Name:    ident.Name,
+		},
 	}
 	if fn, ok := obj.(*types.Func); ok {
 		sign := fn.Type().(*types.Signature)
@@ -241,10 +247,10 @@ func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
 	return 0, 0
 }
 
-func tokenDetail(pkg *types.Package, token string) definitionItem {
+func tokenDetail(pkg *types.Package, token string) baseToken {
 	names := pkg.Scope().Names()
 
-	definitionItem := definitionItem{
+	definitionItem := baseToken{
 		PkgName: pkg.Name(),
 		PkgPath: pkg.Path(),
 		Name:    token,

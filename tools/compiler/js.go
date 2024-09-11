@@ -54,8 +54,8 @@ func jsValue2List(value js.Value) (result []internal.TokenID) {
 	for i := range value.Length() {
 		elem := value.Index(i)
 		token := internal.TokenID{
-			TokenName: elem.Get("TokenName").String(),
-			TokenPkg:  elem.Get("TokenPkg").String(),
+			TokenName: elem.Get("name").String(),
+			TokenPkg:  elem.Get("module").String(),
 		}
 		result = append(result, token)
 	}
@@ -97,9 +97,9 @@ func getCompletionItems(this js.Value, p []js.Value) interface{} {
 }
 
 func getTokenDetail(this js.Value, p []js.Value) interface{} {
-	tokenName := p[0].String()
-	pkgPath := p[1].String()
-	return internal.NewReply(internal.GetTokenDetail(tokenName, pkgPath))
+	name := p[0].String()
+	module := p[1].String()
+	return internal.NewReply(internal.GetTokenDetail(name, module))
 }
 
 func getTokensDetail(this js.Value, p []js.Value) interface{} {
