@@ -98,10 +98,10 @@ func extractParameters(signature *types.Signature, argsExpr []ast.Expr) []*funcP
 
 func (d definitions) Position(fset *token.FileSet) {
 	for _, def := range d {
-		def.StartPosition = fset.Position(token.Pos(def.StartPos))
-		def.EndPosition = fset.Position(token.Pos(def.StartPos))
-		def.From.StartPosition = fset.Position(token.Pos(def.From.StartPos))
-		def.From.EndPosition = fset.Position(token.Pos(def.From.EndPos))
+		def.StartPosition = Position(fset.Position(token.Pos(def.StartPos)))
+		def.EndPosition = Position(fset.Position(token.Pos(def.StartPos)))
+		def.From.StartPosition = Position(fset.Position(token.Pos(def.From.StartPos)))
+		def.From.EndPosition = Position(fset.Position(token.Pos(def.From.EndPos)))
 	}
 }
 func getDefinitionList(info *typesutil.Info) definitions {

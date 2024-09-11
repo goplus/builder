@@ -254,8 +254,8 @@ export class Coordinator {
             style: 'icon',
             behavior: 'triggerCompletion',
             position: {
-              lineNumber: inlayHint.endPosition.Line,
-              column: inlayHint.endPosition.Column
+              lineNumber: inlayHint.endPosition.line,
+              column: inlayHint.endPosition.column
             }
           }
         ]
@@ -266,8 +266,8 @@ export class Coordinator {
             style: 'text',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.startPosition.Line,
-              column: inlayHint.startPosition.Column
+              lineNumber: inlayHint.startPosition.line,
+              column: inlayHint.startPosition.column
             }
           }
         ]
@@ -277,8 +277,8 @@ export class Coordinator {
             style: 'tag',
             behavior: 'none',
             position: {
-              lineNumber: inlayHint.endPosition.Line,
-              column: inlayHint.endPosition.Column
+              lineNumber: inlayHint.endPosition.line,
+              column: inlayHint.endPosition.column
             }
           })
         }
