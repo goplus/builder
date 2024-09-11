@@ -2,7 +2,7 @@
  * @file Tokens from gop
  */
 
-import { type Token } from './common'
+import { type Token } from './types'
 
 export const forLoop: Token = {
   id: {

@@ -4,7 +4,7 @@ import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
-import type { TokenWithDoc, TokenUsage, UsageWithDoc } from '@/components/editor/code-editor/tokens/common'
+import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
 
 export class HoverProvider {
@@ -30,19 +30,8 @@ export class HoverProvider {
     if (!definition) return []
 
     const content = await this.docAbility.getNormalDoc({
-      id: {
-        module: definition.pkgPath,
-        name: definition.name
-      },
-      usages: definition.usages.map(
-        (usage): TokenUsage => ({
-          id: usage.usageID,
-          effect: usage.type,
-          declaration: usage.declaration,
-          sample: usage.sample,
-          insertText: usage.insertText
-        })
-      )
+      module: definition.pkgPath,
+      name: definition.name
     })
 
     const layerContents: LayerContent[] = []
@@ -58,11 +47,7 @@ export class HoverProvider {
   }
 
   private isDefinitionCanBeRenamed(definition: Definition) {
-    return (
-      definition.pkgName === 'main' &&
-      definition.pkgPath === 'main' &&
-      definition.usages.length === 1
-    )
+    return definition.pkgName === 'main' && definition.usages.length === 1
   }
 
   private findDefinition(position: Position): Definition | undefined {
@@ -116,14 +101,37 @@ export class HoverProvider {
   }
 
   private createDocContents(doc: TokenWithDoc, definition: Definition): LayerContent[] {
-    const declarations = this.createDefinitionDeclaration(definition)
-    return doc.usages.map((usage: UsageWithDoc) => ({
+    const declarationMap = this.createDefinitionDeclaration(definition)
+    const usages: UsageWithDoc[] = []
+    const docUsageIdSet = new Set<string>()
+    // if length equals 1, means matched usage
+    if (definition.usages.length === 1) {
+      const usage = definition.usages[0]
+      const usageWithDoc = doc.usages.find((_usage: UsageWithDoc) => (usage.usageID = _usage.id))
+      if (usageWithDoc) {
+        usages.push({ ...usage, ...usageWithDoc })
+      } else {
+        usages.push({ ...usage, id: usage.usageID, effect: definition.structName, doc: '' })
+      }
+    } else {
+      doc.usages.forEach((usage: UsageWithDoc) => {
+        usages.push(usage)
+        docUsageIdSet.add(usage.id)
+      })
+      definition.usages
+        .filter((usage) => !docUsageIdSet.has(usage.usageID))
+        .forEach((usage) =>
+          usages.push({ ...usage, id: usage.usageID, effect: definition.structName, doc: '' })
+        )
+    }
+
+    return usages.map((usage: UsageWithDoc) => ({
       type: 'doc',
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
           icon: usageType2Icon(usage.effect),
-          declaration: declarations[usage.id] || usage.declaration
+          declaration: declarationMap[usage.id] || usage.declaration
         },
         content: usage.doc,
         recommendAction: {
@@ -166,7 +174,7 @@ export class HoverProvider {
               'definition usage is empty when search for doc detail. tokenId: ' +
                 JSON.stringify(doc.id)
             )
-          this.docAbility.getDetailDoc(doc).then((detailDoc) => {
+          this.docAbility.getDetailDoc(doc.id).then((detailDoc) => {
             const usageDetailDoc = detailDoc.usages.find(
               (usage: UsageWithDoc) => usage.id === usageId
             )?.doc

@@ -1,22 +1,30 @@
 import type { I18n } from '@/utils/i18n'
-import { Project } from '@/models/project'
-import type { Token, TokenWithDoc, UsageWithDoc, TokenId, TokenUsage } from './tokens/common'
+import type { Token, TokenWithDoc, UsageWithDoc, TokenId, TokenUsage } from './tokens/types'
+import { getAllTokens } from '@/components/editor/code-editor/tokens'
 
 export class DocAbility {
   private readonly i18n: I18n
-  private readonly project: Project
+  private readonly tokenMap = getAllTokens()
 
-  constructor(i18n: I18n, getProject: () => Project) {
+  constructor(i18n: I18n) {
     this.i18n = i18n
-    this.project = getProject()
   }
 
-  public async getNormalDoc(token: Token): Promise<TokenWithDoc> {
+  private getTokenMapKey(tokenId: TokenId) {
+    return `${tokenId.module}/${tokenId.name}`
+  }
+
+  public async getNormalDoc(tokenId: TokenId): Promise<TokenWithDoc> {
+    const token: Token | null = this.tokenMap[this.getTokenMapKey(tokenId)]
+    if (!token) return { id: tokenId, usages: [] }
     const usages: UsageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
-      const content = await getUsageDocumentFromDir(token.id, usage, this.i18n)
+      let content = await getUsageDocumentFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
-        content.replace('$picPath$', await getGIFFromPath(`${token.id.module}/${token.id.name}`))
+        content = content.replace(
+          '$picPath$',
+          await getGIFFromPath(`${token.id.module}/${token.id.name}`)
+        )
       }
       if (content != null) {
         usage.doc = content
@@ -26,12 +34,17 @@ export class DocAbility {
     return doc
   }
 
-  public async getDetailDoc(token: Token): Promise<TokenWithDoc> {
+  public async getDetailDoc(tokenId: TokenId): Promise<TokenWithDoc> {
+    const token: Token | null = this.tokenMap[this.getTokenMapKey(tokenId)]
+    if (!token) return { id: tokenId, usages: [] }
     const usages: UsageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
-      const content = await getUsageDocumentDetailFromDir(token.id, usage, this.i18n)
+      let content = await getUsageDocumentDetailFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
-        content.replace('$picPath$', await getGIFFromPath(`${token.id.module}/${token.id.name}`))
+        content = content.replace(
+          '$picPath$',
+          await getGIFFromPath(`${token.id.module}/${token.id.name}`)
+        )
       }
       if (content != null) {
         usage.doc = content
@@ -50,10 +63,15 @@ async function getUsageDocumentFromDir(
   if (!(await checkDocumentExistence(token, i18n.lang.value))) {
     return null
   }
-  if (await checkDocumentOverloadExistence(`${token.name}__${usage.id}`, i18n.lang.value)) {
-    return await readDir(`${token.name}__${usage.id}`, i18n.lang.value)
+  if (
+    await checkDocumentOverloadExistence(
+      `${token.module}/${token.name}__${usage.id}`,
+      i18n.lang.value
+    )
+  ) {
+    return await readDir(`${token.module}/${token.name}__${usage.id}`, i18n.lang.value)
   } else {
-    return await readDir(token.name, i18n.lang.value)
+    return await readDir(`${token.module}/${token.name}`, i18n.lang.value)
   }
 }
 
@@ -66,9 +84,9 @@ async function getUsageDocumentDetailFromDir(
     return null
   }
   if (await checkDocumentOverloadExistence(`${token.name}__${usage.id}`, i18n.lang.value)) {
-    return await readDir(`${token.name}__${usage.id}_detail`, i18n.lang.value)
+    return await readDir(`${token.module}/${token.name}__${usage.id}_detail`, i18n.lang.value)
   } else {
-    return await readDir(`${token.name}_detail`, i18n.lang.value)
+    return await readDir(`${token.module}/${token.name}_detail`, i18n.lang.value)
   }
 }
 
@@ -115,55 +133,3 @@ async function getGIFFromPath(path: string): Promise<string> {
   }
   return ''
 }
-
-function markdownFilenameExtract(fullName: string): object {
-  const obj = {
-    simpleName: '',
-    overload: '0',
-    detail: false
-  }
-  const splitName = fullName.split('_')
-  switch (splitName.length) {
-    case 1:
-      obj.simpleName = fullName
-      break
-    case 2:
-      obj.simpleName = splitName[0]
-      if (fullName.includes('detail')) {
-        obj.detail = true
-      } else {
-        obj.overload = splitName[1]
-      }
-      break
-    case 3:
-      obj.simpleName = splitName[0]
-      obj.overload = splitName[1]
-      obj.detail = true
-      break
-  }
-  return obj
-}
-
-// function getDocumentsByKeywords(keyword: string, i18n: I18n, project: Project) {
-//   const tools = getAllTokens(project)
-//   const tool = tools.find((s) => s.id.name === keyword)
-//   if (tool == null) return
-//   let text = i18n.t(tool.desc) + i18n.t({ en: ', e.g.', zh: '，示例：' })
-//   const result: string[] = []
-
-//   if (tool.usage != null) {
-//     text += '\n' + '```gop' + '\n' + tool.usage.sample + '\n' + '```'
-//     result.push(text)
-//   } else {
-//     tool
-//       .usages!.map((usage) => {
-//         const colon = i18n.t({ en: ': ', zh: '：' })
-//         const desc = i18n.t(usage.desc)
-//         return desc + colon + '\n' + '```gop' + '\n' + usage.sample + '\n' + '```'
-//       })
-//       .forEach((item) => {
-//         result.push(text + '\n' + item)
-//       })
-//   }
-//   return result
-// }

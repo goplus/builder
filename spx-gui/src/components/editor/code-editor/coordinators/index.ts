@@ -30,7 +30,7 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type { TokenCategory } from '@/components/editor/code-editor/tokens/common'
+import type { TokenCategory } from '@/components/editor/code-editor/tokens/types'
 
 type JumpPosition = {
   line: number
