@@ -4,7 +4,7 @@ import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, DefinitionUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
-import type { Doc, TokenUsage, usageWithDoc } from '@/components/editor/code-editor/tokens/common'
+import type { Doc, TokenUsage, UsageWithDoc } from '@/components/editor/code-editor/tokens/common'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
 
 export class HoverProvider {
@@ -117,7 +117,7 @@ export class HoverProvider {
 
   private createDocContents(doc: Doc, definition: Definition): LayerContent[] {
     const declarations = this.createDefinitionDeclaration(definition)
-    return doc.usages.map((usage: usageWithDoc) => ({
+    return doc.usages.map((usage: UsageWithDoc) => ({
       type: 'doc',
       layer: {
         level: DocPreviewLevel.Normal,
@@ -168,7 +168,7 @@ export class HoverProvider {
             )
           this.docAbility.getDetailDoc(doc).then((detailDoc) => {
             const usageDetailDoc = detailDoc.usages.find(
-              (usage: usageWithDoc) => usage.id === usageId
+              (usage: UsageWithDoc) => usage.id === usageId
             )?.doc
             if (!usageDetailDoc)
               return console.warn(

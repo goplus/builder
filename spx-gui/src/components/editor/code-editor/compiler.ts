@@ -22,8 +22,6 @@ export interface Hint {
   endPos: number
   startPosition: Position
   endPosition: Position
-  start_position: Position
-  end_position: Position
   name: string
   value: string
   unit: string
@@ -59,17 +57,17 @@ type Code = {
 
 export interface Definition {
   // `start_pos` and `end_pos` is file offset, not compatible with monaco api `getOffset` return offset
-  start_pos: number
-  end_pos: number
-  start_position: Position
+  startPos: number
+  endPos: number
+  startPosition: Position
   // `end_position` is no use for it is same as `start_position` no difference
-  end_position: Position
-  pkg_name: string
+  endPosition: Position
+  pkgName: string
   // `name` and `pkg_path` can transfer to `module` and `name` for type `TokenId`
-  pkg_path: string
+  pkgPath: string
   name: string
   usages: DefinitionUsage[]
-  struct_name: string
+  structName: string
 }
 
 // todo: this is same as function `getTokens.TokenUsage` result, need be updated when `getTokens` is declared
@@ -77,7 +75,7 @@ export interface DefinitionUsage {
   usageID: string
   declaration: string
   sample: string
-  insert_text: string
+  insertText: string
   params: Array<{
     name: string
     type: string
@@ -159,15 +157,7 @@ export class Compiler extends Disposable {
         code: this.codes2CompileCode(codes)
       }
     })
-    if (Array.isArray(inlayHints)) {
-      return inlayHints.map((hint) => ({
-        ...hint,
-        startPosition: hint.start_position,
-        endPosition: hint.end_position
-      }))
-    } else {
-      return []
-    }
+    return Array.isArray(inlayHints) ? inlayHints : []
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {

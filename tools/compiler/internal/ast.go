@@ -123,10 +123,10 @@ func jsonPrint(fset *token.FileSet, x interface{}) error {
 }
 
 type BasePos struct {
-	StartPos      int            `json:"start_pos"`
-	EndPos        int            `json:"end_pos"`
-	StartPosition token.Position `json:"start_position"`
-	EndPosition   token.Position `json:"end_position"`
+	StartPos      int            `json:"startPos"`
+	EndPos        int            `json:"endPos"`
+	StartPosition token.Position `json:"startPosition"`
+	EndPosition   token.Position `json:"endPosition"`
 }
 
 type funcItem struct {
@@ -135,8 +135,8 @@ type funcItem struct {
 	Signature  string           `json:"signature"`
 	Parameters []*funcParameter `json:"parameters"`
 	Overload   string           `json:"overload"`
-	PkgName    string           `json:"pkg_name"`
-	PkgPath    string           `json:"pkg_path"`
+	PkgName    string           `json:"pkgName"`
+	PkgPath    string           `json:"pkgPath"`
 	fnExpr     ast.Expr
 	argsExpr   []ast.Expr
 }

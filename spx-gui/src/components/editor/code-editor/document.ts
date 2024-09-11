@@ -1,6 +1,6 @@
 import type { I18n } from '@/utils/i18n'
 import { Project } from '@/models/project'
-import type { Token, Doc, usageWithDoc, TokenId, TokenUsage } from './tokens/common'
+import type { Token, TokenWithDoc, UsageWithDoc, TokenId, TokenUsage } from './tokens/common'
 
 export class DocAbility {
   private readonly i18n: I18n
@@ -11,8 +11,8 @@ export class DocAbility {
     this.project = getProject()
   }
 
-  public async getNormalDoc(token: Token): Promise<Doc> {
-    const usages: usageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
+  public async getNormalDoc(token: Token): Promise<TokenWithDoc> {
+    const usages: UsageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
       const content = await getUsageDocumentFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
@@ -22,12 +22,12 @@ export class DocAbility {
         usage.doc = content
       }
     }
-    const doc: Doc = { ...token, usages }
+    const doc: TokenWithDoc = { ...token, usages }
     return doc
   }
 
-  public async getDetailDoc(token: Token): Promise<Doc> {
-    const usages: usageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
+  public async getDetailDoc(token: Token): Promise<TokenWithDoc> {
+    const usages: UsageWithDoc[] = token.usages.map((usage) => ({ ...usage, doc: '' }))
     for (const usage of usages) {
       const content = await getUsageDocumentDetailFromDir(token.id, usage, this.i18n)
       if (content?.includes('$picPath$')) {
@@ -37,7 +37,7 @@ export class DocAbility {
         usage.doc = content
       }
     }
-    const doc: Doc = { ...token, usages }
+    const doc: TokenWithDoc = { ...token, usages }
     return doc
   }
 }
