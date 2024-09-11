@@ -70,7 +70,7 @@ export type ChatResp = {
 
 export type TaskResp = {
   taskAction: number
-  suggestions: CodeSuggest[]
+  suggestions: CodeSuggest[] | null
 }
 
 export type CodeSuggest = {
@@ -79,19 +79,21 @@ export type CodeSuggest = {
 }
 
 export async function startChat(params: AIStartChatParams) {
-  return client.post('/llm/chat', params, {timeout: 20000}) as Promise<ChatResp>
+  return (await client.post('/llm/chat', params, { timeout: 20000 })) as Promise<ChatResp>
 }
 
 export async function nextChat(chatID: string, params: AIChatParams) {
   const encodedChatID = encodeURIComponent(chatID)
-  return client.post(`/llm/chat/${encodedChatID}`, params, {timeout: 20000}) as Promise<ChatResp>
+  return (await client.post(`/llm/chat/${encodedChatID}`, params, {
+    timeout: 20000
+  })) as Promise<ChatResp>
 }
 
 export async function deleteChat(chatID: string) {
   const encodedChatID = encodeURIComponent(chatID)
-  return client.delete(`/llm/chat/${encodedChatID}`) as Promise<void>
+  return (await client.delete(`/llm/chat/${encodedChatID}`)) as Promise<void>
 }
 
 export async function startTask(params: AITaskParams) {
-  return client.post('/llm/task', params, {timeout: 20000}) as Promise<TaskResp>
+  return (await client.post('/llm/task', params, { timeout: 20000 })) as Promise<TaskResp>
 }

@@ -144,7 +144,7 @@ export class Coordinator {
 
     this.compiler
       .getCompletionItems(
-        (this.project.selectedSprite?.name ?? 'main') + '.spx',
+        this.currentFilename,
         this.getProjectAllCodes(),
         ctx.position.lineNumber,
         ctx.position.column
@@ -299,40 +299,42 @@ export class Coordinator {
       .then((diagnostics) => {
         if (ctx.signal.aborted) return
         setHints(
-          diagnostics.map((diagnostic) => {
-            const word = model.getWordAtPosition({
-              lineNumber: diagnostic.line,
-              column: diagnostic.column
-            })
+          diagnostics
+            .filter((diagnostic) => diagnostic.filename === this.currentFilename)
+            .map((diagnostic) => {
+              const word = model.getWordAtPosition({
+                lineNumber: diagnostic.line,
+                column: diagnostic.column
+              })
 
-            return {
-              level: AttentionHintLevelEnum.ERROR,
-              message: diagnostic.message,
-              range: {
-                startColumn: diagnostic.column,
-                startLineNumber: diagnostic.line,
-                endColumn: word?.endColumn ?? diagnostic.column,
-                endLineNumber: diagnostic.line
-              },
-              hoverContent: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Error,
-                  content: diagnostic.message,
-                  recommendAction: {
-                    label: this.ui.i18n.t({
-                      zh: '没看明白？场外求助',
-                      en: 'Not clear? Ask for help'
-                    }),
-                    activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-                    onActiveLabelClick: () => {
-                      // TODO: Add some logic code
+              return {
+                level: AttentionHintLevelEnum.ERROR,
+                message: diagnostic.message,
+                range: {
+                  startColumn: diagnostic.column,
+                  startLineNumber: diagnostic.line,
+                  endColumn: word?.endColumn ?? diagnostic.column,
+                  endLineNumber: diagnostic.line
+                },
+                hoverContent: {
+                  type: 'doc',
+                  layer: {
+                    level: DocPreviewLevel.Error,
+                    content: diagnostic.message,
+                    recommendAction: {
+                      label: this.ui.i18n.t({
+                        zh: '没看明白？场外求助',
+                        en: 'Not clear? Ask for help'
+                      }),
+                      activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+                      onActiveLabelClick: () => {
+                        // TODO: Add some logic code
+                      }
                     }
                   }
                 }
               }
-            }
-          })
+            })
         )
       })
   }
