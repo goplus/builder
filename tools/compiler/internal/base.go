@@ -152,14 +152,14 @@ func GetTokensDetail(tokenMap []TokenID) (interface{}, error) {
 		return nil, fmt.Errorf("can't find spx lib")
 	}
 	pkgMap["github.com/goplus/spx"] = spxPrepare
-	var detailList []definitionItem
+	var detailList []baseToken
 	for _, tok := range tokenMap {
 		if pkg, ok := pkgMap[tok.TokenPkg]; ok {
 			detailList = append(detailList, tokenDetail(pkg, tok.TokenName))
 		} else {
 			pkg, ok := gopbuild.LookupPackageFromLib(tok.TokenPkg)
 			if !ok {
-				return nil, fmt.Errorf("can't find lib %s", tok.TokenPkg)
+				continue
 			}
 			pkgMap[tok.TokenPkg] = pkg
 			detailList = append(detailList, tokenDetail(pkg, tok.TokenName))

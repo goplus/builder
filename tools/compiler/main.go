@@ -8,12 +8,17 @@ import (
 
 // wasm entry
 func main() {
-	// make channel
-	c := make(chan struct{})
+	defer handlePanic()
 
 	fmt.Println("WASM Init")
 	// js functions
 	jsFuncRegister()
 
-	<-c
+	select {}
+}
+
+func handlePanic() {
+	if r := recover(); r != nil {
+		fmt.Println("Recovered from panic: ", r)
+	}
 }
