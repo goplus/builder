@@ -1,13 +1,30 @@
 <template>
   <div class="video-recorder">
+    <div v-if="requestingPermission" class="recorder-content request-permission">
+      <p>
+        {{
+          $t({
+            en: 'Please allow the camera permission to start recording',
+            zh: '请允许访问摄像头以开始录制'
+          })
+        }}
+      </p>
+    </div>
+    <div v-else-if="permissionDeniedMessage" class="recorder-content permission-denied">
+      <p>{{ permissionDeniedMessage }}</p>
+      <UIButton size="large" @click="startCamera">
+        <NIcon size="large">
+          <RefreshOutlined />
+        </NIcon>
+        {{ $t({ en: 'Retry', zh: '重试' }) }}
+      </UIButton>
+    </div>
     <Transition name="slide-fade" mode="out-in" appear>
       <div v-if="cameraActive" class="recorder-content record">
-        <!-- seconds -->
         <div v-if="recording" class="recording-time">
           {{ $t({ en: 'Recording', zh: '录制中' }) }}: {{ recordingTime }}s
         </div>
         <video ref="liveVideoRef" autoplay class="recorder-video record"></video>
-
         <div class="control-btn">
           <UIButton size="large" @click="recording ? stopRecording() : startRecording()">
             <NIcon size="large">
@@ -57,22 +74,24 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount, type Ref, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { UIButton } from '@/components/ui'
 import { NIcon } from 'naive-ui'
 import {
   ArrowBackOutlined,
   FileDownloadOutlined,
+  RefreshOutlined,
   RunCircleOutlined,
   SlowMotionVideoOutlined,
-  StopCircleOutlined,
-  VideocamOffOutlined,
-  VideocamOutlined
+  StopCircleOutlined
 } from '@vicons/material'
+import { useI18n } from '@/utils/i18n'
 
 let mediaStream: MediaStream
 let mediaRecorder: MediaRecorder
 let recordedChunks: Blob[] = []
+const requestingPermission = ref(false)
+const permissionDeniedMessage = ref<string | null>(null)
 const cameraActive = ref(false)
 const recording = ref(false)
 const recordingStartedAt = ref<number | null>(null)
@@ -81,21 +100,48 @@ const recordedBlobUrl = ref<string | null>(null)
 const liveVideoRef = ref<HTMLVideoElement | null>(null)
 const recordedVideoRef = ref<HTMLVideoElement | null>(null)
 
+const { t } = useI18n()
+
 const startCamera = async () => {
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({
+  requestingPermission.value = true
+  navigator.mediaDevices
+    .getUserMedia({
       video: true,
       audio: false // we don't need audio
     })
-    cameraActive.value = true
-    await nextTick()
+    .then(async (media) => {
+      requestingPermission.value = false
+      permissionDeniedMessage.value = null
+      mediaStream = media
+      cameraActive.value = true
+      await nextTick()
 
-    if (liveVideoRef.value) {
-      liveVideoRef.value.srcObject = mediaStream
-    }
-  } catch (error) {
-    console.error('无法访问摄像头:', error)
-  }
+      if (liveVideoRef.value) {
+        liveVideoRef.value.srcObject = mediaStream
+      }
+    })
+    .catch((error: DOMException) => {
+      requestingPermission.value = false
+      switch (error.name) {
+        case 'NotAllowedError':
+          permissionDeniedMessage.value = t({
+            en: 'Permission denied, please allow the camera permission in your browser settings to start recording',
+            zh: '权限被拒绝，请在浏览器设置中允许访问摄像头以开始录制'
+          })
+          break
+        case 'NotFoundError':
+          permissionDeniedMessage.value = t({
+            en: 'No camera found, please make sure you have a camera connected to your device',
+            zh: '未找到摄像头，请确保您的设备连接了摄像头'
+          })
+          break
+        default:
+          permissionDeniedMessage.value = t({
+            en: `Failed to start camera, please try again later. ${error.name}: ${error.message}`,
+            zh: `无法启动摄像头，请稍后再试。${error.name}: ${error.message}`
+          })
+      }
+    })
 }
 
 const stopCamera = () => {
@@ -186,6 +232,24 @@ onBeforeUnmount(() => {
   text-align: center;
   min-height: 416px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.recorder-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.request-permission,
+.permission-denied {
+  flex: 1;
+  padding: 20px 0;
+  font-size: 1.2rem;
+  gap: 20px;
 }
 
 .recorder-video {
