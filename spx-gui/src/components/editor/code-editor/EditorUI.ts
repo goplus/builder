@@ -323,7 +323,7 @@ export class EditorUI extends Disposable {
 
     this.addDisposer(() => {
       for (const callbackKey in this.editorUIRequestCallback) {
-        this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback].length = 0
+        this.editorUIRequestCallback[callbackKey as keyof EditorUIRequestCallback] = []
       }
     })
 
@@ -414,7 +414,7 @@ export class EditorUI extends Disposable {
             return { suggestions: [] }
           } else {
             const suggestions =
-              this.completionMenu.completionItemCache.get(completionItemCacheID)?.map(
+              cachedItems.map(
                 (item): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),

@@ -1,6 +1,14 @@
-import { reactive } from "vue";
+import { reactive } from 'vue'
 import type { AIChatParams, AIStartChatParams, AITaskParams, ProjectContext } from '@/apis/llm'
-import { ChatAction, deleteChat, nextChat, startChat, startTask, TaskAction, UserLang } from '@/apis/llm'
+import {
+  ChatAction,
+  deleteChat,
+  nextChat,
+  startChat,
+  startTask,
+  TaskAction,
+  UserLang
+} from '@/apis/llm'
 import type { Project } from '@/models/project'
 import { I18n } from '@/utils/i18n'
 
@@ -36,7 +44,7 @@ export class ChatBot {
   startCommentChat(input: string): Chat {
     return reactive(
       new Chat(
-        this.createParams(ChatAction.comment, input, this.getUserLanguage(),  this.getProject()),
+        this.createParams(ChatAction.comment, input, this.getUserLanguage(), this.getProject()),
         this.i18nInputWithAction(input, ChatAction.comment)
       )
     )
@@ -44,7 +52,7 @@ export class ChatBot {
   startFixCodeChat(input: string): Chat {
     return reactive(
       new Chat(
-        this.createParams(ChatAction.fixCode, input, this.getUserLanguage(),  this.getProject()),
+        this.createParams(ChatAction.fixCode, input, this.getUserLanguage(), this.getProject()),
         this.i18nInputWithAction(input, ChatAction.fixCode)
       )
     )
@@ -74,7 +82,9 @@ export class ChatBot {
           this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + input
         )
       case ChatAction.fixCode:
-        this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + input
+        return (
+          this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + input
+        )
     }
     return ''
   }
@@ -90,11 +100,16 @@ export class ChatBot {
 }
 
 export class Chat {
-  chatState = reactive<{chatID: string, messages: ChatMessage[], length: number, loading: boolean}>({
-    chatID:  '',
-    messages:  [],
+  chatState = reactive<{
+    chatID: string
+    messages: ChatMessage[]
+    length: number
+    loading: boolean
+  }>({
+    chatID: '',
+    messages: [],
     length: 0,
-    loading: true,
+    loading: true
   })
 
   constructor(params: AIStartChatParams, showMessage: string) {
@@ -209,6 +224,7 @@ export class Suggest {
     }
     const res = await startTask(params)
     const suggests = res.suggestions
+    if (suggests == null) return []
     return suggests.map((suggest) => ({
       label: suggest.label,
       desc: suggest.label,

@@ -3,7 +3,6 @@ import { AttentionHint } from './attention-hint'
 import {
   type AttentionHintDecoration,
   AttentionHintLevelEnum,
-  type DocPreview,
   EditorUI
 } from '@/components/editor/code-editor/EditorUI'
 import { onMounted, onUnmounted } from 'vue'
@@ -24,7 +23,6 @@ const updateAttentionHint = debounce(async () => {
       props.attentionHint.attentionHintDecoration.clear()
       props.attentionHint.attentionHintDecoration.set(
         hints.map((hint) => {
-          // todo: add hover layer content
           switch (hint.level) {
             case AttentionHintLevelEnum.WARNING:
               return props.attentionHint.createWarningAttentionHint(hint.range, hint.message)
