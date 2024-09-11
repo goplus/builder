@@ -19,12 +19,12 @@ const props = withDefaults(
     texture: string
     fps?: number
     autoplay?: boolean
-    scale?: number
+    scale?: [number, number]
   }>(),
   {
     fps: 30,
     autoplay: true,
-    scale: 40
+    scale: () => [40, 40] as [number, number]
   }
 )
 
@@ -67,7 +67,6 @@ watch(() => props.scale, () => {
 })
 
 onUnmounted(() => {
-  console.log('unmounted')
   window.removeEventListener('resize', resize)
   clearInterval(resizeTimer)
 })
@@ -88,6 +87,7 @@ type CanvasWebGLRenderingContext = WebGLRenderingContext & {
 interface Uniforms {
   uTexture: WebGLTexture
   uResolution: [number, number]
+  uScale: [number, number]
   uFlipY: 1 | -1
   uTranslate: [number, number]
 }
@@ -129,7 +129,7 @@ export class Renderer {
     fs: string,
     texSrc: string,
     fps: number = 30,
-    scale: number = 40
+    scale: [number, number] = [40, 40]
   ) {
     this.gl = gl
     this.programInfo = setupProgram(gl, vs, fs)
@@ -252,11 +252,11 @@ export class Renderer {
     return img
   }
 
-  private _scale: number = 40
+  private _scale: [number, number] = [40, 40]
   get scale() {
     return this._scale
   }
-  set scale(scale: number) {
+  set scale(scale: [number, number]) {
     this._scale = scale
     this.resize()
   }
@@ -376,8 +376,9 @@ export function initScene(gl: CanvasWebGLRenderingContext, cull: false | 'front'
  * @param uniforms The uniforms to set the projection and view matrix
  * @param scale
  */
-export function setupResolutionMap(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>, scale: number = 40) {
-  uniforms.uResolution = [gl.canvas.width / scale, gl.canvas.height / scale]
+export function setupResolutionMap(gl: CanvasWebGLRenderingContext, uniforms: Partial<Uniforms>, scale: [number, number] = [40, 40]) {
+  uniforms.uResolution = [gl.canvas.width, gl.canvas.height]
+  uniforms.uScale = scale
   uniforms.uTranslate = [1, 1]
   uniforms.uFlipY = 1
 }
@@ -411,7 +412,7 @@ export function setupUniforms(
   gl: CanvasWebGLRenderingContext,
   programInfo: twgl.ProgramInfo,
   texSrc: string,
-  scale: number = 40
+  scale: [number, number] = [40, 40]
 ) {
   const uniforms = {} as Partial<Uniforms>
   setupTexture(gl, uniforms, texSrc)
