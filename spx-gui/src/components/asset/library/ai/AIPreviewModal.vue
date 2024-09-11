@@ -3,8 +3,14 @@
     <div class="head head-actions">
       <Transition name="slide-fade" mode="out-in" appear>
         <div v-if="contentReady" class="head-left">
-          <UIButton v-for="action in currentActions" :key="action.name" size="large" :type="action.type"
-            :disabled="action.disabled" @click="action.action">
+          <UIButton
+            v-for="action in currentActions"
+            :key="action.name"
+            size="large"
+            :type="action.type"
+            :disabled="action.disabled"
+            @click="action.action"
+          >
             <NIcon v-if="action.icon">
               <component :is="action.icon" />
             </NIcon>
@@ -16,8 +22,12 @@
         </div>
       </Transition>
       <div class="head-right">
-        <UIButton size="large" class="insert-button" :disabled="!contentReady || addToProjectPending || exportPending"
-          @click="handleAddButton">
+        <UIButton
+          size="large"
+          class="insert-button"
+          :disabled="!contentReady || addToProjectPending || exportPending"
+          @click="handleAddButton"
+        >
           <span style="white-space: nowrap">
             {{
               addToProjectPending || exportPending
@@ -51,7 +61,10 @@
                     <span v-else-if="status === AIGCStatus.Generating" class="generating-text">
                       {{ $t({ en: `Generating...`, zh: `生成中...` }) }}
                     </span>
-                    <span v-else-if="status === AIGCStatus.Finished && !contentReady" class="generating-text">
+                    <span
+                      v-else-if="status === AIGCStatus.Finished && !contentReady"
+                      class="generating-text"
+                    >
                       {{ $t({ en: `Loading...`, zh: `加载中...` }) }}
                     </span>
                   </Transition>
@@ -73,25 +86,48 @@
             </div>
           </template>
           <template v-else>
-            <AISpriteEditor v-if="asset.assetType === AssetType.Sprite" ref="spriteEditor"
-              :asset="asset as TaggedAIAssetData<AssetType.Sprite>" class="asset-editor sprite-editor" />
-            <AIBackdropEditor v-else-if="asset.assetType === AssetType.Backdrop" ref="backdropEditor"
-              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>" class="asset-editor backdrop-editor" />
-            <AISoundEditor v-else-if="asset.assetType === AssetType.Sound" ref="soundEditor" :asset="asset" />
+            <AISpriteEditor
+              v-if="asset.assetType === AssetType.Sprite"
+              ref="spriteEditor"
+              :asset="asset as TaggedAIAssetData<AssetType.Sprite>"
+              class="asset-editor sprite-editor"
+            />
+            <AIBackdropEditor
+              v-else-if="asset.assetType === AssetType.Backdrop"
+              ref="backdropEditor"
+              :default-ratio="props.project.stage.mapWidth / props.project.stage.mapHeight"
+              :asset="asset as TaggedAIAssetData<AssetType.Backdrop>"
+              class="asset-editor backdrop-editor"
+            />
+            <AISoundEditor
+              v-else-if="asset.assetType === AssetType.Sound"
+              ref="soundEditor"
+              :asset="asset"
+            />
           </template>
         </Transition>
       </main>
       <aside>
-        <NScrollbar :content-style="{
-          paddingRight: '15px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }">
-          <div v-for="aiAsset in aiAssets" :key="aiAsset.taskId" class="ai-asset-wrapper"
-            :class="{ selected: aiAsset.result?.id === asset.id }">
-            <AIAssetItem :task="aiAsset" :show-ai-asset-tip="false" @ready="(aiAsset as any)[isPreviewReady] = true"
-              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)" />
+        <NScrollbar
+          :content-style="{
+            paddingRight: '15px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }"
+        >
+          <div
+            v-for="aiAsset in aiAssets"
+            :key="aiAsset.taskId"
+            class="ai-asset-wrapper"
+            :class="{ selected: aiAsset.result?.id === asset.id }"
+          >
+            <AIAssetItem
+              :task="aiAsset"
+              :show-ai-asset-tip="false"
+              @ready="(aiAsset as any)[isPreviewReady] = true"
+              @click="(aiAsset as any)[isPreviewReady] && emit('selectAi', aiAsset.result!)"
+            />
           </div>
         </NScrollbar>
       </aside>
@@ -111,7 +147,14 @@ export interface EditorAction {
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { NIcon, NSpin } from 'naive-ui'
-import { addAsset, AssetType, getAsset, IsPublic, type AddAssetParams, type AssetData } from '@/apis/asset'
+import {
+  addAsset,
+  AssetType,
+  getAsset,
+  IsPublic,
+  type AddAssetParams,
+  type AssetData
+} from '@/apis/asset'
 import UIButton, { type ButtonType } from '@/components/ui/UIButton.vue'
 import AIAssetItem from '../AIAssetItem.vue'
 import { NScrollbar } from 'naive-ui'
@@ -122,7 +165,7 @@ import {
   isPreviewReady,
   type TaggedAIAssetData,
   exportedId,
-  type RequiredAIGCFiles,
+  type RequiredAIGCFiles
 } from '@/apis/aigc'
 import { debounce } from '@/utils/utils'
 import { getFiles } from '@/models/common/cloud'
@@ -137,12 +180,14 @@ import type { LocaleMessage } from '@/utils/i18n'
 import { AIGCTask, AISpriteTask } from '@/models/aigc'
 import { useRenameAsset } from '../..'
 import { useMessageHandle } from '@/utils/exception'
+import type { Project } from '@/models/project'
 
 // Define component props
 const props = defineProps<{
   asset: TaggedAIAssetData
   aiAssets: AIGCTask[]
   addToProjectPending: boolean
+  project: Project
 }>()
 
 const emit = defineEmits<{
@@ -155,13 +200,25 @@ const backdropEditor = ref<InstanceType<typeof AIBackdropEditor> | null>(null)
 const soundEditor = ref<InstanceType<typeof AISoundEditor> | null>(null)
 
 const currentActions = computed<EditorAction[]>(() => {
-  if (props.asset.assetType === AssetType.Sprite && spriteEditor.value && 'actions' in spriteEditor.value) {
+  if (
+    props.asset.assetType === AssetType.Sprite &&
+    spriteEditor.value &&
+    'actions' in spriteEditor.value
+  ) {
     return spriteEditor?.value?.actions as EditorAction[]
   }
-  if (props.asset.assetType === AssetType.Backdrop && backdropEditor.value && 'actions' in backdropEditor.value) {
+  if (
+    props.asset.assetType === AssetType.Backdrop &&
+    backdropEditor.value &&
+    'actions' in backdropEditor.value
+  ) {
     return backdropEditor?.value?.actions as EditorAction[]
   }
-  if (props.asset.assetType === AssetType.Sound && soundEditor.value && 'actions' in soundEditor.value) {
+  if (
+    props.asset.assetType === AssetType.Sound &&
+    soundEditor.value &&
+    'actions' in soundEditor.value
+  ) {
     return soundEditor?.value?.actions as EditorAction[]
   }
   return []
@@ -245,7 +302,7 @@ const publicAsset = ref<AssetData | null>(null)
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
  */
- const exportAssetDataToPublic = async () => {
+const exportAssetDataToPublic = async () => {
   if (!props.asset[isContentReady]) {
     throw new Error('Could not export an incomplete asset')
   }
@@ -256,8 +313,8 @@ const publicAsset = ref<AssetData | null>(null)
     files: props.asset.files!,
     displayName: props.asset.displayName ?? props.asset.id,
     filesHash: props.asset.filesHash!,
-    preview: "TODO",
-    category: '*',
+    preview: 'TODO',
+    category: '*'
   }
   exportPending.value = true
   const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
@@ -266,20 +323,17 @@ const publicAsset = ref<AssetData | null>(null)
   return publicAsset
 }
 
-
 const handleAddButton = async () => {
   if (props.addToProjectPending) {
     return
   }
-  
+
   if (!publicAsset.value) {
     const exportedAsset = await exportAssetDataToPublic()
     publicAsset.value = exportedAsset
   }
   emit('addToProject', publicAsset.value)
 }
-
-
 
 const renameAsset = useRenameAsset()
 const handleRename = useMessageHandle(
