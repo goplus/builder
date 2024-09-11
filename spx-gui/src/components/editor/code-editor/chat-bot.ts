@@ -111,8 +111,8 @@ export class Chat {
     this.chatState.length++
     const res = await startChat(params)
     this.chatState.loading = false
-    const content = res.resp_message
-    const questions = res.resp_questions
+    const content = res.respMessage
+    const questions = res.respQuestions
     const messages: ChatMessage = {
       content: content,
       role: 'assistant',
@@ -142,8 +142,8 @@ export class Chat {
     const res = await nextChat(this.chatState.chatID, params)
     this.chatState.length++
     this.chatState.loading = false
-    const content = res.resp_message
-    const questions = res.resp_questions
+    const content = res.respMessage
+    const questions = res.respQuestions
     const assistantMessage: ChatMessage = {
       content: content,
       role: 'assistant',
@@ -208,7 +208,7 @@ export class Suggest {
       userCursor: input.position
     }
     const res = await startTask(params)
-    const suggests = res.codeSuggests
+    const suggests = res.suggestions
     return suggests.map((suggest) => ({
       label: suggest.label,
       desc: suggest.label,
