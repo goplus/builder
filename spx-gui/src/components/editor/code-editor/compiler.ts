@@ -135,7 +135,8 @@ export class Compiler extends Disposable {
     }
   }
 
-  public handleConsoleLog(message: any) {
+  public handleConsoleLog(message: any, ...messages: any[]) {
+    console.log('%c[COMPILER]', 'color: #0bc0cf', message, ...messages)
     if (!message) return
     if (message.includes('goroutine ')) this.reloadIframe()
     if (message === 'WASM Init')

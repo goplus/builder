@@ -4,11 +4,13 @@ package main
 
 import (
 	"fmt"
+	"runtime/debug"
+	"syscall/js"
 )
 
 // wasm entry
 func main() {
-	defer handlePanic()
+	defer handlePanic("main", nil)
 
 	fmt.Println("WASM Init")
 	// js functions
@@ -17,8 +19,12 @@ func main() {
 	select {}
 }
 
-func handlePanic() {
+func handlePanic(name string, ret *js.Value) {
 	if r := recover(); r != nil {
-		fmt.Println("Recovered from panic: ", r)
+		fmt.Printf("`%s` Recovered from panic: %v\n", name, r)
+		debug.PrintStack()
+		if ret != nil {
+			*ret = js.ValueOf(`{"ok":false,"content":null}`)
+		}
 	}
 }

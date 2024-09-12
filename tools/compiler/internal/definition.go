@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"go/types"
 	"sort"
 	"strconv"
@@ -59,15 +60,33 @@ func extractFuncDetails(fun *funcItem, infoList *typesutil.Info) {
 	switch obj := fun.fnExpr.(type) {
 	case *ast.Ident:
 		fun.Overload = obj.Name
-		fun.PkgName = infoList.Uses[obj].Pkg().Name()
-		fun.PkgPath = infoList.Uses[obj].Pkg().Path()
+		pkg := infoList.Uses[obj].Pkg()
+		if pkg == nil {
+			fun.PkgName = "unknown"
+			fun.PkgPath = "unknown"
+		} else {
+			fun.PkgName = pkg.Name()
+			fun.PkgPath = pkg.Path()
+		}
 	case *ast.SelectorExpr:
 		fun.Overload = obj.Sel.Name
-		fun.PkgName = infoList.Uses[obj.Sel].Pkg().Name()
-		fun.PkgPath = infoList.Uses[obj.Sel].Pkg().Path()
+		pkg := infoList.Uses[obj.Sel].Pkg()
+		if pkg == nil {
+			fun.PkgName = "unknown"
+			fun.PkgPath = "unknown"
+		} else {
+			fun.PkgName = pkg.Name()
+			fun.PkgPath = pkg.Path()
+		}
 	}
 
-	signature := tv.Type.(*types.Signature)
+	signature, ok := tv.Type.(*types.Signature)
+	if !ok {
+		fmt.Printf("extractFuncDetails: %s(%s) not a signature\n", fun.Name, tv.Type.String())
+		fun.Parameters = []*funcParameter{}
+		fun.Signature = tv.Type.String()
+		return
+	}
 	fun.Parameters = extractParameters(signature, fun.argsExpr)
 	fun.Signature = signature.String()
 }
@@ -159,6 +178,7 @@ func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
 			PkgName: obj.Pkg().Name(),
 			PkgPath: obj.Pkg().Path(),
 			Name:    ident.Name,
+			Usages:  []usage{},
 		},
 	}
 	if fn, ok := obj.(*types.Func); ok {
@@ -193,7 +213,8 @@ func createUsages(obj types.Object, name string) []usage {
 	case *types.Signature:
 		return []usage{createSignatureUsage(obj, t)}
 	default:
-		return nil
+		// TODO: Handle other types.
+		return []usage{}
 	}
 }
 

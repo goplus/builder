@@ -276,7 +276,7 @@ func handleThis(obj types.Object, name string, items *completionList) {
 	}
 
 	structMethodsToCompletion(structType, items)
-
+	// TODO: fields of struct
 }
 
 func handleFunc(obj types.Object, name string, items *completionList) {
