@@ -75,6 +75,16 @@ type GenerateInpaintingResult struct {
 	Desc     string `json:"desc"`
 }
 
+type ExtractMotionParams struct {
+	VideoUrl    string `json:"video_url"`
+	CallbackUrl string `json:"callback_url"`
+}
+
+type ExtractMotionResult struct {
+	ResultUrl string `json:"result_url"`
+	Desc      string `json:"desc"`
+}
+
 type GetAIAssetStatusResult struct {
 	// Status is the status of the AI asset.
 	Status AssetStatus    `json:"status"`
@@ -255,6 +265,17 @@ func (ctrl *Controller) GenerateInpainting(ctx context.Context, param *GenerateI
 		return nil, err
 	}
 	return &generateInpaintingResult, nil
+}
+
+func (ctrl *Controller) ExtractMotion(ctx context.Context, param *ExtractMotionParams) (*ExtractMotionResult, error) {
+	logger := log.GetReqLogger(ctx)
+	var extractMotionResult ExtractMotionResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/motion", &param, &extractMotionResult)
+	if err != nil {
+		logger.Printf("failed to call: %v", err)
+		return nil, err
+	}
+	return &extractMotionResult, nil
 }
 
 // GetAIAssetStatus get AI asset status.
