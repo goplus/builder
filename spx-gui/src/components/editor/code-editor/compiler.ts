@@ -64,7 +64,6 @@ interface TokenSourcePosition {
   startPos: number
   endPos: number
   startPosition: TokenPosition
-  // `end_position` is no use for it is same as `start_position` no difference
   endPosition: TokenPosition
 }
 
@@ -122,8 +121,8 @@ export class Compiler extends Disposable {
 
   private reloadIframe() {
     // each load will emit 'load' event, after 'load', will trigger `initIframe` function
-    // this.containerElement?.contentWindow?.location.reload()
-    // this.wasmHandlerRef.value = null
+    this.containerElement?.contentWindow?.location.reload()
+    this.wasmHandlerRef.value = null
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
