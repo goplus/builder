@@ -73,8 +73,8 @@ export interface Definition extends TokenSourcePosition, TokenDetail {
 }
 
 export interface TokenDetail {
-  // `pkgName` and `pkgPath` can transfer to `module` and `name` for type `TokenId`
   pkgName: string
+  // `name` and `pkgPath` can transfer to `pkgPath` and `name` for type `TokenId`
   pkgPath: string
   name: string
   usages: TokenUsage[]
