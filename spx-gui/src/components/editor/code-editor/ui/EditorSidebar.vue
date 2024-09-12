@@ -8,9 +8,9 @@ import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.
 import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
 import { useLocalStorage } from '@/utils/utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
-  value: string
   ui: EditorUI
 }>()
 
@@ -19,21 +19,22 @@ defineEmits<{
 }>()
 
 const collapsed = useLocalStorage('spx-gui-sidebar-collapse', false)
+const editorCtx = useEditorCtx()
 const categories = ref<InputItemCategory[]>([])
-const controller = ref<AbortController | null>(null)
+const abortController = ref<AbortController | null>(null)
 
 watch(
-  () => props.value,
+  () => editorCtx.project.selected?.type,
   () => {
-    if (controller.value) {
-      controller.value.abort()
+    if (abortController.value) {
+      abortController.value.abort()
     }
 
-    controller.value = new AbortController()
+    abortController.value = new AbortController()
 
     props.ui
       .requestInputAssistantProviderResolve({
-        signal: controller.value.signal
+        signal: abortController.value.signal
       })
       .then((result) => {
         categories.value = result
@@ -43,8 +44,8 @@ watch(
 )
 
 onUnmounted(() => {
-  if (controller.value) {
-    controller.value.abort()
+  if (abortController.value) {
+    abortController.value.abort()
   }
 })
 

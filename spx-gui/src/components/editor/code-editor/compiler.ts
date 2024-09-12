@@ -10,16 +10,16 @@ export type CompilerCodes = Record<string, string>
 
 interface WasmHandler extends Window {
   console: typeof console
-  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | null
+  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[]
   getCompletionItems: (params: {
     in: { name: string; code: CompilerCodes; line: number; column: number }
-  }) => CompletionItem[] | null
-  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | null
-  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | null
-  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail | null
+  }) => CompletionItem[]
+  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[]
+  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[]
+  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail
   getTokensDetail: (params: {
     in: { tokens: Array<{ name: string; pkgPath: string }> }
-  }) => TokenDetail[] | null
+  }) => TokenDetail[]
 }
 
 export interface Hint {
@@ -31,7 +31,6 @@ export interface Hint {
   value: string
   unit: string
   type: 'play' | 'parameter'
-  from: TokenSourcePosition
 }
 
 export interface Diagnostic {
@@ -161,24 +160,22 @@ export class Compiler extends Disposable {
 
   public async getInlayHints(currentFilename: string, codes: Code[]): Promise<Hint[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const inlayHints = wasmHandler.getInlayHints({
+    return wasmHandler.getInlayHints({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(inlayHints) ? inlayHints : []
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const diagnostics = wasmHandler.getDiagnostics({
+    return wasmHandler.getDiagnostics({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(diagnostics) ? diagnostics : []
   }
 
   public async getCompletionItems(
@@ -188,7 +185,7 @@ export class Compiler extends Disposable {
     column: number
   ): Promise<CompletionItem[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const completionItems = wasmHandler.getCompletionItems({
+    return wasmHandler.getCompletionItems({
       in: {
         line,
         column,
@@ -196,33 +193,29 @@ export class Compiler extends Disposable {
         name: currentFilename
       }
     })
-    return Array.isArray(completionItems) ? completionItems : []
   }
 
   public async getDefinition(currentFilename: string, codes: Code[]): Promise<Definition[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const definitions = wasmHandler.getDefinition({
+    return wasmHandler.getDefinition({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(definitions) ? definitions : []
   }
 
   public async getTokenDetail(tokenId: TokenId): Promise<TokenDetail | null> {
     const wasmHandler = await this.waitForWasmInit()
-    const tokenDetail = wasmHandler.getTokenDetail({
+    return wasmHandler.getTokenDetail({
       in: tokenId
     })
-    return tokenDetail
   }
 
   public async getTokensDetail(tokens: Array<TokenId>): Promise<TokenDetail[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const tokensDetail = wasmHandler.getTokensDetail({
+    return wasmHandler.getTokensDetail({
       in: { tokens }
     })
-    return Array.isArray(tokensDetail) ? tokensDetail : []
   }
 }
