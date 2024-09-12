@@ -4,21 +4,22 @@ import compilerWasmExec from '@/assets/wasm_exec.js?url'
 import { Disposable } from '@/utils/disposable'
 import { shallowRef } from 'vue'
 import { untilNotNull } from '@/utils/utils'
+import type { TokenId } from '@/components/editor/code-editor/tokens/types'
 
-export type CompilerCodes = { [k: string]: string }
+export type CompilerCodes = Record<string, string>
 
 interface WasmHandler extends Window {
   console: typeof console
-  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
+  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | null
   getCompletionItems: (params: {
     in: { name: string; code: CompilerCodes; line: number; column: number }
-  }) => CompletionItem[] | {}
-  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | {}
-  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
-  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail
+  }) => CompletionItem[] | null
+  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | null
+  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | null
+  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail | null
   getTokensDetail: (params: {
     in: { tokens: Array<{ name: string; pkgPath: string }> }
-  }) => TokenDetail[] | {}
+  }) => TokenDetail[] | null
 }
 
 export interface Hint {
@@ -30,7 +31,7 @@ export interface Hint {
   value: string
   unit: string
   type: 'play' | 'parameter'
-  from: any
+  from: TokenSourcePosition
 }
 
 export interface Diagnostic {
@@ -74,7 +75,7 @@ export interface Definition extends TokenSourcePosition, TokenDetail {
 
 export interface TokenDetail {
   pkgName: string
-  // `name` and `pkgPath` can transfer to `pkgPath` and `name` for type `TokenId`
+  // `name` and `pkgPath` can transfer to type `TokenId`
   pkgPath: string
   name: string
   usages: TokenUsage[]
@@ -126,12 +127,11 @@ export class Compiler extends Disposable {
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
-    const compilerCodes: Record<string, string> = {}
-    codes.forEach((code) => {
+    return codes.reduce((compilerCodes: CompilerCodes, code) => {
       const filename = code.filename
       compilerCodes[filename] = code.content
-    })
-    return compilerCodes
+      return compilerCodes
+    }, {})
   }
 
   public setContainerElement(containerElement: HTMLIFrameElement) {
@@ -210,20 +210,15 @@ export class Compiler extends Disposable {
     return Array.isArray(definitions) ? definitions : []
   }
 
-  public async getTokenDetail(name: string, pkgPath: string): Promise<TokenDetail | null> {
+  public async getTokenDetail(tokenId: TokenId): Promise<TokenDetail | null> {
     const wasmHandler = await this.waitForWasmInit()
     const tokenDetail = wasmHandler.getTokenDetail({
-      in: {
-        name,
-        pkgPath
-      }
+      in: tokenId
     })
-    return Object.keys(tokenDetail).length ? tokenDetail : null
+    return tokenDetail
   }
 
-  public async getTokensDetail(
-    tokens: Array<{ name: string; pkgPath: string }>
-  ): Promise<TokenDetail[]> {
+  public async getTokensDetail(tokens: Array<TokenId>): Promise<TokenDetail[]> {
     const wasmHandler = await this.waitForWasmInit()
     const tokensDetail = wasmHandler.getTokensDetail({
       in: { tokens }
