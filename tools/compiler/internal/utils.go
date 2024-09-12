@@ -12,7 +12,7 @@ type Reply struct {
 
 func NewReply(content any, err error) js.Value {
 	if err != nil {
-		return js.ValueOf(`{"ok":"false","content":{}}`)
+		return js.ValueOf(`{"ok":false,"content":null}`)
 	}
 	r := Reply{
 		Content: content,
@@ -20,7 +20,7 @@ func NewReply(content any, err error) js.Value {
 	}
 	value, err := Struct2JSValue(r)
 	if err != nil {
-		return js.ValueOf(`{"ok":"false","content":{}}`)
+		return js.ValueOf(`{"ok":false,"content":null}`)
 	}
 	return value
 }

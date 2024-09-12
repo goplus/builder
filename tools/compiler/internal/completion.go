@@ -169,23 +169,31 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	}
 	file := pkg[PKG].Files[fileName]
 
-	cursorOffset := int(fset.File(file.Pos()).LineStart(line)) + column - 1
+	fileObj := fset.File(file.Pos())
+	cursorOffset := int(fileObj.LineStart(line)) + column - 1
 	cursorPos := token.Pos(cursorOffset)
 
 	ctx := igop.NewContext(0)
 	gopCtx := gopbuild.NewContext(ctx)
-	conf := &types.Config{Importer: gopCtx}
+	conf := &types.Config{}
+	conf.Importer = gopCtx
 	chkOpts := initTypeConfig(file, fset)
 
 	info := initTypeInfo()
 	checker := typesutil.NewChecker(conf, chkOpts, nil, info)
-	if err = checker.Files(nil, []*ast.File{file}); err != nil {
+
+	var files []*ast.File
+	for _, f := range pkg[PKG].Files {
+		files = append(files, f)
+	}
+
+	if err = checker.Files(nil, files); err != nil {
 		fmt.Println("Compiler error: ", err)
 	}
 
 	items := &completionList{}
 
-	smallScopes := findSmallestScopesAtPosition(info, cursorPos)
+	smallScopes := findSmallestScopesAtPosition(info, cursorPos, fset)
 	for _, scope := range smallScopes {
 		traverseToRoot(scope, items, info)
 	}
@@ -193,7 +201,7 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	return *items, nil
 }
 
-func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos) []*types.Scope {
+func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos, fset *token.FileSet) []*types.Scope {
 	var scopeList []*types.Scope
 	var smallList []*types.Scope
 
@@ -204,6 +212,12 @@ func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos) []*types.
 	}
 
 	if len(scopeList) == 0 {
+		for _, scope := range info.Scopes {
+			// If user cursor is out for file's scope(the blank line at the end of the file), the return will be the file's scope.
+			if strings.Contains(scope.String(), fset.Position(pos).Filename) {
+				return []*types.Scope{scope}
+			}
+		}
 		return nil
 	}
 
@@ -262,7 +276,7 @@ func handleThis(obj types.Object, name string, items *completionList) {
 	}
 
 	structMethodsToCompletion(structType, items)
-
+	// TODO: fields of struct
 }
 
 func handleFunc(obj types.Object, name string, items *completionList) {
@@ -297,15 +311,14 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 func handleType(obj types.Object, name string, items *completionList) {
 	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
 		for i := 0; i < structType.NumFields(); i++ {
-			if structType.Field(i).Type().String() != "*github.com/goplus/spx.Game" {
+			if structType.Field(i).Type().String() != "github.com/goplus/spx.Game" {
 				continue
 			}
-			pointer, ok := structType.Field(i).Type().(*types.Pointer)
-			if ok {
-				stru, ok := pointer.Elem().Underlying().(*types.Struct)
-				if ok {
-					structMethodsToCompletion(stru, items)
-				}
+			if gameStruct, ok := structType.Field(i).Type().Underlying().(*types.Struct); ok {
+				structMethodsToCompletion(gameStruct, items)
+			}
+			if gameNamed, ok := structType.Field(i).Type().(*types.Named); ok {
+				extractMethodsFromNamed(gameNamed, items, false)
 			}
 		}
 		if checkFieldExist(structType, "github.com/goplus/spx.Sprite") {
@@ -313,32 +326,7 @@ func handleType(obj types.Object, name string, items *completionList) {
 		}
 	}
 	if named, ok := obj.Type().(*types.Named); ok {
-		for i := 0; i < named.NumMethods(); i++ {
-			method := named.Method(i)
-			if method.Name() == "Main" || method.Name() == "Classfname" {
-				continue
-			}
-			item := &completionItem{
-				Label: method.Name(),
-				Type:  "func",
-				TokenID: TokenID{
-					TokenName: method.Name(),
-					TokenPkg:  method.Pkg().Path(),
-				},
-			}
-			signature := method.Type().(*types.Signature)
-			signList, sampleList, _ := extractParams(signature)
-			if listContains(sampleList, "__gop_overload_args__") {
-				continue
-			}
-			item.InsertText = name
-			if len(signList) != 0 {
-				item.InsertText += " " + strings.Join(signList, ", ")
-			}
-			if !items.Contains(item.InsertText) {
-				*items = append(*items, item)
-			}
-		}
+		extractMethodsFromNamed(named, items, true)
 	}
 }
 
@@ -366,33 +354,39 @@ func structMethodsToCompletion(structType *types.Struct, items *completionList) 
 		if !ok {
 			continue
 		}
+		extractMethodsFromNamed(named, items, false)
+	}
+}
 
-		for i := 0; i < named.NumMethods(); i++ {
-			method := named.Method(i)
-			if !method.Exported() {
-				continue
-			}
-			methodName, _ := convertOverloadToSimple(method.Name())
-			item := &completionItem{
-				Label: methodName,
-				Type:  "func",
-				TokenID: TokenID{
-					TokenName: methodName,
-					TokenPkg:  method.Pkg().Path(),
-				},
-			}
-			signature := method.Type().(*types.Signature)
-			signList, sampleList, _ := extractParams(signature)
-			if listContains(sampleList, "__gop_overload_args__") {
-				continue
-			}
-			item.InsertText = methodName
-			if len(signList) != 0 {
-				item.InsertText += " " + strings.Join(signList, ", ")
-			}
-			if !items.Contains(item.InsertText) {
-				*items = append(*items, item)
-			}
+func extractMethodsFromNamed(named *types.Named, items *completionList, export bool) {
+	for i := 0; i < named.NumMethods(); i++ {
+		method := named.Method(i)
+		if method.Name() == "Main" || method.Name() == "Classfname" {
+			continue
+		}
+		if export || !method.Exported() {
+			continue
+		}
+		methodName, _ := convertOverloadToSimple(method.Name())
+		item := &completionItem{
+			Label: methodName,
+			Type:  "func",
+			TokenID: TokenID{
+				TokenName: methodName,
+				TokenPkg:  method.Pkg().Path(),
+			},
+		}
+		signature := method.Type().(*types.Signature)
+		signList, sampleList, _ := extractParams(signature)
+		if listContains(sampleList, "__gop_overload_args__") {
+			continue
+		}
+		item.InsertText = methodName
+		if len(signList) != 0 {
+			item.InsertText += " " + strings.Join(signList, ", ")
+		}
+		if !items.Contains(item.InsertText) {
+			*items = append(*items, item)
 		}
 	}
 }

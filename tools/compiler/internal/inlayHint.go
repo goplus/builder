@@ -34,6 +34,7 @@ func isFuncExpected(fnExpr ast.Expr, uses map[*ast.Ident]types.Object, expectNam
 	}
 
 	isExpectFunctionName := fnIdent.Name == expectName
-	isExpectPkgName := obj.Pkg().Path() == expectPkg
+	pkg := obj.Pkg()
+	isExpectPkgName := pkg != nil && pkg.Path() == expectPkg
 	return isExpectFunctionName && isExpectPkgName
 }

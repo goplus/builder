@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"go/types"
 	"sort"
 	"strconv"
@@ -13,12 +14,16 @@ import (
 
 type definitionItem struct {
 	BasePos
+	baseToken
+	From BasePos `json:"from"`
+}
+
+type baseToken struct {
 	PkgName    string  `json:"pkgName"`
 	PkgPath    string  `json:"pkgPath"`
 	Name       string  `json:"name"`   // This is the token name
 	Usages     []usage `json:"usages"` // contains 1 or n usage for matches.
 	StructName string  `json:"structName"`
-	From       BasePos
 }
 
 type usage struct {
@@ -55,15 +60,33 @@ func extractFuncDetails(fun *funcItem, infoList *typesutil.Info) {
 	switch obj := fun.fnExpr.(type) {
 	case *ast.Ident:
 		fun.Overload = obj.Name
-		fun.PkgName = infoList.Uses[obj].Pkg().Name()
-		fun.PkgPath = infoList.Uses[obj].Pkg().Path()
+		pkg := infoList.Uses[obj].Pkg()
+		if pkg == nil {
+			fun.PkgName = "unknown"
+			fun.PkgPath = "unknown"
+		} else {
+			fun.PkgName = pkg.Name()
+			fun.PkgPath = pkg.Path()
+		}
 	case *ast.SelectorExpr:
 		fun.Overload = obj.Sel.Name
-		fun.PkgName = infoList.Uses[obj.Sel].Pkg().Name()
-		fun.PkgPath = infoList.Uses[obj.Sel].Pkg().Path()
+		pkg := infoList.Uses[obj.Sel].Pkg()
+		if pkg == nil {
+			fun.PkgName = "unknown"
+			fun.PkgPath = "unknown"
+		} else {
+			fun.PkgName = pkg.Name()
+			fun.PkgPath = pkg.Path()
+		}
 	}
 
-	signature := tv.Type.(*types.Signature)
+	signature, ok := tv.Type.(*types.Signature)
+	if !ok {
+		fmt.Printf("extractFuncDetails: %s(%s) not a signature\n", fun.Name, tv.Type.String())
+		fun.Parameters = []*funcParameter{}
+		fun.Signature = tv.Type.String()
+		return
+	}
 	fun.Parameters = extractParameters(signature, fun.argsExpr)
 	fun.Signature = signature.String()
 }
@@ -98,10 +121,10 @@ func extractParameters(signature *types.Signature, argsExpr []ast.Expr) []*funcP
 
 func (d definitions) Position(fset *token.FileSet) {
 	for _, def := range d {
-		def.StartPosition = fset.Position(token.Pos(def.StartPos))
-		def.EndPosition = fset.Position(token.Pos(def.StartPos))
-		def.From.StartPosition = fset.Position(token.Pos(def.From.StartPos))
-		def.From.EndPosition = fset.Position(token.Pos(def.From.EndPos))
+		def.StartPosition = Position(fset.Position(token.Pos(def.StartPos)))
+		def.EndPosition = Position(fset.Position(token.Pos(def.StartPos)))
+		def.From.StartPosition = Position(fset.Position(token.Pos(def.From.StartPos)))
+		def.From.EndPosition = Position(fset.Position(token.Pos(def.From.EndPos)))
 	}
 }
 func getDefinitionList(info *typesutil.Info) definitions {
@@ -151,9 +174,12 @@ func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
 			StartPos: int(ident.Pos()),
 			EndPos:   int(ident.End()),
 		},
-		PkgName: obj.Pkg().Name(),
-		PkgPath: obj.Pkg().Path(),
-		Name:    ident.Name,
+		baseToken: baseToken{
+			PkgName: obj.Pkg().Name(),
+			PkgPath: obj.Pkg().Path(),
+			Name:    ident.Name,
+			Usages:  []usage{},
+		},
 	}
 	if fn, ok := obj.(*types.Func); ok {
 		sign := fn.Type().(*types.Signature)
@@ -187,7 +213,8 @@ func createUsages(obj types.Object, name string) []usage {
 	case *types.Signature:
 		return []usage{createSignatureUsage(obj, t)}
 	default:
-		return nil
+		// TODO: Handle other types.
+		return []usage{}
 	}
 }
 
@@ -241,10 +268,10 @@ func findDef(defs map[*ast.Ident]types.Object, obj types.Object) (int, int) {
 	return 0, 0
 }
 
-func tokenDetail(pkg *types.Package, token string) definitionItem {
+func tokenDetail(pkg *types.Package, token string) baseToken {
 	names := pkg.Scope().Names()
 
-	definitionItem := definitionItem{
+	definitionItem := baseToken{
 		PkgName: pkg.Name(),
 		PkgPath: pkg.Path(),
 		Name:    token,

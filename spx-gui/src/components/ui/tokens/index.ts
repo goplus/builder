@@ -22,7 +22,7 @@ export const fontFamily = {
   'Segoe UI Emoji',
   'Segoe UI Symbol',
   'Noto Color Emoji'`,
-  code: '"JetBrains MonoNL", Consolas, "Courier New", monospace'
+  code: '"JetBrains Mono NL", Consolas, "Courier New", monospace'
 }
 
 export const borderRadius = {

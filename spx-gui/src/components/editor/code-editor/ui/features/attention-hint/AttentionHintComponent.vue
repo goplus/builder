@@ -19,10 +19,10 @@ const updateAttentionHint = debounce(async () => {
   props.ui.requestAttentionHintsProviderResolve(
     model,
     (hints: AttentionHintDecoration[]) => {
+      props.attentionHint.setAttentionHintDecorations(hints)
       props.attentionHint.attentionHintDecoration.clear()
       props.attentionHint.attentionHintDecoration.set(
         hints.map((hint) => {
-          // todo: add hover layer content
           switch (hint.level) {
             case AttentionHintLevelEnum.WARNING:
               return props.attentionHint.createWarningAttentionHint(hint.range, hint.message)

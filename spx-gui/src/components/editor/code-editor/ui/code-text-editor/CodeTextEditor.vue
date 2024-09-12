@@ -178,7 +178,9 @@ watchEffect(async (onCleanup) => {
   inlayHint.value = _inlayHint
   props.ui.setInlayHint(_inlayHint)
 
-  attentionHint.value = new AttentionHint(editor)
+  const _attentionHint = new AttentionHint(editor)
+  attentionHint.value = _attentionHint
+  props.ui.setAttentionHint(_attentionHint)
 
   monacoEditor.value = editor
   onCleanup(() => {

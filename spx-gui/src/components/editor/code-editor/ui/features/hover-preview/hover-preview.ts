@@ -2,6 +2,7 @@ import { editor as IEditor, type IRange, type IDisposable, Emitter } from 'monac
 import { reactive } from 'vue'
 import type { DocPreview, Icon } from '@/components/editor/code-editor/EditorUI'
 import type { Action, RecommendAction } from '@/components/editor/code-editor/EditorUI'
+import { DocPreviewLevel } from '@/components/editor/code-editor/EditorUI'
 
 export class HoverPreview implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
@@ -24,6 +25,7 @@ export class HoverPreview implements IDisposable {
       left: number
     }
     docs: Array<{
+      level: DocPreviewLevel
       header?: {
         icon: Icon
         declaration: string
@@ -67,6 +69,7 @@ export class HoverPreview implements IDisposable {
     this.hoverPreviewState.docs = docPreviews
       .sort((a, b) => b.level - a.level)
       .map((docPreview) => ({
+        level: docPreview.level,
         header: docPreview.header,
         content: docPreview.content,
         moreActions: docPreview.moreActions,
