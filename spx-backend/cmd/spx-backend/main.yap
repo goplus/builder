@@ -48,7 +48,7 @@ go func() {
 }()
 <-stopCtx.Done()
 if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-	logger.Fatalln("Server error:", err)
+	logger.Fatalln("Server error:", serverErr)
 }
 
 shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
