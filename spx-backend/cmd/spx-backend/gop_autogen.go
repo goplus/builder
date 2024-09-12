@@ -130,7 +130,7 @@ func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:50:1
 	if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
 //line cmd/spx-backend/main.yap:51:1
-		logger.Fatalln("Server error:", this.err)
+		logger.Fatalln("Server error:", serverErr)
 	}
 //line cmd/spx-backend/main.yap:54:1
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
