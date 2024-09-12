@@ -80,6 +80,10 @@ type AppV2 struct {
 	ctrl *controller.Controller
 	err  error
 }
+type post_aigc_animate struct {
+	yap.Handler
+	*AppV2
+}
 type post_aigc_image struct {
 	yap.Handler
 	*AppV2
@@ -97,10 +101,6 @@ type post_aigc_matting struct {
 	*AppV2
 }
 type post_aigc_motion struct {
-	yap.Handler
-	*AppV2
-}
-type post_aigc_sprite struct {
 	yap.Handler
 	*AppV2
 }
@@ -148,7 +148,6 @@ type put_project_owner_name struct {
 	yap.Handler
 	*AppV2
 }
-
 //line cmd/spx-backend/main.yap:26
 func (this *AppV2) MainEntry() {
 //line cmd/spx-backend/main.yap:26:1
@@ -206,9 +205,8 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_aigc_status), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_user_rate_id), new(get_util_upinfo), new(post_aigc_image), new(post_aigc_image_sync), new(post_aigc_inpainting), new(post_aigc_matting), new(post_aigc_motion), new(post_aigc_sprite), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_user_rate_id), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_user_liked), new(get_aigc_status), new(get_asset_id), new(get_assets_list), new(get_assets_list_suggestions), new(get_project_owner_name), new(get_projects_list), new(get_user_history_list), new(get_user_liked_list), new(get_user_rate_id), new(get_util_upinfo), new(post_aigc_animate), new(post_aigc_image), new(post_aigc_image_sync), new(post_aigc_inpainting), new(post_aigc_matting), new(post_aigc_motion), new(post_aigc_text), new(post_asset), new(post_asset_id_click), new(post_project), new(post_user_history), new(post_user_liked), new(post_user_rate_id), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name))
 }
-
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -229,7 +227,6 @@ func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *delete_asset_id) Classfname() string {
 	return "delete_asset_#id"
 }
-
 //line cmd/spx-backend/delete_project_#owner_#name.yap:6
 func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -250,7 +247,6 @@ func (this *delete_project_owner_name) Main(_gop_arg0 *yap.Context) {
 func (this *delete_project_owner_name) Classfname() string {
 	return "delete_project_#owner_#name"
 }
-
 //line cmd/spx-backend/delete_user_liked.yap:6
 func (this *delete_user_liked) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -278,7 +274,6 @@ func (this *delete_user_liked) Main(_gop_arg0 *yap.Context) {
 func (this *delete_user_liked) Classfname() string {
 	return "delete_user_liked"
 }
-
 //line cmd/spx-backend/get_aigc_status.yap:6
 func (this *get_aigc_status) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -299,7 +294,6 @@ func (this *get_aigc_status) Main(_gop_arg0 *yap.Context) {
 func (this *get_aigc_status) Classfname() string {
 	return "get_aigc_status"
 }
-
 //line cmd/spx-backend/get_asset_#id.yap:6
 func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -320,7 +314,6 @@ func (this *get_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *get_asset_id) Classfname() string {
 	return "get_asset_#id"
 }
-
 //line cmd/spx-backend/get_assets_list.yap:13
 func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -441,7 +434,6 @@ func (this *get_assets_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_assets_list) Classfname() string {
 	return "get_assets_list"
 }
-
 //line cmd/spx-backend/get_assets_list_suggestions.yap:6
 func (this *get_assets_list_suggestions) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -462,7 +454,6 @@ func (this *get_assets_list_suggestions) Main(_gop_arg0 *yap.Context) {
 func (this *get_assets_list_suggestions) Classfname() string {
 	return "get_assets_list_suggestions"
 }
-
 //line cmd/spx-backend/get_project_#owner_#name.yap:6
 func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -483,7 +474,6 @@ func (this *get_project_owner_name) Main(_gop_arg0 *yap.Context) {
 func (this *get_project_owner_name) Classfname() string {
 	return "get_project_#owner_#name"
 }
-
 //line cmd/spx-backend/get_projects_list.yap:13
 func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -563,7 +553,6 @@ func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_projects_list) Classfname() string {
 	return "get_projects_list"
 }
-
 //line cmd/spx-backend/get_user_history_list.yap:13
 func (this *get_user_history_list) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -637,7 +626,6 @@ func (this *get_user_history_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_history_list) Classfname() string {
 	return "get_user_history_list"
 }
-
 //line cmd/spx-backend/get_user_liked_list.yap:13
 func (this *get_user_liked_list) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -711,7 +699,6 @@ func (this *get_user_liked_list) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_liked_list) Classfname() string {
 	return "get_user_liked_list"
 }
-
 //line cmd/spx-backend/get_user_rate_#id.yap:6
 func (this *get_user_rate_id) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -732,7 +719,6 @@ func (this *get_user_rate_id) Main(_gop_arg0 *yap.Context) {
 func (this *get_user_rate_id) Classfname() string {
 	return "get_user_rate_#id"
 }
-
 //line cmd/spx-backend/get_util_upinfo.yap:6
 func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -760,7 +746,35 @@ func (this *get_util_upinfo) Main(_gop_arg0 *yap.Context) {
 func (this *get_util_upinfo) Classfname() string {
 	return "get_util_upinfo"
 }
-
+//line cmd/spx-backend/post_aigc_animate.yap:10
+func (this *post_aigc_animate) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_aigc_animate.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_aigc_animate.yap:12:1
+	_, ok := ensureUser(ctx)
+//line cmd/spx-backend/post_aigc_animate.yap:13:1
+	if !ok {
+//line cmd/spx-backend/post_aigc_animate.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_animate.yap:16:1
+	params := &controller.GenerateAnimateParams{}
+//line cmd/spx-backend/post_aigc_animate.yap:17:1
+	result, err := this.ctrl.GenerateAnimate(ctx.Context(), params)
+//line cmd/spx-backend/post_aigc_animate.yap:19:1
+	if err != nil {
+//line cmd/spx-backend/post_aigc_animate.yap:20:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_aigc_animate.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_animate.yap:23:1
+	this.Json__1(result)
+}
+func (this *post_aigc_animate) Classfname() string {
+	return "post_aigc_animate"
+}
 //line cmd/spx-backend/post_aigc_image.yap:10
 func (this *post_aigc_image) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -795,7 +809,6 @@ func (this *post_aigc_image) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_image) Classfname() string {
 	return "post_aigc_image"
 }
-
 //line cmd/spx-backend/post_aigc_image_sync.yap:10
 func (this *post_aigc_image_sync) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -830,7 +843,6 @@ func (this *post_aigc_image_sync) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_image_sync) Classfname() string {
 	return "post_aigc_image_sync"
 }
-
 //line cmd/spx-backend/post_aigc_inpainting.yap:10
 func (this *post_aigc_inpainting) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -865,7 +877,6 @@ func (this *post_aigc_inpainting) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_inpainting) Classfname() string {
 	return "post_aigc_inpainting"
 }
-
 //line cmd/spx-backend/post_aigc_matting.yap:10
 func (this *post_aigc_matting) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -909,7 +920,6 @@ func (this *post_aigc_matting) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_matting) Classfname() string {
 	return "post_aigc_matting"
 }
-
 //line cmd/spx-backend/post_aigc_motion.yap:10
 func (this *post_aigc_motion) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -944,37 +954,6 @@ func (this *post_aigc_motion) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_motion) Classfname() string {
 	return "post_aigc_motion"
 }
-
-//line cmd/spx-backend/post_aigc_sprite.yap:10
-func (this *post_aigc_sprite) Main(_gop_arg0 *yap.Context) {
-	this.Handler.Main(_gop_arg0)
-//line cmd/spx-backend/post_aigc_sprite.yap:10:1
-	ctx := &this.Context
-//line cmd/spx-backend/post_aigc_sprite.yap:12:1
-	_, ok := ensureUser(ctx)
-//line cmd/spx-backend/post_aigc_sprite.yap:13:1
-	if !ok {
-//line cmd/spx-backend/post_aigc_sprite.yap:14:1
-		return
-	}
-//line cmd/spx-backend/post_aigc_sprite.yap:16:1
-	params := &controller.GenerateSpriteParams{}
-//line cmd/spx-backend/post_aigc_sprite.yap:17:1
-	result, err := this.ctrl.GenerateSprite(ctx.Context(), params)
-//line cmd/spx-backend/post_aigc_sprite.yap:19:1
-	if err != nil {
-//line cmd/spx-backend/post_aigc_sprite.yap:20:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_aigc_sprite.yap:21:1
-		return
-	}
-//line cmd/spx-backend/post_aigc_sprite.yap:23:1
-	this.Json__1(result)
-}
-func (this *post_aigc_sprite) Classfname() string {
-	return "post_aigc_sprite"
-}
-
 //line cmd/spx-backend/post_aigc_text.yap:10
 func (this *post_aigc_text) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -998,7 +977,6 @@ func (this *post_aigc_text) Main(_gop_arg0 *yap.Context) {
 func (this *post_aigc_text) Classfname() string {
 	return "post_aigc_text"
 }
-
 //line cmd/spx-backend/post_asset.yap:10
 func (this *post_asset) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1044,7 +1022,6 @@ func (this *post_asset) Main(_gop_arg0 *yap.Context) {
 func (this *post_asset) Classfname() string {
 	return "post_asset"
 }
-
 //line cmd/spx-backend/post_asset_#id_click.yap:6
 func (this *post_asset_id_click) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1065,7 +1042,6 @@ func (this *post_asset_id_click) Main(_gop_arg0 *yap.Context) {
 func (this *post_asset_id_click) Classfname() string {
 	return "post_asset_#id_click"
 }
-
 //line cmd/spx-backend/post_project.yap:10
 func (this *post_project) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1111,7 +1087,6 @@ func (this *post_project) Main(_gop_arg0 *yap.Context) {
 func (this *post_project) Classfname() string {
 	return "post_project"
 }
-
 //line cmd/spx-backend/post_user_history.yap:10
 func (this *post_user_history) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1148,7 +1123,6 @@ func (this *post_user_history) Main(_gop_arg0 *yap.Context) {
 func (this *post_user_history) Classfname() string {
 	return "post_user_history"
 }
-
 //line cmd/spx-backend/post_user_liked.yap:10
 func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1185,7 +1159,6 @@ func (this *post_user_liked) Main(_gop_arg0 *yap.Context) {
 func (this *post_user_liked) Classfname() string {
 	return "post_user_liked"
 }
-
 //line cmd/spx-backend/post_user_rate_#id.yap:10
 func (this *post_user_rate_id) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1220,7 +1193,6 @@ func (this *post_user_rate_id) Main(_gop_arg0 *yap.Context) {
 func (this *post_user_rate_id) Classfname() string {
 	return "post_user_rate_#id"
 }
-
 //line cmd/spx-backend/post_util_fileurls.yap:10
 func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1257,7 +1229,6 @@ func (this *post_util_fileurls) Main(_gop_arg0 *yap.Context) {
 func (this *post_util_fileurls) Classfname() string {
 	return "post_util_fileurls"
 }
-
 //line cmd/spx-backend/post_util_fmtcode.yap:10
 func (this *post_util_fmtcode) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1294,7 +1265,6 @@ func (this *post_util_fmtcode) Main(_gop_arg0 *yap.Context) {
 func (this *post_util_fmtcode) Classfname() string {
 	return "post_util_fmtcode"
 }
-
 //line cmd/spx-backend/put_asset_#id.yap:10
 func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
@@ -1338,7 +1308,6 @@ func (this *put_asset_id) Main(_gop_arg0 *yap.Context) {
 func (this *put_asset_id) Classfname() string {
 	return "put_asset_#id"
 }
-
 //line cmd/spx-backend/put_project_#owner_#name.yap:10
 func (this *put_project_owner_name) Main(_gop_arg0 *yap.Context) {
 	this.Handler.Main(_gop_arg0)
