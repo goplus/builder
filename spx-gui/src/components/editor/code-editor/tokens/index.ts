@@ -9,8 +9,8 @@ export function getAllTokens() {
   const allTokens = { ...gopTokens, ...spxTokens }
 
   const insertToken = (token: Token) => {
-    const { module, name } = token.id
-    tokenMap[`${module}/${name}`] = token
+    const { pkgPath, name } = token.id
+    tokenMap[`${pkgPath}/${name}`] = token
   }
 
   Object.values(allTokens).forEach((token) => {

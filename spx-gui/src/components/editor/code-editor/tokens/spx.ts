@@ -7,7 +7,7 @@ import { type Token } from './types'
 export const clone: Token = {
   id: {
     name: 'clone',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -23,7 +23,7 @@ export const clone: Token = {
 export const onCloned: Token = {
   id: {
     name: 'onCloned',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -39,7 +39,7 @@ export const onCloned: Token = {
 export const onTouched: Token = {
   id: {
     name: 'onTouched',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -69,7 +69,7 @@ export const onTouched: Token = {
 export const onMoving: Token = {
   id: {
     name: 'onMoving',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -85,7 +85,7 @@ export const onMoving: Token = {
 export const onTurning: Token = {
   id: {
     name: 'onTurning',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -101,7 +101,7 @@ export const onTurning: Token = {
 export const die: Token = {
   id: {
     name: 'die',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -117,7 +117,7 @@ export const die: Token = {
 export const hide: Token = {
   id: {
     name: 'hide',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -133,7 +133,7 @@ export const hide: Token = {
 export const show: Token = {
   id: {
     name: 'show',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -149,7 +149,7 @@ export const show: Token = {
 export const visible: Token = {
   id: {
     name: 'visible',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -165,7 +165,7 @@ export const visible: Token = {
 export const costumeName: Token = {
   id: {
     name: 'costumeName',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -181,7 +181,7 @@ export const costumeName: Token = {
 export const costumeIndex: Token = {
   id: {
     name: 'costumeIndex',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -197,7 +197,7 @@ export const costumeIndex: Token = {
 export const setCostume: Token = {
   id: {
     name: 'setCostume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -213,7 +213,7 @@ export const setCostume: Token = {
 export const nextCostume: Token = {
   id: {
     name: 'nextCostume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -229,7 +229,7 @@ export const nextCostume: Token = {
 export const prevCostume: Token = {
   id: {
     name: 'prevCostume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -245,7 +245,7 @@ export const prevCostume: Token = {
 export const animate: Token = {
   id: {
     name: 'animate',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -261,7 +261,7 @@ export const animate: Token = {
 export const say: Token = {
   id: {
     name: 'say',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -277,7 +277,7 @@ export const say: Token = {
 export const think: Token = {
   id: {
     name: 'think',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -293,7 +293,7 @@ export const think: Token = {
 export const distanceTo: Token = {
   id: {
     name: 'distanceTo',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -309,7 +309,7 @@ export const distanceTo: Token = {
 export const move: Token = {
   id: {
     name: 'move',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -325,7 +325,7 @@ export const move: Token = {
 export const step: Token = {
   id: {
     name: 'step',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -341,7 +341,7 @@ export const step: Token = {
 export const goto: Token = {
   id: {
     name: 'goto',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -357,7 +357,7 @@ export const goto: Token = {
 export const glide: Token = {
   id: {
     name: 'glide',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -380,7 +380,7 @@ export const glide: Token = {
 export const setXYpos: Token = {
   id: {
     name: 'setXYpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -396,7 +396,7 @@ export const setXYpos: Token = {
 export const changeXYpos: Token = {
   id: {
     name: 'changeXYpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -412,7 +412,7 @@ export const changeXYpos: Token = {
 export const xpos: Token = {
   id: {
     name: 'xpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -428,7 +428,7 @@ export const xpos: Token = {
 export const setXpos: Token = {
   id: {
     name: 'setXpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -444,7 +444,7 @@ export const setXpos: Token = {
 export const changeXpos: Token = {
   id: {
     name: 'changeXpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -460,7 +460,7 @@ export const changeXpos: Token = {
 export const ypos: Token = {
   id: {
     name: 'ypos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -476,7 +476,7 @@ export const ypos: Token = {
 export const setYpos: Token = {
   id: {
     name: 'setYpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -492,7 +492,7 @@ export const setYpos: Token = {
 export const changeYpos: Token = {
   id: {
     name: 'changeYpos',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -508,7 +508,7 @@ export const changeYpos: Token = {
 export const setRotationStyle: Token = {
   id: {
     name: 'setRotationStyle',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -524,7 +524,7 @@ export const setRotationStyle: Token = {
 export const heading: Token = {
   id: {
     name: 'heading',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -540,7 +540,7 @@ export const heading: Token = {
 export const turnTo: Token = {
   id: {
     name: 'turnTo',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -556,7 +556,7 @@ export const turnTo: Token = {
 export const setHeading: Token = {
   id: {
     name: 'setHeading',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -572,7 +572,7 @@ export const setHeading: Token = {
 export const changeHeading: Token = {
   id: {
     name: 'changeHeading',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -588,7 +588,7 @@ export const changeHeading: Token = {
 export const size: Token = {
   id: {
     name: 'size',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -604,7 +604,7 @@ export const size: Token = {
 export const setSize: Token = {
   id: {
     name: 'setSize',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -620,7 +620,7 @@ export const setSize: Token = {
 export const changeSize: Token = {
   id: {
     name: 'changeSize',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -636,7 +636,7 @@ export const changeSize: Token = {
 export const touching: Token = {
   id: {
     name: 'touching',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -652,7 +652,7 @@ export const touching: Token = {
 export const bounceOffEdge: Token = {
   id: {
     name: 'bounceOffEdge',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -668,7 +668,7 @@ export const bounceOffEdge: Token = {
 export const mouseHitItem: Token = {
   id: {
     name: 'mouseHitItem',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -684,7 +684,7 @@ export const mouseHitItem: Token = {
 export const backdropName: Token = {
   id: {
     name: 'backdropName',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -700,7 +700,7 @@ export const backdropName: Token = {
 export const backdropIndex: Token = {
   id: {
     name: 'backdropIndex',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -716,7 +716,7 @@ export const backdropIndex: Token = {
 export const startBackdrop: Token = {
   id: {
     name: 'startBackdrop',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -732,7 +732,7 @@ export const startBackdrop: Token = {
 export const nextBackdrop: Token = {
   id: {
     name: 'nextBackdrop',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -748,7 +748,7 @@ export const nextBackdrop: Token = {
 export const prevBackdrop: Token = {
   id: {
     name: 'prevBackdrop',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -764,7 +764,7 @@ export const prevBackdrop: Token = {
 export const keyPressed: Token = {
   id: {
     name: 'keyPressed',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -780,7 +780,7 @@ export const keyPressed: Token = {
 export const mouseX: Token = {
   id: {
     name: 'mouseX',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -796,7 +796,7 @@ export const mouseX: Token = {
 export const mouseY: Token = {
   id: {
     name: 'mouseY',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -812,7 +812,7 @@ export const mouseY: Token = {
 export const mousePressed: Token = {
   id: {
     name: 'mousePressed',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -828,7 +828,7 @@ export const mousePressed: Token = {
 export const wait: Token = {
   id: {
     name: 'wait',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -844,7 +844,7 @@ export const wait: Token = {
 export const play: Token = {
   id: {
     name: 'play',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -860,7 +860,7 @@ export const play: Token = {
 export const stopAllSounds: Token = {
   id: {
     name: 'stopAllSounds',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -876,7 +876,7 @@ export const stopAllSounds: Token = {
 export const volume: Token = {
   id: {
     name: 'volume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -892,7 +892,7 @@ export const volume: Token = {
 export const setVolume: Token = {
   id: {
     name: 'setVolume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -908,7 +908,7 @@ export const setVolume: Token = {
 export const changeVolume: Token = {
   id: {
     name: 'changeVolume',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -924,7 +924,7 @@ export const changeVolume: Token = {
 export const broadcast: Token = {
   id: {
     name: 'broadcast',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -954,7 +954,7 @@ export const broadcast: Token = {
 export const onStart: Token = {
   id: {
     name: 'onStart',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -970,7 +970,7 @@ export const onStart: Token = {
 export const onClick: Token = {
   id: {
     name: 'onClick',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -986,7 +986,7 @@ export const onClick: Token = {
 export const onAnyKey: Token = {
   id: {
     name: 'onAnyKey',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1002,7 +1002,7 @@ export const onAnyKey: Token = {
 export const onKey: Token = {
   id: {
     name: 'onKey',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1025,7 +1025,7 @@ export const onKey: Token = {
 export const onMsg: Token = {
   id: {
     name: 'onMsg',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1048,7 +1048,7 @@ export const onMsg: Token = {
 export const onBackdrop: Token = {
   id: {
     name: 'onBackdrop',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1071,7 +1071,7 @@ export const onBackdrop: Token = {
 export const rand: Token = {
   id: {
     name: 'rand',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1087,7 +1087,7 @@ export const rand: Token = {
 export const exit: Token = {
   id: {
     name: 'exit',
-    module: 'github.com/goplus/spx'
+    pkgPath: 'github.com/goplus/spx'
   },
   usages: [
     {
@@ -1104,7 +1104,7 @@ export function defineConst(name: string, module: string): Token {
   const token: Token = {
     id: {
       name,
-      module
+      pkgPath: module
     },
     usages: [
       {

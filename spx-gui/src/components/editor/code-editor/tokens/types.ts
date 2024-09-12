@@ -3,7 +3,7 @@ import type { Markdown } from '../EditorUI'
 
 export type TokenId = {
   // "github.com/goplus/spx"
-  module: string
+  pkgPath: string
   // "Sprite.touching"
   name: string
 }

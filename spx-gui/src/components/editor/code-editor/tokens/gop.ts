@@ -7,7 +7,7 @@ import { type Token } from './types'
 export const forLoop: Token = {
   id: {
     name: 'for',
-    module: 'gop'
+    pkgPath: 'gop'
   },
   usages: [
     {
@@ -37,7 +37,7 @@ export const forLoop: Token = {
 export const ifStatement: Token = {
   id: {
     name: 'if',
-    module: 'gop'
+    pkgPath: 'gop'
   },
   usages: [
     {
@@ -60,7 +60,7 @@ export const ifStatement: Token = {
 export const varDefinition: Token = {
   id: {
     name: 'var',
-    module: 'gop'
+    pkgPath: 'gop'
   },
   usages: [
     {
@@ -76,7 +76,7 @@ export const varDefinition: Token = {
 export const functionDefinition: Token = {
   id: {
     name: 'func',
-    module: 'gop'
+    pkgPath: 'gop'
   },
   usages: [
     {
@@ -92,7 +92,7 @@ export const functionDefinition: Token = {
 export const println: Token = {
   id: {
     name: 'println',
-    module: 'gop'
+    pkgPath: 'gop'
   },
   usages: [
     {

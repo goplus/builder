@@ -1,12 +1,7 @@
 <!-- eslint-disable vue/no-v-html -->
 <template>
   <div class="code-editor">
-    <EditorSidebar
-      ref="editorSidebar"
-      :value="value"
-      :ui="ui"
-      @insert-text="handleUseSnippet"
-    ></EditorSidebar>
+    <EditorSidebar ref="editorSidebar" :ui="ui" @insert-text="handleUseSnippet"></EditorSidebar>
     <!--  this is core coding input area  -->
     <div class="code-text-editor-wrapper">
       <CodeTextEditor
@@ -99,7 +94,7 @@ defineExpose({
 
 <style scoped lang="scss">
 .code-text-editor-wrapper {
-  flex: 5 1 300px;
+  flex: 1 1 300px;
   min-width: 0;
   padding: 12px;
 }

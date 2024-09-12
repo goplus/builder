@@ -4,45 +4,43 @@ import compilerWasmExec from '@/assets/wasm_exec.js?url'
 import { Disposable } from '@/utils/disposable'
 import { shallowRef } from 'vue'
 import { untilNotNull } from '@/utils/utils'
+import type { TokenId } from '@/components/editor/code-editor/tokens/types'
 
-export type CompilerCodes = { [k: string]: string }
+export type CompilerCodes = Record<string, string>
 
 interface WasmHandler extends Window {
   console: typeof console
-  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[] | {}
+  getInlayHints: (params: { in: { name: string; code: CompilerCodes } }) => Hint[]
   getCompletionItems: (params: {
     in: { name: string; code: CompilerCodes; line: number; column: number }
-  }) => CompletionItem[] | {}
-  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[] | {}
-  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[] | {}
+  }) => CompletionItem[]
+  getDiagnostics: (params: { in: { name: string; code: CompilerCodes } }) => Diagnostic[]
+  getDefinition: (params: { in: { name: string; code: CompilerCodes } }) => Definition[]
+  getTokenDetail: (params: { in: { name: string; pkgPath: string } }) => TokenDetail
+  getTokensDetail: (params: {
+    in: { tokens: Array<{ name: string; pkgPath: string }> }
+  }) => TokenDetail[]
 }
 
 export interface Hint {
   startPos: number
   endPos: number
-  startPosition: Position
-  endPosition: Position
+  startPosition: TokenPosition
+  endPosition: TokenPosition
   name: string
   value: string
   unit: string
   type: 'play' | 'parameter'
 }
 
-export interface Position {
-  filename: string
-  offset: number
-  line: number
-  column: number
-}
-
-export type Diagnostic = {
+export interface Diagnostic {
   filename: string
   column: number
   line: number
   message: string
 }
 
-type CompletionItem = {
+interface CompletionItem {
   label: string
   insertText: string
   type: string
@@ -50,28 +48,40 @@ type CompletionItem = {
   tokenPkg: string
 }
 
-type Code = {
+interface Code {
   filename: string
   content: string
 }
 
-export interface Definition {
-  // `start_pos` and `end_pos` is file offset, not compatible with monaco api `getOffset` return offset
+export interface TokenPosition {
+  filename: string
+  offset: number
+  line: number
+  column: number
+}
+
+interface TokenSourcePosition {
   startPos: number
   endPos: number
-  startPosition: Position
-  // `end_position` is no use for it is same as `start_position` no difference
-  endPosition: Position
+  startPosition: TokenPosition
+  endPosition: TokenPosition
+}
+
+export interface Definition extends TokenSourcePosition, TokenDetail {
+  // if in 'main.spx' defined a func name 'sayHi', user use this in 'SpriteA.spx', this property 'from' will lead to 'main.spx' and which column and line it is.
+  from: TokenSourcePosition
+}
+
+export interface TokenDetail {
   pkgName: string
-  // `name` and `pkg_path` can transfer to `module` and `name` for type `TokenId`
+  // `name` and `pkgPath` can transfer to type `TokenId`
   pkgPath: string
   name: string
-  usages: DefinitionUsage[]
+  usages: TokenUsage[]
   structName: string
 }
 
-// todo: this is same as function `getTokens.TokenUsage` result, need be updated when `getTokens` is declared
-export interface DefinitionUsage {
+export interface TokenUsage {
   usageID: string
   declaration: string
   sample: string
@@ -116,12 +126,11 @@ export class Compiler extends Disposable {
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
-    const compilerCodes: Record<string, string> = {}
-    codes.forEach((code) => {
+    return codes.reduce((compilerCodes: CompilerCodes, code) => {
       const filename = code.filename
       compilerCodes[filename] = code.content
-    })
-    return compilerCodes
+      return compilerCodes
+    }, {})
   }
 
   public setContainerElement(containerElement: HTMLIFrameElement) {
@@ -152,24 +161,22 @@ export class Compiler extends Disposable {
 
   public async getInlayHints(currentFilename: string, codes: Code[]): Promise<Hint[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const inlayHints = wasmHandler.getInlayHints({
+    return wasmHandler.getInlayHints({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(inlayHints) ? inlayHints : []
   }
 
   public async getDiagnostics(currentFilename: string, codes: Code[]): Promise<Diagnostic[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const diagnostics = wasmHandler.getDiagnostics({
+    return wasmHandler.getDiagnostics({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-    return Array.isArray(diagnostics) ? diagnostics : []
   }
 
   public async getCompletionItems(
@@ -179,7 +186,7 @@ export class Compiler extends Disposable {
     column: number
   ): Promise<CompletionItem[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const completionItems = wasmHandler.getCompletionItems({
+    return wasmHandler.getCompletionItems({
       in: {
         line,
         column,
@@ -187,28 +194,29 @@ export class Compiler extends Disposable {
         name: currentFilename
       }
     })
-    return Array.isArray(completionItems) ? completionItems : []
   }
 
   public async getDefinition(currentFilename: string, codes: Code[]): Promise<Definition[]> {
     const wasmHandler = await this.waitForWasmInit()
-    const res = wasmHandler.getDefinition({
+    return wasmHandler.getDefinition({
       in: {
         name: currentFilename,
         code: this.codes2CompileCode(codes)
       }
     })
-
-    return Array.isArray(res) ? res : []
   }
 
-  public async getTokenDetail(
-    tokenName: string,
-    tokenPath: string
-  ): Promise</* temp return null */ null> {
-    await this.waitForWasmInit()
+  public async getTokenDetail(tokenId: TokenId): Promise<TokenDetail | null> {
+    const wasmHandler = await this.waitForWasmInit()
+    return wasmHandler.getTokenDetail({
+      in: tokenId
+    })
+  }
 
-    // implement logic here
-    return null
+  public async getTokensDetail(tokens: Array<TokenId>): Promise<TokenDetail[]> {
+    const wasmHandler = await this.waitForWasmInit()
+    return wasmHandler.getTokensDetail({
+      in: { tokens }
+    })
   }
 }

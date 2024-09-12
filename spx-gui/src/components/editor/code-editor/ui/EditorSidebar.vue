@@ -7,9 +7,10 @@ import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
 import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
+import { useLocalStorage } from '@/utils/utils'
+import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 
 const props = defineProps<{
-  value: string
   ui: EditorUI
 }>()
 
@@ -17,22 +18,23 @@ defineEmits<{
   insertText: [insertText: string]
 }>()
 
-const collapsed = ref(false)
+const collapsed = useLocalStorage('spx-gui-sidebar-collapse', false)
+const editorCtx = useEditorCtx()
 const categories = ref<InputItemCategory[]>([])
-const controller = ref<AbortController | null>(null)
+const abortController = ref<AbortController | null>(null)
 
 watch(
-  () => props.value,
+  () => editorCtx.project.selected?.type,
   () => {
-    if (controller.value) {
-      controller.value.abort()
+    if (abortController.value) {
+      abortController.value.abort()
     }
 
-    controller.value = new AbortController()
+    abortController.value = new AbortController()
 
     props.ui
       .requestInputAssistantProviderResolve({
-        signal: controller.value.signal
+        signal: abortController.value.signal
       })
       .then((result) => {
         categories.value = result
@@ -42,8 +44,8 @@ watch(
 )
 
 onUnmounted(() => {
-  if (controller.value) {
-    controller.value.abort()
+  if (abortController.value) {
+    abortController.value.abort()
   }
 })
 
@@ -218,11 +220,28 @@ function handleCategoryClick(index: number) {
 }
 
 .sidebar-container {
-  // 162px is the max width of def buttons, use 162px as base width
-  // to keep tools-wrapper's width stable when switch among different def categories
-  flex: 1 0 256px;
   overflow-y: auto;
+  flex-shrink: 0;
+  width: 240px;
   background-color: white;
+}
+
+@media (min-width: 1280px) {
+  .sidebar-container {
+    width: 240px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .sidebar-container {
+    width: 310px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .sidebar-container {
+    width: 360px;
+  }
 }
 
 .tools-wrapper {
