@@ -45,23 +45,24 @@ export const useUserStore = defineStore('spx-user', {
   }),
   actions: {
     async getFreshAccessToken(): Promise<string | null> {
-      if (!this.accessTokenValid()) {
-        if (!this.refreshTokenValid()) {
-          this.signOut()
-          return null
-        }
+      if (this.isAccessTokenValid()) return this.accessToken
 
+      if (this.isRefreshTokenValid()) {
         try {
           const tokenResp = await casdoorSdk.pkce.refreshAccessToken(this.refreshToken!)
           this.setToken(tokenResp)
-        } catch (error) {
-          // TODO: not to clear storage for network error
-          console.error('Failed to refresh access token', error)
-          this.signOut()
-          throw error
+        } catch (e) {
+          console.error('Failed to refresh access token', e)
+          throw e
         }
+
+        // Due to js-pkce's lack of error handling, we must check if the access token is valid after calling `PKCE.refreshAccessToken`.
+        // The token might still be invalid if, e.g., the server has already revoked the refresh token.
+        if (this.isAccessTokenValid()) return this.accessToken
       }
-      return this.accessToken
+
+      this.signOut()
+      return null
     },
     setToken(tokenResp: ITokenResponse) {
       const accessTokenExpiresAt = tokenResp.expires_in
@@ -82,16 +83,16 @@ export const useUserStore = defineStore('spx-user', {
       this.refreshTokenExpiresAt = null
     },
     hasSignedIn() {
-      return this.accessTokenValid() || this.refreshTokenValid()
+      return this.isAccessTokenValid() || this.isRefreshTokenValid()
     },
-    accessTokenValid() {
+    isAccessTokenValid() {
       const delta = 60 * 1000 // 1 minute
       return !!(
         this.accessToken &&
         (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - delta > Date.now())
       )
     },
-    refreshTokenValid() {
+    isRefreshTokenValid() {
       const delta = 60 * 1000 // 1 minute
       return !!(
         this.refreshToken &&
