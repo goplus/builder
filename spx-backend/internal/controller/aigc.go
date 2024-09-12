@@ -39,10 +39,10 @@ type GenerateResult struct {
 
 type GenerateAnimateParams struct {
 	// ImageUrl is the image URL to be generated as sprite.
-	ImageUrl string `json:"image_url"`
-	GenAnimation bool `json:"gen_animation"`
-	MotionUrl string `json:"motion_url"`
-	CallbackUrl string `json:"callback_url"`
+	ImageUrl     string `json:"image_url"`
+	GenAnimation bool   `json:"gen_animation"`
+	MotionUrl    string `json:"motion_url"`
+	CallbackUrl  string `json:"callback_url"`
 }
 
 type GenerateAnimateResult struct {
