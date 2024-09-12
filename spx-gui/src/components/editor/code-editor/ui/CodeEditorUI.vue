@@ -99,7 +99,7 @@ defineExpose({
 
 <style scoped lang="scss">
 .code-text-editor-wrapper {
-  flex: 5 1 300px;
+  flex: 1 1 300px;
   min-width: 0;
   padding: 12px;
 }

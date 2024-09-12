@@ -7,6 +7,7 @@ import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
 import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
 import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
+import { useLocalStorage } from '@/utils/utils'
 
 const props = defineProps<{
   value: string
@@ -17,7 +18,7 @@ defineEmits<{
   insertText: [insertText: string]
 }>()
 
-const collapsed = ref(false)
+const collapsed = useLocalStorage('spx-gui-sidebar-collapse', false)
 const categories = ref<InputItemCategory[]>([])
 const controller = ref<AbortController | null>(null)
 
@@ -218,11 +219,28 @@ function handleCategoryClick(index: number) {
 }
 
 .sidebar-container {
-  // 162px is the max width of def buttons, use 162px as base width
-  // to keep tools-wrapper's width stable when switch among different def categories
-  flex: 1 0 256px;
   overflow-y: auto;
+  flex-shrink: 0;
+  width: 240px;
   background-color: white;
+}
+
+@media (min-width: 1280px) {
+  .sidebar-container {
+    width: 240px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .sidebar-container {
+    width: 310px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .sidebar-container {
+    width: 360px;
+  }
 }
 
 .tools-wrapper {

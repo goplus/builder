@@ -96,6 +96,7 @@ defineExpose({
 .code-editor {
   position: relative;
   flex: 1 1 0;
+  min-width: 0;
   min-height: 0;
   display: flex;
   justify-content: stretch;

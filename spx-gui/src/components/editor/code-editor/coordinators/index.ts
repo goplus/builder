@@ -13,7 +13,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition, TokenDetail } from '../compiler'
+import type { Definition, TokenDetail, TokenUsage as CompilerTokenUsage } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -30,8 +30,13 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
+import type {
+  TokenCategory,
+  TokenUsage,
+  UsageWithDoc
+} from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
+import type { I18n } from '@/utils/i18n'
 
 type JumpPosition = {
   line: number
@@ -73,7 +78,7 @@ export class Coordinator {
     this.suggest = new Suggest(() => project)
 
     ui.registerCompletionProvider({
-      provideDynamicCompletionItems: this.implementsPreDefinedCompletionProvider.bind(this)
+      provideDynamicCompletionItems: this.implementsCompletionProvider.bind(this)
     })
 
     ui.registerHoverProvider({
@@ -101,7 +106,7 @@ export class Coordinator {
     return (this.project.selectedSprite?.name ?? 'main') + '.spx'
   }
 
-  implementsPreDefinedCompletionProvider(
+  implementsCompletionProvider(
     model: TextModel,
     ctx: {
       position: Position
@@ -382,6 +387,7 @@ export class Coordinator {
         category,
         icon,
         color,
+        this.ui,
         this.docAbility,
         tokenDetailsMap
       )
@@ -404,11 +410,13 @@ async function toolCategory2InputItemCategory(
   category: TokenCategory,
   icon: Icon,
   color: string,
+  ui: EditorUI,
   docAbility: DocAbility,
   tokenDetailsMap: Record<string, TokenDetail>
 ): Promise<InputItemCategory> {
   const inputItemGroups: InputItemGroup[] = []
-
+  const transferUsageParam = (params: Array<{ name: string; type: string }>) =>
+    params.map((param) => param.name + ' ' + param.type.split('.').pop()).join(', ')
   for (const group of category.groups) {
     const inputItems: InputItem[] = []
 
@@ -417,15 +425,35 @@ async function toolCategory2InputItemCategory(
       const key = `${token.id.pkgPath}/${token.id.name}`
       const tokenDetail: TokenDetail | undefined = tokenDetailsMap[key]
       const tokenUsages = tokenDetail?.usages || []
-      const docUsages = tokenWithDoc.usages
-      const docUsageIds = new Set<string>()
-      docUsages.forEach((usage) => docUsageIds.add(usage.id))
-      const finalUsages: UsageWithDoc[] = docUsages
-      tokenUsages
-        .filter((usage) => !docUsageIds.has(usage.usageID))
-        .forEach((usage) => {
-          finalUsages.push({ ...usage, id: usage.usageID, effect: tokenDetail.structName, doc: '' })
-        })
+      const docUsages: Array<UsageWithDoc> = tokenWithDoc.usages
+      const tokenUsageIdxMap = new Map<string, number>()
+      const finalUsages: Array<UsageWithDoc> = tokenUsages.map((usage, i) => {
+        tokenUsageIdxMap.set(usage.usageID, i)
+        return {
+          ...usage,
+          id: usage.usageID,
+          effect: tokenDetail.structName,
+          doc: '',
+          declaration:
+            usage.type === 'func'
+              ? `${token.id.name} (${transferUsageParam(usage.params)})`
+              : usage.declaration
+        }
+      })
+      docUsages.forEach((usage) => {
+        if (tokenUsageIdxMap.has(usage.id)) {
+          const idx = tokenUsageIdxMap.get(usage.id)
+          if (idx == null)
+            throw new Error(
+              'get array "finalUsages" member error for already set key "usageId", but idx is not exist'
+            )
+          finalUsages[idx].doc = usage.doc
+          // usage effect from pre-defined is better than wasm get.
+          finalUsages[idx].effect = usage.effect
+        } else {
+          finalUsages.push(usage)
+        }
+      })
       finalUsages.forEach((usage) => {
         inputItems.push({
           icon: usageType2Icon(usage.effect),
@@ -436,7 +464,43 @@ async function toolCategory2InputItemCategory(
             type: 'doc',
             layer: {
               level: DocPreviewLevel.Normal,
-              content: usage.doc
+              content: usage.doc,
+              header: {
+                icon: usageType2Icon(usage.effect),
+                declaration: usage.declaration
+              },
+              recommendAction: {
+                label: ui.i18n.t({
+                  zh: '还有疑惑？场外求助',
+                  en: 'Still in confusion? Ask for help'
+                }),
+                activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+                onActiveLabelClick: () => {
+                  // TODO: add some logic code here
+                }
+              },
+              moreActions: [
+                {
+                  icon: Icon.Document,
+                  label: ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+                  onClick: () => {
+                    const usageId = usage.id
+                    docAbility.getDetailDoc(token.id).then((detailDoc) => {
+                      const usageDetailDoc = detailDoc.usages.find(
+                        (usage: UsageWithDoc) => usage.id === usageId
+                      )?.doc
+                      if (!usageDetailDoc)
+                        return console.warn(
+                          'usageDetailDoc not found. tokenId: ' +
+                            JSON.stringify(token.id) +
+                            ' usageId: ' +
+                            usageId
+                        )
+                      ui.invokeDocumentDetail(usageDetailDoc)
+                    })
+                  }
+                }
+              ]
             }
           }
         })

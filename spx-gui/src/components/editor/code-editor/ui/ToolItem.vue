@@ -2,9 +2,11 @@
   <UITooltip placement="bottom-start" :raw="true" :show-arrow="false">
     <!-- this is temp type force transformed, when completion hover preview merged, this will have common function and here will be removed -->
     <DocumentPreview
-      v-if="inputItem.desc.type === 'doc'"
+      v-if="inputItem.desc.type === 'doc' && !isDocEmpty"
       :header="inputItem.desc.layer.header"
       :content="inputItem.desc.layer.content"
+      :more-actions="inputItem.desc.layer.moreActions"
+      :recommend-action="inputItem.desc.layer.recommendAction"
     ></DocumentPreview>
     <template #trigger>
       <UITagButton class="button" @click="emit('useSnippet', inputItem.insertText)">
@@ -22,15 +24,21 @@ import { UITagButton, UITooltip } from '@/components/ui'
 import type { InputItem } from '../EditorUI'
 import DocumentPreview from './features/hover-preview/DocumentPreview.vue'
 import { icon2SVG } from './common'
-import type { DocPreview } from '../EditorUI'
+import { computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   inputItem: InputItem
 }>()
 
 const emit = defineEmits<{
   useSnippet: [insertText: string]
 }>()
+
+const isDocEmpty = computed(() => {
+  if (props.inputItem.desc.type !== 'doc') return true
+  const layer = props.inputItem.desc.layer
+  return !layer.header?.declaration && !layer.content
+})
 </script>
 
 <style scoped lang="scss">
