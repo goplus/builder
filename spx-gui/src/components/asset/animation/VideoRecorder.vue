@@ -86,6 +86,10 @@ import {
   StopCircleOutlined
 } from '@vicons/material'
 import { useI18n } from '@/utils/i18n'
+import { fromBlob } from '@/models/common/file'
+import { saveFiles } from '@/models/common/cloud'
+import { getWebUrl } from '@/apis/util'
+import { ExtractMotionTask } from '@/models/aigc'
 
 let mediaStream: MediaStream
 let mediaRecorder: MediaRecorder
@@ -96,6 +100,7 @@ const cameraActive = ref(false)
 const recording = ref(false)
 const recordingStartedAt = ref<number | null>(null)
 const recordingTime = ref<number | null>(null)
+let recordedBlob: Blob | null = null
 const recordedBlobUrl = ref<string | null>(null)
 const liveVideoRef = ref<HTMLVideoElement | null>(null)
 const recordedVideoRef = ref<HTMLVideoElement | null>(null)
@@ -177,6 +182,11 @@ const stopRecording = () => {
 }
 
 const resetRecorder = () => {
+  if (recordedBlobUrl.value) {
+    URL.revokeObjectURL(recordedBlobUrl.value)
+  }
+  recordedChunks = []
+  recordedBlob = null
   recordedBlobUrl.value = null
   startCamera()
 }
@@ -198,15 +208,40 @@ const handleRecorderData = (event: BlobEvent) => {
 
 const handleRecorderStop = () => {
   stopCamera()
-  const recordedBlob = new Blob(recordedChunks, { type: 'video/webm' })
+  recordedBlob = new Blob(recordedChunks, { type: 'video/webm' })
   recordedBlobUrl.value = URL.createObjectURL(recordedBlob)
   if (recordedVideoRef.value) {
     recordedVideoRef.value.src = recordedBlobUrl.value
   }
 }
 
-const generateAnimation = () => {
-  // TODO: send recordedBlob to server to generate animation
+const generateAnimation = async () => {
+  if (!recordedBlob) {
+    return
+  }
+  const file = fromBlob('recorded-video.webm', recordedBlob)
+  const { fileCollection } = await saveFiles({'recorded-video.webm': file})
+  const videoKodoUrl = fileCollection['recorded-video.webm']
+  const videoWebUrl = await getWebUrl(videoKodoUrl)
+
+  const extractMotionTask = new ExtractMotionTask({
+    videoUrl: videoWebUrl,
+    callbackUrl: '',
+  })
+
+  extractMotionTask.start()
+
+  return new Promise<string>((resolve, reject) => {
+    extractMotionTask.addEventListener('AIGCFinished', () => {
+      const result = extractMotionTask.result?.resultUrl
+      if (!result) {
+        reject(new Error('Failed to extract motion'))
+      }
+      else {
+        resolve(result)
+      }
+    })
+  })
 }
 
 const downloadRecordedVideo = () => {
