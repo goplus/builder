@@ -66,7 +66,7 @@ onMounted(() => {
 <style lang="scss">
 // this is global css and active in monaco editor code line, add `.view-line` to avoid style override by monaco editor
 .view-line {
-  .inlay-hint__param {
+  .inlay-hint__param::after {
     font-size: 0.8em;
     margin-right: 0.5em;
     color: rgba(0, 0, 0, 0.3);
@@ -87,8 +87,7 @@ onMounted(() => {
     }
   }
 
-  .inlay-hint__tag {
-    width: 0;
+  .inlay-hint__tag::after {
     color: rgba(0, 0, 0, 0.3);
     padding: 2px 4px;
     margin: 0 2px;

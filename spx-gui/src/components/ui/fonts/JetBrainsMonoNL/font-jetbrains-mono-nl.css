@@ -3,7 +3,7 @@
  * free to use for commercial projects.
  */
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 400;
     font-style: normal;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-Regular.ttf') format('truetype');
@@ -11,7 +11,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 400;
     font-style: italic;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-Italic.ttf') format('truetype');
@@ -19,7 +19,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 500;
     font-style: normal;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-Medium.ttf') format('truetype');
@@ -27,7 +27,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 500;
     font-style: italic;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-MediumItalic.ttf') format('truetype');
@@ -35,7 +35,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 600;
     font-style: normal;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-SemiBold.ttf') format('truetype');
@@ -43,7 +43,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 600;
     font-style: italic;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-SemiBoldItalic.ttf') format('truetype');
@@ -51,7 +51,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 700;
     font-style: normal;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-Bold.ttf') format('truetype');
@@ -59,7 +59,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 700;
     font-style: italic;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-BoldItalic.ttf') format('truetype');
@@ -67,7 +67,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 800;
     font-style: normal;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-ExtraBold.ttf') format('truetype');
@@ -75,7 +75,7 @@
 }
 
 @font-face {
-    font-family: 'JetBrains MonoNL';
+    font-family: 'JetBrains Mono NL';
     font-weight: 800;
     font-style: italic;
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/ttf/JetBrainsMonoNL-ExtraBoldItalic.ttf') format('truetype');

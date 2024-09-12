@@ -121,8 +121,7 @@ $markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'Aliba
   }
 
   code {
-    padding: 0.2em 0.4em;
-    margin: 0;
+    padding: 0.1em 0.4em;
     background-color: rgba(27, 31, 35, 0.05);
     border-radius: 3px;
   }

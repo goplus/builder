@@ -13,7 +13,12 @@ export class HoverProvider {
   private docAbility: DocAbility
   private coordinatorState: CoordinatorState
 
-  constructor(ui: EditorUI, docAbility: DocAbility, coordinatorState: CoordinatorState, private project: Project) {
+  constructor(
+    ui: EditorUI,
+    docAbility: DocAbility,
+    coordinatorState: CoordinatorState,
+    private project: Project
+  ) {
     this.ui = ui
     this.docAbility = docAbility
     this.coordinatorState = coordinatorState
@@ -42,8 +47,8 @@ export class HoverProvider {
     const layerContents: LayerContent[] = []
     if (this.isDefinitionCanBeRenamed(definition)) {
       const [usage] = definition.usages
-      if (!usage) throw new Error('definition should have one usage!')
-      layerContents.push(this.createVariableRenameContent(usage))
+      if (!usage) throw new Error('definition should have at least one usage!')
+      layerContents.push(this.createVariableRenameContent(usage, definition))
     } else {
       layerContents.push(...this.createDocContents(content, definition))
     }
@@ -70,14 +75,16 @@ export class HoverProvider {
     })
   }
 
-  private createVariableRenameContent(usage: TokenUsage): LayerContent {
+  private createVariableRenameContent(usage: TokenUsage, definition: Definition): LayerContent {
+    // if this is function we need remap declaration
+    const declarationMap = this.createDefinitionDeclaration(definition.name, [usage])
     return {
       type: 'doc',
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
           icon: usageType2Icon(usage.type),
-          declaration: usage.declaration
+          declaration: declarationMap[usage.usageID] || usage.declaration
         },
         content: '',
         moreActions: [
@@ -107,13 +114,13 @@ export class HoverProvider {
   }
 
   private createDocContents(doc: TokenWithDoc, definition: Definition): LayerContent[] {
-    const declarationMap = this.createDefinitionDeclaration(definition)
+    const declarationMap = this.createDefinitionDeclaration(definition.name, definition.usages)
     const usages: UsageWithDoc[] = []
     const docUsageIdSet = new Set<string>()
     // if length equals 1, means matched usage
     if (definition.usages.length === 1) {
       const usage = definition.usages[0]
-      const usageWithDoc = doc.usages.find((_usage: UsageWithDoc) => (usage.usageID = _usage.id))
+      const usageWithDoc = doc.usages.find((_usage: UsageWithDoc) => usage.usageID === _usage.id)
       if (usageWithDoc) {
         usages.push({ ...usage, ...usageWithDoc })
       } else {
@@ -156,13 +163,13 @@ export class HoverProvider {
   }
 
   /** this declaration only for mapping function params */
-  private createDefinitionDeclaration(definition: Definition) {
+  private createDefinitionDeclaration(name: string, usages: TokenUsage[]) {
     const usageDeclaration: Record<string, string> = {}
-    definition.usages.forEach((usage) => {
+    usages.forEach((usage) => {
       const params = usage.params
         .map((param) => param.name + ' ' + param.type.split('.').pop())
         .join(', ')
-      if (usage.type === 'func') usageDeclaration[usage.usageID] = `${definition.name} (${params})`
+      if (usage.type === 'func') usageDeclaration[usage.usageID] = `${name} (${params})`
     })
     return usageDeclaration
   }
