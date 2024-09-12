@@ -68,7 +68,7 @@ export class Coordinator {
     this.docAbility = docAbility
     this.chatBot = chatBot
     this.compiler = compiler
-    this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState)
+    this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState, project)
     this.suggest = new Suggest(() => project)
 
     ui.registerCompletionProvider({

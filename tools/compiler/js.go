@@ -9,7 +9,7 @@ import (
 )
 
 // jsFuncBody is the type of jsFuncList item.
-type jsFuncBody func(this js.Value, p []js.Value) interface{}
+type jsFuncBody func(this js.Value, p []js.Value) js.Value
 
 // jsFuncList contains every single function can call from js, by using `func name` + `_GO`
 var jsFuncList = []jsFuncBody{
@@ -25,7 +25,9 @@ var jsFuncList = []jsFuncBody{
 // This register can auto register any function form jsFuncList.
 func jsFuncRegister() {
 	for _, f := range jsFuncList {
-		js.Global().Set(getFuncName(f)+"_GO", js.FuncOf(f))
+		js.Global().Set(getFuncName(f)+"_GO", js.FuncOf(func(this js.Value, args []js.Value) any {
+			return f(this, args)
+		}))
 	}
 }
 
@@ -64,36 +66,36 @@ func jsValue2List(value js.Value) (result []internal.TokenID) {
 
 // Functions following below is the entry functions for js.
 
-func getInlayHints(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getInlayHints(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getInlayHints", &ret)
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetInlayHint(fileName, jsValue2Map(fileMap)))
 }
 
-func getDiagnostics(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getDiagnostics(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getDiagnostics", &ret)
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetDiagnostics(fileName, jsValue2Map(fileMap)))
 }
 
-func getDefinition(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getDefinition(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getDefinition", &ret)
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetDefinition(fileName, jsValue2Map(fileMap)))
 }
 
-func getTypes(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getTypes(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getTypes", &ret)
 	fileName := p[0].String()
 	fileMap := p[1]
 	return internal.NewReply(internal.GetSPXFileType(fileName, jsValue2Map(fileMap)))
 }
 
-func getCompletionItems(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getCompletionItems(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getCompletionItems", &ret)
 	fileName := p[0].String()
 	fileMap := p[1]
 	cursorLine := p[2].Int()
@@ -101,15 +103,15 @@ func getCompletionItems(this js.Value, p []js.Value) interface{} {
 	return internal.NewReply(internal.GetCompletions(fileName, jsValue2Map(fileMap), cursorLine, cursorColumn))
 }
 
-func getTokenDetail(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getTokenDetail(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getTokenDetail", &ret)
 	name := p[0].String()
 	pkgPath := p[1].String()
 	return internal.NewReply(internal.GetTokenDetail(name, pkgPath))
 }
 
-func getTokensDetail(this js.Value, p []js.Value) interface{} {
-	defer handlePanic()
+func getTokensDetail(this js.Value, p []js.Value) (ret js.Value) {
+	defer handlePanic("getTokensDetail", &ret)
 	tokens := p[0]
 	return internal.NewReply(internal.GetTokensDetail(jsValue2List(tokens)))
 }

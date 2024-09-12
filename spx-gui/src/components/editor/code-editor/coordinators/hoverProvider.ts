@@ -6,16 +6,21 @@ import type { Definition, DefinitionUsage } from '@/components/editor/code-edito
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
 import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
+import type { Project } from '@/models/project'
 
 export class HoverProvider {
   private ui: EditorUI
   private docAbility: DocAbility
   private coordinatorState: CoordinatorState
 
-  constructor(ui: EditorUI, docAbility: DocAbility, coordinatorState: CoordinatorState) {
+  constructor(ui: EditorUI, docAbility: DocAbility, coordinatorState: CoordinatorState, private project: Project) {
     this.ui = ui
     this.docAbility = docAbility
     this.coordinatorState = coordinatorState
+  }
+
+  private get currentFilename() {
+    return (this.project.selectedSprite?.name ?? 'main') + '.spx'
   }
 
   async provideHover(
@@ -26,7 +31,7 @@ export class HoverProvider {
       signal: AbortSignal
     }
   ): Promise<LayerContent[]> {
-    const definition = this.findDefinition(ctx.position)
+    const definition = this.findDefinition(this.currentFilename, ctx.position)
     if (!definition) return []
 
     const content = await this.docAbility.getNormalDoc({
@@ -50,8 +55,9 @@ export class HoverProvider {
     return definition.pkgName === 'main' && definition.usages.length === 1
   }
 
-  private findDefinition(position: Position): Definition | undefined {
+  private findDefinition(filename: string, position: Position): Definition | undefined {
     return this.coordinatorState.definitions.find((definition) => {
+      if (definition.startPosition.filename !== filename) return false
       const tokenLen = definition.endPos - definition.startPos
       const line = definition.startPosition.line
       const startColumn = definition.startPosition.column
