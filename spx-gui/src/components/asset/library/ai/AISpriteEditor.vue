@@ -57,16 +57,16 @@
         />
       </Transition>
     </div>
+    <Transition name="slide-fade" mode="out-in" appear>
+      <UIFormModal
+        v-model:visible="motionRecordVisible"
+        :title="$t({ en: 'Record Motion', zh: '录制动作' })"
+        :center-title="true"
+      >
+        <VideoRecorder class="motion-recorder" />
+      </UIFormModal>
+    </Transition>
   </div>
-  <Transition name="slide-fade" mode="out-in" appear>
-    <UIFormModal
-      v-model:visible="motionRecordVisible"
-      :title="$t({ en: 'Record Motion', zh: '录制动作' })"
-      :center-title="true"
-    >
-      <VideoRecorder class="motion-recorder" />
-    </UIFormModal>
-  </Transition>
 </template>
 
 <script lang="ts" setup>
