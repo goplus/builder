@@ -1,7 +1,7 @@
-// Get generate image from ai.
+// Generate Animation from image and optional motion
 //
 // Request:
-//   POST /aigc/image
+//   POST /aigc/animate
 
 import (
 	"github.com/goplus/builder/spx-backend/internal/controller"
@@ -13,8 +13,8 @@ _, ok := ensureUser(ctx)
 if !ok {
 	return
 }
-params := &controller.GenerateSpriteParams{}
-result, err := ctrl.GenerateSprite(ctx.Context(),params)
+params := &controller.GenerateAnimateParams{}
+result, err := ctrl.GenerateAnimate(ctx.Context(),params)
 
 if err != nil {
 	replyWithInnerError(ctx, err)

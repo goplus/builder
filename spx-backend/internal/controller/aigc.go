@@ -37,17 +37,16 @@ type GenerateResult struct {
 	ImageJobId string `json:"imageJobId"`
 }
 
-type GenerateSpriteParams struct {
+type GenerateAnimateParams struct {
 	// ImageUrl is the image URL to be generated as sprite.
 	ImageUrl string `json:"image_url"`
+	GenAnimation bool `json:"gen_animation"`
+	MotionUrl string `json:"motion_url"`
+	CallbackUrl string `json:"callback_url"`
 }
 
-type GetGenerateSpriteParams struct {
-	ImageUrl string `json:"image_url"`
-}
-
-type GenerateSpriteResult struct {
-	SpriteUrl string `json:"material_url"`
+type GenerateAnimateResult struct {
+	MaterialUrl string `json:"material_url"`
 }
 
 type GetEmbeddingParams struct {
@@ -227,18 +226,16 @@ func (ctrl *Controller) GeneratingSync(ctx context.Context, param *GenerateParam
 	return &generateResult, nil
 }
 
-// GenerateSprite follow parameters to generating sprite.
-func (ctrl *Controller) GenerateSprite(ctx context.Context, param *GenerateSpriteParams) (*GenerateSpriteResult, error) {
+// GenerateAnimate follow parameters to generating sprite.
+func (ctrl *Controller) GenerateAnimate(ctx context.Context, param *GenerateAnimateParams) (*GenerateAnimateResult, error) {
 	logger := log.GetReqLogger(ctx)
-	var generateSpriteResult GenerateSpriteResult
-	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/animate", &GetGenerateSpriteParams{
-		ImageUrl: param.ImageUrl,
-	}, &generateSpriteResult)
+	var generateAnimateResult GenerateAnimateResult
+	err := ctrl.aigcClient.Call(ctx, http.MethodPost, "/animate", &param, &generateAnimateResult)
 	if err != nil {
 		logger.Printf("failed to call: %v", err)
 		return nil, err
 	}
-	return &generateSpriteResult, nil
+	return &generateAnimateResult, nil
 }
 
 // GetEmbedding get text embedding.

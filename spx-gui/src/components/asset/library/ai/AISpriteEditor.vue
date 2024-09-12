@@ -98,7 +98,7 @@ import {
 } from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
-import { AISpriteTask } from '@/models/aigc'
+import { AIAnimateTask } from '@/models/aigc'
 import { getFiles, saveFiles } from '@/models/common/cloud'
 import { fromBlob, type File } from '@/models/common/file'
 import { hashFileCollection } from '@/models/common/hash'
@@ -109,6 +109,7 @@ import { h } from 'vue'
 import { getWebUrl } from '@/apis/util'
 import { UIFormModal, useConfirmDialog } from '@/components/ui'
 import VideoRecorder from '../../animation/VideoRecorder.vue'
+import type { FileCollection } from '@/apis/common'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -197,14 +198,20 @@ const generateContent = async () => {
     failInfoText.value = t({ en: `Failed to load preview`, zh: `加载预览失败` })
     return
   }
-  const generateTask = new AISpriteTask(await getWebUrl(previewImageFile.value?.meta.universalUrl))
+  const generateTask = new AIAnimateTask({
+    imageUrl: await getWebUrl(previewImageFile.value?.meta.universalUrl)
+  })
   generateTask.addEventListener('AIGCStatusChange', () => {
     status.value = generateTask.status
   })
   generateTask.addEventListener('AIGCFinished', () => {
-    if (generateTask.result?.files) {
+    if (generateTask.result?.materialUrl) {
       contentReady.value = true
-      loadCloudFiles(generateTask.result.files)
+      // TODO: The materialUrl presents a zip file containing the generated content
+      // We may need to unzip it and do further processing on it
+      loadCloudFiles({
+        material: generateTask.result.materialUrl
+      })
     } else {
       status.value = AIGCStatus.Failed
       failInfoText.value = t({ en: `Failed to generate content`, zh: `生成内容失败` })
@@ -213,7 +220,7 @@ const generateContent = async () => {
   generateTask.start()
 }
 
-const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
+const loadCloudFiles = async (cloudFiles: FileCollection) => {
   if (!cloudFiles) {
     status.value = AIGCStatus.Failed
     return

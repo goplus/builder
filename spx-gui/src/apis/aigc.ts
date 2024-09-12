@@ -56,7 +56,7 @@ export const isContentReady = Symbol('isContentReady')
 /**
  * When the asset is exported, the backend will return an ID for the exported asset.
  * This ID can be used to retrieve the exported asset.
- * 
+ *
  * Store the exported ID in the asset data to prevent exporting the same asset multiple times.
  */
 export const exportedId = Symbol('isExported')
@@ -88,16 +88,11 @@ export interface CreateAIImageParams {
  * Generate AI image with given keyword and category
  *
  */
-export async function generateAIImage({
-  keyword,
-  category,
-  width,
-  height
-}: CreateAIImageParams) {
+export async function generateAIImage({ keyword, category, width, height }: CreateAIImageParams) {
   const result = (await client.post(
     '/aigc/image',
     { keyword, category, width, height },
-    { timeout: 60 * 1000 }// 60s
+    { timeout: 60 * 1000 } // 60s
   )) as {
     imageJobId: string
   }
@@ -120,19 +115,42 @@ export async function syncGenerateAIImage({
   return result
 }
 
+export interface GenerateAIAnimateParams {
+  imageUrl: string
+  genAnimation?: boolean
+  motionUrl?: string
+  callbackUrl?: string
+}
+
+export interface GenerateAIAnimateResult {
+  materialUrl: string
+  desc: string
+}
 
 /**
  * Generate AI sprite from image
  *
- * @param imageJobId The image job ID given by `generateAIImage`
- *
- * WARNING: This API has not been implemented yet. It will return a mock result.
  */
-export async function generateAISprite(imageUrl: string) {
-  const result = (await client.post('/aigc/sprite', { image_url: imageUrl }, { timeout: 20 * 1000 })) as {
+export async function generateAIAnimate(params: GenerateAIAnimateParams) {
+  const result = (await client.post(
+    '/aigc/sprite',
+    {
+      image_url: params.imageUrl,
+      gen_animation: params.genAnimation,
+      motion_url: params.motionUrl,
+      callback_url: params.callbackUrl
+    },
+    {
+      timeout: 60 * 1000
+    }
+  )) as {
     material_url: string
+    desc: string
   }
-  return result
+  return {
+    materialUrl: result.material_url,
+    desc: result.desc
+  }
 }
 
 export interface GenerateInpaintingParams {
@@ -151,10 +169,11 @@ export interface GenerateInpaintingResult {
 }
 
 export async function generateInpainting(params: GenerateInpaintingParams) {
-  const result = (await client.post('/aigc/inpainting', params, { timeout: 60 * 1000 })) as GenerateInpaintingResult
+  const result = (await client.post('/aigc/inpainting', params, {
+    timeout: 60 * 1000
+  })) as GenerateInpaintingResult
   return result
 }
-
 
 export interface ExtractMotionParams {
   video_url: string
@@ -167,7 +186,9 @@ export interface ExtractMotionResult {
 }
 
 export async function extractMotion(params: ExtractMotionParams) {
-  const result = (await client.post('/aigc/motion', params, { timeout: 60 * 1000 })) as ExtractMotionResult
+  const result = (await client.post('/aigc/motion', params, {
+    timeout: 60 * 1000
+  })) as ExtractMotionResult
   return result
 }
 
@@ -222,14 +243,15 @@ export async function getAIGCStatus(jobId: string) {
 
 /**
  * The parameter has not been determined yet.
- * As some ai-generated asset may be edited by user or js code, 
+ * As some ai-generated asset may be edited by user or js code,
  * the backend may need to get the partial asset instead of the jobId.
- * 
+ *
  */
-export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>;
-export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>;
+export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>
+export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>
 export async function exportAIGCAsset(param: any) {
-  const result = (await client.post(`/aigc/export`,
+  const result = (await client.post(
+    `/aigc/export`,
     typeof param === 'string' ? { jobId: param } : { ...param }
   )) as {
     assetId: string
