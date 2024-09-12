@@ -276,7 +276,12 @@ func handleThis(obj types.Object, name string, items *completionList) {
 	}
 
 	structMethodsToCompletion(structType, items)
-	// TODO: fields of struct
+
+	named, ok := variable.Type().Underlying().(*types.Pointer).Elem().(*types.Named)
+	if !ok {
+		return
+	}
+	extractMethodsFromNamed(named, items, false)
 }
 
 func handleFunc(obj types.Object, name string, items *completionList) {
@@ -311,6 +316,7 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 func handleType(obj types.Object, name string, items *completionList) {
 	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
 		for i := 0; i < structType.NumFields(); i++ {
+			handleFunc(structType.Field(i), structType.Field(i).Name(), items)
 			if structType.Field(i).Type().String() != "github.com/goplus/spx.Game" {
 				continue
 			}
