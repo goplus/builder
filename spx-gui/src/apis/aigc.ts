@@ -155,6 +155,22 @@ export async function generateInpainting(params: GenerateInpaintingParams) {
   return result
 }
 
+
+export interface ExtractMotionParams {
+  video_url: string
+  callback_url: string
+}
+
+export interface ExtractMotionResult {
+  result_url: string
+  desc: string
+}
+
+export async function extractMotion(params: ExtractMotionParams) {
+  const result = (await client.post('/aigc/motion', params, { timeout: 60 * 1000 })) as ExtractMotionResult
+  return result
+}
+
 export enum AIGCType {
   Image,
   Sprite,

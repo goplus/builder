@@ -1,4 +1,4 @@
-import { AIGCStatus, generateAIImage, generateAISprite, generateInpainting, getAIGCStatus, isAiAsset, isContentReady, isPreviewReady, syncGenerateAIImage, type AIGCFiles, type CreateAIImageParams, type GenerateInpaintingParams, type RequiredAIGCFiles, type TaggedAIAssetData } from "@/apis/aigc"
+import { AIGCStatus, extractMotion, generateAIImage, generateAISprite, generateInpainting, getAIGCStatus, isAiAsset, isContentReady, isPreviewReady, syncGenerateAIImage, type AIGCFiles, type CreateAIImageParams, type GenerateInpaintingParams, type RequiredAIGCFiles, type TaggedAIAssetData } from "@/apis/aigc"
 import { saveFiles } from "./common/cloud"
 import { fromBlob } from "./common/file"
 import { useRetryHandle } from "@/utils/exception"
@@ -235,6 +235,19 @@ export class InpaintingTask extends AIGCTask<WithStatus<{imageUrl: string}>> {
     const res = await generateInpainting(params)
     return {
       imageUrl: res.image_url,
+      status: AIGCStatus.Finished
+    }
+  }
+}
+
+export class ExtractMotionTask extends AIGCTask<WithStatus<{resultUrl: string}>> {
+  constructor(params: {videoUrl: string, callbackUrl?: string}) {
+    super(ExtractMotionTask.request, [params])
+  }
+  private static async request(params: {videoUrl: string, callbackUrl?: string}) {
+    const res = await extractMotion({ video_url: params.videoUrl, callback_url: params.callbackUrl ?? ''})
+    return {
+      resultUrl: res.result_url,
       status: AIGCStatus.Finished
     }
   }
