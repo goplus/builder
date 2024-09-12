@@ -256,7 +256,7 @@ func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.I
 
 func handleObject(obj types.Object, name string, items *completionList) {
 	handleThis(obj, name, items)
-	handleFunc(obj, name, items)
+	handleStruct(obj, name, items)
 	handleType(obj, name, items)
 }
 
@@ -276,15 +276,9 @@ func handleThis(obj types.Object, name string, items *completionList) {
 	}
 
 	structMethodsToCompletion(structType, items)
-
-	named, ok := variable.Type().Underlying().(*types.Pointer).Elem().(*types.Named)
-	if !ok {
-		return
-	}
-	extractMethodsFromNamed(named, items, false)
 }
 
-func handleFunc(obj types.Object, name string, items *completionList) {
+func handleStruct(obj types.Object, name string, items *completionList) {
 	scopeItem := &completionItem{
 		Label: name,
 		Type:  obj.Type().String(),
@@ -316,7 +310,7 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 func handleType(obj types.Object, name string, items *completionList) {
 	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
 		for i := 0; i < structType.NumFields(); i++ {
-			handleFunc(structType.Field(i), structType.Field(i).Name(), items)
+			handleStruct(structType.Field(i), structType.Field(i).Name(), items)
 			if structType.Field(i).Type().String() != "github.com/goplus/spx.Game" {
 				continue
 			}
