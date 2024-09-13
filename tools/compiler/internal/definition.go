@@ -201,7 +201,9 @@ func createDefinitionItem(ident *ast.Ident, obj types.Object) *definitionItem {
 // createUsages creates a slice of usage based on the type of obj.
 func createUsages(obj types.Object, name string) []usage {
 	switch t := obj.Type().(type) {
-	case *types.Basic:
+	case *types.Signature:
+		return []usage{createSignatureUsage(obj, t)}
+	default:
 		return []usage{{
 			UsageID:     "0",
 			Declaration: obj.String(),
@@ -210,11 +212,6 @@ func createUsages(obj types.Object, name string) []usage {
 			Params:      []param{},
 			Type:        t.String(),
 		}}
-	case *types.Signature:
-		return []usage{createSignatureUsage(obj, t)}
-	default:
-		// TODO: Handle other types.
-		return []usage{}
 	}
 }
 
