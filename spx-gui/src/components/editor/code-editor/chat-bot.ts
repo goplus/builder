@@ -76,14 +76,14 @@ export class ChatBot {
   private i18nInputWithAction(input: string, action: ChatAction): string {
     switch (action) {
       case ChatAction.explain:
-        return this.i18n.t({ en: 'Explain the code: \n', zh: '解释一下这段代码: \n' }) + input
+        return this.i18n.t({ en: 'Explain the code: ', zh: '解释一下这段代码: ' }) + '\n```gop  \n' + input + '\n```'
       case ChatAction.comment:
         return (
-          this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + input
+          this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + '\n```gop  \n' + input + '\n```'
         )
       case ChatAction.fixCode:
         return (
-          this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + input
+          this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + '\n```gop  \n' + input + '\n```'
         )
     }
     return ''
@@ -105,11 +105,15 @@ export class Chat {
     messages: ChatMessage[]
     length: number
     loading: boolean
+    currentQuestion: string
+    responseError: boolean
   }>({
     chatID: '',
     messages: [],
     length: 0,
-    loading: true
+    loading: true,
+    currentQuestion: "",
+    responseError: false
   })
 
   constructor(params: AIStartChatParams, showMessage: string) {
@@ -141,6 +145,7 @@ export class Chat {
   }
 
   async nextMessage(msg: string): Promise<boolean> {
+    this.chatState.responseError = false
     if (this.chatState.length > 20) {
       return false
     }
@@ -157,7 +162,13 @@ export class Chat {
     const res = await nextChat(this.chatState.chatID, params)
     this.chatState.length++
     this.chatState.loading = false
+    this.chatState.currentQuestion = msg
+    if(res.respMessage == "") {
+      this.chatState.responseError = true
+      return false
+    }
     const content = res.respMessage
+    
     const questions = res.respQuestions
     const assistantMessage: ChatMessage = {
       content: content,
@@ -169,6 +180,10 @@ export class Chat {
     }
     this.chatState.messages.push(assistantMessage)
     return true
+  }
+
+  async resendMessage(): Promise<boolean> {
+    return this.nextMessage(this.chatState.currentQuestion)
   }
 
   async deleteChat() {
