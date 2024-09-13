@@ -244,7 +244,6 @@ func checkScopeChildrenContainsPos(scope *types.Scope, pos token.Pos) bool {
 }
 
 func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.Info) {
-	fmt.Println(scope)
 	for _, name := range scope.Names() {
 		obj := scope.Lookup(name)
 		handleScopeItem(obj, name, items)
@@ -259,7 +258,6 @@ func handleScopeItem(obj types.Object, name string, items *completionList) {
 	if name == "this" {
 		handleThis(obj, name, items)
 	}
-	handleStruct(obj.Type(), name, items)
 	addCompletionItem(obj, name, items)
 }
 
@@ -278,6 +276,9 @@ func handleStruct(T types.Type, name string, items *completionList) {
 		}
 		if stru.Field(i).Exported() {
 			addCompletionItem(stru.Field(i), name, items)
+		}
+		if stru.Field(i).Pkg().Path() == PKG {
+			addCompletionItem(stru.Field(i), stru.Field(i).Name(), items)
 		}
 	}
 	extractMethodsFromNamed(named, items, false)
