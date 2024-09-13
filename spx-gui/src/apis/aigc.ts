@@ -133,7 +133,7 @@ export interface GenerateAIAnimateResult {
  */
 export async function generateAIAnimate(params: GenerateAIAnimateParams) {
   const result = (await client.post(
-    '/aigc/sprite',
+    '/aigc/animate',
     {
       image_url: params.imageUrl,
       gen_animation: params.genAnimation,

@@ -758,18 +758,23 @@ func (this *post_aigc_animate) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/post_aigc_animate.yap:14:1
 		return
 	}
-//line cmd/spx-backend/post_aigc_animate.yap:16:1
-	params := &controller.GenerateAnimateParams{}
 //line cmd/spx-backend/post_aigc_animate.yap:17:1
-	result, err := this.ctrl.GenerateAnimate(ctx.Context(), params)
+	params := &controller.GenerateAnimateParams{}
+//line cmd/spx-backend/post_aigc_animate.yap:18:1
+	if !parseJSON(ctx, params) {
 //line cmd/spx-backend/post_aigc_animate.yap:19:1
-	if err != nil {
-//line cmd/spx-backend/post_aigc_animate.yap:20:1
-		replyWithInnerError(ctx, err)
-//line cmd/spx-backend/post_aigc_animate.yap:21:1
 		return
 	}
+//line cmd/spx-backend/post_aigc_animate.yap:21:1
+	result, err := this.ctrl.GenerateAnimate(ctx.Context(), params)
 //line cmd/spx-backend/post_aigc_animate.yap:23:1
+	if err != nil {
+//line cmd/spx-backend/post_aigc_animate.yap:24:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_aigc_animate.yap:25:1
+		return
+	}
+//line cmd/spx-backend/post_aigc_animate.yap:27:1
 	this.Json__1(result)
 }
 func (this *post_aigc_animate) Classfname() string {
