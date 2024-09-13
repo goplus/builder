@@ -68,8 +68,6 @@
         </div>
       </div>
     </Transition>
-
-    <Transition name="slide-fade" mode="out-in" appear> </Transition>
   </div>
 </template>
 
@@ -89,7 +87,10 @@ import { useI18n } from '@/utils/i18n'
 import { fromBlob } from '@/models/common/file'
 import { saveFiles } from '@/models/common/cloud'
 import { getWebUrl } from '@/apis/util'
-import { ExtractMotionTask } from '@/models/aigc'
+import { AIAnimateTask, ExtractMotionTask } from '@/models/aigc'
+import type { TaggedAIAssetData } from '@/apis/aigc'
+import type { AssetType } from '@/apis/asset'
+import type { UniversalUrl } from '@/apis/common'
 
 let mediaStream: MediaStream
 let mediaRecorder: MediaRecorder
@@ -104,6 +105,18 @@ let recordedBlob: Blob | null = null
 const recordedBlobUrl = ref<string | null>(null)
 const liveVideoRef = ref<HTMLVideoElement | null>(null)
 const recordedVideoRef = ref<HTMLVideoElement | null>(null)
+
+const generatingAnimation = ref(false)
+const generatingAnimationMessage = ref<string | null>(null)
+const failureMessage = ref<string | null>(null)
+
+const props = defineProps<{
+  imageUrl: UniversalUrl
+}>()
+
+const emit = defineEmits<{
+  resolve: [materialUrl: UniversalUrl]
+}>()
 
 const { t } = useI18n()
 
@@ -215,9 +228,15 @@ const handleRecorderStop = () => {
   }
 }
 
-const generateAnimation = async () => {
+
+const requestExtractMotion = async () => {
+  generatingAnimationMessage.value = t({
+    en: 'Extracting motion from recorded video...',
+    zh: '正在从录制的视频中提取动作...'
+  })
   if (!recordedBlob) {
-    return
+    generatingAnimation.value = false
+    return Promise.reject(new Error('No recorded video'))
   }
   const file = fromBlob('recorded-video.webm', recordedBlob)
   const { fileCollection } = await saveFiles({'recorded-video.webm': file})
@@ -232,9 +251,14 @@ const generateAnimation = async () => {
   extractMotionTask.start()
 
   return new Promise<string>((resolve, reject) => {
+    extractMotionTask.addEventListener('AIGCFailed', () => {
+      generatingAnimation.value = false
+      reject(new Error('Failed to extract motion'))
+    })
     extractMotionTask.addEventListener('AIGCFinished', () => {
       const result = extractMotionTask.result?.resultUrl
       if (!result) {
+        generatingAnimation.value = false
         reject(new Error('Failed to extract motion'))
       }
       else {
@@ -242,6 +266,54 @@ const generateAnimation = async () => {
       }
     })
   })
+}
+
+const requestGenerateAnimation = async (motionUrl: string) => {
+  generatingAnimationMessage.value = t({
+    en: 'Generating animation...',
+    zh: '正在生成动画...'
+  })
+  const animTask = new AIAnimateTask({
+    motionUrl,
+    imageUrl: await getWebUrl(props.imageUrl),
+    callbackUrl: '',
+    genAnimation: true,
+  })
+  animTask.start()
+  return new Promise<string>((resolve, reject) => {
+    animTask.addEventListener('AIGCFailed', () => {
+      generatingAnimation.value = false
+      reject(new Error('Failed to generate animation'))
+    })
+    animTask.addEventListener('AIGCFinished', () => {
+      const result = animTask.result
+      if (!result) {
+        generatingAnimation.value = false
+        reject(new Error('Failed to generate animation'))
+      }
+      else {
+        resolve(result.materialUrl)
+      }
+    })
+  })
+}
+
+const generateAnimation = async () => {
+  generatingAnimation.value = true
+  failureMessage.value = null
+
+  const motionUrl = await requestExtractMotion()
+  if (!motionUrl) {
+    generatingAnimation.value = false
+    return
+  }
+  const materialUrl = await requestGenerateAnimation(motionUrl)
+  if (!materialUrl) {
+    generatingAnimation.value = false
+    return
+  }
+
+  emit('resolve', materialUrl)
 }
 
 const downloadRecordedVideo = () => {

@@ -59,11 +59,12 @@
     </div>
     <Transition name="slide-fade" mode="out-in" appear>
       <UIFormModal
+        v-if="previewImageFile?.meta.universalUrl"
         v-model:visible="motionRecordVisible"
         :title="$t({ en: 'Record Motion', zh: '录制动作' })"
         :center-title="true"
       >
-        <VideoRecorder class="motion-recorder" />
+        <VideoRecorder class="motion-recorder" :image-url="previewImageFile?.meta.universalUrl" />
       </UIFormModal>
     </Transition>
   </div>
