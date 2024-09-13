@@ -1,12 +1,21 @@
-import type { EditorUI, LayerContent, TextModel } from '@/components/editor/code-editor/EditorUI'
-import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
+import {
+  DocPreviewLevel,
+  type EditorUI,
+  Icon,
+  type LayerContent,
+  type TextModel
+} from '@/components/editor/code-editor/EditorUI'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, TokenUsage } from '@/components/editor/code-editor/compiler'
 import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
-import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
+import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import type { Project } from '@/models/project'
+import type { Sound } from '@/models/sound'
+import { useAudioDuration } from '@/utils/audio'
+import { untilNotNull } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 
 export class HoverProvider {
   private ui: EditorUI
@@ -37,20 +46,27 @@ export class HoverProvider {
     }
   ): Promise<LayerContent[]> {
     const definition = this.findDefinition(this.currentFilename, ctx.position)
-    if (!definition) return []
-
-    const content = await this.docAbility.getNormalDoc({
-      pkgPath: definition.pkgPath,
-      name: definition.name
-    })
-
+    const sound = this.findMediaName(this.currentFilename, ctx.position)
+    if (!definition && !sound) return []
     const layerContents: LayerContent[] = []
-    if (this.isDefinitionCanBeRenamed(definition)) {
-      const [usage] = definition.usages
-      if (!usage) throw new Error('definition should have at least one usage!')
-      layerContents.push(this.createVariableRenameContent(usage, definition))
-    } else {
-      layerContents.push(...this.createDocContents(content, definition))
+    if (definition) {
+      const content = await this.docAbility.getNormalDoc({
+        pkgPath: definition.pkgPath,
+        name: definition.name
+      })
+
+      if (this.isDefinitionCanBeRenamed(definition)) {
+        const [usage] = definition.usages
+        if (!usage) throw new Error('definition should have at least one usage!')
+        layerContents.push(this.createVariableRenameContent(usage, definition))
+      } else {
+        layerContents.push(...this.createDocContents(content, definition))
+      }
+    }
+
+    if (sound) {
+      const [audioSrc] = useFileUrl(() => sound.file)
+      layerContents.push(await this.createAudioContent(await untilNotNull(audioSrc)))
     }
 
     return layerContents
@@ -73,6 +89,36 @@ export class HoverProvider {
         position.column <= endColumn
       )
     })
+  }
+
+  private findMediaName(filename: string, position: Position): Sound | undefined {
+    const hint = this.coordinatorState.inlayHints.find((inlayHint) => {
+      if (inlayHint.startPosition.filename !== filename) return false
+      const tokenLen = inlayHint.endPos - inlayHint.startPos
+      const line = inlayHint.startPosition.line
+      const startColumn = inlayHint.startPosition.column
+      const endColumn = startColumn + tokenLen
+      return (
+        position.lineNumber === line &&
+        position.column >= startColumn &&
+        position.column <= endColumn &&
+        inlayHint.name === 'mediaName'
+      )
+    })
+    if (!hint) return
+    return this.project.sounds.find((sound) => `"${sound.name}"` === hint.value)
+  }
+
+  private async createAudioContent(audioSrc: string): Promise<LayerContent> {
+    const { duration: _duration } = useAudioDuration(() => audioSrc)
+    const duration = await untilNotNull(_duration)
+    return {
+      type: 'audio',
+      layer: {
+        duration,
+        src: audioSrc
+      }
+    }
   }
 
   private createVariableRenameContent(usage: TokenUsage, definition: Definition): LayerContent {

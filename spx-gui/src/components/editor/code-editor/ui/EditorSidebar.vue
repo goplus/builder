@@ -61,6 +61,7 @@ function handleCategoryClick(index: number) {
 </script>
 
 <template>
+  <!-- eslint-disable vue/no-v-html -->
   <!--  this ul element area is sidebar tab nav  -->
   <ul
     class="categories-wrapper"
@@ -68,19 +69,23 @@ function handleCategoryClick(index: number) {
       'divide-line': collapsed
     }"
   >
-    <li
-      v-for="(category, i) in categories"
-      v-show="category.groups.length > 0"
-      :key="i"
-      class="category"
-      :class="{ active: i === activeCategoryIndex }"
-      :style="{ '--category-color': category.color }"
-      @click="handleCategoryClick(i)"
-    >
-      <!-- eslint-disable vue/no-v-html -->
-      <div class="icon" v-html="icon2SVG(category.icon)"></div>
-      <p class="label">{{ $t(category.label) }}</p>
-    </li>
+    <template v-if="categories.length">
+      <li
+        v-for="(category, i) in categories"
+        v-show="category.groups.length > 0"
+        :key="i"
+        class="category"
+        :class="{ active: i === activeCategoryIndex }"
+        :style="{ '--category-color': category.color }"
+        @click="handleCategoryClick(i)"
+      >
+        <div class="icon" v-html="icon2SVG(category.icon)"></div>
+        <p class="label">{{ $t(category.label) }}</p>
+      </li>
+    </template>
+    <template v-else>
+      <!-- todo: add skeleton icon animation -->
+    </template>
     <li class="categories-tools">
       <UITooltip>
         {{ collapsed ? $t({ zh: '展开', en: 'Collapse' }) : $t({ zh: '折叠', en: 'Expand' }) }}
@@ -150,7 +155,7 @@ function handleCategoryClick(index: number) {
 </template>
 <style lang="scss" scoped>
 .categories-wrapper {
-  flex: 0 0 auto;
+  flex: 0 0 60px;
   padding: 12px 4px;
   display: flex;
   flex-direction: column;

@@ -13,7 +13,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition, TokenDetail, TokenUsage as CompilerTokenUsage } from '../compiler'
+import type { Definition, Hint, TokenDetail } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -30,13 +30,8 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type {
-  TokenCategory,
-  TokenUsage,
-  UsageWithDoc
-} from '@/components/editor/code-editor/tokens/types'
+import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-import type { I18n } from '@/utils/i18n'
 
 type JumpPosition = {
   line: number
@@ -46,6 +41,7 @@ type JumpPosition = {
 
 export type CoordinatorState = {
   definitions: Definition[]
+  inlayHints: Hint[]
 }
 
 export class Coordinator {
@@ -56,7 +52,8 @@ export class Coordinator {
   compiler: Compiler
   public updateDefinition = debounce(this._updateDefinition, 300)
   private coordinatorState: CoordinatorState = {
-    definitions: []
+    definitions: [],
+    inlayHints: []
   }
   private readonly hoverProvider: HoverProvider
   private suggest: Suggest
@@ -250,7 +247,7 @@ export class Coordinator {
     )
 
     if (ctx.signal.aborted) return []
-
+    this.coordinatorState.inlayHints = inlayHints
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
       if (inlayHint.type === 'play') {

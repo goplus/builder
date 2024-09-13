@@ -5,6 +5,7 @@ import { editor as IEditor } from 'monaco-editor'
 import RenameComponent from '@/components/editor/code-editor/ui/features/hover-preview/RenameComponent.vue'
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { type Action, DocPreviewLevel, type RenamePreview } from '../../../EditorUI'
+import AudioPreview from '@/components/editor/code-editor/ui/features/hover-preview/AudioPreview.vue'
 
 const props = defineProps<{
   hoverPreview: HoverPreview
@@ -45,7 +46,9 @@ props.hoverPreview.onMousemove((e) => {
     (mouseLineNumber === hoverPreviewState.range.endLineNumber &&
       mouseColumn > hoverPreviewState.range.endColumn)
   ) {
-    return props.hoverPreview.hideDocument(true)
+    props.hoverPreview.hideDocument(true)
+    props.hoverPreview.hideAudioPlayer(true)
+    return
   }
 })
 
@@ -57,12 +60,27 @@ props.hoverPreview.onShowDocument((range) => {
   })
   if (!scrolledVisiblePosition) return
   props.hoverPreview.tryToPreventHideDocument()
-  hoverPreviewState.visible = true
+  hoverPreviewState.docs.visible = true
   hoverPreviewState.range = { ...range }
-  hoverPreviewState.position.top =
+  hoverPreviewState.docs.position.top =
     // here add `scrolledVisiblePosition.height` to make docPreview show under current code line
     containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
-  hoverPreviewState.position.left = containerRect.left + scrolledVisiblePosition.left
+  hoverPreviewState.docs.position.left = containerRect.left + scrolledVisiblePosition.left
+})
+props.hoverPreview.onAudioPlayer((range) => {
+  const containerRect = props.hoverPreview.editor.getContainerDomNode().getBoundingClientRect()
+  const scrolledVisiblePosition = props.hoverPreview.editor.getScrolledVisiblePosition({
+    lineNumber: range.endLineNumber,
+    column: range.startColumn
+  })
+  if (!scrolledVisiblePosition) return
+  props.hoverPreview.tryToPreventHideAudioPlayer()
+  hoverPreviewState.audio.visible = true
+  hoverPreviewState.range = { ...range }
+  hoverPreviewState.audio.position.top =
+    // here add `scrolledVisiblePosition.height` to make docPreview show under current code line
+    containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
+  hoverPreviewState.audio.position.left = containerRect.left + scrolledVisiblePosition.left
 })
 
 const cleanUp = () => {
@@ -73,7 +91,7 @@ const cleanUp = () => {
 }
 
 watch(
-  () => hoverPreviewState.visible,
+  () => hoverPreviewState.docs.visible,
   (visible) => {
     if (!visible) cleanUp()
   }
@@ -134,7 +152,7 @@ const hoverPreviewContainerElement = ref<HTMLElement>()
 const activeIdx = ref(0)
 
 const firstDocumentIndex = computed(() =>
-  hoverPreviewState.docs.findIndex((doc) => doc.level === DocPreviewLevel.Normal)
+  hoverPreviewState.docs.layer.findIndex((doc) => doc.level === DocPreviewLevel.Normal)
 )
 
 watch(activeIdx, () => {
@@ -143,7 +161,7 @@ watch(activeIdx, () => {
 
 function updateDocumentCardPosition() {
   const containerElement = hoverPreviewContainerElement.value
-  if (!containerElement || hoverPreviewState.docs.length <= 0) return
+  if (!containerElement || hoverPreviewState.docs.layer.length <= 0) return
   const documentElements = Array.from(containerElement.children).filter(
     (documentContainer) =>
       documentContainer.classList.contains('hover-document') &&
@@ -201,18 +219,18 @@ function updateDocumentCardPosition() {
     <div class="hover-preview-wrapper">
       <transition @after-enter="updateDocumentCardPosition">
         <article
-          v-show="hoverPreviewState.visible"
+          v-show="hoverPreviewState.docs.visible"
           ref="hoverPreviewContainerElement"
           class="hover-preview-container"
           :style="{
-            top: hoverPreviewState.position.top + 'px',
-            left: hoverPreviewState.position.left + 'px'
+            top: hoverPreviewState.docs.position.top + 'px',
+            left: hoverPreviewState.docs.position.left + 'px'
           }"
           @mouseleave="handleMouseLeave"
           @mouseenter="hoverPreview.tryToPreventHideDocument()"
         >
           <DocumentPreview
-            v-for="(doc, i) in hoverPreviewState.docs"
+            v-for="(doc, i) in hoverPreviewState.docs.layer"
             :key="i"
             :data-level="doc.level"
             class="hover-document"
@@ -238,6 +256,17 @@ function updateDocumentCardPosition() {
           </div>
         </article>
       </transition>
+      <transition>
+        <AudioPreview
+          v-if="hoverPreviewState.audio.visible && hoverPreviewState.audio.layer"
+          class="hover-audio"
+          :style="{
+            top: hoverPreviewState.audio.position.top + 'px',
+            left: hoverPreviewState.audio.position.left + 'px'
+          }"
+          :src="hoverPreviewState.audio.layer.src"
+        ></AudioPreview>
+      </transition>
     </div>
   </teleport>
 </template>
@@ -252,6 +281,22 @@ function updateDocumentCardPosition() {
 }
 
 .hover-preview-container {
+  position: absolute;
+  transform-origin: top left;
+
+  &.v-enter-active,
+  &.v-leave-active {
+    transition: 0.15s cubic-bezier(0, 1.25, 1, 1);
+  }
+
+  &.v-enter-from,
+  &.v-leave-to {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+}
+
+.hover-audio {
   position: absolute;
   transform-origin: top left;
 
