@@ -1,5 +1,20 @@
 <template>
   <div class="video-recorder">
+    <Transition name="slide-fade" mode="out-in" appear>
+      <NSpin v-if="generatingAnimation" size="large" class="recorder-content loading">
+        <template #description>
+          <span style="color: white">
+            {{
+              generatingAnimationMessage ||
+              $t({
+                en: 'Generating animation...',
+                zh: '正在生成动画...'
+              })
+            }}
+          </span>
+        </template>
+      </NSpin>
+    </Transition>
     <div v-if="requestingPermission" class="recorder-content request-permission">
       <p>
         {{
@@ -53,7 +68,7 @@
             </NIcon>
             {{ $t({ en: 'Return', zh: '返回' }) }}
           </UIButton>
-          <UIButton size="large" @click="generateAnimation">
+          <UIButton size="large" :disabled="generatingAnimation" @click="generateAnimation">
             <NIcon size="large">
               <RunCircleOutlined />
             </NIcon>
@@ -74,7 +89,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { UIButton } from '@/components/ui'
-import { NIcon } from 'naive-ui'
+import { NIcon, NSpin, useMessage } from 'naive-ui'
 import {
   ArrowBackOutlined,
   FileDownloadOutlined,
@@ -108,7 +123,6 @@ const recordedVideoRef = ref<HTMLVideoElement | null>(null)
 
 const generatingAnimation = ref(false)
 const generatingAnimationMessage = ref<string | null>(null)
-const failureMessage = ref<string | null>(null)
 
 const props = defineProps<{
   imageUrl: UniversalUrl
@@ -228,6 +242,7 @@ const handleRecorderStop = () => {
   }
 }
 
+const errorMessage = useMessage()
 
 const requestExtractMotion = async () => {
   generatingAnimationMessage.value = t({
@@ -239,13 +254,13 @@ const requestExtractMotion = async () => {
     return Promise.reject(new Error('No recorded video'))
   }
   const file = fromBlob('recorded-video.webm', recordedBlob)
-  const { fileCollection } = await saveFiles({'recorded-video.webm': file})
+  const { fileCollection } = await saveFiles({ 'recorded-video.webm': file })
   const videoKodoUrl = fileCollection['recorded-video.webm']
   const videoWebUrl = await getWebUrl(videoKodoUrl)
 
   const extractMotionTask = new ExtractMotionTask({
     videoUrl: videoWebUrl,
-    callbackUrl: '',
+    callbackUrl: ''
   })
 
   extractMotionTask.start()
@@ -260,8 +275,7 @@ const requestExtractMotion = async () => {
       if (!result) {
         generatingAnimation.value = false
         reject(new Error('Failed to extract motion'))
-      }
-      else {
+      } else {
         resolve(result)
       }
     })
@@ -277,7 +291,7 @@ const requestGenerateAnimation = async (motionUrl: string) => {
     motionUrl,
     imageUrl: await getWebUrl(props.imageUrl),
     callbackUrl: '',
-    genAnimation: true,
+    genAnimation: true
   })
   animTask.start()
   return new Promise<string>((resolve, reject) => {
@@ -290,8 +304,7 @@ const requestGenerateAnimation = async (motionUrl: string) => {
       if (!result) {
         generatingAnimation.value = false
         reject(new Error('Failed to generate animation'))
-      }
-      else {
+      } else {
         resolve(result.materialUrl)
       }
     })
@@ -300,20 +313,29 @@ const requestGenerateAnimation = async (motionUrl: string) => {
 
 const generateAnimation = async () => {
   generatingAnimation.value = true
-  failureMessage.value = null
 
-  const motionUrl = await requestExtractMotion()
-  if (!motionUrl) {
-    generatingAnimation.value = false
-    return
-  }
-  const materialUrl = await requestGenerateAnimation(motionUrl)
-  if (!materialUrl) {
-    generatingAnimation.value = false
-    return
-  }
+  try {
+    const motionUrl = await requestExtractMotion()
+    if (!motionUrl) {
+      generatingAnimation.value = false
+      return
+    }
+    const materialUrl = await requestGenerateAnimation(motionUrl)
+    if (!materialUrl) {
+      generatingAnimation.value = false
+      return
+    }
 
-  emit('resolve', materialUrl)
+    emit('resolve', materialUrl)
+  } catch (error: any) {
+    errorMessage.error(
+      t({
+        en: `Failed to generate animation: ${error.message}`,
+        zh: `生成动画失败：${error.message}`
+      })
+    )
+    generatingAnimation.value = false
+  }
 }
 
 const downloadRecordedVideo = () => {
@@ -383,5 +405,19 @@ onBeforeUnmount(() => {
 }
 button {
   margin: 5px;
+}
+
+.recorder-content.loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
 }
 </style>
