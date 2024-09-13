@@ -79,13 +79,13 @@ export type CodeSuggest = {
 }
 
 export async function startChat(params: AIStartChatParams) {
-  return (await client.post('/llm/chat', params, { timeout: 20000 })) as Promise<ChatResp>
+  return (await client.post('/llm/chat', params, { timeout: 40000 })) as Promise<ChatResp>
 }
 
 export async function nextChat(chatID: string, params: AIChatParams) {
   const encodedChatID = encodeURIComponent(chatID)
   return (await client.post(`/llm/chat/${encodedChatID}`, params, {
-    timeout: 20000
+    timeout: 40000
   })) as Promise<ChatResp>
 }
 
@@ -95,5 +95,5 @@ export async function deleteChat(chatID: string) {
 }
 
 export async function startTask(params: AITaskParams) {
-  return (await client.post('/llm/task', params, { timeout: 20000 })) as Promise<TaskResp>
+  return (await client.post('/llm/task', params, { timeout: 40000 })) as Promise<TaskResp>
 }

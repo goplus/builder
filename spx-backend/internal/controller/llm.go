@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	jsonrepair "github.com/RealAlexandreAI/json-repair"
 	"github.com/goplus/builder/spx-backend/internal/llm"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
@@ -82,7 +83,7 @@ const (
 	suggestTaskTemplate = "Generate the suggest of code to complete the code, those suggest will follow behind user's cursor, users code will be inside of the delimiter. Your task is only about generate code suggest to complete the code, you have to remember your task is generate code suggest. This is the user's cursor: line: %d, column: %d. "
 	userInputTemplate   = "Please answer me with this question. "
 	// template about response
-	responseTemplate             = "You have to use the following template to generate the response, do keep remember this template will be your response. Your response will be a json object with following keys: {resp_message, []resp_questions}. Here is the explain about the response json object: response_message is the response message for the user you have to reply as markdown. response_suggests is the suggest question for the user to continue chat, each of it will only be one sentence. And the next user input will be one of those questions. "
+	responseTemplate             = "You have to use the following template to generate the response, do keep remember this template will be your response. Your response will be a json object with following keys: {resp_message, []resp_questions}. Here is the explain about the response json object: response_message is the response message for the user you have to reply as markdown. response_suggests is the suggest question for the user to continue chat, you don't need to number the question's index, each question will only be one sentence for user to click. Which means the next input will be one of those questions. "
 	suggestTaskResponseTemplate  = "You have to use the following template to generate the response, do keep remember this template will be your response. Your response will be a json object with following keys: {suggestions: []{label, insert_text}}. The number of list length is %d. Here is the explain about the response json object: label will shows inside of user's complete menu to tell people some info about the insert code, label will be only one word in most of time. insert_text is the code you have to insert into the user's code after user's cursor. You don't need to explain the json object. JUST JSON"
 	generateMoreQuestionTemplate = "Generate %d more question for this current chat, this question will shows to the user, and the user will choose one of them to continue the chat, so the question you generate have to keep highly close to the previous chat. "
 	regenerateQuestionTemplate   = "Please regenerate %d more question for this current chat, this question will shows to the user, and the user will choose one of them to continue the chat, so the question you generate have to keep highly close to the previous chat. "
@@ -145,8 +146,12 @@ type ChatResponse struct {
 
 func newChatResp(resp llm.LlmResponseBody, chat chat) ChatResp {
 	responseContent := resp.Choices[0].Message.Content
+	repairJSON, err := jsonrepair.RepairJSON(responseContent)
+	if err != nil {
+		return ChatResp{}
+	}
 	var chatResp ChatResp
-	err := json.Unmarshal([]byte(responseContent), &chatResp)
+	err = json.Unmarshal([]byte(repairJSON), &chatResp)
 	if err != nil {
 		fmt.Println(err)
 		return ChatResp{}
@@ -168,8 +173,12 @@ type TaskResponse struct {
 
 func newSuggestTaskResp(resp llm.LlmResponseBody) TaskResp {
 	responseContent := resp.Choices[0].Message.Content
+	repairJSON, err := jsonrepair.RepairJSON(responseContent)
+	if err != nil {
+		return TaskResp{}
+	}
 	var suggestTaskResp TaskResp
-	err := json.Unmarshal([]byte(responseContent), &suggestTaskResp)
+	err = json.Unmarshal([]byte(repairJSON), &suggestTaskResp)
 	if err != nil {
 		return TaskResp{}
 	}
