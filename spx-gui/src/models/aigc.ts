@@ -166,7 +166,7 @@ export class AIGCTask<T extends WithStatus = TaggedAIAssetData> extends EventTar
   }
 
   addEventListener(
-    type: string,
+    type: 'AIGCStatusChange' | 'AIGCFinished' | 'AIGCFailed',
     callback: EventListenerOrEventListenerObject | null,
     options?: AddEventListenerOptions | boolean
   ): void {
