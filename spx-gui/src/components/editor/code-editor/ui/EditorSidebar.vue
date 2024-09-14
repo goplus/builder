@@ -59,10 +59,10 @@ function handleCategoryClick(index: number) {
   props.ui.documentDetailState.visible = false
   activeCategoryIndex.value = index
 
-  if (categoryTitleRefs.value[index] && sidebarContainerRef.value) {
-    const el = categoryTitleRefs.value[index]
+  if (categoryTitleElements.value[index] && sidebarContainerElement.value) {
+    const el = categoryTitleElements.value[index]
     const top = el.offsetTop
-    sidebarContainerRef.value.scrollTo({
+    sidebarContainerElement.value.scrollTo({
       top: top,
       behavior: 'smooth'
     })
@@ -70,25 +70,25 @@ function handleCategoryClick(index: number) {
   }
 }
 
-const categoryTitleRefs = ref<HTMLElement[]>([])
-const sidebarContainerRef = ref<HTMLElement | null>(null)
+const categoryTitleElements = ref<HTMLElement[]>([])
+const sidebarContainerElement = ref<HTMLElement | null>(null)
 
 function setCategoryTitleRef(el: HTMLElement | null, index: number) {
-  if (el) categoryTitleRefs.value[index] = el
+  if (el) categoryTitleElements.value[index] = el
 }
 
 onBeforeUpdate(() => {
-  categoryTitleRefs.value = []
+  categoryTitleElements.value = []
 })
 
 function handleScroll() {
-  if (!(sidebarContainerRef.value && categoryTitleRefs.value.length)) return
+  if (!(sidebarContainerElement.value && categoryTitleElements.value.length)) return
   cancelCategoryClickScrollingState()
-  const scrollTop = sidebarContainerRef.value.scrollTop
-  const containerHeight = sidebarContainerRef.value.clientHeight
+  const scrollTop = sidebarContainerElement.value.scrollTop
+  const containerHeight = sidebarContainerElement.value.clientHeight
   let activeIndex = 0
-  for (let i = 0; i < categoryTitleRefs.value.length; i++) {
-    const el: HTMLElement | null = categoryTitleRefs.value[i]
+  for (let i = 0; i < categoryTitleElements.value.length; i++) {
+    const el: HTMLElement | null = categoryTitleElements.value[i]
     if (!el) continue
     const offsetTop = el.offsetTop
     if (scrollTop >= offsetTop - containerHeight / 2) {
@@ -102,11 +102,11 @@ function handleScroll() {
 }
 
 onMounted(() => {
-  sidebarContainerRef.value?.addEventListener('scroll', handleScroll)
+  sidebarContainerElement.value?.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
-  sidebarContainerRef.value?.removeEventListener('scroll', handleScroll)
+  sidebarContainerElement.value?.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -155,7 +155,7 @@ onUnmounted(() => {
   </ul>
   <!--  this area this used for sidebar main content display like: code shortcut input, document detail view, etc.  -->
   <div
-    ref="sidebarContainerRef"
+    ref="sidebarContainerElement"
     :style="{
       width: collapsed ? '0' : undefined
     }"
