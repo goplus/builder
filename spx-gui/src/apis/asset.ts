@@ -42,7 +42,9 @@ export type AssetData<T extends AssetType = AssetType> = {
 export type AddAssetParams = Pick<
   AssetData,
   'displayName' | 'category' | 'assetType' | 'files' | 'filesHash' | 'preview' | 'isPublic'
->
+> & {
+  prompt?: string
+}
 
 export function addAsset(params: AddAssetParams) {
   return client.post('/asset', params) as Promise<AssetData>
