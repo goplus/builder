@@ -1,5 +1,13 @@
 <template>
-  <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" />
+  <div class="iframe-container">
+    <IframeDisplay
+      v-if="zipData"
+      :zip-data="zipData"
+      @console="handleConsole"
+      @loaded="loading = false"
+    />
+    <UILoading :visible="loading" cover />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -7,10 +15,12 @@ import { onUnmounted, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import { Project } from '@/models/project'
 import IframeDisplay from './IframeDisplay.vue'
+import { UILoading } from '@/components/ui'
 
 const props = defineProps<{ project: Project }>()
 
 const zipData = ref<ArrayBuffer | null>(null)
+const loading = ref(true)
 
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
@@ -33,6 +43,7 @@ onUnmounted(() => {
 
 defineExpose({
   run: async () => {
+    loading.value = true
     registered.onStart()
     const gbpFile = await props.project.exportGbpFile()
     zipData.value = await gbpFile.arrayBuffer()
@@ -43,3 +54,11 @@ defineExpose({
   }
 })
 </script>
+<style scoped lang="scss">
+.iframe-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>

@@ -1,5 +1,10 @@
 <template>
-  <UIModal :visible="visible" auto-focus mask-closable @update:visible="handleUpdateShow">
+  <UIModal
+    :visible="visible"
+    :auto-focus="autoFocus"
+    mask-closable
+    @update:visible="handleUpdateShow"
+  >
     <div class="container">
       <div class="header">
         <div :class="['title', { center: centerTitle }]">
@@ -22,14 +27,21 @@ import { UIDivider } from '@/components/ui'
 import UIModal from './UIModal.vue'
 import UIModalClose from './UIModalClose.vue'
 
-defineProps<{
-  title: string
-  visible?: boolean
-  centerTitle?: boolean
-  // maybe it is better to let caller specify the body class instead of body style,
-  // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
-  bodyStyle?: CSSProperties
-}>()
+withDefaults(
+  defineProps<{
+    title: string
+    visible?: boolean
+    autoFocus?: boolean
+    centerTitle?: boolean
+    // maybe it is better to let caller specify the body class instead of body style,
+    // but it is now not possible with scoped style & naive-ui `Modal`, which is similar to the issue we encountered in `UIDropdown.vue`
+    bodyStyle?: CSSProperties
+  }>(),
+  {
+    autoFocus: true,
+    bodyStyle: () => ({})
+  }
+)
 
 const emit = defineEmits<{
   'update:visible': [visible: boolean]
@@ -70,7 +82,7 @@ const handleCloseButton = () => {
 }
 
 .body {
-  padding: 20px 24px;
+  padding: 20px 24px 24px;
 }
 
 .close {

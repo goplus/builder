@@ -418,84 +418,70 @@ export class Project extends Disposable {
   autoSaveMode = AutoSaveMode.Off
   setAutoSaveMode(autoSaveMode: AutoSaveMode) {
     this.autoSaveMode = autoSaveMode
+    switch (autoSaveMode) {
+      case AutoSaveMode.Cloud:
+        if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
+        break
+      case AutoSaveMode.LocalCache:
+        this.autoSaveToLocalCache?.()
+        break
+    }
   }
+
+  /** watch for changes of game files, update filesHash, and auto save to cloud if hasUnsyncedChanges */
   autoSaveToCloudState = AutoSaveToCloudState.Saved
-
-  /** Initialize editing features */
-  async startEditing(localCacheKey: string) {
-    if (this.lastSyncedFilesHash == null) {
-      this.lastSyncedFilesHash = await hashFiles(this.exportGameFiles())
-    }
-    if (this.filesHash == null) {
-      this.filesHash = this.lastSyncedFilesHash
-    }
-
-    // watch for changes of game files, update filesHash, and auto save to cloud if hasUnsyncedChanges
-    const autoSaveToCloud = (() => {
-      const save = debounce(async () => {
-        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Pending) return
-        this.autoSaveToCloudState = AutoSaveToCloudState.Saving
-
-        try {
-          if (this.isSavingToCloud) {
-            await untilConditionMet(
-              () => this.isSavingToCloud,
-              () => !this.isSavingToCloud
-            )
-          }
-
-          if (this.hasUnsyncedChanges) await this.saveToCloud()
-          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-        } catch (e) {
-          this.autoSaveToCloudState = AutoSaveToCloudState.Failed
-          if (e instanceof Cancelled) {
-            autoSaveToCloud()
-            save.flush()
-          } else {
-            retryAutoSave()
-            await this.saveToLocalCache(localCacheKey) // prevent data loss
-            console.error('failed to auto save to cloud', e)
-          }
-          return
-        }
-
-        if (this.hasUnsyncedChanges) autoSaveToCloud()
-        else await localHelper.clear(localCacheKey)
-      }, 1500)
-      this.addDisposer(save.cancel)
-
-      const retryAutoSave = debounce(async () => {
-        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
-        if (this.hasUnsyncedChanges) {
-          autoSaveToCloud()
-        } else {
-          this.autoSaveToCloudState = AutoSaveToCloudState.Saved
-          await localHelper.clear(localCacheKey)
-        }
-      }, 5000)
-      this.addDisposer(retryAutoSave.cancel)
-
-      // fire pending or retryable auto saves immediately when a new save occurs, making autoSaveToCloudState more responsive
-      this.addDisposer(
-        watch(
-          () => this.isSavingToCloud,
-          async () => {
-            if (this.isSavingToCloud) {
-              await retryAutoSave.flush()
-              save.flush()
-            }
-          },
-          { immediate: true }
-        )
-      )
-
-      return () => {
-        retryAutoSave.cancel()
-        if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
-          this.autoSaveToCloudState = AutoSaveToCloudState.Pending
-        if (this.autoSaveMode === AutoSaveMode.Cloud) save()
+  private autoSaveToCloud: (() => void) | null = null
+  private startAutoSaveToCloud(localCacheKey: string) {
+    const retryAutoSaveToCloud = debounce(async () => {
+      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Failed) return
+      if (this.hasUnsyncedChanges) {
+        this.autoSaveToCloud?.()
+      } else {
+        this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+        await localHelper.clear(localCacheKey)
       }
-    })()
+    }, 5000)
+    this.addDisposer(retryAutoSaveToCloud.cancel)
+
+    const saveToCloud = debounce(async () => {
+      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Pending) return
+      this.autoSaveToCloudState = AutoSaveToCloudState.Saving
+
+      try {
+        if (this.isSavingToCloud) {
+          await untilConditionMet(
+            () => this.isSavingToCloud,
+            () => !this.isSavingToCloud
+          )
+        }
+
+        if (this.hasUnsyncedChanges) await this.saveToCloud()
+        this.autoSaveToCloudState = AutoSaveToCloudState.Saved
+      } catch (e) {
+        this.autoSaveToCloudState = AutoSaveToCloudState.Failed
+        if (e instanceof Cancelled) {
+          this.autoSaveToCloud?.()
+          saveToCloud.flush()
+        } else {
+          retryAutoSaveToCloud()
+          await this.saveToLocalCache(localCacheKey) // prevent data loss
+          console.error('failed to auto save to cloud', e)
+        }
+        return
+      }
+
+      if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
+      else await localHelper.clear(localCacheKey)
+    }, 1500)
+    this.addDisposer(saveToCloud.cancel)
+
+    this.autoSaveToCloud = () => {
+      retryAutoSaveToCloud.cancel()
+      if (this.autoSaveToCloudState !== AutoSaveToCloudState.Saving)
+        this.autoSaveToCloudState = AutoSaveToCloudState.Pending
+      if (this.autoSaveMode === AutoSaveMode.Cloud) saveToCloud()
+    }
+
     this.addDisposer(
       watch(
         () => this.exportGameFiles(),
@@ -505,52 +491,63 @@ export class Project extends Disposable {
           const filesHash = await hashFiles(files)
           if (cancelled) return // avoid race condition and ensure filesHash accuracy
           this.filesHash = filesHash
-          if (this.hasUnsyncedChanges) autoSaveToCloud()
+          if (this.hasUnsyncedChanges) this.autoSaveToCloud?.()
         },
         { immediate: true }
       )
     )
 
-    // watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory
-    const autoSaveToLocalCache = (() => {
-      const save = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
-      this.addDisposer(save.cancel)
-
-      const delazyLoadGameFiles = debounce(() => {
-        const files = this.exportGameFiles()
-        const fileList = Object.keys(files)
-        fileList.map((path) => files[path]!.arrayBuffer())
-      }, 1000)
-      this.addDisposer(delazyLoadGameFiles.cancel)
-
-      return () => {
-        if (this.autoSaveMode === AutoSaveMode.LocalCache) save()
-        else delazyLoadGameFiles()
-      }
-    })()
-    this.addDisposer(
-      watch(() => [this.exportMetadata(), this.exportGameFiles()], autoSaveToLocalCache, {
-        immediate: true
-      })
-    )
-
-    // watch for autoSaveMode switch, and trigger auto save accordingly
+    // fire pending or retryable auto saves immediately when a new save occurs, making autoSaveToCloudState more responsive
     this.addDisposer(
       watch(
-        () => this.autoSaveMode,
-        () => {
-          switch (this.autoSaveMode) {
-            case AutoSaveMode.Cloud:
-              if (this.hasUnsyncedChanges) autoSaveToCloud()
-              break
-            case AutoSaveMode.LocalCache:
-              autoSaveToLocalCache()
-              break
+        () => this.isSavingToCloud,
+        async () => {
+          if (this.isSavingToCloud) {
+            await retryAutoSaveToCloud.flush()
+            saveToCloud.flush()
           }
         },
         { immediate: true }
       )
     )
+  }
+
+  /** watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory */
+  private autoSaveToLocalCache: (() => void) | null = null
+  private startAutoSaveToLocalCache(localCacheKey: string) {
+    const saveToLocalCache = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
+    this.addDisposer(saveToLocalCache.cancel)
+
+    const touchGameFiles = debounce(() => {
+      const files = this.exportGameFiles()
+      Object.keys(files).map((path) => files[path]!.arrayBuffer())
+    }, 1000)
+    this.addDisposer(touchGameFiles.cancel)
+
+    this.autoSaveToLocalCache = () => {
+      if (this.autoSaveMode === AutoSaveMode.LocalCache) saveToLocalCache()
+      else touchGameFiles()
+    }
+
+    this.addDisposer(
+      watch(
+        () => [this.exportMetadata(), this.exportGameFiles()],
+        () => this.autoSaveToLocalCache?.(),
+        {
+          immediate: true
+        }
+      )
+    )
+  }
+
+  /** Initialize editing features */
+  async startEditing(localCacheKey: string) {
+    this.filesHash = await hashFiles(this.exportGameFiles())
+    if (this.lastSyncedFilesHash == null) {
+      this.lastSyncedFilesHash = this.filesHash
+    }
+    this.startAutoSaveToCloud(localCacheKey)
+    this.startAutoSaveToLocalCache(localCacheKey)
   }
 }
 

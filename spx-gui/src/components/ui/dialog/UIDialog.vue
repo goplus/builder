@@ -56,7 +56,7 @@ const iconMap = {
 }
 
 .container {
-  padding: 20px 24px;
+  padding: 20px 24px 24px;
   display: flex;
   gap: 12px;
 }

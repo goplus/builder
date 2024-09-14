@@ -61,7 +61,7 @@ import { onMounted, ref, type CSSProperties, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import ProjectRunner from './ProjectRunner.vue'
-import { useSaveAndShareProject, useShareProject } from '@/components/project'
+import { useShareProject, useCreateProjectSharingLink } from '@/components/project'
 import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
@@ -122,14 +122,14 @@ const handleRerun = () => {
   consoleMessages.value = []
 }
 
-const saveAndShareProject = useSaveAndShareProject()
 const shareProject = useShareProject()
+const createProjectSharingLink = useCreateProjectSharingLink()
 const handleShare = useMessageHandle(
   () => {
     if (props.mode === 'debug') {
-      return saveAndShareProject(props.project)
-    } else {
       return shareProject(props.project)
+    } else {
+      return createProjectSharingLink(props.project)
     }
   },
   { en: 'Failed to share project', zh: '分享项目失败' }

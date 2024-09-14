@@ -181,7 +181,7 @@ describe('Project', () => {
     await vi.advanceTimersByTimeAsync(500)
 
     const secondSavePromise = project.saveToCloud()
-    vi.runAllTimersAsync()
+    vi.runOnlyPendingTimersAsync()
 
     await expect(firstSavePromise).rejects.toThrow(Cancelled)
     await expect(secondSavePromise).resolves.not.toThrow()
@@ -207,40 +207,37 @@ describe('Project', () => {
   })
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
-  it('should handle failed auto-save correctly', async () => {
-    const project = makeProject()
-
+  it('should handle failed auto-save-to-cloud correctly', async () => {
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockRejectedValue(new Error('save failed'))
     const localSaveMock = vi.spyOn(localHelper, 'save').mockResolvedValue(undefined)
     const localClearMock = vi.spyOn(localHelper, 'clear').mockResolvedValue(undefined)
 
-    await project.startEditing('localCacheKey')
-    project.setAutoSaveMode(AutoSaveMode.Cloud)
+    const project = makeProject()
 
-    const newSprite = new Sprite('newSprite')
-    project.addSprite(newSprite)
-    await flushPromises()
-    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
-    await flushPromises()
+    project.setAutoSaveMode(AutoSaveMode.Cloud)
+    project['startAutoSaveToCloud']('localCacheKey')
+    await flushPromises() // flush immediate watchers
+    const autoSaveToCloud = project['autoSaveToCloud']
+    expect(autoSaveToCloud).toBeTruthy()
+
+    project['filesHash'] = 'newHash'
+    project['lastSyncedFilesHash'] = 'hash'
+    expect(project.hasUnsyncedChanges).toBe(true)
+
+    autoSaveToCloud?.()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Pending)
     expect(project.hasUnsyncedChanges).toBe(true)
 
-    await vi.advanceTimersByTimeAsync(1500) // wait for auto-save to trigger
-    await flushPromises()
+    await vi.runOnlyPendingTimersAsync()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Failed)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
     expect(localSaveMock).toHaveBeenCalledTimes(1)
 
-    project.removeSprite(newSprite.id)
-    await flushPromises()
-    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
-    await flushPromises()
-    expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Failed)
+    project['lastSyncedFilesHash'] = project['filesHash']
     expect(project.hasUnsyncedChanges).toBe(false)
 
-    await vi.advanceTimersByTimeAsync(5000) // wait for auto-retry to trigger
-    await flushPromises()
+    await vi.runOnlyPendingTimersAsync()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Saved)
     expect(project.hasUnsyncedChanges).toBe(false)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
@@ -249,50 +246,46 @@ describe('Project', () => {
   })
 
   it('should cancel pending auto-save-to-cloud when project is disposed', async () => {
-    const project = makeProject()
-
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockRejectedValue(undefined)
 
-    await project.startEditing('localCacheKey')
-    project.setAutoSaveMode(AutoSaveMode.Cloud)
+    const project = makeProject()
 
-    const newSprite = new Sprite('newSprite')
-    project.addSprite(newSprite)
-    await flushPromises()
-    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
-    await flushPromises()
+    project.setAutoSaveMode(AutoSaveMode.Cloud)
+    project['startAutoSaveToCloud']('localCacheKey')
+    await flushPromises() // flush immediate watchers
+    const autoSaveToCloud = project['autoSaveToCloud']
+    expect(autoSaveToCloud).toBeTruthy()
+
+    project['filesHash'] = 'newHash'
+    project['lastSyncedFilesHash'] = 'hash'
+    expect(project.hasUnsyncedChanges).toBe(true)
+
+    autoSaveToCloud?.()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Pending)
     expect(project.hasUnsyncedChanges).toBe(true)
 
     project.dispose()
-
-    await vi.advanceTimersByTimeAsync(1500 * 2) // wait longer to ensure auto-save does not trigger
-    await flushPromises()
+    await vi.runOnlyPendingTimersAsync()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Pending)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(0)
   })
 
   it('should cancel pending auto-save-to-local-cache when project is disposed', async () => {
-    const project = makeProject()
-
     const localSaveMock = vi.spyOn(localHelper, 'save').mockResolvedValue(undefined)
 
-    await project.startEditing('localCacheKey')
-    project.setAutoSaveMode(AutoSaveMode.LocalCache)
+    const project = makeProject()
 
-    const newSprite = new Sprite('newSprite')
-    project.addSprite(newSprite)
-    await flushPromises()
-    await vi.advanceTimersByTimeAsync(1000) // wait for changes to be picked up
-    await flushPromises()
-    expect(project.hasUnsyncedChanges).toBe(true)
+    project.setAutoSaveMode(AutoSaveMode.LocalCache)
+    project['startAutoSaveToLocalCache']('localCacheKey')
+    await flushPromises() // flush immediate watchers
+    const autoSaveToLocalCache = project['autoSaveToLocalCache']
+    expect(autoSaveToLocalCache).toBeTruthy()
+
+    autoSaveToLocalCache?.()
 
     project.dispose()
-
-    await vi.advanceTimersByTimeAsync(1000 * 2) // wait longer to ensure auto-save does not trigger
-    await flushPromises()
-    expect(project.hasUnsyncedChanges).toBe(true)
+    await vi.runOnlyPendingTimersAsync()
     expect(localSaveMock).toHaveBeenCalledTimes(0)
   })
 })
