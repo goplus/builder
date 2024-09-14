@@ -314,10 +314,7 @@ func handleStruct(T types.Type, name string, items *completionList) {
 		if stru.Field(i).Embedded() {
 			handleStruct(stru.Field(i).Type(), name, items)
 		}
-		if stru.Field(i).Exported() {
-			addCompletionItem(stru.Field(i), name, items)
-		}
-		if stru.Field(i).Pkg().Path() == PKG {
+		if stru.Field(i).Exported() || stru.Field(i).Pkg().Path() == PKG {
 			addCompletionItem(stru.Field(i), stru.Field(i).Name(), items)
 		}
 	}
