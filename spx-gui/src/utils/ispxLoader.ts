@@ -8,7 +8,10 @@ import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
 
 interface IframeWindow extends Window {
-  goEditorParseSpriteAnimator: (resource: Uint8Array | ArrayBuffer, sprite: string) => string
+  goEditorParseSpriteAnimator: (
+    resource: Uint8Array | ArrayBuffer,
+    sprite: string
+  ) => AnimatorExportData
   goEditorParseSpriteAnimation: (
     resource: Uint8Array | ArrayBuffer,
     sprite: string,
@@ -49,7 +52,6 @@ function initIspxWasm(): Promise<IframeWindow> {
   })
 }
 
-
 let ispxWasmInitPromise: Promise<IframeWindow> | undefined
 
 /**
@@ -84,7 +86,7 @@ export interface AnimationExportData {
 }
 
 export interface AnimationExportFrame {
-	RederOrder: number[]
+  RederOrder: number[]
   Meshes: AnimationExportMesh[]
 }
 
@@ -109,21 +111,20 @@ export interface Point3D extends Point2D {
 
 /**
  * Get animator data from a sprite file.
- * 
+ *
  * This function calls the Editor_ParseSpriteAnimator function from the ispx wasm module.
  * Currently, it returns the clips names and the avatar image.
- * 
+ *
  * @param resource The sprite data in zip format. Filepaths are relative to the assets folder
  *                  (e.g. 'assets/sprites/sprite.zip' => 'sprites/sprite.zip')
- * @param sprite 
- * @returns 
+ * @param sprite
+ * @returns
  */
 export async function goEditorParseSpriteAnimator(
   resource: Uint8Array,
   sprite: string
 ): Promise<AnimatorExportData> {
-  const json = await callGoWasmFunc('goEditorParseSpriteAnimator', resource, sprite)
-  const result: AnimatorExportData = JSON.parse(json)
+  const result = await callGoWasmFunc('goEditorParseSpriteAnimator', resource, sprite)
   return result
 }
 
@@ -149,14 +150,14 @@ export async function goEditorParseSpriteAnimation(
   if (type === 'vertex') {
     const frame0 = result.Frames[0]
     for (let i = 0; i < result.Frames.length; i++) {
-      const frame = result.Frames[i];
+      const frame = result.Frames[i]
       for (let j = 0; j < frame.RederOrder.length; j++) {
         const i = frame.RederOrder[j]
         const mesh = frame.Meshes[i]
         mesh.Indices = frame0.Meshes[i].Indices
         mesh.Uvs = frame0.Meshes[0].Uvs
         mesh.Vertices = frame.Meshes[0].Vertices
-      } 
+      }
     }
   }
 
