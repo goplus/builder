@@ -150,9 +150,7 @@ func GetCompletions(fileName string, fileMap map[string]string, line, column int
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}
-	items := goKeywords
-	items = append(items, list...)
-	return items, nil
+	return list, nil
 }
 
 func GetTokenDetail(token, pkgPath string) (interface{}, error) {
