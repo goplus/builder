@@ -1110,7 +1110,7 @@ export function defineConst(name: string, module: string): Token {
       {
         id: '0',
         effect: 'All',
-        declaration: 'const',
+        declaration: 'const ' + name,
         sample: '',
         insertText: name
       }

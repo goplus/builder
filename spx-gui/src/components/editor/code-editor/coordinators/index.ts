@@ -13,7 +13,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition, TokenDetail, TokenUsage as CompilerTokenUsage } from '../compiler'
+import type { Definition, TokenDetail } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -30,13 +30,8 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type {
-  TokenCategory,
-  TokenUsage,
-  UsageWithDoc
-} from '@/components/editor/code-editor/tokens/types'
+import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-import type { I18n } from '@/utils/i18n'
 
 type JumpPosition = {
   line: number
@@ -389,7 +384,8 @@ export class Coordinator {
         color,
         this.ui,
         this.docAbility,
-        tokenDetailsMap
+        tokenDetailsMap,
+        !this.project.selectedSprite
       )
     }
 
@@ -412,14 +408,14 @@ async function toolCategory2InputItemCategory(
   color: string,
   ui: EditorUI,
   docAbility: DocAbility,
-  tokenDetailsMap: Record<string, TokenDetail>
+  tokenDetailsMap: Record<string, TokenDetail>,
+  isInStageCode: boolean
 ): Promise<InputItemCategory> {
   const inputItemGroups: InputItemGroup[] = []
   const transferUsageParam = (params: Array<{ name: string; type: string }>) =>
     params.map((param) => param.name + ' ' + param.type.split('.').pop()).join(', ')
   for (const group of category.groups) {
     const inputItems: InputItem[] = []
-
     for (const token of group.tokens) {
       const tokenWithDoc = await docAbility.getNormalDoc(token.id)
       const key = `${token.id.pkgPath}/${token.id.name}`
@@ -454,59 +450,68 @@ async function toolCategory2InputItemCategory(
           finalUsages.push(usage)
         }
       })
-      finalUsages.forEach((usage) => {
-        inputItems.push({
-          icon: usageType2Icon(usage.effect),
-          label: token.id.name,
-          sample: usage.sample,
-          insertText: usage.insertText,
-          desc: {
-            type: 'doc',
-            layer: {
-              level: DocPreviewLevel.Normal,
-              content: usage.doc,
-              header: {
-                icon: usageType2Icon(usage.effect),
-                declaration: usage.declaration
-              },
-              recommendAction: {
-                label: ui.i18n.t({
-                  zh: '还有疑惑？场外求助',
-                  en: 'Still in confusion? Ask for help'
-                }),
-                activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-                onActiveLabelClick: () => {
-                  // TODO: add some logic code here
-                }
-              },
-              moreActions: [
-                {
-                  icon: Icon.Document,
-                  label: ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-                  onClick: () => {
-                    const usageId = usage.id
-                    docAbility.getDetailDoc(token.id).then((detailDoc) => {
-                      const usageDetailDoc = detailDoc.usages.find(
-                        (usage: UsageWithDoc) => usage.id === usageId
-                      )?.doc
-                      if (!usageDetailDoc)
-                        return console.warn(
-                          'usageDetailDoc not found. tokenId: ' +
-                            JSON.stringify(token.id) +
-                            ' usageId: ' +
-                            usageId
-                        )
-                      ui.invokeDocumentDetail(usageDetailDoc)
-                    })
-                  }
-                }
-              ]
-            }
-          }
+      finalUsages
+        // this filter is used find usage to match current Sprite Code or Stage Code
+        .filter((usage) => {
+          if (!isInStageCode) return true
+          // some effect may empty but pre-defined in tokens like if, function, const, etc.
+          if (!usage.effect && token.id.pkgPath === 'gop') return true
+          return ['All'].includes(usage.effect)
         })
-      })
+        .forEach((usage) => {
+          inputItems.push({
+            icon: usageType2Icon(usage.effect),
+            label: token.id.name,
+            sample: usage.sample,
+            insertText: usage.insertText,
+            desc: {
+              type: 'doc',
+              layer: {
+                level: DocPreviewLevel.Normal,
+                content: usage.doc,
+                header: {
+                  icon: usageType2Icon(usage.effect),
+                  declaration: usage.declaration
+                },
+                recommendAction: {
+                  label: ui.i18n.t({
+                    zh: '还有疑惑？场外求助',
+                    en: 'Still in confusion? Ask for help'
+                  }),
+                  activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+                  onActiveLabelClick: () => {
+                    // TODO: add some logic code here
+                  }
+                },
+                moreActions: [
+                  {
+                    icon: Icon.Document,
+                    label: ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+                    onClick: () => {
+                      const usageId = usage.id
+                      docAbility.getDetailDoc(token.id).then((detailDoc) => {
+                        const usageDetailDoc = detailDoc.usages.find(
+                          (usage: UsageWithDoc) => usage.id === usageId
+                        )?.doc
+                        if (!usageDetailDoc)
+                          return console.warn(
+                            'usageDetailDoc not found. tokenId: ' +
+                              JSON.stringify(token.id) +
+                              ' usageId: ' +
+                              usageId
+                          )
+                        ui.invokeDocumentDetail(usageDetailDoc)
+                      })
+                    }
+                  }
+                ]
+              }
+            }
+          })
+        })
     }
 
+    if (!inputItems.length) continue
     inputItemGroups.push({
       label: group.label,
       inputItems: inputItems
