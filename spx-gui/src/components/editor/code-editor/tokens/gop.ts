@@ -12,21 +12,24 @@ export const forLoop: Token = {
   usages: [
     {
       id: '0',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'Loop with condition',
       sample: 'for condition {}',
       insertText: 'for ${1:condition} {\n\t${2:}\n}'
     },
     {
       id: '1',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'Loop with range',
       sample: 'for i <- start:end {}',
       insertText: 'for ${1:i} <- ${2:start}:${3:end} {\n\t${4:}\n}'
     },
     {
       id: '2',
-      effect: '',
+      effect: 'code',
+      target: '',
       declaration: 'Iterate within given set',
       sample: 'for i, v := range set {}',
       insertText: 'for ${1:i}, ${2:v} := range ${3:set} {\n\t${4:}\n}'
@@ -42,14 +45,16 @@ export const ifStatement: Token = {
   usages: [
     {
       id: '0',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'If statement',
       sample: 'if condition {}',
       insertText: 'if ${1:condition} {\n\t${2:}\n}'
     },
     {
       id: '1',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'If-else statement',
       sample: 'if condition {} else {}',
       insertText: 'if ${1:condition} {\n\t${2:}\n} else {\n\t${3:}\n}'
@@ -65,7 +70,8 @@ export const varDefinition: Token = {
   usages: [
     {
       id: '0',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'Variable definition',
       sample: 'var count int',
       insertText: 'var ${1:name} ${2:type}'
@@ -81,7 +87,8 @@ export const functionDefinition: Token = {
   usages: [
     {
       id: '0',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'Function definition',
       sample: 'func add(a int, b int) int {}',
       insertText: 'func ${1:name}(${2:params}) ${3:returnType} {\n\t${4}\n}'
@@ -97,7 +104,8 @@ export const println: Token = {
   usages: [
     {
       id: '0',
-      effect: '',
+      effect: 'code',
+      target: 'All',
       declaration: 'println',
       sample: 'println "Hello, world!"',
       insertText: 'println ${1}'

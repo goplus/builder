@@ -241,7 +241,7 @@ onUnmounted(() => {
   &.active {
     color: var(--ui-color-grey-100);
     background-color: var(--category-color);
-    cursor: default;
+    cursor: pointer;
   }
 
   .icon {

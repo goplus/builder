@@ -12,6 +12,7 @@ export type UsageId = string
 
 export type TokenUsage = {
   id: UsageId
+  target: string
   effect: string
   declaration: string
   sample: string

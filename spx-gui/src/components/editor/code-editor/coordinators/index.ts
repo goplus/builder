@@ -154,7 +154,7 @@ export class Coordinator {
         addItems(
           completionItems.map((completionItem) => {
             return {
-              icon: usageType2Icon(completionItem.type),
+              icon: usageEffect2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
@@ -412,55 +412,49 @@ async function toolCategory2InputItemCategory(
   isInStageCode: boolean
 ): Promise<InputItemCategory> {
   const inputItemGroups: InputItemGroup[] = []
-  const transferUsageParam = (params: Array<{ name: string; type: string }>) =>
-    params.map((param) => param.name + ' ' + param.type.split('.').pop()).join(', ')
+  const transferUsageDeclaration = (declaration: string) =>
+    declaration
+      // if parma type is func() (func(mi *github.com/goplus/spx.MovingInfo))
+      // this line remove: "*"
+      .replace(/\*/g, '')
+      // this line remove: "github.com/goplus/spx."
+      .replace(/(?:[\w/]+\.)+/g, '')
   for (const group of category.groups) {
     const inputItems: InputItem[] = []
     for (const token of group.tokens) {
       const tokenWithDoc = await docAbility.getNormalDoc(token.id)
       const key = `${token.id.pkgPath}/${token.id.name}`
       const tokenDetail: TokenDetail | undefined = tokenDetailsMap[key]
+
       const tokenUsages = tokenDetail?.usages || []
       const docUsages: Array<UsageWithDoc> = tokenWithDoc.usages
-      const tokenUsageIdxMap = new Map<string, number>()
-      const finalUsages: Array<UsageWithDoc> = tokenUsages.map((usage, i) => {
-        tokenUsageIdxMap.set(usage.usageID, i)
-        return {
-          ...usage,
-          id: usage.usageID,
-          effect: tokenDetail.structName,
-          doc: '',
-          declaration:
-            usage.type === 'func'
-              ? `${token.id.name} (${transferUsageParam(usage.params)})`
-              : usage.declaration
-        }
+
+      const docUsageIdxMap = new Map<string, number>()
+
+      // current logic is only show document, not shown all wasm usages.
+
+      // collect all usages from document and next get wasm usage to merge it.
+      const finalUsages: Array<UsageWithDoc> = docUsages
+      docUsages.forEach((usage, i) => docUsageIdxMap.set(usage.id, i))
+      // here is wasm usage merge doc usage to full finalUsages
+      tokenUsages.forEach((usage) => {
+        const idx = docUsageIdxMap.get(usage.usageID)
+        // for number 0 is falsy, can not use `if (idx)`
+        if (idx == null) return
+        finalUsages[idx].declaration = transferUsageDeclaration(finalUsages[idx].declaration)
       })
-      docUsages.forEach((usage) => {
-        if (tokenUsageIdxMap.has(usage.id)) {
-          const idx = tokenUsageIdxMap.get(usage.id)
-          if (idx == null)
-            throw new Error(
-              'get array "finalUsages" member error for already set key "usageId", but idx is not exist'
-            )
-          finalUsages[idx].doc = usage.doc
-          // usage effect from pre-defined is better than wasm get.
-          finalUsages[idx].effect = usage.effect
-        } else {
-          finalUsages.push(usage)
-        }
-      })
+
       finalUsages
         // this filter is used find usage to match current Sprite Code or Stage Code
         .filter((usage) => {
           if (!isInStageCode) return true
           // some effect may empty but pre-defined in tokens like if, function, const, etc.
-          if (!usage.effect && token.id.pkgPath === 'gop') return true
-          return ['All'].includes(usage.effect)
+          if (!usage.target && token.id.pkgPath === 'gop') return true
+          return ['All', 'Stage'].includes(usage.target)
         })
         .forEach((usage) => {
           inputItems.push({
-            icon: usageType2Icon(usage.effect),
+            icon: usageEffect2Icon(usage.effect),
             label: token.id.name,
             sample: usage.sample,
             insertText: usage.insertText,
@@ -470,7 +464,7 @@ async function toolCategory2InputItemCategory(
                 level: DocPreviewLevel.Normal,
                 content: usage.doc,
                 header: {
-                  icon: usageType2Icon(usage.effect),
+                  icon: usageEffect2Icon(usage.effect),
                   declaration: usage.declaration
                 },
                 recommendAction: {
@@ -525,17 +519,25 @@ async function toolCategory2InputItemCategory(
   }
 }
 
-/** transform from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
-// todo: add more case type transform to type
-export function usageType2Icon(type: string): Icon {
+/** transform pre-defined token usage effect or from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
+export function usageEffect2Icon(type: string): Icon {
   switch (type) {
+    // pre-defined token usage effect start
+    case 'read':
+      return Icon.Read
+    case 'listen':
+      return Icon.Listen
     case 'func':
       return Icon.Function
+    // pre-defined token usage effect end
+    case 'code':
+      return Icon.Code
     case 'keyword':
-      return Icon.Property
+      return Icon.Write
     case 'bool':
-      return Icon.Property
+      return Icon.Read
+    // todo: add more case type transform to type
     default:
-      return Icon.Property
+      return Icon.Write
   }
 }
