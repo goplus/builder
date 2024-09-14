@@ -192,6 +192,15 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	}
 
 	items := &completionList{}
+	selector, find := getSelector(file, cursorPos)
+	if find {
+		selectorInfoGetter(info, selector, items)
+		if items != nil {
+			return *items, nil
+		}
+	}
+
+	*items = goKeywords
 
 	smallScopes := findSmallestScopesAtPosition(info, cursorPos, fset)
 	for _, scope := range smallScopes {
@@ -199,6 +208,37 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	}
 
 	return *items, nil
+}
+
+func selectorInfoGetter(info *typesutil.Info, selectorExpr *ast.SelectorExpr, items *completionList) {
+	if childSelectorExpr, ok := selectorExpr.X.(*ast.SelectorExpr); ok {
+		ident := childSelectorExpr.Sel
+		obj := info.Uses[ident]
+		if obj == nil {
+			return
+		}
+		handleStruct(obj.Type(), obj.Name(), items)
+	} else if ident, ok := selectorExpr.X.(*ast.Ident); ok {
+		obj := info.Uses[ident]
+		if obj == nil {
+			return
+		}
+		handleStruct(obj.Type(), obj.Name(), items)
+	}
+}
+
+func getSelector(file *ast.File, cursorPos token.Pos) (*ast.SelectorExpr, bool) {
+	list, _ := getCodeSelectorExprList(file)
+	for _, node := range list {
+		if checkPositionInRange(cursorPos, node.Pos(), node.End()) {
+			return node, true
+		}
+	}
+	return nil, false
+}
+
+func checkPositionInRange(pos, from, end token.Pos) bool {
+	return pos > from && pos < end
 }
 
 func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos, fset *token.FileSet) []*types.Scope {
