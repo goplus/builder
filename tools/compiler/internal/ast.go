@@ -202,3 +202,22 @@ func getCodeFunctionList(file *ast.File) (funcList, error) {
 
 	return fv.funcList, nil
 }
+
+type selectorExprVisitor struct {
+	selectorExprList []*ast.SelectorExpr
+}
+
+func (v *selectorExprVisitor) Visit(node ast.Node) ast.Visitor {
+	if selectorExpr, ok := node.(*ast.SelectorExpr); ok {
+		v.selectorExprList = append(v.selectorExprList, selectorExpr)
+	}
+	return v
+}
+
+func getCodeSelectorExprList(file *ast.File) ([]*ast.SelectorExpr, error) {
+	sv := &selectorExprVisitor{}
+
+	ast.Walk(sv, file)
+
+	return sv.selectorExprList, nil
+}
