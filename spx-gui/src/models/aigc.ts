@@ -1,7 +1,25 @@
-import { AIGCStatus, generateAIImage, generateAISprite, generateInpainting, getAIGCStatus, isAiAsset, isContentReady, isPreviewReady, syncGenerateAIImage, type AIGCFiles, type CreateAIImageParams, type GenerateInpaintingParams, type RequiredAIGCFiles, type TaggedAIAssetData } from "@/apis/aigc"
-import { saveFiles } from "./common/cloud"
-import { fromBlob } from "./common/file"
-import { useRetryHandle } from "@/utils/exception"
+import {
+  AIGCStatus,
+  extractMotion,
+  generateAIImage,
+  generateAIAnimate,
+  generateInpainting,
+  getAIGCStatus,
+  isAiAsset,
+  isContentReady,
+  isPreviewReady,
+  syncGenerateAIImage,
+  type AIGCFiles,
+  type CreateAIImageParams,
+  type GenerateInpaintingParams,
+  type RequiredAIGCFiles,
+  type TaggedAIAssetData,
+  type GenerateAIAnimateParams,
+  type GenerateAIAnimateResult
+} from '@/apis/aigc'
+import { saveFiles } from './common/cloud'
+import { fromBlob } from './common/file'
+import { useRetryHandle } from '@/utils/exception'
 
 type ActionFn = (...args: any[]) => Promise<any>
 type PollFn<F extends ActionFn, R> = (result: Awaited<ReturnType<F>>) => Promise<R>
@@ -9,45 +27,43 @@ type WithStatus<T = {}> = T & { status: AIGCStatus }
 
 /**
  * Task handler for AI-generated content requests, supporting synchronous and asynchronous operations.
- * 
+ *
  * @param {Function} action - Function to request AI generation.
  * @param {Array} args - Arguments for the `action`.
  * @param {Function} [pollFn] - Optional function to poll the status of AI generation.
- * 
+ *
  * - **Synchronous**: Use `action` only, leave `pollFn` empty.
  * - **Asynchronous**: Use `pollFn` to poll until completion.
- * 
+ *
  * @property {any} result - Stores the task's result.
  * @property {number} pollingInterval - Interval between polls (default adjustable).
  * @property {number} pollingLimit - Maximum polls before stopping (default adjustable).
- * 
+ *
  * @fires AIGCStatusChange - When task status changes.
  * @fires AIGCFinished - When the task completes.
  * @fires AIGCFailed - When the task fails.
- * 
+ *
  * @example Asynchronous task:
  * const task = new AIGCTask(
  *   (arg) => generateAIImage(arg),
  *   [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }],
  *   (result) => getAIGCStatus(result.imageJobId)
  * );
- * 
+ *
  * @example Synchronous task:
  * const task = new AIGCTask(
  *   (arg) => syncGenerateAIImage(arg),
  *   [{ keyword: 'cat', category: 'animal', assetType: AssetType.Sprite }]
  * );
- * 
+ *
  * @example Event handling:
  * task.addEventListener('AIGCStatusChange', () => {
  *   console.log('Status changed:', task.status);
  * });
- * 
+ *
  * Note: You can't use `t`(i18n) in this class.
  */
-export class AIGCTask<
-  T extends WithStatus = TaggedAIAssetData,
-> extends EventTarget {
+export class AIGCTask<T extends WithStatus = TaggedAIAssetData> extends EventTarget {
   private static _taskId = 0
   readonly taskId = `AIGCTask-${AIGCTask._taskId++}`
   private action: ActionFn
@@ -71,12 +87,12 @@ export class AIGCTask<
   }
   private set status(value: AIGCStatus) {
     if (this._status !== value) {
-      this._status = value;
-      this.dispatchEvent(new CustomEvent('AIGCStatusChange', { detail: value }));
+      this._status = value
+      this.dispatchEvent(new CustomEvent('AIGCStatusChange', { detail: value }))
       if (value === AIGCStatus.Finished) {
-        this.dispatchEvent(new CustomEvent('AIGCFinished', { detail: this.result }));
+        this.dispatchEvent(new CustomEvent('AIGCFinished', { detail: this.result }))
       } else if (value === AIGCStatus.Failed) {
-        this.dispatchEvent(new CustomEvent('AIGCFailed', { detail: this._failureMessage }));
+        this.dispatchEvent(new CustomEvent('AIGCFailed', { detail: this._failureMessage }))
       }
     }
   }
@@ -92,16 +108,14 @@ export class AIGCTask<
     }
     try {
       this.actionResult = await this.action(...this.args)
-    }
-    catch (e: any) {
+    } catch (e: any) {
       this.setFailure('message' in e ? e.message : 'Action failed')
       return
     }
     if (this.pollFn) {
       try {
         this.startPoll()
-      }
-      catch (e: any) {
+      } catch (e: any) {
         this.setFailure('message' in e ? e.message : 'Polling failed')
       }
     } else {
@@ -151,7 +165,11 @@ export class AIGCTask<
     this.dispatchEvent(new CustomEvent('AIGCFailed', { detail: message }))
   }
 
-  addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
+  addEventListener(
+    type: 'AIGCStatusChange' | 'AIGCFinished' | 'AIGCFailed',
+    callback: EventListenerOrEventListenerObject | null,
+    options?: AddEventListenerOptions | boolean
+  ): void {
     super.addEventListener(type, callback, options)
   }
 }
@@ -161,18 +179,16 @@ export class SyncAIImageTask extends AIGCTask<TaggedAIAssetData> {
     super(SyncAIImageTask.request, [params])
   }
   private static async request(params: CreateAIImageParams): Promise<TaggedAIAssetData> {
-    const requestAIGC = useRetryHandle(
-      async () => syncGenerateAIImage(params),
-    ).fn
+    const requestAIGC = useRetryHandle(async () => syncGenerateAIImage(params)).fn
     const res = await requestAIGC()
     // http files to kodo files
     const imageUrl = res.image_url
-    const blob = await fetch(imageUrl).then(res => res.blob())
+    const blob = await fetch(imageUrl).then((res) => res.blob())
     const file = fromBlob('imageUrl', blob)
-    const {fileCollection, fileCollectionHash} = await saveFiles({
-      'imageUrl': file
+    const { fileCollection, fileCollectionHash } = await saveFiles({
+      imageUrl: file
     })
-    
+
     return {
       id: fileCollectionHash, // or other identifier?
       assetType: params.assetType,
@@ -186,10 +202,10 @@ export class SyncAIImageTask extends AIGCTask<TaggedAIAssetData> {
   }
 }
 
-export class AIImageTask extends AIGCTask<TaggedAIAssetData>{
+export class AIImageTask extends AIGCTask<TaggedAIAssetData> {
   constructor(params: CreateAIImageParams) {
     super(AIImageTask.request, [params], async (actionResult: TaggedAIAssetData) => {
-      const {status, result} = await getAIGCStatus(actionResult.id)
+      const { status, result } = await getAIGCStatus(actionResult.id)
       return {
         ...actionResult,
         status,
@@ -206,28 +222,26 @@ export class AIImageTask extends AIGCTask<TaggedAIAssetData>{
       id: res.imageJobId,
       assetType: params.assetType,
       cTime: new Date().toISOString(),
-      status: AIGCStatus.Waiting,
+      status: AIGCStatus.Waiting
     }
   }
 }
 
-
-export class AISpriteTask extends AIGCTask<WithStatus<{files: RequiredAIGCFiles}>> {
-  constructor(imageUrl: string) {
-    super(AISpriteTask.request, [imageUrl])
+export class AIAnimateTask extends AIGCTask<WithStatus<GenerateAIAnimateResult>> {
+  constructor(params: GenerateAIAnimateParams) {
+    super(AIAnimateTask.request, [params])
   }
 
-  private static async request(imageUrl: string) {
-    const res = await generateAISprite(imageUrl)
+  private static async request(params: GenerateAIAnimateParams) {
+    const res = await generateAIAnimate(params)
     return {
-      spriteUrl: (res as any).material_url,
       ...res,
       status: AIGCStatus.Finished
     }
   }
 }
 
-export class InpaintingTask extends AIGCTask<WithStatus<{imageUrl: string}>> {
+export class InpaintingTask extends AIGCTask<WithStatus<{ imageUrl: string }>> {
   constructor(params: GenerateInpaintingParams) {
     super(InpaintingTask.request, [params])
   }
@@ -235,6 +249,22 @@ export class InpaintingTask extends AIGCTask<WithStatus<{imageUrl: string}>> {
     const res = await generateInpainting(params)
     return {
       imageUrl: res.image_url,
+      status: AIGCStatus.Finished
+    }
+  }
+}
+
+export class ExtractMotionTask extends AIGCTask<WithStatus<{ resultUrl: string }>> {
+  constructor(params: { videoUrl: string; callbackUrl?: string }) {
+    super(ExtractMotionTask.request, [params])
+  }
+  private static async request(params: { videoUrl: string; callbackUrl?: string }) {
+    const res = await extractMotion({
+      video_url: params.videoUrl,
+      callback_url: params.callbackUrl ?? ''
+    })
+    return {
+      resultUrl: res.result_url,
       status: AIGCStatus.Finished
     }
   }

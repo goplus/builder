@@ -57,6 +57,20 @@
         />
       </Transition>
     </div>
+    <Transition name="slide-fade" mode="out-in" appear>
+      <UIFormModal
+        v-if="previewImageFile?.meta.universalUrl"
+        v-model:visible="motionRecordVisible"
+        :title="$t({ en: 'Record Motion', zh: '录制动作' })"
+        :center-title="true"
+      >
+        <VideoRecorder
+          class="motion-recorder"
+          :image-url="previewImageFile?.meta.universalUrl"
+          @resolve="handleMotionRecordResolve"
+        />
+      </UIFormModal>
+    </Transition>
   </div>
 </template>
 
@@ -81,19 +95,27 @@ import { useFileUrl } from '@/utils/file'
 import { NEmpty, NIcon, NImage, NSpin } from 'naive-ui'
 import SpriteCarousel from '../details/SpriteCarousel.vue'
 import { EditOutlined } from '@vicons/antd'
-import { ArrowBackOutlined, AutoFixHighOutlined, DirectionsRunRound } from '@vicons/material'
+import {
+  ArrowBackOutlined,
+  AutoFixHighOutlined,
+  CameraAltOutlined,
+  DirectionsRunRound
+} from '@vicons/material'
 import type { ButtonType } from '@/components/ui/UIButton.vue'
 import type { EditorAction } from './AIPreviewModal.vue'
-import { AISpriteTask } from '@/models/aigc'
+import { AIAnimateTask } from '@/models/aigc'
 import { getFiles, saveFiles } from '@/models/common/cloud'
-import { fromBlob, type File } from '@/models/common/file'
+import { fromBlob, type File, type Files } from '@/models/common/file'
 import { hashFileCollection } from '@/models/common/hash'
 import { CancelOutlined } from '@vicons/material'
 import { useI18n } from '@/utils/i18n'
 import ImageRepaint from './ImageEditor/ImageRepaint.vue'
 import { h } from 'vue'
 import { getWebUrl } from '@/apis/util'
-import { useConfirmDialog } from '@/components/ui'
+import { UIFormModal, useConfirmDialog } from '@/components/ui'
+import VideoRecorder from '../../animation/VideoRecorder.vue'
+import type { FileCollection } from '@/apis/common'
+import JSZip from 'jszip'
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -182,14 +204,16 @@ const generateContent = async () => {
     failInfoText.value = t({ en: `Failed to load preview`, zh: `加载预览失败` })
     return
   }
-  const generateTask = new AISpriteTask(await getWebUrl(previewImageFile.value?.meta.universalUrl))
+  const generateTask = new AIAnimateTask({
+    imageUrl: await getWebUrl(previewImageFile.value?.meta.universalUrl)
+  })
   generateTask.addEventListener('AIGCStatusChange', () => {
     status.value = generateTask.status
   })
   generateTask.addEventListener('AIGCFinished', () => {
-    if (generateTask.result?.files) {
+    if (generateTask.result?.materialUrl) {
       contentReady.value = true
-      loadCloudFiles(generateTask.result.files)
+      saveMaterialToAsset(generateTask.result.materialUrl)
     } else {
       status.value = AIGCStatus.Failed
       failInfoText.value = t({ en: `Failed to generate content`, zh: `生成内容失败` })
@@ -198,26 +222,41 @@ const generateContent = async () => {
   generateTask.start()
 }
 
-const loadCloudFiles = async (cloudFiles: RequiredAIGCFiles) => {
-  if (!cloudFiles) {
-    status.value = AIGCStatus.Failed
-    return
-  }
-  const files = (await getFiles(cloudFiles)) as {
-    [key in keyof AIGCFiles]: File
-  }
+const handleMotionRecordResolve = async (materialUrl: string) => {
+  saveMaterialToAsset(materialUrl)
+}
 
+const loadMaterial = async (materialUrl: string) => {
+  const zip = new JSZip()
+  const zipFile = await fetch(materialUrl).then((res) => res.blob())
+  const zipData = await zip.loadAsync(zipFile)
+  const nativeFiles = zipData.files
+  const universalFiles: Files = { }
+  for (const key in nativeFiles) {
+    const file = nativeFiles[key]
+    if (file.dir) {
+      continue
+    }
+    const blob = await file.async('blob')
+    universalFiles[file.name] = fromBlob(file.name, blob)
+  }
+  return universalFiles;
+}
+
+const saveMaterialToAsset = async (materialUrl: string) => {
+  const files = await loadMaterial(materialUrl)
   if (!files) {
     status.value = AIGCStatus.Failed
+    failInfoText.value = t({ en: `Failed to load material`, zh: `加载素材失败` })
     return
   }
-  props.asset.files = cloudFiles
-  props.asset.filesHash = await hashFileCollection(cloudFiles)
+  const { fileCollection, fileCollectionHash } = await saveFiles(files)
+  props.asset.files = fileCollection
+  props.asset.filesHash = fileCollectionHash
   props.asset.displayName = props.asset.displayName ?? props.asset.id
   props.asset[isContentReady] = true
   contentReady.value = true
   emit('contentReady')
-  return
 }
 
 const sprite = useAsyncComputed<Sprite | undefined>(() => {
@@ -255,6 +294,8 @@ const handleRepaintResolve = async (imgDataUrl: string) => {
   props.asset.preview = universalUrl
 }
 
+const motionRecordVisible = ref(false)
+
 const confirm = useConfirmDialog()
 
 const previewActions = computed(
@@ -275,7 +316,8 @@ const previewActions = computed(
         icon: DirectionsRunRound,
         type: 'secondary' satisfies ButtonType,
         action: async () => {
-          await generateContent()
+          // TODO: whether should we generate animation without motions here?
+          // await generateContent()
           editMode.value = 'anim'
         }
       }
@@ -327,6 +369,15 @@ const animActions = computed(
               editMode.value = 'preview'
             })
             .catch(() => {})
+        }
+      },
+      {
+        name: 'record-motion',
+        label: { zh: '录制动作', en: 'Record Motion' },
+        icon: CameraAltOutlined,
+        type: motionRecordVisible.value ? 'primary' : ('secondary' satisfies ButtonType),
+        action: () => {
+          motionRecordVisible.value = !motionRecordVisible.value
         }
       },
       {
