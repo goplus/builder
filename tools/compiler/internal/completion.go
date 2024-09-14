@@ -161,7 +161,7 @@ func (list *completionList) Contains(text string) bool {
 	return false
 }
 
-func getScopesItems(fileName string, fileMap map[string]string, line, column int) (completionList, error) {
+func getCompletionItems(fileName string, fileMap map[string]string, line, column int) (completionList, error) {
 	fset := token.NewFileSet()
 	pkg, err := initProjectParser(fset, fileMap)
 	if err != nil {
@@ -195,7 +195,7 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	selector, find := getSelector(file, cursorPos)
 	if find {
 		selectorInfoGetter(info, selector, items)
-		if items != nil {
+		if len(*items) != 0 {
 			return *items, nil
 		}
 	}
