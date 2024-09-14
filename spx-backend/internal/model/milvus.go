@@ -57,7 +57,7 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		"vector",
 
 		// distance metric type
-		entity.COSINE,
+		entity.L2,
 
 		//Maximum number returned by search
 		topK,
