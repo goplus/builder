@@ -1244,7 +1244,7 @@ export const exit: Token = {
       effect: 'func',
       target: 'All',
       declaration: 'func()',
-      sample: 'exit',
+      sample: '',
       insertText: 'exit'
     }
   ]
