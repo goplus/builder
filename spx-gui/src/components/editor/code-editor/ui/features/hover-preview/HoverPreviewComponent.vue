@@ -78,8 +78,8 @@ props.hoverPreview.onAudioPlayer((range) => {
   hoverPreviewState.audio.visible = true
   hoverPreviewState.range = { ...range }
   hoverPreviewState.audio.position.top =
-    // here add `scrolledVisiblePosition.height` to make docPreview show under current code line
-    containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
+    // here add `scrolledVisiblePosition.height` to make audioPreview show under current code line
+    containerRect.top + scrolledVisiblePosition.top
   hoverPreviewState.audio.position.left = containerRect.left + scrolledVisiblePosition.left
 })
 
@@ -131,6 +131,7 @@ function handleSubmit(value: string) {
 function handleMouseLeave() {
   if (hoverPreviewState.focused) return
   props.hoverPreview.tryToPreventHideDocument()
+  props.hoverPreview.tryToPreventHideAudioPlayer()
 }
 
 // equal `window.addEventListener('keyup', handleEscape)`
@@ -145,6 +146,7 @@ function handleEscape(e: KeyboardEvent) {
     hoverPreviewState.focused = false
   } else {
     props.hoverPreview.hideDocument(true)
+    props.hoverPreview.hideAudioPlayer(true)
   }
 }
 
@@ -265,6 +267,8 @@ function updateDocumentCardPosition() {
             left: hoverPreviewState.audio.position.left + 'px'
           }"
           :src="hoverPreviewState.audio.layer.src"
+          @mouseleave="handleMouseLeave"
+          @mouseenter="hoverPreview.tryToPreventHideAudioPlayer()"
         ></AudioPreview>
       </transition>
     </div>
@@ -298,7 +302,8 @@ function updateDocumentCardPosition() {
 
 .hover-audio {
   position: absolute;
-  transform-origin: top left;
+  transform-origin: bottom left;
+  transform: translateY(-100%);
 
   &.v-enter-active,
   &.v-leave-active {
@@ -308,7 +313,7 @@ function updateDocumentCardPosition() {
   &.v-enter-from,
   &.v-leave-to {
     opacity: 0;
-    transform: scale(0.8) translateY(20px);
+    transform: scale(0.8) translateY(calc(-100% - 20px));
   }
 }
 
