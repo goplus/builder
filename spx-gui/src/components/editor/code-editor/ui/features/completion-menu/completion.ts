@@ -26,6 +26,6 @@ export interface CompletionMenuFeatureItem {
   label: string
   desc: string
   insertText: string
-  preview: LayerContent
+  preview?: LayerContent
   matches: IMatch[]
 }

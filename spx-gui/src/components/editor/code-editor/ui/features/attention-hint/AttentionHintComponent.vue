@@ -16,6 +16,9 @@ const props = defineProps<{
 const updateAttentionHint = debounce(async () => {
   const model = props.attentionHint.editor.getModel()
   if (!model) return
+  props.attentionHint.abortController.abort()
+  const abortController = new AbortController()
+  props.attentionHint.abortController = abortController
   props.ui.requestAttentionHintsProviderResolve(
     model,
     (hints: AttentionHintDecoration[]) => {
@@ -33,7 +36,7 @@ const updateAttentionHint = debounce(async () => {
       )
     },
     {
-      signal: props.attentionHint.abortController.signal
+      signal: abortController.signal
     }
   )
 }, 300)

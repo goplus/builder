@@ -13,7 +13,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition, TokenDetail, TokenUsage as CompilerTokenUsage } from '../compiler'
+import type { Definition, TokenDetail } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -32,11 +32,10 @@ import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
 import type {
   TokenCategory,
-  TokenUsage,
+  TokenId,
   UsageWithDoc
 } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-import type { I18n } from '@/utils/i18n'
 
 type JumpPosition = {
   line: number
@@ -155,9 +154,35 @@ export class Coordinator {
         ctx.position.lineNumber,
         ctx.position.column
       )
-      .then((completionItems) => {
+      .then(async (completionItems) => {
+        const completionItemDocMap = new Map<string, UsageWithDoc>()
+        for (let i = 0; i < completionItems.length; i++) {
+          const completionItem = completionItems[i]
+          const tokenId: TokenId = {
+            pkgPath: completionItem.tokenPkg,
+            name: completionItem.tokenName
+          }
+          const { usages } = await this.docAbility.getNormalDoc(tokenId)
+
+          usages.forEach((usage: UsageWithDoc) => completionItemDocMap.set(usage.insertText, usage))
+        }
         addItems(
           completionItems.map((completionItem) => {
+            const completionItemDoc = completionItemDocMap.get(completionItem.insertText)
+            if (!completionItemDoc)
+              return {
+                icon: usageType2Icon(completionItem.type),
+                insertText: completionItem.insertText,
+                label: completionItem.label,
+                desc: '',
+                preview: {
+                  type: 'doc',
+                  layer: {
+                    level: DocPreviewLevel.Normal,
+                    content: ''
+                  }
+                }
+              }
             return {
               icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
@@ -167,7 +192,11 @@ export class Coordinator {
                 type: 'doc',
                 layer: {
                   level: DocPreviewLevel.Normal,
-                  content: '' /* todo: get content with docAbility */
+                  content: completionItemDoc.doc,
+                  header: {
+                    icon: usageType2Icon(completionItemDoc.effect),
+                    declaration: completionItemDoc.declaration
+                  }
                 }
               }
             }

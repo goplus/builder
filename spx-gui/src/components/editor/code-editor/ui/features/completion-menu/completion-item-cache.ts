@@ -8,7 +8,7 @@ export interface CompletionItemCachePosition {
 }
 
 export class CompletionItemCache extends Disposable {
-  private cache: CompletionItem[] | null = null
+  public cache: CompletionItem[] | null = null
   private position: CompletionItemCachePosition = {
     id: '',
     lineNumber: -1,

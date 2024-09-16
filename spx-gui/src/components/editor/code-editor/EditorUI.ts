@@ -415,7 +415,7 @@ export class EditorUI extends Disposable {
           } else {
             const suggestions =
               cachedItems.map(
-                (item): languages.CompletionItem => ({
+                (item, i): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
@@ -425,7 +425,8 @@ export class EditorUI extends Disposable {
                     endLineNumber: position.lineNumber,
                     startColumn: word.startColumn,
                     endColumn: word.endColumn
-                  }
+                  },
+                  documentation: i.toString()
                 })
               ) || []
             return { suggestions }

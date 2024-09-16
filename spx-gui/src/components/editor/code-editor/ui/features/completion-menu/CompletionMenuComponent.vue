@@ -3,7 +3,9 @@ import { computed, ref, watchEffect } from 'vue'
 import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
 import EditorMenu from '../../EditorMenu.vue'
 import { determineClosestEdge, isElementInViewport } from '../../common'
-import type { Icon } from '@/components/editor/code-editor/EditorUI'
+import type { Icon, LayerContent } from '@/components/editor/code-editor/EditorUI'
+import DocumentPreview from '@/components/editor/code-editor/ui/features/hover-preview/DocumentPreview.vue'
+import type { CompletionMenuFeatureItem } from '@/components/editor/code-editor/ui/features/completion-menu/completion'
 
 interface CompletionMenuItem {
   key: number
@@ -15,6 +17,7 @@ interface CompletionMenuItem {
     text: string
     highlighted: boolean
   }[]
+  preview?: LayerContent
 }
 
 const props = defineProps<{
@@ -44,6 +47,7 @@ const menuItems = computed<CompletionMenuItem[]>(() =>
     // make menu icon slightly larger than fontSize for better display
     iconSize: completionMenuState.fontSize * 1.1,
     active: completionMenuState.activeIdx === i,
+    preview: item.preview,
     // `matches` is not required in `EditorMenu.vue`, but required in `CompletionMenuComponent.vue`.
     // `EditorMenu.vue` can pass any data to default slot if you set, so here we need pass `matches`
     matches: resolveSuggestMatches2Highlight(item.label, item.matches)
@@ -71,38 +75,58 @@ function handleActiveMenuItem(menuItemElement: HTMLLIElement) {
   editorMenuRef.value?.editorMenuElement.scrollTo({ top })
 }
 
+const activeCompletionMenuItem = computed<CompletionMenuFeatureItem | null>(() => {
+  return completionMenuState.suggestions[completionMenuState.activeIdx]
+})
+
 function handleMenuItemSelect(item: CompletionMenuItem) {
   props.completionMenu.select(item.key)
 }
 </script>
 
 <template>
-  <editor-menu
-    v-show="completionMenuState.visible"
-    ref="editorMenuRef"
-    class="completion-menu"
-    :items="menuItems"
+  <div
+    class="completion-menu-wrapper"
     :style="{
       top: completionMenuState.position.top + 'px',
       left: completionMenuState.position.left + 'px'
     }"
-    :list-styles="{
-      maxHeight: 8 * itemHeight + 'px'
-    }"
-    @select="handleMenuItemSelect"
-    @active="(_, el) => handleActiveMenuItem(el)"
   >
-    <template #default="{ items: { matches } }">
-      <span
-        v-for="(match, i) in matches"
-        :key="i"
-        class="completion-menu__label"
-        :class="{ 'completion-menu__label-match': match.highlighted }"
-      >
-        {{ match.text }}
-      </span>
-    </template>
-  </editor-menu>
+    <EditorMenu
+      v-show="completionMenuState.visible && menuItems.length"
+      ref="editorMenuRef"
+      class="completion-menu"
+      :items="menuItems"
+      :list-styles="{
+        maxHeight: 8 * itemHeight + 'px'
+      }"
+      @select="handleMenuItemSelect"
+      @active="(_, el) => handleActiveMenuItem(el)"
+    >
+      <template #default="{ items: { matches } }">
+        <span
+          v-for="(match, i) in matches"
+          :key="i"
+          class="completion-menu__label"
+          :class="{ 'completion-menu__label-match': match.highlighted }"
+        >
+          {{ match.text }}
+        </span>
+      </template>
+    </EditorMenu>
+    <transition name="slide">
+      <!--  for single component add key to implement animation  -->
+      <DocumentPreview
+        v-if="activeCompletionMenuItem?.preview?.type === 'doc'"
+        :key="activeCompletionMenuItem.preview.layer.header?.declaration"
+        class="completion-document"
+        :recommend-action="activeCompletionMenuItem.preview.layer.recommendAction"
+        :more-actions="activeCompletionMenuItem.preview.layer.moreActions"
+        :header="activeCompletionMenuItem.preview.layer.header"
+        :content="activeCompletionMenuItem.preview.layer.content"
+      ></DocumentPreview>
+    </transition>
+  </div>
 </template>
 <style lang="scss">
 // hidden monaco suggest widget
@@ -131,7 +155,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 }
 </style>
 <style scoped lang="scss">
-.completion-menu {
+.completion-menu-wrapper {
   z-index: 999;
   position: absolute;
   top: 0;
@@ -156,5 +180,29 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 
 .completion-menu__label-match {
   color: var(--ui-color-blue-500);
+}
+
+.completion-document {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  transform: translateX(100%);
+
+  &.slide-enter-active {
+    transition: 0.3s cubic-bezier(0, 1.25, 1, 1);
+  }
+  &.slide-leave-active {
+    transition: 0.3s cubic-bezier(0, 1.25, 1, 1);
+  }
+
+  &.slide-enter-from {
+    opacity: 0;
+    transform: translate(100%, 40px);
+  }
+
+  &.slide-leave-to {
+    opacity: 0;
+    transform: translate(100%, -40px);
+  }
 }
 </style>
