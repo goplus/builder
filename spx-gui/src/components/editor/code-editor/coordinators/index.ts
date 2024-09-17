@@ -118,17 +118,9 @@ export class Coordinator {
     const { sprites, sounds, stage, selectedSprite } = this.project
 
     const createCompletionItem = (name: string) => ({
-      icon: Icon.Variable,
+      icon: Icon.Property,
       insertText: `"${name}"`,
-      label: `"${name}"`,
-      desc: '',
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
+      label: `"${name}"`
     })
 
     const items = [
@@ -155,6 +147,7 @@ export class Coordinator {
         ctx.position.column
       )
       .then(async (completionItems) => {
+        // todo: this function code is running very slowly! need refactor
         const completionItemDocMap = new Map<string, UsageWithDoc>()
         for (let i = 0; i < completionItems.length; i++) {
           const completionItem = completionItems[i]
@@ -173,21 +166,12 @@ export class Coordinator {
               return {
                 icon: usageType2Icon(completionItem.type),
                 insertText: completionItem.insertText,
-                label: completionItem.label,
-                desc: '',
-                preview: {
-                  type: 'doc',
-                  layer: {
-                    level: DocPreviewLevel.Normal,
-                    content: ''
-                  }
-                }
+                label: completionItem.label
               }
             return {
               icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
-              desc: '',
               preview: {
                 type: 'doc',
                 layer: {

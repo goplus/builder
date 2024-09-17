@@ -24,7 +24,7 @@ export interface MonacoCompletionModelItem {
 export interface CompletionMenuFeatureItem {
   icon: Icon
   label: string
-  desc: string
+  desc?: string
   insertText: string
   preview?: LayerContent
   matches: IMatch[]

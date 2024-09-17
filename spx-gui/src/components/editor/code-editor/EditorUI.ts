@@ -90,9 +90,9 @@ export type LayerContent =
 export interface CompletionItem {
   icon: Icon
   label: string
-  desc: string
+  desc?: string
   insertText: string
-  preview: LayerContent
+  preview?: LayerContent
 }
 
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
