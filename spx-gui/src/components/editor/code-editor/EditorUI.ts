@@ -43,7 +43,10 @@ export enum Icon {
   Sensing,
   Game,
   Variable,
-  Listen
+  Listen,
+  Read,
+  Write,
+  Code
 }
 
 export type Markdown = string

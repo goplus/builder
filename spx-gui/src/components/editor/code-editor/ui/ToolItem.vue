@@ -7,6 +7,7 @@
       :content="inputItem.desc.layer.content"
       :more-actions="inputItem.desc.layer.moreActions"
       :recommend-action="inputItem.desc.layer.recommendAction"
+      @action-click="handleActionClick"
     ></DocumentPreview>
     <template #trigger>
       <UITagButton class="button" @click="emit('useSnippet', inputItem.insertText)">
@@ -21,7 +22,7 @@
 
 <script setup lang="ts">
 import { UITagButton, UITooltip } from '@/components/ui'
-import type { InputItem } from '../EditorUI'
+import type { Action, InputItem } from '../EditorUI'
 import DocumentPreview from './features/hover-preview/DocumentPreview.vue'
 import { icon2SVG } from './common'
 import { computed } from 'vue'
@@ -39,6 +40,10 @@ const isDocEmpty = computed(() => {
   const layer = props.inputItem.desc.layer
   return !layer.header?.declaration && !layer.content
 })
+
+function handleActionClick(action: Action) {
+  action.onClick()
+}
 </script>
 
 <style scoped lang="scss">

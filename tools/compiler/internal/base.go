@@ -21,7 +21,13 @@ func GetDiagnostics(fileName string, fileMap map[string]string) (interface{}, er
 	}
 	_, err = codeInfo(pkg[PKG].Files[fileName], fset, pkg)
 	list := parseErrorLines(error2List(err))
-	return list, nil
+	filter := []diagnostics{}
+	for _, item := range list {
+		if item.FileName == fileName {
+			filter = append(filter, item)
+		}
+	}
+	return filter, nil
 }
 
 // GetDefinition return user's code definition.
@@ -38,8 +44,13 @@ func GetDefinition(fileName string, fileMap map[string]string) (interface{}, err
 	}
 	definitionList := getDefinitionList(info)
 	definitionList.Position(fset)
-
-	return definitionList, nil
+	filter := definitions{}
+	for _, item := range definitionList {
+		if item.StartPosition.Filename == fileName {
+			filter = append(filter, item)
+		}
+	}
+	return filter, nil
 }
 
 // GetSPXFileType return a json object with spx type info.
@@ -124,7 +135,14 @@ func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{
 		}
 	}
 
-	return inlayHintList, nil
+	filter := []*inlayHint{}
+	for _, item := range inlayHintList {
+		if item.StartPosition.Filename == currentFileName {
+			filter = append(filter, item)
+		}
+	}
+
+	return filter, nil
 }
 
 func GetCompletions(fileName string, fileMap map[string]string, line, column int) (interface{}, error) {
@@ -132,9 +150,7 @@ func GetCompletions(fileName string, fileMap map[string]string, line, column int
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}
-	items := goKeywords
-	items = append(items, list...)
-	return items, nil
+	return list, nil
 }
 
 func GetTokenDetail(token, pkgPath string) (interface{}, error) {

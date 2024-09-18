@@ -192,6 +192,15 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	}
 
 	items := &completionList{}
+	selector, find := getSelector(file, cursorPos)
+	if find {
+		selectorInfoGetter(info, selector, items)
+		if items != nil {
+			return *items, nil
+		}
+	}
+
+	*items = goKeywords
 
 	smallScopes := findSmallestScopesAtPosition(info, cursorPos, fset)
 	for _, scope := range smallScopes {
@@ -199,6 +208,37 @@ func getScopesItems(fileName string, fileMap map[string]string, line, column int
 	}
 
 	return *items, nil
+}
+
+func selectorInfoGetter(info *typesutil.Info, selectorExpr *ast.SelectorExpr, items *completionList) {
+	if childSelectorExpr, ok := selectorExpr.X.(*ast.SelectorExpr); ok {
+		ident := childSelectorExpr.Sel
+		obj := info.Uses[ident]
+		if obj == nil {
+			return
+		}
+		handleStruct(obj.Type(), obj.Name(), items)
+	} else if ident, ok := selectorExpr.X.(*ast.Ident); ok {
+		obj := info.Uses[ident]
+		if obj == nil {
+			return
+		}
+		handleStruct(obj.Type(), obj.Name(), items)
+	}
+}
+
+func getSelector(file *ast.File, cursorPos token.Pos) (*ast.SelectorExpr, bool) {
+	list, _ := getCodeSelectorExprList(file)
+	for _, node := range list {
+		if checkPositionInRange(cursorPos, node.Pos(), node.End()) {
+			return node, true
+		}
+	}
+	return nil, false
+}
+
+func checkPositionInRange(pos, from, end token.Pos) bool {
+	return pos > from && pos < end
 }
 
 func findSmallestScopesAtPosition(info *typesutil.Info, pos token.Pos, fset *token.FileSet) []*types.Scope {
@@ -246,7 +286,7 @@ func checkScopeChildrenContainsPos(scope *types.Scope, pos token.Pos) bool {
 func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.Info) {
 	for _, name := range scope.Names() {
 		obj := scope.Lookup(name)
-		handleObject(obj, name, items)
+		handleScopeItem(obj, name, items)
 	}
 
 	if scope.Parent() != nil {
@@ -254,32 +294,46 @@ func traverseToRoot(scope *types.Scope, items *completionList, info *typesutil.I
 	}
 }
 
-func handleObject(obj types.Object, name string, items *completionList) {
-	handleThis(obj, name, items)
-	handleFunc(obj, name, items)
-	handleType(obj, name, items)
+func handleScopeItem(obj types.Object, name string, items *completionList) {
+	if name == "this" {
+		handleThis(obj, name, items)
+	}
+	addCompletionItem(obj, name, items)
+}
+
+func handleStruct(T types.Type, name string, items *completionList) {
+	if pointer, ok := T.Underlying().(*types.Pointer); ok {
+		handleStruct(pointer.Elem(), name, items)
+	}
+	stru, ok := T.Underlying().(*types.Struct)
+	if !ok {
+		return
+	}
+	named := T.(*types.Named)
+	for i := range stru.NumFields() {
+		if stru.Field(i).Embedded() {
+			handleStruct(stru.Field(i).Type(), name, items)
+		}
+		if stru.Field(i).Exported() || stru.Field(i).Pkg().Path() == PKG {
+			addCompletionItem(stru.Field(i), stru.Field(i).Name(), items)
+		}
+	}
+	extractMethodsFromNamed(named, items, false)
 }
 
 func handleThis(obj types.Object, name string, items *completionList) {
-	if name != "this" {
-		return
-	}
-
 	variable, ok := obj.(*types.Var)
 	if !ok {
 		return
 	}
-
-	structType, ok := variable.Type().Underlying().(*types.Pointer).Elem().Underlying().(*types.Struct)
+	pointer, ok := variable.Type().Underlying().(*types.Pointer)
 	if !ok {
 		return
 	}
-
-	structMethodsToCompletion(structType, items)
-	// TODO: fields of struct
+	handleStruct(pointer.Elem(), name, items)
 }
 
-func handleFunc(obj types.Object, name string, items *completionList) {
+func addCompletionItem(obj types.Object, name string, items *completionList) {
 	scopeItem := &completionItem{
 		Label: name,
 		Type:  obj.Type().String(),
@@ -308,28 +362,6 @@ func handleFunc(obj types.Object, name string, items *completionList) {
 	}
 }
 
-func handleType(obj types.Object, name string, items *completionList) {
-	if structType, ok := obj.Type().Underlying().(*types.Struct); ok {
-		for i := 0; i < structType.NumFields(); i++ {
-			if structType.Field(i).Type().String() != "github.com/goplus/spx.Game" {
-				continue
-			}
-			if gameStruct, ok := structType.Field(i).Type().Underlying().(*types.Struct); ok {
-				structMethodsToCompletion(gameStruct, items)
-			}
-			if gameNamed, ok := structType.Field(i).Type().(*types.Named); ok {
-				extractMethodsFromNamed(gameNamed, items, false)
-			}
-		}
-		if checkFieldExist(structType, "github.com/goplus/spx.Sprite") {
-			structMethodsToCompletion(structType, items)
-		}
-	}
-	if named, ok := obj.Type().(*types.Named); ok {
-		extractMethodsFromNamed(named, items, true)
-	}
-}
-
 func listContains(signList []string, target string) bool {
 	for _, s := range signList {
 		if s == target {
@@ -339,35 +371,19 @@ func listContains(signList []string, target string) bool {
 	return false
 }
 
-func checkFieldExist(structType *types.Struct, field string) bool {
-	for i := range structType.NumFields() {
-		if structType.Field(i).Type().String() == field {
-			return true
-		}
-	}
-	return false
-}
-
-func structMethodsToCompletion(structType *types.Struct, items *completionList) {
-	for i := 0; i < structType.NumFields(); i++ {
-		named, ok := structType.Field(i).Type().(*types.Named)
-		if !ok {
-			continue
-		}
-		extractMethodsFromNamed(named, items, false)
-	}
-}
-
-func extractMethodsFromNamed(named *types.Named, items *completionList, export bool) {
+func extractMethodsFromNamed(named *types.Named, items *completionList, ignoreExport bool) {
 	for i := 0; i < named.NumMethods(); i++ {
 		method := named.Method(i)
 		if method.Name() == "Main" || method.Name() == "Classfname" {
 			continue
 		}
-		if export || !method.Exported() {
+		if !ignoreExport && !method.Exported() {
 			continue
 		}
 		methodName, _ := convertOverloadToSimple(method.Name())
+		if method.Pkg().Path() != "github.com/goplus/spx" {
+			methodName = method.Name()
+		}
 		item := &completionItem{
 			Label: methodName,
 			Type:  "func",

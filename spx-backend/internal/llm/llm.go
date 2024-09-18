@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	jsonrepair "github.com/RealAlexandreAI/json-repair"
 )
 
 // llm max token limit
@@ -30,7 +32,7 @@ type Client struct {
 }
 
 func NewLLMClientWithConfig(config *Conf) *Client {
-	return &Client{Config: *config, Client: &http.Client{Timeout: 20 * time.Second}}
+	return &Client{Config: *config, Client: &http.Client{Timeout: 40 * time.Second}}
 }
 
 // LLM config
@@ -199,7 +201,12 @@ func (c *Client) CallLLM(llmChatMessage Messages) (responseBody LlmResponseBody,
 		return LlmResponseBody{}, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	err = json.Unmarshal(bodyBytes, &responseBody)
+	repairJSON, err := jsonrepair.RepairJSON(string(bodyBytes))
+	if err != nil {
+		return LlmResponseBody{}, err
+	}
+
+	err = json.Unmarshal([]byte(repairJSON), &responseBody)
 	if err != nil {
 		return LlmResponseBody{}, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
