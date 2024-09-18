@@ -138,7 +138,6 @@ const loadCloudFiles = async (cloudFiles?: AIGCFiles) => {
 .asset-item {
   --flex-basis: calc(90% / var(--column-count, 5));
   flex: 0 1 var(--flex-basis);
-  width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
