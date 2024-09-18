@@ -14,7 +14,7 @@ import { reactive } from 'vue'
 import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { createMatches, type IMatch } from '../../common'
 import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
-import { type CompletionItem, Icon } from '@/components/editor/code-editor/EditorUI'
+import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface CompletionMenuState {
   visible: boolean
@@ -239,10 +239,10 @@ export class CompletionMenu implements IDisposable {
   private completionModelItems2CompletionItems(
     completionModelItems: MonacoCompletionModelItem[]
   ): CompletionMenuFeatureItem[] {
-    const completionCacheItems: CompletionItem[] | null = this.completionItemCache.cache
     return completionModelItems.map(({ completion, score }) => {
       const cacheIdx = Number(completion.documentation)
-      if (!completionCacheItems || !completionCacheItems[cacheIdx]) {
+      const completionCacheItem = this.completionItemCache.getCompletionCacheItemByIdx(cacheIdx)
+      if (!completionCacheItem) {
         return {
           icon: completionItemKind2Icon(completion.kind),
           label: completion.label as string,
@@ -252,7 +252,7 @@ export class CompletionMenu implements IDisposable {
         }
       } else {
         return {
-          ...completionCacheItems[cacheIdx],
+          ...completionCacheItem,
           matches: createMatches(score)
         }
       }

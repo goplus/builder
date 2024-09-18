@@ -8,7 +8,7 @@ export interface CompletionItemCachePosition {
 }
 
 export class CompletionItemCache extends Disposable {
-  public cache: CompletionItem[] | null = null
+  private cache: CompletionItem[] | null = null
   private position: CompletionItemCachePosition = {
     id: '',
     lineNumber: -1,
@@ -44,6 +44,11 @@ export class CompletionItemCache extends Disposable {
     } else {
       return null
     }
+  }
+
+  public getCompletionCacheItemByIdx(idx: number): CompletionItem | undefined {
+    if (this.cache == null) return
+    return this.cache[idx]
   }
 
   public isSamePosition(position: CompletionItemCachePosition) {

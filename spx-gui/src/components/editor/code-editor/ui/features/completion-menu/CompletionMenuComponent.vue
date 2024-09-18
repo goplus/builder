@@ -197,12 +197,12 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
 
   &.slide-enter-from {
     opacity: 0;
-    transform: translate(100%, 40px);
+    transform: translate(100%, 100%);
   }
 
   &.slide-leave-to {
     opacity: 0;
-    transform: translate(100%, -40px);
+    transform: translate(100%, -100%);
   }
 }
 </style>
