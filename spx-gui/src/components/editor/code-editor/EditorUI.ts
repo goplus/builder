@@ -429,6 +429,9 @@ export class EditorUI extends Disposable {
                     startColumn: word.startColumn,
                     endColumn: word.endColumn
                   },
+                  // for current completion menu trigger mode, we can not get more data by only pass documentation and desc properties.
+                  // thus, we have to use `completionMenuCache` to reach our goals, here set its idx, and in `complete-menu` class method `completionModelItems2CompletionItems` using `getCompletionCacheItemByIdx` to get full data
+                  // in a word, we are using this property to pass data on purpose
                   documentation: i.toString()
                 })
               ) || []
