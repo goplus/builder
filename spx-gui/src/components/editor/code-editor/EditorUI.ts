@@ -24,6 +24,7 @@ import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
 import type { AttentionHint } from '@/components/editor/code-editor/ui/features/attention-hint/attention-hint'
+import { File } from '@/models/common/file'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -70,8 +71,7 @@ export type DocPreview = {
 }
 
 export type AudioPlayer = {
-  src: string
-  duration: number
+  file: File
 }
 
 export interface RenamePreview {
@@ -487,9 +487,11 @@ export class EditorUI extends Disposable {
             .filter((item): item is { type: 'audio'; layer: AudioPlayer } => item.type === 'audio')
             .map((item) => item.layer)
 
+          // todo: consider if necessary to show trigger in accurate range when hovering, instead of whole line
           const attentionHintDecorations = this.attentionHint?.attentionHintDecorations.filter(
             (item) => item.range.startLineNumber === position.lineNumber
           )
+
           if (attentionHintDecorations) {
             const attentionHintPreviews = attentionHintDecorations
               .map((item) => item.hoverContent)
@@ -507,6 +509,7 @@ export class EditorUI extends Disposable {
             endColumn: word.endColumn
           })
 
+          // for now only goes one audio player
           const [audioPlayer] = audioPlayers
           if (audioPlayer)
             this.hoverPreview?.showAudioPlayer(audioPlayer, {

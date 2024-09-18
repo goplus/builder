@@ -6,7 +6,11 @@ import IconOverview from './icons/overview.svg?raw'
 import { UITooltip } from '@/components/ui'
 import MarkdownPreview from '@/components/editor/code-editor/ui/MarkdownPreview.vue'
 import { icon2SVG, normalizeIconSize } from '@/components/editor/code-editor/ui/common'
-import type { EditorUI, InputItemCategory } from '@/components/editor/code-editor/EditorUI'
+import type {
+  EditorUI,
+  InputItem,
+  InputItemCategory
+} from '@/components/editor/code-editor/EditorUI'
 import { debounce, useLocalStorage } from '@/utils/utils'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { onBeforeUpdate } from 'vue'
@@ -174,7 +178,7 @@ onUnmounted(() => {
               <ToolItem
                 v-for="(def, n) in group.inputItems"
                 :key="n"
-                :input-item="def"
+                :input-item="def as InputItem"
                 @use-snippet="$emit('insertText', $event)"
               />
             </div>
