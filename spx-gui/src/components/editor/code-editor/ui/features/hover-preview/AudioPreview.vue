@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useAsyncComputed } from '@/utils/utils'
-import { getAudioContext } from '@/utils/audio'
+import { getAudioContext, useAudioDuration } from '@/utils/audio'
 import { computed, ref, watchEffect } from 'vue'
 import IconPlay from '../../icons/play.svg?raw'
 import IconPause from '../../icons/pause.svg?raw'
 import IconReset from '../../icons/reset.svg?raw'
 import { normalizeIconSize } from '@/components/editor/code-editor/ui/common'
+import { useFileUrl } from '@/utils/file'
+import { File } from '@/models/common/file'
 
 const emits = defineEmits<{
   playing: []
@@ -13,7 +15,7 @@ const emits = defineEmits<{
 }>()
 
 const props = defineProps<{
-  src: string
+  file: File
 }>()
 
 // todo: reused buffer data by `waveformDataFromSrc` computed functions
@@ -25,11 +27,13 @@ const isPlaying = ref(false)
 const duration = ref(0)
 const currentTime = ref(0)
 const progress = ref(0)
-
+const [audioSrc, audioLoading] = useFileUrl(() => props.file)
+const { formattedDuration } = useAudioDuration(() => audioSrc.value)
 // this function is from current project 'src/components/editor/sound/waveform/WaveformPlayer.vue'
 const waveformDataFromSrc = useAsyncComputed(async () => {
+  if (!audioSrc.value) return
   const audioContext = getAudioContext()
-  const arrayBuffer = await (await fetch(props.src)).arrayBuffer()
+  const arrayBuffer = await (await fetch(audioSrc.value)).arrayBuffer()
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
   const channelData = audioBuffer.getChannelData(0)
 
@@ -78,7 +82,8 @@ const waveformDataFromSrc = useAsyncComputed(async () => {
   return points
 })
 const formatRemain = computed(() => {
-  const remainTime = duration.value - (currentTime.value || 0)
+  const remainTime = duration.value - currentTime.value
+  if (!isPlaying.value) return formattedDuration.value
   return isNaN(remainTime) ? '0.0s' : `${remainTime.toFixed(1)}s`
 })
 
@@ -148,7 +153,7 @@ function resetAudio() {
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <div class="audio-player">
-    <audio ref="audioElement" :src="src"></audio>
+    <audio v-if="audioSrc" ref="audioElement" :src="audioSrc"></audio>
     <aside class="play-button" @click="isPlaying ? pauseAudio() : playAudio()">
       <span
         v-if="isPlaying"
@@ -163,30 +168,44 @@ function resetAudio() {
     </aside>
 
     <main class="audio-wrapper">
-      <!--  this layer is for audio wave  -->
-      <section class="audio-wave">
-        <span
-          v-for="(point, i) in waveformDataFromSrc"
-          :key="i"
-          class="wave-bar"
-          :style="{ height: `${point}%` }"
-        ></span>
-        <span
-          ref="progressMaskElement"
+      <template v-if="!audioLoading">
+        <!--  this layer is for audio wave  -->
+        <section class="audio-wave">
+          <span
+            v-for="(point, i) in waveformDataFromSrc"
+            :key="i"
+            class="wave-bar"
+            :style="{ height: `${point}%` }"
+          ></span>
+          <span
+            ref="progressMaskElement"
+            :style="{
+              animationPlayState: isPlaying ? 'running' : 'paused'
+            }"
+            class="progress-mask"
+          ></span>
+        </section>
+        <!--  this layer is for progress  -->
+        <section
+          ref="progressElement"
+          class="progress"
           :style="{
             animationPlayState: isPlaying ? 'running' : 'paused'
           }"
-          class="progress-mask"
-        ></span>
-      </section>
-      <!--  this layer is for progress  -->
-      <section
-        ref="progressElement"
-        class="progress"
-        :style="{
-          animationPlayState: isPlaying ? 'running' : 'paused'
-        }"
-      ></section>
+        ></section>
+      </template>
+      <template v-else>
+        <section class="audio-wave audio-wave-loading">
+          <span
+            v-for="idx in 36"
+            :key="idx"
+            class="wave-bar"
+            :style="{
+              '--delay': idx * 50 + 'ms'
+            }"
+          ></span>
+        </section>
+      </template>
       <!--  this layer is for extras like duration, reset button  -->
       <nav class="extra">
         <span class="duration">{{ formatRemain }}</span>
@@ -263,6 +282,23 @@ function resetAudio() {
     min-height: 4px;
     background-color: #383838;
     border-radius: 999px;
+  }
+}
+
+.audio-wave-loading {
+  .wave-bar {
+    animation: wave-bar-loading 1200ms var(--delay) infinite;
+  }
+
+  @keyframes wave-bar-loading {
+    0%,
+    100% {
+      height: 10%;
+    }
+
+    50% {
+      height: 80%;
+    }
   }
 }
 

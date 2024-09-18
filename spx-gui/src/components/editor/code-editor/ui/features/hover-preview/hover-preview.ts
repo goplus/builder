@@ -2,6 +2,27 @@ import { editor as IEditor, type IRange, type IDisposable, Emitter } from 'monac
 import { reactive } from 'vue'
 import type { AudioPlayer, DocPreview } from '@/components/editor/code-editor/EditorUI'
 
+export interface HoverPreviewState {
+  focused: boolean
+  range: IRange
+  docs: {
+    visible: boolean
+    layer: Array<DocPreview>
+    position: {
+      top: number
+      left: number
+    }
+  }
+  audio: {
+    visible: boolean
+    layer: AudioPlayer | null
+    position: {
+      top: number
+      left: number
+    }
+  }
+}
+
 export class HoverPreview implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
   // classic ts type matches error between Browser timer and Node.js timer, god knows why 2024 still has this problem.
@@ -17,26 +38,7 @@ export class HoverPreview implements IDisposable {
   public onMousemove = this._onMousemove.event
   public onShowDocument = this._onShowDocument.event
   public onAudioPlayer = this._onShowAudioPlayer.event
-  public hoverPreviewState = reactive<{
-    focused: boolean
-    range: IRange
-    docs: {
-      visible: boolean
-      layer: Array<DocPreview>
-      position: {
-        top: number
-        left: number
-      }
-    }
-    audio: {
-      visible: boolean
-      layer: AudioPlayer | null
-      position: {
-        top: number
-        left: number
-      }
-    }
-  }>({
+  public hoverPreviewState: HoverPreviewState = reactive({
     focused: false,
     range: {
       startLineNumber: 0,

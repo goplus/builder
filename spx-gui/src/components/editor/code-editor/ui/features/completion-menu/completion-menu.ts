@@ -32,7 +32,7 @@ export interface CompletionMenuState {
 
 export class CompletionMenu implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
-  public completionMenuState = reactive<CompletionMenuState>({
+  public completionMenuState: CompletionMenuState = reactive({
     visible: false,
     suggestions: [],
     activeIdx: 0,

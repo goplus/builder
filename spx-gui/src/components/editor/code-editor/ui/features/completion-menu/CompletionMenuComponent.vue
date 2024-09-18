@@ -76,7 +76,7 @@ function handleActiveMenuItem(menuItemElement: HTMLLIElement) {
 }
 
 const activeCompletionMenuItem = computed<CompletionMenuFeatureItem | null>(() => {
-  return completionMenuState.suggestions[completionMenuState.activeIdx]
+  return completionMenuState.suggestions[completionMenuState.activeIdx] as CompletionMenuFeatureItem
 })
 
 function handleMenuItemSelect(item: CompletionMenuItem) {

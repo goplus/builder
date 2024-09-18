@@ -266,7 +266,7 @@ function updateDocumentCardPosition() {
             top: hoverPreviewState.audio.position.top + 'px',
             left: hoverPreviewState.audio.position.left + 'px'
           }"
-          :src="hoverPreviewState.audio.layer.src"
+          :file="hoverPreviewState.audio.layer.file"
           @mouseleave="handleMouseLeave"
           @mouseenter="hoverPreview.tryToPreventHideAudioPlayer()"
         ></AudioPreview>
