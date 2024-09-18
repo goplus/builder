@@ -24,6 +24,7 @@ import { ChatBotModal } from './ui/features/chat-bot/chat-bot-modal'
 import { reactive } from 'vue'
 import type { Chat } from './chat-bot'
 import type { AttentionHint } from '@/components/editor/code-editor/ui/features/attention-hint/attention-hint'
+import { File } from '@/models/common/file'
 
 export interface TextModel extends IEditor.ITextModel {}
 
@@ -43,7 +44,10 @@ export enum Icon {
   Sensing,
   Game,
   Variable,
-  Listen
+  Listen,
+  Read,
+  Write,
+  Code
 }
 
 export type Markdown = string
@@ -67,8 +71,7 @@ export type DocPreview = {
 }
 
 export type AudioPlayer = {
-  src: string
-  duration: number
+  file: File
 }
 
 export interface RenamePreview {
@@ -90,9 +93,9 @@ export type LayerContent =
 export interface CompletionItem {
   icon: Icon
   label: string
-  desc: string
+  desc?: string
   insertText: string
-  preview: LayerContent
+  preview?: LayerContent
 }
 
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
@@ -415,7 +418,7 @@ export class EditorUI extends Disposable {
           } else {
             const suggestions =
               cachedItems.map(
-                (item): languages.CompletionItem => ({
+                (item, i): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
@@ -425,7 +428,11 @@ export class EditorUI extends Disposable {
                     endLineNumber: position.lineNumber,
                     startColumn: word.startColumn,
                     endColumn: word.endColumn
-                  }
+                  },
+                  // for current completion menu trigger mode, we can not get more data by only pass documentation and desc properties.
+                  // thus, we have to use `completionMenuCache` to reach our goals, here set its idx, and in `complete-menu` class method `completionModelItems2CompletionItems` using `getCompletionCacheItemByIdx` to get full data
+                  // in a word, we are using this property to pass data on purpose
+                  documentation: i.toString()
                 })
               ) || []
             return { suggestions }
@@ -475,9 +482,16 @@ export class EditorUI extends Disposable {
             .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
             .map((item) => item.layer)
 
+          const audioPlayers = result
+            // add `item is { type: 'audio'; layer: AudioPlayer }` to pass npm script type-check
+            .filter((item): item is { type: 'audio'; layer: AudioPlayer } => item.type === 'audio')
+            .map((item) => item.layer)
+
+          // todo: consider if necessary to show trigger in accurate range when hovering, instead of whole line
           const attentionHintDecorations = this.attentionHint?.attentionHintDecorations.filter(
             (item) => item.range.startLineNumber === position.lineNumber
           )
+
           if (attentionHintDecorations) {
             const attentionHintPreviews = attentionHintDecorations
               .map((item) => item.hoverContent)
@@ -495,7 +509,15 @@ export class EditorUI extends Disposable {
             endColumn: word.endColumn
           })
 
-          // todo: when show audio preview, add code `item is { type: 'audio'; layer: AudioPlayer }` to pass npm script type-check
+          // for now only goes one audio player
+          const [audioPlayer] = audioPlayers
+          if (audioPlayer)
+            this.hoverPreview?.showAudioPlayer(audioPlayer, {
+              startLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endLineNumber: position.lineNumber,
+              endColumn: word.endColumn
+            })
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content

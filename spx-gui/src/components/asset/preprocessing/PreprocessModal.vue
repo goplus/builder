@@ -288,7 +288,7 @@ watch(
   margin-bottom: -16px;
 }
 .footer-title {
-  color: --ui-color-title;
+  color: var(--ui-color-title);
 }
 .costume-wrapper {
   width: 100%;

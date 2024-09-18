@@ -10,22 +10,20 @@ import IconAIAbility from '../icons/ai-helper.svg?raw'
 import IconDocument from '../icons/document.svg?raw'
 import IconRename from '../icons/rename.svg?raw'
 import IconPlaylist from '../icons/playlist.svg?raw'
-import iconEvent from '../icons/event.svg?raw'
-import iconLook from '../icons/look.svg?raw'
-import iconMotion from '../icons/motion.svg?raw'
-import iconSound from '../icons/sound.svg?raw'
-import iconControl from '../icons/control.svg?raw'
-import iconGame from '../icons/game.svg?raw'
-import iconSensing from '../icons/sensing.svg?raw'
-import iconVariable from '../icons/variable.svg?raw'
+import IconEvent from '../icons/event.svg?raw'
+import IconLook from '../icons/look.svg?raw'
+import IconMotion from '../icons/motion.svg?raw'
+import IconSound from '../icons/sound.svg?raw'
+import IconControl from '../icons/control.svg?raw'
+import IconGame from '../icons/game.svg?raw'
+import IconSensing from '../icons/sensing.svg?raw'
+import IconVariable from '../icons/variable.svg?raw'
 
 /** transform icon enum to raw svg html content */
 export function icon2SVG(icon: Icon): string {
   switch (icon) {
-    case Icon.Function:
-      return IconEffect
     case Icon.Event:
-      return iconEvent
+      return IconEvent
     case Icon.Listen:
       return IconListen
     case Icon.Property:
@@ -41,19 +39,25 @@ export function icon2SVG(icon: Icon): string {
     case Icon.Playlist:
       return IconPlaylist
     case Icon.Look:
-      return iconLook
+      return IconLook
     case Icon.Motion:
-      return iconMotion
+      return IconMotion
     case Icon.Sound:
-      return iconSound
+      return IconSound
     case Icon.Control:
-      return iconControl
+      return IconControl
     case Icon.Sensing:
-      return iconSensing
+      return IconSensing
     case Icon.Game:
-      return iconGame
+      return IconGame
     case Icon.Variable:
-      return iconVariable
+      return IconVariable
+    case Icon.Read:
+      return IconRead
+    case Icon.Code:
+      return IconCode
+    case Icon.Function:
+      return IconEffect
     default:
       return IconEffect
   }

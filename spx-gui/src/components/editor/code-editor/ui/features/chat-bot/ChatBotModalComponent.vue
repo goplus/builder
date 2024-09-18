@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UIFormModal from '@/components/ui/modal/UIFormModal.vue'
+import UIButton from '@/components/ui/UIButton.vue'
 import ChatBubble from './ChatBubble.vue'
 import ChatLoading from './ChatLoading.vue'
 import { Chat } from '../../../chat-bot'
@@ -8,10 +9,14 @@ const emit = defineEmits<{
   cancelled: []
 }>()
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   chat: Chat
 }>()
+
+const resend = async () => {
+  props.chat.resendMessage()
+}
 </script>
 
 <template>
@@ -31,6 +36,9 @@ defineProps<{
       ></ChatBubble>
       <ChatLoading v-if="chat.chatState.loading"></ChatLoading>
     </div>
+    <div v-if="chat.chatState.responseError" class="reload-btn-container" >
+      <UIButton @click="resend">{{ $t({ zh: '重新发送', en: 'Resend' }) }}</UIButton>
+    </div>
   </UIFormModal>
 </template>
 
@@ -48,6 +56,11 @@ defineProps<{
 .container::-webkit-scrollbar-thumb {
   background: var(--ui-color-grey-500);
   border-radius: 4px;
+}
+
+.reload-btn-container{
+  display: flex;
+  justify-content: center;
 }
 
 </style>

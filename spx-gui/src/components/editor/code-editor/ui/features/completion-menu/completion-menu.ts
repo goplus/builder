@@ -14,7 +14,7 @@ import { reactive } from 'vue'
 import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { createMatches, type IMatch } from '../../common'
 import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
-import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
+import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface CompletionMenuState {
   visible: boolean
@@ -32,7 +32,7 @@ export interface CompletionMenuState {
 
 export class CompletionMenu implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
-  public completionMenuState = reactive<CompletionMenuState>({
+  public completionMenuState: CompletionMenuState = reactive({
     visible: false,
     suggestions: [],
     activeIdx: 0,
@@ -61,7 +61,7 @@ export class CompletionMenu implements IDisposable {
   private monacoCompletionModelItems: MonacoCompletionModelItem[] = []
   private completionMenuItemPreviewDecorationsCollection: IEditor.IEditorDecorationsCollection
 
-  private eventsDisposers: Record<string, null | (() => void)> = {}
+  private eventsDisposers: Array<() => void> = []
 
   constructor(editor: IEditor.IStandaloneCodeEditor) {
     this.editor = editor
@@ -111,10 +111,10 @@ export class CompletionMenu implements IDisposable {
       }
     })
 
-    this.eventsDisposers.didHideDispose = didHideDispose
-    this.eventsDisposers.didShowDispose = didShowDispose
-    this.eventsDisposers.didFocusDispose = didFocusDispose
-    this.eventsDisposers.keyDownDispose = keyDownDispose
+    this.eventsDisposers.push(didHideDispose)
+    this.eventsDisposers.push(didShowDispose)
+    this.eventsDisposers.push(didFocusDispose)
+    this.eventsDisposers.push(keyDownDispose)
   }
 
   private disposeCodePreview() {
@@ -230,38 +230,40 @@ export class CompletionMenu implements IDisposable {
     this.completionMenuState.position.top = cursorY + pixelPosition.height
 
     if (windowHeight - cursorY > completionMenuHeight && !isMultiline()) {
-      completionMenuElement.classList.remove('completion-menu--reverse-up')
+      completionMenuElement.parentElement?.classList.remove('completion-menu--reverse-up')
     } else {
-      completionMenuElement.classList.add('completion-menu--reverse-up')
+      completionMenuElement.parentElement?.classList.add('completion-menu--reverse-up')
     }
   }
 
   private completionModelItems2CompletionItems(
     completionModelItems: MonacoCompletionModelItem[]
   ): CompletionMenuFeatureItem[] {
-    // todo: this is temp code, need to combine with other preview.
-    return completionModelItems.map((completion) => {
-      return {
-        icon: completionItemKind2Icon(completion.completion.kind),
-        label: completion.completion.label as string,
-        preview: {
-          type: 'doc',
-          layer: {
-            level: DocPreviewLevel.Normal,
-            content: ''
-          }
-        },
-        insertText: completion.completion.insertText,
-        desc: completion.completion.detail || '',
-        matches: createMatches(completion.score)
+    return completionModelItems.map(({ completion, score }) => {
+      const cacheIdx = Number(completion.documentation)
+      const completionCacheItem = this.completionItemCache.getCompletionCacheItemByIdx(cacheIdx)
+      if (!completionCacheItem) {
+        return {
+          icon: completionItemKind2Icon(completion.kind),
+          label: completion.label as string,
+          insertText: completion.insertText,
+          desc: completion.detail || '',
+          matches: createMatches(score)
+        }
+      } else {
+        return {
+          ...completionCacheItem,
+          matches: createMatches(score)
+        }
       }
     })
   }
 
   public refreshAbortController() {
     this.abortController.abort()
-    this.abortController = new AbortController()
-    return this.abortController
+    const abortController = new AbortController()
+    this.abortController = abortController
+    return abortController
   }
 
   public showCompletionMenu() {
@@ -281,10 +283,7 @@ export class CompletionMenu implements IDisposable {
   }
 
   public dispose() {
-    for (const key in this.eventsDisposers) {
-      this.eventsDisposers[key]?.()
-    }
-
+    this.eventsDisposers.forEach((dispose) => dispose())
     this.completionItemCache.dispose()
     this.disposeCodePreview()
     this.abortController.abort()

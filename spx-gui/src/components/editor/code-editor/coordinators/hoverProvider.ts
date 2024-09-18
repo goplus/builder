@@ -1,12 +1,23 @@
-import type { EditorUI, LayerContent, TextModel } from '@/components/editor/code-editor/EditorUI'
-import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
+import {
+  DocPreviewLevel,
+  type EditorUI,
+  Icon,
+  type LayerContent,
+  type TextModel
+} from '@/components/editor/code-editor/EditorUI'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, TokenUsage } from '@/components/editor/code-editor/compiler'
-import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
+import {
+  type CoordinatorState,
+  definitionStructName2Target,
+  usageType2Icon
+} from '@/components/editor/code-editor/coordinators/index'
 import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
-import { usageType2Icon } from '@/components/editor/code-editor/coordinators/index'
+import { usageEffect2Icon } from '@/components/editor/code-editor/coordinators/index'
 import type { Project } from '@/models/project'
+import type { Sound } from '@/models/sound'
+import { File } from '@/models/common/file'
 
 export class HoverProvider {
   private ui: EditorUI
@@ -37,21 +48,25 @@ export class HoverProvider {
     }
   ): Promise<LayerContent[]> {
     const definition = this.findDefinition(this.currentFilename, ctx.position)
-    if (!definition) return []
-
-    const content = await this.docAbility.getNormalDoc({
-      pkgPath: definition.pkgPath,
-      name: definition.name
-    })
-
+    const sound = this.findMediaName(this.currentFilename, ctx.position)
+    if (!definition && !sound) return []
     const layerContents: LayerContent[] = []
-    if (this.isDefinitionCanBeRenamed(definition)) {
-      const [usage] = definition.usages
-      if (!usage) throw new Error('definition should have at least one usage!')
-      layerContents.push(this.createVariableRenameContent(usage, definition))
-    } else {
-      layerContents.push(...this.createDocContents(content, definition))
+    if (definition) {
+      const content = await this.docAbility.getNormalDoc({
+        pkgPath: definition.pkgPath,
+        name: definition.name
+      })
+
+      if (this.isDefinitionCanBeRenamed(definition)) {
+        const [usage] = definition.usages
+        if (!usage) throw new Error('definition should have at least one usage!')
+        layerContents.push(this.createVariableRenameContent(usage, definition))
+      } else {
+        layerContents.push(...this.createDocContents(content, definition))
+      }
     }
+
+    if (sound) layerContents.push(this.createAudioContent(sound.file))
 
     return layerContents
   }
@@ -75,6 +90,33 @@ export class HoverProvider {
     })
   }
 
+  private findMediaName(filename: string, position: Position): Sound | undefined {
+    const hint = this.coordinatorState.inlayHints.find((inlayHint) => {
+      if (inlayHint.startPosition.filename !== filename) return false
+      const tokenLen = inlayHint.endPos - inlayHint.startPos
+      const line = inlayHint.startPosition.line
+      const startColumn = inlayHint.startPosition.column
+      const endColumn = startColumn + tokenLen
+      return (
+        position.lineNumber === line &&
+        position.column >= startColumn &&
+        position.column <= endColumn &&
+        inlayHint.name === 'mediaName'
+      )
+    })
+    if (!hint) return
+    return this.project.sounds.find((sound) => `"${sound.name}"` === hint.value)
+  }
+
+  private createAudioContent(audioFile: File): LayerContent {
+    return {
+      type: 'audio',
+      layer: {
+        file: audioFile
+      }
+    }
+  }
+
   private createVariableRenameContent(usage: TokenUsage, definition: Definition): LayerContent {
     // if this is function we need remap declaration
     const declarationMap = this.createDefinitionDeclaration(definition.name, [usage])
@@ -83,6 +125,7 @@ export class HoverProvider {
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
+          // in this rename case may not have doc usage, use definition usage type to get icon
           icon: usageType2Icon(usage.type),
           declaration: declarationMap[usage.usageID] || usage.declaration
         },
@@ -124,7 +167,14 @@ export class HoverProvider {
       if (usageWithDoc) {
         usages.push({ ...usage, ...usageWithDoc })
       } else {
-        usages.push({ ...usage, id: usage.usageID, effect: definition.structName, doc: '' })
+        // this case is some usage from wasm without pre-defined token usage effect, may use type(func, string, bool) to determine which effect(read, write, listen, func) is
+        usages.push({
+          ...usage,
+          id: usage.usageID,
+          effect: usage.type,
+          target: definitionStructName2Target(definition.structName),
+          doc: ''
+        })
       }
     } else {
       doc.usages.forEach((usage: UsageWithDoc) => {
@@ -134,7 +184,14 @@ export class HoverProvider {
       definition.usages
         .filter((usage) => !docUsageIdSet.has(usage.usageID))
         .forEach((usage) =>
-          usages.push({ ...usage, id: usage.usageID, effect: definition.structName, doc: '' })
+          // this case is some usage from wasm without pre-defined token usage effect, may use type(func, string, bool) to determine which effect(read, write, listen, func) is
+          usages.push({
+            ...usage,
+            id: usage.usageID,
+            effect: usage.type,
+            target: definitionStructName2Target(definition.structName),
+            doc: ''
+          })
         )
     }
 
@@ -143,7 +200,7 @@ export class HoverProvider {
       layer: {
         level: DocPreviewLevel.Normal,
         header: {
-          icon: usageType2Icon(usage.effect),
+          icon: usageEffect2Icon(usage.effect),
           declaration: declarationMap[usage.id] || usage.declaration
         },
         content: usage.doc,
@@ -167,7 +224,17 @@ export class HoverProvider {
     const usageDeclaration: Record<string, string> = {}
     usages.forEach((usage) => {
       const params = usage.params
-        .map((param) => param.name + ' ' + param.type.split('.').pop())
+        .map(
+          (param) =>
+            param.name +
+            ' ' +
+            param.type
+              // if parma type is func() (func(mi *github.com/goplus/spx.MovingInfo))
+              // this line remove: "*"
+              .replace(/\*/g, '')
+              // this line remove: "github.com/goplus/spx."
+              .replace(/(?:[\w/]+\.)+/g, '')
+        )
         .join(', ')
       if (usage.type === 'func') usageDeclaration[usage.usageID] = `${name} (${params})`
     })

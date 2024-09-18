@@ -13,9 +13,10 @@ const updateInlayHint = debounce(async () => {
   const model = props.inlayHint.editor.getModel()
   if (!model) return
   props.inlayHint.abortController.abort()
-  props.inlayHint.abortController = new AbortController()
+  const abortController = new AbortController()
+  props.inlayHint.abortController = abortController
   const inlayHints = await props.ui.requestInlayHintProviderResolve(model, {
-    signal: props.inlayHint.abortController.signal
+    signal: abortController.signal
   })
 
   props.inlayHint.textDecorationsCollection.clear()
@@ -52,7 +53,18 @@ const updateInlayHint = debounce(async () => {
   )
 }, 300)
 
-props.inlayHint.editor.onDidChangeModelContent(updateInlayHint)
+const { dispose: didChangeModelContentDispose } =
+  props.inlayHint.editor.onDidChangeModelContent(updateInlayHint)
+
+const { dispose: onMouseDownDispose } = props.inlayHint.editor.onMouseDown((e) => {
+  const element = e.target.element
+  if (element?.classList.contains('inlay-hint__icon-playlist')) {
+    props.ui.completionMenu?.showCompletionMenu()
+  }
+})
+
+props.inlayHint.eventDisposeHandler.push(didChangeModelContentDispose)
+props.inlayHint.eventDisposeHandler.push(onMouseDownDispose)
 
 props.inlayHint.eventDisposeHandler.push(
   props.inlayHint.editor.onMouseDown((e) => {

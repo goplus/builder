@@ -13,7 +13,7 @@ import {
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
 import { Runtime } from '../runtime'
-import type { Definition, TokenDetail, TokenUsage as CompilerTokenUsage } from '../compiler'
+import type { Definition, TokenDetail, Hint } from '../compiler'
 import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
@@ -31,12 +31,10 @@ import {
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
 import type {
-  TokenCategory,
-  TokenUsage,
+  TokenCategory, TokenId,
   UsageWithDoc
 } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-import type { I18n } from '@/utils/i18n'
 
 type JumpPosition = {
   line: number
@@ -46,6 +44,7 @@ type JumpPosition = {
 
 export type CoordinatorState = {
   definitions: Definition[]
+  inlayHints: Hint[]
 }
 
 export class Coordinator {
@@ -56,7 +55,8 @@ export class Coordinator {
   compiler: Compiler
   public updateDefinition = debounce(this._updateDefinition, 300)
   private coordinatorState: CoordinatorState = {
-    definitions: []
+    definitions: [],
+    inlayHints: []
   }
   private readonly hoverProvider: HoverProvider
   private suggest: Suggest
@@ -119,17 +119,9 @@ export class Coordinator {
     const { sprites, sounds, stage, selectedSprite } = this.project
 
     const createCompletionItem = (name: string) => ({
-      icon: Icon.Variable,
+      icon: Icon.Property,
       insertText: `"${name}"`,
-      label: `"${name}"`,
-      desc: '',
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
+      label: `"${name}"`
     })
 
     const items = [
@@ -155,19 +147,41 @@ export class Coordinator {
         ctx.position.lineNumber,
         ctx.position.column
       )
-      .then((completionItems) => {
+      .then(async (completionItems) => {
+        // todo: this function code is running very slowly! need refactor
+        const completionItemDocMap = new Map<string, UsageWithDoc>()
+        for (let i = 0; i < completionItems.length; i++) {
+          const completionItem = completionItems[i]
+          const tokenId: TokenId = {
+            pkgPath: completionItem.tokenPkg,
+            name: completionItem.tokenName
+          }
+          const { usages } = await this.docAbility.getNormalDoc(tokenId)
+
+          usages.forEach((usage: UsageWithDoc) => completionItemDocMap.set(usage.insertText, usage))
+        }
         addItems(
           completionItems.map((completionItem) => {
+            const completionItemDoc = completionItemDocMap.get(completionItem.insertText)
+            if (!completionItemDoc)
+              return {
+                icon: usageType2Icon(completionItem.type),
+                insertText: completionItem.insertText,
+                label: completionItem.label
+              }
             return {
               icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
-              desc: '',
               preview: {
                 type: 'doc',
                 layer: {
                   level: DocPreviewLevel.Normal,
-                  content: '' /* todo: get content with docAbility */
+                  content: completionItemDoc.doc,
+                  header: {
+                    icon: usageEffect2Icon(completionItemDoc.effect),
+                    declaration: completionItemDoc.declaration
+                  }
                 }
               }
             }
@@ -250,7 +264,7 @@ export class Coordinator {
     )
 
     if (ctx.signal.aborted) return []
-
+    this.coordinatorState.inlayHints = inlayHints
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
       if (inlayHint.type === 'play') {
@@ -389,7 +403,8 @@ export class Coordinator {
         color,
         this.ui,
         this.docAbility,
-        tokenDetailsMap
+        tokenDetailsMap,
+        !this.project.selectedSprite
       )
     }
 
@@ -412,101 +427,104 @@ async function toolCategory2InputItemCategory(
   color: string,
   ui: EditorUI,
   docAbility: DocAbility,
-  tokenDetailsMap: Record<string, TokenDetail>
+  tokenDetailsMap: Record<string, TokenDetail>,
+  isInStageCode: boolean
 ): Promise<InputItemCategory> {
   const inputItemGroups: InputItemGroup[] = []
-  const transferUsageParam = (params: Array<{ name: string; type: string }>) =>
-    params.map((param) => param.name + ' ' + param.type.split('.').pop()).join(', ')
+  const transferUsageDeclaration = (declaration: string) =>
+    declaration
+      // if parma type is func() (func(mi *github.com/goplus/spx.MovingInfo))
+      // this line remove: "*"
+      .replace(/\*/g, '')
+      // this line remove: "github.com/goplus/spx."
+      .replace(/(?:[\w/]+\.)+/g, '')
   for (const group of category.groups) {
     const inputItems: InputItem[] = []
-
     for (const token of group.tokens) {
       const tokenWithDoc = await docAbility.getNormalDoc(token.id)
       const key = `${token.id.pkgPath}/${token.id.name}`
       const tokenDetail: TokenDetail | undefined = tokenDetailsMap[key]
+
       const tokenUsages = tokenDetail?.usages || []
       const docUsages: Array<UsageWithDoc> = tokenWithDoc.usages
-      const tokenUsageIdxMap = new Map<string, number>()
-      const finalUsages: Array<UsageWithDoc> = tokenUsages.map((usage, i) => {
-        tokenUsageIdxMap.set(usage.usageID, i)
-        return {
-          ...usage,
-          id: usage.usageID,
-          effect: tokenDetail.structName,
-          doc: '',
-          declaration:
-            usage.type === 'func'
-              ? `${token.id.name} (${transferUsageParam(usage.params)})`
-              : usage.declaration
-        }
+
+      const docUsageIdxMap = new Map<string, number>()
+
+      // current logic is only show document, not shown all wasm usages.
+
+      // collect all usages from document and next get wasm usage to merge it.
+      const finalUsages: Array<UsageWithDoc> = docUsages
+      docUsages.forEach((usage, i) => docUsageIdxMap.set(usage.id, i))
+      // here is wasm usage merge doc usage to full finalUsages
+      tokenUsages.forEach((usage) => {
+        const idx = docUsageIdxMap.get(usage.usageID)
+        // for number 0 is falsy, can not use `if (idx)`
+        if (idx == null) return
+        finalUsages[idx].declaration = transferUsageDeclaration(finalUsages[idx].declaration)
       })
-      docUsages.forEach((usage) => {
-        if (tokenUsageIdxMap.has(usage.id)) {
-          const idx = tokenUsageIdxMap.get(usage.id)
-          if (idx == null)
-            throw new Error(
-              'get array "finalUsages" member error for already set key "usageId", but idx is not exist'
-            )
-          finalUsages[idx].doc = usage.doc
-          // usage effect from pre-defined is better than wasm get.
-          finalUsages[idx].effect = usage.effect
-        } else {
-          finalUsages.push(usage)
-        }
-      })
-      finalUsages.forEach((usage) => {
-        inputItems.push({
-          icon: usageType2Icon(usage.effect),
-          label: token.id.name,
-          sample: usage.sample,
-          insertText: usage.insertText,
-          desc: {
-            type: 'doc',
-            layer: {
-              level: DocPreviewLevel.Normal,
-              content: usage.doc,
-              header: {
-                icon: usageType2Icon(usage.effect),
-                declaration: usage.declaration
-              },
-              recommendAction: {
-                label: ui.i18n.t({
-                  zh: '还有疑惑？场外求助',
-                  en: 'Still in confusion? Ask for help'
-                }),
-                activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-                onActiveLabelClick: () => {
-                  // TODO: add some logic code here
-                }
-              },
-              moreActions: [
-                {
-                  icon: Icon.Document,
-                  label: ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-                  onClick: () => {
-                    const usageId = usage.id
-                    docAbility.getDetailDoc(token.id).then((detailDoc) => {
-                      const usageDetailDoc = detailDoc.usages.find(
-                        (usage: UsageWithDoc) => usage.id === usageId
-                      )?.doc
-                      if (!usageDetailDoc)
-                        return console.warn(
-                          'usageDetailDoc not found. tokenId: ' +
-                            JSON.stringify(token.id) +
-                            ' usageId: ' +
-                            usageId
-                        )
-                      ui.invokeDocumentDetail(usageDetailDoc)
-                    })
-                  }
-                }
-              ]
-            }
-          }
+
+      finalUsages
+        // this filter is used find usage to match current Sprite Code or Stage Code
+        .filter((usage) => {
+          if (!isInStageCode) return true
+          // some effect may empty but pre-defined in tokens like if, function, const, etc.
+          if (!usage.target && token.id.pkgPath === 'gop') return true
+          return ['All', 'Stage'].includes(usage.target)
         })
-      })
+        .forEach((usage) => {
+          inputItems.push({
+            icon: usageEffect2Icon(usage.effect),
+            label: token.id.name,
+            sample: usage.sample,
+            insertText: usage.insertText,
+            desc: {
+              type: 'doc',
+              layer: {
+                level: DocPreviewLevel.Normal,
+                content: usage.doc,
+                header: {
+                  icon: usageEffect2Icon(usage.effect),
+                  declaration: usage.declaration
+                },
+                recommendAction: {
+                  label: ui.i18n.t({
+                    zh: '还有疑惑？场外求助',
+                    en: 'Still in confusion? Ask for help'
+                  }),
+                  activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+                  onActiveLabelClick: () => {
+                    // TODO: add some logic code here
+                  }
+                },
+                moreActions: [
+                  {
+                    icon: Icon.Document,
+                    label: ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+                    onClick: () => {
+                      const usageId = usage.id
+                      docAbility.getDetailDoc(token.id).then((detailDoc) => {
+                        const usageDetailDoc = detailDoc.usages.find(
+                          (usage: UsageWithDoc) => usage.id === usageId
+                        )?.doc
+                        if (!usageDetailDoc)
+                          return console.warn(
+                            'usageDetailDoc not found. tokenId: ' +
+                              JSON.stringify(token.id) +
+                              ' usageId: ' +
+                              usageId
+                          )
+                        ui.invokeDocumentDetail(usageDetailDoc)
+                      })
+                    }
+                  }
+                ]
+              }
+            }
+          })
+        })
     }
 
+    if (!inputItems.length) continue
     inputItemGroups.push({
       label: group.label,
       inputItems: inputItems
@@ -520,17 +538,41 @@ async function toolCategory2InputItemCategory(
   }
 }
 
-/** transform from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
-// todo: add more case type transform to type
-export function usageType2Icon(type: string): Icon {
-  switch (type) {
+/** transform pre-defined token usage effect into Icon type */
+export function usageEffect2Icon(effect: string): Icon {
+  switch (effect) {
+    case 'read':
+      return Icon.Read
+    case 'listen':
+      return Icon.Listen
     case 'func':
       return Icon.Function
-    case 'keyword':
-      return Icon.Property
-    case 'bool':
-      return Icon.Property
     default:
-      return Icon.Property
+      return Icon.Function
+  }
+}
+
+/* transform wasm token usage type item like 'func, keyword, bool, byte, float32, etc.'  */
+export function usageType2Icon(type: string): Icon {
+  switch (type) {
+    case 'code':
+      return Icon.Code
+    case 'keyword':
+      return Icon.Write
+    case 'bool':
+      return Icon.Read
+    // todo: add more case type transform to Icon type
+    default:
+      return Icon.Function
+  }
+}
+
+/* transform wasm definition structName item like 'Sound, Game, Camera, etc.' into TokenUsage Target  */
+export function definitionStructName2Target(structName: string): 'All' | 'Sprite' | 'Stage' {
+  switch (structName) {
+    case 'Game':
+      return 'Stage'
+    default:
+      return 'All'
   }
 }
