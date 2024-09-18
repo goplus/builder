@@ -1,8 +1,8 @@
-// This script is used to load all assets to Milvus. 
+// This script is used to load all assets to Milvus.
 //
-// The script reads the assets from the database 
-// and then calls the AIGC service to get the embeddings of the assets 
-// and inserts them into the Milvus database. 
+// The script reads the assets from the database
+// and then calls the AIGC service to get the embeddings of the assets
+// and inserts them into the Milvus database.
 package main
 
 import (
@@ -10,10 +10,10 @@ import (
 	"database/sql"
 	"errors"
 	_ "image/png"
-	"net/http"
 	"io/fs"
+	"net/http"
 	"os"
-	
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/log"
@@ -22,8 +22,8 @@ import (
 	_ "github.com/qiniu/go-cdk-driver/kodoblob"
 	qiniuLog "github.com/qiniu/x/log"
 
-	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 var (
@@ -77,10 +77,10 @@ func Load() (err error) {
 			logger.Printf("Asset %s already exists in Milvus", asset.DisplayName)
 			continue
 		}
-		
+
 		var embeddingResult controller.GetEmbeddingResult
 		err = aigcClient.Call(ctx, http.MethodPost, "/embedding", &controller.GetEmbeddingParams{
-			Prompt: asset.DisplayName,
+			Prompt:      asset.DisplayName,
 			CallbackUrl: "",
 		}, &embeddingResult)
 
@@ -91,9 +91,9 @@ func Load() (err error) {
 
 		// insert the embedding into the milvus
 		model.AddMilvusAsset(ctx, milvusClient, &model.MilvusAsset{
-			AssetID: asset.ID,
+			AssetID:   asset.ID,
 			AssetName: asset.DisplayName,
-			Vector: embeddingResult.Embedding,
+			Vector:    embeddingResult.Embedding,
 		})
 	}
 
