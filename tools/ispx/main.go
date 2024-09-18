@@ -9,7 +9,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"log"
 	"reflect"
@@ -54,13 +53,7 @@ func Editor_ParseSpriteAnimator(this js.Value, args []js.Value) interface{} {
 		return nil
 	}
 
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Println("Failed to marshal sprite animator data:", err)
-		return nil
-	}
-
-	return js.ValueOf(string(jsonData))
+	return convertStructToJSObject(data)
 }
 
 // Editor_ParseSpriteAnimation parses sprite animation data.
@@ -74,13 +67,12 @@ func Editor_ParseSpriteAnimation(this js.Value, args []js.Value) interface{} {
 	goBytes := convertToGoBytes(spriteData)
 	fs := readZipData(goBytes)
 
-	println("parsing sprite animation...")
 	data, err := spx.Editor_ParseSpriteAnimation(fs, spriteName, animName)
 	if err != nil {
 		log.Println("Failed to parse sprite animation:", err)
 		return nil
 	}
-	println("done")
+
 	return convertStructToJSObject(data)
 }
 
