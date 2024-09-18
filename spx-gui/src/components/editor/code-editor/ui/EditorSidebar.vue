@@ -111,6 +111,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- eslint-disable vue/no-v-html -->
   <!--  this ul element area is sidebar tab nav  -->
   <ul
     class="categories-wrapper skeleton-wrapper"
