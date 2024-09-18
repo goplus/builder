@@ -17,9 +17,7 @@ import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor
 import { usageEffect2Icon } from '@/components/editor/code-editor/coordinators/index'
 import type { Project } from '@/models/project'
 import type { Sound } from '@/models/sound'
-import { useAudioDuration } from '@/utils/audio'
-import { untilNotNull } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
+import { File } from '@/models/common/file'
 
 export class HoverProvider {
   private ui: EditorUI
@@ -68,10 +66,7 @@ export class HoverProvider {
       }
     }
 
-    if (sound) {
-      const [audioSrc] = useFileUrl(() => sound.file)
-      layerContents.push(await this.createAudioContent(await untilNotNull(audioSrc)))
-    }
+    if (sound) layerContents.push(this.createAudioContent(sound.file))
 
     return layerContents
   }
@@ -113,14 +108,11 @@ export class HoverProvider {
     return this.project.sounds.find((sound) => `"${sound.name}"` === hint.value)
   }
 
-  private async createAudioContent(audioSrc: string): Promise<LayerContent> {
-    const { duration: _duration } = useAudioDuration(() => audioSrc)
-    const duration = await untilNotNull(_duration)
+  private createAudioContent(audioFile: File): LayerContent {
     return {
       type: 'audio',
       layer: {
-        duration,
-        src: audioSrc
+        file: audioFile
       }
     }
   }

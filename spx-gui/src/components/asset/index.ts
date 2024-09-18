@@ -66,7 +66,7 @@ export function useAddSpriteFromLocalFile() {
       title: actionMessage,
       confirmText: { en: 'Add', zh: '添加' }
     })
-        for (const costume of costumes) {
+    for (const costume of costumes) {
       sprite.addCostume(costume)
     }
     await project.history.doAction({ name: actionMessage }, async () => {

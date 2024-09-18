@@ -6,6 +6,7 @@ import RenameComponent from '@/components/editor/code-editor/ui/features/hover-p
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { type Action, DocPreviewLevel, type RenamePreview } from '../../../EditorUI'
 import AudioPreview from '@/components/editor/code-editor/ui/features/hover-preview/AudioPreview.vue'
+import type { File } from '@/models/common/file'
 
 const props = defineProps<{
   hoverPreview: HoverPreview
@@ -266,7 +267,7 @@ function updateDocumentCardPosition() {
             top: hoverPreviewState.audio.position.top + 'px',
             left: hoverPreviewState.audio.position.left + 'px'
           }"
-          :src="hoverPreviewState.audio.layer.src"
+          :file="hoverPreviewState.audio.layer.file as File"
           @mouseleave="handleMouseLeave"
           @mouseenter="hoverPreview.tryToPreventHideAudioPlayer()"
         ></AudioPreview>
