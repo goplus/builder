@@ -47,7 +47,7 @@ const menuItems = computed<CompletionMenuItem[]>(() =>
     // make menu icon slightly larger than fontSize for better display
     iconSize: completionMenuState.fontSize * 1.1,
     active: completionMenuState.activeIdx === i,
-    preview: item.preview as LayerContent,
+    preview: item.preview,
     // `matches` is not required in `EditorMenu.vue`, but required in `CompletionMenuComponent.vue`.
     // `EditorMenu.vue` can pass any data to default slot if you set, so here we need pass `matches`
     matches: resolveSuggestMatches2Highlight(item.label, item.matches)
