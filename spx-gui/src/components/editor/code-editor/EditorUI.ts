@@ -43,7 +43,10 @@ export enum Icon {
   Sensing,
   Game,
   Variable,
-  Listen
+  Listen,
+  Read,
+  Write,
+  Code
 }
 
 export type Markdown = string
@@ -476,6 +479,11 @@ export class EditorUI extends Disposable {
             .filter((item): item is { type: 'doc'; layer: DocPreview } => item.type === 'doc')
             .map((item) => item.layer)
 
+          const audioPlayers = result
+            // add `item is { type: 'audio'; layer: AudioPlayer }` to pass npm script type-check
+            .filter((item): item is { type: 'audio'; layer: AudioPlayer } => item.type === 'audio')
+            .map((item) => item.layer)
+
           const attentionHintDecorations = this.attentionHint?.attentionHintDecorations.filter(
             (item) => item.range.startLineNumber === position.lineNumber
           )
@@ -496,7 +504,14 @@ export class EditorUI extends Disposable {
             endColumn: word.endColumn
           })
 
-          // todo: when show audio preview, add code `item is { type: 'audio'; layer: AudioPlayer }` to pass npm script type-check
+          const [audioPlayer] = audioPlayers
+          if (audioPlayer)
+            this.hoverPreview?.showAudioPlayer(audioPlayer, {
+              startLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endLineNumber: position.lineNumber,
+              endColumn: word.endColumn
+            })
 
           return {
             // we only need to know when to trigger hover preview, no need to show raw content

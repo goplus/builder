@@ -48,6 +48,7 @@ defineProps<{
       <nav class="more">
         <!--  todo: when has 2 more we need pop out a menu instead of current flat all actions  -->
         <!-- eslint-disable vue/no-v-html -->
+        <!--  when click action may return layer, need emit action click event and let outsider handle manually  -->
         <button
           v-for="(action, i) in moreActions"
           :key="i"
