@@ -146,7 +146,7 @@ func GetInlayHint(currentFileName string, fileMap map[string]string) (interface{
 }
 
 func GetCompletions(fileName string, fileMap map[string]string, line, column int) (interface{}, error) {
-	list, err := getScopesItems(fileName, fileMap, line, column)
+	list, err := getCompletionItems(fileName, fileMap, line, column)
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}
