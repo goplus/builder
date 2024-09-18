@@ -62,6 +62,12 @@ func NewCollection() {
 	if err != nil {
 		log.Fatalf("Failed to create collection: %v", err)
 	}
+
+	idx, err := entity.NewIndexIvfFlat(entity.L2, 2)
+	if err != nil {
+		log.Fatal("fail to create ivf flat index:", err.Error())
+	}
+	cli.CreateIndex(ctx, "asset", "vector", idx, false)
 }
 
 func main() {

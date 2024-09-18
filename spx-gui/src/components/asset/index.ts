@@ -43,8 +43,8 @@ export function useAddAssetToLibrary() {
 
 export function useRenameAsset(){
   const invokeRenameAssetModal = useModal(AssetRenameModal)
-  return function renameAsset(asset: TaggedAIAssetData,isFavorite: boolean){
-    return invokeRenameAssetModal({asset,isFavorite})
+  return function renameAsset(asset: TaggedAIAssetData,isFavorite: boolean,prompt?: string){
+    return invokeRenameAssetModal({asset,isFavorite, prompt})
   }
 }
 

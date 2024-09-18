@@ -57,7 +57,7 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 		"vector",
 
 		// distance metric type
-		entity.COSINE,
+		entity.L2,
 
 		//Maximum number returned by search
 		topK,
@@ -81,4 +81,36 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 	}
 
 	return assetNames, nil
+}
+
+// Add an asset
+func AddMilvusAsset(ctx context.Context, cli client.Client, asset *MilvusAsset) error {
+	logger := log.GetReqLogger(ctx)
+
+	if cli == nil || asset == nil {
+		logger.Printf("Invalid input: %v, %v", cli, asset)
+		return nil
+	}
+
+	vector := asset.Vector
+
+	columns := []entity.Column{
+		entity.NewColumnFloatVector("vector", 384, [][]float32{vector}),
+		entity.NewColumnVarChar("asset_id", []string{asset.AssetID}),
+		entity.NewColumnVarChar("asset_name", []string{asset.AssetName}),
+	}
+
+	_, err := cli.Insert(ctx, "asset", "", columns...)
+	if err != nil {
+		logger.Printf("Failed to insert data: %v", err)
+		return err
+	}
+
+	err = cli.Flush(ctx, "asset", false)
+	if err != nil {
+		logger.Printf("Failed to flush data: %v", err)
+		return err
+	}
+
+	return nil
 }

@@ -240,21 +240,3 @@ export async function getAIGCStatus(jobId: string) {
   )) as AIGCStatusResponse
   return result
 }
-
-/**
- * The parameter has not been determined yet.
- * As some ai-generated asset may be edited by user or js code,
- * the backend may need to get the partial asset instead of the jobId.
- *
- */
-export async function exportAIGCAsset(asset: TaggedAIAssetData): Promise<{ assetId: string }>
-export async function exportAIGCAsset(jobId: string): Promise<{ assetId: string }>
-export async function exportAIGCAsset(param: any) {
-  const result = (await client.post(
-    `/aigc/export`,
-    typeof param === 'string' ? { jobId: param } : { ...param }
-  )) as {
-    assetId: string
-  }
-  return result
-}

@@ -162,6 +162,9 @@ type AddAssetParams struct {
 	FilesHash   string               `json:"filesHash"`
 	Preview     string               `json:"preview"`
 	IsPublic    model.IsPublic       `json:"isPublic"`
+	// optional
+	// presenting the keyword when generating the asset
+	Prompt string `json:"prompt"`
 }
 
 // Validate validates the parameters.
@@ -231,6 +234,33 @@ func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*
 			return nil, err
 		}
 	}
+	// add to milvus
+	prompt := params.Prompt
+	if prompt == "" {
+		prompt = params.DisplayName
+	}
+
+	embedding, err := ctrl.GetEmbedding(ctx,
+		&GetEmbeddingParams{
+			Prompt:      prompt,
+			CallbackUrl: "",
+		})
+	if err != nil {
+		logger.Printf("failed to get embedding: %v", err)
+		return nil, err
+	}
+
+	err = model.AddMilvusAsset(ctx, *ctrl.milvusClient, &model.MilvusAsset{
+		Vector:    embedding.Embedding,
+		AssetID:   asset.ID,
+		AssetName: asset.DisplayName,
+	})
+
+	if err != nil {
+		logger.Printf("failed to add asset to milvus: %v", err)
+		return nil, err
+	}
+
 	return asset, nil
 }
 

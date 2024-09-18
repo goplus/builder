@@ -135,6 +135,7 @@ import { AIGCTask } from '@/models/aigc'
 import { useRenameAsset } from '../..'
 import { useMessageHandle } from '@/utils/exception'
 import type { Project } from '@/models/project'
+import { useSearchCtx } from '../SearchContextProvider.vue'
 
 // Define component props
 const props = defineProps<{
@@ -185,6 +186,8 @@ const exportPending = ref(false)
 
 const publicAsset = ref<AssetData | null>(null)
 
+const searchCtx = useSearchCtx()
+
 /**
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
@@ -201,7 +204,8 @@ const exportAssetDataToPublic = async () => {
     displayName: props.asset.displayName ?? props.asset.id,
     filesHash: props.asset.filesHash!,
     preview: 'TODO',
-    category: '*'
+    category: '*',
+    prompt: searchCtx.keyword
   }
   exportPending.value = true
   const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
@@ -227,7 +231,7 @@ const handleRename = useMessageHandle(
   async () => {
     isFavorite.value = !isFavorite.value
     exportPending.value = true
-    await renameAsset(props.asset, isFavorite.value)
+    await renameAsset(props.asset, isFavorite.value, searchCtx.keyword)
     exportPending.value = false
   },
   {

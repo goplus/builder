@@ -42,6 +42,7 @@ const props = defineProps<{
   visible: boolean
   asset: TaggedAIAssetData
   isFavorite: boolean
+  prompt?: string
 }>()
 
 const emit = defineEmits<{
@@ -101,6 +102,7 @@ await handleToggleFav()
     filesHash: props.asset.filesHash!,
     preview: "TODO",
     category: '*',
+    prompt: props.prompt,
   }
   const assetId = props.asset[exportedId] ?? (await addAsset(addAssetParam)).id
   const publicAsset = await getAsset(assetId)
