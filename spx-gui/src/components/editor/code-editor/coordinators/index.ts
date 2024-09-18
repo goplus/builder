@@ -154,7 +154,7 @@ export class Coordinator {
         addItems(
           completionItems.map((completionItem) => {
             return {
-              icon: usageEffect2Icon(completionItem.type),
+              icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
               desc: '',
@@ -519,25 +519,41 @@ async function toolCategory2InputItemCategory(
   }
 }
 
-/** transform pre-defined token usage effect or from wasm token usage type item like 'func, keyword, bool, byte, float32, etc.' into Icon type */
-export function usageEffect2Icon(type: string): Icon {
-  switch (type) {
-    // pre-defined token usage effect start
+/** transform pre-defined token usage effect into Icon type */
+export function usageEffect2Icon(effect: string): Icon {
+  switch (effect) {
     case 'read':
       return Icon.Read
     case 'listen':
       return Icon.Listen
     case 'func':
       return Icon.Function
-    // pre-defined token usage effect end
+    default:
+      return Icon.Function
+  }
+}
+
+/* transform wasm token usage type item like 'func, keyword, bool, byte, float32, etc.'  */
+export function usageType2Icon(type: string): Icon {
+  switch (type) {
     case 'code':
       return Icon.Code
     case 'keyword':
       return Icon.Write
     case 'bool':
       return Icon.Read
-    // todo: add more case type transform to type
+    // todo: add more case type transform to Icon type
     default:
-      return Icon.Write
+      return Icon.Function
+  }
+}
+
+/* transform wasm definition structName item like 'Sound, Game, Camera, etc.' into TokenUsage Target  */
+export function definitionStructName2Target(structName: string): 'All' | 'Sprite' | 'Stage' {
+  switch (structName) {
+    case 'Game':
+      return 'Stage'
+    default:
+      return 'All'
   }
 }

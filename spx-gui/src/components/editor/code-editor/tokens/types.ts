@@ -12,7 +12,7 @@ export type UsageId = string
 
 export type TokenUsage = {
   id: UsageId
-  target: string
+  target: 'All' | 'Sprite' | 'Stage'
   effect: string
   declaration: string
   sample: string

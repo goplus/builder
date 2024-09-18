@@ -29,7 +29,7 @@ export const forLoop: Token = {
     {
       id: '2',
       effect: 'code',
-      target: '',
+      target: 'All',
       declaration: 'Iterate within given set',
       sample: 'for i, v := range set {}',
       insertText: 'for ${1:i}, ${2:v} := range ${3:set} {\n\t${4:}\n}'

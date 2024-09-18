@@ -3,7 +3,11 @@ import { DocPreviewLevel, Icon } from '@/components/editor/code-editor/EditorUI'
 import { DocAbility } from '@/components/editor/code-editor/document'
 import type { Position } from 'monaco-editor'
 import type { Definition, TokenUsage } from '@/components/editor/code-editor/compiler'
-import type { CoordinatorState } from '@/components/editor/code-editor/coordinators/index'
+import {
+  type CoordinatorState,
+  definitionStructName2Target,
+  usageType2Icon
+} from '@/components/editor/code-editor/coordinators/index'
 import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { usageEffect2Icon } from '@/components/editor/code-editor/coordinators/index'
 import type { Project } from '@/models/project'
@@ -84,7 +88,7 @@ export class HoverProvider {
         level: DocPreviewLevel.Normal,
         header: {
           // in this rename case may not have doc usage, use definition usage type to get icon
-          icon: usageEffect2Icon(usage.type),
+          icon: usageType2Icon(usage.type),
           declaration: declarationMap[usage.usageID] || usage.declaration
         },
         content: '',
@@ -130,7 +134,7 @@ export class HoverProvider {
           ...usage,
           id: usage.usageID,
           effect: usage.type,
-          target: definition.structName,
+          target: definitionStructName2Target(definition.structName),
           doc: ''
         })
       }
@@ -147,7 +151,7 @@ export class HoverProvider {
             ...usage,
             id: usage.usageID,
             effect: usage.type,
-            target: definition.structName,
+            target: definitionStructName2Target(definition.structName),
             doc: ''
           })
         )
