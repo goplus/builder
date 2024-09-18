@@ -40,7 +40,20 @@ const TableUserAsset = "user_asset"
 // AddUserAsset adds an asset.
 func AddUserAsset(ctx context.Context, db *gorm.DB, p *UserAsset) error {
 	logger := log.GetReqLogger(ctx)
-	result := db.Create(p)
+
+	// check if the asset already exists
+	var count int64
+	result := db.Model(&UserAsset{}).Where("asset_id = ? AND relation_type = ? AND owner = ?", p.AssetID, p.RelationType, p.Owner).Count(&count)
+	if result.Error != nil {
+		logger.Printf("failed to check if asset exists: %v", result.Error)
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	result = db.Create(p)
 	if result.Error != nil {
 		logger.Printf("failed to add asset: %v", result.Error)
 		return result.Error
