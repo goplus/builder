@@ -12,7 +12,8 @@ export const clone: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'clone sprite',
       sample: 'clone',
       insertText: 'clone'
@@ -28,9 +29,10 @@ export const onCloned: Token = {
   usages: [
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(onCloned func())',
-      sample: 'onCloned => {}',
+      sample: '=> {}',
       insertText: 'onCloned => {\n\t${1}\n}'
     }
   ]
@@ -44,23 +46,26 @@ export const onTouched: Token = {
   usages: [
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(onCloned func())',
-      sample: 'onTouched target => {}',
+      sample: 'target => {}',
       insertText: 'onTouched target => {\n\t${1}\n}'
     },
     {
       id: '3',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(name string, onTouched func())',
-      sample: 'name onTouched',
+      sample: 'S1, => {}',
       insertText: 'onTouched ${1:name}, => {\n\t${2}\n}'
     },
     {
       id: '5',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(names []string, onTouched func())',
-      sample: 'name onTouched',
+      sample: '[S1, S2], => {}',
       insertText: 'onTouched ${1:names}, => {\n\t${2}\n}'
     }
   ]
@@ -74,9 +79,10 @@ export const onMoving: Token = {
   usages: [
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(onMoving func())',
-      sample: 'onMoving',
+      sample: '=> {}',
       insertText: 'onMoving => {\n\t${1}\n}'
     }
   ]
@@ -90,9 +96,10 @@ export const onTurning: Token = {
   usages: [
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'listen',
+      target: 'Sprite',
       declaration: 'func(onTurning func())',
-      sample: 'onTurning',
+      sample: '=> {}',
       insertText: 'onTurning => {\n\t${1}\n}'
     }
   ]
@@ -106,7 +113,8 @@ export const die: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'die',
       sample: '',
       insertText: 'die'
@@ -122,7 +130,8 @@ export const hide: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func()',
       sample: '',
       insertText: 'hide'
@@ -138,7 +147,8 @@ export const show: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func()',
       sample: '',
       insertText: 'show'
@@ -154,7 +164,8 @@ export const visible: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() bool',
       sample: '',
       insertText: 'visible'
@@ -170,7 +181,8 @@ export const costumeName: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() string',
       sample: '',
       insertText: 'costumeName'
@@ -186,7 +198,8 @@ export const costumeIndex: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() int',
       sample: '',
       insertText: 'costumeIndex'
@@ -202,9 +215,10 @@ export const setCostume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(costume interface{})',
-      sample: 'costume',
+      sample: '"happy"',
       insertText: 'setCostume ${1:costume}'
     }
   ]
@@ -218,7 +232,8 @@ export const nextCostume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func()',
       sample: '',
       insertText: 'nextCostume'
@@ -234,7 +249,8 @@ export const prevCostume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func()',
       sample: '',
       insertText: 'prevCostume'
@@ -250,9 +266,10 @@ export const animate: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(name string)',
-      sample: 'name',
+      sample: '"jump"',
       insertText: 'animate ${1:name}'
     }
   ]
@@ -264,11 +281,22 @@ export const say: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'Sprite',
+      declaration: 'func(msg interface{})',
+      sample: 'msg "Hello!"',
+      insertText: 'say ${1:msg}'
+    },
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(msg interface{}, secs ...float64)',
-      sample: 'msg secs',
+      sample: 'msg "Hello!", 2',
       insertText: 'say ${1:msg}, ${2:secs}'
     }
   ]
@@ -280,11 +308,22 @@ export const think: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'Sprite',
+      declaration: 'func(msg interface{})',
+      sample: '"Wow!"',
+      insertText: 'think ${1:msg}'
+    },
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(msg interface{}, secs ...float64)',
-      sample: 'msg secs',
+      sample: '"Wow!", 2',
       insertText: 'think ${1:msg}, ${2:secs}'
     }
   ]
@@ -298,9 +337,10 @@ export const distanceTo: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func(obj interface{}) float64',
-      sample: 'obj',
+      sample: 'Sprite1',
       insertText: 'distanceTo ${1:obj}'
     }
   ]
@@ -314,9 +354,10 @@ export const move: Token = {
   usages: [
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(step int)',
-      sample: 'step',
+      sample: '10',
       insertText: 'move ${1:step}'
     }
   ]
@@ -330,9 +371,10 @@ export const step: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(step int)',
-      sample: 'step',
+      sample: '10',
       insertText: 'step ${1:step}'
     }
   ]
@@ -346,9 +388,10 @@ export const goto: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(obj interface{})',
-      sample: 'obj',
+      sample: 'Sprite1',
       insertText: 'Goto ${1:obj}'
     }
   ]
@@ -362,16 +405,18 @@ export const glide: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(x float64, y float64, secs float64)',
-      sample: 'x y secs',
+      sample: '50, -50, 2',
       insertText: 'glide ${1:x}, ${2:y}, ${3:secs}'
     },
     {
       id: '1',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(obj interface{}, secs float64)',
-      sample: 'obj secs',
+      sample: 'Sprite1, 2',
       insertText: 'glide ${1:obj}, ${2:secs}'
     }
   ]
@@ -385,9 +430,10 @@ export const setXYpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(x float64, y float64)',
-      sample: 'x y',
+      sample: '0, 0',
       insertText: 'setXYpos ${1:x}, ${2:y}'
     }
   ]
@@ -401,9 +447,10 @@ export const changeXYpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(dx float64, dy float64)',
-      sample: 'dx dy',
+      sample: '10, 10',
       insertText: 'changeXYpos ${1:dx}, ${2:dy}'
     }
   ]
@@ -417,7 +464,8 @@ export const xpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() float64',
       sample: '',
       insertText: 'xpos'
@@ -433,9 +481,10 @@ export const setXpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(x float64)',
-      sample: 'x',
+      sample: '100',
       insertText: 'setXpos ${1:x}'
     }
   ]
@@ -449,9 +498,10 @@ export const changeXpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(dx float64)',
-      sample: 'dx',
+      sample: '10',
       insertText: 'changeXpos ${1:dx}'
     }
   ]
@@ -465,9 +515,10 @@ export const ypos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() float64',
-      sample: '',
+      sample: '10',
       insertText: 'ypos'
     }
   ]
@@ -481,9 +532,10 @@ export const setYpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(y float64)',
-      sample: 'y',
+      sample: '100',
       insertText: 'setYpos ${1:y}'
     }
   ]
@@ -497,9 +549,10 @@ export const changeYpos: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(dy float64)',
-      sample: 'dy',
+      sample: '10',
       insertText: 'changeYpos ${1:dy}'
     }
   ]
@@ -513,9 +566,10 @@ export const setRotationStyle: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(style github.com/goplus/spx.RotationStyle)',
-      sample: 'style',
+      sample: 'None',
       insertText: 'setRotationStyle ${1:style}'
     }
   ]
@@ -529,7 +583,8 @@ export const heading: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() float64',
       sample: '',
       insertText: 'heading'
@@ -545,10 +600,20 @@ export const turnTo: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(obj interface{})',
-      sample: 'obj',
+      sample: '90',
       insertText: 'turnTo ${1:obj}'
+    },
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'Sprite',
+      declaration: 'func(obj interface{})',
+      sample: 'target',
+      insertText: 'turnTo ${1:target}'
     }
   ]
 }
@@ -561,10 +626,11 @@ export const setHeading: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(dir float64)',
-      sample: 'dir',
-      insertText: 'setHeading ${1:dir}'
+      sample: 'Up',
+      insertText: 'setHeading ${1:direction}'
     }
   ]
 }
@@ -577,10 +643,11 @@ export const changeHeading: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(dir float64)',
-      sample: 'dir',
-      insertText: 'changeHeading ${1:dir}'
+      sample: '90',
+      insertText: 'changeHeading ${1:dDirection}'
     }
   ]
 }
@@ -593,7 +660,8 @@ export const size: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func() float64',
       sample: '',
       insertText: 'size'
@@ -609,9 +677,10 @@ export const setSize: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(size float64)',
-      sample: 'size',
+      sample: '2',
       insertText: 'setSize ${1:size}'
     }
   ]
@@ -625,9 +694,10 @@ export const changeSize: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(delta float64)',
-      sample: 'delta',
+      sample: '1',
       insertText: 'changeSize ${1:delta}'
     }
   ]
@@ -641,9 +711,10 @@ export const touching: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'func',
+      target: 'Sprite',
       declaration: 'func(obj interface{}) bool',
-      sample: 'obj',
+      sample: 'Edge',
       insertText: 'touching ${1:obj}'
     }
   ]
@@ -657,7 +728,8 @@ export const bounceOffEdge: Token = {
   usages: [
     {
       id: '0',
-      effect: 'Sprite',
+      effect: 'read',
+      target: 'Sprite',
       declaration: 'func()',
       sample: '',
       insertText: 'bounceOffEdge'
@@ -673,7 +745,8 @@ export const mouseHitItem: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() (target *github.com/goplus/spx.Sprite, ok bool)',
       sample: '',
       insertText: 'mouseHitItem'
@@ -689,7 +762,8 @@ export const backdropName: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() string',
       sample: '',
       insertText: 'backdropName'
@@ -705,7 +779,8 @@ export const backdropIndex: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() int',
       sample: '',
       insertText: 'backdropIndex'
@@ -719,11 +794,22 @@ export const startBackdrop: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'All',
+      declaration: 'func(backdrop interface{})',
+      sample: '"backdrop1"',
+      insertText: 'startBackdrop ${1:backdrop}'
+    },
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(backdrop interface{}, wait ...bool)',
-      sample: 'backdrop wait',
+      sample: '"backdrop1", true',
       insertText: 'startBackdrop ${1:backdrop}, ${2:wait}'
     }
   ]
@@ -735,11 +821,22 @@ export const nextBackdrop: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'All',
+      declaration: 'func()',
+      sample: '',
+      insertText: 'nextBackdrop'
+    },
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(wait ...bool)',
-      sample: 'wait',
+      sample: 'true',
       insertText: 'nextBackdrop ${1:wait}'
     }
   ]
@@ -751,11 +848,22 @@ export const prevBackdrop: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'All',
+      declaration: 'func()',
+      sample: '',
+      insertText: 'prevBackdrop'
+    },
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(wait ...bool)',
-      sample: 'wait',
+      sample: 'true',
       insertText: 'prevBackdrop ${1:wait}'
     }
   ]
@@ -769,7 +877,8 @@ export const keyPressed: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(key github.com/hajimehoshi/ebiten/v2.Key) bool',
       sample: 'key',
       insertText: 'keyPressed ${1:key}'
@@ -785,7 +894,8 @@ export const mouseX: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() float64',
       sample: '',
       insertText: 'mouseX'
@@ -801,7 +911,8 @@ export const mouseY: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() float64',
       sample: '',
       insertText: 'mouseY'
@@ -817,7 +928,8 @@ export const mousePressed: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() bool',
       sample: '',
       insertText: 'mousePressed'
@@ -833,9 +945,10 @@ export const wait: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(secs float64)',
-      sample: 'secs',
+      sample: '0.5',
       insertText: 'wait ${1:secs}'
     }
   ]
@@ -847,11 +960,30 @@ export const play: Token = {
     pkgPath: 'github.com/goplus/spx'
   },
   usages: [
+    // keep this order
+    // in wasm only one usage, and usage id is "0", but here set 2 usages for better understanding
+    {
+      id: '1',
+      effect: 'func',
+      target: 'All',
+      declaration: 'func(media github.com/goplus/spx.Sound) (err error)',
+      sample: '"sound"',
+      insertText: 'play ${1:media}'
+    },
+    {
+      id: '2',
+      effect: 'func',
+      target: 'All',
+      declaration: 'func(media github.com/goplus/spx.Sound, wait bool) (err error)',
+      sample: '"sound", true',
+      insertText: 'play ${1:media}, ${2:wait}'
+    },
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(media github.com/goplus/spx.Sound, wait bool, loop bool) (err error)',
-      sample: 'media wait loop',
+      sample: '"sound", true, true',
       insertText: 'play ${1:media}, ${2:wait}, ${3:loop}'
     }
   ]
@@ -865,7 +997,8 @@ export const stopAllSounds: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func()',
       sample: '',
       insertText: 'stopAllSounds'
@@ -881,7 +1014,8 @@ export const volume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'read',
+      target: 'All',
       declaration: 'func() float64',
       sample: '',
       insertText: 'volume'
@@ -897,9 +1031,10 @@ export const setVolume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(volume float64)',
-      sample: 'volume',
+      sample: '100',
       insertText: 'setVolume ${1:volume}'
     }
   ]
@@ -913,9 +1048,10 @@ export const changeVolume: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(delta float64)',
-      sample: 'delta',
+      sample: '100',
       insertText: 'changeVolume ${1:delta}'
     }
   ]
@@ -929,23 +1065,26 @@ export const broadcast: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(msg string)',
-      sample: 'msg',
+      sample: '"message"',
       insertText: 'broadcast ${1:msg}'
     },
     {
       id: '1',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(msg string, wait bool)',
-      sample: 'msg wait',
+      sample: '"message", true',
       insertText: 'broadcast ${1:msg}, ${2:wait}'
     },
     {
       id: '2',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(msg string, data interface{}, wait bool)',
-      sample: 'msg data wait',
+      sample: '"message", data, true',
       insertText: 'broadcast ${1:msg}, ${2:data}, ${3:wait}'
     }
   ]
@@ -959,9 +1098,10 @@ export const onStart: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(onStart func())',
-      sample: 'onStart',
+      sample: '=> {}',
       insertText: 'onStart => {\n\t${1}\n}'
     }
   ]
@@ -975,9 +1115,10 @@ export const onClick: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(onClick func())',
-      sample: 'onClick',
+      sample: '=> {}',
       insertText: 'onClick => {\n\t${1}\n}'
     }
   ]
@@ -991,9 +1132,10 @@ export const onAnyKey: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(onKey func(key github.com/hajimehoshi/ebiten/v2.Key)',
-      sample: 'onKey',
+      sample: 'key => {}',
       insertText: 'onAnyKey => {\n\t${1}\n}'
     }
   ]
@@ -1007,16 +1149,18 @@ export const onKey: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(key github.com/hajimehoshi/ebiten/v2.Key, onKey func())',
-      sample: 'onKey onKey',
+      sample: 'Key1, => {}',
       insertText: 'onKey ${1:key}, => {\n\t${2}\n}'
     },
     {
       id: '2',
-      effect: 'All',
-      declaration: 'func(key github.com/hajimehoshi/ebiten/v2.Key, onKey func()',
-      sample: 'onKey onKey',
+      effect: 'listen',
+      target: 'All',
+      declaration: 'func(key github.com/hajimehoshi/ebiten/v2.Key, onKey func())',
+      sample: '[Key1, Key2], => {}',
       insertText: 'onKey ${1:keys}, => {\n\t${2}\n}'
     }
   ]
@@ -1030,16 +1174,18 @@ export const onMsg: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(onMsg func(msg string, data interface{}))',
-      sample: 'onMsg',
+      sample: '(message, data) => {}',
       insertText: 'onMsg => {\n\t${1}\n}'
     },
     {
       id: '1',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(msg string, onMsg func())',
-      sample: 'msg onMsg',
+      sample: 'msg "message", => {}',
       insertText: 'onMsg ${1:msg}, => {\n\t${2}\n}'
     }
   ]
@@ -1053,16 +1199,18 @@ export const onBackdrop: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(onBackdrop func(name string))',
-      sample: 'onBackdrop',
+      sample: 'backdrop => {}',
       insertText: 'onBackdrop => {\n\t${1}\n}'
     },
     {
       id: '1',
-      effect: 'All',
+      effect: 'listen',
+      target: 'All',
       declaration: 'func(name string, onBackdrop func())',
-      sample: 'name onBackdrop',
+      sample: 'name "backdrop1", => {}',
       insertText: 'onBackdrop ${1:name}, => {\n\t${2}\n}'
     }
   ]
@@ -1076,9 +1224,10 @@ export const rand: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func(from, to float64)',
-      sample: 'from to',
+      sample: '(1, 10)',
       insertText: 'rand(${1:from}, ${2:to})'
     }
   ]
@@ -1092,9 +1241,10 @@ export const exit: Token = {
   usages: [
     {
       id: '0',
-      effect: 'All',
+      effect: 'func',
+      target: 'All',
       declaration: 'func()',
-      sample: 'exit',
+      sample: '',
       insertText: 'exit'
     }
   ]
@@ -1109,8 +1259,9 @@ export function defineConst(name: string, module: string): Token {
     usages: [
       {
         id: '0',
-        effect: 'All',
-        declaration: 'const',
+        effect: 'read',
+        target: 'All',
+        declaration: 'const ' + name,
         sample: '',
         insertText: name
       }
