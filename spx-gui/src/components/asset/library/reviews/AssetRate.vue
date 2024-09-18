@@ -124,7 +124,7 @@ const handleRate = () => {
   rateAsset(props.asset.id, userRate.value)
   if (rateData.value) {
     rateData.value.detail[userRate.value - 1]++
-    rateData.value.rate = (rateData.value.rate * rateCount.value + userRate.value) / (rateCount.value + 1)
+    rateData.value.rate = rateData.value.detail.reduce((acc, cur, idx) => acc + cur * (idx + 1), 0) / rateCount.value
   }
   rateModalVisible.value = false
 }
