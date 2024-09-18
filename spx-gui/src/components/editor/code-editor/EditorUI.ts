@@ -145,6 +145,16 @@ export interface CompletionProvider {
   ): void
 }
 
+export interface PlaylistCompletionProvider {
+  providePlaylistCompletionItems(
+    model: TextModel,
+    ctx: {
+      range: IRange
+      signal: AbortSignal
+    }
+  ): Promise<CompletionItem[]>
+}
+
 export interface HoverProvider {
   provideHover(
     model: TextModel,
@@ -232,6 +242,7 @@ export type AIChatModalOptions = {
 
 interface EditorUIRequestCallback {
   completion: CompletionProvider[]
+  playlistCompletion: PlaylistCompletionProvider[]
   hover: HoverProvider[]
   selectionMenu: SelectionMenuProvider[]
   inlayHints: InlayHintsProvider[]
@@ -315,6 +326,7 @@ export class EditorUI extends Disposable {
     this.getProject = getProject
     this.editorUIRequestCallback = {
       completion: [],
+      playlistCompletion: [],
       hover: [],
       selectionMenu: [],
       inlayHints: [],
@@ -546,6 +558,17 @@ export class EditorUI extends Disposable {
     }
   }
 
+  public async requestPlayListCompletionProviderResolve(
+    model: TextModel,
+    ctx: {
+      position: IRange
+      signal: AbortSignal
+    }
+  ): Promise<CompletionItem[]> {
+    // todo: implement logic
+    return []
+  }
+
   public requestCompletionProviderResolve(
     model: TextModel,
     ctx: {
@@ -558,6 +581,21 @@ export class EditorUI extends Disposable {
     this.editorUIRequestCallback.completion.forEach((item) =>
       item.provideDynamicCompletionItems(model, ctx, addItems)
     )
+  }
+
+  public async requestPlaylistCompletionProviderResolve(
+    model: TextModel,
+    ctx: {
+      range: IRange
+      signal: AbortSignal
+    }
+  ) {
+    const promiseResults = await Promise.all(
+      this.editorUIRequestCallback.playlistCompletion.map((item) =>
+        item.providePlaylistCompletionItems(model, ctx)
+      )
+    )
+    return promiseResults.flat().filter(Boolean)
   }
 
   public async requestHoverProviderResolve(
@@ -621,6 +659,11 @@ export class EditorUI extends Disposable {
     )
     return promiseResults.flat().filter(Boolean)
   }
+
+  public registerPlaylistCompletionProvider(provider: PlaylistCompletionProvider) {
+    this.editorUIRequestCallback.playlistCompletion.push(provider)
+  }
+
   public registerCompletionProvider(provider: CompletionProvider) {
     this.editorUIRequestCallback.completion.push(provider)
   }

@@ -159,7 +159,7 @@ export class CompletionMenu implements IDisposable {
     if (!insertText.toLowerCase().startsWith(word)) return
     const resolvedInsertText = insertText
       // replace placeholder with inside content. like: ${1:message} => message for better user experience
-      .replace(/\$\{\d+:(.*?)}/g, (_, placeholderContent: string) => placeholderContent)
+      .replace(/\$\{\d+:?(.*?)}/g, (_, placeholderContent: string) => placeholderContent)
       // replace tab with space
       .replace(/\t/g, this.indentSymbolBySpace)
 
