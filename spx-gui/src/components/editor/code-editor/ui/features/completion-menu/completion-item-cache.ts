@@ -46,6 +46,11 @@ export class CompletionItemCache extends Disposable {
     }
   }
 
+  public getCompletionCacheItemByIdx(idx: number): CompletionItem | undefined {
+    if (this.cache == null) return
+    return this.cache[idx]
+  }
+
   public isSamePosition(position: CompletionItemCachePosition) {
     return (
       this.position.id === position.id &&

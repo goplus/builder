@@ -30,7 +30,10 @@ import {
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
+import type {
+  TokenCategory, TokenId,
+  UsageWithDoc
+} from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
 
 type JumpPosition = {
@@ -116,17 +119,9 @@ export class Coordinator {
     const { sprites, sounds, stage, selectedSprite } = this.project
 
     const createCompletionItem = (name: string) => ({
-      icon: Icon.Variable,
+      icon: Icon.Property,
       insertText: `"${name}"`,
-      label: `"${name}"`,
-      desc: '',
-      preview: {
-        type: 'doc' as const,
-        layer: {
-          level: DocPreviewLevel.Normal,
-          content: ''
-        }
-      }
+      label: `"${name}"`
     })
 
     const items = [
@@ -152,19 +147,41 @@ export class Coordinator {
         ctx.position.lineNumber,
         ctx.position.column
       )
-      .then((completionItems) => {
+      .then(async (completionItems) => {
+        // todo: this function code is running very slowly! need refactor
+        const completionItemDocMap = new Map<string, UsageWithDoc>()
+        for (let i = 0; i < completionItems.length; i++) {
+          const completionItem = completionItems[i]
+          const tokenId: TokenId = {
+            pkgPath: completionItem.tokenPkg,
+            name: completionItem.tokenName
+          }
+          const { usages } = await this.docAbility.getNormalDoc(tokenId)
+
+          usages.forEach((usage: UsageWithDoc) => completionItemDocMap.set(usage.insertText, usage))
+        }
         addItems(
           completionItems.map((completionItem) => {
+            const completionItemDoc = completionItemDocMap.get(completionItem.insertText)
+            if (!completionItemDoc)
+              return {
+                icon: usageType2Icon(completionItem.type),
+                insertText: completionItem.insertText,
+                label: completionItem.label
+              }
             return {
               icon: usageType2Icon(completionItem.type),
               insertText: completionItem.insertText,
               label: completionItem.label,
-              desc: '',
               preview: {
                 type: 'doc',
                 layer: {
                   level: DocPreviewLevel.Normal,
-                  content: '' /* todo: get content with docAbility */
+                  content: completionItemDoc.doc,
+                  header: {
+                    icon: usageEffect2Icon(completionItemDoc.effect),
+                    declaration: completionItemDoc.declaration
+                  }
                 }
               }
             }

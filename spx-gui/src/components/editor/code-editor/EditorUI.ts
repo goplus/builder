@@ -93,9 +93,9 @@ export type LayerContent =
 export interface CompletionItem {
   icon: Icon
   label: string
-  desc: string
+  desc?: string
   insertText: string
-  preview: LayerContent
+  preview?: LayerContent
 }
 
 export type InlayHintBehavior = 'none' | 'triggerCompletion'
@@ -418,7 +418,7 @@ export class EditorUI extends Disposable {
           } else {
             const suggestions =
               cachedItems.map(
-                (item): languages.CompletionItem => ({
+                (item, i): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
                   insertText: item.insertText,
@@ -428,7 +428,11 @@ export class EditorUI extends Disposable {
                     endLineNumber: position.lineNumber,
                     startColumn: word.startColumn,
                     endColumn: word.endColumn
-                  }
+                  },
+                  // for current completion menu trigger mode, we can not get more data by only pass documentation and desc properties.
+                  // thus, we have to use `completionMenuCache` to reach our goals, here set its idx, and in `complete-menu` class method `completionModelItems2CompletionItems` using `getCompletionCacheItemByIdx` to get full data
+                  // in a word, we are using this property to pass data on purpose
+                  documentation: i.toString()
                 })
               ) || []
             return { suggestions }
