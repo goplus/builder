@@ -3,7 +3,7 @@
     <Transition name="slide-fade" mode="out-in" appear>
       <NSpin v-if="generatingAnimation" size="large" class="recorder-content loading">
         <template #description>
-          <span style="color: white">
+          <span style="color: white; text-shadow: 0 0 4px #222;">
             {{
               generatingAnimationMessage ||
               $t({
