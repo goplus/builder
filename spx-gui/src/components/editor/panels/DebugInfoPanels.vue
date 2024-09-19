@@ -32,7 +32,17 @@ const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
 }
 
 const handleClick = (error: RuntimeError) => {
-    
+  if (error.position.fileUri == 'main') {
+    editorCtx.project.select({
+      type: 'stage'
+    })
+  } else {
+    editorCtx.project.select({
+      type: 'sprite',
+      name: error.position.fileUri
+    })
+  }
+  //TODO: jump to column, line
 }
 </script>
 
@@ -54,14 +64,17 @@ const handleClick = (error: RuntimeError) => {
         ></ProjectRunner>
       </div>
       <div class="console">
-        <div v-for="error in runtimeErrors" :key="error.message" class="message" @click="(error) => handleClick">
+        <div
+          v-for="error in runtimeErrors"
+          :key="error.message"
+          class="message"
+          @click="handleClick(error)"
+        >
           <span class="fileUri">{{
             $t({ en: 'file:', zh: '文件:' }) + error.position.fileUri
           }}</span>
           <span class="line">{{ $t({ en: 'line:', zh: '行:' }) + error.position.line }}</span>
-          <span class="column">{{
-            $t({ en: 'column:', zh: '列:' }) + error.position.column
-          }}</span>
+          <span class="column">{{ $t({ en: 'column:', zh: '列:' }) + error.position.column }}</span>
           <br />
           <span class="msg">{{ $t({ en: 'message:', zh: '信息:' }) + error.message }}</span>
         </div>
