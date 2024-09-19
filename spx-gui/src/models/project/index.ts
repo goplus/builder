@@ -105,7 +105,10 @@ export class Project extends Disposable {
   }
 
   get currentFilesHash() {
-    return this.filesHash
+    if(this.filesHash) {
+      return this.filesHash
+    } 
+    return "" 
   }
 
   stage: Stage

@@ -1,14 +1,14 @@
-import { Disposable, type Disposer } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 
 export type Position = { line: number; column: number; fileUri: string }
 
-type RuntimeError = {
+export type RuntimeError = {
   message: string
   position: Position
   filesHash: string
 }
 
-type Log = { type: 'log' | 'warn'; args: any[] }
+type Log = { type: 'log' | 'warn'; args: unknown[] }
 
 export class Runtime extends Disposable {
   runtimeErrors: RuntimeError[] = []
@@ -21,9 +21,10 @@ export class Runtime extends Disposable {
       this.clearRuntimeErrors()
     }
     const runtimeError = this.parseRuntimeLog(log)
-    runtimeError!.filesHash = filesHash
-    this.runtimeErrors.push(runtimeError!)
-    this.notifyErrors()
+    if (runtimeError !== null) {
+      runtimeError.filesHash = filesHash
+      this.runtimeErrors.push(runtimeError)
+    }
   }
 
   private clearRuntimeErrors() {
@@ -33,15 +34,14 @@ export class Runtime extends Disposable {
   private parseRuntimeLog(log: Log): RuntimeError | null {
     switch (log.args.length) {
       case 1: {
-        const logRegex = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2} .*?: (.*?):(\d+):(\d+): (.*)$/
-        const match = log.args[0].match(logRegex)
+        const logRegex = /^[^:]+:\d+:\d+ [^:]+: ([^:]+):(\d+):(\d+): (.*)$/
+        const match = (log.args[0] as string).match(logRegex)
 
         if (!match) {
           return null
         }
 
-        const [fileName, lineNumber, columnNumber, message] = match
-
+        const [_, fileName, lineNumber, columnNumber, message] = match
         const [fileUri] = fileName.split('.')
 
         const position: Position = {
@@ -57,20 +57,5 @@ export class Runtime extends Disposable {
       default:
         return null
     }
-  }
-
-  private errorCallbacks: ((errors: RuntimeError[]) => void)[] = []
-
-  private notifyErrors() {
-    this.errorCallbacks.forEach((cb) => cb(this.runtimeErrors))
-  }
-
-  onRuntimeErrors(cb: (errors: RuntimeError[]) => void): Disposer {
-    this.errorCallbacks.push(cb)
-    const disposer: Disposer = () => {
-      this.errorCallbacks = this.errorCallbacks.filter((callback) => callback !== cb)
-    }
-    this.addDisposer(disposer)
-    return disposer
   }
 }
