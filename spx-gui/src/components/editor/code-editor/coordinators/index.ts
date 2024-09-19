@@ -19,6 +19,7 @@ import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
+import { type Position as jumpPosition } from '@/models/runtime'
 import {
   controlCategory,
   eventCategory,
@@ -35,12 +36,6 @@ import type {
   UsageWithDoc
 } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-
-type JumpPosition = {
-  line: number
-  column: number
-  fileUri: string
-}
 
 export type CoordinatorState = {
   definitions: Definition[]
@@ -418,7 +413,7 @@ export class Coordinator {
     )
   }
 
-  public jump(position: JumpPosition): void {}
+  public jump(position: jumpPosition): void {}
 }
 
 async function toolCategory2InputItemCategory(

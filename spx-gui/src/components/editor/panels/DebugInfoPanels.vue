@@ -30,6 +30,10 @@ const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
   runtimeErrors.value = runTime.runtimeErrors
   editorCtx.debugErrorList = runTime.runtimeErrors
 }
+
+const handleClick = (error: RuntimeError) => {
+    
+}
 </script>
 
 <template>
@@ -50,16 +54,16 @@ const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
         ></ProjectRunner>
       </div>
       <div class="console">
-        <div v-for="message in runtimeErrors" :key="message.message" class="message">
+        <div v-for="error in runtimeErrors" :key="error.message" class="message" @click="(error) => handleClick">
           <span class="fileUri">{{
-            $t({ en: 'file:', zh: '文件:' }) + message.position.fileUri
+            $t({ en: 'file:', zh: '文件:' }) + error.position.fileUri
           }}</span>
-          <span class="line">{{ $t({ en: 'line:', zh: '行:' }) + message.position.line }}</span>
+          <span class="line">{{ $t({ en: 'line:', zh: '行:' }) + error.position.line }}</span>
           <span class="column">{{
-            $t({ en: 'column:', zh: '列:' }) + message.position.column
+            $t({ en: 'column:', zh: '列:' }) + error.position.column
           }}</span>
           <br />
-          <span class="msg">{{ $t({ en: 'message:', zh: '信息:' }) + message.message }}</span>
+          <span class="msg">{{ $t({ en: 'message:', zh: '信息:' }) + error.message }}</span>
         </div>
       </div>
     </UICard>
