@@ -325,7 +325,7 @@ const generateAnimation = async () => {
       generatingAnimation.value = false
       return
     }
-
+    generatingAnimation.value = false
     emit('resolve', materialUrl)
   } catch (error: any) {
     errorMessage.error(

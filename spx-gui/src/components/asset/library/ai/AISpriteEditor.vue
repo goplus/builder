@@ -223,6 +223,7 @@ const generateContent = async () => {
 }
 
 const handleMotionRecordResolve = async (materialUrl: string) => {
+  motionRecordVisible.value = false
   saveMaterialToAsset(materialUrl)
 }
 
