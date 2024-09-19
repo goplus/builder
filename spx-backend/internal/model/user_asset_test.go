@@ -28,7 +28,8 @@ func TestAddUserAsset(t *testing.T) {
 		mock.ExpectQuery("SELECT count(*) FROM `user_assets` WHERE asset_id = ? AND relation_type = ? AND owner = ?").
 			WithArgs(1, "owned", "user1").
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-		
+
+ 		mock.ExpectBegin()
 		mock.ExpectBegin()
 		mock.ExpectExec("INSERT INTO `user_assets` (`owner`,`asset_id`,`relation_type`,`relation_timestamp`) VALUES (?,?,?,?)").
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
