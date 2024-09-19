@@ -188,6 +188,8 @@ const publicAsset = ref<AssetData | null>(null)
 
 const searchCtx = useSearchCtx()
 
+const renameAsset = useRenameAsset()
+
 /**
  * Get the public asset data from the asset data
  * If the asset data is not exported, export it first
@@ -196,6 +198,8 @@ const exportAssetDataToPublic = async () => {
   if (!props.asset[isContentReady]) {
     throw new Error('Could not export an incomplete asset')
   }
+
+  await renameAsset(props.asset, isFavorite.value, searchCtx.keyword)
   // let addAssetParam = props.asset
   let addAssetParam: AddAssetParams = {
     ...props.asset,
@@ -214,6 +218,7 @@ const exportAssetDataToPublic = async () => {
   return publicAsset
 }
 
+
 const handleAddButton = async () => {
   if (props.addToProjectPending) {
     return
@@ -226,7 +231,6 @@ const handleAddButton = async () => {
   emit('addToProject', publicAsset.value)
 }
 
-const renameAsset = useRenameAsset()
 const handleRename = useMessageHandle(
   async () => {
     isFavorite.value = !isFavorite.value
