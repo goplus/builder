@@ -11,7 +11,7 @@ export class Runtime extends Disposable {
     super()
     this.editorCtx = editorCtx
     watch(
-      () => editorCtx.debugErrorList,
+      () => editorCtx.debugLogList,
       () => {
         this.notifyErrors()
       },
@@ -19,7 +19,7 @@ export class Runtime extends Disposable {
   }
 
   private notifyErrors() {
-    this.errorCallbacks.forEach((cb) => cb(this.editorCtx.debugErrorList))
+    this.errorCallbacks.forEach((cb) => cb(this.editorCtx.debugLogList))
   }
 
   onRuntimeErrors(cb: (errors: RuntimeLog[]) => void): Disposer {
