@@ -19,6 +19,7 @@ import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
+import { type Position as JumpPosition } from '@/models/runtime'
 import {
   controlCategory,
   eventCategory,
@@ -31,16 +32,11 @@ import {
 import { debounce } from '@/utils/utils'
 import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
 import type {
-  TokenCategory, TokenId,
+  TokenCategory,
+  TokenId,
   UsageWithDoc
 } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
-
-type JumpPosition = {
-  line: number
-  column: number
-  fileUri: string
-}
 
 export type CoordinatorState = {
   definitions: Definition[]
@@ -189,33 +185,56 @@ export class Coordinator {
         )
       })
 
-    // this.suggest
-    //   .startSuggestTask({
-    //     code: model.getValue(),
-    //     position: {
-    //       line: ctx.position.lineNumber,
-    //       column: ctx.position.column
-    //     }
-    //   })
-    //   .then((items) => {
-    //     addItems(
-    //       items.map((item) => {
-    //         return {
-    //           icon: Icon.AIAbility,
-    //           insertText: ctx.unitWord + item.insertText,
-    //           label: ctx.unitWord + item.label,
-    //           desc: ctx.unitWord + item.label,
-    //           preview: {
-    //             type: 'doc',
-    //             layer: {
-    //               level: DocPreviewLevel.Normal,
-    //               content: ''
-    //             }
-    //           }
-    //         }
-    //       })
-    //     )
-    //   })
+    function getContextualCode(
+      code: string,
+      position: { line: number; column: number },
+      numLines: number
+    ) {
+      const lines = code.split('\n')
+
+      const startLine = Math.max(0, position.line - numLines)
+      const endLine = Math.min(lines.length - 1, position.line + numLines)
+
+      const contextualLines = lines.slice(startLine, endLine + 1)
+
+      return contextualLines.join('\n')
+    }
+
+    const code = model.getValue()
+    const position = {
+      line: ctx.position.lineNumber,
+      column: ctx.position.column
+    }
+    const numLines = 3
+    const contextualCode = getContextualCode(code, position, numLines)
+
+    this.suggest
+      .startSuggestTask({
+        code: contextualCode,
+        position: {
+          line: position.line,
+          column: position.column
+        }
+      })
+      .then((items) => {
+        addItems(
+          items.map((item) => {
+            return {
+              icon: Icon.AIAbility,
+              insertText: ctx.unitWord + item.insertText,
+              label: ctx.unitWord + item.label,
+              desc: ctx.unitWord + item.label,
+              preview: {
+                type: 'doc',
+                layer: {
+                  level: DocPreviewLevel.Normal,
+                  content: ''
+                }
+              }
+            }
+          })
+        )
+      })
   }
 
   async implementsSelectionMenuProvider(

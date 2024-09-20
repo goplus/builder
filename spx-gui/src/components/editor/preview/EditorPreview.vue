@@ -4,6 +4,9 @@
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
+      <UIButton class="debug-button" type="secondary" icon="play" @click="startDebug">
+        {{ $t({ en: 'Debug', zh: '调试' }) }}
+      </UIButton>
       <UIButton class="run-button" type="primary" icon="play" @click="show = true">
         {{ $t({ en: 'Run', zh: '运行' }) }}
       </UIButton>
@@ -28,6 +31,11 @@ import RunnerContainer from '@/components/project/runner/RunnerContainer.vue'
 let show = ref(false)
 
 const editorCtx = useEditorCtx()
+
+const startDebug = () => {
+  editorCtx.debugProject = true
+  editorCtx.debugLogList = []
+}
 </script>
 
 <style scoped lang="scss">
@@ -52,6 +60,10 @@ const editorCtx = useEditorCtx()
   }
 }
 
+.debug-button {
+  margin-right: 6px;
+}
+
 .project-runner-modal {
   margin-left: 32px;
   margin-right: 32px;
@@ -61,9 +73,11 @@ const editorCtx = useEditorCtx()
   align-items: center;
   background: #fff;
   border-radius: 20px;
+
   .n-modal-content {
     border-radius: 20px;
   }
+
   padding: 16px;
 }
 </style>

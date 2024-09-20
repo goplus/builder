@@ -9,6 +9,7 @@ import { Coordinator } from '@/components/editor/code-editor/coordinators'
 import { onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { type Position } from '@/models/runtime'
 
 defineEmits<{
   'update:value': [value: string]
@@ -53,7 +54,7 @@ function initCoordinator() {
   const editorUI = new EditorUI(i18n, () => editorCtx.project)
   const compiler = new Compiler()
   const project = editorCtx.project
-  const runtime = new Runtime()
+  const runtime = new Runtime(editorCtx)
   const docAbility = new DocAbility(i18n)
   const chatBot = new ChatBot(i18n, () => editorCtx.project)
 
@@ -65,7 +66,10 @@ defineExpose({
   async format() {
     await codeEditorUI.value?.format()
   },
-  editorUI
+  editorUI,
+  jump(position: Position) {
+    coordinator.jump(position)
+  }
 })
 </script>
 

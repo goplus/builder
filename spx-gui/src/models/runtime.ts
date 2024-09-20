@@ -1,76 +1,63 @@
-import { Disposable, type Disposer } from '@/utils/disposable'
+import { Disposable } from '@/utils/disposable'
 
-export type Position = { line: number; column: number; fileUri: string }
+export type Position = { line: number; column: number; fileUri: string; abledToJump: boolean }
 
-type RuntimeError = {
+export type RuntimeLog = {
   message: string
   position: Position
   filesHash: string
 }
 
-type Log = { type: 'log' | 'warn'; args: any[] }
+type Log = { type: 'log' | 'warn'; args: unknown[] }
 
 export class Runtime extends Disposable {
-  runtimeErrors: RuntimeError[] = []
+  runtimeLogs: RuntimeLog[] = []
 
   addRuntimeLog(log: Log, filesHash: string) {
     if (
-      this.runtimeErrors.length > 0 &&
-      filesHash !== this.runtimeErrors[this.runtimeErrors.length - 1].filesHash
+      this.runtimeLogs.length > 0 &&
+      filesHash !== this.runtimeLogs[this.runtimeLogs.length - 1].filesHash
     ) {
       this.clearRuntimeErrors()
     }
     const runtimeError = this.parseRuntimeLog(log)
-    runtimeError!.filesHash = filesHash
-    this.runtimeErrors.push(runtimeError!)
-    this.notifyErrors()
+    if (runtimeError !== null) {
+      runtimeError.filesHash = filesHash
+      this.runtimeLogs = [...this.runtimeLogs, runtimeError]
+    }
   }
 
   private clearRuntimeErrors() {
-    this.runtimeErrors = []
+    this.runtimeLogs = []
   }
 
-  private parseRuntimeLog(log: Log): RuntimeError | null {
+  private parseRuntimeLog(log: Log): RuntimeLog | null {
     switch (log.args.length) {
       case 1: {
-        const logRegex = /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2} .*?: (.*?):(\d+):(\d+): (.*)$/
-        const match = log.args[0].match(logRegex)
+        const logRegex = /^[^:]+:\d+:\d+ [^:]+: ([^:]+):(\d+):(\d+): (.*)$/
+        const match = (log.args[0] as string).match(logRegex)
 
-        if (!match) {
-          return null
+        if (match) {
+          const [_, fileName, lineNumber, columnNumber, message] = match
+          const [fileUri] = fileName.split('.')
+
+          const position: Position = {
+            line: parseInt(lineNumber),
+            column: parseInt(columnNumber),
+            fileUri: fileUri,
+            abledToJump: true
+          }
+          return { position, message, filesHash: '' }
         }
-
-        const [fileName, lineNumber, columnNumber, message] = match
-
-        const [fileUri] = fileName.split('.')
-
-        const position: Position = {
-          line: parseInt(lineNumber),
-          column: parseInt(columnNumber),
-          fileUri: fileUri
-        }
-
+        
         //TODO: make message easier to understand
-
-        return { position, message, filesHash: '' }
       }
-      default:
-        return null
     }
-  }
-
-  private errorCallbacks: ((errors: RuntimeError[]) => void)[] = []
-
-  private notifyErrors() {
-    this.errorCallbacks.forEach((cb) => cb(this.runtimeErrors))
-  }
-
-  onRuntimeErrors(cb: (errors: RuntimeError[]) => void): Disposer {
-    this.errorCallbacks.push(cb)
-    const disposer: Disposer = () => {
-      this.errorCallbacks = this.errorCallbacks.filter((callback) => callback !== cb)
+    const msgs = log.args.join(' ')
+    return {
+      position: { line: 0, column: 0, fileUri: '', abledToJump: false },
+      message: msgs,
+      filesHash: ''
     }
-    this.addDisposer(disposer)
-    return disposer
   }
 }

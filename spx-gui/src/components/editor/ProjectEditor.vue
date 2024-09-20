@@ -15,8 +15,11 @@
     <EditorPlaceholder v-else />
   </UICard>
   <div class="sider">
-    <EditorPreview />
-    <EditorPanels />
+    <EditorPreview v-if="!editorCtx.debugProject" />
+    <DebugPreview v-else :project="editorCtx.project" />
+
+    <EditorPanels v-if="!editorCtx.debugProject" />
+    <DebugInfoPanels v-else :project="editorCtx.project" />
   </div>
 </template>
 
@@ -28,6 +31,8 @@ import StageEditor from './stage/StageEditor.vue'
 import EditorPreview from './preview/EditorPreview.vue'
 import EditorPanels from './panels/EditorPanels.vue'
 import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
+import DebugInfoPanels from './panels/DebugInfoPanels.vue'
+import DebugPreview from './preview/DebugPreview.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
 
 const editorCtx = useEditorCtx()
