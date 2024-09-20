@@ -117,13 +117,15 @@ $markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'Aliba
       padding: initial;
       border-radius: initial;
       background-color: initial;
+      font-family: $markdown-code-font-family;
     }
   }
 
   code {
     padding: 0.1em 0.4em;
-    background-color: rgba(27, 31, 35, 0.05);
+    background-color: rgba(229, 229, 229, 0.4);
     border-radius: 3px;
+    font-family: $markdown-code-font-family;
   }
 
   h1,
@@ -233,6 +235,10 @@ $markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'Aliba
 
   tr:nth-child(2n) {
     background-color: #f6f8fa;
+  }
+
+  & > *:last-child {
+    margin-bottom: 0 !important;
   }
 }
 

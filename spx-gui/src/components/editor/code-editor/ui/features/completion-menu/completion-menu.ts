@@ -20,6 +20,9 @@ export interface CompletionMenuState {
   visible: boolean
   suggestions: CompletionMenuFeatureItem[]
   activeIdx: number
+  // attention! this property is a hacker way to prevent monaco inner `_focusTracker` working,
+  // if meet some abnormal focus problem like monaco editor not response `keyDown` please recheck this property and related code
+  focus: boolean
   position: {
     top: number
     left: number
@@ -34,6 +37,7 @@ export class CompletionMenu implements IDisposable {
   public editor: IEditor.IStandaloneCodeEditor
   public completionMenuState: CompletionMenuState = reactive({
     visible: false,
+    focus: false,
     suggestions: [],
     activeIdx: 0,
     position: {
@@ -48,6 +52,7 @@ export class CompletionMenu implements IDisposable {
   public abortController = new AbortController()
   private suggestController: any
   private suggestControllerWidget: any
+  private editorWidgetFocus: any
   private readonly TabSize: number
   private readonly indentSymbolBySpace: string
   private viewZoneChangeAccessorState: {
@@ -71,7 +76,7 @@ export class CompletionMenu implements IDisposable {
 
     this.TabSize = editor.getModel()?.getOptions().tabSize || 4
     this.indentSymbolBySpace = ' '.repeat(this.TabSize)
-
+    this.editorWidgetFocus = (this.editor as any)._editorWidgetFocus
     this.completionMenuItemPreviewDecorationsCollection = editor.createDecorationsCollection([])
 
     this.initEventListeners()
@@ -110,6 +115,17 @@ export class CompletionMenu implements IDisposable {
         this.abortController.abort()
       }
     })
+
+    // attention! here we intercept `fire` function to prevent global `onDidChangeBlurWidget` active
+    // this is monaco inner function no need dispose manually
+    const rawFireFn = this.editorWidgetFocus._onDidChangeToFalse.fire
+    this.editorWidgetFocus._onDidChangeToFalse.fire = () => {
+      if (this.completionMenuState.focus) {
+        this.suggestControllerWidget._listElement?.firstElementChild.focus()
+      } else {
+        rawFireFn.call(this.editorWidgetFocus._onDidChangeToFalse)
+      }
+    }
 
     this.eventsDisposers.push(didHideDispose)
     this.eventsDisposers.push(didShowDispose)

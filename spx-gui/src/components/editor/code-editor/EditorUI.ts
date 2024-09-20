@@ -487,9 +487,12 @@ export class EditorUI extends Disposable {
             .filter((item): item is { type: 'audio'; layer: AudioPlayer } => item.type === 'audio')
             .map((item) => item.layer)
 
-          // todo: consider if necessary to show trigger in accurate range when hovering, instead of whole line
           const attentionHintDecorations = this.attentionHint?.attentionHintDecorations.filter(
-            (item) => item.range.startLineNumber === position.lineNumber
+            (item) =>
+              item.range.startLineNumber <= position.lineNumber &&
+              item.range.endLineNumber >= position.lineNumber &&
+              position.column <= item.range.endColumn &&
+              position.column >= item.range.startColumn
           )
 
           if (attentionHintDecorations) {

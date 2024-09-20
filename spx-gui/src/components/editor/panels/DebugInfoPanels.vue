@@ -2,25 +2,22 @@
 import UICard from '@/components/ui/UICard.vue'
 import UICardHeader from '@/components/ui/UICardHeader.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { type RuntimeLog } from '@/models/runtime'
+import { type Position, type RuntimeLog } from '@/models/runtime'
+
+const emits = defineEmits<{
+  jumpCode: [target: 'stage' | 'sprite', name: string, position: Position]
+}>()
 
 const editorCtx = useEditorCtx()
 
 const handleClick = (log: RuntimeLog) => {
-  if (log.position.abledToJump == false) {
-    return
-  }
-  if (log.position.fileUri == 'main') {
-    editorCtx.project.select({
-      type: 'stage'
-    })
-  } else {
-    editorCtx.project.select({
-      type: 'sprite',
-      name: log.position.fileUri
-    })
-  }
-  //TODO: jump to column, line
+  if (!log.position.ableToJump) return
+  emits(
+    'jumpCode',
+    log.position.fileUri === 'main' ? 'stage' : 'sprite',
+    log.position.fileUri,
+    log.position
+  )
 }
 </script>
 
@@ -39,7 +36,7 @@ const handleClick = (log: RuntimeLog) => {
           class="message"
           @click="handleClick(log)"
         >
-          <span v-if="log.position.abledToJump">
+          <span v-if="log.position.ableToJump">
             <span class="fileUri">{{
               $t({ en: 'file:', zh: '文件:' }) + log.position.fileUri
             }}</span>

@@ -11,22 +11,32 @@ const props = defineProps<{
   hoverPreview: HoverPreview
 }>()
 const hoverPreviewState = props.hoverPreview.hoverPreviewState
+const disposeList: Array<() => void> = []
 
-props.hoverPreview.onMousemove((e) => {
+const closeAllHoverPreviewLayer = () => {
+  props.hoverPreview.hideAudioPlayer(true)
+  props.hoverPreview.hideDocument(true)
+}
+
+const { dispose: onMousemoveDispose } = props.hoverPreview.onMousemove((e) => {
   if (hoverPreviewState.focused) return
 
-  if (e.type !== IEditor.MouseTargetType.CONTENT_TEXT) return props.hoverPreview.hideDocument(true)
-
+  if (e.type !== IEditor.MouseTargetType.CONTENT_TEXT) return closeAllHoverPreviewLayer()
+  if (
+    e.element?.classList.contains('inlay-hint__icon-playlist') ||
+    e.element?.classList.contains('inlay-hint__param')
+  )
+    return closeAllHoverPreviewLayer()
   const mouseColumn = e.position.column
   const mouseLineNumber = e.position.lineNumber
 
-  const position = props.hoverPreview.editor.getModel()?.getWordAtPosition({
+  const positionWord = props.hoverPreview.editor.getModel()?.getWordAtPosition({
     column: e.range.startColumn,
     lineNumber: e.range.startLineNumber
   })
-  if (!position || !position.word) return props.hoverPreview.hideDocument(true)
+  if (!positionWord || !positionWord.word) return closeAllHoverPreviewLayer()
 
-  const { startColumn, endColumn } = position
+  const { startColumn, endColumn } = positionWord
   const lineNumber = e.position.lineNumber
   // check if the word or mouse position is outside the allowed range
   if (
@@ -46,13 +56,11 @@ props.hoverPreview.onMousemove((e) => {
     (mouseLineNumber === hoverPreviewState.range.endLineNumber &&
       mouseColumn > hoverPreviewState.range.endColumn)
   ) {
-    props.hoverPreview.hideDocument(true)
-    props.hoverPreview.hideAudioPlayer(true)
-    return
+    return closeAllHoverPreviewLayer()
   }
 })
 
-props.hoverPreview.onShowDocument((range) => {
+const { dispose: onShowDocumentDispose } = props.hoverPreview.onShowDocument((range) => {
   const containerRect = props.hoverPreview.editor.getContainerDomNode().getBoundingClientRect()
   const scrolledVisiblePosition = props.hoverPreview.editor.getScrolledVisiblePosition({
     lineNumber: range.endLineNumber,
@@ -67,7 +75,8 @@ props.hoverPreview.onShowDocument((range) => {
     containerRect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height
   hoverPreviewState.docs.position.left = containerRect.left + scrolledVisiblePosition.left
 })
-props.hoverPreview.onAudioPlayer((range) => {
+
+const { dispose: onAudioPlayerDispose } = props.hoverPreview.onAudioPlayer((range) => {
   const containerRect = props.hoverPreview.editor.getContainerDomNode().getBoundingClientRect()
   const scrolledVisiblePosition = props.hoverPreview.editor.getScrolledVisiblePosition({
     lineNumber: range.endLineNumber,
@@ -77,11 +86,13 @@ props.hoverPreview.onAudioPlayer((range) => {
   props.hoverPreview.tryToPreventHideAudioPlayer()
   hoverPreviewState.audio.visible = true
   hoverPreviewState.range = { ...range }
-  hoverPreviewState.audio.position.top =
-    // here add `scrolledVisiblePosition.height` to make audioPreview show under current code line
-    containerRect.top + scrolledVisiblePosition.top
+  hoverPreviewState.audio.position.top = containerRect.top + scrolledVisiblePosition.top
   hoverPreviewState.audio.position.left = containerRect.left + scrolledVisiblePosition.left
 })
+
+disposeList.push(onMousemoveDispose)
+disposeList.push(onShowDocumentDispose)
+disposeList.push(onAudioPlayerDispose)
 
 const cleanUp = () => {
   layer.value = null
@@ -99,6 +110,7 @@ watch(
 
 onUnmounted(() => {
   cleanUp()
+  disposeList.forEach((dispose) => dispose())
 })
 
 function handleActionClick(action: Action) {

@@ -6,6 +6,7 @@ import { determineClosestEdge, isElementInViewport } from '../../common'
 import type { Icon, LayerContent } from '@/components/editor/code-editor/EditorUI'
 import DocumentPreview from '@/components/editor/code-editor/ui/features/hover-preview/DocumentPreview.vue'
 import type { CompletionMenuFeatureItem } from '@/components/editor/code-editor/ui/features/completion-menu/completion'
+import AudioPreview from '@/components/editor/code-editor/ui/features/hover-preview/AudioPreview.vue'
 
 interface CompletionMenuItem {
   key: number
@@ -91,6 +92,8 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
       top: completionMenuState.position.top + 'px',
       left: completionMenuState.position.left + 'px'
     }"
+    @mouseenter="completionMenuState.focus = true"
+    @mouseleave="completionMenuState.focus = false"
   >
     <EditorMenu
       v-show="completionMenuState.visible && menuItems.length"
@@ -119,12 +122,17 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
       <DocumentPreview
         v-if="activeCompletionMenuItem?.preview?.type === 'doc'"
         :key="activeCompletionMenuItem.preview.layer.header?.declaration"
-        class="completion-document"
+        class="completion-layer"
         :recommend-action="activeCompletionMenuItem.preview.layer.recommendAction"
         :more-actions="activeCompletionMenuItem.preview.layer.moreActions"
         :header="activeCompletionMenuItem.preview.layer.header"
         :content="activeCompletionMenuItem.preview.layer.content"
       ></DocumentPreview>
+      <AudioPreview
+        v-else-if="activeCompletionMenuItem?.preview?.type === 'audio'"
+        class="completion-layer"
+        :file="activeCompletionMenuItem.preview.layer.file"
+      ></AudioPreview>
     </transition>
   </div>
 </template>
@@ -160,6 +168,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   position: absolute;
   top: 0;
   right: 0;
+  min-width: 360px;
   max-width: 430px;
   transform: translateY(0);
   transition: 150ms left cubic-bezier(0.1, 0.93, 0.15, 1.5);
@@ -182,7 +191,7 @@ div[widgetid='editor.widget.suggestWidget'].suggest-widget {
   color: var(--ui-color-blue-500);
 }
 
-.completion-document {
+.completion-layer {
   position: absolute;
   top: 0;
   right: -4px;

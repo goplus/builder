@@ -18,21 +18,27 @@ import { usageEffect2Icon } from '@/components/editor/code-editor/coordinators/i
 import type { Project } from '@/models/project'
 import type { Sound } from '@/models/sound'
 import { File } from '@/models/common/file'
+import type { ChatBot } from '@/components/editor/code-editor/chat-bot'
 
 export class HoverProvider {
   private ui: EditorUI
   private docAbility: DocAbility
   private coordinatorState: CoordinatorState
+  private project: Project
+  private chatBot: ChatBot
 
   constructor(
     ui: EditorUI,
     docAbility: DocAbility,
     coordinatorState: CoordinatorState,
-    private project: Project
+    project: Project,
+    chatBot: ChatBot
   ) {
     this.ui = ui
     this.docAbility = docAbility
     this.coordinatorState = coordinatorState
+    this.project = project
+    this.chatBot = chatBot
   }
 
   private get currentFilename() {
@@ -211,7 +217,21 @@ export class HoverProvider {
           }),
           activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
           onActiveLabelClick: () => {
-            // TODO: add some logic code here
+            const usageId = usage.id
+            this.docAbility.getDetailDoc(doc.id).then((detailDoc) => {
+              const usageDetailDoc = detailDoc.usages.find(
+                (usage: UsageWithDoc) => usage.id === usageId
+              )?.doc
+              if (usageDetailDoc) {
+                const chat = this.chatBot.startExplainChat(
+                  usage.declaration + '\n' + usageDetailDoc
+                )
+                this.ui.invokeAIChatModal(chat)
+              } else {
+                const chat = this.chatBot.startExplainChat(usage.declaration)
+                this.ui.invokeAIChatModal(chat)
+              }
+            })
           }
         },
         moreActions: [...this.createDocDetailAction(doc, definition)]
@@ -230,13 +250,12 @@ export class HoverProvider {
             ' ' +
             param.type
               // if parma type is func() (func(mi *github.com/goplus/spx.MovingInfo))
-              // this line remove: "*"
-              .replace(/\*/g, '')
               // this line remove: "github.com/goplus/spx."
               .replace(/(?:[\w/]+\.)+/g, '')
         )
         .join(', ')
       if (usage.type === 'func') usageDeclaration[usage.usageID] = `${name} (${params})`
+      else usageDeclaration[usage.usageID] = usage.declaration.replace(/(?:[\w/]+\.)+/g, '')
     })
     return usageDeclaration
   }

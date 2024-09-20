@@ -9,6 +9,7 @@ import {
   type InputItem,
   type InputItemCategory,
   type InputItemGroup,
+  type LayerContent,
   type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
@@ -70,7 +71,7 @@ export class Coordinator {
     this.docAbility = docAbility
     this.chatBot = chatBot
     this.compiler = compiler
-    this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState, project)
+    this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState, project, chatBot)
     this.suggest = new Suggest(() => project)
 
     ui.registerCompletionProvider({
@@ -111,18 +112,32 @@ export class Coordinator {
     },
     addItems: (items: CompletionItem[]) => void
   ) {
+    const transferUsageDeclaration = (declaration: string) =>
+      declaration
+        // if param type is func() (func(mi *github.com/goplus/spx.MovingInfo))
+        // this line remove: "github.com/goplus/spx."
+        .replace(/(?:[\w/]+\.)+/g, '')
+
     // add project variables
     const { sprites, sounds, stage, selectedSprite } = this.project
 
-    const createCompletionItem = (name: string) => ({
+    const createCompletionItem = (name: string, preview?: LayerContent) => ({
       icon: Icon.Property,
       insertText: `"${name}"`,
-      label: `"${name}"`
+      label: `"${name}"`,
+      preview
     })
 
     const items = [
       ...sprites.map((sprite) => createCompletionItem(sprite.name)),
-      ...sounds.map((sound) => createCompletionItem(sound.name)),
+      ...sounds.map((sound) =>
+        createCompletionItem(sound.name, {
+          type: 'audio',
+          layer: {
+            file: sound.file
+          }
+        })
+      ),
       ...stage.backdrops.map((backdrop) => createCompletionItem(backdrop.name))
     ]
 
@@ -153,7 +168,6 @@ export class Coordinator {
             name: completionItem.tokenName
           }
           const { usages } = await this.docAbility.getNormalDoc(tokenId)
-
           usages.forEach((usage: UsageWithDoc) => completionItemDocMap.set(usage.insertText, usage))
         }
         addItems(
@@ -176,7 +190,7 @@ export class Coordinator {
                   content: completionItemDoc.doc,
                   header: {
                     icon: usageEffect2Icon(completionItemDoc.effect),
-                    declaration: completionItemDoc.declaration
+                    declaration: transferUsageDeclaration(completionItemDoc.declaration)
                   }
                 }
               }
@@ -221,16 +235,8 @@ export class Coordinator {
           items.map((item) => {
             return {
               icon: Icon.AIAbility,
-              insertText: ctx.unitWord + item.insertText,
-              label: ctx.unitWord + item.label,
-              desc: ctx.unitWord + item.label,
-              preview: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Normal,
-                  content: ''
-                }
-              }
+              insertText: item.insertText,
+              label: ctx.unitWord + item.label
             }
           })
         )
@@ -286,15 +292,17 @@ export class Coordinator {
     this.coordinatorState.inlayHints = inlayHints
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
       // from compiler has two type of inlay hint, so here use if else to distinguish
-      if (inlayHint.type === 'play') {
+
+      if (inlayHint.type === 'play') return []
+      if (inlayHint.name === 'mediaName') {
         return [
           {
             content: Icon.Playlist,
             style: 'icon',
             behavior: 'triggerCompletion',
             position: {
-              lineNumber: inlayHint.endPosition.line,
-              column: inlayHint.endPosition.column
+              lineNumber: inlayHint.startPosition.line,
+              column: inlayHint.startPosition.column
             }
           }
         ]
@@ -367,7 +375,8 @@ export class Coordinator {
                       }),
                       activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
                       onActiveLabelClick: () => {
-                        // TODO: Add some logic code
+                        const chat = this.chatBot.startFixCodeChat(diagnostic.message)
+                        this.ui.invokeAIChatModal(chat)
                       }
                     }
                   }
@@ -423,7 +432,8 @@ export class Coordinator {
         this.ui,
         this.docAbility,
         tokenDetailsMap,
-        !this.project.selectedSprite
+        !this.project.selectedSprite,
+        this.chatBot
       )
     }
 
@@ -437,9 +447,20 @@ export class Coordinator {
     )
   }
 
-  public jump(position: JumpPosition): void {}
+  public jump(position: JumpPosition): void {
+    if (!position.ableToJump) return
+    // here temp using completion editor instance
+    // in fact all features in this ui have same editor instance
+    const editor = this.ui.completionMenu?.editor
+    editor?.setPosition({
+      column: position.column,
+      lineNumber: position.line
+    })
+    editor?.focus()
+  }
 }
 
+/*  todo: this function params length need refactor to config object */
 async function toolCategory2InputItemCategory(
   category: TokenCategory,
   icon: Icon,
@@ -447,14 +468,13 @@ async function toolCategory2InputItemCategory(
   ui: EditorUI,
   docAbility: DocAbility,
   tokenDetailsMap: Record<string, TokenDetail>,
-  isInStageCode: boolean
+  isInStageCode: boolean,
+  chatBot: ChatBot
 ): Promise<InputItemCategory> {
   const inputItemGroups: InputItemGroup[] = []
   const transferUsageDeclaration = (declaration: string) =>
     declaration
-      // if parma type is func() (func(mi *github.com/goplus/spx.MovingInfo))
-      // this line remove: "*"
-      .replace(/\*/g, '')
+      // if param type is func() (func(mi *github.com/goplus/spx.MovingInfo))
       // this line remove: "github.com/goplus/spx."
       .replace(/(?:[\w/]+\.)+/g, '')
   for (const group of category.groups) {
@@ -503,7 +523,9 @@ async function toolCategory2InputItemCategory(
                 content: usage.doc,
                 header: {
                   icon: usageEffect2Icon(usage.effect),
-                  declaration: usage.declaration
+                  // if some usage is from wasm, also need to transform declaration
+                  // you can remove `tokenUsages` related logic and only keep this line code
+                  declaration: transferUsageDeclaration(usage.declaration)
                 },
                 recommendAction: {
                   label: ui.i18n.t({
@@ -512,7 +534,21 @@ async function toolCategory2InputItemCategory(
                   }),
                   activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
                   onActiveLabelClick: () => {
-                    // TODO: add some logic code here
+                    const usageId = usage.id
+                    docAbility.getDetailDoc(token.id).then((detailDoc) => {
+                      const usageDetailDoc = detailDoc.usages.find(
+                        (usage: UsageWithDoc) => usage.id === usageId
+                      )?.doc
+                      if (usageDetailDoc) {
+                        const chat = chatBot.startExplainChat(
+                          usage.declaration + '\n' + usageDetailDoc
+                        )
+                        ui.invokeAIChatModal(chat)
+                      } else {
+                        const chat = chatBot.startExplainChat(usage.declaration)
+                        ui.invokeAIChatModal(chat)
+                      }
+                    })
                   }
                 },
                 moreActions: [

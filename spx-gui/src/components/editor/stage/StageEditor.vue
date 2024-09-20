@@ -32,6 +32,7 @@ import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './BackdropsEditor.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import BackdropModeSelector from './BackdropModeSelector.vue'
+import type { Position } from '@/models/runtime'
 
 const props = defineProps<{
   stage: Stage
@@ -50,4 +51,10 @@ const action = {
 function handleCodeUpdate(value: string) {
   editorCtx.project.history.doAction(action, () => props.stage.setCode(value))
 }
+
+defineExpose({
+  jump(position: Position): void {
+    codeEditor.value?.jump(position)
+  }
+})
 </script>

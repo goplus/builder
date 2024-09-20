@@ -18,7 +18,6 @@ const props = defineProps<{
   file: File
 }>()
 
-// todo: reused buffer data by `waveformDataFromSrc` computed functions
 const audioElement = ref<HTMLAudioElement>()
 const progressElement = ref<HTMLElement>()
 const progressMaskElement = ref<HTMLElement>()
@@ -27,6 +26,8 @@ const isPlaying = ref(false)
 const duration = ref(0)
 const currentTime = ref(0)
 const progress = ref(0)
+// todo: reused buffer data by `waveformDataFromSrc` computed functions
+// this url is already in blob:http://host:xxx-xxxx-xxx-xx reuse data or keep it in url depends on you
 const [audioSrc, audioLoading] = useFileUrl(() => props.file)
 const { formattedDuration } = useAudioDuration(() => audioSrc.value)
 // this function is from current project 'src/components/editor/sound/waveform/WaveformPlayer.vue'
@@ -158,17 +159,31 @@ function resetAudio() {
       <span
         v-if="isPlaying"
         :ref="(element) => normalizeIconSize(element as Element, 21, 25)"
+        class="pause"
         v-html="IconPause"
       ></span>
       <span
         v-else
         :ref="(element) => normalizeIconSize(element as Element, 21, 25)"
+        class="play"
         v-html="IconPlay"
       ></span>
     </aside>
 
     <main class="audio-wrapper">
-      <template v-if="!audioLoading">
+      <template v-if="audioLoading">
+        <section class="audio-wave audio-wave-loading">
+          <span
+            v-for="idx in 36"
+            :key="idx"
+            class="wave-bar"
+            :style="{
+              '--delay': idx * 50 + 'ms'
+            }"
+          ></span>
+        </section>
+      </template>
+      <template v-else>
         <!--  this layer is for audio wave  -->
         <section class="audio-wave">
           <span
@@ -194,18 +209,7 @@ function resetAudio() {
           }"
         ></section>
       </template>
-      <template v-else>
-        <section class="audio-wave audio-wave-loading">
-          <span
-            v-for="idx in 36"
-            :key="idx"
-            class="wave-bar"
-            :style="{
-              '--delay': idx * 50 + 'ms'
-            }"
-          ></span>
-        </section>
-      </template>
+
       <!--  this layer is for extras like duration, reset button  -->
       <nav class="extra">
         <span class="duration">{{ formatRemain }}</span>
@@ -227,6 +231,7 @@ function resetAudio() {
   align-items: center;
   height: 62px;
   width: 320px;
+  color: black;
   border-radius: 5px;
   border: 1px solid #a6a6a6;
   background-color: white;
@@ -248,6 +253,12 @@ function resetAudio() {
 
   &:active {
     transform: scale(0.8);
+  }
+
+  .pause,
+  .play {
+    display: inline-flex;
+    vertical-align: middle;
   }
 }
 
@@ -287,6 +298,7 @@ function resetAudio() {
 
 .audio-wave-loading {
   .wave-bar {
+    background-color: #787878;
     animation: wave-bar-loading 1200ms var(--delay) infinite;
   }
 

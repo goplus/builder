@@ -7,6 +7,7 @@ import {
 } from '@/components/editor/code-editor/EditorUI'
 import { onMounted, onUnmounted } from 'vue'
 import { debounce } from '@/utils/utils'
+import { MarkerSeverity } from 'monaco-editor'
 
 const props = defineProps<{
   attentionHint: AttentionHint
@@ -31,6 +32,26 @@ const updateAttentionHint = debounce(async () => {
               return props.attentionHint.createWarningAttentionHint(hint.range, hint.message)
             case AttentionHintLevelEnum.ERROR:
               return props.attentionHint.createErrorAttentionHint(hint.range, hint.message)
+          }
+        })
+      )
+      props.ui.monaco?.editor.setModelMarkers(
+        model,
+        'owner',
+        hints.map((hint) => {
+          switch (hint.level) {
+            case AttentionHintLevelEnum.WARNING:
+              return {
+                ...hint.range,
+                message: hint.message,
+                severity: MarkerSeverity.Warning
+              }
+            case AttentionHintLevelEnum.ERROR:
+              return {
+                ...hint.range,
+                message: hint.message,
+                severity: MarkerSeverity.Error
+              }
           }
         })
       )
