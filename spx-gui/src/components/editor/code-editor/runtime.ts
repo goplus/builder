@@ -1,23 +1,33 @@
-type Dispose = () => void
+import { watch } from 'vue'
+import type { RuntimeLog } from '@/models/runtime'
+import { Disposable, type Disposer } from '@/utils/disposable'
+import type { EditorCtx } from '../EditorContextProvider.vue'
 
-type RuntimeErrors = {
-  errors: RuntimeError[]
-  fileHash: string
-}
+export class Runtime extends Disposable {
+  private errorCallbacks: ((errors: RuntimeLog[]) => void)[] = []
+  private editorCtx: EditorCtx
 
-type RuntimeError = {
-  message: string
-  position: Position
-}
+  constructor(editorCtx: EditorCtx) {
+    super()
+    this.editorCtx = editorCtx
+    watch(
+      () => editorCtx.debugLogList,
+      () => {
+        this.notifyErrors()
+      },
+    )
+  }
 
-type Position = {
-  line: number
-  column: number
-  fileUri: string
-}
+  private notifyErrors() {
+    this.errorCallbacks.forEach((cb) => cb(this.editorCtx.debugLogList))
+  }
 
-export class Runtime {
-  public onRuntimeErrors(cb: (errors: RuntimeErrors) => void): Dispose {
-    return () => {}
+  onRuntimeErrors(cb: (errors: RuntimeLog[]) => void): Disposer {
+    this.errorCallbacks.push(cb)
+    const disposer: Disposer = () => {
+      this.errorCallbacks = this.errorCallbacks.filter((callback) => callback !== cb)
+    }
+    this.addDisposer(disposer)
+    return disposer
   }
 }
