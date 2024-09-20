@@ -55,6 +55,14 @@
           :sprite="sprite"
           class="skeleton-editor"
         />
+        <div v-else-if="!loadingVisible && !sprite" class="container">
+          {{
+            $t({
+              en: 'No content available, click to record motion to generate animation',
+              zh: '无可用内容, 点击录制动作来生成动画吧'
+            })
+          }}
+        </div>
       </Transition>
     </div>
     <Transition name="slide-fade" mode="out-in" appear>
@@ -141,6 +149,7 @@ const status = ref<AIGCStatus | null>(null)
 const contentReady = ref(props.asset[isContentReady])
 
 const inpaintingLoading = ref(false)
+const animLoading = ref(false)
 
 const loadingVisible = computed(() => {
   return (
@@ -149,7 +158,8 @@ const loadingVisible = computed(() => {
         status.value === AIGCStatus.Generating ||
         (!contentReady.value && status.value === AIGCStatus.Finished))) ||
     previewImageLoading.value ||
-    inpaintingLoading.value
+    inpaintingLoading.value ||
+    animLoading.value
   )
 })
 
@@ -164,6 +174,8 @@ const loadingInfoText = computed(() => {
     return t({ en: `Loading preview...`, zh: `加载预览...` })
   } else if (inpaintingLoading.value) {
     return t({ en: `Inpainting...`, zh: `重绘中...` })
+  } else if (animLoading.value) {
+    return t({ en: `Loading animation...`, zh: `加载动画...` })
   }
   return ''
 })
@@ -224,6 +236,7 @@ const generateContent = async () => {
 
 const handleMotionRecordResolve = async (materialUrl: string) => {
   motionRecordVisible.value = false
+  animLoading.value = true
   saveMaterialToAsset(materialUrl)
 }
 
@@ -262,7 +275,7 @@ const loadMaterial = async (materialUrl: string) => {
     costumes: [
       {
         name: 'default',
-        path: 'texture.png',
+        path: 'avatars/Sprite.png',
         x: 0,
         y: 0
       }
@@ -272,7 +285,7 @@ const loadMaterial = async (materialUrl: string) => {
     type: 'vertex',
     image: 'avatars/Sprite.png',
     mesh: 'avatars/Sprite.vmesh',
-    scale: { x: 100, y: 100 },
+    scale: { x: 200, y: 200 },
     offset: { x: 0, y: 0 },
     uvOffset: { x: 20, y: 0 }
   }
@@ -292,15 +305,18 @@ const loadMaterial = async (materialUrl: string) => {
     [`assets/sprites/Sprite/animations/Sprite@Default.vanim`]: universalFiles[ANIM_FILE_KEY],
     [`assets/sprites/Sprite/avatars/Sprite.vmesh`]: universalFiles[MESH_FILE_KEY],
     [`assets/sprites/Sprite/avatars/Sprite.png`]: universalFiles[TEXTURE_FILE_KEY],
-    [`assets/sprites/Sprite/vertex.avatar`]: fromConfig('vertex.avatar', avatarConfig, { type: 'application/json' }),
+    [`assets/sprites/Sprite/vertex.avatar`]: fromConfig('vertex.avatar', avatarConfig, {
+      type: 'application/json'
+    }),
     [`assets/sprites/Sprite/vertex.animator`]: fromConfig('vertex.animator', animatorConfig, {
       type: 'application/json'
     }),
-    [`assets/sprites/Sprite/index.json`]: fromConfig('index.json', indexConfig, { type: 'application/json' })
+    [`assets/sprites/Sprite/index.json`]: fromConfig('index.json', indexConfig, {
+      type: 'application/json'
+    })
   }
   return spriteFiles
 }
-
 
 const saveMaterialToAsset = async (materialUrl: string) => {
   const files = await loadMaterial(materialUrl)
@@ -324,6 +340,15 @@ const sprite = useAsyncComputed<Sprite | undefined>(() => {
   }
   return cachedConvertAssetData(props.asset as Required<TaggedAIAssetData<AssetType.Sprite>>)
 })
+
+watch(
+  sprite,
+  (newSprite) => {
+    if (newSprite &&animLoading.value) {
+      animLoading.value = false
+    }
+  }
+)
 
 // preview : view preview image
 // repaint : repaint preview image
