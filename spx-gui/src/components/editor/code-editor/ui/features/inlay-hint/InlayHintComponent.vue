@@ -21,35 +21,29 @@ const updateInlayHint = debounce(async () => {
 
   props.inlayHint.textDecorationsCollection.clear()
   props.inlayHint.textDecorationsCollection.set(
-    inlayHints
-      .filter(
-        (inlayHint) =>
-          // filter special param like playlist icon param
-          !(typeof inlayHint.content === 'string' && ['mediaName'].includes(inlayHint.content))
-      )
-      .map((inlayHint) => {
-        switch (inlayHint.style) {
-          case 'icon':
-            return props.inlayHint.createIconDecoration(
-              inlayHint.position.lineNumber,
-              inlayHint.position.column
-            )
-          case 'tag':
-            return props.inlayHint.createTagDecoration(
-              inlayHint.position.lineNumber,
-              inlayHint.position.column,
-              // we know content is string when style is tag, here use force type
-              inlayHint.content as string
-            )
-          case 'text':
-            return props.inlayHint.createParamDecoration(
-              inlayHint.position.lineNumber,
-              inlayHint.position.column,
-              // we know content is string when style is text, here use force type
-              inlayHint.content + ':'
-            )
-        }
-      })
+    inlayHints.map((inlayHint) => {
+      switch (inlayHint.style) {
+        case 'icon':
+          return props.inlayHint.createIconDecoration(
+            inlayHint.position.lineNumber,
+            inlayHint.position.column
+          )
+        case 'tag':
+          return props.inlayHint.createTagDecoration(
+            inlayHint.position.lineNumber,
+            inlayHint.position.column,
+            // we know content is string when style is tag, here use force type
+            inlayHint.content as string
+          )
+        case 'text':
+          return props.inlayHint.createParamDecoration(
+            inlayHint.position.lineNumber,
+            inlayHint.position.column,
+            // we know content is string when style is text, here use force type
+            inlayHint.content + ':'
+          )
+      }
+    })
   )
 }, 300)
 
@@ -92,10 +86,12 @@ onMounted(() => {
       display: inline-block;
       width: 0.75em;
       height: 0.75em;
+      margin-right: 0.25em;
       background-image: var(--monaco-editor-icon-playlist);
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center center;
+      vertical-align: middle;
     }
   }
 

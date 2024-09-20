@@ -74,6 +74,20 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
   color: black;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   transition: 0.15s;
+  font-family:
+    AlibabaHealthB,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji';
 }
 
 .declaration-wrapper {

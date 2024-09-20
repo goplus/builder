@@ -288,7 +288,7 @@ export const say: Token = {
       effect: 'func',
       target: 'Sprite',
       declaration: 'func(msg interface{})',
-      sample: 'msg "Hello!"',
+      sample: '"Hello!"',
       insertText: 'say ${1:msg}'
     },
     {
@@ -296,7 +296,7 @@ export const say: Token = {
       effect: 'func',
       target: 'Sprite',
       declaration: 'func(msg interface{}, secs ...float64)',
-      sample: 'msg "Hello!", 2',
+      sample: '"Hello!", 2',
       insertText: 'say ${1:msg}, ${2:secs}'
     }
   ]

@@ -6,10 +6,12 @@
     />
     <SpriteEditor
       v-else-if="editorCtx.project.selectedSprite != null"
+      ref="spriteCodeEditor"
       :sprite="editorCtx.project.selectedSprite"
     />
     <StageEditor
       v-else-if="editorCtx.project.selected?.type === 'stage'"
+      ref="stageCodeEditor"
       :stage="editorCtx.project.stage"
     />
     <EditorPlaceholder v-else />
@@ -19,7 +21,7 @@
     <DebugPreview v-else :project="editorCtx.project" />
 
     <EditorPanels v-if="!editorCtx.debugProject" />
-    <DebugInfoPanels v-else :project="editorCtx.project" />
+    <DebugInfoPanels v-else :project="editorCtx.project" @jump-code="handleJumpCode" />
   </div>
 </template>
 
@@ -34,8 +36,33 @@ import EditorPlaceholder from './common/placeholder/EditorPlaceholder.vue'
 import DebugInfoPanels from './panels/DebugInfoPanels.vue'
 import DebugPreview from './preview/DebugPreview.vue'
 import { useEditorCtx } from './EditorContextProvider.vue'
+import type { Position } from '@/models/runtime'
+import { ref } from 'vue'
+import CodeEditor from '@/components/editor/code-editor/CodeEditor.vue'
 
 const editorCtx = useEditorCtx()
+const spriteCodeEditor = ref<InstanceType<typeof CodeEditor>>()
+const stageCodeEditor = ref<InstanceType<typeof CodeEditor>>()
+
+function handleJumpCode(target: 'stage' | 'sprite', name: string, position: Position) {
+  switch (target) {
+    case 'sprite': {
+      editorCtx.project.select({
+        name,
+        type: 'sprite'
+      })
+      spriteCodeEditor.value?.jump(position)
+      break
+    }
+    case 'stage': {
+      editorCtx.project.select({
+        type: 'stage'
+      })
+      stageCodeEditor.value?.jump(position)
+      break
+    }
+  }
+}
 </script>
 
 <style scoped lang="scss">

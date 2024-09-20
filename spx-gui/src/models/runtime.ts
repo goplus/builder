@@ -1,6 +1,6 @@
 import { Disposable } from '@/utils/disposable'
 
-export type Position = { line: number; column: number; fileUri: string; abledToJump: boolean }
+export type Position = { line: number; column: number; fileUri: string; ableToJump: boolean }
 
 export type RuntimeLog = {
   message: string
@@ -45,18 +45,18 @@ export class Runtime extends Disposable {
             line: parseInt(lineNumber),
             column: parseInt(columnNumber),
             fileUri: fileUri,
-            abledToJump: true
+            ableToJump: true
           }
           return { position, message, filesHash: '' }
         }
-        
+
         //TODO: make message easier to understand
       }
     }
-    const msgs = log.args.join(' ')
+    const messages = log.args.join(' ')
     return {
-      position: { line: 0, column: 0, fileUri: '', abledToJump: false },
-      message: msgs,
+      position: { line: 0, column: 0, fileUri: '', ableToJump: false },
+      message: messages,
       filesHash: ''
     }
   }

@@ -34,6 +34,7 @@ import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor from './CostumesEditor.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import AnimationEditor from './AnimationEditor.vue'
+import type { Position } from '@/models/runtime'
 
 const props = defineProps<{
   sprite: Sprite
@@ -53,4 +54,10 @@ const actionUpdateCode = computed(() => ({
 function handleCodeUpdate(value: string) {
   editorCtx.project.history.doAction(actionUpdateCode.value, () => props.sprite.setCode(value))
 }
+
+defineExpose({
+  jump(position: Position): void {
+    codeEditor.value?.jump(position)
+  }
+})
 </script>
