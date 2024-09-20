@@ -1,5 +1,5 @@
 移动到指定位置
 
 ```gop
-setYpos 0
+setXYpos 0, 0
 ```
