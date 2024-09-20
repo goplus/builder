@@ -467,7 +467,7 @@ export const xpos: Token = {
       effect: 'read',
       target: 'Sprite',
       declaration: 'func() float64',
-      sample: '',
+      sample: '5',
       insertText: 'xpos'
     }
   ]

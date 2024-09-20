@@ -1,3 +1,5 @@
+// todo: refactor this into webWorker
+
 import compilerWasmHtml from '@/assets/compiler/index.html?raw'
 import compilerWasm from '@/assets/compiler/main.wasm?url'
 import compilerWasmExec from '@/assets/wasm_exec.js?url'

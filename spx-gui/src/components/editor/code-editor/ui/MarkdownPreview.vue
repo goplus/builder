@@ -134,8 +134,7 @@ $markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'Aliba
   h4,
   h5,
   h6 {
-    margin-top: 24px;
-    margin-bottom: 16px;
+    padding-bottom: 0.3em;
     font-weight: 600;
     line-height: 1.25;
   }
@@ -237,8 +236,12 @@ $markdown-code-font-family: 'JetBrains Mono NL', Consolas, 'Courier New', 'Aliba
     background-color: #f6f8fa;
   }
 
+  & > *:first-child {
+    margin-top: 0;
+  }
+
   & > *:last-child {
-    margin-bottom: 0 !important;
+    margin-bottom: 0;
   }
 }
 

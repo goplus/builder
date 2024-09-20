@@ -119,9 +119,17 @@ export class CompletionMenu implements IDisposable {
     // attention! here we intercept `fire` function to prevent global `onDidChangeBlurWidget` active
     // this is monaco inner function no need dispose manually
     const rawFireFn = this.editorWidgetFocus._onDidChangeToFalse.fire
+    // This function runs when the Monaco Editor loses focus.
+    // It starts when Monaco's own completion menu is open,
+    // and the user clicks outside any Monaco HTML element.
+    // Our custom completion menu is separate from Monaco's, so clicking it moves focus from Monaco to our menu.
+    // This function makes sure clicking our menu doesn't change the focus,
+    // so users can use the menu (like selecting items with keys or pressing 'Enter'/'Tab' to insert words) without losing focus on the editor.
+    // If our custom menu is active, we stop the normal focus loss but keep original events working.
     this.editorWidgetFocus._onDidChangeToFalse.fire = () => {
       if (this.completionMenuState.focus) {
         this.suggestControllerWidget._listElement?.firstElementChild.focus()
+        this.editor.focus()
       } else {
         rawFireFn.call(this.editorWidgetFocus._onDidChangeToFalse)
       }

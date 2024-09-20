@@ -11,6 +11,7 @@ import type { Definition, TokenUsage } from '@/components/editor/code-editor/com
 import {
   type CoordinatorState,
   definitionStructName2Target,
+  transformInput2MarkdownCode,
   usageType2Icon
 } from '@/components/editor/code-editor/coordinators/index'
 import type { TokenWithDoc, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
@@ -217,21 +218,15 @@ export class HoverProvider {
           }),
           activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
           onActiveLabelClick: () => {
-            const usageId = usage.id
-            this.docAbility.getDetailDoc(doc.id).then((detailDoc) => {
-              const usageDetailDoc = detailDoc.usages.find(
-                (usage: UsageWithDoc) => usage.id === usageId
-              )?.doc
-              if (usageDetailDoc) {
-                const chat = this.chatBot.startExplainChat(
-                  usage.declaration + '\n' + usageDetailDoc
-                )
-                this.ui.invokeAIChatModal(chat)
-              } else {
-                const chat = this.chatBot.startExplainChat(usage.declaration)
-                this.ui.invokeAIChatModal(chat)
-              }
-            })
+            if (usage.doc) {
+              const chat = this.chatBot.startExplainChat('\n' + usage.doc)
+              this.ui.invokeAIChatModal(chat)
+            } else {
+              const chat = this.chatBot.startExplainChat(
+                transformInput2MarkdownCode(usage.declaration)
+              )
+              this.ui.invokeAIChatModal(chat)
+            }
           }
         },
         moreActions: [...this.createDocDetailAction(doc, definition)]
@@ -267,7 +262,7 @@ export class HoverProvider {
         icon: Icon.Document,
         label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
         onClick: () => {
-          const usageId = definition.usages.shift()?.usageID
+          const usageId: string | null = definition.usages[0].usageID
           if (!usageId)
             throw new Error(
               'definition usage is empty when search for doc detail. tokenId: ' +
