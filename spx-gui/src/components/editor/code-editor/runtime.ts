@@ -1,10 +1,10 @@
 import { watch } from 'vue'
-import type { RuntimeError } from '@/models/runtime'
+import type { RuntimeLog } from '@/models/runtime'
 import { Disposable, type Disposer } from '@/utils/disposable'
 import type { EditorCtx } from '../EditorContextProvider.vue'
 
 export class Runtime extends Disposable {
-  private errorCallbacks: ((errors: RuntimeError[]) => void)[] = []
+  private errorCallbacks: ((errors: RuntimeLog[]) => void)[] = []
   private editorCtx: EditorCtx
 
   constructor(editorCtx: EditorCtx) {
@@ -22,7 +22,7 @@ export class Runtime extends Disposable {
     this.errorCallbacks.forEach((cb) => cb(this.editorCtx.debugErrorList))
   }
 
-  onRuntimeErrors(cb: (errors: RuntimeError[]) => void): Disposer {
+  onRuntimeErrors(cb: (errors: RuntimeLog[]) => void): Disposer {
     this.errorCallbacks.push(cb)
     const disposer: Disposer = () => {
       this.errorCallbacks = this.errorCallbacks.filter((callback) => callback !== cb)

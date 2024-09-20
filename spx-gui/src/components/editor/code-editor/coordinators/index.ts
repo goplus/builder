@@ -19,7 +19,7 @@ import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
 import { type IRange, type Position } from 'monaco-editor'
-import { type Position as jumpPosition } from '@/models/runtime'
+import { type Position as JumpPosition } from '@/models/runtime'
 import {
   controlCategory,
   eventCategory,
@@ -413,7 +413,7 @@ export class Coordinator {
     )
   }
 
-  public jump(position: jumpPosition): void {}
+  public jump(position: JumpPosition): void {}
 }
 
 async function toolCategory2InputItemCategory(

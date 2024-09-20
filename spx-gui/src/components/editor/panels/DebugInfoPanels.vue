@@ -1,45 +1,23 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import UICard from '@/components/ui/UICard.vue'
-import UIModalClose from '@/components/ui/modal/UIModalClose.vue'
-import type { Project } from '@/models/project'
 import UICardHeader from '@/components/ui/UICardHeader.vue'
-import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { Runtime, type RuntimeError } from '@/models/runtime'
-
-const projectRunnerRef = ref<InstanceType<typeof ProjectRunner>>()
+import { type RuntimeLog } from '@/models/runtime'
 
 const editorCtx = useEditorCtx()
 
-const runTime = new Runtime()
-
-const props = defineProps<{
-  project: Project
-}>()
-
-onMounted(() => {
-  if (!projectRunnerRef.value) throw new Error('projectRunnerRef is not ready')
-  projectRunnerRef.value.run()
-})
-
-const runtimeErrors = ref<RuntimeError[]>([])
-
-const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
-  runTime.addRuntimeLog({ type, args }, props.project.currentFilesHash)
-  runtimeErrors.value = runTime.runtimeErrors
-  editorCtx.debugErrorList = runTime.runtimeErrors
-}
-
-const handleClick = (error: RuntimeError) => {
-  if (error.position.fileUri == 'main') {
+const handleClick = (log: RuntimeLog) => {
+  if (log.position.abledToJump == false) {
+    return
+  }
+  if (log.position.fileUri == 'main') {
     editorCtx.project.select({
       type: 'stage'
     })
   } else {
     editorCtx.project.select({
       type: 'sprite',
-      name: error.position.fileUri
+      name: log.position.fileUri
     })
   }
   //TODO: jump to column, line
@@ -53,30 +31,23 @@ const handleClick = (error: RuntimeError) => {
         <div class="header">
           {{ $t({ en: 'Console', zh: '日志信息' }) }}
         </div>
-        <UIModalClose class="close" @click="editorCtx.debugProject = false" />
       </UICardHeader>
-      <div class="hidden-runner">
-        <ProjectRunner
-          v-if="project"
-          ref="projectRunnerRef"
-          :project="project"
-          @console="handleConsole"
-        ></ProjectRunner>
-      </div>
       <div class="console">
         <div
-          v-for="error in runtimeErrors"
-          :key="error.message"
+          v-for="(log, index) in editorCtx.debugLogList"
+          :key="index"
           class="message"
-          @click="handleClick(error)"
+          @click="handleClick(log)"
         >
-          <span class="fileUri">{{
-            $t({ en: 'file:', zh: '文件:' }) + error.position.fileUri
-          }}</span>
-          <span class="line">{{ $t({ en: 'line:', zh: '行:' }) + error.position.line }}</span>
-          <span class="column">{{ $t({ en: 'column:', zh: '列:' }) + error.position.column }}</span>
-          <br />
-          <span class="msg">{{ $t({ en: 'message:', zh: '信息:' }) + error.message }}</span>
+          <span v-if="log.position.abledToJump">
+            <span class="fileUri">{{
+              $t({ en: 'file:', zh: '文件:' }) + log.position.fileUri
+            }}</span>
+            <span class="line">{{ $t({ en: 'line:', zh: '行:' }) + log.position.line }}</span>
+            <span class="column">{{ $t({ en: 'column:', zh: '列:' }) + log.position.column }}</span>
+            <br />
+          </span>
+          <span class="msg">{{ $t({ en: 'message:', zh: '信息:' }) + log.message }}</span>
         </div>
       </div>
     </UICard>

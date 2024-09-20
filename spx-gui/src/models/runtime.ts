@@ -1,8 +1,8 @@
 import { Disposable } from '@/utils/disposable'
 
-export type Position = { line: number; column: number; fileUri: string }
+export type Position = { line: number; column: number; fileUri: string; abledToJump: boolean }
 
-export type RuntimeError = {
+export type RuntimeLog = {
   message: string
   position: Position
   filesHash: string
@@ -11,51 +11,53 @@ export type RuntimeError = {
 type Log = { type: 'log' | 'warn'; args: unknown[] }
 
 export class Runtime extends Disposable {
-  runtimeErrors: RuntimeError[] = []
+  runtimeLogs: RuntimeLog[] = []
 
   addRuntimeLog(log: Log, filesHash: string) {
     if (
-      this.runtimeErrors.length > 0 &&
-      filesHash !== this.runtimeErrors[this.runtimeErrors.length - 1].filesHash
+      this.runtimeLogs.length > 0 &&
+      filesHash !== this.runtimeLogs[this.runtimeLogs.length - 1].filesHash
     ) {
       this.clearRuntimeErrors()
     }
     const runtimeError = this.parseRuntimeLog(log)
     if (runtimeError !== null) {
       runtimeError.filesHash = filesHash
-      this.runtimeErrors.push(runtimeError)
+      this.runtimeLogs = [...this.runtimeLogs, runtimeError]
     }
   }
 
   private clearRuntimeErrors() {
-    this.runtimeErrors = []
+    this.runtimeLogs = []
   }
 
-  private parseRuntimeLog(log: Log): RuntimeError | null {
+  private parseRuntimeLog(log: Log): RuntimeLog | null {
     switch (log.args.length) {
       case 1: {
         const logRegex = /^[^:]+:\d+:\d+ [^:]+: ([^:]+):(\d+):(\d+): (.*)$/
         const match = (log.args[0] as string).match(logRegex)
 
-        if (!match) {
-          return null
+        if (match) {
+          const [_, fileName, lineNumber, columnNumber, message] = match
+          const [fileUri] = fileName.split('.')
+
+          const position: Position = {
+            line: parseInt(lineNumber),
+            column: parseInt(columnNumber),
+            fileUri: fileUri,
+            abledToJump: true
+          }
+          return { position, message, filesHash: '' }
         }
-
-        const [_, fileName, lineNumber, columnNumber, message] = match
-        const [fileUri] = fileName.split('.')
-
-        const position: Position = {
-          line: parseInt(lineNumber),
-          column: parseInt(columnNumber),
-          fileUri: fileUri
-        }
-
+        
         //TODO: make message easier to understand
-
-        return { position, message, filesHash: '' }
       }
-      default:
-        return null
+    }
+    const msgs = log.args.join(' ')
+    return {
+      position: { line: 0, column: 0, fileUri: '', abledToJump: false },
+      message: msgs,
+      filesHash: ''
     }
   }
 }

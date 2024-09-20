@@ -4,7 +4,7 @@
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton class="debug-button" type="secondary" icon="play" @click="editorCtx.debugProject = true">
+      <UIButton class="debug-button" type="secondary" icon="play" @click="startDebug">
         {{ $t({ en: 'Debug', zh: '调试' }) }}
       </UIButton>
       <UIButton class="run-button" type="primary" icon="play" @click="show = true">
@@ -31,6 +31,11 @@ import RunnerContainer from '@/components/project/runner/RunnerContainer.vue'
 let show = ref(false)
 
 const editorCtx = useEditorCtx()
+
+const startDebug = () => {
+  editorCtx.debugProject = true
+  editorCtx.debugLogList = []
+}
 </script>
 
 <style scoped lang="scss">
