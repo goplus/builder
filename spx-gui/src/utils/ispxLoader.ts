@@ -35,9 +35,8 @@ function initIspxWasm(): Promise<IframeWindow> {
   iframe.style.display = 'none'
 
   const runnerHTML = rawRunnerHtml.replace(WASM_EXEC_JS, wasmExecUrl).replace(MAIN_WASM, wasmUrl)
-  document.head.appendChild(iframe)
 
-  return new Promise<IframeWindow>((resolve, reject) => {
+  const promise = new Promise<IframeWindow>((resolve, reject) => {
     iframe.addEventListener('load', () => {
       iframe.contentWindow!.document!.write(runnerHTML)
 
@@ -50,6 +49,9 @@ function initIspxWasm(): Promise<IframeWindow> {
       })
     })
   })
+
+  document.body.appendChild(iframe)
+  return promise
 }
 
 let ispxWasmInitPromise: Promise<IframeWindow> | undefined
