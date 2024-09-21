@@ -76,14 +76,14 @@ export class ChatBot {
   private i18nInputWithAction(input: string, action: ChatAction): string {
     switch (action) {
       case ChatAction.explain:
-        return this.i18n.t({ en: 'Explain the code: ', zh: '解释一下这段代码: ' }) + '\n```gop  \n' + input + '\n```'
+        return this.i18n.t({ en: 'Explain the code: ', zh: '解释一下这段代码: ' }) + input
       case ChatAction.comment:
         return (
-          this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + '\n```gop  \n' + input + '\n```'
+          this.i18n.t({ en: 'I want to comment the code: ', zh: '我想给这段代码写注释: ' }) + input
         )
       case ChatAction.fixCode:
         return (
-          this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + '\n```gop  \n' + input + '\n```'
+          this.i18n.t({ en: 'I want to fix the code: ', zh: '帮我修复这段代码的问题: ' }) + input
         )
     }
     return ''
@@ -112,7 +112,7 @@ export class Chat {
     messages: [],
     length: 0,
     loading: true,
-    currentQuestion: "",
+    currentQuestion: '',
     responseError: false
   })
 
@@ -163,12 +163,12 @@ export class Chat {
     this.chatState.length++
     this.chatState.loading = false
     this.chatState.currentQuestion = msg
-    if(res.respMessage == "") {
+    if (res.respMessage == '') {
       this.chatState.responseError = true
       return false
     }
     const content = res.respMessage
-    
+
     const questions = res.respQuestions
     const assistantMessage: ChatMessage = {
       content: content,

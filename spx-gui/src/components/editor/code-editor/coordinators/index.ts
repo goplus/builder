@@ -191,7 +191,54 @@ export class Coordinator {
                   header: {
                     icon: usageEffect2Icon(completionItemDoc.effect),
                     declaration: transferUsageDeclaration(completionItemDoc.declaration)
-                  }
+                  },
+                  recommendAction: {
+                    label: this.ui.i18n.t({
+                      zh: '还有疑惑？场外求助',
+                      en: 'Still in confusion? Ask for help'
+                    }),
+                    activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
+                    onActiveLabelClick: () => {
+                      if (completionItemDoc.doc) {
+                        const chat = this.chatBot.startExplainChat('\n\n' + completionItemDoc.doc)
+                        this.ui.invokeAIChatModal(chat)
+                      } else {
+                        const chat = this.chatBot.startExplainChat(
+                          transformInput2MarkdownCode(completionItemDoc.declaration)
+                        )
+                        this.ui.invokeAIChatModal(chat)
+                      }
+                    }
+                  },
+                  moreActions: [
+                    {
+                      icon: Icon.Document,
+                      label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
+                      onClick: () => {
+                        const usageId = completionItemDoc.id
+                        this.docAbility
+                          .getDetailDoc({
+                            name: completionItem.tokenName,
+                            pkgPath: completionItem.tokenPkg
+                          })
+                          .then((detailDoc) => {
+                            const usageDetailDoc = detailDoc.usages.find(
+                              (usage: UsageWithDoc) => usage.id === usageId
+                            )?.doc
+                            if (usageDetailDoc) return this.ui.invokeDocumentDetail(usageDetailDoc)
+                            console.warn(
+                              'usageDetailDoc not found. tokenId: ' +
+                                JSON.stringify({
+                                  name: completionItem.tokenName,
+                                  pkgPath: completionItem.tokenPkg
+                                }) +
+                                ' usageId: ' +
+                                usageId
+                            )
+                          })
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -255,7 +302,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '对这段代码有疑惑', en: 'Suspect this code' }),
         action: () => {
-          const chat = this.chatBot.startExplainChat(ctx.selectContent)
+          const chat = this.chatBot.startExplainChat(transformInput2MarkdownCode(ctx.selectContent))
           this.ui.invokeAIChatModal(chat)
         }
       },
@@ -263,7 +310,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '这段代码无法正常运行', en: 'This code cannot run properly' }),
         action: () => {
-          const chat = this.chatBot.startFixCodeChat(ctx.selectContent)
+          const chat = this.chatBot.startFixCodeChat(transformInput2MarkdownCode(ctx.selectContent))
           this.ui.invokeAIChatModal(chat)
         }
       },
@@ -271,7 +318,7 @@ export class Coordinator {
         icon: Icon.AIAbility,
         label: this.ui.i18n.t({ zh: '给这段代码添加注释', en: 'Add explanation to this code' }),
         action: () => {
-          const chat = this.chatBot.startCommentChat(ctx.selectContent)
+          const chat = this.chatBot.startCommentChat(transformInput2MarkdownCode(ctx.selectContent))
           this.ui.invokeAIChatModal(chat)
         }
       }
@@ -291,9 +338,8 @@ export class Coordinator {
     if (ctx.signal.aborted) return []
     this.coordinatorState.inlayHints = inlayHints
     return inlayHints.flatMap((inlayHint): InlayHintDecoration[] => {
-      // from compiler has two type of inlay hint, so here use if else to distinguish
-
       if (inlayHint.type === 'play') return []
+      // todo: this is temp way to show playlistIcon, need a better way to identify
       if (inlayHint.name === 'mediaName') {
         return [
           {
@@ -488,7 +534,6 @@ async function toolCategory2InputItemCategory(
       const docUsages: Array<UsageWithDoc> = tokenWithDoc.usages
 
       const docUsageIdxMap = new Map<string, number>()
-
       // current logic is only show document, not shown all wasm usages.
 
       // collect all usages from document and next get wasm usage to merge it.
@@ -534,21 +579,15 @@ async function toolCategory2InputItemCategory(
                   }),
                   activeLabel: ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
                   onActiveLabelClick: () => {
-                    const usageId = usage.id
-                    docAbility.getDetailDoc(token.id).then((detailDoc) => {
-                      const usageDetailDoc = detailDoc.usages.find(
-                        (usage: UsageWithDoc) => usage.id === usageId
-                      )?.doc
-                      if (usageDetailDoc) {
-                        const chat = chatBot.startExplainChat(
-                          usage.declaration + '\n' + usageDetailDoc
-                        )
-                        ui.invokeAIChatModal(chat)
-                      } else {
-                        const chat = chatBot.startExplainChat(usage.declaration)
-                        ui.invokeAIChatModal(chat)
-                      }
-                    })
+                    if (usage.doc) {
+                      const chat = chatBot.startExplainChat('\n\n' + usage.doc)
+                      ui.invokeAIChatModal(chat)
+                    } else {
+                      const chat = chatBot.startExplainChat(
+                        transformInput2MarkdownCode(usage.declaration)
+                      )
+                      ui.invokeAIChatModal(chat)
+                    }
                   }
                 },
                 moreActions: [
@@ -561,14 +600,13 @@ async function toolCategory2InputItemCategory(
                         const usageDetailDoc = detailDoc.usages.find(
                           (usage: UsageWithDoc) => usage.id === usageId
                         )?.doc
-                        if (!usageDetailDoc)
-                          return console.warn(
-                            'usageDetailDoc not found. tokenId: ' +
-                              JSON.stringify(token.id) +
-                              ' usageId: ' +
-                              usageId
-                          )
-                        ui.invokeDocumentDetail(usageDetailDoc)
+                        if (usageDetailDoc) return ui.invokeDocumentDetail(usageDetailDoc)
+                        console.warn(
+                          'usageDetailDoc not found. tokenId: ' +
+                            JSON.stringify(token.id) +
+                            ' usageId: ' +
+                            usageId
+                        )
                       })
                     }
                   }
@@ -630,4 +668,8 @@ export function definitionStructName2Target(structName: string): 'All' | 'Sprite
     default:
       return 'All'
   }
+}
+
+export function transformInput2MarkdownCode(input: string) {
+  return '\n```gop  \n' + input + '\n```'
 }

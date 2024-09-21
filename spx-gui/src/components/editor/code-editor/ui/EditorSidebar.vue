@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import ToolItem from './ToolItem.vue'
 import IconCollapse from './icons/collapse.svg?raw'
 import IconOverview from './icons/overview.svg?raw'
@@ -63,15 +63,17 @@ function handleCategoryClick(index: number) {
   props.ui.documentDetailState.visible = false
   activeCategoryIndex.value = index
 
-  if (categoryTitleElements.value[index] && sidebarContainerElement.value) {
-    const el = categoryTitleElements.value[index]
-    const top = el.offsetTop
-    sidebarContainerElement.value.scrollTo({
-      top: top,
-      behavior: 'smooth'
-    })
-    isInCategoryClickScrollingState.value = true
-  }
+  nextTick(() => {
+    if (categoryTitleElements.value[index] && sidebarContainerElement.value) {
+      const el = categoryTitleElements.value[index]
+      const top = el.offsetTop
+      sidebarContainerElement.value.scrollTo({
+        top: top,
+        behavior: 'smooth'
+      })
+      isInCategoryClickScrollingState.value = true
+    }
+  })
 }
 
 const categoryTitleElements = ref<HTMLElement[]>([])
@@ -86,6 +88,7 @@ onBeforeUpdate(() => {
 })
 
 function handleScroll() {
+  if (props.ui.documentDetailState.visible) return
   if (!(sidebarContainerElement.value && categoryTitleElements.value.length)) return
   cancelCategoryClickScrollingState()
   const scrollTop = sidebarContainerElement.value.scrollTop
@@ -166,7 +169,7 @@ onUnmounted(() => {
     }"
     class="sidebar-container"
   >
-    <section v-if="!ui.documentDetailState.visible" class="tools-wrapper">
+    <section v-show="!ui.documentDetailState.visible" class="tools-wrapper">
       <template v-if="categories.length">
         <template v-for="(category, i) in categories" :key="i">
           <h4 :ref="(el) => setCategoryTitleRef(el as HTMLElement | null, i)" class="title">
@@ -201,7 +204,7 @@ onUnmounted(() => {
         </div>
       </template>
     </section>
-    <section v-else class="document-wrapper">
+    <section v-show="ui.documentDetailState.visible" class="document-wrapper">
       <header class="header">
         <span
           :ref="(el) => normalizeIconSize(el as Element, 28)"

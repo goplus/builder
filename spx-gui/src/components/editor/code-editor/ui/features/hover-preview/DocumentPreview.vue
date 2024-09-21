@@ -68,6 +68,7 @@ div[widgetid='editor.contrib.resizableContentHoverWidget'] {
 // for here is under body, not in #app, so can't use var(--ui-font-family-main)
 .document-preview {
   min-width: 370px;
+  max-width: 420px;
   background: white;
   border-radius: 5px;
   border: 1px solid #a6a6a6;

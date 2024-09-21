@@ -3,7 +3,7 @@ import { computed, ref, watchEffect } from 'vue'
 import { type CompletionMenu, resolveSuggestMatches2Highlight } from './completion-menu'
 import EditorMenu from '../../EditorMenu.vue'
 import { determineClosestEdge, isElementInViewport } from '../../common'
-import type { Icon, LayerContent } from '@/components/editor/code-editor/EditorUI'
+import type { Action, Icon, LayerContent } from '@/components/editor/code-editor/EditorUI'
 import DocumentPreview from '@/components/editor/code-editor/ui/features/hover-preview/DocumentPreview.vue'
 import type { CompletionMenuFeatureItem } from '@/components/editor/code-editor/ui/features/completion-menu/completion'
 import AudioPreview from '@/components/editor/code-editor/ui/features/hover-preview/AudioPreview.vue'
@@ -83,6 +83,10 @@ const activeCompletionMenuItem = computed<CompletionMenuFeatureItem | null>(() =
 function handleMenuItemSelect(item: CompletionMenuItem) {
   props.completionMenu.select(item.key)
 }
+
+function handleActionClick(action: Action) {
+  action.onClick()
+}
 </script>
 
 <template>
@@ -127,6 +131,7 @@ function handleMenuItemSelect(item: CompletionMenuItem) {
         :more-actions="activeCompletionMenuItem.preview.layer.moreActions"
         :header="activeCompletionMenuItem.preview.layer.header"
         :content="activeCompletionMenuItem.preview.layer.content"
+        @action-click="handleActionClick"
       ></DocumentPreview>
       <AudioPreview
         v-else-if="activeCompletionMenuItem?.preview?.type === 'audio'"
