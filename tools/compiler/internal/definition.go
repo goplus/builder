@@ -33,6 +33,7 @@ type usage struct {
 	InsertText  string  `json:"insertText"`
 	Params      []param `json:"params"`
 	Type        string  `json:"type"`
+	Document    string  `json:"document"`
 }
 
 type param struct {
@@ -127,7 +128,7 @@ func (d definitions) Position(fset *token.FileSet) {
 		def.From.EndPosition = Position(fset.Position(token.Pos(def.From.EndPos)))
 	}
 }
-func getDefinitionList(info *typesutil.Info) definitions {
+func getDefinitionList(info *typesutil.Info, fnList []*ast.FuncDecl) definitions {
 	var definitionList definitions
 
 	defs := info.Defs
@@ -138,7 +139,11 @@ func getDefinitionList(info *typesutil.Info) definitions {
 			continue
 		}
 		definition := createDefinitionItem(ident, obj)
-		definition.Usages = createUsages(obj, ident.Name)
+		definitionUsage := createUsages(obj, ident.Name)
+		if commentList := checkFnExist(fnList, ident); commentList != nil {
+			definitionUsage[0].Document = commentList.Text()
+		}
+		definition.Usages = definitionUsage
 		definitionList = append(definitionList, definition)
 	}
 
@@ -349,4 +354,13 @@ func extractParams(signature *types.Signature) (signList []string, sampleList []
 		sampleList = append(sampleList, paramName)
 	}
 	return
+}
+
+func checkFnExist(fnList []*ast.FuncDecl, ident *ast.Ident) *ast.CommentGroup {
+	for _, fnDecl := range fnList {
+		if fnDecl.Name == ident && fnDecl.Doc != nil {
+			return fnDecl.Doc
+		}
+	}
+	return nil
 }
