@@ -42,7 +42,8 @@ func GetDefinition(fileName string, fileMap map[string]string) (interface{}, err
 	if err != nil {
 		fmt.Println("Internal error: ", err)
 	}
-	definitionList := getDefinitionList(info)
+	fnList, _ := getCodeFuncDecl(pkg[PKG].Files[fileName])
+	definitionList := getDefinitionList(info, fnList)
 	definitionList.Position(fset)
 	filter := definitions{}
 	for _, item := range definitionList {

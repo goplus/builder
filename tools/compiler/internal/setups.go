@@ -28,7 +28,7 @@ func initSPXMod() *gopmod.Module {
 func initSPXParserConf() parser.Config {
 	return parser.Config{
 		ClassKind: gopbuild.ClassKind,
-		Mode:      parser.DeclarationErrors,
+		Mode:      parser.AllErrors | parser.ParseComments,
 	}
 }
 
