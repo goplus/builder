@@ -1,13 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel="dns-prefetch" href="https://builder-static.goplus.org" />
-    <link rel="dns-prefetch" href="https://aigc-static.goplus.org" />
     <link rel="dns-prefetch" href="https://upload-na0.qiniup.com" />
-    <link rel="preconnect" href="https://builder-static.goplus.org" crossorigin />
+    <% if (NODE_ENV === 'production') { %>
+    <link rel="dns-prefetch" href="https://builder-static.gopluscdn.com" />
+    <link rel="dns-prefetch" href="https://builder-usercontent.gopluscdn.com" />
+    <link rel="preconnect" href="https://builder-static.gopluscdn.com" crossorigin />
+    <link rel="preconnect" href="https://builder-usercontent.gopluscdn.com" crossorigin />
+    <% } else { %>
+    <link rel="dns-prefetch" href="https://builder-static-test.gopluscdn.com" />
+    <link rel="dns-prefetch" href="https://builder-usercontent-test.gopluscdn.com" />
+    <link rel="preconnect" href="https://builder-static-test.gopluscdn.com" crossorigin />
+    <link rel="preconnect" href="https://builder-usercontent-test.gopluscdn.com" crossorigin />
+    <% } %>
 
     <title>Go+ Builder</title>
     <meta name="description" content="Go+ Builder is a tool for building games. We create it to help children to learn abilities to build." />
