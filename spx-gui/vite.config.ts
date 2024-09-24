@@ -3,6 +3,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import VueDevTools from 'vite-plugin-vue-devtools'
+import { ViteEjsPlugin } from 'vite-plugin-ejs'
 import vercel from 'vite-plugin-vercel'
 import path from 'path'
 // https://vitejs.dev/config/
@@ -10,7 +11,7 @@ const resolve = (dir: string) => path.join(__dirname, dir)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [vue(), VueDevTools(), vercel()],
+    plugins: [vue(), VueDevTools(), ViteEjsPlugin(), vercel()],
     resolve: {
       alias: {
         '@': resolve('src')
