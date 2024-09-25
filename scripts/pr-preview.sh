@@ -8,7 +8,7 @@ echo "WORKSPACE: ${PWD}"
 
 PREVIEW_URL="http://goplus-builder-pr-${PULL_NUMBER}.goplus-pr-review.svc.jfcs-qa1.local"
 
-echo "VITE_PUBLISH_BASE_URL=${PREVIEW_URL}/" > spx-gui/.env.local
+echo "VITE_PUBLISH_BASE_URL=${PREVIEW_URL}/" > spx-gui/.env.staging.local
 
 GOPLUS_REGISTRY_REPO=aslan-spock-register.qiniu.io/goplus
 CONTAINER_IMAGE="${GOPLUS_REGISTRY_REPO}/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}"
@@ -22,6 +22,7 @@ docker build \
 	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27" \
 	--build-arg GOPROXY=https://goproxy.cn,direct \
 	--build-arg NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
+	--build-arg NODE_ENV=staging \
 	.
 
 CURRENT_TIME="$(date "--iso-8601=seconds")"
