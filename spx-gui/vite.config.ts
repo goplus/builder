@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
       rewrites: [
         {
           source: '/api/(.*)',
-          destination: (env.VERCEL_PROXIED_API_BASE_URL as string) + '/$1'
+          destination: (env.VITE_VERCEL_PROXIED_API_BASE_URL as string) + '/$1'
         },
         {
           source: '/(.*)',
