@@ -12,7 +12,6 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    'vue/multi-word-component-names': 'off',
     'no-useless-escape': 'warn',
     'vue/no-mutating-props': [
       'error',
