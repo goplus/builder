@@ -42,4 +42,4 @@ export { default as UIEditorBackdropItem } from './block-items/UIEditorBackdropI
 export { default as UIBackdropItem } from './block-items/UIBackdropItem.vue'
 export { default as UIEditorWidgetItem } from './block-items/UIEditorWidgetItem.vue'
 export { default as UIPagination } from './UIPagination.vue'
-export { default as UIRadioGroup } from './radio/UIRadioGroup.vue'
+export { default as UIButtonRadioGroup } from './UIButtonRadioGroup.vue'
