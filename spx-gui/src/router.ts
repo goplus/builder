@@ -62,14 +62,14 @@ const routes: Array<RouteRecordRaw> = [
           {
             path: 'following',
             component: () => import('@/pages/community/user/following.vue')
-          },
-        ],
+          }
+        ]
       },
       {
         path: '/project/:owner/:name',
         component: () => import('@/pages/community/project.vue'),
         props: true
-      },
+      }
     ]
   },
   {
@@ -90,7 +90,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/share/:owner/:name',
-    redirect: to => getProjectPageRoute(to.params.owner as string, to.params.name as string)
+    redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
   }
 ]
 
