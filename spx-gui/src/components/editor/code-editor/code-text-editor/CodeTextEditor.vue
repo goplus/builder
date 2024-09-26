@@ -57,7 +57,7 @@ editorCtx = useEditorCtx()
 
 const loaderConfig = {
   paths: {
-    vs: '/monaco-editor-0.45.0/min/vs'
+    vs: 'https://builder-static.gopluscdn.com/libs/monaco-editor/0.45.0/min/vs'
   }
 }
 if (i18n.lang.value !== 'en') {

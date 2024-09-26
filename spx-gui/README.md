@@ -1,37 +1,22 @@
 # spx-gui
 
-## Dependency Installation
+## Install Dependencies
 
 ```bash
 npm install
 ```
 
-## Project Execution
+## Run the Project in Development Mode
 
 ```bash
-cp .env.dev .env.local
 npm run dev
 ```
 
-## Project DevTool
-
-`vite-plugin-vue-devtools` <https://devtools-next.vuejs.org/>  
-
-DevTool will run in `localhost:5173/__devtools__/`
-
-## Code Architecture
-
-```arduino
-├── public 
-└── src 
-    ├── api          // Requests
-    ├── assets       // Resource files
-    ├── components   // Components
-    ├── router       // Routing
-    ├── store        // State/Storage Management
-        ├── modules  // State Modules
-    └── util         // Utils
-```
+> [!NOTE]
+> To help you quickly get started with development, we have symbolically linked `.env.development` to `.env.staging`.
+> Feel free to override any environment settings by creating a `.env.development.local` file. For example, if you need
+> to use your local `spx-backend` server, simply append something like `VITE_API_BASE_URL="http://localhost:8080"` to
+> the file, adjusting the URL as needed.
 
 ## Development Standards
 
@@ -131,7 +116,7 @@ export const useUserStore = defineStore('user', () => {
     //  getters
     getFullToken,
     //  actions
-    setToken,
+    setToken
   }
 })
 ```
@@ -146,13 +131,13 @@ const routes = [
   {
     path: '/spx/homepage',
     name: 'SpxHomepage',
-    component: () => import('../components/SpxHomepage.vue'),
+    component: () => import('../components/SpxHomepage.vue')
   },
   {
     path: '/sprite/list',
     name: 'SpriteList',
-    component: () => import('../components/sprite-list/SpriteList.vue'),
-  },
+    component: () => import('../components/sprite-list/SpriteList.vue')
+  }
 ]
 ```
 
@@ -164,9 +149,7 @@ Use TODO for team code handover
 
 ```vue
 <script setup>
-
 // TODO Complete xx content writing/bugfix  @xxx
-
 </script>
 ```
 
@@ -175,7 +158,7 @@ Use TODO for team code handover
 Taking the creation of an Audio Editing Page as an example:
 
 1. If it's a new page, create a folder, sounds-edit
-2. Create SoundEdit.vue component
+2. Create `SoundEdit.vue` component
 3. Register the component in the route
 4. Complete the page development
 
@@ -186,25 +169,25 @@ If your project includes custom CSS styles with color definitions, follow these 
 1. Add custom color variables in the file located at src/assets/theme.scss
 
 ```scss
-// SpxEditor  
-$spx-editor-tab-font-uncheck: black;   // Please start the name with the component name, for example, for CSS styles in SpxEditor, start with spx-editor
+// SpxEditor
+$spx-editor-tab-font-uncheck: black; // Please start the name with the component name, for example, for CSS styles in SpxEditor, start with spx-editor
 ```
 
 2. Import and use these variables in SpxEditor
 
 ```scss
-<style scoped lang="scss">  
-@import "@/assets/theme.scss";  
+<style scoped lang="scss">
+@import "@/assets/theme.scss";
 
-.tab-font-uncheck {  
-  font-size: 20px;  
-  color: $spx-editor-tab-font-uncheck;  
+.tab-font-uncheck {
+  font-size: 20px;
+  color: $spx-editor-tab-font-uncheck;
 }
-  
+
 </style>
 ```
 
-## i18n/i10n
+## I18n/I10n
 
 ### Configure languages in `src/language/index.ts`
 
@@ -213,14 +196,14 @@ export const initI18n = async (app: App) => {
   const messages = {
     en: {
       sounds: {
-        hint: 'Sounds',
-      },
+        hint: 'Sounds'
+      }
     },
     zh: {
       sounds: {
-        hint: '音频',
-      },
-    },
+        hint: '音频'
+      }
+    }
   }
 }
 ```

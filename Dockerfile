@@ -39,13 +39,15 @@ COPY tools ../tools
 COPY --from=go-builder /app/tools/fmt/static/main.wasm /app/spx-gui/src/assets/format.wasm
 COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/main.wasm
 
+ARG NODE_ENV
+
 RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
 COPY --from=go-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Compress WASM files for gzip_static
 RUN find /usr/share/nginx/html -name "*.wasm" -exec gzip -9 -k {} \;

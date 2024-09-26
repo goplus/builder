@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --build --force && vite build",
+    "build": "vue-tsc --build --force && vite build --mode ${NODE_ENV:-production}",
     "build-wasm": "./build-wasm.sh",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
@@ -59,6 +59,7 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.3.3",
     "vite": "^5.0.10",
+    "vite-plugin-ejs": "^1.7.0",
     "vite-plugin-top-level-await": "^1.4.1",
     "vite-plugin-vercel": "^9.0.1",
     "vite-plugin-vue-devtools": "^7.0.7",
