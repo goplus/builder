@@ -82,11 +82,11 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/callback', // TODO: remove me
-    redirect: '/signin/callback'
+    redirect: '/sign-in/callback'
   },
   {
-    path: '/signin/callback',
-    component: () => import('@/pages/signin/callback.vue')
+    path: '/sign-in/callback',
+    component: () => import('@/pages/sign-in/callback.vue')
   },
   {
     path: '/share/:owner/:name',
