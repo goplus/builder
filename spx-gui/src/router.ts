@@ -5,27 +5,92 @@ export function getProjectEditorRoute(projectName: string) {
   return `/editor/${projectName}`
 }
 
+export function getProjectPageRoute(owner: string, name: string) {
+  return `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
+}
+
+export type UserTab = 'overview' | 'projects' | 'likes' | 'followers' | 'following'
+
+export function getUserPageRoute(name: string, tab: UserTab = 'overview') {
+  const base = `/user/${encodeURIComponent(name)}`
+  if (tab === 'overview') return base
+  return `${base}/${tab}`
+}
+
 export function getProjectShareRoute(owner: string, name: string) {
-  return `/share/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
+  return getProjectPageRoute(owner, name)
 }
 
 const routes: Array<RouteRecordRaw> = [
-  { path: '/', redirect: '/editor' },
+  {
+    path: '/',
+    component: () => import('@/pages/community/index.vue'),
+    children: [
+      {
+        path: '/',
+        component: () => import('@/pages/community/home.vue')
+      },
+      {
+        path: '/explore',
+        component: () => import('@/pages/community/explore.vue')
+      },
+      {
+        path: '/projects',
+        component: () => import('@/pages/community/projects.vue')
+      },
+      {
+        path: '/user/:name',
+        component: () => import('@/pages/community/user/index.vue'),
+        props: true,
+        children: [
+          {
+            path: '',
+            component: () => import('@/pages/community/user/overview.vue')
+          },
+          {
+            path: 'projects',
+            component: () => import('@/pages/community/user/projects.vue')
+          },
+          {
+            path: 'likes',
+            component: () => import('@/pages/community/user/likes.vue')
+          },
+          {
+            path: 'followers',
+            component: () => import('@/pages/community/user/followers.vue')
+          },
+          {
+            path: 'following',
+            component: () => import('@/pages/community/user/following.vue')
+          }
+        ]
+      },
+      {
+        path: '/project/:owner/:name',
+        component: () => import('@/pages/community/project.vue'),
+        props: true
+      }
+    ]
+  },
   {
     path: '/editor',
-    component: () => import('@/components/editor/EditorHomepage.vue')
+    redirect: '/'
   },
   {
     path: '/editor/:projectName',
-    component: () => import('@/components/editor/EditorHomepage.vue')
+    component: () => import('@/pages/editor/index.vue')
   },
   {
-    path: '/callback',
-    component: () => import('@/components/SigninCallback.vue')
+    path: '/callback', // TODO: remove me
+    redirect: '/sign-in/callback'
+  },
+  {
+    path: '/sign-in/callback',
+    component: () => import('@/pages/sign-in/callback.vue')
   },
   {
     path: '/share/:owner/:name',
-    component: () => import('@/components/share/SharePage.vue')
+    redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
   }
 ]
 
