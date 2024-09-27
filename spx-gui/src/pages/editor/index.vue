@@ -1,7 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <TopNav :project="project" />
+      <EditorNavbar :project="project" />
     </header>
     <main v-if="userStore.userInfo" :class="['editor-main', { 'in-homepage': !projectName }]">
       <template v-if="projectName">
@@ -57,7 +57,7 @@ import {
 } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import TopNav from '@/components/top-nav/TopNav.vue'
+import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
 import ProjectList from '@/components/project/ProjectList.vue'

@@ -21,6 +21,10 @@ export function getProjectShareRoute(owner: string, name: string) {
   return getProjectPageRoute(owner, name)
 }
 
+export function getProjectsRoute(keyword: string = '') {
+  return keyword !== '' ? `/projects?keyword=${encodeURIComponent(keyword)}` : '/projects'
+}
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
