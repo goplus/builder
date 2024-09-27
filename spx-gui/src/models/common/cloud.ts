@@ -2,7 +2,7 @@ import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
 import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
+import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
@@ -32,10 +32,10 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   const { fileCollection } = await saveFiles(files, signal)
   signal?.throwIfAborted()
 
-  const isPublic = metadata.isPublic ?? IsPublic.personal
+  const visibility = metadata.visibility ?? Visibility.Private
   const projectData = await (id != null
-    ? updateProject(owner, name, { isPublic, files: fileCollection }, signal)
-    : addProject({ name, isPublic, files: fileCollection }, signal))
+    ? updateProject(owner, name, { visibility, files: fileCollection }, signal)
+    : addProject({ name, visibility, files: fileCollection }, signal))
   signal?.throwIfAborted()
 
   return { metadata: projectData, files }

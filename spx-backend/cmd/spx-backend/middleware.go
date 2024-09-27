@@ -53,7 +53,7 @@ func NewUserMiddleware(ctrl *controller.Controller) func(next http.Handler) http
 			authorization := r.Header.Get("Authorization")
 			if authorization != "" {
 				token := strings.TrimPrefix(authorization, "Bearer ")
-				user, err := ctrl.UserFromToken(token)
+				user, err := ctrl.UserFromToken(r.Context(), token)
 				if err != nil {
 					logger.Printf("failed to get user from token: %v", err)
 				} else if user == nil {

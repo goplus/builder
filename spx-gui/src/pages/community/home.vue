@@ -140,7 +140,7 @@ const myProjects = useQuery(
     const { data: projects } = await listProject({
       pageIndex: 1,
       pageSize: numInRow,
-      orderBy: 'uTime',
+      orderBy: 'updatedAt',
       sortOrder: 'desc'
     })
     return projects

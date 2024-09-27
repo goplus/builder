@@ -31,12 +31,12 @@ paths:
           schema:
             type: string
             enum:
-              - cTime
-              - uTime
+              - createdAt
+              - updatedAt
               - followedAt
-            default: cTime
+            default: createdAt
             examples:
-              - cTime
+              - createdAt
           description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
@@ -103,7 +103,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
 
-  /user/following/{username}:
+  /user/{username}/following:
     post:
       tags:
         - Users
@@ -169,7 +169,7 @@ paths:
               type: object
               required:
                 - name
-                - isPublic
+                - visibility
               properties:
                 remixSource:
                   oneOf:
@@ -187,8 +187,8 @@ paths:
                     File paths and their corresponding universal URLs associated with the project.
 
                     **Required if `remixSource` is not provided.**
-                isPublic:
-                  $ref: "#/components/schemas/Project/properties/isPublic"
+                visibility:
+                  $ref: "#/components/schemas/Project/properties/visibility"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -214,7 +214,10 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/Project/properties/owner"
-          description: Filter projects by the owner's username.
+          description: |
+            Filter projects by the owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include projects from all users.
         - name: remixedFrom
           in: query
           schema:
@@ -227,15 +230,11 @@ paths:
           schema:
             $ref: "#/components/schemas/Project/properties/name"
           description: Filter projects by name pattern.
-        - name: isPublic
+        - name: visibility
           in: query
           schema:
-            $ref: "#/components/schemas/Project/properties/isPublic"
-          description: |
-            Filter projects by visibility status.
-
-            - `0`: Personal
-            - `1`: Public
+            $ref: "#/components/schemas/Project/properties/visibility"
+          description: Filter projects by visibility.
         - name: liker
           in: query
           schema:
@@ -270,15 +269,15 @@ paths:
           schema:
             type: string
             enum:
-              - cTime
-              - uTime
+              - createdAt
+              - updatedAt
               - likeCount
               - remixCount
               - recentLikeCount
               - recentRemixCount
-            default: cTime
+            default: createdAt
             examples:
-              - cTime
+              - createdAt
           description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
@@ -349,16 +348,13 @@ paths:
             schema:
               type: object
               required:
-                - name
                 - files
-                - isPublic
+                - visibility
               properties:
-                name:
-                  $ref: "#/components/schemas/Project/properties/name"
                 files:
                   $ref: "#/components/schemas/Project/properties/files"
-                isPublic:
-                  $ref: "#/components/schemas/Project/properties/isPublic"
+                visibility:
+                  $ref: "#/components/schemas/Project/properties/visibility"
                 description:
                   $ref: "#/components/schemas/Project/properties/description"
                 instructions:
@@ -394,7 +390,7 @@ paths:
         "204":
           description: Successfully deleted the project.
 
-  /project/liking/{owner}/{name}:
+  /project/{owner}/{name}/liking:
     post:
       tags:
         - Projects
@@ -509,12 +505,12 @@ paths:
           schema:
             type: string
             enum:
-              - cTime
-              - uTime
+              - createdAt
+              - updatedAt
               - remixCount
-            default: cTime
+            default: createdAt
             examples:
-              - cTime
+              - createdAt
           description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
@@ -582,26 +578,24 @@ paths:
               type: object
               required:
                 - displayName
+                - type
                 - category
-                - assetType
                 - files
                 - filesHash
-                - isPublic
+                - visibility
               properties:
                 displayName:
                   $ref: "#/components/schemas/Asset/properties/displayName"
+                type:
+                  $ref: "#/components/schemas/Asset/properties/type"
                 category:
                   $ref: "#/components/schemas/Asset/properties/category"
-                assetType:
-                  $ref: "#/components/schemas/Asset/properties/assetType"
                 files:
                   $ref: "#/components/schemas/Asset/properties/files"
                 filesHash:
                   $ref: "#/components/schemas/Asset/properties/filesHash"
-                preview:
-                  $ref: "#/components/schemas/Asset/properties/preview"
-                isPublic:
-                  $ref: "#/components/schemas/Asset/properties/isPublic"
+                visibility:
+                  $ref: "#/components/schemas/Asset/properties/visibility"
       responses:
         "201":
           description: Successfully created the asset.
@@ -626,46 +620,39 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/User/properties/username"
-          description: Filter assets by owner's username.
+          description: |
+            Filter assets by owner's username.
+
+            Defaults to the authenticated user if not specified. Use `*` to include assets from all users.
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/type"
+          description: Filter assets by type.
         - name: category
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/category"
           description: Filter assets by category.
-        - name: assetType
-          in: query
-          schema:
-            $ref: "#/components/schemas/Asset/properties/assetType"
-          description: |
-            Filter assets by type.
-
-            - `0`: Sprite
-            - `1`: Backdrop
-            - `2`: Sound
         - name: filesHash
           in: query
           schema:
             $ref: "#/components/schemas/Asset/properties/filesHash"
           description: Filter assets by files hash.
-        - name: isPublic
+        - name: visibility
           in: query
           schema:
-            $ref: "#/components/schemas/Asset/properties/isPublic"
-          description: |
-            Filter assets by visibility status.
-
-            - `0`: Personal
-            - `1`: Public
+            $ref: "#/components/schemas/Asset/properties/visibility"
+          description: Filter assets by visibility.
         - name: orderBy
           in: query
           schema:
             type: string
             enum:
-              - default
-              - time
-              - clickCount
+              - createdAt
+              - updatedAt
             examples:
-              - default
+              - createdAt
           description: Field by which to order the results.
         - $ref: "#/components/parameters/SortOrder"
         - $ref: "#/components/parameters/PageIndex"
@@ -726,26 +713,24 @@ paths:
               type: object
               required:
                 - displayName
+                - type
                 - category
-                - assetType
                 - files
                 - filesHash
-                - isPublic
+                - visibility
               properties:
                 displayName:
                   $ref: "#/components/schemas/Asset/properties/displayName"
+                type:
+                  $ref: "#/components/schemas/Asset/properties/type"
                 category:
                   $ref: "#/components/schemas/Asset/properties/category"
-                assetType:
-                  $ref: "#/components/schemas/Asset/properties/assetType"
                 files:
                   $ref: "#/components/schemas/Asset/properties/files"
                 filesHash:
                   $ref: "#/components/schemas/Asset/properties/filesHash"
-                preview:
-                  $ref: "#/components/schemas/Asset/properties/preview"
-                isPublic:
-                  $ref: "#/components/schemas/Asset/properties/isPublic"
+                visibility:
+                  $ref: "#/components/schemas/Asset/properties/visibility"
       responses:
         "200":
           description: Successfully updated the asset.
@@ -768,23 +753,6 @@ paths:
       responses:
         "204":
           description: Successfully deleted the asset.
-
-  /asset/{id}/click:
-    post:
-      tags:
-        - Assets
-      summary: Increment the click count of an asset
-      description: Increase the click count of the specified asset.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Model/properties/id"
-          description: ID of the asset for which to increase click count.
-      responses:
-        "204":
-          description: Successfully increased the click count.
 
   /aigc/matting:
     post:
@@ -928,42 +896,37 @@ components:
           examples:
             - 1
           description: Unique identifier.
-        cTime:
+        createdAt:
           type: string
           format: date-time
           examples:
             - 2006-01-02T15:04:05Z07:00
           description: Creation timestamp.
-        uTime:
+        updatedAt:
           type: string
           format: date-time
           examples:
             - 2006-01-02T15:04:05Z07:00
           description: Last update timestamp.
 
-    IsPublic:
-      type: integer
-      format: int8
+    Visibility:
+      type: string
       enum:
-        - 0
-        - 1
+        - private
+        - public
       examples:
-        - 1
-      description: |
-        Visibility status of the object.
-
-        - `0`: Personal
-        - `1`: Public
+        - private
+      description: Visibility of the object.
 
     User:
       type: object
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
-        cTime:
-          $ref: "#/components/schemas/Model/properties/cTime"
-        uTime:
-          $ref: "#/components/schemas/Model/properties/uTime"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
         username:
           type: string
           examples:
@@ -1015,14 +978,15 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
-        cTime:
-          $ref: "#/components/schemas/Model/properties/cTime"
-        uTime:
-          $ref: "#/components/schemas/Model/properties/uTime"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
         owner:
           $ref: "#/components/schemas/User/properties/username"
         remixedFrom:
           $ref: "#/components/schemas/ProjectReleaseFullName"
+          nullable: true
           description: Full name of the project release from which the project is remixed.
         name:
           type: string
@@ -1045,8 +1009,8 @@ components:
               assets/sprites/Sprite/index.json: kodo://goplus-builder-usercontent-test/files/FoDx7DeLnvbXK45k23OU7IvzmlKE-215
               main.spx: kodo://goplus-builder-usercontent-test/files/Fto5o-5ea0sNMlW_75VgGJCv2AcJ-0
           description: File paths and their corresponding universal URLs associated with the project.
-        isPublic:
-          $ref: "#/components/schemas/IsPublic"
+        visibility:
+          $ref: "#/components/schemas/Visibility"
         description:
           type: string
           examples:
@@ -1103,10 +1067,10 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
-        cTime:
-          $ref: "#/components/schemas/Model/properties/cTime"
-        uTime:
-          $ref: "#/components/schemas/Model/properties/uTime"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
         projectFullName:
           $ref: "#/components/schemas/ProjectFullName"
           description: Full name of the project that the release is associated with, in the format `owner/project`.
@@ -1142,10 +1106,10 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/Model/properties/id"
-        cTime:
-          $ref: "#/components/schemas/Model/properties/cTime"
-        uTime:
-          $ref: "#/components/schemas/Model/properties/uTime"
+        createdAt:
+          $ref: "#/components/schemas/Model/properties/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/Model/properties/updatedAt"
         owner:
           $ref: "#/components/schemas/User/properties/username"
           description: Username of the asset's owner.
@@ -1154,26 +1118,20 @@ components:
           examples:
             - NiuXiaoQi
           description: Display name of the asset.
+        type:
+          type: string
+          enum:
+            - sprite
+            - backdrop
+            - sound
+          examples:
+            - sprite
+          description: Type of the asset.
         category:
           type: string
           examples:
             - People
           description: Category to which the asset belongs.
-        assetType:
-          type: integer
-          format: int8
-          enum:
-            - 0
-            - 1
-            - 2
-          examples:
-            - 0
-          description: |
-            Type of the asset.
-
-            - `0`: Sprite
-            - `1`: Backdrop
-            - `2`: Sound
         files:
           type: object
           examples:
@@ -1186,21 +1144,8 @@ components:
           examples:
             - h1:qUqP5cyxm6YcTAhz05Hph5gvu9M=
           description: Hash of the asset files.
-        preview:
-          type: string
-          format: uri
-          examples:
-            - https://builder.goplus.org/asset_preview.png
-          description: URL of the asset's preview image.
-        isPublic:
-          $ref: "#/components/schemas/IsPublic"
-        clickCount:
-          type: integer
-          format: int64
-          minimum: 0
-          examples:
-            - 1
-          description: Number of times the asset has been clicked.
+        visibility:
+          $ref: "#/components/schemas/Visibility"
 
     UpInfo:
       type: object

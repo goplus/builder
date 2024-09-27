@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useMessageHandle, useQuery } from '@/utils/exception'
-import { IsPublic, listProject, type ListProjectParams } from '@/apis/project'
+import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getProjectEditorRoute } from '@/router'
 import { useUserStore } from '@/stores'
 import { UISelect, UISelectOption, UIPagination, UIButton } from '@/components/ui'
@@ -37,10 +37,10 @@ const listParams = computed<ListProjectParams>(() => {
     pageSize,
     pageIndex: page.value
   }
-  if (!isCurrentUser.value) p.isPublic = IsPublic.public
+  if (!isCurrentUser.value) p.visibility = Visibility.Public
   switch (order.value) {
     case Order.RecentlyUpdated:
-      p.orderBy = 'uTime'
+      p.orderBy = 'updatedAt'
       p.sortOrder = 'desc'
       break
     case Order.MostLikes:

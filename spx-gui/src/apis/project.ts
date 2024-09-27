@@ -1,9 +1,9 @@
 import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams } from './common'
-import { client, IsPublic, ownerAll, timeStringify } from './common'
+import { client, Visibility, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
-export { IsPublic, ownerAll }
+export { Visibility, ownerAll }
 
 export enum ProjectDataType {
   Sprite = 0,
@@ -12,20 +12,24 @@ export enum ProjectDataType {
 }
 
 export type ProjectData = {
-  /** Globally Unique ID */
+  /** Unique identifier */
   id: string
-  /** Project name, unique for projects of same owner */
-  name: string
-  /** Name of project owner */
+  /** Creation timestamp */
+  createdAt: string
+  /** Last update timestamp */
+  updatedAt: string
+  /** Unique username of the user */
   owner: string
-  /** Public status */
-  isPublic: IsPublic
-  /** Files the project contains */
-  files: FileCollection
-  /** Project version */
-  version: number
   /** Full name of the project release from which the project is remixed */
   remixedFrom: string
+  /** Unique name of the project */
+  name: string
+  /** Version number of the project */
+  version: number
+  /** File paths and their corresponding universal URLs associated with the project */
+  files: FileCollection
+  /** Visibility of the project */
+  visibility: Visibility
   /** Brief description of the project */
   description: string
   /** Instructions on how to interact with the project */
@@ -40,10 +44,6 @@ export type ProjectData = {
   releaseCount: number
   /** Number of remixes associated with the project */
   remixCount: number
-  /** Create time */
-  cTime: string
-  /** Update time */
-  uTime: string
 }
 
 // TODO: remove me
@@ -75,13 +75,13 @@ function __adaptProjectData(p: unknown): ProjectData {
   }
 }
 
-export type AddProjectParams = Pick<ProjectData, 'name' | 'isPublic' | 'files'>
+export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility'>
 
 export async function addProject(params: AddProjectParams, signal?: AbortSignal) {
   return __adaptProjectData(await client.post('/project', params, { signal }))
 }
 
-export type UpdateProjectParams = Pick<ProjectData, 'isPublic' | 'files'>
+export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'>
 
 function encode(owner: string, name: string) {
   return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
@@ -101,11 +101,15 @@ export function deleteProject(owner: string, name: string) {
 }
 
 export type ListProjectParams = PaginationParams & {
-  isPublic?: IsPublic
-  /** Name of project owner, `*` indicates projects of all users */
+  /**
+   * Filter projects by the owner's username.
+   * Defaults to the authenticated user if not specified. Use * to include projects from all users.
+   **/
   owner?: string
   /** Filter projects by name pattern */
   keyword?: string
+  /** Filter projects by visibility */
+  visibility?: Visibility
   /** Filter projects liked by the specified user */
   liker?: string
   /** Filter projects that were created after this timestamp */
@@ -117,7 +121,13 @@ export type ListProjectParams = PaginationParams & {
   /** If filter projects created by followees of logged-in user */
   fromFollowees?: boolean
   /** Field by which to order the results */
-  orderBy?: 'cTime' | 'uTime' | 'likeCount' | 'remixCount' | 'recentLikeCount' | 'recentRemixCount'
+  orderBy?:
+    | 'createdAt'
+    | 'updatedAt'
+    | 'likeCount'
+    | 'remixCount'
+    | 'recentLikeCount'
+    | 'recentRemixCount'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
@@ -156,7 +166,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
   // count within the last month
   const countAfter = timeStringify(dayjs().subtract(1, 'month').valueOf())
   const p: ListProjectParams = {
-    isPublic: IsPublic.public,
+    visibility: Visibility.Public,
     owner: ownerAll,
     pageSize: count,
     pageIndex: 1
@@ -175,7 +185,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
     case ExploreOrder.FollowingCreated:
       p.fromFollowees = true
       p.createdAfter = countAfter
-      p.orderBy = 'cTime'
+      p.orderBy = 'createdAt'
       p.sortOrder = 'desc'
       break
   }
@@ -191,7 +201,7 @@ export async function isLiking(owner: string, name: string) {
   // TODO: remove me
   if (process.env.NODE_ENV === 'development') return Math.random() > 0.5
   try {
-    await client.get(`/project/liking/${encode(owner, name)}`)
+    await client.get(`/project/${encode(owner, name)}/liking`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {

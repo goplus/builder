@@ -1,4 +1,4 @@
-// Add a project.
+// Create a project.
 //
 // Request:
 //   POST /project
@@ -9,24 +9,22 @@ import (
 
 ctx := &Context
 
-user, ok := ensureUser(ctx)
-if !ok {
+if _, ok := ensureUser(ctx); !ok {
 	return
 }
 
-params := &controller.AddProjectParams{}
+params := &controller.CreateProjectParams{}
 if !parseJSON(ctx, params) {
 	return
 }
-params.Owner = user.Name
 if ok, msg := params.Validate(); !ok {
 	replyWithCodeMsg(ctx, errorInvalidArgs, msg)
 	return
 }
 
-project, err := ctrl.AddProject(ctx.Context(), params)
+project, err := ctrl.CreateProject(ctx.Context(), params)
 if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json project
+json 201, project

@@ -28,8 +28,8 @@ func TestFmtCodeParamsValidate(t *testing.T) {
 
 func TestControllerFmtCode(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
 		formattedCode, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
 			Body: "package main\n\nfunc main() {}\n",
@@ -42,8 +42,8 @@ func TestControllerFmtCode(t *testing.T) {
 	})
 
 	t.Run("FormatError", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
 		formattedCode, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
 			Body: "package main\n\nfunc main() {",
@@ -58,10 +58,10 @@ func TestControllerFmtCode(t *testing.T) {
 	})
 
 	t.Run("InvalidBody", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
-		_, err = ctrl.FmtCode(context.Background(), &FmtCodeParams{
+		_, err := ctrl.FmtCode(context.Background(), &FmtCodeParams{
 			Body: "-- prog.go --\n-- prog.go --",
 		})
 		require.Error(t, err)
@@ -71,8 +71,8 @@ func TestControllerFmtCode(t *testing.T) {
 
 func TestControllerGetUpInfo(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
 		upInfo, err := ctrl.GetUpInfo(context.Background())
 		require.NoError(t, err)
@@ -98,8 +98,8 @@ func TestMakeFileURLsParamsValidate(t *testing.T) {
 
 func TestControllerMakeFileURLs(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
 		fileURLs, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"kodo://builder/foo/bar"},
@@ -110,8 +110,8 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	})
 
 	t.Run("EmptyObjects", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
 		fileURLs, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{})
 		require.NoError(t, err)
@@ -120,10 +120,10 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	})
 
 	t.Run("InvalidObject", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
-		_, err = ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
+		_, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"://invalid"},
 		})
 		require.Error(t, err)
@@ -131,10 +131,10 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	})
 
 	t.Run("UnrecognizedObject", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 
-		_, err = ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
+		_, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"not-kodo://builder/foo/bar"},
 		})
 		require.Error(t, err)
@@ -142,11 +142,11 @@ func TestControllerMakeFileURLs(t *testing.T) {
 	})
 
 	t.Run("URLJoinPathError", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, _, closeDB := newTestController(t)
+		closeDB()
 		ctrl.kodo.baseUrl = "://invalid"
 
-		_, err = ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
+		_, err := ctrl.MakeFileURLs(context.Background(), &MakeFileURLsParams{
 			Objects: []string{"kodo://builder/foo/bar"},
 		})
 		require.Error(t, err)

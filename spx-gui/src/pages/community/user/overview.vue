@@ -26,7 +26,7 @@ const projectsRet = useQuery(
       owner: props.name,
       pageIndex: 1,
       pageSize: numInRow,
-      orderBy: 'uTime',
+      orderBy: 'updatedAt',
       sortOrder: 'desc'
     })
     return projects

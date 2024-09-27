@@ -44,7 +44,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import { type ProjectData, getProject, addProject, IsPublic } from '@/apis/project'
+import { type ProjectData, getProject, addProject, Visibility } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
@@ -103,7 +103,7 @@ const handleSubmit = useMessageHandle(
     const { fileCollection } = await saveFiles(files)
     const projectData = await addProject({
       name: form.value.name,
-      isPublic: IsPublic.personal,
+      visibility: Visibility.Private,
       files: fileCollection
     })
     emit('resolved', projectData)

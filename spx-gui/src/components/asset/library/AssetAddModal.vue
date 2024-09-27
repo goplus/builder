@@ -33,9 +33,9 @@
           <UIFormItem
             v-if="addPublicLibraryEnabled"
             :label="$t({ en: 'Publish to public assets', zh: '发布到公共素材库' })"
-            path="isPublic"
+            path="visibility"
           >
-            <UICheckbox v-model:checked="form.value.isPublic" />
+            <UICheckbox v-model:checked="form.value.visibilityPublic" />
           </UIFormItem>
         </div>
       </main>
@@ -61,14 +61,7 @@ import {
   useForm,
   useConfirmDialog
 } from '@/components/ui'
-import {
-  type AssetData,
-  addAsset,
-  listAsset,
-  IsPublic,
-  ListAssetParamOrderBy,
-  AssetType
-} from '@/apis/asset'
+import { type AssetData, addAsset, listAsset, Visibility, AssetType } from '@/apis/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { Backdrop } from '@/models/backdrop'
 import { Sound } from '@/models/sound'
@@ -100,7 +93,7 @@ const { t } = useI18n()
 const form = useForm({
   name: [props.asset.name, validateName],
   category: [categoryAll.value],
-  isPublic: [false]
+  visibilityPublic: [false]
 })
 
 const withConfirm = useConfirmDialog()
@@ -126,13 +119,14 @@ const handleSubmit = useMessageHandle(
     const { data: assets } = await listAsset({
       pageSize: 1, // we only need to know if the asset with the same filesHash exists
       pageIndex: 1,
-      assetType: params.assetType,
+      type: params.type,
       filesHash: params.filesHash,
-      orderBy: ListAssetParamOrderBy.TimeDesc
+      orderBy: 'createdAt',
+      sortOrder: 'desc'
     })
     if (assets.length) {
       let assetTypeName = t({ en: 'asset', zh: '素材' })
-      switch (params.assetType) {
+      switch (params.type) {
         case AssetType.Sprite:
           assetTypeName = t({ en: 'sprite', zh: '精灵' })
           break
@@ -160,8 +154,7 @@ const handleSubmit = useMessageHandle(
       ...params,
       displayName: form.value.name,
       category: form.value.category,
-      preview: 'TODO',
-      isPublic: form.value.isPublic ? IsPublic.public : IsPublic.personal
+      visibility: form.value.visibilityPublic ? Visibility.Public : Visibility.Private
     })
     emit('resolved')
     return assetData

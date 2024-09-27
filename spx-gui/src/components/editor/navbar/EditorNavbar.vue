@@ -33,7 +33,7 @@
               {{ $t({ en: 'Share project', zh: '分享项目' }) }}
             </UIMenuItem>
             <UIMenuItem
-              v-if="project?.isPublic === IsPublic.public"
+              v-if="project?.visibility === Visibility.Public"
               @click="handleStopSharingProject"
             >
               <template #icon><img :src="stopSharingSvg" /></template>
@@ -100,7 +100,7 @@ import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { AutoSaveToCloudState, type Project } from '@/models/project'
-import { IsPublic } from '@/apis/common'
+import { Visibility } from '@/apis/common'
 import { useRemoveProject, useShareProject, useStopSharingProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'

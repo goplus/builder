@@ -106,7 +106,7 @@ import {
   UISearchableModal,
   UIDivider
 } from '@/components/ui'
-import { listAsset, AssetType, type AssetData, IsPublic } from '@/apis/asset'
+import { listAsset, AssetType, type AssetData, Visibility } from '@/apis/asset'
 import { debounce } from 'lodash'
 import { useMessageHandle, useQuery } from '@/utils/exception'
 import { type Category, categories as categoriesWithoutAll, categoryAll } from './category'
@@ -165,13 +165,13 @@ const {
     const c = category.value.value
     const cPersonal = categoryPersonal.value.value
     return listAsset({
-      pageSize: 500, // try to get all
+      pageSize: 100, // try to get all
       pageIndex: 1,
-      assetType: props.type,
+      type: props.type,
       keyword: keyword.value,
       category: c === categoryAll.value || c === cPersonal ? undefined : c,
       owner: c === cPersonal ? undefined : '*',
-      isPublic: c === cPersonal ? undefined : IsPublic.public
+      visibility: c === cPersonal ? undefined : Visibility.Public
     })
   },
   {
@@ -191,7 +191,7 @@ function handleSelectCategory(c: Category) {
 const selected = shallowReactive<AssetData[]>([])
 
 async function addAssetToProject(asset: AssetData) {
-  switch (asset.assetType) {
+  switch (asset.type) {
     case AssetType.Sprite: {
       const sprite = await asset2Sprite(asset)
       props.project.addSprite(sprite)

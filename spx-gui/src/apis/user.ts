@@ -4,6 +4,10 @@ import { ApiException, ApiExceptionCode } from './common/exception'
 export type User = {
   /** Unique identifier */
   id: string
+  /** Creation timestamp */
+  createdAt: string
+  /** Last update timestamp */
+  updatedAt: string
   /** Unique username of the user */
   username: string
   /** Brief bio or description of the user */
@@ -12,10 +16,6 @@ export type User = {
   displayName: string
   /** Avatar URL, TODO: from Casdoor? */
   avatar: string
-  /** Create time */
-  cTime: string
-  /** Update time */
-  uTime: string
 }
 
 function __mockUser(name: string): User {
@@ -26,8 +26,8 @@ function __mockUser(name: string): User {
       'All the world’s a stage, and all the men and women merely players. They have their exits and their entrances; and one man in his time plays many parts.',
     displayName: name,
     avatar: 'https://avatars.githubusercontent.com/u/1492263?v=4',
-    cTime: '2021-08-07T07:00:00Z',
-    uTime: '2021-08-07T07:00:00Z'
+    createdAt: '2021-08-07T07:00:00Z',
+    updatedAt: '2021-08-07T07:00:00Z'
   }
 }
 
@@ -50,7 +50,7 @@ export type ListUserParams = PaginationParams & {
   /** Filter users who are following the specified user */
   followee?: string
   /** Field by which to order the results */
-  orderBy?: 'cTime' | 'uTime' | 'followedAt'
+  orderBy?: 'createdAt' | 'updatedAt' | 'followedAt'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
@@ -79,7 +79,7 @@ export async function isFollowing(username: string) {
     return Math.random() > 0.5
   }
   try {
-    await client.get(`/user/following/${encodeURIComponent(username)}`)
+    await client.get(`/user/${encodeURIComponent(username)}/following`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {
@@ -100,7 +100,7 @@ export async function follow(username: string) {
     if (Math.random() > 0.5) throw new Error('Failed to follow')
     return
   }
-  await client.post(`/user/following/${encodeURIComponent(username)}`)
+  await client.post(`/user/${encodeURIComponent(username)}/following`)
 }
 
 export async function unfollow(username: string) {
@@ -110,5 +110,5 @@ export async function unfollow(username: string) {
     if (Math.random() > 0.5) throw new Error('Failed to follow')
     return
   }
-  await client.delete(`/user/following/${encodeURIComponent(username)}`)
+  await client.delete(`/user/${encodeURIComponent(username)}/following`)
 }
