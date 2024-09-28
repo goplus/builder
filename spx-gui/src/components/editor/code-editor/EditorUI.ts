@@ -382,7 +382,7 @@ export class EditorUI extends Disposable {
           const word = model.getWordUntilPosition(position)
           const project = getProject()
           const fileHash = project.currentFilesHash || ''
-          const completionItemCacheID = {
+          const completionItemStagingID = {
             id: fileHash,
             lineNumber: position.lineNumber,
             column: word.startColumn
@@ -395,10 +395,11 @@ export class EditorUI extends Disposable {
             this.completionMenu.hideCompletionMenu()
             return { suggestions: [] }
           }
-          const stagingItems = this.completionMenu.completionStagingItem.get(completionItemCacheID)
+          const stagingItems =
+            this.completionMenu.completionStagingItem.get(completionItemStagingID)
           if (stagingItems == null) {
             const completionItems: CompletionItem[] = []
-            this.completionMenu.completionStagingItem.set(completionItemCacheID, completionItems)
+            this.completionMenu.completionStagingItem.set(completionItemStagingID, completionItems)
             const abortController = this.completionMenu.refreshAbortController()
             this.requestCompletionProviderResolve(
               model,
@@ -411,9 +412,12 @@ export class EditorUI extends Disposable {
                 if (!this.completionMenu) return console.warn('completionMenu is null')
 
                 if (this.completionMenu.completionMenuState.triggerMode.type !== 'playlist') {
-                  const isSamePosition =
-                    this.completionMenu.completionStagingItem.isSameStagingID(completionItemCacheID)
-                  if (!isSamePosition) return abortController.abort()
+                  if (
+                    !this.completionMenu.completionStagingItem.isSameStagingID(
+                      completionItemStagingID
+                    )
+                  )
+                    return abortController.abort()
                   if (this.completionMenu.abortController !== abortController) return
 
                   completionItems.push(...items)
