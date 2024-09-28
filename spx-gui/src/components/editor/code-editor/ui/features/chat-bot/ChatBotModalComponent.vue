@@ -15,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const resend = async () => {
-  props.chat.resendMessage()
+  await props.chat.resendMessage()
 }
 </script>
 
@@ -36,7 +36,7 @@ const resend = async () => {
       ></ChatBubble>
       <ChatLoading v-if="chat.chatState.loading"></ChatLoading>
     </div>
-    <div v-if="chat.chatState.responseError" class="reload-btn-container" >
+    <div v-if="chat.chatState.responseError" class="reload-btn-container">
       <UIButton @click="resend">{{ $t({ zh: '重新发送', en: 'Resend' }) }}</UIButton>
     </div>
   </UIFormModal>
@@ -58,9 +58,8 @@ const resend = async () => {
   border-radius: 4px;
 }
 
-.reload-btn-container{
+.reload-btn-container {
   display: flex;
   justify-content: center;
 }
-
 </style>

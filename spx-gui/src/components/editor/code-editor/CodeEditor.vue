@@ -34,6 +34,7 @@ const wasmContainer = ref<HTMLIFrameElement>()
 onUnmounted(() => {
   // for vite HMR, we have to dispose editorUI when HMR triggered
   editorUI.dispose()
+  compiler.dispose()
 })
 
 watchEffect(() => {

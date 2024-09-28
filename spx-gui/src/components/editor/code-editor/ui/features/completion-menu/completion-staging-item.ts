@@ -7,7 +7,7 @@ export interface CompletionItemCachePosition {
   column: number
 }
 
-export class CompletionItemCache extends Disposable {
+export class CompletionStagingItem extends Disposable {
   private cache: CompletionItem[] | null = null
   private position: CompletionItemCachePosition = {
     id: '',
@@ -32,6 +32,10 @@ export class CompletionItemCache extends Disposable {
   public set(position: CompletionItemCachePosition, items: CompletionItem[]) {
     this.position = { ...position }
     this.cache = items
+  }
+
+  public updateCacheID(position: CompletionItemCachePosition) {
+    this.position = { ...position }
   }
 
   public clear() {

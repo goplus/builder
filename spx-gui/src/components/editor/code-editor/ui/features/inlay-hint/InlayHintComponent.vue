@@ -52,9 +52,10 @@ const { dispose: didChangeModelContentDispose } =
 
 const { dispose: onMouseDownDispose } = props.inlayHint.editor.onMouseDown((e) => {
   const element = e.target.element
-  if (element?.classList.contains('inlay-hint__icon-playlist')) {
-    props.ui.completionMenu?.showCompletionMenu()
-  }
+  const model = props.inlayHint.editor.getModel()
+  if (!model) return
+  if (!element?.classList.contains('inlay-hint__icon-playlist')) return
+  props.ui.completionMenu?.showCompletionMenu('playlist')
 })
 
 props.inlayHint.eventDisposeHandler.push(didChangeModelContentDispose)
@@ -72,7 +73,7 @@ onMounted(() => {
 <style lang="scss">
 // this is global css and active in monaco editor code line, add `.view-line` to avoid style override by monaco editor
 .view-line {
-  .inlay-hint__param::after {
+  .inlay-hint__param {
     font-size: 0.8em;
     margin-right: 0.5em;
     color: rgba(0, 0, 0, 0.3);
@@ -81,11 +82,12 @@ onMounted(() => {
 
   .inlay-hint__icon-playlist {
     cursor: pointer;
-    &::after {
+    &::before {
       content: '';
       display: inline-block;
       width: 0.75em;
       height: 0.75em;
+      margin-left: -0.25em;
       margin-right: 0.25em;
       background-image: var(--monaco-editor-icon-playlist);
       background-size: contain;
@@ -95,14 +97,14 @@ onMounted(() => {
     }
   }
 
-  .inlay-hint__tag::after {
+  .inlay-hint__tag {
     color: rgba(0, 0, 0, 0.3);
-    padding: 2px 4px;
-    margin: 0 2px;
+    padding: 0 4px;
+    margin-left: 0.25em;
     background: rgba(0, 0, 0, 0.05);
     border-radius: 2px;
     font-size: 0.85em;
-    vertical-align: top;
+    vertical-align: middle;
   }
 }
 </style>

@@ -6,6 +6,7 @@ import {
   editor as IEditor,
   type IDisposable,
   type IPosition,
+  type IRange,
   KeyCode,
   languages,
   Range
@@ -13,7 +14,7 @@ import {
 import { reactive } from 'vue'
 import type { CompletionMenuFeatureItem, MonacoCompletionModelItem } from './completion'
 import { createMatches, type IMatch } from '../../common'
-import { CompletionItemCache } from '@/components/editor/code-editor/ui/features/completion-menu/completion-item-cache'
+import { CompletionStagingItem } from '@/components/editor/code-editor/ui/features/completion-menu/completion-staging-item'
 import { Icon } from '@/components/editor/code-editor/EditorUI'
 
 export interface CompletionMenuState {
@@ -31,6 +32,14 @@ export interface CompletionMenuState {
   lineHeight: number
   word: string
   completionMenuElement?: HTMLElement
+  triggerMode:
+    | {
+        type: 'default'
+      }
+    | {
+        type: 'playlist'
+        range: IRange | undefined
+      }
 }
 
 export class CompletionMenu implements IDisposable {
@@ -46,9 +55,10 @@ export class CompletionMenu implements IDisposable {
     },
     fontSize: 14,
     lineHeight: 19,
-    word: ''
+    word: '',
+    triggerMode: { type: 'default' }
   })
-  public completionItemCache = new CompletionItemCache()
+  public completionStagingItem = new CompletionStagingItem()
   public abortController = new AbortController()
   private suggestController: any
   private suggestControllerWidget: any
@@ -91,8 +101,8 @@ export class CompletionMenu implements IDisposable {
     const { dispose: didShowDispose } = this.suggestControllerWidget.onDidShow(() => {
       this.completionMenuState.visible = true
       this.syncCompletionMenuStateFromSuggestControllerWidget(0)
-      // must be use next render time to update correct position
-      setTimeout(() => this.updateCompletionMenuPosition(), 0)
+      // must be use next render keyframe to update the correct position
+      setTimeout(() => this.updateCompletionMenuPosition())
     })
     const { dispose: didFocusDispose } = this.suggestControllerWidget.onDidFocus(() => {
       this.completionMenuState.visible = true
@@ -128,6 +138,8 @@ export class CompletionMenu implements IDisposable {
     // If our custom menu is active, we stop the normal focus loss but keep original events working.
     this.editorWidgetFocus._onDidChangeToFalse.fire = () => {
       if (this.completionMenuState.focus) {
+        // `_listElement` is raw monaco completion menu element container,
+        // use `firstElementChild` to get raw monaco completion menu element
         this.suggestControllerWidget._listElement?.firstElementChild.focus()
         this.editor.focus()
       } else {
@@ -135,10 +147,15 @@ export class CompletionMenu implements IDisposable {
       }
     }
 
+    const { dispose: didChangeModelContentDispose } = this.editor.onDidChangeModelContent(() => {
+      this.completionMenuState.triggerMode = { type: 'default' }
+    })
+
     this.eventsDisposers.push(didHideDispose)
     this.eventsDisposers.push(didShowDispose)
     this.eventsDisposers.push(didFocusDispose)
     this.eventsDisposers.push(keyDownDispose)
+    this.eventsDisposers.push(didChangeModelContentDispose)
   }
 
   private disposeCodePreview() {
@@ -265,7 +282,7 @@ export class CompletionMenu implements IDisposable {
   ): CompletionMenuFeatureItem[] {
     return completionModelItems.map(({ completion, score }) => {
       const cacheIdx = Number(completion.documentation)
-      const completionCacheItem = this.completionItemCache.getCompletionCacheItemByIdx(cacheIdx)
+      const completionCacheItem = this.completionStagingItem.getCompletionCacheItemByIdx(cacheIdx)
       if (!completionCacheItem) {
         return {
           icon: completionItemKind2Icon(completion.kind),
@@ -289,9 +306,20 @@ export class CompletionMenu implements IDisposable {
     this.abortController = abortController
     return abortController
   }
-
-  public showCompletionMenu() {
+  public showCompletionMenu(triggerMode: 'default'): void
+  public showCompletionMenu(triggerMode: 'playlist', range?: IRange): void
+  public showCompletionMenu(triggerMode: 'playlist' | 'default' = 'default', range?: IRange) {
     this.completionMenuState.visible = true
+
+    switch (triggerMode) {
+      case 'playlist':
+        this.completionMenuState.triggerMode = { type: 'playlist', range }
+        break
+      case 'default':
+        this.completionMenuState.triggerMode = { type: 'default' }
+        break
+    }
+
     this.editor.trigger('keyboard', 'editor.action.triggerSuggest', {})
   }
 
@@ -308,7 +336,7 @@ export class CompletionMenu implements IDisposable {
 
   public dispose() {
     this.eventsDisposers.forEach((dispose) => dispose())
-    this.completionItemCache.dispose()
+    this.completionStagingItem.dispose()
     this.disposeCodePreview()
     this.abortController.abort()
   }

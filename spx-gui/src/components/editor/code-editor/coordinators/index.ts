@@ -1,7 +1,6 @@
 import {
   type AttentionHintDecoration,
   AttentionHintLevelEnum,
-  type CompletionItem,
   DocPreviewLevel,
   type EditorUI,
   Icon,
@@ -9,7 +8,6 @@ import {
   type InputItem,
   type InputItemCategory,
   type InputItemGroup,
-  type LayerContent,
   type SelectionMenuItem,
   type TextModel
 } from '@/components/editor/code-editor/EditorUI'
@@ -19,7 +17,7 @@ import { Compiler } from '../compiler'
 import { ChatBot, Suggest } from '../chat-bot'
 import { DocAbility } from '../document'
 import { Project } from '@/models/project'
-import { type IRange, type Position } from 'monaco-editor'
+import { type IRange } from 'monaco-editor'
 import { type Position as JumpPosition } from '@/models/runtime'
 import {
   controlCategory,
@@ -31,13 +29,10 @@ import {
   soundCategory
 } from '@/components/editor/code-editor/tokens/group'
 import { debounce } from '@/utils/utils'
-import { HoverProvider } from '@/components/editor/code-editor/coordinators/hoverProvider'
-import type {
-  TokenCategory,
-  TokenId,
-  UsageWithDoc
-} from '@/components/editor/code-editor/tokens/types'
+import { HoverProvider } from '@/components/editor/code-editor/coordinators/hover-provider'
+import type { TokenCategory, UsageWithDoc } from '@/components/editor/code-editor/tokens/types'
 import { getAllTokens } from '@/components/editor/code-editor/tokens'
+import { CompletionProvider } from '@/components/editor/code-editor/coordinators/completion-provider'
 
 export type CoordinatorState = {
   definitions: Definition[]
@@ -45,37 +40,39 @@ export type CoordinatorState = {
 }
 
 export class Coordinator {
-  project: Project
-  ui: EditorUI
-  chatBot: ChatBot
-  docAbility: DocAbility
-  compiler: Compiler
   public updateDefinition = debounce(this._updateDefinition, 300)
   private coordinatorState: CoordinatorState = {
     definitions: [],
     inlayHints: []
   }
   private readonly hoverProvider: HoverProvider
-  private suggest: Suggest
+  private readonly completionProvider: CompletionProvider
+  private readonly suggest: Suggest
 
   constructor(
-    ui: EditorUI,
-    runtime: Runtime,
-    compiler: Compiler,
-    chatBot: ChatBot,
-    docAbility: DocAbility,
-    project: Project
+    private readonly ui: EditorUI,
+    private runtime: Runtime,
+    private compiler: Compiler,
+    private readonly chatBot: ChatBot,
+    private readonly docAbility: DocAbility,
+    private project: Project
   ) {
-    this.project = project
-    this.ui = ui
-    this.docAbility = docAbility
-    this.chatBot = chatBot
-    this.compiler = compiler
     this.hoverProvider = new HoverProvider(ui, docAbility, this.coordinatorState, project, chatBot)
     this.suggest = new Suggest(() => project)
+    this.completionProvider = new CompletionProvider(
+      ui,
+      docAbility,
+      this.coordinatorState,
+      project,
+      chatBot,
+      compiler,
+      this.suggest
+    )
 
     ui.registerCompletionProvider({
-      provideDynamicCompletionItems: this.implementsCompletionProvider.bind(this)
+      provideDynamicCompletionItems: this.completionProvider.provideCompletion.bind(
+        this.completionProvider
+      )
     })
 
     ui.registerHoverProvider({
@@ -101,193 +98,6 @@ export class Coordinator {
 
   get currentFilename() {
     return (this.project.selectedSprite?.name ?? 'main') + '.spx'
-  }
-
-  implementsCompletionProvider(
-    model: TextModel,
-    ctx: {
-      position: Position
-      unitWord: string
-      signal: AbortSignal
-    },
-    addItems: (items: CompletionItem[]) => void
-  ) {
-    const transferUsageDeclaration = (declaration: string) =>
-      declaration
-        // if param type is func() (func(mi *github.com/goplus/spx.MovingInfo))
-        // this line remove: "github.com/goplus/spx."
-        .replace(/(?:[\w/]+\.)+/g, '')
-
-    // add project variables
-    const { sprites, sounds, stage, selectedSprite } = this.project
-
-    const createCompletionItem = (name: string, preview?: LayerContent) => ({
-      icon: Icon.Property,
-      insertText: `"${name}"`,
-      label: `"${name}"`,
-      preview
-    })
-
-    const items = [
-      ...sprites.map((sprite) => createCompletionItem(sprite.name)),
-      ...sounds.map((sound) =>
-        createCompletionItem(sound.name, {
-          type: 'audio',
-          layer: {
-            file: sound.file
-          }
-        })
-      ),
-      ...stage.backdrops.map((backdrop) => createCompletionItem(backdrop.name))
-    ]
-
-    if (selectedSprite) {
-      const { animations, costumes } = selectedSprite
-      items.push(
-        ...animations.map((animation) => createCompletionItem(animation.name)),
-        ...costumes.map((costume) => createCompletionItem(costume.name))
-      )
-    }
-
-    addItems(items)
-
-    this.compiler
-      .getCompletionItems(
-        this.currentFilename,
-        this.getProjectAllCodes(),
-        ctx.position.lineNumber,
-        ctx.position.column
-      )
-      .then(async (completionItems) => {
-        // todo: this function code is running very slowly! need refactor
-        const completionItemDocMap = new Map<string, UsageWithDoc>()
-        for (let i = 0; i < completionItems.length; i++) {
-          const completionItem = completionItems[i]
-          const tokenId: TokenId = {
-            pkgPath: completionItem.tokenPkg,
-            name: completionItem.tokenName
-          }
-          const { usages } = await this.docAbility.getNormalDoc(tokenId)
-          usages.forEach((usage: UsageWithDoc) => completionItemDocMap.set(usage.insertText, usage))
-        }
-        addItems(
-          completionItems.map((completionItem) => {
-            const completionItemDoc = completionItemDocMap.get(completionItem.insertText)
-            if (!completionItemDoc)
-              return {
-                icon: usageType2Icon(completionItem.type),
-                insertText: completionItem.insertText,
-                label: completionItem.label
-              }
-            return {
-              icon: usageType2Icon(completionItem.type),
-              insertText: completionItem.insertText,
-              label: completionItem.label,
-              preview: {
-                type: 'doc',
-                layer: {
-                  level: DocPreviewLevel.Normal,
-                  content: completionItemDoc.doc,
-                  header: {
-                    icon: usageEffect2Icon(completionItemDoc.effect),
-                    declaration: transferUsageDeclaration(completionItemDoc.declaration)
-                  },
-                  recommendAction: {
-                    label: this.ui.i18n.t({
-                      zh: '还有疑惑？场外求助',
-                      en: 'Still in confusion? Ask for help'
-                    }),
-                    activeLabel: this.ui.i18n.t({ zh: '在线答疑', en: 'Online Q&A' }),
-                    onActiveLabelClick: () => {
-                      if (completionItemDoc.doc) {
-                        const chat = this.chatBot.startExplainChat('\n\n' + completionItemDoc.doc)
-                        this.ui.invokeAIChatModal(chat)
-                      } else {
-                        const chat = this.chatBot.startExplainChat(
-                          transformInput2MarkdownCode(completionItemDoc.declaration)
-                        )
-                        this.ui.invokeAIChatModal(chat)
-                      }
-                    }
-                  },
-                  moreActions: [
-                    {
-                      icon: Icon.Document,
-                      label: this.ui.i18n.t({ zh: '查看文档', en: 'Document' }),
-                      onClick: () => {
-                        const usageId = completionItemDoc.id
-                        this.docAbility
-                          .getDetailDoc({
-                            name: completionItem.tokenName,
-                            pkgPath: completionItem.tokenPkg
-                          })
-                          .then((detailDoc) => {
-                            const usageDetailDoc = detailDoc.usages.find(
-                              (usage: UsageWithDoc) => usage.id === usageId
-                            )?.doc
-                            if (usageDetailDoc) return this.ui.invokeDocumentDetail(usageDetailDoc)
-                            console.warn(
-                              'usageDetailDoc not found. tokenId: ' +
-                                JSON.stringify({
-                                  name: completionItem.tokenName,
-                                  pkgPath: completionItem.tokenPkg
-                                }) +
-                                ' usageId: ' +
-                                usageId
-                            )
-                          })
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          })
-        )
-      })
-
-    function getContextualCode(
-      code: string,
-      position: { line: number; column: number },
-      numLines: number
-    ) {
-      const lines = code.split('\n')
-
-      const startLine = Math.max(0, position.line - numLines)
-      const endLine = Math.min(lines.length - 1, position.line + numLines)
-
-      const contextualLines = lines.slice(startLine, endLine + 1)
-
-      return contextualLines.join('\n')
-    }
-
-    const code = model.getValue()
-    const position = {
-      line: ctx.position.lineNumber,
-      column: ctx.position.column
-    }
-    const numLines = 3
-    const contextualCode = getContextualCode(code, position, numLines)
-
-    this.suggest
-      .startSuggestTask({
-        code: contextualCode,
-        position: {
-          line: position.line,
-          column: position.column
-        }
-      })
-      .then((items) => {
-        addItems(
-          items.map((item) => {
-            return {
-              icon: Icon.AIAbility,
-              insertText: item.insertText,
-              label: ctx.unitWord + item.label
-            }
-          })
-        )
-      })
   }
 
   async implementsSelectionMenuProvider(
@@ -364,9 +174,10 @@ export class Coordinator {
             }
           }
         ]
+
         if (inlayHint.unit) {
           hints.push({
-            content: inlayHint.name,
+            content: inlayHint.unit,
             style: 'tag',
             behavior: 'none',
             position: {

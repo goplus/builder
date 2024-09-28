@@ -123,8 +123,9 @@ export class Compiler extends Disposable {
 
   private reloadIframe() {
     // each load will emit 'load' event, after 'load', will trigger `initIframe` function
-    this.containerElement?.contentWindow?.location.reload()
+    // fixme: fix when wasm crashed and reload not working
     this.wasmHandlerRef.value = null
+    this.containerElement?.contentWindow?.location.reload()
   }
 
   private codes2CompileCode(codes: Code[]): CompilerCodes {
