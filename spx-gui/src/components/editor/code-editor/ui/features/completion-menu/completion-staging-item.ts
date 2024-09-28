@@ -1,15 +1,15 @@
 import { Disposable } from '@/utils/disposable'
 import type { CompletionItem } from '@/components/editor/code-editor/EditorUI'
 
-export interface CompletionItemCachePosition {
+export interface CompletionStagingItemID {
   id: string
   lineNumber: number
   column: number
 }
 
 export class CompletionStagingItem extends Disposable {
-  private cache: CompletionItem[] | null = null
-  private position: CompletionItemCachePosition = {
+  private stagingItems: CompletionItem[] | null = null
+  private stagingItemID: CompletionStagingItemID = {
     id: '',
     lineNumber: -1,
     column: -1
@@ -21,7 +21,7 @@ export class CompletionStagingItem extends Disposable {
     // will throw undefined error.
     this.addDisposer(() => {
       this.clear()
-      this.position = {
+      this.stagingItemID = {
         id: '',
         lineNumber: -1,
         column: -1
@@ -29,37 +29,37 @@ export class CompletionStagingItem extends Disposable {
     })
   }
 
-  public set(position: CompletionItemCachePosition, items: CompletionItem[]) {
-    this.position = { ...position }
-    this.cache = items
+  public set(stagingItemID: CompletionStagingItemID, items: CompletionItem[]) {
+    this.stagingItemID = { ...stagingItemID }
+    this.stagingItems = items
   }
 
-  public updateCacheID(position: CompletionItemCachePosition) {
-    this.position = { ...position }
+  public updateCacheID(stagingItemID: CompletionStagingItemID) {
+    this.stagingItemID = { ...stagingItemID }
   }
 
   public clear() {
-    this.cache = []
+    this.stagingItems = []
   }
 
-  public get(completionItemCacheID: CompletionItemCachePosition) {
-    if (this.isSamePosition(completionItemCacheID)) {
-      return this.cache
+  public get(stagingItemID: CompletionStagingItemID) {
+    if (this.isSameStagingID(stagingItemID)) {
+      return this.stagingItems
     } else {
       return null
     }
   }
 
   public getCompletionCacheItemByIdx(idx: number): CompletionItem | undefined {
-    if (this.cache == null) return
-    return this.cache[idx]
+    if (this.stagingItems == null) return
+    return this.stagingItems[idx]
   }
 
-  public isSamePosition(position: CompletionItemCachePosition) {
+  public isSameStagingID(stagingItemID: CompletionStagingItemID) {
     return (
-      this.position.id === position.id &&
-      this.position.lineNumber === position.lineNumber &&
-      this.position.column === position.column
+      this.stagingItemID.id === stagingItemID.id &&
+      this.stagingItemID.lineNumber === stagingItemID.lineNumber &&
+      this.stagingItemID.column === stagingItemID.column
     )
   }
 }

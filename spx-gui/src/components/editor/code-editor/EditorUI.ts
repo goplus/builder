@@ -395,8 +395,8 @@ export class EditorUI extends Disposable {
             this.completionMenu.hideCompletionMenu()
             return { suggestions: [] }
           }
-          const cachedItems = this.completionMenu.completionStagingItem.get(completionItemCacheID)
-          if (cachedItems == null) {
+          const stagingItems = this.completionMenu.completionStagingItem.get(completionItemCacheID)
+          if (stagingItems == null) {
             const completionItems: CompletionItem[] = []
             this.completionMenu.completionStagingItem.set(completionItemCacheID, completionItems)
             const abortController = this.completionMenu.refreshAbortController()
@@ -412,7 +412,7 @@ export class EditorUI extends Disposable {
 
                 if (this.completionMenu.completionMenuState.triggerMode.type !== 'playlist') {
                   const isSamePosition =
-                    this.completionMenu.completionStagingItem.isSamePosition(completionItemCacheID)
+                    this.completionMenu.completionStagingItem.isSameStagingID(completionItemCacheID)
                   if (!isSamePosition) return abortController.abort()
                   if (this.completionMenu.abortController !== abortController) return
 
@@ -449,7 +449,7 @@ export class EditorUI extends Disposable {
             return { suggestions: [] }
           } else {
             const suggestions =
-              cachedItems.map(
+              stagingItems.map(
                 (item, i): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
