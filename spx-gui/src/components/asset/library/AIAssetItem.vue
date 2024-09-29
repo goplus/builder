@@ -198,6 +198,12 @@ const loadCloudFiles = async (cloudFiles?: AIGCFiles) => {
   flex-direction: row;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  text-wrap: ellipsis;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: left;
 }
 
 .generating-text {

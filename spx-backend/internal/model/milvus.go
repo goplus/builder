@@ -83,12 +83,49 @@ func SearchByVector(ctx context.Context, cli client.Client, collectionName strin
 	return assetNames, nil
 }
 
+func ExistsMilvusAsset(ctx context.Context, cli client.Client, assetID string) bool {
+	logger := log.GetReqLogger(ctx)
+
+	if cli == nil || assetID == "" {
+		logger.Printf("Invalid input: %v, %v", cli, assetID)
+		return false
+	}
+
+	opt := client.SearchQueryOptionFunc(func(option *client.SearchQueryOption) {
+		option.Limit = 3
+		option.Offset = 0
+		option.ConsistencyLevel = entity.ClStrong
+		option.IgnoreGrowing = false
+	})
+
+	// Search for the asset ID in the collection
+	_, err := cli.Query(
+		ctx,
+		"asset",
+		[]string{},
+		"asset_id == '"+assetID+"'",
+		[]string{"asset_id"},
+		opt,
+	)
+	if err != nil {
+		logger.Printf("Failed to search: %v", err)
+		return false
+	}
+
+	return true
+}
+
 // Add an asset
 func AddMilvusAsset(ctx context.Context, cli client.Client, asset *MilvusAsset) error {
 	logger := log.GetReqLogger(ctx)
 
 	if cli == nil || asset == nil {
 		logger.Printf("Invalid input: %v, %v", cli, asset)
+		return nil
+	}
+
+	if ExistsMilvusAsset(ctx, cli, asset.AssetID) {
+		logger.Printf("Asset %s already exists in Milvus", asset.AssetName)
 		return nil
 	}
 

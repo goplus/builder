@@ -153,6 +153,7 @@ const handleAddToProject = () => {
 <style lang="scss" scoped>
 .asset-item {
   --flex-basis: calc(90% / var(--column-count, 5));
+  width: 0;
   flex: 0 1 var(--flex-basis);
   display: flex;
   flex-direction: column;
@@ -210,6 +211,12 @@ const handleAddToProject = () => {
 
 .asset-name {
   margin-top: 8px;
+  white-space: nowrap;
+  text-wrap: ellipsis;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: left;
 }
 
 .asset-operations {
