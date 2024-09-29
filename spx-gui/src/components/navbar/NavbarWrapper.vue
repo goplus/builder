@@ -24,6 +24,11 @@ import NavbarProfile from './NavbarProfile.vue'
 
 withDefaults(
   defineProps<{
+    /**
+     * Whether the navbar content should be centered (to keep consistent with the page content). Typically,
+     * - We stretch the navbar content to full width for editor pages
+     * - We center the navbar content for community pages
+     */
     centered?: boolean
   }>(),
   {
