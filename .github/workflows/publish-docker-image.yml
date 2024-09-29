@@ -25,4 +25,4 @@ jobs:
             NODE_ENV=staging
           push: true
           tags: |
-            ghcr.io/${{github.repository}}:latest
+            ghcr.io/${{github.repository}}:dev
