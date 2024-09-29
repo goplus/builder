@@ -9,7 +9,7 @@ import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
 import { IsPublic, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig } from '../common/file'
+import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
@@ -23,7 +23,7 @@ import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
-import { untilConditionMet } from '@/utils/utils'
+import { until } from '@/utils/utils'
 
 export type { Action } from './history'
 
@@ -91,6 +91,8 @@ type RawProjectConfig = RawStageConfig & {
   builder_soundOrder?: string[]
   // TODO: camera
 }
+
+export type ScreenshotTaker = (name: string) => Promise<File>
 
 export class Project extends Disposable {
   id?: string
@@ -227,6 +229,17 @@ export class Project extends Disposable {
 
   history: History
   historyMutex = new Mutex()
+
+  private screenshotTaker: ScreenshotTaker | null = null
+  bindScreenshotTaker(st: ScreenshotTaker) {
+    if (this.screenshotTaker != null) throw new Error('screenshotTaker already bound')
+    this.screenshotTaker = st
+    return () => {
+      if (this.screenshotTaker === st) {
+        this.screenshotTaker = null
+      }
+    }
+  }
 
   constructor() {
     super()
@@ -390,6 +403,8 @@ export class Project extends Disposable {
     try {
       if (this.isDisposed) throw new Error('disposed')
       const [metadata, files] = await this.export()
+      // TODO: take screenshot & save as thumbnail
+      // test screenshot function with `window.open(await (await project.screenshotTaker()).url(() => null))` in console
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
       this.lastSyncedFilesHash = await hashFiles(files)
@@ -449,10 +464,7 @@ export class Project extends Disposable {
 
       try {
         if (this.isSavingToCloud) {
-          await untilConditionMet(
-            () => this.isSavingToCloud,
-            () => !this.isSavingToCloud
-          )
+          await until(() => !this.isSavingToCloud)
         }
 
         if (this.hasUnsyncedChanges) await this.saveToCloud()
