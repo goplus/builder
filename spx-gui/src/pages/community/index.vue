@@ -1,12 +1,12 @@
 <template>
   <div class="wrapper">
-    <TopNav></TopNav>
+    <CommunityNavbar></CommunityNavbar>
     <router-view />
   </div>
 </template>
 
 <script setup lang="ts">
-import TopNav from '@/components/community/TopNav.vue'
+import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 </script>
 
 <style lang="scss" scoped>

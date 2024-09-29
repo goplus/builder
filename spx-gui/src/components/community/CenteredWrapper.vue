@@ -5,7 +5,7 @@
 </template>
 
 <style scoped lang="scss">
-$threshold: 1920px; // TODO: reconfirm here with @qingqing
+@import '@/components/ui/responsive';
 
 .centered {
   position: relative;
@@ -13,7 +13,7 @@ $threshold: 1920px; // TODO: reconfirm here with @qingqing
   margin-right: auto;
 
   width: 1020px;
-  @media (min-width: $threshold) {
+  @include responsive(desktop-large) {
     width: 1280px;
   }
 }
