@@ -135,9 +135,23 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
         return
       }
       loadingRef.value = true
+      let cancelled = false
+      let fileUrlCleanup: (() => void) | null = null
+      onCleanup(() => {
+        cancelled = true
+        urlRef.value = null
+        fileUrlCleanup?.()
+      })
       file
-        .url(onCleanup)
+        .url((cleanup) => {
+          if (cancelled) {
+            cleanup()
+            return
+          }
+          fileUrlCleanup = cleanup
+        })
         .then((url) => {
+          if (cancelled) return
           urlRef.value = url
         })
         .catch((e) => {
