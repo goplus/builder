@@ -1,7 +1,6 @@
 // definition for responsive mixin
 
 @mixin responsive($size) {
-  // TODO: reconfirm this with @qingqing, consider https://www.browserstack.com/guide/responsive-design-breakpoints
   @if $size == mobile {
     @media (max-width: 767px) {
       @content;
@@ -15,7 +14,7 @@
       @content;
     }
   } @else if $size == desktop-large {
-    @media (min-width: 1920px) {
+    @media (min-width: 1680px) {
       @content;
     }
   }
