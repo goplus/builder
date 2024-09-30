@@ -6,6 +6,9 @@ set -ex
 
 echo "WORKSPACE: ${PWD}"
 
+# Configure spx-gui to use co-located spx-backend
+echo "VITE_API_BASE_URL=/api" > ./spx-gui/.env.staging.local
+
 GOPLUS_REGISTRY_REPO=aslan-spock-register.qiniu.io/goplus
 CONTAINER_IMAGE="${GOPLUS_REGISTRY_REPO}/goplus-builder-pr:${PULL_NUMBER}-${PULL_PULL_SHA:0:8}"
 docker build \
