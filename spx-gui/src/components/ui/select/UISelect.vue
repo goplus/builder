@@ -68,9 +68,24 @@ watch(() => props.value, syncSelected, {
   justify-content: space-between;
   gap: 2px;
 
+  border-radius: var(--ui-border-radius-2);
   color: var(--ui-color-grey-1000);
-  border-radius: 12px;
-  background: var(--ui-color-grey-400);
+  background: var(--ui-color-grey-300);
+  transition: 0.3s;
+
+  &:hover {
+    color: var(--ui-color-grey-800);
+    background: var(--ui-color-grey-400);
+  }
+  &:has(:focus) {
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-400);
+    box-shadow: inset 0 0 0 1px var(--ui-color-primary-500);
+  }
+  &:has(:active) {
+    color: var(--ui-color-grey-1000);
+    background: var(--ui-color-grey-500);
+  }
 }
 
 .label {
@@ -85,11 +100,11 @@ watch(() => props.value, syncSelected, {
 }
 
 .select {
-  opacity: 0;
+  position: absolute;
   width: 100%;
   height: 100%;
-  position: absolute;
   left: 0;
   top: 0;
+  opacity: 0;
 }
 </style>
