@@ -90,6 +90,11 @@ export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) 
   ) as Promise<NonNullable<T>>
 }
 
+/** Wait until given condition is met. */
+export async function until(conditionSource: WatchSource<boolean>) {
+  await untilConditionMet(conditionSource, (c) => c)
+}
+
 /**
  * Wait until a given condition is met for a (reactive) value.
  * ```ts
@@ -97,7 +102,7 @@ export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) 
  * const bar = await untilConditionMet(() => getBar(), (value) => value > 10)
  * ```
  */
-export function untilConditionMet<T>(
+function untilConditionMet<T>(
   valueSource: WatchSource<T>,
   condition: (value: T) => boolean
 ): Promise<T> {

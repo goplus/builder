@@ -47,4 +47,13 @@ effect(async () => {
   await nextTick() // Wait to ensure the selected node updated by Konva
   transformerNode.nodes([selectedNode])
 })
+
+defineExpose({
+  withHidden<T>(callback: () => T): T {
+    transformer.value?.getNode().hide()
+    const ret = callback()
+    transformer.value?.getNode().show()
+    return ret
+  }
+})
 </script>
