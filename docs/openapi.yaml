@@ -1,0 +1,1287 @@
+openapi: 3.1.0
+info:
+  title: Go+ Builder API
+  version: 0.1.0
+  description: |
+    ## Overview
+
+    **The API endpoints documented here are not yet stable and may change or break without notice. Use them at your own
+    risk.**
+
+paths:
+  /users/list:
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Retrieve a paginated list of users with optional filtering and ordering.
+      parameters:
+        - name: follower
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Filter users who are being followed by the specified user.
+        - name: followee
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Filter users who are following the specified user.
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - cTime
+              - uTime
+              - followedAt
+            default: cTime
+            examples:
+              - cTime
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                    description: Array of user objects.
+
+  /user/{username}:
+    get:
+      tags:
+        - Users
+      summary: Get a user
+      description: Retrieve details of a specific user.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Username of the user to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /user:
+    put:
+      tags:
+        - Users
+      summary: Update the authenticated user
+      description: Update the profile information of the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                description:
+                  $ref: "#/components/schemas/User/properties/description"
+      responses:
+        "200":
+          description: Successfully updated the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /user/following/{username}:
+    post:
+      tags:
+        - Users
+      summary: Follow a user
+      description: Follow the specified user as the authenticated user.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Username of the user to follow.
+      responses:
+        "204":
+          description: Successfully followed the user.
+    get:
+      tags:
+        - Users
+      summary: Check if a user is followed by the authenticated user
+      description: Determine if the authenticated user is following the specified user.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Username of the user to check.
+      responses:
+        "204":
+          description: The user is followed by the authenticated user.
+        "404":
+          description: The user is not followed by the authenticated user.
+    delete:
+      tags:
+        - Users
+      summary: Unfollow a user
+      description: Unfollow the specified user as the authenticated user.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Username of the user to unfollow.
+      responses:
+        "204":
+          description: Successfully unfollowed the user.
+
+  /project:
+    post:
+      tags:
+        - Projects
+      summary: Create a project
+      description: |
+        Create a new project.
+
+        If `remixSource` is provided, the new project will be a remix of an existing project.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - isPublic
+              properties:
+                remixSource:
+                  oneOf:
+                    - $ref: "#/components/schemas/ProjectFullName"
+                    - $ref: "#/components/schemas/ProjectReleaseFullName"
+                  description: |
+                    Full name of the project or project release to remix from.
+
+                    **Using the project's full name means remixing the latest release sourced from that project.**
+                name:
+                  $ref: "#/components/schemas/Project/properties/name"
+                files:
+                  $ref: "#/components/schemas/Project/properties/files"
+                  description: |
+                    File paths and their corresponding universal URLs associated with the project.
+
+                    **Required if `remixSource` is not provided.**
+                isPublic:
+                  $ref: "#/components/schemas/Project/properties/isPublic"
+                description:
+                  $ref: "#/components/schemas/Project/properties/description"
+                instructions:
+                  $ref: "#/components/schemas/Project/properties/instructions"
+                thumbnail:
+                  $ref: "#/components/schemas/Project/properties/thumbnail"
+      responses:
+        "201":
+          description: Successfully created the project.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/list:
+    get:
+      tags:
+        - Projects
+      summary: List projects
+      description: Retrieve a paginated list of projects with optional filtering and ordering.
+      parameters:
+        - name: owner
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Filter projects by the owner's username.
+        - name: remixedFrom
+          in: query
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/ProjectFullName"
+              - $ref: "#/components/schemas/ProjectReleaseFullName"
+          description: Filter remixed projects by the full name of the source project or project release.
+        - name: keyword
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Filter projects by name pattern.
+        - name: isPublic
+          in: query
+          schema:
+            $ref: "#/components/schemas/Project/properties/isPublic"
+          description: |
+            Filter projects by visibility status.
+
+            - `0`: Personal
+            - `1`: Public
+        - name: liker
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Filter projects liked by the specified user.
+        - name: createdAfter
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter projects created after this timestamp.
+        - name: likesReceivedAfter
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter projects that gained new likes after this timestamp.
+        - name: remixesReceivedAfter
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter projects that were remixed after this timestamp.
+        - name: fromFollowees
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: When true, include projects created by the authenticated user's followees.
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - cTime
+              - uTime
+              - likeCount
+              - remixCount
+              - recentLikeCount
+              - recentRemixCount
+            default: cTime
+            examples:
+              - cTime
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+
+  /project/{owner}/{name}:
+    get:
+      tags:
+        - Projects
+      summary: Get a project
+      description: Retrieve details of a specific project.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    put:
+      tags:
+        - Projects
+      summary: Update a project
+      description: Update the details of a specific project.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - files
+                - isPublic
+              properties:
+                name:
+                  $ref: "#/components/schemas/Project/properties/name"
+                files:
+                  $ref: "#/components/schemas/Project/properties/files"
+                isPublic:
+                  $ref: "#/components/schemas/Project/properties/isPublic"
+                description:
+                  $ref: "#/components/schemas/Project/properties/description"
+                instructions:
+                  $ref: "#/components/schemas/Project/properties/instructions"
+                thumbnail:
+                  $ref: "#/components/schemas/Project/properties/thumbnail"
+      responses:
+        "200":
+          description: Successfully updated the project.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      tags:
+        - Projects
+      summary: Delete a project
+      description: Permanently delete a specific project by its owner and name.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to delete.
+      responses:
+        "204":
+          description: Successfully deleted the project.
+
+  /project/liking/{owner}/{name}:
+    post:
+      tags:
+        - Projects
+      summary: Like a project
+      description: Like the specified project as the authenticated user.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to like.
+      responses:
+        "204":
+          description: Successfully liked the project.
+    get:
+      tags:
+        - Projects
+      summary: Check if a project is liked by the authenticated user
+      description: Determine if the authenticated user has liked the specified project.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to check.
+      responses:
+        "204":
+          description: The project is liked by the authenticated user.
+        "404":
+          description: The project is not liked by the authenticated user.
+    delete:
+      tags:
+        - Projects
+      summary: Unlike a project
+      description: Unlike the specified project as the authenticated user.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to unlike.
+      responses:
+        "204":
+          description: Successfully unliked the project.
+
+  /project-release:
+    post:
+      tags:
+        - Project Releases
+      summary: Create a project release
+      description: Create a new release for a specific project.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - projectFullName
+                - name
+              properties:
+                projectFullName:
+                  $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
+                name:
+                  $ref: "#/components/schemas/ProjectRelease/properties/name"
+                description:
+                  $ref: "#/components/schemas/ProjectRelease/properties/description"
+                thumbnail:
+                  $ref: "#/components/schemas/ProjectRelease/properties/thumbnail"
+      responses:
+        "201":
+          description: Successfully created the project release.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectRelease"
+
+  /project-releases/list:
+    get:
+      tags:
+        - Project Releases
+      summary: List project releases
+      description: Retrieve a paginated list of project releases with optional filtering and ordering.
+      parameters:
+        - name: projectFullName
+          in: query
+          schema:
+            $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
+          description: Filter releases by the full name of the associated project.
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - cTime
+              - uTime
+              - remixCount
+            default: cTime
+            examples:
+              - cTime
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProjectRelease"
+                    description: Array of project release objects.
+
+  /project-release/{owner}/{project}/{release}:
+    get:
+      tags:
+        - Project Releases
+      summary: Get a project release
+      description: Retrieve details of a specific project release.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: project
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project.
+        - name: release
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ProjectRelease/properties/name"
+          description: Name of the project release to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectRelease"
+
+  /asset:
+    post:
+      tags:
+        - Assets
+      summary: Create an asset
+      description: Create a new asset with the necessary details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - displayName
+                - category
+                - assetType
+                - files
+                - filesHash
+                - isPublic
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/Asset/properties/displayName"
+                category:
+                  $ref: "#/components/schemas/Asset/properties/category"
+                assetType:
+                  $ref: "#/components/schemas/Asset/properties/assetType"
+                files:
+                  $ref: "#/components/schemas/Asset/properties/files"
+                filesHash:
+                  $ref: "#/components/schemas/Asset/properties/filesHash"
+                preview:
+                  $ref: "#/components/schemas/Asset/properties/preview"
+                isPublic:
+                  $ref: "#/components/schemas/Asset/properties/isPublic"
+      responses:
+        "201":
+          description: Successfully created the asset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/list:
+    get:
+      tags:
+        - Assets
+      summary: List assets
+      description: Retrieve a paginated list of assets with optional filtering and ordering.
+      parameters:
+        - name: keyword
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/displayName"
+          description: Filter assets by display name pattern.
+        - name: owner
+          in: query
+          schema:
+            $ref: "#/components/schemas/User/properties/username"
+          description: Filter assets by owner's username.
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/category"
+          description: Filter assets by category.
+        - name: assetType
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/assetType"
+          description: |
+            Filter assets by type.
+
+            - `0`: Sprite
+            - `1`: Backdrop
+            - `2`: Sound
+        - name: filesHash
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/filesHash"
+          description: Filter assets by files hash.
+        - name: isPublic
+          in: query
+          schema:
+            $ref: "#/components/schemas/Asset/properties/isPublic"
+          description: |
+            Filter assets by visibility status.
+
+            - `0`: Personal
+            - `1`: Public
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - default
+              - time
+              - clickCount
+            examples:
+              - default
+          description: Field by which to order the results.
+        - $ref: "#/components/parameters/SortOrder"
+        - $ref: "#/components/parameters/PageIndex"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    $ref: "#/components/schemas/ByPage/properties/total"
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Asset"
+                    description: Array of asset objects.
+
+  /asset/{id}:
+    get:
+      tags:
+        - Assets
+      summary: Get an asset
+      description: Retrieve details of a specific asset.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the asset to get.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    put:
+      tags:
+        - Assets
+      summary: Update an asset
+      description: Update the details of a specific asset.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the asset to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - displayName
+                - category
+                - assetType
+                - files
+                - filesHash
+                - isPublic
+              properties:
+                displayName:
+                  $ref: "#/components/schemas/Asset/properties/displayName"
+                category:
+                  $ref: "#/components/schemas/Asset/properties/category"
+                assetType:
+                  $ref: "#/components/schemas/Asset/properties/assetType"
+                files:
+                  $ref: "#/components/schemas/Asset/properties/files"
+                filesHash:
+                  $ref: "#/components/schemas/Asset/properties/filesHash"
+                preview:
+                  $ref: "#/components/schemas/Asset/properties/preview"
+                isPublic:
+                  $ref: "#/components/schemas/Asset/properties/isPublic"
+      responses:
+        "200":
+          description: Successfully updated the asset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      tags:
+        - Assets
+      summary: Delete an asset
+      description: Permanently delete a specific asset by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the asset to delete.
+      responses:
+        "204":
+          description: Successfully deleted the asset.
+
+  /asset/{id}/click:
+    post:
+      tags:
+        - Assets
+      summary: Increment the click count of an asset
+      description: Increase the click count of the specified asset.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Model/properties/id"
+          description: ID of the asset for which to increase click count.
+      responses:
+        "204":
+          description: Successfully increased the click count.
+
+  /aigc/matting:
+    post:
+      tags:
+        - AIGC
+      summary: Remove image background
+      description: Process the provided image URL to remove its background, resulting in a transparent background.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - imageUrl
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: URL of the image to process for background removal.
+      responses:
+        "201":
+          description: Successfully processed the image for background removal.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultUrl:
+                    type: string
+                    format: uri
+                    description: URL of the processed image with background removed.
+
+  /util/upinfo:
+    get:
+      tags:
+        - Utils
+      summary: Get upload information
+      description: Retrieve necessary information and tokens required for file uploads.
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpInfo"
+
+  /util/fileurls:
+    post:
+      tags:
+        - Utils
+      summary: Generate signed URLs for files
+      description: Create signed web URLs for the specified files to allow secure access.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objects:
+                  type: array
+                  items:
+                    type: string
+                  examples:
+                    - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
+                  description: List of universal URLs of the objects.
+      responses:
+        "201":
+          description: Successfully generated signed URLs for the files.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objectUrls:
+                    type: array
+                    items:
+                      type: object
+                    examples:
+                      - - kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195: https://builder-usercontent.gopluscdn.com/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195?e=1727658000&token=t_6AOOkCdDu4m7fPleblcK0gMBZfbGQzeEIVt5Au:EMJdLqcCWrqQ5pRd01diOv7nhQw=
+                    description: Map from universal URLs to signed web URLs for the objects.
+
+  /util/fmtcode:
+    post:
+      tags:
+        - Utils
+      summary: Format code
+      description: Format the provided code and optionally fix import statements.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+                  description: Code body to format.
+                fixImports:
+                  type: boolean
+                  default: false
+                  description: Whether to fix import statements during formatting.
+      responses:
+        "201":
+          description: Successfully formatted the code.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  body:
+                    type: string
+                    description: Formatted code body.
+                  error:
+                    type: object
+                    properties:
+                      line:
+                        type: integer
+                        format: int32
+                        description: Line number where the error occurred.
+                      column:
+                        type: integer
+                        format: int32
+                        description: Column number where the error occurred.
+                      msg:
+                        type: string
+                        description: Message describing the formatting error.
+                    description: Details of any formatting errors encountered.
+
+components:
+  schemas:
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          format: int64
+          examples:
+            - 1
+          description: Unique identifier.
+        cTime:
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05Z07:00
+          description: Creation timestamp.
+        uTime:
+          type: string
+          format: date-time
+          examples:
+            - 2006-01-02T15:04:05Z07:00
+          description: Last update timestamp.
+
+    IsPublic:
+      type: integer
+      format: int8
+      enum:
+        - 0
+        - 1
+      examples:
+        - 1
+      description: |
+        Visibility status of the object.
+
+        - `0`: Personal
+        - `1`: Public
+
+    User:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        cTime:
+          $ref: "#/components/schemas/Model/properties/cTime"
+        uTime:
+          $ref: "#/components/schemas/Model/properties/uTime"
+        username:
+          type: string
+          examples:
+            - john
+          description: Unique username of the user.
+        description:
+          type: string
+          examples:
+            - Two giants live in Britain's land...
+          description: Brief bio or description of the user.
+        followerCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of followers the user has.
+        followingCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of users the user is following.
+        projectCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Total number of projects created by the user.
+        publicProjectCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of public projects created by the user.
+        likedProjectCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of projects liked by the user.
+
+    Project:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        cTime:
+          $ref: "#/components/schemas/Model/properties/cTime"
+        uTime:
+          $ref: "#/components/schemas/Model/properties/uTime"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+        remixedFrom:
+          $ref: "#/components/schemas/ProjectReleaseFullName"
+          description: Full name of the project release from which the project is remixed.
+        name:
+          type: string
+          examples:
+            - NiuXiaoQi
+          description: Unique name of the project.
+        version:
+          type: integer
+          format: int32
+          examples:
+            - 1
+          description: Version number of the project.
+        files:
+          type: object
+          examples:
+            - Sprite.spx: kodo://goplus-builder-usercontent-test/files/Fto5o-5ea0sNMlW_75VgGJCv2AcJ-0
+              assets/backdrop.jpeg: kodo://goplus-builder-usercontent-test/files/FnPtX9heX2eXE8vRIiITmFXQVAOz-5352
+              assets/index.json: kodo://goplus-builder-usercontent-test/files/FjgMMuSaAsRWx1t7UAQnQ5r4YsAe-195
+              assets/sprites/Sprite/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq-52661
+              assets/sprites/Sprite/index.json: kodo://goplus-builder-usercontent-test/files/FoDx7DeLnvbXK45k23OU7IvzmlKE-215
+              main.spx: kodo://goplus-builder-usercontent-test/files/Fto5o-5ea0sNMlW_75VgGJCv2AcJ-0
+          description: File paths and their corresponding universal URLs associated with the project.
+        isPublic:
+          $ref: "#/components/schemas/IsPublic"
+        description:
+          type: string
+          examples:
+            - NiuXiaoQi in your area.
+          description: Brief description of the project.
+        instructions:
+          type: string
+          examples:
+            - Just run it.
+          description: Instructions on how to interact with the project.
+        thumbnail:
+          type: string
+          format: uri
+          examples:
+            - https://builder.goplus.org/logo.svg
+          description: URL of the project's thumbnail image.
+        viewCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of times the project has been viewed.
+        likeCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of likes the project has received.
+        releaseCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of releases associated with the project.
+        remixCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of times the project has been remixed.
+
+    ProjectFullName:
+      type: string
+      examples:
+        - john/NiuXiaoQi
+      description: Full name of the project, in the format `owner/project`.
+
+    ProjectRelease:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        cTime:
+          $ref: "#/components/schemas/Model/properties/cTime"
+        uTime:
+          $ref: "#/components/schemas/Model/properties/uTime"
+        projectFullName:
+          $ref: "#/components/schemas/ProjectFullName"
+          description: Full name of the project that the release is associated with, in the format `owner/project`.
+        name:
+          type: string
+          pattern: '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+          examples:
+            - v1.2.3
+          description: Unique name of the project release, adhering to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
+        description:
+          type: string
+          examples:
+            - First release.
+          description: Brief description of the release.
+        files:
+          $ref: "#/components/schemas/Project/properties/files"
+          description: File paths and their corresponding universal URLs associated with the release.
+        thumbnail:
+          $ref: "#/components/schemas/Project/properties/thumbnail"
+          description: URL of the release's thumbnail image.
+        remixCount:
+          $ref: "#/components/schemas/Project/properties/remixCount"
+          description: Number of times the release has been remixed.
+
+    ProjectReleaseFullName:
+      type: string
+      examples:
+        - john/NiuXiaoQi/v1.2.3
+      description: Full name of the project release, in the format `owner/project/release`.
+
+    Asset:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Model/properties/id"
+        cTime:
+          $ref: "#/components/schemas/Model/properties/cTime"
+        uTime:
+          $ref: "#/components/schemas/Model/properties/uTime"
+        owner:
+          $ref: "#/components/schemas/User/properties/username"
+          description: Username of the asset's owner.
+        displayName:
+          type: string
+          examples:
+            - NiuXiaoQi
+          description: Display name of the asset.
+        category:
+          type: string
+          examples:
+            - People
+          description: Category to which the asset belongs.
+        assetType:
+          type: integer
+          format: int8
+          enum:
+            - 0
+            - 1
+            - 2
+          examples:
+            - 0
+          description: |
+            Type of the asset.
+
+            - `0`: Sprite
+            - `1`: Backdrop
+            - `2`: Sound
+        files:
+          type: object
+          examples:
+            - NiuXiaoQi.spx: kodo://goplus-builder-usercontent-test/files/Fk7e7QFkOtDe_dBJW61oIpR-tjEF/NiuXiaoQi.spx
+              assets/sprites/NiuXiaoQi/costume.png: kodo://goplus-builder-usercontent-test/files/FoSC8ngQn_jzAIPBqCp9VZLBVkSq/costume.png
+              assets/sprites/NiuXiaoQi/index.json: kodo://goplus-builder-usercontent-test/files/FklZqw4fMW7eHmhIO4nkZ_MZyAq7/index.json
+          description: File paths and their corresponding universal URLs associated with the asset.
+        filesHash:
+          type: string
+          examples:
+            - h1:qUqP5cyxm6YcTAhz05Hph5gvu9M=
+          description: Hash of the asset files.
+        preview:
+          type: string
+          format: uri
+          examples:
+            - https://builder.goplus.org/asset_preview.png
+          description: URL of the asset's preview image.
+        isPublic:
+          $ref: "#/components/schemas/IsPublic"
+        clickCount:
+          type: integer
+          format: int64
+          minimum: 0
+          examples:
+            - 1
+          description: Number of times the asset has been clicked.
+
+    UpInfo:
+      type: object
+      properties:
+        token:
+          type: string
+          examples:
+            - MY_ACCESS_KEY:wQ4ofysef1R7IKnrziqtomqyDvI=:eyJzY29wZSI6Im15LWJ1Y2tldDpzdW5mbG93ZXIuanBnIiwiZGVhZGxpbmUiOjE0NTE0OTEyMDAsInJldHVybkJvZHkiOiJ7XCJuYW1lXCI6JChmbmFtZSksXCJzaXplXCI6JChmc2l6ZSksXCJ3XCI6JChpbWFnZUluZm8ud2lkdGgpLFwiaFwiOiQoaW1hZ2VJbmZvLmhlaWdodCksXCJoYXNoXCI6JChldGFnKX0ifQ==
+          description: Upload token used for authenticating upload requests.
+        expires:
+          type: integer
+          format: int64
+          examples:
+            - 1800
+          description: Expiration time of the upload token in seconds.
+        maxSize:
+          type: integer
+          format: int64
+          examples:
+            - 26214400
+          description: Maximum allowed file size in bytes.
+        bucket:
+          type: string
+          examples:
+            - goplus-builder-usercontent-test
+          description: Name of the Qiniu Kodo bucket where files will be uploaded.
+        region:
+          type: string
+          examples:
+            - na0
+          description: Region of the Qiniu Kodo bucket.
+
+    ByPage:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Total number of result items in the result set.
+        data:
+          type: array
+          items:
+            type: object
+          description: Array of result items.
+
+  parameters:
+    SortOrder:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+        default: asc
+        examples:
+          - asc
+      description: Order in which to sort the results.
+
+    PageIndex:
+      name: pageIndex
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 1
+        examples:
+          - 1
+      description: Index of the page to retrieve.
+
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+        examples:
+          - 20
+      description: Number of items per page.

@@ -95,6 +95,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/share/:owner/:name',
     redirect: (to) => getProjectPageRoute(to.params.owner as string, to.params.name as string)
+  },
+  {
+    path: '/docs/api/:pathMatch(.*)?',
+    component: () => import('@/pages/docs/api.vue')
   }
 ]
 
