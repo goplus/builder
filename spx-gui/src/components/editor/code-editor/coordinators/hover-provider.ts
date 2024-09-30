@@ -22,25 +22,13 @@ import { File } from '@/models/common/file'
 import type { ChatBot } from '@/components/editor/code-editor/chat-bot'
 
 export class HoverProvider {
-  private ui: EditorUI
-  private docAbility: DocAbility
-  private coordinatorState: CoordinatorState
-  private project: Project
-  private chatBot: ChatBot
-
   constructor(
-    ui: EditorUI,
-    docAbility: DocAbility,
-    coordinatorState: CoordinatorState,
-    project: Project,
-    chatBot: ChatBot
-  ) {
-    this.ui = ui
-    this.docAbility = docAbility
-    this.coordinatorState = coordinatorState
-    this.project = project
-    this.chatBot = chatBot
-  }
+    private ui: EditorUI,
+    private docAbility: DocAbility,
+    private coordinatorState: CoordinatorState,
+    private project: Project,
+    private chatBot: ChatBot
+  ) {}
 
   private get currentFilename() {
     return (this.project.selectedSprite?.name ?? 'main') + '.spx'

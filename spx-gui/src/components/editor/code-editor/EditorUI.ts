@@ -374,6 +374,7 @@ export class EditorUI extends Disposable {
 
     this.monacoProviderDisposes.completionProvider =
       monaco.languages.registerCompletionItemProvider(LANGUAGE_NAME, {
+        triggerCharacters: ['"'],
         provideCompletionItems: (model, position) => {
           if (!this.completionMenu) throw new Error('completionMenu is null')
 
@@ -381,19 +382,24 @@ export class EditorUI extends Disposable {
           const word = model.getWordUntilPosition(position)
           const project = getProject()
           const fileHash = project.currentFilesHash || ''
-          const completionItemCacheID = {
+          const completionItemStagingID = {
             id: fileHash,
             lineNumber: position.lineNumber,
             column: word.startColumn
           }
-          if (!word.word) {
+          if (
+            !word.word &&
+            // sometimes token like `""` `getWordUntilPosition` is empty, but still necessary for 'playlist' to show completion menu
+            this.completionMenu.completionMenuState.triggerMode.type !== 'playlist'
+          ) {
             this.completionMenu.hideCompletionMenu()
             return { suggestions: [] }
           }
-          const cachedItems = this.completionMenu.completionItemCache.get(completionItemCacheID)
-          if (cachedItems == null) {
+          const stagingItems =
+            this.completionMenu.completionStagingItem.get(completionItemStagingID)
+          if (stagingItems == null) {
             const completionItems: CompletionItem[] = []
-            this.completionMenu.completionItemCache.set(completionItemCacheID, completionItems)
+            this.completionMenu.completionStagingItem.set(completionItemStagingID, completionItems)
             const abortController = this.completionMenu.refreshAbortController()
             this.requestCompletionProviderResolve(
               model,
@@ -404,20 +410,50 @@ export class EditorUI extends Disposable {
               },
               (items: CompletionItem[]) => {
                 if (!this.completionMenu) return console.warn('completionMenu is null')
-                const isSamePosition =
-                  this.completionMenu.completionItemCache.isSamePosition(completionItemCacheID)
-                if (!isSamePosition) return abortController.abort()
-                if (this.completionMenu.abortController !== abortController) return
-                completionItems.push(...items)
-                // if you need user immediately show updated completion items, we need close it and reopen it.
-                this.completionMenu.hideCompletionMenu()
-                this.completionMenu.showCompletionMenu()
+
+                if (this.completionMenu.completionMenuState.triggerMode.type !== 'playlist') {
+                  if (
+                    !this.completionMenu.completionStagingItem.isSameStagingID(
+                      completionItemStagingID
+                    )
+                  )
+                    return abortController.abort()
+                  if (this.completionMenu.abortController !== abortController) return
+
+                  completionItems.push(...items)
+                  // if you need user immediately show updated completion items, we need close it and reopen it.
+                  this.completionMenu.hideCompletionMenu()
+                  this.completionMenu.showCompletionMenu('default')
+                } else {
+                  // using position to get word is not correct word, like: `"soundName"` => `sound`, quote will not be included
+                  // here range is from wasm `Hint` item and `type = 'mediaName'` to get correct range
+                  const range = this.completionMenu.completionMenuState.triggerMode.range
+                  if (!range) return
+
+                  // must use next render time to avoid monaco inner conflict
+                  // when selection has changed, completion menu will be self closed
+                  // here we move `hideCompletion` and `showCompletion` in same code block to avoid after showCompletion and update selection result completion menu closed
+                  setTimeout(() => {
+                    this.completionMenu?.editor.setSelection(range)
+                    this.completionMenu?.completionStagingItem.updateCacheID({
+                      id: fileHash,
+                      lineNumber: range.endLineNumber,
+                      column: range.endColumn
+                    })
+
+                    completionItems.push(...items)
+                    // if you need user immediately show updated completion items, we need close it and reopen it.
+                    this.completionMenu?.hideCompletionMenu()
+                    // for can not know when `addItems` will be called, this range will always be saved until code has been changed
+                    this.completionMenu?.showCompletionMenu('playlist', range)
+                  })
+                }
               }
             )
             return { suggestions: [] }
           } else {
             const suggestions =
-              cachedItems.map(
+              stagingItems.map(
                 (item, i): languages.CompletionItem => ({
                   label: item.label,
                   kind: icon2CompletionItemKind(item.icon),
