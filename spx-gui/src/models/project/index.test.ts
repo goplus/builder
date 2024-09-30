@@ -229,6 +229,7 @@ describe('Project', () => {
     expect(project.hasUnsyncedChanges).toBe(true)
 
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Failed)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
@@ -238,6 +239,7 @@ describe('Project', () => {
     expect(project.hasUnsyncedChanges).toBe(false)
 
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Saved)
     expect(project.hasUnsyncedChanges).toBe(false)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
@@ -266,6 +268,7 @@ describe('Project', () => {
 
     project.dispose()
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Pending)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(0)
@@ -286,6 +289,7 @@ describe('Project', () => {
 
     project.dispose()
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(localSaveMock).toHaveBeenCalledTimes(0)
   })
 })
