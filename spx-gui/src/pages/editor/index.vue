@@ -1,7 +1,7 @@
 <template>
   <section class="editor-home">
     <header class="editor-header">
-      <TopNav :project="project" />
+      <EditorNavbar :project="project" />
     </header>
     <main v-if="userStore.userInfo" :class="['editor-main', { 'in-homepage': !projectName }]">
       <template v-if="projectName">
@@ -18,6 +18,7 @@
         </EditorContextProvider>
       </template>
       <template v-else>
+        <!-- TODO: remove me -->
         <div class="my-projects">
           <div class="header">
             {{ $t({ en: 'My projects', zh: '我的项目' }) }}
@@ -43,13 +44,8 @@ import { useRouter } from 'vue-router'
 import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { AutoSaveMode, Project } from '@/models/project'
-import TopNav from '@/components/top-nav/TopNav.vue'
-import ProjectList from '@/components/project/ProjectList.vue'
-import { useCreateProject } from '@/components/project'
 import { getProjectEditorRoute } from '@/router'
 import { useMessageHandle, useQuery } from '@/utils/exception'
-import EditorContextProvider from './EditorContextProvider.vue'
-import ProjectEditor from './ProjectEditor.vue'
 import { clear } from '@/models/common/local'
 import {
   UIButton,
@@ -61,6 +57,11 @@ import {
 } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
+import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
+import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
+import ProjectEditor from '@/components/editor/ProjectEditor.vue'
+import ProjectList from '@/components/project/ProjectList.vue'
+import { useCreateProject } from '@/components/project'
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 

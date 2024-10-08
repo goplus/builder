@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+      - name: Configure spx-gui to use co-located spx-backend
+        run: echo "VITE_API_BASE_URL=/api" > ./spx-gui/.env.staging.local
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -25,4 +27,4 @@ jobs:
             NODE_ENV=staging
           push: true
           tags: |
-            ghcr.io/${{github.repository}}:latest
+            ghcr.io/${{github.repository}}:dev

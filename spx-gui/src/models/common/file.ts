@@ -59,9 +59,7 @@ export class File {
 
   async url(onCleanup: (disposer: Disposer) => void) {
     let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
+    onCleanup(() => (cancelled = true))
     const ab = await this.arrayBuffer()
     if (cancelled) throw new Cancelled()
     const url = URL.createObjectURL(new Blob([ab], { type: this.type }))
