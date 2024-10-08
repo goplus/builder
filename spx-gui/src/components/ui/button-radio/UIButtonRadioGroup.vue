@@ -20,12 +20,10 @@ const emit = defineEmits<{
   'update:value': [string]
 }>()
 
-// Emit update event when a child radio is clicked
 const updateValue = (newValue: string) => {
   emit('update:value', newValue)
 }
 
-// Provide the `value` and the `updateValue` function to the children using symbols
 provide(
   radioGroupValueKey,
   computed(() => props.value)

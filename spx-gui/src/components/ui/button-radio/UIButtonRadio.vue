@@ -13,14 +13,11 @@ const props = defineProps<{
   value: string
 }>()
 
-// Inject the value and update function from the parent `UIRadioGroup` using symbols
 const radioGroupValue = inject(radioGroupValueKey)
 const updateRadioValue = inject(updateRadioValueKey)
 
-// Computed property to check if this radio button is active
 const isActive = computed(() => radioGroupValue?.value === props.value)
 
-// Handle the button click
 const handleClick = () => {
   updateRadioValue?.(props.value)
 }
