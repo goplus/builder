@@ -31,7 +31,7 @@
       <button
         v-else
         :class="['ui-pagination-button', { active: page === current }]"
-        @click="goToPage(page as number)"
+        @click="goToPage(page)"
       >
         {{ page }}
       </button>
@@ -81,33 +81,47 @@ const goToPage = (page: number) => {
 }
 
 const pages = computed(() => {
-  const result: (number | string)[] = []
+  const result: (number | '...')[] = []
 
-  if (props.total <= 5 + 2 * 2) {
+  // We want to show the pattern
+  // `head, ... or number, extraPagesDisplayed, current, extraPagesDisplayed, ... or number, tail`
+  const extraPagesDisplayed = 2
+  const windowSize = extraPagesDisplayed * 2 + 1
+  // We need 4 slots to display the fixed pattern
+  // `head, ... or number, ... or number, tail`
+  const fixedPages = 4
+
+  if (props.total <= fixedPages + windowSize) {
+    // Display all the pages
     for (let i = 1; i <= props.total; i++) {
       result.push(i)
     }
     return result
   }
 
-  if (props.current <= 5) {
-    for (let i = 1; i <= 7; i++) {
+  // To keep the width of the pagination bar fixed,
+  // we need to handle the cases where the current page is close to the start or the end
+  if (props.current <= windowSize) {
+    // 1, 2, 3, 4, 5, 6, 7, ..., total
+    for (let i = 1; i <= windowSize + extraPagesDisplayed; i++) {
       result.push(i)
     }
     result.push('...', props.total)
     return result
   }
 
-  if (props.current >= props.total - 4) {
+  if (props.current >= props.total - fixedPages) {
+    // 1, ..., total - 6, total - 5, total - 4, total - 3, total - 2, total - 1, total
     result.push(1, '...')
-    for (let i = props.total - 6; i <= props.total; i++) {
+    for (let i = props.total - 2 - extraPagesDisplayed * 2; i <= props.total; i++) {
       result.push(i)
     }
     return result
   }
 
+  // 1, ..., current - 2, current - 1, current, current + 1, current + 2, ..., total
   result.push(1, '...')
-  for (let i = props.current - 2; i <= props.current + 2; i++) {
+  for (let i = props.current - extraPagesDisplayed; i <= props.current + extraPagesDisplayed; i++) {
     result.push(i)
   }
   result.push('...', props.total)
