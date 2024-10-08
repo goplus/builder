@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
     plugins: [vue(), VueDevTools(), ViteEjsPlugin(), vercel()],
     resolve: {
       alias: {
-        '@': resolve('src')
+        '@': resolve('src'),
+        '@docs': resolve('../docs')
       }
     },
     build: {
