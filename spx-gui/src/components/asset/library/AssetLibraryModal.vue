@@ -255,7 +255,7 @@ async function handleAssetClick(asset: AssetData) {
   padding: var(--ui-gap-middle);
   gap: 12px;
 
-  background: var(--ui-color-grey-200);
+  border-right: 1px solid var(--ui-color-grey-400);
 }
 .main {
   flex: 1 1 0;
