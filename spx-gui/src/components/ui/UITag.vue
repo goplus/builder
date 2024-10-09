@@ -25,7 +25,7 @@ defineProps<{
   border-radius: var(--ui-border-radius-2);
   cursor: pointer;
   white-space: nowrap;
-  transition: .3s;
+  transition: 0.3s;
 
   &.type-primary {
     color: var(--ui-color-grey-100);

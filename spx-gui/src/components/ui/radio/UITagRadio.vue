@@ -1,8 +1,5 @@
 <template>
-  <UITag
-    :type="isActive ? 'primary' : 'boring'"
-    @click="handleClick"
-  >
+  <UITag :type="isActive ? 'primary' : 'boring'" @click="handleClick">
     <slot></slot>
   </UITag>
 </template>
