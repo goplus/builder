@@ -1,5 +1,7 @@
 import { memoize } from 'lodash'
+import dayjs from 'dayjs'
 import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import type { LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -145,4 +147,50 @@ export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
       throw e
     }
   }) as T
+}
+
+/** Convert time string to human-friendly format, e.g., "3 days ago" */
+export function humanizeTime(time: string): LocaleMessage {
+  const t = dayjs(time)
+  return {
+    en: t.locale('en').fromNow(),
+    zh: t.locale('zh').fromNow()
+  }
+}
+
+/** Humanize exact time, e.g., "September 29, 2024 5:58 PM" */
+export function humanizeExactTime(time: string): LocaleMessage {
+  const t = dayjs(time)
+  return {
+    en: t.locale('en').format('LLL'),
+    zh: t.locale('zh').format('LLL')
+  }
+}
+
+function humanizeCountEn(count: number) {
+  if (count < 1000) return count.toString()
+  if (count < 10000) return (count / 1000).toFixed(1) + 'k'
+  return Math.round(count / 1000) + 'k'
+}
+
+function humanizeCountZh(count: number) {
+  if (count < 10000) return count.toString()
+  if (count < 100000) return (count / 10000).toFixed(1) + ' 万'
+  return Math.round(count / 10000) + '万'
+}
+
+/** Convert count to human-friendly format, e.g., "1.2k" */
+export function humanizeCount(count: number) {
+  return {
+    en: humanizeCountEn(count),
+    zh: humanizeCountZh(count)
+  }
+}
+
+/** Humanize exact count, e.g., "1,234" */
+export function humanizeExactCount(count: number) {
+  return {
+    en: count.toLocaleString('en-US'),
+    zh: count.toLocaleString('zh-CN')
+  }
 }

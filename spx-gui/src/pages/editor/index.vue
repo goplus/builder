@@ -3,68 +3,44 @@
     <header class="editor-header">
       <EditorNavbar :project="project" />
     </header>
-    <main v-if="userStore.userInfo" :class="['editor-main', { 'in-homepage': !projectName }]">
-      <template v-if="projectName">
-        <UILoading v-if="isLoading" />
-        <UIError v-else-if="error != null" :retry="refetch">
-          {{ $t(error.userMessage) }}
-        </UIError>
-        <EditorContextProvider
-          v-else-if="project != null"
-          :project="project"
-          :user-info="userStore.userInfo"
-        >
-          <ProjectEditor />
-        </EditorContextProvider>
-      </template>
-      <template v-else>
-        <!-- TODO: remove me -->
-        <div class="my-projects">
-          <div class="header">
-            {{ $t({ en: 'My projects', zh: '我的项目' }) }}
-          </div>
-          <UIDivider />
-          <div class="body">
-            <ProjectList :in-homepage="true" @selected="handleSelected" />
-          </div>
-          <div class="footer">
-            <UIButton type="primary" size="large" icon="plus" @click="handleCreate">
-              {{ $t({ en: 'New Project', zh: '新建项目' }) }}
-            </UIButton>
-          </div>
-        </div>
-      </template>
+    <main v-if="userStore.userInfo" class="editor-main">
+      <UILoading v-if="isLoading" />
+      <UIError v-else-if="error != null" :retry="refetch">
+        {{ $t(error.userMessage) }}
+      </UIError>
+      <EditorContextProvider
+        v-else-if="project != null"
+        :project="project"
+        :user-info="userStore.userInfo"
+      >
+        <ProjectEditor />
+      </EditorContextProvider>
     </main>
   </section>
 </template>
 
 <script setup lang="ts">
-import { watchEffect, computed, watch, onMounted, onUnmounted } from 'vue'
+import { watchEffect, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { ProjectData } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
-import { useMessageHandle, useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/exception'
 import { clear } from '@/models/common/local'
-import {
-  UIButton,
-  UIDivider,
-  UILoading,
-  UIError,
-  useConfirmDialog,
-  useMessage
-} from '@/components/ui'
+import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
-import ProjectList from '@/components/project/ProjectList.vue'
-import { useCreateProject } from '@/components/project'
+
+const props = defineProps<{
+  projectName: string
+}>()
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
+// TODO: move this to some outer position
 const userStore = useUserStore()
 watchEffect(() => {
   // This will be called on mount and whenever userStore changes,
@@ -75,16 +51,11 @@ watchEffect(() => {
 })
 
 const router = useRouter()
-const createProject = useCreateProject()
 
 const withConfirm = useConfirmDialog()
 const { t } = useI18n()
 const { isOnline } = useNetwork()
 const m = useMessage()
-
-const projectName = computed(
-  () => router.currentRoute.value.params.projectName as string | undefined
-)
 
 const askToOpenTargetWithAnotherInCache = (
   targetName: string,
@@ -144,7 +115,7 @@ const {
   () => {
     // We need to read `userStore.userInfo.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
-    return loadProject(userStore.userInfo?.name, projectName.value)
+    return loadProject(userStore.userInfo?.name, props.projectName)
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
 )
@@ -287,18 +258,6 @@ onUnmounted(() => {
 function openProject(projectName: string) {
   router.push(getProjectEditorRoute(projectName))
 }
-
-function handleSelected(project: ProjectData) {
-  openProject(project.name)
-}
-
-const handleCreate = useMessageHandle(
-  async () => {
-    const newProject = await createProject()
-    openProject(newProject.name)
-  },
-  { en: 'Failed to create project', zh: '创建项目失败' }
-).fn
 </script>
 
 <style scoped lang="scss">
@@ -320,43 +279,5 @@ const handleCreate = useMessageHandle(
   display: flex;
   gap: var(--ui-gap-middle);
   padding: 16px;
-}
-
-.editor-main.in-homepage {
-  padding: 25px;
-  display: flex;
-  justify-content: center;
-  background-color: var(--ui-color-grey-100);
-}
-
-.my-projects {
-  width: 1208px;
-  padding-bottom: 51px;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-
-  .header {
-    font-size: 16px;
-    line-height: 26px;
-    color: var(--ui-color-title);
-    padding: 15px 24px;
-  }
-
-  .body {
-    flex: 1 1 0;
-    display: flex;
-    padding: 20px 24px;
-    overflow: hidden;
-  }
-
-  .footer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 28px;
-    display: flex;
-    justify-content: center;
-  }
 }
 </style>

@@ -1,18 +1,17 @@
 <template>
   <UIFormModal
     :title="$t({ en: 'Open project', zh: '打开项目' })"
-    :style="{ width: '936px' }"
+    :style="{ width: '1020px' }"
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <ProjectList :style="{ maxHeight: '570px' }" @selected="$emit('resolved', $event)" />
+    <ProjectList :style="{ maxHeight: '570px' }" edit @selected="$emit('resolved')" />
   </UIFormModal>
 </template>
 
 <script lang="ts" setup>
 import { UIFormModal } from '@/components/ui'
-import ProjectList from './ProjectList.vue'
-import { type ProjectData } from '@/apis/project'
+import ProjectList from './MyProjectList.vue'
 
 const props = defineProps<{
   visible: boolean
@@ -20,7 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [ProjectData]
+  resolved: []
 }>()
 
 function handleCancel() {
