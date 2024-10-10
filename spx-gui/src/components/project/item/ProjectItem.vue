@@ -137,6 +137,7 @@ const handleRemove = useMessageHandle(
   border-radius: var(--ui-border-radius-2);
   border: 1px solid var(--ui-color-grey-400);
   background-color: var(--ui-color-grey-100);
+  transition: 0.1s;
 }
 
 .link {
@@ -156,6 +157,8 @@ const handleRemove = useMessageHandle(
   }
 
   .options {
+    opacity: 0;
+    visibility: hidden;
     position: absolute;
     top: 8px;
     right: 8px;
@@ -168,7 +171,7 @@ const handleRemove = useMessageHandle(
     color: var(--ui-color-grey-800);
     background-color: var(--ui-color-grey-100);
     cursor: pointer;
-    transition: 0.3s;
+    transition: 0.1s;
 
     &:hover {
       color: var(--ui-color-grey-100);
@@ -185,6 +188,14 @@ const handleRemove = useMessageHandle(
     position: absolute;
     bottom: 13px;
     right: 13px;
+  }
+}
+
+.project-item:hover {
+  box-shadow: 0px 4px 12px 0px rgba(36, 41, 47, 0.08);
+  .options {
+    visibility: visible;
+    opacity: 1;
   }
 }
 

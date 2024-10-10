@@ -65,7 +65,8 @@ defineProps<{
 }
 
 .projects {
-  margin: 20px 0 32px;
+  padding: 20px 0;
+  margin-bottom: 12px;
 
   // same height as `ProjectItem`, to prevent layout shift
   min-height: 260px;
