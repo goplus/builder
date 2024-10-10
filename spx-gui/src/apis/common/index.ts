@@ -10,7 +10,7 @@ export type ByPage<T> = {
   data: T[]
 }
 
-export const OwnerAll = '*'
+export const ownerAll = '*'
 
 export enum IsPublic {
   personal = 0,

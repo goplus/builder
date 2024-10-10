@@ -31,13 +31,13 @@ import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '../navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
-import { getProjectsRoute } from '@/router'
+import { getSearchRoute } from '@/router'
 
 const router = useRouter()
 const searchInput = ref('')
 
 function handleSearch() {
-  router.push(getProjectsRoute(searchInput.value))
+  router.push(getSearchRoute(searchInput.value))
 }
 </script>
 

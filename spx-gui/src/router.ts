@@ -21,8 +21,8 @@ export function getProjectShareRoute(owner: string, name: string) {
   return getProjectPageRoute(owner, name)
 }
 
-export function getProjectsRoute(keyword: string = '') {
-  return keyword !== '' ? `/projects?keyword=${encodeURIComponent(keyword)}` : '/projects'
+export function getSearchRoute(keyword: string = '') {
+  return keyword !== '' ? `/search?q=${encodeURIComponent(keyword)}` : '/search'
 }
 
 const routes: Array<RouteRecordRaw> = [
@@ -39,8 +39,8 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/community/explore.vue')
       },
       {
-        path: '/projects',
-        component: () => import('@/pages/community/projects.vue')
+        path: '/search',
+        component: () => import('@/pages/community/search.vue')
       },
       {
         path: '/user/:name',

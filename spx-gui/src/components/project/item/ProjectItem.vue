@@ -205,7 +205,7 @@ const handleRemove = useMessageHandle(
     margin-top: 4px;
     display: flex;
     gap: 12px;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--ui-color-grey-700);
 
     .part {
