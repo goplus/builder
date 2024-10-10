@@ -34,6 +34,9 @@ import status from './status.svg?raw'
 import sound from './sound.svg?raw'
 import volumeUp from './volume-up.svg?raw'
 import volumeOff from './volume-off.svg?raw'
+import statePublic from './state-public.svg?raw'
+import statePrivate from './state-private.svg?raw'
+import heart from './heart.svg?raw'
 
 const typeIconMap = {
   file,
@@ -64,7 +67,10 @@ const typeIconMap = {
   status,
   sound,
   volumeUp,
-  volumeOff
+  volumeOff,
+  statePublic,
+  statePrivate,
+  heart
 }
 
 export type Type = keyof typeof typeIconMap

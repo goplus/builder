@@ -82,7 +82,8 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/editor/:projectName',
-    component: () => import('@/pages/editor/index.vue')
+    component: () => import('@/pages/editor/index.vue'),
+    props: true
   },
   {
     path: '/callback', // TODO: remove me

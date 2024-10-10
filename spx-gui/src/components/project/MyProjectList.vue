@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" :class="['project-list', { 'in-homepage': inHomepage }]">
+  <div ref="container" class="project-list">
     <UIError v-if="isError && error">
       {{ $t((error as ActionException).userMessage) }}
     </UIError>
@@ -9,9 +9,9 @@
         <ProjectItem
           v-for="project in page.data"
           :key="project.id"
-          :in-homepage="inHomepage"
-          :project-data="project"
-          @click="() => emit('selected', project)"
+          :context="edit ? 'edit' : 'mine'"
+          :project="project"
+          @selected="emit('selected')"
           @removed="handleProjectRemoved(project)"
         />
       </template>
@@ -22,20 +22,21 @@
 </template>
 
 <script lang="ts" setup>
-import ProjectItem from './ProjectItem.vue'
+import ProjectItem from './item/ProjectItem.vue'
 import { listProject, type ProjectData } from '@/apis/project'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
-import { UIEmpty, UIError, UILoading } from '../ui'
+import { UIEmpty, UIError, UILoading } from '@/components/ui'
 import { nextTick, ref, watchEffect } from 'vue'
 import { ActionException, useAction } from '@/utils/exception'
 import type { ByPage } from '@/apis/common'
 
 defineProps<{
-  inHomepage?: boolean
+  /** If the list is for editing project */
+  edit?: boolean
 }>()
 
 const emit = defineEmits<{
-  selected: [ProjectData]
+  selected: []
 }>()
 
 const intersectTrigger = ref<HTMLDivElement | null>(null)
@@ -111,6 +112,7 @@ const handleProjectRemoved = (project: ProjectData) => {
 </script>
 
 <style lang="scss" scoped>
+// TODO: styles details here
 .project-list {
   margin-right: -20px; // negative right margin to allow optional scrollbar
   flex: 1 1 0;
@@ -136,10 +138,5 @@ const handleProjectRemoved = (project: ProjectData) => {
   width: 100%;
   height: 300px;
   pointer-events: none;
-}
-.in-homepage {
-  .list {
-    gap: 20px;
-  }
 }
 </style>

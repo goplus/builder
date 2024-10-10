@@ -1,4 +1,3 @@
-import { useRouter } from 'vue-router'
 import { useModal, useConfirmDialog } from '@/components/ui'
 import { IsPublic, deleteProject } from '@/apis/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
@@ -6,7 +5,6 @@ import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
-import { getProjectEditorRoute } from '@/router'
 
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
@@ -17,12 +15,10 @@ export function useCreateProject() {
 }
 
 export function useOpenProject() {
-  const router = useRouter()
   const modal = useModal(ProjectOpenModal)
 
-  return async function openProject() {
-    const project = await modal({})
-    router.push(getProjectEditorRoute(project.name))
+  return function openProject() {
+    return modal({})
   }
 }
 
