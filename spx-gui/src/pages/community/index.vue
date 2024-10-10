@@ -13,6 +13,8 @@ import CommunityNavbar from '@/components/community/CommunityNavbar.vue'
 .wrapper {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   background-color: var(--ui-color-grey-300);
 }

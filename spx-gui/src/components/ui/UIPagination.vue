@@ -58,7 +58,9 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
+  /** Total page num */
   total: number
+  /** Current page index, start from `1` */
   current: number
 }>()
 const emit = defineEmits<{

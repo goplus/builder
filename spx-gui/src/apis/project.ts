@@ -1,8 +1,8 @@
 import type { FileCollection, ByPage, PaginationParams } from './common'
-import { client, IsPublic } from './common'
+import { client, IsPublic, ownerAll } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
-export { IsPublic }
+export { IsPublic, ownerAll }
 
 export enum ProjectDataType {
   Sprite = 0,
@@ -101,11 +101,15 @@ export function deleteProject(owner: string, name: string) {
 
 export type ListProjectParams = PaginationParams & {
   isPublic?: IsPublic
+  /** Name of project owner, `*` indicates projects of all users */
   owner?: string
+  /** Filter projects by name pattern */
+  keyword?: string
+  /** Field by which to order the results */
+  orderBy?: 'cTime' | 'uTime' | 'likeCount' | 'remixCount' | 'recentLikeCount' | 'recentRemixCount'
+  /** Order in which to sort the results */
+  sortOrder?: 'asc' | 'desc'
 }
-
-/** `owner: ownerAll` indicates that we want to list project of all users */
-export const ownerAll = '*'
 
 export async function listProject(params?: ListProjectParams) {
   const { total, data } = await (client.get('/projects/list', params) as Promise<
