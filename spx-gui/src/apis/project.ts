@@ -1,5 +1,6 @@
+import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams } from './common'
-import { client, IsPublic, ownerAll } from './common'
+import { client, IsPublic, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
 
 export { IsPublic, ownerAll }
@@ -105,6 +106,14 @@ export type ListProjectParams = PaginationParams & {
   owner?: string
   /** Filter projects by name pattern */
   keyword?: string
+  /** Filter projects that were created after this timestamp */
+  createdAfter?: string
+  /** Filter projects that gained new likes after this timestamp */
+  likesReceivedAfter?: string
+  /** Filter projects that were remixed after this timestamp */
+  remixesReceivedAfter?: string
+  /** If filter projects created by followees of logged-in user */
+  fromFollowees?: boolean
   /** Field by which to order the results */
   orderBy?: 'cTime' | 'uTime' | 'likeCount' | 'remixCount' | 'recentLikeCount' | 'recentRemixCount'
   /** Order in which to sort the results */
@@ -123,6 +132,49 @@ export async function listProject(params?: ListProjectParams) {
 
 export async function getProject(owner: string, name: string) {
   return __adaptProjectData(await client.get(`/project/${encode(owner, name)}`))
+}
+
+export enum ExploreOrder {
+  MostLikes = 'likes',
+  MostRemixes = 'remix',
+  FollowingCreated = 'following'
+}
+
+export type ExploreParams = {
+  order: ExploreOrder
+  count: number
+}
+
+/** Get project list for explore purpose */
+export async function exploreProjects({ order, count }: ExploreParams) {
+  // count within the last month
+  const countAfter = timeStringify(dayjs().subtract(1, 'month').valueOf())
+  const p: ListProjectParams = {
+    isPublic: IsPublic.public,
+    owner: ownerAll,
+    pageSize: count,
+    pageIndex: 1
+  }
+  switch (order) {
+    case ExploreOrder.MostLikes:
+      p.likesReceivedAfter = countAfter
+      p.orderBy = 'recentLikeCount'
+      p.sortOrder = 'desc'
+      break
+    case ExploreOrder.MostRemixes:
+      p.remixesReceivedAfter = countAfter
+      p.orderBy = 'recentRemixCount'
+      p.sortOrder = 'desc'
+      break
+    case ExploreOrder.FollowingCreated:
+      p.fromFollowees = true
+      p.createdAfter = countAfter
+      p.orderBy = 'cTime'
+      p.sortOrder = 'desc'
+      break
+  }
+  const listResult = await listProject(p)
+  return listResult.data
 }
 
 /**

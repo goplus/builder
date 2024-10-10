@@ -101,6 +101,7 @@ const slots = useSlots()
 }
 
 .size-large {
+  width: 100%;
   flex-direction: column;
   gap: 12px;
 

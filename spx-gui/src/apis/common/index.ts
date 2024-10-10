@@ -33,4 +33,9 @@ export type FileCollection = {
   [path: string]: UniversalUrl
 }
 
+/** Get time string for spx-backend APIs */
+export function timeStringify(time: number) {
+  return new Date(time).toISOString()
+}
+
 export const client = new Client()

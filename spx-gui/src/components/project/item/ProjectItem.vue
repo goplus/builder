@@ -128,14 +128,11 @@ const handleRemove = useMessageHandle(
 </script>
 
 <style lang="scss" scoped>
-@mixin text-ellipsis {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+@import '@/utils/utils';
 
 .project-item {
   width: 240px;
+  flex: 0 0 auto;
   overflow: hidden;
   border-radius: var(--ui-border-radius-2);
   border: 1px solid var(--ui-color-grey-400);

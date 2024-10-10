@@ -1,6 +1,6 @@
 <template>
   <div v-if="!userStore.userInfo" class="sign-in">
-    <UIButton :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
+    <UIButton type="secondary" :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
       $t({ en: 'Sign in', zh: '登录' })
     }}</UIButton>
   </div>
@@ -37,14 +37,18 @@ const { isOnline } = useNetwork()
 <style lang="scss" scoped>
 .sign-in,
 .avatar {
+  margin: 0 8px;
   height: 100%;
   display: flex;
   align-items: center;
 }
 
+.sign-in {
+  white-space: nowrap;
+}
+
 .avatar {
-  margin-right: 8px;
-  padding: 0 24px;
+  padding: 0 16px;
 
   &:hover {
     background-color: var(--ui-color-primary-600);
