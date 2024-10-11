@@ -1,5 +1,6 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import type { ExploreOrder } from './apis/project'
 
 export function getProjectEditorRoute(projectName: string) {
   return `/editor/${projectName}`
@@ -23,6 +24,10 @@ export function getProjectShareRoute(owner: string, name: string) {
 
 export function getSearchRoute(keyword: string = '') {
   return keyword !== '' ? `/search?q=${encodeURIComponent(keyword)}` : '/search'
+}
+
+export function getExploreRoute(order?: ExploreOrder) {
+  return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
 const routes: Array<RouteRecordRaw> = [

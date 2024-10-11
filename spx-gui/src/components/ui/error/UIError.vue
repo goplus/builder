@@ -1,7 +1,7 @@
 <template>
   <div class="ui-error">
     <img :src="defaultErrorImg" />
-    <h5 class="error">
+    <h5 class="message">
       <slot></slot>
     </h5>
     <button v-if="retry != null" class="retry" @click="retry">{{ retryText }}</button>
@@ -32,7 +32,7 @@ const retryText = computed(() => config.error?.retryText ?? 'Retry')
   justify-content: center;
 }
 
-.error {
+.message {
   margin-top: 12px;
   font-size: 16px;
   line-height: 26px;

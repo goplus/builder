@@ -2,7 +2,9 @@
   <NavbarWrapper centered>
     <template #left>
       <NavbarDropdown>
-        <template #trigger> Create(TODO) </template>
+        <template #trigger>
+          <UIIcon type="plus" />
+        </template>
         <UIMenu>
           <NavbarNewProjectItem />
           <NavbarOpenProjectItem />

@@ -72,6 +72,7 @@ withDefaults(
 .right {
   flex-basis: 30%;
   display: flex;
+  gap: 8px;
 }
 
 .center {

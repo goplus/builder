@@ -1,17 +1,15 @@
 <template>
-  <section class="header">
-    <CenteredWrapper class="header-content">
-      <h1 class="title">
-        <template v-if="titleForResult != null">
-          <!-- TODO: support vnode as i18n message to simplify such case -->
-          {{ $t(titleForResult.prefix) }}<span class="keyword">{{ keyword }}</span
-          >{{ $t(titleForResult.suffix) }}
-        </template>
-        <template v-else>
-          {{ $t(titleForNoResult) }}
-        </template>
-      </h1>
-      <label class="order">
+  <CommunityHeader>
+    <template v-if="titleForResult != null">
+      <!-- TODO: support vnode as i18n message to simplify such case -->
+      {{ $t(titleForResult.prefix) }}<span class="keyword">{{ keyword }}</span
+      >{{ $t(titleForResult.suffix) }}
+    </template>
+    <template v-else>
+      {{ $t(titleForNoResult) }}
+    </template>
+    <template #options>
+      <label>
         {{
           $t({
             en: 'Sort by',
@@ -21,29 +19,29 @@
         <UISelect v-model:value="order">
           <UISelectOption :value="Order.RecentlyUpdated">{{
             $t({
-              en: 'Recently Updated',
+              en: 'Recently updated',
               zh: '最近更新'
             })
           }}</UISelectOption>
-          <UISelectOption :value="Order.MostlyLiked">{{
+          <UISelectOption :value="Order.MostLikes">{{
             $t({
-              en: 'Mostly Liked',
+              en: 'Most likes',
               zh: '最受喜欢'
             })
           }}</UISelectOption>
-          <UISelectOption :value="Order.MostlyRemixed">{{
+          <UISelectOption :value="Order.MostRemixes">{{
             $t({
-              en: 'Mostly Remixed',
-              zh: '改编最多'
+              en: 'Most remixes',
+              zh: '最多改编'
             })
           }}</UISelectOption>
         </UISelect>
       </label>
-    </CenteredWrapper>
-  </section>
+    </template>
+  </CommunityHeader>
   <CenteredWrapper class="main">
     <UILoading v-if="isLoading" />
-    <UIError v-else-if="error != null" :retry="refetch">
+    <UIError v-else-if="error != null" class="error" :retry="refetch">
       {{ $t(error.userMessage) }}
     </UIError>
     <div v-else-if="result?.data.length === 0" class="empty">
@@ -74,42 +72,43 @@ import {
   UIEmpty
 } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/item/ProjectItem.vue'
 
-const params = useRouteQuery<'q' | 'p' | 'o'>()
+const queryParams = useRouteQuery<'q' | 'p' | 'o'>()
 
-const keyword = computed(() => params.get('q') ?? '')
+const keyword = computed(() => queryParams.get('q') ?? '')
 
-const pageSize = 8 // 2 rows
+const pageSize = 8 // 2 rows, TODO: responsive layout
 const defaultPage = 1
 const page = computed<number>({
   get() {
-    const pageStr = params.get('p')
+    const pageStr = queryParams.get('p')
     if (pageStr == null || pageStr === '') return defaultPage
     const page = parseInt(pageStr)
     return isNaN(page) ? defaultPage : page
   },
   set(p) {
-    params.set('p', p === defaultPage ? null : p.toString())
+    queryParams.set('p', p === defaultPage ? null : p.toString())
   }
 })
 
 enum Order {
   RecentlyUpdated = 'update',
-  MostlyLiked = 'likes',
-  MostlyRemixed = 'remix'
+  MostLikes = 'likes',
+  MostRemixes = 'remix'
 }
 const defaultOrder = Order.RecentlyUpdated
 
 const order = computed<Order>({
   get() {
-    const orderStr = params.get('o')
+    const orderStr = queryParams.get('o')
     if (orderStr == null || orderStr === '') return defaultOrder
     if (!Object.values(Order).includes(orderStr as Order)) return defaultOrder
     return orderStr as Order
   },
   set(o) {
-    params.set({
+    queryParams.set({
       o: o === defaultOrder ? null : o,
       p: null
     })
@@ -131,11 +130,11 @@ const listParams = computed<ListProjectParams>(() => {
       p.orderBy = 'uTime'
       p.sortOrder = 'desc'
       break
-    case Order.MostlyLiked:
+    case Order.MostLikes:
       p.orderBy = 'likeCount'
       p.sortOrder = 'desc'
       break
-    case Order.MostlyRemixed:
+    case Order.MostRemixes:
       p.orderBy = 'remixCount'
       p.sortOrder = 'desc'
       break
@@ -173,29 +172,8 @@ const titleForNoResult = computed(() => ({
 </script>
 
 <style lang="scss" scoped>
-.header {
-  flex: 0 0 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--ui-color-grey-100);
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-
-  .title {
-    color: var(--ui-color-title);
-    font-size: 16px;
-    line-height: 26px;
-
-    .keyword {
-      color: var(--ui-color-primary-main);
-    }
-  }
+.keyword {
+  color: var(--ui-color-primary-main);
 }
 
 .main {
@@ -206,6 +184,7 @@ const titleForNoResult = computed(() => ({
   gap: 20px;
 }
 
+.error,
 .empty {
   flex: 1 1 0;
   display: flex;

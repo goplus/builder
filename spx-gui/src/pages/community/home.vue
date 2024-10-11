@@ -1,57 +1,168 @@
 <template>
-  <CenteredWrapper>
-    <h1>Public</h1>
-    <ul v-if="projects != null" class="projects">
+  <CenteredWrapper class="main">
+    <ProjectsSection v-if="userStore.isSignedIn" :link-to="myProjectsRoute" :query-ret="myProjects">
+      <template #title>
+        {{
+          $t({
+            en: 'My projects',
+            zh: '我的项目'
+          })
+        }}
+      </template>
+      <template #link>
+        {{
+          $t({
+            en: 'View all',
+            zh: '查看所有'
+          })
+        }}
+      </template>
       <ProjectItem
-        v-for="project in projects"
+        v-for="project in myProjects.data.value"
         :key="project.id"
-        :project="project"
-        context="public"
-      ></ProjectItem>
-    </ul>
-    <h1>Mine</h1>
-    <ul v-if="projects != null" class="projects">
-      <ProjectItem
-        v-for="project in projects"
-        :key="project.id"
-        :project="project"
         context="mine"
-      ></ProjectItem>
-    </ul>
-    <h1>To Edit</h1>
-    <ul v-if="projects != null" class="projects">
+        :project="project"
+      />
+    </ProjectsSection>
+    <ProjectsSection :link-to="communityLikingRoute" :query-ret="communityLikingProjects">
+      <template #title>
+        {{
+          $t({
+            en: 'The community is liking',
+            zh: '大家喜欢的'
+          })
+        }}
+      </template>
+      <template #link>
+        {{
+          $t({
+            en: 'View more',
+            zh: '查看更多'
+          })
+        }}
+      </template>
       <ProjectItem
-        v-for="project in projects"
+        v-for="project in communityLikingProjects.data.value"
         :key="project.id"
         :project="project"
-        context="edit"
-      ></ProjectItem>
-    </ul>
+      />
+    </ProjectsSection>
+    <ProjectsSection :link-to="communityRemixingRoute" :query-ret="communityRemixingProjects">
+      <template #title>
+        {{
+          $t({
+            en: 'The community is remixing',
+            zh: '大家在改编'
+          })
+        }}
+      </template>
+      <template #link>
+        {{
+          $t({
+            en: 'View more',
+            zh: '查看更多'
+          })
+        }}
+      </template>
+      <ProjectItem
+        v-for="project in communityRemixingProjects.data.value"
+        :key="project.id"
+        :project="project"
+      />
+    </ProjectsSection>
+    <ProjectsSection
+      v-if="userStore.isSignedIn"
+      :link-to="followingCreatedRoute"
+      :query-ret="followingCreatedProjects"
+    >
+      <template #title>
+        {{
+          $t({
+            en: 'Users I follow are creating',
+            zh: '我关注的人在创作'
+          })
+        }}
+      </template>
+      <template #link>
+        {{
+          $t({
+            en: 'View more',
+            zh: '查看更多'
+          })
+        }}
+      </template>
+      <ProjectItem
+        v-for="project in followingCreatedProjects.data.value"
+        :key="project.id"
+        :project="project"
+      />
+    </ProjectsSection>
   </CenteredWrapper>
 </template>
 
 <script setup lang="ts">
-import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
+import { computed } from 'vue'
 import { useQuery } from '@/utils/exception'
-import { listProject } from '@/apis/project'
+import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
+import { getExploreRoute, getUserPageRoute } from '@/router'
+import { useUserStore } from '@/stores'
+import ProjectsSection from '@/components/community/ProjectsSection.vue'
+import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectItem from '@/components/project/item/ProjectItem.vue'
 
-const { data: projects } = useQuery(
+const numInRow = 5 // at most 5 projects in a row, depending on the screen width
+
+const userStore = useUserStore()
+
+const myProjectsRoute = computed(() => {
+  if (userStore.userInfo == null) return ''
+  return getUserPageRoute(userStore.userInfo.name, 'projects')
+})
+
+const myProjects = useQuery(
   async () => {
-    const { data: projects } = await listProject()
-    return projects.slice(0, 4)
+    if (userStore.userInfo == null) return []
+    const { data: projects } = await listProject({
+      pageIndex: 1,
+      pageSize: numInRow,
+      orderBy: 'uTime',
+      sortOrder: 'desc'
+    })
+    return projects
   },
-  { en: 'Failed to load projects', zh: '加载项目失败' }
+  { en: 'Failed to load projects', zh: '加载失败' }
+)
+
+const communityLikingRoute = getExploreRoute(ExploreOrder.MostLikes)
+
+const communityLikingProjects = useQuery(
+  () => exploreProjects({ order: ExploreOrder.MostLikes, count: numInRow }),
+  { en: 'Failed to load projects', zh: '加载失败' }
+)
+
+const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
+
+const communityRemixingProjects = useQuery(
+  () => exploreProjects({ order: ExploreOrder.MostRemixes, count: numInRow }),
+  { en: 'Failed to load projects', zh: '加载失败' }
+)
+
+const followingCreatedRoute = computed(() => {
+  if (userStore.userInfo == null) return ''
+  return getExploreRoute(ExploreOrder.FollowingCreated)
+})
+
+const followingCreatedProjects = useQuery(
+  async () => {
+    if (userStore.userInfo == null) return []
+    return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow })
+  },
+  { en: 'Failed to load projects', zh: '加载失败' }
 )
 </script>
 
 <style lang="scss" scoped>
-.projects {
-  padding: 20px 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 20px;
+.main {
+  margin-top: 8px;
 }
 </style>

@@ -45,9 +45,9 @@ export const useUserStore = defineStore('spx-user', {
   }),
   actions: {
     async getFreshAccessToken(): Promise<string | null> {
-      if (this.isAccessTokenValid()) return this.accessToken
+      if (this.isAccessTokenValid) return this.accessToken
 
-      if (this.isRefreshTokenValid()) {
+      if (this.isRefreshTokenValid) {
         try {
           const tokenResp = await casdoorSdk.pkce.refreshAccessToken(this.refreshToken!)
           this.setToken(tokenResp)
@@ -58,7 +58,7 @@ export const useUserStore = defineStore('spx-user', {
 
         // Due to js-pkce's lack of error handling, we must check if the access token is valid after calling `PKCE.refreshAccessToken`.
         // The token might still be invalid if, e.g., the server has already revoked the refresh token.
-        if (this.isAccessTokenValid()) return this.accessToken
+        if (this.isAccessTokenValid) return this.accessToken
       }
 
       this.signOut()
@@ -82,23 +82,6 @@ export const useUserStore = defineStore('spx-user', {
       this.accessTokenExpiresAt = null
       this.refreshTokenExpiresAt = null
     },
-    hasSignedIn() {
-      return this.isAccessTokenValid() || this.isRefreshTokenValid()
-    },
-    isAccessTokenValid() {
-      const delta = 60 * 1000 // 1 minute
-      return !!(
-        this.accessToken &&
-        (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - delta > Date.now())
-      )
-    },
-    isRefreshTokenValid() {
-      const delta = 60 * 1000 // 1 minute
-      return !!(
-        this.refreshToken &&
-        (this.refreshTokenExpiresAt === null || this.refreshTokenExpiresAt - delta > Date.now())
-      )
-    },
     async consumeCurrentUrl() {
       const tokenResp = await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
       this.setToken(tokenResp)
@@ -108,9 +91,26 @@ export const useUserStore = defineStore('spx-user', {
     }
   },
   getters: {
-    userInfo: (state) => {
-      if (!state.accessToken) return null
-      return parseJwt(state.accessToken) as UserInfo
+    isAccessTokenValid(state): boolean {
+      const delta = 60 * 1000 // 1 minute
+      return !!(
+        state.accessToken &&
+        (state.accessTokenExpiresAt === null || state.accessTokenExpiresAt - delta > Date.now())
+      )
+    },
+    isRefreshTokenValid(state): boolean {
+      const delta = 60 * 1000 // 1 minute
+      return !!(
+        state.refreshToken &&
+        (state.refreshTokenExpiresAt === null || state.refreshTokenExpiresAt - delta > Date.now())
+      )
+    },
+    isSignedIn(): boolean {
+      return this.isAccessTokenValid || this.isRefreshTokenValid
+    },
+    userInfo(state): UserInfo | null {
+      if (!this.isSignedIn) return null
+      return parseJwt(state.accessToken!) as UserInfo
     }
   },
   persist: true
