@@ -106,6 +106,8 @@ export type ListProjectParams = PaginationParams & {
   owner?: string
   /** Filter projects by name pattern */
   keyword?: string
+  /** Filter projects liked by the specified user */
+  liker?: string
   /** Filter projects that were created after this timestamp */
   createdAfter?: string
   /** Filter projects that gained new likes after this timestamp */
@@ -121,6 +123,10 @@ export type ListProjectParams = PaginationParams & {
 }
 
 export async function listProject(params?: ListProjectParams) {
+  // const r = Math.random()
+  // await new Promise(resolve => setTimeout(resolve, 300))
+  // if (r < 0.3) throw new ApiException(ApiExceptionCode.errorNotFound, 'test')
+  // if (r < 0.6) return { total: 0, data: [] }
   const { total, data } = await (client.get('/projects/list', params) as Promise<
     ByPage<ProjectData>
   >)
@@ -182,7 +188,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
  * If not logged in, `false` will be returned.
  */
 export async function isLiking(owner: string, name: string) {
-  // TOOD: remove me
+  // TODO: remove me
   if (process.env.NODE_ENV === 'development') return Math.random() > 0.5
   try {
     await client.get(`/project/liking/${encode(owner, name)}`)

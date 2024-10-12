@@ -16,53 +16,29 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main">
-    <UILoading v-if="isLoading" />
-    <UIError v-else-if="error != null" class="error" :retry="refetch">
-      {{ $t(error.userMessage) }}
-    </UIError>
-    <div v-else-if="projects != null && projects.length === 0" class="empty">
-      <UIEmpty size="large" />
-    </div>
-    <ul v-else-if="projects != null" class="projects">
-      <ProjectItem v-for="project in projects" :key="project.id" :project="project" />
-    </ul>
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet">
+      <ul class="projects">
+        <ProjectItem v-for="project in slotProps.data" :key="project.id" :project="project" />
+      </ul>
+    </ListResultWrapper>
   </CenteredWrapper>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouteQuery } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
+import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
-import { UITagRadioGroup, UITagRadio, UILoading, UIError, UIEmpty } from '@/components/ui'
+import { UITagRadioGroup, UITagRadio } from '@/components/ui'
+import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
-import ProjectItem from '@/components/project/item/ProjectItem.vue'
+import ProjectItem from '@/components/project/ProjectItem.vue'
 
-const queryParams = useRouteQuery<'o'>()
-
-const defaultOrder = Order.MostLikes
-
-const order = computed<Order>({
-  get() {
-    const orderStr = queryParams.get('o')
-    if (orderStr == null || orderStr === '') return defaultOrder
-    if (!Object.values(Order).includes(orderStr as Order)) return defaultOrder
-    return orderStr as Order
-  },
-  set(o) {
-    queryParams.set('o', o === defaultOrder ? null : o)
-  }
-})
+const order = useRouteQueryParamStrEnum('o', Order, Order.MostLikes)
 
 const maxCount = 50
 
-const {
-  data: projects,
-  isLoading,
-  error,
-  refetch
-} = useQuery(
+const queryRet = useQuery(
   () => {
     // TODO: login prompt for unauthenticated users
     return exploreProjects({

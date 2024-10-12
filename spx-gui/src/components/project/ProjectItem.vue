@@ -18,7 +18,7 @@
             </UIMenuItem>
           </UIMenu>
         </UIDropdown>
-        <OwnerAvatar class="owner-avatar" :owner="project.owner" />
+        <UserAvatar class="owner-avatar" :owner="project.owner" />
       </div>
       <div class="info">
         <div class="name">{{ project.name }}</div>
@@ -60,8 +60,8 @@ import {
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { IsPublic, isLiking, type ProjectData } from '@/apis/project'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
-import { useRemoveProject } from '..'
-import OwnerAvatar from './OwnerAvatar.vue'
+import UserAvatar from '@/components/community/user/UserAvatar.vue'
+import { useRemoveProject } from '.'
 
 /**
  * Context (list) where the project item is used

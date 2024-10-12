@@ -22,13 +22,13 @@
 </template>
 
 <script lang="ts" setup>
-import ProjectItem from './item/ProjectItem.vue'
-import { listProject, type ProjectData } from '@/apis/project'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
-import { UIEmpty, UIError, UILoading } from '@/components/ui'
 import { nextTick, ref, watchEffect } from 'vue'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/vue-query'
 import { ActionException, useAction } from '@/utils/exception'
 import type { ByPage } from '@/apis/common'
+import { listProject, type ProjectData } from '@/apis/project'
+import { UIEmpty, UIError, UILoading } from '@/components/ui'
+import ProjectItem from './ProjectItem.vue'
 
 defineProps<{
   /** If the list is for editing project */

@@ -40,82 +40,48 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main">
-    <UILoading v-if="isLoading" />
-    <UIError v-else-if="error != null" class="error" :retry="refetch">
-      {{ $t(error.userMessage) }}
-    </UIError>
-    <div v-else-if="result?.data.length === 0" class="empty">
-      <UIEmpty size="large" />
-    </div>
-    <template v-else-if="result != null">
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="542">
       <ul class="projects">
-        <ProjectItem v-for="project in result.data" :key="project.id" :project="project" />
+        <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>
-      <footer v-show="pageTotal > 1" class="pagination-wrapper">
-        <UIPagination v-model:current="page" :total="pageTotal" />
-      </footer>
-    </template>
+    </ListResultWrapper>
+    <footer v-show="pageTotal > 1" class="pagination-wrapper">
+      <UIPagination v-model:current="page" :total="pageTotal" />
+    </footer>
   </CenteredWrapper>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouteQuery } from '@/utils/route'
+import {
+  useRouteQueryParamInt,
+  useRouteQueryParamStr,
+  useRouteQueryParamStrEnum
+} from '@/utils/route'
 import { useQuery } from '@/utils/exception'
 import { IsPublic, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
-import {
-  UIError,
-  UILoading,
-  UISelect,
-  UISelectOption,
-  UIPagination,
-  UIEmpty
-} from '@/components/ui'
+import { UISelect, UISelectOption, UIPagination } from '@/components/ui'
+import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
-import ProjectItem from '@/components/project/item/ProjectItem.vue'
+import ProjectItem from '@/components/project/ProjectItem.vue'
 
-const queryParams = useRouteQuery<'q' | 'p' | 'o'>()
-
-const keyword = computed(() => queryParams.get('q') ?? '')
+const keyword = useRouteQueryParamStr('q', '')
 
 const pageSize = 8 // 2 rows, TODO: responsive layout
-const defaultPage = 1
-const page = computed<number>({
-  get() {
-    const pageStr = queryParams.get('p')
-    if (pageStr == null || pageStr === '') return defaultPage
-    const page = parseInt(pageStr)
-    return isNaN(page) ? defaultPage : page
-  },
-  set(p) {
-    queryParams.set('p', p === defaultPage ? null : p.toString())
-  }
-})
+const page = useRouteQueryParamInt('p', 1)
 
 enum Order {
   RecentlyUpdated = 'update',
   MostLikes = 'likes',
   MostRemixes = 'remix'
 }
-const defaultOrder = Order.RecentlyUpdated
+const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs) => ({
+  ...kvs,
+  p: null
+}))
 
-const order = computed<Order>({
-  get() {
-    const orderStr = queryParams.get('o')
-    if (orderStr == null || orderStr === '') return defaultOrder
-    if (!Object.values(Order).includes(orderStr as Order)) return defaultOrder
-    return orderStr as Order
-  },
-  set(o) {
-    queryParams.set({
-      o: o === defaultOrder ? null : o,
-      p: null
-    })
-  }
-})
-
-const pageTotal = computed(() => Math.ceil((result.value?.total ?? 0) / pageSize))
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
@@ -142,22 +108,17 @@ const listParams = computed<ListProjectParams>(() => {
   return p
 })
 
-const {
-  data: result,
-  isLoading,
-  error,
-  refetch
-} = useQuery(() => listProject(listParams.value), {
+const queryRet = useQuery(() => listProject(listParams.value), {
   en: 'Failed to search projects',
   zh: '搜索项目失败'
 })
 
 const titleForResult = computed(() => {
-  if (result.value == null) return null
+  if (queryRet.data.value == null) return null
   return {
     prefix: {
-      en: `Found ${result.value?.total} projects for "`,
-      zh: `找到 ${result.value?.total} 个关于“`
+      en: `Found ${queryRet.data.value?.total} projects for "`,
+      zh: `找到 ${queryRet.data.value?.total} 个关于“`
     },
     suffix: {
       en: '"',
@@ -177,7 +138,6 @@ const titleForNoResult = computed(() => ({
 }
 
 .main {
-  flex: 1 1 0;
   padding: 20px 0;
   display: flex;
   flex-direction: column;

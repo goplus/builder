@@ -1,7 +1,7 @@
 <!-- Project list as a section -->
 
 <template>
-  <section>
+  <section :class="`context-${context}`">
     <header class="header">
       <h2 class="title">
         <slot name="title"></slot>
@@ -12,29 +12,29 @@
       </RouterLink>
     </header>
     <ul class="projects">
-      <UILoading v-if="queryRet.isLoading.value" :mask="false" />
-      <!-- TODO: simpler UIError & UIEmpty here -->
-      <UIError v-else-if="queryRet.error.value != null" :retry="queryRet.refetch">
-        {{ $t(queryRet.error.value.userMessage) }}
-      </UIError>
-      <UIEmpty
-        v-else-if="queryRet.data.value != null && queryRet.data.value.length === 0"
-        size="large"
-      />
-      <template v-else-if="queryRet.data.value != null">
+      <ListResultWrapper :query-ret="queryRet" :height="260">
         <slot></slot>
-      </template>
+      </ListResultWrapper>
     </ul>
   </section>
 </template>
 
 <script setup lang="ts">
 import type { QueryRet } from '@/utils/exception'
-import { UIIcon, UILoading, UIError, UIEmpty } from '@/components/ui'
+import ListResultWrapper from '../common/ListResultWrapper.vue'
+import { UIIcon } from '@/components/ui'
+
+/**
+ * Context (page) where the projects section is used
+ * - `home`: community home page
+ * - `user`: user overview page
+ */
+type Context = 'home' | 'user'
 
 defineProps<{
   linkTo: string
   queryRet: QueryRet<unknown[]>
+  context: Context
 }>()
 </script>
 
@@ -53,8 +53,14 @@ defineProps<{
 
   .link {
     display: flex;
+    font-size: 15px;
     color: var(--ui-color-primary-main);
     text-decoration: none;
+    transition: 0.1s;
+
+    &:hover {
+      color: var(--ui-color-primary-400);
+    }
   }
 
   .link-icon {
@@ -67,14 +73,27 @@ defineProps<{
 .projects {
   padding: 20px 0;
   margin-bottom: 12px;
-
-  // same height as `ProjectItem`, to prevent layout shift
-  min-height: 260px;
   position: relative;
 
   display: flex;
   overflow: hidden;
   align-items: center;
   gap: 20px;
+}
+
+.context-user {
+  .header {
+    height: auto;
+    padding: 20px 0 8px;
+  }
+  .title {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .projects {
+    gap: 16px;
+    padding: 8px 0;
+    margin-bottom: 24px;
+  }
 }
 </style>
