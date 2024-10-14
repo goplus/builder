@@ -43,9 +43,4 @@ const handleClick = useMessageHandle(
   </UIButton>
 </template>
 
-<style lang="scss" scoped>
-.follow-button {
-  // TODO: fix width here
-  width: 90px;
-}
-</style>
+<style lang="scss" scoped></style>

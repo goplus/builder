@@ -21,7 +21,9 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
       <UserJoinedAt class="joined-at" :time="user.cTime" />
       <p class="description">{{ user.description }}</p>
     </div>
-    <FollowButton class="follow" :name="user.username" />
+    <div class="op">
+      <FollowButton class="follow" :name="user.username" />
+    </div>
   </li>
 </template>
 
@@ -60,7 +62,9 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
   color: var(--ui-color-text);
 }
 
-.follow {
-  flex: 0 0 auto;
+.op {
+  flex: 0 0 100px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
