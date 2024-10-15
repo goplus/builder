@@ -9,7 +9,7 @@
     :y="pos?.y"
     :to="attachTo"
     :show-arrow="false"
-    :style="{ marginTop: offset.y + 'px', marginLeft: offset.x + 'px' }"
+    :style="extraStyle"
     raw
     @update:show="handleUpdateShow"
     @clickoutside="handleClickOutside"
@@ -32,7 +32,7 @@ export function useDropdown() {
 </script>
 
 <script setup lang="ts">
-import { inject, provide, ref, type InjectionKey } from 'vue'
+import { inject, provide, ref, type InjectionKey, computed, type CSSProperties } from 'vue'
 import { NPopover } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
@@ -43,7 +43,7 @@ export type Pos = {
   y: number
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     placement?: Placement
     trigger?: Trigger
@@ -68,6 +68,22 @@ const emit = defineEmits<{
 const attachTo = usePopupContainer()
 
 const nPopoverRef = ref<InstanceType<typeof NPopover>>()
+
+const extraStyle = computed(() => {
+  const { placement, offset } = props
+  const style: CSSProperties = {}
+  if (['top', 'top-start', 'top-end'].includes(placement)) {
+    style.marginBottom = -offset.y + 'px'
+  } else {
+    style.marginTop = offset.y + 'px'
+  }
+  if (['top-end', 'bottom-end'].includes(placement)) {
+    style.marginRight = -offset.x + 'px'
+  } else {
+    style.marginLeft = offset.x + 'px'
+  }
+  return style
+})
 
 function handleUpdateShow(show: boolean) {
   emit('update:visible', show)

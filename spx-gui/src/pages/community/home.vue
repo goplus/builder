@@ -1,9 +1,15 @@
 <template>
   <CenteredWrapper class="main">
-    <ProjectsSection v-if="userStore.isSignedIn" :link-to="myProjectsRoute" :query-ret="myProjects">
+    <ProjectsSection
+      v-if="userStore.isSignedIn"
+      context="home"
+      :link-to="myProjectsRoute"
+      :query-ret="myProjects"
+    >
       <template #title>
         {{
           $t({
+            // TODO: "my" or "your"? (consistency)
             en: 'My projects',
             zh: '我的项目'
           })
@@ -24,7 +30,11 @@
         :project="project"
       />
     </ProjectsSection>
-    <ProjectsSection :link-to="communityLikingRoute" :query-ret="communityLikingProjects">
+    <ProjectsSection
+      :link-to="communityLikingRoute"
+      context="home"
+      :query-ret="communityLikingProjects"
+    >
       <template #title>
         {{
           $t({
@@ -47,7 +57,11 @@
         :project="project"
       />
     </ProjectsSection>
-    <ProjectsSection :link-to="communityRemixingRoute" :query-ret="communityRemixingProjects">
+    <ProjectsSection
+      :link-to="communityRemixingRoute"
+      context="home"
+      :query-ret="communityRemixingProjects"
+    >
       <template #title>
         {{
           $t({
@@ -72,6 +86,7 @@
     </ProjectsSection>
     <ProjectsSection
       v-if="userStore.isSignedIn"
+      context="home"
       :link-to="followingCreatedRoute"
       :query-ret="followingCreatedProjects"
     >
@@ -108,7 +123,7 @@ import { getExploreRoute, getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
-import ProjectItem from '@/components/project/item/ProjectItem.vue'
+import ProjectItem from '@/components/project/ProjectItem.vue'
 
 const numInRow = 5 // at most 5 projects in a row, depending on the screen width
 

@@ -31,6 +31,7 @@ export function getExploreRoute(order?: ExploreOrder) {
 }
 
 const routes: Array<RouteRecordRaw> = [
+  // TODO: page title
   {
     path: '/',
     component: () => import('@/pages/community/index.vue'),
@@ -54,23 +55,28 @@ const routes: Array<RouteRecordRaw> = [
         children: [
           {
             path: '',
-            component: () => import('@/pages/community/user/overview.vue')
+            component: () => import('@/pages/community/user/overview.vue'),
+            props: true
           },
           {
             path: 'projects',
-            component: () => import('@/pages/community/user/projects.vue')
+            component: () => import('@/pages/community/user/projects.vue'),
+            props: true
           },
           {
             path: 'likes',
-            component: () => import('@/pages/community/user/likes.vue')
+            component: () => import('@/pages/community/user/likes.vue'),
+            props: true
           },
           {
             path: 'followers',
-            component: () => import('@/pages/community/user/followers.vue')
+            component: () => import('@/pages/community/user/followers.vue'),
+            props: true
           },
           {
             path: 'following',
-            component: () => import('@/pages/community/user/following.vue')
+            component: () => import('@/pages/community/user/following.vue'),
+            props: true
           }
         ]
       },

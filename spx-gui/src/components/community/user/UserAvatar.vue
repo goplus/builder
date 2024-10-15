@@ -2,7 +2,7 @@
   <RouterLink
     v-if="user != null"
     :to="to"
-    class="project-owner-avatar"
+    class="user-avatar"
     :style="{ backgroundImage: `url(${user.avatar})` }"
     :title="user.displayName"
   ></RouterLink>
@@ -11,19 +11,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
-import { getUser } from '@/apis/user'
+import { getUser, type User } from '@/apis/user'
 import { getUserPageRoute } from '@/router'
 
 const props = defineProps<{
-  owner: string
+  owner: string | User
 }>()
 
-const to = computed(() => getUserPageRoute(props.owner))
-const user = useAsyncComputed(() => getUser(props.owner))
+const username = computed(() =>
+  typeof props.owner === 'string' ? props.owner : props.owner.username
+)
+const to = computed(() => getUserPageRoute(username.value))
+const user = useAsyncComputed(() =>
+  typeof props.owner === 'string' ? getUser(props.owner) : Promise.resolve(props.owner)
+)
 </script>
 
 <style lang="scss" scoped>
-.project-owner-avatar {
+.user-avatar {
+  display: block;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -32,7 +38,7 @@ const user = useAsyncComputed(() => getUser(props.owner))
   background-color: var(--ui-color-grey-100);
   background-position: center;
   background-size: contain;
-  transition: 0.3s;
+  transition: 0.1s;
 
   &:hover {
     border-color: var(--ui-color-primary-400);

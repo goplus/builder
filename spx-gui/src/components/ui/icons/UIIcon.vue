@@ -38,6 +38,7 @@ import statePublic from './state-public.svg?raw'
 import statePrivate from './state-private.svg?raw'
 import heart from './heart.svg?raw'
 import arrowRightSmall from './arrow-right-small.svg?raw'
+import calendar from './calendar.svg?raw'
 
 const typeIconMap = {
   file,
@@ -72,7 +73,8 @@ const typeIconMap = {
   statePublic,
   statePrivate,
   heart,
-  arrowRightSmall
+  arrowRightSmall,
+  calendar
 }
 
 export type Type = keyof typeof typeIconMap

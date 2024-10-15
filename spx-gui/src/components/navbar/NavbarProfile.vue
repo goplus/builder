@@ -4,7 +4,7 @@
       $t({ en: 'Sign in', zh: '登录' })
     }}</UIButton>
   </div>
-  <UIDropdown v-else placement="bottom-end">
+  <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
     <template #trigger>
       <div class="avatar">
         <img class="avatar-img" :src="userStore.userInfo.avatar" />
@@ -37,7 +37,7 @@ const { isOnline } = useNetwork()
 <style lang="scss" scoped>
 .sign-in,
 .avatar {
-  margin: 0 8px;
+  margin: 0 4px 0 8px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -48,7 +48,8 @@ const { isOnline } = useNetwork()
 }
 
 .avatar {
-  padding: 0 16px;
+  width: 72px;
+  justify-content: center;
 
   &:hover {
     background-color: var(--ui-color-primary-600);
