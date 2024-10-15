@@ -18,44 +18,23 @@ export type User = {
   avatar: string
 }
 
-function __mockUser(name: string): User {
+// TODO: remove me
+function __adaptUser(user: Omit<User, 'displayName' | 'avatar'>): User {
   return {
-    id: Math.random().toString(),
-    username: name,
-    description:
-      'All the world’s a stage, and all the men and women merely players. They have their exits and their entrances; and one man in his time plays many parts.',
-    displayName: name,
+    displayName: user.username,
     avatar: 'https://avatars.githubusercontent.com/u/1492263?v=4',
-    createdAt: '2021-08-07T07:00:00Z',
-    updatedAt: '2021-08-07T07:00:00Z'
+    ...user
   }
-}
-
-function __mockUsers(num: number): User[] {
-  return Array.from({ length: num }, (_, i) => __mockUser(`test${i}`))
 }
 
 export async function getUser(name: string): Promise<User> {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return __mockUser(name)
-  }
-  return client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>
+  return __adaptUser(await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>))
 }
 
 export type UpdateProfileParams = Pick<User, 'description'>
 
 export async function updateProfile(params: UpdateProfileParams) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return {
-      ...__mockUser('test'),
-      ...params
-    }
-  }
-  return client.put(`/user`, params) as Promise<User>
+  return __adaptUser(await (client.put(`/user`, params) as Promise<User>))
 }
 
 export type ListUserParams = PaginationParams & {
@@ -70,16 +49,11 @@ export type ListUserParams = PaginationParams & {
 }
 
 export async function listUsers(params: ListUserParams) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return {
-      total: 15,
-      data:
-        params.pageIndex === 1 ? __mockUsers(params.pageSize!) : __mockUsers(15 - params.pageSize!)
-    }
+  const { total, data } = await (client.get('/users/list', { params }) as Promise<ByPage<User>>)
+  return {
+    total,
+    data: data.map(__adaptUser)
   }
-  return client.get('/users/list', { params }) as Promise<ByPage<User>>
 }
 
 /**
@@ -87,11 +61,6 @@ export async function listUsers(params: ListUserParams) {
  * If not logged in, `false` will be returned.
  */
 export async function isFollowing(username: string) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    return Math.random() > 0.5
-  }
   try {
     await client.get(`/user/${encodeURIComponent(username)}/following`)
     return true
@@ -108,21 +77,9 @@ export async function isFollowing(username: string) {
 }
 
 export async function follow(username: string) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    if (Math.random() > 0.5) throw new Error('Failed to follow')
-    return
-  }
   await client.post(`/user/${encodeURIComponent(username)}/following`)
 }
 
 export async function unfollow(username: string) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    if (Math.random() > 0.5) throw new Error('Failed to follow')
-    return
-  }
   await client.delete(`/user/${encodeURIComponent(username)}/following`)
 }
