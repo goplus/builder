@@ -46,39 +46,10 @@ export type ProjectData = {
   remixCount: number
 }
 
-// TODO: remove me
-function __adaptProjectData(p: unknown): ProjectData {
-  function rand(decimals: number) {
-    return Math.floor(Math.pow(10, Math.random() * decimals))
-  }
-  const project = p as Omit<
-    ProjectData,
-    | 'remixedFrom'
-    | 'description'
-    | 'instructions'
-    | 'thumbnail'
-    | 'viewCount'
-    | 'likeCount'
-    | 'releaseCount'
-    | 'remixCount'
-  >
-  return {
-    ...project,
-    remixedFrom: `${project.owner}/${project.name}/0`,
-    description: `This is description of ${project.name}`,
-    instructions: `This is instructions of ${project.name}`,
-    thumbnail: 'https://github.com/user-attachments/assets/d5032bf5-dbb0-4a17-a46d-8d41ce14f595',
-    viewCount: rand(7),
-    likeCount: rand(6),
-    releaseCount: rand(2),
-    remixCount: rand(2)
-  }
-}
-
 export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility'>
 
 export async function addProject(params: AddProjectParams, signal?: AbortSignal) {
-  return __adaptProjectData(await client.post('/project', params, { signal }))
+  return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
 export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'>
@@ -93,7 +64,7 @@ export async function updateProject(
   params: UpdateProjectParams,
   signal?: AbortSignal
 ) {
-  return __adaptProjectData(await client.put(`/project/${encode(owner, name)}`, params, { signal }))
+  return client.put(`/project/${encode(owner, name)}`, params, { signal }) as Promise<ProjectData>
 }
 
 export function deleteProject(owner: string, name: string) {
@@ -133,21 +104,11 @@ export type ListProjectParams = PaginationParams & {
 }
 
 export async function listProject(params?: ListProjectParams) {
-  // const r = Math.random()
-  // await new Promise(resolve => setTimeout(resolve, 300))
-  // if (r < 0.3) throw new ApiException(ApiExceptionCode.errorNotFound, 'test')
-  // if (r < 0.6) return { total: 0, data: [] }
-  const { total, data } = await (client.get('/projects/list', params) as Promise<
-    ByPage<ProjectData>
-  >)
-  return {
-    total,
-    data: data.map(__adaptProjectData)
-  }
+  return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
 }
 
 export async function getProject(owner: string, name: string) {
-  return __adaptProjectData(await client.get(`/project/${encode(owner, name)}`))
+  return client.get(`/project/${encode(owner, name)}`) as Promise<ProjectData>
 }
 
 export enum ExploreOrder {
@@ -198,14 +159,12 @@ export async function exploreProjects({ order, count }: ExploreParams) {
  * If not logged in, `false` will be returned.
  */
 export async function isLiking(owner: string, name: string) {
-  // TODO: remove me
-  if (process.env.NODE_ENV === 'development') return Math.random() > 0.5
   try {
     await client.get(`/project/${encode(owner, name)}/liking`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {
-      // Not liked. TODO: reconfirm value of `code` here
+      // Not liked.
       if (e.code === ApiExceptionCode.errorNotFound) return false
       // Not logged in.
       if (e.code === ApiExceptionCode.errorUnauthorized) return false
