@@ -68,6 +68,7 @@ export class Client {
       }
       throw new ApiException(body.code, body.msg)
     }
+    if (resp.status === 204) return null
     return resp.json()
   }
 
