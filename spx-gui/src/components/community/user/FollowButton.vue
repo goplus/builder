@@ -16,6 +16,7 @@ const following = ref<boolean | null>(null)
 watch(
   () => props.name,
   async (name) => {
+    if (!followable.value) return
     const result = await isFollowing(name)
     if (props.name === name) following.value = result
   },
