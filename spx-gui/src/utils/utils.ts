@@ -153,6 +153,7 @@ export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
 export function humanizeTime(time: string): LocaleMessage {
   const t = dayjs(time)
   return {
+    // TODO: maybe still too long for `ProjectItem`, especially for time like "a few seconds ago"
     en: t.locale('en').fromNow(),
     zh: t.locale('zh').fromNow()
   }
