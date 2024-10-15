@@ -43,10 +43,10 @@ const handleEditProfile = useMessageHandle(
         <p class="description">{{ user.description || '&nbsp;' }}</p>
       </div>
       <div class="op">
-        <FollowButton :name="user.username" />
         <UIButton v-if="isCurrentUser" @click="handleEditProfile">
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
+        <FollowButton v-else :name="user.username" />
       </div>
     </div>
   </CommunityCard>

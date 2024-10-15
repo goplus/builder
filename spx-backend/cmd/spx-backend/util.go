@@ -56,14 +56,14 @@ func replyWithCodeMsg(ctx *yap.Context, code errorCode, msg string) {
 // replyWithInnerError replies to the client with the inner error.
 func replyWithInnerError(ctx *yap.Context, err error) {
 	switch {
-	case errors.Is(err, gorm.ErrDuplicatedKey):
+	case errors.Is(err, controller.ErrBadRequest), errors.Is(err, gorm.ErrDuplicatedKey):
 		replyWithCode(ctx, errorInvalidArgs)
+	case errors.Is(err, controller.ErrNotExist), errors.Is(err, gorm.ErrRecordNotFound):
+		replyWithCode(ctx, errorNotFound)
 	case errors.Is(err, controller.ErrUnauthorized):
 		replyWithCode(ctx, errorUnauthorized)
 	case errors.Is(err, controller.ErrForbidden):
 		replyWithCode(ctx, errorForbidden)
-	case errors.Is(err, controller.ErrNotExist), errors.Is(err, gorm.ErrRecordNotFound):
-		replyWithCode(ctx, errorNotFound)
 	default:
 		logger := log.GetReqLogger(ctx.Context())
 		logger.Printf("failed to handle request [%s %s]: %v", ctx.Method, ctx.URL, err)
