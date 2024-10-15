@@ -857,6 +857,75 @@ func TestControllerListProjects(t *testing.T) {
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
+	t.Run("WithLiker", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		params := NewListProjectsParams()
+		liker := "liker_user"
+		params.Liker = &liker
+
+		mProjects := []model.Project{
+			{
+				Model:       model.Model{ID: 1},
+				OwnerID:     mUser.ID,
+				Name:        "liked_project",
+				Visibility:  model.VisibilityPublic,
+				Description: "Liked Project",
+			},
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Model(&model.Project{}).
+			Joins("JOIN user_project_relationship AS liker_relationship ON liker_relationship.project_id = project.id").
+			Joins("JOIN user AS liker ON liker.id = liker_relationship.user_id").
+			Where("project.visibility = ?", model.VisibilityPublic).
+			Where("liker.username = ?", *params.Liker).
+			Where("liker_relationship.liked_at IS NOT NULL").
+			Count(new(int64)).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Joins("JOIN user_project_relationship AS liker_relationship ON liker_relationship.project_id = project.id").
+			Joins("JOIN user AS liker ON liker.id = liker_relationship.user_id").
+			Where("project.visibility = ?", model.VisibilityPublic).
+			Where("liker.username = ?", *params.Liker).
+			Where("liker_relationship.liked_at IS NOT NULL").
+			Order("project.created_at desc").
+			Limit(params.Pagination.Size).
+			Find(&[]model.Project{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProjects...)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		result, err := ctrl.ListProjects(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, int64(1), result.Total)
+		assert.Len(t, result.Data, 1)
+		assert.Equal(t, mProjects[0].Name, result.Data[0].Name)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
 	t.Run("WithOrderBy", func(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
