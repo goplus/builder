@@ -1,10 +1,12 @@
 package controller
 
 import (
-	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,42 +44,69 @@ uPrfGhKFB+ckitTWslFGf1d/Dt/MYS544QlB06IW8f+AM7z0sohh5nGH8lQIOmLC
 VTh1XIl/IELBoZ+rQXozGA==
 -----END CERTIFICATE-----`)
 	t.Setenv("GOP_CASDOOR_ORGANIZATIONNAME", "fake-organization")
-	t.Setenv("GOP_CASDOOR_APPLICATONNAME", "fake-application")
+	t.Setenv("GOP_CASDOOR_APPLICATIONNAME", "fake-application")
 }
 
-func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
+func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, closeDB func() error) {
 	setTestEnv(t)
 
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		return nil, nil, err
-	}
-	t.Cleanup(func() {
-		db.Close()
-	})
+	logger := log.GetLogger()
+	kodoConfig := newKodoConfig(logger)
+	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
+	casdoorClient := newCasdoorClient(logger)
 
-	ctrl, err := New(context.Background())
-	if err != nil {
-		return nil, nil, err
-	}
-	ctrl.db = db
-	return ctrl, mock, nil
+	db, dbMock, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	return &Controller{
+		db:            db,
+		kodo:          kodoConfig,
+		aigcClient:    aigcClient,
+		casdoorClient: casdoorClient,
+	}, dbMock, closeDB
 }
 
-func TestNew(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		setTestEnv(t)
-		ctrl, err := New(context.Background())
-		require.NoError(t, err)
-		require.NotNil(t, ctrl)
+func TestSortOrder(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		assert.True(t, SortOrderAsc.IsValid())
+		assert.True(t, SortOrderDesc.IsValid())
 	})
 
-	t.Run("InvalidDSN", func(t *testing.T) {
-		setTestEnv(t)
-		t.Setenv("GOP_SPX_DSN", "invalid-dsn")
-		ctrl, err := New(context.Background())
-		require.Error(t, err)
-		assert.EqualError(t, err, "invalid DSN: missing the slash separating the database name")
-		require.Nil(t, ctrl)
+	t.Run("Invalid", func(t *testing.T) {
+		assert.False(t, SortOrder("invalid").IsValid())
 	})
+}
+
+func TestPagination(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 20}
+		assert.True(t, p.IsValid())
+	})
+
+	t.Run("InvalidIndex", func(t *testing.T) {
+		p := Pagination{Index: 0, Size: 20}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("InvalidSize", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 0}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("SizeExceedsMaximum", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 101}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("Offset", func(t *testing.T) {
+		p := Pagination{Index: 3, Size: 20}
+		assert.Equal(t, 40, p.Offset())
+	})
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

@@ -17,7 +17,7 @@ defineProps<{
     <div class="info">
       <h2 class="name">
         {{ user.displayName }}
-        <UserJoinedAt class="joined-at" :time="user.cTime" />
+        <UserJoinedAt class="joined-at" :time="user.createdAt" />
       </h2>
       <p class="description">{{ user.description }}</p>
     </div>

@@ -5,25 +5,15 @@
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/goplus/builder/spx-backend/internal/controller"
-	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
 
 user, _ := controller.UserFromContext(ctx.Context())
-params := &controller.ListProjectsParams{}
-
-if isPublicParam := ${isPublic}; isPublicParam != "" {
-	isPublicInt, err := strconv.Atoi(isPublicParam)
-	if err != nil {
-		replyWithCode(ctx, errorInvalidArgs)
-		return
-	}
-	isPublic := model.IsPublic(isPublicInt)
-	params.IsPublic = &isPublic
-}
+params := controller.NewListProjectsParams()
 
 switch owner := ${owner}; owner {
 case "":
@@ -31,11 +21,67 @@ case "":
 		replyWithCode(ctx, errorUnauthorized)
 		return
 	}
-	params.Owner = &user.Name
+	params.Owner = &user.Username
 case "*":
 	params.Owner = nil
 default:
 	params.Owner = &owner
+}
+
+if remixedFrom := ${remixedFrom}; remixedFrom != "" {
+	params.RemixedFrom = &remixedFrom
+}
+
+if keyword := ${keyword}; keyword != "" {
+	params.Keyword = &keyword
+}
+
+if visibility := ${visibility}; visibility != "" {
+	params.Visibility = &visibility
+}
+
+if liker := ${liker}; liker != "" {
+	params.Liker = &liker
+}
+
+if createdAfter := ${createdAfter}; createdAfter != "" {
+	createdAfterTime, err := time.Parse(time.RFC3339Nano, createdAfter)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid createdAfter")
+		return
+	}
+	params.CreatedAfter = &createdAfterTime
+}
+
+if likesReceivedAfter := ${likesReceivedAfter}; likesReceivedAfter != "" {
+	likesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, likesReceivedAfter)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid likesReceivedAfter")
+		return
+	}
+	params.LikesReceivedAfter = &likesReceivedAfterTime
+}
+
+if remixesReceivedAfter := ${remixesReceivedAfter}; remixesReceivedAfter != "" {
+	remixesReceivedAfterTime, err := time.Parse(time.RFC3339Nano, remixesReceivedAfter)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid remixesReceivedAfter")
+		return
+	}
+	params.RemixesReceivedAfter = &remixesReceivedAfterTime
+}
+
+if fromFollowees := ${fromFollowees}; fromFollowees != "" {
+	fromFolloweesBool, err := strconv.ParseBool(fromFollowees)
+	if err != nil {
+		replyWithCodeMsg(ctx, errorInvalidArgs, "invalid fromFollowees")
+		return
+	}
+	params.FromFollowees = &fromFolloweesBool
+}
+
+if orderBy := ${orderBy}; orderBy != "" {
+	params.OrderBy = controller.ListProjectsOrderBy(orderBy)
 }
 
 params.Pagination.Index = paramInt("pageIndex", firstPageIndex)

@@ -2,556 +2,548 @@ package controller
 
 import (
 	"context"
-	"database/sql"
+	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/goplus/builder/spx-backend/internal/model"
+	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func TestControllerEnsureAsset(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		asset, err := ctrl.ensureAsset(ctx, "1", false)
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:      model.Model{ID: 1},
+			OwnerID:    mUser.ID,
+			Visibility: model.VisibilityPublic,
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		asset, err := ctrl.ensureAsset(ctx, mAsset.ID, false)
 		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
+		assert.Equal(t, mAsset.ID, asset.ID)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("NoAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("AssetNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		_, err = ctrl.ensureAsset(ctx, "1", false)
+
+		var mAssetID int64 = 1
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAssetID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		_, err := ctrl.ensureAsset(ctx, mAssetID, false)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, model.ErrNotExist)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		_, err = ctrl.ensureAsset(ctx, "1", false)
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:      model.Model{ID: 1},
+			OwnerID:    mUser.ID + 1,
+			Visibility: model.VisibilityPrivate,
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mAsset.OwnerID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(model.User{
+				Model:    model.Model{ID: mAsset.OwnerID},
+				Username: "otheruser",
+			})...))
+
+		_, err := ctrl.ensureAsset(ctx, mAsset.ID, false)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
-	})
+		assert.ErrorIs(t, err, ErrForbidden)
 
-	t.Run("NoUserWithPublicAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", model.Public))
-		asset, err := ctrl.ensureAsset(ctx, "1", false)
-		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
-	})
-
-	t.Run("NoUserWithPublicAssetButCheckOwner", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", model.Public))
-		_, err = ctrl.ensureAsset(ctx, "1", true)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
-	})
-
-	t.Run("NoUserWithPersonalAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", model.Personal))
-		_, err = ctrl.ensureAsset(ctx, "1", false)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 }
 
-func TestControllerGetAsset(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		asset, err := ctrl.GetAsset(ctx, "1")
-		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
-	})
-
-	t.Run("NoAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		_, err = ctrl.GetAsset(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, model.ErrNotExist)
-	})
-}
-
-func TestListAssetsParamsValidate(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Owner:      &paramsOwner,
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    DefaultOrder,
-			Pagination: model.Pagination{Index: 1, Size: 10},
+func TestCreateAssetParams(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
+	})
+
+	t.Run("MissingDisplayName", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing displayName", msg)
+	})
+
+	t.Run("InvalidDisplayName", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: strings.Repeat("a", 256),
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid displayName", msg)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "invalid",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid type", msg)
+	})
+
+	t.Run("MissingCategory", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing category", msg)
+	})
+
+	t.Run("MissingFilesHash", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing filesHash", msg)
+	})
+
+	t.Run("InvalidVisibility", func(t *testing.T) {
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "invalid",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid visibility", msg)
+	})
+}
+
+func TestControllerCreateAsset(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
+	t.Run("Normal", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+
+		dbMock.ExpectBegin()
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Create(&model.Asset{}).
+			Statement
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		dbMock.ExpectCommit()
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			First(&model.Asset{Model: model.Model{ID: 1}}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(model.Asset{
+				Model:       model.Model{ID: 1},
+				OwnerID:     mUser.ID,
+				DisplayName: params.DisplayName,
+				Type:        model.ParseAssetType(params.Type),
+				Category:    params.Category,
+				FilesHash:   params.FilesHash,
+				Visibility:  model.ParseVisibility(params.Visibility),
+			})...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		assetDTO, err := ctrl.CreateAsset(ctx, params)
+		require.NoError(t, err)
+		assert.Equal(t, params.DisplayName, assetDTO.DisplayName)
+		assert.Equal(t, params.Type, assetDTO.Type)
+		assert.Equal(t, params.Category, assetDTO.Category)
+		assert.Equal(t, params.FilesHash, assetDTO.FilesHash)
+		assert.Equal(t, params.Visibility, assetDTO.Visibility)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
+
+		params := &CreateAssetParams{
+			DisplayName: "Test Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "abc123",
+			Visibility:  "public",
+		}
+
+		_, err := ctrl.CreateAsset(context.Background(), params)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	})
+}
+
+func TestListAssetsOrderBy(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		assert.True(t, ListAssetsOrderByCreatedAt.IsValid())
+		assert.True(t, ListAssetsOrderByUpdatedAt.IsValid())
+	})
+
+	t.Run("Invalid", func(t *testing.T) {
+		assert.False(t, ListAssetsOrderBy("invalid").IsValid())
+	})
+}
+
+func TestListAssetsParams(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		params := NewListAssetsParams()
+		ok, msg := params.Validate()
+		assert.True(t, ok)
+		assert.Empty(t, msg)
+	})
+
+	t.Run("InvalidType", func(t *testing.T) {
+		params := NewListAssetsParams()
+		invalidType := "invalid"
+		params.Type = &invalidType
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid type", msg)
+	})
+
+	t.Run("InvalidVisibility", func(t *testing.T) {
+		params := NewListAssetsParams()
+		invalidVisibility := "invalid"
+		params.Visibility = &invalidVisibility
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid visibility", msg)
+	})
+
+	t.Run("InvalidOrderBy", func(t *testing.T) {
+		params := NewListAssetsParams()
+		params.OrderBy = "invalid"
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid orderBy", msg)
+	})
+
+	t.Run("InvalidSortOrder", func(t *testing.T) {
+		params := NewListAssetsParams()
+		params.SortOrder = "invalid"
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid sortOrder", msg)
+	})
+
+	t.Run("InvalidPagination", func(t *testing.T) {
+		params := NewListAssetsParams()
+		params.Pagination.Index = 0
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid pagination", msg)
 	})
 }
 
 func TestControllerListAssets(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsFilesHash := "fake-files-hash"
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Owner:      &paramsOwner,
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			FilesHash:  &paramsFilesHash,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    DefaultOrder,
-			Pagination: model.Pagination{Index: 1, Size: 10},
-		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Personal, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		assets, err := ctrl.ListAssets(ctx, params)
-		require.NoError(t, err)
-		require.NotNil(t, assets)
-		assert.Len(t, assets.Data, 1)
-		assert.Equal(t, "1", assets.Data[0].ID)
-	})
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
 
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		params := NewListAssetsParams()
 
-		ctx := context.Background()
-		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsFilesHash := "fake-files-hash"
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Owner:      &paramsOwner,
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			FilesHash:  &paramsFilesHash,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    TimeDesc,
-			Pagination: model.Pagination{Index: 1, Size: 10},
-		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY c_time DESC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		assets, err := ctrl.ListAssets(ctx, params)
-		require.NoError(t, err)
-		require.NotNil(t, assets)
-		assert.Len(t, assets.Data, 1)
-		assert.Equal(t, "1", assets.Data[0].ID)
-	})
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Model(&model.Asset{}).
+			Where("asset.visibility = ?", model.VisibilityPublic).
+			Count(new(int64)).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
-	t.Run("NoOwner", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("asset.visibility = ?", model.VisibilityPublic).
+			Order("asset.created_at desc").
+			Limit(params.Pagination.Size).
+			Find(&[]model.Asset{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(
+				generateAssetDBRows(
+					model.Asset{Model: model.Model{ID: 1}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
+					model.Asset{Model: model.Model{ID: 2}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
+				)...,
+			))
 
-		ctx := newContextWithTestUser(context.Background())
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsFilesHash := "fake-files-hash"
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			FilesHash:  &paramsFilesHash,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    ClickCountDesc,
-			Pagination: model.Pagination{Index: 1, Size: 10},
-		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY click_count DESC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		assets, err := ctrl.ListAssets(ctx, params)
-		require.NoError(t, err)
-		require.NotNil(t, assets)
-		assert.Len(t, assets.Data, 1)
-		assert.Equal(t, "1", assets.Data[0].ID)
-	})
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
-	t.Run("DifferentOwner", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
+		result, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
+		assert.Equal(t, int64(2), result.Total)
+		assert.Len(t, result.Data, 2)
 
-		ctx := newContextWithTestUser(context.Background())
-		paramsOwner := "another-fake-name"
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsFilesHash := "fake-files-hash"
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Owner:      &paramsOwner,
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			FilesHash:  &paramsFilesHash,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    DefaultOrder,
-			Pagination: model.Pagination{Index: 1, Size: 10},
-		}
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \?`).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted).
-			WillReturnRows(mock.NewRows([]string{"COUNT(1)"}).
-				AddRow(1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE display_name LIKE \? AND owner = \? AND category = \? AND asset_type = \? AND files_hash = \? AND is_public = \? AND status != \? ORDER BY id ASC LIMIT \?, \? `).
-			WithArgs("%"+params.Keyword+"%", params.Owner, params.Category, model.AssetTypeSprite, params.FilesHash, model.Public, model.StatusDeleted, 0, 10).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "another-fake-name"))
-		assets, err := ctrl.ListAssets(ctx, params)
-		require.NoError(t, err)
-		require.NotNil(t, assets)
-		assert.Len(t, assets.Data, 1)
-		assert.Equal(t, "1", assets.Data[0].ID)
-	})
-
-	t.Run("ClosedDB", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
-		ctrl.db.Close()
-
-		ctx := newContextWithTestUser(context.Background())
-		paramsOwner := "fake-name"
-		paramsCategory := "fake-category"
-		paramsAssetType := model.AssetTypeSprite
-		paramsFilesHash := "fake-files-hash"
-		paramsIsPublic := model.Personal
-		params := &ListAssetsParams{
-			Keyword:    "fake",
-			Owner:      &paramsOwner,
-			Category:   &paramsCategory,
-			AssetType:  &paramsAssetType,
-			FilesHash:  &paramsFilesHash,
-			IsPublic:   &paramsIsPublic,
-			OrderBy:    DefaultOrder,
-			Pagination: model.Pagination{Index: 1, Size: 10},
-		}
-		_, err = ctrl.ListAssets(ctx, params)
-		require.Error(t, err)
-		assert.EqualError(t, err, "sql: database is closed")
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 }
 
-func TestAddAssetParamsValidate(t *testing.T) {
+func TestControllerGetAsset(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
 	t.Run("Normal", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:      model.Model{ID: 1},
+			OwnerID:    mUser.ID,
+			Visibility: model.VisibilityPublic,
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		asset, err := ctrl.GetAsset(ctx, "1")
+		require.NoError(t, err)
+		assert.Equal(t, strconv.FormatInt(mAsset.ID, 10), asset.ID)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+
+	t.Run("AssetNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
+
+		ctx := newContextWithTestUser(context.Background())
+
+		var mAssetID int64 = 1
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAssetID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		_, err := ctrl.GetAsset(ctx, "1")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
+	})
+}
+
+func TestUpdateAssetParams(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		params := &UpdateAssetParams{
+			DisplayName: "Updated Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "def456",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.True(t, ok)
 		assert.Empty(t, msg)
 	})
 
-	t.Run("EmptyDisplayName", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "",
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "missing displayName", msg)
-	})
-
-	t.Run("InvalidDisplayName", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: strings.Repeat("fake-asset", 11),
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid displayName", msg)
-	})
-
-	t.Run("EmptyOwner", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "missing owner", msg)
-	})
-
-	t.Run("EmptyCategory", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "fake-owner",
-			Category:    "",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "missing category", msg)
-	})
-
-	t.Run("InvalidAssetType", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   -1,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid assetType", msg)
-	})
-
-	t.Run("EmptyFilesHash", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "missing filesHash", msg)
-	})
-
-	t.Run("InvalidIsPublic", func(t *testing.T) {
-		params := &AddAssetParams{
-			DisplayName: "fake-display-name",
-			Owner:       "fake-owner",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    -1,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid isPublic", msg)
-	})
-}
-
-func TestControllerAddAsset(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		params := &AddAssetParams{
-			DisplayName: "fake-asset",
-			Owner:       "fake-name",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		mock.ExpectExec(`INSERT INTO asset \(.+\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?\)`).
-			WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner"}).
-				AddRow(1, "fake-asset", "fake-name"))
-		asset, err := ctrl.AddAsset(ctx, params)
-		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
-	})
-
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := context.Background()
-		params := &AddAssetParams{
-			DisplayName: "fake-asset",
-			Owner:       "fake-name",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		_, err = ctrl.AddAsset(ctx, params)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
-	})
-
-	t.Run("UnexpectedUser", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		params := &AddAssetParams{
-			DisplayName: "fake-asset",
-			Owner:       "another-fake-name",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		_, err = ctrl.AddAsset(ctx, params)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrForbidden)
-	})
-
-	t.Run("ClosedDB", func(t *testing.T) {
-		ctrl, _, err := newTestController(t)
-		require.NoError(t, err)
-		ctrl.db.Close()
-
-		ctx := newContextWithTestUser(context.Background())
-		params := &AddAssetParams{
-			DisplayName: "fake-asset",
-			Owner:       "fake-name",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		_, err = ctrl.AddAsset(ctx, params)
-		require.Error(t, err)
-		assert.EqualError(t, err, "sql: database is closed")
-	})
-}
-
-func TestUpdateAssetParamsValidate(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.True(t, ok)
-		assert.Empty(t, msg)
-	})
-
-	t.Run("EmptyDisplayName", func(t *testing.T) {
+	t.Run("MissingDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
 			DisplayName: "",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "def456",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -560,340 +552,374 @@ func TestUpdateAssetParamsValidate(t *testing.T) {
 
 	t.Run("InvalidDisplayName", func(t *testing.T) {
 		params := &UpdateAssetParams{
-			DisplayName: strings.Repeat("fake-asset", 11),
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+			DisplayName: strings.Repeat("a", 256),
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "def456",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid displayName", msg)
 	})
 
-	t.Run("EmptyCategory", func(t *testing.T) {
+	t.Run("InvalidType", func(t *testing.T) {
 		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+			DisplayName: "Updated Asset",
+			Type:        "invalid",
+			Category:    "characters",
+			FilesHash:   "def456",
+			Visibility:  "public",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "invalid type", msg)
+	})
+
+	t.Run("MissingCategory", func(t *testing.T) {
+		params := &UpdateAssetParams{
+			DisplayName: "Updated Asset",
+			Type:        "sprite",
+			FilesHash:   "def456",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing category", msg)
 	})
 
-	t.Run("InvalidAssetType", func(t *testing.T) {
+	t.Run("MissingFilesHash", func(t *testing.T) {
 		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   -1,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		ok, msg := params.Validate()
-		assert.False(t, ok)
-		assert.Equal(t, "invalid assetType", msg)
-	})
-
-	t.Run("EmptyFilesHash", func(t *testing.T) {
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+			DisplayName: "Updated Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			Visibility:  "public",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "missing filesHash", msg)
 	})
 
-	t.Run("InvalidIsPublic", func(t *testing.T) {
+	t.Run("InvalidVisibility", func(t *testing.T) {
 		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    -1,
+			DisplayName: "Updated Asset",
+			Type:        "sprite",
+			Category:    "characters",
+			FilesHash:   "def456",
+			Visibility:  "invalid",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
-		assert.Equal(t, "invalid isPublic", msg)
+		assert.Equal(t, "invalid visibility", msg)
 	})
 }
 
 func TestControllerUpdateAsset(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:       model.Model{ID: 1},
+			OwnerID:     mUser.ID,
+			DisplayName: "Old Name",
+			Type:        model.AssetTypeSprite,
+			Category:    "old-category",
+			FilesHash:   "old-hash",
+			Visibility:  model.VisibilityPublic,
 		}
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
-			WithArgs(sqlmock.AnyArg(), params.DisplayName, params.Category, params.AssetType, []byte("{}"), params.FilesHash, params.Preview, params.IsPublic, "1").
-			WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Public))
-		asset, err := ctrl.UpdateAsset(ctx, "1", params)
+
+		params := &UpdateAssetParams{
+			DisplayName: "Updated Asset",
+			Type:        "backdrop",
+			Category:    "new-category",
+			FilesHash:   "new-hash",
+			Visibility:  "private",
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		dbMock.ExpectBegin()
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Model(&model.Asset{Model: mAsset.Model}).
+			Updates(map[string]any{
+				"display_name": params.DisplayName,
+				"type":         model.ParseAssetType(params.Type),
+				"category":     params.Category,
+				"files_hash":   params.FilesHash,
+				"visibility":   model.ParseVisibility(params.Visibility),
+			}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[5] = sqlmock.AnyArg()
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		dbMock.ExpectCommit()
+
+		updatedAsset, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.NoError(t, err)
-		require.NotNil(t, asset)
-		assert.Equal(t, "1", asset.ID)
-		assert.Equal(t, model.Public, asset.IsPublic)
+		assert.Equal(t, params.DisplayName, updatedAsset.DisplayName)
+		assert.Equal(t, params.Type, updatedAsset.Type)
+		assert.Equal(t, params.Category, updatedAsset.Category)
+		assert.Equal(t, params.FilesHash, updatedAsset.FilesHash)
+		assert.Equal(t, params.Visibility, updatedAsset.Visibility)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("AssetNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
-		ctx := context.Background()
+		ctx := newContextWithTestUser(context.Background())
+
+		var mAssetID int64 = 1
+
 		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+			DisplayName: "Updated Asset",
+			Type:        "backdrop",
+			Category:    "new-category",
+			FilesHash:   "new-hash",
+			Visibility:  "private",
 		}
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		_, err = ctrl.UpdateAsset(ctx, "1", params)
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAssetID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		_, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("UnexpectedUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:       model.Model{ID: 1},
+			OwnerID:     mUser.ID + 1,
+			DisplayName: "Old Name",
+			Type:        model.AssetTypeSprite,
+			Category:    "old-category",
+			FilesHash:   "old-hash",
+			Visibility:  model.VisibilityPublic,
 		}
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		_, err = ctrl.UpdateAsset(ctx, "1", params)
+
+		params := &UpdateAssetParams{
+			DisplayName: "Updated Asset",
+			Type:        "backdrop",
+			Category:    "new-category",
+			FilesHash:   "new-hash",
+			Visibility:  "private",
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mAsset.OwnerID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(model.User{
+				Model:    model.Model{ID: mAsset.OwnerID},
+				Username: "otheruser",
+			})...))
+
+		_, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
-	})
 
-	t.Run("NoAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		_, err = ctrl.UpdateAsset(ctx, "1", params)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, model.ErrNotExist)
-	})
-
-	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		params := &UpdateAssetParams{
-			DisplayName: "fake-asset",
-			Category:    "fake-category",
-			AssetType:   model.AssetTypeSprite,
-			Files:       model.FileCollection{},
-			FilesHash:   "fake-files-hash",
-			Preview:     "fake-preview",
-			IsPublic:    model.Personal,
-		}
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,display_name=\?,category=\?,asset_type=\?,files=\?,files_hash=\?,preview=\?,is_public=\? WHERE id=\?`).
-			WithArgs(sqlmock.AnyArg(), params.DisplayName, params.Category, params.AssetType, []byte("{}"), params.FilesHash, params.Preview, params.IsPublic, "1").
-			WillReturnError(sql.ErrConnDone)
-		_, err = ctrl.UpdateAsset(ctx, "1", params)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrConnDone)
-	})
-}
-
-func TestControllerIncreaseAssetClickCount(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
-			WithArgs(sqlmock.AnyArg(), "1").
-			WillReturnResult(sqlmock.NewResult(1, 1))
-		err = ctrl.IncreaseAssetClickCount(ctx, "1")
-		require.NoError(t, err)
-	})
-
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		err = ctrl.IncreaseAssetClickCount(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
-	})
-
-	t.Run("UnexpectedUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		err = ctrl.IncreaseAssetClickCount(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrForbidden)
-	})
-
-	t.Run("NoAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		err = ctrl.IncreaseAssetClickCount(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, model.ErrNotExist)
-	})
-
-	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time = \?, click_count = click_count \+ 1 WHERE id = \?`).
-			WithArgs(sqlmock.AnyArg(), "1").
-			WillReturnError(sql.ErrConnDone)
-		err = ctrl.IncreaseAssetClickCount(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrConnDone)
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 }
 
 func TestControllerDeleteAsset(t *testing.T) {
+	db, _, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	closeDB()
+	userDBColumns, err := modeltest.ExtractDBColumns(db, model.User{})
+	require.NoError(t, err)
+	generateUserDBRows, err := modeltest.NewDBRowsGenerator(db, model.User{})
+	require.NoError(t, err)
+	assetDBColumns, err := modeltest.ExtractDBColumns(db, model.Asset{})
+	require.NoError(t, err)
+	generateAssetDBRows, err := modeltest.NewDBRowsGenerator(db, model.Asset{})
+	require.NoError(t, err)
+
 	t.Run("Normal", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
-			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
-			WillReturnResult(sqlmock.NewResult(1, 1))
-		err = ctrl.DeleteAsset(ctx, "1")
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:      model.Model{ID: 1},
+			OwnerID:    mUser.ID,
+			Visibility: model.VisibilityPublic,
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mUser.ID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+
+		dbMock.ExpectBegin()
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Delete(&model.Asset{Model: mAsset.Model}).
+			Statement
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		dbMock.ExpectCommit()
+
+		err := ctrl.DeleteAsset(ctx, "1")
 		require.NoError(t, err)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("NoUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("AssetNotFound", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
-		ctx := context.Background()
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		err = ctrl.DeleteAsset(ctx, "1")
+		ctx := newContextWithTestUser(context.Background())
+
+		var mAssetID int64 = 1
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAssetID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		err := ctrl.DeleteAsset(ctx, "1")
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnauthorized)
+		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("UnexpectedUser", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("Unauthorized", func(t *testing.T) {
+		ctrl, dbMock, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "another-fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		err = ctrl.DeleteAsset(ctx, "1")
+		mUser, ok := UserFromContext(ctx)
+		require.True(t, ok)
+
+		mAsset := model.Asset{
+			Model:      model.Model{ID: 1},
+			OwnerID:    mUser.ID + 1,
+			Visibility: model.VisibilityPrivate,
+		}
+
+		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("id = ?", mAsset.ID).
+			First(&model.Asset{}).
+			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Where("`user`.`id` = ?", mAsset.OwnerID).
+			Find(&model.User{}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(model.User{
+				Model:    model.Model{ID: mAsset.OwnerID},
+				Username: "otheruser",
+			})...))
+
+		err := ctrl.DeleteAsset(ctx, "1")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrForbidden)
+
+		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
 
-	t.Run("NoAsset", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
+	t.Run("InvalidID", func(t *testing.T) {
+		ctrl, _, closeDB := newTestController(t)
+		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows(nil))
-		err = ctrl.DeleteAsset(ctx, "1")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, model.ErrNotExist)
-	})
 
-	t.Run("ClosedConnForUpdateQuery", func(t *testing.T) {
-		ctrl, mock, err := newTestController(t)
-		require.NoError(t, err)
-
-		ctx := newContextWithTestUser(context.Background())
-		mock.ExpectQuery(`SELECT \* FROM asset WHERE id = \? AND status != \? ORDER BY id ASC LIMIT 1`).
-			WillReturnRows(mock.NewRows([]string{"id", "display_name", "owner", "files", "files_hash", "is_public"}).
-				AddRow(1, "fake-asset", "fake-name", []byte("{}"), "fake-files-hash", model.Personal))
-		mock.ExpectExec(`UPDATE asset SET u_time=\?,status=\? WHERE id=\?`).
-			WithArgs(sqlmock.AnyArg(), model.StatusDeleted, "1").
-			WillReturnError(sql.ErrConnDone)
-		err = ctrl.DeleteAsset(ctx, "1")
+		err := ctrl.DeleteAsset(ctx, "invalid")
 		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrConnDone)
+		assert.EqualError(t, err, fmt.Sprintf("invalid asset id: %s", `strconv.ParseInt: parsing "invalid": invalid syntax`))
 	})
 }

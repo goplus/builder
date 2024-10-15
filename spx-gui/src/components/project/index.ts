@@ -1,5 +1,5 @@
 import { useModal, useConfirmDialog } from '@/components/ui'
-import { IsPublic, deleteProject } from '@/apis/project'
+import { Visibility, deleteProject } from '@/apis/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
@@ -57,12 +57,12 @@ export function useShareProject() {
   const createProjectSharingLink = useCreateProjectSharingLink()
 
   async function makePublic(project: Project) {
-    project.setPublic(IsPublic.public)
+    project.setVisibility(Visibility.Public)
     await project.saveToCloud()
   }
 
   return async function shareProject(project: Project) {
-    if (project.isPublic !== IsPublic.public) {
+    if (project.visibility !== Visibility.Public) {
       await withConfirm({
         title: t({ en: 'Share project', zh: '分享项目' }),
         content: t({
@@ -80,8 +80,8 @@ export function useStopSharingProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
 
-  async function makePersonal(project: Project) {
-    project.setPublic(IsPublic.personal)
+  async function makePrivate(project: Project) {
+    project.setVisibility(Visibility.Private)
     await project.saveToCloud()
   }
 
@@ -92,7 +92,7 @@ export function useStopSharingProject() {
         en: 'If sharing is stopped, others will no longer have access to the current project, and its sharing links will expire. Would you like to proceed?',
         zh: '如果停止分享，其他人将无法访问当前项目，且分享链接将会失效。确认继续吗？'
       }),
-      confirmHandler: () => makePersonal(project)
+      confirmHandler: () => makePrivate(project)
     })
   }
 }

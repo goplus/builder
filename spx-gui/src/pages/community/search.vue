@@ -59,7 +59,7 @@ import {
   useRouteQueryParamStrEnum
 } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
-import { IsPublic, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
+import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
 import { UISelect, UISelectOption, UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -85,7 +85,7 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
-    isPublic: IsPublic.public,
+    visibility: Visibility.Public,
     owner: ownerAll,
     pageSize,
     pageIndex: page.value
@@ -93,7 +93,7 @@ const listParams = computed<ListProjectParams>(() => {
   if (keyword.value !== '') p.keyword = keyword.value
   switch (order.value) {
     case Order.RecentlyUpdated:
-      p.orderBy = 'uTime'
+      p.orderBy = 'updatedAt'
       p.sortOrder = 'desc'
       break
     case Order.MostLikes:

@@ -24,7 +24,7 @@
         <div class="name">{{ project.name }}</div>
         <p class="others">
           <template v-if="context !== 'public'">
-            <span v-if="project.isPublic === IsPublic.public" class="part">
+            <span v-if="project.visibility === Visibility.Public" class="part">
               <UIIcon type="statePublic" />
               {{ $t({ en: 'Public', zh: '公开' }) }}
             </span>
@@ -38,7 +38,7 @@
             {{ $t(humanizeCount(project.likeCount)) }}
           </span>
           <span class="part time" :title="$t(timeTitle)">
-            {{ $t(humanizeTime(project.uTime)) }}
+            {{ $t(humanizeTime(project.updatedAt)) }}
           </span>
         </p>
       </div>
@@ -58,7 +58,7 @@ import {
   useAsyncComputed
 } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
-import { IsPublic, isLiking, type ProjectData } from '@/apis/project'
+import { Visibility, isLiking, type ProjectData } from '@/apis/project'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
 import { useRemoveProject } from '.'
@@ -105,7 +105,7 @@ const likesTitle = computed(() => {
 })
 
 const timeTitle = computed(() => {
-  const fullTime = humanizeExactTime(props.project.uTime)
+  const fullTime = humanizeExactTime(props.project.updatedAt)
   return {
     en: `Last updated at ${fullTime.en}`,
     zh: `最后更新于 ${fullTime.zh}`

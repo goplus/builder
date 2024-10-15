@@ -8,7 +8,7 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
-import { IsPublic, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData } from '@/apis/project'
 import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
@@ -29,12 +29,12 @@ export type { Action } from './history'
 
 export type Metadata = {
   id?: string
+  createdAt?: string
+  updatedAt?: string
   owner?: string
   name?: string
-  isPublic?: IsPublic
   version?: number
-  cTime?: string
-  uTime?: string
+  visibility?: Visibility
   filesHash?: string
   lastSyncedFilesHash?: string
 }
@@ -96,12 +96,12 @@ export type ScreenshotTaker = (name: string) => Promise<File>
 
 export class Project extends Disposable {
   id?: string
+  createdAt?: string
+  updatedAt?: string
   owner?: string
   name?: string
-  isPublic?: IsPublic
   version = 0
-  cTime?: string
-  uTime?: string
+  visibility?: Visibility
 
   private filesHash?: string
   private lastSyncedFilesHash?: string
@@ -189,8 +189,8 @@ export class Project extends Disposable {
     this.sounds.push(sound)
   }
 
-  setPublic(isPublic: IsPublic) {
-    this.isPublic = isPublic
+  setVisibility(visibility: Visibility) {
+    this.visibility = visibility
   }
 
   selected: Selected = null
@@ -265,12 +265,12 @@ export class Project extends Disposable {
   private exportMetadata(): Metadata {
     return {
       id: this.id,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
       owner: this.owner,
       name: this.name,
-      isPublic: this.isPublic,
       version: this.version,
-      cTime: this.cTime,
-      uTime: this.uTime,
+      visibility: this.visibility,
       filesHash: this.filesHash,
       lastSyncedFilesHash: this.lastSyncedFilesHash
     }

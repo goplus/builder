@@ -2,202 +2,294 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"maps"
 	"regexp"
+	"strconv"
 
-	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 )
+
+// AssetDTO is the DTO for assets.
+type AssetDTO struct {
+	ModelDTO
+
+	Owner       string               `json:"owner"`
+	DisplayName string               `json:"displayName"`
+	Type        string               `json:"type"`
+	Category    string               `json:"category"`
+	Files       model.FileCollection `json:"files"`
+	FilesHash   string               `json:"filesHash"`
+	Visibility  string               `json:"visibility"`
+}
+
+// toAssetDTO converts the model asset to its DTO.
+func toAssetDTO(mAsset model.Asset) AssetDTO {
+	return AssetDTO{
+		ModelDTO:    toModelDTO(mAsset.Model),
+		Owner:       mAsset.Owner.Username,
+		DisplayName: mAsset.DisplayName,
+		Type:        mAsset.Type.String(),
+		Category:    mAsset.Category,
+		Files:       mAsset.Files,
+		FilesHash:   mAsset.FilesHash,
+		Visibility:  mAsset.Visibility.String(),
+	}
+}
 
 // assetDisplayNameRE is the regular expression for asset display name.
 var assetDisplayNameRE = regexp.MustCompile(`^.{1,100}$`)
 
 // ensureAsset ensures the asset exists and the user has access to it.
-func (ctrl *Controller) ensureAsset(ctx context.Context, id string, ownedOnly bool) (*model.Asset, error) {
-	logger := log.GetReqLogger(ctx)
-
-	asset, err := model.AssetByID(ctx, ctrl.db, id)
-	if err != nil {
-		logger.Printf("failed to get asset: %v", err)
-		return nil, err
+func (ctrl *Controller) ensureAsset(ctx context.Context, id int64, ownedOnly bool) (*model.Asset, error) {
+	var mAsset model.Asset
+	if err := ctrl.db.WithContext(ctx).
+		Preload("Owner").
+		Where("id = ?", id).
+		First(&mAsset).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to get asset: %w", err)
 	}
 
-	if ownedOnly || asset.IsPublic == model.Personal {
-		if _, err := EnsureUser(ctx, asset.Owner); err != nil {
+	if ownedOnly || mAsset.Visibility == model.VisibilityPrivate {
+		if _, err := ensureUser(ctx, mAsset.OwnerID); err != nil {
 			return nil, err
 		}
 	}
 
-	return asset, nil
+	return &mAsset, nil
 }
 
-// GetAsset gets asset by id.
-func (ctrl *Controller) GetAsset(ctx context.Context, id string) (*model.Asset, error) {
-	return ctrl.ensureAsset(ctx, id, false)
-}
-
-// ListAssetsOrderBy is the order by condition for listing assets.
-type ListAssetsOrderBy string
-
-var (
-	DefaultOrder   ListAssetsOrderBy = "default"
-	TimeDesc       ListAssetsOrderBy = "time"
-	ClickCountDesc ListAssetsOrderBy = "clickCount"
-)
-
-// ListAssetsParams holds parameters for listing assets.
-type ListAssetsParams struct {
-	// Keyword is the keyword filter for the display name, applied only if non-empty.
-	Keyword string
-
-	// Owner is the owner filter, applied only if non-nil.
-	Owner *string
-
-	// Category is the category filter, applied only if non-nil.
-	Category *string
-
-	// AccessType is the access type filter, applied only if non-nil.
-	AssetType *model.AssetType
-
-	// FilesHash is the files hash filter, applied only if non-nil.
-	FilesHash *string
-
-	// IsPublic is the visibility filter, applied only if non-nil.
-	IsPublic *model.IsPublic
-
-	// OrderBy is the order by condition.
-	OrderBy ListAssetsOrderBy
-
-	// Pagination is the pagination information.
-	Pagination model.Pagination
-}
-
-// Validate validates the parameters.
-func (p *ListAssetsParams) Validate() (ok bool, msg string) {
-	return true, ""
-}
-
-// ListAssets lists assets.
-func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams) (*model.ByPage[model.Asset], error) {
-	logger := log.GetReqLogger(ctx)
-
-	// Ensure non-owners can only see public assets.
-	if user, ok := UserFromContext(ctx); !ok || params.Owner == nil || user.Name != *params.Owner {
-		public := model.Public
-		params.IsPublic = &public
-	}
-
-	var wheres []model.FilterCondition
-	if params.Keyword != "" {
-		wheres = append(wheres, model.FilterCondition{Column: "display_name", Operation: "LIKE", Value: "%" + params.Keyword + "%"})
-	}
-	if params.Owner != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "owner", Operation: "=", Value: *params.Owner})
-	}
-	if params.Category != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "category", Operation: "=", Value: *params.Category})
-	}
-	if params.AssetType != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "asset_type", Operation: "=", Value: *params.AssetType})
-	}
-	if params.FilesHash != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "files_hash", Operation: "=", Value: *params.FilesHash})
-	}
-	if params.IsPublic != nil {
-		wheres = append(wheres, model.FilterCondition{Column: "is_public", Operation: "=", Value: *params.IsPublic})
-	}
-
-	var orders []model.OrderByCondition
-	switch params.OrderBy {
-	case TimeDesc:
-		orders = append(orders, model.OrderByCondition{Column: "c_time", Direction: "DESC"})
-	case ClickCountDesc:
-		orders = append(orders, model.OrderByCondition{Column: "click_count", Direction: "DESC"})
-	}
-
-	assets, err := model.ListAssets(ctx, ctrl.db, params.Pagination, wheres, orders)
-	if err != nil {
-		logger.Printf("failed to list assets : %v", err)
-		return nil, err
-	}
-	return assets, nil
-}
-
-// AddAssetParams holds parameters for adding an asset.
-type AddAssetParams struct {
+// CreateAssetParams holds parameters for creating an asset.
+type CreateAssetParams struct {
 	DisplayName string               `json:"displayName"`
-	Owner       string               `json:"owner"`
+	Type        string               `json:"type"`
 	Category    string               `json:"category"`
-	AssetType   model.AssetType      `json:"assetType"`
 	Files       model.FileCollection `json:"files"`
 	FilesHash   string               `json:"filesHash"`
 	Preview     string               `json:"preview"`
-	IsPublic    model.IsPublic       `json:"isPublic"`
+	Visibility  string               `json:"visibility"`
 }
 
 // Validate validates the parameters.
-func (p *AddAssetParams) Validate() (ok bool, msg string) {
+func (p *CreateAssetParams) Validate() (ok bool, msg string) {
 	if p.DisplayName == "" {
 		return false, "missing displayName"
 	} else if !assetDisplayNameRE.Match([]byte(p.DisplayName)) {
 		return false, "invalid displayName"
 	}
-	if p.Owner == "" {
-		return false, "missing owner"
+	if model.ParseAssetType(p.Type).String() != p.Type {
+		return false, "invalid type"
 	}
 	if p.Category == "" {
 		return false, "missing category"
 	}
-	switch p.AssetType {
-	case model.AssetTypeSprite, model.AssetTypeBackdrop, model.AssetTypeSound:
-	default:
-		return false, "invalid assetType"
-	}
 	if p.FilesHash == "" {
 		return false, "missing filesHash"
 	}
-	switch p.IsPublic {
-	case model.Personal, model.Public:
-	default:
-		return false, "invalid isPublic"
+	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
+		return false, "invalid visibility"
 	}
 	return true, ""
 }
 
-// AddAsset adds an asset.
-func (ctrl *Controller) AddAsset(ctx context.Context, params *AddAssetParams) (*model.Asset, error) {
-	logger := log.GetReqLogger(ctx)
-
-	user, err := EnsureUser(ctx, params.Owner)
-	if err != nil {
-		return nil, err
+// CreateAsset creates an asset.
+func (ctrl *Controller) CreateAsset(ctx context.Context, params *CreateAssetParams) (*AssetDTO, error) {
+	mUser, ok := UserFromContext(ctx)
+	if !ok {
+		return nil, ErrUnauthorized
 	}
 
-	asset, err := model.AddAsset(ctx, ctrl.db, &model.Asset{
+	mAsset := model.Asset{
+		OwnerID:     mUser.ID,
 		DisplayName: params.DisplayName,
-		Owner:       user.Name,
+		Type:        model.ParseAssetType(params.Type),
 		Category:    params.Category,
-		AssetType:   params.AssetType,
 		Files:       params.Files,
 		FilesHash:   params.FilesHash,
-		Preview:     params.Preview,
-		IsPublic:    params.IsPublic,
-	})
+		Visibility:  model.ParseVisibility(params.Visibility),
+	}
+	if err := ctrl.db.WithContext(ctx).Create(&mAsset).Error; err != nil {
+		return nil, fmt.Errorf("failed to create asset: %w", err)
+	}
+	if err := ctrl.db.WithContext(ctx).
+		Preload("Owner").
+		First(&mAsset).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to get asset: %w", err)
+	}
+	assetDTO := toAssetDTO(mAsset)
+	return &assetDTO, nil
+}
+
+// ListAssetsOrderBy is the order by condition for listing assets.
+type ListAssetsOrderBy string
+
+const (
+	ListAssetsOrderByCreatedAt ListAssetsOrderBy = "createdAt"
+	ListAssetsOrderByUpdatedAt ListAssetsOrderBy = "updatedAt"
+)
+
+// IsValid reports whether the order by condition is valid.
+func (ob ListAssetsOrderBy) IsValid() bool {
+	switch ob {
+	case ListAssetsOrderByCreatedAt, ListAssetsOrderByUpdatedAt:
+		return true
+	}
+	return false
+}
+
+// ListAssetsParams holds parameters for listing assets.
+type ListAssetsParams struct {
+	// Keyword filters assets by display name pattern.
+	//
+	// Applied only if non-nil.
+	Keyword *string
+
+	// Owner filters assets by owner's username.
+	//
+	// Applied only if non-nil.
+	Owner *string
+
+	// Type filters assets by type.
+	//
+	// Applied only if non-nil.
+	Type *string
+
+	// Category filters assets by category.
+	//
+	// Applied only if non-nil.
+	Category *string
+
+	// FilesHash filters assets by files hash.
+	//
+	// Applied only if non-nil.
+	FilesHash *string
+
+	// Visibility filters assets by visibility.
+	//
+	// Applied only if non-nil.
+	Visibility *string
+
+	// OrderBy indicates the field by which to order the results.
+	OrderBy ListAssetsOrderBy
+
+	// SortOrder indicates the order in which to sort the results.
+	SortOrder SortOrder
+
+	// Pagination is the pagination information.
+	Pagination Pagination
+}
+
+// NewListAssetsParams creates a new ListAssetsParams.
+func NewListAssetsParams() *ListAssetsParams {
+	return &ListAssetsParams{
+		OrderBy:    ListAssetsOrderByCreatedAt,
+		SortOrder:  SortOrderDesc,
+		Pagination: Pagination{Index: 1, Size: 20},
+	}
+}
+
+// Validate validates the parameters.
+func (p *ListAssetsParams) Validate() (ok bool, msg string) {
+	if p.Type != nil && model.ParseAssetType(*p.Type).String() != *p.Type {
+		return false, "invalid type"
+	}
+	if p.Visibility != nil && model.ParseVisibility(*p.Visibility).String() != *p.Visibility {
+		return false, "invalid visibility"
+	}
+	if !p.OrderBy.IsValid() {
+		return false, "invalid orderBy"
+	}
+	if !p.SortOrder.IsValid() {
+		return false, "invalid sortOrder"
+	}
+	if !p.Pagination.IsValid() {
+		return false, "invalid pagination"
+	}
+	return true, ""
+}
+
+// ListAssets lists assets.
+func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams) (*ByPage[AssetDTO], error) {
+	// Ensure non-owners can only see public assets.
+	if mUser, ok := UserFromContext(ctx); !ok || params.Owner == nil || *params.Owner != mUser.Username {
+		public := model.VisibilityPublic.String()
+		params.Visibility = &public
+	}
+
+	query := ctrl.db.WithContext(ctx).Model(&model.Asset{})
+	if params.Keyword != nil {
+		query = query.Where("asset.display_name LIKE ?", "%"+*params.Keyword+"%")
+	}
+	if params.Owner != nil {
+		query = query.Joins("JOIN user ON user.id = asset.owner_id").Where("user.username = ?", *params.Owner)
+	}
+	if params.Type != nil {
+		query = query.Where("asset.type = ?", model.ParseAssetType(*params.Type))
+	}
+	if params.Category != nil {
+		query = query.Where("asset.category = ?", *params.Category)
+	}
+	if params.FilesHash != nil {
+		query = query.Where("asset.files_hash = ?", *params.FilesHash)
+	}
+	if params.Visibility != nil {
+		query = query.Where("asset.visibility = ?", model.ParseVisibility(*params.Visibility))
+	}
+	switch params.OrderBy {
+	case ListAssetsOrderByCreatedAt:
+		query = query.Order(fmt.Sprintf("asset.created_at %s", params.SortOrder))
+	case ListAssetsOrderByUpdatedAt:
+		query = query.Order(fmt.Sprintf("asset.updated_at %s", params.SortOrder))
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, fmt.Errorf("failed to count assets: %w", err)
+	}
+
+	var mAssets []model.Asset
+	if err := query.
+		Preload("Owner").
+		Offset(params.Pagination.Offset()).
+		Limit(params.Pagination.Size).
+		Find(&mAssets).
+		Error; err != nil {
+		return nil, fmt.Errorf("failed to list assets: %w", err)
+	}
+	assetDTOs := make([]AssetDTO, len(mAssets))
+	for i, mAsset := range mAssets {
+		assetDTOs[i] = toAssetDTO(mAsset)
+	}
+	return &ByPage[AssetDTO]{
+		Total: total,
+		Data:  assetDTOs,
+	}, nil
+}
+
+// GetAsset gets asset by id.
+func (ctrl *Controller) GetAsset(ctx context.Context, id string) (*AssetDTO, error) {
+	mAssetID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		logger.Printf("failed to add asset: %v", err)
+		return nil, fmt.Errorf("invalid asset id: %w", err)
+	}
+	mAsset, err := ctrl.ensureAsset(ctx, mAssetID, false)
+	if err != nil {
 		return nil, err
 	}
-	return asset, nil
+	assetDTO := toAssetDTO(*mAsset)
+	return &assetDTO, nil
 }
 
 // UpdateAssetParams holds parameters for updating an asset.
 type UpdateAssetParams struct {
 	DisplayName string               `json:"displayName"`
+	Type        string               `json:"type"`
 	Category    string               `json:"category"`
-	AssetType   model.AssetType      `json:"assetType"`
 	Files       model.FileCollection `json:"files"`
 	FilesHash   string               `json:"filesHash"`
-	Preview     string               `json:"preview"`
-	IsPublic    model.IsPublic       `json:"isPublic"`
+	Visibility  string               `json:"visibility"`
 }
 
 // Validate validates the parameters.
@@ -207,78 +299,71 @@ func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
 	} else if !assetDisplayNameRE.Match([]byte(p.DisplayName)) {
 		return false, "invalid displayName"
 	}
+	if model.ParseAssetType(p.Type).String() != p.Type {
+		return false, "invalid type"
+	}
 	if p.Category == "" {
 		return false, "missing category"
-	}
-	switch p.AssetType {
-	case model.AssetTypeSprite, model.AssetTypeBackdrop, model.AssetTypeSound:
-	default:
-		return false, "invalid assetType"
 	}
 	if p.FilesHash == "" {
 		return false, "missing filesHash"
 	}
-	switch p.IsPublic {
-	case model.Personal, model.Public:
-	default:
-		return false, "invalid isPublic"
+	if model.ParseVisibility(p.Visibility).String() != p.Visibility {
+		return false, "invalid visibility"
 	}
 	return true, ""
 }
 
 // UpdateAsset updates an asset.
-func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, updates *UpdateAssetParams) (*model.Asset, error) {
-	logger := log.GetReqLogger(ctx)
-
-	asset, err := ctrl.ensureAsset(ctx, id, true)
+func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, params *UpdateAssetParams) (*AssetDTO, error) {
+	mAssetID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid asset id: %w", err)
+	}
+	mAsset, err := ctrl.ensureAsset(ctx, mAssetID, true)
 	if err != nil {
 		return nil, err
 	}
-
-	updatedAsset, err := model.UpdateAssetByID(ctx, ctrl.db, asset.ID, &model.Asset{
-		DisplayName: updates.DisplayName,
-		Category:    updates.Category,
-		AssetType:   updates.AssetType,
-		Files:       updates.Files,
-		FilesHash:   updates.FilesHash,
-		Preview:     updates.Preview,
-		IsPublic:    updates.IsPublic,
-	})
-	if err != nil {
-		logger.Printf("failed to update asset: %v", err)
-		return nil, err
+	updates := map[string]any{}
+	if params.DisplayName != mAsset.DisplayName {
+		updates["display_name"] = params.DisplayName
 	}
-	return updatedAsset, nil
-}
-
-// IncreaseAssetClickCount increases the click count of an asset.
-func (ctrl *Controller) IncreaseAssetClickCount(ctx context.Context, id string) error {
-	logger := log.GetReqLogger(ctx)
-
-	asset, err := ctrl.ensureAsset(ctx, id, false)
-	if err != nil {
-		return err
+	if params.Type != mAsset.Type.String() {
+		updates["type"] = model.ParseAssetType(params.Type)
 	}
-
-	if err := model.IncreaseAssetClickCount(ctx, ctrl.db, asset.ID); err != nil {
-		logger.Printf("failed to increase asset click count: %v", err)
-		return err
+	if params.Category != mAsset.Category {
+		updates["category"] = params.Category
 	}
-	return nil
+	if !maps.Equal(params.Files, mAsset.Files) {
+		updates["files"] = params.Files
+	}
+	if params.FilesHash != mAsset.FilesHash {
+		updates["files_hash"] = params.FilesHash
+	}
+	if params.Visibility != mAsset.Visibility.String() {
+		updates["visibility"] = model.ParseVisibility(params.Visibility)
+	}
+	if len(updates) > 0 {
+		if err := ctrl.db.WithContext(ctx).Model(mAsset).Omit("Owner").Updates(updates).Error; err != nil {
+			return nil, fmt.Errorf("failed to update asset: %w", err)
+		}
+	}
+	assetDTO := toAssetDTO(*mAsset)
+	return &assetDTO, nil
 }
 
 // DeleteAsset deletes an asset.
 func (ctrl *Controller) DeleteAsset(ctx context.Context, id string) error {
-	logger := log.GetReqLogger(ctx)
-
-	asset, err := ctrl.ensureAsset(ctx, id, true)
+	mAssetID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid asset id: %w", err)
+	}
+	mAsset, err := ctrl.ensureAsset(ctx, mAssetID, true)
 	if err != nil {
 		return err
 	}
-
-	if err := model.DeleteAssetByID(ctx, ctrl.db, asset.ID); err != nil {
-		logger.Printf("failed to delete asset: %v", err)
-		return err
+	if err := ctrl.db.WithContext(ctx).Delete(mAsset).Error; err != nil {
+		return fmt.Errorf("failed to delete asset: %w", err)
 	}
 	return nil
 }

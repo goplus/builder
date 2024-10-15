@@ -12,9 +12,9 @@ export type ByPage<T> = {
 
 export const ownerAll = '*'
 
-export enum IsPublic {
-  personal = 0,
-  public = 1
+export enum Visibility {
+  Private = 'private',
+  Public = 'public'
 }
 
 /** Url with 'http:', 'https:', or 'data:' schemes, used for web resources that can be accessed directly via `fetch()` */

@@ -23,4 +23,4 @@ if err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json fileURLs
+json 201, fileURLs

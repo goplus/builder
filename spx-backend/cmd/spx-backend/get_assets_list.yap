@@ -4,18 +4,17 @@
 //   GET /assets/list
 
 import (
-	"strconv"
-
 	"github.com/goplus/builder/spx-backend/internal/controller"
-	"github.com/goplus/builder/spx-backend/internal/model"
 )
 
 ctx := &Context
 
 user, _ := controller.UserFromContext(ctx.Context())
-params := &controller.ListAssetsParams{}
+params := controller.NewListAssetsParams()
 
-params.Keyword = ${keyword}
+if keyword := ${keyword}; keyword != "" {
+	params.Keyword = &keyword
+}
 
 switch owner := ${owner}; owner {
 case "":
@@ -23,39 +22,27 @@ case "":
 		replyWithCode(ctx, errorUnauthorized)
 		return
 	}
-	params.Owner = &user.Name
+	params.Owner = &user.Username
 case "*":
 	params.Owner = nil
 default:
 	params.Owner = &owner
 }
 
-if category := ${category}; category != "" {
-	params.Category = &category
+if typeParam := ctx.Param("type"); typeParam != "" {
+	params.Type = &typeParam
 }
 
-if assetTypeParam := ${assetType}; assetTypeParam != "" {
-	assetTypeInt, err := strconv.Atoi(assetTypeParam)
-	if err != nil {
-		replyWithCode(ctx, errorInvalidArgs)
-		return
-	}
-	assetType := model.AssetType(assetTypeInt)
-	params.AssetType = &assetType
+if category := ${category}; category != "" {
+	params.Category = &category
 }
 
 if filesHash := ${filesHash}; filesHash != "" {
 	params.FilesHash = &filesHash
 }
 
-if isPublicParam := ${isPublic}; isPublicParam != "" {
-	isPublicInt, err := strconv.Atoi(isPublicParam)
-	if err != nil {
-		replyWithCode(ctx, errorInvalidArgs)
-		return
-	}
-	isPublic := model.IsPublic(isPublicInt)
-	params.IsPublic = &isPublic
+if visibility := ${visibility}; visibility != "" {
+	params.Visibility = &visibility
 }
 
 if orderBy := ${orderBy}; orderBy != "" {

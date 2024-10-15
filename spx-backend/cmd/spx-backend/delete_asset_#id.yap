@@ -9,4 +9,4 @@ if err := ctrl.DeleteAsset(ctx.Context(), ${id}); err != nil {
 	replyWithInnerError(ctx, err)
 	return
 }
-json nil
+text 204, "", ""
