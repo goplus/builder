@@ -54,7 +54,7 @@ defineProps<{
           fill="currentColor"
         />
       </svg>
-      {{ $t({ en: 'Likes', zh: '喜欢' }) }}
+      {{ $t({ en: 'Likes', zh: '喜欢的项目' }) }}
     </UserSidebarItem>
     <UserSidebarItem :to="getUserPageRoute(username, 'following')">
       <svg
@@ -69,7 +69,7 @@ defineProps<{
           fill="currentColor"
         />
       </svg>
-      {{ $t({ en: 'Following', zh: '关注' }) }}
+      {{ $t({ en: 'Following', zh: '正在关注' }) }}
     </UserSidebarItem>
     <UserSidebarItem :to="getUserPageRoute(username, 'followers')">
       <svg
@@ -84,7 +84,7 @@ defineProps<{
           fill="currentColor"
         />
       </svg>
-      {{ $t({ en: 'Followers', zh: '被关注' }) }}
+      {{ $t({ en: 'Followers', zh: '关注者' }) }}
     </UserSidebarItem>
   </CommunityCard>
 </template>

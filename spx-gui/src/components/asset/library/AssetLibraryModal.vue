@@ -151,7 +151,7 @@ watch(
 // "personal" is not actually a category. Define it as a category for convenience
 const categoryPersonal = computed<Category>(() => ({
   value: 'personal',
-  message: { en: `My ${entityMessage.value.en}s`, zh: `我的${entityMessage.value.zh}` }
+  message: { en: `Your ${entityMessage.value.en}s`, zh: `你的${entityMessage.value.zh}` }
 }))
 const category = ref(categoryAll)
 

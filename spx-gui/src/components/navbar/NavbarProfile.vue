@@ -17,6 +17,14 @@
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
+        <UIMenuItem @click="handleUserPage">
+          {{ $t({ en: 'Profile', zh: '个人主页' }) }}
+        </UIMenuItem>
+        <UIMenuItem @click="handleProjects">
+          {{ $t({ en: 'Projects', zh: '项目列表' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
         <UIMenuItem @click="userStore.signOut()">{{
           $t({ en: 'Sign out', zh: '登出' })
         }}</UIMenuItem>
@@ -26,12 +34,23 @@
 </template>
 
 <script setup lang="ts">
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
+import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
+import { getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
+const router = useRouter()
+
+function handleUserPage() {
+  router.push(getUserPageRoute(userStore.userInfo!.name))
+}
+
+function handleProjects() {
+  router.push(getUserPageRoute(userStore.userInfo!.name, 'projects'))
+}
 </script>
 
 <style lang="scss" scoped>

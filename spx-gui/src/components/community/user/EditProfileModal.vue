@@ -2,7 +2,15 @@
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { updateProfile, type User } from '@/apis/user'
-import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
+import {
+  UIImg,
+  UIFormModal,
+  UIForm,
+  UIFormItem,
+  UITextInput,
+  UIButton,
+  useForm
+} from '@/components/ui'
 
 const props = defineProps<{
   user: User
@@ -21,7 +29,8 @@ const form = useForm({
 })
 
 function validateDescription(val: string) {
-  if (val.length > 200) return t({ en: 'Description must be 200 characters or fewer', zh: '输入不能超过 200 字' })
+  if (val.length > 200)
+    return t({ en: 'The input must be 200 characters or fewer', zh: '输入不能超过 200 字' })
   return null
 }
 
@@ -52,7 +61,7 @@ const handleSubmit = useMessageHandle(
       <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
         <UITextInput :value="user.displayName" disabled />
       </UIFormItem>
-      <UIFormItem :label="$t({ en: 'Description', zh: '介绍' })" path="description">
+      <UIFormItem :label="$t({ en: 'About me', zh: '关于我' })" path="description">
         <UITextInput
           v-model:value="form.value.description"
           type="textarea"
@@ -63,11 +72,7 @@ const handleSubmit = useMessageHandle(
         <UIButton type="boring" @click="emit('cancelled')">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
-        <UIButton
-          type="primary"
-          html-type="submit"
-          :loading="handleSubmit.isLoading.value"
-        >
+        <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
           {{ $t({ en: 'Confirm', zh: '确认' }) }}
         </UIButton>
       </footer>
