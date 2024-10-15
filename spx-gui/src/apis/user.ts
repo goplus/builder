@@ -49,7 +49,7 @@ export type ListUserParams = PaginationParams & {
 }
 
 export async function listUsers(params: ListUserParams) {
-  const { total, data } = await (client.get('/users/list', { params }) as Promise<ByPage<User>>)
+  const { total, data } = await (client.get('/users/list', params) as Promise<ByPage<User>>)
   return {
     total,
     data: data.map(__adaptUser)
