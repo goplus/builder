@@ -10,7 +10,7 @@
           {{ $t({ en: 'Most recent remixes', zh: '最近最多改编' }) }}
         </UITagRadio>
         <UITagRadio :value="Order.FollowingCreated">
-          {{ $t({ en: 'My following created', zh: '我关注的人创作' }) }}
+          {{ $t({ en: 'My following created', zh: '你关注的用户创作' }) }}
         </UITagRadio>
       </UITagRadioGroup>
     </template>

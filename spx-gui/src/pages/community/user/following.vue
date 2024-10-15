@@ -33,7 +33,7 @@ const queryRet = useQuery(
 <template>
   <UserContent class="user-likes">
     <template #title>
-      {{ $t({ en: 'Following', zh: '关注' }) }}
+      {{ $t({ en: "Users I'm following", zh: '我关注的用户' }) }}
     </template>
     <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="896">
       <ul class="users">

@@ -34,6 +34,7 @@ import CommunityCard from '../../CommunityCard.vue'
   gap: 20px;
 
   .title {
+    // TODO: Layout here shifts when jumping from `/user/:name` to `/user/:name/projects`, which is not ideal
     line-height: 26px;
     font-size: 16px;
     color: var(--ui-color-title);

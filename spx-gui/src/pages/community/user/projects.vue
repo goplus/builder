@@ -70,7 +70,7 @@ const handleNewProject = useMessageHandle(
 <template>
   <UserContent class="user-projects">
     <template #title>
-      {{ $t({ en: 'Projects', zh: '项目' }) }}
+      {{ $t({ en: 'My projects', zh: '我的项目' }) }}
     </template>
     <template #extra>
       <label>

@@ -9,9 +9,8 @@
       <template #title>
         {{
           $t({
-            // TODO: "my" or "your"? (consistency)
-            en: 'My projects',
-            zh: '我的项目'
+            en: 'Your projects',
+            zh: '你的项目'
           })
         }}
       </template>
@@ -93,8 +92,8 @@
       <template #title>
         {{
           $t({
-            en: 'Users I follow are creating',
-            zh: '我关注的人在创作'
+            en: 'Users you follow are creating',
+            zh: '你关注的用户在创作'
           })
         }}
       </template>

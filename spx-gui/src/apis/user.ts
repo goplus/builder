@@ -44,6 +44,20 @@ export async function getUser(name: string): Promise<User> {
   return client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>
 }
 
+export type UpdateProfileParams = Pick<User, 'description'>
+
+export async function updateProfile(params: UpdateProfileParams) {
+  // TODO: remove me
+  if (process.env.NODE_ENV === 'development') {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return {
+      ...__mockUser('test'),
+      ...params
+    }
+  }
+  return client.put(`/user`, params) as Promise<User>
+}
+
 export type ListUserParams = PaginationParams & {
   /** Filter users who are being followed by the specified user */
   follower?: string
