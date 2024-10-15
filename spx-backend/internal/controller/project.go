@@ -382,7 +382,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 			Joins("JOIN user_project_relationship AS liker_relationship ON liker_relationship.project_id = project.id").
 			Joins("JOIN user AS liker ON liker.id = liker_relationship.user_id").
 			Where("liker.username = ?", *params.Liker).
-			Where("user_project_relationship.liked_at IS NOT NULL")
+			Where("liker_relationship.liked_at IS NOT NULL")
 	}
 	if params.CreatedAfter != nil {
 		query = query.Where("project.created_at > ?", *params.CreatedAfter)
