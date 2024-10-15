@@ -69,7 +69,7 @@ const handleSubmit = useMessageHandle(
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton type="boring" @click="emit('cancelled')">
+        <UIButton type="boring" @click="handleCancel">
           {{ $t({ en: 'Cancel', zh: '取消' }) }}
         </UIButton>
         <UIButton type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
