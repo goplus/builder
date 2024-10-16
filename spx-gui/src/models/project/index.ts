@@ -551,9 +551,6 @@ export class Project extends Disposable {
         { immediate: true }
       )
     )
-
-    // new created project has no thumbnail, do save to cloud to generate thumbnail
-    if (this.thumbnail === '') this.saveToCloud()
   }
 
   /** watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory */
@@ -592,6 +589,17 @@ export class Project extends Disposable {
     }
     this.startAutoSaveToCloud(localCacheKey)
     this.startAutoSaveToLocalCache(localCacheKey)
+
+    this.addDisposer(
+      watch(
+        // new created project has no thumbnail, do save to cloud to generate thumbnail
+        () => this.thumbnail === '' && this.autoSaveMode === AutoSaveMode.Cloud,
+        (shouldGenerateThumbnail) => {
+          if (shouldGenerateThumbnail) this.saveToCloud?.()
+        },
+        { immediate: true }
+      )
+    )
   }
 }
 
