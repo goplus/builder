@@ -46,7 +46,7 @@ watchEffect(() => {
   // This will be called on mount and whenever userStore changes,
   // which are the cases when userStore.signOut() is called
   if (!userStore.isSignedIn) {
-    userStore.signInWithRedirection()
+    userStore.initiateSignIn()
   }
 })
 

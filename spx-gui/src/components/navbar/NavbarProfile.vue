@@ -1,6 +1,6 @@
 <template>
   <div v-if="!userStore.userInfo" class="sign-in">
-    <UIButton type="secondary" :disabled="!isOnline" @click="userStore.signInWithRedirection()">{{
+    <UIButton type="secondary" :disabled="!isOnline" @click="userStore.initiateSignIn()">{{
       $t({ en: 'Sign in', zh: '登录' })
     }}</UIButton>
   </div>

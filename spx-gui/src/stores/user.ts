@@ -1,38 +1,29 @@
-import CasdoorSdk from '@/utils/casdoor'
+import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
-import type ITokenResponse from 'js-pkce/dist/ITokenResponse'
+import { jwtDecode } from 'jwt-decode'
 import { defineStore } from 'pinia'
 
-// https://stackoverflow.com/questions/38552003/how-to-decode-jwt-token-in-javascript-without-using-a-library
-const parseJwt = (token: string) => {
-  const base64Url = token.split('.')[1]
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-  const jsonPayload = decodeURIComponent(
-    atob(base64)
-      .split('')
-      .map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-      })
-      .join('')
-  )
-
-  return JSON.parse(jsonPayload)
-}
-
 export interface UserInfo {
-  name: string
   id: string
+  name: string
   displayName: string
   avatar: string
-  email: string
-  emailVerified: boolean
-  phone: string
 }
 
-const casdoorSdk = new CasdoorSdk({
+interface TokenResponse {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  refresh_expires_in: number
+}
+
+const casdoorAuthRedirectPath = '/callback'
+const casdoorSdk = new Sdk({
   ...casdoorConfig,
-  redirectPath: '/callback'
+  redirectPath: casdoorAuthRedirectPath
 })
+
+const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
 
 export const useUserStore = defineStore('spx-user', {
   state: () => ({
@@ -43,38 +34,43 @@ export const useUserStore = defineStore('spx-user', {
     accessTokenExpiresAt: null as number | null,
     refreshTokenExpiresAt: null as number | null
   }),
-  actions: {
-    async getFreshAccessToken(): Promise<string | null> {
-      if (this.isAccessTokenValid) return this.accessToken
-
-      if (this.isRefreshTokenValid) {
-        try {
-          const tokenResp = await casdoorSdk.pkce.refreshAccessToken(this.refreshToken!)
-          this.setToken(tokenResp)
-        } catch (e) {
-          console.error('Failed to refresh access token', e)
-          throw e
-        }
-
-        // Due to js-pkce's lack of error handling, we must check if the access token is valid after calling `PKCE.refreshAccessToken`.
-        // The token might still be invalid if, e.g., the server has already revoked the refresh token.
-        if (this.isAccessTokenValid) return this.accessToken
-      }
-
-      this.signOut()
-      return null
+  getters: {
+    isAccessTokenValid(): boolean {
+      return !!(
+        this.accessToken &&
+        (this.accessTokenExpiresAt === null ||
+          this.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
+      )
     },
-    setToken(tokenResp: ITokenResponse) {
-      const accessTokenExpiresAt = tokenResp.expires_in
-        ? Date.now() + tokenResp.expires_in * 1000
-        : null
-      const refreshTokenExpiresAt = tokenResp.refresh_expires_in
-        ? Date.now() + tokenResp.refresh_expires_in * 1000
-        : null
-      this.accessToken = tokenResp.access_token
-      this.refreshToken = tokenResp.refresh_token
-      this.accessTokenExpiresAt = accessTokenExpiresAt
-      this.refreshTokenExpiresAt = refreshTokenExpiresAt
+    isRefreshTokenValid(): boolean {
+      return !!(
+        this.refreshToken &&
+        (this.refreshTokenExpiresAt === null ||
+          this.refreshTokenExpiresAt - tokenExpiryDelta > Date.now())
+      )
+    },
+    isSignedIn(): boolean {
+      return this.isAccessTokenValid || this.isRefreshTokenValid
+    },
+    userInfo(): UserInfo | null {
+      if (!this.isSignedIn) return null
+      return jwtDecode<UserInfo>(this.accessToken!)
+    }
+  },
+  actions: {
+    initiateSignIn(
+      returnTo: string = window.location.pathname + window.location.search + window.location.hash
+    ) {
+      // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
+      const casdoorSdk = new Sdk({
+        ...casdoorConfig,
+        redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
+      })
+      casdoorSdk.signin_redirect()
+    },
+    async completeSignIn() {
+      const resp = await casdoorSdk.exchangeForAccessToken()
+      this.handleTokenResponse(resp)
     },
     signOut() {
       this.accessToken = null
@@ -82,35 +78,34 @@ export const useUserStore = defineStore('spx-user', {
       this.accessTokenExpiresAt = null
       this.refreshTokenExpiresAt = null
     },
-    async consumeCurrentUrl() {
-      const tokenResp = await casdoorSdk.pkce.exchangeForAccessToken(window.location.href)
-      this.setToken(tokenResp)
+    async ensureAccessToken(): Promise<string | null> {
+      if (this.isAccessTokenValid) return this.accessToken
+
+      if (this.isRefreshTokenValid) {
+        try {
+          const resp = await casdoorSdk.refreshAccessToken(this.refreshToken!)
+          this.handleTokenResponse(resp)
+        } catch (e) {
+          console.error('failed to refresh access token', e)
+          throw e
+        }
+
+        // Due to casdoor-js-sdk's lack of error handling, we must check if the access token is valid after calling
+        // `casdoorSdk.refreshAccessToken`. The token might still be invalid if, e.g., the server has already revoked
+        // the refresh token.
+        if (this.isAccessTokenValid) return this.accessToken
+      }
+
+      this.signOut()
+      return null
     },
-    signInWithRedirection() {
-      casdoorSdk.signinWithRedirection()
-    }
-  },
-  getters: {
-    isAccessTokenValid(state): boolean {
-      const delta = 60 * 1000 // 1 minute
-      return !!(
-        state.accessToken &&
-        (state.accessTokenExpiresAt === null || state.accessTokenExpiresAt - delta > Date.now())
-      )
-    },
-    isRefreshTokenValid(state): boolean {
-      const delta = 60 * 1000 // 1 minute
-      return !!(
-        state.refreshToken &&
-        (state.refreshTokenExpiresAt === null || state.refreshTokenExpiresAt - delta > Date.now())
-      )
-    },
-    isSignedIn(): boolean {
-      return this.isAccessTokenValid || this.isRefreshTokenValid
-    },
-    userInfo(state): UserInfo | null {
-      if (!this.isSignedIn) return null
-      return parseJwt(state.accessToken!) as UserInfo
+    handleTokenResponse(resp: TokenResponse) {
+      this.accessToken = resp.access_token
+      this.refreshToken = resp.refresh_token
+      this.accessTokenExpiresAt = resp.expires_in ? Date.now() + resp.expires_in * 1000 : null
+      this.refreshTokenExpiresAt = resp.refresh_expires_in
+        ? Date.now() + resp.refresh_expires_in * 1000
+        : null
     }
   },
   persist: true
