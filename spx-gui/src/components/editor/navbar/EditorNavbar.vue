@@ -28,16 +28,20 @@
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null || !isOnline">
-            <UIMenuItem @click="handleShareProject">
-              <template #icon><img :src="shareSvg" /></template>
-              {{ $t({ en: 'Share project', zh: '分享项目' }) }}
+            <UIMenuItem @click="handlePublishProject">
+              <template #icon><img :src="publishSvg" /></template>
+              {{ $t({ en: 'Publish project', zh: '发布项目' }) }}
             </UIMenuItem>
             <UIMenuItem
               v-if="project?.visibility === Visibility.Public"
-              @click="handleStopSharingProject"
+              @click="handleUnpublishProject"
             >
-              <template #icon><img :src="stopSharingSvg" /></template>
-              {{ $t({ en: 'Stop sharing', zh: '停止分享' }) }}
+              <template #icon><img :src="unpublishSvg" /></template>
+              {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
+            </UIMenuItem>
+            <UIMenuItem @click="handleOpenProjectPage">
+              <template #icon><img :src="projectPageSvg" /></template>
+              {{ $t({ en: 'Open project page', zh: '打开项目主页' }) }}
             </UIMenuItem>
           </UIMenuGroup>
           <UIMenuGroup :disabled="project == null">
@@ -80,6 +84,13 @@
         </div>
       </template>
     </template>
+    <template #right>
+      <div v-show="project != null" class="publish">
+        <UIButton type="secondary" :disabled="!isOnline" @click="handlePublishProject">
+          {{ $t({ en: 'Publish', zh: '发布' }) }}
+        </UIButton>
+      </div>
+    </template>
   </NavbarWrapper>
 </template>
 
@@ -93,7 +104,8 @@ import {
   UIMenuItem,
   UIIcon,
   UITooltip,
-  useConfirmDialog
+  useConfirmDialog,
+  UIButton
 } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
@@ -101,7 +113,8 @@ import { useNetwork } from '@/utils/network'
 import { selectFile } from '@/utils/file'
 import { AutoSaveToCloudState, type Project } from '@/models/project'
 import { Visibility } from '@/apis/common'
-import { useRemoveProject, useShareProject, useStopSharingProject } from '@/components/project'
+import { getProjectPageRoute } from '@/router'
+import { usePublishProject, useRemoveProject, useUnpublishProject } from '@/components/project'
 import { useLoadFromScratchModal } from '@/components/asset'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '@/components/navbar/NavbarDropdown.vue'
@@ -113,8 +126,9 @@ import importProjectSvg from './icons/import-project.svg'
 import exportProjectSvg from './icons/export-project.svg'
 import removeProjectSvg from './icons/remove-project.svg'
 import importScratchSvg from './icons/import-scratch.svg'
-import shareSvg from './icons/share.svg'
-import stopSharingSvg from './icons/stop-sharing.svg'
+import publishSvg from './icons/publish.svg'
+import unpublishSvg from './icons/unpublish.svg'
+import projectPageSvg from './icons/project-page.svg'
 import offlineSvg from './icons/offline.svg?raw'
 import savingSvg from './icons/saving.svg?raw'
 import failedToSaveSvg from './icons/failed-to-save.svg?raw'
@@ -163,18 +177,30 @@ const handleImportFromScratch = useMessageHandle(() => loadFromScratchModal(prop
   zh: '从 Scratch 项目文件导入失败'
 }).fn
 
-const shareProject = useShareProject()
-const handleShareProject = useMessageHandle(() => shareProject(props.project!), {
-  en: 'Failed to share project',
-  zh: '分享项目失败'
+const publishProject = usePublishProject()
+const handlePublishProject = useMessageHandle(() => publishProject(props.project!), {
+  en: 'Failed to publish project',
+  zh: '发布项目失败'
 }).fn
 
-const stopSharingProject = useStopSharingProject()
-const handleStopSharingProject = useMessageHandle(
-  () => stopSharingProject(props.project!),
-  { en: 'Failed to stop sharing project', zh: '停止分享项目失败' },
-  { en: 'Project sharing is now stopped', zh: '项目已停止分享' }
+const unpublishProject = useUnpublishProject()
+const handleUnpublishProject = useMessageHandle(
+  () => unpublishProject(props.project!),
+  {
+    en: 'Failed to unpublish project',
+    zh: '取消发布失败'
+  },
+  {
+    en: 'Project unpublished',
+    zh: '已取消发布'
+  }
 ).fn
+
+function handleOpenProjectPage() {
+  const { owner, name } = props.project!
+  if (owner == null || name == null) throw new Error('project owner or name is null')
+  window.open(getProjectPageRoute(owner, name))
+}
 
 const removeProject = useRemoveProject()
 const handleRemoveProject = useMessageHandle(
@@ -272,5 +298,12 @@ const autoSaveStateIcon = computed<AutoSaveStateIcon>(() => {
       }
     }
   }
+}
+
+.publish {
+  margin-right: 2px;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 </style>

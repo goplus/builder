@@ -56,7 +56,6 @@ const handleSubmit = useMessageHandle(
   >
     <div class="cover"></div>
     <UIImg class="avatar" :src="user.avatar" />
-    <!-- TODO: header & avatar -->
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
         <UITextInput :value="user.displayName" disabled />

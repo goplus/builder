@@ -243,10 +243,10 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   menuVisible.value = false
 }
 
-async function takeScreenshot(name: string) {
-  const stage = await untilNotNull(stageRef)
-  const nodeTransformer = await untilNotNull(nodeTransformerRef)
-  await until(() => !loading.value)
+async function takeScreenshot(name: string, signal?: AbortSignal) {
+  const stage = await untilNotNull(stageRef, signal)
+  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
+  await until(() => !loading.value, signal)
   // Omit transform control when taking screenshot
   const dataUrl = nodeTransformer.withHidden(() =>
     stage.getStage().toDataURL({

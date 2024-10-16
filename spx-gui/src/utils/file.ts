@@ -124,7 +124,7 @@ export async function selectAudio() {
 }
 
 /** Get url for File */
-export function useFileUrl(fileSource: WatchSource<File | undefined>) {
+export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   const urlRef = ref<string | null>(null)
   const loadingRef = ref(false)
   watch(
