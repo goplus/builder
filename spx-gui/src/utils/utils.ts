@@ -1,6 +1,6 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import { shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
 import type { LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
@@ -26,7 +26,7 @@ export function isAddPublicLibraryEnabled() {
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
-  const r = ref<T>()
+  const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
     onCleanup(() => {
@@ -85,16 +85,20 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const bar = await untilNotNull(() => getBar())
  * ```
  */
-export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) {
+export function untilNotNull<T>(
+  valueSource: WatchSource<T | null | undefined>,
+  signal?: AbortSignal
+) {
   return untilConditionMet(
     valueSource as WatchSource<T | null | undefined>,
-    (value): value is NonNullable<T> => value != null
+    (value): value is NonNullable<T> => value != null,
+    signal
   ) as Promise<NonNullable<T>>
 }
 
 /** Wait until given condition is met. */
-export async function until(conditionSource: WatchSource<boolean>) {
-  await untilConditionMet(conditionSource, (c) => c)
+export async function until(conditionSource: WatchSource<boolean>, signal?: AbortSignal) {
+  await untilConditionMet(conditionSource, (c) => c, signal)
 }
 
 /**
@@ -106,7 +110,8 @@ export async function until(conditionSource: WatchSource<boolean>) {
  */
 function untilConditionMet<T>(
   valueSource: WatchSource<T>,
-  condition: (value: T) => boolean
+  condition: (value: T) => boolean,
+  signal?: AbortSignal
 ): Promise<T> {
   return new Promise<T>((resolve) => {
     let stopWatch: (() => void) | null = null
@@ -119,6 +124,10 @@ function untilConditionMet<T>(
       },
       { immediate: true }
     )
+    if (signal != null) {
+      if (signal.aborted) stopWatch?.()
+      else signal.addEventListener('abort', () => stopWatch?.())
+    }
   })
 }
 

@@ -34,7 +34,18 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
 
   const visibility = metadata.visibility ?? Visibility.Private
   const projectData = await (id != null
-    ? updateProject(owner, name, { visibility, files: fileCollection }, signal)
+    ? updateProject(
+        owner,
+        name,
+        {
+          visibility,
+          files: fileCollection,
+          description: metadata.description,
+          instructions: metadata.instructions,
+          thumbnail: metadata.thumbnail
+        },
+        signal
+      )
     : addProject({ name, visibility, files: fileCollection }, signal))
   signal?.throwIfAborted()
 
@@ -101,14 +112,15 @@ export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   return universalUrlToWebUrl(universalUrl)
 }
 
-async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
+export async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
   const { protocol } = new URL(universalUrl)
   if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
   const map = await makeObjectUrls([universalUrl])
   return map[universalUrl]
 }
 
-async function saveFile(file: File, signal?: AbortSignal) {
+/** Save file to cloud and return its universal URL */
+export async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 

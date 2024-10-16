@@ -45,6 +45,7 @@ function handleSearch() {
 
 <style lang="scss" scoped>
 .search {
+  margin-right: 8px;
   width: 340px;
   display: flex;
   align-items: center;
