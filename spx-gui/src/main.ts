@@ -12,7 +12,7 @@ import { initI18n } from './i18n'
 import App from './App.vue'
 import { initRouter } from './router'
 import { initStore, useUserStore } from './stores'
-import { client } from './apis/common'
+import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 
 dayjs.extend(localizedFormat)
@@ -22,7 +22,7 @@ dayjs.extend(timezone)
 
 const initApiClient = async () => {
   const userStore = useUserStore()
-  client.setAuthProvider(userStore.ensureAccessToken)
+  setTokenProvider(userStore.ensureAccessToken)
 }
 
 async function initApp() {

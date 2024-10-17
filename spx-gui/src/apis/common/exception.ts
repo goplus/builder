@@ -48,3 +48,11 @@ const codeMessages: Record<ApiExceptionCode, LocaleMessage> = {
     zh: '服务器出问题了'
   }
 }
+
+export class CasdoorApiException extends Exception {
+  name = 'CasdoorApiError'
+  userMessage = null
+  constructor(message: string) {
+    super(message)
+  }
+}

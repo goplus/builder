@@ -1,5 +1,6 @@
 import { client, type ByPage, type PaginationParams } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
+import { getCasdoorUser } from './casdoor-user'
 
 export type User = {
   /** Unique identifier */
@@ -12,29 +13,33 @@ export type User = {
   username: string
   /** Brief bio or description of the user */
   description: string
-  /** Name to display, TODO: from Casdoor? */
+
+  /** Name to display, from Casdoor */
   displayName: string
-  /** Avatar URL, TODO: from Casdoor? */
+  /** Avatar URL, from Casdoor */
   avatar: string
 }
 
-// TODO: remove me
-function __adaptUser(user: Omit<User, 'displayName' | 'avatar'>): User {
+async function completeUserWithCasdoor(user: Omit<User, 'displayName' | 'avatar'>): Promise<User> {
+  // TODO: cache the result of `getCasdoorUser` to avoid redundant requests?
+  const casdoorUser = await getCasdoorUser(user.username)
   return {
-    displayName: user.username,
-    avatar: 'https://avatars.githubusercontent.com/u/1492263?v=4',
-    ...user
+    ...user,
+    displayName: casdoorUser.displayName,
+    avatar: casdoorUser.avatar
   }
 }
 
 export async function getUser(name: string): Promise<User> {
-  return __adaptUser(await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>))
+  const user = await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>)
+  return completeUserWithCasdoor(user)
 }
 
 export type UpdateProfileParams = Pick<User, 'description'>
 
 export async function updateProfile(params: UpdateProfileParams) {
-  return __adaptUser(await (client.put(`/user`, params) as Promise<User>))
+  const user = await (client.put(`/user`, params) as Promise<User>)
+  return completeUserWithCasdoor(user)
 }
 
 export type ListUserParams = PaginationParams & {
@@ -52,7 +57,9 @@ export async function listUsers(params: ListUserParams) {
   const { total, data } = await (client.get('/users/list', params) as Promise<ByPage<User>>)
   return {
     total,
-    data: data.map(__adaptUser)
+    // There is a performance issue here, as we are calling `completeUserWithCasdoor` for each user. Unfortunately,
+    // Casdoor doesn't provide a batch API for fetching multiple user profiles by their usernames.
+    data: await Promise.all(data.map(completeUserWithCasdoor))
   }
 }
 
