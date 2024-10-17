@@ -10,7 +10,7 @@
     </UICardHeader>
 
     <UIFullScreenModal v-model:show="show" class="project-runner-modal">
-      <RunnerContainer mode="debug" :project="editorCtx.project" @close="show = false" />
+      <RunnerContainer :project="editorCtx.project" @close="show = false" />
     </UIFullScreenModal>
     <div class="stage-viewer-container">
       <StageViewer />

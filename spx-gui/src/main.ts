@@ -4,6 +4,8 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 import 'dayjs/locale/zh'
 
 import { initI18n } from './i18n'
@@ -15,10 +17,12 @@ import { CustomTransformer } from './components/editor/preview/stage-viewer/cust
 
 dayjs.extend(localizedFormat)
 dayjs.extend(relativeTime)
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 const initApiClient = async () => {
   const userStore = useUserStore()
-  setTokenProvider(userStore.getFreshAccessToken)
+  setTokenProvider(userStore.ensureAccessToken)
 }
 
 async function initApp() {

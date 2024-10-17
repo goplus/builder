@@ -34,7 +34,7 @@ export type ProjectData = {
   description: string
   /** Instructions on how to interact with the project */
   instructions: string
-  /** URL of the project's thumbnail image */
+  /** Universal URL of the project's thumbnail image */
   thumbnail: string
   /** Number of times the project has been viewed */
   viewCount: number
@@ -52,7 +52,8 @@ export async function addProject(params: AddProjectParams, signal?: AbortSignal)
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
-export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'>
+export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
+  Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
 
 function encode(owner: string, name: string) {
   return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`

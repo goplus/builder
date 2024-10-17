@@ -2,7 +2,7 @@
   <li class="project-item">
     <RouterLink class="link" :to="to" @click="emit('selected')">
       <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="project.thumbnail" />
+        <UIImg class="thumbnail" :src="thumbnailUrl" />
         <UIDropdown v-if="context === 'mine'" trigger="click" placement="bottom-end">
           <template #trigger>
             <div class="options" @click.stop.prevent>
@@ -59,6 +59,7 @@ import {
 } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, isLiking, type ProjectData } from '@/apis/project'
+import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
 import { useRemoveProject } from '.'
@@ -92,6 +93,11 @@ const router = useRouter()
 const to = computed(() => {
   const { owner, name } = props.project
   return props.context === 'edit' ? getProjectEditorRoute(name) : getProjectPageRoute(owner, name)
+})
+
+const thumbnailUrl = useAsyncComputed(async () => {
+  if (props.project.thumbnail === '') return null
+  return universalUrlToWebUrl(props.project.thumbnail)
 })
 
 const liking = useAsyncComputed(() => isLiking(props.project.owner, props.project.name))

@@ -23,18 +23,11 @@ import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
-import { until } from '@/utils/utils'
+import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
-export type Metadata = {
-  id?: string
-  createdAt?: string
-  updatedAt?: string
-  owner?: string
-  name?: string
-  version?: number
-  visibility?: Visibility
+export type Metadata = Partial<Omit<ProjectData, 'files'>> & {
   filesHash?: string
   lastSyncedFilesHash?: string
 }
@@ -92,7 +85,12 @@ type RawProjectConfig = RawStageConfig & {
   // TODO: camera
 }
 
-export type ScreenshotTaker = (name: string) => Promise<File>
+export type ScreenshotTaker = (
+  /** File name without extention */
+  name: string,
+  /** Signal for aborting the operation */
+  signal?: AbortSignal
+) => Promise<File>
 
 export class Project extends Disposable {
   id?: string
@@ -102,6 +100,13 @@ export class Project extends Disposable {
   name?: string
   version = 0
   visibility?: Visibility
+  description?: string
+  instructions?: string
+  thumbnail?: string
+  viewCount?: number
+  likeCount?: number
+  releaseCount?: number
+  remixCount?: number
 
   private filesHash?: string
   private lastSyncedFilesHash?: string
@@ -193,6 +198,14 @@ export class Project extends Disposable {
     this.visibility = visibility
   }
 
+  setDescription(description: string) {
+    this.description = description
+  }
+
+  setInstructions(instructions: string) {
+    this.instructions = instructions
+  }
+
   selected: Selected = null
 
   get selectedSprite() {
@@ -241,6 +254,19 @@ export class Project extends Disposable {
     }
   }
 
+  private thumbnailCache: { filesHash: string; promise: Promise<File> } | null = null
+  async getThumbnail(signal?: AbortSignal) {
+    const filesHash = this.filesHash
+    if (this.thumbnailCache != null && this.thumbnailCache.filesHash === filesHash)
+      return this.thumbnailCache.promise
+    const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
+    const promise = screenshotTaker('thumbnail', signal)
+    if (filesHash != null) {
+      this.thumbnailCache = { filesHash, promise }
+    }
+    return promise
+  }
+
   constructor() {
     super()
     const reactiveThis = reactive(this) as this
@@ -271,6 +297,9 @@ export class Project extends Disposable {
       name: this.name,
       version: this.version,
       visibility: this.visibility,
+      description: this.description,
+      instructions: this.instructions,
+      thumbnail: this.thumbnail,
       filesHash: this.filesHash,
       lastSyncedFilesHash: this.lastSyncedFilesHash
     }
@@ -402,9 +431,9 @@ export class Project extends Disposable {
 
     try {
       if (this.isDisposed) throw new Error('disposed')
+      const thumbnailFile = await this.getThumbnail(abortController.signal)
+      this.thumbnail = await cloudHelper.saveFile(thumbnailFile, abortController.signal)
       const [metadata, files] = await this.export()
-      // TODO: take screenshot & save as thumbnail
-      // test screenshot function with `window.open(await (await project.screenshotTaker()).url(() => null))` in console
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
       this.lastSyncedFilesHash = await hashFiles(files)
@@ -560,6 +589,17 @@ export class Project extends Disposable {
     }
     this.startAutoSaveToCloud(localCacheKey)
     this.startAutoSaveToLocalCache(localCacheKey)
+
+    this.addDisposer(
+      watch(
+        // new created project has no thumbnail, do save to cloud to generate thumbnail
+        () => this.thumbnail === '' && this.autoSaveMode === AutoSaveMode.Cloud,
+        (shouldGenerateThumbnail) => {
+          if (shouldGenerateThumbnail) this.saveToCloud?.()
+        },
+        { immediate: true }
+      )
+    )
   }
 }
 
