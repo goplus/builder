@@ -22,7 +22,7 @@ dayjs.extend(timezone)
 
 const initApiClient = async () => {
   const userStore = useUserStore()
-  client.setAuthProvider(userStore.getFreshAccessToken)
+  client.setAuthProvider(userStore.ensureAccessToken)
 }
 
 async function initApp() {

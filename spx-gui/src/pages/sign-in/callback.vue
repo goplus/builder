@@ -16,8 +16,13 @@ try {
   if (lang === 'en' || lang === 'zh') {
     i18n.setLang(lang)
   }
-  await userStore.consumeCurrentUrl()
-} finally {
+
+  await userStore.completeSignIn()
+
+  const returnTo = params.get('returnTo')
+  window.location.replace(returnTo != null ? returnTo : '/')
+} catch (e) {
+  console.error('failed to complete sign-in', e)
   window.location.replace('/')
 }
 </script>
