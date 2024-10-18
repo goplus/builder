@@ -63,6 +63,7 @@ import { universalUrlToWebUrl } from '@/models/common/cloud'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
 import { useRemoveProject } from '.'
+import { useUserStore } from '@/stores'
 
 /**
  * Context (list) where the project item is used
@@ -100,7 +101,12 @@ const thumbnailUrl = useAsyncComputed(async () => {
   return universalUrlToWebUrl(props.project.thumbnail)
 })
 
-const liking = useAsyncComputed(() => isLiking(props.project.owner, props.project.name))
+const userStore = useUserStore()
+
+const liking = useAsyncComputed(() => {
+  if (!userStore.isSignedIn()) return Promise.resolve(false)
+  else return isLiking(props.project.owner, props.project.name)
+})
 
 const likesTitle = computed(() => {
   const count = humanizeExactCount(props.project.likeCount)
