@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
 	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
@@ -47,13 +48,38 @@ VTh1XIl/IELBoZ+rQXozGA==
 	t.Setenv("GOP_CASDOOR_APPLICATIONNAME", "fake-application")
 }
 
+type mockCasdoorClient struct {
+	casdoorClient casdoorClient
+	jwt           string
+}
+
+func newMockCasdoorClient(casdoorClient casdoorClient, jwt string) *mockCasdoorClient {
+	return &mockCasdoorClient{casdoorClient: casdoorClient, jwt: jwt}
+}
+
+func (m *mockCasdoorClient) ParseJwtToken(token string) (*casdoorsdk.Claims, error) {
+	return m.casdoorClient.ParseJwtToken(token)
+}
+
+func (m *mockCasdoorClient) GetUser(name string) (*casdoorsdk.User, error) {
+	claims, err := m.casdoorClient.ParseJwtToken(m.jwt)
+	if err != nil {
+		return nil, err
+	}
+	return &claims.User, nil
+}
+
+const fakeUserToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9." +
+	"eyJvd25lciI6IkdvUGx1cyIsIm5hbWUiOiJmYWtlLW5hbWUiLCJpZCI6IjEiLCJpc3MiOiJHb1BsdXMiLCJzdWIiOiIxIiwiZXhwIjo0ODcwNDI5MDQwfQ." +
+	"X0T-v-RJggMRy3Mmui2FoRH-_4DQsNA6DekUx1BfIljTZaEbHbuW59dSlKQ-i2MuYD7_8mI18vZqT3iysbKQ1T70NF97B_A130ML3pulZWlj1ZokgjCkVug25QRbq_N7JMd4apJZFlyZj8Bd2VfqtAKMlJJ4HzKzNXB-GBogDVlKeu4xJ1BiXO2rHL1PNa5KyKLSSMXmuP_Wc108RXZ0BiKDE30IG1fvcyvudXcetmltuWjuU6JRj3FGedxuVEqZLXqcm13dCxHnuFV1x1XU9KExcDvVyVB91FpBe5npzYp6WMX0fx9vU1b4eJ69EZoeMdMolhmvYInT1G8r1PEmbg"
+
 func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, closeDB func() error) {
 	setTestEnv(t)
 
 	logger := log.GetLogger()
 	kodoConfig := newKodoConfig(logger)
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
-	casdoorClient := newCasdoorClient(logger)
+	casdoorClient := newMockCasdoorClient(newCasdoorClient(logger), fakeUserToken)
 
 	db, dbMock, closeDB, err := modeltest.NewMockDB()
 	require.NoError(t, err)

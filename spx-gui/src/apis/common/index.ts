@@ -1,6 +1,5 @@
 import { Exception } from '@/utils/exception'
 import { Client } from './client'
-import { CasdoorClient } from './casdoor-client'
 
 /** TokenProvider provides access token used for the Authorization header */
 export type TokenProvider = () => Promise<string | null>
@@ -124,4 +123,3 @@ export function timeStringify(time: number) {
 }
 
 export const client = new Client()
-export const casdoorClient = new CasdoorClient()

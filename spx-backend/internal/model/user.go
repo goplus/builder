@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -14,6 +15,12 @@ type User struct {
 
 	// Username is the unique username.
 	Username string `gorm:"column:username;index:,unique,where:deleted_at IS NULL"`
+
+	// DisplayName is the display name.
+	DisplayName string `gorm:"column:display_name"`
+
+	// Avatar is the URL of the avatar image.
+	Avatar string `gorm:"column:avatar"`
 
 	// Description is the brief bio or description.
 	Description string `gorm:"column:description"`
@@ -40,26 +47,42 @@ func (User) TableName() string {
 }
 
 // FirstOrCreateUser gets or creates a user.
-func FirstOrCreateUser(ctx context.Context, db *gorm.DB, username string) (*User, error) {
+func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk.User) (*User, error) {
 	var mUser User
 	if err := db.WithContext(ctx).
-		Where("username = ?", username).
-		Attrs(User{Username: username}).
+		Where("username = ?", casdoorUser.Name).
+		Attrs(User{
+			Username:    casdoorUser.Name,
+			DisplayName: casdoorUser.DisplayName,
+			Avatar:      casdoorUser.Avatar,
+		}).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "username"}},
 			DoNothing: true,
 		}).
 		FirstOrCreate(&mUser).
 		Error; err != nil {
-		return nil, fmt.Errorf("failed to get/create user %s: %w", username, err)
+		return nil, fmt.Errorf("failed to get/create user %s: %w", casdoorUser.Name, err)
 	}
 	if mUser.ID == 0 {
 		// Unfortunatlly, MySQL doesn't support the RETURNING clause.
 		if err := db.WithContext(ctx).
-			Where("username = ?", username).
+			Where("username = ?", casdoorUser.Name).
 			First(&mUser).
 			Error; err != nil {
-			return nil, fmt.Errorf("failed to get user %s: %w", username, err)
+			return nil, fmt.Errorf("failed to get user %s: %w", casdoorUser.Name, err)
+		}
+	}
+	userUpdates := map[string]any{}
+	if mUser.DisplayName != casdoorUser.DisplayName {
+		userUpdates["display_name"] = casdoorUser.DisplayName
+	}
+	if mUser.Avatar != casdoorUser.Avatar {
+		userUpdates["avatar"] = casdoorUser.Avatar
+	}
+	if len(userUpdates) > 0 {
+		if err := db.WithContext(ctx).Model(&mUser).Updates(userUpdates).Error; err != nil {
+			return nil, fmt.Errorf("failed to update user %s: %w", mUser.Username, err)
 		}
 	}
 	return &mUser, nil
