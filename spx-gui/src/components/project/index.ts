@@ -55,7 +55,7 @@ export function usePublishProject() {
 
   return async function publishProject(project: Project) {
     await invokePublishModal({ project })
-    return invokePublishedModal({ project })
+    invokePublishedModal({ project })
   }
 }
 

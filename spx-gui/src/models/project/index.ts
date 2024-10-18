@@ -118,6 +118,8 @@ export class Project extends Disposable {
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
   get hasUnsyncedChanges() {
+    // if filesHash is null, it means editing not started yet
+    if (this.filesHash == null) return false
     return this.lastSyncedFilesHash !== this.filesHash
   }
 

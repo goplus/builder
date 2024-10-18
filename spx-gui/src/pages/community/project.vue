@@ -190,11 +190,14 @@ const handleRemix = useMessageHandle(
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
 
+const releaseHistoryRef = ref<InstanceType<typeof ReleaseHistory>>()
+
 const unpublishProject = useUnpublishProject()
 const handleUnpublish = useMessageHandle(
   async () => {
     const p = await untilNotNull(project)
     await unpublishProject(p)
+    releaseHistoryRef.value?.refetch()
   },
   { en: 'Failed to unpublish project', zh: '取消发布项目失败' },
   {
@@ -208,6 +211,7 @@ const handlePublish = useMessageHandle(
   async () => {
     const p = await untilNotNull(project)
     await publishProject(p)
+    releaseHistoryRef.value?.refetch()
   },
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
@@ -384,7 +388,7 @@ const remixesRet = useQuery(
               {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
             </UICollapseItem>
             <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
-              <ReleaseHistory :owner="props.owner" :name="props.name" />
+              <ReleaseHistory ref="releaseHistoryRef" :owner="props.owner" :name="props.name" />
             </UICollapseItem>
           </UICollapse>
         </div>

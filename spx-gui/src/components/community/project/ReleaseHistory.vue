@@ -28,6 +28,10 @@ const {
   },
   { en: 'Load release history failed', zh: '加载发布历史失败' }
 )
+
+defineExpose({
+  refetch
+})
 </script>
 
 <template>
