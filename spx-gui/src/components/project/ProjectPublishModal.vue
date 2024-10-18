@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import dayjs from 'dayjs'
+import { useAsyncComputed } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { useAsyncComputed } from '@/utils/utils'
-import { useFileUrl } from '@/utils/file'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
+import { universalUrlToWebUrl } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import {
   UIImg,
@@ -29,8 +29,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const thumbnail = useAsyncComputed(() => props.project.getThumbnail())
-const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(thumbnail)
+const thumbnail = useAsyncComputed(async () => {
+  if (props.project.thumbnail == null || props.project.thumbnail === '') return null
+  return universalUrlToWebUrl(props.project.thumbnail)
+})
 
 /** If this is the first time the project is published */
 const firstTime = props.project.releaseCount === 0
@@ -38,9 +40,8 @@ const firstTime = props.project.releaseCount === 0
 let defaultDescription = ''
 if (firstTime) {
   defaultDescription = t({
-    // TODO: With https://github.com/goplus/builder/issues/987 we can use emoji like "🎉" here
-    en: 'First release!',
-    zh: '第一版正式发布！'
+    en: '🎉 First release!',
+    zh: '🎉 第一版正式发布！'
   })
 }
 
@@ -102,12 +103,7 @@ const handleSubmit = useMessageHandle(
         }}
       </p>
       <div class="thumbnail-wrapper">
-        <UIImg
-          class="thumbnail"
-          :src="thumbnailUrl"
-          :loading="thumbnailUrlLoading"
-          size="contain"
-        />
+        <UIImg class="thumbnail" :src="thumbnail" :loading="thumbnail == null" size="contain" />
       </div>
       <UIFormItem
         :label="$t({ en: 'Release description', zh: '发布内容' })"

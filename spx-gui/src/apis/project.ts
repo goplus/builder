@@ -46,18 +46,22 @@ export type ProjectData = {
   remixCount: number
 }
 
+export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> & {
+  /** Full name of the project or project release to remix from. */
+  remixSource: string
+}
+
 export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility'>
 
-export async function addProject(params: AddProjectParams, signal?: AbortSignal) {
+export async function addProject(
+  params: AddProjectParams | AddProjectByRemixParams,
+  signal?: AbortSignal
+) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
 export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
   Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
-
-function encode(owner: string, name: string) {
-  return `${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
-}
 
 export async function updateProject(
   owner: string,
@@ -65,11 +69,15 @@ export async function updateProject(
   params: UpdateProjectParams,
   signal?: AbortSignal
 ) {
-  return client.put(`/project/${encode(owner, name)}`, params, { signal }) as Promise<ProjectData>
+  return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
+    signal
+  }) as Promise<ProjectData>
 }
 
 export function deleteProject(owner: string, name: string) {
-  return client.delete(`/project/${encode(owner, name)}`) as Promise<void>
+  return client.delete(
+    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
+  ) as Promise<void>
 }
 
 export type ListProjectParams = PaginationParams & {
@@ -78,6 +86,8 @@ export type ListProjectParams = PaginationParams & {
    * Defaults to the authenticated user if not specified. Use * to include projects from all users.
    **/
   owner?: string
+  /** Filter remixed projects by the full name of the source project or project release */
+  remixedFrom?: string
   /** Filter projects by name pattern */
   keyword?: string
   /** Filter projects by visibility */
@@ -108,8 +118,12 @@ export async function listProject(params?: ListProjectParams) {
   return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
 }
 
-export async function getProject(owner: string, name: string) {
-  return client.get(`/project/${encode(owner, name)}`) as Promise<ProjectData>
+export async function getProject(owner: string, name: string, signal?: AbortSignal) {
+  return client.get(
+    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
+    undefined,
+    { signal }
+  ) as Promise<ProjectData>
 }
 
 export enum ExploreOrder {
@@ -161,7 +175,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
  */
 export async function isLiking(owner: string, name: string) {
   try {
-    await client.get(`/project/${encode(owner, name)}/liking`)
+    await client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`)
     return true
   } catch (e) {
     if (e instanceof ApiException) {
@@ -173,4 +187,27 @@ export async function isLiking(owner: string, name: string) {
     }
     throw e
   }
+}
+
+export async function likeProject(owner: string, name: string) {
+  return client.post(
+    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`
+  ) as Promise<void>
+}
+
+export async function unlikeProject(owner: string, name: string) {
+  return client.delete(
+    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`
+  ) as Promise<void>
+}
+
+export type RemixSource = [owner: string, project: string, release?: string]
+
+export function parseRemixSource(rs: string) {
+  const [owner, project, release = null] = rs.split('/')
+  return { owner, project, release }
+}
+
+export function stringifyRemixSource(owner: string, project: string, release?: string) {
+  return [owner, project, release].filter((s) => s != null).join('/')
 }

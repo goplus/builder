@@ -19,9 +19,9 @@ const fileUniversalUrlSchemes = {
   kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
 } as const
 
-export async function load(owner: string, name: string) {
-  const projectData = await getProject(owner, name)
-  return await parseProjectData(projectData)
+export async function load(owner: string, name: string, signal?: AbortSignal) {
+  const projectData = await getProject(owner, name, signal)
+  return parseProjectData(projectData)
 }
 
 export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
@@ -52,8 +52,8 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   return { metadata: projectData, files }
 }
 
-export async function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
-  const files = await getFiles(fileCollection)
+export function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
+  const files = getFiles(fileCollection)
   return { metadata, files }
 }
 
@@ -70,7 +70,7 @@ export async function saveFiles(
   return { fileCollection, fileCollectionHash }
 }
 
-export async function getFiles(fileCollection: FileCollection): Promise<Files> {
+export function getFiles(fileCollection: FileCollection): Files {
   const files: Files = {}
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]

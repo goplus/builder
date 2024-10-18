@@ -1,29 +1,22 @@
 <template>
-  <RouterLink
-    v-if="user != null"
-    :to="to"
+  <UserLink
     class="user-avatar"
-    :style="{ backgroundImage: `url(${user.avatar})` }"
-    :title="user.displayName"
-  ></RouterLink>
+    :style="userInfo != null ? { backgroundImage: `url(${userInfo.avatar})` } : null"
+    :user="userInfo"
+  ></UserLink>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useAsyncComputed } from '@/utils/utils'
 import { getUser, type User } from '@/apis/user'
-import { getUserPageRoute } from '@/router'
+import UserLink from './UserLink.vue'
 
 const props = defineProps<{
-  owner: string | User
+  user: string | User | null
 }>()
 
-const username = computed(() =>
-  typeof props.owner === 'string' ? props.owner : props.owner.username
-)
-const to = computed(() => getUserPageRoute(username.value))
-const user = useAsyncComputed(() =>
-  typeof props.owner === 'string' ? getUser(props.owner) : Promise.resolve(props.owner)
+const userInfo = useAsyncComputed(() =>
+  typeof props.user === 'string' ? getUser(props.user) : Promise.resolve(props.user)
 )
 </script>
 

@@ -21,7 +21,7 @@ function handleUserUpdated(updated: User) {
 </script>
 
 <template>
-  <CenteredWrapper class="user-page">
+  <CenteredWrapper class="user-page" size="large">
     <UIError v-if="error != null" :error="error" />
     <template v-else-if="user != null">
       <UserHeader :user="user" @updated="handleUserUpdated" />

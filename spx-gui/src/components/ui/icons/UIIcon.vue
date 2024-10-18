@@ -18,6 +18,7 @@ import stop from './stop.svg?raw'
 import plus from './plus.svg?raw'
 import trash from './trash.svg?raw'
 import edit from './edit.svg?raw'
+import edit2 from './edit-2.svg?raw'
 import eye from './eye.svg?raw'
 import eyeSlash from './eye-slash.svg?raw'
 import more from './more.svg?raw'
@@ -39,6 +40,8 @@ import statePrivate from './state-private.svg?raw'
 import heart from './heart.svg?raw'
 import arrowRightSmall from './arrow-right-small.svg?raw'
 import calendar from './calendar.svg?raw'
+import remix from './remix.svg?raw'
+import heartHollow from './heart-hollow.svg?raw'
 
 const typeIconMap = {
   file,
@@ -54,6 +57,7 @@ const typeIconMap = {
   plus,
   trash,
   edit,
+  edit2, // TODO: can we merge edit & edit2?
   eye,
   eyeSlash,
   more,
@@ -74,7 +78,9 @@ const typeIconMap = {
   statePrivate,
   heart,
   arrowRightSmall,
-  calendar
+  calendar,
+  remix,
+  heartHollow
 }
 
 export type Type = keyof typeof typeIconMap

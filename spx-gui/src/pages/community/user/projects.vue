@@ -17,7 +17,7 @@ const props = defineProps<{
   name: string
 }>()
 
-const isCurrentUser = computed(() => props.name === useUserStore().userInfo?.name)
+const isCurrentUser = computed(() => props.name === useUserStore().userInfo()?.name)
 
 const pageSize = 6 // 2 rows, TODO: responsive layout
 const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))

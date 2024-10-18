@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
-import { listProject, ownerAll } from '@/apis/project'
+import { Visibility, listProject, ownerAll } from '@/apis/project'
 import { UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
@@ -19,8 +19,9 @@ const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / p
 const queryRet = useQuery(
   () =>
     listProject({
-      // TODO: check order here
+      visibility: Visibility.Public,
       owner: ownerAll,
+      // TODO: check order here
       liker: props.name,
       pageSize,
       pageIndex: page.value

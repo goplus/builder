@@ -15,7 +15,7 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 
 <template>
   <li class="user-item">
-    <UserAvatar :owner="user" />
+    <UserAvatar :user="user" />
     <div class="user-info">
       <RouterLink class="name" :to="userRoute">{{ user.displayName }}</RouterLink>
       <UserJoinedAt class="joined-at" :time="user.createdAt" />
