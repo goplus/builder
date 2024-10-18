@@ -133,7 +133,7 @@ func TestControllerUserFromToken(t *testing.T) {
 
 		_, err := ctrl.UserFromToken(context.Background(), "invalid-token")
 		require.Error(t, err)
-		assert.EqualError(t, err, "ctrl.casdoorClient.ParseJwtToken failed: token contains an invalid number of segments")
+		assert.EqualError(t, err, "ctrl.casdoorClient.ParseJwtToken failed: unauthorized: token contains an invalid number of segments")
 	})
 }
 

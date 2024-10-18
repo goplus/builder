@@ -1,7 +1,7 @@
 <template>
   <CenteredWrapper class="main">
     <ProjectsSection
-      v-if="userStore.isSignedIn"
+      v-if="userStore.isSignedIn()"
       context="home"
       :link-to="myProjectsRoute"
       :query-ret="myProjects"
@@ -84,7 +84,7 @@
       />
     </ProjectsSection>
     <ProjectsSection
-      v-if="userStore.isSignedIn"
+      v-if="userStore.isSignedIn()"
       context="home"
       :link-to="followingCreatedRoute"
       :query-ret="followingCreatedProjects"
@@ -128,14 +128,16 @@ const numInRow = 5 // at most 5 projects in a row, depending on the screen width
 
 const userStore = useUserStore()
 
+const userInfo = computed(() => userStore.userInfo())
+
 const myProjectsRoute = computed(() => {
-  if (userStore.userInfo == null) return ''
-  return getUserPageRoute(userStore.userInfo.name, 'projects')
+  if (userInfo.value == null) return ''
+  return getUserPageRoute(userInfo.value.name, 'projects')
 })
 
 const myProjects = useQuery(
   async () => {
-    if (userStore.userInfo == null) return []
+    if (userInfo.value == null) return []
     const { data: projects } = await listProject({
       pageIndex: 1,
       pageSize: numInRow,
@@ -162,13 +164,13 @@ const communityRemixingProjects = useQuery(
 )
 
 const followingCreatedRoute = computed(() => {
-  if (userStore.userInfo == null) return ''
+  if (userInfo.value == null) return ''
   return getExploreRoute(ExploreOrder.FollowingCreated)
 })
 
 const followingCreatedProjects = useQuery(
   async () => {
-    if (userStore.userInfo == null) return []
+    if (userInfo.value == null) return []
     return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow })
   },
   { en: 'Failed to load projects', zh: '加载失败' }

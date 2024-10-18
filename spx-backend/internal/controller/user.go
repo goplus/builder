@@ -69,7 +69,7 @@ func ensureUser(ctx context.Context, expectedUserID int64) (*model.User, error) 
 func (ctrl *Controller) UserFromToken(ctx context.Context, token string) (*model.User, error) {
 	claims, err := ctrl.casdoorClient.ParseJwtToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("ctrl.casdoorClient.ParseJwtToken failed: %w", err)
+		return nil, fmt.Errorf("ctrl.casdoorClient.ParseJwtToken failed: %w: %w", ErrUnauthorized, err)
 	}
 	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, claims.Name)
 	if err != nil {
