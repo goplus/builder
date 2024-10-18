@@ -33,14 +33,17 @@ import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
+import { useEnsureSignedIn } from '@/utils/user'
 
 const order = useRouteQueryParamStrEnum('o', Order, Order.MostLikes)
 
 const maxCount = 50
 
+const ensureSignedIn = useEnsureSignedIn()
+
 const queryRet = useQuery(
-  () => {
-    // TODO: login prompt for unauthenticated users
+  async () => {
+    if (order.value === Order.FollowingCreated) await ensureSignedIn()
     return exploreProjects({
       order: order.value,
       count: maxCount

@@ -25,9 +25,7 @@
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
-        <UIMenuItem @click="userStore.signOut()">{{
-          $t({ en: 'Sign out', zh: '登出' })
-        }}</UIMenuItem>
+        <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
   </UIDropdown>
@@ -53,6 +51,11 @@ function handleUserPage() {
 
 function handleProjects() {
   router.push(getUserPageRoute(userInfo.value!.name, 'projects'))
+}
+
+function handleSignOut() {
+  userStore.signOut()
+  router.go(0) // Reload the page to trigger navigation guards.
 }
 </script>
 

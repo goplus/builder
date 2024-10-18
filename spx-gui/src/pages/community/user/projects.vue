@@ -11,6 +11,7 @@ import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
+import { useEnsureSignedIn } from '@/utils/user'
 
 const props = defineProps<{
   name: string
@@ -57,9 +58,11 @@ const queryRet = useQuery(() => listProject(listParams.value), {
 })
 
 const router = useRouter()
+const ensureSignedIn = useEnsureSignedIn()
 const createProject = useCreateProject()
 const handleNewProject = useMessageHandle(
   async () => {
+    await ensureSignedIn()
     const { name } = await createProject()
     router.push(getProjectEditorRoute(name))
   },

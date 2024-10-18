@@ -16,7 +16,7 @@ interface TokenResponse {
   refresh_token: string
 }
 
-const casdoorAuthRedirectPath = '/callback'
+const casdoorAuthRedirectPath = '/sign-in/callback'
 const casdoorSdk = new Sdk({
   ...casdoorConfig,
   redirectPath: casdoorAuthRedirectPath

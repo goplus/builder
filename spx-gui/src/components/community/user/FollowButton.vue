@@ -4,6 +4,7 @@ import { useUserStore } from '@/stores'
 import { follow, isFollowing, unfollow } from '@/apis/user'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { useEnsureSignedIn } from '@/utils/user'
 
 const props = defineProps<{
   /** Name of user to follow */
@@ -23,8 +24,11 @@ watch(
   { immediate: true }
 )
 
+const ensureSignedIn = useEnsureSignedIn()
+
 const handleClick = useMessageHandle(
   async () => {
+    await ensureSignedIn()
     await (following.value ? unfollow(props.name) : follow(props.name))
     following.value = !following.value
   },
