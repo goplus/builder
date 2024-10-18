@@ -443,9 +443,10 @@ func TestControllerCreateProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{}).
-			Joins("JOIN project_release ON project_release.project_id = project.id").
-			Where("project_release.id = ?", mSourceProjectRelease.ID).
-			Update("project.remix_count", gorm.Expr("project.remix_count + 1")).
+			Where("id = (?)", ctrl.db.Model(&model.ProjectRelease{}).
+				Select("project_id").
+				Where("id = ?", mSourceProjectRelease.ID)).
+			Update("remix_count", gorm.Expr("remix_count + 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -1585,10 +1586,11 @@ func TestControllerDeleteProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{}).
-			Joins("JOIN user_project_relationship ON user_project_relationship.user_id = user.id").
-			Where("user_project_relationship.project_id = ?", mProject.ID).
-			Where("user_project_relationship.liked_at IS NOT NULL").
-			Update("user.liked_project_count", gorm.Expr("user.liked_project_count - 1")).
+			Where("id IN (?)", ctrl.db.Model(&model.UserProjectRelationship{}).
+				Select("user_id").
+				Where("project_id = ?", mProject.ID).
+				Where("liked_at IS NOT NULL")).
+			Update("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -1602,9 +1604,10 @@ func TestControllerDeleteProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{}).
-			Joins("JOIN project_release ON project_release.id = project.remixed_from_release_id").
-			Where("project_release.project_id = ?", mProject.ID).
-			Update("project.remixed_from_release_id", sql.NullInt64{}).
+			Where("remixed_from_release_id IN (?)", ctrl.db.Model(&model.ProjectRelease{}).
+				Select("id").
+				Where("project_id = ?", mProject.ID)).
+			Update("remixed_from_release_id", sql.NullInt64{}).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))

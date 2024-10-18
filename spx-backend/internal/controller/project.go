@@ -204,9 +204,10 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			}
 			if err := tx.
 				Model(&model.Project{}).
-				Joins("JOIN project_release ON project_release.project_id = project.id").
-				Where("project_release.id = ?", mProject.RemixedFromReleaseID.Int64).
-				Update("project.remix_count", gorm.Expr("project.remix_count + 1")).
+				Where("id = (?)", tx.Model(&model.ProjectRelease{}).
+					Select("project_id").
+					Where("id = ?", mProject.RemixedFromReleaseID.Int64)).
+				Update("remix_count", gorm.Expr("remix_count + 1")).
 				Error; err != nil {
 				return err
 			}
@@ -588,9 +589,10 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 			}
 			if err := tx.
 				Model(&model.Project{}).
-				Joins("JOIN project_release ON project_release.project_id = project.id").
-				Where("project_release.id = ?", mProject.RemixedFromReleaseID.Int64).
-				Update("project.remix_count", gorm.Expr("project.remix_count - 1")).
+				Where("id = (?)", tx.Model(&model.ProjectRelease{}).
+					Select("project_id").
+					Where("id = ?", mProject.RemixedFromReleaseID.Int64)).
+				Update("remix_count", gorm.Expr("remix_count - 1")).
 				Error; err != nil {
 				return err
 			}
@@ -598,10 +600,11 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 
 		if err := tx.
 			Model(&model.User{}).
-			Joins("JOIN user_project_relationship ON user_project_relationship.user_id = user.id").
-			Where("user_project_relationship.project_id = ?", mProject.ID).
-			Where("user_project_relationship.liked_at IS NOT NULL").
-			Update("user.liked_project_count", gorm.Expr("user.liked_project_count - 1")).
+			Where("id IN (?)", tx.Model(&model.UserProjectRelationship{}).
+				Select("user_id").
+				Where("project_id = ?", mProject.ID).
+				Where("liked_at IS NOT NULL")).
+			Update("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Error; err != nil {
 			return err
 		}
@@ -614,9 +617,10 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 
 		if err := tx.
 			Model(&model.Project{}).
-			Joins("JOIN project_release ON project_release.id = project.remixed_from_release_id").
-			Where("project_release.project_id = ?", mProject.ID).
-			Update("project.remixed_from_release_id", sql.NullInt64{}).
+			Where("remixed_from_release_id IN (?)", tx.Model(&model.ProjectRelease{}).
+				Select("id").
+				Where("project_id = ?", mProject.ID)).
+			Update("remixed_from_release_id", sql.NullInt64{}).
 			Error; err != nil {
 			return err
 		}
