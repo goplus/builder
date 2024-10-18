@@ -363,24 +363,26 @@ func TestControllerCreateProject(t *testing.T) {
 		mSourceProjectOwnerUsername := "otheruser"
 
 		mSourceProject := model.Project{
-			Model:      model.Model{ID: 2},
-			OwnerID:    mUser.ID + 1,
-			Name:       "sourceproject",
-			Visibility: model.VisibilityPublic,
+			Model:        model.Model{ID: 2},
+			OwnerID:      mUser.ID + 1,
+			Name:         "sourceproject",
+			Visibility:   model.VisibilityPublic,
+			Description:  "Source project description",
+			Instructions: "Source project instructions",
 		}
 
 		mSourceProjectRelease := model.ProjectRelease{
 			Model:     model.Model{ID: 1},
 			ProjectID: mSourceProject.ID,
 			Name:      "v1.0.0",
+			Files:     model.FileCollection{"source_main.go": "http://example.com/source_main.go"},
+			Thumbnail: "http://example.com/source_thumbnail.jpg",
 		}
 
 		params := &CreateProjectParams{
 			RemixSource: fmt.Sprintf("%s/%s", mSourceProjectOwnerUsername, mSourceProject.Name),
 			Name:        "remixproject",
-			Files:       model.FileCollection{"main.go": "http://example.com/main.go"},
 			Visibility:  "public",
-			Description: "Remixed project description",
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -462,9 +464,11 @@ func TestControllerCreateProject(t *testing.T) {
 				Model:                model.Model{ID: 3},
 				OwnerID:              mUser.ID,
 				Name:                 params.Name,
-				Files:                params.Files,
+				Files:                mSourceProjectRelease.Files,
 				Visibility:           model.ParseVisibility(params.Visibility),
-				Description:          params.Description,
+				Description:          mSourceProject.Description,
+				Instructions:         mSourceProject.Instructions,
+				Thumbnail:            mSourceProjectRelease.Thumbnail,
 				RemixedFromReleaseID: sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
 			})...))
 
@@ -511,7 +515,10 @@ func TestControllerCreateProject(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, params.Name, projectDTO.Name)
 		assert.Equal(t, params.Visibility, projectDTO.Visibility)
-		assert.Equal(t, params.Description, projectDTO.Description)
+		assert.Equal(t, mSourceProject.Description, projectDTO.Description)
+		assert.Equal(t, mSourceProject.Instructions, projectDTO.Instructions)
+		assert.Equal(t, mSourceProjectRelease.Thumbnail, projectDTO.Thumbnail)
+		assert.Equal(t, mSourceProjectRelease.Files, projectDTO.Files)
 		assert.Equal(t, fmt.Sprintf("%s/%s/%s", mSourceProjectOwnerUsername, mSourceProject.Name, mSourceProjectRelease.Name), projectDTO.RemixedFrom)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())

@@ -178,6 +178,18 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			Int64: mRemixSourceProjectRelease.ID,
 			Valid: true,
 		}
+		if len(mProject.Files) == 0 {
+			mProject.Files = mRemixSourceProjectRelease.Files
+		}
+		if mProject.Thumbnail == "" {
+			mProject.Thumbnail = mRemixSourceProjectRelease.Thumbnail
+		}
+		if mProject.Description == "" {
+			mProject.Description = mRemixSourceProject.Description
+		}
+		if mProject.Instructions == "" {
+			mProject.Instructions = mRemixSourceProject.Instructions
+		}
 	}
 	if err := ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&mProject).Error; err != nil {
