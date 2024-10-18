@@ -10,10 +10,18 @@ import { UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useOpenProject } from '@/components/project'
 import openSvg from './icons/open.svg'
+import { useEnsureSignedIn } from '@/utils/user'
 
+const ensureSignedIn = useEnsureSignedIn()
 const openProject = useOpenProject()
-const handleOpenProject = useMessageHandle(openProject, {
-  en: 'Failed to open project',
-  zh: '打开项目失败'
-}).fn
+const handleOpenProject = useMessageHandle(
+  async () => {
+    await ensureSignedIn()
+    return openProject()
+  },
+  {
+    en: 'Failed to open project',
+    zh: '打开项目失败'
+  }
+).fn
 </script>

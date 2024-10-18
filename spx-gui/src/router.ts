@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { ExploreOrder } from './apis/project'
+import { useUserStore } from './stores'
 
 export function getProjectEditorRoute(projectName: string) {
   return `/editor/${projectName}`
@@ -94,11 +95,8 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/editor/:projectName',
     component: () => import('@/pages/editor/index.vue'),
+    meta: { requiresSignIn: true },
     props: true
-  },
-  {
-    path: '/callback', // TODO: remove me
-    redirect: '/sign-in/callback'
   },
   {
     path: '/sign-in/callback',
@@ -120,6 +118,14 @@ const router = createRouter({
 })
 
 export const initRouter = async (app: App) => {
+  const userStore = useUserStore()
+  router.beforeEach((to, _, next) => {
+    if (to.meta.requiresSignIn && !userStore.isSignedIn()) {
+      userStore.initiateSignIn()
+    } else {
+      next()
+    }
+  })
   app.use(router)
   // This is an example of a routing result that needs to be loaded.
   await new Promise((resolve) => {

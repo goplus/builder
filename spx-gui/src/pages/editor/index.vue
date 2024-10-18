@@ -36,15 +36,7 @@ const props = defineProps<{
 
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
-// TODO: move this to some outer position
 const userStore = useUserStore()
-watchEffect(() => {
-  // This will be called on mount and whenever userStore changes,
-  // which are the cases when userStore.signOut() is called
-  if (!userStore.isSignedIn()) {
-    userStore.initiateSignIn()
-  }
-})
 
 const userInfo = computed(() => userStore.userInfo())
 

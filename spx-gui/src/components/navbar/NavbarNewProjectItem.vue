@@ -12,11 +12,14 @@ import { UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useCreateProject } from '@/components/project'
 import newSvg from './icons/new.svg'
+import { useEnsureSignedIn } from '@/utils/user'
 
 const router = useRouter()
+const ensureSignedIn = useEnsureSignedIn()
 const createProject = useCreateProject()
 const handleNewProject = useMessageHandle(
   async () => {
+    await ensureSignedIn()
     const { name } = await createProject()
     router.push(getProjectEditorRoute(name))
   },
