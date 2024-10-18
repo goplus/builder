@@ -3,16 +3,12 @@
     <header class="editor-header">
       <EditorNavbar :project="project" />
     </header>
-    <main v-if="userStore.userInfo" class="editor-main">
+    <main v-if="userInfo" class="editor-main">
       <UILoading v-if="isLoading" />
       <UIError v-else-if="error != null" :retry="refetch">
         {{ $t(error.userMessage) }}
       </UIError>
-      <EditorContextProvider
-        v-else-if="project != null"
-        :project="project"
-        :user-info="userStore.userInfo"
-      >
+      <EditorContextProvider v-else-if="project != null" :project="project" :user-info="userInfo">
         <ProjectEditor />
       </EditorContextProvider>
     </main>
@@ -20,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, watch, onMounted, onUnmounted } from 'vue'
+import { watchEffect, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { AutoSaveMode, Project } from '@/models/project'
@@ -45,10 +41,12 @@ const userStore = useUserStore()
 watchEffect(() => {
   // This will be called on mount and whenever userStore changes,
   // which are the cases when userStore.signOut() is called
-  if (!userStore.isSignedIn) {
+  if (!userStore.isSignedIn()) {
     userStore.initiateSignIn()
   }
 })
+
+const userInfo = computed(() => userStore.userInfo())
 
 const router = useRouter()
 
@@ -113,9 +111,9 @@ const {
   refetch
 } = useQuery(
   () => {
-    // We need to read `userStore.userInfo.name` & `projectName.value` synchronously,
+    // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
-    return loadProject(userStore.userInfo?.name, props.projectName)
+    return loadProject(userInfo.value?.name, props.projectName)
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
 )

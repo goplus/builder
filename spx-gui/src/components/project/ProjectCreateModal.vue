@@ -58,6 +58,7 @@ import defaultSpritePng from '@/assets/default-sprite.png'
 import defaultBackdropImg from '@/assets/default-backdrop.png'
 import { Backdrop } from '@/models/backdrop'
 import { Project } from '@/models/project'
+import { computed } from 'vue'
 
 const props = defineProps<{
   visible: boolean
@@ -70,6 +71,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const userStore = useUserStore()
+
+const userInfo = computed(() => userStore.userInfo())
 
 const form = useForm({
   name: ['', validateName]
@@ -134,8 +137,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  if (userStore.userInfo == null) throw new Error('login required')
-  const username = userStore.userInfo.name
+  if (userInfo.value == null) throw new Error('login required')
+  const username = userInfo.value.name
   const existedProject = await getProject(username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e

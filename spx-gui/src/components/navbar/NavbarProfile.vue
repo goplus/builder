@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!userStore.userInfo" class="sign-in">
+  <div v-if="!userInfo" class="sign-in">
     <UIButton type="secondary" :disabled="!isOnline" @click="userStore.initiateSignIn()">{{
       $t({ en: 'Sign in', zh: '登录' })
     }}</UIButton>
@@ -7,13 +7,13 @@
   <UIDropdown v-else placement="bottom-end" :offset="{ x: -4, y: 8 }">
     <template #trigger>
       <div class="avatar">
-        <img class="avatar-img" :src="userStore.userInfo.avatar" />
+        <img class="avatar-img" :src="userInfo.avatar" />
       </div>
     </template>
     <UIMenu class="user-menu">
       <UIMenuGroup>
         <UIMenuItem :interactive="false">
-          {{ userStore.userInfo.displayName || userStore.userInfo.name }}
+          {{ userInfo.displayName || userInfo.name }}
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
@@ -39,17 +39,20 @@ import { useNetwork } from '@/utils/network'
 import { getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
+import { computed } from 'vue'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const router = useRouter()
 
+const userInfo = computed(() => userStore.userInfo())
+
 function handleUserPage() {
-  router.push(getUserPageRoute(userStore.userInfo!.name))
+  router.push(getUserPageRoute(userInfo.value!.name))
 }
 
 function handleProjects() {
-  router.push(getUserPageRoute(userStore.userInfo!.name, 'projects'))
+  router.push(getUserPageRoute(userInfo.value!.name, 'projects'))
 }
 </script>
 

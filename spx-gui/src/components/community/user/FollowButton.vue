@@ -10,7 +10,7 @@ const props = defineProps<{
   name: string
 }>()
 
-const followable = computed(() => props.name !== useUserStore().userInfo?.name)
+const followable = computed(() => props.name !== useUserStore().userInfo()?.name)
 const following = ref<boolean | null>(null)
 
 watch(
