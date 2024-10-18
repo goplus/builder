@@ -16,6 +16,8 @@ type UserDTO struct {
 	ModelDTO
 
 	Username           string `json:"username"`
+	DisplayName        string `json:"displayName"`
+	Avatar             string `json:"avatar"`
 	Description        string `json:"description"`
 	FollowerCount      int64  `json:"followerCount"`
 	FollowingCount     int64  `json:"followingCount"`
@@ -29,6 +31,8 @@ func toUserDTO(mUser model.User) UserDTO {
 	return UserDTO{
 		ModelDTO:           toModelDTO(mUser.Model),
 		Username:           mUser.Username,
+		DisplayName:        mUser.DisplayName,
+		Avatar:             mUser.Avatar,
 		Description:        mUser.Description,
 		FollowerCount:      mUser.FollowerCount,
 		FollowingCount:     mUser.FollowingCount,
@@ -71,7 +75,11 @@ func (ctrl *Controller) UserFromToken(ctx context.Context, token string) (*model
 	if err != nil {
 		return nil, fmt.Errorf("ctrl.casdoorClient.ParseJwtToken failed: %w: %w", ErrUnauthorized, err)
 	}
-	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, claims.Name)
+	casdoorUser, err := ctrl.casdoorClient.GetUser(claims.Name)
+	if err != nil {
+		return nil, fmt.Errorf("ctrl.casdoorClient.GetUser failed: %w", err)
+	}
+	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, casdoorUser)
 	if err != nil {
 		return nil, err
 	}

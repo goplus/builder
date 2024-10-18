@@ -39,7 +39,7 @@ type Controller struct {
 	db            *gorm.DB
 	kodo          *kodoConfig
 	aigcClient    *aigc.AigcClient
-	casdoorClient *casdoorsdk.Client
+	casdoorClient casdoorClient
 }
 
 // New creates a new controller.
@@ -92,8 +92,14 @@ func newKodoConfig(logger *qiniuLog.Logger) *kodoConfig {
 	}
 }
 
+// casdoorClient is the client interface for Casdoor.
+type casdoorClient interface {
+	ParseJwtToken(token string) (*casdoorsdk.Claims, error)
+	GetUser(name string) (*casdoorsdk.User, error)
+}
+
 // newCasdoorClient creates a new [casdoorsdk.Client].
-func newCasdoorClient(logger *qiniuLog.Logger) *casdoorsdk.Client {
+func newCasdoorClient(logger *qiniuLog.Logger) casdoorClient {
 	config := &casdoorsdk.AuthConfig{
 		Endpoint:         mustEnv(logger, "GOP_CASDOOR_ENDPOINT"),
 		ClientId:         mustEnv(logger, "GOP_CASDOOR_CLIENTID"),

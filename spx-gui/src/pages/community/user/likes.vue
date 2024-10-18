@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
-import { listProject } from '@/apis/project'
+import { listProject, ownerAll } from '@/apis/project'
 import { UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
@@ -20,6 +20,7 @@ const queryRet = useQuery(
   () =>
     listProject({
       // TODO: check order here
+      owner: ownerAll,
       liker: props.name,
       pageSize,
       pageIndex: page.value

@@ -774,7 +774,7 @@ paths:
                   format: uri
                   description: URL of the image to process for background removal.
       responses:
-        "201":
+        "200":
           description: Successfully processed the image for background removal.
           content:
             application/json:
@@ -932,6 +932,17 @@ components:
           examples:
             - john
           description: Unique username of the user.
+        displayName:
+          type: string
+          examples:
+            - John Doe
+          description: Display name of the user.
+        avatar:
+          type: string
+          format: uri
+          examples:
+            - https://avatars.githubusercontent.com/u/10137?v=4
+          description: URL of the user's avatar image.
         description:
           type: string
           examples:

@@ -85,10 +85,6 @@ func TestEnsureUser(t *testing.T) {
 	})
 }
 
-const fakeUserToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9." +
-	"eyJvd25lciI6IkdvUGx1cyIsIm5hbWUiOiJmYWtlLW5hbWUiLCJpZCI6IjEiLCJpc3MiOiJHb1BsdXMiLCJzdWIiOiIxIiwiZXhwIjo0ODcwNDI5MDQwfQ." +
-	"X0T-v-RJggMRy3Mmui2FoRH-_4DQsNA6DekUx1BfIljTZaEbHbuW59dSlKQ-i2MuYD7_8mI18vZqT3iysbKQ1T70NF97B_A130ML3pulZWlj1ZokgjCkVug25QRbq_N7JMd4apJZFlyZj8Bd2VfqtAKMlJJ4HzKzNXB-GBogDVlKeu4xJ1BiXO2rHL1PNa5KyKLSSMXmuP_Wc108RXZ0BiKDE30IG1fvcyvudXcetmltuWjuU6JRj3FGedxuVEqZLXqcm13dCxHnuFV1x1XU9KExcDvVyVB91FpBe5npzYp6WMX0fx9vU1b4eJ69EZoeMdMolhmvYInT1G8r1PEmbg"
-
 func TestControllerUserFromToken(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)

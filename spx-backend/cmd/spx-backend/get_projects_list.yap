@@ -12,12 +12,12 @@ import (
 
 ctx := &Context
 
-user, _ := controller.UserFromContext(ctx.Context())
 params := controller.NewListProjectsParams()
 
 switch owner := ${owner}; owner {
 case "":
-	if user == nil {
+	user, ok := controller.UserFromContext(ctx.Context())
+	if !ok {
 		replyWithCode(ctx, errorUnauthorized)
 		return
 	}

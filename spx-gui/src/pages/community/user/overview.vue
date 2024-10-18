@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
-import { listProject } from '@/apis/project'
+import { listProject, ownerAll } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -42,6 +42,7 @@ const likesRet = useQuery(
   async () => {
     const { data: likes } = await listProject({
       // TODO: check order here
+      owner: ownerAll,
       liker: props.name,
       pageIndex: 1,
       pageSize: numInRow

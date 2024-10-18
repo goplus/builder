@@ -535,17 +535,17 @@ func (this *get_projects_list) Main(_gop_arg0 *yap.Context) {
 //line cmd/spx-backend/get_projects_list.yap:13:1
 	ctx := &this.Context
 //line cmd/spx-backend/get_projects_list.yap:15:1
-	user, _ := controller.UserFromContext(ctx.Context())
-//line cmd/spx-backend/get_projects_list.yap:16:1
 	params := controller.NewListProjectsParams()
-//line cmd/spx-backend/get_projects_list.yap:18:1
+//line cmd/spx-backend/get_projects_list.yap:17:1
 	switch
-//line cmd/spx-backend/get_projects_list.yap:18:1
+//line cmd/spx-backend/get_projects_list.yap:17:1
 	owner := this.Gop_Env("owner"); owner {
-//line cmd/spx-backend/get_projects_list.yap:19:1
+//line cmd/spx-backend/get_projects_list.yap:18:1
 	case "":
+//line cmd/spx-backend/get_projects_list.yap:19:1
+		user, ok := controller.UserFromContext(ctx.Context())
 //line cmd/spx-backend/get_projects_list.yap:20:1
-		if user == nil {
+		if !ok {
 //line cmd/spx-backend/get_projects_list.yap:21:1
 			replyWithCode(ctx, errorUnauthorized)
 //line cmd/spx-backend/get_projects_list.yap:22:1
