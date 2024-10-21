@@ -12,7 +12,7 @@ import { getUser, type User } from '@/apis/user'
 import UserLink from './UserLink.vue'
 
 const props = defineProps<{
-  user: string | User | null
+  user: string | User
 }>()
 
 const userInfo = useAsyncComputed(() =>
