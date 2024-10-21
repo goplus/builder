@@ -314,6 +314,30 @@ func (p *UpdateAssetParams) Validate() (ok bool, msg string) {
 	return true, ""
 }
 
+// Diff returns the updates between the parameters and the model asset.
+func (p *UpdateAssetParams) Diff(mAsset *model.Asset) map[string]any {
+	updates := map[string]any{}
+	if p.DisplayName != mAsset.DisplayName {
+		updates["display_name"] = p.DisplayName
+	}
+	if p.Type != mAsset.Type.String() {
+		updates["type"] = model.ParseAssetType(p.Type)
+	}
+	if p.Category != mAsset.Category {
+		updates["category"] = p.Category
+	}
+	if !maps.Equal(p.Files, mAsset.Files) {
+		updates["files"] = p.Files
+	}
+	if p.FilesHash != mAsset.FilesHash {
+		updates["files_hash"] = p.FilesHash
+	}
+	if p.Visibility != mAsset.Visibility.String() {
+		updates["visibility"] = model.ParseVisibility(p.Visibility)
+	}
+	return updates
+}
+
 // UpdateAsset updates an asset.
 func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, params *UpdateAssetParams) (*AssetDTO, error) {
 	mAssetID, err := strconv.ParseInt(id, 10, 64)
@@ -324,25 +348,7 @@ func (ctrl *Controller) UpdateAsset(ctx context.Context, id string, params *Upda
 	if err != nil {
 		return nil, err
 	}
-	updates := map[string]any{}
-	if params.DisplayName != mAsset.DisplayName {
-		updates["display_name"] = params.DisplayName
-	}
-	if params.Type != mAsset.Type.String() {
-		updates["type"] = model.ParseAssetType(params.Type)
-	}
-	if params.Category != mAsset.Category {
-		updates["category"] = params.Category
-	}
-	if !maps.Equal(params.Files, mAsset.Files) {
-		updates["files"] = params.Files
-	}
-	if params.FilesHash != mAsset.FilesHash {
-		updates["files_hash"] = params.FilesHash
-	}
-	if params.Visibility != mAsset.Visibility.String() {
-		updates["visibility"] = model.ParseVisibility(params.Visibility)
-	}
+	updates := params.Diff(mAsset)
 	if len(updates) > 0 {
 		if err := ctrl.db.WithContext(ctx).Model(mAsset).Omit("Owner").Updates(updates).Error; err != nil {
 			return nil, fmt.Errorf("failed to update asset: %w", err)

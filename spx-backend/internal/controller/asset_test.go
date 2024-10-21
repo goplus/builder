@@ -256,11 +256,13 @@ func TestControllerCreateAsset(t *testing.T) {
 		}
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.Asset{}).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(1, 1))
+
 		dbMock.ExpectCommit()
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
@@ -672,6 +674,7 @@ func TestControllerUpdateAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Asset{Model: mAsset.Model}).
 			Updates(map[string]any{
@@ -683,19 +686,20 @@ func TestControllerUpdateAsset(t *testing.T) {
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[5] = sqlmock.AnyArg()
+		dbMockArgs[5] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
+
 		dbMock.ExpectCommit()
 
-		updatedAsset, err := ctrl.UpdateAsset(ctx, "1", params)
+		mUpdatedAsset, err := ctrl.UpdateAsset(ctx, "1", params)
 		require.NoError(t, err)
-		assert.Equal(t, params.DisplayName, updatedAsset.DisplayName)
-		assert.Equal(t, params.Type, updatedAsset.Type)
-		assert.Equal(t, params.Category, updatedAsset.Category)
-		assert.Equal(t, params.FilesHash, updatedAsset.FilesHash)
-		assert.Equal(t, params.Visibility, updatedAsset.Visibility)
+		assert.Equal(t, params.DisplayName, mUpdatedAsset.DisplayName)
+		assert.Equal(t, params.Type, mUpdatedAsset.Type)
+		assert.Equal(t, params.Category, mUpdatedAsset.Category)
+		assert.Equal(t, params.FilesHash, mUpdatedAsset.FilesHash)
+		assert.Equal(t, params.Visibility, mUpdatedAsset.Visibility)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -833,11 +837,13 @@ func TestControllerDeleteAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Delete(&model.Asset{Model: mAsset.Model}).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
+
 		dbMock.ExpectCommit()
 
 		err := ctrl.DeleteAsset(ctx, "1")

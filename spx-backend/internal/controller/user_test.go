@@ -37,6 +37,7 @@ func TestNewContextWithUser(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		mExpectedUser := newTestUser()
 		ctx := NewContextWithUser(context.Background(), mExpectedUser)
+
 		mUser, ok := ctx.Value(userContextKey).(*model.User)
 		require.True(t, ok)
 		require.NotNil(t, mUser)
@@ -48,6 +49,7 @@ func TestUserFromContext(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		mExpectedUser := newTestUser()
 		ctx := newContextWithTestUser(context.Background())
+
 		mUser, ok := UserFromContext(ctx)
 		require.True(t, ok)
 		require.NotNil(t, mUser)
@@ -191,7 +193,7 @@ func TestControllerListUsers(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
-		mExpectedUsers := []model.User{
+		mUsers := []model.User{
 			{
 				Model:              model.Model{ID: 1},
 				Username:           "user1",
@@ -230,14 +232,14 @@ func TestControllerListUsers(t *testing.T) {
 			Find(&[]model.User{}).
 			Statement
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUsers...)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUsers...)...))
 
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
 		assert.Len(t, result.Data, 2)
-		assert.Equal(t, mExpectedUsers[0].Username, result.Data[0].Username)
-		assert.Equal(t, mExpectedUsers[1].Username, result.Data[1].Username)
+		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
+		assert.Equal(t, mUsers[1].Username, result.Data[1].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -246,7 +248,7 @@ func TestControllerListUsers(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
-		mExpectedUsers := []model.User{
+		mUsers := []model.User{
 			{
 				Model:         model.Model{ID: 1},
 				Username:      "followee_user",
@@ -281,13 +283,13 @@ func TestControllerListUsers(t *testing.T) {
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUsers...)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUsers...)...))
 
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
 		assert.Len(t, result.Data, 1)
-		assert.Equal(t, mExpectedUsers[0].Username, result.Data[0].Username)
+		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -296,7 +298,7 @@ func TestControllerListUsers(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
-		mExpectedUsers := []model.User{
+		mUsers := []model.User{
 			{
 				Model:          model.Model{ID: 1},
 				Username:       "follower_user",
@@ -331,13 +333,13 @@ func TestControllerListUsers(t *testing.T) {
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUsers...)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUsers...)...))
 
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), result.Total)
 		assert.Len(t, result.Data, 1)
-		assert.Equal(t, mExpectedUsers[0].Username, result.Data[0].Username)
+		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -346,7 +348,7 @@ func TestControllerListUsers(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
-		mExpectedUsers := []model.User{
+		mUsers := []model.User{
 			{
 				Model:       model.Model{ID: 1},
 				Username:    "user1",
@@ -386,14 +388,14 @@ func TestControllerListUsers(t *testing.T) {
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUsers...)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUsers...)...))
 
 		result, err := ctrl.ListUsers(context.Background(), params)
 		require.NoError(t, err)
 		assert.Equal(t, int64(2), result.Total)
 		assert.Len(t, result.Data, 2)
-		assert.Equal(t, mExpectedUsers[0].Username, result.Data[0].Username)
-		assert.Equal(t, mExpectedUsers[1].Username, result.Data[1].Username)
+		assert.Equal(t, mUsers[0].Username, result.Data[0].Username)
+		assert.Equal(t, mUsers[1].Username, result.Data[1].Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -459,7 +461,7 @@ func TestControllerGetUser(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
 
-		mExpectedUser := model.User{
+		mUser := model.User{
 			Model:              model.Model{ID: 1},
 			Username:           "testuser",
 			DisplayName:        "Tester",
@@ -473,17 +475,18 @@ func TestControllerGetUser(t *testing.T) {
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("username = ?", mExpectedUser.Username).
+			Where("username = ?", mUser.Username).
 			First(&model.User{}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUser)...))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{Model: mExpectedUser.Model}).
+			Model(&model.User{Model: mUser.Model}).
 			Updates(map[string]any{
 				"display_name": "",
 				"avatar":       "",
@@ -494,13 +497,14 @@ func TestControllerGetUser(t *testing.T) {
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
+
 		dbMock.ExpectCommit()
 
-		result, err := ctrl.GetUser(context.Background(), mExpectedUser.Username)
+		result, err := ctrl.GetUser(context.Background(), mUser.Username)
 		require.NoError(t, err)
-		assert.Equal(t, mExpectedUser.Username, result.Username)
-		assert.Equal(t, mExpectedUser.Description, result.Description)
-		assert.Equal(t, mExpectedUser.FollowerCount, result.FollowerCount)
+		assert.Equal(t, mUser.Username, result.Username)
+		assert.Equal(t, mUser.Description, result.Description)
+		assert.Equal(t, mUser.FollowerCount, result.FollowerCount)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -553,15 +557,19 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		}
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mUser.Model}).
-			Updates(map[string]any{"description": params.Description}).
+			Updates(map[string]any{
+				"description": params.Description,
+				"updated_at":  sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[1] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
+
 		dbMock.ExpectCommit()
 
 		result, err := ctrl.UpdateAuthedUser(ctx, params)
@@ -618,12 +626,14 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		}
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mUser.Model}).
 			Updates(map[string]any{"description": params.Description}).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnError(errors.New("update error"))
+
 		dbMock.ExpectRollback()
 
 		_, err := ctrl.UpdateAuthedUser(ctx, params)
@@ -680,49 +690,58 @@ func TestControllerFollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userRelationshipDBColumns))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Create(&model.UserRelationship{UserID: 1, TargetUserID: 2}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
-		dbMockArgs[1] = sqlmock.AnyArg()
-		dbMockArgs[2] = sqlmock.AnyArg()
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
+
 		dbMock.ExpectCommit()
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.UserRelationship{Model: model.Model{ID: 1}}).
-			Update("followed_at", sql.NullTime{Valid: true}).
+			Where("followed_at IS NULL").
+			Updates(map[string]any{
+				"followed_at": sqlmock.AnyArg(),
+				"updated_at":  sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
-		dbMockArgs[1] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mUser.Model}).
-			Update("following_count", gorm.Expr("following_count + 1")).
+			Updates(map[string]any{
+				"following_count": gorm.Expr("following_count + 1"),
+				"updated_at":      sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mTargetUser.Model}).
-			Update("follower_count", gorm.Expr("follower_count + 1")).
+			Updates(map[string]any{
+				"follower_count": gorm.Expr("follower_count + 1"),
+				"updated_at":     sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
+
 		dbMock.ExpectCommit()
 
 		err := ctrl.FollowUser(ctx, mTargetUser.Username)
@@ -962,36 +981,44 @@ func TestControllerUnfollowUser(t *testing.T) {
 			)...))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.UserRelationship{Model: model.Model{ID: 1}}).
-			Update("followed_at", sql.NullTime{}).
+			Where("followed_at = ?", sqlmock.AnyArg()).
+			Updates(map[string]any{
+				"followed_at": sql.NullTime{},
+				"updated_at":  sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
-		dbMockArgs[1] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mUser.Model}).
-			Update("following_count", gorm.Expr("following_count - 1")).
+			Updates(map[string]any{
+				"following_count": gorm.Expr("following_count - 1"),
+				"updated_at":      sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mTargetUser.Model}).
-			Update("follower_count", gorm.Expr("follower_count - 1")).
+			Updates(map[string]any{
+				"follower_count": gorm.Expr("follower_count - 1"),
+				"updated_at":     sqlmock.AnyArg(),
+			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
+
 		dbMock.ExpectCommit()
 
 		err := ctrl.UnfollowUser(ctx, mTargetUser.Username)
