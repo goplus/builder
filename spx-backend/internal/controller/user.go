@@ -75,11 +75,7 @@ func (ctrl *Controller) UserFromToken(ctx context.Context, token string) (*model
 	if err != nil {
 		return nil, fmt.Errorf("ctrl.casdoorClient.ParseJwtToken failed: %w: %w", ErrUnauthorized, err)
 	}
-	casdoorUser, err := ctrl.casdoorClient.GetUser(claims.Name)
-	if err != nil {
-		return nil, fmt.Errorf("ctrl.casdoorClient.GetUser failed: %w", err)
-	}
-	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, casdoorUser)
+	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, &claims.User)
 	if err != nil {
 		return nil, err
 	}
@@ -208,6 +204,24 @@ func (ctrl *Controller) GetUser(ctx context.Context, username string) (*UserDTO,
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get user %s: %w", username, err)
 	}
+
+	casdoorUser, err := ctrl.casdoorClient.GetUser(mUser.Username)
+	if err != nil {
+		return nil, fmt.Errorf("ctrl.casdoorClient.GetUser failed: %w", err)
+	}
+	mUserUpdates := map[string]any{}
+	if mUser.DisplayName != casdoorUser.DisplayName {
+		mUserUpdates["display_name"] = casdoorUser.DisplayName
+	}
+	if mUser.Avatar != casdoorUser.Avatar {
+		mUserUpdates["avatar"] = casdoorUser.Avatar
+	}
+	if len(mUserUpdates) > 0 {
+		if err := ctrl.db.WithContext(ctx).Model(&mUser).Updates(mUserUpdates).Error; err != nil {
+			return nil, fmt.Errorf("failed to update user %s: %w", mUser.Username, err)
+		}
+	}
+
 	userDTO := toUserDTO(mUser)
 	return &userDTO, nil
 }

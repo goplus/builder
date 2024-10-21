@@ -114,45 +114,4 @@ func TestFirstOrCreateUser(t *testing.T) {
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
-
-	t.Run("UpdateExistingUser", func(t *testing.T) {
-		db, dbMock, closeDB, err := modeltest.NewMockDB()
-		require.NoError(t, err)
-		defer closeDB()
-
-		mExistingUser := mExpectedUser
-		mExistingUser.DisplayName = "Old Name"
-		mExistingUser.Avatar = "https://example.com/old-avatar.jpg"
-
-		dbMockStmt := db.Session(&gorm.Session{DryRun: true}).
-			Where("username = ?", mExistingUser.Username).
-			First(&User{}).
-			Statement
-		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
-			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExistingUser)...))
-
-		dbMock.ExpectBegin()
-		dbMockStmt = db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&User{Model: mExistingUser.Model}).
-			Updates(map[string]any{
-				"display_name": mExpectedUser.DisplayName,
-				"avatar":       mExpectedUser.Avatar,
-			}).
-			Statement
-		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[2] = sqlmock.AnyArg()
-		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
-			WithArgs(dbMockArgs...).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-		dbMock.ExpectCommit()
-
-		mUser, err := FirstOrCreateUser(context.Background(), db, &expectedCasdoorUser)
-		require.NoError(t, err)
-		assert.Equal(t, mExpectedUser.DisplayName, mUser.DisplayName)
-		assert.Equal(t, mExpectedUser.Avatar, mUser.Avatar)
-
-		require.NoError(t, dbMock.ExpectationsWereMet())
-	})
 }
