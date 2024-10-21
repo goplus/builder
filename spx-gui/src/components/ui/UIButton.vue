@@ -59,8 +59,10 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   --ui-button-shadow-color: var(--ui-color-primary-700);
 
   .content {
+    flex: 1 1 0;
     display: flex;
     padding: 0 16px;
+    justify-content: center;
     align-items: center;
     gap: 4px;
     border-radius: var(--ui-border-radius-2);
@@ -144,7 +146,7 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   }
 }
 
-.size-large {
+.ui-button.size-large {
   height: var(--ui-line-height-3);
 
   .content {
@@ -160,7 +162,7 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
   }
 }
 
-.size-small {
+.ui-button.size-small {
   height: var(--ui-line-height-1);
 
   .content {

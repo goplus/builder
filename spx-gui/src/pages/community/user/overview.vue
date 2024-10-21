@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
-import { listProject, ownerAll } from '@/apis/project'
+import { Visibility, listProject, ownerAll } from '@/apis/project'
 import { useUserStore } from '@/stores'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -12,7 +12,7 @@ const props = defineProps<{
   name: string
 }>()
 
-const isCurrentUser = computed(() => props.name === useUserStore().userInfo?.name)
+const isCurrentUser = computed(() => props.name === useUserStore().userInfo()?.name)
 
 const numInRow = 4 // at most 4 projects in a row, depending on the screen width
 
@@ -41,8 +41,9 @@ const likesRoute = computed(() => {
 const likesRet = useQuery(
   async () => {
     const { data: likes } = await listProject({
-      // TODO: check order here
+      visibility: Visibility.Public,
       owner: ownerAll,
+      // TODO: check order here
       liker: props.name,
       pageIndex: 1,
       pageSize: numInRow

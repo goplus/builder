@@ -116,8 +116,7 @@ onMounted(() => {
 })
 
 const handleRerun = () => {
-  projectRunnerRef.value?.stop()
-  projectRunnerRef.value?.run()
+  projectRunnerRef.value?.rerun()
   consoleMessages.value = []
 }
 

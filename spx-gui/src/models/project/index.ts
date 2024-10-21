@@ -27,10 +27,15 @@ import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
-export type Metadata = Partial<Omit<ProjectData, 'files'>> & {
+export type CloudMetadata = Omit<ProjectData, 'files'>
+
+export type Metadata = Partial<CloudMetadata> & {
   filesHash?: string
   lastSyncedFilesHash?: string
 }
+
+// TODO: better organization & type derivation
+export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
@@ -97,6 +102,7 @@ export class Project extends Disposable {
   createdAt?: string
   updatedAt?: string
   owner?: string
+  remixedFrom?: string | null
   name?: string
   version = 0
   visibility?: Visibility
@@ -112,6 +118,8 @@ export class Project extends Disposable {
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
   get hasUnsyncedChanges() {
+    // if filesHash is null, it means editing not started yet
+    if (this.filesHash == null) return false
     return this.lastSyncedFilesHash !== this.filesHash
   }
 
@@ -254,17 +262,13 @@ export class Project extends Disposable {
     }
   }
 
-  private thumbnailCache: { filesHash: string; promise: Promise<File> } | null = null
-  async getThumbnail(signal?: AbortSignal) {
-    const filesHash = this.filesHash
-    if (this.thumbnailCache != null && this.thumbnailCache.filesHash === filesHash)
-      return this.thumbnailCache.promise
+  private async ensureThumbnail(signal?: AbortSignal) {
+    if (!this.hasUnsyncedChanges && !!this.thumbnail) return
     const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
-    const promise = screenshotTaker('thumbnail', signal)
-    if (filesHash != null) {
-      this.thumbnailCache = { filesHash, promise }
-    }
-    return promise
+    const file = await screenshotTaker('thumbnail', signal)
+    signal?.throwIfAborted()
+    const url = await cloudHelper.saveFile(file, signal)
+    this.thumbnail = url
   }
 
   constructor() {
@@ -407,14 +411,11 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string): Promise<void>
-  async loadFromCloud(projectData: ProjectData): Promise<void>
-  async loadFromCloud(ownerOrProjectData: string | ProjectData, name?: string) {
-    const { metadata, files } =
-      typeof ownerOrProjectData === 'string'
-        ? await cloudHelper.load(ownerOrProjectData, name!)
-        : await cloudHelper.parseProjectData(ownerOrProjectData)
+  async loadFromCloud(owner: string, name: string, signal?: AbortSignal) {
+    const { metadata, files } = await cloudHelper.load(owner, name, signal)
+    signal?.throwIfAborted()
     await this.load(metadata, files)
+    return this as CloudProject
   }
 
   /** Save to cloud */
@@ -431,8 +432,7 @@ export class Project extends Disposable {
 
     try {
       if (this.isDisposed) throw new Error('disposed')
-      const thumbnailFile = await this.getThumbnail(abortController.signal)
-      this.thumbnail = await cloudHelper.saveFile(thumbnailFile, abortController.signal)
+      await this.ensureThumbnail(abortController.signal)
       const [metadata, files] = await this.export()
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)

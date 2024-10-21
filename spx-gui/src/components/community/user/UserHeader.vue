@@ -17,7 +17,7 @@ const emit = defineEmits<{
   updated: [User]
 }>()
 
-const isCurrentUser = computed(() => props.user.username === useUserStore().userInfo?.name)
+const isCurrentUser = computed(() => props.user.username === useUserStore().userInfo()?.name)
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 

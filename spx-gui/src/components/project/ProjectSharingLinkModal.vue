@@ -25,13 +25,13 @@
 <script setup lang="ts">
 import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { Project } from '@/models/project'
 import { computed } from 'vue'
 import { getProjectShareRoute } from '@/router'
 
 const props = defineProps<{
   visible: boolean
-  project: Project
+  owner: string
+  name: string
 }>()
 
 const emit = defineEmits<{
@@ -40,10 +40,7 @@ const emit = defineEmits<{
 }>()
 
 const projectSharingLink = computed(() => {
-  const { owner, name } = props.project
-  // TODO: the check should be unnecessary
-  if (owner == null || name == null) throw new Error(`owner (${owner}), name (${name}) required`)
-  return `${location.origin}${getProjectShareRoute(owner, name)}`
+  return `${location.origin}${getProjectShareRoute(props.owner, props.name)}`
 })
 
 const handleCopy = useMessageHandle(

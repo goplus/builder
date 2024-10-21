@@ -118,6 +118,10 @@ const themeOverrides: GlobalThemeOverrides = {
   },
   Form: {
     labelTextColor: uiVariables.color.text
+  },
+  Timeline: {
+    iconColorInfo: uiVariables.color.grey[500],
+    lineColor: uiVariables.color.grey[500]
   }
 }
 </script>

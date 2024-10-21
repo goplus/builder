@@ -18,7 +18,7 @@
             </UIMenuItem>
           </UIMenu>
         </UIDropdown>
-        <UserAvatar class="owner-avatar" :owner="project.owner" />
+        <UserAvatar v-if="context === 'public'" class="owner-avatar" :user="project.owner" />
       </div>
       <div class="info">
         <div class="name">{{ project.name }}</div>
@@ -143,7 +143,7 @@ const handleRemove = useMessageHandle(
 @import '@/utils/utils';
 
 .project-item {
-  width: 240px;
+  width: 232px;
   flex: 0 0 auto;
   overflow: hidden;
   border-radius: var(--ui-border-radius-2);

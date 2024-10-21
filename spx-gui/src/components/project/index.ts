@@ -11,8 +11,8 @@ import ProjectPublishedModal from './ProjectPublishedModal.vue'
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
-  return function createProject() {
-    return modal({})
+  return function createProject(remixSource?: string) {
+    return modal({ remixSource })
   }
 }
 
@@ -35,16 +35,17 @@ export function useRemoveProject() {
         en: `Removed projects can not be recovered. Are you sure you want to remove project ${name}?`,
         zh: `删除后的项目无法恢复，确定要删除项目 ${name} 吗？`
       }),
+      // TODO: message for exception
       confirmHandler: () => deleteProject(owner, name)
     })
   }
 }
 
-export function useCreateProjectSharingLink() {
+export function useShareProject() {
   const modal = useModal(ProjectSharingLinkModal)
 
-  return async function createProjectSharingLink(project: Project) {
-    await modal({ project })
+  return async function shareProject(owner: string, name: string) {
+    await modal({ owner, name })
   }
 }
 
@@ -54,7 +55,7 @@ export function usePublishProject() {
 
   return async function publishProject(project: Project) {
     await invokePublishModal({ project })
-    return invokePublishedModal({ project })
+    invokePublishedModal({ project })
   }
 }
 
@@ -62,6 +63,7 @@ export function useUnpublishProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
 
+  // TODO: message for exception
   async function makePrivate(project: Project) {
     project.setVisibility(Visibility.Private)
     await project.saveToCloud()

@@ -1,7 +1,8 @@
 /**
- * @file class Disposble
- * @desc Collect disposers & do dispose together
+ * @file Disposing related utilities
  */
+
+import { Cancelled } from './exception'
 
 export type Disposer = () => void
 
@@ -25,4 +26,12 @@ export class Disposable {
       this.disposers.pop()?.()
     }
   }
+}
+
+export type OnCleanup = (disposer: Disposer) => void
+
+export function getCleanupSignal(onCleanup: OnCleanup) {
+  const ctrl = new AbortController()
+  onCleanup(() => ctrl.abort(new Cancelled('cleanup')))
+  return ctrl.signal
 }

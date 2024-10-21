@@ -1,4 +1,4 @@
-import { client, type FileCollection } from './common'
+import { client, type ByPage, type FileCollection, type PaginationParams } from './common'
 
 export type ProjectRelease = {
   /** Unique identifier */
@@ -28,4 +28,14 @@ export type CreateReleaseParams = Pick<
 
 export function createRelease(params: CreateReleaseParams) {
   return client.post('/project-release', params) as Promise<ProjectRelease>
+}
+
+export type ListReleasesParams = PaginationParams & {
+  projectFullName?: string
+  orderBy?: 'createdAt' | 'updatedAt' | 'remixCount'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export function listReleases(params: ListReleasesParams) {
+  return client.get(`/project-releases/list`, params) as Promise<ByPage<ProjectRelease>>
 }

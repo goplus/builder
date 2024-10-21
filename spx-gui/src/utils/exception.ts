@@ -2,10 +2,10 @@
  * @desc Definition for Exceptions & tools to help handle them
  */
 
-import { useMessage } from '@/components/ui'
-import { useI18n } from './i18n'
-import type { LocaleMessage } from './i18n'
 import { ref, shallowRef, watchEffect, type Ref, type ShallowRef } from 'vue'
+import { useI18n, type LocaleMessage } from './i18n'
+import type { OnCleanup } from './disposable'
+import { useMessage } from '@/components/ui'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -138,7 +138,7 @@ export type QueryRet<T> = {
   isLoading: Ref<boolean>
   data: ShallowRef<T | null>
   error: ShallowRef<ActionException | null>
-  refetch: () => void
+  refetch: (onCleanup?: OnCleanup) => void
 }
 
 /**
@@ -150,15 +150,15 @@ export type QueryRet<T> = {
  * TODO: if things get more complex, we may need tools like `@tanstack/vue-query`
  */
 export function useQuery<T>(
-  fn: () => Promise<T>,
+  fn: (onCleanup: OnCleanup) => Promise<T>,
   failureSummaryMessage: LocaleMessage
 ): QueryRet<T> {
   const action = useAction(fn, failureSummaryMessage)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
 
-  function fetch() {
-    action.fn().then(
+  function fetch(onCleanup: OnCleanup) {
+    action.fn(onCleanup).then(
       (d) => {
         data.value = d
         error.value = null
@@ -170,7 +170,11 @@ export function useQuery<T>(
     )
   }
 
+  function refetch() {
+    fetch(() => {})
+  }
+
   watchEffect(fetch)
 
-  return { isLoading: action.isLoading, data, error, refetch: fetch }
+  return { isLoading: action.isLoading, data, error, refetch }
 }

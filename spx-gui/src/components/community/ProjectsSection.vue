@@ -6,7 +6,7 @@
       <h2 class="title">
         <slot name="title"></slot>
       </h2>
-      <RouterLink class="link" :to="linkTo">
+      <RouterLink v-if="linkTo != null" class="link" :to="linkTo">
         <slot name="link"></slot>
         <UIIcon class="link-icon" type="arrowRightSmall" />
       </RouterLink>
@@ -28,11 +28,12 @@ import { UIIcon } from '@/components/ui'
  * Context (page) where the projects section is used
  * - `home`: community home page
  * - `user`: user overview page
+ * - `project`: project page
  */
-type Context = 'home' | 'user'
+type Context = 'home' | 'user' | 'project'
 
 defineProps<{
-  linkTo: string
+  linkTo?: string
   queryRet: QueryRet<unknown[]>
   context: Context
 }>()
