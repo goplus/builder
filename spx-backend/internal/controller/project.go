@@ -196,13 +196,13 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			return err
 		}
 
-		userUpdates := map[string]any{
+		mUserUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count + 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			userUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 		}
-		if err := tx.Model(mUser).Updates(userUpdates).Error; err != nil {
+		if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
 			return err
 		}
 
@@ -541,17 +541,17 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 				return nil
 			}
 
-			userUpdates := map[string]any{}
+			mUserUpdates := map[string]any{}
 			if updates["visibility"] != nil {
 				switch params.Visibility {
 				case model.VisibilityPrivate.String():
-					userUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+					mUserUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 				case model.VisibilityPublic.String():
-					userUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+					mUserUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 				}
 			}
-			if len(userUpdates) > 0 {
-				if err := tx.Model(mUser).Updates(userUpdates).Error; err != nil {
+			if len(mUserUpdates) > 0 {
+				if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
 					return err
 				}
 			}
@@ -581,13 +581,13 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 			return err
 		}
 
-		userUpdates := map[string]any{
+		mUserUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count - 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			userUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 		}
-		if err := tx.Model(mUser).Updates(userUpdates).Error; err != nil {
+		if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
 			return err
 		}
 

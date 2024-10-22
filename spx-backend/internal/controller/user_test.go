@@ -456,6 +456,8 @@ func TestControllerGetUser(t *testing.T) {
 		mExpectedUser := model.User{
 			Model:              model.Model{ID: 1},
 			Username:           "testuser",
+			DisplayName:        "Tester",
+			Avatar:             "https://example.com/avatar.jpg",
 			Description:        "Test user description",
 			FollowerCount:      10,
 			FollowingCount:     5,
@@ -472,6 +474,21 @@ func TestControllerGetUser(t *testing.T) {
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
+
+		dbMock.ExpectBegin()
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Model(&model.User{Model: mExpectedUser.Model}).
+			Updates(map[string]any{
+				"display_name": "",
+				"avatar":       "",
+				"updated_at":   sqlmock.AnyArg(),
+			}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		dbMock.ExpectCommit()
 
 		result, err := ctrl.GetUser(context.Background(), mExpectedUser.Username)
 		require.NoError(t, err)

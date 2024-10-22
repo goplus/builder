@@ -73,17 +73,5 @@ func FirstOrCreateUser(ctx context.Context, db *gorm.DB, casdoorUser *casdoorsdk
 			return nil, fmt.Errorf("failed to get user %s: %w", casdoorUser.Name, err)
 		}
 	}
-	userUpdates := map[string]any{}
-	if mUser.DisplayName != casdoorUser.DisplayName {
-		userUpdates["display_name"] = casdoorUser.DisplayName
-	}
-	if mUser.Avatar != casdoorUser.Avatar {
-		userUpdates["avatar"] = casdoorUser.Avatar
-	}
-	if len(userUpdates) > 0 {
-		if err := db.WithContext(ctx).Model(&mUser).Updates(userUpdates).Error; err != nil {
-			return nil, fmt.Errorf("failed to update user %s: %w", mUser.Username, err)
-		}
-	}
 	return &mUser, nil
 }
