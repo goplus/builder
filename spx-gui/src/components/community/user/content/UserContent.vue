@@ -20,13 +20,13 @@ import CommunityCard from '../../CommunityCard.vue'
 
 <style lang="scss" scoped>
 .user-content {
-  padding: 20px 20px 40px;
+  padding: 20px var(--ui-gap-middle);
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 .header {
+  margin-bottom: 8px;
   height: 32px;
   display: flex;
   justify-content: space-between;

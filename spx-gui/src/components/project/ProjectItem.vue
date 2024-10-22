@@ -3,7 +3,7 @@
     <RouterLink class="link" :to="to" @click="emit('selected')">
       <div class="thumbnail-wrapper">
         <UIImg class="thumbnail" :src="thumbnailUrl" />
-        <UIDropdown v-if="context === 'mine'" trigger="click" placement="bottom-end">
+        <UIDropdown v-if="context === 'mine' && isOwner" trigger="click" placement="bottom-end">
           <template #trigger>
             <div class="options" @click.stop.prevent>
               <UIIcon class="icon" type="more" />
@@ -18,21 +18,40 @@
             </UIMenuItem>
           </UIMenu>
         </UIDropdown>
-        <UserAvatar v-if="context === 'public'" class="owner-avatar" :user="project.owner" />
+        <div v-if="context === 'public'" class="owner-avatar-wrapper">
+          <svg
+            class="avatar-bg"
+            xmlns="http://www.w3.org/2000/svg"
+            width="67"
+            height="31"
+            viewBox="0 0 67 31"
+            fill="none"
+          >
+            <path
+              d="M48.67 11.94C43.36 6.71 39.42 0 29.3 0H28.7C18.58 0 14.64 6.71 9.33 11.94C5.47 16.76 -2.39 17.81 -9 18V31H67V18C60.39 17.81 52.53 16.76 48.67 11.94Z"
+              fill="white"
+            />
+          </svg>
+          <UserAvatar class="owner-avatar" size="small" :user="project.owner" />
+        </div>
       </div>
       <div class="info">
-        <div class="name">{{ project.name }}</div>
-        <p class="others">
-          <template v-if="context !== 'public'">
-            <span v-if="project.visibility === Visibility.Public" class="part">
-              <UIIcon type="statePublic" />
-              {{ $t({ en: 'Public', zh: '公开' }) }}
-            </span>
-            <span v-else class="part">
-              <UIIcon type="statePrivate" />
-              {{ $t({ en: 'Private', zh: '私有' }) }}
-            </span>
+        <div class="header">
+          <h5 class="name">{{ project.name }}</h5>
+          <template v-if="context !== 'public' && isOwner">
+            <i
+              v-if="project.visibility === Visibility.Public"
+              class="public"
+              :title="$t({ en: 'Public', zh: '公开' })"
+            >
+              <UIIcon class="icon" type="statePublic" />
+            </i>
+            <i v-else class="private" :title="$t({ en: 'Private', zh: '私有' })">
+              <UIIcon class="icon" type="statePrivate" />
+            </i>
           </template>
+        </div>
+        <p class="others">
           <span class="part" :class="{ liking }" :title="$t(likesTitle)">
             <UIIcon type="heart" />
             {{ $t(humanizeCount(project.likeCount)) }}
@@ -60,10 +79,10 @@ import {
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, isLiking, type ProjectData } from '@/apis/project'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { useUserStore } from '@/stores'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
 import { useRemoveProject } from '.'
-import { useUserStore } from '@/stores'
 
 /**
  * Context (list) where the project item is used
@@ -89,6 +108,9 @@ const emit = defineEmits<{
   removed: []
 }>()
 
+const userStore = useUserStore()
+const isOwner = computed(() => props.project.owner === userStore.userInfo()?.name)
+
 const router = useRouter()
 
 const to = computed(() => {
@@ -100,8 +122,6 @@ const thumbnailUrl = useAsyncComputed(async () => {
   if (props.project.thumbnail === '') return null
   return universalUrlToWebUrl(props.project.thumbnail)
 })
-
-const userStore = useUserStore()
 
 const liking = useAsyncComputed(() => {
   if (!userStore.isSignedIn()) return Promise.resolve(false)
@@ -196,10 +216,25 @@ const handleRemove = useMessageHandle(
     }
   }
 
-  .owner-avatar {
+  .owner-avatar-wrapper {
     position: absolute;
-    bottom: 13px;
-    right: 13px;
+    bottom: -9px;
+    left: 0;
+    width: 100%;
+    height: 13px;
+    background-color: var(--ui-color-grey-100);
+
+    .avatar-bg {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+
+    .owner-avatar {
+      position: absolute;
+      bottom: -2px;
+      left: 14px;
+    }
   }
 }
 
@@ -214,11 +249,46 @@ const handleRemove = useMessageHandle(
 .info {
   padding: var(--ui-gap-middle);
 
-  .name {
-    font-size: 15px;
-    line-height: 24px;
-    color: var(--ui-color-title);
-    @include text-ellipsis;
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .name {
+      flex: 0 1 auto;
+      font-size: 15px;
+      line-height: 24px;
+      color: var(--ui-color-title);
+      @include text-ellipsis;
+    }
+
+    .public,
+    .private {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--ui-color-grey-200);
+    }
+
+    .public {
+      color: #378ff6;
+      .icon {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .private {
+      color: #ff972b;
+      .icon {
+        width: 12px;
+        height: 12px;
+      }
+    }
   }
 
   .others {

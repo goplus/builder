@@ -98,9 +98,9 @@ defineProps<{
   flex-direction: column;
   gap: 4px;
 
-  width: 208px;
+  width: 212px;
   @include responsive(desktop-large) {
-    width: 212px;
+    width: 216px;
   }
 }
 </style>

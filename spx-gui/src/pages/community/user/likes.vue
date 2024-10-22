@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
-import { UIPagination } from '@/components/ui'
+import { UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
@@ -12,9 +12,11 @@ const props = defineProps<{
   name: string
 }>()
 
-const pageSize = 6 // 2 rows, TODO: responsive layout
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const pageSize = computed(() => numInRow.value * 2)
 const page = useRouteQueryParamInt('p', 1)
-const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize.value))
 
 const queryRet = useQuery(
   () =>
@@ -23,7 +25,7 @@ const queryRet = useQuery(
       owner: ownerAll,
       // TODO: check order here
       liker: props.name,
-      pageSize,
+      pageSize: pageSize.value,
       pageIndex: page.value
     }),
   {
@@ -34,7 +36,7 @@ const queryRet = useQuery(
 </script>
 
 <template>
-  <UserContent class="user-likes">
+  <UserContent class="user-likes" :style="{ '--project-num-in-row': numInRow }">
     <template #title>
       {{ $t({ en: 'Projects I like', zh: '我喜欢的项目' }) }}
     </template>
@@ -46,17 +48,22 @@ const queryRet = useQuery(
     <UIPagination
       v-show="pageTotal > 1"
       v-model:current="page"
+      class="pagination"
       :total="pageTotal"
-      style="justify-content: center"
     />
   </UserContent>
 </template>
 
 <style lang="scss" scoped>
 .projects {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: var(--ui-gap-middle);
+}
+
+.pagination {
+  margin: 36px 0 20px;
+  justify-content: center;
 }
 </style>

@@ -1,6 +1,7 @@
 <template>
   <UserLink
     class="user-avatar"
+    :class="`size-${size}`"
     :style="userInfo != null ? { backgroundImage: `url(${userInfo.avatar})` } : null"
     :user="userInfo"
   ></UserLink>
@@ -11,9 +12,17 @@ import { useAsyncComputed } from '@/utils/utils'
 import { getUser, type User } from '@/apis/user'
 import UserLink from './UserLink.vue'
 
-const props = defineProps<{
-  user: string | User
-}>()
+export type Size = 'small' | 'medium'
+
+const props = withDefaults(
+  defineProps<{
+    user: string | User
+    size?: Size
+  }>(),
+  {
+    size: 'medium'
+  }
+)
 
 const userInfo = useAsyncComputed(() =>
   typeof props.user === 'string' ? getUser(props.user) : Promise.resolve(props.user)
@@ -32,6 +41,12 @@ const userInfo = useAsyncComputed(() =>
   background-position: center;
   background-size: contain;
   transition: 0.1s;
+
+  &.size-small {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+  }
 
   &:hover {
     border-color: var(--ui-color-primary-400);

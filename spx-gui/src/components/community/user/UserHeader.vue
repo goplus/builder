@@ -8,6 +8,7 @@ import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
 import { useMessageHandle } from '@/utils/exception'
+import { getCoverImgUrl } from './cover'
 
 const props = defineProps<{
   user: User
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const isCurrentUser = computed(() => props.user.username === useUserStore().userInfo()?.name)
+const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
@@ -32,7 +34,7 @@ const handleEditProfile = useMessageHandle(
 
 <template>
   <CommunityCard class="user-header">
-    <div class="cover"></div>
+    <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
     <UIImg class="avatar" :src="user.avatar" />
     <div class="content">
       <div class="info">
@@ -59,9 +61,11 @@ const handleEditProfile = useMessageHandle(
 
 .cover {
   width: 100%;
-  // TODO: optimize me together with https://github.com/goplus/builder/issues/978
-  aspect-ratio: 1280 / 200;
-  background: center / cover no-repeat url(./cover.jpg);
+  height: 21.74vh;
+  max-height: 200px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .avatar {
