@@ -114,7 +114,7 @@ const supportedAudioExts = ['mp3', 'wav']
  * Currently spx supports `mp3` and `wav` only, and it seems that wav-encoding is simpler than mp3-encoding.
  * So we convert unsupported audio files to wav before added to project.
  *
- * Note: wav with codec `adpcm` is supported by spx, while not natively supported by chrome (& maybe more other browsers).
+ * NOTE: wav with codec `adpcm` is supported by spx, while not natively supported by chrome (& maybe more other browsers).
  * So it is allowed to add a sound of wav file with codec `adpcm` to project, and it works in the game.
  * But it does not work as expected with audio element (`SoundPlayer`) & wavesurfer.
  */

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/exception'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
-import { useUserStore } from '@/stores'
+import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
@@ -12,9 +12,8 @@ const props = defineProps<{
   name: string
 }>()
 
-const isCurrentUser = computed(() => props.name === useUserStore().userInfo()?.name)
-
-const numInRow = 4 // at most 4 projects in a row, depending on the screen width
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
 const projectsRoute = computed(() => {
   return getUserPageRoute(props.name, 'projects')
@@ -25,7 +24,7 @@ const projectsRet = useQuery(
     const { data: projects } = await listProject({
       owner: props.name,
       pageIndex: 1,
-      pageSize: numInRow,
+      pageSize: numInRow.value,
       orderBy: 'updatedAt',
       sortOrder: 'desc'
     })
@@ -46,7 +45,7 @@ const likesRet = useQuery(
       // TODO: check order here
       liker: props.name,
       pageIndex: 1,
-      pageSize: numInRow
+      pageSize: numInRow.value
     })
     return likes
   },
@@ -57,7 +56,12 @@ const likesRet = useQuery(
 <template>
   <div class="user-overview">
     <CommunityCard class="card">
-      <ProjectsSection context="user" :query-ret="projectsRet" :link-to="projectsRoute">
+      <ProjectsSection
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="projectsRet"
+        :link-to="projectsRoute"
+      >
         <template #title>
           {{
             $t({
@@ -77,13 +81,18 @@ const likesRet = useQuery(
         <ProjectItem
           v-for="project in projectsRet.data.value"
           :key="project.id"
-          :context="isCurrentUser ? 'mine' : 'public'"
+          context="mine"
           :project="project"
         />
       </ProjectsSection>
     </CommunityCard>
     <CommunityCard class="card">
-      <ProjectsSection context="user" :query-ret="likesRet" :link-to="likesRoute">
+      <ProjectsSection
+        context="user"
+        :num-in-row="numInRow"
+        :query-ret="likesRet"
+        :link-to="likesRoute"
+      >
         <template #title>
           {{
             $t({
@@ -114,6 +123,6 @@ const likesRet = useQuery(
 }
 
 .card {
-  padding: 0 20px;
+  padding: 0 var(--ui-gap-middle);
 }
 </style>

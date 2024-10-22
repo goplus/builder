@@ -27,7 +27,8 @@ import {
   UIMenuItem,
   UICollapse,
   UICollapseItem,
-  UIDivider
+  UIDivider,
+  useResponsive
 } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
@@ -229,7 +230,8 @@ const handleRemove = useMessageHandle(
   { en: 'Project removed', zh: '项目已删除' }
 )
 
-const numInRow = 5 // at most 5 projects in a row, depending on the screen width
+const isDesktopLarge = useResponsive('desktop-large')
+const remixNumInRow = computed(() => (isDesktopLarge.value ? 6 : 5))
 
 const remixesRet = useQuery(
   async () => {
@@ -238,7 +240,7 @@ const remixesRet = useQuery(
       owner: ownerAll,
       remixedFrom: `${props.owner}/${props.name}`,
       pageIndex: 1,
-      pageSize: numInRow,
+      pageSize: remixNumInRow.value,
       orderBy: 'likeCount',
       sortOrder: 'desc'
     })
@@ -249,7 +251,7 @@ const remixesRet = useQuery(
 </script>
 
 <template>
-  <CenteredWrapper class="wrapper" size="large">
+  <CenteredWrapper size="large">
     <UIError v-if="error != null" :retry="reloadProject">
       {{ $t(error.userMessage) }}
     </UIError>
@@ -276,6 +278,17 @@ const remixesRet = useQuery(
           </div>
           <div class="ops">
             <UIButton
+              v-if="runnerState === 'initial'"
+              type="primary"
+              icon="play"
+              :disabled="projectRunnerRef == null"
+              :loading="handleRun.isLoading.value"
+              @click="handleRun.fn"
+            >
+              {{ $t({ en: 'Run', zh: '运行' }) }}
+            </UIButton>
+            <UIButton
+              v-if="runnerState === 'running'"
               type="primary"
               icon="rotate"
               :disabled="projectRunnerRef == null"
@@ -380,7 +393,10 @@ const remixesRet = useQuery(
             </template>
           </div>
           <UIDivider class="divider" />
-          <UICollapse class="collapse" :default-expanded-names="['description', 'instructions']">
+          <UICollapse
+            class="collapse"
+            :default-expanded-names="['description', 'instructions', 'releases']"
+          >
             <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
               {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
             </UICollapseItem>
@@ -396,7 +412,12 @@ const remixesRet = useQuery(
           </UICollapse>
         </div>
       </CommunityCard>
-      <ProjectsSection class="remixes" context="project" :query-ret="remixesRet">
+      <ProjectsSection
+        class="remixes"
+        context="project"
+        :num-in-row="remixNumInRow"
+        :query-ret="remixesRet"
+      >
         <template #title>
           {{
             $t({
@@ -412,13 +433,9 @@ const remixesRet = useQuery(
 </template>
 
 <style scoped lang="scss">
-.wrapper {
-  flex: 1 1 0;
-}
-
 .main {
   flex: 0 0 auto;
-  margin-top: 20px;
+  margin-top: 24px;
   padding: 20px;
   display: flex;
   gap: 40px;
@@ -444,12 +461,12 @@ const remixesRet = useQuery(
       justify-content: center;
       align-items: center;
       border-radius: var(--ui-border-radius-1);
-      background: rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
+      background: rgba(87, 96, 106, 0.2);
+      backdrop-filter: blur(5px);
     }
 
     .run-button {
-      width: 200px;
+      width: 160px;
     }
   }
 
@@ -463,7 +480,7 @@ const remixesRet = useQuery(
 
 .right {
   flex: 1 1 456px;
-  padding-right: 60px;
+  padding-right: 20px;
   display: flex;
   flex-direction: column;
 
@@ -536,6 +553,6 @@ const remixesRet = useQuery(
 }
 
 .remixes {
-  margin-top: 36px;
+  margin-top: 20px;
 }
 </style>

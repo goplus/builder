@@ -6,7 +6,7 @@ import { useMessageHandle, useQuery } from '@/utils/exception'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getProjectEditorRoute } from '@/router'
 import { useUserStore } from '@/stores'
-import { UISelect, UISelectOption, UIPagination, UIButton } from '@/components/ui'
+import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
@@ -19,8 +19,10 @@ const props = defineProps<{
 
 const isCurrentUser = computed(() => props.name === useUserStore().userInfo()?.name)
 
-const pageSize = 6 // 2 rows, TODO: responsive layout
-const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const pageSize = computed(() => numInRow.value * 2)
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize.value))
 const page = useRouteQueryParamInt('p', 1)
 
 enum Order {
@@ -35,7 +37,7 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
     owner: props.name,
-    pageSize,
+    pageSize: pageSize.value,
     pageIndex: page.value
   }
   if (!isCurrentUser.value) p.visibility = Visibility.Public
@@ -71,7 +73,7 @@ const handleNewProject = useMessageHandle(
 </script>
 
 <template>
-  <UserContent class="user-projects">
+  <UserContent class="user-projects" :style="{ '--project-num-in-row': numInRow }">
     <template #title>
       {{ $t({ en: 'My projects', zh: '我的项目' }) }}
     </template>
@@ -102,13 +104,13 @@ const handleNewProject = useMessageHandle(
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="538">
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="534">
       <ul class="projects">
         <ProjectItem
           v-for="project in slotProps.data.data"
           :key="project.id"
           size="small"
-          :context="isCurrentUser ? 'mine' : 'public'"
+          context="mine"
           :project="project"
         />
       </ul>
@@ -116,17 +118,22 @@ const handleNewProject = useMessageHandle(
     <UIPagination
       v-show="pageTotal > 1"
       v-model:current="page"
+      class="pagination"
       :total="pageTotal"
-      style="justify-content: center"
     />
   </UserContent>
 </template>
 
 <style lang="scss" scoped>
 .projects {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: var(--ui-gap-middle);
+}
+
+.pagination {
+  margin: 36px 0 20px;
+  justify-content: center;
 }
 </style>

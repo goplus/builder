@@ -39,8 +39,8 @@
       </label>
     </template>
   </CommunityHeader>
-  <CenteredWrapper class="main">
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="542">
+  <CenteredWrapper class="main" :style="{ '--project-num-in-row': numInRow }">
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="530">
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>
@@ -60,7 +60,7 @@ import {
 } from '@/utils/route'
 import { useQuery } from '@/utils/exception'
 import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
-import { UISelect, UISelectOption, UIPagination } from '@/components/ui'
+import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
@@ -68,7 +68,9 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 
 const keyword = useRouteQueryParamStr('q', '')
 
-const pageSize = 8 // 2 rows, TODO: responsive layout
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const pageSize = computed(() => numInRow.value * 2)
 const page = useRouteQueryParamInt('p', 1)
 
 enum Order {
@@ -81,13 +83,13 @@ const order = useRouteQueryParamStrEnum('o', Order, Order.RecentlyUpdated, (kvs)
   p: null
 }))
 
-const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize))
+const pageTotal = computed(() => Math.ceil((queryRet.data.value?.total ?? 0) / pageSize.value))
 
 const listParams = computed<ListProjectParams>(() => {
   const p: ListProjectParams = {
     visibility: Visibility.Public,
     owner: ownerAll,
-    pageSize,
+    pageSize: pageSize.value,
     pageIndex: page.value
   }
   if (keyword.value !== '') p.keyword = keyword.value
@@ -154,9 +156,8 @@ const titleForNoResult = computed(() => ({
 }
 
 .projects {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: 20px;
 }
 

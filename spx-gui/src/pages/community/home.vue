@@ -3,6 +3,7 @@
     <ProjectsSection
       v-if="userStore.isSignedIn()"
       context="home"
+      :num-in-row="numInRow"
       :link-to="myProjectsRoute"
       :query-ret="myProjects"
     >
@@ -32,6 +33,7 @@
     <ProjectsSection
       :link-to="communityLikingRoute"
       context="home"
+      :num-in-row="numInRow"
       :query-ret="communityLikingProjects"
     >
       <template #title>
@@ -59,6 +61,7 @@
     <ProjectsSection
       :link-to="communityRemixingRoute"
       context="home"
+      :num-in-row="numInRow"
       :query-ret="communityRemixingProjects"
     >
       <template #title>
@@ -86,6 +89,7 @@
     <ProjectsSection
       v-if="userStore.isSignedIn()"
       context="home"
+      :num-in-row="numInRow"
       :link-to="followingCreatedRoute"
       :query-ret="followingCreatedProjects"
     >
@@ -120,11 +124,13 @@ import { useQuery } from '@/utils/exception'
 import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores'
+import { useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 
-const numInRow = 5 // at most 5 projects in a row, depending on the screen width
+const isDesktopLarge = useResponsive('desktop-large')
+const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
 const userStore = useUserStore()
 
@@ -140,7 +146,7 @@ const myProjects = useQuery(
     if (userInfo.value == null) return []
     const { data: projects } = await listProject({
       pageIndex: 1,
-      pageSize: numInRow,
+      pageSize: numInRow.value,
       orderBy: 'updatedAt',
       sortOrder: 'desc'
     })
@@ -152,14 +158,14 @@ const myProjects = useQuery(
 const communityLikingRoute = getExploreRoute(ExploreOrder.MostLikes)
 
 const communityLikingProjects = useQuery(
-  () => exploreProjects({ order: ExploreOrder.MostLikes, count: numInRow }),
+  () => exploreProjects({ order: ExploreOrder.MostLikes, count: numInRow.value }),
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
 const communityRemixingRoute = getExploreRoute(ExploreOrder.MostRemixes)
 
 const communityRemixingProjects = useQuery(
-  () => exploreProjects({ order: ExploreOrder.MostRemixes, count: numInRow }),
+  () => exploreProjects({ order: ExploreOrder.MostRemixes, count: numInRow.value }),
   { en: 'Failed to load projects', zh: '加载失败' }
 )
 
@@ -171,7 +177,7 @@ const followingCreatedRoute = computed(() => {
 const followingCreatedProjects = useQuery(
   async () => {
     if (userInfo.value == null) return []
-    return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow })
+    return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
   { en: 'Failed to load projects', zh: '加载失败' }
 )

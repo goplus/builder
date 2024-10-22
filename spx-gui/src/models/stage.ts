@@ -68,7 +68,7 @@ export class Stage extends Disposable {
 
   /**
    * Add given backdrop to stage.
-   * Note: the backdrop's name may be altered to avoid conflict.
+   * NOTE: the backdrop's name may be altered to avoid conflict.
    */
   addBackdrop(backdrop: Backdrop) {
     const newName = ensureValidBackdropName(backdrop.name, this)
@@ -89,7 +89,7 @@ export class Stage extends Disposable {
     // Maintain current backdrop's index if possible
     if (this.backdropIndex === idx) {
       this.backdropIndex = 0
-      // Note that if there is only one backdrop in the array
+      // NOTE: if there is only one backdrop in the array
       // and it is removed, the index will also be set to 0
     } else if (this.backdropIndex > idx) {
       this.backdropIndex = this.backdropIndex - 1
@@ -102,7 +102,7 @@ export class Stage extends Disposable {
 
   /**
    * Add given widget to stage.
-   * Note: the widget's name may be altered to avoid conflict.
+   * NOTE: the widget's name may be altered to avoid conflict.
    */
   addWidget(widget: Widget) {
     const newName = ensureValidWidgetName(widget.name, this)

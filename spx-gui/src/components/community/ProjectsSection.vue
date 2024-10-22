@@ -1,7 +1,7 @@
 <!-- Project list as a section -->
 
 <template>
-  <section :class="`context-${context}`">
+  <section :class="`context-${context}`" :style="{ '--project-num-in-row': numInRow }">
     <header class="header">
       <h2 class="title">
         <slot name="title"></slot>
@@ -11,11 +11,13 @@
         <UIIcon class="link-icon" type="arrowRightSmall" />
       </RouterLink>
     </header>
-    <ul class="projects">
-      <ListResultWrapper :query-ret="queryRet" :height="260">
-        <slot></slot>
+    <div class="projects-wrapper">
+      <ListResultWrapper :query-ret="queryRet" :height="255">
+        <ul class="projects">
+          <slot></slot>
+        </ul>
       </ListResultWrapper>
-    </ul>
+    </div>
   </section>
 </template>
 
@@ -36,6 +38,7 @@ defineProps<{
   linkTo?: string
   queryRet: QueryRet<unknown[]>
   context: Context
+  numInRow: number
 }>()
 </script>
 
@@ -71,30 +74,31 @@ defineProps<{
   }
 }
 
-.projects {
-  padding: 20px 0;
-  margin-bottom: 12px;
+.projects-wrapper {
+  margin: 8px 0 32px;
   position: relative;
+}
 
-  display: flex;
-  overflow: hidden;
-  align-items: center;
+.projects {
+  display: grid;
+  grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: 20px;
 }
 
 .context-user {
   .header {
-    height: auto;
+    height: 60px;
     padding: 20px 0 8px;
   }
   .title {
     font-size: 16px;
     line-height: 26px;
   }
+  .projects-wrapper {
+    margin: 8px 0 16px;
+  }
   .projects {
     gap: 16px;
-    padding: 8px 0;
-    margin-bottom: 24px;
   }
 }
 </style>
