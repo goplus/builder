@@ -81,7 +81,10 @@ watch(
 )
 
 const isOwner = computed(() => props.owner === userStore.userInfo()?.name)
-const liking = useAsyncComputed(() => isLiking(props.owner, props.name))
+const liking = useAsyncComputed(() => {
+  if (!userStore.isSignedIn()) return Promise.resolve(false)
+  else return isLiking(props.owner, props.name)
+})
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 
