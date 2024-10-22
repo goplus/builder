@@ -148,16 +148,15 @@ func (p *ListUsersParams) Validate() (ok bool, msg string) {
 // ListUsers retrieves a paginated list of users with optional filtering and ordering.
 func (ctrl *Controller) ListUsers(ctx context.Context, params *ListUsersParams) (*ByPage[UserDTO], error) {
 	query := ctrl.db.WithContext(ctx).Model(&model.User{})
-	joinedTables := map[string]struct{}{}
 	if params.Follower != nil {
-		query = query.Joins("JOIN user_relationship ON user_relationship.target_user_id = user.id").
-			Where("user_relationship.user_id = ?", *params.Follower)
-		joinedTables["user_relationship"] = struct{}{}
+		query = query.Joins("JOIN user AS follower ON follower.username = ?", *params.Follower).
+			Joins("JOIN user_relationship AS follower_relationship ON follower_relationship.user_id = follower.id AND follower_relationship.target_user_id = user.id").
+			Where("follower_relationship.followed_at IS NOT NULL")
 	}
 	if params.Followee != nil {
-		query = query.Joins("JOIN user_relationship ON user_relationship.user_id = user.id").
-			Where("user_relationship.target_user_id = ?", *params.Followee)
-		joinedTables["user_relationship"] = struct{}{}
+		query = query.Joins("JOIN user AS followee ON followee.username = ?", *params.Followee).
+			Joins("JOIN user_relationship AS followee_relationship ON followee_relationship.target_user_id = followee.id AND followee_relationship.user_id = user.id").
+			Where("followee_relationship.followed_at IS NOT NULL")
 	}
 	switch params.OrderBy {
 	case ListUsersOrderByCreatedAt:
@@ -165,11 +164,14 @@ func (ctrl *Controller) ListUsers(ctx context.Context, params *ListUsersParams) 
 	case ListUsersOrderByUpdatedAt:
 		query = query.Order(fmt.Sprintf("user.updated_at %s", params.SortOrder))
 	case ListUsersOrderByFollowedAt:
-		if _, ok := joinedTables["user_relationship"]; !ok {
+		switch {
+		case params.Follower != nil:
+			query = query.Order(fmt.Sprintf("follower_relationship.followed_at %s", params.SortOrder))
+		case params.Followee != nil:
+			query = query.Order(fmt.Sprintf("followee_relationship.followed_at %s", params.SortOrder))
+		default:
 			query = query.Order(fmt.Sprintf("user.created_at %s", params.SortOrder))
-			break
 		}
-		query = query.Order(fmt.Sprintf("user_relationship.followed_at %s", params.SortOrder))
 	}
 
 	var total int64
