@@ -5,7 +5,7 @@ export type ReponsiveSize = 'mobile' | 'tablet' | 'desktop' | 'desktop-large'
 function getQuery(size: ReponsiveSize) {
   let query: string
   switch (size) {
-    // Note: remember to keep these values in sync with the breakpoints in ./responsive.scss
+    // NOTE: remember to keep these values in sync with the breakpoints in ./responsive.scss
     case 'mobile':
       query = '(max-width: 767px)'
       break

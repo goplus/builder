@@ -69,7 +69,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   watch(ref, (newValue) => {
     if (newValue === initialValue) {
       // Remove the key if the value is the initial value.
-      // Note: this may be unexpected for some special use cases
+      // NOTE: this may be unexpected for some special use cases
       localStorage.removeItem(key)
       return
     }

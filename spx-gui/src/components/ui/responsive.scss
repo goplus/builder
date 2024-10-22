@@ -1,7 +1,7 @@
 // definition for responsive mixin
 
 @mixin responsive($size) {
-  // Note: remember to keep these values in sync with the breakpoints in ./responsive.ts
+  // NOTE: remember to keep these values in sync with the breakpoints in ./responsive.ts
   @if $size == mobile {
     @media (max-width: 767px) {
       @content;

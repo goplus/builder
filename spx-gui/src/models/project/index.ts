@@ -138,7 +138,7 @@ export class Project extends Disposable {
   }
   /**
    * Add given sprite to project.
-   * Note: the sprite's name may be altered to avoid conflict
+   * NOTE: the sprite's name may be altered to avoid conflict
    */
   addSprite(sprite: Sprite) {
     const newName = ensureValidSpriteName(sprite.name, this)
@@ -192,7 +192,7 @@ export class Project extends Disposable {
   }
   /**
    * Add given sound to project.
-   * Note: the sound's name may be altered to avoid conflict
+   * NOTE: the sound's name may be altered to avoid conflict
    */
   addSound(sound: Sound) {
     const newName = ensureValidSoundName(sound.name, this)
