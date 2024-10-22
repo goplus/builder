@@ -79,6 +79,7 @@ func TestFirstOrCreateUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns))
 
 		dbMock.ExpectBegin()
+
 		dbMockStmt = db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "username"}},
@@ -91,12 +92,12 @@ func TestFirstOrCreateUser(t *testing.T) {
 			}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMockArgs[0] = sqlmock.AnyArg()
-		dbMockArgs[1] = sqlmock.AnyArg()
-		dbMockArgs[2] = sqlmock.AnyArg()
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnResult(driver.ResultNoRows)
+
 		dbMock.ExpectCommit()
 
 		dbMockStmt = db.Session(&gorm.Session{DryRun: true}).

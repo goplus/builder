@@ -238,16 +238,22 @@ func (p *UpdateAuthedUserParams) Validate() (ok bool, msg string) {
 	return true, ""
 }
 
+// Diff returns the updates between the parameters and the model user.
+func (p *UpdateAuthedUserParams) Diff(mUser *model.User) map[string]any {
+	updates := map[string]any{}
+	if p.Description != mUser.Description {
+		updates["description"] = p.Description
+	}
+	return updates
+}
+
 // UpdateAuthedUser updates the authenticated user.
 func (ctrl *Controller) UpdateAuthedUser(ctx context.Context, params *UpdateAuthedUserParams) (*UserDTO, error) {
 	mUser, ok := UserFromContext(ctx)
 	if !ok {
 		return nil, ErrUnauthorized
 	}
-	updates := map[string]any{}
-	if params.Description != mUser.Description {
-		updates["description"] = params.Description
-	}
+	updates := params.Diff(mUser)
 	if len(updates) > 0 {
 		if err := ctrl.db.WithContext(ctx).Model(mUser).Updates(updates).Error; err != nil {
 			return nil, fmt.Errorf("failed to update authenticated user %s: %w", mUser.Username, err)
@@ -286,10 +292,8 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 	if err := ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if queryResult := tx.
 			Model(mUserRelationship).
-			Update("followed_at", sql.NullTime{
-				Time:  time.Now().UTC(),
-				Valid: true,
-			}); queryResult.Error != nil {
+			Where("followed_at IS NULL").
+			Update("followed_at", sql.NullTime{Time: time.Now().UTC(), Valid: true}); queryResult.Error != nil {
 			return queryResult.Error
 		} else if queryResult.RowsAffected == 0 {
 			return nil
@@ -369,6 +373,7 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 	if err := ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if queryResult := tx.
 			Model(mUserRelationship).
+			Where("followed_at = ?", mUserRelationship.FollowedAt).
 			Update("followed_at", sql.NullTime{}); queryResult.Error != nil {
 			return queryResult.Error
 		} else if queryResult.RowsAffected == 0 {

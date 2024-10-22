@@ -390,6 +390,29 @@ paths:
         "204":
           description: Successfully deleted the project.
 
+  /project/{owner}/{name}/view:
+    post:
+      tags:
+        - Projects
+      summary: Record a project view
+      description: Record a view for the specified project as the authenticated user.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/owner"
+          description: Username of the project's owner.
+        - name: name
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Project/properties/name"
+          description: Name of the project to record a view for.
+      responses:
+        "204":
+          description: Successfully recorded the project view.
+
   /project/{owner}/{name}/liking:
     post:
       tags:
