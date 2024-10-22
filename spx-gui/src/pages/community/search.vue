@@ -40,7 +40,7 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main" :style="{ '--project-num-in-row': numInRow }">
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="542">
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="530">
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>

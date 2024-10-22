@@ -104,7 +104,7 @@ const handleNewProject = useMessageHandle(
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="538">
+    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="534">
       <ul class="projects">
         <ProjectItem
           v-for="project in slotProps.data.data"
