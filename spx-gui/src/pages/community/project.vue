@@ -9,6 +9,7 @@ import {
   isLiking,
   likeProject,
   ownerAll,
+  recordProjectView,
   stringifyRemixSource,
   unlikeProject,
   Visibility
@@ -71,6 +72,12 @@ const {
     en: 'Failed to load project',
     zh: '加载项目失败'
   }
+)
+
+watch(
+  () => [props.owner, props.name],
+  () => userStore.isSignedIn() && recordProjectView(props.owner, props.name),
+  { immediate: true }
 )
 
 const runnerState = ref<'initial' | 'running'>('initial')

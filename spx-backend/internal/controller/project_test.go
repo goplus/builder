@@ -1862,7 +1862,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.UserProjectRelationship{Model: model.Model{ID: 1}}).
-			Where("last_viewed_at = ?", sqlmock.AnyArg()).
+			Where("last_viewed_at IS NULL").
 			Updates(map[string]any{
 				"view_count":     gorm.Expr("view_count + 1"),
 				"last_viewed_at": sqlmock.AnyArg(),

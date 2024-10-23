@@ -699,13 +699,16 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 	}
 
 	if err := ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if queryResult := tx.
-			Model(mUserProjectRelationship).
-			Where("last_viewed_at = ?", mUserProjectRelationship.LastViewedAt).
-			Updates(map[string]any{
-				"view_count":     gorm.Expr("view_count + 1"),
-				"last_viewed_at": sql.NullTime{Time: time.Now().UTC(), Valid: true},
-			}); queryResult.Error != nil {
+		query := tx.Model(mUserProjectRelationship)
+		if mUserProjectRelationship.LastViewedAt.Valid {
+			query = query.Where("last_viewed_at = ?", mUserProjectRelationship.LastViewedAt)
+		} else {
+			query = query.Where("last_viewed_at IS NULL")
+		}
+		if queryResult := query.Updates(map[string]any{
+			"view_count":     gorm.Expr("view_count + 1"),
+			"last_viewed_at": sql.NullTime{Time: time.Now().UTC(), Valid: true},
+		}); queryResult.Error != nil {
 			return queryResult.Error
 		} else if queryResult.RowsAffected == 0 {
 			return nil
