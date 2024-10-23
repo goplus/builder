@@ -169,6 +169,13 @@ export async function exploreProjects({ order, count }: ExploreParams) {
   return listResult.data
 }
 
+/** Record a view for the given project */
+export async function recordProjectView(owner: string, name: string) {
+  return client.post(
+    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/view`
+  ) as Promise<void>
+}
+
 /**
  * Check if given project liked by current logged-in user.
  * If not logged in, `false` will be returned.

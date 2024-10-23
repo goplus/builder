@@ -107,6 +107,10 @@ type post_project_owner_name_liking struct {
 	yap.Handler
 	*AppV2
 }
+type post_project_owner_name_view struct {
+	yap.Handler
+	*AppV2
+}
 type post_user_username_following struct {
 	yap.Handler
 	*AppV2
@@ -188,7 +192,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -1023,6 +1027,33 @@ func (this *post_project_owner_name_liking) Main(_gop_arg0 *yap.Context) {
 }
 func (this *post_project_owner_name_liking) Classfname() string {
 	return "post_project_#owner_#name_liking"
+}
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:6
+func (this *post_project_owner_name_view) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:6:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:8:1
+	if
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:8:1
+	_, ok := ensureUser(ctx); !ok {
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:9:1
+		return
+	}
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:12:1
+	if
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:12:1
+	err := this.ctrl.RecordProjectView(ctx.Context(), this.Gop_Env("owner"), this.Gop_Env("name")); err != nil {
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:13:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:14:1
+		return
+	}
+//line cmd/spx-backend/post_project_#owner_#name_view.yap:16:1
+	this.Text__0(204, "", "")
+}
+func (this *post_project_owner_name_view) Classfname() string {
+	return "post_project_#owner_#name_view"
 }
 //line cmd/spx-backend/post_user_#username_following.yap:6
 func (this *post_user_username_following) Main(_gop_arg0 *yap.Context) {
