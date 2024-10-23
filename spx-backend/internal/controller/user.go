@@ -158,21 +158,23 @@ func (ctrl *Controller) ListUsers(ctx context.Context, params *ListUsersParams) 
 			Joins("JOIN user_relationship AS followee_relationship ON followee_relationship.target_user_id = followee.id AND followee_relationship.user_id = user.id").
 			Where("followee_relationship.followed_at IS NOT NULL")
 	}
+	var queryOrderByColumn string
 	switch params.OrderBy {
 	case ListUsersOrderByCreatedAt:
-		query = query.Order(fmt.Sprintf("user.created_at %s", params.SortOrder))
 	case ListUsersOrderByUpdatedAt:
-		query = query.Order(fmt.Sprintf("user.updated_at %s", params.SortOrder))
+		queryOrderByColumn = "user.updated_at"
 	case ListUsersOrderByFollowedAt:
 		switch {
 		case params.Follower != nil:
-			query = query.Order(fmt.Sprintf("follower_relationship.followed_at %s", params.SortOrder))
+			queryOrderByColumn = "follower_relationship.followed_at"
 		case params.Followee != nil:
-			query = query.Order(fmt.Sprintf("followee_relationship.followed_at %s", params.SortOrder))
-		default:
-			query = query.Order(fmt.Sprintf("user.created_at %s", params.SortOrder))
+			queryOrderByColumn = "followee_relationship.followed_at"
 		}
 	}
+	if queryOrderByColumn == "" {
+		queryOrderByColumn = "user.created_at"
+	}
+	query = query.Order(fmt.Sprintf("%s %s, user.id", queryOrderByColumn, params.SortOrder))
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

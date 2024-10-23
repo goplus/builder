@@ -195,14 +195,18 @@ func (ctrl *Controller) ListProjectReleases(ctx context.Context, params *ListPro
 			Where("project_owner.username = ?", projectOwnerUsername).
 			Where("project.name = ?", projectName)
 	}
+	var queryOrderByColumn string
 	switch params.OrderBy {
 	case ListProjectReleasesOrderByCreatedAt:
-		query = query.Order(fmt.Sprintf("project_release.created_at %s", params.SortOrder))
 	case ListProjectReleasesOrderByUpdatedAt:
-		query = query.Order(fmt.Sprintf("project_release.updated_at %s", params.SortOrder))
+		queryOrderByColumn = "project_release.updated_at"
 	case ListProjectReleasesOrderByRemixCount:
-		query = query.Order(fmt.Sprintf("project_release.remix_count %s", params.SortOrder))
+		queryOrderByColumn = "project_release.remix_count"
 	}
+	if queryOrderByColumn == "" {
+		queryOrderByColumn = "project_release.created_at"
+	}
+	query = query.Order(fmt.Sprintf("%s %s, project_release.id", queryOrderByColumn, params.SortOrder))
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

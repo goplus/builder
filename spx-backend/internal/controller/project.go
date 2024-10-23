@@ -424,36 +424,32 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 			Where("user_relationship.user_id = ?", mUser.ID).
 			Where("user_relationship.followed_at IS NOT NULL")
 	}
+	var queryOrderByColumn string
 	switch params.OrderBy {
 	case ListProjectsOrderByCreatedAt:
-		query = query.Order(fmt.Sprintf("project.created_at %s", params.SortOrder))
 	case ListProjectsOrderByUpdatedAt:
-		query = query.Order(fmt.Sprintf("project.updated_at %s", params.SortOrder))
+		queryOrderByColumn = "project.updated_at"
 	case ListProjectsOrderByLikeCount:
-		query = query.Order(fmt.Sprintf("project.like_count %s", params.SortOrder))
+		queryOrderByColumn = "project.like_count"
 	case ListProjectsOrderByRemixCount:
-		query = query.Order(fmt.Sprintf("project.remix_count %s", params.SortOrder))
+		queryOrderByColumn = "project.remix_count"
 	case ListProjectsOrderByRecentLikeCount:
 		if params.LikesReceivedAfter == nil {
-			query = query.Order(fmt.Sprintf("project.like_count %s", params.SortOrder))
+			queryOrderByColumn = "project.like_count"
 			break
 		}
-		query = query.
-			Joins("JOIN user_project_relationship AS recent_likes_relationship ON recent_likes_relationship.project_id = project.id").
-			Where("recent_likes_relationship.liked_at > ?", *params.LikesReceivedAfter).
-			Group("project.id").
-			Order("COUNT(recent_likes_relationship.id) " + string(params.SortOrder))
+		queryOrderByColumn = "COUNT(likes_after_relationship.id)"
 	case ListProjectsOrderByRecentRemixCount:
 		if params.RemixesReceivedAfter == nil {
-			query = query.Order(fmt.Sprintf("project.remix_count %s", params.SortOrder))
+			queryOrderByColumn = "project.remix_count"
 			break
 		}
-		query = query.
-			Joins("JOIN project AS recent_remixed_project ON recent_remixed_project.remixed_from_release_id = project_release.id").
-			Where("recent_remixed_project.created_at > ?", *params.RemixesReceivedAfter).
-			Group("project.id").
-			Order("COUNT(recent_remixed_project.id) " + string(params.SortOrder))
+		queryOrderByColumn = "COUNT(remixed_project.id)"
 	}
+	if queryOrderByColumn == "" {
+		queryOrderByColumn = "project.created_at"
+	}
+	query = query.Order(fmt.Sprintf("%s %s, project.id", queryOrderByColumn, params.SortOrder))
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
