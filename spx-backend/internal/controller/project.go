@@ -86,7 +86,7 @@ func (ctrl *Controller) ensureProject(ctx context.Context, owner, name string, o
 	}
 
 	if ownedOnly || mProject.Visibility == model.VisibilityPrivate {
-		if _, err := ensureUser(ctx, mProject.OwnerID); err != nil {
+		if _, err := ensureAuthedUser(ctx, mProject.OwnerID); err != nil {
 			return nil, err
 		}
 	}
@@ -125,13 +125,13 @@ func (p *CreateProjectParams) Validate() (ok bool, msg string) {
 
 // CreateProject creates a project.
 func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProjectParams) (*ProjectDTO, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return nil, ErrUnauthorized
 	}
 
 	mProject := model.Project{
-		OwnerID:      mUser.ID,
+		OwnerID:      mAuthedUser.ID,
 		Name:         params.Name,
 		Version:      1,
 		Files:        params.Files,
@@ -203,7 +203,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 		if mProject.Visibility == model.VisibilityPublic {
 			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 		}
-		if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
 			return err
 		}
 
@@ -357,10 +357,15 @@ func (p *ListProjectsParams) Validate() (ok bool, msg string) {
 
 // ListProjects lists projects.
 func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsParams) (*ByPage[ProjectDTO], error) {
-	// Ensure non-owners can only see public projects.
-	if mUser, ok := UserFromContext(ctx); !ok || params.Owner == nil || *params.Owner != mUser.Username {
-		public := model.VisibilityPublic.String()
-		params.Visibility = &public
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed || (params.Owner != nil && *params.Owner != mAuthedUser.Username) {
+		// Ensure non-owners can only see public projects.
+		if params.Visibility == nil {
+			public := model.VisibilityPublic.String()
+			params.Visibility = &public
+		} else if *params.Visibility != model.VisibilityPublic.String() {
+			return nil, ErrUnauthorized
+		}
 	}
 
 	query := ctrl.db.WithContext(ctx).
@@ -390,6 +395,8 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 	}
 	if params.Visibility != nil {
 		query = query.Where("project.visibility = ?", model.ParseVisibility(*params.Visibility))
+	} else if isAuthed && params.Owner == nil {
+		query = query.Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic))
 	}
 	if params.Liker != nil {
 		query = query.
@@ -415,13 +422,12 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 			Group("project.id")
 	}
 	if params.FromFollowees != nil && *params.FromFollowees {
-		mUser, ok := UserFromContext(ctx)
-		if !ok {
+		if !isAuthed {
 			return nil, ErrUnauthorized
 		}
 		query = query.
 			Joins("JOIN user_relationship ON user_relationship.target_user_id = project.owner_id").
-			Where("user_relationship.user_id = ?", mUser.ID).
+			Where("user_relationship.user_id = ?", mAuthedUser.ID).
 			Where("user_relationship.followed_at IS NOT NULL")
 	}
 	var queryOrderByColumn string
@@ -526,8 +532,8 @@ func (p *UpdateProjectParams) Diff(mProject *model.Project) map[string]any {
 
 // UpdateProject updates a project.
 func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, params *UpdateProjectParams) (*ProjectDTO, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return nil, ErrUnauthorized
 	}
 
@@ -562,7 +568,7 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 				}
 			}
 			if len(mUserUpdates) > 0 {
-				if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
+				if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
 					return err
 				}
 			}
@@ -578,8 +584,8 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 
 // DeleteProject deletes a project.
 func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
 
@@ -605,7 +611,7 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 		if mProject.Visibility == model.VisibilityPublic {
 			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 		}
-		if err := tx.Model(mUser).Updates(mUserUpdates).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
 			return err
 		}
 
@@ -670,8 +676,8 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 
 // RecordProjectView records a view for the specified project as the authenticated user.
 func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
 
@@ -685,7 +691,7 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -721,8 +727,8 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 
 // LikeProject likes the specified project as the authenticated user.
 func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
 
@@ -736,7 +742,7 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -753,7 +759,7 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mUser).Update("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Update("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mProject).Update("like_count", gorm.Expr("like_count + 1")).Error; err != nil {
@@ -768,8 +774,8 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 
 // HasLikedProject checks if the authenticated user has liked the specified project.
 func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string) (bool, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return false, nil
 	}
 
@@ -785,7 +791,7 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string)
 
 	if err := ctrl.db.WithContext(ctx).
 		Select("id").
-		Where("user_id = ?", mUser.ID).
+		Where("user_id = ?", mAuthedUser.ID).
 		Where("project_id = ?", mProject.ID).
 		Where("liked_at IS NOT NULL").
 		First(&model.UserProjectRelationship{}).
@@ -793,15 +799,15 @@ func (ctrl *Controller) HasLikedProject(ctx context.Context, owner, name string)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check if user %s has liked project %s/%s: %w", mUser.Username, owner, name, err)
+		return false, fmt.Errorf("failed to check if user %s has liked project %s/%s: %w", mAuthedUser.Username, owner, name, err)
 	}
 	return true, nil
 }
 
 // UnlikeProject unlikes the specified project as the authenticated user.
 func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
 
@@ -815,7 +821,7 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) e
 		return fmt.Errorf("failed to get project %s/%s: %w", owner, name, err)
 	}
 
-	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mUser.ID, mProject.ID)
+	mUserProjectRelationship, err := model.FirstOrCreateUserProjectRelationship(ctx, ctrl.db, mAuthedUser.ID, mProject.ID)
 	if err != nil {
 		return err
 	}
@@ -832,7 +838,7 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) e
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mUser).Update("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Update("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mProject).Update("like_count", gorm.Expr("like_count - 1")).Error; err != nil {

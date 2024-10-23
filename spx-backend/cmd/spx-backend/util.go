@@ -12,10 +12,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// ensureUser ensures the user is authenticated.
-func ensureUser(ctx *yap.Context) (u *model.User, ok bool) {
-	u, ok = controller.UserFromContext(ctx.Context())
-	if !ok {
+// ensureAuthedUser ensures there is an authenticated user in the context.
+func ensureAuthedUser(ctx *yap.Context) (mAuthedUser *model.User, isAuthed bool) {
+	mAuthedUser, isAuthed = controller.AuthedUserFromContext(ctx.Context())
+	if !isAuthed {
 		replyWithCode(ctx, errorUnauthorized)
 	}
 	return

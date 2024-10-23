@@ -4,10 +4,10 @@
 //   GET /util/upinfo
 
 ctx := &Context
-
-if _, ok := ensureUser(ctx); !ok {
+if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 	return
 }
+
 upInfo, err := ctrl.GetUpInfo(ctx.Context())
 if err != nil {
 	replyWithInnerError(ctx, err)

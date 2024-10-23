@@ -9,7 +9,6 @@ import (
 
 ctx := &Context
 
-user, _ := controller.UserFromContext(ctx.Context())
 params := controller.NewListAssetsParams()
 
 if keyword := ${keyword}; keyword != "" {
@@ -18,11 +17,11 @@ if keyword := ${keyword}; keyword != "" {
 
 switch owner := ${owner}; owner {
 case "":
-	if user == nil {
-		replyWithCode(ctx, errorUnauthorized)
+	mAuthedUser, isAuthed := ensureAuthedUser(ctx)
+	if !isAuthed {
 		return
 	}
-	params.Owner = &user.Username
+	params.Owner = &mAuthedUser.Username
 case "*":
 	params.Owner = nil
 default:

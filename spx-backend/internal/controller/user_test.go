@@ -30,64 +30,64 @@ func newTestUser() *model.User {
 }
 
 func newContextWithTestUser(ctx context.Context) context.Context {
-	return NewContextWithUser(ctx, newTestUser())
+	return NewContextWithAuthedUser(ctx, newTestUser())
 }
 
-func TestNewContextWithUser(t *testing.T) {
+func TestNewContextWithAuthedUser(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		mExpectedUser := newTestUser()
-		ctx := NewContextWithUser(context.Background(), mExpectedUser)
+		ctx := NewContextWithAuthedUser(context.Background(), mExpectedUser)
 
-		mUser, ok := ctx.Value(userContextKey).(*model.User)
-		require.True(t, ok)
-		require.NotNil(t, mUser)
-		assert.Equal(t, *mExpectedUser, *mUser)
+		mAuthedUser, isAuthed := ctx.Value(authedUserContextKey).(*model.User)
+		require.True(t, isAuthed)
+		require.NotNil(t, mAuthedUser)
+		assert.Equal(t, *mExpectedUser, *mAuthedUser)
 	})
 }
 
-func TestUserFromContext(t *testing.T) {
+func TestAuthedUserFromContext(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		mExpectedUser := newTestUser()
 		ctx := newContextWithTestUser(context.Background())
 
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
-		require.NotNil(t, mUser)
-		assert.Equal(t, *mExpectedUser, *mUser)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
+		require.NotNil(t, mAuthedUser)
+		assert.Equal(t, *mExpectedUser, *mAuthedUser)
 	})
 
-	t.Run("NoUser", func(t *testing.T) {
-		mUser, ok := UserFromContext(context.Background())
-		require.False(t, ok)
-		require.Nil(t, mUser)
+	t.Run("NoAuthedUser", func(t *testing.T) {
+		mAuthedUser, isAuthed := AuthedUserFromContext(context.Background())
+		require.False(t, isAuthed)
+		require.Nil(t, mAuthedUser)
 	})
 }
 
-func TestEnsureUser(t *testing.T) {
+func TestEnsureAuthedUser(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		mExpectedUser := newTestUser()
-		ctx := NewContextWithUser(context.Background(), mExpectedUser)
+		ctx := NewContextWithAuthedUser(context.Background(), mExpectedUser)
 
-		mUser, err := ensureUser(ctx, 1)
+		mAuthedUser, err := ensureAuthedUser(ctx, 1)
 		require.NoError(t, err)
-		assert.Equal(t, *mExpectedUser, *mUser)
+		assert.Equal(t, *mExpectedUser, *mAuthedUser)
 	})
 
 	t.Run("ErrUnauthorized", func(t *testing.T) {
-		_, err := ensureUser(context.Background(), 1)
+		_, err := ensureAuthedUser(context.Background(), 1)
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
 
 	t.Run("ErrForbidden", func(t *testing.T) {
 		mExpectedUser := newTestUser()
-		ctx := NewContextWithUser(context.Background(), mExpectedUser)
+		ctx := NewContextWithAuthedUser(context.Background(), mExpectedUser)
 
-		_, err := ensureUser(ctx, 65535)
+		_, err := ensureAuthedUser(ctx, 65535)
 		assert.ErrorIs(t, err, ErrForbidden)
 	})
 }
 
-func TestControllerUserFromToken(t *testing.T) {
+func TestControllerAuthedUserFromToken(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
 		ctrl, dbMock, closeDB := newTestController(t)
 		defer closeDB()
@@ -117,10 +117,10 @@ func TestControllerUserFromToken(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mExpectedUser)...))
 
-		mUser, err := ctrl.UserFromToken(context.Background(), fakeUserToken)
+		mAuthedUser, err := ctrl.AuthedUserFromToken(context.Background(), fakeUserToken)
 		require.NoError(t, err)
-		require.NotNil(t, mUser)
-		assert.Equal(t, mExpectedUser, *mUser)
+		require.NotNil(t, mAuthedUser)
+		assert.Equal(t, mExpectedUser, *mAuthedUser)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -129,7 +129,7 @@ func TestControllerUserFromToken(t *testing.T) {
 		ctrl, _, closeDB := newTestController(t)
 		defer closeDB()
 
-		_, err := ctrl.UserFromToken(context.Background(), "invalid-token")
+		_, err := ctrl.AuthedUserFromToken(context.Background(), "invalid-token")
 		require.Error(t, err)
 		assert.EqualError(t, err, "ctrl.casdoorClient.ParseJwtToken failed: unauthorized: token contains an invalid number of segments")
 	})
@@ -549,8 +549,8 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := &UpdateAuthedUserParams{
 			Description: "New description",
@@ -559,7 +559,7 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{Model: mUser.Model}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			Updates(map[string]any{
 				"description": params.Description,
 				"updated_at":  sqlmock.AnyArg(),
@@ -575,7 +575,7 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		result, err := ctrl.UpdateAuthedUser(ctx, params)
 		require.NoError(t, err)
 		assert.Equal(t, params.Description, result.Description)
-		assert.Equal(t, mUser.Username, result.Username)
+		assert.Equal(t, mAuthedUser.Username, result.Username)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -585,17 +585,17 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := &UpdateAuthedUserParams{
-			Description: mUser.Description,
+			Description: mAuthedUser.Description,
 		}
 
 		result, err := ctrl.UpdateAuthedUser(ctx, params)
 		require.NoError(t, err)
-		assert.Equal(t, mUser.Description, result.Description)
-		assert.Equal(t, mUser.Username, result.Username)
+		assert.Equal(t, mAuthedUser.Description, result.Description)
+		assert.Equal(t, mAuthedUser.Username, result.Username)
 	})
 
 	t.Run("Unauthorized", func(t *testing.T) {
@@ -618,8 +618,8 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := &UpdateAuthedUserParams{
 			Description: "New description",
@@ -628,7 +628,7 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{Model: mUser.Model}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			Updates(map[string]any{"description": params.Description}).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -638,7 +638,7 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 
 		_, err := ctrl.UpdateAuthedUser(ctx, params)
 		require.Error(t, err)
-		assert.EqualError(t, err, fmt.Sprintf("failed to update authenticated user %s: update error", mUser.Username))
+		assert.EqualError(t, err, fmt.Sprintf("failed to update authenticated user %s: update error", mAuthedUser.Username))
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
 	})
@@ -662,8 +662,8 @@ func TestControllerFollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -680,7 +680,7 @@ func TestControllerFollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mTargetUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			First(&model.UserRelationship{}).
 			Statement
@@ -719,7 +719,7 @@ func TestControllerFollowUser(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{Model: mUser.Model}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			Updates(map[string]any{
 				"following_count": gorm.Expr("following_count + 1"),
 				"updated_at":      sqlmock.AnyArg(),
@@ -755,8 +755,8 @@ func TestControllerFollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -773,7 +773,7 @@ func TestControllerFollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mTargetUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			First(&model.UserRelationship{}).
 			Statement
@@ -783,7 +783,7 @@ func TestControllerFollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userRelationshipDBColumns).AddRows(generateUserRelationshipDBRows(
 				model.UserRelationship{
 					Model:        model.Model{ID: 1},
-					UserID:       mUser.ID,
+					UserID:       mAuthedUser.ID,
 					TargetUserID: mTargetUser.ID,
 					FollowedAt:   sql.NullTime{Valid: true},
 				},
@@ -808,10 +808,10 @@ func TestControllerFollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
-		err := ctrl.FollowUser(ctx, mUser.Username)
+		err := ctrl.FollowUser(ctx, mAuthedUser.Username)
 		require.ErrorIs(t, err, ErrBadRequest)
 	})
 }
@@ -830,8 +830,8 @@ func TestControllerIsFollowingUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -849,7 +849,7 @@ func TestControllerIsFollowingUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Select("id").
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			Where("followed_at IS NOT NULL").
 			First(&model.UserRelationship{}).
@@ -871,8 +871,8 @@ func TestControllerIsFollowingUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -890,7 +890,7 @@ func TestControllerIsFollowingUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Select("id").
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			Where("followed_at IS NOT NULL").
 			First(&model.UserRelationship{}).
@@ -920,10 +920,10 @@ func TestControllerIsFollowingUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
-		_, err := ctrl.IsFollowingUser(ctx, mUser.Username)
+		_, err := ctrl.IsFollowingUser(ctx, mAuthedUser.Username)
 		require.ErrorIs(t, err, ErrBadRequest)
 	})
 }
@@ -946,8 +946,8 @@ func TestControllerUnfollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -964,7 +964,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mTargetUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			First(&model.UserRelationship{}).
 			Statement
@@ -974,7 +974,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userRelationshipDBColumns).AddRows(generateUserRelationshipDBRows(
 				model.UserRelationship{
 					Model:        model.Model{ID: 1},
-					UserID:       mUser.ID,
+					UserID:       mAuthedUser.ID,
 					TargetUserID: mTargetUser.ID,
 					FollowedAt:   sql.NullTime{Valid: true, Time: sql.NullTime{}.Time},
 				},
@@ -996,7 +996,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{Model: mUser.Model}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			Updates(map[string]any{
 				"following_count": gorm.Expr("following_count - 1"),
 				"updated_at":      sqlmock.AnyArg(),
@@ -1032,8 +1032,8 @@ func TestControllerUnfollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mTargetUser := model.User{
 			Model:    model.Model{ID: 2},
@@ -1050,7 +1050,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mTargetUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("user_id = ?", mUser.ID).
+			Where("user_id = ?", mAuthedUser.ID).
 			Where("target_user_id = ?", mTargetUser.ID).
 			First(&model.UserRelationship{}).
 			Statement
@@ -1060,7 +1060,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(userRelationshipDBColumns).AddRows(generateUserRelationshipDBRows(
 				model.UserRelationship{
 					Model:        model.Model{ID: 1},
-					UserID:       mUser.ID,
+					UserID:       mAuthedUser.ID,
 					TargetUserID: mTargetUser.ID,
 					FollowedAt:   sql.NullTime{Valid: false},
 				},
@@ -1085,10 +1085,10 @@ func TestControllerUnfollowUser(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
-		err := ctrl.UnfollowUser(ctx, mUser.Username)
+		err := ctrl.UnfollowUser(ctx, mAuthedUser.Username)
 		require.ErrorIs(t, err, ErrBadRequest)
 	})
 }

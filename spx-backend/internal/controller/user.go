@@ -42,44 +42,44 @@ func toUserDTO(mUser model.User) UserDTO {
 	}
 }
 
-// userContextKey is the context key for user.
-var userContextKey = &contextKey{"user"}
+// authedUserContextKey is the context key for authenticated users.
+var authedUserContextKey = &contextKey{"authed-user"}
 
-// NewContextWithUser creates a new context with user.
-func NewContextWithUser(ctx context.Context, mUser *model.User) context.Context {
-	return context.WithValue(ctx, userContextKey, mUser)
+// NewContextWithAuthedUser creates a new context with the authenticated user.
+func NewContextWithAuthedUser(ctx context.Context, mAuthedUser *model.User) context.Context {
+	return context.WithValue(ctx, authedUserContextKey, mAuthedUser)
 }
 
-// UserFromContext gets user from context.
-func UserFromContext(ctx context.Context) (mUser *model.User, ok bool) {
-	mUser, ok = ctx.Value(userContextKey).(*model.User)
+// AuthedUserFromContext gets the authenticated user from context.
+func AuthedUserFromContext(ctx context.Context) (mAuthedUser *model.User, isAuthed bool) {
+	mAuthedUser, isAuthed = ctx.Value(authedUserContextKey).(*model.User)
 	return
 }
 
-// ensureUser ensures there is a user in the context and it matches the expected
-// user.
-func ensureUser(ctx context.Context, expectedUserID int64) (*model.User, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+// ensureAuthedUser ensures there is an authenticated user in the context and it
+// matches the expected user.
+func ensureAuthedUser(ctx context.Context, expectedUserID int64) (*model.User, error) {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return nil, ErrUnauthorized
 	}
-	if mUser.ID != expectedUserID {
+	if mAuthedUser.ID != expectedUserID {
 		return nil, ErrForbidden
 	}
-	return mUser, nil
+	return mAuthedUser, nil
 }
 
-// UserFromToken gets user from the provided JWT token.
-func (ctrl *Controller) UserFromToken(ctx context.Context, token string) (*model.User, error) {
+// AuthedUserFromToken gets authenticated user from the provided JWT token.
+func (ctrl *Controller) AuthedUserFromToken(ctx context.Context, token string) (*model.User, error) {
 	claims, err := ctrl.casdoorClient.ParseJwtToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("ctrl.casdoorClient.ParseJwtToken failed: %w: %w", ErrUnauthorized, err)
 	}
-	mUser, err := model.FirstOrCreateUser(ctx, ctrl.db, &claims.User)
+	mAuthedUser, err := model.FirstOrCreateUser(ctx, ctrl.db, &claims.User)
 	if err != nil {
 		return nil, err
 	}
-	return mUser, nil
+	return mAuthedUser, nil
 }
 
 // ListUsersOrderBy is the order by condition for listing users.
@@ -251,27 +251,27 @@ func (p *UpdateAuthedUserParams) Diff(mUser *model.User) map[string]any {
 
 // UpdateAuthedUser updates the authenticated user.
 func (ctrl *Controller) UpdateAuthedUser(ctx context.Context, params *UpdateAuthedUserParams) (*UserDTO, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return nil, ErrUnauthorized
 	}
-	updates := params.Diff(mUser)
+	updates := params.Diff(mAuthedUser)
 	if len(updates) > 0 {
-		if err := ctrl.db.WithContext(ctx).Model(mUser).Updates(updates).Error; err != nil {
-			return nil, fmt.Errorf("failed to update authenticated user %s: %w", mUser.Username, err)
+		if err := ctrl.db.WithContext(ctx).Model(mAuthedUser).Updates(updates).Error; err != nil {
+			return nil, fmt.Errorf("failed to update authenticated user %s: %w", mAuthedUser.Username, err)
 		}
 	}
-	userDTO := toUserDTO(*mUser)
+	userDTO := toUserDTO(*mAuthedUser)
 	return &userDTO, nil
 }
 
 // FollowUser follows the target user as the authenticated user.
 func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
-	if mUser.Username == targetUsername {
+	if mAuthedUser.Username == targetUsername {
 		return ErrBadRequest
 	}
 
@@ -283,7 +283,7 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 		return fmt.Errorf("failed to get target user %s: %w", targetUsername, err)
 	}
 
-	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mUser.ID, mTargetUser.ID)
+	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mAuthedUser.ID, mTargetUser.ID)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mUser).Update("following_count", gorm.Expr("following_count + 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Update("following_count", gorm.Expr("following_count + 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mTargetUser).Update("follower_count", gorm.Expr("follower_count + 1")).Error; err != nil {
@@ -315,11 +315,11 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 
 // IsFollowingUser checks if the authenticated user is following the target user.
 func (ctrl *Controller) IsFollowingUser(ctx context.Context, targetUsername string) (bool, error) {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return false, ErrUnauthorized
 	}
-	if mUser.Username == targetUsername {
+	if mAuthedUser.Username == targetUsername {
 		return false, ErrBadRequest
 	}
 
@@ -333,7 +333,7 @@ func (ctrl *Controller) IsFollowingUser(ctx context.Context, targetUsername stri
 
 	if err := ctrl.db.WithContext(ctx).
 		Select("id").
-		Where("user_id = ?", mUser.ID).
+		Where("user_id = ?", mAuthedUser.ID).
 		Where("target_user_id = ?", mTargetUser.ID).
 		Where("followed_at IS NOT NULL").
 		First(&model.UserRelationship{}).
@@ -341,18 +341,18 @@ func (ctrl *Controller) IsFollowingUser(ctx context.Context, targetUsername stri
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, fmt.Errorf("failed to check if user %s is following user %s: %w", mUser.Username, targetUsername, err)
+		return false, fmt.Errorf("failed to check if user %s is following user %s: %w", mAuthedUser.Username, targetUsername, err)
 	}
 	return true, nil
 }
 
 // UnfollowUser unfollows the target user as the authenticated user.
 func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string) error {
-	mUser, ok := UserFromContext(ctx)
-	if !ok {
+	mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+	if !isAuthed {
 		return ErrUnauthorized
 	}
-	if mUser.Username == targetUsername {
+	if mAuthedUser.Username == targetUsername {
 		return ErrBadRequest
 	}
 
@@ -364,7 +364,7 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 		return fmt.Errorf("failed to get target user %s: %w", targetUsername, err)
 	}
 
-	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mUser.ID, mTargetUser.ID)
+	mUserRelationship, err := model.FirstOrCreateUserRelationship(ctx, ctrl.db, mAuthedUser.ID, mTargetUser.ID)
 	if err != nil {
 		return err
 	}
@@ -381,7 +381,7 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mUser).Update("following_count", gorm.Expr("following_count - 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).Update("following_count", gorm.Expr("following_count - 1")).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&mTargetUser).Update("follower_count", gorm.Expr("follower_count - 1")).Error; err != nil {

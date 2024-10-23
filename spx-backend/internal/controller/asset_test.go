@@ -34,12 +34,12 @@ func TestControllerEnsureAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mUser.ID,
+			OwnerID:    mAuthedUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -53,13 +53,13 @@ func TestControllerEnsureAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		asset, err := ctrl.ensureAsset(ctx, mAsset.ID, false)
 		require.NoError(t, err)
@@ -97,12 +97,12 @@ func TestControllerEnsureAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mUser.ID + 1,
+			OwnerID:    mAuthedUser.ID + 1,
 			Visibility: model.VisibilityPrivate,
 		}
 
@@ -244,8 +244,8 @@ func TestControllerCreateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := &CreateAssetParams{
 			DisplayName: "Test Asset",
@@ -273,7 +273,7 @@ func TestControllerCreateAsset(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(model.Asset{
 				Model:       model.Model{ID: 1},
-				OwnerID:     mUser.ID,
+				OwnerID:     mAuthedUser.ID,
 				DisplayName: params.DisplayName,
 				Type:        model.ParseAssetType(params.Type),
 				Category:    params.Category,
@@ -282,13 +282,13 @@ func TestControllerCreateAsset(t *testing.T) {
 			})...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		assetDTO, err := ctrl.CreateAsset(ctx, params)
 		require.NoError(t, err)
@@ -399,14 +399,14 @@ func TestControllerListAssets(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := NewListAssetsParams()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Model(&model.Asset{}).
-			Where("asset.visibility = ?", model.VisibilityPublic).
+			Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
 			Count(new(int64)).
 			Statement
 		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -415,7 +415,7 @@ func TestControllerListAssets(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("asset.visibility = ?", model.VisibilityPublic).
+			Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
 			Order("asset.created_at desc, asset.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Asset{}).
@@ -425,19 +425,19 @@ func TestControllerListAssets(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(
 				generateAssetDBRows(
-					model.Asset{Model: model.Model{ID: 1}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
-					model.Asset{Model: model.Model{ID: 2}, OwnerID: mUser.ID, Visibility: model.VisibilityPublic},
+					model.Asset{Model: model.Model{ID: 1}, OwnerID: mAuthedUser.ID, Visibility: model.VisibilityPublic},
+					model.Asset{Model: model.Model{ID: 2}, OwnerID: mAuthedUser.ID, Visibility: model.VisibilityPublic},
 				)...,
 			))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		result, err := ctrl.ListAssets(ctx, params)
 		require.NoError(t, err)
@@ -466,12 +466,12 @@ func TestControllerGetAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mUser.ID,
+			OwnerID:    mAuthedUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -485,13 +485,13 @@ func TestControllerGetAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		asset, err := ctrl.GetAsset(ctx, "1")
 		require.NoError(t, err)
@@ -634,12 +634,12 @@ func TestControllerUpdateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:       model.Model{ID: 1},
-			OwnerID:     mUser.ID,
+			OwnerID:     mAuthedUser.ID,
 			DisplayName: "Old Name",
 			Type:        model.AssetTypeSprite,
 			Category:    "old-category",
@@ -665,13 +665,13 @@ func TestControllerUpdateAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		dbMock.ExpectBegin()
 
@@ -741,12 +741,12 @@ func TestControllerUpdateAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:       model.Model{ID: 1},
-			OwnerID:     mUser.ID + 1,
+			OwnerID:     mAuthedUser.ID + 1,
 			DisplayName: "Old Name",
 			Type:        model.AssetTypeSprite,
 			Category:    "old-category",
@@ -809,12 +809,12 @@ func TestControllerDeleteAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mUser.ID,
+			OwnerID:    mAuthedUser.ID,
 			Visibility: model.VisibilityPublic,
 		}
 
@@ -828,13 +828,13 @@ func TestControllerDeleteAsset(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(mAsset)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		dbMock.ExpectBegin()
 
@@ -881,12 +881,12 @@ func TestControllerDeleteAsset(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mAsset := model.Asset{
 			Model:      model.Model{ID: 1},
-			OwnerID:    mUser.ID + 1,
+			OwnerID:    mAuthedUser.ID + 1,
 			Visibility: model.VisibilityPrivate,
 		}
 
