@@ -416,7 +416,7 @@ func TestControllerListAssets(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("asset.visibility = ?", model.VisibilityPublic).
-			Order("asset.created_at desc").
+			Order("asset.created_at desc, asset.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Asset{}).
 			Statement

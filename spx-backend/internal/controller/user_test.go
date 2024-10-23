@@ -227,7 +227,7 @@ func TestControllerListUsers(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Order("user.created_at desc").
+			Order("user.created_at desc, user.id").
 			Limit(2).
 			Find(&[]model.User{}).
 			Statement
@@ -276,7 +276,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user AS follower ON follower.username = ?", *params.Follower).
 			Joins("JOIN user_relationship AS follower_relationship ON follower_relationship.user_id = follower.id AND follower_relationship.target_user_id = user.id").
 			Where("follower_relationship.followed_at IS NOT NULL").
-			Order("user.created_at desc").
+			Order("user.created_at desc, user.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
@@ -326,7 +326,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user AS followee ON followee.username = ?", *params.Followee).
 			Joins("JOIN user_relationship AS followee_relationship ON followee_relationship.target_user_id = followee.id AND followee_relationship.user_id = user.id").
 			Where("followee_relationship.followed_at IS NOT NULL").
-			Order("user.created_at desc").
+			Order("user.created_at desc, user.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
@@ -381,7 +381,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user AS follower ON follower.username = ?", *params.Follower).
 			Joins("JOIN user_relationship AS follower_relationship ON follower_relationship.user_id = follower.id AND follower_relationship.target_user_id = user.id").
 			Where("follower_relationship.followed_at IS NOT NULL").
-			Order("follower_relationship.followed_at desc").
+			Order("follower_relationship.followed_at desc, user.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement

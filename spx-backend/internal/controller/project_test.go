@@ -713,7 +713,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project.visibility = ?", model.VisibilityPublic).
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(2).
 			Find(&[]model.Project{}).
 			Statement
@@ -778,7 +778,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", *params.Owner).
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -843,7 +843,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project.name LIKE ?", "%"+*params.Keyword+"%").
 			Where("project.visibility = ?", model.VisibilityPublic).
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -914,7 +914,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("project.visibility = ?", model.VisibilityPublic).
 			Where("liker.username = ?", *params.Liker).
 			Where("liker_relationship.liked_at IS NOT NULL").
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -984,7 +984,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project.visibility = ?", model.VisibilityPublic).
-			Order("project.like_count desc").
+			Order("project.like_count desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1059,7 +1059,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project.visibility = ?", model.VisibilityPublic).
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1120,7 +1120,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("remixed_from_user.username = ?", "original_user").
 			Where("remixed_from_project.name = ?", "original_project").
 			Where("project.visibility = ?", model.VisibilityPublic).
-			Order("project.created_at desc").
+			Order("project.created_at desc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement

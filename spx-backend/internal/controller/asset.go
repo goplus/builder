@@ -237,12 +237,16 @@ func (ctrl *Controller) ListAssets(ctx context.Context, params *ListAssetsParams
 	if params.Visibility != nil {
 		query = query.Where("asset.visibility = ?", model.ParseVisibility(*params.Visibility))
 	}
+	var queryOrderByColumn string
 	switch params.OrderBy {
 	case ListAssetsOrderByCreatedAt:
-		query = query.Order(fmt.Sprintf("asset.created_at %s", params.SortOrder))
 	case ListAssetsOrderByUpdatedAt:
-		query = query.Order(fmt.Sprintf("asset.updated_at %s", params.SortOrder))
+		queryOrderByColumn = "asset.updated_at"
 	}
+	if queryOrderByColumn == "" {
+		queryOrderByColumn = "asset.created_at"
+	}
+	query = query.Order(fmt.Sprintf("%s %s, asset.id", queryOrderByColumn, params.SortOrder))
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
