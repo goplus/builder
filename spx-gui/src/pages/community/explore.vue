@@ -16,7 +16,7 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main">
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet">
+    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet">
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data" :key="project.id" :project="project" />
       </ul>

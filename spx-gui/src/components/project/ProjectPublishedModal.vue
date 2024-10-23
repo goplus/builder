@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIButton, UIFormModal, UITextInput } from '@/components/ui'
+import { UIButton, UIFormModal, UITextInput, UILink } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { getProjectPageRoute } from '@/router'
 import { Project } from '@/models/project'
@@ -50,7 +50,7 @@ const handleCopy = useMessageHandle(
   >
     <div class="desc">
       {{ $t(preLinkText)
-      }}<a class="link" target="_blank" :href="projectPageRoute">{{ $t(linkText) }}</a
+      }}<UILink target="_blank" :href="projectPageRoute">{{ $t(linkText) }}</UILink
       >{{ $t(postLinkText) }}
     </div>
     <div class="link-wrapper">
@@ -66,16 +66,6 @@ const handleCopy = useMessageHandle(
 .desc {
   color: var(--ui-color-grey-900);
   margin-bottom: 8px;
-}
-
-.link {
-  // TODO: extract to `@/components/ui`?
-  color: var(--ui-color-primary-main);
-  text-decoration: none;
-  transition: 0.1s;
-  &:hover {
-    color: var(--ui-color-primary-400);
-  }
 }
 
 .link-wrapper {

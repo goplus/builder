@@ -6,13 +6,16 @@
       <h2 class="title">
         <slot name="title"></slot>
       </h2>
-      <RouterLink v-if="linkTo != null" class="link" :to="linkTo">
+      <RouterUILink v-if="linkTo != null" class="link" :to="linkTo">
         <slot name="link"></slot>
         <UIIcon class="link-icon" type="arrowRightSmall" />
-      </RouterLink>
+      </RouterUILink>
     </header>
     <div class="projects-wrapper">
-      <ListResultWrapper :query-ret="queryRet" :height="255">
+      <ListResultWrapper content-type="project" :query-ret="queryRet" :height="255">
+        <template v-if="!!slots.empty" #empty="emptyProps">
+          <slot name="empty" v-bind="emptyProps"></slot>
+        </template>
         <ul class="projects">
           <slot></slot>
         </ul>
@@ -22,9 +25,11 @@
 </template>
 
 <script setup lang="ts">
+import { useSlots } from 'vue'
 import type { QueryRet } from '@/utils/exception'
-import ListResultWrapper from '../common/ListResultWrapper.vue'
 import { UIIcon } from '@/components/ui'
+import ListResultWrapper from '../common/ListResultWrapper.vue'
+import RouterUILink from '../common/RouterUILink.vue'
 
 /**
  * Context (page) where the projects section is used
@@ -35,11 +40,13 @@ import { UIIcon } from '@/components/ui'
 type Context = 'home' | 'user' | 'project'
 
 defineProps<{
-  linkTo?: string
+  linkTo?: string | null
   queryRet: QueryRet<unknown[]>
   context: Context
   numInRow: number
 }>()
+
+const slots = useSlots()
 </script>
 
 <style lang="scss" scoped>
@@ -57,14 +64,8 @@ defineProps<{
 
   .link {
     display: flex;
+    align-items: center;
     font-size: 15px;
-    color: var(--ui-color-primary-main);
-    text-decoration: none;
-    transition: 0.1s;
-
-    &:hover {
-      color: var(--ui-color-primary-400);
-    }
   }
 
   .link-icon {
@@ -77,6 +78,11 @@ defineProps<{
 .projects-wrapper {
   margin: 8px 0 32px;
   position: relative;
+
+  &:not(:has(.projects)) {
+    background-color: var(--ui-color-grey-100);
+    border-radius: var(--ui-border-radius-2);
+  }
 }
 
 .projects {
