@@ -40,7 +40,12 @@ const queryRet = useQuery(
     <template #title>
       {{ $t({ en: 'Projects I like', zh: '我喜欢的项目' }) }}
     </template>
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="534">
+    <ListResultWrapper
+      v-slot="slotProps"
+      content-type="project"
+      :query-ret="queryRet"
+      :height="534"
+    >
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>

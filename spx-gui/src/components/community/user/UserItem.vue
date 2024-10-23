@@ -5,6 +5,7 @@ import { getUserPageRoute } from '@/router'
 import UserAvatar from './UserAvatar.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
+import RouterUILink from '@/components/common/RouterUILink.vue'
 
 const props = defineProps<{
   user: User
@@ -17,7 +18,7 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
   <li class="user-item">
     <UserAvatar :user="user" />
     <div class="user-info">
-      <RouterLink class="name" :to="userRoute">{{ user.displayName }}</RouterLink>
+      <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
       <UserJoinedAt class="joined-at" :time="user.createdAt" />
       <p class="description">{{ user.description }}</p>
     </div>
@@ -47,12 +48,8 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
   font-size: 15px;
   line-height: 24px;
   color: var(--ui-color-title);
+  // TODO: should this style be one type of `UILink` / `RouterUILink`?
   text-decoration: none;
-  transition: 0.1s;
-
-  &:hover {
-    color: var(--ui-color-primary-main);
-  }
 }
 
 .description {

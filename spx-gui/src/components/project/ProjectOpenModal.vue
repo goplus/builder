@@ -41,7 +41,12 @@ const queryRet = useQuery(
     :visible="props.visible"
     @update:visible="emit('cancelled')"
   >
-    <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="546">
+    <ListResultWrapper
+      v-slot="slotProps"
+      content-type="project"
+      :query-ret="queryRet"
+      :height="546"
+    >
       <ul class="project-list">
         <ProjectItem
           v-for="project in slotProps.data.data"
