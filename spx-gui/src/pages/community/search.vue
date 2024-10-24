@@ -73,8 +73,8 @@ import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 
 usePageTitle({
-  en: `Project search results`,
-  zh: `项目搜索结果`
+  en: 'Project search results',
+  zh: '项目搜索结果'
 })
 
 const keyword = useRouteQueryParamStr('q', '')

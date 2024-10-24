@@ -218,11 +218,13 @@ export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => P
   return { fn: wrappedFn, isLoading }
 }
 
-export function usePageTitle(titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)) {
+export function usePageTitle(
+  titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
+) {
   const i18n = useI18n()
   function setTitle(parts: LocaleMessage | LocaleMessage[]) {
     if (!Array.isArray(parts)) parts = [parts]
-    document.title = [...parts.map(p => i18n.t(p)), 'Go+ Builder'].join(' - ')
+    document.title = [...parts.map((p) => i18n.t(p)), 'Go+ Builder'].join(' - ')
   }
 
   if (typeof titleParts !== 'function') {
