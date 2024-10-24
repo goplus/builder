@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { useAsyncComputed } from '@/utils/utils'
-import { getUser } from '@/apis/user'
+import { useUser } from '@/stores/user'
 import UserLink from '../user/UserLink.vue'
 
 const props = defineProps<{
   owner: string
 }>()
 
-const user = useAsyncComputed(() => getUser(props.owner))
+const { data: user } = useUser(() => props.owner)
 </script>
 
 <template>
-  <UserLink class="owner-info" :user="user">
+  <UserLink class="owner-info" :user="user?.username ?? null">
     <i class="avatar" :style="user != null ? { backgroundImage: `url(${user.avatar})` } : null"></i>
     {{ owner }}
   </UserLink>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { listUsers } from '@/apis/user'
 import { UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'

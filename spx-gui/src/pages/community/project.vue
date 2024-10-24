@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle, useQuery } from '@/utils/exception'
-import { humanizeCount, humanizeExactCount, untilNotNull, useAsyncComputed } from '@/utils/utils'
-import { getCleanupSignal } from '@/utils/disposable'
+import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
+import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
+import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
-import {
-  isLiking,
-  likeProject,
-  ownerAll,
-  recordProjectView,
-  stringifyRemixSource,
-  unlikeProject,
-  Visibility
-} from '@/apis/project'
+import { ownerAll, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { Project } from '@/models/project'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -61,8 +54,7 @@ const {
   error,
   refetch: reloadProject
 } = useQuery(
-  async (onCleanup) => {
-    const signal = getCleanupSignal(onCleanup)
+  async (signal) => {
     const p = new Project()
     ;(window as any).project = p // for debug purpose, TODO: remove me
     const loaded = await p.loadFromCloud(props.owner, props.name, signal)
@@ -88,11 +80,8 @@ watch(
   }
 )
 
-const isOwner = computed(() => props.owner === userStore.userInfo()?.name)
-const liking = useAsyncComputed(() => {
-  if (!userStore.isSignedIn()) return Promise.resolve(false)
-  else return isLiking(props.owner, props.name)
-})
+const isOwner = computed(() => props.owner === userStore.getSignedInUser()?.name)
+const { data: liking } = useIsLikingProject(() => ({ owner: props.owner, name: props.name }))
 
 const projectRunnerRef = ref<InstanceType<typeof ProjectRunner> | null>(null)
 
@@ -155,22 +144,22 @@ const handleEdit = useMessageHandle(
   { en: 'Failed to open editor', zh: '打开编辑器失败' }
 )
 
+const likeProject = useLikeProject()
 const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await likeProject(props.owner, props.name)
-    await project.value?.loadFromCloud(props.owner, props.name)
-    liking.value = true
+    await project.value?.loadFromCloud(props.owner, props.name) // refresh project info (likeCount)
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
 )
 
+const unlikeProject = useUnlikeProject()
 const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await unlikeProject(props.owner, props.name)
-    await project.value?.loadFromCloud(props.owner, props.name)
-    liking.value = false
+    await project.value?.loadFromCloud(props.owner, props.name) // refresh project info (likeCount)
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }
 )
@@ -231,7 +220,7 @@ const removeProject = useRemoveProject()
 const handleRemove = useMessageHandle(
   async () => {
     await removeProject(props.owner, props.name)
-    await router.push(getUserPageRoute(userStore.userInfo()!.name, 'projects'))
+    await router.push(getUserPageRoute(userStore.getSignedInUser()!.name, 'projects'))
   },
   { en: 'Failed to remove project', zh: '删除项目失败' },
   { en: 'Project removed', zh: '项目已删除' }

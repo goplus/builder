@@ -1,7 +1,8 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
-import { updateProfile, type User } from '@/apis/user'
+import { type User } from '@/apis/user'
 import {
   UIImg,
   UIFormModal,
@@ -11,6 +12,8 @@ import {
   UIButton,
   useForm
 } from '@/components/ui'
+import { getCoverImgUrl } from './cover'
+import { useUpdateSignedInUser } from '@/stores/user'
 
 const props = defineProps<{
   user: User
@@ -23,6 +26,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const form = useForm({
   description: [props.user.description, validateDescription]
@@ -38,13 +43,12 @@ function handleCancel() {
   emit('cancelled')
 }
 
-const handleSubmit = useMessageHandle(
-  async () => {
-    const updated = await updateProfile({ description: form.value.description })
-    emit('resolved', updated)
-  },
-  { en: 'Failed to update profile', zh: '更新个人信息失败' }
-)
+const updateProfile = useUpdateSignedInUser()
+
+const handleSubmit = useMessageHandle(async () => {
+  const updated = await updateProfile({ description: form.value.description })
+  emit('resolved', updated)
+})
 </script>
 
 <template>
@@ -54,7 +58,7 @@ const handleSubmit = useMessageHandle(
     :visible="props.visible"
     @update:visible="handleCancel"
   >
-    <div class="cover"></div>
+    <div class="cover" :style="{ backgroundImage: `url(${coverImgUrl})` }"></div>
     <UIImg class="avatar" :src="user.avatar" />
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <UIFormItem :label="$t({ en: 'Name', zh: '名字' })">
@@ -83,7 +87,9 @@ const handleSubmit = useMessageHandle(
 .cover {
   margin: -20px -24px 0;
   height: 168px;
-  background: center / cover no-repeat url(./cover.jpg);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .avatar {

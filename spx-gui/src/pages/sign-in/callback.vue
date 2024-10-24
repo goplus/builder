@@ -4,7 +4,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { useI18n } from '@/utils/i18n'
 
 const userStore = useUserStore()

@@ -152,10 +152,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessageHandle, useQuery } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { useResponsive, UILink, UIEmpty, UIButton } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
@@ -167,8 +168,7 @@ const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
 const userStore = useUserStore()
-
-const userInfo = computed(() => userStore.userInfo())
+const signedInUser = computed(() => userStore.getSignedInUser())
 
 function handleJoin() {
   userStore.initiateSignIn()
@@ -185,13 +185,13 @@ const handleNewProject = useMessageHandle(
 ).fn
 
 const myProjectsRoute = computed(() => {
-  if (userInfo.value == null) return ''
-  return getUserPageRoute(userInfo.value.name, 'projects')
+  if (signedInUser.value == null) return ''
+  return getUserPageRoute(signedInUser.value.name, 'projects')
 })
 
 const myProjects = useQuery(
   async () => {
-    if (userInfo.value == null) return []
+    if (signedInUser.value == null) return []
     const { data: projects } = await listProject({
       pageIndex: 1,
       pageSize: numInRow.value,
@@ -218,13 +218,13 @@ const communityRemixingProjects = useQuery(
 )
 
 const followingCreatedRoute = computed(() => {
-  if (userInfo.value == null) return ''
+  if (signedInUser.value == null) return ''
   return getExploreRoute(ExploreOrder.FollowingCreated)
 })
 
 const followingCreatedProjects = useQuery(
   async () => {
-    if (userInfo.value == null) return []
+    if (signedInUser.value == null) return []
     return exploreProjects({ order: ExploreOrder.FollowingCreated, count: numInRow.value })
   },
   { en: 'Failed to load projects', zh: '加载失败' }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type User } from '@/apis/user'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import FollowButton from './FollowButton.vue'
@@ -14,20 +14,15 @@ const props = defineProps<{
   user: User
 }>()
 
-const emit = defineEmits<{
-  updated: [User]
-}>()
-
-const isCurrentUser = computed(() => props.user.username === useUserStore().userInfo()?.name)
+const isSignedInUser = computed(
+  () => props.user.username === useUserStore().getSignedInUser()?.name
+)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
 const handleEditProfile = useMessageHandle(
-  async () => {
-    const updated = await invokeEditProfileModal({ user: props.user })
-    emit('updated', updated)
-  },
+  async () => invokeEditProfileModal({ user: props.user }),
   { en: 'Failed to update profile', zh: '更新个人信息失败' }
 ).fn
 </script>
@@ -45,7 +40,7 @@ const handleEditProfile = useMessageHandle(
         <p class="description">{{ user.description || '&nbsp;' }}</p>
       </div>
       <div class="op">
-        <UIButton v-if="isCurrentUser" @click="handleEditProfile">
+        <UIButton v-if="isSignedInUser" @click="handleEditProfile">
           {{ $t({ en: 'Edit profile', zh: '编辑' }) }}
         </UIButton>
         <FollowButton v-else :name="user.username" />

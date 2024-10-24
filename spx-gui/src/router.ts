@@ -1,7 +1,7 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { ExploreOrder } from './apis/project'
-import { useUserStore } from './stores'
+import { useUserStore } from './stores/user'
 
 export function getProjectEditorRoute(projectName: string) {
   return `/editor/${projectName}`

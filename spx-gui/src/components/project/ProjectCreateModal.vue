@@ -79,7 +79,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const userStore = useUserStore()
 
-const userInfo = computed(() => userStore.userInfo())
+const signedInUser = computed(() => userStore.getSignedInUser())
 
 const title = computed(() => {
   if (props.remixSource == null) return { en: 'Create a new project', zh: '创建新的项目' }
@@ -160,8 +160,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
     })
 
   // check naming conflict
-  if (userInfo.value == null) throw new Error('login required')
-  const username = userInfo.value.name
+  if (signedInUser.value == null) throw new Error('login required')
+  const username = signedInUser.value.name
   const existedProject = await getProject(username, name).catch((e) => {
     if (e instanceof ApiException && e.code === ApiExceptionCode.errorNotFound) return null
     throw e

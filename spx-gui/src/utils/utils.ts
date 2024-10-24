@@ -1,6 +1,6 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
 import type { LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
@@ -203,4 +203,17 @@ export function humanizeExactCount(count: number) {
     en: count.toLocaleString('en-US'),
     zh: count.toLocaleString('zh-CN')
   }
+}
+
+export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => Promise<T>) {
+  const isLoading = ref(false)
+  async function wrappedFn(...args: Args) {
+    isLoading.value = true
+    try {
+      return await fn(...args)
+    } finally {
+      isLoading.value = false
+    }
+  }
+  return { fn: wrappedFn, isLoading }
 }

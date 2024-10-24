@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useQuery } from '@/utils/exception'
-import { getUser, type User } from '@/apis/user'
+import { useUser } from '@/stores/user'
 import { UIError } from '@/components/ui'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import UserHeader from '@/components/community/user/UserHeader.vue'
@@ -10,21 +9,16 @@ const props = defineProps<{
   name: string
 }>()
 
-const { data: user, error } = useQuery(() => getUser(props.name), {
-  en: 'Failed to load user information',
-  zh: '加载用户信息失败'
-})
-
-function handleUserUpdated(updated: User) {
-  user.value = updated
-}
+const { data: user, error, refetch } = useUser(() => props.name)
 </script>
 
 <template>
   <CenteredWrapper class="user-page" size="large">
-    <UIError v-if="error != null" :error="error" />
+    <UIError v-if="error != null" :retry="refetch">
+      {{ $t(error.userMessage) }}
+    </UIError>
     <template v-else-if="user != null">
-      <UserHeader :user="user" @updated="handleUserUpdated" />
+      <UserHeader :user="user" />
       <div class="main">
         <UserSidebar class="sidebar" :username="name" />
         <div class="content">

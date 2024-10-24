@@ -1,7 +1,9 @@
+import { type App } from 'vue'
+import { defineStore, createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import Sdk from 'casdoor-js-sdk'
 import { casdoorConfig } from '@/utils/env'
 import { jwtDecode } from 'jwt-decode'
-import { defineStore } from 'pinia'
 
 export interface UserInfo {
   id: string
@@ -86,10 +88,18 @@ export const useUserStore = defineStore('spx-user', {
     isSignedIn(): boolean {
       return this.isAccessTokenValid() || this.refreshToken != null
     },
-    userInfo(): UserInfo | null {
+    // TODO: return type `User` instead of `UserInfo` to keep consistency with `getUser` in `src/apis/user.ts`
+    getSignedInUser(): UserInfo | null {
       if (!this.isSignedIn()) return null
       return jwtDecode<UserInfo>(this.accessToken!)
     }
   },
   persist: true
 })
+
+// TODO: we may get rid of pinia as it offers almost nothing.
+export function initUserStore(app: App) {
+  const store = createPinia()
+  store.use(piniaPluginPersistedstate)
+  app.use(store)
+}

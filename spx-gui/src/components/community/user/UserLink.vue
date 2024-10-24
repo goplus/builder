@@ -1,26 +1,18 @@
 <template>
-  <RouterLink :to="to" :title="user?.displayName">
+  <RouterLink :to="to ?? ''" :title="userInfo?.displayName">
     <slot></slot>
   </RouterLink>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAsyncComputed } from '@/utils/utils'
-import { getUser, type User } from '@/apis/user'
 import { getUserPageRoute } from '@/router'
+import { useUser } from '@/stores/user'
 
 const props = defineProps<{
-  user: string | User | null
+  user: string | null
 }>()
 
-const to = computed(() => {
-  if (props.user == null) return '' // TODO: some better default value?
-  const username = typeof props.user === 'string' ? props.user : props.user.username
-  return getUserPageRoute(username)
-})
-
-const user = useAsyncComputed(() =>
-  typeof props.user === 'string' ? getUser(props.user) : Promise.resolve(props.user)
-)
+const to = computed(() => (props.user == null ? null : getUserPageRoute(props.user)))
+const { data: userInfo } = useUser(() => props.user)
 </script>

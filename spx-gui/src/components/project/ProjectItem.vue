@@ -77,9 +77,10 @@ import {
   useAsyncComputed
 } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
-import { Visibility, isLiking, type ProjectData } from '@/apis/project'
+import { Visibility, type ProjectData } from '@/apis/project'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
+import { useIsLikingProject } from '@/stores/liking'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import UserAvatar from '@/components/community/user/UserAvatar.vue'
 import { useRemoveProject } from '.'
@@ -109,7 +110,7 @@ const emit = defineEmits<{
 }>()
 
 const userStore = useUserStore()
-const isOwner = computed(() => props.project.owner === userStore.userInfo()?.name)
+const isOwner = computed(() => props.project.owner === userStore.getSignedInUser()?.name)
 
 const router = useRouter()
 
@@ -123,10 +124,10 @@ const thumbnailUrl = useAsyncComputed(async () => {
   return universalUrlToWebUrl(props.project.thumbnail)
 })
 
-const liking = useAsyncComputed(() => {
-  if (!userStore.isSignedIn()) return Promise.resolve(false)
-  else return isLiking(props.project.owner, props.project.name)
-})
+const { data: liking } = useIsLikingProject(() => ({
+  owner: props.project.owner,
+  name: props.project.name
+}))
 
 const likesTitle = computed(() => {
   const count = humanizeExactCount(props.project.likeCount)

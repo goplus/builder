@@ -2,10 +2,9 @@
  * @desc Definition for Exceptions & tools to help handle them
  */
 
-import { ref, shallowRef, watchEffect, type Ref, type ShallowRef } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
-import type { OnCleanup } from './disposable'
 import { useMessage } from '@/components/ui'
+import { useFnWithLoading } from './utils'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -60,29 +59,19 @@ export class ActionException extends Exception {
   }
 }
 
-export type ActionRet<Args extends any[], T> = {
-  fn: (...args: Args) => Promise<T>
-  isLoading: Ref<boolean>
-}
-
 /** useAction transforms exceptions to ActionException instances, with proper messages */
 export function useAction<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
-  failureSummaryMessage: LocaleMessage
-): ActionRet<Args, T> {
-  const isLoading = ref(false)
-  async function actionFn(...args: Args) {
-    isLoading.value = true
+  failureSummaryMessage: LocaleMessage // TODO: the messages can be simplified if the messages' format is consistent
+): (...args: Args) => Promise<T> {
+  return async function actionFn(...args: Args) {
     try {
       return await fn(...args)
     } catch (e) {
       if (e instanceof Cancelled) throw e
       throw new ActionException(e, failureSummaryMessage)
-    } finally {
-      isLoading.value = false
     }
   }
-  return { fn: actionFn, isLoading }
 }
 
 /**
@@ -92,18 +81,21 @@ export function useAction<Args extends any[], T>(
  */
 export function useMessageHandle<Args extends any[], T>(
   fn: (...args: Args) => Promise<T>,
-  failureSummaryMessage: LocaleMessage, // TODO: the messages can be simplified if the messages' format is consistent
+  failureSummaryMessage?: LocaleMessage,
   successMessage?: LocaleMessage | ((ret: T) => LocaleMessage)
 ) {
   const m = useMessage()
   const { t } = useI18n()
-  const action = useAction(fn, failureSummaryMessage)
+  if (failureSummaryMessage != null) {
+    fn = useAction(fn, failureSummaryMessage)
+  }
+  const fnWithLoading = useFnWithLoading(fn)
 
   // Typically we should do message handling only in the very end of the action chain,
   // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
   // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
-  function messageHandleFn(...args: Args): Promise<void> {
-    return action.fn(...args).then(
+  function fnWithMessage(...args: Args): Promise<void> {
+    return fnWithLoading.fn(...args).then(
       (ret) => {
         if (successMessage != null) {
           const successText = t(
@@ -129,52 +121,7 @@ export function useMessageHandle<Args extends any[], T>(
     )
   }
   return {
-    fn: messageHandleFn,
-    isLoading: action.isLoading
+    fn: fnWithMessage,
+    isLoading: fnWithLoading.isLoading
   }
-}
-
-export type QueryRet<T> = {
-  isLoading: Ref<boolean>
-  data: ShallowRef<T | null>
-  error: ShallowRef<ActionException | null>
-  refetch: (onCleanup?: OnCleanup) => void
-}
-
-/**
- * `useQuery`
- * - do query automatically
- * - transforms exceptions like `useAction`
- * - manage states for query result
- *
- * TODO: if things get more complex, we may need tools like `@tanstack/vue-query`
- */
-export function useQuery<T>(
-  fn: (onCleanup: OnCleanup) => Promise<T>,
-  failureSummaryMessage: LocaleMessage
-): QueryRet<T> {
-  const action = useAction(fn, failureSummaryMessage)
-  const data = shallowRef<T | null>(null)
-  const error = shallowRef<ActionException | null>(null)
-
-  function fetch(onCleanup: OnCleanup) {
-    action.fn(onCleanup).then(
-      (d) => {
-        data.value = d
-        error.value = null
-      },
-      (e) => {
-        error.value = e
-        console.warn(e)
-      }
-    )
-  }
-
-  function refetch() {
-    fetch(() => {})
-  }
-
-  watchEffect(fetch)
-
-  return { isLoading: action.isLoading, data, error, refetch }
 }

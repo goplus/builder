@@ -1,4 +1,4 @@
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { useI18n } from './i18n'
 import { useConfirmDialog } from '@/components/ui'
 import { Cancelled } from './exception'

@@ -8,7 +8,7 @@
 
 <script setup lang="ts" generic="T extends unknown[] | ByPage<unknown>">
 import { computed, useSlots } from 'vue'
-import type { QueryRet } from '@/utils/exception'
+import type { QueryRet } from '@/utils/query'
 import { UILoading, UIError, UIEmpty } from '@/components/ui'
 import type { ByPage } from '@/apis/common'
 

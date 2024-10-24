@@ -11,7 +11,7 @@ import 'dayjs/locale/zh'
 import { initI18n } from './i18n'
 import App from './App.vue'
 import { initRouter } from './router'
-import { initStore, useUserStore } from './stores'
+import { initUserStore, useUserStore } from './stores/user'
 import { setTokenProvider } from './apis/common'
 import { CustomTransformer } from './components/editor/preview/stage-viewer/custom-transformer'
 
@@ -28,7 +28,7 @@ const initApiClient = async () => {
 async function initApp() {
   const app = createApp(App)
 
-  initStore(app)
+  initUserStore(app)
   initApiClient()
   await initRouter(app)
   await initI18n(app)

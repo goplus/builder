@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
-import { useMessageHandle, useQuery } from '@/utils/exception'
+import { useMessageHandle } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getProjectEditorRoute } from '@/router'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -17,7 +18,7 @@ const props = defineProps<{
   name: string
 }>()
 
-const isCurrentUser = computed(() => props.name === useUserStore().userInfo()?.name)
+const isSignedInUser = computed(() => props.name === useUserStore().getSignedInUser()?.name)
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
@@ -40,7 +41,7 @@ const listParams = computed<ListProjectParams>(() => {
     pageSize: pageSize.value,
     pageIndex: page.value
   }
-  if (!isCurrentUser.value) p.visibility = Visibility.Public
+  if (!isSignedInUser.value) p.visibility = Visibility.Public
   switch (order.value) {
     case Order.RecentlyUpdated:
       p.orderBy = 'updatedAt'
@@ -100,7 +101,7 @@ const handleNewProject = useMessageHandle(
           }}</UISelectOption>
         </UISelect>
       </label>
-      <UIButton v-if="isCurrentUser" type="secondary" icon="plus" @click="handleNewProject">
+      <UIButton v-if="isSignedInUser" type="secondary" icon="plus" @click="handleNewProject">
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>

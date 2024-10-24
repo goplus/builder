@@ -1,41 +1,32 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useUserStore } from '@/stores'
-import { follow, isFollowing, unfollow } from '@/apis/user'
+import { computed } from 'vue'
+import { useUserStore } from '@/stores/user'
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useEnsureSignedIn } from '@/utils/user'
+import { useFollow, useIsFollowing, useUnfollow } from '@/stores/following'
 
 const props = defineProps<{
   /** Name of user to follow */
   name: string
 }>()
 
-const userInfo = useUserStore().userInfo()
+const userStore = useUserStore()
 
-const followable = computed(() => userInfo != null && props.name !== userInfo.name)
-const following = ref<boolean | null>(null)
+const followable = computed(() => {
+  const signedInUser = userStore.getSignedInUser()
+  return signedInUser != null && props.name !== signedInUser.name
+})
 
-watch(
-  () => props.name,
-  async (name) => {
-    if (!followable.value) return
-    const result = await isFollowing(name)
-    if (props.name === name) following.value = result
-  },
-  { immediate: true }
-)
+const { data: following } = useIsFollowing(() => props.name)
+const follow = useFollow()
+const unfollow = useUnfollow()
 
 const ensureSignedIn = useEnsureSignedIn()
-
-const handleClick = useMessageHandle(
-  async () => {
-    await ensureSignedIn()
-    await (following.value ? unfollow(props.name) : follow(props.name))
-    following.value = !following.value
-  },
-  { en: 'Failed to operate', zh: '操作失败' }
-)
+const handleClick = useMessageHandle(async () => {
+  await ensureSignedIn()
+  await (following.value ? unfollow(props.name) : follow(props.name))
+})
 </script>
 
 <template>
