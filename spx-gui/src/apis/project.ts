@@ -34,7 +34,7 @@ export type ProjectData = {
   description: string
   /** Instructions on how to interact with the project */
   instructions: string
-  /** Universal URL of the project's thumbnail image */
+  /** Universal URL of the project's thumbnail image, may be empty (`""`) */
   thumbnail: string
   /** Number of times the project has been viewed */
   viewCount: number
