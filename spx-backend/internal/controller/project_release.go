@@ -97,7 +97,7 @@ func (ctrl *Controller) CreateProjectRelease(ctx context.Context, params *Create
 		if err := tx.
 			Model(&mProject).
 			Omit("Owner", "RemixedFromRelease").
-			Update("release_count", gorm.Expr("release_count + 1")).
+			UpdateColumn("release_count", gorm.Expr("release_count + 1")).
 			Error; err != nil {
 			return err
 		}

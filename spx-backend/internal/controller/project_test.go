@@ -312,7 +312,7 @@ func TestControllerCreateProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{}).
-			Updates(map[string]any{
+			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count + 1"),
 				"public_project_count": gorm.Expr("public_project_count + 1"),
 			}).
@@ -431,7 +431,7 @@ func TestControllerCreateProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{}).
-			Updates(map[string]any{
+			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count + 1"),
 				"public_project_count": gorm.Expr("public_project_count + 1"),
 			}).
@@ -442,7 +442,7 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.ProjectRelease{}).
 			Where("id = ?", mSourceProjectRelease.ID).
-			Update("remix_count", gorm.Expr("remix_count + 1")).
+			UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -452,7 +452,7 @@ func TestControllerCreateProject(t *testing.T) {
 			Where("id = (?)", ctrl.db.Model(&model.ProjectRelease{}).
 				Select("project_id").
 				Where("id = ?", mSourceProjectRelease.ID)).
-			Update("remix_count", gorm.Expr("remix_count + 1")).
+			UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -1400,7 +1400,7 @@ func TestControllerUpdateProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{}).
-			Update("public_project_count", gorm.Expr("public_project_count + 1")).
+			UpdateColumn("public_project_count", gorm.Expr("public_project_count + 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -1615,7 +1615,7 @@ func TestControllerDeleteProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{}).
-			Updates(map[string]any{
+			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count - 1"),
 				"public_project_count": gorm.Expr("public_project_count - 1"),
 			}).
@@ -1629,7 +1629,7 @@ func TestControllerDeleteProject(t *testing.T) {
 				Select("user_id").
 				Where("project_id = ?", mProject.ID).
 				Where("liked_at IS NOT NULL")).
-			Update("liked_project_count", gorm.Expr("liked_project_count - 1")).
+			UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
@@ -1867,7 +1867,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.UserProjectRelationship{Model: model.Model{ID: 1}}).
 			Where("last_viewed_at IS NULL").
-			Updates(map[string]any{
+			UpdateColumns(map[string]any{
 				"view_count":     gorm.Expr("view_count + 1"),
 				"last_viewed_at": sqlmock.AnyArg(),
 			}).
@@ -1880,7 +1880,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
-			Update("view_count", gorm.Expr("view_count + 1")).
+			UpdateColumn("view_count", gorm.Expr("view_count + 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMockArgs[0] = sqlmock.AnyArg() // UpdatedAt
@@ -2058,10 +2058,7 @@ func TestControllerLikeProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mAuthedUser.Model}).
-			Updates(map[string]any{
-				"liked_project_count": gorm.Expr("liked_project_count + 1"),
-				"updated_at":          sqlmock.AnyArg(),
-			}).
+			UpdateColumn("liked_project_count", gorm.Expr("liked_project_count + 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -2070,10 +2067,7 @@ func TestControllerLikeProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
-			Updates(map[string]any{
-				"like_count": gorm.Expr("like_count + 1"),
-				"updated_at": sqlmock.AnyArg(),
-			}).
+			UpdateColumn("like_count", gorm.Expr("like_count + 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -2381,10 +2375,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mAuthedUser.Model}).
-			Updates(map[string]any{
-				"liked_project_count": gorm.Expr("liked_project_count - 1"),
-				"updated_at":          sqlmock.AnyArg(),
-			}).
+			UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -2393,10 +2384,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
-			Updates(map[string]any{
-				"like_count": gorm.Expr("like_count - 1"),
-				"updated_at": sqlmock.AnyArg(),
-			}).
+			UpdateColumn("like_count", gorm.Expr("like_count - 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).

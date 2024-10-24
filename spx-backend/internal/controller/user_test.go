@@ -720,10 +720,7 @@ func TestControllerFollowUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mAuthedUser.Model}).
-			Updates(map[string]any{
-				"following_count": gorm.Expr("following_count + 1"),
-				"updated_at":      sqlmock.AnyArg(),
-			}).
+			UpdateColumn("following_count", gorm.Expr("following_count + 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -732,10 +729,7 @@ func TestControllerFollowUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mTargetUser.Model}).
-			Updates(map[string]any{
-				"follower_count": gorm.Expr("follower_count + 1"),
-				"updated_at":     sqlmock.AnyArg(),
-			}).
+			UpdateColumn("follower_count", gorm.Expr("follower_count + 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -997,10 +991,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mAuthedUser.Model}).
-			Updates(map[string]any{
-				"following_count": gorm.Expr("following_count - 1"),
-				"updated_at":      sqlmock.AnyArg(),
-			}).
+			UpdateColumn("following_count", gorm.Expr("following_count - 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
@@ -1009,10 +1000,7 @@ func TestControllerUnfollowUser(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mTargetUser.Model}).
-			Updates(map[string]any{
-				"follower_count": gorm.Expr("follower_count - 1"),
-				"updated_at":     sqlmock.AnyArg(),
-			}).
+			UpdateColumn("follower_count", gorm.Expr("follower_count - 1")).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
