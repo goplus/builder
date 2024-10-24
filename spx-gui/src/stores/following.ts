@@ -8,7 +8,7 @@ function getFollowingQueryKey(signedInUser: UserInfo | null, username: string) {
   return ['following', signedInUser?.name ?? null, username]
 }
 
-const staleTime = 1000 * 60 * 5 // 5min
+const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsFollowing(username: WatchSource<string>) {
   const userStore = useUserStore()

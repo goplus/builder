@@ -8,7 +8,7 @@ function getLikingQueryKey(signedInUser: UserInfo | null, owner: string, name: s
   return ['liking', signedInUser?.name ?? null, owner, name]
 }
 
-const staleTime = 1000 * 60 * 5 // 5min
+const staleTime = 5 * 60 * 1000 // 5min
 
 export function useIsLikingProject(project: WatchSource<{ owner: string; name: string }>) {
   const userStore = useUserStore()

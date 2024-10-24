@@ -10,7 +10,7 @@ function getUserQueryKey(username: string) {
   return ['user', username]
 }
 
-const staleTime = 1000 * 60 * 5 // 5min
+const staleTime = 5 * 60 * 1000 // 5min
 
 export function useUser(username: WatchSource<string | null>) {
   const usernameRef = toRef(username)
