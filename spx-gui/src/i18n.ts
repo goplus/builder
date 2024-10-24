@@ -3,7 +3,7 @@ import { createI18n, type Lang } from './utils/i18n'
 
 const LOCALSTORAGE_KEY_LANGUAGE = 'spx-gui-language'
 
-export const initI18n = async (app: App) => {
+export const initI18n = (app: App) => {
   const currentLanguage = (localStorage.getItem(LOCALSTORAGE_KEY_LANGUAGE) || 'en') as Lang
   const i18n = createI18n({ lang: currentLanguage })
 

@@ -26,6 +26,7 @@ import { clear } from '@/models/common/local'
 import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
+import { usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
@@ -34,10 +35,14 @@ const props = defineProps<{
   projectName: string
 }>()
 
+usePageTitle(() => ({
+  en: `Edit ${props.projectName}`,
+  zh: `编辑 ${props.projectName}`
+}))
+
 const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
-
 const userInfo = computed(() => userStore.getSignedInUser())
 
 const router = useRouter()

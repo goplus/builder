@@ -4,21 +4,31 @@ import { useRouter } from 'vue-router'
 import { useRouteQueryParamInt, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
+import { useEnsureSignedIn } from '@/utils/user'
 import { Visibility, listProject, type ListProjectParams } from '@/apis/project'
 import { getProjectEditorRoute } from '@/router'
-import { useUserStore } from '@/stores/user'
+import { useUser, useUserStore } from '@/stores/user'
 import { UISelect, UISelectOption, UIPagination, UIButton, useResponsive } from '@/components/ui'
 import { useCreateProject } from '@/components/project'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
-import { useEnsureSignedIn } from '@/utils/user'
 
 const props = defineProps<{
   name: string
 }>()
 
 const isSignedInUser = computed(() => props.name === useUserStore().getSignedInUser()?.name)
+
+const { data: user } = useUser(() => props.name)
+usePageTitle(() => {
+  if (user.value == null) return null
+  return {
+    en: `Projects of ${user.value.displayName}`,
+    zh: `${user.value.displayName} 的项目`
+  }
+})
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))

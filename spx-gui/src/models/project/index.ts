@@ -108,6 +108,7 @@ export class Project extends Disposable {
   visibility?: Visibility
   description?: string
   instructions?: string
+  /** Universal URL of the project's thumbnail image, may be empty (`""`) */
   thumbnail?: string
   viewCount?: number
   likeCount?: number

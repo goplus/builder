@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { UIMenu, UITextInput, UIIcon } from '@/components/ui'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
@@ -41,6 +41,14 @@ const searchInput = ref('')
 function handleSearch() {
   router.push(getSearchRoute(searchInput.value))
 }
+
+// Clear search input when leaving search page
+watch(
+  () => router.currentRoute.value.meta.isSearch,
+  (isSearch, oldIsSearch) => {
+    if (oldIsSearch && !isSearch) searchInput.value = ''
+  }
+)
 </script>
 
 <style lang="scss" scoped>

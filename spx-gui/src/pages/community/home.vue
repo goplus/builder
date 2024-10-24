@@ -155,6 +155,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getProjectEditorRoute, getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores/user'
@@ -164,6 +165,8 @@ import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import { useCreateProject } from '@/components/project'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import newProjectIcon from '@/components/navbar/icons/new.svg'
+
+usePageTitle([])
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))

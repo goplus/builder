@@ -12,7 +12,7 @@ const { data: user } = useUser(() => props.owner)
 <template>
   <UserLink class="owner-info" :user="user?.username ?? null">
     <i class="avatar" :style="user != null ? { backgroundImage: `url(${user.avatar})` } : null"></i>
-    {{ owner }}
+    {{ user?.displayName }}
   </UserLink>
 </template>
 

@@ -6,10 +6,11 @@ import { useQuery } from '@/utils/query'
 import { useIsLikingProject, useLikeProject, useUnlikeProject } from '@/stores/liking'
 import { humanizeCount, humanizeExactCount, untilNotNull } from '@/utils/utils'
 import { useEnsureSignedIn } from '@/utils/user'
+import { usePageTitle } from '@/utils/utils'
 import { ownerAll, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
 import { Project } from '@/models/project'
-import { useUserStore } from '@/stores/user'
+import { useUser, useUserStore } from '@/stores/user'
 import { getProjectEditorRoute, getUserPageRoute } from '@/router'
 import {
   UIIcon,
@@ -65,6 +66,22 @@ const {
     zh: '加载项目失败'
   }
 )
+
+const { data: ownerInfo } = useUser(() => props.owner)
+
+usePageTitle(() => {
+  if (ownerInfo.value == null) return null
+  return [
+    {
+      en: props.name,
+      zh: props.name
+    },
+    {
+      en: ownerInfo.value.displayName,
+      zh: ownerInfo.value.displayName
+    }
+  ]
+})
 
 watch(
   () => [props.owner, props.name],
@@ -309,17 +326,17 @@ const remixesRet = useQuery(
             <div class="info">
               <OwnerInfo :owner="project.owner!" />
               <p class="extra">
-                <template v-if="isOwner">
-                  <span class="part" :title="$t(likeCount!.title)">
-                    <UIIcon type="heart" />
-                    {{ $t(likeCount!.text) }}
-                  </span>
-                  <i class="sep"></i>
-                </template>
                 <span class="part" :title="$t(viewCount!.title)">
                   <UIIcon type="eye" />
                   {{ $t(viewCount!.text) }}
                 </span>
+                <template v-if="isOwner">
+                  <i class="sep"></i>
+                  <span class="part" :title="$t(likeCount!.title)">
+                    <UIIcon type="heart" />
+                    {{ $t(likeCount!.text) }}
+                  </span>
+                </template>
                 <i class="sep"></i>
                 <span class="part" :title="$t(remixCount!.title)">
                   <UIIcon type="remix" />

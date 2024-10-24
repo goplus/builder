@@ -31,6 +31,15 @@ export function getExploreRoute(order?: ExploreOrder) {
   return order == null ? '/explore' : `/explore?o=${encodeURIComponent(order)}`
 }
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** Whether the route requires sign-in */
+    requiresSignIn?: boolean
+    /** Whether the route is a search page */
+    isSearch?: boolean
+  }
+}
+
 const routes: Array<RouteRecordRaw> = [
   // TODO: page title
   {
@@ -47,7 +56,8 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: '/search',
-        component: () => import('@/pages/community/search.vue')
+        component: () => import('@/pages/community/search.vue'),
+        meta: { isSearch: true }
       },
       {
         path: '/user/:name',
@@ -117,7 +127,7 @@ const router = createRouter({
   routes
 })
 
-export const initRouter = async (app: App) => {
+export const initRouter = (app: App) => {
   const userStore = useUserStore()
   router.beforeEach((to, _, next) => {
     if (to.meta.requiresSignIn && !userStore.isSignedIn()) {
@@ -127,10 +137,4 @@ export const initRouter = async (app: App) => {
     }
   })
   app.use(router)
-  // This is an example of a routing result that needs to be loaded.
-  await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true)
-    }, 0)
-  })
 }

@@ -1,7 +1,7 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
 import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
-import type { LocaleMessage } from './i18n'
+import { useI18n, type LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -216,4 +216,28 @@ export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => P
     }
   }
   return { fn: wrappedFn, isLoading }
+}
+
+export function usePageTitle(
+  titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
+) {
+  const i18n = useI18n()
+  function setTitle(parts: LocaleMessage | LocaleMessage[]) {
+    if (!Array.isArray(parts)) parts = [parts]
+    document.title = [...parts.map((p) => i18n.t(p)), 'Go+ Builder'].join(' - ')
+  }
+
+  if (typeof titleParts !== 'function') {
+    setTitle(titleParts)
+    return
+  }
+
+  watch(
+    titleParts,
+    (parts) => {
+      if (parts == null) return
+      setTitle(parts)
+    },
+    { immediate: true }
+  )
 }
