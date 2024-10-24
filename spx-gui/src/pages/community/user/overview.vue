@@ -84,6 +84,7 @@ const likesRet = useQuery(
           :key="project.id"
           context="mine"
           :project="project"
+          @removed="projectsRet.refetch()"
         />
       </ProjectsSection>
     </CommunityCard>

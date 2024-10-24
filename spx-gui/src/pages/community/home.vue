@@ -59,6 +59,7 @@
         :key="project.id"
         context="mine"
         :project="project"
+        @removed="myProjects.refetch()"
       />
     </ProjectsSection>
     <ProjectsSection
