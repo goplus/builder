@@ -197,13 +197,13 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			return err
 		}
 
-		mUserUpdates := map[string]any{
+		mAuthedUserStatisticalUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count + 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+			mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 		}
-		if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
 			return err
 		}
 
@@ -211,7 +211,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 			if err := tx.
 				Model(&model.ProjectRelease{}).
 				Where("id = ?", mProject.RemixedFromReleaseID.Int64).
-				Update("remix_count", gorm.Expr("remix_count + 1")).
+				UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 				Error; err != nil {
 				return err
 			}
@@ -220,7 +220,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 				Where("id = (?)", tx.Model(&model.ProjectRelease{}).
 					Select("project_id").
 					Where("id = ?", mProject.RemixedFromReleaseID.Int64)).
-				Update("remix_count", gorm.Expr("remix_count + 1")).
+				UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 				Error; err != nil {
 				return err
 			}
@@ -558,17 +558,17 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 				return nil
 			}
 
-			mUserUpdates := map[string]any{}
+			mAuthedUserStatisticalUpdates := map[string]any{}
 			if updates["visibility"] != nil {
 				switch params.Visibility {
 				case model.VisibilityPrivate.String():
-					mUserUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+					mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 				case model.VisibilityPublic.String():
-					mUserUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
+					mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count + 1")
 				}
 			}
-			if len(mUserUpdates) > 0 {
-				if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
+			if len(mAuthedUserStatisticalUpdates) > 0 {
+				if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
 					return err
 				}
 			}
@@ -605,13 +605,13 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 			return err
 		}
 
-		mUserUpdates := map[string]any{
+		mAuthedUserStatisticalUpdates := map[string]any{
 			"project_count": gorm.Expr("project_count - 1"),
 		}
 		if mProject.Visibility == model.VisibilityPublic {
-			mUserUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
+			mAuthedUserStatisticalUpdates["public_project_count"] = gorm.Expr("public_project_count - 1")
 		}
-		if err := tx.Model(mAuthedUser).Updates(mUserUpdates).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumns(mAuthedUserStatisticalUpdates).Error; err != nil {
 			return err
 		}
 
@@ -619,7 +619,7 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 			if err := tx.
 				Model(&model.ProjectRelease{}).
 				Where("id = ?", mProject.RemixedFromReleaseID.Int64).
-				Update("remix_count", gorm.Expr("remix_count - 1")).
+				UpdateColumn("remix_count", gorm.Expr("remix_count - 1")).
 				Error; err != nil {
 				return err
 			}
@@ -628,7 +628,7 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 				Where("id = (?)", tx.Model(&model.ProjectRelease{}).
 					Select("project_id").
 					Where("id = ?", mProject.RemixedFromReleaseID.Int64)).
-				Update("remix_count", gorm.Expr("remix_count - 1")).
+				UpdateColumn("remix_count", gorm.Expr("remix_count - 1")).
 				Error; err != nil {
 				return err
 			}
@@ -640,7 +640,7 @@ func (ctrl *Controller) DeleteProject(ctx context.Context, owner, name string) e
 				Select("user_id").
 				Where("project_id = ?", mProject.ID).
 				Where("liked_at IS NOT NULL")).
-			Update("liked_project_count", gorm.Expr("liked_project_count - 1")).
+			UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Error; err != nil {
 			return err
 		}
@@ -707,7 +707,7 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 		} else {
 			query = query.Where("last_viewed_at IS NULL")
 		}
-		if queryResult := query.Updates(map[string]any{
+		if queryResult := query.UpdateColumns(map[string]any{
 			"view_count":     gorm.Expr("view_count + 1"),
 			"last_viewed_at": sql.NullTime{Time: time.Now().UTC(), Valid: true},
 		}); queryResult.Error != nil {
@@ -715,7 +715,7 @@ func (ctrl *Controller) RecordProjectView(ctx context.Context, owner, name strin
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(&mProject).Update("view_count", gorm.Expr("view_count + 1")).Error; err != nil {
+		if err := tx.Model(&mProject).UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error; err != nil {
 			return err
 		}
 		return nil
@@ -759,10 +759,10 @@ func (ctrl *Controller) LikeProject(ctx context.Context, owner, name string) err
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).Update("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count + 1")).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&mProject).Update("like_count", gorm.Expr("like_count + 1")).Error; err != nil {
+		if err := tx.Model(&mProject).UpdateColumn("like_count", gorm.Expr("like_count + 1")).Error; err != nil {
 			return err
 		}
 		return nil
@@ -838,10 +838,10 @@ func (ctrl *Controller) UnlikeProject(ctx context.Context, owner, name string) e
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).Update("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&mProject).Update("like_count", gorm.Expr("like_count - 1")).Error; err != nil {
+		if err := tx.Model(&mProject).UpdateColumn("like_count", gorm.Expr("like_count - 1")).Error; err != nil {
 			return err
 		}
 		return nil

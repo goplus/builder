@@ -300,10 +300,10 @@ func (ctrl *Controller) FollowUser(ctx context.Context, targetUsername string) e
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).Update("following_count", gorm.Expr("following_count + 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumn("following_count", gorm.Expr("following_count + 1")).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&mTargetUser).Update("follower_count", gorm.Expr("follower_count + 1")).Error; err != nil {
+		if err := tx.Model(&mTargetUser).UpdateColumn("follower_count", gorm.Expr("follower_count + 1")).Error; err != nil {
 			return err
 		}
 		return nil
@@ -381,10 +381,10 @@ func (ctrl *Controller) UnfollowUser(ctx context.Context, targetUsername string)
 		} else if queryResult.RowsAffected == 0 {
 			return nil
 		}
-		if err := tx.Model(mAuthedUser).Update("following_count", gorm.Expr("following_count - 1")).Error; err != nil {
+		if err := tx.Model(mAuthedUser).UpdateColumn("following_count", gorm.Expr("following_count - 1")).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&mTargetUser).Update("follower_count", gorm.Expr("follower_count - 1")).Error; err != nil {
+		if err := tx.Model(&mTargetUser).UpdateColumn("follower_count", gorm.Expr("follower_count - 1")).Error; err != nil {
 			return err
 		}
 		return nil

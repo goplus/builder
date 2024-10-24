@@ -118,7 +118,7 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
-			Update("release_count", gorm.Expr("release_count + 1")).
+			UpdateColumn("release_count", gorm.Expr("release_count + 1")).
 			Statement
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WillReturnResult(sqlmock.NewResult(0, 1))
