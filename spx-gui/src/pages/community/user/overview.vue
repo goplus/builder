@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
 import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { humanizeTime } from '@/utils/utils'
 import { listReleases } from '@/apis/project-release'
 import { UITimeline, UITimelineItem, UILoading, UIError } from '@/components/ui'

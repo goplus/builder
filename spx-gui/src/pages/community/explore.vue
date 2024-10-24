@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
 import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
 import { UITagRadioGroup, UITagRadio } from '@/components/ui'

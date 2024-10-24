@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { useSlots } from 'vue'
-import type { QueryRet } from '@/utils/exception'
+import type { QueryRet } from '@/utils/query'
 import { UIIcon } from '@/components/ui'
 import ListResultWrapper from '../common/ListResultWrapper.vue'
 import RouterUILink from '../common/RouterUILink.vue'

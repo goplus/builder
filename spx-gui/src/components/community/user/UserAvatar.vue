@@ -3,20 +3,19 @@
     class="user-avatar"
     :class="`size-${size}`"
     :style="userInfo != null ? { backgroundImage: `url(${userInfo.avatar})` } : null"
-    :user="userInfo"
+    :user="userInfo?.username ?? null"
   ></UserLink>
 </template>
 
 <script setup lang="ts">
-import { useAsyncComputed } from '@/utils/utils'
-import { getUser, type User } from '@/apis/user'
 import UserLink from './UserLink.vue'
+import { useUser } from '@/stores/user'
 
 export type Size = 'small' | 'medium'
 
 const props = withDefaults(
   defineProps<{
-    user: string | User
+    user: string
     size?: Size
   }>(),
   {
@@ -24,9 +23,7 @@ const props = withDefaults(
   }
 )
 
-const userInfo = useAsyncComputed(() =>
-  typeof props.user === 'string' ? getUser(props.user) : Promise.resolve(props.user)
-)
+const { data: userInfo } = useUser(() => props.user)
 </script>
 
 <style lang="scss" scoped>

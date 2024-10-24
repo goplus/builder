@@ -35,7 +35,7 @@
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
 import { getUserPageRoute } from '@/router'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
 import { computed } from 'vue'
 
@@ -43,7 +43,7 @@ const userStore = useUserStore()
 const { isOnline } = useNetwork()
 const router = useRouter()
 
-const userInfo = computed(() => userStore.userInfo())
+const userInfo = computed(() => userStore.getSignedInUser())
 
 function handleUserPage() {
   router.push(getUserPageRoute(userInfo.value!.name))

@@ -3,7 +3,7 @@ import { UIFormModal, UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import { computed, shallowRef } from 'vue'
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { listProject } from '@/apis/project'
 
 const props = defineProps<{

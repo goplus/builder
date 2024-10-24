@@ -63,7 +63,7 @@ import {
   useRouteQueryParamStr,
   useRouteQueryParamStrEnum
 } from '@/utils/route'
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'

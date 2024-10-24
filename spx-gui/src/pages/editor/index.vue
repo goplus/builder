@@ -18,10 +18,10 @@
 <script setup lang="ts">
 import { watchEffect, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores'
+import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
-import { useQuery } from '@/utils/exception'
+import { useQuery } from '@/utils/query'
 import { clear } from '@/models/common/local'
 import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
@@ -38,7 +38,7 @@ const LOCAL_CACHE_KEY = 'GOPLUS_BUILDER_CACHED_PROJECT'
 
 const userStore = useUserStore()
 
-const userInfo = computed(() => userStore.userInfo())
+const userInfo = computed(() => userStore.getSignedInUser())
 
 const router = useRouter()
 

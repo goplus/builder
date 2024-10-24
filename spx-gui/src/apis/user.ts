@@ -22,9 +22,9 @@ export async function getUser(name: string): Promise<User> {
   return await (client.get(`/user/${encodeURIComponent(name)}`) as Promise<User>)
 }
 
-export type UpdateProfileParams = Pick<User, 'description'>
+export type UpdateSignedInUserParams = Pick<User, 'description'>
 
-export async function updateProfile(params: UpdateProfileParams) {
+export async function updateSignedInUser(params: UpdateSignedInUserParams) {
   return await (client.put(`/user`, params) as Promise<User>)
 }
 
