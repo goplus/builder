@@ -264,10 +264,10 @@ const remixesRet = useQuery(
     </UIError>
     <template v-else>
       <CommunityCard class="main">
+        <UILoading v-if="isLoading" cover mask="solid" />
         <div class="left">
           <div class="project-wrapper">
-            <UILoading v-if="isLoading" />
-            <template v-else-if="project != null">
+            <template v-if="project != null">
               <ProjectRunner ref="projectRunnerRef" :project="project" />
               <div v-show="runnerState === 'initial'" class="runner-mask">
                 <UIButton
@@ -309,114 +309,124 @@ const remixesRet = useQuery(
             </UIButton>
           </div>
         </div>
-        <div v-if="project != null" class="right">
-          <h2 class="title">{{ project.name }}</h2>
-          <RemixedFrom
-            v-if="project.remixedFrom != null"
-            class="remixed-from"
-            :remixed-from="project.remixedFrom"
-          />
-          <div class="info">
-            <OwnerInfo :owner="project.owner!" />
-            <p class="extra">
-              <template v-if="isOwner">
-                <span class="part" :title="$t(likeCount!.title)">
-                  <UIIcon type="heart" />
-                  {{ $t(likeCount!.text) }}
+        <div class="right">
+          <template v-if="project != null">
+            <h2 class="title">{{ project.name }}</h2>
+            <RemixedFrom
+              v-if="project.remixedFrom != null"
+              class="remixed-from"
+              :remixed-from="project.remixedFrom"
+            />
+            <div class="info">
+              <OwnerInfo :owner="project.owner!" />
+              <p class="extra">
+                <template v-if="isOwner">
+                  <span class="part" :title="$t(likeCount!.title)">
+                    <UIIcon type="heart" />
+                    {{ $t(likeCount!.text) }}
+                  </span>
+                  <i class="sep"></i>
+                </template>
+                <span class="part" :title="$t(viewCount!.title)">
+                  <UIIcon type="eye" />
+                  {{ $t(viewCount!.text) }}
                 </span>
                 <i class="sep"></i>
+                <span class="part" :title="$t(remixCount!.title)">
+                  <UIIcon type="remix" />
+                  {{ $t(remixCount!.text) }}
+                </span>
+              </p>
+            </div>
+            <div class="ops">
+              <template v-if="isOwner">
+                <UIButton
+                  type="primary"
+                  size="large"
+                  icon="edit2"
+                  :loading="handleEdit.isLoading.value"
+                  @click="handleEdit.fn"
+                  >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
+                >
+                <UIButton
+                  v-if="project.visibility === Visibility.Public"
+                  type="boring"
+                  size="large"
+                  icon="share"
+                  @click="handleShare.fn"
+                  >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
+                >
+                <UIButton
+                  v-else
+                  type="boring"
+                  size="large"
+                  icon="share"
+                  @click="handlePublish.fn"
+                  >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
+                >
+                <UIDropdown placement="bottom-end" trigger="click">
+                  <template #trigger>
+                    <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
+                  </template>
+                  <UIMenu>
+                    <UIMenuItem
+                      v-if="project.visibility === Visibility.Public"
+                      @click="handleUnpublish.fn"
+                      >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
+                    >
+                    <UIMenuItem @click="handleRemove.fn">{{
+                      $t({ en: 'Remove', zh: '删除' })
+                    }}</UIMenuItem>
+                  </UIMenu>
+                </UIDropdown>
               </template>
-              <span class="part" :title="$t(viewCount!.title)">
-                <UIIcon type="eye" />
-                {{ $t(viewCount!.text) }}
-              </span>
-              <i class="sep"></i>
-              <span class="part" :title="$t(remixCount!.title)">
-                <UIIcon type="remix" />
-                {{ $t(remixCount!.text) }}
-              </span>
-            </p>
-          </div>
-          <div class="ops">
-            <template v-if="isOwner">
-              <UIButton
-                type="primary"
-                size="large"
-                icon="edit2"
-                :loading="handleEdit.isLoading.value"
-                @click="handleEdit.fn"
-                >{{ $t({ en: 'Edit', zh: '编辑' }) }}</UIButton
-              >
-              <UIButton
-                v-if="project.visibility === Visibility.Public"
-                type="boring"
-                size="large"
-                icon="share"
-                @click="handleShare.fn"
-                >{{ $t({ en: 'Share', zh: '分享' }) }}</UIButton
-              >
-              <UIButton v-else type="boring" size="large" icon="share" @click="handlePublish.fn">{{
-                $t({ en: 'Publish', zh: '发布' })
-              }}</UIButton>
-              <UIDropdown placement="bottom-end" trigger="click">
-                <template #trigger>
-                  <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
-                </template>
-                <UIMenu>
-                  <UIMenuItem
-                    v-if="project.visibility === Visibility.Public"
-                    @click="handleUnpublish.fn"
-                    >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
-                  >
-                  <UIMenuItem @click="handleRemove.fn">{{
-                    $t({ en: 'Remove', zh: '删除' })
-                  }}</UIMenuItem>
-                </UIMenu>
-              </UIDropdown>
-            </template>
-            <template v-else>
-              <UIButton
-                type="primary"
-                size="large"
-                icon="remix"
-                :loading="handleRemix.isLoading.value"
-                @click="handleRemix.fn"
-                >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
-              >
-              <UIButton
-                :class="{ liking }"
-                type="boring"
-                size="large"
-                :title="$t(likeCount!.title)"
-                :icon="liking ? 'heart' : 'heartHollow'"
-                :loading="isTogglingLike"
-                @click="handleToggleLike"
-              >
-                {{ $t(likeCount!.text) }}
-              </UIButton>
-              <UIButton type="boring" size="large" icon="share" @click="handleShare.fn">{{
-                $t({ en: 'Share', zh: '分享' })
-              }}</UIButton>
-            </template>
-          </div>
-          <UIDivider class="divider" />
-          <UICollapse
-            class="collapse"
-            :default-expanded-names="['description', 'instructions', 'releases']"
-          >
-            <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
-              {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
-            </UICollapseItem>
-            <UICollapseItem
-              :title="$t({ en: 'Play instructions', zh: '操作说明' })"
-              name="instructions"
+              <template v-else>
+                <UIButton
+                  type="primary"
+                  size="large"
+                  icon="remix"
+                  :loading="handleRemix.isLoading.value"
+                  @click="handleRemix.fn"
+                  >{{ $t({ en: 'Remix', zh: '改编' }) }}</UIButton
+                >
+                <UIButton
+                  :class="{ liking }"
+                  type="boring"
+                  size="large"
+                  :title="$t(likeCount!.title)"
+                  :icon="liking ? 'heart' : 'heartHollow'"
+                  :loading="isTogglingLike"
+                  @click="handleToggleLike"
+                >
+                  {{ $t(likeCount!.text) }}
+                </UIButton>
+                <UIButton type="boring" size="large" icon="share" @click="handleShare.fn">{{
+                  $t({ en: 'Share', zh: '分享' })
+                }}</UIButton>
+              </template>
+            </div>
+            <UIDivider class="divider" />
+            <UICollapse
+              class="collapse"
+              :default-expanded-names="['description', 'instructions', 'releases']"
             >
-              {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
-            </UICollapseItem>
-            <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
-              <ReleaseHistory ref="releaseHistoryRef" :owner="props.owner" :name="props.name" />
-            </UICollapseItem>
-          </UICollapse>
+              <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
+                {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
+              </UICollapseItem>
+              <UICollapseItem
+                :title="$t({ en: 'Play instructions', zh: '操作说明' })"
+                name="instructions"
+              >
+                {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
+              </UICollapseItem>
+              <UICollapseItem
+                :title="$t({ en: 'Release history', zh: '发布历史' })"
+                name="releases"
+              >
+                <ReleaseHistory ref="releaseHistoryRef" :owner="props.owner" :name="props.name" />
+              </UICollapseItem>
+            </UICollapse>
+          </template>
         </div>
       </CommunityCard>
       <ProjectsSection
@@ -441,6 +451,7 @@ const remixesRet = useQuery(
 
 <style scoped lang="scss">
 .main {
+  position: relative;
   flex: 0 0 auto;
   margin-top: 24px;
   padding: 20px;
