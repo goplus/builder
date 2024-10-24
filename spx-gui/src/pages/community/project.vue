@@ -309,17 +309,17 @@ const remixesRet = useQuery(
             <div class="info">
               <OwnerInfo :owner="project.owner!" />
               <p class="extra">
-                <template v-if="isOwner">
-                  <span class="part" :title="$t(likeCount!.title)">
-                    <UIIcon type="heart" />
-                    {{ $t(likeCount!.text) }}
-                  </span>
-                  <i class="sep"></i>
-                </template>
                 <span class="part" :title="$t(viewCount!.title)">
                   <UIIcon type="eye" />
                   {{ $t(viewCount!.text) }}
                 </span>
+                <template v-if="isOwner">
+                  <i class="sep"></i>
+                  <span class="part" :title="$t(likeCount!.title)">
+                    <UIIcon type="heart" />
+                    {{ $t(likeCount!.text) }}
+                  </span>
+                </template>
                 <i class="sep"></i>
                 <span class="part" :title="$t(remixCount!.title)">
                   <UIIcon type="remix" />
