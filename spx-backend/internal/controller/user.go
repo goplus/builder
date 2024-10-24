@@ -126,7 +126,7 @@ type ListUsersParams struct {
 func NewListUsersParams() *ListUsersParams {
 	return &ListUsersParams{
 		OrderBy:    ListUsersOrderByCreatedAt,
-		SortOrder:  SortOrderDesc,
+		SortOrder:  SortOrderAsc,
 		Pagination: Pagination{Index: 1, Size: 20},
 	}
 }

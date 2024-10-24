@@ -20,6 +20,8 @@ const queryRet = useQuery(
   () =>
     listUsers({
       followee: props.name,
+      orderBy: 'followedAt',
+      sortOrder: 'desc',
       pageSize,
       pageIndex: page.value
     }),

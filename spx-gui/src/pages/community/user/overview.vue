@@ -42,8 +42,9 @@ const likesRet = useQuery(
     const { data: likes } = await listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      // TODO: check order here
       liker: props.name,
+      orderBy: 'likedAt',
+      sortOrder: 'desc',
       pageIndex: 1,
       pageSize: numInRow.value
     })

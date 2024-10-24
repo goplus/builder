@@ -22,6 +22,9 @@ if followee := ${followee}; followee != "" {
 if orderBy := ${orderBy}; orderBy != "" {
 	params.OrderBy = controller.ListUsersOrderBy(orderBy)
 }
+if sortOrder := ${sortOrder}; sortOrder != "" {
+	params.SortOrder = controller.SortOrder(sortOrder)
+}
 
 params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
 params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)

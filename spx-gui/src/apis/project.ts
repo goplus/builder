@@ -110,6 +110,7 @@ export type ListProjectParams = PaginationParams & {
     | 'remixCount'
     | 'recentLikeCount'
     | 'recentRemixCount'
+    | 'likedAt'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
