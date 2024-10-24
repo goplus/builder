@@ -4,8 +4,7 @@
 //   DELETE /user/:username/following
 
 ctx := &Context
-
-if _, ok := ensureUser(ctx); !ok {
+if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 	return
 }
 

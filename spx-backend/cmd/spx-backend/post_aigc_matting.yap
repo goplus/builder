@@ -8,9 +8,7 @@ import (
 )
 
 ctx := &Context
-
-_, ok := ensureUser(ctx)
-if !ok {
+if _, isAuthed := ensureAuthedUser(ctx); !isAuthed {
 	return
 }
 

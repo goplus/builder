@@ -70,19 +70,19 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mProject := model.Project{
 			Model:       model.Model{ID: 1},
-			OwnerID:     mUser.ID,
+			OwnerID:     mAuthedUser.ID,
 			Name:        "testproject",
 			Description: "Test project",
 			Thumbnail:   "http://example.com/project-thumbnail.jpg",
 		}
 
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: fmt.Sprintf("%s/%s", mUser.Username, mProject.Name),
+			ProjectFullName: fmt.Sprintf("%s/%s", mAuthedUser.Username, mProject.Name),
 			Name:            "v1.0.0",
 			Description:     "Test release",
 			Thumbnail:       "http://example.com/thumbnail.jpg",
@@ -90,7 +90,7 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", mUser.Username).
+			Where("user.username = ?", mAuthedUser.Username).
 			Where("project.name = ?", mProject.Name).
 			First(&model.Project{}).
 			Statement
@@ -100,13 +100,13 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		dbMock.ExpectBegin()
 
@@ -150,13 +150,13 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		releaseDTO, err := ctrl.CreateProjectRelease(ctx, params)
 		require.NoError(t, err)
@@ -173,19 +173,19 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mProjectName := "nonexistent"
 
 		params := &CreateProjectReleaseParams{
-			ProjectFullName: fmt.Sprintf("%s/%s", mUser.Username, mProjectName),
+			ProjectFullName: fmt.Sprintf("%s/%s", mAuthedUser.Username, mProjectName),
 			Name:            "v1.0.0",
 		}
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", mUser.Username).
+			Where("user.username = ?", mAuthedUser.Username).
 			Where("project.name = ?", mProjectName).
 			First(&model.Project{}).
 			Statement
@@ -278,8 +278,8 @@ func TestControllerGetProjectRelease(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mProject := model.Project{
 			Model:      model.Model{ID: 1},
@@ -297,7 +297,7 @@ func TestControllerGetProjectRelease(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", mUser.Username).
+			Where("user.username = ?", mAuthedUser.Username).
 			Where("project.name = ?", mProject.Name).
 			First(&model.Project{}).
 			Statement
@@ -307,13 +307,13 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project_id = ?", mProject.ID).
@@ -335,17 +335,17 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
-		projectReleaseDTO, err := ctrl.GetProjectRelease(ctx, mUser.Username, "testproject", "v1.0.0")
+		projectReleaseDTO, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, "testproject", "v1.0.0")
 		require.NoError(t, err)
-		assert.Equal(t, mUser.Username+"/testproject", projectReleaseDTO.ProjectFullName)
+		assert.Equal(t, mAuthedUser.Username+"/testproject", projectReleaseDTO.ProjectFullName)
 		assert.Equal(t, "v1.0.0", projectReleaseDTO.Name)
 
 		require.NoError(t, dbMock.ExpectationsWereMet())
@@ -356,14 +356,14 @@ func TestControllerGetProjectRelease(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mProjectName := "nonexistent"
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", mUser.Username).
+			Where("user.username = ?", mAuthedUser.Username).
 			Where("project.name = ?", mProjectName).
 			First(&model.Project{}).
 			Statement
@@ -372,7 +372,7 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectDBColumns))
 
-		_, err := ctrl.GetProjectRelease(ctx, mUser.Username, mProjectName, "v1.0.0")
+		_, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, mProjectName, "v1.0.0")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
@@ -384,8 +384,8 @@ func TestControllerGetProjectRelease(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
-		mUser, ok := UserFromContext(ctx)
-		require.True(t, ok)
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		mProject := model.Project{
 			Model:      model.Model{ID: 1},
@@ -396,7 +396,7 @@ func TestControllerGetProjectRelease(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
-			Where("user.username = ?", mUser.Username).
+			Where("user.username = ?", mAuthedUser.Username).
 			Where("project.name = ?", mProject.Name).
 			First(&model.Project{}).
 			Statement
@@ -406,13 +406,13 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mUser.ID).
+			Where("`user`.`id` = ?", mAuthedUser.ID).
 			Find(&model.User{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mUser)...))
+			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(*mAuthedUser)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project_id = ?", mProject.ID).
@@ -424,7 +424,7 @@ func TestControllerGetProjectRelease(t *testing.T) {
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectReleaseDBColumns))
 
-		_, err := ctrl.GetProjectRelease(ctx, mUser.Username, mProject.Name, "v1.0.0")
+		_, err := ctrl.GetProjectRelease(ctx, mAuthedUser.Username, mProject.Name, "v1.0.0")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 

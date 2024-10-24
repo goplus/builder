@@ -208,7 +208,28 @@ paths:
       tags:
         - Projects
       summary: List projects
-      description: Retrieve a paginated list of projects with optional filtering and ordering.
+      description: |
+        Retrieve a paginated list of projects with optional filtering and ordering.
+
+        #### Visibility rules
+
+        | Authed (as alice) | Owner | Visibility | Access |
+        |-------------|-------------|------------------|-----------|
+        | false | * | | All users' public projects (force `visibility=public`) |
+        | false | * | public | All users' public projects |
+        | false | * | private | `401 Unauthorized` |
+        | false | alice | | Alice's public projects (force `visibility=public`) |
+        | false | alice | public | Alice's public projects |
+        | false | alice | private | `401 Unauthorized` |
+        | true | * | | All alice's projects + others' public projects |
+        | true | * | public | All users' public projects |
+        | true | * | private | Alice's private projects |
+        | true | alice | | All alice's projects |
+        | true | alice | public | Alice's public projects |
+        | true | alice | private | Alice's private projects |
+        | true | bob | | Bob's public projects (force `visibility=public`) |
+        | true | bob | public | Bob's public projects |
+        | true | bob | private | `401 Unauthorized` |
       parameters:
         - name: owner
           in: query
@@ -632,7 +653,28 @@ paths:
       tags:
         - Assets
       summary: List assets
-      description: Retrieve a paginated list of assets with optional filtering and ordering.
+      description: |
+        Retrieve a paginated list of assets with optional filtering and ordering.
+
+        #### Visibility rules
+
+        | Authed (as alice) | Owner | Visibility | Access |
+        |-------------|-------------|------------------|-----------|
+        | false | * | | All users' public assets (force `visibility=public`) |
+        | false | * | public | All users' public assets |
+        | false | * | private | `401 Unauthorized` |
+        | false | alice | | Alice's public assets (force `visibility=public`) |
+        | false | alice | public | Alice's public assets |
+        | false | alice | private | `401 Unauthorized` |
+        | true | * | | All alice's assets + others' public assets |
+        | true | * | public | All users' public assets |
+        | true | * | private | Alice's private assets |
+        | true | alice | | All alice's assets |
+        | true | alice | public | Alice's public assets |
+        | true | alice | private | Alice's private assets |
+        | true | bob | | Bob's public assets (force `visibility=public`) |
+        | true | bob | public | Bob's public assets |
+        | true | bob | private | `401 Unauthorized` |
       parameters:
         - name: keyword
           in: query
