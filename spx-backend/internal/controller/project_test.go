@@ -580,6 +580,7 @@ func TestListProjectsOrderBy(t *testing.T) {
 		assert.True(t, ListProjectsOrderByRemixCount.IsValid())
 		assert.True(t, ListProjectsOrderByRecentLikeCount.IsValid())
 		assert.True(t, ListProjectsOrderByRecentRemixCount.IsValid())
+		assert.True(t, ListProjectsOrderByLikedAt.IsValid())
 	})
 
 	t.Run("Invalid", func(t *testing.T) {
@@ -713,7 +714,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(2).
 			Find(&[]model.Project{}).
 			Statement
@@ -778,7 +779,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", *params.Owner).
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -843,7 +844,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project.name LIKE ?", "%"+*params.Keyword+"%").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -914,7 +915,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Where("liker.username = ?", *params.Liker).
 			Where("liker_relationship.liked_at IS NOT NULL").
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1063,7 +1064,7 @@ func TestControllerListProjects(t *testing.T) {
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1124,7 +1125,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("remixed_from_user.username = ?", "original_user").
 			Where("remixed_from_project.name = ?", "original_project").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
-			Order("project.created_at desc, project.id").
+			Order("project.created_at asc, project.id").
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement

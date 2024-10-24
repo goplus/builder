@@ -185,7 +185,7 @@ type ListAssetsParams struct {
 func NewListAssetsParams() *ListAssetsParams {
 	return &ListAssetsParams{
 		OrderBy:    ListAssetsOrderByCreatedAt,
-		SortOrder:  SortOrderDesc,
+		SortOrder:  SortOrderAsc,
 		Pagination: Pagination{Index: 1, Size: 20},
 	}
 }

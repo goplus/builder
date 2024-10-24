@@ -82,6 +82,9 @@ if fromFollowees := ${fromFollowees}; fromFollowees != "" {
 if orderBy := ${orderBy}; orderBy != "" {
 	params.OrderBy = controller.ListProjectsOrderBy(orderBy)
 }
+if sortOrder := ${sortOrder}; sortOrder != "" {
+	params.SortOrder = controller.SortOrder(sortOrder)
+}
 
 params.Pagination.Index = paramInt("pageIndex", firstPageIndex)
 params.Pagination.Size = paramInt("pageSize", defaultPageSize)

@@ -23,8 +23,9 @@ const queryRet = useQuery(
     listProject({
       visibility: Visibility.Public,
       owner: ownerAll,
-      // TODO: check order here
       liker: props.name,
+      orderBy: 'likedAt',
+      sortOrder: 'desc',
       pageSize: pageSize.value,
       pageIndex: page.value
     }),

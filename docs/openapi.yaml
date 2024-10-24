@@ -296,6 +296,7 @@ paths:
               - remixCount
               - recentLikeCount
               - recentRemixCount
+              - likedAt
             default: createdAt
             examples:
               - createdAt

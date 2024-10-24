@@ -18,6 +18,9 @@ if projectFullName := ${projectFullName}; projectFullName != "" {
 if orderBy := ${orderBy}; orderBy != "" {
 	params.OrderBy = controller.ListProjectReleasesOrderBy(orderBy)
 }
+if sortOrder := ${sortOrder}; sortOrder != "" {
+	params.SortOrder = controller.SortOrder(sortOrder)
+}
 
 params.Pagination.Index = ctx.ParamInt("pageIndex", firstPageIndex)
 params.Pagination.Size = ctx.ParamInt("pageSize", defaultPageSize)

@@ -157,7 +157,7 @@ type ListProjectReleasesParams struct {
 func NewListProjectReleasesParams() *ListProjectReleasesParams {
 	return &ListProjectReleasesParams{
 		OrderBy:    ListProjectReleasesOrderByCreatedAt,
-		SortOrder:  SortOrderDesc,
+		SortOrder:  SortOrderAsc,
 		Pagination: Pagination{Index: 1, Size: 20},
 	}
 }

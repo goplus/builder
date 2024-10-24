@@ -251,6 +251,7 @@ const (
 	ListProjectsOrderByRemixCount       ListProjectsOrderBy = "remixCount"
 	ListProjectsOrderByRecentLikeCount  ListProjectsOrderBy = "recentLikeCount"
 	ListProjectsOrderByRecentRemixCount ListProjectsOrderBy = "recentRemixCount"
+	ListProjectsOrderByLikedAt          ListProjectsOrderBy = "likedAt"
 )
 
 // IsValid reports whether the order by condition is valid.
@@ -261,7 +262,8 @@ func (ob ListProjectsOrderBy) IsValid() bool {
 		ListProjectsOrderByLikeCount,
 		ListProjectsOrderByRemixCount,
 		ListProjectsOrderByRecentLikeCount,
-		ListProjectsOrderByRecentRemixCount:
+		ListProjectsOrderByRecentRemixCount,
+		ListProjectsOrderByLikedAt:
 		return true
 	}
 	return false
@@ -328,7 +330,7 @@ type ListProjectsParams struct {
 func NewListProjectsParams() *ListProjectsParams {
 	return &ListProjectsParams{
 		OrderBy:    ListProjectsOrderByCreatedAt,
-		SortOrder:  SortOrderDesc,
+		SortOrder:  SortOrderAsc,
 		Pagination: Pagination{Index: 1, Size: 20},
 	}
 }
@@ -451,6 +453,11 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 			break
 		}
 		queryOrderByColumn = "COUNT(remixed_project.id)"
+	case ListProjectsOrderByLikedAt:
+		if params.Liker == nil {
+			break
+		}
+		queryOrderByColumn = "liker_relationship.liked_at"
 	}
 	if queryOrderByColumn == "" {
 		queryOrderByColumn = "project.created_at"
