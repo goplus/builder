@@ -117,6 +117,7 @@ const handleNewProject = useMessageHandle(
           size="small"
           context="mine"
           :project="project"
+          @removed="queryRet.refetch()"
         />
       </ul>
     </ListResultWrapper>

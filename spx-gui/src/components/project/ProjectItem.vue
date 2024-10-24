@@ -37,7 +37,7 @@
       </div>
       <div class="info">
         <div class="header">
-          <h5 class="name">{{ project.name }}</h5>
+          <h5 class="name" :title="project.name">{{ project.name }}</h5>
           <template v-if="context !== 'public' && isOwner">
             <i
               v-if="project.visibility === Visibility.Public"
