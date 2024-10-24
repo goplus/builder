@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { listUsers } from '@/apis/user'
+import { useUser } from '@/stores/user'
 import { UIPagination } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
@@ -11,6 +13,15 @@ import UserItem from '@/components/community/user/UserItem.vue'
 const props = defineProps<{
   name: string
 }>()
+
+const { data: user } = useUser(() => props.name)
+usePageTitle(() => {
+  if (user.value == null) return null
+  return {
+    en: `${user.value.displayName} is following`,
+    zh: `${user.value.displayName} 关注的用户`
+  }
+})
 
 const pageSize = 8
 const page = useRouteQueryParamInt('p', 1)
@@ -39,7 +50,7 @@ const queryRet = useQuery(
     </template>
     <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="496">
       <ul class="users">
-        <UserItem v-for="user in slotProps.data.data" :key="user.id" :user="user" />
+        <UserItem v-for="u in slotProps.data.data" :key="u.id" :user="u" />
       </ul>
     </ListResultWrapper>
     <UIPagination

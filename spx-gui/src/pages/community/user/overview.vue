@@ -7,6 +7,8 @@ import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
+import { useUser } from '@/stores/user'
+import { usePageTitle } from '@/utils/utils'
 
 const props = defineProps<{
   name: string
@@ -14,6 +16,15 @@ const props = defineProps<{
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+
+const { data: user } = useUser(() => props.name)
+usePageTitle(() => {
+  if (user.value == null) return null
+  return {
+    en: `User ${user.value.displayName}`,
+    zh: `用户 ${user.value.displayName}`
+  }
+})
 
 const projectsRoute = computed(() => {
   return getUserPageRoute(props.name, 'projects')
