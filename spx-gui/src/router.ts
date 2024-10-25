@@ -1,5 +1,6 @@
 import type { App } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
 import { useUserStore } from './stores/user'
 
@@ -24,7 +25,9 @@ export function getProjectShareRoute(owner: string, name: string) {
 }
 
 export function getSearchRoute(keyword: string = '') {
-  return keyword !== '' ? `/search?q=${encodeURIComponent(keyword)}` : '/search'
+  return keyword !== ''
+    ? `/search?${searchKeywordQueryParamName}=${encodeURIComponent(keyword)}`
+    : '/search'
 }
 
 export function getExploreRoute(order?: ExploreOrder) {

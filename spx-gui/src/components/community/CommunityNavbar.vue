@@ -28,11 +28,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { getStringParam } from '@/utils/route'
 import { UIMenu, UITextInput, UIIcon } from '@/components/ui'
 import NavbarWrapper from '@/components/navbar/NavbarWrapper.vue'
 import NavbarDropdown from '../navbar/NavbarDropdown.vue'
 import NavbarNewProjectItem from '@/components/navbar/NavbarNewProjectItem.vue'
 import NavbarOpenProjectItem from '@/components/navbar/NavbarOpenProjectItem.vue'
+import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import { getSearchRoute } from '@/router'
 
 const router = useRouter()
@@ -48,6 +50,20 @@ watch(
   (isSearch, oldIsSearch) => {
     if (oldIsSearch && !isSearch) searchInput.value = ''
   }
+)
+
+// Sync search input from query
+watch(
+  () => router.currentRoute.value,
+  (r) => {
+    if (r.meta.isSearch) {
+      const keywordInQuery = getStringParam(router, searchKeywordQueryParamName)
+      if (keywordInQuery != null && keywordInQuery !== searchInput.value) {
+        searchInput.value = keywordInQuery
+      }
+    }
+  },
+  { immediate: true }
 )
 </script>
 

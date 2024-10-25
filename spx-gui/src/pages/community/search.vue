@@ -56,6 +56,11 @@
   </CenteredWrapper>
 </template>
 
+<script lang="ts">
+// `?q=123`
+export const searchKeywordQueryParamName = 'q'
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
@@ -77,7 +82,7 @@ usePageTitle({
   zh: '项目搜索结果'
 })
 
-const keyword = useRouteQueryParamStr('q', '')
+const keyword = useRouteQueryParamStr(searchKeywordQueryParamName, '')
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
