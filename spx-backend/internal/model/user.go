@@ -100,7 +100,7 @@ END
 func isUserDuplicateUsernameError(err error) bool {
 	var mysqlError *mysql.MySQLError
 	if errors.As(err, &mysqlError) {
-		return mysqlError.Number == 1644 && mysqlError.Message == userDuplicateUsernameErrorMessage
+		return mysqlError.Number == 1213 || (mysqlError.Number == 1644 && mysqlError.Message == userDuplicateUsernameErrorMessage)
 	}
 	return false
 }
