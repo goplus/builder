@@ -104,6 +104,9 @@ function createFile(url: string) {
   })
 }
 
+// TODO: we should maintain thumbnail together with other content of the default project, see details in https://github.com/goplus/builder/issues/1027
+const defaultThumbnailImg = 'https://builder-static.gopluscdn.com/assets/default-thumbnail.jpg'
+
 const handleSubmit = useMessageHandle(
   async () => {
     let projectData: ProjectData
@@ -129,7 +132,8 @@ const handleSubmit = useMessageHandle(
       projectData = await addProject({
         name: form.value.name,
         visibility: Visibility.Private,
-        files: fileCollection
+        files: fileCollection,
+        thumbnail: defaultThumbnailImg
       })
     }
     emit('resolved', projectData)

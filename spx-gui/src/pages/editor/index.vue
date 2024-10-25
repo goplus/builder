@@ -22,14 +22,16 @@ import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
 import { useQuery } from '@/utils/query'
+import { getStringParam } from '@/utils/route'
 import { clear } from '@/models/common/local'
 import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { usePageTitle } from '@/utils/utils'
+import { untilNotNull, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
+import { usePublishProject } from '@/components/project'
 
 const props = defineProps<{
   projectName: string
@@ -114,6 +116,15 @@ const {
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
 )
+
+// `?publish`
+if (getStringParam(router, 'publish') != null) {
+  const publishProject = usePublishProject()
+  onMounted(async () => {
+    const p = await untilNotNull(project)
+    publishProject(p)
+  })
+}
 
 async function loadProject(user: string | undefined, projectName: string | undefined) {
   if (user == null) return null
