@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func TestFirstOrCreateUser(t *testing.T) {
@@ -81,10 +80,6 @@ func TestFirstOrCreateUser(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt = db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "username"}},
-				DoNothing: true,
-			}).
 			Create(&User{
 				Username:    mExpectedUser.Username,
 				DisplayName: mExpectedUser.DisplayName,
