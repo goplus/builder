@@ -3,7 +3,7 @@ import { useRouter, type Router } from 'vue-router'
 
 type KVS = Partial<Record<string, string | null>>
 
-function getStringParam(router: Router, key: string): string | null {
+export function getStringParam(router: Router, key: string): string | null {
   const value = router.currentRoute.value.query[key]
   if (value == null) return null
   if (Array.isArray(value)) return value[0]

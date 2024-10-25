@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { useRouteQueryParamInt } from '@/utils/route'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { useUser } from '@/stores/user'
 import { UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import UserContent from '@/components/community/user/content/UserContent.vue'
@@ -11,6 +13,15 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 const props = defineProps<{
   name: string
 }>()
+
+const { data: user } = useUser(() => props.name)
+usePageTitle(() => {
+  if (user.value == null) return null
+  return {
+    en: `Projects ${user.value.displayName} likes`,
+    zh: `${user.value.displayName} 喜欢的项目`
+  }
+})
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))

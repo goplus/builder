@@ -56,6 +56,11 @@
   </CenteredWrapper>
 </template>
 
+<script lang="ts">
+// `?q=123`
+export const searchKeywordQueryParamName = 'q'
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
@@ -65,13 +70,19 @@ import {
 } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
+import { usePageTitle } from '@/utils/utils'
 import { UISelect, UISelectOption, UIPagination, useResponsive } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import CommunityHeader from '@/components/community/CommunityHeader.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 
-const keyword = useRouteQueryParamStr('q', '')
+usePageTitle({
+  en: 'Project search results',
+  zh: '项目搜索结果'
+})
+
+const keyword = useRouteQueryParamStr(searchKeywordQueryParamName, '')
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))

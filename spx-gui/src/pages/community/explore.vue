@@ -4,13 +4,13 @@
     <template #options>
       <UITagRadioGroup v-model:value="order">
         <UITagRadio :value="Order.MostLikes">
-          {{ $t({ en: 'Most recent likes', zh: '最近最受喜欢' }) }}
+          {{ $t(titles[Order.MostLikes]) }}
         </UITagRadio>
         <UITagRadio :value="Order.MostRemixes">
-          {{ $t({ en: 'Most recent remixes', zh: '最近最多改编' }) }}
+          {{ $t(titles[Order.MostRemixes]) }}
         </UITagRadio>
         <UITagRadio :value="Order.FollowingCreated">
-          {{ $t({ en: 'My following created', zh: '你关注的用户创作' }) }}
+          {{ $t(titles[Order.FollowingCreated]) }}
         </UITagRadio>
       </UITagRadioGroup>
     </template>
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { useQuery } from '@/utils/query'
 import { useRouteQueryParamStrEnum } from '@/utils/route'
+import { usePageTitle } from '@/utils/utils'
 import { exploreProjects, ExploreOrder as Order } from '@/apis/project'
 import { UITagRadioGroup, UITagRadio } from '@/components/ui'
 import ListResultWrapper from '@/components/common/ListResultWrapper.vue'
@@ -36,6 +37,14 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 import { useEnsureSignedIn } from '@/utils/user'
 
 const order = useRouteQueryParamStrEnum('o', Order, Order.MostLikes)
+
+const titles = {
+  [Order.MostLikes]: { en: 'Most recent likes', zh: '最近最受喜欢' },
+  [Order.MostRemixes]: { en: 'Most recent remixes', zh: '最近最多改编' },
+  [Order.FollowingCreated]: { en: 'My following created', zh: '你关注的用户创作' }
+}
+
+usePageTitle(() => titles[order.value])
 
 const maxCount = 50
 

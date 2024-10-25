@@ -30,8 +30,8 @@ async function initApp() {
 
   initUserStore(app)
   initApiClient()
-  await initRouter(app)
-  await initI18n(app)
+  initRouter(app)
+  initI18n(app)
 
   app.use(VueKonva as any, {
     customNodes: { CustomTransformer }
