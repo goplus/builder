@@ -270,7 +270,11 @@ const remixesRet = useQuery(
         <div class="left">
           <div class="project-wrapper">
             <template v-if="project != null">
-              <ProjectRunner ref="projectRunnerRef" :project="project" />
+              <ProjectRunner
+                ref="projectRunnerRef"
+                :key="`${project.owner}/${project.name}`"
+                :project="project"
+              />
               <div v-show="runnerState === 'initial'" class="runner-mask">
                 <UIButton
                   class="run-button"
