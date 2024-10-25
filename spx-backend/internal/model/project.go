@@ -1,13 +1,17 @@
 package model
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"gorm.io/gorm"
+)
 
 // Project is the model for projects.
 type Project struct {
 	Model
 
 	// OwnerID is the ID of the project owner.
-	OwnerID int64 `gorm:"column:owner_id;index;index:,composite:owner_id_name,unique,where:deleted_at IS NULL"`
+	OwnerID int64 `gorm:"column:owner_id;index;index:,composite:owner_id_name"`
 	Owner   User  `gorm:"foreignKey:OwnerID"`
 
 	// RemixedFromReleaseID is the ID of the project release from which the
@@ -19,7 +23,7 @@ type Project struct {
 	RemixedFromRelease   *ProjectRelease `gorm:"foreignKey:RemixedFromReleaseID"`
 
 	// Name is the unique name.
-	Name string `gorm:"column:name;index:,class:FULLTEXT;index:,composite:owner_id_name,unique,where:deleted_at IS NULL"`
+	Name string `gorm:"column:name;index:,class:FULLTEXT;index:,composite:owner_id_name"`
 
 	// Version is the version number.
 	Version int `gorm:"column:version"`
@@ -56,4 +60,53 @@ type Project struct {
 // TableName implements [gorm.io/gorm/schema.Tabler].
 func (Project) TableName() string {
 	return "project"
+}
+
+func (Project) AfterMigrate(tx *gorm.DB) error {
+	for _, sql := range []string{
+		"DROP TRIGGER IF EXISTS trg_project_before_insert",
+		`
+CREATE TRIGGER trg_project_before_insert
+BEFORE INSERT ON project
+FOR EACH ROW
+BEGIN
+	IF NEW.deleted_at IS NULL
+	AND EXISTS (
+		SELECT id FROM project
+		WHERE owner_id = NEW.owner_id
+		AND name = NEW.name
+		AND deleted_at IS NULL
+	) THEN
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Duplicate entry: An active record with same owner_id and name already exists';
+	END IF;
+END
+		`,
+
+		"DROP TRIGGER IF EXISTS trg_project_before_update",
+		`
+CREATE TRIGGER trg_project_before_update
+BEFORE UPDATE ON project
+FOR EACH ROW
+BEGIN
+	IF (NEW.owner_id <> OLD.owner_id OR NEW.name <> OLD.name)
+	AND NEW.deleted_at IS NULL
+	AND EXISTS (
+		SELECT id FROM project
+		WHERE owner_id = NEW.owner_id
+		AND name = NEW.name
+		AND deleted_at IS NULL
+		AND id != NEW.id
+	) THEN
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Duplicate entry: An active record with same owner_id and name already exists';
+	END IF;
+END
+		`,
+	} {
+		if err := tx.Exec(sql).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
