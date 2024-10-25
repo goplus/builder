@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
+import { getLatestRelease } from './project-release'
 
 export { Visibility, ownerAll }
 
@@ -116,6 +117,7 @@ export type ListProjectParams = PaginationParams & {
 }
 
 export async function listProject(params?: ListProjectParams) {
+  // TODO: released thumbnail for project list
   return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
 }
 
@@ -125,6 +127,20 @@ export async function getProject(owner: string, name: string, signal?: AbortSign
     undefined,
     { signal }
   ) as Promise<ProjectData>
+}
+
+/** Similar to `getProject`, while prefer released game content */
+export async function getReleasedProject(owner: string, name: string, signal?: AbortSignal) {
+  const [projectData, latestRelease] = await Promise.all([
+    getProject(owner, name, signal),
+    getLatestRelease(owner, name, signal)
+  ])
+  if (latestRelease == null) return projectData
+  return {
+    ...projectData,
+    thumbnail: latestRelease.thumbnail,
+    files: latestRelease.files
+  }
 }
 
 export enum ExploreOrder {
