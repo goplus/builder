@@ -419,6 +419,14 @@ export class Project extends Disposable {
     return this as CloudProject
   }
 
+  /** Similar to `loadFromCloud`, while prefer released game content */
+  async loadReleasedFromCloud(owner: string, name: string, signal?: AbortSignal) {
+    const { metadata, files } = await cloudHelper.loadReleased(owner, name, signal)
+    signal?.throwIfAborted()
+    await this.load(metadata, files)
+    return this as CloudProject
+  }
+
   /** Save to cloud */
   private saveToCloudAbortController: AbortController | null = null
   private get isSavingToCloud() {
