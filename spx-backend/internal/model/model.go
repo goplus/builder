@@ -41,6 +41,14 @@ func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, mod
 		if err := db.WithContext(ctx).AutoMigrate(models...); err != nil {
 			return nil, fmt.Errorf("failed to auto migrate models: %w", err)
 		}
+		for _, model := range models {
+			// NOTE: Workaround for https://github.com/go-gorm/gorm/issues/7227.
+			if am, ok := model.(interface{ AfterMigrate(tx *gorm.DB) error }); ok {
+				if err := db.WithContext(ctx).Transaction(am.AfterMigrate); err != nil {
+					return nil, fmt.Errorf("failed to run AfterMigrate: %w", err)
+				}
+			}
+		}
 	}
 	return db, nil
 }
