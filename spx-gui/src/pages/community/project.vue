@@ -9,6 +9,7 @@ import { useEnsureSignedIn } from '@/utils/user'
 import { usePageTitle } from '@/utils/utils'
 import { ownerAll, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
+import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, useUserStore } from '@/stores/user'
 import { getProjectEditorRoute, getUserPageRoute } from '@/router'
@@ -206,14 +207,31 @@ const handleRemix = useMessageHandle(
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
 
-const releaseHistoryRef = ref<InstanceType<typeof ReleaseHistory>>()
+const releasesRet = useQuery(
+  async () => {
+    const { owner, name } = props
+    const { data } = await listReleases({
+      projectFullName: `${owner}/${name}`,
+      orderBy: 'createdAt',
+      sortOrder: 'desc',
+      pageIndex: 1,
+      pageSize: 10 // load at most 10 recent releases
+    })
+    return data
+  },
+  { en: 'Load release history failed', zh: '加载发布历史失败' }
+)
+
+const hasRelease = computed(
+  () => releasesRet.data.value != null && releasesRet.data.value?.length > 0
+)
 
 const unpublishProject = useUnpublishProject()
 const handleUnpublish = useMessageHandle(
   async () => {
     const p = await untilNotNull(project)
     await unpublishProject(p)
-    releaseHistoryRef.value?.refetch()
+    releasesRet.refetch()
   },
   { en: 'Failed to unpublish project', zh: '取消发布项目失败' },
   {
@@ -389,6 +407,7 @@ const remixesRet = useQuery(
               </template>
               <template v-else>
                 <UIButton
+                  v-if="hasRelease"
                   type="primary"
                   size="large"
                   icon="remix"
@@ -430,7 +449,7 @@ const remixesRet = useQuery(
                 :title="$t({ en: 'Release history', zh: '发布历史' })"
                 name="releases"
               >
-                <ReleaseHistory ref="releaseHistoryRef" :owner="props.owner" :name="props.name" />
+                <ReleaseHistory :query-ret="releasesRet" />
               </UICollapseItem>
             </UICollapse>
           </template>
