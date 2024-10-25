@@ -4,8 +4,8 @@ import { searchKeywordQueryParamName } from '@/pages/community/search.vue'
 import type { ExploreOrder } from './apis/project'
 import { useUserStore } from './stores/user'
 
-export function getProjectEditorRoute(projectName: string) {
-  return `/editor/${projectName}`
+export function getProjectEditorRoute(projectName: string, publish = false) {
+  return publish ? `/editor/${projectName}?publish` : `/editor/${projectName}`
 }
 
 export function getProjectPageRoute(owner: string, name: string) {

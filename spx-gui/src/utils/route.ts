@@ -4,9 +4,17 @@ import { useRouter, type Router } from 'vue-router'
 type KVS = Partial<Record<string, string | null>>
 
 export function getStringParam(router: Router, key: string): string | null {
-  const value = router.currentRoute.value.query[key]
-  if (value == null) return null
-  if (Array.isArray(value)) return value[0]
+  let value = router.currentRoute.value.query[key]
+  if (Array.isArray(value)) value = value[0]
+
+  /**
+   * vue-router gives
+   * `{ isNull: null, isEmpty: '', other: 'other' }`.
+   * for
+   * `?isNull&isEmpty=&other=other`
+   */
+  if (value === undefined) return null
+  if (value === null) return ''
   return value
 }
 

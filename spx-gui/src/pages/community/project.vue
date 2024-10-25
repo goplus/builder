@@ -33,7 +33,6 @@ import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import {
   useCreateProject,
-  usePublishProject,
   useRemoveProject,
   useShareProject,
   useUnpublishProject
@@ -223,13 +222,10 @@ const handleUnpublish = useMessageHandle(
   }
 )
 
-const publishProject = usePublishProject()
 const handlePublish = useMessageHandle(
-  async () => {
-    const p = await untilNotNull(project)
-    await publishProject(p)
-    releaseHistoryRef.value?.refetch()
-  },
+  // there may be no thumbnail for some projects (see details in https://github.com/goplus/builder/issues/1025),
+  // to ensure thumbnail for project-release, we jump to editor where we are able to generate thumbnails and then finish publishing
+  async () => router.push(getProjectEditorRoute(props.name, true)),
   { en: 'Failed to publish project', zh: '发布项目失败' }
 )
 
@@ -367,6 +363,7 @@ const remixesRet = useQuery(
                   type="boring"
                   size="large"
                   icon="share"
+                  :loading="handlePublish.isLoading.value"
                   @click="handlePublish.fn"
                   >{{ $t({ en: 'Publish', zh: '发布' }) }}</UIButton
                 >
