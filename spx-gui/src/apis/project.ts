@@ -51,7 +51,7 @@ export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> &
   remixSource: string
 }
 
-export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility'>
+export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>
 
 export async function addProject(
   params: AddProjectParams | AddProjectByRemixParams,
