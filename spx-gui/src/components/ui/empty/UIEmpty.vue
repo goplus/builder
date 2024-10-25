@@ -1,14 +1,14 @@
 <template>
   <div class="ui-empty" :class="[`size-${size}`]">
     <template v-if="size === 'large'">
-      <img :src="emptyImg" />
+      <img :src="img" />
       <slot></slot>
       <template v-if="!slots.default">
         {{ defaultText }}
       </template>
     </template>
     <template v-else-if="size === 'extra-large'">
-      <img :src="emptyXlImg" />
+      <img :src="img" />
       <p class="text">
         <slot></slot>
         <template v-if="!slots.default">
@@ -77,12 +77,20 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 import { useConfig } from '../UIConfigProvider.vue'
-import emptyImg from './empty.svg'
-import emptyXlImg from './empty-xl.svg'
+import searchImg from './search.svg'
+import gameImg from './game.svg'
 
-defineProps<{
+const props = defineProps<{
   size: 'small' | 'medium' | 'large' | 'extra-large'
+  img?: 'search' | 'game'
 }>()
+
+const img = computed(() => {
+  if (props.img === 'game') return gameImg
+  if (props.img === 'search') return searchImg
+  if (props.size === 'extra-large') return gameImg
+  return searchImg
+})
 
 const config = useConfig()
 const defaultText = computed(() => config.empty?.text ?? 'No data')
@@ -101,6 +109,7 @@ const slots = useSlots()
 }
 
 .size-large {
+  width: 100%;
   flex-direction: column;
   gap: 12px;
 

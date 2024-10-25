@@ -8,8 +8,8 @@ import { reactive, watch } from 'vue'
 import { join } from '@/utils/path'
 import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
-import { IsPublic, type ProjectData } from '@/apis/project'
-import { toConfig, type Files, fromConfig } from '../common/file'
+import { Visibility, type ProjectData } from '@/apis/project'
+import { toConfig, type Files, fromConfig, File } from '../common/file'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
 import * as gbpHelper from '../common/gbp'
@@ -23,21 +23,19 @@ import type { RawWidgetConfig } from '../widget'
 import { History } from './history'
 import Mutex from '@/utils/mutex'
 import { Cancelled } from '@/utils/exception'
-import { untilConditionMet } from '@/utils/utils'
+import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
-export type Metadata = {
-  id?: string
-  owner?: string
-  name?: string
-  isPublic?: IsPublic
-  version?: number
-  cTime?: string
-  uTime?: string
+export type CloudMetadata = Omit<ProjectData, 'files'>
+
+export type Metadata = Partial<CloudMetadata> & {
   filesHash?: string
   lastSyncedFilesHash?: string
 }
+
+// TODO: better organization & type derivation
+export type CloudProject = Project & CloudMetadata
 
 const projectConfigFileName = 'index.json'
 const projectConfigFilePath = join('assets', projectConfigFileName)
@@ -92,19 +90,37 @@ type RawProjectConfig = RawStageConfig & {
   // TODO: camera
 }
 
+export type ScreenshotTaker = (
+  /** File name without extention */
+  name: string,
+  /** Signal for aborting the operation */
+  signal?: AbortSignal
+) => Promise<File>
+
 export class Project extends Disposable {
   id?: string
+  createdAt?: string
+  updatedAt?: string
   owner?: string
+  remixedFrom?: string | null
   name?: string
-  isPublic?: IsPublic
   version = 0
-  cTime?: string
-  uTime?: string
+  visibility?: Visibility
+  description?: string
+  instructions?: string
+  /** Universal URL of the project's thumbnail image, may be empty (`""`) */
+  thumbnail?: string
+  viewCount?: number
+  likeCount?: number
+  releaseCount?: number
+  remixCount?: number
 
   private filesHash?: string
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
   get hasUnsyncedChanges() {
+    // if filesHash is null, it means editing not started yet
+    if (this.filesHash == null) return false
     return this.lastSyncedFilesHash !== this.filesHash
   }
 
@@ -123,7 +139,7 @@ export class Project extends Disposable {
   }
   /**
    * Add given sprite to project.
-   * Note: the sprite's name may be altered to avoid conflict
+   * NOTE: the sprite's name may be altered to avoid conflict
    */
   addSprite(sprite: Sprite) {
     const newName = ensureValidSpriteName(sprite.name, this)
@@ -177,7 +193,7 @@ export class Project extends Disposable {
   }
   /**
    * Add given sound to project.
-   * Note: the sound's name may be altered to avoid conflict
+   * NOTE: the sound's name may be altered to avoid conflict
    */
   addSound(sound: Sound) {
     const newName = ensureValidSoundName(sound.name, this)
@@ -187,8 +203,16 @@ export class Project extends Disposable {
     this.sounds.push(sound)
   }
 
-  setPublic(isPublic: IsPublic) {
-    this.isPublic = isPublic
+  setVisibility(visibility: Visibility) {
+    this.visibility = visibility
+  }
+
+  setDescription(description: string) {
+    this.description = description
+  }
+
+  setInstructions(instructions: string) {
+    this.instructions = instructions
   }
 
   selected: Selected = null
@@ -228,6 +252,26 @@ export class Project extends Disposable {
   history: History
   historyMutex = new Mutex()
 
+  private screenshotTaker: ScreenshotTaker | null = null
+  bindScreenshotTaker(st: ScreenshotTaker) {
+    if (this.screenshotTaker != null) throw new Error('screenshotTaker already bound')
+    this.screenshotTaker = st
+    return () => {
+      if (this.screenshotTaker === st) {
+        this.screenshotTaker = null
+      }
+    }
+  }
+
+  private async ensureThumbnail(signal?: AbortSignal) {
+    if (!this.hasUnsyncedChanges && !!this.thumbnail) return
+    const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
+    const file = await screenshotTaker('thumbnail', signal)
+    signal?.throwIfAborted()
+    const url = await cloudHelper.saveFile(file, signal)
+    this.thumbnail = url
+  }
+
   constructor() {
     super()
     const reactiveThis = reactive(this) as this
@@ -252,12 +296,15 @@ export class Project extends Disposable {
   private exportMetadata(): Metadata {
     return {
       id: this.id,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
       owner: this.owner,
       name: this.name,
-      isPublic: this.isPublic,
       version: this.version,
-      cTime: this.cTime,
-      uTime: this.uTime,
+      visibility: this.visibility,
+      description: this.description,
+      instructions: this.instructions,
+      thumbnail: this.thumbnail,
       filesHash: this.filesHash,
       lastSyncedFilesHash: this.lastSyncedFilesHash
     }
@@ -365,14 +412,11 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string): Promise<void>
-  async loadFromCloud(projectData: ProjectData): Promise<void>
-  async loadFromCloud(ownerOrProjectData: string | ProjectData, name?: string) {
-    const { metadata, files } =
-      typeof ownerOrProjectData === 'string'
-        ? await cloudHelper.load(ownerOrProjectData, name!)
-        : await cloudHelper.parseProjectData(ownerOrProjectData)
+  async loadFromCloud(owner: string, name: string, signal?: AbortSignal) {
+    const { metadata, files } = await cloudHelper.load(owner, name, signal)
+    signal?.throwIfAborted()
     await this.load(metadata, files)
+    return this as CloudProject
   }
 
   /** Save to cloud */
@@ -389,6 +433,7 @@ export class Project extends Disposable {
 
     try {
       if (this.isDisposed) throw new Error('disposed')
+      await this.ensureThumbnail(abortController.signal)
       const [metadata, files] = await this.export()
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
@@ -449,10 +494,7 @@ export class Project extends Disposable {
 
       try {
         if (this.isSavingToCloud) {
-          await untilConditionMet(
-            () => this.isSavingToCloud,
-            () => !this.isSavingToCloud
-          )
+          await until(() => !this.isSavingToCloud)
         }
 
         if (this.hasUnsyncedChanges) await this.saveToCloud()
@@ -548,6 +590,17 @@ export class Project extends Disposable {
     }
     this.startAutoSaveToCloud(localCacheKey)
     this.startAutoSaveToLocalCache(localCacheKey)
+
+    this.addDisposer(
+      watch(
+        // new created project has no thumbnail, do save to cloud to generate thumbnail
+        () => this.thumbnail === '' && this.autoSaveMode === AutoSaveMode.Cloud,
+        (shouldGenerateThumbnail) => {
+          if (shouldGenerateThumbnail) this.saveToCloud?.()
+        },
+        { immediate: true }
+      )
+    )
   }
 }
 

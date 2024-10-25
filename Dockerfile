@@ -34,7 +34,7 @@ ARG NPM_CONFIG_REGISTRY
 RUN npm install
 
 COPY spx-gui .
-# Required to resolve symlinks
+COPY docs ../docs
 COPY tools ../tools
 COPY --from=go-builder /app/tools/fmt/static/main.wasm /app/spx-gui/src/assets/format.wasm
 COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/main.wasm

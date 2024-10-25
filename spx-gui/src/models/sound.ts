@@ -63,7 +63,7 @@ export class Sound extends Disposable {
 
   /**
    * Create instance with default inits
-   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   * NOTE: the "default" means default behavior for builder, not the default behavior of spx
    */
   static async create(nameBase: string, file: File, inits?: SoundInits) {
     const adaptedFile = await adaptAudio(file)

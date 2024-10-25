@@ -63,6 +63,10 @@ const handleContentInput = debounce(() => {
   }
 }
 
+.ui-form-item + .ui-form-item {
+  margin-top: 24px;
+}
+
 .tip {
   margin-top: 4px;
   color: var(--ui-color-hint-1);

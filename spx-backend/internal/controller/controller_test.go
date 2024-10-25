@@ -1,10 +1,13 @@
 package controller
 
 import (
-	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+	"github.com/goplus/builder/spx-backend/internal/aigc"
+	"github.com/goplus/builder/spx-backend/internal/log"
+	"github.com/goplus/builder/spx-backend/internal/model/modeltest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,42 +45,94 @@ uPrfGhKFB+ckitTWslFGf1d/Dt/MYS544QlB06IW8f+AM7z0sohh5nGH8lQIOmLC
 VTh1XIl/IELBoZ+rQXozGA==
 -----END CERTIFICATE-----`)
 	t.Setenv("GOP_CASDOOR_ORGANIZATIONNAME", "fake-organization")
-	t.Setenv("GOP_CASDOOR_APPLICATONNAME", "fake-application")
+	t.Setenv("GOP_CASDOOR_APPLICATIONNAME", "fake-application")
 }
 
-func newTestController(t *testing.T) (*Controller, sqlmock.Sqlmock, error) {
+type mockCasdoorClient struct {
+	casdoorClient casdoorClient
+	jwt           string
+}
+
+func newMockCasdoorClient(casdoorClient casdoorClient, jwt string) *mockCasdoorClient {
+	return &mockCasdoorClient{casdoorClient: casdoorClient, jwt: jwt}
+}
+
+func (m *mockCasdoorClient) ParseJwtToken(token string) (*casdoorsdk.Claims, error) {
+	return m.casdoorClient.ParseJwtToken(token)
+}
+
+func (m *mockCasdoorClient) GetUser(name string) (*casdoorsdk.User, error) {
+	claims, err := m.casdoorClient.ParseJwtToken(m.jwt)
+	if err != nil {
+		return nil, err
+	}
+	return &claims.User, nil
+}
+
+const fakeUserToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9." +
+	"eyJvd25lciI6IkdvUGx1cyIsIm5hbWUiOiJmYWtlLW5hbWUiLCJpZCI6IjEiLCJpc3MiOiJHb1BsdXMiLCJzdWIiOiIxIiwiZXhwIjo0ODcwNDI5MDQwfQ." +
+	"X0T-v-RJggMRy3Mmui2FoRH-_4DQsNA6DekUx1BfIljTZaEbHbuW59dSlKQ-i2MuYD7_8mI18vZqT3iysbKQ1T70NF97B_A130ML3pulZWlj1ZokgjCkVug25QRbq_N7JMd4apJZFlyZj8Bd2VfqtAKMlJJ4HzKzNXB-GBogDVlKeu4xJ1BiXO2rHL1PNa5KyKLSSMXmuP_Wc108RXZ0BiKDE30IG1fvcyvudXcetmltuWjuU6JRj3FGedxuVEqZLXqcm13dCxHnuFV1x1XU9KExcDvVyVB91FpBe5npzYp6WMX0fx9vU1b4eJ69EZoeMdMolhmvYInT1G8r1PEmbg"
+
+func newTestController(t *testing.T) (ctrl *Controller, dbMock sqlmock.Sqlmock, closeDB func() error) {
 	setTestEnv(t)
 
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		return nil, nil, err
-	}
-	t.Cleanup(func() {
-		db.Close()
-	})
+	logger := log.GetLogger()
+	kodoConfig := newKodoConfig(logger)
+	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
+	casdoorClient := newMockCasdoorClient(newCasdoorClient(logger), fakeUserToken)
 
-	ctrl, err := New(context.Background())
-	if err != nil {
-		return nil, nil, err
-	}
-	ctrl.db = db
-	return ctrl, mock, nil
+	db, dbMock, closeDB, err := modeltest.NewMockDB()
+	require.NoError(t, err)
+	return &Controller{
+		db:            db,
+		kodo:          kodoConfig,
+		aigcClient:    aigcClient,
+		casdoorClient: casdoorClient,
+	}, dbMock, closeDB
 }
 
-func TestNew(t *testing.T) {
-	t.Run("Normal", func(t *testing.T) {
-		setTestEnv(t)
-		ctrl, err := New(context.Background())
-		require.NoError(t, err)
-		require.NotNil(t, ctrl)
+func TestSortOrder(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		assert.True(t, SortOrderAsc.IsValid())
+		assert.True(t, SortOrderDesc.IsValid())
 	})
 
-	t.Run("InvalidDSN", func(t *testing.T) {
-		setTestEnv(t)
-		t.Setenv("GOP_SPX_DSN", "invalid-dsn")
-		ctrl, err := New(context.Background())
-		require.Error(t, err)
-		assert.EqualError(t, err, "invalid DSN: missing the slash separating the database name")
-		require.Nil(t, ctrl)
+	t.Run("Invalid", func(t *testing.T) {
+		assert.False(t, SortOrder("invalid").IsValid())
 	})
+}
+
+func TestPagination(t *testing.T) {
+	t.Run("Valid", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 20}
+		assert.True(t, p.IsValid())
+	})
+
+	t.Run("InvalidIndex", func(t *testing.T) {
+		p := Pagination{Index: 0, Size: 20}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("InvalidSize", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 0}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("SizeExceedsMaximum", func(t *testing.T) {
+		p := Pagination{Index: 1, Size: 101}
+		assert.False(t, p.IsValid())
+	})
+
+	t.Run("Offset", func(t *testing.T) {
+		p := Pagination{Index: 3, Size: 20}
+		assert.Equal(t, 40, p.Offset())
+	})
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

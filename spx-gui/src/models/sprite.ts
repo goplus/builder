@@ -131,7 +131,7 @@ export class Sprite extends Disposable {
   }
   /**
    * Add given costume to sprite.
-   * Note: the costume's name may be altered to avoid conflict
+   * NOTE: the costume's name may be altered to avoid conflict
    */
   addCostume(costume: Costume) {
     const newCostumeName = ensureValidCostumeName(costume.name, this)
@@ -153,7 +153,7 @@ export class Sprite extends Disposable {
   }
   /**
    * Add given animation to sprite.
-   * Note: the animation's name may be altered to avoid conflict
+   * NOTE: the animation's name may be altered to avoid conflict
    */
   addAnimation(animation: Animation) {
     const newAnimationName = ensureValidAnimationName(animation.name, this)

@@ -2,7 +2,7 @@ import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
 import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { IsPublic, addProject, getProject, updateProject } from '@/apis/project'
+import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
@@ -19,9 +19,9 @@ const fileUniversalUrlSchemes = {
   kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
 } as const
 
-export async function load(owner: string, name: string) {
-  const projectData = await getProject(owner, name)
-  return await parseProjectData(projectData)
+export async function load(owner: string, name: string, signal?: AbortSignal) {
+  const projectData = await getProject(owner, name, signal)
+  return parseProjectData(projectData)
 }
 
 export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
@@ -32,17 +32,31 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   const { fileCollection } = await saveFiles(files, signal)
   signal?.throwIfAborted()
 
-  const isPublic = metadata.isPublic ?? IsPublic.personal
+  const visibility = metadata.visibility ?? Visibility.Private
   const projectData = await (id != null
-    ? updateProject(owner, name, { isPublic, files: fileCollection }, signal)
-    : addProject({ name, isPublic, files: fileCollection }, signal))
+    ? updateProject(
+        owner,
+        name,
+        {
+          visibility,
+          files: fileCollection,
+          description: metadata.description,
+          instructions: metadata.instructions,
+          thumbnail: metadata.thumbnail
+        },
+        signal
+      )
+    : addProject(
+        { name, visibility, thumbnail: metadata.thumbnail ?? '', files: fileCollection },
+        signal
+      ))
   signal?.throwIfAborted()
 
   return { metadata: projectData, files }
 }
 
-export async function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
-  const files = await getFiles(fileCollection)
+export function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
+  const files = getFiles(fileCollection)
   return { metadata, files }
 }
 
@@ -59,7 +73,7 @@ export async function saveFiles(
   return { fileCollection, fileCollectionHash }
 }
 
-export async function getFiles(fileCollection: FileCollection): Promise<Files> {
+export function getFiles(fileCollection: FileCollection): Files {
   const files: Files = {}
   Object.keys(fileCollection).forEach((path) => {
     const universalUrl = fileCollection[path]
@@ -101,14 +115,15 @@ export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   return universalUrlToWebUrl(universalUrl)
 }
 
-async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
+export async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
   const { protocol } = new URL(universalUrl)
   if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
   const map = await makeObjectUrls([universalUrl])
   return map[universalUrl]
 }
 
-async function saveFile(file: File, signal?: AbortSignal) {
+/** Save file to cloud and return its universal URL */
+export async function saveFile(file: File, signal?: AbortSignal) {
   const savedUrl = getUniversalUrl(file)
   if (savedUrl != null) return savedUrl
 

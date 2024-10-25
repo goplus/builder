@@ -6,14 +6,16 @@ import (
 	"io"
 
 	"github.com/goplus/builder/spx-backend/internal/controller"
+	"github.com/goplus/builder/spx-backend/internal/log"
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"github.com/goplus/yap"
+	"gorm.io/gorm"
 )
 
-// ensureUser ensures the user is authenticated.
-func ensureUser(ctx *yap.Context) (u *controller.User, ok bool) {
-	u, ok = controller.UserFromContext(ctx.Context())
-	if !ok {
+// ensureAuthedUser ensures there is an authenticated user in the context.
+func ensureAuthedUser(ctx *yap.Context) (mAuthedUser *model.User, isAuthed bool) {
+	mAuthedUser, isAuthed = controller.AuthedUserFromContext(ctx.Context())
+	if !isAuthed {
 		replyWithCode(ctx, errorUnauthorized)
 	}
 	return
@@ -54,15 +56,17 @@ func replyWithCodeMsg(ctx *yap.Context, code errorCode, msg string) {
 // replyWithInnerError replies to the client with the inner error.
 func replyWithInnerError(ctx *yap.Context, err error) {
 	switch {
-	case errors.Is(err, model.ErrExist):
+	case errors.Is(err, controller.ErrBadRequest), errors.Is(err, gorm.ErrDuplicatedKey):
 		replyWithCode(ctx, errorInvalidArgs)
+	case errors.Is(err, controller.ErrNotExist), errors.Is(err, gorm.ErrRecordNotFound):
+		replyWithCode(ctx, errorNotFound)
 	case errors.Is(err, controller.ErrUnauthorized):
 		replyWithCode(ctx, errorUnauthorized)
 	case errors.Is(err, controller.ErrForbidden):
 		replyWithCode(ctx, errorForbidden)
-	case errors.Is(err, controller.ErrNotExist), errors.Is(err, model.ErrNotExist):
-		replyWithCode(ctx, errorNotFound)
 	default:
+		logger := log.GetReqLogger(ctx.Context())
+		logger.Printf("failed to handle request [%s %s]: %v", ctx.Method, ctx.URL, err)
 		replyWithCode(ctx, errorUnknown)
 	}
 }

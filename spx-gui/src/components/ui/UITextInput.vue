@@ -3,6 +3,7 @@
     class="ui-text-input"
     :placeholder="placeholder || ''"
     :value="value"
+    :type="type"
     :disabled="disabled"
     :readonly="readonly"
     @update:value="(v) => emit('update:value', v)"
@@ -34,8 +35,11 @@
 import { useSlots } from 'vue'
 import { NInput } from 'naive-ui'
 
+type Type = 'textarea' | 'text' | 'password'
+
 defineProps<{
   value: string
+  type?: Type
   clearable?: boolean
   disabled?: boolean
   readonly?: boolean

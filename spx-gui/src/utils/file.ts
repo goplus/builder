@@ -124,7 +124,7 @@ export async function selectAudio() {
 }
 
 /** Get url for File */
-export function useFileUrl(fileSource: WatchSource<File | undefined>) {
+export function useFileUrl(fileSource: WatchSource<File | undefined | null>) {
   const urlRef = ref<string | null>(null)
   const loadingRef = ref(false)
   watch(
@@ -135,9 +135,23 @@ export function useFileUrl(fileSource: WatchSource<File | undefined>) {
         return
       }
       loadingRef.value = true
+      let cancelled = false
+      let fileUrlCleanup: (() => void) | null = null
+      onCleanup(() => {
+        cancelled = true
+        urlRef.value = null
+        fileUrlCleanup?.()
+      })
       file
-        .url(onCleanup)
+        .url((cleanup) => {
+          if (cancelled) {
+            cleanup()
+            return
+          }
+          fileUrlCleanup = cleanup
+        })
         .then((url) => {
+          if (cancelled) return
           urlRef.value = url
         })
         .catch((e) => {

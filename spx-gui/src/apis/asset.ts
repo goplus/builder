@@ -1,40 +1,36 @@
 import type { FileCollection, ByPage, PaginationParams } from './common'
-import { client, IsPublic } from './common'
+import { client, Visibility } from './common'
 
-export { IsPublic }
+export { Visibility }
 
 export enum AssetType {
-  Sprite = 0,
-  Backdrop = 1,
-  Sound = 2
+  Sprite = 'sprite',
+  Backdrop = 'backdrop',
+  Sound = 'sound'
 }
 
 export type AssetData = {
-  /** Globally unique ID */
+  /** Unique identifier */
   id: string
-  /** Name to display */
-  displayName: string
-  /** Name of asset owner */
+  /** Username of the asset's owner */
   owner: string
-  /** Asset Category */
+  /** Display name of the asset */
+  displayName: string
+  /** Type of the asset */
+  type: AssetType
+  /** Category to which the asset belongs */
   category: string
-  /** Asset Type */
-  assetType: AssetType
-  /** Files the asset contains */
+  /** File paths and their corresponding universal URLs associated with the asset */
   files: FileCollection
-  /** Hash of the files */
+  /** Hash of the asset files */
   filesHash: string
-  /** Preview URL for the asset, e.g., a gif for a sprite */
-  preview: string
-  /** Click count of the asset */
-  clickCount: number
-  /** Public status */
-  isPublic: IsPublic
+  /** Visibility of the asset */
+  visibility: Visibility
 }
 
 export type AddAssetParams = Pick<
   AssetData,
-  'displayName' | 'category' | 'assetType' | 'files' | 'filesHash' | 'preview' | 'isPublic'
+  'displayName' | 'type' | 'category' | 'files' | 'filesHash' | 'visibility'
 >
 
 export function addAsset(params: AddAssetParams) {
@@ -51,20 +47,15 @@ export function deleteAsset(id: string) {
   return client.delete(`/asset/${encodeURIComponent(id)}`) as Promise<void>
 }
 
-export enum ListAssetParamOrderBy {
-  Default = 'default',
-  TimeDesc = 'time',
-  ClickCountDesc = 'clickCount'
-}
-
 export type ListAssetParams = PaginationParams & {
   keyword?: string
   owner?: string
+  type?: AssetType
   category?: string
-  assetType?: AssetType
   filesHash?: string
-  isPublic?: IsPublic
-  orderBy?: ListAssetParamOrderBy
+  visibility?: Visibility
+  orderBy?: 'createdAt' | 'updatedAt'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export function listAsset(params?: ListAssetParams) {

@@ -1,28 +1,26 @@
-import { useRouter } from 'vue-router'
 import { useModal, useConfirmDialog } from '@/components/ui'
-import { IsPublic, deleteProject } from '@/apis/project'
+import { Visibility, deleteProject } from '@/apis/project'
+import { useI18n } from '@/utils/i18n'
+import type { Project } from '@/models/project'
 import ProjectCreateModal from './ProjectCreateModal.vue'
 import ProjectOpenModal from './ProjectOpenModal.vue'
 import ProjectSharingLinkModal from './ProjectSharingLinkModal.vue'
-import { useI18n } from '@/utils/i18n'
-import type { Project } from '@/models/project'
-import { getProjectEditorRoute } from '@/router'
+import ProjectPublishModal from './ProjectPublishModal.vue'
+import ProjectPublishedModal from './ProjectPublishedModal.vue'
 
 export function useCreateProject() {
   const modal = useModal(ProjectCreateModal)
 
-  return function createProject() {
-    return modal({})
+  return function createProject(remixSource?: string) {
+    return modal({ remixSource })
   }
 }
 
 export function useOpenProject() {
-  const router = useRouter()
   const modal = useModal(ProjectOpenModal)
 
-  return async function openProject() {
-    const project = await modal({})
-    router.push(getProjectEditorRoute(project.name))
+  return function openProject() {
+    return modal({})
   }
 }
 
@@ -37,66 +35,48 @@ export function useRemoveProject() {
         en: `Removed projects can not be recovered. Are you sure you want to remove project ${name}?`,
         zh: `删除后的项目无法恢复，确定要删除项目 ${name} 吗？`
       }),
+      // TODO: message for exception
       confirmHandler: () => deleteProject(owner, name)
     })
   }
 }
 
-export function useCreateProjectSharingLink() {
+export function useShareProject() {
   const modal = useModal(ProjectSharingLinkModal)
 
-  return async function createProjectSharingLink(project: Project) {
-    await modal({ project })
+  return async function shareProject(owner: string, name: string) {
+    await modal({ owner, name })
   }
 }
 
-/**
- * Share given project
- * - make project public
- * - copy sharing link
- */
-export function useShareProject() {
-  const { t } = useI18n()
-  const withConfirm = useConfirmDialog()
-  const createProjectSharingLink = useCreateProjectSharingLink()
+export function usePublishProject() {
+  const invokePublishModal = useModal(ProjectPublishModal)
+  const invokePublishedModal = useModal(ProjectPublishedModal)
 
-  async function makePublic(project: Project) {
-    project.setPublic(IsPublic.public)
-    await project.saveToCloud()
-  }
-
-  return async function shareProject(project: Project) {
-    if (project.isPublic !== IsPublic.public) {
-      await withConfirm({
-        title: t({ en: 'Share project', zh: '分享项目' }),
-        content: t({
-          en: 'To share the current project, it will be made public. Would you like to proceed?',
-          zh: '为了分享当前项目，它将被设置为公开。确认继续吗？'
-        }),
-        confirmHandler: () => makePublic(project)
-      })
-    }
-    return createProjectSharingLink(project)
+  return async function publishProject(project: Project) {
+    await invokePublishModal({ project })
+    invokePublishedModal({ project })
   }
 }
 
-export function useStopSharingProject() {
+export function useUnpublishProject() {
   const { t } = useI18n()
   const withConfirm = useConfirmDialog()
 
-  async function makePersonal(project: Project) {
-    project.setPublic(IsPublic.personal)
+  // TODO: message for exception
+  async function makePrivate(project: Project) {
+    project.setVisibility(Visibility.Private)
     await project.saveToCloud()
   }
 
-  return async function stopSharingProject(project: Project) {
+  return async function unpublishProject(project: Project) {
     return withConfirm({
-      title: t({ en: 'Stop sharing project', zh: '停止分享项目' }),
+      title: t({ en: 'Unpublish project', zh: '取消发布项目' }),
       content: t({
-        en: 'If sharing is stopped, others will no longer have access to the current project, and its sharing links will expire. Would you like to proceed?',
-        zh: '如果停止分享，其他人将无法访问当前项目，且分享链接将会失效。确认继续吗？'
+        en: 'If project unpublished, others will no longer have access to the current project, and its sharing links will expire. Would you like to proceed?',
+        zh: '如果取消发布，其他人将无法访问当前项目，且分享链接将会失效。确认继续吗？'
       }),
-      confirmHandler: () => makePersonal(project)
+      confirmHandler: () => makePrivate(project)
     })
   }
 }

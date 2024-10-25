@@ -106,7 +106,7 @@ export class Animation extends Disposable {
 
   /**
    * Create instance with default inits
-   * Note that the "default" means default behavior for builder, not the default behavior of spx
+   * NOTE: the "default" means default behavior for builder, not the default behavior of spx
    */
   static create(nameBase: string, costumes: Costume[], inits?: AnimationInits) {
     const animation = new Animation(getAnimationName(null, nameBase), inits)

@@ -1,17 +1,20 @@
 <template>
-  <div class="ui-loading" :class="{ cover, visible, mask }">
+  <div class="ui-loading" :class="{ cover, visible, [`mask-${mask}`]: true }">
     <NSpin />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { NSpin } from 'naive-ui'
 
-withDefaults(
+export type MaskType = 'none' | 'semi-transparent' | 'solid'
+
+const props = withDefaults(
   defineProps<{
     cover?: boolean
     visible?: boolean
-    mask?: boolean
+    mask?: boolean | MaskType
   }>(),
   {
     cover: false,
@@ -19,6 +22,12 @@ withDefaults(
     mask: true
   }
 )
+
+const mask = computed(() => {
+  if (props.mask === false) return 'none'
+  if (props.mask === true) return 'semi-transparent'
+  return props.mask
+})
 </script>
 
 <style lang="scss" scoped>
@@ -41,8 +50,11 @@ withDefaults(
     width: 100%;
     height: 100%;
 
-    &.mask {
+    &.mask-semi-transparent {
       background-color: rgba(255, 255, 255, 0.5);
+    }
+    &.mask-solid {
+      background-color: var(--ui-color-grey-100);
     }
   }
 

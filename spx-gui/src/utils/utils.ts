@@ -1,5 +1,7 @@
 import { memoize } from 'lodash'
+import dayjs from 'dayjs'
 import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import { useI18n, type LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -24,7 +26,7 @@ export function isAddPublicLibraryEnabled() {
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
-  const r = ref<T>()
+  const r = shallowRef<T | null>(null)
   watchEffect(async (onCleanup) => {
     let cancelled = false
     onCleanup(() => {
@@ -67,7 +69,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   watch(ref, (newValue) => {
     if (newValue === initialValue) {
       // Remove the key if the value is the initial value.
-      // Note: this may be unexpected for some special use cases
+      // NOTE: this may be unexpected for some special use cases
       localStorage.removeItem(key)
       return
     }
@@ -83,11 +85,20 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const bar = await untilNotNull(() => getBar())
  * ```
  */
-export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) {
+export function untilNotNull<T>(
+  valueSource: WatchSource<T | null | undefined>,
+  signal?: AbortSignal
+) {
   return untilConditionMet(
     valueSource as WatchSource<T | null | undefined>,
-    (value): value is NonNullable<T> => value != null
+    (value): value is NonNullable<T> => value != null,
+    signal
   ) as Promise<NonNullable<T>>
+}
+
+/** Wait until given condition is met. */
+export async function until(conditionSource: WatchSource<boolean>, signal?: AbortSignal) {
+  await untilConditionMet(conditionSource, (c) => c, signal)
 }
 
 /**
@@ -97,9 +108,10 @@ export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>) 
  * const bar = await untilConditionMet(() => getBar(), (value) => value > 10)
  * ```
  */
-export function untilConditionMet<T>(
+function untilConditionMet<T>(
   valueSource: WatchSource<T>,
-  condition: (value: T) => boolean
+  condition: (value: T) => boolean,
+  signal?: AbortSignal
 ): Promise<T> {
   return new Promise<T>((resolve) => {
     let stopWatch: (() => void) | null = null
@@ -112,6 +124,10 @@ export function untilConditionMet<T>(
       },
       { immediate: true }
     )
+    if (signal != null) {
+      if (signal.aborted) stopWatch?.()
+      else signal.addEventListener('abort', () => stopWatch?.())
+    }
   })
 }
 
@@ -140,4 +156,88 @@ export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
       throw e
     }
   }) as T
+}
+
+/** Convert time string to human-friendly format, e.g., "3 days ago" */
+export function humanizeTime(time: string): LocaleMessage {
+  const t = dayjs(time)
+  return {
+    // TODO: maybe still too long for `ProjectItem`, especially for time like "a few seconds ago"
+    en: t.locale('en').fromNow(),
+    zh: t.locale('zh').fromNow()
+  }
+}
+
+/** Humanize exact time, e.g., "September 29, 2024 5:58 PM" */
+export function humanizeExactTime(time: string): LocaleMessage {
+  const t = dayjs(time)
+  return {
+    en: t.locale('en').format('LLL'),
+    zh: t.locale('zh').format('LLL')
+  }
+}
+
+function humanizeCountEn(count: number) {
+  if (count < 1000) return count.toString()
+  if (count < 10000) return (count / 1000).toFixed(1) + 'k'
+  return Math.round(count / 1000) + 'k'
+}
+
+function humanizeCountZh(count: number) {
+  if (count < 10000) return count.toString()
+  if (count < 100000) return (count / 10000).toFixed(1) + ' 万'
+  return Math.round(count / 10000) + '万'
+}
+
+/** Convert count to human-friendly format, e.g., "1.2k" */
+export function humanizeCount(count: number) {
+  return {
+    en: humanizeCountEn(count),
+    zh: humanizeCountZh(count)
+  }
+}
+
+/** Humanize exact count, e.g., "1,234" */
+export function humanizeExactCount(count: number) {
+  return {
+    en: count.toLocaleString('en-US'),
+    zh: count.toLocaleString('zh-CN')
+  }
+}
+
+export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => Promise<T>) {
+  const isLoading = ref(false)
+  async function wrappedFn(...args: Args) {
+    isLoading.value = true
+    try {
+      return await fn(...args)
+    } finally {
+      isLoading.value = false
+    }
+  }
+  return { fn: wrappedFn, isLoading }
+}
+
+export function usePageTitle(
+  titleParts: LocaleMessage | LocaleMessage[] | (() => LocaleMessage | LocaleMessage[] | null)
+) {
+  const i18n = useI18n()
+  function setTitle(parts: LocaleMessage | LocaleMessage[]) {
+    if (!Array.isArray(parts)) parts = [parts]
+    document.title = [...parts.map((p) => i18n.t(p)), 'Go+ Builder'].join(' - ')
+  }
+
+  if (typeof titleParts !== 'function') {
+    setTitle(titleParts)
+    return
+  }
+
+  watch(
+    titleParts,
+    (parts) => {
+      if (parts == null) return
+      setTitle(parts)
+    },
+    { immediate: true }
+  )
 }

@@ -27,6 +27,7 @@ function makeProject() {
   const animation = Animation.create('default', animationCostumes)
   sprite.addAnimation(animation)
   project.addSprite(sprite)
+  project.bindScreenshotTaker(async () => mockFile())
   return project
 }
 
@@ -160,6 +161,8 @@ describe('Project', () => {
   it('should abort previous saveToCloud call when a new one is initiated', async () => {
     const project = makeProject()
 
+    vi.spyOn(cloudHelper, 'saveFile').mockImplementation(async () => 'data:;,')
+
     const cloudSaveMock = vi
       .spyOn(cloudHelper, 'save')
       .mockImplementation((metadata, files, signal) => {
@@ -191,6 +194,8 @@ describe('Project', () => {
   it('should not abort saveToCloud call if it completes before a new one is initiated', async () => {
     const project = makeProject()
 
+    vi.spyOn(cloudHelper, 'saveFile').mockImplementation(async () => 'data:;,')
+
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files) => {
       return new Promise((resolve) => {
         resolve({ metadata: metadata as ProjectData, files })
@@ -208,6 +213,7 @@ describe('Project', () => {
 
   // https://github.com/goplus/builder/pull/794#discussion_r1728120369
   it('should handle failed auto-save-to-cloud correctly', async () => {
+    vi.spyOn(cloudHelper, 'saveFile').mockImplementation(async () => 'data:;,')
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockRejectedValue(new Error('save failed'))
     const localSaveMock = vi.spyOn(localHelper, 'save').mockResolvedValue(undefined)
     const localClearMock = vi.spyOn(localHelper, 'clear').mockResolvedValue(undefined)
@@ -229,6 +235,7 @@ describe('Project', () => {
     expect(project.hasUnsyncedChanges).toBe(true)
 
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Failed)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
@@ -238,6 +245,7 @@ describe('Project', () => {
     expect(project.hasUnsyncedChanges).toBe(false)
 
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Saved)
     expect(project.hasUnsyncedChanges).toBe(false)
     expect(cloudSaveMock).toHaveBeenCalledTimes(1)
@@ -266,6 +274,7 @@ describe('Project', () => {
 
     project.dispose()
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(project.autoSaveToCloudState).toBe(AutoSaveToCloudState.Pending)
     expect(project.hasUnsyncedChanges).toBe(true)
     expect(cloudSaveMock).toHaveBeenCalledTimes(0)
@@ -286,6 +295,7 @@ describe('Project', () => {
 
     project.dispose()
     await vi.runOnlyPendingTimersAsync()
+    await flushPromises()
     expect(localSaveMock).toHaveBeenCalledTimes(0)
   })
 })

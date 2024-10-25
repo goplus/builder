@@ -1,0 +1,24 @@
+@mixin link($type) {
+  transition: 0.1s;
+
+  @if $type == primary {
+    color: var(--ui-color-primary-main);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--ui-color-primary-400);
+    }
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
+  } @else if $type == boring {
+    color: inherit;
+
+    &:hover {
+      color: var(--ui-color-primary-main);
+    }
+    &:active {
+      color: var(--ui-color-primary-600);
+    }
+  }
+}

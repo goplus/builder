@@ -115,6 +115,13 @@ const themeOverrides: GlobalThemeOverrides = {
     textColorWarning: uiVariables.color.title,
     textColorError: uiVariables.color.title,
     maxWidth: '367px'
+  },
+  Form: {
+    labelTextColor: uiVariables.color.text
+  },
+  Timeline: {
+    iconColorInfo: uiVariables.color.grey[500],
+    lineColor: uiVariables.color.grey[500]
   }
 }
 </script>

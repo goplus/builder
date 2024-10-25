@@ -5,7 +5,7 @@ import { Sprite } from '../sprite'
 import { Backdrop, type BackdropInits } from '../backdrop'
 import { getFiles, saveFiles } from './cloud'
 
-export type PartialAssetData = Pick<AssetData, 'displayName' | 'assetType' | 'files' | 'filesHash'>
+export type PartialAssetData = Pick<AssetData, 'displayName' | 'type' | 'files' | 'filesHash'>
 
 export type AssetModel<T extends AssetType = AssetType> = T extends AssetType.Sound
   ? Sound
@@ -21,7 +21,7 @@ export async function sprite2Asset(sprite: Sprite): Promise<PartialAssetData> {
   )
   return {
     displayName: sprite.name,
-    assetType: AssetType.Sprite,
+    type: AssetType.Sprite,
     files: fileCollection,
     filesHash: fileCollectionHash
   }
@@ -43,7 +43,7 @@ export async function backdrop2Asset(backdrop: Backdrop): Promise<PartialAssetDa
   const { fileCollection, fileCollectionHash } = await saveFiles(files)
   return {
     displayName: backdrop.name,
-    assetType: AssetType.Backdrop,
+    type: AssetType.Backdrop,
     files: fileCollection,
     filesHash: fileCollectionHash
   }
@@ -61,7 +61,7 @@ export async function sound2Asset(sound: Sound): Promise<PartialAssetData> {
   const { fileCollection, fileCollectionHash } = await saveFiles(sound.export({ includeId: false }))
   return {
     displayName: sound.name,
-    assetType: AssetType.Sound,
+    type: AssetType.Sound,
     files: fileCollection,
     filesHash: fileCollectionHash
   }

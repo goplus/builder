@@ -1,3 +1,5 @@
+<!-- TODO: move into `@/components/editor/`? -->
+
 <template>
   <div class="container">
     <div class="header">
@@ -9,16 +11,10 @@
         <UIButton class="button" icon="rotate" @click="handleRerun">
           {{ $t({ en: 'Rerun', zh: '重新运行' }) }}
         </UIButton>
-        <UIButton
-          class="button"
-          type="boring"
-          icon="share"
-          :loading="handleShare.isLoading.value"
-          @click="handleShare.fn"
-        >
-          {{ $t({ en: 'Share', zh: '分享' }) }}
+        <UIButton class="button" type="boring" icon="share" @click="handlePublish">
+          {{ $t({ en: 'Publish', zh: '发布' }) }}
         </UIButton>
-        <UIModalClose v-if="mode === 'debug'" class="close" @click="emit('close')" />
+        <UIModalClose class="close" @click="emit('close')" />
       </div>
     </div>
     <div :class="['main', displayMode, { expanded }]">
@@ -34,7 +30,7 @@
           />
         </div>
       </div>
-      <div v-if="mode === 'debug'" class="console-container">
+      <div class="console-container">
         <div class="console-header">
           <div>Console</div>
           <button class="expand-icon" @click="expanded = !expanded">
@@ -61,11 +57,14 @@ import { onMounted, ref, type CSSProperties, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
 import ProjectRunner from './ProjectRunner.vue'
-import { useShareProject, useCreateProjectSharingLink } from '@/components/project'
+import { usePublishProject } from '@/components/project'
 import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 
-const props = defineProps<{ project: Project; mode: 'debug' | 'share' }>()
+const props = defineProps<{
+  project: Project
+}>()
+
 const emit = defineEmits<{
   close: []
 }>()
@@ -117,23 +116,15 @@ onMounted(() => {
 })
 
 const handleRerun = () => {
-  projectRunnerRef.value?.stop()
-  projectRunnerRef.value?.run()
+  projectRunnerRef.value?.rerun()
   consoleMessages.value = []
 }
 
-const shareProject = useShareProject()
-const createProjectSharingLink = useCreateProjectSharingLink()
-const handleShare = useMessageHandle(
-  () => {
-    if (props.mode === 'debug') {
-      return shareProject(props.project)
-    } else {
-      return createProjectSharingLink(props.project)
-    }
-  },
-  { en: 'Failed to share project', zh: '分享项目失败' }
-)
+const publishProject = usePublishProject()
+const handlePublish = useMessageHandle(() => publishProject(props.project), {
+  en: 'Failed to publish project',
+  zh: '发布项目失败'
+}).fn
 </script>
 <style lang="scss" scoped>
 button {

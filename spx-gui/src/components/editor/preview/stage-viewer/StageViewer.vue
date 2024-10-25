@@ -29,7 +29,7 @@
         />
       </v-layer>
       <v-layer>
-        <NodeTransformer :node-ready-map="nodeReadyMap" />
+        <NodeTransformer ref="nodeTransformerRef" :node-ready-map="nodeReadyMap" />
       </v-layer>
     </v-stage>
     <UIDropdown trigger="manual" :visible="menuVisible" :pos="menuPos" placement="bottom-start">
@@ -52,9 +52,11 @@ import type { Stage } from 'konva/lib/Stage'
 import { UIDropdown, UILoading, UIMenu, UIMenuItem } from '@/components/ui'
 import { useContentSize } from '@/utils/dom'
 import { useFileUrl } from '@/utils/file'
+import { until, untilNotNull } from '@/utils/utils'
 import type { Sprite } from '@/models/sprite'
 import { MapMode } from '@/models/stage'
 import type { Widget } from '@/models/widget'
+import { createFileWithWebUrl } from '@/models/common/cloud'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import NodeTransformer from './NodeTransformer.vue'
 import SpriteNode from './SpriteNode.vue'
@@ -69,6 +71,7 @@ const stageRef = ref<{
   getStage(): Konva.Stage
 }>()
 const mapSize = computed(() => editorCtx.project.stage.getMapSize())
+const nodeTransformerRef = ref<InstanceType<typeof NodeTransformer>>()
 
 const nodeReadyMap = reactive(new Map<string, boolean>())
 
@@ -239,6 +242,24 @@ async function moveZorder(direction: 'up' | 'down' | 'top' | 'bottom') {
   })
   menuVisible.value = false
 }
+
+async function takeScreenshot(name: string, signal?: AbortSignal) {
+  const stage = await untilNotNull(stageRef, signal)
+  const nodeTransformer = await untilNotNull(nodeTransformerRef, signal)
+  await until(() => !loading.value, signal)
+  // Omit transform control when taking screenshot
+  const dataUrl = nodeTransformer.withHidden(() =>
+    stage.getStage().toDataURL({
+      mimeType: 'image/jpeg'
+    })
+  )
+  return createFileWithWebUrl(dataUrl, `${name}.jpg`)
+}
+
+watchEffect((onCleanup) => {
+  const unbind = editorCtx.project.bindScreenshotTaker(takeScreenshot)
+  onCleanup(unbind)
+})
 </script>
 <style scoped>
 .stage-viewer {

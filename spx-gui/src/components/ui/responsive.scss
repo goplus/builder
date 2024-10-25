@@ -1,0 +1,22 @@
+// definition for responsive mixin
+
+@mixin responsive($size) {
+  // NOTE: remember to keep these values in sync with the breakpoints in ./responsive.ts
+  @if $size == mobile {
+    @media (max-width: 767px) {
+      @content;
+    }
+  } @else if $size == tablet {
+    @media (min-width: 768px) and (max-width: 1279px) {
+      @content;
+    }
+  } @else if $size == desktop {
+    @media (min-width: 1280px) and (max-width: 1679px) {
+      @content;
+    }
+  } @else if $size == desktop-large {
+    @media (min-width: 1680px) {
+      @content;
+    }
+  }
+}
