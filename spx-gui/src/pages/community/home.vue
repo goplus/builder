@@ -1,6 +1,8 @@
 <template>
   <CenteredWrapper class="main">
+    <!-- TODO: some placeholder or guide here for guest users, see details in https://github.com/goplus/builder/issues/1028 -->
     <ProjectsSection
+      v-if="userStore.isSignedIn()"
       context="home"
       :num-in-row="numInRow"
       :link-to="userStore.isSignedIn() ? myProjectsRoute : null"
