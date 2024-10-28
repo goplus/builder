@@ -54,31 +54,21 @@ export type AddProjectByRemixParams = Pick<ProjectData, 'name' | 'visibility'> &
 
 export type AddProjectParams = Pick<ProjectData, 'name' | 'files' | 'visibility' | 'thumbnail'>
 
-export async function addProject(
-  params: AddProjectParams | AddProjectByRemixParams,
-  signal?: AbortSignal
-) {
+export async function addProject(params: AddProjectParams | AddProjectByRemixParams, signal?: AbortSignal) {
   return client.post('/project', params, { signal }) as Promise<ProjectData>
 }
 
 export type UpdateProjectParams = Pick<ProjectData, 'files' | 'visibility'> &
   Partial<Pick<ProjectData, 'description' | 'instructions' | 'thumbnail'>>
 
-export async function updateProject(
-  owner: string,
-  name: string,
-  params: UpdateProjectParams,
-  signal?: AbortSignal
-) {
+export async function updateProject(owner: string, name: string, params: UpdateProjectParams, signal?: AbortSignal) {
   return client.put(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, params, {
     signal
   }) as Promise<ProjectData>
 }
 
 export function deleteProject(owner: string, name: string) {
-  return client.delete(
-    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`
-  ) as Promise<void>
+  return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`) as Promise<void>
 }
 
 export type ListProjectParams = PaginationParams & {
@@ -104,14 +94,7 @@ export type ListProjectParams = PaginationParams & {
   /** If filter projects created by followees of logged-in user */
   fromFollowees?: boolean
   /** Field by which to order the results */
-  orderBy?:
-    | 'createdAt'
-    | 'updatedAt'
-    | 'likeCount'
-    | 'remixCount'
-    | 'recentLikeCount'
-    | 'recentRemixCount'
-    | 'likedAt'
+  orderBy?: 'createdAt' | 'updatedAt' | 'likeCount' | 'remixCount' | 'recentLikeCount' | 'recentRemixCount' | 'likedAt'
   /** Order in which to sort the results */
   sortOrder?: 'asc' | 'desc'
 }
@@ -122,11 +105,9 @@ export async function listProject(params?: ListProjectParams) {
 }
 
 export async function getProject(owner: string, name: string, signal?: AbortSignal) {
-  return client.get(
-    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
-    undefined,
-    { signal }
-  ) as Promise<ProjectData>
+  return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
+    signal
+  }) as Promise<ProjectData>
 }
 
 /** Similar to `getProject`, while prefer released game content */
@@ -188,9 +169,7 @@ export async function exploreProjects({ order, count }: ExploreParams) {
 
 /** Record a view for the given project */
 export async function recordProjectView(owner: string, name: string) {
-  return client.post(
-    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/view`
-  ) as Promise<void>
+  return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/view`) as Promise<void>
 }
 
 /**
@@ -214,15 +193,11 @@ export async function isLiking(owner: string, name: string) {
 }
 
 export async function likeProject(owner: string, name: string) {
-  return client.post(
-    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`
-  ) as Promise<void>
+  return client.post(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
 }
 
 export async function unlikeProject(owner: string, name: string) {
-  return client.delete(
-    `/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`
-  ) as Promise<void>
+  return client.delete(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/liking`) as Promise<void>
 }
 
 export type RemixSource = [owner: string, project: string, release?: string]

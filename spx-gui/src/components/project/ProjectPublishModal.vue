@@ -7,15 +7,7 @@ import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
 import { universalUrlToWebUrl } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
-import {
-  UIImg,
-  UIFormModal,
-  UIForm,
-  UIFormItem,
-  UITextInput,
-  UIButton,
-  useForm
-} from '@/components/ui'
+import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 
 const props = defineProps<{
   project: Project
@@ -52,8 +44,7 @@ const form = useForm({
 })
 
 function validateText(val: string) {
-  if (val.length > 400)
-    return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
+  if (val.length > 400) return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
   return null
 }
 
@@ -105,20 +96,14 @@ const handleSubmit = useMessageHandle(
       <div class="thumbnail-wrapper">
         <UIImg class="thumbnail" :src="thumbnail" :loading="thumbnail == null" size="contain" />
       </div>
-      <UIFormItem
-        :label="$t({ en: 'Release description', zh: '发布内容' })"
-        path="releaseDescription"
-      >
+      <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
         <UITextInput
           v-model:value="form.value.releaseDescription"
           type="textarea"
           :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
         />
       </UIFormItem>
-      <UIFormItem
-        :label="$t({ en: 'Project description', zh: '项目描述' })"
-        path="projectDescription"
-      >
+      <UIFormItem :label="$t({ en: 'Project description', zh: '项目描述' })" path="projectDescription">
         <UITextInput
           ref="aboutProjectInput"
           v-model:value="form.value.projectDescription"
@@ -131,10 +116,7 @@ const handleSubmit = useMessageHandle(
           "
         />
       </UIFormItem>
-      <UIFormItem
-        :label="$t({ en: 'Play instructions', zh: '操作说明' })"
-        path="projectInstructions"
-      >
+      <UIFormItem :label="$t({ en: 'Play instructions', zh: '操作说明' })" path="projectInstructions">
         <UITextInput
           v-model:value="form.value.projectInstructions"
           type="textarea"

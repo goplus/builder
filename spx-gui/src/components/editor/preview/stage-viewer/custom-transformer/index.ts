@@ -137,9 +137,7 @@ export class CustomTransformer extends Konva.Transformer {
   }
   rotatorTag: RotatorTag
 
-  rotationStyle(
-    attr?: CustomTransformerConfig['rotationStyle']
-  ): CustomTransformerConfig['rotationStyle'] {
+  rotationStyle(attr?: CustomTransformerConfig['rotationStyle']): CustomTransformerConfig['rotationStyle'] {
     if (!attr) return this.getAttr('rotationStyle')
     this.setAttr('rotationStyle', attr)
   }

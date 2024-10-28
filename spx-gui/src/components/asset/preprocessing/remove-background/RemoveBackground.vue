@@ -3,13 +3,7 @@
     <template #header>
       {{ $t({ en: 'Remove background', zh: '去除背景' }) }}
     </template>
-    <ImgPreview
-      v-for="(file, i) in input"
-      ref="imgPreviewRefs"
-      :key="i"
-      :file="file"
-      :multiple="input.length > 1"
-    />
+    <ImgPreview v-for="(file, i) in input" ref="imgPreviewRefs" :key="i" :file="file" :multiple="input.length > 1" />
   </ProcessDetail>
 </template>
 

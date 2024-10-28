@@ -18,14 +18,7 @@
 import { NTooltip } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
-export type Placement =
-  | 'top'
-  | 'top-start'
-  | 'top-end'
-  | 'bottom'
-  | 'bottom-start'
-  | 'bottom-end'
-  | 'right'
+export type Placement = 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end' | 'right'
 
 withDefaults(
   defineProps<{

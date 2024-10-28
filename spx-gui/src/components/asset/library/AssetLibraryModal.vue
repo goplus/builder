@@ -219,9 +219,7 @@ const handleConfirm = useMessageHandle(
     const action = {
       name: { en: `Add ${entityMessage.value.en}`, zh: `添加${entityMessage.value.zh}` }
     }
-    const assetModels = await props.project.history.doAction(action, () =>
-      Promise.all(selected.map(addAssetToProject))
-    )
+    const assetModels = await props.project.history.doAction(action, () => Promise.all(selected.map(addAssetToProject)))
     emit('resolved', assetModels)
   },
   { en: 'Failed to add asset', zh: '素材添加失败' }

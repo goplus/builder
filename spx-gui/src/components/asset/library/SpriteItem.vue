@@ -1,10 +1,5 @@
 <template>
-  <UISpriteItem
-    :selected="selected"
-    :img-src="imgSrc"
-    :img-loading="!imgSrc || imgLoading"
-    :name="asset.displayName"
-  />
+  <UISpriteItem :selected="selected" :img-src="imgSrc" :img-loading="!imgSrc || imgLoading" :name="asset.displayName" />
 </template>
 
 <script setup lang="ts">

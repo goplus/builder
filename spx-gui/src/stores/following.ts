@@ -13,9 +13,7 @@ const staleTime = 5 * 60 * 1000 // 5min
 export function useIsFollowing(username: WatchSource<string>) {
   const userStore = useUserStore()
   const usernameRef = toRef(username)
-  const queryKey = computed(() =>
-    getFollowingQueryKey(userStore.getSignedInUser(), usernameRef.value)
-  )
+  const queryKey = computed(() => getFollowingQueryKey(userStore.getSignedInUser(), usernameRef.value))
   return useQueryWithCache({
     queryKey,
     async queryFn() {

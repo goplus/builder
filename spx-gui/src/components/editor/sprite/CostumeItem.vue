@@ -1,10 +1,5 @@
 <template>
-  <UIEditorSpriteItem
-    :selected="selected"
-    :img-src="imgSrc"
-    :img-loading="imgLoading"
-    :name="costume.name"
-  >
+  <UIEditorSpriteItem :selected="selected" :img-src="imgSrc" :img-loading="imgLoading" :name="costume.name">
     <UICornerIcon v-if="selected && removable" type="trash" color="sprite" @click="handleRemove" />
   </UIEditorSpriteItem>
 </template>
@@ -33,9 +28,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.costume.name
     const action = { name: { en: `Remove costume ${name}`, zh: `删除造型 ${name}` } }
-    await editorCtx.project.history.doAction(action, () =>
-      props.sprite.removeCostume(props.costume.id)
-    )
+    await editorCtx.project.history.doAction(action, () => props.sprite.removeCostume(props.costume.id))
   },
   {
     en: 'Failed to remove costume',

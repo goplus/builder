@@ -68,12 +68,7 @@ const likesRet = useQuery(
 <template>
   <div class="user-overview">
     <CommunityCard class="card">
-      <ProjectsSection
-        context="user"
-        :num-in-row="numInRow"
-        :query-ret="projectsRet"
-        :link-to="projectsRoute"
-      >
+      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="projectsRet" :link-to="projectsRoute">
         <template #title>
           {{
             $t({
@@ -100,12 +95,7 @@ const likesRet = useQuery(
       </ProjectsSection>
     </CommunityCard>
     <CommunityCard class="card">
-      <ProjectsSection
-        context="user"
-        :num-in-row="numInRow"
-        :query-ret="likesRet"
-        :link-to="likesRoute"
-      >
+      <ProjectsSection context="user" :num-in-row="numInRow" :query-ret="likesRet" :link-to="likesRoute">
         <template #title>
           {{
             $t({

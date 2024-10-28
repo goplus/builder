@@ -1,10 +1,5 @@
 <template>
-  <UIEditorSpriteItem
-    :selected="selected"
-    :img-src="imgSrc"
-    :img-loading="imgLoading"
-    :name="animation.name"
-  >
+  <UIEditorSpriteItem :selected="selected" :img-src="imgSrc" :img-loading="imgLoading" :name="animation.name">
     <UICornerIcon v-if="selected" type="trash" color="sprite" @click="handleRemove" />
   </UIEditorSpriteItem>
 </template>

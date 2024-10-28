@@ -53,20 +53,12 @@ watch(
   () => expandedPanel.value,
   (expanded) => {
     const project = editorCtx.project
-    if (
-      expanded === 'sprites' &&
-      project.selected?.type !== 'sprite' &&
-      project.sprites.length > 0
-    ) {
+    if (expanded === 'sprites' && project.selected?.type !== 'sprite' && project.sprites.length > 0) {
       project.select({
         type: 'sprite',
         id: lastSelectedSpriteId.value ?? project.sprites[0].id
       })
-    } else if (
-      expanded === 'sounds' &&
-      project.selected?.type !== 'sound' &&
-      project.sounds.length > 0
-    ) {
+    } else if (expanded === 'sounds' && project.selected?.type !== 'sound' && project.sounds.length > 0) {
       project.select({
         type: 'sound',
         id: lastSelectedSoundId.value ?? editorCtx.project.sounds[0].id

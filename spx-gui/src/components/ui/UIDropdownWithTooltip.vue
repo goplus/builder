@@ -1,9 +1,5 @@
 <template>
-  <UIDropdown
-    trigger="click"
-    :visible="dropdownVisible"
-    @update:visible="handleDropdownVisibleChange"
-  >
+  <UIDropdown trigger="click" :visible="dropdownVisible" @update:visible="handleDropdownVisibleChange">
     <template #trigger>
       <div>
         <!--

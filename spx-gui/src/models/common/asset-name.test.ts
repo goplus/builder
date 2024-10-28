@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  getSoundName,
-  getSpriteName,
-  normalizeAssetName,
-  normalizeGopIdentifierAssetName
-} from './asset-name'
+import { getSoundName, getSpriteName, normalizeAssetName, normalizeGopIdentifierAssetName } from './asset-name'
 import { Project } from '../project'
 import { Sprite } from '../sprite'
 import { Sound } from '../sound'
@@ -30,9 +25,7 @@ describe('normalizeAssetName', () => {
 describe('normalizeGopIdentifierAssetName', () => {
   it('should work well with camel case', () => {
     expect(normalizeGopIdentifierAssetName('abc', 'camel')).toBe('abc')
-    expect(normalizeGopIdentifierAssetName('abc def---ghi__jkl.mno', 'camel')).toBe(
-      'abcDefGhiJklMno'
-    )
+    expect(normalizeGopIdentifierAssetName('abc def---ghi__jkl.mno', 'camel')).toBe('abcDefGhiJklMno')
     expect(normalizeGopIdentifierAssetName('', 'camel')).toBe('')
     expect(normalizeGopIdentifierAssetName('中文', 'camel')).toBe('')
     expect(normalizeGopIdentifierAssetName('中文en', 'camel')).toBe('en')
@@ -44,9 +37,7 @@ describe('normalizeGopIdentifierAssetName', () => {
   })
   it('should work well with pascal case', () => {
     expect(normalizeGopIdentifierAssetName('abc', 'pascal')).toBe('Abc')
-    expect(normalizeGopIdentifierAssetName('abc def---ghi__jkl.mno', 'pascal')).toBe(
-      'AbcDefGhiJklMno'
-    )
+    expect(normalizeGopIdentifierAssetName('abc def---ghi__jkl.mno', 'pascal')).toBe('AbcDefGhiJklMno')
     expect(normalizeGopIdentifierAssetName('', 'pascal')).toBe('')
     expect(normalizeGopIdentifierAssetName('中文', 'pascal')).toBe('')
     expect(normalizeGopIdentifierAssetName('中文en', 'pascal')).toBe('En')

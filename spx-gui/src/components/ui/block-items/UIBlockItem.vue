@@ -1,11 +1,6 @@
 <template>
   <div
-    :class="[
-      'block-item',
-      active && 'block-item-active',
-      `block-item-${variant}`,
-      `block-item-${size}`
-    ]"
+    :class="['block-item', active && 'block-item-active', `block-item-${variant}`, `block-item-${size}`]"
     :style="style"
   >
     <slot></slot>

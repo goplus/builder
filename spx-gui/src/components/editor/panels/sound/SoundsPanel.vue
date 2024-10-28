@@ -87,10 +87,10 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx
 }).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
-const handleAddFromAssetLibrary = useMessageHandle(
-  () => addAssetFromLibrary(editorCtx.project, AssetType.Sound),
-  { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
-).fn
+const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(editorCtx.project, AssetType.Sound), {
+  en: 'Failed to add sound from asset library',
+  zh: '从素材库添加失败'
+}).fn
 
 const recorderVisible = ref(false)
 

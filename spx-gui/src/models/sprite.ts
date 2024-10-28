@@ -254,18 +254,11 @@ export class Sprite extends Disposable {
     const { defaultCostume, project: project } = this
     if (project == null) throw new Error('`autoFit` should be called after added to a project')
     if (defaultCostume != null) {
-      const [mapSize, costumeSize] = await Promise.all([
-        project.stage.getMapSize(),
-        defaultCostume.getSize()
-      ])
+      const [mapSize, costumeSize] = await Promise.all([project.stage.getMapSize(), defaultCostume.getSize()])
       let size = this.size
       if (mapSize != null) {
         // ensure the sprite's size no larger than half-of-mapSize
-        size = Math.min(
-          mapSize.width / 2 / costumeSize.width,
-          mapSize.height / 2 / costumeSize.height,
-          this.size
-        )
+        size = Math.min(mapSize.width / 2 / costumeSize.width, mapSize.height / 2 / costumeSize.height, this.size)
         this.setSize(size)
       }
       // ensure the sprite placed in the center of stage
@@ -320,8 +313,7 @@ export class Sprite extends Disposable {
       }
     } else {
       if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
-      else if (costumeMPSet != null)
-        console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
+      else if (costumeMPSet != null) console.warn(`unsupported field: costumeMPSet for sprite ${name}`)
       else console.warn(`no costume found for sprite: ${name}`)
     }
 
@@ -407,16 +399,17 @@ export class Sprite extends Disposable {
     const defaultAnimationName = this.animations.find((a) => a.id === defaultAnimationId)?.name
     if (defaultAnimationId && defaultAnimationName == null)
       console.warn('default animation', defaultAnimationId, 'not found for sprite:', this.name)
-    const animationBindingsNames = Object.entries(animBindings).reduce<
-      Record<string, string | undefined>
-    >((acc, [state, id]) => {
-      const name = this.animations.find((a) => a.id === id)?.name
-      if (id && name == null) {
-        console.warn('animation', id, 'not found for sprite:', this.name)
-      }
-      acc[state] = name
-      return acc
-    }, {})
+    const animationBindingsNames = Object.entries(animBindings).reduce<Record<string, string | undefined>>(
+      (acc, [state, id]) => {
+        const name = this.animations.find((a) => a.id === id)?.name
+        if (id && name == null) {
+          console.warn('animation', id, 'not found for sprite:', this.name)
+        }
+        acc[state] = name
+        return acc
+      },
+      {}
+    )
     const config: RawSpriteConfig = {
       heading: this.heading,
       x: this.x,

@@ -49,11 +49,7 @@ export function useRouteQueryParamInt(
   })
 }
 
-export function useRouteQueryParamStr<K extends string>(
-  key: K,
-  defaultValue: string,
-  setModifier?: (kvs: KVS) => KVS
-) {
+export function useRouteQueryParamStr<K extends string>(key: K, defaultValue: string, setModifier?: (kvs: KVS) => KVS) {
   const router = useRouter()
   return computed<string>({
     get() {

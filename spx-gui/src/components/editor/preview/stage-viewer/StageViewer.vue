@@ -100,9 +100,7 @@ const stageConfig = computed(() => {
 })
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(
-  () => editorCtx.project.stage.defaultBackdrop?.img
-)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()

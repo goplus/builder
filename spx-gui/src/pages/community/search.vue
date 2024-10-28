@@ -40,12 +40,7 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main" :style="{ '--project-num-in-row': numInRow }">
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="530"
-    >
+    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="530">
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>
@@ -63,11 +58,7 @@ export const searchKeywordQueryParamName = 'q'
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  useRouteQueryParamInt,
-  useRouteQueryParamStr,
-  useRouteQueryParamStrEnum
-} from '@/utils/route'
+import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
 import { usePageTitle } from '@/utils/utils'

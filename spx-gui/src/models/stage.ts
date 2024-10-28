@@ -126,10 +126,7 @@ export class Stage extends Disposable {
 
     this.widgetsZorder = this.widgetsZorder.filter((v) => v !== id)
   }
-  private setWidgetZorderIdx(
-    id: string,
-    newIdx: number | ((idx: number, length: number) => number)
-  ) {
+  private setWidgetZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.widgetsZorder.findIndex((v) => v === id)
     if (idx < 0) throw new Error(`widget ${id} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.widgetsZorder.length) : newIdx
@@ -220,9 +217,7 @@ export class Stage extends Disposable {
       mapHeight: map?.height,
       mapMode: getMapMode(map?.mode)
     })
-    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) =>
-      Backdrop.load(c, files)
-    )
+    const backdrops = (backdropConfigs ?? sceneConfigs ?? costumeConfigs ?? []).map((c) => Backdrop.load(c, files))
     for (const backdrop of backdrops) {
       stage.addBackdrop(backdrop)
     }

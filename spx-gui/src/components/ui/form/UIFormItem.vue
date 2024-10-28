@@ -1,16 +1,7 @@
 <template>
   <!-- TODO: margin among multiple FormItems -->
-  <NFormItem
-    class="ui-form-item"
-    :show-label="!!label"
-    :label="label"
-    :path="path"
-    v-bind="nFormItemProps"
-  >
-    <UIFormItemInternal
-      :handle-content-blur="handleContentBlur"
-      :handle-content-input="handleContentInput"
-    >
+  <NFormItem class="ui-form-item" :show-label="!!label" :label="label" :path="path" v-bind="nFormItemProps">
+    <UIFormItemInternal :handle-content-blur="handleContentBlur" :handle-content-input="handleContentInput">
       <slot></slot>
     </UIFormItemInternal>
   </NFormItem>
@@ -35,8 +26,7 @@ const form = useForm()
 const validated = computed(() => (props.path != null ? form.form.validated[props.path] : null))
 const nFormItemProps = computed(() => {
   if (validated.value == null) return undefined
-  if (validated.value.hasError)
-    return { validationStatus: 'error' as const, feedback: validated.value.error }
+  if (validated.value.hasError) return { validationStatus: 'error' as const, feedback: validated.value.error }
   return form.hasSuccessFeedback ? { validationStatus: 'success' as const } : undefined
 })
 

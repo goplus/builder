@@ -152,10 +152,7 @@ export class Project extends Disposable {
     }
   }
   // TODO: Test this method
-  private setSpriteZorderIdx(
-    id: string,
-    newIdx: number | ((idx: number, length: number) => number)
-  ) {
+  private setSpriteZorderIdx(id: string, newIdx: number | ((idx: number, length: number) => number)) {
     const idx = this.zorder.findIndex((v) => v === id)
     if (idx < 0) throw new Error(`sprite ${id} not found in zorder`)
     const newIdxVal = typeof newIdx === 'function' ? newIdx(idx, this.zorder.length) : newIdx

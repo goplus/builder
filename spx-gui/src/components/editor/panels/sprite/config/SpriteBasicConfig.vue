@@ -2,12 +2,7 @@
 <template>
   <div class="line name">
     <AssetName>{{ sprite.name }}</AssetName>
-    <UIIcon
-      class="icon"
-      :title="$t({ en: 'Rename', zh: '重命名' })"
-      type="edit"
-      @click="handleNameEdit"
-    />
+    <UIIcon class="icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
     <div class="spacer" />
     <UITooltip>
       <template #trigger>
@@ -36,10 +31,7 @@
   <div class="line">
     <p class="with-label">
       {{ $t({ en: 'Rotation', zh: '旋转' }) }}:
-      <UIButtonGroup
-        :value="sprite.rotationStyle"
-        @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)"
-      >
+      <UIButtonGroup :value="sprite.rotationStyle" @update:value="(v) => handleRotationStyleUpdate(v as RotationStyle)">
         <UITooltip>
           {{ $t(rotationStyleTips.normal) }}
           <template #trigger>
@@ -117,24 +109,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  UINumberInput,
-  UIIcon,
-  useModal,
-  UITooltip,
-  UIButtonGroup,
-  UIButtonGroupItem
-} from '@/components/ui'
+import { UINumberInput, UIIcon, useModal, UITooltip, UIButtonGroup, UIButtonGroupItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
-import {
-  RotationStyle,
-  LeftRight,
-  headingToLeftRight,
-  leftRightToHeading,
-  type Sprite
-} from '@/models/sprite'
+import { RotationStyle, LeftRight, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import { type Project } from '@/models/project'
 import AssetName from '@/components/asset/AssetName.vue'
 import SpriteRenameModal from '../SpriteRenameModal.vue'
@@ -200,10 +179,7 @@ const handleRotationStyleUpdate = wrapUpdateHandler((style: RotationStyle) => {
 })
 
 const handleHeadingUpdate = wrapUpdateHandler((h: number | null) => props.sprite.setHeading(h ?? 0))
-const handleVisibleUpdate = wrapUpdateHandler(
-  (visible: boolean) => props.sprite.setVisible(visible),
-  false
-)
+const handleVisibleUpdate = wrapUpdateHandler((visible: boolean) => props.sprite.setVisible(visible), false)
 
 function wrapUpdateHandler<Args extends any[]>(
   handler: (...args: Args) => unknown,

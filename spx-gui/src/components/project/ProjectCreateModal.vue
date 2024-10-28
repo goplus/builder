@@ -1,10 +1,5 @@
 <template>
-  <UIFormModal
-    class="project-create-modal"
-    :title="$t(title)"
-    :visible="props.visible"
-    @update:visible="handleCancel"
-  >
+  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
@@ -21,12 +16,7 @@
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton
-          class="create-button"
-          type="primary"
-          html-type="submit"
-          :loading="handleSubmit.isLoading.value"
-        >
+        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
@@ -45,13 +35,7 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import {
-  type ProjectData,
-  getProject,
-  addProject,
-  Visibility,
-  parseRemixSource
-} from '@/apis/project'
+import { type ProjectData, getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'

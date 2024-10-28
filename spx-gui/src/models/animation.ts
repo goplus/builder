@@ -1,11 +1,7 @@
 import { reactive } from 'vue'
 
 import { Disposable } from '@/utils/disposable'
-import {
-  ensureValidCostumeName,
-  getAnimationName,
-  validateAnimationName
-} from './common/asset-name'
+import { ensureValidCostumeName, getAnimationName, validateAnimationName } from './common/asset-name'
 import type { Files } from './common/file'
 import type { Costume, RawCostumeConfig } from './costume'
 import type { Sprite } from './sprite'
@@ -136,8 +132,7 @@ export class Animation extends Disposable {
     frameFrom = frameFrom ?? from
     frameTo = frameTo ?? to
     frameFps = frameFps ?? fps
-    if (frameFrom == null || frameTo == null)
-      throw new Error(`from and to expected for Animation ${name}`)
+    if (frameFrom == null || frameTo == null) throw new Error(`from and to expected for Animation ${name}`)
     const fromIndex = getCostumeIndex(costumes, frameFrom)
     const toIndex = getCostumeIndex(costumes, frameTo)
     const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone())
@@ -150,8 +145,7 @@ export class Animation extends Disposable {
     let soundId: string | undefined = undefined
     if (onStart?.play != null) {
       const sound = sounds.find((s) => s.name === onStart.play)
-      if (sound == null)
-        console.warn(`Sound ${onStart.play} not found when creating animation ${name}`)
+      if (sound == null) console.warn(`Sound ${onStart.play} not found when creating animation ${name}`)
       else soundId = sound.id
     }
     const animation = new Animation(name, {
@@ -171,11 +165,7 @@ export class Animation extends Disposable {
 
   export(
     /** Path of directory which contains the sprite's config file */
-    {
-      basePath,
-      sounds,
-      includeId = true
-    }: { basePath: string; includeId?: boolean; sounds: Sound[] }
+    { basePath, sounds, includeId = true }: { basePath: string; includeId?: boolean; sounds: Sound[] }
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}

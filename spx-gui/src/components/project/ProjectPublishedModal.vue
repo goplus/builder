@@ -15,9 +15,7 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-const projectPageRoute = computed(() =>
-  getProjectPageRoute(props.project.owner!, props.project.name!)
-)
+const projectPageRoute = computed(() => getProjectPageRoute(props.project.owner!, props.project.name!))
 const projectPageLink = computed(() => `${location.origin}${projectPageRoute.value}`)
 
 // TODO: support vnode as i18n message to simplify such case
@@ -49,8 +47,7 @@ const handleCopy = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <div class="desc">
-      {{ $t(preLinkText)
-      }}<UILink target="_blank" :href="projectPageRoute">{{ $t(linkText) }}</UILink
+      {{ $t(preLinkText) }}<UILink target="_blank" :href="projectPageRoute">{{ $t(linkText) }}</UILink
       >{{ $t(postLinkText) }}
     </div>
     <div class="link-wrapper">

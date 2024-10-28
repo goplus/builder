@@ -14,17 +14,15 @@ const props = defineProps<{
   user: User
 }>()
 
-const isSignedInUser = computed(
-  () => props.user.username === useUserStore().getSignedInUser()?.name
-)
+const isSignedInUser = computed(() => props.user.username === useUserStore().getSignedInUser()?.name)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
-const handleEditProfile = useMessageHandle(
-  async () => invokeEditProfileModal({ user: props.user }),
-  { en: 'Failed to update profile', zh: '更新个人信息失败' }
-).fn
+const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ user: props.user }), {
+  en: 'Failed to update profile',
+  zh: '更新个人信息失败'
+}).fn
 </script>
 
 <template>

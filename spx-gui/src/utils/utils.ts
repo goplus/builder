@@ -85,10 +85,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const bar = await untilNotNull(() => getBar())
  * ```
  */
-export function untilNotNull<T>(
-  valueSource: WatchSource<T | null | undefined>,
-  signal?: AbortSignal
-) {
+export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, signal?: AbortSignal) {
   return untilConditionMet(
     valueSource as WatchSource<T | null | undefined>,
     (value): value is NonNullable<T> => value != null,

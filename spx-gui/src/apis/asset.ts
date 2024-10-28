@@ -28,10 +28,7 @@ export type AssetData = {
   visibility: Visibility
 }
 
-export type AddAssetParams = Pick<
-  AssetData,
-  'displayName' | 'type' | 'category' | 'files' | 'filesHash' | 'visibility'
->
+export type AddAssetParams = Pick<AssetData, 'displayName' | 'type' | 'category' | 'files' | 'filesHash' | 'visibility'>
 
 export function addAsset(params: AddAssetParams) {
   return client.post('/asset', params) as Promise<AssetData>

@@ -47,8 +47,7 @@ interface ScratchProject {
   }[]
 }
 
-const getFilename = (file: ScratchFile) =>
-  file.md5ext ? file.md5ext : `${file.assetId}.${file.dataFormat}`
+const getFilename = (file: ScratchFile) => (file.md5ext ? file.md5ext : `${file.assetId}.${file.dataFormat}`)
 
 export const parseScratchFileAssets = async (file: File): Promise<ExportedScratchAssets> => {
   const zip = await JSZip.loadAsync(file)
@@ -63,9 +62,7 @@ export const parseScratchFileAssets = async (file: File): Promise<ExportedScratc
     backdrops: []
   }
 
-  const convertFiles = async (
-    scratchFiles: (ScratchCostume | ScratchSound)[]
-  ): Promise<ExportedScratchFile[]> => {
+  const convertFiles = async (scratchFiles: (ScratchCostume | ScratchSound)[]): Promise<ExportedScratchFile[]> => {
     const files = []
     for (const file of scratchFiles) {
       const zipFilename = getFilename(file)

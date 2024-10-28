@@ -12,8 +12,7 @@ const props = defineProps<{
 }>()
 
 const nFormItemInjection = inject(nFormItemInjectionKey)
-if (nFormItemInjection == null)
-  throw new Error('UIFormItemInternal is expected to be used in NFormItem')
+if (nFormItemInjection == null) throw new Error('UIFormItemInternal is expected to be used in NFormItem')
 
 // hijack injection of NFormItem to get notified when content blur/input
 provide(nFormItemInjectionKey, {

@@ -1,9 +1,5 @@
 <template>
-  <NConfigProvider
-    class="ui-config-provider"
-    :theme-overrides="themeOverrides"
-    :style="cssVariables"
-  >
+  <NConfigProvider class="ui-config-provider" :theme-overrides="themeOverrides" :style="cssVariables">
     <slot></slot>
   </NConfigProvider>
 </template>

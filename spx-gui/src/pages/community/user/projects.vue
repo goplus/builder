@@ -115,12 +115,7 @@ const handleNewProject = useMessageHandle(
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="534"
-    >
+    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="534">
       <ul class="projects">
         <ProjectItem
           v-for="project in slotProps.data.data"
@@ -132,12 +127,7 @@ const handleNewProject = useMessageHandle(
         />
       </ul>
     </ListResultWrapper>
-    <UIPagination
-      v-show="pageTotal > 1"
-      v-model:current="page"
-      class="pagination"
-      :total="pageTotal"
-    />
+    <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
   </UserContent>
 </template>
 

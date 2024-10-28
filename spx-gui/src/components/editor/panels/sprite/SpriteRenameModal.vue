@@ -46,9 +46,7 @@ const actionRenameSprite = {
 
 async function handleSubmit() {
   if (form.value.name !== props.sprite.name) {
-    await props.project.history.doAction(actionRenameSprite, () =>
-      props.sprite.setName(form.value.name)
-    )
+    await props.project.history.doAction(actionRenameSprite, () => props.sprite.setName(form.value.name))
   }
   emit('resolved')
 }

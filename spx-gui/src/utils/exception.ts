@@ -98,9 +98,7 @@ export function useMessageHandle<Args extends any[], T>(
     return fnWithLoading.fn(...args).then(
       (ret) => {
         if (successMessage != null) {
-          const successText = t(
-            typeof successMessage === 'function' ? successMessage(ret) : successMessage
-          )
+          const successText = t(typeof successMessage === 'function' ? successMessage(ret) : successMessage)
           m.success(successText)
         }
       },

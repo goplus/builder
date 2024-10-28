@@ -32,12 +32,7 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
-import {
-  useCreateProject,
-  useRemoveProject,
-  useShareProject,
-  useUnpublishProject
-} from '@/components/project'
+import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
 
@@ -181,9 +176,7 @@ const handleUnlike = useMessageHandle(
   { en: 'Failed to unlike', zh: '取消喜欢失败' }
 )
 
-const isTogglingLike = computed(() =>
-  liking.value ? handleUnlike.isLoading.value : handleLike.isLoading.value
-)
+const isTogglingLike = computed(() => (liking.value ? handleUnlike.isLoading.value : handleLike.isLoading.value))
 
 function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
@@ -222,9 +215,7 @@ const releasesRet = useQuery(
   { en: 'Load release history failed', zh: '加载发布历史失败' }
 )
 
-const hasRelease = computed(
-  () => releasesRet.data.value != null && releasesRet.data.value?.length > 0
-)
+const hasRelease = computed(() => releasesRet.data.value != null && releasesRet.data.value?.length > 0)
 
 const unpublishProject = useUnpublishProject()
 const handleUnpublish = useMessageHandle(
@@ -288,11 +279,7 @@ const remixesRet = useQuery(
         <div class="left">
           <div class="project-wrapper">
             <template v-if="project != null">
-              <ProjectRunner
-                ref="projectRunnerRef"
-                :key="`${project.owner}/${project.name}`"
-                :project="project"
-              />
+              <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
               <div v-show="runnerState === 'initial'" class="runner-mask">
                 <UIButton
                   class="run-button"
@@ -336,11 +323,7 @@ const remixesRet = useQuery(
         <div class="right">
           <template v-if="project != null">
             <h2 class="title">{{ project.name }}</h2>
-            <RemixedFrom
-              v-if="project.remixedFrom != null"
-              class="remixed-from"
-              :remixed-from="project.remixedFrom"
-            />
+            <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
             <div class="info">
               <OwnerInfo :owner="project.owner!" />
               <p class="extra">
@@ -394,14 +377,10 @@ const remixesRet = useQuery(
                     <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
                   </template>
                   <UIMenu>
-                    <UIMenuItem
-                      v-if="project.visibility === Visibility.Public"
-                      @click="handleUnpublish.fn"
-                      >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
-                    >
-                    <UIMenuItem @click="handleRemove.fn">{{
-                      $t({ en: 'Remove', zh: '删除' })
+                    <UIMenuItem v-if="project.visibility === Visibility.Public" @click="handleUnpublish.fn">{{
+                      $t({ en: 'Unpublish', zh: '取消发布' })
                     }}</UIMenuItem>
+                    <UIMenuItem @click="handleRemove.fn">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
                   </UIMenu>
                 </UIDropdown>
               </template>
@@ -432,35 +411,21 @@ const remixesRet = useQuery(
               </template>
             </div>
             <UIDivider class="divider" />
-            <UICollapse
-              class="collapse"
-              :default-expanded-names="['description', 'instructions', 'releases']"
-            >
+            <UICollapse class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
               <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
                 {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
               </UICollapseItem>
-              <UICollapseItem
-                :title="$t({ en: 'Play instructions', zh: '操作说明' })"
-                name="instructions"
-              >
+              <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
                 {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
               </UICollapseItem>
-              <UICollapseItem
-                :title="$t({ en: 'Release history', zh: '发布历史' })"
-                name="releases"
-              >
+              <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
                 <ReleaseHistory :query-ret="releasesRet" />
               </UICollapseItem>
             </UICollapse>
           </template>
         </div>
       </CommunityCard>
-      <ProjectsSection
-        class="remixes"
-        context="project"
-        :num-in-row="remixNumInRow"
-        :query-ret="remixesRet"
-      >
+      <ProjectsSection class="remixes" context="project" :num-in-row="remixNumInRow" :query-ret="remixesRet">
         <template #title>
           {{
             $t({

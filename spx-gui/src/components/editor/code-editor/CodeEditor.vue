@@ -20,34 +20,19 @@
       <div v-for="(group, i) in activeCategory.groups" :key="i" class="def-group">
         <h5 class="group-title">{{ $t(group.label) }}</h5>
         <div class="defs">
-          <ToolItem
-            v-for="(def, j) in group.tools"
-            :key="j"
-            :tool="def"
-            @use-snippet="handleUseSnippet"
-          />
+          <ToolItem v-for="(def, j) in group.tools" :key="j" :tool="def" @use-snippet="handleUseSnippet" />
         </div>
       </div>
     </div>
     <div class="code-text-editor-wrapper">
-      <CodeTextEditor
-        ref="codeTextEditor"
-        :file="file"
-        :value="value"
-        @update:value="(v) => emit('update:value', v)"
-      />
+      <CodeTextEditor ref="codeTextEditor" :file="file" :value="value" @update:value="(v) => emit('update:value', v)" />
     </div>
     <div class="extra">
       <UIImg class="thumbnail" :src="thumbnailSrc" />
       <div class="zoomer">
         <button class="zoom-btn" title="Zoom in" @click="handleZoom('in')" v-html="iconZoomIn" />
         <button class="zoom-btn" title="Zoom out" @click="handleZoom('out')" v-html="iconZoomOut" />
-        <button
-          class="zoom-btn"
-          title="Reset"
-          @click="handleZoom('initial')"
-          v-html="iconZoomReset"
-        />
+        <button class="zoom-btn" title="Reset" @click="handleZoom('initial')" v-html="iconZoomReset" />
       </div>
     </div>
     <UILoading :visible="loading" cover />
