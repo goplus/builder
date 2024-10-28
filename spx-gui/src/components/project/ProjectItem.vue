@@ -39,11 +39,7 @@
         <div class="header">
           <h5 class="name" :title="project.name">{{ project.name }}</h5>
           <template v-if="context !== 'public' && isOwner">
-            <i
-              v-if="project.visibility === Visibility.Public"
-              class="public"
-              :title="$t({ en: 'Public', zh: '公开' })"
-            >
+            <i v-if="project.visibility === Visibility.Public" class="public" :title="$t({ en: 'Public', zh: '公开' })">
               <UIIcon class="icon" type="statePublic" />
             </i>
             <i v-else class="private" :title="$t({ en: 'Private', zh: '私有' })">
@@ -69,13 +65,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessageHandle } from '@/utils/exception'
-import {
-  humanizeCount,
-  humanizeExactCount,
-  humanizeTime,
-  humanizeExactTime,
-  useAsyncComputed
-} from '@/utils/utils'
+import { humanizeCount, humanizeExactCount, humanizeTime, humanizeExactTime, useAsyncComputed } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
 import { universalUrlToWebUrl } from '@/models/common/cloud'

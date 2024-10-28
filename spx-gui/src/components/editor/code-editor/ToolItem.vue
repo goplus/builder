@@ -15,11 +15,7 @@
       </div>
     </template>
     <UIMenu>
-      <UIMenuItem
-        v-for="(usage, k) in tool.usages"
-        :key="k"
-        @click="emit('useSnippet', usage.insertText)"
-      >
+      <UIMenuItem v-for="(usage, k) in tool.usages" :key="k" @click="emit('useSnippet', usage.insertText)">
         {{ $t(usage.desc) + $t({ en: ': ', zh: '：' }) }}
         <UICode>{{ usage.sample }}</UICode>
       </UIMenuItem>

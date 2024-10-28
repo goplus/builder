@@ -27,20 +27,8 @@
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M1 1H9"
-          stroke="#EAEFF3"
-          stroke-width="1.56"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M15 1H35"
-          stroke="#EAEFF3"
-          stroke-width="1.56"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
+        <path d="M1 1H9" stroke="#EAEFF3" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M15 1H35" stroke="#EAEFF3" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       <slot></slot>
       <template v-if="!slots.default">
@@ -55,20 +43,8 @@
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M1 1H21"
-          stroke="#EAEFF3"
-          stroke-width="1.56"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M27 1H35"
-          stroke="#EAEFF3"
-          stroke-width="1.56"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
+        <path d="M1 1H21" stroke="#EAEFF3" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M27 1H35" stroke="#EAEFF3" stroke-width="1.56" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </template>
   </div>

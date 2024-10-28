@@ -61,12 +61,7 @@
           </span>
         </div>
         <div class="icon-button">
-          <UIIconButton
-            icon="play"
-            type="info"
-            size="large"
-            @click="waveformRecorderRef?.startPlayback()"
-          />
+          <UIIconButton icon="play" type="info" size="large" @click="waveformRecorderRef?.startPlayback()" />
           <span>
             {{
               $t({

@@ -41,12 +41,7 @@ const queryRet = useQuery(
     :visible="props.visible"
     @update:visible="emit('cancelled')"
   >
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="546"
-    >
+    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="546">
       <ul class="project-list">
         <ProjectItem
           v-for="project in slotProps.data.data"
@@ -57,12 +52,7 @@ const queryRet = useQuery(
         />
       </ul>
     </ListResultWrapper>
-    <UIPagination
-      v-show="pageTotal > 1"
-      v-model:current="page"
-      :total="pageTotal"
-      style="justify-content: center"
-    />
+    <UIPagination v-show="pageTotal > 1" v-model:current="page" :total="pageTotal" style="justify-content: center" />
   </UIFormModal>
 </template>
 

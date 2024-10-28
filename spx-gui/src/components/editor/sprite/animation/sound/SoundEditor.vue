@@ -37,14 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Animation } from '@/models/animation'
-import {
-  UIDropdownModal,
-  UIDropdown,
-  UIMenu,
-  UIMenuItem,
-  UIBlockItem,
-  UIIcon
-} from '@/components/ui'
+import { UIDropdownModal, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from './SoundItem.vue'
 import { useAddAssetFromLibrary, useAddSoundFromLocalFile } from '@/components/asset'
@@ -99,9 +92,7 @@ function handleRecorded(sound: Sound) {
 }
 
 async function handleConfirm() {
-  await editorCtx.project.history.doAction({ name: actionName }, () =>
-    props.animation.setSound(selected.value)
-  )
+  await editorCtx.project.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
   emit('close')
 }
 </script>

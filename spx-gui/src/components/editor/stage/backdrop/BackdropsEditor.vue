@@ -77,8 +77,8 @@ const handleAddFromLocalFile = useMessageHandle(
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-const handleAddFromAssetLibrary = useMessageHandle(
-  () => addAssetFromLibrary(editorCtx.project, AssetType.Backdrop),
-  { en: 'Failed to add from asset library', zh: '从素材库添加失败' }
-).fn
+const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(editorCtx.project, AssetType.Backdrop), {
+  en: 'Failed to add from asset library',
+  zh: '从素材库添加失败'
+}).fn
 </script>

@@ -1,17 +1,6 @@
 <template>
-  <UIEditorSpriteItem
-    :img-src="imgSrc"
-    :img-loading="imgLoading"
-    :name="sprite.name"
-    :selected="selected"
-  >
-    <CornerMenu
-      :visible="selected"
-      color="sprite"
-      removable
-      :item="sprite"
-      @remove="handleRemove"
-    />
+  <UIEditorSpriteItem :img-src="imgSrc" :img-loading="imgLoading" :name="sprite.name" :selected="selected">
+    <CornerMenu :visible="selected" color="sprite" removable :item="sprite" @remove="handleRemove" />
   </UIEditorSpriteItem>
 </template>
 

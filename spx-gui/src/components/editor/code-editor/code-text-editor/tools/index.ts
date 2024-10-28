@@ -72,16 +72,7 @@ export const motionCategory: ToolCategory = {
     },
     {
       label: { en: 'Heading', zh: '方向' },
-      tools: [
-        spx.heading,
-        spx.turnTo,
-        spx.setHeading,
-        spx.changeHeading,
-        spx.up,
-        spx.down,
-        spx.left,
-        spx.right
-      ]
+      tools: [spx.heading, spx.turnTo, spx.setHeading, spx.changeHeading, spx.up, spx.down, spx.left, spx.right]
     },
     {
       label: { en: 'Size', zh: '大小' },
@@ -116,13 +107,7 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
-      tools: [
-        spx.backdropName,
-        spx.backdropIndex,
-        spx.startBackdrop,
-        spx.nextBackdrop,
-        spx.prevBackdrop
-      ]
+      tools: [spx.backdropName, spx.backdropIndex, spx.startBackdrop, spx.nextBackdrop, spx.prevBackdrop]
     }
   ]
 }
@@ -132,15 +117,7 @@ export const sensingCategory: ToolCategory = {
   groups: [
     {
       label: { en: 'Distance', zh: '距离' },
-      tools: [
-        spx.touching,
-        spx.distanceTo,
-        spx.edge,
-        spx.edgeLeft,
-        spx.edgeRight,
-        spx.edgeTop,
-        spx.edgeBottom
-      ]
+      tools: [spx.touching, spx.distanceTo, spx.edge, spx.edgeLeft, spx.edgeRight, spx.edgeTop, spx.edgeBottom]
     },
     {
       label: { en: 'Mouse', zh: '鼠标' },

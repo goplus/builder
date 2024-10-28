@@ -25,9 +25,7 @@ export function getProjectShareRoute(owner: string, name: string) {
 }
 
 export function getSearchRoute(keyword: string = '') {
-  return keyword !== ''
-    ? `/search?${searchKeywordQueryParamName}=${encodeURIComponent(keyword)}`
-    : '/search'
+  return keyword !== '' ? `/search?${searchKeywordQueryParamName}=${encodeURIComponent(keyword)}` : '/search'
 }
 
 export function getExploreRoute(order?: ExploreOrder) {

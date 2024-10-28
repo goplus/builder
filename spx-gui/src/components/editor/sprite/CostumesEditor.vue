@@ -46,8 +46,8 @@ function handleSelect(costume: Costume) {
 }
 
 const addFromLocalFile = useAddCostumeFromLocalFile()
-const handleAddFromLocalFile = useMessageHandle(
-  () => addFromLocalFile(props.sprite, editorCtx.project),
-  { en: 'Failed to add from local file', zh: '从本地文件添加失败' }
-).fn
+const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(props.sprite, editorCtx.project), {
+  en: 'Failed to add from local file',
+  zh: '从本地文件添加失败'
+}).fn
 </script>

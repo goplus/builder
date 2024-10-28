@@ -21,10 +21,7 @@ export type ProjectRelease = {
   remixCount: number
 }
 
-export type CreateReleaseParams = Pick<
-  ProjectRelease,
-  'projectFullName' | 'name' | 'description' | 'thumbnail'
->
+export type CreateReleaseParams = Pick<ProjectRelease, 'projectFullName' | 'name' | 'description' | 'thumbnail'>
 
 export function createRelease(params: CreateReleaseParams) {
   return client.post('/project-release', params) as Promise<ProjectRelease>

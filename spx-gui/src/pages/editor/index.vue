@@ -54,10 +54,7 @@ const { t } = useI18n()
 const { isOnline } = useNetwork()
 const m = useMessage()
 
-const askToOpenTargetWithAnotherInCache = (
-  targetName: string,
-  cachedName: string
-): Promise<boolean> => {
+const askToOpenTargetWithAnotherInCache = (targetName: string, cachedName: string): Promise<boolean> => {
   return new Promise((resolve) =>
     withConfirm({
       title: t({

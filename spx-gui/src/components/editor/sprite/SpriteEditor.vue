@@ -6,10 +6,7 @@
       <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton
-        v-if="selectedTab === 'code' && codeEditor != null && code != null"
-        :code-editor="codeEditor"
-      />
+      <FormatButton v-if="selectedTab === 'code' && codeEditor != null && code != null" :code-editor="codeEditor" />
     </template>
   </EditorHeader>
   <CodeEditor

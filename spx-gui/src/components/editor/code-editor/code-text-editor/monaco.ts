@@ -179,12 +179,7 @@ export function initMonaco(
         startColumn: word.startColumn,
         endColumn: word.endColumn
       }
-      const suggestions: languages.CompletionItem[] = getCompletionItems(
-        range,
-        monaco,
-        i18n,
-        getProject()
-      )
+      const suggestions: languages.CompletionItem[] = getCompletionItems(range, monaco, i18n, getProject())
       return { suggestions }
     }
   })

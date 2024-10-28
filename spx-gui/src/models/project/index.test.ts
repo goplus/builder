@@ -163,22 +163,20 @@ describe('Project', () => {
 
     vi.spyOn(cloudHelper, 'saveFile').mockImplementation(async () => 'data:;,')
 
-    const cloudSaveMock = vi
-      .spyOn(cloudHelper, 'save')
-      .mockImplementation((metadata, files, signal) => {
-        return new Promise((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            resolve({ metadata: metadata as ProjectData, files })
-          }, 1000)
+    const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files, signal) => {
+      return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          resolve({ metadata: metadata as ProjectData, files })
+        }, 1000)
 
-          if (signal) {
-            signal.addEventListener('abort', () => {
-              clearTimeout(timeoutId)
-              reject(signal.reason)
-            })
-          }
-        })
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            clearTimeout(timeoutId)
+            reject(signal.reason)
+          })
+        }
       })
+    })
 
     const firstSavePromise = project.saveToCloud()
     await vi.advanceTimersByTimeAsync(500)

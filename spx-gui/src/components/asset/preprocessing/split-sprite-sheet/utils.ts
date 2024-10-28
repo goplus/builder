@@ -3,12 +3,7 @@ export type Color = [r: number, g: number, b: number, a: number]
 
 function getPixel(imageData: ImageData, [x, y]: Point): Color {
   const offset = (imageData.width * y + x) * 4
-  return [
-    imageData.data[offset],
-    imageData.data[offset + 1],
-    imageData.data[offset + 2],
-    imageData.data[offset + 3]
-  ]
+  return [imageData.data[offset], imageData.data[offset + 1], imageData.data[offset + 2], imageData.data[offset + 3]]
 }
 
 function setPixel(imageData: ImageData, [x, y]: Point, color: Color) {
@@ -212,10 +207,7 @@ export type CutOptions = RowColNum & {
   mimeType: string
 }
 
-export async function cutGrid(
-  img: HTMLImageElement,
-  { rowNum, colNum, bgColor, mimeType }: CutOptions
-) {
+export async function cutGrid(img: HTMLImageElement, { rowNum, colNum, bgColor, mimeType }: CutOptions) {
   const rows: Blob[][] = await Promise.all(
     Array.from({ length: rowNum }).map(async (_, rowIndex) => {
       const row = await Promise.all(

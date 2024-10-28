@@ -12,13 +12,7 @@ import { computed, onMounted, ref, watchEffect } from 'vue'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import type { Image, ImageConfig } from 'konva/lib/shapes/Image'
 import type { Action } from '@/models/project'
-import {
-  LeftRight,
-  RotationStyle,
-  headingToLeftRight,
-  leftRightToHeading,
-  type Sprite
-} from '@/models/sprite'
+import { LeftRight, RotationStyle, headingToLeftRight, leftRightToHeading, type Sprite } from '@/models/sprite'
 import type { Size } from '@/models/common'
 import { nomalizeDegree, round } from '@/utils/utils'
 import { useFileImg } from '@/utils/file'
@@ -108,10 +102,7 @@ function handleChange(e: KonvaEventObject<unknown>, action: Action) {
   const x = round(e.target.x() - mapSize.width / 2)
   const y = round(mapSize.height / 2 - e.target.y())
   let heading = sprite.heading
-  if (
-    sprite.rotationStyle === RotationStyle.normal ||
-    sprite.rotationStyle === RotationStyle.leftRight
-  ) {
+  if (sprite.rotationStyle === RotationStyle.normal || sprite.rotationStyle === RotationStyle.leftRight) {
     heading = nomalizeDegree(round(e.target.rotation() + 90))
   }
   const size = round(Math.abs(e.target.scaleX()) * bitmapResolution.value, 2)

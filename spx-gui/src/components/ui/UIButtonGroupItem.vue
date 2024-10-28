@@ -1,19 +1,12 @@
 <template>
-  <div
-    :class="['ui-button-group-item', { active: isActive }, `type-${type()}`]"
-    @click="handleClick"
-  >
+  <div :class="['ui-button-group-item', { active: isActive }, `type-${type()}`]" @click="handleClick">
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, inject } from 'vue'
-import {
-  selectedValueInjectionKey,
-  typeInjectionKey,
-  updateValueInjectionKey
-} from './UIButtonGroup.vue'
+import { selectedValueInjectionKey, typeInjectionKey, updateValueInjectionKey } from './UIButtonGroup.vue'
 
 const props = defineProps<{
   value: string

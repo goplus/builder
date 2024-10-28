@@ -50,8 +50,8 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx
 })
 
 const addFromAssetLibrary = useAddAssetFromLibrary()
-const handleAddFromAssetLibrary = useMessageHandle(
-  () => addFromAssetLibrary(editorCtx.project, AssetType.Sprite),
-  { en: 'Failed to add sprite from asset library', zh: '从素材库添加失败' }
-)
+const handleAddFromAssetLibrary = useMessageHandle(() => addFromAssetLibrary(editorCtx.project, AssetType.Sprite), {
+  en: 'Failed to add sprite from asset library',
+  zh: '从素材库添加失败'
+})
 </script>

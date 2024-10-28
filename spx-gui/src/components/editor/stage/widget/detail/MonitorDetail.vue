@@ -8,11 +8,7 @@
           <UITextInput class="input" :value="monitor.label" @update:value="handleLabelUpdate">
             <template #prefix>{{ $t({ en: 'Label', zh: '标签' }) }}:</template>
           </UITextInput>
-          <UITextInput
-            class="input"
-            :value="monitor.variableName"
-            @update:value="handleValueUpdate"
-          >
+          <UITextInput class="input" :value="monitor.variableName" @update:value="handleValueUpdate">
             <template #prefix>{{ $t({ en: 'Value', zh: '值' }) }}:</template>
           </UITextInput>
         </div>
@@ -26,12 +22,7 @@
           </UINumberInput>
         </div>
         <div class="line">
-          <UINumberInput
-            class="input"
-            :min="0"
-            :value="sizePercent"
-            @update:value="handleSizePercentUpdate"
-          >
+          <UINumberInput class="input" :min="0" :value="sizePercent" @update:value="handleSizePercentUpdate">
             <template #prefix> {{ $t({ en: 'Size', zh: '大小' }) }}: </template>
             <template #suffix>%</template>
           </UINumberInput>
@@ -59,14 +50,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  useModal,
-  UITextInput,
-  UINumberInput,
-  UIButtonGroup,
-  UIButtonGroupItem,
-  UIIcon
-} from '@/components/ui'
+import { useModal, UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
@@ -99,10 +83,7 @@ const handleRename = useMessageHandle(
 // 2. It's ok to omit the debounce for label / value update
 // TODO: we should make the behaviors of different inputs (`UINumberInput`, `UITextInput`, ...) consistent. Then remove differences here.
 const handleLabelUpdate = wrapUpdateHandler((label: string) => props.monitor.setLabel(label), false)
-const handleValueUpdate = wrapUpdateHandler(
-  (value: string) => props.monitor.setVariableName(value),
-  false
-)
+const handleValueUpdate = wrapUpdateHandler((value: string) => props.monitor.setVariableName(value), false)
 
 // TODO: common logic may be extracted when we have more widget types
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.monitor.setX(x ?? 0))
@@ -117,10 +98,7 @@ const handleSizePercentUpdate = wrapUpdateHandler((sizeInPercent: number | null)
   props.monitor.setSize(round(sizeInPercent / 100, 2))
 })
 
-const handleVisibleUpdate = wrapUpdateHandler(
-  (visible: boolean) => props.monitor.setVisible(visible),
-  false
-)
+const handleVisibleUpdate = wrapUpdateHandler((visible: boolean) => props.monitor.setVisible(visible), false)
 
 function wrapUpdateHandler<Args extends any[]>(
   handler: (...args: Args) => unknown,
@@ -128,8 +106,7 @@ function wrapUpdateHandler<Args extends any[]>(
 ): (...args: Args) => void {
   const name = props.monitor.name
   const action = { name: { en: `Configure widget ${name}`, zh: `修改控件 ${name} 配置` } }
-  const wrapped = (...args: Args) =>
-    editorCtx.project.history.doAction(action, () => handler(...args))
+  const wrapped = (...args: Args) => editorCtx.project.history.doAction(action, () => handler(...args))
   return withDebounce ? debounce(wrapped, 300) : wrapped
 }
 </script>

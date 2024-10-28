@@ -39,11 +39,7 @@
         </div>
         <div class="console">
           <div class="spacer"></div>
-          <div
-            v-for="{ id, time, message, type } in consoleMessages"
-            :key="id"
-            :class="`message message-${type}`"
-          >
+          <div v-for="{ id, time, message, type } in consoleMessages" :key="id" :class="`message message-${type}`">
             <span class="time">{{ time }}</span>
             <pre class="content">{{ message }}</pre>
           </div>

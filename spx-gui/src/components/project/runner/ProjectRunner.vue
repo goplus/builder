@@ -1,11 +1,6 @@
 <template>
   <div class="iframe-container">
-    <IframeDisplay
-      v-if="zipData"
-      :zip-data="zipData"
-      @console="handleConsole"
-      @loaded="loading = false"
-    />
+    <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" @loaded="loading = false" />
     <UIImg v-show="zipData == null || loading" class="thumbnail" :src="thumbnailUrl" />
     <UILoading :visible="loading" cover />
   </div>

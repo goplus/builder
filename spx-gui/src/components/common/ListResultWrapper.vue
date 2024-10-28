@@ -42,12 +42,7 @@ const slots = useSlots()
     <template v-if="!!slots.empty">
       <slot name="empty" :style="extraStyle"></slot>
     </template>
-    <UIEmpty
-      v-else
-      size="large"
-      :style="extraStyle"
-      :img="contentType === 'project' ? 'game' : undefined"
-    >
+    <UIEmpty v-else size="large" :style="extraStyle" :img="contentType === 'project' ? 'game' : undefined">
       <template v-if="contentType === 'project'">
         {{ $t({ en: 'No projects', zh: '没有项目' }) }}
       </template>

@@ -33,9 +33,7 @@ export const useUserStore = defineStore('spx-user', {
     refreshToken: null as string | null
   }),
   actions: {
-    initiateSignIn(
-      returnTo: string = window.location.pathname + window.location.search + window.location.hash
-    ) {
+    initiateSignIn(returnTo: string = window.location.pathname + window.location.search + window.location.hash) {
       // Workaround for casdoor-js-sdk not supporting override of `redirectPath` in `signin_redirect`.
       const casdoorSdk = new Sdk({
         ...casdoorConfig,
@@ -81,8 +79,7 @@ export const useUserStore = defineStore('spx-user', {
     isAccessTokenValid(): boolean {
       return !!(
         this.accessToken &&
-        (this.accessTokenExpiresAt === null ||
-          this.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
+        (this.accessTokenExpiresAt === null || this.accessTokenExpiresAt - tokenExpiryDelta > Date.now())
       )
     },
     isSignedIn(): boolean {

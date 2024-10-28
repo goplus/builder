@@ -51,14 +51,10 @@ const modalContextInjectKey: InjectionKey<ModalContext> = Symbol('modal-context'
 
 let mid = 0
 
-export function useModal<P extends ModalComponentProps, R>(
-  component: ComponentDefinition<P, ModalComponentEmits<R>>
-) {
+export function useModal<P extends ModalComponentProps, R>(component: ComponentDefinition<P, ModalComponentEmits<R>>) {
   const ctx = inject(modalContextInjectKey)
   if (ctx == null) throw new Error('useModal should be called inside of ModalProvider')
-  return function invokeModal(
-    extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>
-  ) {
+  return function invokeModal(extraProps: Omit<PruneProps<P, ModalComponentEmits<R>>, keyof ModalComponentProps>) {
     return new Promise<R>((resolve, reject) => {
       mid++
       const handlers = { resolve, reject }

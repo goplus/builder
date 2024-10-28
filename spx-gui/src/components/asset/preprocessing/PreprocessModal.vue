@@ -30,12 +30,7 @@
           <template #header>
             {{ $t({ en: 'Original', zh: '原图' }) }}
           </template>
-          <ImgPreview
-            v-for="(file, i) in files"
-            :key="i"
-            :file="file"
-            :multiple="files.length > 1"
-          />
+          <ImgPreview v-for="(file, i) in files" :key="i" :file="file" :multiple="files.length > 1" />
         </ProcessDetail>
         <component
           :is="method.component"
@@ -212,9 +207,7 @@ const selectedCostumes = shallowReactive<Costume[]>([])
 
 /** Update costumes based on current process output */
 async function updateCostumes(files: File[]) {
-  const newCostumes = await Promise.all(
-    files.map((file) => Costume.create(stripExt(file.name), file))
-  )
+  const newCostumes = await Promise.all(files.map((file) => Costume.create(stripExt(file.name), file)))
   costumes.value = newCostumes
   selectedCostumes.splice(0, selectedCostumes.length, ...newCostumes)
 }

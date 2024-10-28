@@ -1,36 +1,19 @@
 <!-- eslint-disable vue/no-v-html -->
 
 <template>
-  <UIDropdownModal
-    :title="$t(actionName)"
-    style="width: 320px"
-    @cancel="emit('close')"
-    @confirm="handleConfirm"
-  >
+  <UIDropdownModal :title="$t(actionName)" style="width: 320px" @cancel="emit('close')" @confirm="handleConfirm">
     <ul class="state-items">
-      <UIBlockItem
-        class="state-item"
-        :active="isBound(State.default)"
-        @click="handleStateItemClick(State.default)"
-      >
+      <UIBlockItem class="state-item" :active="isBound(State.default)" @click="handleStateItemClick(State.default)">
         <div class="icon" v-html="iconStateDefault"></div>
         <p class="name">{{ $t({ en: 'Default', zh: '默认' }) }}</p>
         <UICornerIcon v-show="isBound(State.default)" type="check" />
       </UIBlockItem>
-      <UIBlockItem
-        class="state-item"
-        :active="isBound(State.step)"
-        @click="handleStateItemClick(State.step)"
-      >
+      <UIBlockItem class="state-item" :active="isBound(State.step)" @click="handleStateItemClick(State.step)">
         <div class="icon" v-html="iconStateStep"></div>
         <p class="name">{{ $t({ en: 'Step', zh: '行走' }) }}</p>
         <UICornerIcon v-show="isBound(State.step)" type="check" />
       </UIBlockItem>
-      <UIBlockItem
-        class="state-item"
-        :active="isBound(State.die)"
-        @click="handleStateItemClick(State.die)"
-      >
+      <UIBlockItem class="state-item" :active="isBound(State.die)" @click="handleStateItemClick(State.die)">
         <div class="icon" v-html="iconStateDie"></div>
         <p class="name">{{ $t({ en: 'Die', zh: '死亡' }) }}</p>
         <UICornerIcon v-show="isBound(State.die)" type="check" />

@@ -86,11 +86,7 @@
           })
         }}
       </template>
-      <ProjectItem
-        v-for="project in communityLikingProjects.data.value"
-        :key="project.id"
-        :project="project"
-      />
+      <ProjectItem v-for="project in communityLikingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
       :link-to="communityRemixingRoute"
@@ -114,11 +110,7 @@
           })
         }}
       </template>
-      <ProjectItem
-        v-for="project in communityRemixingProjects.data.value"
-        :key="project.id"
-        :project="project"
-      />
+      <ProjectItem v-for="project in communityRemixingProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
     <ProjectsSection
       v-if="userStore.isSignedIn()"
@@ -143,11 +135,7 @@
           })
         }}
       </template>
-      <ProjectItem
-        v-for="project in followingCreatedProjects.data.value"
-        :key="project.id"
-        :project="project"
-      />
+      <ProjectItem v-for="project in followingCreatedProjects.data.value" :key="project.id" :project="project" />
     </ProjectsSection>
   </CenteredWrapper>
 </template>
