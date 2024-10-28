@@ -1,14 +1,8 @@
 import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
-import type { WebUrl, UniversalUrl, FileCollection } from '@/apis/common'
+import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import {
-  Visibility,
-  addProject,
-  getProject,
-  getReleasedProject,
-  updateProject
-} from '@/apis/project'
+import { Visibility, addProject, getProject, getReleasedProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
@@ -58,10 +52,7 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
         },
         signal
       )
-    : addProject(
-        { name, visibility, thumbnail: metadata.thumbnail ?? '', files: fileCollection },
-        signal
-      ))
+    : addProject({ name, visibility, thumbnail: metadata.thumbnail ?? '', files: fileCollection }, signal))
   signal?.throwIfAborted()
 
   return { metadata: projectData, files }
@@ -77,9 +68,7 @@ export async function saveFiles(
   signal?: AbortSignal
 ): Promise<{ fileCollection: FileCollection; fileCollectionHash: string }> {
   const fileCollection = Object.fromEntries(
-    await Promise.all(
-      Object.keys(files).map(async (path) => [path, await saveFile(files[path]!, signal)] as const)
-    )
+    await Promise.all(Object.keys(files).map(async (path) => [path, await saveFile(files[path]!, signal)] as const))
   )
   const fileCollectionHash = await hashFileCollection(fileCollection)
   return { fileCollection, fileCollectionHash }
@@ -127,12 +116,60 @@ export async function saveFileForWebUrl(file: File, signal?: AbortSignal) {
   return universalUrlToWebUrl(universalUrl)
 }
 
-export async function universalUrlToWebUrl(universalUrl: UniversalUrl) {
-  const { protocol } = new URL(universalUrl)
-  if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
-  const map = await makeObjectUrls([universalUrl])
-  return map[universalUrl]
-}
+export const universalUrlToWebUrl = (() => {
+  const cache = (() => {
+    type Entry = { webUrl: WebUrl; cachedAt: number }
+    const entries = new Map<UniversalUrl, Entry>()
+    const ttl = 60 * 60 * 1000 // 1 hour in milliseconds
+    const isFresh = (entry: Entry) => Date.now() - entry.cachedAt < ttl
+    return {
+      get: (universalUrl: UniversalUrl) => {
+        const entry = entries.get(universalUrl)
+        if (entry != null) {
+          if (isFresh(entry)) return entry.webUrl
+          entries.delete(universalUrl)
+        }
+        return null
+      },
+      set: (universalUrl: UniversalUrl, webUrl: WebUrl) => entries.set(universalUrl, { webUrl, cachedAt: Date.now() }),
+      clear: () => entries.clear()
+    }
+  })()
+
+  const makeObjectUrl = (() => {
+    const batch = new Set<UniversalUrl>()
+    const batchDelay = 15 // 15ms
+    let batchPromise: Promise<UniversalToWebUrlMap> | null = null
+    const processBatch = () => {
+      const currentBatch = Array.from(batch)
+      batch.clear()
+      batchPromise = null
+      return makeObjectUrls(currentBatch)
+    }
+    return async (universalUrl: UniversalUrl) => {
+      batch.add(universalUrl)
+      if (batchPromise == null) {
+        batchPromise = new Promise((resolve) => setTimeout(() => resolve(processBatch()), batchDelay))
+      }
+      const objectUrls = await batchPromise
+      return objectUrls[universalUrl]
+    }
+  })()
+
+  const fn = async (universalUrl: UniversalUrl): Promise<WebUrl> => {
+    const { protocol } = new URL(universalUrl)
+    if (protocol !== fileUniversalUrlSchemes.kodo) return universalUrl
+
+    const cached = cache.get(universalUrl)
+    if (cached != null) return cached
+
+    const webUrl = await makeObjectUrl(universalUrl)
+    cache.set(universalUrl, webUrl)
+    return webUrl
+  }
+  fn.clearCache = cache.clear
+  return fn
+})()
 
 /** Save file to cloud and return its universal URL */
 export async function saveFile(file: File, signal?: AbortSignal) {
