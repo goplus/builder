@@ -194,7 +194,7 @@ const createProject = useCreateProject()
 const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const { name } = await createProject(stringifyRemixSource(props.owner, props.name))
+    const name = await createProject(stringifyRemixSource(props.owner, props.name))
     router.push(getProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }

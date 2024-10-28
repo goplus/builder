@@ -35,11 +35,18 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   if (owner == null) throw new Error('owner expected')
   if (!name) throw new DefaultException({ en: 'project name not specified', zh: '未指定项目名' })
 
-  const { fileCollection } = await saveFiles(files, signal)
+  const [{ fileCollection }, thumbnailUniversalUrl] = await Promise.all([
+    saveFiles(files, signal),
+    metadata.thumbnail == null ? '' : await saveFile(metadata.thumbnail, signal)
+  ])
   signal?.throwIfAborted()
 
   const visibility = metadata.visibility ?? Visibility.Private
-  const projectData = await (id != null
+  const {
+    files: _files,
+    thumbnail,
+    ...savedMetadata
+  } = await (id != null
     ? updateProject(
         owner,
         name,
@@ -48,18 +55,21 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
           files: fileCollection,
           description: metadata.description,
           instructions: metadata.instructions,
-          thumbnail: metadata.thumbnail
+          thumbnail: thumbnailUniversalUrl
         },
         signal
       )
-    : addProject({ name, visibility, thumbnail: metadata.thumbnail ?? '', files: fileCollection }, signal))
+    : addProject({ name, visibility, thumbnail: thumbnailUniversalUrl, files: fileCollection }, signal))
   signal?.throwIfAborted()
 
-  return { metadata: projectData, files }
+  metadata = { ...savedMetadata, thumbnail: metadata.thumbnail }
+  return { metadata, files }
 }
 
-export function parseProjectData({ files: fileCollection, ...metadata }: ProjectData) {
+async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
   const files = getFiles(fileCollection)
+  const thumbnail = thumbnailUniversalUrl === '' ? null : createFileWithUniversalUrl(thumbnailUniversalUrl)
+  const metadata: Metadata = { ...extra, thumbnail }
   return { metadata, files }
 }
 

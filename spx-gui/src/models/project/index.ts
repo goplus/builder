@@ -27,7 +27,9 @@ import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
-export type CloudMetadata = Omit<ProjectData, 'files'>
+export type CloudMetadata = Omit<ProjectData, 'files' | 'thumbnail'> & {
+  thumbnail: File | null
+}
 
 export type Metadata = Partial<CloudMetadata> & {
   filesHash?: string
@@ -109,7 +111,7 @@ export class Project extends Disposable {
   description?: string
   instructions?: string
   /** Universal URL of the project's thumbnail image, may be empty (`""`) */
-  thumbnail?: string
+  thumbnail?: File | null
   viewCount?: number
   likeCount?: number
   releaseCount?: number
@@ -260,18 +262,17 @@ export class Project extends Disposable {
     }
   }
 
-  private async ensureThumbnail(signal?: AbortSignal) {
+  private async updateThumbnail(signal?: AbortSignal) {
     if (!this.hasUnsyncedChanges && !!this.thumbnail) return
     const screenshotTaker = await untilNotNull(() => this.screenshotTaker, signal)
-    const file = await screenshotTaker('thumbnail', signal)
-    signal?.throwIfAborted()
-    const url = await cloudHelper.saveFile(file, signal)
-    this.thumbnail = url
+    this.thumbnail = await screenshotTaker('thumbnail', signal)
   }
 
-  constructor() {
+  constructor(owner?: string, name?: string) {
     super()
     const reactiveThis = reactive(this) as this
+    this.owner = owner
+    this.name = name
     this.history = new History(reactiveThis)
     this.zorder = []
     this.stage = new Stage()
@@ -394,13 +395,7 @@ export class Project extends Disposable {
 
   async loadGbpFile(file: globalThis.File) {
     const { metadata, files } = await gbpHelper.load(file)
-    await this.load(
-      {
-        // name is the only metadata we need when load from file
-        name: this.name ?? metadata.name
-      },
-      files
-    )
+    await this.load(metadata, files)
   }
 
   async exportGbpFile() {
@@ -438,7 +433,7 @@ export class Project extends Disposable {
 
     try {
       if (this.isDisposed) throw new Error('disposed')
-      await this.ensureThumbnail(abortController.signal)
+      await this.updateThumbnail(abortController.signal)
       const [metadata, files] = await this.export()
       const saved = await cloudHelper.save(metadata, files, abortController.signal)
       this.loadMetadata(saved.metadata)
@@ -461,6 +456,7 @@ export class Project extends Disposable {
   /** Save to local cache */
   private async saveToLocalCache(key: string) {
     if (this.isDisposed) throw new Error('disposed')
+    await this.updateThumbnail()
     const [metadata, files] = await this.export()
     await localHelper.save(key, metadata, files)
   }
@@ -559,21 +555,22 @@ export class Project extends Disposable {
     )
   }
 
-  /** watch for all changes, auto save to local cache, or touch all game files to trigger lazy loading to ensure they are in memory */
+  /** watch for all changes, auto save to local cache, or touch all files to trigger lazy loading to ensure they are in memory */
   private autoSaveToLocalCache: (() => void) | null = null
   private startAutoSaveToLocalCache(localCacheKey: string) {
     const saveToLocalCache = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
     this.addDisposer(saveToLocalCache.cancel)
 
-    const touchGameFiles = debounce(() => {
+    const touchFiles = debounce(() => {
+      this.thumbnail?.arrayBuffer()
       const files = this.exportGameFiles()
       Object.keys(files).map((path) => files[path]!.arrayBuffer())
     }, 1000)
-    this.addDisposer(touchGameFiles.cancel)
+    this.addDisposer(touchFiles.cancel)
 
     this.autoSaveToLocalCache = () => {
       if (this.autoSaveMode === AutoSaveMode.LocalCache) saveToLocalCache()
-      else touchGameFiles()
+      else touchFiles()
     }
 
     this.addDisposer(
@@ -599,7 +596,7 @@ export class Project extends Disposable {
     this.addDisposer(
       watch(
         // new created project has no thumbnail, do save to cloud to generate thumbnail
-        () => this.thumbnail === '' && this.autoSaveMode === AutoSaveMode.Cloud,
+        () => this.thumbnail == null && this.autoSaveMode === AutoSaveMode.Cloud,
         (shouldGenerateThumbnail) => {
           if (shouldGenerateThumbnail) this.saveToCloud?.()
         },

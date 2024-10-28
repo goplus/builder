@@ -172,7 +172,7 @@ const router = useRouter()
 const createProject = useCreateProject()
 const handleNewProject = useMessageHandle(
   async () => {
-    const { name } = await createProject()
+    const name = await createProject()
     router.push(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }

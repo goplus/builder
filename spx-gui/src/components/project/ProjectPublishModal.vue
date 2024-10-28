@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { useAsyncComputed } from '@/utils/utils'
+import { untilNotNull } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 
@@ -21,10 +21,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const thumbnail = useAsyncComputed(async () => {
-  if (props.project.thumbnail == null || props.project.thumbnail === '') return null
-  return universalUrlToWebUrl(props.project.thumbnail)
-})
+const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 /** If this is the first time the project is published */
 const firstTime = props.project.releaseCount === 0
@@ -65,11 +62,12 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     await project.saveToCloud()
+    const thumbnail = await untilNotNull(thumbnailUrl)
     await createRelease({
       projectFullName: `${project.owner!}/${project.name!}`,
       name: generateReleaseName(),
       description: form.value.releaseDescription,
-      thumbnail: project.thumbnail!
+      thumbnail
     })
     emit('resolved')
   },
@@ -94,7 +92,7 @@ const handleSubmit = useMessageHandle(
         }}
       </p>
       <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="thumbnail" :loading="thumbnail == null" size="contain" />
+        <UIImg class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
       </div>
       <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
         <UITextInput
@@ -148,7 +146,7 @@ const handleSubmit = useMessageHandle(
   margin-bottom: 24px;
   width: 100%;
   height: 224px;
-  background: url(./bg.svg) center / cover no-repeat;
+  background: url(@/assets/stage-bg.svg) center / cover no-repeat;
   border-radius: var(--ui-border-radius-1);
   overflow: hidden;
 
