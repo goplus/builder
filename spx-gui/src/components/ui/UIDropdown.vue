@@ -73,7 +73,7 @@ const extraStyle = computed(() => {
   const { placement, offset } = props
   const style: CSSProperties = {}
   if (['top', 'top-start', 'top-end'].includes(placement)) {
-    style.marginBottom = -offset.y + 'px'
+    style.marginBottom = offset.y + 'px'
   } else {
     style.marginTop = offset.y + 'px'
   }
