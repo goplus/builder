@@ -66,7 +66,7 @@ export async function save(metadata: Metadata, files: Files, signal?: AbortSigna
   return { metadata, files }
 }
 
-async function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
+function parseProjectData({ files: fileCollection, thumbnail: thumbnailUniversalUrl, ...extra }: ProjectData) {
   const files = getFiles(fileCollection)
   const thumbnail = thumbnailUniversalUrl === '' ? null : createFileWithUniversalUrl(thumbnailUniversalUrl)
   const metadata: Metadata = { ...extra, thumbnail }
