@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 import { getUserPageRoute } from '@/router'
 import { useQuery } from '@/utils/query'
+import { usePageTitle } from '@/utils/utils'
 import { Visibility, listProject, ownerAll } from '@/apis/project'
+import { useUser, useUserStore } from '@/stores/user'
 import { useResponsive } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
-import { useUser } from '@/stores/user'
-import { usePageTitle } from '@/utils/utils'
+import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
 
 const props = defineProps<{
   name: string
@@ -16,6 +17,8 @@ const props = defineProps<{
 
 const isDesktopLarge = useResponsive('desktop-large')
 const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
+const userStore = useUserStore()
+const isSignedInUser = computed(() => props.name === userStore.getSignedInUser()?.name)
 
 const { data: user } = useUser(() => props.name)
 usePageTitle(() => {
@@ -27,6 +30,8 @@ usePageTitle(() => {
 })
 
 const projectsRoute = computed(() => {
+  const projectsNum = projectsRet.data.value?.length ?? 0
+  if (projectsNum === 0) return null
   return getUserPageRoute(props.name, 'projects')
 })
 
@@ -84,6 +89,9 @@ const likesRet = useQuery(
               zh: '查看所有'
             })
           }}
+        </template>
+        <template v-if="isSignedInUser" #empty="emptyProps">
+          <MyProjectsEmpty :style="emptyProps.style" />
         </template>
         <ProjectItem
           v-for="project in projectsRet.data.value"

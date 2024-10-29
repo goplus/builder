@@ -328,19 +328,19 @@ const remixesRet = useQuery(
               <OwnerInfo :owner="project.owner!" />
               <p class="extra">
                 <span class="part" :title="$t(viewCount!.title)">
-                  <UIIcon type="eye" />
+                  <UIIcon class="icon" type="eye" />
                   {{ $t(viewCount!.text) }}
                 </span>
                 <template v-if="isOwner">
                   <i class="sep"></i>
                   <span class="part" :title="$t(likeCount!.title)">
-                    <UIIcon type="heart" />
+                    <UIIcon class="icon" type="heart" />
                     {{ $t(likeCount!.text) }}
                   </span>
                 </template>
                 <i class="sep"></i>
                 <span class="part" :title="$t(remixCount!.title)">
-                  <UIIcon type="remix" />
+                  <UIIcon class="icon" type="remix" />
                   {{ $t(remixCount!.text) }}
                 </span>
               </p>
@@ -521,6 +521,11 @@ const remixesRet = useQuery(
         color: var(--ui-color-hint-2);
       }
 
+      .icon {
+        width: 14px;
+        height: 14px;
+      }
+
       .sep {
         width: 1px;
         height: 12px;
@@ -556,6 +561,7 @@ const remixesRet = useQuery(
   }
 
   .collapse {
+    margin-bottom: 8px;
     flex: 1 1 0;
     overflow-y: auto;
   }

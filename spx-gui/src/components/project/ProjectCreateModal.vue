@@ -122,8 +122,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
   if (!/^[\w-]+$/.test(name))
     return t({
-      en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
-      zh: '项目名仅可包含字母、数字、符号 - 及 _'
+      en: 'The project name can only contain letters, numbers, - and _',
+      zh: '项目名仅可包含字母、数字、- 及 _'
     })
 
   if (name.length > 100)

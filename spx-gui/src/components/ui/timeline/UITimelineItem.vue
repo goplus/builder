@@ -32,11 +32,14 @@ defineProps<{
   line-height: 22px;
 }
 :global(.n-timeline-item-timeline) {
-  top: 3px !important;
+  top: 5px !important;
   margin-left: 4px !important;
 }
 :global(.n-timeline-item-timeline__line) {
-  width: 1px !important;
+  // set width 2px then scale it down to 1px, to make it offset for 0.5px, to keep it centered with the circle
+  width: 2px !important;
+  transform: scaleX(0.5);
+  left: 3px !important;
 }
 :global(.n-timeline-item-content) {
   margin-left: 31px !important;

@@ -16,32 +16,32 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 
 <template>
   <li class="user-item">
-    <UserAvatar :user="user.username" />
-    <div class="user-info">
-      <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
-      <UserJoinedAt class="joined-at" :time="user.createdAt" />
-      <p class="description">{{ user.description }}</p>
-    </div>
-    <div class="op">
-      <FollowButton class="follow" :name="user.username" />
-    </div>
+    <UserAvatar class="avatar" :user="user.username" />
+    <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
+    <UserJoinedAt class="joined-at" :time="user.createdAt" />
+    <p class="description">{{ user.description }}</p>
+    <FollowButton class="follow" :name="user.username" />
   </li>
 </template>
 
 <style lang="scss" scoped>
 .user-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12px 0;
-}
-
-.user-info {
-  flex: 1 1 0;
-  min-width: 0;
+  position: relative;
+  padding: 12px 0 12px 56px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+}
+
+.avatar {
+  position: absolute;
+  left: 0;
+  top: 12px;
+}
+
+.name,
+.joined-at,
+.description {
+  width: fit-content;
 }
 
 .name {
@@ -59,9 +59,9 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
   color: var(--ui-color-text);
 }
 
-.op {
-  flex: 0 0 100px;
-  display: flex;
-  justify-content: flex-end;
+.follow {
+  position: absolute;
+  top: 12px;
+  right: 0;
 }
 </style>
