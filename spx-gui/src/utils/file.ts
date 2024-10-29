@@ -29,6 +29,19 @@ const ext2mime: Record<string, string | undefined> = {
  */
 export const getMimeFromExt = (ext: string) => ext2mime[ext]
 
+const mime2Ext: Record<string, string | undefined> = Object.fromEntries(
+  Object.entries(ext2mime).map(([k, v]) => [v, k])
+)
+
+/**
+ * Get file extension from mime type.
+ * @param mime the mime type
+ * @returns the file extension, without dot (`.`)
+ */
+export function getExtFromMime(mime: string) {
+  return mime2Ext[mime]
+}
+
 export const imgExts = ['png', 'jpg', 'jpeg', 'svg', 'webp']
 export const audioExts = ['wav', 'mp3', 'ogg', 'webm']
 

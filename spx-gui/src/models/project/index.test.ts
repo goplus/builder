@@ -8,7 +8,6 @@ import { fromText, type Files } from '../common/file'
 import { AutoSaveMode, AutoSaveToCloudState, Project } from '.'
 import * as cloudHelper from '../common/cloud'
 import * as localHelper from '../common/local'
-import type { ProjectData } from '@/apis/project'
 import { Cancelled } from '@/utils/exception'
 
 function mockFile(name = 'mocked') {
@@ -166,7 +165,7 @@ describe('Project', () => {
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files, signal) => {
       return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
-          resolve({ metadata: metadata as ProjectData, files })
+          resolve({ metadata, files })
         }, 1000)
 
         if (signal) {
@@ -196,7 +195,7 @@ describe('Project', () => {
 
     const cloudSaveMock = vi.spyOn(cloudHelper, 'save').mockImplementation((metadata, files) => {
       return new Promise((resolve) => {
-        resolve({ metadata: metadata as ProjectData, files })
+        resolve({ metadata, files })
       })
     })
 

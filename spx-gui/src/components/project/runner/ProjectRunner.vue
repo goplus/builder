@@ -1,7 +1,7 @@
 <template>
   <div class="iframe-container">
     <IframeDisplay v-if="zipData" :zip-data="zipData" @console="handleConsole" @loaded="loading = false" />
-    <UIImg v-show="zipData == null || loading" class="thumbnail" :src="thumbnailUrl" />
+    <UIImg v-show="zipData == null || loading" class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" />
     <UILoading :visible="loading" cover />
   </div>
 </template>
@@ -9,8 +9,7 @@
 <script lang="ts" setup>
 import { onUnmounted, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
-import { useAsyncComputed } from '@/utils/utils'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { useFileUrl } from '@/utils/file'
 import { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 import IframeDisplay from './IframeDisplay.vue'
@@ -24,10 +23,7 @@ const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
-const thumbnailUrl = useAsyncComputed(async () => {
-  if (props.project.thumbnail == null || props.project.thumbnail === '') return null
-  return universalUrlToWebUrl(props.project.thumbnail!)
-})
+const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
   emit('console', type, args)
