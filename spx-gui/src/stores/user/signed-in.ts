@@ -39,7 +39,11 @@ export const useUserStore = defineStore('spx-user', {
         ...casdoorConfig,
         redirectPath: `${casdoorAuthRedirectPath}?returnTo=${encodeURIComponent(returnTo)}`
       })
-      casdoorSdk.signin_redirect()
+
+      // We handle the redirection manually instead of using `casdoorSdk.signin_redirect()`
+      // because `casdoorSdk.signin_redirect()` uses `location.replace`, which prevents the user from
+      // navigating back to the current page after being redirected to the login page.
+      window.location.assign(casdoorSdk['pkce'].authorizeUrl())
     },
     async completeSignIn() {
       const resp = await casdoorSdk.exchangeForAccessToken()
