@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { untilNotNull } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
+import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
 import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 
@@ -35,7 +35,7 @@ if (firstTime) {
 }
 
 const form = useForm({
-  releaseDescription: [defaultDescription, validateText],
+  releaseDescription: [defaultDescription, validateReleaseDescription],
   projectDescription: [props.project.description ?? '', validateText],
   projectInstructions: [props.project.instructions ?? '', validateText]
 })
@@ -43,6 +43,11 @@ const form = useForm({
 function validateText(val: string) {
   if (val.length > 400) return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
   return null
+}
+
+function validateReleaseDescription(val: string) {
+  if (val.trim() === '') return t({ en: 'Release description is required', zh: '发布内容不能为空' })
+  return validateText(val)
 }
 
 function handleCancel() {
@@ -62,12 +67,12 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     await project.saveToCloud()
-    const thumbnail = await untilNotNull(thumbnailUrl)
+    const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: `${project.owner!}/${project.name!}`,
       name: generateReleaseName(),
       description: form.value.releaseDescription,
-      thumbnail
+      thumbnail: thumbnailUniversalUrl
     })
     emit('resolved')
   },
