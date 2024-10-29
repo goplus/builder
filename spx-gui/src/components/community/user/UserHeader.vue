@@ -73,7 +73,7 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
 }
 
 .content {
-  padding: 20px 24px 20px 192px;
+  padding: 20px 20px 20px 192px;
   display: flex;
   align-items: end;
   gap: 100px;

@@ -6,6 +6,7 @@
     :type="type"
     :disabled="disabled"
     :readonly="readonly"
+    :resizable="false"
     @update:value="(v) => emit('update:value', v)"
   >
     <template v-if="!!slots.prefix" #prefix>

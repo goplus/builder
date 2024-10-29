@@ -18,7 +18,7 @@ defineProps<{
   width: fit-content;
   align-items: center;
   height: 32px; // TODO: support different sizes
-  padding: 0 12px;
+  padding: 0 16px;
   color: var(--ui-color-grey-100);
   background: var(--ui-color-grey-600);
   border: 1px solid var(--ui-color-grey-600);
