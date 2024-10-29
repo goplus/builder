@@ -52,6 +52,9 @@ func main() {
 	var mode igop.Mode
 	ctx := igop.NewContext(mode)
 
+	// NOTE(everyone): Keep sync with the config in spx [gop.mod](https://github.com/goplus/spx/blob/main/gop.mod)
+	gopbuild.RegisterClassFileType(".spx", "Game", []*gopbuild.Class{{Ext: ".spx", Class: "SpriteImpl"}}, "github.com/goplus/spx")
+
 	// Register patch for spx to support functions with generic type like `Gopt_Game_Gopx_GetWidget`.
 	// See details in https://github.com/goplus/builder/issues/765#issuecomment-2313915805
 	err = gopbuild.RegisterPackagePatch(ctx, "github.com/goplus/spx", `
