@@ -33,6 +33,7 @@ func TestCreateProjectReleaseParams(t *testing.T) {
 		params := &CreateProjectReleaseParams{
 			ProjectFullName: "invalid/project/name",
 			Name:            "v1.0.0",
+			Description:     "First release",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
@@ -43,10 +44,21 @@ func TestCreateProjectReleaseParams(t *testing.T) {
 		params := &CreateProjectReleaseParams{
 			ProjectFullName: "user/project",
 			Name:            "invalid-version",
+			Description:     "First release",
 		}
 		ok, msg := params.Validate()
 		assert.False(t, ok)
 		assert.Equal(t, "invalid projectReleaseName", msg)
+	})
+
+	t.Run("MissingDescription", func(t *testing.T) {
+		params := &CreateProjectReleaseParams{
+			ProjectFullName: "user/project",
+			Name:            "v1.0.0",
+		}
+		ok, msg := params.Validate()
+		assert.False(t, ok)
+		assert.Equal(t, "missing description", msg)
 	})
 }
 
