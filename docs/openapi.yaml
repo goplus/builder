@@ -516,6 +516,7 @@ paths:
               required:
                 - projectFullName
                 - name
+                - description
               properties:
                 projectFullName:
                   $ref: "#/components/schemas/ProjectRelease/properties/projectFullName"
