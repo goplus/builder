@@ -65,6 +65,6 @@ const queryRet = useQuery(
 }
 .pagination {
   justify-content: center;
-  margin: 32px 0 20px;
+  margin: 32px 0 16px;
 }
 </style>
