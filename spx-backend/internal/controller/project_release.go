@@ -64,6 +64,9 @@ func (p *CreateProjectReleaseParams) Validate() (ok bool, msg string) {
 	if !projectReleaseNameRE.MatchString(p.Name) {
 		return false, "invalid projectReleaseName"
 	}
+	if p.Description == "" {
+		return false, "missing description"
+	}
 	return true, ""
 }
 
@@ -78,9 +81,6 @@ func (ctrl *Controller) CreateProjectRelease(ctx context.Context, params *Create
 		return nil, err
 	}
 
-	if params.Description == "" {
-		params.Description = mProject.Description
-	}
 	if params.Thumbnail == "" {
 		params.Thumbnail = mProject.Thumbnail
 	}
