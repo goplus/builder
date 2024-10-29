@@ -223,15 +223,20 @@ func TestControllerListUsers(t *testing.T) {
 			Model(&model.User{}).
 			Count(new(int64)).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Order("user.created_at asc, user.id").
-			Limit(2).
+			Offset(params.Pagination.Offset()).
+			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(mUsers...)...))
 
 		result, err := ctrl.ListUsers(context.Background(), params)
@@ -277,6 +282,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user_relationship AS follower_relationship ON follower_relationship.user_id = follower.id AND follower_relationship.target_user_id = user.id").
 			Where("follower_relationship.followed_at IS NOT NULL").
 			Order("user.created_at asc, user.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
@@ -327,6 +333,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user_relationship AS followee_relationship ON followee_relationship.target_user_id = followee.id AND followee_relationship.user_id = user.id").
 			Where("followee_relationship.followed_at IS NOT NULL").
 			Order("user.created_at asc, user.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
@@ -382,6 +389,7 @@ func TestControllerListUsers(t *testing.T) {
 			Joins("JOIN user_relationship AS follower_relationship ON follower_relationship.user_id = follower.id AND follower_relationship.target_user_id = user.id").
 			Where("follower_relationship.followed_at IS NOT NULL").
 			Order("follower_relationship.followed_at asc, user.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
@@ -410,7 +418,9 @@ func TestControllerListUsers(t *testing.T) {
 			Model(&model.User{}).
 			Count(new(int64)).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnError(errors.New("count error"))
 
 		_, err := ctrl.ListUsers(context.Background(), params)
@@ -430,14 +440,20 @@ func TestControllerListUsers(t *testing.T) {
 			Model(&model.User{}).
 			Count(new(int64)).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Order("user.created_at asc").
+			Order("user.created_at asc, user.id").
+			Offset(params.Pagination.Offset()).
+			Limit(params.Pagination.Size).
 			Find(&[]model.User{}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnError(errors.New("query error"))
 
 		_, err := ctrl.ListUsers(context.Background(), params)
@@ -629,9 +645,14 @@ func TestControllerUpdateAuthedUser(t *testing.T) {
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.User{Model: mAuthedUser.Model}).
-			Updates(map[string]any{"description": params.Description}).
+			Updates(map[string]any{
+				"description": params.Description,
+				"updated_at":  sqlmock.AnyArg(),
+			}).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnError(errors.New("update error"))
 
 		dbMock.ExpectRollback()

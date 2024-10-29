@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"regexp"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func TestCreateProjectReleaseParams(t *testing.T) {
@@ -110,17 +112,41 @@ func TestControllerCreateProjectRelease(t *testing.T) {
 
 		dbMock.ExpectBegin()
 
-		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.ProjectRelease{}).
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&mProject).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
+			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
+
+		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
+			Create(&model.ProjectRelease{
+				ProjectID:   mProject.ID,
+				Name:        params.Name,
+				Description: params.Description,
+				Thumbnail:   params.Thumbnail,
+			}).
+			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Model(&model.Project{Model: mProject.Model}).
-			UpdateColumn("release_count", gorm.Expr("release_count + 1")).
+			Updates(map[string]any{
+				"latest_release_id": sql.NullInt64{Int64: 1, Valid: true},
+				"release_count":     gorm.Expr("release_count + 1"),
+				"updated_at":        sqlmock.AnyArg(),
+			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()

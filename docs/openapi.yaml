@@ -1065,6 +1065,10 @@ components:
           $ref: "#/components/schemas/ProjectReleaseFullName"
           nullable: true
           description: Full name of the project release from which the project is remixed.
+        latestRelease:
+          $ref: "#/components/schemas/ProjectRelease"
+          nullable: true
+          description: Latest release of the project.
         name:
           type: string
           examples:

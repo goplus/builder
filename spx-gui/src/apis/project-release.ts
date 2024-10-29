@@ -36,17 +36,3 @@ export type ListReleasesParams = PaginationParams & {
 export function listReleases(params: ListReleasesParams, signal?: AbortSignal) {
   return client.get(`/project-releases/list`, params, { signal }) as Promise<ByPage<ProjectRelease>>
 }
-
-export async function getLatestRelease(owner: string, projectName: string, signal?: AbortSignal) {
-  const listResult = await listReleases(
-    {
-      projectFullName: `${owner}/${projectName}`,
-      orderBy: 'createdAt',
-      sortOrder: 'desc',
-      pageSize: 1
-    },
-    signal
-  )
-  if (listResult.total === 0) return null
-  return listResult.data[0]
-}

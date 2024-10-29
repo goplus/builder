@@ -19,19 +19,20 @@ import (
 type ProjectDTO struct {
 	ModelDTO
 
-	Owner        string               `json:"owner"`
-	RemixedFrom  string               `json:"remixedFrom,omitempty"`
-	Name         string               `json:"name"`
-	Version      int                  `json:"version"`
-	Files        model.FileCollection `json:"files"`
-	Visibility   string               `json:"visibility"`
-	Description  string               `json:"description"`
-	Instructions string               `json:"instructions"`
-	Thumbnail    string               `json:"thumbnail"`
-	ViewCount    int64                `json:"viewCount"`
-	LikeCount    int64                `json:"likeCount"`
-	ReleaseCount int64                `json:"releaseCount"`
-	RemixCount   int64                `json:"remixCount"`
+	Owner         string               `json:"owner"`
+	RemixedFrom   string               `json:"remixedFrom,omitempty"`
+	LatestRelease *ProjectReleaseDTO   `json:"latestRelease,omitempty"`
+	Name          string               `json:"name"`
+	Version       int                  `json:"version"`
+	Files         model.FileCollection `json:"files"`
+	Visibility    string               `json:"visibility"`
+	Description   string               `json:"description"`
+	Instructions  string               `json:"instructions"`
+	Thumbnail     string               `json:"thumbnail"`
+	ViewCount     int64                `json:"viewCount"`
+	LikeCount     int64                `json:"likeCount"`
+	ReleaseCount  int64                `json:"releaseCount"`
+	RemixCount    int64                `json:"remixCount"`
 }
 
 // toProjectDTO converts the model project to its DTO.
@@ -45,21 +46,27 @@ func toProjectDTO(mProject model.Project) ProjectDTO {
 			mProject.RemixedFromRelease.Name,
 		)
 	}
+	var latestRelease *ProjectReleaseDTO
+	if mProject.LatestRelease != nil {
+		lr := toProjectReleaseDTO(*mProject.LatestRelease)
+		latestRelease = &lr
+	}
 	return ProjectDTO{
-		ModelDTO:     toModelDTO(mProject.Model),
-		Owner:        mProject.Owner.Username,
-		RemixedFrom:  remixedFrom,
-		Name:         mProject.Name,
-		Version:      mProject.Version,
-		Files:        mProject.Files,
-		Visibility:   mProject.Visibility.String(),
-		Description:  mProject.Description,
-		Instructions: mProject.Instructions,
-		Thumbnail:    mProject.Thumbnail,
-		ViewCount:    mProject.ViewCount,
-		LikeCount:    mProject.LikeCount,
-		ReleaseCount: mProject.ReleaseCount,
-		RemixCount:   mProject.RemixCount,
+		ModelDTO:      toModelDTO(mProject.Model),
+		Owner:         mProject.Owner.Username,
+		RemixedFrom:   remixedFrom,
+		LatestRelease: latestRelease,
+		Name:          mProject.Name,
+		Version:       mProject.Version,
+		Files:         mProject.Files,
+		Visibility:    mProject.Visibility.String(),
+		Description:   mProject.Description,
+		Instructions:  mProject.Instructions,
+		Thumbnail:     mProject.Thumbnail,
+		ViewCount:     mProject.ViewCount,
+		LikeCount:     mProject.LikeCount,
+		ReleaseCount:  mProject.ReleaseCount,
+		RemixCount:    mProject.RemixCount,
 	}
 }
 
@@ -77,6 +84,7 @@ func (ctrl *Controller) ensureProject(ctx context.Context, owner, name string, o
 	if err := ctrl.db.WithContext(ctx).
 		Preload("Owner").
 		Preload("RemixedFromRelease.Project.Owner").
+		Preload("LatestRelease.Project.Owner").
 		Joins("JOIN user ON user.id = project.owner_id").
 		Where("user.username = ?", owner).
 		Where("project.name = ?", name).
@@ -147,8 +155,6 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 
 		var mRemixSourceProject model.Project
 		if err := ctrl.db.WithContext(ctx).
-			Preload("Owner").
-			Preload("RemixedFromRelease.Project.Owner").
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", ownerUsername).
 			Where("project.name = ?", projectName).
@@ -233,6 +239,7 @@ func (ctrl *Controller) CreateProject(ctx context.Context, params *CreateProject
 	if err := ctrl.db.WithContext(ctx).
 		Preload("Owner").
 		Preload("RemixedFromRelease.Project.Owner").
+		Preload("LatestRelease.Project.Owner").
 		First(&mProject).
 		Error; err != nil {
 		return nil, fmt.Errorf("failed to get project: %w", err)
@@ -370,10 +377,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 		}
 	}
 
-	query := ctrl.db.WithContext(ctx).
-		Model(&model.Project{}).
-		Preload("Owner").
-		Preload("RemixedFromRelease.Project.Owner")
+	query := ctrl.db.WithContext(ctx).Model(&model.Project{})
 	if params.Owner != nil {
 		query = query.Joins("JOIN user ON user.id = project.owner_id").Where("user.username = ?", *params.Owner)
 	}
@@ -473,6 +477,7 @@ func (ctrl *Controller) ListProjects(ctx context.Context, params *ListProjectsPa
 	if err := query.
 		Preload("Owner").
 		Preload("RemixedFromRelease.Project.Owner").
+		Preload("LatestRelease.Project.Owner").
 		Offset(params.Pagination.Offset()).
 		Limit(params.Pagination.Size).
 		Find(&mProjects).
@@ -559,7 +564,7 @@ func (ctrl *Controller) UpdateProject(ctx context.Context, owner, name string, p
 				return nil
 			}
 
-			if queryResult := tx.Model(mProject).Omit("Owner", "RemixedFromRelease").Updates(updates); queryResult.Error != nil {
+			if queryResult := tx.Model(mProject).Omit("Owner", "RemixedFromRelease", "LatestRelease").Updates(updates); queryResult.Error != nil {
 				return queryResult.Error
 			} else if queryResult.RowsAffected == 0 {
 				return nil

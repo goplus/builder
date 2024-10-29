@@ -53,7 +53,7 @@ const {
   async (signal) => {
     const p = new Project()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const loaded = await p.loadReleasedFromCloud(props.owner, props.name, signal)
+    const loaded = await p.loadFromCloud(props.owner, props.name, true, signal)
     return loaded
   },
   {
@@ -161,7 +161,7 @@ const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await likeProject(props.owner, props.name)
-    await project.value?.loadReleasedFromCloud(props.owner, props.name) // refresh project info (likeCount)
+    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
 )
@@ -171,7 +171,7 @@ const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await unlikeProject(props.owner, props.name)
-    await project.value?.loadReleasedFromCloud(props.owner, props.name) // refresh project info (likeCount)
+    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }
 )
