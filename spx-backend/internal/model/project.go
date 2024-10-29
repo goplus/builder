@@ -22,6 +22,10 @@ type Project struct {
 	RemixedFromReleaseID sql.NullInt64   `gorm:"column:remixed_from_release_id;index"`
 	RemixedFromRelease   *ProjectRelease `gorm:"foreignKey:RemixedFromReleaseID"`
 
+	// LatestReleaseID is the ID of the latest project release.
+	LatestReleaseID sql.NullInt64   `gorm:"column:latest_release_id;index"`
+	LatestRelease   *ProjectRelease `gorm:"foreignKey:LatestReleaseID"`
+
 	// Name is the unique name.
 	Name string `gorm:"column:name;index:,class:FULLTEXT;index:,composite:owner_id_name"`
 

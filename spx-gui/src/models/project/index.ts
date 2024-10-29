@@ -27,7 +27,7 @@ import { until, untilNotNull } from '@/utils/utils'
 
 export type { Action } from './history'
 
-export type CloudMetadata = Omit<ProjectData, 'files' | 'thumbnail'> & {
+export type CloudMetadata = Omit<ProjectData, 'latestRelease' | 'files' | 'thumbnail'> & {
   thumbnail: File | null
 }
 
@@ -404,16 +404,8 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string, signal?: AbortSignal) {
-    const { metadata, files } = await cloudHelper.load(owner, name, signal)
-    signal?.throwIfAborted()
-    await this.load(metadata, files)
-    return this as CloudProject
-  }
-
-  /** Similar to `loadFromCloud`, while prefer released game content */
-  async loadReleasedFromCloud(owner: string, name: string, signal?: AbortSignal) {
-    const { metadata, files } = await cloudHelper.loadReleased(owner, name, signal)
+  async loadFromCloud(owner: string, name: string, preferReleasedContent: boolean = false, signal?: AbortSignal) {
+    const { metadata, files } = await cloudHelper.load(owner, name, preferReleasedContent, signal)
     signal?.throwIfAborted()
     await this.load(metadata, files)
     return this as CloudProject

@@ -2,11 +2,13 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"regexp"
 
 	"github.com/goplus/builder/spx-backend/internal/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ProjectReleaseDTO is the DTO for project releases.
@@ -90,14 +92,21 @@ func (ctrl *Controller) CreateProjectRelease(ctx context.Context, params *Create
 		Thumbnail:   params.Thumbnail,
 	}
 	if err := ctrl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(mProject).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Create(&mProjectRelease).Error; err != nil {
 			return err
 		}
 
 		if err := tx.
 			Model(&mProject).
-			Omit("Owner", "RemixedFromRelease").
-			UpdateColumn("release_count", gorm.Expr("release_count + 1")).
+			Omit("Owner", "RemixedFromRelease", "LatestRelease").
+			Updates(map[string]any{
+				"latest_release_id": sql.NullInt64{Int64: mProjectRelease.ID, Valid: true},
+				"release_count":     gorm.Expr("release_count + 1"),
+			}).
 			Error; err != nil {
 			return err
 		}
@@ -183,7 +192,6 @@ func (p *ListProjectReleasesParams) Validate() (ok bool, msg string) {
 func (ctrl *Controller) ListProjectReleases(ctx context.Context, params *ListProjectReleasesParams) (*ByPage[ProjectReleaseDTO], error) {
 	query := ctrl.db.WithContext(ctx).
 		Model(&model.ProjectRelease{}).
-		Preload("Project.Owner").
 		Joins("JOIN project ON project.id = project_release.project_id").
 		Where("project.visibility = ?", model.VisibilityPublic)
 	if params.ProjectFullName != nil {

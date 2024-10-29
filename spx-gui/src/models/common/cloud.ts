@@ -2,7 +2,7 @@ import * as qiniu from 'qiniu-js'
 import { filename } from '@/utils/path'
 import type { WebUrl, UniversalUrl, FileCollection, UniversalToWebUrlMap } from '@/apis/common'
 import type { ProjectData } from '@/apis/project'
-import { Visibility, addProject, getProject, getReleasedProject, updateProject } from '@/apis/project'
+import { Visibility, addProject, getProject, updateProject } from '@/apis/project'
 import { getUpInfo as getRawUpInfo, makeObjectUrls, type UpInfo as RawUpInfo } from '@/apis/util'
 import { DefaultException } from '@/utils/exception'
 import type { Metadata } from '../project'
@@ -19,14 +19,12 @@ const fileUniversalUrlSchemes = {
   kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
 } as const
 
-export async function load(owner: string, name: string, signal?: AbortSignal) {
+export async function load(owner: string, name: string, preferReleasedContent: boolean = false, signal?: AbortSignal) {
   const projectData = await getProject(owner, name, signal)
-  return parseProjectData(projectData)
-}
-
-/** Similar to `load`, while prefer released game content */
-export async function loadReleased(owner: string, name: string, signal?: AbortSignal) {
-  const projectData = await getReleasedProject(owner, name, signal)
+  if (preferReleasedContent && projectData.latestRelease != null) {
+    projectData.thumbnail = projectData.latestRelease.thumbnail
+    projectData.files = projectData.latestRelease.files
+  }
   return parseProjectData(projectData)
 }
 

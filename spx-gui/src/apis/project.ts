@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import type { FileCollection, ByPage, PaginationParams } from './common'
 import { client, Visibility, ownerAll, timeStringify } from './common'
 import { ApiException, ApiExceptionCode } from './common/exception'
-import { getLatestRelease } from './project-release'
+import type { ProjectRelease } from './project-release'
 
 export { Visibility, ownerAll }
 
@@ -22,7 +22,9 @@ export type ProjectData = {
   /** Unique username of the user */
   owner: string
   /** Full name of the project release from which the project is remixed */
-  remixedFrom: string
+  remixedFrom: string | null
+  /** Latest release of the project */
+  latestRelease: ProjectRelease | null
   /** Unique name of the project */
   name: string
   /** Version number of the project */
@@ -100,7 +102,6 @@ export type ListProjectParams = PaginationParams & {
 }
 
 export async function listProject(params?: ListProjectParams) {
-  // TODO: released thumbnail for project list
   return client.get('/projects/list', params) as Promise<ByPage<ProjectData>>
 }
 
@@ -108,20 +109,6 @@ export async function getProject(owner: string, name: string, signal?: AbortSign
   return client.get(`/project/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, undefined, {
     signal
   }) as Promise<ProjectData>
-}
-
-/** Similar to `getProject`, while prefer released game content */
-export async function getReleasedProject(owner: string, name: string, signal?: AbortSignal) {
-  const [projectData, latestRelease] = await Promise.all([
-    getProject(owner, name, signal),
-    getLatestRelease(owner, name, signal)
-  ])
-  if (latestRelease == null) return projectData
-  return {
-    ...projectData,
-    thumbnail: latestRelease.thumbnail,
-    files: latestRelease.files
-  }
 }
 
 export enum ExploreOrder {

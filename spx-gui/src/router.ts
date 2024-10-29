@@ -42,7 +42,6 @@ declare module 'vue-router' {
 }
 
 const routes: Array<RouteRecordRaw> = [
-  // TODO: page title
   {
     path: '/',
     component: () => import('@/pages/community/index.vue'),
