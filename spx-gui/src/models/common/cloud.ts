@@ -19,13 +19,22 @@ const fileUniversalUrlSchemes = {
   kodo: 'kodo:' // for objects stored in Qiniu Kodo, e.g. kodo://bucket/key
 } as const
 
-export async function load(owner: string, name: string, preferReleasedContent: boolean = false, signal?: AbortSignal) {
+export async function load(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
   const projectData = await getProject(owner, name, signal)
-  if (preferReleasedContent && projectData.latestRelease != null) {
-    projectData.thumbnail = projectData.latestRelease.thumbnail
-    projectData.files = projectData.latestRelease.files
+  if (preferPublishedContent) {
+    const published = getPublishedContent(projectData)
+    if (published != null) {
+      projectData.thumbnail = published.thumbnail
+      projectData.files = published.files
+    }
   }
   return parseProjectData(projectData)
+}
+
+export function getPublishedContent(project: ProjectData) {
+  // "published content" is the latest release of a public project
+  if (project.visibility === Visibility.Public && project.latestRelease != null) return project.latestRelease
+  return null
 }
 
 export async function save(metadata: Metadata, files: Files, signal?: AbortSignal) {
