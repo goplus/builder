@@ -1,8 +1,8 @@
 <template>
   <CenteredWrapper class="home-page">
-    <!-- TODO: some placeholder or guide here for guest users, see details in https://github.com/goplus/builder/issues/1028 -->
+    <GuestBanner v-if="!userStore.isSignedIn()" class="guest-banner" />
     <ProjectsSection
-      v-if="userStore.isSignedIn()"
+      v-else
       context="home"
       :num-in-row="numInRow"
       :link-to="userStore.isSignedIn() ? myProjectsRoute : null"
@@ -25,21 +25,7 @@
         }}
       </template>
       <template #empty="emptyProps">
-        <div v-if="!userStore.isSignedIn()" class="join-placeholder" :style="emptyProps.style">
-          <h4 class="title">
-            <!-- TODO: design here not finished yet -->
-            <UILink @click="handleJoin">
-              {{ $t({ en: 'Join Go+ Builder', zh: '加入 Go+ Builder' }) }}
-            </UILink>
-            {{
-              $t({
-                en: 'to create',
-                zh: '一起创作'
-              })
-            }}
-          </h4>
-        </div>
-        <MyProjectsEmpty v-else :style="emptyProps.style" />
+        <MyProjectsEmpty :style="emptyProps.style" />
       </template>
       <ProjectItem
         v-for="project in myProjects.data.value"
@@ -132,11 +118,12 @@ import { usePageTitle } from '@/utils/utils'
 import { ExploreOrder, exploreProjects, listProject } from '@/apis/project'
 import { getExploreRoute, getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores/user'
-import { useResponsive, UILink } from '@/components/ui'
+import { useResponsive } from '@/components/ui'
 import ProjectsSection from '@/components/community/ProjectsSection.vue'
 import CenteredWrapper from '@/components/community/CenteredWrapper.vue'
 import ProjectItem from '@/components/project/ProjectItem.vue'
 import MyProjectsEmpty from '@/components/community/MyProjectsEmpty.vue'
+import GuestBanner from '@/components/community/home/banner/GuestBanner.vue'
 
 usePageTitle([])
 
@@ -145,10 +132,6 @@ const numInRow = computed(() => (isDesktopLarge.value ? 5 : 4))
 
 const userStore = useUserStore()
 const signedInUser = computed(() => userStore.getSignedInUser())
-
-function handleJoin() {
-  userStore.initiateSignIn()
-}
 
 const myProjectsRoute = computed(() => {
   if (signedInUser.value == null) return ''
@@ -202,19 +185,7 @@ const followingCreatedProjects = useQuery(
   margin-top: 20px;
 }
 
-.join-placeholder {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--ui-color-grey-100);
-  border-radius: var(--ui-border-radius-2);
-
-  .title {
-    font-size: 16px;
-    line-height: 26px;
-    color: var(--ui-color-grey-1000);
-  }
+.guest-banner {
+  margin: 12px 0 32px;
 }
 </style>
