@@ -21,6 +21,16 @@ type Model struct {
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index"`
 }
 
+// _deleted_at_is_null is the Gorm data type representing a generated column
+// that has a value of 1 when deleted_at is null and NULL otherwise. It is
+// typically used to create composite soft unique indexes with other columns.
+type _deleted_at_is_null bool
+
+// GormDataType implements [gorm.io/gorm/schema.GormDataTypeInterface].
+func (_deleted_at_is_null) GormDataType() string {
+	return "bit(1) GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END) STORED"
+}
+
 // OpenDB opens the database with the given dsn and models to be migrated.
 func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, models ...any) (*gorm.DB, error) {
 	dialector := mysql.New(mysql.Config{DSN: dsn})
@@ -40,14 +50,6 @@ func OpenDB(ctx context.Context, dsn string, maxOpenConns, maxIdleConns int, mod
 	if len(models) > 0 {
 		if err := db.WithContext(ctx).AutoMigrate(models...); err != nil {
 			return nil, fmt.Errorf("failed to auto migrate models: %w", err)
-		}
-		for _, model := range models {
-			// NOTE: Workaround for https://github.com/go-gorm/gorm/issues/7227.
-			if am, ok := model.(interface{ AfterMigrate(tx *gorm.DB) error }); ok {
-				if err := db.WithContext(ctx).Transaction(am.AfterMigrate); err != nil {
-					return nil, fmt.Errorf("failed to run AfterMigrate: %w", err)
-				}
-			}
 		}
 	}
 	return db, nil
