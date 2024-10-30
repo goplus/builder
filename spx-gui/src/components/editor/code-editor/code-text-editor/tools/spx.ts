@@ -459,6 +459,21 @@ export const heading: Tool = {
   }
 }
 
+export const turn: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'turn',
+  desc: {
+    en: 'Turn with given direction change',
+    zh: '转动给定的角度'
+  },
+  usage: {
+    sample: 'turn Left',
+    insertText: 'turn ${1:dDirection}'
+  }
+}
+
 export const turnTo: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
@@ -496,7 +511,7 @@ export const changeHeading: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'changeHeading',
-  desc: { en: 'Change heading with given direction change', zh: '以给定的偏移值改变朝向' },
+  desc: { en: 'Change heading with given direction change', zh: '以给定的角度改变朝向' },
   usage: {
     sample: 'changeHeading 90',
     insertText: 'changeHeading ${1:dDirection}'

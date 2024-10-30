@@ -50,14 +50,14 @@ export const motionCategory: ToolCategory = {
   label: { en: 'Motion', zh: '运动' },
   groups: [
     {
-      label: { en: 'Move', zh: '移动' },
-      tools: [spx.step, spx.move, spx.goto, spx.glide]
-    },
-    {
       label: { en: 'Position', zh: '位置' },
       tools: [
         spx.xpos,
         spx.ypos,
+        spx.step,
+        spx.move,
+        spx.goto,
+        spx.glide,
         spx.setXYpos,
         spx.changeXYpos,
         spx.setXpos,
@@ -67,16 +67,26 @@ export const motionCategory: ToolCategory = {
       ]
     },
     {
-      label: { en: 'Rotation', zh: '旋转' },
-      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
-    },
-    {
       label: { en: 'Heading', zh: '方向' },
-      tools: [spx.heading, spx.turnTo, spx.setHeading, spx.changeHeading, spx.up, spx.down, spx.left, spx.right]
+      tools: [
+        spx.heading,
+        spx.turn,
+        spx.turnTo,
+        spx.setHeading,
+        spx.changeHeading,
+        spx.up,
+        spx.down,
+        spx.left,
+        spx.right
+      ]
     },
     {
       label: { en: 'Size', zh: '大小' },
       tools: [spx.size, spx.setSize, spx.changeSize]
+    },
+    {
+      label: { en: 'Rotation', zh: '旋转' },
+      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
     },
     {
       label: { en: 'Others', zh: '其他' },
