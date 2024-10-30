@@ -404,8 +404,8 @@ export class Project extends Disposable {
   }
 
   /** Load from cloud */
-  async loadFromCloud(owner: string, name: string, preferReleasedContent: boolean = false, signal?: AbortSignal) {
-    const { metadata, files } = await cloudHelper.load(owner, name, preferReleasedContent, signal)
+  async loadFromCloud(owner: string, name: string, preferPublishedContent: boolean = false, signal?: AbortSignal) {
+    const { metadata, files } = await cloudHelper.load(owner, name, preferPublishedContent, signal)
     signal?.throwIfAborted()
     await this.load(metadata, files)
     return this as CloudProject

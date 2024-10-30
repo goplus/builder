@@ -99,7 +99,7 @@ import { useMessageHandle } from '@/utils/exception'
 import { humanizeCount, humanizeExactCount, humanizeTime, humanizeExactTime, useAsyncComputed } from '@/utils/utils'
 import { getProjectEditorRoute, getProjectPageRoute } from '@/router'
 import { Visibility, type ProjectData } from '@/apis/project'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { getPublishedContent, universalUrlToWebUrl } from '@/models/common/cloud'
 import { useUserStore } from '@/stores/user'
 import { useIsLikingProject } from '@/stores/liking'
 import { UIImg, UIDropdown, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
@@ -141,8 +141,9 @@ const to = computed(() => {
 })
 
 const thumbnailUrl = useAsyncComputed(async () => {
-  if (props.project.thumbnail === '') return null
-  return universalUrlToWebUrl(props.project.thumbnail)
+  const thumbnail = getPublishedContent(props.project)?.thumbnail ?? props.project.thumbnail
+  if (thumbnail === '') return null
+  return universalUrlToWebUrl(thumbnail)
 })
 
 const { data: liking } = useIsLikingProject(() => ({
