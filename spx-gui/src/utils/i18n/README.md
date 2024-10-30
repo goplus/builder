@@ -24,9 +24,11 @@ i18n.setLang('zh')
 ### Do translation in template of SFC
 
 ```vue
-<button>
-  {{$t({ en: 'Sign in', zh: '登录' })}}
-</button>
+<template>
+  <button>
+    {{ $t({ en: 'Sign in', zh: '登录' }) }}
+  </button>
+</template>
 ```
 
 ### Do translation in setup script
@@ -37,6 +39,17 @@ import { useI18n } from '@/utils/i18n'
 const { t } = useI18n()
 
 const signoutText = t({ en: 'Sign out', zh: '登出' })
+```
+
+### Translate complex elements in template of SFC
+
+```vue
+<template>
+  <I18nT>
+    <template #en>Please <a :href="link">sign in</a>.</template>
+    <template #zh>请<a :href="link">登录</a>。</template>
+  </I18nT>
+</template>
 ```
 
 ### Locale Message Functions

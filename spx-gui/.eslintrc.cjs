@@ -28,7 +28,8 @@ module.exports = {
           // These rules will match components in both kebab-case and CamelCase
           'router-view',
           'router-link',
-          'v-.*' // for Vue Konva components
+          'v-.*', // for Vue Konva components
+          'I18nT'
         ]
       }
     ],

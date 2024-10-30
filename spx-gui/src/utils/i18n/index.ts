@@ -2,7 +2,16 @@
  * @desc Simple i18n tool for vue
  */
 
-import { inject, type App, type InjectionKey, type ObjectPlugin, ref, type Ref } from 'vue'
+import {
+  inject,
+  type App,
+  type InjectionKey,
+  type ObjectPlugin,
+  ref,
+  type Ref,
+  type SetupContext,
+  type SlotsType
+} from 'vue'
 
 export type Lang = 'en' | 'zh'
 
@@ -25,6 +34,9 @@ export type TranslateFn = InstanceType<typeof I18n>['t']
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $t: TranslateFn
+  }
+  interface GlobalComponents {
+    I18nT: typeof T
   }
 }
 
@@ -57,7 +69,29 @@ export class I18n implements ObjectPlugin<[]> {
   install(app: App<unknown>) {
     app.provide(injectKey, this)
     app.config.globalProperties.$t = this.t
+    app.component('I18nT', T as any)
   }
+}
+
+// NOTE: `T` (also known as `I18nT`) is a suitable choice for translating complex content within templates in Single File Component (SFC).
+// It relies on a straightforward mechanism and integrates well with SFC features such as scoped styles.
+// If we decide to externalize locale messages from components into separate locale data in the future, we need to:
+// 1. Provide support for locale messages of type `VNode`.
+// 2. Adjust component code to properly handle potential issues with SFC features like scoped styles.
+
+/**
+ * Translate component. Use slot with lang as key to provide translated content. e.g.,
+ * ```html
+ * <I18nT>
+ *   <template #en>English</template>
+ *   <template #zh>中文</template>
+ * </I18nT>
+ * ```
+ */
+function T(_props: unknown, { slots }: SetupContext<unknown, SlotsType<Record<Lang, any>>>) {
+  const i18n = inject(injectKey)
+  if (i18n == null) throw new Error('i18n not installed')
+  return slots[i18n.lang.value]?.()
 }
 
 export function createI18n(config: I18nConfig) {
@@ -66,7 +100,7 @@ export function createI18n(config: I18nConfig) {
 
 export function useI18n() {
   const i18n = inject(injectKey)
-  if (i18n == null) throw new Error('i18n not used')
+  if (i18n == null) throw new Error('i18n not installed')
   return i18n
 }
 
