@@ -155,6 +155,8 @@ export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
   }) as T
 }
 
+// TODO: we may move these `humanizeX` functions to i18n module as exposed helpers
+
 /** Convert time string to human-friendly format, e.g., "3 days ago" */
 export function humanizeTime(time: string): LocaleMessage {
   const t = dayjs(time)
