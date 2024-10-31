@@ -35,6 +35,7 @@ import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
 import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
+import TextView from '@/components/community/TextView.vue'
 
 const props = defineProps<{
   owner: string
@@ -413,10 +414,13 @@ const remixesRet = useQuery(
             <UIDivider class="divider" />
             <UICollapse class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
               <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
-                {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
+                <TextView :text="project.description" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
               </UICollapseItem>
               <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
-                {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
+                <TextView
+                  :text="project.instructions"
+                  :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })"
+                />
               </UICollapseItem>
               <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
                 <ReleaseHistory :query-ret="releasesRet" />

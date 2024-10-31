@@ -3,6 +3,7 @@ import { type QueryRet } from '@/utils/query'
 import { humanizeTime } from '@/utils/utils'
 import { type ProjectRelease } from '@/apis/project-release'
 import { UITimeline, UITimelineItem, UILoading, UIError } from '@/components/ui'
+import TextView from '../TextView.vue'
 
 defineProps<{
   queryRet: QueryRet<ProjectRelease[]>
@@ -23,7 +24,7 @@ defineProps<{
       :key="release.id"
       :time="$t(humanizeTime(release.createdAt))"
     >
-      {{ release.description }}
+      <TextView :text="release.description" />
     </UITimelineItem>
   </UITimeline>
 </template>

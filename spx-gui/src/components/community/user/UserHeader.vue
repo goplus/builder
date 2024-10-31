@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type User } from '@/apis/user'
+import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
+import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
-import { useMessageHandle } from '@/utils/exception'
 import { getCoverImgUrl } from './cover'
 
 const props = defineProps<{
@@ -35,7 +36,7 @@ const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ 
           {{ user.displayName }}
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
         </h2>
-        <p class="description">{{ user.description || '&nbsp;' }}</p>
+        <TextView style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
         <UIButton v-if="isSignedInUser" @click="handleEditProfile">

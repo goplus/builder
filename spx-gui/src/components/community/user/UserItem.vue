@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import type { User } from '@/apis/user'
 import { getUserPageRoute } from '@/router'
+import RouterUILink from '@/components/common/RouterUILink.vue'
+import TextView from '../TextView.vue'
 import UserAvatar from './UserAvatar.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
-import RouterUILink from '@/components/common/RouterUILink.vue'
 
 const props = defineProps<{
   user: User
@@ -19,7 +20,7 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
     <UserAvatar class="avatar" :user="user.username" />
     <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
     <UserJoinedAt class="joined-at" :time="user.createdAt" />
-    <p class="description">{{ user.description }}</p>
+    <TextView class="description" :text="user.description" />
     <FollowButton class="follow" :name="user.username" />
   </li>
 </template>
@@ -54,6 +55,7 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 
 .description {
   margin-top: 6px;
+  max-height: 60px;
   font-size: 13px;
   line-height: 20px;
   color: var(--ui-color-text);
