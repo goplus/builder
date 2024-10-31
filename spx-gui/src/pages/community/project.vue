@@ -489,6 +489,7 @@ const remixesRet = useQuery(
 
 .right {
   flex: 1 1 456px;
+  min-width: 0;
   padding-right: 20px;
   display: flex;
   flex-direction: column;
@@ -497,6 +498,7 @@ const remixesRet = useQuery(
     font-size: 20px;
     line-height: 1.4;
     color: var(--ui-color-title);
+    word-break: break-all;
   }
 
   .remixed-from {
