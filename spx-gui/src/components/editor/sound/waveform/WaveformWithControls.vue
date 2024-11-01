@@ -1,11 +1,6 @@
 <template>
   <div class="container">
-    <WaveformDisplay
-      class="waveform"
-      :points="waveformData"
-      :scale="gain"
-      :draw-padding-right="drawPaddingRight"
-    />
+    <WaveformDisplay class="waveform" :points="waveformData" :scale="gain" :draw-padding-right="drawPaddingRight" />
     <WaveformRangeControl
       :value="range"
       @update:value="emit('update:range', $event)"

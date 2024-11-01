@@ -85,10 +85,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
  * const bar = await untilNotNull(() => getBar())
  * ```
  */
-export function untilNotNull<T>(
-  valueSource: WatchSource<T | null | undefined>,
-  signal?: AbortSignal
-) {
+export function untilNotNull<T>(valueSource: WatchSource<T | null | undefined>, signal?: AbortSignal) {
   return untilConditionMet(
     valueSource as WatchSource<T | null | undefined>,
     (value): value is NonNullable<T> => value != null,
@@ -157,6 +154,8 @@ export function memoizeAsync<T extends (...args: any) => Promise<unknown>>(
     }
   }) as T
 }
+
+// TODO: we may move these `humanizeX` functions to i18n module as exposed helpers
 
 /** Convert time string to human-friendly format, e.g., "3 days ago" */
 export function humanizeTime(time: string): LocaleMessage {

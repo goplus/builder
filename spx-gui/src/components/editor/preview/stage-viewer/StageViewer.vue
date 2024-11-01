@@ -100,9 +100,7 @@ const stageConfig = computed(() => {
 })
 
 const backdropImg = ref<HTMLImageElement | null>(null)
-const [backdropSrc, backdropSrcLoading] = useFileUrl(
-  () => editorCtx.project.stage.defaultBackdrop?.img
-)
+const [backdropSrc, backdropSrcLoading] = useFileUrl(() => editorCtx.project.stage.defaultBackdrop?.img)
 watchEffect(() => {
   if (backdropSrc.value == null) return
   const img = new Image()
@@ -270,7 +268,7 @@ watchEffect((onCleanup) => {
   justify-content: center;
 
   border-radius: var(--ui-border-radius-1);
-  background-image: url(@/components/project/bg.svg);
+  background-image: url(@/assets/stage-bg.svg);
   background-position: center;
   background-repeat: repeat;
   background-size: contain;

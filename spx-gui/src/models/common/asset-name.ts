@@ -121,10 +121,7 @@ export function normalizeGopIdentifierAssetName(src: string, cas: 'camel' | 'pas
   const parts = src.split('_').filter((p) => !!p)
   if (parts.length === 0) return ''
   const [firstpart, ...otherParts] = parts
-  const result = [
-    cas === 'pascal' ? upFirst(firstpart) : firstpart,
-    ...otherParts.map(upFirst)
-  ].join('')
+  const result = [cas === 'pascal' ? upFirst(firstpart) : firstpart, ...otherParts.map(upFirst)].join('')
   return result.slice(0, 20) // 20 should be enough, it will be hard to read with too long name
 }
 

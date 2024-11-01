@@ -15,24 +15,8 @@ const emit = defineEmits<{
   resolved: []
 }>()
 
-const projectPageRoute = computed(() =>
-  getProjectPageRoute(props.project.owner!, props.project.name!)
-)
+const projectPageRoute = computed(() => getProjectPageRoute(props.project.owner!, props.project.name!))
 const projectPageLink = computed(() => `${location.origin}${projectPageRoute.value}`)
-
-// TODO: support vnode as i18n message to simplify such case
-const preLinkText = {
-  en: 'Visit ',
-  zh: '访问'
-}
-const linkText = {
-  en: 'project page',
-  zh: '项目主页'
-}
-const postLinkText = {
-  en: ', or copy the link below to share the project with others.',
-  zh: '，或者复制下方链接将项目分享给其他人。'
-}
 
 const handleCopy = useMessageHandle(
   () => navigator.clipboard.writeText(projectPageLink.value),
@@ -49,9 +33,15 @@ const handleCopy = useMessageHandle(
     @update:visible="emit('cancelled')"
   >
     <div class="desc">
-      {{ $t(preLinkText)
-      }}<UILink target="_blank" :href="projectPageRoute">{{ $t(linkText) }}</UILink
-      >{{ $t(postLinkText) }}
+      <I18nT>
+        <template #en>
+          Visit <UILink target="_blank" :href="projectPageRoute">project page</UILink>, or copy the link below to share
+          the project with others.
+        </template>
+        <template #zh>
+          访问<UILink target="_blank" :href="projectPageRoute">项目主页</UILink>，或者复制下方链接将项目分享给其他人。
+        </template>
+      </I18nT>
     </div>
     <div class="link-wrapper">
       <UITextInput :value="projectPageLink" :readonly="true" @focus="$event.target.select()" />

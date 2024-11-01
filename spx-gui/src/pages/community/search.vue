@@ -1,12 +1,17 @@
 <template>
   <CommunityHeader>
-    <template v-if="titleForResult != null">
-      <!-- TODO: support vnode as i18n message to simplify such case -->
-      {{ $t(titleForResult.prefix) }}<span class="keyword">{{ keyword }}</span
-      >{{ $t(titleForResult.suffix) }}
-    </template>
+    <I18nT v-if="queryRet.data.value != null">
+      <template #en>
+        Found {{ queryRet.data.value?.total }} projects for "<span class="keyword">{{ keyword }}</span
+        >"
+      </template>
+      <template #zh>
+        找到 {{ queryRet.data.value?.total }} 个关于“<span class="keyword">{{ keyword }}</span
+        >”的项目
+      </template>
+    </I18nT>
     <template v-else>
-      {{ $t(titleForNoResult) }}
+      {{ $t({ en: 'Search projects', zh: '搜索项目' }) }}
     </template>
     <template #options>
       <label>
@@ -40,12 +45,7 @@
     </template>
   </CommunityHeader>
   <CenteredWrapper class="main" :style="{ '--project-num-in-row': numInRow }">
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="530"
-    >
+    <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="528">
       <ul class="projects">
         <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
       </ul>
@@ -63,11 +63,7 @@ export const searchKeywordQueryParamName = 'q'
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  useRouteQueryParamInt,
-  useRouteQueryParamStr,
-  useRouteQueryParamStrEnum
-} from '@/utils/route'
+import { useRouteQueryParamInt, useRouteQueryParamStr, useRouteQueryParamStrEnum } from '@/utils/route'
 import { useQuery } from '@/utils/query'
 import { Visibility, listProject, ownerAll, type ListProjectParams } from '@/apis/project'
 import { usePageTitle } from '@/utils/utils'
@@ -130,24 +126,6 @@ const queryRet = useQuery(() => listProject(listParams.value), {
   en: 'Failed to search projects',
   zh: '搜索项目失败'
 })
-
-const titleForResult = computed(() => {
-  if (queryRet.data.value == null) return null
-  return {
-    prefix: {
-      en: `Found ${queryRet.data.value?.total} projects for "`,
-      zh: `找到 ${queryRet.data.value?.total} 个关于“`
-    },
-    suffix: {
-      en: '"',
-      zh: '”的项目'
-    }
-  }
-})
-const titleForNoResult = computed(() => ({
-  en: 'Search projects',
-  zh: '搜索项目'
-}))
 </script>
 
 <style lang="scss" scoped>

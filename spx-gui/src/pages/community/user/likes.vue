@@ -52,28 +52,23 @@ const queryRet = useQuery(
     <template #title>
       {{ $t({ en: 'Projects I like', zh: '我喜欢的项目' }) }}
     </template>
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="534"
-    >
-      <ul class="projects">
-        <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
-      </ul>
-    </ListResultWrapper>
-    <UIPagination
-      v-show="pageTotal > 1"
-      v-model:current="page"
-      class="pagination"
-      :total="pageTotal"
-    />
+    <div class="projects-wrapper">
+      <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
+        <ul class="projects">
+          <ProjectItem v-for="project in slotProps.data.data" :key="project.id" :project="project" />
+        </ul>
+      </ListResultWrapper>
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    </div>
   </UserContent>
 </template>
 
 <style lang="scss" scoped>
-.projects {
+.projects-wrapper {
   margin-top: 8px;
+}
+
+.projects {
   display: grid;
   grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: var(--ui-gap-middle);

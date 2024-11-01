@@ -53,8 +53,7 @@ const editorCtx = useEditorCtx()
 
 const selectedAnimationId = ref<string | null>(props.sprite.animations[0]?.id || null)
 const selectedAnimation = computed(
-  () =>
-    props.sprite.animations.find((animation) => animation.id === selectedAnimationId.value) ?? null
+  () => props.sprite.animations.find((animation) => animation.id === selectedAnimationId.value) ?? null
 )
 
 watchEffect(() => {

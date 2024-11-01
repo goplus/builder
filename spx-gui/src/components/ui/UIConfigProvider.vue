@@ -1,9 +1,5 @@
 <template>
-  <NConfigProvider
-    class="ui-config-provider"
-    :theme-overrides="themeOverrides"
-    :style="cssVariables"
-  >
+  <NConfigProvider class="ui-config-provider" :theme-overrides="themeOverrides" :style="cssVariables">
     <slot></slot>
   </NConfigProvider>
 </template>
@@ -117,7 +113,7 @@ const themeOverrides: GlobalThemeOverrides = {
     maxWidth: '367px'
   },
   Form: {
-    labelTextColor: uiVariables.color.text
+    labelTextColor: uiVariables.color.hint[1]
   },
   Timeline: {
     iconColorInfo: uiVariables.color.grey[500],

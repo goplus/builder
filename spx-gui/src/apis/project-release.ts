@@ -21,10 +21,7 @@ export type ProjectRelease = {
   remixCount: number
 }
 
-export type CreateReleaseParams = Pick<
-  ProjectRelease,
-  'projectFullName' | 'name' | 'description' | 'thumbnail'
->
+export type CreateReleaseParams = Pick<ProjectRelease, 'projectFullName' | 'name' | 'description' | 'thumbnail'>
 
 export function createRelease(params: CreateReleaseParams) {
   return client.post('/project-release', params) as Promise<ProjectRelease>
@@ -38,18 +35,4 @@ export type ListReleasesParams = PaginationParams & {
 
 export function listReleases(params: ListReleasesParams, signal?: AbortSignal) {
   return client.get(`/project-releases/list`, params, { signal }) as Promise<ByPage<ProjectRelease>>
-}
-
-export async function getLatestRelease(owner: string, projectName: string, signal?: AbortSignal) {
-  const listResult = await listReleases(
-    {
-      projectFullName: `${owner}/${projectName}`,
-      orderBy: 'createdAt',
-      sortOrder: 'desc',
-      pageSize: 1
-    },
-    signal
-  )
-  if (listResult.total === 0) return null
-  return listResult.data[0]
 }

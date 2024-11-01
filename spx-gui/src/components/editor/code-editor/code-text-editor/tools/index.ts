@@ -25,7 +25,7 @@ export const eventCategory: ToolCategory = {
     },
     {
       label: { en: 'Sensing Events', zh: '感知事件' },
-      tools: [spx.onClick, spx.onKey, spx.onAnyKey]
+      tools: [spx.onClick, spx.onKey, spx.onAnyKey, spx.onTouchStart]
     },
     {
       label: { en: 'Motion Events', zh: '运动事件' },
@@ -50,14 +50,14 @@ export const motionCategory: ToolCategory = {
   label: { en: 'Motion', zh: '运动' },
   groups: [
     {
-      label: { en: 'Move', zh: '移动' },
-      tools: [spx.step, spx.move, spx.goto, spx.glide]
-    },
-    {
       label: { en: 'Position', zh: '位置' },
       tools: [
         spx.xpos,
         spx.ypos,
+        spx.step,
+        spx.move,
+        spx.goto,
+        spx.glide,
         spx.setXYpos,
         spx.changeXYpos,
         spx.setXpos,
@@ -67,13 +67,10 @@ export const motionCategory: ToolCategory = {
       ]
     },
     {
-      label: { en: 'Rotation', zh: '旋转' },
-      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
-    },
-    {
       label: { en: 'Heading', zh: '方向' },
       tools: [
         spx.heading,
+        spx.turn,
         spx.turnTo,
         spx.setHeading,
         spx.changeHeading,
@@ -86,6 +83,10 @@ export const motionCategory: ToolCategory = {
     {
       label: { en: 'Size', zh: '大小' },
       tools: [spx.size, spx.setSize, spx.changeSize]
+    },
+    {
+      label: { en: 'Rotation', zh: '旋转' },
+      tools: [spx.setRotationStyle, spx.normal, spx.leftRight, spx.none]
     },
     {
       label: { en: 'Others', zh: '其他' },
@@ -116,13 +117,7 @@ export const lookCategory: ToolCategory = {
     },
     {
       label: { en: 'Backdrop', zh: '背景' },
-      tools: [
-        spx.backdropName,
-        spx.backdropIndex,
-        spx.startBackdrop,
-        spx.nextBackdrop,
-        spx.prevBackdrop
-      ]
+      tools: [spx.backdropName, spx.backdropIndex, spx.startBackdrop, spx.nextBackdrop, spx.prevBackdrop]
     }
   ]
 }
@@ -132,15 +127,7 @@ export const sensingCategory: ToolCategory = {
   groups: [
     {
       label: { en: 'Distance', zh: '距离' },
-      tools: [
-        spx.touching,
-        spx.distanceTo,
-        spx.edge,
-        spx.edgeLeft,
-        spx.edgeRight,
-        spx.edgeTop,
-        spx.edgeBottom
-      ]
+      tools: [spx.touching, spx.distanceTo, spx.edge, spx.edgeLeft, spx.edgeRight, spx.edgeTop, spx.edgeBottom]
     },
     {
       label: { en: 'Mouse', zh: '鼠标' },

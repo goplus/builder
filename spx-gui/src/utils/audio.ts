@@ -67,15 +67,8 @@ function audioBufferToWav(audioBuffer: AudioBuffer): ArrayBuffer {
   return buffer
 }
 
-export const formatDuration = (
-  durationInSeconds: number | null | undefined,
-  fractionDigits = 1
-) => {
-  if (
-    durationInSeconds === null ||
-    durationInSeconds === undefined ||
-    durationInSeconds === Infinity
-  ) {
+export const formatDuration = (durationInSeconds: number | null | undefined, fractionDigits = 1) => {
+  if (durationInSeconds === null || durationInSeconds === undefined || durationInSeconds === Infinity) {
     return ''
   }
   return durationInSeconds.toFixed(fractionDigits) + 's'
@@ -112,13 +105,7 @@ export const useAudioDuration = (audio: () => string | Blob | null) => {
 
 function trim(audioBuffer: AudioBuffer, startRatio: number, endRatio: number): AudioBuffer {
   // Ensure ratios are between 0.0 and 1.0
-  if (
-    startRatio < 0.0 ||
-    startRatio > 1.0 ||
-    endRatio < 0.0 ||
-    endRatio > 1.0 ||
-    startRatio >= endRatio
-  ) {
+  if (startRatio < 0.0 || startRatio > 1.0 || endRatio < 0.0 || endRatio > 1.0 || startRatio >= endRatio) {
     throw new Error('Invalid start or end ratio')
   }
 

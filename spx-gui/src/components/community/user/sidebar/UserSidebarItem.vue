@@ -34,8 +34,8 @@ defineProps<{
     position: absolute;
     left: 12px;
     top: 14px;
-    width: 20px;
-    height: 20px;
+    width: 17px;
+    height: 17px;
     border-radius: 50%;
     background: var(--ui-color-grey-500);
     transition: 0.1s;
@@ -53,22 +53,24 @@ defineProps<{
 
 .content {
   position: relative;
+  padding-left: 26px;
   flex: 1 1 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 1;
+  font-size: 13px;
+  line-height: 20px;
 
-  svg {
-    width: 24px;
-    height: 24px;
+  :deep(svg) {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
   }
 }
 
 .arrow {
   flex: 0 0 auto;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   transform: rotate(90deg);
   color: var(--ui-color-grey-800);
 }

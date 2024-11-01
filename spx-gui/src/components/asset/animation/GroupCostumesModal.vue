@@ -26,13 +26,7 @@
         <UIEmpty v-if="selectedCostumes.length === 0" size="medium">
           {{ $t({ en: 'Select costumes to continue', zh: '请选择造型' }) }}
         </UIEmpty>
-        <AnimationPlayer
-          v-else
-          class="player"
-          :costumes="selectedCostumes"
-          :duration="duration"
-          :sound="null"
-        />
+        <AnimationPlayer v-else class="player" :costumes="selectedCostumes" :duration="duration" :sound="null" />
       </div>
     </div>
     <div class="footer">

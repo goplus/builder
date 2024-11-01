@@ -7,9 +7,7 @@
       <UIMenuItem @click="handleAddToAssetLibrary.fn">{{
         $t({ en: 'Add to asset library', zh: '添加到素材库' })
       }}</UIMenuItem>
-      <UIMenuItem :disabled="!removable" @click="emit('remove')">{{
-        $t({ en: 'Remove', zh: '删除' })
-      }}</UIMenuItem>
+      <UIMenuItem :disabled="!removable" @click="emit('remove')">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
     </UIMenu>
   </UIDropdown>
 </template>

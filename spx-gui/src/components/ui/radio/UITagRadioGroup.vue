@@ -4,8 +4,7 @@
   </div>
 </template>
 <script lang="ts">
-export const radioGroupValueKey: InjectionKey<ComputedRef<string | undefined>> =
-  Symbol('radioGroupValue')
+export const radioGroupValueKey: InjectionKey<ComputedRef<string | undefined>> = Symbol('radioGroupValue')
 export const updateRadioValueKey: InjectionKey<(value: string) => void> = Symbol('updateRadioValue')
 </script>
 

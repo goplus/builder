@@ -1,30 +1,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type User } from '@/apis/user'
+import { useMessageHandle } from '@/utils/exception'
 import { useUserStore } from '@/stores/user'
 import { UIButton, UIImg, useModal } from '@/components/ui'
 import CommunityCard from '@/components/community/CommunityCard.vue'
+import TextView from '../TextView.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
 import EditProfileModal from './EditProfileModal.vue'
-import { useMessageHandle } from '@/utils/exception'
 import { getCoverImgUrl } from './cover'
 
 const props = defineProps<{
   user: User
 }>()
 
-const isSignedInUser = computed(
-  () => props.user.username === useUserStore().getSignedInUser()?.name
-)
+const isSignedInUser = computed(() => props.user.username === useUserStore().getSignedInUser()?.name)
 const coverImgUrl = computed(() => getCoverImgUrl(props.user.username))
 
 const invokeEditProfileModal = useModal(EditProfileModal)
 
-const handleEditProfile = useMessageHandle(
-  async () => invokeEditProfileModal({ user: props.user }),
-  { en: 'Failed to update profile', zh: '更新个人信息失败' }
-).fn
+const handleEditProfile = useMessageHandle(async () => invokeEditProfileModal({ user: props.user }), {
+  en: 'Failed to update profile',
+  zh: '更新个人信息失败'
+}).fn
 </script>
 
 <template>
@@ -37,7 +36,7 @@ const handleEditProfile = useMessageHandle(
           {{ user.displayName }}
           <UserJoinedAt class="joined-at" :time="user.createdAt" />
         </h2>
-        <p class="description">{{ user.description || '&nbsp;' }}</p>
+        <TextView style="max-height: 66px" :text="user.description" />
       </div>
       <div class="op">
         <UIButton v-if="isSignedInUser" @click="handleEditProfile">
@@ -75,7 +74,7 @@ const handleEditProfile = useMessageHandle(
 }
 
 .content {
-  padding: 20px 24px 20px 192px;
+  padding: 20px 20px 20px 192px;
   display: flex;
   align-items: end;
   gap: 100px;

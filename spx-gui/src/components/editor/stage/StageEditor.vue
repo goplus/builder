@@ -6,10 +6,7 @@
       <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton
-        v-if="selectedTab === 'code' && codeEditor != null && code != null"
-        :code-editor="codeEditor"
-      />
+      <FormatButton v-if="selectedTab === 'code' && codeEditor != null && code != null" :code-editor="codeEditor" />
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>

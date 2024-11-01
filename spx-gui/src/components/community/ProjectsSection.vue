@@ -12,7 +12,7 @@
       </RouterUILink>
     </header>
     <div class="projects-wrapper">
-      <ListResultWrapper content-type="project" :query-ret="queryRet" :height="255">
+      <ListResultWrapper content-type="project" :query-ret="queryRet" :height="254">
         <template v-if="!!slots.empty" #empty="emptyProps">
           <slot name="empty" v-bind="emptyProps"></slot>
         </template>
@@ -51,7 +51,7 @@ const slots = useSlots()
 
 <style lang="scss" scoped>
 .header {
-  height: 56px;
+  height: 52px;
   display: flex;
   justify-content: space-between;
   align-items: center;

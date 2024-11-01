@@ -1,10 +1,5 @@
 <template>
-  <UIBackdropItem
-    :selected="selected"
-    :img-src="imgSrc"
-    :img-loading="!imgSrc"
-    :name="asset.name"
-  />
+  <UIBackdropItem :selected="selected" :img-src="imgSrc" :img-loading="!imgSrc" :name="asset.name" />
 </template>
 
 <script setup lang="ts">

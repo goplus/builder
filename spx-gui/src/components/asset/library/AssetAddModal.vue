@@ -16,18 +16,9 @@
             <UITextInput v-model:value="form.value.name" />
             <template #tip>{{ $t(nameTip) }}</template>
           </UIFormItem>
-          <UIFormItem
-            v-if="addPublicLibraryEnabled"
-            :label="$t({ en: 'Category', zh: '素材类别' })"
-            path="category"
-          >
+          <UIFormItem v-if="addPublicLibraryEnabled" :label="$t({ en: 'Category', zh: '素材类别' })" path="category">
             <UIRadioGroup v-model:value="form.value.category">
-              <UIRadio
-                v-for="c in categories"
-                :key="c.value"
-                :value="c.value"
-                :label="$t(c.message)"
-              />
+              <UIRadio v-for="c in categories" :key="c.value" :value="c.value" :label="$t(c.message)" />
             </UIRadioGroup>
           </UIFormItem>
           <UIFormItem

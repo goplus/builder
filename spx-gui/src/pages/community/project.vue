@@ -9,6 +9,7 @@ import { useEnsureSignedIn } from '@/utils/user'
 import { usePageTitle } from '@/utils/utils'
 import { ownerAll, recordProjectView, stringifyRemixSource, Visibility } from '@/apis/project'
 import { listProject } from '@/apis/project'
+import { listReleases } from '@/apis/project-release'
 import { Project } from '@/models/project'
 import { useUser, useUserStore } from '@/stores/user'
 import { getProjectEditorRoute, getUserPageRoute } from '@/router'
@@ -31,14 +32,10 @@ import ProjectItem from '@/components/project/ProjectItem.vue'
 import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 import RemixedFrom from '@/components/community/project/RemixedFrom.vue'
 import OwnerInfo from '@/components/community/project/OwnerInfo.vue'
-import {
-  useCreateProject,
-  useRemoveProject,
-  useShareProject,
-  useUnpublishProject
-} from '@/components/project'
+import { useCreateProject, useRemoveProject, useShareProject, useUnpublishProject } from '@/components/project'
 import CommunityCard from '@/components/community/CommunityCard.vue'
 import ReleaseHistory from '@/components/community/project/ReleaseHistory.vue'
+import TextView from '@/components/community/TextView.vue'
 
 const props = defineProps<{
   owner: string
@@ -57,7 +54,7 @@ const {
   async (signal) => {
     const p = new Project()
     ;(window as any).project = p // for debug purpose, TODO: remove me
-    const loaded = await p.loadReleasedFromCloud(props.owner, props.name, signal)
+    const loaded = await p.loadFromCloud(props.owner, props.name, true, signal)
     return loaded
   },
   {
@@ -165,7 +162,7 @@ const handleLike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await likeProject(props.owner, props.name)
-    await project.value?.loadReleasedFromCloud(props.owner, props.name) // refresh project info (likeCount)
+    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
   },
   { en: 'Failed to like', zh: '标记喜欢失败' }
 )
@@ -175,14 +172,12 @@ const handleUnlike = useMessageHandle(
   async () => {
     await ensureSignedIn()
     await unlikeProject(props.owner, props.name)
-    await project.value?.loadReleasedFromCloud(props.owner, props.name) // refresh project info (likeCount)
+    await project.value?.loadFromCloud(props.owner, props.name, true) // refresh project info (likeCount)
   },
   { en: 'Failed to unlike', zh: '取消喜欢失败' }
 )
 
-const isTogglingLike = computed(() =>
-  liking.value ? handleUnlike.isLoading.value : handleLike.isLoading.value
-)
+const isTogglingLike = computed(() => (liking.value ? handleUnlike.isLoading.value : handleLike.isLoading.value))
 
 function handleToggleLike() {
   return (liking.value ? handleUnlike.fn : handleLike.fn)()
@@ -200,20 +195,35 @@ const createProject = useCreateProject()
 const handleRemix = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const { name } = await createProject(stringifyRemixSource(props.owner, props.name))
+    const name = await createProject(stringifyRemixSource(props.owner, props.name))
     router.push(getProjectEditorRoute(name))
   },
   { en: 'Failed to remix project', zh: '改编项目失败' }
 )
 
-const releaseHistoryRef = ref<InstanceType<typeof ReleaseHistory>>()
+const releasesRet = useQuery(
+  async () => {
+    const { owner, name } = props
+    const { data } = await listReleases({
+      projectFullName: `${owner}/${name}`,
+      orderBy: 'createdAt',
+      sortOrder: 'desc',
+      pageIndex: 1,
+      pageSize: 10 // load at most 10 recent releases
+    })
+    return data
+  },
+  { en: 'Load release history failed', zh: '加载发布历史失败' }
+)
+
+const hasRelease = computed(() => releasesRet.data.value != null && releasesRet.data.value?.length > 0)
 
 const unpublishProject = useUnpublishProject()
 const handleUnpublish = useMessageHandle(
   async () => {
     const p = await untilNotNull(project)
     await unpublishProject(p)
-    releaseHistoryRef.value?.refetch()
+    releasesRet.refetch()
   },
   { en: 'Failed to unpublish project', zh: '取消发布项目失败' },
   {
@@ -270,7 +280,7 @@ const remixesRet = useQuery(
         <div class="left">
           <div class="project-wrapper">
             <template v-if="project != null">
-              <ProjectRunner ref="projectRunnerRef" :project="project" />
+              <ProjectRunner ref="projectRunnerRef" :key="`${project.owner}/${project.name}`" :project="project" />
               <div v-show="runnerState === 'initial'" class="runner-mask">
                 <UIButton
                   class="run-button"
@@ -314,28 +324,24 @@ const remixesRet = useQuery(
         <div class="right">
           <template v-if="project != null">
             <h2 class="title">{{ project.name }}</h2>
-            <RemixedFrom
-              v-if="project.remixedFrom != null"
-              class="remixed-from"
-              :remixed-from="project.remixedFrom"
-            />
+            <RemixedFrom v-if="project.remixedFrom != null" class="remixed-from" :remixed-from="project.remixedFrom" />
             <div class="info">
               <OwnerInfo :owner="project.owner!" />
               <p class="extra">
                 <span class="part" :title="$t(viewCount!.title)">
-                  <UIIcon type="eye" />
+                  <UIIcon class="icon" type="eye" />
                   {{ $t(viewCount!.text) }}
                 </span>
                 <template v-if="isOwner">
                   <i class="sep"></i>
                   <span class="part" :title="$t(likeCount!.title)">
-                    <UIIcon type="heart" />
+                    <UIIcon class="icon" type="heart" />
                     {{ $t(likeCount!.text) }}
                   </span>
                 </template>
                 <i class="sep"></i>
                 <span class="part" :title="$t(remixCount!.title)">
-                  <UIIcon type="remix" />
+                  <UIIcon class="icon" type="remix" />
                   {{ $t(remixCount!.text) }}
                 </span>
               </p>
@@ -372,19 +378,16 @@ const remixesRet = useQuery(
                     <UIButton class="more" type="boring" size="large" icon="more"></UIButton>
                   </template>
                   <UIMenu>
-                    <UIMenuItem
-                      v-if="project.visibility === Visibility.Public"
-                      @click="handleUnpublish.fn"
-                      >{{ $t({ en: 'Unpublish', zh: '取消发布' }) }}</UIMenuItem
-                    >
-                    <UIMenuItem @click="handleRemove.fn">{{
-                      $t({ en: 'Remove', zh: '删除' })
+                    <UIMenuItem v-if="project.visibility === Visibility.Public" @click="handleUnpublish.fn">{{
+                      $t({ en: 'Unpublish', zh: '取消发布' })
                     }}</UIMenuItem>
+                    <UIMenuItem @click="handleRemove.fn">{{ $t({ en: 'Remove', zh: '删除' }) }}</UIMenuItem>
                   </UIMenu>
                 </UIDropdown>
               </template>
               <template v-else>
                 <UIButton
+                  v-if="hasRelease"
                   type="primary"
                   size="large"
                   icon="remix"
@@ -409,35 +412,24 @@ const remixesRet = useQuery(
               </template>
             </div>
             <UIDivider class="divider" />
-            <UICollapse
-              class="collapse"
-              :default-expanded-names="['description', 'instructions', 'releases']"
-            >
+            <UICollapse class="collapse" :default-expanded-names="['description', 'instructions', 'releases']">
               <UICollapseItem :title="$t({ en: 'Description', zh: '描述' })" name="description">
-                {{ project.description || $t({ en: 'No description yet', zh: '暂无描述' }) }}
+                <TextView :text="project.description" :placeholder="$t({ en: 'No description yet', zh: '暂无描述' })" />
               </UICollapseItem>
-              <UICollapseItem
-                :title="$t({ en: 'Play instructions', zh: '操作说明' })"
-                name="instructions"
-              >
-                {{ project.instructions || $t({ en: 'No instructions yet', zh: '暂无操作说明' }) }}
+              <UICollapseItem :title="$t({ en: 'Play instructions', zh: '操作说明' })" name="instructions">
+                <TextView
+                  :text="project.instructions"
+                  :placeholder="$t({ en: 'No instructions yet', zh: '暂无操作说明' })"
+                />
               </UICollapseItem>
-              <UICollapseItem
-                :title="$t({ en: 'Release history', zh: '发布历史' })"
-                name="releases"
-              >
-                <ReleaseHistory ref="releaseHistoryRef" :owner="props.owner" :name="props.name" />
+              <UICollapseItem :title="$t({ en: 'Release history', zh: '发布历史' })" name="releases">
+                <ReleaseHistory :query-ret="releasesRet" />
               </UICollapseItem>
             </UICollapse>
           </template>
         </div>
       </CommunityCard>
-      <ProjectsSection
-        class="remixes"
-        context="project"
-        :num-in-row="remixNumInRow"
-        :query-ret="remixesRet"
-      >
+      <ProjectsSection class="remixes" context="project" :num-in-row="remixNumInRow" :query-ret="remixesRet">
         <template #title>
           {{
             $t({
@@ -501,6 +493,7 @@ const remixesRet = useQuery(
 
 .right {
   flex: 1 1 456px;
+  min-width: 0;
   padding-right: 20px;
   display: flex;
   flex-direction: column;
@@ -509,6 +502,7 @@ const remixesRet = useQuery(
     font-size: 20px;
     line-height: 1.4;
     color: var(--ui-color-title);
+    word-break: break-all;
   }
 
   .remixed-from {
@@ -531,6 +525,11 @@ const remixesRet = useQuery(
         gap: 4px;
         align-items: center;
         color: var(--ui-color-hint-2);
+      }
+
+      .icon {
+        width: 14px;
+        height: 14px;
       }
 
       .sep {
@@ -568,6 +567,7 @@ const remixesRet = useQuery(
   }
 
   .collapse {
+    margin-bottom: 8px;
     flex: 1 1 0;
     overflow-y: auto;
   }

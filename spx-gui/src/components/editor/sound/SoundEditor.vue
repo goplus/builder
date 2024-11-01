@@ -8,12 +8,7 @@
     <div class="header">
       <div class="name">
         <AssetName>{{ sound.name }}</AssetName>
-        <UIIcon
-          class="edit-icon"
-          :title="$t({ en: 'Rename', zh: '重命名' })"
-          type="edit"
-          @click="handleNameEdit"
-        />
+        <UIIcon class="edit-icon" :title="$t({ en: 'Rename', zh: '重命名' })" type="edit" @click="handleNameEdit" />
       </div>
       <div class="duration">
         {{ formattedTrimmedDuration || '&nbsp;' }}
@@ -42,15 +37,8 @@
       <VolumeSlider class="volume-slider" :value="gain" @update:value="handleGainUpdate" />
       <div class="spacer" />
       <div v-if="editing" class="editing-buttons">
-        <UIButton type="boring" @click="handleResetEdit">{{
-          $t({ en: 'Cancel', zh: '取消' })
-        }}</UIButton>
-        <UIButton
-          type="success"
-          icon="check"
-          :loading="handleSave.isLoading.value"
-          @click="handleSave.fn"
-        >
+        <UIButton type="boring" @click="handleResetEdit">{{ $t({ en: 'Cancel', zh: '取消' }) }}</UIButton>
+        <UIButton type="success" icon="check" :loading="handleSave.isLoading.value" @click="handleSave.fn">
           {{ $t({ en: 'Save', zh: '保存' }) }}
         </UIButton>
       </div>
@@ -95,9 +83,7 @@ const waveformPlayerRef = ref<InstanceType<typeof WaveformPlayer> | null>(null)
 const gain = ref(1)
 const audioRange = ref({ left: 0, right: 1 })
 
-const editing = computed(
-  () => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1
-)
+const editing = computed(() => audioRange.value.left !== 0 || audioRange.value.right !== 1 || gain.value !== 1)
 
 type Playing = {
   progress: number // percent

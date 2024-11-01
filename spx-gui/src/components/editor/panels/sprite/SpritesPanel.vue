@@ -50,11 +50,7 @@
         <UIEmpty v-if="sprites.length === 0" size="small">
           {{ $t({ en: 'Empty', zh: '无' }) }}
         </UIEmpty>
-        <SpriteSummaryItem
-          v-for="sprite in summaryListData.list"
-          :key="sprite.id"
-          :sprite="sprite"
-        />
+        <SpriteSummaryItem v-for="sprite in summaryListData.list" :key="sprite.id" :sprite="sprite" />
       </PanelSummaryList>
     </template>
   </CommonPanel>
@@ -109,10 +105,10 @@ const handleAddFromLocalFile = useMessageHandle(() => addFromLocalFile(editorCtx
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
-const handleAddFromAssetLibrary = useMessageHandle(
-  () => addAssetFromLibrary(editorCtx.project, AssetType.Sprite),
-  { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
-).fn
+const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(editorCtx.project, AssetType.Sprite), {
+  en: 'Failed to add sound from asset library',
+  zh: '从素材库添加失败'
+}).fn
 </script>
 
 <style scoped lang="scss">

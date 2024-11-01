@@ -44,18 +44,7 @@ export const keywords = [
   'select'
 ]
 
-export const typeKeywords = [
-  'int',
-  'string',
-  'bool',
-  'void',
-  'map',
-  'chan',
-  'error',
-  'interface',
-  'struct',
-  'nil'
-]
+export const typeKeywords = ['int', 'string', 'bool', 'void', 'map', 'chan', 'error', 'interface', 'struct', 'nil']
 
 export const operators = [
   '=',

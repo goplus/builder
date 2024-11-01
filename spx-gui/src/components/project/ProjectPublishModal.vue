@@ -1,21 +1,13 @@
 <script lang="ts" setup>
 import dayjs from 'dayjs'
-import { useAsyncComputed } from '@/utils/utils'
+import { useFileUrl } from '@/utils/file'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { Visibility } from '@/apis/common'
 import { createRelease } from '@/apis/project-release'
-import { universalUrlToWebUrl } from '@/models/common/cloud'
+import { saveFile } from '@/models/common/cloud'
 import type { Project } from '@/models/project'
-import {
-  UIImg,
-  UIFormModal,
-  UIForm,
-  UIFormItem,
-  UITextInput,
-  UIButton,
-  useForm
-} from '@/components/ui'
+import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 
 const props = defineProps<{
   project: Project
@@ -29,10 +21,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const thumbnail = useAsyncComputed(async () => {
-  if (props.project.thumbnail == null || props.project.thumbnail === '') return null
-  return universalUrlToWebUrl(props.project.thumbnail)
-})
+const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 /** If this is the first time the project is published */
 const firstTime = props.project.releaseCount === 0
@@ -46,15 +35,19 @@ if (firstTime) {
 }
 
 const form = useForm({
-  releaseDescription: [defaultDescription, validateText],
+  releaseDescription: [defaultDescription, validateReleaseDescription],
   projectDescription: [props.project.description ?? '', validateText],
   projectInstructions: [props.project.instructions ?? '', validateText]
 })
 
 function validateText(val: string) {
-  if (val.length > 400)
-    return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
+  if (val.length > 400) return t({ en: 'The input must be 400 characters or fewer', zh: '输入不能超过 400 字' })
   return null
+}
+
+function validateReleaseDescription(val: string) {
+  if (val.trim() === '') return t({ en: 'Release description is required', zh: '发布内容不能为空' })
+  return validateText(val)
 }
 
 function handleCancel() {
@@ -74,11 +67,12 @@ const handleSubmit = useMessageHandle(
     project.setDescription(form.value.projectDescription)
     project.setInstructions(form.value.projectInstructions)
     await project.saveToCloud()
+    const thumbnailUniversalUrl = await saveFile(props.project.thumbnail!)
     await createRelease({
       projectFullName: `${project.owner!}/${project.name!}`,
       name: generateReleaseName(),
       description: form.value.releaseDescription,
-      thumbnail: project.thumbnail!
+      thumbnail: thumbnailUniversalUrl
     })
     emit('resolved')
   },
@@ -103,22 +97,16 @@ const handleSubmit = useMessageHandle(
         }}
       </p>
       <div class="thumbnail-wrapper">
-        <UIImg class="thumbnail" :src="thumbnail" :loading="thumbnail == null" size="contain" />
+        <UIImg class="thumbnail" :src="thumbnailUrl" :loading="thumbnailUrlLoading" size="contain" />
       </div>
-      <UIFormItem
-        :label="$t({ en: 'Release description', zh: '发布内容' })"
-        path="releaseDescription"
-      >
+      <UIFormItem :label="$t({ en: 'Release description', zh: '发布内容' })" path="releaseDescription">
         <UITextInput
           v-model:value="form.value.releaseDescription"
           type="textarea"
           :placeholder="$t({ en: 'What is new in this release?', zh: '这次发布有什么新内容？' })"
         />
       </UIFormItem>
-      <UIFormItem
-        :label="$t({ en: 'Project description', zh: '项目描述' })"
-        path="projectDescription"
-      >
+      <UIFormItem :label="$t({ en: 'Project description', zh: '项目描述' })" path="projectDescription">
         <UITextInput
           ref="aboutProjectInput"
           v-model:value="form.value.projectDescription"
@@ -131,10 +119,7 @@ const handleSubmit = useMessageHandle(
           "
         />
       </UIFormItem>
-      <UIFormItem
-        :label="$t({ en: 'Play instructions', zh: '操作说明' })"
-        path="projectInstructions"
-      >
+      <UIFormItem :label="$t({ en: 'Play instructions', zh: '操作说明' })" path="projectInstructions">
         <UITextInput
           v-model:value="form.value.projectInstructions"
           type="textarea"
@@ -166,7 +151,7 @@ const handleSubmit = useMessageHandle(
   margin-bottom: 24px;
   width: 100%;
   height: 224px;
-  background: url(./bg.svg) center / cover no-repeat;
+  background: url(@/assets/stage-bg.svg) center / cover no-repeat;
   border-radius: var(--ui-border-radius-1);
   overflow: hidden;
 

@@ -28,7 +28,8 @@ module.exports = {
           // These rules will match components in both kebab-case and CamelCase
           'router-view',
           'router-link',
-          'v-.*' // for Vue Konva components
+          'v-.*', // for Vue Konva components
+          'I18nT'
         ]
       }
     ],
@@ -44,6 +45,12 @@ module.exports = {
               '`defineProps` and `defineEmits` are compiler macros and no longer need to be imported.'
           }
         ]
+      }
+    ],
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        ignoreRestSiblings: true
       }
     ]
   }

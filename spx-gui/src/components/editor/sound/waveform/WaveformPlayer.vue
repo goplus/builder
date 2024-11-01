@@ -2,9 +2,7 @@
   <WaveformWithControls
     :waveform-data="waveformDataFromSrc?.data || props.customWaveformData?.data || []"
     :draw-padding-right="
-      waveformDataFromSrc
-        ? waveformDataFromSrc.paddingRight
-        : props.customWaveformData?.paddingRight
+      waveformDataFromSrc ? waveformDataFromSrc.paddingRight : props.customWaveformData?.paddingRight
     "
     :gain="gain"
     :progress="progress"
@@ -64,12 +62,7 @@ defineExpose({
     const audioContext = getAudioContext()
     const arrayBuffer = await (await fetch(props.audioSrc)).arrayBuffer()
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-    const wavBlob = await trimAndApplyGainToWavBlob(
-      audioBuffer,
-      props.range.left,
-      props.range.right,
-      props.gain
-    )
+    const wavBlob = await trimAndApplyGainToWavBlob(audioBuffer, props.range.left, props.range.right, props.gain)
     return wavBlob
   }
 })
@@ -112,10 +105,7 @@ watch(
       if (ratio >= props.range.right) {
         audio.pause()
       }
-      const nextProgress = Math.min(
-        Math.max((ratio - props.range.left) / (props.range.right - props.range.left), 0),
-        1
-      )
+      const nextProgress = Math.min(Math.max((ratio - props.range.left) / (props.range.right - props.range.left), 0), 1)
       emit('progress', nextProgress)
       progress.value = nextProgress
 

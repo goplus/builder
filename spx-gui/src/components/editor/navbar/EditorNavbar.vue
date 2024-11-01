@@ -32,10 +32,7 @@
               <template #icon><img :src="publishSvg" /></template>
               {{ $t({ en: 'Publish project', zh: '发布项目' }) }}
             </UIMenuItem>
-            <UIMenuItem
-              v-if="project?.visibility === Visibility.Public"
-              @click="handleUnpublishProject"
-            >
+            <UIMenuItem v-if="project?.visibility === Visibility.Public" @click="handleUnpublishProject">
               <template #icon><img :src="unpublishSvg" /></template>
               {{ $t({ en: 'Unpublish project', zh: '取消发布' }) }}
             </UIMenuItem>
@@ -74,10 +71,7 @@
         <div class="auto-save-state">
           <UITooltip placement="right">
             <template #trigger>
-              <div
-                :class="['icon', autoSaveStateIcon.stateClass]"
-                v-html="autoSaveStateIcon.svg"
-              ></div>
+              <div :class="['icon', autoSaveStateIcon.stateClass]" v-html="autoSaveStateIcon.svg"></div>
             </template>
             {{ $t(autoSaveStateIcon.desc) }}
           </UITooltip>
@@ -98,15 +92,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import saveAs from 'file-saver'
-import {
-  UIMenu,
-  UIMenuGroup,
-  UIMenuItem,
-  UIIcon,
-  UITooltip,
-  useConfirmDialog,
-  UIButton
-} from '@/components/ui'
+import { UIMenu, UIMenuGroup, UIMenuItem, UIIcon, UITooltip, useConfirmDialog, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
@@ -241,8 +227,7 @@ type AutoSaveStateIcon = {
   desc: LocaleMessage
 }
 const autoSaveStateIcon = computed<AutoSaveStateIcon>(() => {
-  if (!isOnline.value)
-    return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
+  if (!isOnline.value) return { svg: offlineSvg, desc: { en: 'No internet connection', zh: '无网络连接' } }
   switch (props.project?.autoSaveToCloudState) {
     case AutoSaveToCloudState.Saved:
       return { svg: cloudCheckSvg, desc: { en: 'Saved', zh: '已保存' } }

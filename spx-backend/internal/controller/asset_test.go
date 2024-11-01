@@ -258,9 +258,20 @@ func TestControllerCreateAsset(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.Asset{}).
+			Create(&model.Asset{
+				OwnerID:     mAuthedUser.ID,
+				DisplayName: params.DisplayName,
+				Type:        model.ParseAssetType(params.Type),
+				Category:    params.Category,
+				FilesHash:   params.FilesHash,
+				Visibility:  model.ParseVisibility(params.Visibility),
+			}).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		dbMock.ExpectCommit()
@@ -268,7 +279,7 @@ func TestControllerCreateAsset(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			First(&model.Asset{Model: model.Model{ID: 1}}).
 			Statement
-		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(assetDBColumns).AddRows(generateAssetDBRows(model.Asset{
@@ -417,6 +428,7 @@ func TestControllerListAssets(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("asset.owner_id = ?", mAuthedUser.ID).Or("asset.visibility = ?", model.VisibilityPublic)).
 			Order("asset.created_at asc, asset.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Asset{}).
 			Statement
@@ -841,7 +853,10 @@ func TestControllerDeleteAsset(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Delete(&model.Asset{Model: mAsset.Model}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // DeletedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()

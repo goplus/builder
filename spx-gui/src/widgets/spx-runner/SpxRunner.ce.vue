@@ -47,7 +47,7 @@ watch(
       errorMsg.value = ''
       try {
         const newProject = new Project()
-        await newProject.loadFromCloud(owner, name)
+        await newProject.loadFromCloud(owner, name, true)
         project.value.dispose()
         project.value = newProject
         ready.value = true

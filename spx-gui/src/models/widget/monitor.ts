@@ -63,11 +63,9 @@ export class Monitor extends BaseWidget {
     if (type !== 'monitor') throw new Error(`unexpected type ${type}`)
     if (name == null) throw new Error('name expected for monitor')
     if (mode !== supportedMode) throw new Error(`unsupported mode: ${mode} for monitor ${name}`)
-    if (target !== supportedTarget)
-      throw new Error(`unsupported target: ${target} for monitor ${name}`)
+    if (target !== supportedTarget) throw new Error(`unsupported target: ${target} for monitor ${name}`)
     if (val == null) throw new Error(`val expected for monitor ${name}`)
-    if (!val.startsWith(prefixForVariable))
-      throw new Error(`unexpected val: ${val} for monitor ${name}`)
+    if (!val.startsWith(prefixForVariable)) throw new Error(`unexpected val: ${val} for monitor ${name}`)
     const variableName = val.slice(prefixForVariable.length)
     return new Monitor(name, { ...inits, id, variableName })
   }

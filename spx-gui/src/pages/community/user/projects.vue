@@ -76,7 +76,7 @@ const createProject = useCreateProject()
 const handleNewProject = useMessageHandle(
   async () => {
     await ensureSignedIn()
-    const { name } = await createProject()
+    const name = await createProject()
     router.push(getProjectEditorRoute(name))
   },
   { en: 'Failed to create new project', zh: '新建项目失败' }
@@ -89,7 +89,7 @@ const handleNewProject = useMessageHandle(
       {{ $t({ en: 'My projects', zh: '我的项目' }) }}
     </template>
     <template #extra>
-      <label>
+      <label class="sort">
         {{
           $t({
             en: 'Sort by',
@@ -115,35 +115,36 @@ const handleNewProject = useMessageHandle(
         {{ $t({ en: 'New project', zh: '新建项目' }) }}
       </UIButton>
     </template>
-    <ListResultWrapper
-      v-slot="slotProps"
-      content-type="project"
-      :query-ret="queryRet"
-      :height="534"
-    >
-      <ul class="projects">
-        <ProjectItem
-          v-for="project in slotProps.data.data"
-          :key="project.id"
-          size="small"
-          context="mine"
-          :project="project"
-          @removed="queryRet.refetch()"
-        />
-      </ul>
-    </ListResultWrapper>
-    <UIPagination
-      v-show="pageTotal > 1"
-      v-model:current="page"
-      class="pagination"
-      :total="pageTotal"
-    />
+    <div class="projects-wrapper">
+      <ListResultWrapper v-slot="slotProps" content-type="project" :query-ret="queryRet" :height="524">
+        <ul class="projects">
+          <ProjectItem
+            v-for="project in slotProps.data.data"
+            :key="project.id"
+            size="small"
+            context="mine"
+            :project="project"
+            @removed="queryRet.refetch()"
+          />
+        </ul>
+      </ListResultWrapper>
+      <UIPagination v-show="pageTotal > 1" v-model:current="page" class="pagination" :total="pageTotal" />
+    </div>
   </UserContent>
 </template>
 
 <style lang="scss" scoped>
-.projects {
+.sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projects-wrapper {
   margin-top: 8px;
+}
+
+.projects {
   display: grid;
   grid-template-columns: repeat(var(--project-num-in-row), 1fr);
   gap: var(--ui-gap-middle);

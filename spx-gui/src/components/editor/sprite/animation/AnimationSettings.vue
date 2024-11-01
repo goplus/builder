@@ -1,18 +1,9 @@
 <template>
   <section class="wrapper">
-    <UIDropdown
-      trigger="manual"
-      :visible="activeSetting != null"
-      placement="top"
-      @click-outside="handleClickOutside"
-    >
+    <UIDropdown trigger="manual" :visible="activeSetting != null" placement="top" @click-outside="handleClickOutside">
       <template #trigger>
         <ul class="settings">
-          <li
-            class="setting"
-            :class="{ active: activeSetting === 'duration' }"
-            @click="handleSummaryClick('duration')"
-          >
+          <li class="setting" :class="{ active: activeSetting === 'duration' }" @click="handleSummaryClick('duration')">
             <UIIcon type="timer" />
             {{ $t({ en: 'Duration', zh: '时长' }) }}
             <span class="value">{{ formatDuration(animation.duration, 2) }}</span>
@@ -26,33 +17,21 @@
             {{ $t({ en: 'Binding', zh: '绑定' }) }}
             <span v-if="boundStateNum > 0" class="value">{{ boundStateNum }}</span>
           </li>
-          <li
-            class="setting"
-            :class="{ active: activeSetting === 'sound' }"
-            @click="handleSummaryClick('sound')"
-          >
+          <li class="setting" :class="{ active: activeSetting === 'sound' }" @click="handleSummaryClick('sound')">
             <UIIcon type="sound" />
             {{ $t({ en: 'Sound', zh: '声音' }) }}
             <span class="value">{{ soundName }}</span>
           </li>
         </ul>
       </template>
-      <DurationEditor
-        v-show="activeSetting === 'duration'"
-        :animation="animation"
-        @close="handleEditorClose"
-      />
+      <DurationEditor v-show="activeSetting === 'duration'" :animation="animation" @close="handleEditorClose" />
       <BoundStateEditor
         v-show="activeSetting === 'bound-state'"
         :animation="animation"
         :sprite="sprite"
         @close="handleEditorClose"
       />
-      <SoundEditor
-        v-show="activeSetting === 'sound'"
-        :animation="animation"
-        @close="handleEditorClose"
-      />
+      <SoundEditor v-show="activeSetting === 'sound'" :animation="animation" @close="handleEditorClose" />
     </UIDropdown>
   </section>
 </template>
@@ -88,9 +67,7 @@ function handleEditorClose() {
   activeSetting.value = null
 }
 
-const boundStateNum = computed(
-  () => props.sprite.getAnimationBoundStates(props.animation.id).length
-)
+const boundStateNum = computed(() => props.sprite.getAnimationBoundStates(props.animation.id).length)
 
 function handleClickOutside(e: MouseEvent) {
   // There are popups (dropdown, modal, ...) in setting editor (e.g. "Record" in `SoundEditor`), we should not close the editor when user clicks in the popup content.

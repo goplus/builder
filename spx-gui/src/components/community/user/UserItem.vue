@@ -2,10 +2,11 @@
 import { computed } from 'vue'
 import type { User } from '@/apis/user'
 import { getUserPageRoute } from '@/router'
+import RouterUILink from '@/components/common/RouterUILink.vue'
+import TextView from '../TextView.vue'
 import UserAvatar from './UserAvatar.vue'
 import FollowButton from './FollowButton.vue'
 import UserJoinedAt from './UserJoinedAt.vue'
-import RouterUILink from '@/components/common/RouterUILink.vue'
 
 const props = defineProps<{
   user: User
@@ -16,32 +17,32 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 
 <template>
   <li class="user-item">
-    <UserAvatar :user="user.username" />
-    <div class="user-info">
-      <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
-      <UserJoinedAt class="joined-at" :time="user.createdAt" />
-      <p class="description">{{ user.description }}</p>
-    </div>
-    <div class="op">
-      <FollowButton class="follow" :name="user.username" />
-    </div>
+    <UserAvatar class="avatar" :user="user.username" />
+    <RouterUILink class="name" type="boring" :to="userRoute">{{ user.displayName }}</RouterUILink>
+    <UserJoinedAt class="joined-at" :time="user.createdAt" />
+    <TextView class="description" :text="user.description" />
+    <FollowButton class="follow" :name="user.username" />
   </li>
 </template>
 
 <style lang="scss" scoped>
 .user-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12px 0;
-}
-
-.user-info {
-  flex: 1 1 0;
-  min-width: 0;
+  position: relative;
+  padding: 12px 0 12px 56px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+}
+
+.avatar {
+  position: absolute;
+  left: 0;
+  top: 12px;
+}
+
+.name,
+.joined-at,
+.description {
+  width: fit-content;
 }
 
 .name {
@@ -54,14 +55,15 @@ const userRoute = computed(() => getUserPageRoute(props.user.username))
 
 .description {
   margin-top: 6px;
+  max-height: 60px;
   font-size: 13px;
   line-height: 20px;
   color: var(--ui-color-text);
 }
 
-.op {
-  flex: 0 0 100px;
-  display: flex;
-  justify-content: flex-end;
+.follow {
+  position: absolute;
+  top: 12px;
+  right: 0;
 }
 </style>

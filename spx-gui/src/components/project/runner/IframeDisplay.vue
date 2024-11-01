@@ -30,9 +30,7 @@ watch(iframe, () => {
   if (!iframeWindow) {
     return
   }
-  const runnerHtml = rawRunnerHtml
-    .replace('/wasm_exec.js', wasmExecUrl)
-    .replace('main.wasm', wasmUrl)
+  const runnerHtml = rawRunnerHtml.replace('/wasm_exec.js', wasmExecUrl).replace('main.wasm', wasmUrl)
 
   iframeWindow.document.write(runnerHtml) // This resets the iframe's content, including its window object
 

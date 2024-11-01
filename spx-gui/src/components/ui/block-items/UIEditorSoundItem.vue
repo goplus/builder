@@ -1,9 +1,5 @@
 <template>
-  <UIBlockItem
-    :color="color"
-    :variant="color === 'sound' ? 'colorful' : 'standard'"
-    :active="selected"
-  >
+  <UIBlockItem :color="color" :variant="color === 'sound' ? 'colorful' : 'standard'" :active="selected">
     <div class="sound-container">
       <div class="sound-player">
         <slot name="player"></slot>

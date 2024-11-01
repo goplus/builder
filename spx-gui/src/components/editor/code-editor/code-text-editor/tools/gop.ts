@@ -24,8 +24,8 @@ export const forLoop: Tool = {
     },
     {
       desc: { en: 'Iterate within given set', zh: '遍历指定集合' },
-      sample: 'for i, v := range set {}',
-      insertText: 'for ${1:i}, ${2:v} := range ${3:set} {\n\t${4:}\n}'
+      sample: 'for i, v <- set {}',
+      insertText: 'for ${1:i}, ${2:v} <- ${3:set} {\n\t${4:}\n}'
     }
   ]
 }

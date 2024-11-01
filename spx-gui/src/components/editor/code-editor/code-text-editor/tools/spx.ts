@@ -32,32 +32,35 @@ export const onCloned: Tool = {
   }
 }
 
-// For now `onTouched` is not exposed to the user
-// As it behaves strangely in the current implementation, see details in https://github.com/goplus/spx/issues/298
-export const onTouched: Tool = {
+export const onTouchStart: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.listen,
   target: ToolContext.sprite,
-  keyword: 'onTouched',
+  keyword: 'onTouchStart',
   desc: {
-    en: 'Listen to current sprite touched by other sprites',
-    zh: '当前精灵与其他精灵接触时执行'
+    en: 'Listen to current sprite starting to be touched by other sprites',
+    zh: '当前精灵与其他精灵开始接触时执行'
   },
   usages: [
     {
       desc: { en: 'By any other sprites', zh: '任意精灵' },
-      sample: 'onTouched target => {}',
-      insertText: 'onTouched target => {\n\t${1}\n}'
+      sample: 'onTouchStart => {}',
+      insertText: 'onTouchStart => {\n\t${1}\n}'
     },
     {
-      desc: { en: 'By the given sprite', zh: '指定精灵' },
-      sample: 'onTouched S1, => {}',
-      insertText: 'onTouched ${1:sprite}, => {\n\t${2}\n}'
+      desc: { en: 'By any other sprites (and get the sprite)', zh: '任意精灵（并获得精灵信息）' },
+      sample: 'onTouchStart otherSprite => {}',
+      insertText: 'onTouchStart otherSprite => {\n\t${1}\n}'
     },
     {
-      desc: { en: 'By some given sprites', zh: '指定的某些精灵' },
-      sample: 'onTouched [S1, S2], => {}',
-      insertText: 'onTouched [${1:}], => {\n\t${2}\n}'
+      desc: { en: 'By sprite of given name', zh: '指定名字的精灵' },
+      sample: 'onTouchStart "sprite", => {}',
+      insertText: 'onTouchStart ${1:name}, => {\n\t${2}\n}'
+    },
+    {
+      desc: { en: 'By sprite of given name (and get the sprite)', zh: '指定名字的精灵（并获得精灵信息）' },
+      sample: 'onTouchStart "sprite", otherSprite => {}',
+      insertText: 'onTouchStart ${1:name}, otherSprite => {\n\t${2}\n}'
     }
   ]
 }
@@ -456,6 +459,21 @@ export const heading: Tool = {
   }
 }
 
+export const turn: Tool = {
+  type: ToolType.method,
+  callEffect: ToolCallEffect.write,
+  target: ToolContext.sprite,
+  keyword: 'turn',
+  desc: {
+    en: 'Turn with given direction change',
+    zh: '转动给定的角度'
+  },
+  usage: {
+    sample: 'turn Left',
+    insertText: 'turn ${1:dDirection}'
+  }
+}
+
 export const turnTo: Tool = {
   type: ToolType.method,
   callEffect: ToolCallEffect.write,
@@ -493,7 +511,7 @@ export const changeHeading: Tool = {
   callEffect: ToolCallEffect.write,
   target: ToolContext.sprite,
   keyword: 'changeHeading',
-  desc: { en: 'Change heading with given direction change', zh: '以给定的偏移值改变朝向' },
+  desc: { en: 'Change heading with given direction change', zh: '以给定的角度改变朝向' },
   usage: {
     sample: 'changeHeading 90',
     insertText: 'changeHeading ${1:dDirection}'

@@ -12,9 +12,7 @@ describe('resolve', () => {
     expect(resolve('https://test.com/foo', 'bar')).toBe('https://test.com/foo/bar')
     expect(resolve('https://test.com/foo', 'bar', 'baz')).toBe('https://test.com/foo/bar/baz')
     expect(resolve('https://test.com/foo/bar', 'baz')).toBe('https://test.com/foo/bar/baz')
-    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe(
-      'https://test.com/foo/bar/baz/qux'
-    )
+    expect(resolve('https://test.com/foo/bar', 'baz', 'qux')).toBe('https://test.com/foo/bar/baz/qux')
   })
   it('should work well with no path', () => {
     expect(resolve('foo')).toBe('foo')
@@ -64,9 +62,7 @@ describe('stripExt', () => {
   })
   it('should work well with url', () => {
     expect(stripExt('https://test.com/abc.txt')).toBe('https://test.com/abc')
-    expect(stripExt('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe(
-      'https://test.com/foo/%E4%B8%AD%E6%96%87'
-    )
+    expect(stripExt('https://test.com/foo/%E4%B8%AD%E6%96%87.png')).toBe('https://test.com/foo/%E4%B8%AD%E6%96%87')
   })
   it('should work well with no ext', () => {
     expect(stripExt('abc')).toBe('abc')

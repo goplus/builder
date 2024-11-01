@@ -28,9 +28,7 @@ const emit = defineEmits<{
 }>()
 
 const uiVariables = useUIVariables()
-const cssVars = computed(() =>
-  getCssVars('--ui-corner-icon-color-', uiVariables.color[props.color])
-)
+const cssVars = computed(() => getCssVars('--ui-corner-icon-color-', uiVariables.color[props.color]))
 </script>
 
 <style scoped lang="scss">

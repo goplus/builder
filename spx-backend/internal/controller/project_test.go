@@ -305,19 +305,32 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.Project{}).
+			Create(&model.Project{
+				OwnerID:     mAuthedUser.ID,
+				Name:        params.Name,
+				Version:     1,
+				Files:       params.Files,
+				Visibility:  model.ParseVisibility(params.Visibility),
+				Description: params.Description,
+			}).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count + 1"),
 				"public_project_count": gorm.Expr("public_project_count + 1"),
 			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()
@@ -325,7 +338,7 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			First(&model.Project{Model: model.Model{ID: 1}}).
 			Statement
-		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
 			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(model.Project{
@@ -400,18 +413,6 @@ func TestControllerCreateProject(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mSourceProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
-			Where("`user`.`id` = ?", mSourceProject.OwnerID).
-			Find(&model.User{}).
-			Statement
-		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
-		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
-			WithArgs(dbMockArgs...).
-			WillReturnRows(sqlmock.NewRows(userDBColumns).AddRows(generateUserDBRows(model.User{
-				Model:    model.Model{ID: mSourceProject.OwnerID},
-				Username: mSourceProjectOwnerUsername,
-			})...))
-
-		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where("project_id = ?", mSourceProject.ID).
 			Order("created_at DESC").
 			First(&model.ProjectRelease{}).
@@ -424,19 +425,35 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.Project{}).
+			Create(&model.Project{
+				OwnerID:              mAuthedUser.ID,
+				RemixedFromReleaseID: sql.NullInt64{Int64: mSourceProjectRelease.ID, Valid: true},
+				Name:                 params.Name,
+				Version:              1,
+				Files:                mSourceProjectRelease.Files,
+				Visibility:           model.ParseVisibility(params.Visibility),
+				Description:          mSourceProject.Description,
+				Instructions:         mSourceProject.Instructions,
+				Thumbnail:            mSourceProjectRelease.Thumbnail,
+			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(3, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count + 1"),
 				"public_project_count": gorm.Expr("public_project_count + 1"),
 			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
@@ -444,7 +461,9 @@ func TestControllerCreateProject(t *testing.T) {
 			Where("id = ?", mSourceProjectRelease.ID).
 			UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
@@ -454,7 +473,9 @@ func TestControllerCreateProject(t *testing.T) {
 				Where("id = ?", mSourceProjectRelease.ID)).
 			UpdateColumn("remix_count", gorm.Expr("remix_count + 1")).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()
@@ -548,6 +569,8 @@ func TestControllerCreateProject(t *testing.T) {
 		defer closeDB()
 
 		ctx := newContextWithTestUser(context.Background())
+		mAuthedUser, isAuthed := AuthedUserFromContext(ctx)
+		require.True(t, isAuthed)
 
 		params := &CreateProjectParams{
 			Name:       "testproject",
@@ -557,9 +580,18 @@ func TestControllerCreateProject(t *testing.T) {
 		dbMock.ExpectBegin()
 
 		dbMockStmt := ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.Project{}).
+			Create(&model.Project{
+				OwnerID:    mAuthedUser.ID,
+				Name:       params.Name,
+				Version:    1,
+				Visibility: model.ParseVisibility(params.Visibility),
+			}).
 			Statement
+		dbMockArgs := modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnError(errors.New("create project failed"))
 
 		dbMock.ExpectRollback()
@@ -715,7 +747,8 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
-			Limit(2).
+			Offset(params.Pagination.Offset()).
+			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
@@ -780,6 +813,7 @@ func TestControllerListProjects(t *testing.T) {
 			Joins("JOIN user ON user.id = project.owner_id").
 			Where("user.username = ?", *params.Owner).
 			Order("project.created_at asc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -845,6 +879,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("project.name LIKE ?", "%"+*params.Keyword+"%").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -916,6 +951,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("liker.username = ?", *params.Liker).
 			Where("liker_relationship.liked_at IS NOT NULL").
 			Order("project.created_at asc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -986,6 +1022,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.like_count desc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1065,6 +1102,7 @@ func TestControllerListProjects(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true}).
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1126,6 +1164,7 @@ func TestControllerListProjects(t *testing.T) {
 			Where("remixed_from_project.name = ?", "original_project").
 			Where(ctrl.db.Where("project.owner_id = ?", mAuthedUser.ID).Or("project.visibility = ?", model.VisibilityPublic)).
 			Order("project.created_at asc, project.id").
+			Offset(params.Pagination.Offset()).
 			Limit(params.Pagination.Size).
 			Find(&[]model.Project{}).
 			Statement
@@ -1390,20 +1429,25 @@ func TestControllerUpdateProject(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows(projectDBColumns).AddRows(generateProjectDBRows(mProject)...))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.Project{}).
+			Model(&model.Project{Model: mProject.Model}).
 			Updates(map[string]any{
 				"visibility":  model.ParseVisibility(params.Visibility),
 				"description": params.Description,
 			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[2] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			UpdateColumn("public_project_count", gorm.Expr("public_project_count + 1")).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()
@@ -1611,17 +1655,22 @@ func TestControllerDeleteProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Delete(&model.Project{Model: mProject.Model}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // DeletedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Model(&model.User{}).
+			Model(&model.User{Model: mAuthedUser.Model}).
 			UpdateColumns(map[string]any{
 				"project_count":        gorm.Expr("project_count - 1"),
 				"public_project_count": gorm.Expr("public_project_count - 1"),
 			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
@@ -1632,14 +1681,19 @@ func TestControllerDeleteProject(t *testing.T) {
 				Where("liked_at IS NOT NULL")).
 			UpdateColumn("liked_project_count", gorm.Expr("liked_project_count - 1")).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Where("project_id = ?", mProject.ID).
 			Delete(&model.UserProjectRelationship{}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // DeletedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
@@ -1647,16 +1701,24 @@ func TestControllerDeleteProject(t *testing.T) {
 			Where("remixed_from_release_id IN (?)", ctrl.db.Model(&model.ProjectRelease{}).
 				Select("id").
 				Where("project_id = ?", mProject.ID)).
-			Update("remixed_from_release_id", sql.NullInt64{}).
+			Updates(map[string]any{
+				"remixed_from_release_id": sql.NullInt64{},
+				"updated_at":              sqlmock.AnyArg(),
+			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Where("project_id = ?", mProject.ID).
 			Delete(&model.ProjectRelease{}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // DeletedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		dbMock.ExpectCommit()
@@ -1791,7 +1853,10 @@ func TestControllerDeleteProject(t *testing.T) {
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
 			Delete(&model.Project{Model: mProject.Model}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // DeletedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnError(errors.New("delete failed"))
 
 		dbMock.ExpectRollback()
@@ -1851,14 +1916,22 @@ func TestControllerRecordProjectView(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns))
 
 		dbMock.ExpectBegin()
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.UserProjectRelationship{}).
+			Create(&model.UserProjectRelationship{
+				UserID:    mAuthedUser.ID,
+				ProjectID: mProject.ID,
+			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		dbMock.ExpectCommit()
@@ -1933,6 +2006,7 @@ func TestControllerRecordProjectView(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns).AddRows(generateUserProjectRelationshipDBRows(model.UserProjectRelationship{
 				Model:        model.Model{ID: 1},
 				UserID:       mAuthedUser.ID,
@@ -2030,14 +2104,22 @@ func TestControllerLikeProject(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns))
 
 		dbMock.ExpectBegin()
 
 		dbMockStmt = ctrl.db.Session(&gorm.Session{DryRun: true, SkipDefaultTransaction: true}).
-			Create(&model.UserProjectRelationship{}).
+			Create(&model.UserProjectRelationship{
+				UserID:    mAuthedUser.ID,
+				ProjectID: mProject.ID,
+			}).
 			Statement
+		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
+		dbMockArgs[0] = sqlmock.AnyArg() // CreatedAt
+		dbMockArgs[1] = sqlmock.AnyArg() // UpdatedAt
 		dbMock.ExpectExec(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		dbMock.ExpectCommit()
@@ -2117,6 +2199,7 @@ func TestControllerLikeProject(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns).AddRows(generateUserProjectRelationshipDBRows(model.UserProjectRelationship{
 				Model:     model.Model{ID: 1},
 				UserID:    mAuthedUser.ID,
@@ -2352,6 +2435,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns).AddRows(generateUserProjectRelationshipDBRows(model.UserProjectRelationship{
 				Model:     model.Model{ID: 1},
 				UserID:    mAuthedUser.ID,
@@ -2434,6 +2518,7 @@ func TestControllerUnlikeProject(t *testing.T) {
 			Statement
 		dbMockArgs = modeltest.ToDriverValueSlice(dbMockStmt.Vars...)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbMockStmt.SQL.String())).
+			WithArgs(dbMockArgs...).
 			WillReturnRows(sqlmock.NewRows(userProjectRelationshipDBColumns).AddRows(generateUserProjectRelationshipDBRows(model.UserProjectRelationship{
 				Model:     model.Model{ID: 1},
 				UserID:    mAuthedUser.ID,

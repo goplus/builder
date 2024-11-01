@@ -3,15 +3,7 @@ import { computed } from 'vue'
 import { useMessageHandle } from '@/utils/exception'
 import { useI18n } from '@/utils/i18n'
 import { type User } from '@/apis/user'
-import {
-  UIImg,
-  UIFormModal,
-  UIForm,
-  UIFormItem,
-  UITextInput,
-  UIButton,
-  useForm
-} from '@/components/ui'
+import { UIImg, UIFormModal, UIForm, UIFormItem, UITextInput, UIButton, useForm } from '@/components/ui'
 import { getCoverImgUrl } from './cover'
 import { useUpdateSignedInUser } from '@/stores/user'
 
@@ -34,8 +26,7 @@ const form = useForm({
 })
 
 function validateDescription(val: string) {
-  if (val.length > 200)
-    return t({ en: 'The input must be 200 characters or fewer', zh: '输入不能超过 200 字' })
+  if (val.length > 200) return t({ en: 'The input must be 200 characters or fewer', zh: '输入不能超过 200 字' })
   return null
 }
 

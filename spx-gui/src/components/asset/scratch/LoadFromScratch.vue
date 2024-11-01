@@ -3,11 +3,7 @@
     <div v-if="scratchAssets.sprites.length">
       <h4 class="title">{{ $t({ en: 'Sprites', zh: '精灵' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
-        <NGridItem
-          v-for="asset in scratchAssets.sprites"
-          :key="asset.name"
-          @click="selectSprite(asset)"
-        >
+        <NGridItem v-for="asset in scratchAssets.sprites" :key="asset.name" @click="selectSprite(asset)">
           <SpriteItem :asset="asset" :selected="selected.sprites.has(asset)" />
         </NGridItem>
       </NGrid>
@@ -15,11 +11,7 @@
     <div v-if="scratchAssets.sounds.length">
       <h4 class="title">{{ $t({ en: 'Sounds', zh: '声音' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
-        <NGridItem
-          v-for="asset in scratchAssets.sounds"
-          :key="asset.name"
-          @click="selectSound(asset)"
-        >
+        <NGridItem v-for="asset in scratchAssets.sounds" :key="asset.name" @click="selectSound(asset)">
           <SoundItem :asset="asset" :selected="selected.sounds.has(asset)" />
         </NGridItem>
       </NGrid>
@@ -28,21 +20,12 @@
     <div v-if="scratchAssets.backdrops.length">
       <h4 class="title">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</h4>
       <NGrid cols="6" x-gap="8" y-gap="8">
-        <NGridItem
-          v-for="asset in scratchAssets.backdrops"
-          :key="asset.name"
-          @click="selectBackdrop(asset)"
-        >
+        <NGridItem v-for="asset in scratchAssets.backdrops" :key="asset.name" @click="selectBackdrop(asset)">
           <BackdropItem :asset="asset" :selected="selected.backdrops.has(asset)" />
         </NGridItem>
       </NGrid>
     </div>
-    <UIButton
-      size="large"
-      class="import-button"
-      :loading="importSelected.isLoading.value"
-      @click="importSelected.fn"
-    >
+    <UIButton size="large" class="import-button" :loading="importSelected.isLoading.value" @click="importSelected.fn">
       {{
         $t({
           en: 'Import',

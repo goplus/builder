@@ -28,9 +28,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.widget.name
     const action = { name: { en: `Remove widget ${name}`, zh: `删除控件 ${name}` } }
-    await editorCtx.project.history.doAction(action, () =>
-      props.stage.removeWidget(props.widget.id)
-    )
+    await editorCtx.project.history.doAction(action, () => props.stage.removeWidget(props.widget.id))
   },
   {
     en: 'Failed to remove widget',

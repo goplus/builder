@@ -24,13 +24,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  UIIcon,
-  type Color,
-  useUIVariables,
-  getCssVars,
-  UIDropdownWithTooltip
-} from '@/components/ui'
+import { UIIcon, type Color, useUIVariables, getCssVars, UIDropdownWithTooltip } from '@/components/ui'
 
 const props = defineProps<{
   color: Color

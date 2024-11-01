@@ -1,17 +1,6 @@
 <template>
-  <UIEditorBackdropItem
-    :img-src="imgSrc"
-    :img-loading="imgLoading"
-    :name="backdrop.name"
-    :selected="selected"
-  >
-    <CornerMenu
-      :visible="selected"
-      color="stage"
-      :removable="removable"
-      :item="backdrop"
-      @remove="handleRemove"
-    />
+  <UIEditorBackdropItem :img-src="imgSrc" :img-loading="imgLoading" :name="backdrop.name" :selected="selected">
+    <CornerMenu :visible="selected" color="stage" :removable="removable" :item="backdrop" @remove="handleRemove" />
   </UIEditorBackdropItem>
 </template>
 
@@ -40,9 +29,7 @@ const handleRemove = useMessageHandle(
   async () => {
     const name = props.backdrop.name
     const action = { name: { en: `Remove backdrop ${name}`, zh: `删除背景 ${name}` } }
-    await editorCtx.project.history.doAction(action, () =>
-      props.stage.removeBackdrop(props.backdrop.id)
-    )
+    await editorCtx.project.history.doAction(action, () => props.stage.removeBackdrop(props.backdrop.id))
   },
   {
     en: 'Failed to remove backdrop',

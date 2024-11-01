@@ -61,8 +61,8 @@ function handleToggle() {
   }
 
   .arrow {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     transform: rotate(180deg);
     color: var(--ui-color-hint-1);
     transition: transform 0.3s;

@@ -1,10 +1,5 @@
 <template>
-  <UIFormModal
-    class="project-create-modal"
-    :title="$t(title)"
-    :visible="props.visible"
-    @update:visible="handleCancel"
-  >
+  <UIFormModal class="project-create-modal" :title="$t(title)" :visible="props.visible" @update:visible="handleCancel">
     <UIForm :form="form" has-success-feedback @submit="handleSubmit.fn">
       <div class="alert">
         {{
@@ -21,12 +16,7 @@
         />
       </UIFormItem>
       <footer class="footer">
-        <UIButton
-          class="create-button"
-          type="primary"
-          html-type="submit"
-          :loading="handleSubmit.isLoading.value"
-        >
+        <UIButton class="create-button" type="primary" html-type="submit" :loading="handleSubmit.isLoading.value">
           {{ $t({ en: 'Create', zh: '创建' }) }}
         </UIButton>
       </footer>
@@ -45,26 +35,22 @@ import {
   useForm,
   type FormValidationResult
 } from '@/components/ui'
-import {
-  type ProjectData,
-  getProject,
-  addProject,
-  Visibility,
-  parseRemixSource
-} from '@/apis/project'
+import { getProject, addProject, Visibility, parseRemixSource } from '@/apis/project'
 import { useI18n } from '@/utils/i18n'
 import { useMessageHandle } from '@/utils/exception'
+import { untilNotNull } from '@/utils/utils'
 import { useUserStore } from '@/stores/user'
 import { ApiException, ApiExceptionCode } from '@/apis/common/exception'
-import { Sprite } from '@/models/sprite'
-import { Costume } from '@/models/costume'
-import { File } from '@/models/common/file'
-import { saveFiles } from '@/models/common/cloud'
-import { filename } from '@/utils/path'
-import defaultSpritePng from '@/assets/default-sprite.png'
-import defaultBackdropImg from '@/assets/default-backdrop.png'
-import { Backdrop } from '@/models/backdrop'
 import { Project } from '@/models/project'
+
+/**
+ * How to update the default project:
+ * 1. Use Go+ Builder to create / open a project.
+ * 2. Edit it as needed.
+ * 3. Export the project file (`.gbp`).
+ * 4. Replace `./default-project.gbp` with the exported file.
+ */
+import defaultProjectFileUrl from './default-project.gbp?url'
 
 const props = defineProps<{
   remixSource?: string
@@ -73,7 +59,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: [ProjectData]
+  resolved: [name: string]
 }>()
 
 const { t } = useI18n()
@@ -96,53 +82,36 @@ function handleCancel() {
   emit('cancelled')
 }
 
-function createFile(url: string) {
-  return new File(filename(url), async () => {
-    const resp = await fetch(url)
-    const blob = await resp.blob()
-    return blob.arrayBuffer()
-  })
+async function getDefaultProjectFile() {
+  const resp = await fetch(defaultProjectFileUrl)
+  const blob = await resp.blob()
+  return new window.File([blob], 'default-project.gbp', { type: blob.type })
 }
-
-// TODO: we should maintain thumbnail together with other content of the default project, see details in https://github.com/goplus/builder/issues/1027
-const defaultThumbnailImg = 'https://builder-static.gopluscdn.com/assets/default-thumbnail.jpg'
 
 const handleSubmit = useMessageHandle(
   async () => {
-    let projectData: ProjectData
+    const projectName = form.value.name
     if (props.remixSource != null) {
-      projectData = await addProject({
-        name: form.value.name,
+      await addProject({
+        name: projectName,
         visibility: Visibility.Private,
         remixSource: props.remixSource
       })
     } else {
-      // make default project
-      const sprite = Sprite.create('')
-      const costume = await Costume.create('', createFile(defaultSpritePng))
-      sprite.addCostume(costume)
-      const project = new Project()
-      const backdrop = await Backdrop.create('', createFile(defaultBackdropImg))
-      project.stage.addBackdrop(backdrop)
-      project.addSprite(sprite)
-      await sprite.autoFit()
-      // upload project content & call API addProject, TODO: maybe this should be extracted to `@/models`?
-      const [, files] = await project.export()
-      const { fileCollection } = await saveFiles(files)
-      projectData = await addProject({
-        name: form.value.name,
-        visibility: Visibility.Private,
-        files: fileCollection,
-        thumbnail: defaultThumbnailImg
-      })
+      const owner = await untilNotNull(signedInUser)
+      const defaultProjectFile = await getDefaultProjectFile()
+      const project = new Project(owner.name, projectName)
+      await project.loadGbpFile(defaultProjectFile)
+      project.setVisibility(Visibility.Private)
+      await project.saveToCloud()
     }
-    emit('resolved', projectData)
-    return projectData
+    emit('resolved', projectName)
+    return projectName
   },
   { en: 'Failed to create project', zh: '项目创建失败' },
-  (projectData) => ({
-    en: `Project ${projectData.name} created`,
-    zh: `项目 ${projectData.name} 创建成功`
+  (projectName) => ({
+    en: `Project ${projectName} created`,
+    zh: `项目 ${projectName} 创建成功`
   })
 )
 
@@ -153,8 +122,8 @@ async function validateName(name: string): Promise<FormValidationResult> {
 
   if (!/^[\w-]+$/.test(name))
     return t({
-      en: 'The project name can only contain ASCII letters, digits, and the characters - and _',
-      zh: '项目名仅可包含字母、数字、符号 - 及 _'
+      en: 'The project name can only contain letters, numbers, - and _',
+      zh: '项目名仅可包含字母、数字、- 及 _'
     })
 
   if (name.length > 100)
