@@ -25,6 +25,7 @@ const casdoorSdk = new Sdk({
 })
 
 const tokenExpiryDelta = 60 * 1000 // 1 minute in milliseconds
+let tokenRefreshPromise: Promise<string | null> | null = null
 
 export const useUserStore = defineStore('spx-user', {
   state: () => ({
@@ -53,9 +54,15 @@ export const useUserStore = defineStore('spx-user', {
     async ensureAccessToken(): Promise<string | null> {
       if (this.isAccessTokenValid()) return this.accessToken
 
-      if (this.refreshToken != null) {
+      if (tokenRefreshPromise != null) return tokenRefreshPromise
+      if (this.refreshToken == null) {
+        this.signOut()
+        return null
+      }
+
+      tokenRefreshPromise = (async () => {
         try {
-          const resp = await casdoorSdk.refreshAccessToken(this.refreshToken)
+          const resp = await casdoorSdk.refreshAccessToken(this.refreshToken!)
           this.handleTokenResponse(resp)
         } catch (e) {
           console.error('failed to refresh access token', e)
@@ -64,12 +71,15 @@ export const useUserStore = defineStore('spx-user', {
 
         // Due to casdoor-js-sdk's lack of error handling, we must check if the access token is valid after calling
         // `casdoorSdk.refreshAccessToken`. The token might still be invalid if, e.g., the server has already revoked
-        // the refresh token.
-        if (this.isAccessTokenValid()) return this.accessToken
-      }
+        // the refresh token. We can't do anything but sign out the user in such cases.
+        if (!this.isAccessTokenValid()) {
+          this.signOut()
+          return null
+        }
 
-      this.signOut()
-      return null
+        return this.accessToken
+      })()
+      return tokenRefreshPromise.finally(() => (tokenRefreshPromise = null))
     },
     handleTokenResponse(resp: TokenResponse) {
       this.accessToken = resp.access_token
