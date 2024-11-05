@@ -8,31 +8,24 @@ import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
 import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
 
-// Patch for type declaration of fetch priority
-// TODO: upgrade typescript & related development tools, then remove the patch
-declare global {
-  interface HTMLLinkElement {
-    /**
-     * An optional string representing a hint given to the browser on how it should prioritize fetching of a preload relative to other resources of the same type.
-     * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/HTMLLinkElement/fetchPriority)
-     */
-    fetchPriority?: 'low' | 'high' | 'auto'
-  }
-}
-
-function addPreloadLink(type: 'fetch' | 'script', url: string) {
+function addPrefetchLink(url: string) {
+  // Use `prefetch` instead of `preload`:
+  // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be runned until the user clicks some "run" button.
+  // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
   const link = document.createElement('link')
-  link.rel = 'preload'
-  link.as = type
+  link.rel = 'prefetch'
   link.href = url
-  link.fetchPriority = 'low'
+  link.crossOrigin = 'anonymous'
+  link.onload = link.onerror = () => {
+    document.head.removeChild(link)
+  }
   document.head.appendChild(link)
 }
 
 // preload resources (for example, wasm files) to accelerate the loading
 export function preload() {
-  addPreloadLink('script', wasmExecUrl)
-  addPreloadLink('fetch', wasmUrl)
+  addPrefetchLink(wasmExecUrl)
+  addPrefetchLink(wasmUrl)
 }
 </script>
 
