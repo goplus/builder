@@ -48,11 +48,16 @@
     </div>
   </div>
 </template>
+
+<script lang="ts">
+import ProjectRunner, { preload } from './ProjectRunner.vue'
+export { preload }
+</script>
+
 <script setup lang="ts">
 import { onMounted, ref, type CSSProperties, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import type { Project } from '@/models/project'
-import ProjectRunner from './ProjectRunner.vue'
 import { usePublishProject } from '@/components/project'
 import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'

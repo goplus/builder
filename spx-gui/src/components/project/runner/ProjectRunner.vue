@@ -6,13 +6,17 @@
   </div>
 </template>
 
+<script lang="ts">
+import IframeDisplay, { preload } from './IframeDisplay.vue'
+export { preload }
+</script>
+
 <script lang="ts" setup>
 import { onUnmounted, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
 import { useFileUrl } from '@/utils/file'
 import { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
-import IframeDisplay from './IframeDisplay.vue'
 
 const props = defineProps<{ project: Project }>()
 
