@@ -1,6 +1,41 @@
 <template>
   <iframe ref="iframe" class="iframe" frameborder="0" src="about:blank" />
 </template>
+
+<script lang="ts">
+import { ref, watch } from 'vue'
+import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
+import wasmExecUrl from '@/assets/wasm_exec.js?url'
+import wasmUrl from '@/assets/ispx/main.wasm?url'
+
+// Patch for type declaration of fetch priority
+// TODO: upgrade typescript & related development tools, then remove the patch
+declare global {
+  interface HTMLLinkElement {
+    /**
+     * An optional string representing a hint given to the browser on how it should prioritize fetching of a preload relative to other resources of the same type.
+     * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/HTMLLinkElement/fetchPriority)
+     */
+    fetchPriority?: 'low' | 'high' | 'auto'
+  }
+}
+
+function addPreloadLink(type: 'fetch' | 'script', url: string) {
+  const link = document.createElement('link')
+  link.rel = 'preload'
+  link.as = type
+  link.href = url
+  link.fetchPriority = 'low'
+  document.head.appendChild(link)
+}
+
+// preload resources (for example, wasm files) to accelerate the loading
+export function preload() {
+  addPreloadLink('script', wasmExecUrl)
+  addPreloadLink('fetch', wasmUrl)
+}
+</script>
+
 <script setup lang="ts">
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
@@ -11,12 +46,6 @@ interface IframeWindow extends Window {
   startWithZipBuffer: (buf: ArrayBuffer | Uint8Array) => void
   console: typeof console
 }
-
-import { ref } from 'vue'
-import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
-import wasmExecUrl from '@/assets/wasm_exec.js?url'
-import wasmUrl from '@/assets/ispx/main.wasm?url'
-import { watch } from 'vue'
 
 const props = defineProps<{ zipData: ArrayBuffer | Uint8Array }>()
 
