@@ -1,6 +1,12 @@
 <template>
   <section class="wrapper">
-    <UIDropdown trigger="manual" :visible="activeSetting != null" placement="top" @click-outside="handleClickOutside">
+    <UIDropdown
+      trigger="manual"
+      :visible="activeSetting != null"
+      placement="top"
+      @click-outside="handleClickOutside"
+      @update:visible="handleDropdownVisibleUpdate"
+    >
       <template #trigger>
         <ul class="settings">
           <li class="setting" :class="{ active: activeSetting === 'duration' }" @click="handleSummaryClick('duration')">
@@ -74,6 +80,10 @@ function handleClickOutside(e: MouseEvent) {
   // TODO: There should be a systematical solution for this, something like event propagation along the component tree instead of DOM tree.
   if (isInPopup(e.target as HTMLElement | null)) return
   activeSetting.value = null
+}
+
+function handleDropdownVisibleUpdate(visible: boolean) {
+  if (!visible) activeSetting.value = null
 }
 </script>
 

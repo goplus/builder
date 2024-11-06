@@ -32,7 +32,7 @@ export function useDropdown() {
 </script>
 
 <script setup lang="ts">
-import { inject, provide, ref, type InjectionKey, computed, type CSSProperties } from 'vue'
+import { inject, provide, ref, type InjectionKey, computed, type CSSProperties, watchEffect } from 'vue'
 import { NPopover } from 'naive-ui'
 import { usePopupContainer } from './utils'
 
@@ -89,6 +89,13 @@ function handleUpdateShow(show: boolean) {
   emit('update:visible', show)
 }
 
+function setVisible(visible: boolean) {
+  // `NPopover.setShow` sets show status in uncontrolled mode without triggering the `on-update:show` callback.
+  // So we need to manually trigger the `on-update:show` callback.
+  nPopoverRef.value?.setShow(visible)
+  handleUpdateShow(visible)
+}
+
 function handleClickOutside(e: MouseEvent) {
   const triggerEl = nPopoverRef.value?.binderInstRef?.targetRef
   // naive-ui triggers `clickoutside` event when trigger-element clicked, so we need to fix it
@@ -96,14 +103,19 @@ function handleClickOutside(e: MouseEvent) {
   emit('clickOutside', e)
 }
 
-provide(dropdownCtrlKey, {
-  setVisible(visible) {
-    // `NPopover.setShow` sets show status in uncontrolled mode without triggering the `on-update:show` callback.
-    // So we need to manually trigger the `on-update:show` callback.
-    nPopoverRef.value?.setShow(visible)
-    handleUpdateShow(visible)
+watchEffect((onCleanup) => {
+  // Currently, pressing the `Escape` key closes all modals and dropdowns.
+  // TODO: Ideally, only the topmost modal or dropdown should be closed.
+  function handleDocumentKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') setVisible(false)
   }
+  window.addEventListener('keydown', handleDocumentKeydown)
+  onCleanup(() => {
+    window.removeEventListener('keydown', handleDocumentKeydown)
+  })
 })
+
+provide(dropdownCtrlKey, { setVisible })
 </script>
 
 <style lang="scss" scoped></style>
