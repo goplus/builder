@@ -1,5 +1,5 @@
 <template>
-  <section class="wrapper">
+  <form class="wrapper" @submit.prevent="emit('confirm')">
     <header class="header">
       <h4 class="title">{{ title }}</h4>
       <UIModalClose class="close" @click="emit('cancel')" />
@@ -12,11 +12,11 @@
       <UIButton type="boring" @click="emit('cancel')">
         {{ $t({ en: 'Cancel', zh: '取消' }) }}
       </UIButton>
-      <UIButton type="primary" @click="emit('confirm')">
+      <UIButton type="primary" html-type="submit">
         {{ $t({ en: 'Confirm', zh: '确认' }) }}
       </UIButton>
     </footer>
-  </section>
+  </form>
 </template>
 <script setup lang="ts">
 import { UIButton, UIDivider } from '@/components/ui'
