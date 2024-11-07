@@ -974,6 +974,20 @@ export const exit: Tool = {
   }
 }
 
+export const getWidget: Tool = {
+  type: ToolType.function,
+  callEffect: ToolCallEffect.read,
+  target: ToolContext.all,
+  keyword: 'getWidget',
+  desc: { en: 'Get the widget by given name', zh: '通过指定名称获取控件' },
+  usage: {
+    sample: 'getWidget(Monitor, "monitor1")',
+    insertText: 'getWidget(${1:Monitor}, ${2:name})'
+  }
+}
+
+// TODO: definition for widget methods
+
 function defineConst(name: string, desc: LocaleMessage): Tool {
   name = name[0].toUpperCase() + name.slice(1) // it's strange, but required
   return {

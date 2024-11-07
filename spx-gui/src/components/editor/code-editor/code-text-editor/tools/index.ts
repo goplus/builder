@@ -188,7 +188,7 @@ export const gameCategory: ToolCategory = {
     },
     {
       label: { en: 'Others', zh: '其他' },
-      tools: [spx.rand, gop.println]
+      tools: [spx.rand, gop.println, spx.getWidget]
     }
   ]
 }
@@ -245,6 +245,23 @@ export function getVariableCategory(project: Project): ToolCategory {
         target: ToolContext.all,
         keyword,
         desc: { en: `Backdrop "${backdrop.name}"`, zh: `背景 ${backdrop.name}` },
+        usage: {
+          sample: keyword,
+          insertText: keyword
+        }
+      }
+    })
+  })
+
+  groups.push({
+    label: { en: 'Widgets', zh: '控件' },
+    tools: project.stage.widgets.map((widget) => {
+      const keyword = `"${widget.name}"`
+      return {
+        type: ToolType.variable,
+        target: ToolContext.all,
+        keyword,
+        desc: { en: `Widget "${widget.name}"`, zh: `控件 ${widget.name}` },
         usage: {
           sample: keyword,
           insertText: keyword
