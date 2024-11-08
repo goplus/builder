@@ -19,15 +19,19 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UICard, UICardHeader, UIButton, UIFullScreenModal } from '@/components/ui'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import RunnerContainer from '@/components/project/runner/RunnerContainer.vue'
+import RunnerContainer, { preload as preloadRunner } from '@/components/project/runner/RunnerContainer.vue'
 
 let show = ref(false)
 
 const editorCtx = useEditorCtx()
+
+onMounted(() => {
+  preloadRunner()
+})
 </script>
 
 <style scoped lang="scss">
