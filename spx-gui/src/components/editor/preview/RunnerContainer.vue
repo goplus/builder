@@ -1,5 +1,3 @@
-<!-- TODO: move into `@/components/editor/`? -->
-
 <template>
   <div class="container">
     <div class="header">
@@ -50,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import ProjectRunner, { preload } from './ProjectRunner.vue'
+import ProjectRunner, { preload } from '@/components/project/runner/ProjectRunner.vue'
 export { preload }
 </script>
 
