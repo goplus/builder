@@ -4,14 +4,19 @@
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton class="run-button" type="primary" icon="play" @click="show = true">
+      <UIButton ref="runButtonRef" class="run-button" type="primary" icon="play" @click="running = true">
         {{ $t({ en: 'Run', zh: '运行' }) }}
       </UIButton>
     </UICardHeader>
 
-    <UIFullScreenModal v-model:show="show" class="project-runner-modal">
-      <RunnerContainer :project="editorCtx.project" @close="show = false" />
-    </UIFullScreenModal>
+    <!--
+      naive-ui Modal does not support feature like `destroyOnClose: false` of antd Modal.
+      To initialize the runner early & only once, we use a hidden container to hold the runner.
+      TODO: use `UIModal` with `destroyOnClose: false` feature.
+    -->
+    <div class="project-runner-modal" :class="{ visible: running }" :style="modalStyle">
+      <RunnerContainer :project="editorCtx.project" :visible="running" @close="running = false" />
+    </div>
     <div class="stage-viewer-container">
       <StageViewer />
     </div>
@@ -19,18 +24,20 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
-import { UICard, UICardHeader, UIButton, UIFullScreenModal } from '@/components/ui'
+import { UICard, UICardHeader, UIButton } from '@/components/ui'
 import StageViewer from './stage-viewer/StageViewer.vue'
-import RunnerContainer, { preload as preloadRunner } from './RunnerContainer.vue'
+import RunnerContainer from './RunnerContainer.vue'
 
-let show = ref(false)
-
+const running = ref(false)
 const editorCtx = useEditorCtx()
 
-onMounted(() => {
-  preloadRunner()
+const runButtonRef = ref<InstanceType<typeof UIButton>>()
+const modalStyle = computed(() => {
+  if (!runButtonRef.value) return null
+  const { top, left, width, height } = runButtonRef.value.$el.getBoundingClientRect()
+  return { transformOrigin: `${left + width / 2}px ${top + height / 2}px` }
 })
 </script>
 
@@ -57,17 +64,23 @@ onMounted(() => {
 }
 
 .project-runner-modal {
-  margin-left: 32px;
-  margin-right: 32px;
-  height: 80vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #fff;
-  border-radius: 20px;
-  .n-modal-content {
-    border-radius: 20px;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: white;
+  transform: scale(0);
+  opacity: 0;
+  transition:
+    transform 0.5s ease-in-out,
+    opacity 0.2s ease-in-out 0.2s;
+
+  &.visible {
+    display: block;
+    transform: scale(1);
+    opacity: 1;
   }
-  padding: 16px;
 }
 </style>

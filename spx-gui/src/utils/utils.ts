@@ -22,7 +22,17 @@ export const isSound = (url: string): boolean => {
  * This is a informal & temporary behavior.
  */
 export function isAddPublicLibraryEnabled() {
-  return window.location.search.includes('?library')
+  return /\blibrary\b/.test(window.location.search)
+}
+
+/**
+ * Get user specified spx version.
+ * Currently spx v2 is not production ready, so we provide a way to specify spx version by adding `?spx=(v2|v1)` in URL query.
+ * This is a informal & temporary behavior.
+ */
+export function getSpxVersion() {
+  const matched = /\bspx=(\w+)\b/.exec(window.location.search)
+  return matched?.[1]
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {

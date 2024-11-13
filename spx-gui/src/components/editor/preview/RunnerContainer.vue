@@ -3,7 +3,7 @@
     <div class="header">
       <div class="header-left"></div>
       <div class="project-name">
-        {{ project?.name }}
+        {{ project.name }}
       </div>
       <div class="header-right">
         <UIButton class="button" icon="rotate" @click="handleRerun">
@@ -19,7 +19,6 @@
       <div class="runner-container">
         <div class="wrapper" :style="runnerAspectRatio">
           <ProjectRunner
-            v-if="project"
             ref="projectRunnerRef"
             :project="project"
             :style="runnerAspectRatio"
@@ -47,21 +46,19 @@
   </div>
 </template>
 
-<script lang="ts">
-import ProjectRunner, { preload } from '@/components/project/runner/ProjectRunner.vue'
-export { preload }
-</script>
-
 <script setup lang="ts">
-import { onMounted, ref, type CSSProperties, watch, nextTick } from 'vue'
+import { ref, type CSSProperties, watch } from 'vue'
 import dayjs from 'dayjs'
-import type { Project } from '@/models/project'
-import { usePublishProject } from '@/components/project'
-import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
+import { untilNotNull } from '@/utils/utils'
 import { useMessageHandle } from '@/utils/exception'
+import type { Project } from '@/models/project'
+import { UIButton, UIIcon, UIModalClose } from '@/components/ui'
+import { usePublishProject } from '@/components/project'
+import ProjectRunner from '@/components/project/runner/ProjectRunner.vue'
 
 const props = defineProps<{
   project: Project
+  visible: boolean
 }>()
 
 const emit = defineEmits<{
@@ -87,18 +84,20 @@ const displayMode = ref<'landscape' | 'portrait'>('landscape')
 const expanded = ref(false)
 
 watch(
-  () => props.project,
-  async (newProject) => {
-    const mapSize = newProject.stage.getMapSize()
+  () => props.visible,
+  async (visible, _, onCleanup) => {
+    if (!visible) return
 
+    const mapSize = props.project.stage.getMapSize()
     runnerAspectRatio.value.aspectRatio = `${mapSize.width}/${mapSize.height}`
     displayMode.value = mapSize.width > mapSize.height ? 'landscape' : 'portrait'
+
+    const projectRunner = await untilNotNull(projectRunnerRef)
     consoleMessages.value = []
-
-    // Wait for the project to be injected into the component
-    await nextTick()
-
-    handleRerun()
+    projectRunner.run()
+    onCleanup(() => {
+      projectRunner.stop()
+    })
   },
   { immediate: true }
 )
@@ -108,11 +107,6 @@ const handleConsole = (type: 'log' | 'warn', args: any[]) => {
   const message = args.join(' ')
   consoleMessages.value.unshift({ id: nextId.value++, time, message, type })
 }
-
-onMounted(() => {
-  if (!projectRunnerRef.value) throw new Error('projectRunnerRef is not ready')
-  projectRunnerRef.value.run()
-})
 
 const handleRerun = () => {
   projectRunnerRef.value?.rerun()

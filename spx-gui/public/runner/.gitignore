@@ -1,0 +1,13 @@
+# Files from gdspx/spx output while useless for Go+ Builder
+diff.zip
+favicon.png
+game.zip
+index.html
+logo.svg
+manifest.json
+offline.html
+service-worker.js
+
+# For now it costs time to build the wasm file, we commit them to simplify the deployment
+# TODO: Build wasm files on the fly
+!*.wasm

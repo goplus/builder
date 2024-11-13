@@ -20,7 +20,7 @@ export async function hashFileCollection(fileCollection: FileCollection): Promis
   return calculateHash(data)
 }
 
-async function hashFile(file: File): Promise<string> {
+export async function hashFile(file: File): Promise<string> {
   if (file.meta.hash != null) return file.meta.hash
   const ab = await file.arrayBuffer()
   if (ab.byteLength >= 100 * 1024)
