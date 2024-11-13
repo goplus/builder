@@ -45,7 +45,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     vercel: {
-      // TODO: check cache for `public/runner/*`
       // prevent redirection from `/runner/*/runner.html` to `/runner/*/runner`
       cleanUrls: false,
       rewrites: [

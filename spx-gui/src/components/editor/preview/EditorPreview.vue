@@ -10,9 +10,9 @@
     </UICardHeader>
 
     <!--
-      naive-ui Modal does not support feature like `destroyOnClose: false` of antd Modal.
-      To initialize the runner early & only once, we use a hidden container to hold the runner.
-      TODO: use `UIModal` with `destroyOnClose: false` feature.
+      A hidden div is used instead of `UIModal` to initialize the runner early, allowing for flexible preload logic in the runner component.
+      Although naive-ui modal supports `display-directive: show`, it does not initialize the component until it is shown for the first time.
+      TODO: Update `UIModal` to support this requirement.
     -->
     <div class="project-runner-modal" :class="{ visible: running }" :style="modalStyle">
       <RunnerContainer :project="editorCtx.project" :visible="running" @close="running = false" />
