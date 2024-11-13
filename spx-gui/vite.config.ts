@@ -89,6 +89,15 @@ export default defineConfig(({ mode }) => {
               value: 'same-origin'
             }
           ]
+        },
+        {
+          source: '/runner/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable'
+            }
+          ]
         }
       ]
     }
