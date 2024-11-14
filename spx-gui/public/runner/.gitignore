@@ -6,7 +6,10 @@ index.html
 logo.svg
 manifest.json
 offline.html
-service-worker.js
+run.bat
+run.py
+run.sh
+service.worker.js
 
 # For now it costs time to build the wasm file, we commit them to simplify the deployment
 # TODO: Build wasm files on the fly
