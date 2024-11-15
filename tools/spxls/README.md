@@ -2,7 +2,18 @@
 
 A lightweight Go+ language server for [spx](https://github.com/goplus/spx) that runs in the browser using WebAssembly.
 
-## LSP methods
+This project follows the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/)
+using [JSON-RPC 2.0](https://www.jsonrpc.org/specification) for message exchange. However, unlike traditional LSP
+implementations that require a network transport layer, this project operates directly in the browser's memory space
+through its API interfaces.
+
+## Usage
+
+This project is a standard Go WebAssembly module. You can use it like any other Go WASM modules in your web applications.
+
+For detailed API references, please check the [index.d.ts](index.d.ts) file.
+
+## Supported LSP methods
 
 | Category | Method | Purpose & Explanation |
 |----------|--------|-----------------------|
@@ -29,6 +40,8 @@ A lightweight Go+ language server for [spx](https://github.com/goplus/spx) that 
 || [`textDocument/typeDefinition`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_typeDefinition) | Navigates to type definitions of variables/fields. |
 || [`textDocument/implementation`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_implementation) | Locates implementations. |
 || [`textDocument/references`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_references) | Finds all references of a symbol. |
+|| [`textDocument/documentLink`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_documentLink) | Provides clickable links within document content. |
+|| [`documentLink/resolve`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#documentLink_resolve) | Provides detailed target information for selected document links. |
 || [`textDocument/documentSymbol`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_documentSymbol) | Provides document symbols for outline/navigation. |
 || [`textDocument/documentHighlight`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_documentHighlight) | Highlights other occurrences of selected symbol. |
 || [`workspace/symbol`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspace_symbol) | Provides workspace-wide symbol search with name matching patterns. |
@@ -61,47 +74,118 @@ defined as follows:
 
 ```typescript
 interface ExecuteCommandParams {
-    /**
-     * The identifier of the actual command handler.
-     */
-    command: 'spx.renameResources'
+  /**
+   * The identifier of the actual command handler.
+   */
+  command: 'spx.renameResources'
 
-    /**
-     * Arguments that the command should be invoked with.
-     */
-    arguments: RenameResourceParams[]
+  /**
+   * Arguments that the command should be invoked with.
+   */
+  arguments: SpxRenameResourceParams[]
 }
 ```
 
 ```typescript
 /**
- * Parameters to rename a resource in the workspace.
+ * Parameters to rename a spx resource in the workspace.
  */
-interface RenameResourceParams {
-    /**
-     * The resource.
-     */
-    resource: ResourceIdentifier
+interface SpxRenameResourceParams {
+  /**
+   * The spx resource.
+   */
+  resource: SpxResourceIdentifier
 
-    /**
-     * The new name of the resource.
-     */
-    newName: string
+  /**
+   * The new name of the spx resource.
+   */
+  newName: string
 }
 ```
 
 ```typescript
-interface ResourceIdentifier {
-    /**
-     * The resource's URI.
-     */
-    uri: URI
+interface SpxResourceIdentifier {
+  /**
+   * The spx resource's URI.
+   */
+  uri: SpxResourceUri
 }
+```
+
+```typescript
+type SpxResourceUri = string
 ```
 
 *Response:*
 
 - result: [`WorkspaceEdit`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspaceEdit)
-| `null` describing the modification to the workspace. `null` should be treated the same as [`WorkspaceEdit`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspaceEdit)
+  | `null` describing the modification to the workspace. `null` should be treated the same as
+  [`WorkspaceEdit`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspaceEdit)
 with no changes (no change was required).
 - error: code and message set in case when rename could not be performed for any reason.
+
+### Definition lookup
+
+The `spx.getDefinitions` command retrieves definition identifiers at a given position in a document.
+
+*Request:*
+
+- method: [`workspace/executeCommand`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#workspace_executeCommand)
+- params: [`ExecuteCommandParams`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#executeCommandParams)
+defined as follows:
+
+```typescript
+interface ExecuteCommandParams {
+  /**
+   * The identifier of the actual command handler.
+   */
+  command: 'spx.getDefinitions'
+
+  /**
+   * Arguments that the command should be invoked with.
+   */
+  arguments: SpxGetDefinitionsParams[]
+}
+```
+
+```typescript
+/**
+ * Parameters to get definitions at a specific position in a document.
+ */
+interface SpxGetDefinitionsParams extends TextDocumentPositionParams {}
+```
+
+*Response:*
+
+- result: `SpxDefinitionIdentifier[]` | `null` describing the definitions found at the given position. `null` indicates
+  no definitions were found.
+- error: code and message set in case when definitions could not be retrieved for any reason.
+
+```typescript
+interface SpxDefinitionIdentifier {
+  /**
+   * Full name of source package.
+   * If not provided, it's assumed to be kind-statement.
+   * If `main`, it's the current user package.
+   * Examples:
+   * - `fmt`
+   * - `github.com/goplus/spx`
+   * - `main`
+   */
+  package?: string;
+
+  /**
+   * Exported name of the definition.
+   * If not provided, it's assumed to be kind-package.
+   * Examples:
+   * - `Println`
+   * - `Sprite`
+   * - `Sprite.turn`
+   * - `for_statement_with_single_condition`
+   */
+  name?: string;
+
+  /** Index in overloads. */
+  overloadIndex?: number;
+}
+```
