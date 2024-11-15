@@ -59,7 +59,10 @@ const preloadFrames = async (costumeFiles: File[]) => {
       ...urls.map(async (url) => {
         const img = new Image()
         img.src = url
-        await img.decode()
+        await img.decode().catch((e) => {
+          // Sometimes `decode` fails, while the image is still able to be displayed
+          console.warn('Failed to decode image', url, e)
+        })
         return img
       })
     ])
