@@ -8,6 +8,7 @@ declare interface CodeEditorUI {
   registerDiagnosticsProvider(provider: DiagnosticsProvider): void
   registerAPIReferenceProvider(provider: APIReferenceProvider): void
   registerCopilot(copilot: Copilot): void
+  registerFormattingEditProvider(provider: FormattingEditProvider): void
 
   /** Execute a command */
   executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R>
@@ -186,4 +187,13 @@ interface ChatContext extends BaseContext {}
 
 interface Copilot {
   getChatCompletion(ctx: ChatContext, chat: Chat): Promise<ChatMessage | null>
+}
+
+// ======================== Format Editing ========================
+
+interface FormattingContext extends BaseContext {}
+
+interface FormattingEditProvider {
+  /** Get edits for formatting single text document */
+  provideDocumentFormattingEdits(ctx: FormattingContext): Promise<TextEdit[]>
 }
