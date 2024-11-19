@@ -1,5 +1,10 @@
-function getAPIsForPosition({ textDocument, position }: TextDocumentPosition): Promise<DefinitionIdentifier[]> {
-  return TODO
+async function getAPIsForPosition({ textDocument, position }: TextDocumentPosition): Promise<DefinitionIdentifier[]> {
+  const definitions: DefinitionIdentifier[] = await lsp.request('workspace/executeCommand', {
+    command: 'spx.getDefinitions',
+    arguments: [textDocument, position]
+  })
+  // And do some filtering here
+  return definitions
 }
 
 ui.registerAPIReferenceProvider({
