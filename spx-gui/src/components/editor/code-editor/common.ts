@@ -94,7 +94,7 @@ export type MarkdownString = {
 export type Icon = string
 
 /**
- * Documentation for an identifier, keyword, etc. Typically:
+ * Documentation for a definition. Typically:
  * ```mdx
  * <Overview>func turn(dDirection float64)</Overview>
  * <Detail>
@@ -103,6 +103,13 @@ export type Icon = string
  * ```
  */
 export type Documentation = MarkdownString
+
+export type DocumentationItem = {
+  kind: DefinitionKind
+  definition: DefinitionIdentifier
+  insertText: string
+  documentation: Documentation
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface CommandConstraint<A, R> {}

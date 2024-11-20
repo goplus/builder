@@ -1,17 +1,6 @@
-import {
-  DefinitionKind,
-  type BaseContext,
-  type Documentation,
-  type Position,
-  type DefinitionIdentifier
-} from '../common'
+import { type BaseContext, type Position, type DocumentationItem } from '../common'
 
-export type APIReferenceItem = {
-  kind: DefinitionKind
-  definition: DefinitionIdentifier
-  insertText: string
-  documentation: Documentation
-}
+export type APIReferenceItem = DocumentationItem
 
 export type APIReferenceContext = BaseContext
 

@@ -1,8 +1,7 @@
-import type { DefinitionIdentifier } from './common'
-import type { APIReferenceItem } from './ui'
+import type { DefinitionIdentifier, DocumentationItem } from './common'
 
 export class DocumentBase {
-  async getDocumentaion(definition: DefinitionIdentifier): Promise<APIReferenceItem | null> {
+  async getDocumentation(definition: DefinitionIdentifier): Promise<DocumentationItem | null> {
     console.warn('TODO', definition)
     return null
   }
