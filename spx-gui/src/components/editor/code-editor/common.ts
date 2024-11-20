@@ -1,3 +1,5 @@
+import type { LocaleMessage } from '@/utils/i18n'
+
 export type Position = {
   line: number
   column: number
@@ -36,8 +38,8 @@ export enum DefinitionKind {
   Function,
   /** Function or method for reading data */
   Read,
-  /** Function or method for causing effect, e.g., writing data */
-  Effect,
+  /** Function or method for executing commands, e.g., move a sprite */
+  Command,
   /** Function or method for listening to event */
   Listen,
   /** Language defined statements, e.g., `for { ... }` */
@@ -75,40 +77,85 @@ export type DefinitionIdentifier = {
   overloadIndex?: number
 }
 
+export function stringifyDefinitionId(defId: DefinitionIdentifier): string {
+  if (defId.name == null) {
+    if (defId.package == null) throw new Error('package expected for ' + defId)
+    return defId.package
+  }
+  const suffix = defId.overloadIndex == null ? '' : `[${defId.overloadIndex}]`
+  if (defId.package == null) return defId.name + suffix
+  return defId.package + '|' + defId.name + suffix
+}
+
 /**
  * Model for text document
  * Similar to https://microsoft.github.io/monaco-editor/docs.html#interfaces/editor.ITextModel.html
  */
-interface TextDocument {
+export interface ITextDocument {
   id: TextDocumentIdentifier
   getOffsetAt(position: Position): number
   getPositionAt(offset: number): Position
   getValueInRange(range: IRange): string
 }
 
-export type MarkdownString = {
+export type MarkdownStringFlag = 'basic' | 'advanced'
+
+/**
+ * Markdown string with MDX support.
+ * We use flag to distinguish different types of Markdown string.
+ * Different types of Markdown string expect different rendering behaviors, especially for custom components support in MDX.
+ */
+export type MarkdownString<F extends MarkdownStringFlag> = {
+  flag?: F
   /** Markdown string with MDX support. */
-  value: string
+  value: string | LocaleMessage
 }
+
+/**
+ * Markdown string with support of basic MDX components.
+ * Typically, it is used in `DefinitionDocumentationItem.detail`.
+ */
+export type BasicMarkdownString = MarkdownString<'basic'>
+
+export function makeBasicMarkdownString(value: string | LocaleMessage): BasicMarkdownString {
+  return { value, flag: 'basic' }
+}
+
+/**
+ * Markdown string with support of advanced MDX components, e.g., `OverviewWrapper`, `Detail` (which reads data from `DocumentBase` & render with `DetailWrapper`).
+ * Typically, it is used in `CompletionItem.documentation` or `Hover.contents`.
+ */
+export type AdvancedMarkdownString = MarkdownString<'advanced'>
 
 export type Icon = string
 
 /**
- * Documentation for a definition. Typically:
+ * Documentation string for a definition. Typically:
  * ```mdx
- * <Overview>func turn(dDirection float64)</Overview>
- * <Detail>
- *  Turn with given direction change.
- * </Detail>
+ * <OverviewWrapper>func turn(dDirection float64)</OverviewWrapper>
+ * <Detail id="github.com/goplus/spx|Sprite.turn[0]" />
  * ```
  */
-export type Documentation = MarkdownString
+export type DefinitionDocumentationString = AdvancedMarkdownString
 
-export type DocumentationItem = {
+export const categoryEvent = 'event'
+export const categoryEventGame = [categoryEvent, 'game']
+export const categoryMotion = 'motion'
+export const categoryMotionPosition = [categoryMotion, 'position']
+export const categoryControl = 'control'
+export const categoryControlFlow = [categoryControl, 'flow']
+
+export type DefinitionDocumentationItem = {
+  /** For classification when listed in a group, e.g., `[["event", "game"]]` */
+  categories: string[][]
   kind: DefinitionKind
   definition: DefinitionIdentifier
+  /** Text to insert when completion / snippet is applied */
   insertText: string
-  documentation: Documentation
+  /** Brief explanation for the definition, typically the signature string */
+  overview: string
+  /** Detailed explanation for the definition, overview not included */
+  detail: BasicMarkdownString
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -130,7 +177,7 @@ export type Action<I extends any[] = any, R = any> = {
 
 export type BaseContext = {
   /** Current active text document */
-  textDocument: TextDocument
+  textDocument: ITextDocument
   /** Signal to abort long running operations */
   signal: AbortSignal
 }

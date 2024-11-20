@@ -1,7 +1,7 @@
-import { type Action, type BaseContext, type Documentation, type Position } from '../common'
+import { type Action, type BaseContext, type DefinitionDocumentationString, type Position } from '../common'
 
 export type Hover = {
-  contents: Documentation[]
+  contents: DefinitionDocumentationString[]
   actions: Action[]
 }
 

@@ -19,7 +19,7 @@ export class Disposable {
     this.disposers.push(disposer)
   }
 
-  dispose = () => {
+  dispose() {
     if (this._isDisposed) return
     this._isDisposed = true
     while (this.disposers.length > 0) {

@@ -3,13 +3,20 @@ import { Disposable } from '@/utils/disposable'
 import type { Project } from '@/models/project'
 import { Stage } from '@/models/stage'
 import type { Sprite } from '@/models/sprite'
-import { type Command, type CommandInfo, type IRange, type Position, type TextDocumentIdentifier } from '../common'
+import {
+  type Command,
+  type CommandInfo,
+  type IRange,
+  type Position,
+  type TextDocumentIdentifier,
+  type ITextDocument
+} from '../common'
 import type { IHoverProvider } from './hover'
 import type { ICompletionProvider } from './completion'
 import type { IResourceReferencesProvider } from './resource-reference'
 import type { IContextMenuProvider } from './context-menu'
 import type { IDiagnosticsProvider } from './diagnostics'
-import type { IAPIReferenceProvider } from './api-reference'
+import { APIReference, type IAPIReferenceProvider } from './api-reference'
 import type { ICopilot } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
 
@@ -47,6 +54,25 @@ export interface ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, range: IRange): void
 }
 
+class TextDocument implements ITextDocument {
+  constructor(public id: TextDocumentIdentifier) {}
+
+  getOffsetAt(position: Position): number {
+    console.warn('TODO', position)
+    return 0
+  }
+
+  getPositionAt(offset: number): Position {
+    console.warn('TODO', offset)
+    return { line: 0, column: 0 }
+  }
+
+  getValueInRange(range: IRange): string {
+    console.warn('TODO', range)
+    return ''
+  }
+}
+
 export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void {
     console.warn('TODO', provider)
@@ -64,7 +90,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     console.warn('TODO', provider)
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
-    console.warn('TODO', provider)
+    this.apiReference.registerProvider(provider)
   }
   registerCopilot(copilot: ICopilot): void {
     console.warn('TODO', copilot)
@@ -88,25 +114,29 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     console.warn('TODO', textDocument, positionOrRange)
   }
 
+  apiReference = new APIReference(this)
+
   constructor(private project: Project) {
     super()
   }
 
-  monaco?: typeof import('monaco-editor')
+  monaco: typeof import('monaco-editor') | null = null
 
-  initializeMonaco(monaco: typeof import('monaco-editor')) {
+  initMonaco(monaco: typeof import('monaco-editor')) {
     // TODO: do monaco configuration here
     this.monaco = monaco
   }
 
-  editor?: editor.IStandaloneCodeEditor
+  editor: editor.IStandaloneCodeEditor | null = null
 
-  initializeEditor(editor: editor.IStandaloneCodeEditor) {
+  initEditor(editor: editor.IStandaloneCodeEditor) {
     // TODO: do editor configuration here
     this.editor = editor
   }
 
-  initialize() {
+  activeTextDocument: ITextDocument | null = null
+
+  init(signal: AbortSignal) {
     const { project, editor } = this
     if (editor == null) throw new Error('editor expected')
 
@@ -130,5 +160,13 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
         selected.setCode(newValue)
       })
     })
+
+    this.activeTextDocument = new TextDocument({ uri: 'TODO' })
+    this.apiReference.init(signal)
+  }
+
+  dispose() {
+    this.apiReference.dispose()
+    super.dispose()
   }
 }
