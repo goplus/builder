@@ -25,6 +25,14 @@
         </UIMenuItem>
       </UIMenuGroup>
       <UIMenuGroup>
+        <UIMenuItem v-if="spxVersion === 'v2'" @click="handleUseSpxV1">
+          {{ $t({ en: 'Use default SPX', zh: '使用默认 SPX' }) }}
+        </UIMenuItem>
+        <UIMenuItem v-if="spxVersion === 'v1'" @click="handleUseSpxV2">
+          {{ $t({ en: 'Use new SPX (in beta)', zh: '启用新 SPX（测试中）' }) }}
+        </UIMenuItem>
+      </UIMenuGroup>
+      <UIMenuGroup>
         <UIMenuItem @click="handleSignOut">{{ $t({ en: 'Sign out', zh: '登出' }) }}</UIMenuItem>
       </UIMenuGroup>
     </UIMenu>
@@ -32,12 +40,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNetwork } from '@/utils/network'
+import { useSpxVersion } from '@/utils/utils'
+import { useI18n } from '@/utils/i18n'
+import { useMessageHandle } from '@/utils/exception'
 import { getUserPageRoute } from '@/router'
 import { useUserStore } from '@/stores/user'
-import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem } from '@/components/ui'
-import { computed } from 'vue'
+import { UIButton, UIDropdown, UIMenu, UIMenuGroup, UIMenuItem, useConfirmDialog } from '@/components/ui'
 
 const userStore = useUserStore()
 const { isOnline } = useNetwork()
@@ -52,6 +63,44 @@ function handleUserPage() {
 function handleProjects() {
   router.push(getUserPageRoute(userInfo.value!.name, 'projects'))
 }
+
+const spxVersion = useSpxVersion()
+
+const handleUseSpxV1 = useMessageHandle(
+  async () => {
+    spxVersion.value = 'v1'
+  },
+  undefined,
+  {
+    en: 'Back to the default version of SPX',
+    zh: '已切换回默认版本 SPX'
+  }
+).fn
+
+const i18n = useI18n()
+const withConfirm = useConfirmDialog()
+
+const handleUseSpxV2 = useMessageHandle(
+  async () => {
+    await withConfirm({
+      type: 'info',
+      title: i18n.t({
+        en: 'Use new version of SPX',
+        zh: '启用新版本 SPX'
+      }),
+      content: i18n.t({
+        en: 'The new version of SPX is still in beta. You can switch back to the default version anytime if you encounter issues.',
+        zh: '新版本 SPX 还在测试中，如果遇到问题可以随时退回到默认版本。'
+      })
+    })
+    spxVersion.value = 'v2'
+  },
+  undefined,
+  {
+    en: 'Now using the new version of SPX',
+    zh: '已启用新版本 SPX'
+  }
+).fn
 
 function handleSignOut() {
   userStore.signOut()
