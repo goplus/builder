@@ -25,7 +25,12 @@ const loading = ref(true)
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
 
 interface IframeWindow extends Window {
-  startProject(buffer: ArrayBuffer, projectName: string, showEditor: boolean, assetURLs: Record<string, string>): Promise<void>
+  startProject(
+    buffer: ArrayBuffer,
+    projectName: string,
+    showEditor: boolean,
+    assetURLs: Record<string, string>
+  ): Promise<void>
   updateProject(buffer: ArrayBuffer, addInfos: string[], deleteInfos: string[], updateInfos: string[]): Promise<void>
   stopProject(): Promise<void>
   runGame(): Promise<void>
@@ -152,10 +157,13 @@ watch(
     const projectName = encodeProjectName(project)
     // We should not need to wait startProject to finish here, it's a bug of the runner page.
     // TODO: remove `await` here after this bug fixed.
-    await withLog('startProject', iframeWindow.startProject(zipData, projectName, false, {
-      'gdspx.wasm': 'gdspx.wasm',
-      'godot.editor.wasm': 'godot.editor.wasm',
-    }))
+    await withLog(
+      'startProject',
+      iframeWindow.startProject(zipData, projectName, false, {
+        'gdspx.wasm': 'gdspx.wasm',
+        'godot.editor.wasm': 'godot.editor.wasm'
+      })
+    )
     lastFiles.value = files
     iframeWindowWithProjectStartedRef.value = iframeWindow
     signal.addEventListener('abort', () => {

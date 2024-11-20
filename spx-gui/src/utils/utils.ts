@@ -19,7 +19,7 @@ export const isSound = (url: string): boolean => {
  * If add-to-public-library features are enabled.
  * In release v1.3, we do not allow users to add asset to public library (the corresponding features are disabled).
  * These features are only enabled when there is `?library` in URL query. A simple & ugly interface will be provided.
- * This is a informal & temporary behavior.
+ * This is an informal & temporary behavior.
  */
 export function isAddPublicLibraryEnabled() {
   return /\blibrary\b/.test(window.location.search)
@@ -28,7 +28,7 @@ export function isAddPublicLibraryEnabled() {
 /**
  * Get user specified spx version.
  * Currently spx v2 is not production ready, so we provide a way to specify spx version by adding `?spx=(v2|v1)` in URL query.
- * This is a informal & temporary behavior.
+ * This is an informal & temporary behavior.
  */
 export function getSpxVersion() {
   const matched = /\bspx=(\w+)\b/.exec(window.location.search)
