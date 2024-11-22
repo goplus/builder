@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { isImage, isSound, nomalizeDegree, memoizeAsync } from './utils'
+import { nextTick, watch } from 'vue'
+import { describe, it, expect, vitest } from 'vitest'
+import { isImage, isSound, nomalizeDegree, memoizeAsync, useLocalStorage } from './utils'
 import { sleep } from './test'
 
 describe('isImage', () => {
@@ -137,5 +138,51 @@ describe('memoizeAsync', () => {
     await expect(fn(2, 1)).resolves.toBe(3)
     await expect(fn(2, 2)).resolves.toBe(4)
     expect(count).toBe(3)
+  })
+})
+
+describe('useLocalStorage', () => {
+  it('should work well', () => {
+    const key = 'test-key'
+    const stored = useLocalStorage(key, 'default-value')
+    expect(stored.value).toBe('default-value')
+    stored.value = 'new-value'
+    expect(stored.value).toBe('new-value')
+    expect(localStorage.getItem(key)).toBe('"new-value"')
+    stored.value = 'default-value'
+    expect(stored.value).toBe('default-value')
+    expect(localStorage.getItem(key)).toBeNull()
+  })
+
+  it('should sync within the same document', async () => {
+    const key = 'test-key'
+    const stored1 = useLocalStorage(key, 0)
+    const stored2 = useLocalStorage(key, 0)
+    expect(stored1.value).toBe(0)
+    expect(stored2.value).toBe(0)
+
+    stored1.value++
+    expect(stored1.value).toBe(1)
+    expect(stored2.value).toBe(1)
+    stored2.value++
+    expect(stored1.value).toBe(2)
+    expect(stored2.value).toBe(2)
+
+    const onStored1Change = vitest.fn()
+    const onStored2Change = vitest.fn()
+    watch(stored1, (v) => onStored1Change(v))
+    watch(stored2, (v) => onStored2Change(v))
+    stored1.value = 3
+    await nextTick()
+    expect(onStored1Change).toHaveBeenCalledTimes(1)
+    expect(onStored1Change).toHaveBeenCalledWith(3)
+    expect(onStored2Change).toHaveBeenCalledTimes(1)
+    expect(onStored2Change).toHaveBeenCalledWith(3)
+    stored2.value = 4
+    await nextTick()
+    expect(onStored1Change).toHaveBeenCalledTimes(2)
+    expect(onStored1Change).toHaveBeenCalledWith(4)
+    expect(onStored2Change).toHaveBeenCalledTimes(2)
+    expect(onStored2Change).toHaveBeenCalledWith(4)
   })
 })

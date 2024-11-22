@@ -1,6 +1,6 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { ref, shallowReactive, shallowRef, watch, watchEffect, type WatchSource } from 'vue'
+import { ref, shallowReactive, shallowRef, watch, watchEffect, type ShallowRef, type WatchSource, computed } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 
 export const isImage = (url: string): boolean => {
@@ -25,14 +25,9 @@ export function isAddPublicLibraryEnabled() {
   return /\blibrary\b/.test(window.location.search)
 }
 
-/**
- * Get user specified spx version.
- * Currently spx v2 is not production ready, so we provide a way to specify spx version by adding `?spx=(v2|v1)` in URL query.
- * This is an informal & temporary behavior.
- */
-export function getSpxVersion() {
-  const matched = /\bspx=(\w+)\b/.exec(window.location.search)
-  return matched?.[1]
+/** Manage spx version. */
+export function useSpxVersion(): ShallowRef<'v1' | 'v2'> {
+  return useLocalStorage<'v1' | 'v2'>('spx-gui-runner', 'v1')
 }
 
 export function useAsyncComputed<T>(getter: () => Promise<T>) {
@@ -70,20 +65,39 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
   return r
 }
 
+const lsSyncer = shallowReactive(new Map<string, number>())
+
+function watchLSChange(key: string) {
+  lsSyncer.get(key)
+}
+
+function fireLSChange(key: string) {
+  const val = lsSyncer.get(key) ?? 0
+  lsSyncer.set(key, val + 1)
+}
+
+/**
+ * Manipulate data stored in localStorage.
+ * Changes will be synchronized within the same document.
+ */
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const ref = shallowRef<T>(initialValue)
-  const storedValue = localStorage.getItem(key)
-  if (storedValue != null) {
-    ref.value = JSON.parse(storedValue)
-  }
-  watch(ref, (newValue) => {
-    if (newValue === initialValue) {
-      // Remove the key if the value is the initial value.
-      // NOTE: this may be unexpected for some special use cases
-      localStorage.removeItem(key)
-      return
+  const ref = computed<T>({
+    get() {
+      watchLSChange(key)
+      const storedValue = localStorage.getItem(key)
+      if (storedValue == null) return initialValue
+      return JSON.parse(storedValue)
+    },
+    set(newValue) {
+      if (newValue === initialValue) {
+        // Remove the key if the value is the initial value.
+        // NOTE: this may be unexpected for some special use cases
+        localStorage.removeItem(key)
+      } else {
+        localStorage.setItem(key, JSON.stringify(newValue))
+      }
+      fireLSChange(key)
     }
-    localStorage.setItem(key, JSON.stringify(newValue))
   })
   return ref
 }

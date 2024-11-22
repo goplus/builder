@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { getSpxVersion, useLocalStorage } from '@/utils/utils'
+import { useSpxVersion } from '@/utils/utils'
 import type { Project } from '@/models/project'
 import ProjectRunnerV1 from './v1/ProjectRunnerV1.vue'
 import ProjectRunnerV2 from './v2/ProjectRunnerV2.vue'
@@ -17,9 +17,7 @@ function handleConsole(type: 'log' | 'warn', args: unknown[]) {
   emit('console', type, args)
 }
 
-const version = useLocalStorage('spx-gui-runner', 'v1')
-const specifiedVersion = getSpxVersion()
-if (specifiedVersion != null) version.value = specifiedVersion
+const version = useSpxVersion()
 
 defineExpose({
   run() {
