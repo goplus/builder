@@ -1,4 +1,4 @@
-package mapfs
+package vfs
 
 import (
 	"io"
@@ -19,8 +19,8 @@ type MapFS struct {
 	modTime    time.Time
 }
 
-// New creates a new virtual file system.
-func New(getFileMap GetFileMapFunc) *MapFS {
+// NewMapFS creates a new map file system.
+func NewMapFS(getFileMap GetFileMapFunc) *MapFS {
 	return &MapFS{
 		getFileMap: getFileMap,
 		fileMode:   0444,
@@ -113,6 +113,55 @@ func (mfs *MapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 		})
 	}
 	return entries, nil
+}
+
+// Stat implements [fs.StatFS].
+func (mfs *MapFS) Stat(name string) (fs.FileInfo, error) {
+	if name == "" {
+		return nil, &fs.PathError{Op: "stat", Path: name, Err: fs.ErrInvalid}
+	}
+
+	fileMap := mfs.getFileMap()
+	if name == "." {
+		return &fileInfo{
+			name:    ".",
+			mode:    mfs.dirMode,
+			modTime: mfs.modTime,
+			isDir:   true,
+		}, nil
+	}
+
+	content, ok := fileMap[name]
+	if ok {
+		return &fileInfo{
+			name:    path.Base(name),
+			size:    int64(len(content)),
+			mode:    mfs.fileMode,
+			modTime: mfs.modTime,
+			isDir:   false,
+		}, nil
+	}
+
+	// Check if it's a directory by looking for files with this prefix.
+	prefix := name + "/"
+	hasPrefix := false
+	for p := range fileMap {
+		if strings.HasPrefix(p, prefix) {
+			hasPrefix = true
+			break
+		}
+	}
+
+	if hasPrefix {
+		return &fileInfo{
+			name:    path.Base(name),
+			mode:    mfs.dirMode,
+			modTime: mfs.modTime,
+			isDir:   true,
+		}, nil
+	}
+
+	return nil, &fs.PathError{Op: "stat", Path: name, Err: fs.ErrNotExist}
 }
 
 // file implements [fs.file].

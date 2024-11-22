@@ -1,4 +1,4 @@
-package mapfs
+package vfs
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ func newTestMapFS() (fs.FS, map[string][]byte) {
 		"dir/subdir/another.txt": []byte("another"),
 		"other/file.txt":         []byte("other"),
 	}
-	fsys := New(func() map[string][]byte {
+	fsys := NewMapFS(func() map[string][]byte {
 		return files
 	})
 	return fsys, files
@@ -176,12 +176,68 @@ func TestMapFSFile(t *testing.T) {
 	}
 }
 
+func TestMapFSWalkDir(t *testing.T) {
+	fsys, _ := newTestMapFS()
+
+	t.Run("WalkAll", func(t *testing.T) {
+		got := make(map[string]struct{})
+		err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			got[path] = struct{}{}
+			checkDirEntry(t, d)
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := map[string]struct{}{
+			".":                      {},
+			"foo.txt":                {},
+			"dir":                    {},
+			"dir/bar.txt":            {},
+			"dir/subdir":             {},
+			"dir/subdir/another.txt": {},
+			"other":                  {},
+			"other/file.txt":         {},
+		}
+
+		if len(got) != len(want) {
+			t.Errorf("got %d paths, want %d", len(got), len(want))
+		}
+
+		for path := range want {
+			if _, ok := got[path]; !ok {
+				t.Errorf("path not visited: %s", path)
+			}
+		}
+	})
+
+	t.Run("NonExistentRoot", func(t *testing.T) {
+		err := fs.WalkDir(fsys, "nonexistent", func(path string, d fs.DirEntry, err error) error {
+			return err
+		})
+		if err == nil {
+			t.Error("expected error for non-existent root")
+		}
+		if _, ok := err.(*fs.PathError); !ok {
+			t.Errorf("expected *fs.PathError, got %T", err)
+		}
+	})
+}
+
 func checkDirEntry(t *testing.T, de fs.DirEntry) {
 	t.Helper()
 
 	name := de.Name()
 	isDir := de.IsDir()
-	if isDir != (filepath.Ext(name) == "") {
+	if name == "." {
+		if !isDir {
+			t.Errorf("IsDir mismatch for %s: got %v", name, isDir)
+		}
+	} else if isDir != (filepath.Ext(name) == "") {
 		t.Errorf("IsDir mismatch for %s: got %v", name, isDir)
 	}
 
