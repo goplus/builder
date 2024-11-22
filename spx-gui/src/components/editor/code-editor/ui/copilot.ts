@@ -4,7 +4,7 @@ import {
   type DefinitionIdentifier,
   type CodeSegment,
   type TextDocumentRange,
-  type MarkdownString
+  type BasicMarkdownString
 } from '../common'
 import type { Diagnostic } from './diagnostics'
 
@@ -63,7 +63,7 @@ export enum MessageRole {
 
 export type ChatMessage = {
   role: MessageRole
-  content: MarkdownString
+  content: BasicMarkdownString
 }
 
 export type Chat = {

@@ -16,6 +16,7 @@ import {
   type ResourceReference,
   type ResourceReferencesContext
 } from './ui'
+import type { DefinitionDocumentationItem, DefinitionIdentifier } from './common'
 
 const editorCtx = useEditorCtx()
 
@@ -27,8 +28,14 @@ function initialize(ui: ICodeEditorUI) {
 
   ui.registerAPIReferenceProvider({
     async provideAPIReference(ctx, position) {
-      console.warn('TODO', ctx, position, documentBase, spxlc)
-      return []
+      console.warn('TODO: get api references from LS', ctx, position, spxlc)
+      const ids: DefinitionIdentifier[] = [
+        { package: 'github.com/goplus/spx', name: 'onStart' },
+        { package: 'github.com/goplus/spx', name: 'Sprite.setXYpos' },
+        { name: 'for_iterate (TODO)' }
+      ]
+      const documentations = await Promise.all(ids.map((id) => documentBase.getDocumentation(id)))
+      return documentations as DefinitionDocumentationItem[]
     }
   })
 
