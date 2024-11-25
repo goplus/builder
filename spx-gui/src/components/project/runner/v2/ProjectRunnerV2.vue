@@ -10,7 +10,7 @@ import { hashFile } from '@/models/common/hash'
 import type { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
 
-const runnerVersion = '20241119_1605'
+const runnerVersion = '20241121_2139'
 const runnerBaseUrl = `/runner/${runnerVersion}/`
 const runnerUrl = `${runnerBaseUrl}runner.html`
 
@@ -69,6 +69,9 @@ watch(iframeRef, (iframe) => {
 const lastFiles = shallowRef<Files>({})
 
 async function getProjectData() {
+  // NOTE: Now runner (spx2) relies on the zip file hash to determine if the game content has changed.
+  // While jszip can't guarantee the zip result to be byte-to-byte equal, even if we use the same input & pass in same `date` for each file.
+  // TODO: Figure out why and fix it, or update the runner not to rely on the zip file hash.
   const zip = new JSZip()
   const [, files] = await props.project.export()
   Object.entries(files).forEach(([path, file]) => {
@@ -198,8 +201,8 @@ defineExpose({
       // await withLog('updateProject', iframeWindow.updateProject(zipData, ...updateInfo))
       withLog('updateProject', iframeWindow.updateProject(zipData, ...updateInfo))
     }
-    loading.value = false
     await withLog('runGame', iframeWindow.runGame())
+    loading.value = false
   },
   async stop() {
     const iframeWindow = iframeWindowRef.value

@@ -103,8 +103,9 @@ export class Costume {
     return reactive(this) as this
   }
 
-  clone() {
+  clone(preserveId = false) {
     return new Costume(this.name, this.img, {
+      id: preserveId ? this.id : undefined,
       x: this.x,
       y: this.y,
       faceRight: this.faceRight,
