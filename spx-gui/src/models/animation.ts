@@ -135,7 +135,7 @@ export class Animation extends Disposable {
     if (frameFrom == null || frameTo == null) throw new Error(`from and to expected for Animation ${name}`)
     const fromIndex = getCostumeIndex(costumes, frameFrom)
     const toIndex = getCostumeIndex(costumes, frameTo)
-    const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone())
+    const animationCostumes = costumes.slice(fromIndex, toIndex + 1).map((c) => c.clone(true))
     const duration = animationCostumes.length / (frameFps ?? defaultFps)
     // drop spx `duration`, which is different from ours
     if (spxDuration != null) console.warn(`unsupported field: duration for animation ${name}`)

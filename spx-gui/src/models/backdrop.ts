@@ -41,12 +41,12 @@ export class Backdrop extends Costume {
     })
   }
 
-  static load({ name, path, ...inits }: RawBackdropConfig, files: Files) {
+  static load({ name, path, builder_id: id, ...inits }: RawBackdropConfig, files: Files) {
     if (name == null) throw new Error(`name expected for backdrop`)
     if (path == null) throw new Error(`path expected for backdrop ${name}`)
     const file = files[resolve(backdropAssetPath, path)]
     if (file == null) throw new Error(`file ${path} for backdrop ${name} not found`)
-    return new Backdrop(name, file, inits)
+    return new Backdrop(name, file, { ...inits, id })
   }
 
   export({ includeId = true }: { includeId?: boolean } = {}): [RawBackdropConfig, Files] {
