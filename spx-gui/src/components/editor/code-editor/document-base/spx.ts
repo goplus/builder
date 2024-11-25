@@ -17,7 +17,10 @@ export const onStart: DefinitionDocumentationItem = {
   },
   insertText: 'onStart => {\n\t${1}\n}',
   overview: 'func onStart(callback func())',
-  detail: makeBasicMarkdownString({ en: 'Listen to game start', zh: '游戏开始时执行' })
+  detail: makeBasicMarkdownString({
+    en: 'Listen to game start, e.g., `onStart => {}`',
+    zh: '游戏开始时执行，示例：`onStart => {}`'
+  })
 }
 
 export const setXYpos: DefinitionDocumentationItem = {
@@ -29,5 +32,8 @@ export const setXYpos: DefinitionDocumentationItem = {
   },
   insertText: 'setXYpos ${1:X}, ${2:Y}',
   overview: 'func setXYpos(x, y float64)',
-  detail: makeBasicMarkdownString({ en: 'Move to given position', zh: '移动到指定位置' })
+  detail: makeBasicMarkdownString({
+    en: 'Move to given position, e.g., `setXYpos 0, 0`',
+    zh: '移动到指定位置，示例：`setXYpos 0, 0`'
+  })
 }
