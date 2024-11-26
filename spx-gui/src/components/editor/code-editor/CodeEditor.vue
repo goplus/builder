@@ -5,7 +5,6 @@ import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
 import { Spxlc } from './lsp'
-import { Runtime } from './runtime'
 import {
   CodeEditorUIComp,
   type ICodeEditorUI,
@@ -24,7 +23,6 @@ function initialize(ui: ICodeEditorUI) {
   const copilot = new Copilot()
   const documentBase = new DocumentBase()
   const spxlc = new Spxlc()
-  const runtime = new Runtime()
 
   ui.registerAPIReferenceProvider({
     async provideAPIReference(ctx, position) {
@@ -66,7 +64,7 @@ function initialize(ui: ICodeEditorUI) {
     implements IDiagnosticsProvider
   {
     async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-      console.warn('TODO', ctx, runtime)
+      console.warn('TODO', ctx, editorCtx.runtime)
       return []
     }
   }

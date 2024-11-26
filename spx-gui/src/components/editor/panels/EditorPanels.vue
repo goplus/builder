@@ -1,5 +1,5 @@
 <template>
-  <div class="editor-panels">
+  <div v-show="running !== 'debug'" class="editor-panels">
     <UICard class="main">
       <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
       <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
@@ -8,15 +8,17 @@
       <StagePanel></StagePanel>
     </UICard>
   </div>
+  <ConsolePanel v-show="running === 'debug'" class="console-panel" />
 </template>
 
 <script setup lang="ts">
-import { ref, watch, shallowRef } from 'vue'
+import { ref, watch, shallowRef, computed } from 'vue'
 import { UICard } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundsPanel from './sound/SoundsPanel.vue'
 import SpritesPanel from './sprite/SpritesPanel.vue'
 import StagePanel from './stage/StagePanel.vue'
+import ConsolePanel from './ConsolePanel.vue'
 
 const expandedPanel = ref<'sprites' | 'sounds'>('sprites')
 function expand(panel: 'sprites' | 'sounds') {
@@ -24,6 +26,7 @@ function expand(panel: 'sprites' | 'sounds') {
 }
 
 const editorCtx = useEditorCtx()
+const running = computed(() => editorCtx.runtime.running)
 
 watch(
   () => editorCtx.project.selected,
@@ -74,6 +77,10 @@ watch(
   display: flex;
   flex-direction: row;
   gap: var(--ui-gap-middle);
+}
+
+.console-panel {
+  flex: 1 1 0;
 }
 
 .main {

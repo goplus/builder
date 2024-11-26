@@ -117,7 +117,8 @@ export class Project extends Disposable {
   releaseCount?: number
   remixCount?: number
 
-  private filesHash?: string
+  /** Files' hash of game content, available when project under editing */
+  filesHash?: string
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
   get hasUnsyncedChanges() {

@@ -1,11 +1,22 @@
 <template>
   <UICard class="editor-preview">
-    <UICardHeader>
+    <UICardHeader v-if="running !== 'debug'">
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton ref="runButtonRef" class="run-button" type="primary" icon="play" @click="running = true">
+      <UIButton ref="runButtonRef" class="button" type="primary" icon="play" @click="setRunning('debug')">
         {{ $t({ en: 'Run', zh: '运行' }) }}
+      </UIButton>
+      <UIButton ref="fullScreenRunButtonRef" class="button" type="primary" icon="play" @click="setRunning('run')">
+        {{ $t({ en: 'Full screen', zh: '全屏' }) }}
+      </UIButton>
+    </UICardHeader>
+    <UICardHeader v-else>
+      <div class="header">
+        {{ $t({ en: 'Running', zh: '运行中' }) }}
+      </div>
+      <UIButton class="button" type="primary" icon="stop" @click="setRunning('none')">
+        {{ $t({ en: 'Stop', zh: '停止' }) }}
       </UIButton>
     </UICardHeader>
 
@@ -14,29 +25,42 @@
       Although naive-ui modal supports `display-directive: show`, it does not initialize the component until it is shown for the first time.
       TODO: Update `UIModal` to support this requirement.
     -->
-    <div class="project-runner-modal" :class="{ visible: running }" :style="modalStyle">
-      <RunnerContainer :project="editorCtx.project" :visible="running" @close="running = false" />
+    <div class="full-screen-runner-modal" :class="{ visible: running === 'run' }" :style="modalStyle">
+      <RunnerContainer :project="editorCtx.project" :visible="running === 'run'" @close="setRunning('none')" />
     </div>
-    <div class="stage-viewer-container">
-      <StageViewer />
+
+    <div class="main">
+      <div class="stage-viewer-container">
+        <StageViewer />
+        <div v-show="running === 'debug'" class="in-place-runner">
+          <InPlaceRunner :project="editorCtx.project" :visible="running === 'debug'" />
+        </div>
+      </div>
     </div>
   </UICard>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
+import type { RunningMode } from '@/models/runtime'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { UICard, UICardHeader, UIButton } from '@/components/ui'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RunnerContainer from './RunnerContainer.vue'
+import InPlaceRunner from './InPlaceRunner.vue'
 
-const running = ref(false)
 const editorCtx = useEditorCtx()
 
-const runButtonRef = ref<InstanceType<typeof UIButton>>()
+const running = computed(() => editorCtx.runtime.running)
+
+function setRunning(running: RunningMode) {
+  editorCtx.runtime.setRunning(running)
+}
+
+const fullScreenRunButtonRef = ref<InstanceType<typeof UIButton>>()
 const modalStyle = computed(() => {
-  if (!runButtonRef.value) return null
-  const { top, left, width, height } = runButtonRef.value.$el.getBoundingClientRect()
+  if (!fullScreenRunButtonRef.value) return null
+  const { top, left, width, height } = fullScreenRunButtonRef.value.$el.getBoundingClientRect()
   return { transformOrigin: `${left + width / 2}px ${top + height / 2}px` }
 })
 </script>
@@ -54,16 +78,28 @@ const modalStyle = computed(() => {
     color: var(--ui-color-title);
   }
 
-  .stage-viewer-container {
+  .button {
+    margin-left: 8px;
+  }
+
+  .main {
     display: flex;
     overflow: hidden;
     justify-content: center;
     padding: 12px;
     height: 100%;
   }
+
+  .stage-viewer-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--ui-border-radius-1);
+    overflow: hidden;
+  }
 }
 
-.project-runner-modal {
+.full-screen-runner-modal {
   position: fixed;
   z-index: 100;
   left: 0;
@@ -82,5 +118,14 @@ const modalStyle = computed(() => {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.in-place-runner {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
 }
 </style>

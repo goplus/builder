@@ -1,9 +1,8 @@
-import { shallowRef, watchEffect, type Ref, type ShallowRef, type WatchSource, computed } from 'vue'
+import { shallowRef, watchEffect, type Ref, type ShallowRef, type WatchSource, computed, ref } from 'vue'
 import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@tanstack/vue-query'
 import { type LocaleMessage } from './i18n'
 import { getCleanupSignal, type OnCleanup } from './disposable'
 import { useAction, type ActionException } from './exception'
-import { useFnWithLoading } from './utils'
 
 export type QueryRet<T> = {
   isLoading: Ref<boolean>
@@ -25,20 +24,23 @@ export function useQuery<T>(
   if (failureSummaryMessage != null) {
     queryFn = useAction(queryFn, failureSummaryMessage)
   }
-  const withLoading = useFnWithLoading(queryFn)
+  const isLoading = ref(false)
   const data = shallowRef<T | null>(null)
   const error = shallowRef<ActionException | null>(null)
 
   function fetch(onCleanup: OnCleanup) {
     const signal = getCleanupSignal(onCleanup)
-    withLoading.fn(signal).then(
+    isLoading.value = true
+    queryFn(signal).then(
       (d) => {
         data.value = d
         error.value = null
+        isLoading.value = false
       },
       (e) => {
-        error.value = e
         console.warn(e)
+        error.value = e
+        isLoading.value = false
       }
     )
   }
@@ -49,7 +51,7 @@ export function useQuery<T>(
 
   watchEffect(fetch)
 
-  return { isLoading: withLoading.isLoading, data, error, refetch }
+  return { isLoading, data, error, refetch }
 }
 
 export type QueryWithCacheOptions<T> = {

@@ -1,7 +1,8 @@
 import { memoize } from 'lodash'
 import dayjs from 'dayjs'
-import { ref, shallowReactive, shallowRef, watch, watchEffect, type ShallowRef, type WatchSource, computed } from 'vue'
+import { shallowReactive, shallowRef, watch, watchEffect, type ShallowRef, type WatchSource, computed } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
+import type { Disposable } from './disposable'
 
 export const isImage = (url: string): boolean => {
   const extension = url.split('.').pop()
@@ -63,6 +64,17 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
     { immediate: true }
   )
   return r
+}
+
+/** Like `computed`, while dispose the value properly */
+export function useComputedDisposable<T extends Disposable>(getter: () => T) {
+  const r = shallowRef<T>()
+  watchEffect((onCleanup) => {
+    const value = getter()
+    onCleanup(() => value.dispose())
+    r.value = value
+  })
+  return r as ShallowRef<T>
 }
 
 const lsSyncer = shallowReactive(new Map<string, number>())
@@ -226,19 +238,6 @@ export function humanizeExactCount(count: number) {
     en: count.toLocaleString('en-US'),
     zh: count.toLocaleString('zh-CN')
   }
-}
-
-export function useFnWithLoading<Args extends any[], T>(fn: (...args: Args) => Promise<T>) {
-  const isLoading = ref(false)
-  async function wrappedFn(...args: Args) {
-    isLoading.value = true
-    try {
-      return await fn(...args)
-    } finally {
-      isLoading.value = false
-    }
-  }
-  return { fn: wrappedFn, isLoading }
 }
 
 export function usePageTitle(
