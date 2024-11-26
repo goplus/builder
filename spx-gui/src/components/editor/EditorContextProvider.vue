@@ -4,10 +4,12 @@
 
 <script lang="ts">
 import { inject } from 'vue'
+import { Runtime } from '@/models/runtime'
 
 export type EditorCtx = {
   project: Project
   userInfo: UserInfo
+  runtime: Runtime
 }
 
 const editorCtxKey: InjectionKey<EditorCtx> = Symbol('editor-ctx')
@@ -23,16 +25,19 @@ export function useEditorCtx() {
 import { provide, type InjectionKey } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
-import { computedShallowReactive } from '@/utils/utils'
+import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
 
 const props = defineProps<{
   project: Project
   userInfo: UserInfo
 }>()
 
-const editorCtx = computedShallowReactive(() => ({
+const runtimeRef = useComputedDisposable(() => new Runtime(props.project))
+
+const editorCtx = computedShallowReactive<EditorCtx>(() => ({
   project: props.project,
-  userInfo: props.userInfo
+  userInfo: props.userInfo,
+  runtime: runtimeRef.value
 }))
 
 provide(editorCtxKey, editorCtx)

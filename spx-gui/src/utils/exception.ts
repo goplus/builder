@@ -2,9 +2,9 @@
  * @desc Definition for Exceptions & tools to help handle them
  */
 
+import { ref } from 'vue'
 import { useI18n, type LocaleMessage } from './i18n'
 import { useMessage } from '@/components/ui'
-import { useFnWithLoading } from './utils'
 
 /**
  * Exceptions are like errors, while slightly different:
@@ -89,20 +89,23 @@ export function useMessageHandle<Args extends any[], T>(
   if (failureSummaryMessage != null) {
     fn = useAction(fn, failureSummaryMessage)
   }
-  const fnWithLoading = useFnWithLoading(fn)
+  const isLoading = ref(false)
 
   // Typically we should do message handling only in the very end of the action chain,
   // which means the returned (or resolved) value will not be used by subsequent code (cuz there is supposed to be no subsequent code).
   // So it's ok to resolve with `void` here, which allows us to swallow exceptions.
   function fnWithMessage(...args: Args): Promise<void> {
-    return fnWithLoading.fn(...args).then(
+    isLoading.value = true
+    return fn(...args).then(
       (ret) => {
+        isLoading.value = false
         if (successMessage != null) {
           const successText = t(typeof successMessage === 'function' ? successMessage(ret) : successMessage)
           m.success(successText)
         }
       },
       (e) => {
+        isLoading.value = false
         // For
         // - `Cancelled` exceptions: nothing to do
         // - `ActionException` exceptions: we will notify the user
@@ -120,6 +123,6 @@ export function useMessageHandle<Args extends any[], T>(
   }
   return {
     fn: fnWithMessage,
-    isLoading: fnWithLoading.isLoading
+    isLoading
   }
 }
