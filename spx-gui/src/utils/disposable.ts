@@ -6,7 +6,11 @@ import { Cancelled } from './exception'
 
 export type Disposer = () => void
 
-export class Disposable {
+export interface IDisposable {
+  dispose(): void
+}
+
+export class Disposable implements IDisposable {
   private disposers: Disposer[] = []
 
   private _isDisposed = false
@@ -14,9 +18,13 @@ export class Disposable {
     return this._isDisposed
   }
 
-  addDisposer = (disposer: Disposer) => {
+  addDisposer(disposer: Disposer) {
     if (this._isDisposed) throw new Error('disposed')
     this.disposers.push(disposer)
+  }
+
+  addDisposable(disposable: IDisposable) {
+    this.addDisposer(() => disposable.dispose())
   }
 
   dispose() {
