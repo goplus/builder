@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
-	"path/filepath"
+	"path"
 	"testing"
 )
 
@@ -237,7 +237,7 @@ func checkDirEntry(t *testing.T, de fs.DirEntry) {
 		if !isDir {
 			t.Errorf("IsDir mismatch for %s: got %v", name, isDir)
 		}
-	} else if isDir != (filepath.Ext(name) == "") {
+	} else if isDir != (path.Ext(name) == "") {
 		t.Errorf("IsDir mismatch for %s: got %v", name, isDir)
 	}
 

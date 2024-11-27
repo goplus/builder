@@ -21,9 +21,10 @@ type MessageReplier interface {
 
 // Server is the core language server implementation that handles LSP messages
 type Server struct {
-	workspaceRootURI DocumentURI
-	workspaceRootFS  fs.ReadDirFS
-	replier          MessageReplier
+	workspaceRootURI   DocumentURI
+	workspaceRootFS    fs.ReadDirFS
+	spxResourceRootDir string
+	replier            MessageReplier
 }
 
 // New creates a new Server instance.
