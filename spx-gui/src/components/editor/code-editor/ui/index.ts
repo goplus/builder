@@ -1,3 +1,4 @@
+import { uniqueId } from 'lodash'
 import type { editor } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
 import type { Project } from '@/models/project'
@@ -11,14 +12,16 @@ import {
   type TextDocumentIdentifier,
   type ITextDocument
 } from '../common'
-import type { IHoverProvider } from './hover'
-import type { ICompletionProvider } from './completion'
+import { HoverController, type IHoverProvider } from './hover'
+import { CompletionController, type ICompletionProvider } from './completion'
 import type { IResourceReferencesProvider } from './resource-reference'
 import type { IContextMenuProvider } from './context-menu'
 import type { IDiagnosticsProvider } from './diagnostics'
-import { APIReference, type IAPIReferenceProvider } from './api-reference'
+import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
 import type { ICopilot } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
+import type { Monaco, Editor } from './MonacoEditor.vue'
+import { toMonacoPosition, toMonacoRange } from './common'
 
 export * from './hover'
 export * from './completion'
@@ -55,7 +58,10 @@ export interface ICodeEditorUI {
 }
 
 class TextDocument implements ITextDocument {
-  constructor(public id: TextDocumentIdentifier) {}
+  constructor(
+    public id: TextDocumentIdentifier,
+    private textModel: editor.ITextModel
+  ) {}
 
   getOffsetAt(position: Position): number {
     console.warn('TODO', position)
@@ -68,17 +74,25 @@ class TextDocument implements ITextDocument {
   }
 
   getValueInRange(range: IRange): string {
-    console.warn('TODO', range)
-    return ''
+    return this.textModel.getValueInRange(toMonacoRange(range))
+  }
+
+  getDefaultRange(position: Position): IRange {
+    const word = this.textModel.getWordAtPosition(toMonacoPosition(position))
+    if (word == null) return { start: position, end: position }
+    return {
+      start: { line: position.line, column: word.startColumn },
+      end: { line: position.line, column: word.endColumn }
+    }
   }
 }
 
 export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void {
-    console.warn('TODO', provider)
+    this.hoverController.registerProvider(provider)
   }
   registerCompletionProvider(provider: ICompletionProvider): void {
-    console.warn('TODO', provider)
+    this.completionController.registerProvider(provider)
   }
   registerResourceReferencesProvider(provider: IResourceReferencesProvider): void {
     console.warn('TODO', provider)
@@ -90,7 +104,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     console.warn('TODO', provider)
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
-    this.apiReference.registerProvider(provider)
+    this.apiReferenceController.registerProvider(provider)
   }
   registerCopilot(copilot: ICopilot): void {
     console.warn('TODO', copilot)
@@ -114,32 +128,41 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     console.warn('TODO', textDocument, positionOrRange)
   }
 
-  apiReference = new APIReference(this)
-
   constructor(private project: Project) {
     super()
   }
 
-  monaco: typeof import('monaco-editor') | null = null
-
-  initMonaco(monaco: typeof import('monaco-editor')) {
-    // TODO: do monaco configuration here
-    this.monaco = monaco
-  }
-
-  editor: editor.IStandaloneCodeEditor | null = null
-
-  initEditor(editor: editor.IStandaloneCodeEditor) {
-    // TODO: do editor configuration here
-    this.editor = editor
-  }
+  id = uniqueId('code-editor-ui-')
+  apiReferenceController = new APIReferenceController(this)
+  hoverController = new HoverController(this)
+  completionController = new CompletionController(this)
 
   activeTextDocument: ITextDocument | null = null
+  getTextDocument(id: TextDocumentIdentifier): ITextDocument | null {
+    console.warn('TODO: getTextDocument', id)
+    return this.activeTextDocument
+  }
 
-  init(signal: AbortSignal) {
-    const { project, editor } = this
-    if (editor == null) throw new Error('editor expected')
+  private _monaco: Monaco | null = null
+  get monaco() {
+    if (this._monaco == null) throw new Error('Monaco not initialized')
+    return this._monaco
+  }
+  private _editor: Editor | null = null
+  get editor() {
+    if (this._editor == null) throw new Error('Editor not initialized')
+    return this._editor
+  }
 
+  init(monaco: Monaco, editor: Editor) {
+    this._monaco = monaco
+    this._editor = editor
+
+    monaco.languages.register({
+      id: 'spx'
+    })
+
+    const project = this.project
     let selected: Stage | Sprite
     if (project.selected?.type === 'stage') selected = project.stage
     else if (project.selected?.type === 'sprite') selected = project.selectedSprite!
@@ -161,12 +184,17 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       })
     })
 
-    this.activeTextDocument = new TextDocument({ uri: 'TODO' })
-    this.apiReference.init(signal)
+    this.activeTextDocument = new TextDocument({ uri: 'TODO' }, editor.getModel()! /** TODO */)
+
+    this.apiReferenceController.init()
+    this.hoverController.init()
+    this.completionController.init()
   }
 
   dispose() {
-    this.apiReference.dispose()
+    this.completionController.dispose()
+    this.hoverController.dispose()
+    this.apiReferenceController.dispose()
     super.dispose()
   }
 }

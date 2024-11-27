@@ -40,8 +40,7 @@ import { ref, watchEffect } from 'vue'
 import { useI18n, type Lang } from '@/utils/i18n'
 
 const emit = defineEmits<{
-  monaco: [Monaco]
-  editor: [Editor]
+  init: [Monaco, Editor]
 }>()
 
 const i18n = useI18n()
@@ -50,8 +49,7 @@ async function getMonaco() {
   if (monacoPromise != null) return monacoPromise
   loader.config(getLoaderConfig(i18n.lang.value))
   return (monacoPromise = loader.init().then((monaco) => {
-    // TODO: do monaco configuration here
-    emit('monaco', monaco)
+    // TODO: do general configuration for monaco here
     return monaco
   }))
 }
@@ -89,7 +87,7 @@ watchEffect(async (onClenaup) => {
       verticalScrollbarSize: 8
     }
   })
-  emit('editor', editor)
+  emit('init', monaco, editor)
   onClenaup(() => {
     editor.dispose()
   })
