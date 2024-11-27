@@ -141,7 +141,7 @@ watch(
       framesDisposable.dispose()
       return
     }
-    disposable.addDisposer(framesDisposable.dispose)
+    disposable.addDisposable(framesDisposable)
 
     if (soundSrc) {
       const nextAudioElement = await preloadAudio(soundSrc)
