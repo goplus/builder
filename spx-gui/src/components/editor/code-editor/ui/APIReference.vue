@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { APIReference } from '.'
+import DefinitionOverviewWrapper from './DefinitionOverviewWrapper.vue'
+import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
 import MarkdownView from './MarkdownView.vue'
 
 defineProps<{
@@ -18,8 +20,10 @@ function handleExplain() {
 <template>
   <ul class="api-reference">
     <li v-for="(item, i) in apiReference.items" :key="i" class="item">
-      <h4>{{ item.overview }}</h4>
-      <MarkdownView :value="item.detail.value" />
+      <DefinitionOverviewWrapper>{{ item.overview }}</DefinitionOverviewWrapper>
+      <DefinitionDetailWrapper>
+        <MarkdownView v-bind="item.detail" />
+      </DefinitionDetailWrapper>
       <button type="button" @click="handleInsert">insert</button>
       <button type="button" @click="handleExplain">explain</button>
     </li>

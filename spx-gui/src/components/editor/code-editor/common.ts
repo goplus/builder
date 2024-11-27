@@ -73,18 +73,31 @@ export type DefinitionIdentifier = {
    * - `for_statement_with_single_condition`: kind-statement
    */
   name?: string
-  /** Index in overloads. */
-  overloadIndex?: number
+  /** Overload Identifier. */
+  overloadId?: string
 }
 
-export function stringifyDefinitionId(defId: DefinitionIdentifier): string {
-  if (defId.name == null) {
-    if (defId.package == null) throw new Error('package expected for ' + defId)
-    return defId.package
+/** gop:<package>?<name>#<overloadId> */
+type DefinitionIdString = string
+
+export function stringifyDefinitionId(defId: DefinitionIdentifier): DefinitionIdString {
+  let idStr = 'gop:'
+  if (defId.package != null) idStr += `${defId.package}`
+  if (defId.name != null) idStr += `?${encodeURIComponent(defId.name)}`
+  if (defId.overloadId != null) idStr += `#${encodeURIComponent(defId.overloadId)}`
+  return idStr
+}
+
+export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifier {
+  if (!idStr.startsWith('gop:')) throw new Error(`Invalid definition ID: ${idStr}`)
+  idStr = idStr.slice(4)
+  const [withoutHash, hash = ''] = idStr.split('#')
+  const [hostWithPath, query = ''] = withoutHash.split('?')
+  return {
+    package: hostWithPath === '' ? undefined : hostWithPath,
+    name: query === '' ? undefined : decodeURIComponent(query),
+    overloadId: hash === '' ? undefined : decodeURIComponent(hash)
   }
-  const suffix = defId.overloadIndex == null ? '' : `[${defId.overloadIndex}]`
-  if (defId.package == null) return defId.name + suffix
-  return defId.package + '|' + defId.name + suffix
 }
 
 /**
@@ -105,7 +118,7 @@ export type MarkdownStringFlag = 'basic' | 'advanced'
  * We use flag to distinguish different types of Markdown string.
  * Different types of Markdown string expect different rendering behaviors, especially for custom components support in MDX.
  */
-export type MarkdownString<F extends MarkdownStringFlag> = {
+export type MarkdownString<F extends MarkdownStringFlag = MarkdownStringFlag> = {
   flag?: F
   /** Markdown string with MDX support. */
   value: string | LocaleMessage
