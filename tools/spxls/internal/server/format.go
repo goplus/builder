@@ -13,19 +13,23 @@ import (
 )
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_formatting
-func (s *Server) formatting(params *DocumentFormattingParams) ([]TextEdit, error) {
-	if path.Ext(string(params.TextDocument.URI)) != ".spx" {
+func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]TextEdit, error) {
+	spxFile, err := s.fromDocumentURI(params.TextDocument.URI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get path from document uri: %w", err)
+	}
+	if path.Ext(spxFile) != ".spx" {
 		return nil, nil // Not a spx source file.
 	}
 
-	content, err := fs.ReadFile(s.rootFS, string(params.TextDocument.URI))
+	content, err := fs.ReadFile(s.workspaceRootFS, spxFile)
 	if err != nil {
 		return nil, err
 	}
 
-	formatted, err := gopfmt.Source(content, false, string(params.TextDocument.URI))
+	formatted, err := gopfmt.Source(content, false, spxFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to format document %q: %w", params.TextDocument.URI, err)
+		return nil, fmt.Errorf("failed to format document %q: %w", spxFile, err)
 	}
 	formatted, err = formatSpx(formatted)
 	if err != nil {

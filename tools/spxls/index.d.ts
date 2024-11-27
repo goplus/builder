@@ -13,9 +13,9 @@ export interface Spxls {
 /**
  * Creates a new instance of the spx language server.
  *
- * @param filesProvider - Function that provides access to the workspace files. This will be called whenever the
- *                       language server needs to access the file system. The returned map should have relative file
- *                       paths as keys and file contents values.
+ * @param filesProvider - Function that provides access to the workspace files. All paths in the returned Files are
+ *                       relative to the workspace root. This will be called whenever the language server needs to
+ *                       access the file system.
  *
  * @param messageReplier - Function called when the language server needs to reply to the client. The client should
  *                        handle these messages according to the LSP specification.

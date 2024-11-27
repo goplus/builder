@@ -7,8 +7,8 @@ import (
 	"syscall/js"
 
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
-	"github.com/goplus/builder/tools/spxls/internal/mapfs"
 	"github.com/goplus/builder/tools/spxls/internal/server"
+	"github.com/goplus/builder/tools/spxls/internal/vfs"
 )
 
 // Spxls implements a lightweight Go+ language server for spx that runs in the
@@ -33,7 +33,7 @@ func NewSpxls(this js.Value, args []js.Value) any {
 	s := &Spxls{
 		messageReplier: args[1],
 	}
-	s.server = server.New(mapfs.New(func() map[string][]byte {
+	s.server = server.New(vfs.NewMapFS(func() map[string][]byte {
 		files := filesProvider.Invoke()
 		return ConvertJSFilesToMap(files)
 	}), s)
