@@ -41,3 +41,15 @@ export function loadImg(src: string, timeout?: number) {
     }
   })
 }
+
+/** Add (and remove when not needed) `<link rel=prefetch>` */
+export function addPrefetchLink(url: string) {
+  const link = document.createElement('link')
+  link.rel = 'prefetch'
+  link.href = url
+  link.crossOrigin = 'anonymous'
+  link.onload = link.onerror = () => {
+    document.head.removeChild(link)
+  }
+  document.head.appendChild(link)
+}

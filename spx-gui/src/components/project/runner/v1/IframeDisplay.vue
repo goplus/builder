@@ -7,23 +7,13 @@ import { ref, watch } from 'vue'
 import rawRunnerHtml from '@/assets/ispx/runner.html?raw'
 import wasmExecUrl from '@/assets/wasm_exec.js?url'
 import wasmUrl from '@/assets/ispx/main.wasm?url'
-
-function addPrefetchLink(url: string) {
-  // Use `prefetch` instead of `preload`:
-  // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be runned until the user clicks some "run" button.
-  // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
-  const link = document.createElement('link')
-  link.rel = 'prefetch'
-  link.href = url
-  link.crossOrigin = 'anonymous'
-  link.onload = link.onerror = () => {
-    document.head.removeChild(link)
-  }
-  document.head.appendChild(link)
-}
+import { addPrefetchLink } from '@/utils/dom'
 
 // preload resources (for example, wasm files) to accelerate the loading
 export function preload() {
+  // Use `<link rel=prefetch>` instead of `<link rel=preload>`:
+  // * `preload` indicates higher priority than `prefetch`. Preloaded content are expected to be used soon. For example, chrome will warn if the preloaded content is not used within 3 or 5 seconds. While project here will not be runned until the user clicks some "run" button.
+  // * `preload` results are not shared across different documents, while the iframe content is a different document. The "preloading" is meaningful only when the HTTP cache is shared, which is more like the case of `prefetch`.
   addPrefetchLink(wasmExecUrl)
   addPrefetchLink(wasmUrl)
 }
