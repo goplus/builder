@@ -8,7 +8,5 @@
 
 <style lang="scss" scoped>
 .definition-detail-wrapper {
-  padding: 0.5em;
-  background: #ddd;
 }
 </style>

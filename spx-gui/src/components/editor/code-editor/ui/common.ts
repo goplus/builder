@@ -1,5 +1,12 @@
-import * as monaco from 'monaco-editor'
+import type * as monaco from 'monaco-editor'
+import { Sprite } from '@/models/sprite'
+import type { Stage } from '@/models/stage'
+import type { Action, Project } from '@/models/project'
 import type { IRange, Position, TextDocumentIdentifier } from '../common'
+
+export type { monaco }
+export type Monaco = typeof import('monaco-editor')
+export type MonacoEditor = monaco.editor.IStandaloneCodeEditor
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -32,7 +39,78 @@ export function toMonacoRange(range: IRange): monaco.IRange {
   }
 }
 
-export function fromMonacoTextModelUri(uri: monaco.Uri): TextDocumentIdentifier {
+export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
   // TODO: check if this is correct
   return { uri: uri.toString() }
+}
+
+export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.Uri {
+  return monaco.Uri.parse(id.uri)
+}
+
+export interface ICodeOwner {
+  getTextDocumentId(): TextDocumentIdentifier
+  getCode(): string
+  setCode(newCode: string): Promise<void>
+}
+
+class CodeOwnerStage implements ICodeOwner {
+  action: Action
+  constructor(
+    private stage: Stage,
+    private project: Project
+  ) {
+    this.action = {
+      name: { en: 'Update stage code', zh: '修改舞台代码' },
+      mergeable: true
+    }
+  }
+  getTextDocumentId() {
+    return { uri: `file:///${this.stage.codeFilePath}` }
+  }
+  getCode() {
+    return this.stage.code
+  }
+  setCode(newCode: string) {
+    return this.project.history.doAction(this.action, () => {
+      this.stage.setCode(newCode)
+    })
+  }
+}
+
+class CodeOwnerSprite implements ICodeOwner {
+  action: Action
+  constructor(
+    private sprite: Sprite,
+    private project: Project
+  ) {
+    this.action = {
+      name: { en: `Update ${sprite.name} code`, zh: `修改 ${sprite.name} 代码` },
+      mergeable: true
+    }
+  }
+  getTextDocumentId() {
+    return { uri: `file:///${this.sprite.codeFilePath}` }
+  }
+  getCode() {
+    return this.sprite.code
+  }
+  setCode(newCode: string) {
+    return this.project.history.doAction(this.action, () => {
+      this.sprite.setCode(newCode)
+    })
+  }
+}
+
+export function getSelectedCodeOwner(project: Project): ICodeOwner | null {
+  const selected = project.selected
+  if (selected == null) return null
+  switch (selected.type) {
+    case 'sprite':
+      return new CodeOwnerSprite(project.selectedSprite!, project)
+    case 'stage':
+      return new CodeOwnerStage(project.stage, project)
+    default:
+      return null
+  }
 }
