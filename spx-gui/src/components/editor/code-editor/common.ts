@@ -109,6 +109,7 @@ export interface ITextDocument {
   getOffsetAt(position: Position): number
   getPositionAt(offset: number): Position
   getValueInRange(range: IRange): string
+  getDefaultRange(position: Position): IRange
 }
 
 export type MarkdownStringFlag = 'basic' | 'advanced'

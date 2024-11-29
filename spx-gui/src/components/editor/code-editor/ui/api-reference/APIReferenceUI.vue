@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { APIReference } from '.'
-import DefinitionOverviewWrapper from './DefinitionOverviewWrapper.vue'
-import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
-import MarkdownView from './MarkdownView.vue'
+import DefinitionOverviewWrapper from '../DefinitionOverviewWrapper.vue'
+import DefinitionDetailWrapper from '../DefinitionDetailWrapper.vue'
+import MarkdownView from '../MarkdownView.vue'
+import type { APIReferenceController } from '.'
 
 defineProps<{
-  apiReference: APIReference
+  controller: APIReferenceController
 }>()
 
 function handleInsert() {
@@ -19,7 +19,7 @@ function handleExplain() {
 
 <template>
   <ul class="api-reference">
-    <li v-for="(item, i) in apiReference.items" :key="i" class="item">
+    <li v-for="(item, i) in controller.itemsRef.value" :key="i" class="item">
       <DefinitionOverviewWrapper>{{ item.overview }}</DefinitionOverviewWrapper>
       <DefinitionDetailWrapper>
         <MarkdownView v-bind="item.detail" />
@@ -32,6 +32,14 @@ function handleExplain() {
 
 <style lang="scss" scoped>
 .api-reference {
-  padding: 1em;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  padding: 8px;
+  border: 1px solid #333;
 }
 </style>

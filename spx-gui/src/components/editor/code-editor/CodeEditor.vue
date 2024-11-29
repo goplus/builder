@@ -15,11 +15,11 @@ import {
   type ResourceReference,
   type ResourceReferencesContext
 } from './ui'
-import type { DefinitionDocumentationItem, DefinitionIdentifier } from './common'
+import { DefinitionKind, type DefinitionDocumentationItem, type DefinitionIdentifier } from './common'
 
 const editorCtx = useEditorCtx()
 
-function initialize(ui: ICodeEditorUI) {
+function handleUIInit(ui: ICodeEditorUI) {
   const copilot = new Copilot()
   const documentBase = new DocumentBase()
   const spxlc = new Spxlc()
@@ -40,7 +40,24 @@ function initialize(ui: ICodeEditorUI) {
   ui.registerCompletionProvider({
     async provideCompletion(ctx, position) {
       console.warn('TODO', ctx, position)
-      return []
+      return [
+        {
+          label: 'onStart',
+          kind: DefinitionKind.Listen,
+          detail: 'func onStart(callback func())',
+          documentation: {
+            value: `documentation for \`onStart\``
+          }
+        },
+        {
+          label: 'setXYpos',
+          kind: DefinitionKind.Function,
+          detail: 'func Sprite.setXYpos(x, y int)',
+          documentation: {
+            value: `documentation for \`setXYpos\``
+          }
+        }
+      ]
     }
   })
 
@@ -81,7 +98,21 @@ function initialize(ui: ICodeEditorUI) {
   ui.registerHoverProvider({
     async provideHover(ctx, position) {
       console.warn('TODO', ctx, position)
-      return null
+      const range = ctx.textDocument.getDefaultRange(position)
+      let value = ctx.textDocument.getValueInRange(range)
+      if (value === '') {
+        value = ctx.textDocument.getValueInRange({
+          start: position,
+          end: {
+            line: position.line,
+            column: position.column + 1
+          }
+        })
+      }
+      return {
+        contents: [{ value: '`' + value + '` hovered' }],
+        actions: []
+      }
     }
   })
 
@@ -115,5 +146,5 @@ defineExpose({
 </script>
 
 <template>
-  <CodeEditorUIComp :key="editorKey" :project="editorCtx.project" @initialize="initialize" />
+  <CodeEditorUIComp :key="editorKey" :project="editorCtx.project" @init="handleUIInit" />
 </template>
