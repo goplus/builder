@@ -25,6 +25,12 @@ func FromGopTokenPosition(p goptoken.Position) Position {
 	}
 }
 
+// toURI converts a string to a [URI].
+func toURI(s string) *URI {
+	u := URI(s)
+	return &u
+}
+
 // SpxRenameResourceParams represents parameters to rename a spx resource in the
 // workspace.
 type SpxRenameResourceParams struct {

@@ -92,16 +92,22 @@ var (
 		assert.True(t, ok, "expected *RelatedFullDocumentDiagnosticReport")
 		assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
 		require.Len(t, fullReport.Items, 2)
-		assert.Contains(t, fullReport.Items[0].Message, "expected ')'")
-		assert.Equal(t, Range{
-			Start: Position{Line: 4, Character: 24},
-			End:   Position{Line: 4, Character: 24},
-		}, fullReport.Items[0].Range)
-		assert.Contains(t, fullReport.Items[1].Message, "expected ';'")
-		assert.Equal(t, Range{
-			Start: Position{Line: 4, Character: 24},
-			End:   Position{Line: 4, Character: 24},
-		}, fullReport.Items[1].Range)
+		assert.Contains(t, fullReport.Items, Diagnostic{
+			Severity: SeverityError,
+			Message:  "expected ')', found 'EOF'",
+			Range: Range{
+				Start: Position{Line: 4, Character: 24},
+				End:   Position{Line: 4, Character: 24},
+			},
+		})
+		assert.Contains(t, fullReport.Items, Diagnostic{
+			Severity: SeverityError,
+			Message:  "expected ';', found 'EOF'",
+			Range: Range{
+				Start: Position{Line: 4, Character: 24},
+				End:   Position{Line: 4, Character: 24},
+			},
+		})
 	})
 
 	t.Run("NonSpxFile", func(t *testing.T) {
@@ -187,16 +193,22 @@ var (
 			fullReport := item.Value.(*WorkspaceFullDocumentDiagnosticReport)
 			if fullReport.URI == "file:///main.spx" {
 				require.Len(t, fullReport.Items, 2)
-				assert.Contains(t, fullReport.Items[0].Message, "expected ')'")
-				assert.Equal(t, Range{
-					Start: Position{Line: 4, Character: 24},
-					End:   Position{Line: 4, Character: 24},
-				}, fullReport.Items[0].Range)
-				assert.Contains(t, fullReport.Items[1].Message, "expected ';'")
-				assert.Equal(t, Range{
-					Start: Position{Line: 4, Character: 24},
-					End:   Position{Line: 4, Character: 24},
-				}, fullReport.Items[1].Range)
+				assert.Contains(t, fullReport.Items, Diagnostic{
+					Severity: SeverityError,
+					Message:  "expected ')', found 'EOF'",
+					Range: Range{
+						Start: Position{Line: 4, Character: 24},
+						End:   Position{Line: 4, Character: 24},
+					},
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
+					Severity: SeverityError,
+					Message:  "expected ';', found 'EOF'",
+					Range: Range{
+						Start: Position{Line: 4, Character: 24},
+						End:   Position{Line: 4, Character: 24},
+					},
+				})
 			} else {
 				assert.Empty(t, fullReport.Items)
 			}
@@ -255,80 +267,80 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///main.spx":
 				require.Len(t, fullReport.Items, 3)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
 						Start: Position{Line: 3, Character: 2},
 						End:   Position{Line: 3, Character: 22},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
 						Start: Position{Line: 5, Character: 6},
 						End:   Position{Line: 5, Character: 26},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityWarning,
 					Message:  "resources must be defined in the first var block for auto-binding",
 					Range: Range{
 						Start: Position{Line: 7, Character: 2},
 						End:   Position{Line: 7, Character: 29},
 					},
-				}, fullReport.Items[2])
+				})
 			case "file:///MySprite.spx":
 				require.Len(t, fullReport.Items, 6)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityWarning,
 					Message:  "auto-binding of resources can only happen in main.spx",
 					Range: Range{
 						Start: Position{Line: 5, Character: 2},
 						End:   Position{Line: 5, Character: 23},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "sound resource name cannot be empty",
 					Range: Range{
 						Start: Position{Line: 9, Character: 7},
 						End:   Position{Line: 9, Character: 9},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "ConstSoundName" not found`,
 					Range: Range{
 						Start: Position{Line: 10, Character: 7},
 						End:   Position{Line: 10, Character: 21},
 					},
-				}, fullReport.Items[2])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "LiteralSoundName" not found`,
 					Range: Range{
 						Start: Position{Line: 11, Character: 7},
 						End:   Position{Line: 11, Character: 25},
 					},
-				}, fullReport.Items[3])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
 						Start: Position{Line: 13, Character: 7},
 						End:   Position{Line: 13, Character: 27},
 					},
-				}, fullReport.Items[4])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
-					Message:  "auto-binding of resources only works for variables declared in main.spx",
+					Message:  `cannot find auto-binding for sound resource "AutoBindingSoundName2"`,
 					Range: Range{
 						Start: Position{Line: 14, Character: 7},
 						End:   Position{Line: 14, Character: 28},
 					},
-				}, fullReport.Items[5])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -366,40 +378,40 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///main.spx":
 				require.Len(t, fullReport.Items, 2)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "backdrop resource name cannot be empty",
 					Range: Range{
 						Start: Position{Line: 2, Character: 12},
 						End:   Position{Line: 2, Character: 14},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `backdrop resource "NonExistentBackdrop" not found`,
 					Range: Range{
 						Start: Position{Line: 3, Character: 12},
 						End:   Position{Line: 3, Character: 33},
 					},
-				}, fullReport.Items[1])
+				})
 			case "file:///MySprite.spx":
 				require.Len(t, fullReport.Items, 2)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `backdrop resource "ConstBackdropName" not found`,
 					Range: Range{
 						Start: Position{Line: 6, Character: 13},
 						End:   Position{Line: 6, Character: 30},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `backdrop resource "LiteralBackdropName" not found`,
 					Range: Range{
 						Start: Position{Line: 7, Character: 13},
 						End:   Position{Line: 7, Character: 34},
 					},
-				}, fullReport.Items[1])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -444,82 +456,82 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///main.spx":
 				require.Len(t, fullReport.Items, 3)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
 						Start: Position{Line: 3, Character: 2},
 						End:   Position{Line: 3, Character: 11},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
 						Start: Position{Line: 4, Character: 2},
 						End:   Position{Line: 4, Character: 11},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "sprite resource name must match type name for explicit auto-binding to work",
 					Range: Range{
 						Start: Position{Line: 5, Character: 2},
 						End:   Position{Line: 5, Character: 12},
 					},
-				}, fullReport.Items[2])
+				})
 			case "file:///MySprite1.spx":
 				require.Len(t, fullReport.Items, 3)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityWarning,
 					Message:  "auto-binding of resources can only happen in main.spx",
 					Range: Range{
 						Start: Position{Line: 2, Character: 5},
 						End:   Position{Line: 2, Character: 14},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
 						Start: Position{Line: 4, Character: 2},
-						End:   Position{Line: 4, Character: 9},
+						End:   Position{Line: 4, Character: 19},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
 						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 19},
+						End:   Position{Line: 5, Character: 11},
 					},
-				}, fullReport.Items[2])
+				})
 			case "file:///MySprite2.spx":
 				require.Len(t, fullReport.Items, 3)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
 						Start: Position{Line: 3, Character: 2},
-						End:   Position{Line: 3, Character: 19},
+						End:   Position{Line: 3, Character: 11},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
 						Start: Position{Line: 4, Character: 2},
-						End:   Position{Line: 4, Character: 9},
+						End:   Position{Line: 4, Character: 19},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
 						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 19},
+						End:   Position{Line: 5, Character: 11},
 					},
-				}, fullReport.Items[2])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -552,22 +564,22 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///MySprite.spx":
 				require.Len(t, fullReport.Items, 2)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
-					Message:  "costume resource name cannot be empty",
+					Message:  "sprite costume resource name cannot be empty",
 					Range: Range{
 						Start: Position{Line: 3, Character: 13},
 						End:   Position{Line: 3, Character: 15},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `costume resource "NonExistentCostume" not found in sprite "MySprite"`,
 					Range: Range{
 						Start: Position{Line: 4, Character: 13},
 						End:   Position{Line: 4, Character: 33},
 					},
-				}, fullReport.Items[1])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -600,22 +612,22 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///MySprite.spx":
 				require.Len(t, fullReport.Items, 2)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
-					Message:  "animation resource name cannot be empty",
+					Message:  "sprite animation resource name cannot be empty",
 					Range: Range{
 						Start: Position{Line: 3, Character: 10},
 						End:   Position{Line: 3, Character: 12},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `animation resource "roll-in" not found in sprite "MySprite"`,
 					Range: Range{
 						Start: Position{Line: 4, Character: 10},
 						End:   Position{Line: 4, Character: 19},
 					},
-				}, fullReport.Items[1])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -653,30 +665,30 @@ onStart => {
 			switch fullReport.URI {
 			case "file:///MySprite.spx":
 				require.Len(t, fullReport.Items, 3)
-				assert.Equal(t, Diagnostic{
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "widget resource name cannot be empty",
 					Range: Range{
 						Start: Position{Line: 6, Character: 21},
 						End:   Position{Line: 6, Character: 23},
 					},
-				}, fullReport.Items[0])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `widget resource "ConstWidgetName" not found`,
 					Range: Range{
 						Start: Position{Line: 7, Character: 21},
 						End:   Position{Line: 7, Character: 36},
 					},
-				}, fullReport.Items[1])
-				assert.Equal(t, Diagnostic{
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `widget resource "LiteralWidgetName" not found`,
 					Range: Range{
 						Start: Position{Line: 8, Character: 21},
 						End:   Position{Line: 8, Character: 40},
 					},
-				}, fullReport.Items[2])
+				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
