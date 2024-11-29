@@ -17,7 +17,7 @@ export const clone: DefinitionDocumentationItem = {
     name: 'Sprite.Clone'
   },
   insertText: 'clone',
-  overview: 'func clone()',
+  overview: 'clone',
   detail: makeBasicMarkdownString({
     en: 'Make a clone of current sprite, with optional data (for `onCloned` callback)',
     zh: '复制当前精灵，可传递数据给 `onCloned` 回调'
@@ -32,7 +32,7 @@ export const onCloned: DefinitionDocumentationItem = {
     name: 'Sprite.OnCloned'
   },
   insertText: 'onCloned => {\n\t${1}\n}',
-  overview: 'func onCloned(callback func())',
+  overview: 'onCloned => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite cloned',
     zh: '当前精灵被复制时执行'
@@ -48,7 +48,7 @@ export const onTouchStart0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onTouchStart => {\n\t${1}\n}',
-  overview: 'func onTouchStart(callback func())',
+  overview: 'onTouchStart => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any other sprites',
     zh: '当前精灵与其他任意精灵开始接触时执行'
@@ -63,8 +63,8 @@ export const onTouchStart1: DefinitionDocumentationItem = {
     name: 'Sprite.OnTouchStart',
     overloadId: '1'
   },
-  insertText: 'onTouchStart otherSprite => {\n\t${1}\n}',
-  overview: 'func onTouchStart(callback func(otherSprite Sprite))',
+  insertText: 'onTouchStart sprite => {\n\t${1}\n}',
+  overview: 'onTouchStart sprite => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by any other sprites (and get the sprite)',
     zh: '当前精灵与其他精灵开始接触时执行（并获得精灵信息）'
@@ -80,7 +80,7 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertText: 'onTouchStart ${1:name}, => {\n\t${2}\n}',
-  overview: 'func onTouchStart(name string, callback func())',
+  overview: 'onTouchStart name, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name',
     zh: '当前精灵与指定名字的精灵开始接触时执行'
@@ -95,8 +95,8 @@ export const onTouchStart3: DefinitionDocumentationItem = {
     name: 'Sprite.OnTouchStart',
     overloadId: '3'
   },
-  insertText: 'onTouchStart ${1:name}, otherSprite => {\n\t${2}\n}',
-  overview: 'func onTouchStart(name string, callback func(otherSprite Sprite))',
+  insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
+  overview: 'onTouchStart name, sprite => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name (and get the sprite)',
     zh: '当前精灵与指定名字的精灵开始接触时执行（并获得精灵信息）'
@@ -111,7 +111,7 @@ export const onMoving: DefinitionDocumentationItem = {
     name: 'Sprite.OnMoving'
   },
   insertText: 'onMoving => {\n\t${1}\n}',
-  overview: 'func onMoving(callback func())',
+  overview: 'onMoving => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite moving (position change)',
     zh: '当前精灵移动（位置改变）时执行'
@@ -126,7 +126,7 @@ export const onTurning: DefinitionDocumentationItem = {
     name: 'Sprite.OnTurning'
   },
   insertText: 'onTurning => {\n\t${1}\n}',
-  overview: 'func onTurning(callback func())',
+  overview: 'onTurning => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite turning (heading change)',
     zh: '当前精灵转向（朝向改变）时执行'
@@ -141,7 +141,7 @@ export const die: DefinitionDocumentationItem = {
     name: 'Sprite.Die'
   },
   insertText: 'die',
-  overview: 'func die()',
+  overview: 'die',
   detail: makeBasicMarkdownString({
     en: 'Let current sprite die. Animation bound to state "die" will be played.',
     zh: '让当前精灵死亡，绑定到“死亡”状态的动画会被播放'
@@ -156,7 +156,7 @@ export const hide: DefinitionDocumentationItem = {
     name: 'Sprite.Hide'
   },
   insertText: 'hide',
-  overview: 'func hide()',
+  overview: 'hide',
   detail: makeBasicMarkdownString({
     en: 'Make current sprite invisible',
     zh: '使当前精灵不可见'
@@ -171,7 +171,7 @@ export const show: DefinitionDocumentationItem = {
     name: 'Sprite.Show'
   },
   insertText: 'show',
-  overview: 'func show()',
+  overview: 'show',
   detail: makeBasicMarkdownString({
     en: 'Make current sprite visible',
     zh: '使当前精灵可见'
@@ -186,7 +186,7 @@ export const visible: DefinitionDocumentationItem = {
     name: 'Sprite.Visible'
   },
   insertText: 'visible',
-  overview: 'func visible()',
+  overview: 'visible',
   detail: makeBasicMarkdownString({
     en: 'If current sprite visible',
     zh: '当前精灵是否可见'
@@ -201,7 +201,7 @@ export const costumeName: DefinitionDocumentationItem = {
     name: 'Sprite.CostumeName'
   },
   insertText: 'costumeName',
-  overview: 'func costumeName()',
+  overview: 'costumeName',
   detail: makeBasicMarkdownString({
     en: 'The name of the current costume',
     zh: '当前造型的名称'
@@ -216,7 +216,7 @@ export const setCostume: DefinitionDocumentationItem = {
     name: 'Sprite.SetCostume'
   },
   insertText: 'setCostume ${1:name}',
-  overview: 'func setCostume(name string)',
+  overview: 'setCostume name',
   detail: makeBasicMarkdownString({
     en: 'Set the current costume by specifying name, e.g., `setCostume "happy"`',
     zh: '通过指定名称设置当前造型，如：`setCostume "happy"`'
@@ -231,7 +231,7 @@ export const animate: DefinitionDocumentationItem = {
     name: 'Sprite.Animate'
   },
   insertText: 'animate ${1:name}',
-  overview: 'func animate(name string)',
+  overview: 'animate name',
   detail: makeBasicMarkdownString({
     en: 'Play animation with given name, e.g., `animate "jump"`',
     zh: '通过指定名称播放动画，如：`animate "jump"`'
@@ -247,7 +247,7 @@ export const say0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'say ${1:""}',
-  overview: 'func say(word string)',
+  overview: 'say word',
   detail: makeBasicMarkdownString({
     en: 'Make the sprite say some word, e.g., `say "Hello!"`',
     zh: '使精灵说出一些话，如：`say "Hello!"`'
@@ -263,7 +263,7 @@ export const say1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'say ${1:""}, ${2:seconds}',
-  overview: 'func say(word string, duration float64)',
+  overview: 'say word, seconds',
   detail: makeBasicMarkdownString({
     en: 'Make the sprite say some word with duration, e.g., `say "Hello!", 2`',
     zh: '使精灵说出一些话并指定持续时间，如：`say "Hello!", 2`'
@@ -279,7 +279,7 @@ export const think0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'think ${1:""}',
-  overview: 'func think(word string)',
+  overview: 'think word',
   detail: makeBasicMarkdownString({
     en: 'Make the sprite think of some word, e.g., `think "Wow!"`',
     zh: '使精灵思考一些内容，如：`think "Wow!"`'
@@ -295,7 +295,7 @@ export const think1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'think ${1:""}, ${2:seconds}',
-  overview: 'func think(word string, duration float64)',
+  overview: 'think word, seconds',
   detail: makeBasicMarkdownString({
     en: 'Make the sprite think of some word with duration, e.g., `think "Wow!", 2`',
     zh: '使精灵思考一些内容并指定持续时间，如：`think "Wow!", 2`'
@@ -310,7 +310,7 @@ export const distanceTo: DefinitionDocumentationItem = {
     name: 'Sprite.DistanceTo'
   },
   insertText: 'distanceTo(${1:target})',
-  overview: 'func distanceTo(target Sprite) float64', // TODO: other types of target
+  overview: 'distanceTo(target)',
   detail: makeBasicMarkdownString({
     en: 'Get the distance from current sprite to given target',
     zh: '获取当前精灵到指定目标的距离'
@@ -325,7 +325,7 @@ export const move: DefinitionDocumentationItem = {
     name: 'Sprite.Move'
   },
   insertText: 'move ${1:distance}',
-  overview: 'func move(distance float64)',
+  overview: 'move distance',
   detail: makeBasicMarkdownString({
     en: 'Move given distance, toward current heading',
     zh: '向当前朝向移动指定的距离'
@@ -340,7 +340,7 @@ export const step: DefinitionDocumentationItem = {
     name: 'Sprite.Step'
   },
   insertText: 'step ${1:distance}',
-  overview: 'func step(distance float64)',
+  overview: 'step distance',
   detail: makeBasicMarkdownString({
     en: 'Step given distance, toward current heading. Animation bound to state "step" will be played',
     zh: '向当前朝向行走指定的距离，绑定到“行走”状态的动画会被播放'
@@ -355,7 +355,7 @@ export const goto: DefinitionDocumentationItem = {
     name: 'Sprite.Goto'
   },
   insertText: 'goto ${1:target}',
-  overview: 'func goto(target Sprite)', // TODO: other types of target
+  overview: 'goto target',
   detail: makeBasicMarkdownString({
     en: 'Move to given target',
     zh: '移动到指定目标'
@@ -370,8 +370,8 @@ export const glide0: DefinitionDocumentationItem = {
     name: 'Sprite.Glide',
     overloadId: '0'
   },
-  insertText: 'glide ${1:X}, ${2:Y}, ${3:seconds}',
-  overview: 'func glide(X, Y float64, seconds float64)',
+  insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
+  overview: 'glide x, y, seconds',
   detail: makeBasicMarkdownString({
     en: 'Move to given position (X, Y), with glide animation',
     zh: '滑行到指定位置（X，Y）'
@@ -387,7 +387,7 @@ export const glide1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'glide(target Sprite, ${1:seconds})',
-  overview: 'func glide(target Sprite, seconds float64)', // TODO: other types of target
+  overview: 'glide target, seconds',
   detail: makeBasicMarkdownString({
     en: 'Move to given target, with glide animation',
     zh: '滑行到指定目标'
@@ -401,8 +401,8 @@ export const setXYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.SetXYpos'
   },
-  insertText: 'setXYpos ${1:X}, ${2:Y}',
-  overview: 'func setXYpos(X, Y float64)',
+  insertText: 'setXYpos ${1:x}, ${2:y}',
+  overview: 'setXYpos x, y',
   detail: makeBasicMarkdownString({
     en: 'Move to given position, e.g., `setXYpos 100, 100`',
     zh: '移动到指定位置，如：`setXYpos 100, 100`'
@@ -417,7 +417,7 @@ export const changeXYpos: DefinitionDocumentationItem = {
     name: 'Sprite.ChangeXYpos'
   },
   insertText: 'changeXYpos ${1:dX}, ${2:dY}',
-  overview: 'func changeXYpos(dX, dY float64)',
+  overview: 'changeXYpos dX, dY',
   detail: makeBasicMarkdownString({
     en: 'Move with given position (X, Y) change, e.g., `changeXYpos 10, 10`',
     zh: '以指定的位置偏移移动（X，Y），如：`changeXYpos 10, 10`'
@@ -432,7 +432,7 @@ export const xpos: DefinitionDocumentationItem = {
     name: 'Sprite.Xpos'
   },
   insertText: 'xpos',
-  overview: 'func xpos() float64',
+  overview: 'xpos',
   detail: makeBasicMarkdownString({
     en: 'Get current X position',
     zh: '获取当前水平位置'
@@ -446,8 +446,8 @@ export const setXpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.SetXpos'
   },
-  insertText: 'setXpos ${1:X}',
-  overview: 'func setXpos(X float64)',
+  insertText: 'setXpos ${1:x}',
+  overview: 'setXpos x',
   detail: makeBasicMarkdownString({
     en: 'Move to given X position, e.g., `setXpos 100`',
     zh: '移动到指定的水平位置，如：`setXpos 100`'
@@ -462,7 +462,7 @@ export const changeXpos: DefinitionDocumentationItem = {
     name: 'Sprite.ChangeXpos'
   },
   insertText: 'changeXpos ${1:dX}',
-  overview: 'func changeXpos(dX float64)',
+  overview: 'changeXpos dX',
   detail: makeBasicMarkdownString({
     en: 'Move with given X position change, e.g., `changeXpos 10`',
     zh: '以给定的水平位置偏移移动，如：`changeXpos 10`'
@@ -477,7 +477,7 @@ export const ypos: DefinitionDocumentationItem = {
     name: 'Sprite.Ypos'
   },
   insertText: 'ypos',
-  overview: 'func ypos() float64',
+  overview: 'ypos',
   detail: makeBasicMarkdownString({
     en: 'Get current Y position',
     zh: '获取当前垂直位置'
@@ -491,8 +491,8 @@ export const setYpos: DefinitionDocumentationItem = {
     package: packageSpx,
     name: 'Sprite.SetYpos'
   },
-  insertText: 'setYpos ${1:Y}',
-  overview: 'func setYpos(Y float64)',
+  insertText: 'setYpos ${1:y}',
+  overview: 'setYpos y',
   detail: makeBasicMarkdownString({
     en: 'Move to given Y position, e.g., `setYpos 100`',
     zh: '移动到指定的垂直位置，如：`setYpos 100`'
@@ -507,7 +507,7 @@ export const changeYpos: DefinitionDocumentationItem = {
     name: 'Sprite.ChangeYpos'
   },
   insertText: 'changeYpos ${1:dY}',
-  overview: 'func changeYpos(dY float64)',
+  overview: 'changeYpos dY',
   detail: makeBasicMarkdownString({
     en: 'Move with given Y position change, e.g., `changeYpos 10`',
     zh: '以给定的垂直位置偏移移动，如：`changeYpos 10`'
@@ -522,7 +522,7 @@ export const setRotationStyle: DefinitionDocumentationItem = {
     name: 'Sprite.SetRotationStyle'
   },
   insertText: 'setRotationStyle ${1:style}',
-  overview: 'func setRotationStyle(style string)',
+  overview: 'setRotationStyle style',
   detail: makeBasicMarkdownString({
     en: 'Set the rotation style of the sprite, e.g., `setRotationStyle LeftRight`',
     zh: '设置精灵的旋转方式，如：`setRotationStyle LeftRight`'
@@ -537,7 +537,7 @@ export const heading: DefinitionDocumentationItem = {
     name: 'Sprite.Heading'
   },
   insertText: 'heading',
-  overview: 'func heading() float64',
+  overview: 'heading',
   detail: makeBasicMarkdownString({
     en: 'Get current heading direction',
     zh: '获取当前朝向'
@@ -552,7 +552,7 @@ export const turn: DefinitionDocumentationItem = {
     name: 'Sprite.Turn'
   },
   insertText: 'turn ${1:dDirection}',
-  overview: 'func turn(dDirection float64)',
+  overview: 'turn dDirection',
   detail: makeBasicMarkdownString({
     en: 'Turn with given direction change, e.g., `turn Left`',
     zh: '转动给定的角度，如：`turn Left`'
@@ -568,7 +568,7 @@ export const turnTo0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'turnTo ${1:direction}',
-  overview: 'func turnTo(direction float64)',
+  overview: 'turnTo direction',
   detail: makeBasicMarkdownString({
     en: 'Turn heading to given direction, e.g., `turnTo Left`',
     zh: '将朝向转到指定方向，如：`turnTo Left`'
@@ -584,7 +584,7 @@ export const turnTo1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'turnTo ${1:target}',
-  overview: 'func turnTo(target Sprite)', // TODO: other types of target
+  overview: 'turnTo target',
   detail: makeBasicMarkdownString({
     en: 'Turn heading to given target',
     zh: '将朝向转到指定目标'
@@ -599,7 +599,7 @@ export const setHeading: DefinitionDocumentationItem = {
     name: 'Sprite.SetHeading'
   },
   insertText: 'setHeading ${1:direction}',
-  overview: 'func setHeading(direction float64)',
+  overview: 'setHeading direction',
   detail: makeBasicMarkdownString({
     en: 'Set heading to given value, e.g., `setHeading Up`',
     zh: '设置朝向为给定值，如：`setHeading Up`'
@@ -614,7 +614,7 @@ export const changeHeading: DefinitionDocumentationItem = {
     name: 'Sprite.ChangeHeading'
   },
   insertText: 'changeHeading ${1:dDirection}',
-  overview: 'func changeHeading(dDirection float64)',
+  overview: 'changeHeading dDirection',
   detail: makeBasicMarkdownString({
     en: 'Change heading with given direction change, e.g., `changeHeading 90`',
     zh: '以给定的角度改变朝向，如：`changeHeading 90`'
@@ -629,7 +629,7 @@ export const size: DefinitionDocumentationItem = {
     name: 'Sprite.Size'
   },
   insertText: 'size',
-  overview: 'func size() float64',
+  overview: 'size',
   detail: makeBasicMarkdownString({
     en: 'Get the size of current sprite',
     zh: '获取当前精灵的大小'
@@ -644,7 +644,7 @@ export const setSize: DefinitionDocumentationItem = {
     name: 'Sprite.SetSize'
   },
   insertText: 'setSize ${1:size}',
-  overview: 'func setSize(size float64)',
+  overview: 'setSize size',
   detail: makeBasicMarkdownString({
     en: 'Set the size of current sprite, e.g., `setSize 2`',
     zh: '设置当前精灵的大小，如：`setSize 2`'
@@ -659,7 +659,7 @@ export const changeSize: DefinitionDocumentationItem = {
     name: 'Sprite.ChangeSize'
   },
   insertText: 'changeSize ${1:dSize}',
-  overview: 'func changeSize(dSize float64)',
+  overview: 'changeSize dSize',
   detail: makeBasicMarkdownString({
     en: 'Change the size of current sprite, e.g., `changeSize 1`',
     zh: '改变当前精灵的大小，如：`changeSize 1`'
@@ -674,7 +674,7 @@ export const touching: DefinitionDocumentationItem = {
     name: 'Sprite.Touching'
   },
   insertText: 'touching(${1:target})',
-  overview: 'func touching(target Sprite) bool', // TODO: other types of target
+  overview: 'touching(target)',
   detail: makeBasicMarkdownString({
     en: 'Check if current sprite touching specified target',
     zh: '检查当前精灵是否与指定目标接触'
@@ -689,7 +689,7 @@ export const bounceOffEdge: DefinitionDocumentationItem = {
     name: 'Sprite.BounceOffEdge'
   },
   insertText: 'bounceOffEdge',
-  overview: 'func bounceOffEdge()',
+  overview: 'bounceOffEdge',
   detail: makeBasicMarkdownString({
     en: 'Check & bounce off current sprite if touching the edge',
     zh: '如果当前精灵接触到边缘，则反弹'
@@ -704,7 +704,7 @@ export const mouseHitItem: DefinitionDocumentationItem = {
     name: 'Game.MouseHitItem'
   },
   insertText: 'mouseHitItem',
-  overview: 'func mouseHitItem() (Sprite, bool)',
+  overview: 'mouseHitItem',
   detail: makeBasicMarkdownString({
     en: 'Get the topmost sprite which is hit by mouse, e.g., `hitSprite, ok := mouseHitItem`',
     zh: '获取鼠标点击的最上层精灵，如：`hitSprite, ok := mouseHitItem`'
@@ -719,7 +719,7 @@ export const backdropName: DefinitionDocumentationItem = {
     name: 'Game.BackdropName'
   },
   insertText: 'backdropName',
-  overview: 'func backdropName() string',
+  overview: 'backdropName',
   detail: makeBasicMarkdownString({
     en: 'Get the name of the current backdrop',
     zh: '获取当前背景的名称'
@@ -734,7 +734,7 @@ export const backdropIndex: DefinitionDocumentationItem = {
     name: 'Game.BackdropIndex'
   },
   insertText: 'backdropIndex',
-  overview: 'func backdropIndex() int',
+  overview: 'backdropIndex',
   detail: makeBasicMarkdownString({
     en: 'Get the index of the current backdrop',
     zh: '获取当前背景的索引'
@@ -749,8 +749,8 @@ export const startBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.StartBackdrop',
     overloadId: '0'
   },
-  insertText: 'startBackdrop ${1:nameOrIndex}',
-  overview: 'func startBackdrop(nameOrIndex string)',
+  insertText: 'startBackdrop ${1:backdrop}',
+  overview: 'startBackdrop backdrop',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name or index, e.g., `startBackdrop "backdrop1"`',
     zh: '通过指定名称或索引切换背景，如：`startBackdrop "backdrop1"`'
@@ -765,8 +765,8 @@ export const startBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.StartBackdrop',
     overloadId: '1'
   },
-  insertText: 'startBackdrop ${1:nameOrIndex}, ${2:wait}',
-  overview: 'func startBackdrop(nameOrIndex string, wait bool)',
+  insertText: 'startBackdrop ${1:backdrop}, ${2:wait}',
+  overview: 'startBackdrop backdrop, wait',
   detail: makeBasicMarkdownString({
     en: 'Set the current backdrop by specifying name or index, with waiting, e.g., `startBackdrop "backdrop1", true`',
     zh: '通过指定名称或索引切换背景，并等待切换完成，如：`startBackdrop "backdrop1", true`'
@@ -781,7 +781,7 @@ export const nextBackdrop: DefinitionDocumentationItem = {
     name: 'Game.NextBackdrop'
   },
   insertText: 'nextBackdrop',
-  overview: 'func nextBackdrop()', // TODO: optional argument `wait`
+  overview: 'nextBackdrop',
   detail: makeBasicMarkdownString({
     en: 'Switch to the next backdrop',
     zh: '切换到下一个背景'
@@ -796,7 +796,7 @@ export const prevBackdrop: DefinitionDocumentationItem = {
     name: 'Game.PrevBackdrop'
   },
   insertText: 'prevBackdrop',
-  overview: 'func prevBackdrop()', // TODO: optional argument `wait`
+  overview: 'prevBackdrop', // TODO: optional argument `wait`
   detail: makeBasicMarkdownString({
     en: 'Switch to the previous backdrop',
     zh: '切换到上一个背景'
@@ -811,7 +811,7 @@ export const keyPressed: DefinitionDocumentationItem = {
     name: 'Game.KeyPressed'
   },
   insertText: 'keyPressed ${1:key}',
-  overview: 'func keyPressed(key string) bool',
+  overview: 'keyPressed(key)',
   detail: makeBasicMarkdownString({
     en: 'Check if given key is currently pressed, e.g., `keyPressed(KeyA)`',
     zh: '检查给定的按键当前是否被按下，如：`keyPressed(KeyA)`'
@@ -826,7 +826,7 @@ export const mouseX: DefinitionDocumentationItem = {
     name: 'Game.MouseX'
   },
   insertText: 'mouseX',
-  overview: 'func mouseX() float64',
+  overview: 'mouseX',
   detail: makeBasicMarkdownString({
     en: 'Get X position of the mouse',
     zh: '获取鼠标的水平位置'
@@ -841,7 +841,7 @@ export const mouseY: DefinitionDocumentationItem = {
     name: 'Game.MouseY'
   },
   insertText: 'mouseY',
-  overview: 'func mouseY() float64',
+  overview: 'mouseY',
   detail: makeBasicMarkdownString({
     en: 'Get Y position of the mouse',
     zh: '获取鼠标的垂直位置'
@@ -856,7 +856,7 @@ export const mousePressed: DefinitionDocumentationItem = {
     name: 'Game.MousePressed'
   },
   insertText: 'mousePressed',
-  overview: 'func mousePressed() bool',
+  overview: 'mousePressed',
   detail: makeBasicMarkdownString({
     en: 'Check if the mouse is currently pressed',
     zh: '检查鼠标当前是否被按下'
@@ -871,7 +871,7 @@ export const wait: DefinitionDocumentationItem = {
     name: 'Game.Wait'
   },
   insertText: 'wait ${1:seconds}',
-  overview: 'func wait(seconds float64)',
+  overview: 'wait seconds',
   detail: makeBasicMarkdownString({
     en: 'Block current execution (coroutine) for given seconds, e.g., `wait 0.5`',
     zh: '阻塞当前的执行，并指定阻塞的秒数，如：`wait 0.5`'
@@ -887,7 +887,7 @@ export const play0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'play ${1:sound}',
-  overview: 'func play(sound Sound)',
+  overview: 'play sound',
   detail: makeBasicMarkdownString({
     en: 'Play given sound, e.g., `play explosion`',
     zh: '播放指定声音，如：`play explosion`'
@@ -903,7 +903,7 @@ export const play1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'play ${1:sound}, ${2:wait}',
-  overview: 'func play(sound Sound, wait bool)',
+  overview: 'play sound, wait',
   detail: makeBasicMarkdownString({
     en: 'Play given sound with waiting, e.g., `play explosion, true`',
     zh: '播放指定声音并等待播放完成，如：`play explosion, true`'
@@ -919,7 +919,7 @@ export const play2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertText: 'play ${1:sound}, ${2:options}',
-  overview: 'func play(sound Sound, options PlayOptions)',
+  overview: 'play sound, options',
   detail: makeBasicMarkdownString({
     en: 'Play given sound with options, e.g., `play explosion, { Loop: true }`',
     zh: '播放指定声音并指定选项，如：`play explosion, { Loop: true }`'
@@ -935,7 +935,7 @@ export const play3: DefinitionDocumentationItem = {
     overloadId: '3'
   },
   insertText: 'play ${1:"sound"}',
-  overview: 'func play(sound string)',
+  overview: 'play soundName',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name, e.g., `play "explosion"`',
     zh: '播放声音（指定名字），如：`play "explosion"`'
@@ -951,7 +951,7 @@ export const play4: DefinitionDocumentationItem = {
     overloadId: '4'
   },
   insertText: 'play ${1:"sound"}, ${2:wait}',
-  overview: 'func play(sound string, wait bool)',
+  overview: 'play soundName, wait',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name and waiting, e.g., `play "explosion", true`',
     zh: '播放声音（指定名字）并等待播放完成，如：`play "explosion", true`'
@@ -967,7 +967,7 @@ export const play5: DefinitionDocumentationItem = {
     overloadId: '5'
   },
   insertText: 'play ${1:"sound"}, ${2:options}',
-  overview: 'func play(sound string, options PlayOptions)',
+  overview: 'play soundName, options',
   detail: makeBasicMarkdownString({
     en: 'Play sound with given name and options, e.g., `play "explosion", { Loop: true }`',
     zh: '播放声音（指定名字）并指定选项，如：`play "explosion", { Loop: true }`'
@@ -982,7 +982,7 @@ export const stopAllSounds: DefinitionDocumentationItem = {
     name: 'Game.StopAllSounds'
   },
   insertText: 'stopAllSounds',
-  overview: 'func stopAllSounds()',
+  overview: 'stopAllSounds',
   detail: makeBasicMarkdownString({
     en: 'Stop all playing sounds',
     zh: '停止所有正在播放的声音'
@@ -997,7 +997,7 @@ export const volume: DefinitionDocumentationItem = {
     name: 'Game.Volume'
   },
   insertText: 'volume',
-  overview: 'func volume() float64',
+  overview: 'volume',
   detail: makeBasicMarkdownString({
     en: 'Get the volume for sounds',
     zh: '获取声音的音量'
@@ -1012,7 +1012,7 @@ export const setVolume: DefinitionDocumentationItem = {
     name: 'Game.SetVolume'
   },
   insertText: 'setVolume ${1:volume}',
-  overview: 'func setVolume(volume float64)',
+  overview: 'setVolume volume',
   detail: makeBasicMarkdownString({
     en: 'Set the volume for sounds, e.g., `setVolume 100`',
     zh: '设置声音的音量，如：`setVolume 100`'
@@ -1027,7 +1027,7 @@ export const changeVolume: DefinitionDocumentationItem = {
     name: 'Game.ChangeVolume'
   },
   insertText: 'changeVolume ${1:dVolume}',
-  overview: 'func changeVolume(dVolume float64)',
+  overview: 'changeVolume dVolume',
   detail: makeBasicMarkdownString({
     en: 'Change the volume for sounds with given volume change, e.g., `changeVolume 10`',
     zh: '根据给定的音量变化改变声音的音量，如：`changeVolume 10`'
@@ -1043,7 +1043,7 @@ export const broadcast0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'broadcast ${1:"message"}',
-  overview: 'func broadcast(message string)',
+  overview: 'broadcast message',
   detail: makeBasicMarkdownString({
     en: 'Broadcast a message, e.g., `broadcast "message"`',
     zh: '广播一条消息，如：`broadcast "message"`'
@@ -1059,7 +1059,7 @@ export const broadcast1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'broadcast ${1:"message"}, ${2:wait}',
-  overview: 'func broadcast(message string, wait bool)',
+  overview: 'broadcast message, wait',
   detail: makeBasicMarkdownString({
     en: 'Broadcast a message with waiting, e.g., `broadcast "message", true`',
     zh: '广播一条消息并等待，如：`broadcast "message", true`'
@@ -1075,7 +1075,7 @@ export const broadcast2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertText: 'broadcast ${1:"message"}, ${2:data}, ${3:wait}',
-  overview: 'func broadcast(message string, data interface{}, wait bool)',
+  overview: 'broadcast message, data, wait',
   detail: makeBasicMarkdownString({
     en: 'Broadcast a message with data and waiting, e.g., `broadcast "message", data, true`',
     zh: '广播一条消息（带有数据）并等待，如：`broadcast "message", data, true`'
@@ -1090,7 +1090,7 @@ export const onStart: DefinitionDocumentationItem = {
     name: 'Game.OnStart'
   },
   insertText: 'onStart => {\n\t${1}\n}',
-  overview: 'func onStart()',
+  overview: 'onStart => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to game start',
     zh: '游戏开始时执行'
@@ -1105,7 +1105,7 @@ export const onClickGame: DefinitionDocumentationItem = {
     name: 'Game.OnClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
-  overview: 'func onClick()',
+  overview: 'onClick => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to stage clicked',
     zh: '舞台被鼠标点击时执行'
@@ -1120,7 +1120,7 @@ export const onClickSprite: DefinitionDocumentationItem = {
     name: 'Sprite.OnClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
-  overview: 'func onClick()',
+  overview: 'onClick => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite clicked',
     zh: '当前精灵被点击时执行'
@@ -1135,7 +1135,7 @@ export const onAnyKey: DefinitionDocumentationItem = {
     name: 'Game.OnAnyKey'
   },
   insertText: 'onAnyKey key => {\n\t${1}\n}',
-  overview: 'func onAnyKey(callback func(key string))',
+  overview: 'onAnyKey key => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to any key pressed',
     zh: '任意按键被按下时执行'
@@ -1151,7 +1151,7 @@ export const onKey0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onKey ${1:key}, => {\n\t${2}\n}',
-  overview: 'func onKey(key Key, callback func())',
+  overview: 'onKey key, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to given key pressed',
     zh: '指定按键被按下时执行'
@@ -1167,7 +1167,7 @@ export const onKey1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
-  overview: 'func onKey(keys []Key, callback func(Key))',
+  overview: 'onKey keys, key => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to given keys pressed (and get the key)',
     zh: '指定多个按键，任一被按下时执行（并获得按键信息）'
@@ -1183,7 +1183,7 @@ export const onKey2: DefinitionDocumentationItem = {
     overloadId: '2'
   },
   insertText: 'onKey [${1:}], => {\n\t${2}\n}',
-  overview: 'func onKey(keys []Key, callback func())',
+  overview: 'onKey keys, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to given keys pressed',
     zh: '指定多个按键，任一被按下时执行'
@@ -1199,7 +1199,7 @@ export const onMsg0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onMsg (message, data) => {\n\t${1}\n}',
-  overview: 'func onMsg(callback func(message string, data interface{}))',
+  overview: 'onMsg (message, data) => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to any message broadcasted, get the broadcasted message and data',
     zh: '任意消息被广播时执行，并获取被广播的消息和数据'
@@ -1215,7 +1215,7 @@ export const onMsg1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onMsg ${1:message}, => {\n\t${2}\n}',
-  overview: 'func onMsg(message string, callback func())',
+  overview: 'onMsg message, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to specific message broadcasted',
     zh: '指定消息被广播时执行'
@@ -1231,7 +1231,7 @@ export const onBackdrop0: DefinitionDocumentationItem = {
     overloadId: '0'
   },
   insertText: 'onBackdrop backdrop => {\n\t${1}\n}',
-  overview: 'func onBackdrop(callback func(backdrop string))',
+  overview: 'onBackdrop backdrop => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to backdrop switching',
     zh: '背景切换时执行'
@@ -1247,7 +1247,7 @@ export const onBackdrop1: DefinitionDocumentationItem = {
     overloadId: '1'
   },
   insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}',
-  overview: 'func onBackdrop(backdrop string, callback func())',
+  overview: 'onBackdrop backdrop, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to switching to specific backdrop',
     zh: '切换到指定背景时执行'
@@ -1262,7 +1262,7 @@ export const rand: DefinitionDocumentationItem = {
     name: 'Game.Rand'
   },
   insertText: 'rand(${1:from}, ${2:to})',
-  overview: 'func rand(from, to float64) float64',
+  overview: 'rand(from, to)',
   detail: makeBasicMarkdownString({
     en: 'Generate a random number, e.g., `rand(1, 10)`',
     zh: '生成一个随机数，如：`rand(1, 10)`'
@@ -1277,7 +1277,7 @@ export const exit: DefinitionDocumentationItem = {
     name: 'Game.Exit'
   },
   insertText: 'exit',
-  overview: 'func exit()',
+  overview: 'exit',
   detail: makeBasicMarkdownString({
     en: 'Exit the game',
     zh: '退出游戏'
@@ -1292,7 +1292,7 @@ export const getWidget: DefinitionDocumentationItem = {
     name: 'Game.GetWidget'
   },
   insertText: 'getWidget(${1:Monitor}, ${2:name})',
-  overview: 'func getWidget(widgetType, name string) Widget', // TODO: type of `widgetType`?
+  overview: 'getWidget(type, name)',
   detail: makeBasicMarkdownString({
     en: 'Get the widget by given name',
     zh: '通过指定名称获取控件'
@@ -1314,7 +1314,7 @@ function defineConst(
       name
     },
     insertText: name,
-    overview: `const ${name}`, // TODO: add type
+    overview: name,
     detail: makeBasicMarkdownString(desc)
   }
 }
@@ -1335,7 +1335,7 @@ export const leftRight = defineConst('LeftRight', [categories.motion.rotationSty
 export const normal = defineConst('Normal', [categories.motion.rotationStyle], { en: 'Normal', zh: '正常旋转' })
 
 export const mouse = defineConst('Mouse', [categories.sensing.mouse], { en: 'Mouse', zh: '鼠标' })
-export const edge = defineConst('Edge', [categories.sensing.distance], { en: 'Edge', zh: '边缘' })
+export const edge = defineConst('Edge', [categories.sensing.distance], { en: 'Any edge', zh: '任一边缘' })
 export const edgeLeft = defineConst('EdgeLeft', [categories.sensing.distance], { en: 'Left edge', zh: '左边缘' })
 export const edgeTop = defineConst('EdgeTop', [categories.sensing.distance], { en: 'Top edge', zh: '上边缘' })
 export const edgeRight = defineConst('EdgeRight', [categories.sensing.distance], { en: 'Right edge', zh: '右边缘' })

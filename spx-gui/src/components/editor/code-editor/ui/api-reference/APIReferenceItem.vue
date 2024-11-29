@@ -35,6 +35,7 @@ function handleExplain() {
     <DefinitionOverviewWrapper class="overview">
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="icon" v-html="getIcon(item)"></div>
+      <!-- TODO: code font & code highlight -->
       {{ item.overview }}
     </DefinitionOverviewWrapper>
     <DefinitionDetailWrapper class="detail">
