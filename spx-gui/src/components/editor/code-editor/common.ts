@@ -1,3 +1,4 @@
+import { mapValues } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
 
 export type Position = {
@@ -152,16 +153,86 @@ export type Icon = string
  */
 export type DefinitionDocumentationString = AdvancedMarkdownString
 
-export const categoryEvent = 'event'
-export const categoryEventGame = [categoryEvent, 'game']
-export const categoryMotion = 'motion'
-export const categoryMotionPosition = [categoryMotion, 'position']
-export const categoryControl = 'control'
-export const categoryControlFlow = [categoryControl, 'flow']
+export type DefinitionDocumentationCategory = [main: string, sub: string]
+
+export const mainCategories = {
+  event: 'event',
+  motion: 'motion',
+  look: 'look',
+  sensing: 'sensing',
+  sound: 'sound',
+  control: 'control',
+  game: 'game'
+}
+
+export const subCategories = {
+  event: {
+    game: 'game',
+    sensing: 'sensing',
+    motion: 'motion',
+    message: 'message',
+    sprite: 'sprite',
+    stage: 'stage'
+  },
+  motion: {
+    position: 'position',
+    heading: 'heading',
+    size: 'size',
+    rotationStyle: 'rotation-style',
+    others: 'others'
+  },
+  look: {
+    visibility: 'visibility',
+    behavior: 'behavior',
+    costume: 'costume',
+    animation: 'animation',
+    backdrop: 'backdrop'
+  },
+  sensing: {
+    distance: 'distance',
+    mouse: 'mouse',
+    keyboard: 'keyboard'
+  },
+  sound: {
+    playControl: 'play-control',
+    volume: 'volume'
+  },
+  control: {
+    time: 'time',
+    flowControl: 'flow-control',
+    declaration: 'declaration'
+  },
+  game: {
+    startStop: 'start-stop',
+    sprite: 'sprite',
+    others: 'others'
+  }
+}
+
+/**
+ * Category definitions:
+ * ```js
+ * {
+ *   event: {
+ *     game: ['event', 'game'],
+ *     ...
+ *   },
+ *   ...
+ * }
+ * ```
+ */
+export const categories = mapValues(subCategories, (subKeys, mainKey) => {
+  const mainId = mainCategories[mainKey as keyof typeof subCategories]
+  return mapValues(subKeys, (subId) => [mainId, subId] satisfies DefinitionDocumentationCategory)
+}) as {
+  [MC in keyof typeof subCategories]: {
+    [SC in keyof (typeof subCategories)[MC]]: DefinitionDocumentationCategory
+  }
+}
 
 export type DefinitionDocumentationItem = {
   /** For classification when listed in a group, e.g., `[["event", "game"]]` */
-  categories: string[][]
+  categories: DefinitionDocumentationCategory[]
   kind: DefinitionKind
   definition: DefinitionIdentifier
   /** Text to insert when completion / snippet is applied */

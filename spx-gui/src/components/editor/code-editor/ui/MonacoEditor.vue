@@ -1,10 +1,9 @@
 <script lang="ts">
-import { type editor } from 'monaco-editor'
+import { debounce } from 'lodash'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import loader from '@monaco-editor/loader'
-
-export type Monaco = typeof import('monaco-editor')
-export type Editor = editor.IStandaloneCodeEditor
+import { untilNotNull } from '@/utils/utils'
+import type { Monaco, MonacoEditor } from './common'
 
 let monacoPromise: Promise<Monaco> | null = null
 
@@ -40,7 +39,7 @@ import { ref, watchEffect } from 'vue'
 import { useI18n, type Lang } from '@/utils/i18n'
 
 const emit = defineEmits<{
-  init: [Monaco, Editor]
+  init: [Monaco, MonacoEditor]
 }>()
 
 const i18n = useI18n()
@@ -54,11 +53,12 @@ async function getMonaco() {
   }))
 }
 
-const editorElement = ref<HTMLDivElement>()
+const editorElRef = ref<HTMLDivElement>()
 
 watchEffect(async (onClenaup) => {
-  const monaco = await getMonaco()
-  const editor = monaco.editor.create(editorElement.value!, {
+  const [monaco, editorEl] = await Promise.all([getMonaco(), untilNotNull(editorElRef)])
+
+  const editor = monaco.editor.create(editorEl, {
     language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,
@@ -87,20 +87,23 @@ watchEffect(async (onClenaup) => {
       verticalScrollbarSize: 8
     }
   })
+
+  const handleResize = debounce(() => {
+    editor.layout()
+  }, 300)
+  const resizeObserver = new ResizeObserver(handleResize)
+  resizeObserver.observe(editorEl)
+
   emit('init', monaco, editor)
   onClenaup(() => {
     editor.dispose()
+    resizeObserver.disconnect()
   })
 })
 </script>
 
 <template>
-  <div ref="editorElement" class="code-text-editor"></div>
+  <div ref="editorElRef" class="monaco-editor"></div>
 </template>
 
-<style lang="scss" scoped>
-.code-text-editor {
-  width: 100%;
-  height: 100%;
-}
-</style>
+<style lang="scss" scoped></style>

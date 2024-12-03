@@ -58,13 +58,12 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   }
   :deep(code) {
     // TODO: keep consistent with component `UICode`
-    padding: 2px 4px;
-    font-size: 10px;
-    font-family: var(--ui-font-family-code);
+    display: inline-block;
     line-height: 1.6;
-    color: var(--ui-color-primary-main);
-    background-color: var(--ui-color-primary-200);
+    padding: 1px 4px;
     border-radius: 4px;
+    border: 1px solid var(--ui-color-grey-500);
+    background: var(--ui-color-grey-300);
   }
 }
 </style>

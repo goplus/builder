@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import Emitter from '@/utils/emitter'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
@@ -15,7 +14,15 @@ import {
   type ResourceReference,
   type ResourceReferencesContext
 } from './ui'
-import { DefinitionKind, type DefinitionDocumentationItem, type DefinitionIdentifier } from './common'
+import { DefinitionKind, type DefinitionDocumentationItem } from './common'
+import * as spxDocumentationItems from './document-base/spx'
+import * as gopDocumentationItems from './document-base/gop'
+
+// mock data for test
+const allIds = Object.values({
+  ...spxDocumentationItems,
+  ...gopDocumentationItems
+}).map((item) => item.definition)
 
 const editorCtx = useEditorCtx()
 
@@ -27,12 +34,10 @@ function handleUIInit(ui: ICodeEditorUI) {
   ui.registerAPIReferenceProvider({
     async provideAPIReference(ctx, position) {
       console.warn('TODO: get api references from LS', ctx, position, spxlc)
-      const ids: DefinitionIdentifier[] = [
-        { package: 'github.com/goplus/spx', name: 'onStart' },
-        { package: 'github.com/goplus/spx', name: 'Sprite.setXYpos' },
-        { name: 'for_iterate (TODO)' }
-      ]
-      const documentations = await Promise.all(ids.map((id) => documentBase.getDocumentation(id)))
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      const documentations = (await Promise.all(allIds.map((id) => documentBase.getDocumentation(id)))).filter(
+        () => Math.random() > 0.4
+      )
       return documentations as DefinitionDocumentationItem[]
     }
   })
@@ -131,13 +136,6 @@ function handleUIInit(ui: ICodeEditorUI) {
   ui.registerResourceReferencesProvider(new ResourceReferencesProvider())
 }
 
-const editorKey = computed(() => {
-  const selected = editorCtx.project.selected
-  if (selected?.type === 'stage') return 'stage'
-  if (selected?.type === 'sprite') return `sprite:${selected.id}`
-  return ''
-})
-
 defineExpose({
   async format() {
     console.warn('TODO')
@@ -146,5 +144,5 @@ defineExpose({
 </script>
 
 <template>
-  <CodeEditorUIComp :key="editorKey" :project="editorCtx.project" @init="handleUIInit" />
+  <CodeEditorUIComp :project="editorCtx.project" @init="handleUIInit" />
 </template>

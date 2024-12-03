@@ -9,7 +9,7 @@ import {
   type Position
 } from '../../common'
 import type { CodeEditorUI } from '..'
-import { fromMonacoPosition, fromMonacoTextModelUri, toMonacoPosition, token2Signal } from '../common'
+import { fromMonacoPosition, toMonacoPosition, token2Signal } from '../common'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -71,11 +71,11 @@ export class HoverController extends Disposable {
 
     this.addDisposable(
       monaco.languages.registerHoverProvider('spx', {
-        provideHover: async (model, position, token) => {
+        provideHover: async (_, position, token) => {
           // TODO: use `onMouseMove` as trigger?
           if (this.provider == null) return
-          const textDocument = this.ui.getTextDocument(fromMonacoTextModelUri(model.uri))
-          if (textDocument == null) throw new Error('Text document not found')
+          const textDocument = this.ui.activeTextDocument
+          if (textDocument == null) throw new Error('No active text document')
           const signal = token2Signal(token)
           const hover = await this.provider.provideHover(
             { textDocument, signal },
@@ -106,5 +106,7 @@ export class HoverController extends Disposable {
           this.hideHover()
       })
     )
+
+    // TODO: clear hover when switching text document
   }
 }
