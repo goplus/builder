@@ -2,7 +2,7 @@
 import { UIButton } from '@/components/ui'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import type { Action } from '../../common'
-import MarkdownView from '../MarkdownView.vue'
+import MarkdownView from '../markdown/MarkdownView.vue'
 import type { InternalHover } from '.'
 
 defineProps<{

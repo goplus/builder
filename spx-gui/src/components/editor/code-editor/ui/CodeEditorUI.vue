@@ -115,7 +115,7 @@ watchEffect((onCleanup) => {
           }}
         </div>
       </footer>
-      <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" />
+      <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div ref="resizeHandleEl" class="resize-handle" :style="{ left: `${sidebarWidth}px` }"></div>
     <MonacoEditorComp class="monaco-editor" @init="handleMonacoEditorInit" />
@@ -175,9 +175,9 @@ watchEffect((onCleanup) => {
   .copilot {
     position: absolute;
     left: 0;
-    right: 0;
     top: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     z-index: 10;
   }
 }

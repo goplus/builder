@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { DefinitionDocumentationItem } from '../common'
-import { onStart } from '../document-base/spx'
+import type { DefinitionDocumentationItem } from '../../common'
+import { onStart } from '../../document-base/spx'
 import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
 import MarkdownView from './MarkdownView.vue'
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { UITooltip } from '@/components/ui'
 import { DefinitionKind } from '../../common'
-import DefinitionOverviewWrapper from '../DefinitionOverviewWrapper.vue'
-import DefinitionDetailWrapper from '../DefinitionDetailWrapper.vue'
-import MarkdownView from '../MarkdownView.vue'
+import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
+import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
+import MarkdownView from '../markdown/MarkdownView.vue'
 import type { APIReferenceItem } from '.'
 import iconRead from './icons/read.svg?raw'
 import iconEffect from './icons/effect.svg?raw'
@@ -38,8 +38,8 @@ function handleExplain() {
       <!-- TODO: code font & code highlight -->
       {{ item.overview }}
     </DefinitionOverviewWrapper>
-    <DefinitionDetailWrapper class="detail">
-      <MarkdownView v-bind="item.detail" />
+    <DefinitionDetailWrapper>
+      <MarkdownView v-bind="item.detail" class="detail" />
     </DefinitionDetailWrapper>
     <UITooltip>
       <template #trigger>
@@ -109,6 +109,12 @@ function handleExplain() {
   font-size: 10px;
   color: var(--ui-color-hint-1);
   line-height: 20px;
+
+  :deep(:not(pre) > code) {
+    font-size: inherit;
+    line-height: 1.6;
+    padding: 1px 4px;
+  }
 }
 
 .explain-btn {

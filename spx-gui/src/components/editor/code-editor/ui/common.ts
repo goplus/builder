@@ -48,6 +48,18 @@ export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.
   return monaco.Uri.parse(id.uri)
 }
 
+const textDocumentURIPrefix = 'file:///'
+
+export function getTextDocumentURI(codeFilePath: string) {
+  return textDocumentURIPrefix + codeFilePath
+}
+
+export function getCodeFilePath(textDocumentURI: string) {
+  if (!textDocumentURI.startsWith(textDocumentURIPrefix))
+    throw new Error(`Invalid text document URI: ${textDocumentURI}`)
+  return textDocumentURI.slice(textDocumentURIPrefix.length)
+}
+
 export interface ICodeOwner {
   getTextDocumentId(): TextDocumentIdentifier
   getCode(): string
@@ -66,7 +78,7 @@ class CodeOwnerStage implements ICodeOwner {
     }
   }
   getTextDocumentId() {
-    return { uri: `file:///${this.stage.codeFilePath}` }
+    return { uri: getTextDocumentURI(this.stage.codeFilePath) }
   }
   getCode() {
     return this.stage.code
@@ -90,7 +102,7 @@ class CodeOwnerSprite implements ICodeOwner {
     }
   }
   getTextDocumentId() {
-    return { uri: `file:///${this.sprite.codeFilePath}` }
+    return { uri: getTextDocumentURI(this.sprite.codeFilePath) }
   }
   getCode() {
     return this.sprite.code

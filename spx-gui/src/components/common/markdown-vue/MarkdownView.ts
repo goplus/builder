@@ -6,9 +6,9 @@ import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
 import { defaultSchema, sanitize, type Schema } from 'hast-util-sanitize'
 
-export type Props = {
-  /** Markdown string */
-  value: string
+type Components = {
+  /** Component for rendering code blocks */
+  codeBlock?: Component
   /**
    * Custom components (key as component name expected to be in kebab-case).
    * Example:
@@ -26,23 +26,29 @@ export type Props = {
    * </my-comp2>
    * ```
    */
-  components?: Record<string, Component>
+  custom?: Record<string, Component>
+}
+
+export type Props = {
+  /** Markdown string */
+  value: string
+  components?: Components
 }
 
 export default defineComponent<Props>(
   (props, { attrs }) => {
     const hastNodes = computed(() => {
-      const components = props.components ?? {}
+      const customComponents = props.components?.codeBlock ?? {}
       const mdast = fromMarkdown(props.value)
       const hast = toHast(mdast, { allowDangerousHtml: true })
       const rawProcessed = raw(hast, { tagfilter: false })
 
       // XSS protection
       const sanitizeSchema: Schema = {
-        tagNames: (defaultSchema.tagNames ?? []).concat(...Object.keys(components)),
+        tagNames: (defaultSchema.tagNames ?? []).concat(...Object.keys(customComponents)),
         attributes: {
           ...defaultSchema.attributes,
-          ...Object.entries(components).reduce(
+          ...Object.entries(customComponents).reduce(
             (attrs, [tagName, component]) => {
               attrs[tagName] = getComponentPropNames(component).map(camelCase2KebabCase)
               return attrs
@@ -73,7 +79,7 @@ export default defineComponent<Props>(
   }
 )
 
-function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, components: Record<string, Component>) {
+function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, components: Components) {
   if (node.type === 'root') {
     return h(
       'div',
@@ -86,7 +92,7 @@ function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, compo
 
 type VRendered = VNode | string | null | VRendered[]
 
-function renderHastNode(node: hast.Node, components: Record<string, Component>): VRendered {
+function renderHastNode(node: hast.Node, components: Components): VRendered {
   switch (node.type) {
     case 'element':
       return renderHastElement(node as hast.Element, components)
@@ -97,17 +103,38 @@ function renderHastNode(node: hast.Node, components: Record<string, Component>):
   }
 }
 
-function renderHastElement(element: hast.Element, components: Record<string, Component>): VNode {
-  const props = hastProps2VueProps(element.properties)
+function renderHastElement(element: hast.Element, components: Components): VNode {
+  let props: Record<string, string | number | boolean>
   let type: string | Component
   let children: VRendered | (() => VRendered)
-  if (Object.prototype.hasOwnProperty.call(components, element.tagName)) {
-    type = components[element.tagName]
+  const customComponents = components.custom ?? {}
+  if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
+    type = customComponents[element.tagName]
+    props = hastProps2VueProps(element.properties)
     // Use function slot for custom components to avoid Vue warning:
     // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
     children = () => element.children.map((c) => renderHastNode(c, components))
+  } else if (
+    // Render code blocks with `components.codeBlock`
+    // TODO: It may be simpler to recognize & process code blocks based on mdast instead of hast
+    components.codeBlock != null &&
+    element.tagName === 'pre' &&
+    element.children[0]?.type === 'element' &&
+    element.children[0].tagName === 'code'
+  ) {
+    type = components.codeBlock
+    const className = element.children[0].properties?.className
+    let language = ''
+    if (typeof className === 'string') {
+      language = className.split('-')[1]
+    } else if (Array.isArray(className) && typeof className[0] === 'string') {
+      language = className[0].split('-')[1]
+    }
+    props = { language }
+    children = element.children[0].children.map((c) => renderHastNode(c, components))
   } else {
     type = element.tagName
+    props = hastProps2VueProps(element.properties)
     children = element.children.map((c) => renderHastNode(c, components))
   }
   return h(type, props, children)
