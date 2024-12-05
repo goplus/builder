@@ -1,8 +1,7 @@
 import { watch } from 'vue'
-import type * as monaco from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
-import type { IRange, ITextDocument, Position, TextDocumentIdentifier } from '../common'
-import { toMonacoPosition, toMonacoRange, toMonacoUri, type ICodeOwner, type Monaco } from './common'
+import type { Range, ITextDocument, Position, TextDocumentIdentifier, WordAtPosition } from '../common'
+import { toMonacoPosition, toMonacoRange, toMonacoUri, type ICodeOwner, type Monaco, type monaco } from './common'
 
 export class TextDocument extends Disposable implements ITextDocument {
   id: TextDocumentIdentifier
@@ -54,12 +53,16 @@ export class TextDocument extends Disposable implements ITextDocument {
     return { line: 0, column: 0 }
   }
 
-  getValueInRange(range: IRange): string {
+  getValueInRange(range: Range): string {
     return this.monacoTextModel.getValueInRange(toMonacoRange(range))
   }
 
-  getDefaultRange(position: Position): IRange {
-    const word = this.monacoTextModel.getWordAtPosition(toMonacoPosition(position))
+  getWordAtPosition(position: Position): WordAtPosition | null {
+    return this.monacoTextModel.getWordAtPosition(toMonacoPosition(position))
+  }
+
+  getDefaultRange(position: Position): Range {
+    const word = this.getWordAtPosition(position)
     if (word == null) return { start: position, end: position }
     return {
       start: { line: position.line, column: word.startColumn },

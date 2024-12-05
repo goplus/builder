@@ -2,3 +2,4 @@
 wasm_exec.js
 # 3rd party code
 src/components/ui/reset.css
+src/components/editor/code-editor/ui/completion/fuzzy/*

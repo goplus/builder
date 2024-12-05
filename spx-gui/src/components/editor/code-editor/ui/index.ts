@@ -2,7 +2,14 @@ import { uniqueId } from 'lodash'
 import { ref, shallowRef, watchEffect } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type { Project } from '@/models/project'
-import { type Command, type CommandInfo, type IRange, type Position, type TextDocumentIdentifier } from '../common'
+import {
+  type Command,
+  type CommandInfo,
+  type Range,
+  type Position,
+  type TextDocumentIdentifier,
+  type ITextDocument
+} from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
 import type { IResourceReferencesProvider } from './resource-reference'
@@ -45,7 +52,7 @@ export interface ICodeEditorUI {
   /** Open a text document in the editor,and scroll to given position */
   open(textDocument: TextDocumentIdentifier, position: Position): void
   /** Open a text document in the editor, and select the given range */
-  open(textDocument: TextDocumentIdentifier, range: IRange): void
+  open(textDocument: TextDocumentIdentifier, range: Range): void
 }
 
 export const builtInCommandCopilotChat: Command<[ChatTopic], void> = 'spx.copilot.chat'
@@ -91,8 +98,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   open(textDocument: TextDocumentIdentifier): void
   open(textDocument: TextDocumentIdentifier, position: Position): void
-  open(textDocument: TextDocumentIdentifier, range: IRange): void
-  open(textDocument: TextDocumentIdentifier, positionOrRange?: Position | IRange): void {
+  open(textDocument: TextDocumentIdentifier, range: Range): void
+  open(textDocument: TextDocumentIdentifier, positionOrRange?: Position | Range): void {
     console.warn('TODO', textDocument, positionOrRange)
   }
 
@@ -113,7 +120,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   /** Current active text document ID */
   private activeTextDocumentIdRef = shallowRef<TextDocumentIdentifier | null>(null)
 
-  getTextDocument(id: TextDocumentIdentifier): TextDocument | null {
+  getTextDocument(id: TextDocumentIdentifier): ITextDocument | null {
     return this.textDocuments.get(id.uri) ?? null
   }
 
@@ -128,7 +135,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       this.editor.setModel(null)
       return
     }
-    const textDocument = this.getTextDocument(activeId)
+    const textDocument = this.textDocuments.get(activeId.uri)
     if (textDocument == null) throw new Error(`Text document not exist: ${activeId.uri}`)
     this.activeTextDocumentIdRef.value = activeId
     this.editor.setModel(textDocument.monacoTextModel)

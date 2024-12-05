@@ -69,9 +69,11 @@ watchEffect(async (onClenaup) => {
     glyphMargin: true, // the margin is used for glyph margin and line numbers
     useTabStops: false, // use tab key
     renderControlCharacters: false,
-    quickSuggestionsDelay: 100,
+    quickSuggestions: false,
     wordWrapColumn: 40,
     tabSize: 4,
+    insertSpaces: false,
+    detectIndentation: false,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
     foldingStrategy: 'indentation', // 折叠方式  auto | indentation

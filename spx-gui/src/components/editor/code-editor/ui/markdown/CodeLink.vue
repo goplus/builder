@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import type { IRange, Position } from '../../common'
+import type { Range, Position } from '../../common'
 import { getCodeFilePath } from '../common'
 
 const props = defineProps<{
@@ -31,7 +31,7 @@ const position = computed<Position | null>(() => {
   return parsePosition(props.position)
 })
 
-const range = computed<IRange | null>(() => {
+const range = computed<Range | null>(() => {
   if (props.range == null || props.range === '') return null
   const [start, end] = props.range.split('-').map(parsePosition)
   return { start, end }

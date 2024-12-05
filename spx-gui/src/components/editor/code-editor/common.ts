@@ -6,7 +6,7 @@ export type Position = {
   column: number
 }
 
-export type IRange = {
+export type Range = {
   start: Position
   end: Position
 }
@@ -26,7 +26,7 @@ export type TextDocumentPosition = {
 
 export type TextDocumentRange = {
   textDocument: TextDocumentIdentifier
-  range: IRange
+  range: Range
 }
 
 export type CodeSegment = TextDocumentRange & {
@@ -106,9 +106,15 @@ export enum DiagnosticSeverity {
 }
 
 export type Diagnostic = {
-  range: IRange
+  range: Range
   severity: DiagnosticSeverity
   message: string
+}
+
+export interface WordAtPosition {
+  word: string
+  startColumn: number
+  endColumn: number
 }
 
 /**
@@ -119,8 +125,9 @@ export interface ITextDocument {
   id: TextDocumentIdentifier
   getOffsetAt(position: Position): number
   getPositionAt(offset: number): Position
-  getValueInRange(range: IRange): string
-  getDefaultRange(position: Position): IRange
+  getValueInRange(range: Range): string
+  getWordAtPosition(position: Position): WordAtPosition | null
+  getDefaultRange(position: Position): Range
 }
 
 export type MarkdownStringFlag = 'basic' | 'advanced'
@@ -161,7 +168,7 @@ export type Icon = string
  * <Detail id="github.com/goplus/spx|Sprite.turn[0]" />
  * ```
  */
-export type DefinitionDocumentationString = AdvancedMarkdownString
+export type DefinitionDocumentationString = BasicMarkdownString | AdvancedMarkdownString
 
 export type DefinitionDocumentationCategory = [main: string, sub: string]
 

@@ -84,8 +84,8 @@ defineExpose({ focus })
 <style lang="scss" scoped>
 .copilot-input {
   border-radius: 8px;
-  background: #C390FF;
-  background: linear-gradient(90deg, #72BBFF 0%, #C390FF 100%);
+  background: #c390ff;
+  background: linear-gradient(90deg, #72bbff 0%, #c390ff 100%);
 }
 
 .content {
