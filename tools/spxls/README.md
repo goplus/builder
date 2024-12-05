@@ -12,13 +12,13 @@ through its API interfaces.
 1. Generate required package data:
 
   ```bash
-  go generate ./internal/pkgdata
+  GODEBUG=gotypesalias=1 go generate ./internal/pkgdata
   ```
 
 2. Build the project:
 
   ```bash
-  GOOS=js GOARCH=wasm go build -o spxls.wasm
+  GOOS=js GOARCH=wasm GODEBUG=gotypesalias=1 go build -o spxls.wasm
   ```
 
 ## Usage
@@ -118,6 +118,9 @@ interface SpxRenameResourceParams {
 ```
 
 ```typescript
+/**
+ * The spx resource's identifier.
+ */
 interface SpxResourceIdentifier {
   /**
    * The spx resource's URI.
@@ -127,6 +130,17 @@ interface SpxResourceIdentifier {
 ```
 
 ```typescript
+/**
+ * The spx resource's URI.
+ *
+ * @example
+ * - `spx://resources/sounds/MySound`
+ * - `spx://resources/sprites/MySprite`
+ * - `spx://resources/sprites/MySprite/costumes/MyCostume`
+ * - `spx://resources/sprites/MySprite/animations/MyAnimation`
+ * - `spx://resources/backdrops/MyBackdrop`
+ * - `spx://resources/widgets/MyWidget`
+ */
 type SpxResourceUri = string
 ```
 

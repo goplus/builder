@@ -3,9 +3,11 @@ package server
 import (
 	"errors"
 	"fmt"
+	"go/types"
 	"io/fs"
 	"strings"
 
+	"github.com/goplus/builder/tools/spxls/internal"
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
 )
 
@@ -25,6 +27,7 @@ type Server struct {
 	workspaceRootFS    fs.ReadDirFS
 	spxResourceRootDir string
 	replier            MessageReplier
+	importer           types.Importer
 }
 
 // New creates a new Server instance.
@@ -33,6 +36,7 @@ func New(workspaceRootFS fs.ReadDirFS, replier MessageReplier) *Server {
 		workspaceRootURI: "file:///", // TODO: Allow setting this via the `initialize` request.
 		workspaceRootFS:  workspaceRootFS,
 		replier:          replier,
+		importer:         internal.NewImporter(nil),
 	}
 }
 
@@ -137,13 +141,17 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentDocumentLink(&params)
+		})
 	case "documentLink/resolve":
 		var params DocumentLink
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.documentLinkResolve(&params)
+		})
 	case "textDocument/documentSymbol":
 		var params DocumentSymbolParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
