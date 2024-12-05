@@ -7,14 +7,13 @@ import { Spxlc } from './lsp'
 import {
   CodeEditorUIComp,
   type ICodeEditorUI,
-  type Diagnostic,
   type DiagnosticsContext,
   type IDiagnosticsProvider,
   type IResourceReferencesProvider,
   type ResourceReference,
   type ResourceReferencesContext
 } from './ui'
-import { DefinitionKind, type DefinitionDocumentationItem } from './common'
+import { DefinitionKind, type DefinitionDocumentationItem, type Diagnostic } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
 
@@ -78,6 +77,30 @@ function handleUIInit(ui: ICodeEditorUI) {
   })
 
   ui.registerCopilot(copilot)
+
+  // test copilot chat
+  // TODO: remove me
+  //   ui.executeCommxplainKind.CodeSegment,
+  //       codeSegment: {
+  //         textDocument: {
+  //           uri: 'file:///NiuXiaoQi.spx'
+  //         },
+  //         range: {
+  //           start: {
+  //             line: 1,
+  //             column: 1
+  //           },
+  //           end: {
+  //             line: 1,
+  //             column: 2
+  //           }
+  //         },
+  //         content: `onClick => {
+  //     println "clicked"
+  // }`
+  //       }
+  //     }
+  //   })
 
   class DiagnosticsProvider
     extends Emitter<{

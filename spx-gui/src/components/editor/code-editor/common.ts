@@ -29,8 +29,7 @@ export type TextDocumentRange = {
   range: IRange
 }
 
-export type CodeSegment = {
-  range: IRange
+export type CodeSegment = TextDocumentRange & {
   content: string
 }
 
@@ -99,6 +98,17 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
     name: query === '' ? undefined : decodeURIComponent(query),
     overloadId: hash === '' ? undefined : decodeURIComponent(hash)
   }
+}
+
+export enum DiagnosticSeverity {
+  Error,
+  Warning
+}
+
+export type Diagnostic = {
+  range: IRange
+  severity: DiagnosticSeverity
+  message: string
 }
 
 /**
@@ -247,10 +257,10 @@ export type DefinitionDocumentationItem = {
 interface CommandConstraint<A, R> {}
 
 export type Command<A extends any[], R> = string & CommandConstraint<A, R>
-export type CommandHandler<A extends any[], R> = (...args: A) => Promise<R>
+export type CommandHandler<A extends any[], R> = (...args: A) => R | Promise<R>
 export type CommandInfo<A extends any[], R> = {
   icon: Icon
-  title: string
+  title: LocaleMessage
   handler: CommandHandler<A, R>
 }
 
@@ -275,8 +285,3 @@ export type TextEdit = {
 export type WorkspaceEdit = {
   changes?: { [uri: string]: TextEdit[] }
 }
-
-// const builtInCommandCopilotChat: Command<[ChatTopic], void> = 'spx.copilot.chat'
-// const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
-// const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
-// const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'

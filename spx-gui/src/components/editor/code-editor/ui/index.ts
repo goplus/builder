@@ -9,7 +9,7 @@ import type { IResourceReferencesProvider } from './resource-reference'
 import type { IContextMenuProvider } from './context-menu'
 import type { IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
-import type { ICopilot } from './copilot'
+import { CopilotController, type ChatTopic, type ICopilot } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
 import { type Monaco, type MonacoEditor, getSelectedCodeOwner, type ICodeOwner, fromMonacoPosition } from './common'
 import { TextDocument } from './text-document'
@@ -48,6 +48,11 @@ export interface ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, range: IRange): void
 }
 
+export const builtInCommandCopilotChat: Command<[ChatTopic], void> = 'spx.copilot.chat'
+// const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
+// const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
+// const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'
+
 export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void {
     this.hoverController.registerProvider(provider)
@@ -68,18 +73,20 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.apiReferenceController.registerProvider(provider)
   }
   registerCopilot(copilot: ICopilot): void {
-    console.warn('TODO', copilot)
+    this.copilotController.registerCopilot(copilot)
   }
   registerFormattingEditProvider(provider: IFormattingEditProvider): void {
     console.warn('TODO', provider)
   }
 
+  private commandHandlers = new Map<Command<any, any>, CommandInfo<any, any>>()
   async executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R> {
-    console.warn('TODO', command, input)
-    return null as any
+    const info = this.commandHandlers.get(command)
+    if (info == null) throw new Error(`Command not found: ${command}`)
+    return info.handler(...input)
   }
   registerCommand<A extends any[], R>(command: Command<A, R>, info: CommandInfo<A, R>): void {
-    console.warn('TODO', command, info)
+    this.commandHandlers.set(command, info)
   }
 
   open(textDocument: TextDocumentIdentifier): void
@@ -97,6 +104,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   apiReferenceController = new APIReferenceController(this)
   hoverController = new HoverController(this)
   completionController = new CompletionController(this)
+  copilotController = new CopilotController(this)
 
   /** All opened text documents in current editor, by ID uri */
   private textDocuments = new Map<string, TextDocument>()
@@ -200,12 +208,26 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       })
     )
 
+    this.registerCommand(builtInCommandCopilotChat, {
+      icon: 'TODO',
+      title: {
+        en: 'Ask copilot',
+        zh: '向 Copilot 提问'
+      },
+      handler: (topic) => {
+        this.setIsCopilotActive(true)
+        this.copilotController.startChat(topic)
+      }
+    })
+
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
+    this.copilotController.init()
   }
 
   dispose() {
+    this.copilotController.dispose()
     this.completionController.dispose()
     this.hoverController.dispose()
     this.apiReferenceController.dispose()
