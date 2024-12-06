@@ -263,3 +263,7 @@ export function usePageTitle(
     { immediate: true }
   )
 }
+
+export function timeout(duration = 0) {
+  return new Promise<void>((resolve) => setTimeout(() => resolve(), duration))
+}

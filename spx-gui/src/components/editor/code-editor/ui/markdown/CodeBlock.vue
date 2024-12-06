@@ -19,7 +19,7 @@ defineProps<{
 .code-block {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   align-self: stretch;
 
   border-radius: var(--ui-border-radius-2);
@@ -28,5 +28,7 @@ defineProps<{
 }
 .code-wrapper {
   padding: 12px;
+  min-width: 0;
+  overflow-x: auto;
 }
 </style>

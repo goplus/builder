@@ -4,15 +4,20 @@ import { DefinitionKind } from '../../common'
 import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
+import { ChatExplainKind, builtInCommandCopilotExplain } from '..'
+import { getSelectionRange } from '../common'
+import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import type { APIReferenceItem } from '.'
 import iconRead from './icons/read.svg?raw'
 import iconEffect from './icons/effect.svg?raw'
 import iconListen from './icons/listen.svg?raw'
 import iconCode from './icons/code.svg?raw'
 
-defineProps<{
+const props = defineProps<{
   item: APIReferenceItem
 }>()
+
+const codeEditorCtx = useCodeEditorCtx()
 
 function getIcon(item: APIReferenceItem) {
   if (item.kind === DefinitionKind.Listen) return iconListen
@@ -22,11 +27,21 @@ function getIcon(item: APIReferenceItem) {
 }
 
 function handleInsert() {
-  console.warn('TODO: insert')
+  const startPosition = { line: 1, column: 1 }
+  let range = { start: startPosition, end: startPosition }
+  if (codeEditorCtx.ui.selection != null) {
+    range = getSelectionRange(codeEditorCtx.ui.selection)
+  }
+  codeEditorCtx.ui.insertSnippet(props.item.insertText, range)
+  codeEditorCtx.ui.editor.focus()
 }
 
 function handleExplain() {
-  console.warn('TODO: explain')
+  codeEditorCtx.ui.executeCommand(builtInCommandCopilotExplain, {
+    kind: ChatExplainKind.Definition,
+    overview: props.item.overview,
+    definition: props.item.definition
+  })
 }
 </script>
 
