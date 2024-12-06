@@ -43,11 +43,11 @@ type SpxRenameResourceParams struct {
 // SpxResourceIdentifier identifies a spx resource.
 type SpxResourceIdentifier struct {
 	// The spx resource's URI.
-	URI SpxResourceUri `json:"uri"`
+	URI SpxResourceURI `json:"uri"`
 }
 
-// SpxResourceUri represents a URI string for a spx resource.
-type SpxResourceUri = string
+// SpxResourceURI represents a URI string for a spx resource.
+type SpxResourceURI string
 
 // SpxGetDefinitionsParams represents parameters to get definitions at a
 // specific position in a document.
