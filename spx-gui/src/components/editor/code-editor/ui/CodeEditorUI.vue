@@ -14,14 +14,16 @@ export function useCodeEditorCtx() {
 import { type InjectionKey, inject, provide, ref, watchEffect } from 'vue'
 import { computedShallowReactive, useComputedDisposable, useLocalStorage } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
+import { keywords, brackets, typeKeywords, operators } from '@/utils/spx'
 import type { Project } from '@/models/project'
+import { useUIVariables } from '@/components/ui'
 import { type ICodeEditorUI, CodeEditorUI } from '.'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
-import type { Monaco, MonacoEditor } from './common'
+import type { Monaco, MonacoEditor, monaco } from './common'
 
 const props = defineProps<{
   project: Project
@@ -31,9 +33,217 @@ const emit = defineEmits<{
   init: [ui: ICodeEditorUI]
 }>()
 
+const uiVariables = useUIVariables()
 const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project))
 
+const defaultThemeName = 'spx-default-theme'
+const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
+  language: 'spx',
+  theme: defaultThemeName
+}
+
 function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor) {
+  monaco.languages.register({
+    id: 'spx'
+  })
+
+  // copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
+  monaco.languages.setLanguageConfiguration('spx', {
+    comments: {
+      lineComment: '//',
+      blockComment: ['/*', '*/']
+    },
+    brackets: [
+      ['{', '}'],
+      ['[', ']'],
+      ['(', ')']
+    ],
+    autoClosingPairs: [
+      {
+        open: '{',
+        close: '}'
+      },
+      {
+        open: '[',
+        close: ']'
+      },
+      {
+        open: '(',
+        close: ')'
+      },
+      {
+        open: '`',
+        close: '`',
+        notIn: ['string']
+      },
+      {
+        open: '"',
+        close: '"',
+        notIn: ['string']
+      },
+      {
+        open: "'",
+        close: "'",
+        notIn: ['string', 'comment']
+      }
+    ],
+    surroundingPairs: [
+      {
+        open: '{',
+        close: '}'
+      },
+      {
+        open: '[',
+        close: ']'
+      },
+      {
+        open: '(',
+        close: ')'
+      },
+      {
+        open: '"',
+        close: '"'
+      },
+      {
+        open: "'",
+        close: "'"
+      },
+      {
+        open: '`',
+        close: '`'
+      }
+    ],
+    indentationRules: {
+      increaseIndentPattern: new RegExp(
+        '^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}"\'`]*|\\([^)"\'`]*)$'
+      ),
+      decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|\\)[,]?)$')
+    },
+    folding: {
+      markers: {
+        start: new RegExp('^\\s*//\\s*#?region\\b'),
+        end: new RegExp('^\\s*//\\s*#?endregion\\b')
+      }
+    }
+  })
+
+  // Match token and highlight
+  monaco.languages.setMonarchTokensProvider('spx', {
+    // defaultToken: 'invalid',
+    keywords,
+    typeKeywords,
+    operators,
+    brackets,
+    symbols: /[=><!~?:&|+\-*/^%]+/,
+    escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
+    // digits
+    digits: /\d+(_+\d+)*/,
+    octaldigits: /[0-7]+(_+[0-7]+)*/,
+    binarydigits: /[0-1]+(_+[0-1]+)*/,
+    hexdigits: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
+    // The main tokenizer for our languages
+    tokenizer: {
+      root: [
+        [
+          /[a-zA-Z_$][\w$]*/,
+          {
+            cases: {
+              '@typeKeywords': 'typeKeywords',
+              '@keywords': 'keyword',
+              '@default': 'identifier'
+            }
+          }
+        ],
+
+        // whitespace
+        { include: '@whitespace' },
+
+        // delimiters and operators
+        [/[{}()[\]]/, 'brackets'],
+        // [/[<>](?!@symbols)/, '@brackets'],
+        [
+          /@symbols/,
+          {
+            cases: {
+              '@operators': 'operator',
+              '@default': ''
+            }
+          }
+        ],
+
+        // numbers
+        [/(@digits)[eE]([-+]?(@digits))?/, 'number.float'],
+        [/(@digits)\.(@digits)([eE][-+]?(@digits))?/, 'number.float'],
+        [/0[xX](@hexdigits)/, 'number.hex'],
+        [/0[oO]?(@octaldigits)/, 'number.octal'],
+        [/0[bB](@binarydigits)/, 'number.binary'],
+        [/(@digits)/, 'number'],
+
+        // delimiter: after number because of .\d floats
+        [/[;,.]/, 'delimiter'],
+        [/[=><!~?:&|+\-*/^%]+/, 'operator'],
+
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+
+        // characters
+        [/'[^\\']'/, 'string'],
+        [/(')(@escapes)(')/, ['string', 'string.escape', 'string']],
+        [/'/, 'string.invalid']
+      ],
+      comment: [
+        [/[^/*]+/, 'comment'],
+        [/\/\*/, 'comment', '@push'],
+        ['\\*/', 'comment', '@pop'],
+        [/[/*]/, 'comment']
+      ],
+
+      string: [
+        [/[^\\"]+/, 'string'],
+        [/@escapes/, 'string.escape'],
+        [/\\./, 'string.escape.invalid'],
+        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+      ],
+
+      whitespace: [
+        [/[ \t\r\n]+/, 'white'],
+        [/\/\*/, 'comment', '@comment'],
+        [/\/\/.*$/, 'comment']
+      ],
+
+      bracketCounting: [
+        [/{/, 'delimiter.bracket', '@bracketCounting'],
+        [/}/, 'delimiter.bracket', '@pop']
+      ]
+    }
+  })
+
+  // TODO: use 3rd-party highlighters like [shiki](https://shiki.style)?
+  const color = uiVariables.color
+  monaco.editor.defineTheme(defaultThemeName, {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      // TODO: review colors here
+      { token: 'comment', foreground: color.hint[2], fontStyle: 'italic' },
+      { token: 'string', foreground: color.blue[600] },
+      { token: 'operator', foreground: color.red[300] },
+      { token: 'number', foreground: color.blue[600] },
+      { token: 'keyword', foreground: color.red[300] },
+      { token: 'typeKeywords', foreground: color.green[300] },
+      // TODO: not working
+      { token: 'brackets', foreground: color.red[300] },
+      { token: 'identifier', foreground: color.title }
+    ],
+    colors: {
+      'editor.background': '#FFFFFF',
+      'scrollbar.shadow': '#FFFFFF00',
+      'scrollbarSlider.background': `${color.primary.main}50`,
+      'scrollbarSlider.hoverBackground': `${color.primary.main}80`,
+      'scrollbarSlider.activeBackground': color.primary.main
+    }
+  })
+
   uiRef.value.init(monaco, editor)
   emit('init', uiRef.value)
 }
@@ -119,7 +329,7 @@ watchEffect((onCleanup) => {
       <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div ref="resizeHandleEl" class="resize-handle" :style="{ left: `${sidebarWidth}px` }"></div>
-    <MonacoEditorComp class="monaco-editor" @init="handleMonacoEditorInit" />
+    <MonacoEditorComp class="monaco-editor" :options="monacoEditorOptions" @init="handleMonacoEditorInit" />
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
   </div>

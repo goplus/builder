@@ -11,8 +11,8 @@ import { toJpeg } from './img'
 
 export const keywords = [
   'func',
-  'main',
-  'println',
+  // 'main',
+  // 'println',
   'if',
   'else',
   'for',
@@ -24,27 +24,39 @@ export const keywords = [
   'case',
   'default',
   'type',
-  'struct',
+  // 'struct',
   'map',
   'chan',
-  'nil',
-  'true',
-  'false',
-  'iota',
+  // 'nil',
+  // 'true',
+  // 'false',
+  // 'iota',
   'const',
   'import',
   'package',
   'var',
-  'error',
-  'interface',
-  'struct',
+  // 'error',
+  // 'interface',
+  // 'struct',
   'fallthrough',
   'go',
   'defer',
   'select'
 ]
 
-export const typeKeywords = ['int', 'string', 'bool', 'void', 'map', 'chan', 'error', 'interface', 'struct', 'nil']
+export const typeKeywords = [
+  'int',
+  'float64',
+  'string',
+  'bool',
+  'void',
+  'map',
+  'chan',
+  'error',
+  'interface',
+  'struct'
+  // 'nil'
+]
 
 export const operators = [
   '=',

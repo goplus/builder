@@ -11,6 +11,11 @@ export type Range = {
   end: Position
 }
 
+export type Selection = {
+  start: Position
+  position: Position
+}
+
 export type ResourceIdentifier = {
   uri: string
 }
@@ -159,6 +164,10 @@ export function makeBasicMarkdownString(value: string | LocaleMessage): BasicMar
  */
 export type AdvancedMarkdownString = MarkdownString<'advanced'>
 
+export function makeAdvancedMarkdownString(value: string | LocaleMessage): AdvancedMarkdownString {
+  return { value, flag: 'advanced' }
+}
+
 export type Icon = string
 
 /**
@@ -258,6 +267,10 @@ export type DefinitionDocumentationItem = {
   overview: string
   /** Detailed explanation for the definition, overview not included */
   detail: BasicMarkdownString
+}
+
+export interface IDocumentBase {
+  getDocumentation(defId: DefinitionIdentifier): Promise<DefinitionDocumentationItem | null>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
