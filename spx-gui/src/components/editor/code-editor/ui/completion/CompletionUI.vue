@@ -9,7 +9,11 @@ defineProps<{
 
 <template>
   <Teleport :to="controller.widgetEl">
-    <CompletionCard v-if="controller.itemsRef.value != null" :items="controller.itemsRef.value" />
+    <CompletionCard
+      v-if="controller.nonEmptyItems != null"
+      :items="controller.nonEmptyItems"
+      :controller="controller"
+    />
   </Teleport>
 </template>
 

@@ -13,15 +13,16 @@ import {
   type ResourceReference,
   type ResourceReferencesContext
 } from './ui'
-import { DefinitionKind, type DefinitionDocumentationItem, type Diagnostic } from './common'
+import { type DefinitionDocumentationItem, type Diagnostic } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
 
 // mock data for test
-const allIds = Object.values({
+const allItems = Object.values({
   ...spxDocumentationItems,
   ...gopDocumentationItems
-}).map((item) => item.definition)
+})
+const allIds = allItems.map((item) => item.definition)
 
 const editorCtx = useEditorCtx()
 
@@ -44,24 +45,15 @@ function handleUIInit(ui: ICodeEditorUI) {
   ui.registerCompletionProvider({
     async provideCompletion(ctx, position) {
       console.warn('TODO', ctx, position)
-      return [
-        {
-          label: 'onStart',
-          kind: DefinitionKind.Listen,
-          detail: 'func onStart(callback func())',
-          documentation: {
-            value: `documentation for \`onStart\``
-          }
-        },
-        {
-          label: 'setXYpos',
-          kind: DefinitionKind.Function,
-          detail: 'func Sprite.setXYpos(x, y int)',
-          documentation: {
-            value: `documentation for \`setXYpos\``
-          }
-        }
-      ]
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      return allItems.map((item) => ({
+        label: item.definition
+          .name!.split('.')
+          .pop()!
+          .replace(/^./, (c) => c.toLowerCase()),
+        kind: item.kind,
+        documentation: item.detail
+      }))
     }
   })
 

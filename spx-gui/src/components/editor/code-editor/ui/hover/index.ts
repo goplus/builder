@@ -1,24 +1,23 @@
 import { shallowRef, watch } from 'vue'
-import type { editor } from 'monaco-editor'
 import { Disposable } from '@/utils/disposable'
 import {
   type Action,
   type BaseContext,
   type DefinitionDocumentationString,
-  type IRange,
+  type Range,
   type Position
 } from '../../common'
 import type { CodeEditorUI } from '..'
-import { fromMonacoPosition, toMonacoPosition, token2Signal } from '../common'
+import { fromMonacoPosition, toMonacoPosition, token2Signal, type monaco } from '../common'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
-  range?: IRange
+  range?: Range
   actions: Action[]
 }
 
 export type InternalHover = Hover & {
-  range: IRange
+  range: Range
 }
 
 export type HoverContext = BaseContext
@@ -50,7 +49,7 @@ export class HoverController extends Disposable {
 
   widgetEl = document.createElement('div')
 
-  private widget: editor.IContentWidget = {
+  private widget: monaco.editor.IContentWidget = {
     getId: () => `hover-for-${this.ui.id}`,
     getDomNode: () => this.widgetEl,
     getPosition: () => {

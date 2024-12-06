@@ -2,17 +2,32 @@ import type * as monaco from 'monaco-editor'
 import { Sprite } from '@/models/sprite'
 import type { Stage } from '@/models/stage'
 import type { Action, Project } from '@/models/project'
-import type { IRange, Position, TextDocumentIdentifier } from '../common'
+import type { Range, Position, TextDocumentIdentifier } from '../common'
 
 export type { monaco }
 export type Monaco = typeof import('monaco-editor')
 export type MonacoEditor = monaco.editor.IStandaloneCodeEditor
+export { KeyCode as MonacoKeyCode } from 'monaco-editor'
+
+declare module 'monaco-editor' {
+  namespace editor {
+    interface IStandaloneCodeEditor {
+      // It is actually supported while not in the type definition
+      onDidType: (callback: (text: string) => void) => monaco.IDisposable
+    }
+  }
+}
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
   if (token.isCancellationRequested) ctrl.abort()
   else token.onCancellationRequested((e) => ctrl.abort(e))
   return ctrl.signal
+}
+
+export function positionEq(a: Position | null, b: Position | null) {
+  if (a == null || b == null) return a == b
+  return a.line === b.line && a.column === b.column
 }
 
 export function fromMonacoPosition(position: monaco.IPosition): Position {
@@ -23,14 +38,14 @@ export function toMonacoPosition(position: Position): monaco.IPosition {
   return { lineNumber: position.line, column: position.column }
 }
 
-export function fromMonacoRange(range: monaco.IRange): IRange {
+export function fromMonacoRange(range: monaco.IRange): Range {
   return {
     start: { line: range.startLineNumber, column: range.startColumn },
     end: { line: range.endLineNumber, column: range.endColumn }
   }
 }
 
-export function toMonacoRange(range: IRange): monaco.IRange {
+export function toMonacoRange(range: Range): monaco.IRange {
   return {
     startLineNumber: range.start.line,
     startColumn: range.start.column,

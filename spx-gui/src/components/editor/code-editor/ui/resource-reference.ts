@@ -1,10 +1,10 @@
 import type Emitter from '@/utils/emitter'
-import { type BaseContext, type IRange, type ResourceIdentifier } from '../common'
+import { type BaseContext, type Range, type ResourceIdentifier } from '../common'
 
 export type ResourceReferencesContext = BaseContext
 
 export type ResourceReference = {
-  range: IRange
+  range: Range
   resource: ResourceIdentifier
 }
 

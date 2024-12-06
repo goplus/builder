@@ -47,6 +47,7 @@ const codeEditorCtx = computedShallowReactive<CodeEditorCtx>(() => ({
 }))
 provide(codeEditorCtxInjectionKey, codeEditorCtx)
 
+// TOOD: use percentage instead of px as default width
 const defaultSidebarWidth = 280 // px
 const minSidebarWidth = 160 // px
 const minMonacoEditorWidth = 200 // px
