@@ -1,5 +1,6 @@
 import { mapValues } from 'lodash'
 import type { LocaleMessage } from '@/utils/i18n'
+import type Emitter from '@/utils/emitter'
 
 export type Position = {
   line: number
@@ -126,8 +127,13 @@ export interface WordAtPosition {
  * Model for text document
  * Similar to https://microsoft.github.io/monaco-editor/docs.html#interfaces/editor.ITextModel.html
  */
-export interface ITextDocument {
+export interface ITextDocument
+  extends Emitter<{
+    didChangeContent: string
+  }> {
   id: TextDocumentIdentifier
+  getValue(): string
+  setValue(newValue: string): void
   getOffsetAt(position: Position): number
   getPositionAt(offset: number): Position
   getValueInRange(range: Range): string

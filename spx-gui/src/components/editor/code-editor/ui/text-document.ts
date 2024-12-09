@@ -1,9 +1,22 @@
 import { watch } from 'vue'
-import { Disposable } from '@/utils/disposable'
+import Emitter from '@/utils/emitter'
 import type { Range, ITextDocument, Position, TextDocumentIdentifier, WordAtPosition } from '../common'
-import { toMonacoPosition, toMonacoRange, toMonacoUri, type ICodeOwner, type Monaco, type monaco } from './common'
+import {
+  toMonacoPosition,
+  toMonacoRange,
+  toMonacoUri,
+  type ICodeOwner,
+  type Monaco,
+  type monaco,
+  fromMonacoPosition
+} from './common'
 
-export class TextDocument extends Disposable implements ITextDocument {
+export class TextDocument
+  extends Emitter<{
+    didChangeContent: string
+  }>
+  implements ITextDocument
+{
   id: TextDocumentIdentifier
   monacoTextModel: monaco.editor.ITextModel
 
@@ -29,6 +42,7 @@ export class TextDocument extends Disposable implements ITextDocument {
     this.addDisposable(
       this.monacoTextModel.onDidChangeContent(() => {
         const newCode = this.monacoTextModel.getValue()
+        this.emit('didChangeContent', newCode)
         if (codeOwner.getCode() === newCode) return
         codeOwner.setCode(newCode)
       })
@@ -44,13 +58,11 @@ export class TextDocument extends Disposable implements ITextDocument {
   }
 
   getOffsetAt(position: Position): number {
-    console.warn('TODO', position)
-    return 0
+    return this.monacoTextModel.getOffsetAt(toMonacoPosition(position))
   }
 
   getPositionAt(offset: number): Position {
-    console.warn('TODO', offset)
-    return { line: 0, column: 0 }
+    return fromMonacoPosition(this.monacoTextModel.getPositionAt(offset))
   }
 
   getValueInRange(range: Range): string {
