@@ -29,6 +29,7 @@ import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
+import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import type { Monaco, MonacoEditor, monaco } from './common'
 
 const props = defineProps<{
@@ -223,6 +224,7 @@ watchEffect((onCleanup) => {
     <MonacoEditorComp class="monaco-editor" :options="monacoEditorOptions" @init="handleMonacoEditorInit" />
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
+    <DiagnosticsUI :controller="uiRef.diagnosticsController" />
   </div>
 </template>
 

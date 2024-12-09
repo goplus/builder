@@ -2,7 +2,7 @@ import type * as monaco from 'monaco-editor'
 import { Sprite } from '@/models/sprite'
 import { stageCodeFilePaths, type Stage } from '@/models/stage'
 import type { Action, Project } from '@/models/project'
-import type { Range, Position, TextDocumentIdentifier, Selection } from '../common'
+import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
 
 export type { monaco }
 export type Monaco = typeof import('monaco-editor')
@@ -87,6 +87,13 @@ export function isRangeEmpty(range: Range) {
 export function isSelectionEmpty(selection: Selection | null) {
   if (selection == null) return true
   return positionEq(selection.start, selection.position)
+}
+
+export function containsPosition(range: Range, position: Position) {
+  if (position.line < range.start.line || position.line > range.end.line) return false
+  if (position.line === range.start.line && position.column < range.start.column) return false
+  if (position.line === range.end.line && position.column > range.end.column) return false
+  return true
 }
 
 export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {

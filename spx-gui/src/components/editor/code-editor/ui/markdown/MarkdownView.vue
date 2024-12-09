@@ -100,5 +100,11 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
     border: 1px solid var(--ui-color-grey-500);
     background: var(--ui-color-grey-300);
   }
+  :deep(blockquote) {
+    // TODO: confirm style detail here
+    padding: 0 0.6em;
+    border-radius: 4px;
+    background-color: var(--ui-color-grey-300);
+  }
 }
 </style>

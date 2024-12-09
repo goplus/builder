@@ -9,15 +9,15 @@ import {
   type Range,
   type Position,
   type TextDocumentIdentifier,
-  type ITextDocument,
   type Selection,
-  type IDocumentBase
+  type IDocumentBase,
+  type Diagnostic
 } from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
 import type { IResourceReferencesProvider } from './resource-reference'
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
-import type { IDiagnosticsProvider } from './diagnostics'
+import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
 import { CopilotController, type ICopilot, ChatTopicKind, type ChatTopicExplainTarget } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
@@ -72,6 +72,10 @@ export interface ICodeEditorUI {
 
 export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'spx.copilot.inspire'
 export const builtInCommandCopilotExplain: Command<[target: ChatTopicExplainTarget], void> = 'spx.copilot.explain'
+export const builtInCommandCopilotFixProblem: Command<
+  [{ textDocument: TextDocumentIdentifier; problem: Diagnostic }],
+  void
+> = 'spx.copilot.fixProblem'
 // const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
 // const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
 // const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'
@@ -90,7 +94,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     console.warn('TODO', provider)
   }
   registerDiagnosticsProvider(provider: IDiagnosticsProvider): void {
-    console.warn('TODO', provider)
+    this.diagnosticsController.registerProvider(provider)
   }
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void {
     this.apiReferenceController.registerProvider(provider)
@@ -139,6 +143,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   completionController = new CompletionController(this)
   copilotController = new CopilotController(this)
   contextMenuController = new ContextMenuController(this)
+  diagnosticsController = new DiagnosticsController(this)
   documentBase: IDocumentBase | null = null
 
   /** All opened text documents in current editor, by ID uri */
@@ -148,7 +153,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   /** Current active text document ID */
   private activeTextDocumentIdRef = shallowRef<TextDocumentIdentifier | null>(null)
 
-  getTextDocument(id: TextDocumentIdentifier): ITextDocument | null {
+  getTextDocument(id: TextDocumentIdentifier): TextDocument | null {
     return this.textDocuments.get(id.uri) ?? null
   }
 
@@ -303,14 +308,30 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
 
+    this.registerCommand(builtInCommandCopilotFixProblem, {
+      icon: 'TODO',
+      title: {
+        en: 'Fix problem',
+        zh: '修复问题'
+      },
+      handler: (params) => {
+        this.copilotController.startChat({
+          kind: ChatTopicKind.FixProblem,
+          ...params
+        })
+      }
+    })
+
     this.apiReferenceController.init()
     this.hoverController.init()
     this.completionController.init()
     this.copilotController.init()
     this.contextMenuController.init()
+    this.diagnosticsController.init()
   }
 
   dispose() {
+    this.diagnosticsController.dispose()
     this.contextMenuController.dispose()
     this.copilotController.dispose()
     this.completionController.dispose()
