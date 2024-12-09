@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"path"
+	"strings"
 )
 
 // SpxResourceType is the type of a spx resource.
@@ -30,7 +32,42 @@ func (s *Server) readSpxResourceFile(subPath string) ([]byte, error) {
 
 // SpxResourceRefKey is the key of a spx resource reference.
 type SpxResourceRefKey interface {
-	RefURI() URI
+	URI() SpxResourceURI
+}
+
+// ParseSpxResourceURI parses a spx resource URI and returns the corresponding
+// spx resource reference key.
+func ParseSpxResourceURI(uri SpxResourceURI) (SpxResourceRefKey, error) {
+	u, err := url.Parse(string(uri))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse spx resource URI: %w", err)
+	}
+	pathParts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	pathPartCount := len(pathParts)
+	if u.Scheme != "spx" || u.Host != "resources" || path.Clean(u.Path) != u.Path || pathPartCount < 2 {
+		return nil, fmt.Errorf("invalid spx resource URI: %s", uri)
+	}
+	switch pathParts[0] {
+	case "backdrops":
+		return SpxBackdropResourceRefKey{BackdropName: pathParts[1]}, nil
+	case "sounds":
+		return SpxSoundResourceRefKey{SoundName: pathParts[1]}, nil
+	case "sprites":
+		if pathPartCount == 2 {
+			return SpxSpriteResourceRefKey{SpriteName: pathParts[1]}, nil
+		}
+		if pathPartCount > 3 {
+			switch pathParts[2] {
+			case "costumes":
+				return SpxSpriteCostumeResourceRefKey{SpriteName: pathParts[1], CostumeName: pathParts[3]}, nil
+			case "animations":
+				return SpxSpriteAnimationResourceRefKey{SpriteName: pathParts[1], AnimationName: pathParts[3]}, nil
+			}
+		}
+	case "widgets":
+		return SpxWidgetResourceRefKey{WidgetName: pathParts[1]}, nil
+	}
+	return nil, fmt.Errorf("unsupported or malformed spx resource type in URI: %s", uri)
 }
 
 // SpxBackdropResource represents a backdrop resource in spx.
@@ -44,9 +81,9 @@ type SpxBackdropResourceRefKey struct {
 	BackdropName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxBackdropResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/backdrops/%s", k.BackdropName))
+// URI implements [SpxResourceRefKey].
+func (k SpxBackdropResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/backdrops/%s", k.BackdropName))
 }
 
 // getSpxBackdropResource gets a spx backdrop resource from the workspace.
@@ -81,9 +118,9 @@ type SpxSoundResourceRefKey struct {
 	SoundName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxSoundResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/sounds/%s", k.SoundName))
+// URI implements [SpxResourceRefKey].
+func (k SpxSoundResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/sounds/%s", k.SoundName))
 }
 
 // getSpxSoundResource gets a spx sound resource from the workspace.
@@ -115,9 +152,9 @@ type SpxSpriteResourceRefKey struct {
 	SpriteName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxSpriteResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/sprites/%s", k.SpriteName))
+// URI implements [SpxResourceRefKey].
+func (k SpxSpriteResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/sprites/%s", k.SpriteName))
 }
 
 // SpxSpriteCostumeResource represents a spx sprite costume resource.
@@ -133,9 +170,9 @@ type SpxSpriteCostumeResourceRefKey struct {
 	CostumeName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxSpriteCostumeResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/sprites/%s/costumes/%s", k.SpriteName, k.CostumeName))
+// URI implements [SpxResourceRefKey].
+func (k SpxSpriteCostumeResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/sprites/%s/costumes/%s", k.SpriteName, k.CostumeName))
 }
 
 // SpxSpriteAnimationResource represents a spx sprite animation resource.
@@ -149,9 +186,9 @@ type SpxSpriteAnimationResourceRefKey struct {
 	AnimationName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxSpriteAnimationResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/sprites/%s/animations/%s", k.SpriteName, k.AnimationName))
+// URI implements [SpxResourceRefKey].
+func (k SpxSpriteAnimationResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/sprites/%s/animations/%s", k.SpriteName, k.AnimationName))
 }
 
 // getSpxSpriteResource gets a spx sprite resource from the workspace.
@@ -185,9 +222,9 @@ type SpxWidgetResourceRefKey struct {
 	WidgetName string
 }
 
-// RefURI implements [SpxResourceRefKey].
-func (k SpxWidgetResourceRefKey) RefURI() URI {
-	return URI(fmt.Sprintf("spx://resources/widgets/%s", k.WidgetName))
+// URI implements [SpxResourceRefKey].
+func (k SpxWidgetResourceRefKey) URI() SpxResourceURI {
+	return SpxResourceURI(fmt.Sprintf("spx://resources/widgets/%s", k.WidgetName))
 }
 
 // getSpxWidgetResource gets a spx widget resource from the workspace.

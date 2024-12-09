@@ -6,7 +6,7 @@ require (
 	github.com/goplus/gogen v1.15.2
 	github.com/goplus/gop v1.2.6
 	github.com/goplus/mod v0.13.10
-	github.com/goplus/spx v1.0.1-0.20241204084233-971e4a0c6ea8
+	github.com/goplus/spx v1.0.1-0.20241205084644-1ac28b85188f
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/tools v0.23.0
 )

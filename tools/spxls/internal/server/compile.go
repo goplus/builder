@@ -70,6 +70,10 @@ type compileResult struct {
 
 	// diagnostics stores diagnostic messages for each document.
 	diagnostics map[DocumentURI][]Diagnostic
+
+	// hasErrorSeverityDiagnostic is true if the compile result has any
+	// diagnostics with error severity.
+	hasErrorSeverityDiagnostic bool
 }
 
 // addSpxResourceRef adds a spx resource reference to the compile result.
@@ -107,6 +111,13 @@ func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnos
 		}
 		return false
 	})
+	if !r.hasErrorSeverityDiagnostic {
+		for _, diag := range dedupedDiags {
+			if diag.Severity == SeverityError {
+				r.hasErrorSeverityDiagnostic = true
+			}
+		}
+	}
 	r.diagnostics[documentURI] = append(r.diagnostics[documentURI], dedupedDiags...)
 }
 
@@ -390,7 +401,7 @@ func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compile
 func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all type-checked expressions.
 	for expr, tv := range result.typeInfo.Types {
-		if tv.IsType() {
+		if expr == nil || expr.Pos() == goptoken.NoPos || tv.IsType() {
 			continue // Skip type identifiers.
 		}
 
@@ -557,10 +568,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 					End:   FromGopTokenPosition(result.fset.Position(fun.X.End())),
 				}
 
-				obj := result.typeInfo.Defs[ident]
-				if obj == nil {
-					obj = result.typeInfo.Uses[ident]
-				}
+				obj := result.typeInfo.ObjectOf(ident)
 				if obj != nil {
 					if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
 						ri.result.addDiagnostics(ri.documentURI, Diagnostic{
@@ -596,8 +604,8 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			if !ok {
 				return nil
 			}
-			obj, ok := result.typeInfo.Uses[ident]
-			if !ok {
+			obj := result.typeInfo.ObjectOf(ident)
+			if obj == nil {
 				return nil
 			}
 			if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
@@ -726,7 +734,7 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 		if !ok {
 			return nil
 		}
-		obj := result.typeInfo.Uses[ident]
+		obj := result.typeInfo.ObjectOf(ident)
 		if obj == nil {
 			return nil
 		}

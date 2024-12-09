@@ -217,7 +217,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.workspaceExecuteCommand(&params)
+		})
 	default:
 		return s.replyMethodNotFound(c.ID(), c.Method())
 	}

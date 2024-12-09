@@ -30,13 +30,13 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]Documen
 			if startPos.Filename != spxFile {
 				continue
 			}
-			refURI := refKey.RefURI()
+			target := URI(refKey.URI())
 			links = append(links, DocumentLink{
 				Range: Range{
 					Start: FromGopTokenPosition(startPos),
 					End:   FromGopTokenPosition(result.fset.Position(ref.End())),
 				},
-				Target: &refURI,
+				Target: &target,
 			})
 		}
 	}
