@@ -11,7 +11,7 @@ defineProps<{
 <template>
   <h4 class="definition-overview-wrapper">
     <DefinitionIcon v-if="kind != null" class="icon" :kind="kind" />
-    <CodeView><slot></slot></CodeView>
+    <CodeView mode="inline"><slot></slot></CodeView>
   </h4>
 </template>
 

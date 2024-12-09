@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <section class="code-block">
-    <CodeView class="code-wrapper"><slot></slot></CodeView>
+    <CodeView class="code-wrapper" mode="block"><slot></slot></CodeView>
     <footer>
       <!-- TODO: actions: insert / copy -->
     </footer>

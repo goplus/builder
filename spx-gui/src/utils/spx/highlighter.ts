@@ -8,9 +8,11 @@ defaultLightTheme.colors['editor.background'] = 'transparent'
 export const tabSize = 4
 export const theme = defaultLightTheme.name
 
-let highlighterPromise: ReturnType<typeof createHighlighter> | null = null
+export type Highlighter = Awaited<ReturnType<typeof createHighlighter>>
 
-export function getHighlighter() {
+let highlighterPromise: Promise<Highlighter> | null = null
+
+export function getHighlighter(): Promise<Highlighter> {
   if (highlighterPromise == null) {
     highlighterPromise = createHighlighter({
       langs: [gopLang as any],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSlots, type VNode, type VNodeChild } from 'vue'
+import { computed, useSlots, type VNode, type VNodeChild } from 'vue'
 import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
 import { useAsyncComputed } from '@/utils/utils'
 
@@ -7,6 +7,7 @@ const props = withDefaults(
   defineProps<{
     /** Only `spx` supported now. */
     language?: string
+    mode: 'block' | 'inline'
   }>(),
   {
     language: 'spx'
@@ -14,13 +15,15 @@ const props = withDefaults(
 )
 
 const slots = useSlots()
+const highlighter = useAsyncComputed(getHighlighter)
 
-const codeHtml = useAsyncComputed(async () => {
+const codeHtml = computed(() => {
+  if (highlighter.value == null) return ''
   const defaultSlot = slots.default?.()
   const code = getTextForVNodeChild(defaultSlot)
-  const highlighter = await getHighlighter()
-  return highlighter.codeToHtml(code, {
+  return highlighter.value.codeToHtml(code, {
     lang: props.language,
+    structure: props.mode === 'block' ? 'classic' : 'inline',
     theme
   })
 })
