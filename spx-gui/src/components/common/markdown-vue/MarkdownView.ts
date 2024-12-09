@@ -38,7 +38,7 @@ export type Props = {
 export default defineComponent<Props>(
   (props, { attrs }) => {
     const hastNodes = computed(() => {
-      const customComponents = props.components?.codeBlock ?? {}
+      const customComponents = props.components?.custom ?? {}
       const mdast = fromMarkdown(props.value)
       const hast = toHast(mdast, { allowDangerousHtml: true })
       const rawProcessed = raw(hast, { tagfilter: false })

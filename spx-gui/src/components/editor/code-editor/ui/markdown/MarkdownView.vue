@@ -44,7 +44,7 @@ const advancedComponents = {
   /**
    * Usage:
    * ```html
-   * <definition-detail id="gop:fmt?Println">
+   * <definition-detail def-id="gop:fmt?Println">
    *   Default detail content here (Markdown supported)
    * </definition-detail>
    */

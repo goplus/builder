@@ -8,7 +8,7 @@ import {
   type Position
 } from '../../common'
 import type { CodeEditorUI } from '..'
-import { fromMonacoPosition, toMonacoPosition, token2Signal, type monaco } from '../common'
+import { fromMonacoPosition, toMonacoPosition, token2Signal, type monaco, isSelectionEmpty } from '../common'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -33,7 +33,7 @@ export class HoverController extends Disposable {
     this.currentHoverRef.value = hover
   }
 
-  private hideHover() {
+  hideHover() {
     this.currentHoverRef.value = null
   }
 
@@ -75,6 +75,7 @@ export class HoverController extends Disposable {
           if (this.provider == null) return
           const textDocument = this.ui.activeTextDocument
           if (textDocument == null) throw new Error('No active text document')
+          if (!isSelectionEmpty(this.ui.selection)) return
           const signal = token2Signal(token)
           const hover = await this.provider.provideHover(
             { textDocument, signal },

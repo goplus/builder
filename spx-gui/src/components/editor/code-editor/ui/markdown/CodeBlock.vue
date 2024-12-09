@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import CodeView from './CodeView.vue'
+
 defineProps<{
-  /** Only `spx` supported now. */
-  language: string
+  language?: string
 }>()
 </script>
 
 <template>
   <section class="code-block">
-    <!-- TODO: code highlight -->
-    <pre class="code-wrapper"><code class="code"><slot></slot></code></pre>
+    <CodeView class="code-wrapper"><slot></slot></CodeView>
     <footer>
       <!-- TODO: actions: insert / copy -->
     </footer>
@@ -19,7 +19,7 @@ defineProps<{
 .code-block {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   align-self: stretch;
 
   border-radius: var(--ui-border-radius-2);
@@ -28,5 +28,7 @@ defineProps<{
 }
 .code-wrapper {
   padding: 12px;
+  min-width: 0;
+  overflow-x: auto;
 }
 </style>

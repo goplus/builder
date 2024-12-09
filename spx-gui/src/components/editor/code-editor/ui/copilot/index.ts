@@ -28,7 +28,8 @@ export type ChatTopicInspire = {
 
 export enum ChatExplainKind {
   CodeSegment,
-  SymbolWithDefinition
+  SymbolWithDefinition,
+  Definition
 }
 
 export type ChatExplainTargetCodeSegment = {
@@ -36,9 +37,8 @@ export type ChatExplainTargetCodeSegment = {
   codeSegment: CodeSegment
 }
 
-export type SymbolWithDefinition = {
+export type SymbolWithDefinition = TextDocumentRange & {
   symbol: string
-  range: TextDocumentRange
   definition: DefinitionIdentifier
 }
 
@@ -46,14 +46,24 @@ export type ChatExplainTargetSymbolWithDefinition = SymbolWithDefinition & {
   kind: ChatExplainKind.SymbolWithDefinition
 }
 
-export type ChatTopicExplain = {
-  kind: ChatTopicKind.Explain
-  target: ChatExplainTargetCodeSegment | ChatExplainTargetSymbolWithDefinition
+export type ChatExplainTargetDefinition = {
+  kind: ChatExplainKind.Definition
+  overview: string
+  definition: DefinitionIdentifier
 }
 
-export type ChatTopicReview = {
+export type ChatTopicExplainTarget =
+  | ChatExplainTargetCodeSegment
+  | ChatExplainTargetSymbolWithDefinition
+  | ChatExplainTargetDefinition
+
+export type ChatTopicExplain = {
+  kind: ChatTopicKind.Explain
+  target: ChatTopicExplainTarget
+}
+
+export type ChatTopicReview = TextDocumentRange & {
   kind: ChatTopicKind.Review
-  range: TextDocumentRange
   code: string
 }
 
@@ -128,6 +138,7 @@ export class CopilotController extends Disposable {
   }
 
   async startChat(topic: ChatTopic) {
+    this.ui.setIsCopilotActive(true)
     const currentChat = this.currentChat
     if (currentChat != null) currentChat.ctrl.abort()
 
@@ -206,10 +217,6 @@ export class CopilotController extends Disposable {
     if (this.copilot == null) throw new Error('No copilot')
 
     const currentRound = this.ensureCurrentRound()
-    // currentRound.ctrl.signal.addEventListener('abort', () => {
-    //   currentRound.state = RoundState.Cancelled
-    // })
-
     try {
       const answer = await this.copilot.getChatCompletion(
         { textDocument, signal: currentRound.ctrl.signal },
@@ -245,7 +252,8 @@ function getMessageContentToExplainCodeSegment({ textDocument, range, content }:
 
 function getMessageContentToExplainSymbolWithDefinition({
   symbol,
-  range: { textDocument, range }
+  textDocument,
+  range
 }: ChatExplainTargetSymbolWithDefinition) {
   const codeLink = makeCodeLinkWithRange(textDocument, range, symbol)
   return makeBasicMarkdownString({
@@ -254,7 +262,14 @@ function getMessageContentToExplainSymbolWithDefinition({
   })
 }
 
-function getMessageContentToReviewCode({ range: { textDocument, range }, code }: ChatTopicReview) {
+function getMessageContentToExplainDefinition({ overview }: ChatExplainTargetDefinition) {
+  return makeBasicMarkdownString({
+    en: `Explain \`${overview}\``,
+    zh: `解释 \`${overview}\``
+  })
+}
+
+function getMessageContentToReviewCode({ textDocument, range, code }: ChatTopicReview) {
   const codeLink = makeCodeLinkWithRange(textDocument, range)
   const codeBlock = makeCodeBlock(code)
   return makeBasicMarkdownString({
@@ -283,6 +298,8 @@ function getTopicMessageContent(topic: ChatTopic): BasicMarkdownString {
           return getMessageContentToExplainCodeSegment(target.codeSegment)
         case ChatExplainKind.SymbolWithDefinition:
           return getMessageContentToExplainSymbolWithDefinition(target)
+        case ChatExplainKind.Definition:
+          return getMessageContentToExplainDefinition(target)
       }
       throw new Error(`Unknown explain target kind: ${(target as any).kind}`)
     }

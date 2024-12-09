@@ -3,6 +3,7 @@ import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
 import type { Range, Position } from '../../common'
 import { getCodeFilePath } from '../common'
+import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 
 const props = defineProps<{
   /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
@@ -15,6 +16,7 @@ const props = defineProps<{
 
 const slots = useSlots()
 const i18n = useI18n()
+const codeEditorContext = useCodeEditorCtx()
 
 const file = computed(() => {
   const codeFilePath = getCodeFilePath(props.file)
@@ -65,7 +67,16 @@ const text = computed(() => {
 })
 
 function handleClick() {
-  console.warn('TODO: Open file in editor', position.value ?? range.value)
+  const textDocumentId = { uri: props.file }
+  if (position.value != null) {
+    codeEditorContext.ui.open(textDocumentId, position.value)
+    return
+  }
+  if (range.value != null) {
+    codeEditorContext.ui.open(textDocumentId, range.value)
+    return
+  }
+  throw new Error('either `position` or `range` must be provided')
 }
 </script>
 

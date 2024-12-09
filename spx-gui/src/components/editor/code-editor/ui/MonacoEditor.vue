@@ -3,7 +3,7 @@ import { debounce } from 'lodash'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import loader from '@monaco-editor/loader'
 import { untilNotNull } from '@/utils/utils'
-import type { Monaco, MonacoEditor } from './common'
+import type { monaco, Monaco, MonacoEditor } from './common'
 
 let monacoPromise: Promise<Monaco> | null = null
 
@@ -38,6 +38,10 @@ self.MonacoEnvironment = {
 import { ref, watchEffect } from 'vue'
 import { useI18n, type Lang } from '@/utils/i18n'
 
+const props = defineProps<{
+  options: monaco.editor.IStandaloneEditorConstructionOptions
+}>()
+
 const emit = defineEmits<{
   init: [Monaco, MonacoEditor]
 }>()
@@ -59,7 +63,6 @@ watchEffect(async (onClenaup) => {
   const [monaco, editorEl] = await Promise.all([getMonaco(), untilNotNull(editorElRef)])
 
   const editor = monaco.editor.create(editorEl, {
-    language: 'spx',
     minimap: { enabled: false },
     selectOnLineNumbers: true,
     roundedSelection: true,
@@ -76,18 +79,22 @@ watchEffect(async (onClenaup) => {
     detectIndentation: false,
     folding: true, // code folding
     foldingHighlight: true, // 折叠等高线
-    foldingStrategy: 'indentation', // 折叠方式  auto | indentation
+    foldingStrategy: 'indentation', // 折叠方式 auto | indentation
     showFoldingControls: 'mouseover', // 是否一直显示折叠 always | mouseover
     disableLayerHinting: true, // 等宽优
     lineNumbersMinChars: 2,
     scrollBeyondLastLine: false,
     overviewRulerLanes: 0,
     renderLineHighlight: 'none',
+    bracketPairColorization: {
+      enabled: false
+    },
     scrollbar: {
       useShadows: false,
       horizontalScrollbarSize: 8,
       verticalScrollbarSize: 8
-    }
+    },
+    ...props.options
   })
 
   const handleResize = debounce(() => {

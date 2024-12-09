@@ -1,8 +1,8 @@
 import type * as monaco from 'monaco-editor'
 import { Sprite } from '@/models/sprite'
-import type { Stage } from '@/models/stage'
+import { stageCodeFilePaths, type Stage } from '@/models/stage'
 import type { Action, Project } from '@/models/project'
-import type { Range, Position, TextDocumentIdentifier } from '../common'
+import type { Range, Position, TextDocumentIdentifier, Selection } from '../common'
 
 export type { monaco }
 export type Monaco = typeof import('monaco-editor')
@@ -52,6 +52,41 @@ export function toMonacoRange(range: Range): monaco.IRange {
     endLineNumber: range.end.line,
     endColumn: range.end.column
   }
+}
+
+export function fromMonacoSelection(selection: monaco.ISelection): Selection {
+  return {
+    start: fromMonacoPosition({
+      lineNumber: selection.selectionStartLineNumber,
+      column: selection.selectionStartColumn
+    }),
+    position: fromMonacoPosition({
+      lineNumber: selection.positionLineNumber,
+      column: selection.positionColumn
+    })
+  }
+}
+
+export function toMonacoSelection(selection: Selection): monaco.ISelection {
+  return {
+    selectionStartLineNumber: selection.start.line,
+    selectionStartColumn: selection.start.column,
+    positionLineNumber: selection.position.line,
+    positionColumn: selection.position.column
+  }
+}
+
+export function getSelectionRange(selection: Selection): Range {
+  return { start: selection.start, end: selection.position }
+}
+
+export function isRangeEmpty(range: Range) {
+  return positionEq(range.start, range.end)
+}
+
+export function isSelectionEmpty(selection: Selection | null) {
+  if (selection == null) return true
+  return positionEq(selection.start, selection.position)
 }
 
 export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
@@ -140,4 +175,17 @@ export function getSelectedCodeOwner(project: Project): ICodeOwner | null {
     default:
       return null
   }
+}
+
+export function getCodeOwner(project: Project, textDocumentId: TextDocumentIdentifier): ICodeOwner | null {
+  const codeFilePath = getCodeFilePath(textDocumentId.uri)
+  if (stageCodeFilePaths.includes(codeFilePath)) {
+    return new CodeOwnerStage(project.stage, project)
+  }
+  for (const sprite of project.sprites) {
+    if (sprite.codeFilePath === codeFilePath) {
+      return new CodeOwnerSprite(sprite, project)
+    }
+  }
+  return null
 }
