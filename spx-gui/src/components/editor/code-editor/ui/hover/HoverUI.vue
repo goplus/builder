@@ -9,7 +9,11 @@ defineProps<{
 
 <template>
   <Teleport :to="controller.widgetEl">
-    <HoverCard v-if="controller.currentHoverRef.value != null" :hover="controller.currentHoverRef.value" />
+    <HoverCard
+      v-if="controller.currentHoverRef.value != null"
+      :hover="controller.currentHoverRef.value"
+      :controller="controller"
+    />
   </Teleport>
 </template>
 

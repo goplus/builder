@@ -12,8 +12,16 @@ export function useCodeEditorCtx() {
 
 <script setup lang="ts">
 import { type InjectionKey, inject, provide, ref, watchEffect } from 'vue'
-import { computedShallowReactive, useComputedDisposable, useLocalStorage } from '@/utils/utils'
+import { shikiToMonaco } from '@shikijs/monaco'
+import {
+  computedShallowReactive,
+  untilNotNull,
+  useAsyncComputed,
+  useComputedDisposable,
+  useLocalStorage
+} from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
+import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
 import type { Project } from '@/models/project'
 import { type ICodeEditorUI, CodeEditorUI } from '.'
 import MonacoEditorComp from './MonacoEditor.vue'
@@ -21,7 +29,7 @@ import APIReferenceUI from './api-reference/APIReferenceUI.vue'
 import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
-import type { Monaco, MonacoEditor } from './common'
+import type { Monaco, MonacoEditor, monaco } from './common'
 
 const props = defineProps<{
   project: Project
@@ -33,7 +41,100 @@ const emit = defineEmits<{
 
 const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project))
 
-function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor) {
+const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
+  language: 'spx',
+  theme,
+  tabSize
+}
+const highlighterComputed = useAsyncComputed(getHighlighter)
+
+async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor) {
+  monaco.languages.register({
+    id: 'spx'
+  })
+  const highlighter = await untilNotNull(highlighterComputed)
+  shikiToMonaco(highlighter, monaco)
+
+  // copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
+  monaco.languages.setLanguageConfiguration('spx', {
+    comments: {
+      lineComment: '//',
+      blockComment: ['/*', '*/']
+    },
+    brackets: [
+      ['{', '}'],
+      ['[', ']'],
+      ['(', ')']
+    ],
+    autoClosingPairs: [
+      {
+        open: '{',
+        close: '}'
+      },
+      {
+        open: '[',
+        close: ']'
+      },
+      {
+        open: '(',
+        close: ')'
+      },
+      {
+        open: '`',
+        close: '`',
+        notIn: ['string']
+      },
+      {
+        open: '"',
+        close: '"',
+        notIn: ['string']
+      },
+      {
+        open: "'",
+        close: "'",
+        notIn: ['string', 'comment']
+      }
+    ],
+    surroundingPairs: [
+      {
+        open: '{',
+        close: '}'
+      },
+      {
+        open: '[',
+        close: ']'
+      },
+      {
+        open: '(',
+        close: ')'
+      },
+      {
+        open: '"',
+        close: '"'
+      },
+      {
+        open: "'",
+        close: "'"
+      },
+      {
+        open: '`',
+        close: '`'
+      }
+    ],
+    indentationRules: {
+      increaseIndentPattern: new RegExp(
+        '^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}"\'`]*|\\([^)"\'`]*)$'
+      ),
+      decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|\\)[,]?)$')
+    },
+    folding: {
+      markers: {
+        start: new RegExp('^\\s*//\\s*#?region\\b'),
+        end: new RegExp('^\\s*//\\s*#?endregion\\b')
+      }
+    }
+  })
+
   uiRef.value.init(monaco, editor)
   emit('init', uiRef.value)
 }
@@ -119,7 +220,7 @@ watchEffect((onCleanup) => {
       <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div ref="resizeHandleEl" class="resize-handle" :style="{ left: `${sidebarWidth}px` }"></div>
-    <MonacoEditorComp class="monaco-editor" @init="handleMonacoEditorInit" />
+    <MonacoEditorComp class="monaco-editor" :options="monacoEditorOptions" @init="handleMonacoEditorInit" />
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
   </div>

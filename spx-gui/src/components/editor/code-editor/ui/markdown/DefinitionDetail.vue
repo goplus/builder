@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { DefinitionDocumentationItem } from '../../common'
-import { onStart } from '../../document-base/spx'
+import { parseDefinitionId, type DefinitionDocumentationItem } from '../../common'
+import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
 import MarkdownView from './MarkdownView.vue'
+import { useAsyncComputed } from '@/utils/utils'
 
-defineProps<{
-  id: string
+const props = defineProps<{
+  defId: string
 }>()
 
-const documentation = computed<DefinitionDocumentationItem | null>(() => {
-  return onStart // TODO: query from DocumentBase
+const codeEditorCtx = useCodeEditorCtx()
+
+const documentation = useAsyncComputed<DefinitionDocumentationItem | null>(async () => {
+  const defId = parseDefinitionId(props.defId)
+  const documentBase = codeEditorCtx.ui.documentBase
+  if (documentBase == null) return null
+  return documentBase.getDocumentation(defId)
 })
 </script>
 

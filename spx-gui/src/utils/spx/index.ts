@@ -4,10 +4,10 @@
  */
 
 import { File, fromBlob, toNativeFile } from '@/models/common/file'
-import { getMimeFromExt } from './file'
-import { stripExt } from './path'
-import { toWav } from './audio'
-import { toJpeg } from './img'
+import { getMimeFromExt } from '../file'
+import { stripExt } from '../path'
+import { toWav } from '../audio'
+import { toJpeg } from '../img'
 
 export const keywords = [
   'func',
@@ -44,7 +44,19 @@ export const keywords = [
   'select'
 ]
 
-export const typeKeywords = ['int', 'string', 'bool', 'void', 'map', 'chan', 'error', 'interface', 'struct', 'nil']
+export const typeKeywords = [
+  'int',
+  'float64',
+  'string',
+  'bool',
+  'void',
+  'map',
+  'chan',
+  'error',
+  'interface',
+  'struct',
+  'nil'
+]
 
 export const operators = [
   '=',

@@ -1,5 +1,7 @@
 # Copied from go
 wasm_exec.js
-# 3rd party code
+# 3rd party code or configuration
 src/components/ui/reset.css
 src/components/editor/code-editor/ui/completion/fuzzy/*
+src/utils/spx/default-light-theme.json
+src/utils/spx/gop-tm-language.json

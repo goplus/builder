@@ -38,7 +38,7 @@ export type Props = {
 export default defineComponent<Props>(
   (props, { attrs }) => {
     const hastNodes = computed(() => {
-      const customComponents = props.components?.codeBlock ?? {}
+      const customComponents = props.components?.custom ?? {}
       const mdast = fromMarkdown(props.value)
       const hast = toHast(mdast, { allowDangerousHtml: true })
       const rawProcessed = raw(hast, { tagfilter: false })
@@ -84,7 +84,7 @@ function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, compo
     return h(
       'div',
       attrs,
-      node.children.map((child) => renderHastNode(child, components))
+      node.children.map((child, i) => renderHastNode(child, components, i))
     )
   }
   return h('div', attrs, [renderHastNode(node, components)])
@@ -92,10 +92,10 @@ function renderHastNodes(node: hast.Nodes, attrs: Record<string, unknown>, compo
 
 type VRendered = VNode | string | null | VRendered[]
 
-function renderHastNode(node: hast.Node, components: Components): VRendered {
+function renderHastNode(node: hast.Node, components: Components, key?: string | number): VRendered {
   switch (node.type) {
     case 'element':
-      return renderHastElement(node as hast.Element, components)
+      return renderHastElement(node as hast.Element, components, key)
     case 'text':
       return (node as hast.Text).value
     default:
@@ -103,7 +103,7 @@ function renderHastNode(node: hast.Node, components: Components): VRendered {
   }
 }
 
-function renderHastElement(element: hast.Element, components: Components): VNode {
+function renderHastElement(element: hast.Element, components: Components, key?: string | number): VNode {
   let props: Record<string, string | number | boolean>
   let type: string | Component
   let children: VRendered | (() => VRendered)
@@ -113,7 +113,7 @@ function renderHastElement(element: hast.Element, components: Components): VNode
     props = hastProps2VueProps(element.properties)
     // Use function slot for custom components to avoid Vue warning:
     // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
-    children = () => element.children.map((c) => renderHastNode(c, components))
+    children = () => element.children.map((c, i) => renderHastNode(c, components, i))
   } else if (
     // Render code blocks with `components.codeBlock`
     // TODO: It may be simpler to recognize & process code blocks based on mdast instead of hast
@@ -123,7 +123,8 @@ function renderHastElement(element: hast.Element, components: Components): VNode
     element.children[0].tagName === 'code'
   ) {
     type = components.codeBlock
-    const className = element.children[0].properties?.className
+    const codeEl = element.children[0]
+    const className = codeEl.properties?.className
     let language = ''
     if (typeof className === 'string') {
       language = className.split('-')[1]
@@ -131,13 +132,16 @@ function renderHastElement(element: hast.Element, components: Components): VNode
       language = className[0].split('-')[1]
     }
     props = { language }
-    children = element.children[0].children.map((c) => renderHastNode(c, components))
+    children = () => codeEl.children.map((c, i) => renderHastNode(c, components, i))
   } else {
     type = element.tagName
     props = hastProps2VueProps(element.properties)
-    children = element.children.map((c) => renderHastNode(c, components))
+    children = element.children.map((c, i) => renderHastNode(c, components, i))
   }
-  return h(type, props, children)
+  // There's issue when children of custom component (for exmaple `DefinitionOverviewWrapper`) updated: the component will not be notified,
+  // here we use random key to force re-render the component as a workaround. TODO: find the reason and fix it
+  key = key + '' + Math.random()
+  return h(type, { ...props, key }, children)
 }
 
 function hastProps2VueProps(properties: hast.Properties) {

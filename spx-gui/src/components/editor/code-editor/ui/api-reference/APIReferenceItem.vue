@@ -1,43 +1,41 @@
 <script setup lang="ts">
 import { UITooltip } from '@/components/ui'
-import { DefinitionKind } from '../../common'
 import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
+import { ChatExplainKind, builtInCommandCopilotExplain } from '..'
+import { getSelectionRange } from '../common'
+import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import type { APIReferenceItem } from '.'
-import iconRead from './icons/read.svg?raw'
-import iconEffect from './icons/effect.svg?raw'
-import iconListen from './icons/listen.svg?raw'
-import iconCode from './icons/code.svg?raw'
 
-defineProps<{
+const props = defineProps<{
   item: APIReferenceItem
 }>()
 
-function getIcon(item: APIReferenceItem) {
-  if (item.kind === DefinitionKind.Listen) return iconListen
-  if (item.kind === DefinitionKind.Command) return iconEffect
-  if ([DefinitionKind.Constant, DefinitionKind.Variable, DefinitionKind.Read].includes(item.kind)) return iconRead
-  return iconCode
-}
+const codeEditorCtx = useCodeEditorCtx()
 
 function handleInsert() {
-  console.warn('TODO: insert')
+  const startPosition = { line: 1, column: 1 }
+  let range = { start: startPosition, end: startPosition }
+  if (codeEditorCtx.ui.selection != null) {
+    range = getSelectionRange(codeEditorCtx.ui.selection)
+  }
+  codeEditorCtx.ui.insertSnippet(props.item.insertText, range)
+  codeEditorCtx.ui.editor.focus()
 }
 
 function handleExplain() {
-  console.warn('TODO: explain')
+  codeEditorCtx.ui.executeCommand(builtInCommandCopilotExplain, {
+    kind: ChatExplainKind.Definition,
+    overview: props.item.overview,
+    definition: props.item.definition
+  })
 }
 </script>
 
 <template>
   <li class="api-reference-item" @click="handleInsert">
-    <DefinitionOverviewWrapper class="overview">
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="icon" v-html="getIcon(item)"></div>
-      <!-- TODO: code font & code highlight -->
-      {{ item.overview }}
-    </DefinitionOverviewWrapper>
+    <DefinitionOverviewWrapper class="overview" :kind="item.kind">{{ item.overview }}</DefinitionOverviewWrapper>
     <DefinitionDetailWrapper>
       <MarkdownView v-bind="item.detail" class="detail" />
     </DefinitionDetailWrapper>
@@ -95,14 +93,6 @@ function handleExplain() {
   line-height: 20px;
   word-break: break-all;
   color: var(--ui-color-title);
-
-  .icon {
-    margin-top: 2px;
-    margin-right: 4px;
-    width: 16px;
-    height: 16px;
-    color: var(--ui-color-yellow-main);
-  }
 }
 
 .detail {

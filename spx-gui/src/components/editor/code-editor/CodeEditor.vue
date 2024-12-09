@@ -11,9 +11,20 @@ import {
   type IDiagnosticsProvider,
   type IResourceReferencesProvider,
   type ResourceReference,
-  type ResourceReferencesContext
+  type ResourceReferencesContext,
+  builtInCommandCopilotExplain,
+  ChatExplainKind
 } from './ui'
-import { type DefinitionDocumentationItem, type Diagnostic } from './common'
+import {
+  makeBasicMarkdownString,
+  type Action,
+  type DefinitionDocumentationItem,
+  type DefinitionDocumentationString,
+  type DefinitionIdentifier,
+  type Diagnostic,
+  makeAdvancedMarkdownString,
+  stringifyDefinitionId
+} from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
 
@@ -70,30 +81,6 @@ function handleUIInit(ui: ICodeEditorUI) {
 
   ui.registerCopilot(copilot)
 
-  // test copilot chat
-  // TODO: remove me
-  //   ui.executeCommxplainKind.CodeSegment,
-  //       codeSegment: {
-  //         textDocument: {
-  //           uri: 'file:///NiuXiaoQi.spx'
-  //         },
-  //         range: {
-  //           start: {
-  //             line: 1,
-  //             column: 1
-  //           },
-  //           end: {
-  //             line: 1,
-  //             column: 2
-  //           }
-  //         },
-  //         content: `onClick => {
-  //     println "clicked"
-  // }`
-  //       }
-  //     }
-  //   })
-
   class DiagnosticsProvider
     extends Emitter<{
       didChangeDiagnostics: []
@@ -120,18 +107,40 @@ function handleUIInit(ui: ICodeEditorUI) {
       console.warn('TODO', ctx, position)
       const range = ctx.textDocument.getDefaultRange(position)
       let value = ctx.textDocument.getValueInRange(range)
-      if (value === '') {
-        value = ctx.textDocument.getValueInRange({
-          start: position,
-          end: {
-            line: position.line,
-            column: position.column + 1
-          }
+      if (value.trim() === '') return null
+      const methodName = value[0].toUpperCase() + value.slice(1)
+      // TODO: get definition ID from LS
+      const definitionID: DefinitionIdentifier = {
+        package: 'github.com/goplus/spx',
+        name: `Sprite.${methodName}`
+      }
+      const definition = await documentBase.getDocumentation(definitionID)
+      const contents: DefinitionDocumentationString[] = []
+      const actions: Action[] = []
+      if (definition != null) {
+        contents.push(
+          makeAdvancedMarkdownString(`
+<definition-overview-wrapper>${definition.overview}</definition-overview-wrapper>
+<definition-detail def-id="${stringifyDefinitionId(definition.definition)}"></definition-detail>
+`)
+        )
+        actions.push({
+          title: 'Explain',
+          command: builtInCommandCopilotExplain,
+          arguments: [
+            {
+              kind: ChatExplainKind.Definition,
+              overview: definition.overview,
+              definition: definition.definition
+            }
+          ]
         })
+      } else {
+        contents.push(makeBasicMarkdownString(`<definition-overview-wrapper>${value}</definition-overview-wrapper>`))
       }
       return {
-        contents: [{ value: '`' + value + '` hovered' }],
-        actions: []
+        contents,
+        actions
       }
     }
   })
@@ -149,6 +158,7 @@ function handleUIInit(ui: ICodeEditorUI) {
   }
 
   ui.registerResourceReferencesProvider(new ResourceReferencesProvider())
+  ui.registerDocumentBase(documentBase)
 }
 
 defineExpose({

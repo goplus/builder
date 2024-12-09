@@ -1,6 +1,7 @@
 import { uniqueId } from 'lodash'
 import { ref, shallowRef, watchEffect } from 'vue'
 import { Disposable } from '@/utils/disposable'
+import { timeout } from '@/utils/utils'
 import type { Project } from '@/models/project'
 import {
   type Command,
@@ -8,17 +9,30 @@ import {
   type Range,
   type Position,
   type TextDocumentIdentifier,
-  type ITextDocument
+  type ITextDocument,
+  type Selection,
+  type IDocumentBase
 } from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
 import type { IResourceReferencesProvider } from './resource-reference'
-import type { IContextMenuProvider } from './context-menu'
+import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import type { IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
-import { CopilotController, type ChatTopic, type ICopilot } from './copilot'
+import { CopilotController, type ICopilot, ChatTopicKind, type ChatTopicExplainTarget } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
-import { type Monaco, type MonacoEditor, getSelectedCodeOwner, type ICodeOwner, fromMonacoPosition } from './common'
+import {
+  type Monaco,
+  type MonacoEditor,
+  getSelectedCodeOwner,
+  type ICodeOwner,
+  fromMonacoPosition,
+  toMonacoRange,
+  fromMonacoSelection,
+  isRangeEmpty,
+  toMonacoPosition,
+  getCodeOwner
+} from './common'
 import { TextDocument } from './text-document'
 
 export * from './hover'
@@ -41,6 +55,7 @@ export interface ICodeEditorUI {
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
   registerCopilot(copilot: ICopilot): void
   registerFormattingEditProvider(provider: IFormattingEditProvider): void
+  registerDocumentBase(documentBase: IDocumentBase): void
 
   /** Execute a command */
   executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R>
@@ -55,7 +70,8 @@ export interface ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, range: Range): void
 }
 
-export const builtInCommandCopilotChat: Command<[ChatTopic], void> = 'spx.copilot.chat'
+export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'spx.copilot.inspire'
+export const builtInCommandCopilotExplain: Command<[target: ChatTopicExplainTarget], void> = 'spx.copilot.explain'
 // const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
 // const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
 // const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'
@@ -85,6 +101,9 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerFormattingEditProvider(provider: IFormattingEditProvider): void {
     console.warn('TODO', provider)
   }
+  registerDocumentBase(documentBase: IDocumentBase): void {
+    this.documentBase = documentBase
+  }
 
   private commandHandlers = new Map<Command<any, any>, CommandInfo<any, any>>()
   async executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R> {
@@ -100,7 +119,14 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, position: Position): void
   open(textDocument: TextDocumentIdentifier, range: Range): void
   open(textDocument: TextDocumentIdentifier, positionOrRange?: Position | Range): void {
-    console.warn('TODO', textDocument, positionOrRange)
+    this.openTextDocument(textDocument)
+    if (positionOrRange == null) return
+    if ('line' in positionOrRange) {
+      this.editor.setPosition(toMonacoPosition(positionOrRange))
+    } else {
+      this.editor.setSelection(toMonacoRange(positionOrRange))
+    }
+    this.editor.focus()
   }
 
   constructor(private project: Project) {
@@ -112,6 +138,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   hoverController = new HoverController(this)
   completionController = new CompletionController(this)
   copilotController = new CopilotController(this)
+  contextMenuController = new ContextMenuController(this)
+  documentBase: IDocumentBase | null = null
 
   /** All opened text documents in current editor, by ID uri */
   private textDocuments = new Map<string, TextDocument>()
@@ -165,15 +193,45 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     }
   }
 
-  openTextDocument(id: TextDocumentIdentifier) {
-    console.warn('TODO: openTextDocument', id)
-    // TODO: create text document if not opened yet, then set active
+  private openTextDocument(id: TextDocumentIdentifier) {
+    if (this.getTextDocument(id) == null) {
+      const codeOwner = getCodeOwner(this.project, id)
+      if (codeOwner == null) {
+        console.warn(`Code file not exist for ${id.uri}`)
+        return
+      }
+      const textDocument = new TextDocument(codeOwner, this.monaco)
+      this.addTextDocument(textDocument)
+    }
+    this.setActiveTextDocument(id)
+  }
+
+  async insertSnippet(snippet: string, range: Range) {
+    const editor = this.editor
+    // `executeEdits` does not support snippet, so we have to split the insertion into two steps:
+    // 1. remove the range with `executeEdits`
+    // 2. insert the snippet with `snippetController2`
+    if (!isRangeEmpty(range)) {
+      const removing = { range: toMonacoRange(range), text: '' }
+      editor.executeEdits('snippet', [removing])
+      await timeout(0) // NOTE: the timeout is necessary, or the cursor position will be wrong after snippet inserted
+    }
+    // it's strange but it works, see details in https://github.com/Microsoft/monaco-editor/issues/342
+    const contribution = editor.getContribution('snippetController2')
+    if (contribution == null) throw new Error('Snippet contribution not found')
+    ;(contribution as any).insert(snippet)
   }
 
   private cursorPositionRef = shallowRef<Position | null>(null)
   /** Cursor position (in current active text document) */
   get cursorPosition() {
     return this.cursorPositionRef.value
+  }
+
+  private selectionRef = shallowRef<Selection | null>(null)
+  /** Selection (in current active text document) */
+  get selection() {
+    return this.selectionRef.value
   }
 
   private _monaco: Monaco | null = null
@@ -199,10 +257,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this._monaco = monaco
     this._editor = editor
 
-    monaco.languages.register({
-      id: 'spx'
-    })
-
     this.addDisposer(
       watchEffect(() => {
         this.initMainTextDocument(getSelectedCodeOwner(this.project))
@@ -215,15 +269,37 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       })
     )
 
-    this.registerCommand(builtInCommandCopilotChat, {
+    this.addDisposable(
+      editor.onDidChangeCursorSelection((e) => {
+        this.selectionRef.value = fromMonacoSelection(e.selection)
+      })
+    )
+
+    this.registerCommand(builtInCommandCopilotInspire, {
       icon: 'TODO',
       title: {
         en: 'Ask copilot',
         zh: '向 Copilot 提问'
       },
-      handler: (topic) => {
-        this.setIsCopilotActive(true)
-        this.copilotController.startChat(topic)
+      handler: (problem) => {
+        this.copilotController.startChat({
+          kind: ChatTopicKind.Inspire,
+          problem
+        })
+      }
+    })
+
+    this.registerCommand(builtInCommandCopilotExplain, {
+      icon: 'TODO',
+      title: {
+        en: 'Explain',
+        zh: '解释'
+      },
+      handler: (target) => {
+        this.copilotController.startChat({
+          kind: ChatTopicKind.Explain,
+          target
+        })
       }
     })
 
@@ -231,9 +307,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.hoverController.init()
     this.completionController.init()
     this.copilotController.init()
+    this.contextMenuController.init()
   }
 
   dispose() {
+    this.contextMenuController.dispose()
     this.copilotController.dispose()
     this.completionController.dispose()
     this.hoverController.dispose()
