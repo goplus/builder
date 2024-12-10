@@ -3,10 +3,12 @@ package server
 import (
 	"errors"
 	"fmt"
+	"go/token"
 	"go/types"
 	"io/fs"
 	"path"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
@@ -55,6 +57,9 @@ type compileResult struct {
 	// mainSpxFile is the main.spx file path.
 	mainSpxFile string
 
+	// spxPkg is the spx package.
+	spxPkg *types.Package
+
 	// typeInfo contains type information collected during the compile
 	// process.
 	typeInfo *goptypesutil.Info
@@ -74,6 +79,49 @@ type compileResult struct {
 	// hasErrorSeverityDiagnostic is true if the compile result has any
 	// diagnostics with error severity.
 	hasErrorSeverityDiagnostic bool
+}
+
+// innermostScope returns the innermost scope that contains the given position.
+// It returns nil if not found.
+func (r *compileResult) innermostScope(pos token.Pos) *types.Scope {
+	var innermostScope *types.Scope
+	for _, scope := range r.typeInfo.Scopes {
+		if scope.Contains(pos) && (innermostScope == nil || innermostScope.Contains(scope.Pos())) {
+			innermostScope = scope
+		}
+	}
+	if innermostScope == nil {
+		// Fallback to file scope as a last resort.
+		innermostScope = r.typeInfo.Scopes[r.mainPkgFiles[r.fset.Position(pos).Filename]]
+	}
+	return innermostScope
+}
+
+// findDirectScopesAt returns all scopes that directly contain the position,
+// meaning the scope contains the position but none of its children scopes do.
+func (r *compileResult) findDirectScopesAt(pos token.Pos) []*types.Scope {
+	// Collect all scopes containing the pos.
+	var scopes []*types.Scope
+	for _, scope := range r.typeInfo.Scopes {
+		if scope.Contains(pos) {
+			scopes = append(scopes, scope)
+		}
+	}
+
+	// Sort from innermost to outermost.
+	sort.Slice(scopes, func(i, j int) bool {
+		return scopes[i].Pos() >= scopes[j].Pos() && scopes[i].End() <= scopes[j].End()
+	})
+
+	// Keep only scopes whose children don't contain the pos.
+	return slices.DeleteFunc(scopes, func(scope *types.Scope) bool {
+		for i := range scope.NumChildren() {
+			if scope.Child(i).Contains(pos) {
+				return true
+			}
+		}
+		return false
+	})
 }
 
 // addSpxResourceRef adds a spx resource reference to the compile result.
@@ -216,6 +264,11 @@ func (s *Server) compile() (*compileResult, error) {
 			return nil, errNoMainSpxFile
 		}
 		return result, nil
+	}
+
+	result.spxPkg, err = s.importer.Import(spxPkgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to import spx package: %w", err)
 	}
 
 	mod := gopmod.New(gopmodload.Default)

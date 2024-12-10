@@ -64,7 +64,7 @@ type SpxDefinitionIdentifier struct {
 	// - `fmt`
 	// - `github.com/goplus/spx`
 	// - `main`
-	Package string `json:"package,omitempty"`
+	Package *string `json:"package,omitempty"`
 
 	// Exported name of the definition.
 	// If not provided, it's assumed to be kind-package.
@@ -73,10 +73,10 @@ type SpxDefinitionIdentifier struct {
 	// - `Sprite`
 	// - `Sprite.turn`
 	// - `for_statement_with_single_condition`
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// Index in overloads.
-	OverloadIndex int `json:"overloadIndex,omitempty"`
+	OverloadIndex *int `json:"overloadIndex,omitempty"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////
