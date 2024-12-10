@@ -55,6 +55,9 @@ type compileResult struct {
 	// mainSpxFile is the main.spx file path.
 	mainSpxFile string
 
+	// spxPkg is the spx package.
+	spxPkg *types.Package
+
 	// typeInfo contains type information collected during the compile
 	// process.
 	typeInfo *goptypesutil.Info
@@ -216,6 +219,11 @@ func (s *Server) compile() (*compileResult, error) {
 			return nil, errNoMainSpxFile
 		}
 		return result, nil
+	}
+
+	result.spxPkg, err = s.importer.Import(spxPkgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to import spx package: %w", err)
 	}
 
 	mod := gopmod.New(gopmodload.Default)

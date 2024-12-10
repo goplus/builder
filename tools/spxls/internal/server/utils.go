@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"go/types"
 
 	gopast "github.com/goplus/gop/ast"
@@ -40,4 +41,44 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 	default:
 		return "", false
 	}
+}
+
+// deduplicateLocations deduplicates locations.
+func deduplicateLocations(locations []Location) []Location {
+	result := make([]Location, 0, len(locations))
+	seen := map[string]struct{}{}
+	for _, loc := range locations {
+		key := fmt.Sprintf("%s:%d:%d", loc.URI, loc.Range.Start.Line, loc.Range.Start.Character)
+		if _, ok := seen[key]; !ok {
+			seen[key] = struct{}{}
+			result = append(result, loc)
+		}
+	}
+	return result
+}
+
+// toStringPtr returns a pointer to the string.
+func toStringPtr(s string) *string {
+	return &s
+}
+
+// fromStringPtr returns the string value from a pointer to a string.
+func fromStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// toIntPtr returns a pointer to the int.
+func toIntPtr(i int) *int {
+	return &i
+}
+
+// fromIntPtr returns the int value from a pointer to an int.
+func fromIntPtr(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
 }
