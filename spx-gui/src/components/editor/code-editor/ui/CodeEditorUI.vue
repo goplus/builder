@@ -8,6 +8,12 @@ export function useCodeEditorCtx() {
   if (ctx == null) throw new Error('useCodeEditorCtx should be called inside of CodeEditorUI')
   return ctx
 }
+
+export function makeContentWidgetEl() {
+  const el = document.createElement('div')
+  el.className = 'code-editor-content-widget'
+  return el
+}
 </script>
 
 <script setup lang="ts">
@@ -30,6 +36,7 @@ import HoverUI from './hover/HoverUI.vue'
 import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
+import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import type { Monaco, MonacoEditor, monaco } from './common'
 
 const props = defineProps<{
@@ -49,7 +56,7 @@ const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = 
 }
 const highlighterComputed = useAsyncComputed(getHighlighter)
 
-async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor) {
+async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement) {
   monaco.languages.register({
     id: 'spx'
   })
@@ -136,7 +143,7 @@ async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor) {
     }
   })
 
-  uiRef.value.init(monaco, editor)
+  uiRef.value.init(monaco, editor, editorEl)
   emit('init', uiRef.value)
 }
 
@@ -225,6 +232,7 @@ watchEffect((onCleanup) => {
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
+    <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
   </div>
 </template>
 
@@ -307,5 +315,9 @@ watchEffect((onCleanup) => {
 .monaco-editor {
   flex: 1 1 0;
   min-width: 0;
+}
+
+:global(.code-editor-content-widget) {
+  z-index: 10; // Ensure content widget is above other elements, especially cursor
 }
 </style>

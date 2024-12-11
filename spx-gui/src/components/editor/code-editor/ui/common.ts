@@ -1,4 +1,5 @@
 import type * as monaco from 'monaco-editor'
+import { Cancelled } from '@/utils/exception'
 import { Sprite } from '@/models/sprite'
 import { stageCodeFilePaths, type Stage } from '@/models/stage'
 import type { Action, Project } from '@/models/project'
@@ -21,7 +22,7 @@ declare module 'monaco-editor' {
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
   if (token.isCancellationRequested) ctrl.abort()
-  else token.onCancellationRequested((e) => ctrl.abort(e))
+  else token.onCancellationRequested((e) => ctrl.abort(e ?? new Cancelled()))
   return ctrl.signal
 }
 

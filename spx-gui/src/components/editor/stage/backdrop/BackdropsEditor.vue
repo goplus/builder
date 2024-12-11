@@ -26,25 +26,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { UIMenu, UIMenuItem, useMessage } from '@/components/ui'
+import { UIMenu, UIMenuItem } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
-import { selectImg } from '@/utils/file'
-import { fromNativeFile } from '@/models/common/file'
 import { Backdrop } from '@/models/backdrop'
-import { stripExt } from '@/utils/path'
-import { useAddAssetFromLibrary } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddBackdropFromLocalFile } from '@/components/asset'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
 import BackdropItem from './BackdropItem.vue'
 import BackdropDetail from './BackdropDetail.vue'
-import { saveFiles } from '@/models/common/cloud'
-import { useI18n } from '@/utils/i18n'
-import { useNetwork } from '@/utils/network'
-
-const m = useMessage()
-const { t } = useI18n()
-const { isOnline } = useNetwork()
 
 const editorCtx = useEditorCtx()
 const stage = computed(() => editorCtx.project.stage)
@@ -55,25 +45,12 @@ function handleSelect(backdrop: Backdrop) {
   editorCtx.project.history.doAction(action, () => stage.value.setDefaultBackdrop(backdrop.id))
 }
 
-const handleAddFromLocalFile = useMessageHandle(
-  async () => {
-    const img = await selectImg()
-    const file = fromNativeFile(img)
-    const backdrop = await Backdrop.create(stripExt(img.name), file)
-    const action = { name: { en: 'Add backdrop', zh: '添加背景' } }
+const addBackdropFromLocalFile = useAddBackdropFromLocalFile()
 
-    if (isOnline.value) {
-      const [, backdropFiles] = backdrop.export()
-      await m.withLoading(saveFiles(backdropFiles), t({ en: 'Uploading files', zh: '上传文件中' }))
-    }
-
-    await editorCtx.project.history.doAction(action, () => {
-      stage.value.addBackdrop(backdrop)
-      stage.value.setDefaultBackdrop(backdrop.id)
-    })
-  },
-  { en: 'Failed to add from local file', zh: '从本地文件添加失败' }
-).fn
+const handleAddFromLocalFile = useMessageHandle(async () => addBackdropFromLocalFile(editorCtx.project), {
+  en: 'Failed to add from local file',
+  zh: '从本地文件添加失败'
+}).fn
 
 const addAssetFromLibrary = useAddAssetFromLibrary()
 
