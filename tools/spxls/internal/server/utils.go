@@ -1,7 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"go/types"
+	"regexp"
+	"strconv"
+	"strings"
 
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
@@ -41,3 +45,117 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 		return "", false
 	}
 }
+
+// deduplicateLocations deduplicates locations.
+func deduplicateLocations(locations []Location) []Location {
+	result := make([]Location, 0, len(locations))
+	seen := map[string]struct{}{}
+	for _, loc := range locations {
+		key := fmt.Sprintf("%s:%d:%d", loc.URI, loc.Range.Start.Line, loc.Range.Start.Character)
+		if _, ok := seen[key]; !ok {
+			seen[key] = struct{}{}
+			result = append(result, loc)
+		}
+	}
+	return result
+}
+
+// toStringPtr returns a pointer to the string.
+func toStringPtr(s string) *string {
+	return &s
+}
+
+// fromStringPtr returns the string value from a pointer to a string.
+func fromStringPtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// toIntPtr returns a pointer to the int.
+func toIntPtr(i int) *int {
+	return &i
+}
+
+// fromIntPtr returns the int value from a pointer to an int.
+func fromIntPtr(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
+// walkStruct walks a struct and calls the given functions for each field and
+// method.
+func walkStruct(
+	typ types.Type,
+	onField func(named *types.Named, namedParents []*types.Named, field *types.Var),
+	onMethod func(named *types.Named, namedParents []*types.Named, method *types.Func),
+) {
+	seenFields := make(map[string]struct{})
+	seenMethods := make(map[string]struct{})
+
+	var walk func(typ types.Type, namedParents []*types.Named)
+	walk = func(typ types.Type, namedParents []*types.Named) {
+		st, ok := typ.Underlying().(*types.Struct)
+		if !ok {
+			return
+		}
+		named := typ.(*types.Named)
+
+		for i := range st.NumFields() {
+			field := st.Field(i)
+			if field.Embedded() {
+				fieldType := field.Type()
+				if ptr, ok := fieldType.(*types.Pointer); ok {
+					fieldType = ptr.Elem()
+				}
+				if _, ok := fieldType.Underlying().(*types.Struct); ok {
+					walk(fieldType, append(namedParents, named))
+				}
+			}
+			if onField != nil {
+				if _, ok := seenFields[field.Name()]; ok {
+					continue
+				}
+				seenFields[field.Name()] = struct{}{}
+
+				onField(named, namedParents, field)
+			}
+		}
+
+		for i := 0; i < named.NumMethods(); i++ {
+			method := named.Method(i)
+			if onMethod != nil {
+				if _, ok := seenMethods[method.Name()]; ok {
+					continue
+				}
+				seenMethods[method.Name()] = struct{}{}
+
+				onMethod(named, namedParents, method)
+			}
+		}
+	}
+	walk(typ, nil)
+}
+
+// gopOverloadFuncNameRE is the regular expression of the Go+ overloaded
+// function name.
+var gopOverloadFuncNameRE = regexp.MustCompile(`^(.+)__(\d+)$`)
+
+// parseGopFuncName parses the Go+ overloaded function name.
+func parseGopFuncName(name string) (funcName string, overloadIndex *int) {
+	funcName = name
+	if matches := gopOverloadFuncNameRE.FindStringSubmatch(funcName); len(matches) == 3 {
+		funcName = matches[1]
+		idx, _ := strconv.Atoi(matches[2])
+		overloadIndex = &idx
+	}
+	funcName = strings.ToLower(string(funcName[0])) + funcName[1:] // Make it lowerCamelCase.
+	return
+}
+
+// spxEventHandlerFuncNameRE is the regular expression of the spx event handler
+// function name.
+var spxEventHandlerFuncNameRE = regexp.MustCompile(`^on[A-Z]\w*$`)
