@@ -9,6 +9,8 @@ import (
 
 	"github.com/goplus/builder/tools/spxls/internal"
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
+	gopast "github.com/goplus/gop/ast"
+	goptoken "github.com/goplus/gop/token"
 )
 
 // MessageReplier is an interface for sending messages back to the client.
@@ -111,7 +113,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentDefinition(&params)
+		})
 	case "textDocument/typeDefinition":
 		var params TypeDefinitionParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -129,7 +133,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentReferences(&params)
+		})
 	case "textDocument/documentHighlight":
 		var params DocumentHighlightParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -353,4 +359,15 @@ func (s *Server) spxFiles() ([]string, error) {
 		files = append(files, entry.Name())
 	}
 	return files, nil
+}
+
+// createLocation creates a Location from an ident position.
+func (s *Server) createLocation(fset *goptoken.FileSet, ident *gopast.Ident) Location {
+	return Location{
+		URI: s.toDocumentURI(fset.Position(ident.Pos()).Filename),
+		Range: Range{
+			Start: FromGopTokenPosition(fset.Position(ident.Pos())),
+			End:   FromGopTokenPosition(fset.Position(ident.End())),
+		},
+	}
 }

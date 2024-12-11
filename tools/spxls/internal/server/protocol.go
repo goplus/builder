@@ -20,8 +20,8 @@ func UnmarshalJSON(msg json.RawMessage, v any) error {
 // FromGopTokenPosition converts a [goptoken.Position] to a protocol [Position].
 func FromGopTokenPosition(p goptoken.Position) Position {
 	return Position{
-		Line:      uint32(p.Line),
-		Character: uint32(p.Column),
+		Line:      uint32(p.Line - 1),
+		Character: uint32(p.Column - 1),
 	}
 }
 
@@ -64,7 +64,7 @@ type SpxDefinitionIdentifier struct {
 	// - `fmt`
 	// - `github.com/goplus/spx`
 	// - `main`
-	Package string `json:"package,omitempty"`
+	Package *string `json:"package,omitempty"`
 
 	// Exported name of the definition.
 	// If not provided, it's assumed to be kind-package.
@@ -73,10 +73,10 @@ type SpxDefinitionIdentifier struct {
 	// - `Sprite`
 	// - `Sprite.turn`
 	// - `for_statement_with_single_condition`
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// Index in overloads.
-	OverloadIndex int `json:"overloadIndex,omitempty"`
+	OverloadIndex *int `json:"overloadIndex,omitempty"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////

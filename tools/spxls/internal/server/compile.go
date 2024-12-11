@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"go/token"
 	"go/types"
 	"io/fs"
 	"path"
@@ -55,6 +56,9 @@ type compileResult struct {
 	// mainSpxFile is the main.spx file path.
 	mainSpxFile string
 
+	// spxPkg is the spx package.
+	spxPkg *types.Package
+
 	// typeInfo contains type information collected during the compile
 	// process.
 	typeInfo *goptypesutil.Info
@@ -74,6 +78,48 @@ type compileResult struct {
 	// hasErrorSeverityDiagnostic is true if the compile result has any
 	// diagnostics with error severity.
 	hasErrorSeverityDiagnostic bool
+}
+
+// innermostScope returns the innermost scope that contains the given position.
+// It returns nil if not found.
+func (r *compileResult) innermostScope(pos token.Pos) *types.Scope {
+	var innermostScope *types.Scope
+	for _, scope := range r.typeInfo.Scopes {
+		if scope.Contains(pos) && (innermostScope == nil || innermostScope.Contains(scope.Pos())) {
+			innermostScope = scope
+		}
+	}
+	if innermostScope == nil {
+		// Fallback to file scope as a last resort.
+		innermostScope = r.typeInfo.Scopes[r.mainPkgFiles[r.fset.Position(pos).Filename]]
+	}
+	return innermostScope
+}
+
+// objectAtFilePosition returns the object at the given position in the given file.
+func (r *compileResult) objectAtFilePosition(astFile *gopast.File, position Position) types.Object {
+	tokenPos := r.fset.Position(astFile.Pos())
+	tokenPos.Line = int(position.Line) + 1
+	tokenPos.Column = int(position.Character) + 1
+
+	var obj types.Object
+	gopast.Inspect(astFile, func(node gopast.Node) bool {
+		ident, ok := node.(*gopast.Ident)
+		if !ok {
+			return true
+		}
+		identPos := r.fset.Position(ident.Pos())
+		identEnd := r.fset.Position(ident.End())
+		if tokenPos.Line != identPos.Line ||
+			tokenPos.Column < identPos.Column ||
+			tokenPos.Column > identEnd.Column {
+			return true
+		}
+
+		obj = r.typeInfo.ObjectOf(ident)
+		return obj == nil
+	})
+	return obj
 }
 
 // addSpxResourceRef adds a spx resource reference to the compile result.
@@ -216,6 +262,11 @@ func (s *Server) compile() (*compileResult, error) {
 			return nil, errNoMainSpxFile
 		}
 		return result, nil
+	}
+
+	result.spxPkg, err = s.importer.Import(spxPkgPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to import spx package: %w", err)
 	}
 
 	mod := gopmod.New(gopmodload.Default)
