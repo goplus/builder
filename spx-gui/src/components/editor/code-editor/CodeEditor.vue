@@ -23,7 +23,8 @@ import {
   type DefinitionIdentifier,
   type Diagnostic,
   makeAdvancedMarkdownString,
-  stringifyDefinitionId
+  stringifyDefinitionId,
+  DiagnosticSeverity
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -46,6 +47,7 @@ function handleUIInit(ui: ICodeEditorUI) {
     async provideAPIReference(ctx, position) {
       console.warn('TODO: get api references from LS', ctx, position, spxlc)
       await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      ctx.signal.throwIfAborted()
       const documentations = (await Promise.all(allIds.map((id) => documentBase.getDocumentation(id)))).filter(
         () => Math.random() > 0.4
       )
@@ -57,6 +59,7 @@ function handleUIInit(ui: ICodeEditorUI) {
     async provideCompletion(ctx, position) {
       console.warn('TODO', ctx, position)
       await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      ctx.signal.throwIfAborted()
       return allItems.map((item) => ({
         label: item.definition
           .name!.split('.')
@@ -89,7 +92,33 @@ function handleUIInit(ui: ICodeEditorUI) {
   {
     async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
       console.warn('TODO', ctx, editorCtx.runtime)
-      return []
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      ctx.signal.throwIfAborted()
+      const diagnostics: Diagnostic[] = []
+      const value = ctx.textDocument.getValue()
+      const errIdx = value.indexOf('err')
+      if (errIdx >= 0) {
+        diagnostics.push({
+          range: {
+            start: ctx.textDocument.getPositionAt(errIdx),
+            end: ctx.textDocument.getPositionAt(errIdx + 3)
+          },
+          severity: DiagnosticSeverity.Error,
+          message: 'This is an error'
+        })
+      }
+      const warningIdx = value.indexOf('warn')
+      if (warningIdx >= 0) {
+        diagnostics.push({
+          range: {
+            start: ctx.textDocument.getPositionAt(warningIdx),
+            end: ctx.textDocument.getPositionAt(warningIdx + 4)
+          },
+          severity: DiagnosticSeverity.Warning,
+          message: 'This is a warning'
+        })
+      }
+      return diagnostics
     }
   }
 
@@ -105,6 +134,8 @@ function handleUIInit(ui: ICodeEditorUI) {
   ui.registerHoverProvider({
     async provideHover(ctx, position) {
       console.warn('TODO', ctx, position)
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      ctx.signal.throwIfAborted()
       const range = ctx.textDocument.getDefaultRange(position)
       let value = ctx.textDocument.getValueInRange(range)
       if (value.trim() === '') return null

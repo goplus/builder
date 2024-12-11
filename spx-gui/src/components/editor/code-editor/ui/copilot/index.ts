@@ -281,8 +281,8 @@ function getMessageContentToReviewCode({ textDocument, range, code }: ChatTopicR
 function getMessageContentToFixProblem({ textDocument, problem }: ChatTopicFixProblem) {
   const codeLink = makeCodeLinkWithRange(textDocument, problem.range)
   return makeBasicMarkdownString({
-    en: `How to fix this problem: \n\n${codeLink}\n\n${problem.message}`,
-    zh: `如何修复这个问题：\n\n${codeLink}\n\n${problem.message}`
+    en: `How to fix this problem: \n\n> ${problem.message}\n\n${codeLink}`,
+    zh: `如何修复这个问题：\n\n> ${problem.message}\n\n${codeLink}`
   })
 }
 

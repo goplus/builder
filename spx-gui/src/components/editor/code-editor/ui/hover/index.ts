@@ -5,10 +5,19 @@ import {
   type BaseContext,
   type DefinitionDocumentationString,
   type Range,
-  type Position
+  type Position,
+  makeBasicMarkdownString
 } from '../../common'
-import type { CodeEditorUI } from '..'
-import { fromMonacoPosition, toMonacoPosition, token2Signal, type monaco, isSelectionEmpty } from '../common'
+import { builtInCommandCopilotFixProblem, type CodeEditorUI } from '..'
+import {
+  fromMonacoPosition,
+  toMonacoPosition,
+  token2Signal,
+  type monaco,
+  isSelectionEmpty,
+  containsPosition
+} from '../common'
+import type { TextDocument } from '../text-document'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -65,17 +74,52 @@ export class HoverController extends Disposable {
     }
   }
 
+  private getDiagnosticsHover(textDocument: TextDocument, position: monaco.Position): InternalHover | null {
+    const diagnosticsController = this.ui.diagnosticsController
+    if (diagnosticsController.diagnostics == null) return null
+    for (const diagnostic of diagnosticsController.diagnostics) {
+      if (!containsPosition(diagnostic.range, fromMonacoPosition(position))) continue
+      return {
+        contents: [makeBasicMarkdownString(diagnostic.message)],
+        range: diagnostic.range,
+        actions: [
+          {
+            title: 'Fix',
+            command: builtInCommandCopilotFixProblem,
+            arguments: [
+              {
+                textDocument: textDocument.id,
+                problem: diagnostic
+              }
+            ]
+          }
+        ]
+      }
+    }
+    return null
+  }
+
   init() {
     const { monaco, editor } = this.ui
 
     this.addDisposable(
       monaco.languages.registerHoverProvider('spx', {
         provideHover: async (_, position, token) => {
+          this.hideHover()
+
           // TODO: use `onMouseMove` as trigger?
           if (this.provider == null) return
           const textDocument = this.ui.activeTextDocument
           if (textDocument == null) throw new Error('No active text document')
           if (!isSelectionEmpty(this.ui.selection)) return
+
+          const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
+          if (diagnosticsHover != null) {
+            // TODO: merge with hover from provider?
+            this.showHover(diagnosticsHover)
+            return null
+          }
+
           const signal = token2Signal(token)
           const hover = await this.provider.provideHover(
             { textDocument, signal },
