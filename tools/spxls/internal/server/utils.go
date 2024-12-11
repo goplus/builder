@@ -159,3 +159,8 @@ func parseGopFuncName(name string) (funcName string, overloadIndex *int) {
 // spxEventHandlerFuncNameRE is the regular expression of the spx event handler
 // function name.
 var spxEventHandlerFuncNameRE = regexp.MustCompile(`^on[A-Z]\w*$`)
+
+// isMainPkgObject returns true if the given object is defined in the main package.
+func isMainPkgObject(obj types.Object) bool {
+	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == "main"
+}

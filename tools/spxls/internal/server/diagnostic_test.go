@@ -96,16 +96,16 @@ var (
 			Severity: SeverityError,
 			Message:  "expected ')', found 'EOF'",
 			Range: Range{
-				Start: Position{Line: 4, Character: 24},
-				End:   Position{Line: 4, Character: 24},
+				Start: Position{Line: 3, Character: 23},
+				End:   Position{Line: 3, Character: 23},
 			},
 		})
 		assert.Contains(t, fullReport.Items, Diagnostic{
 			Severity: SeverityError,
 			Message:  "expected ';', found 'EOF'",
 			Range: Range{
-				Start: Position{Line: 4, Character: 24},
-				End:   Position{Line: 4, Character: 24},
+				Start: Position{Line: 3, Character: 23},
+				End:   Position{Line: 3, Character: 23},
 			},
 		})
 	})
@@ -197,16 +197,16 @@ var (
 					Severity: SeverityError,
 					Message:  "expected ')', found 'EOF'",
 					Range: Range{
-						Start: Position{Line: 4, Character: 24},
-						End:   Position{Line: 4, Character: 24},
+						Start: Position{Line: 3, Character: 23},
+						End:   Position{Line: 3, Character: 23},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "expected ';', found 'EOF'",
 					Range: Range{
-						Start: Position{Line: 4, Character: 24},
-						End:   Position{Line: 4, Character: 24},
+						Start: Position{Line: 3, Character: 23},
+						End:   Position{Line: 3, Character: 23},
 					},
 				})
 			} else {
@@ -271,24 +271,24 @@ onStart => {
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
-						Start: Position{Line: 3, Character: 2},
-						End:   Position{Line: 3, Character: 22},
+						Start: Position{Line: 2, Character: 1},
+						End:   Position{Line: 2, Character: 21},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
-						Start: Position{Line: 5, Character: 6},
-						End:   Position{Line: 5, Character: 26},
+						Start: Position{Line: 4, Character: 5},
+						End:   Position{Line: 4, Character: 25},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityWarning,
 					Message:  "resources must be defined in the first var block for auto-binding",
 					Range: Range{
-						Start: Position{Line: 7, Character: 2},
-						End:   Position{Line: 7, Character: 29},
+						Start: Position{Line: 6, Character: 1},
+						End:   Position{Line: 6, Character: 28},
 					},
 				})
 			case "file:///MySprite.spx":
@@ -297,48 +297,48 @@ onStart => {
 					Severity: SeverityWarning,
 					Message:  "auto-binding of resources can only happen in main.spx",
 					Range: Range{
-						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 23},
+						Start: Position{Line: 4, Character: 1},
+						End:   Position{Line: 4, Character: 22},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "sound resource name cannot be empty",
 					Range: Range{
-						Start: Position{Line: 9, Character: 7},
-						End:   Position{Line: 9, Character: 9},
+						Start: Position{Line: 8, Character: 6},
+						End:   Position{Line: 8, Character: 8},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "ConstSoundName" not found`,
 					Range: Range{
-						Start: Position{Line: 10, Character: 7},
-						End:   Position{Line: 10, Character: 21},
+						Start: Position{Line: 9, Character: 6},
+						End:   Position{Line: 9, Character: 20},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "LiteralSoundName" not found`,
 					Range: Range{
-						Start: Position{Line: 11, Character: 7},
-						End:   Position{Line: 11, Character: 25},
+						Start: Position{Line: 10, Character: 6},
+						End:   Position{Line: 10, Character: 24},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sound resource "AutoBindingSoundName" not found`,
 					Range: Range{
-						Start: Position{Line: 13, Character: 7},
-						End:   Position{Line: 13, Character: 27},
+						Start: Position{Line: 12, Character: 6},
+						End:   Position{Line: 12, Character: 26},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `cannot find auto-binding for sound resource "AutoBindingSoundName2"`,
 					Range: Range{
-						Start: Position{Line: 14, Character: 7},
-						End:   Position{Line: 14, Character: 28},
+						Start: Position{Line: 13, Character: 6},
+						End:   Position{Line: 13, Character: 27},
 					},
 				})
 			default:
@@ -382,16 +382,16 @@ onStart => {
 					Severity: SeverityError,
 					Message:  "backdrop resource name cannot be empty",
 					Range: Range{
-						Start: Position{Line: 2, Character: 12},
-						End:   Position{Line: 2, Character: 14},
+						Start: Position{Line: 1, Character: 11},
+						End:   Position{Line: 1, Character: 13},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `backdrop resource "NonExistentBackdrop" not found`,
 					Range: Range{
-						Start: Position{Line: 3, Character: 12},
-						End:   Position{Line: 3, Character: 33},
+						Start: Position{Line: 2, Character: 11},
+						End:   Position{Line: 2, Character: 32},
 					},
 				})
 			case "file:///MySprite.spx":
@@ -400,16 +400,16 @@ onStart => {
 					Severity: SeverityError,
 					Message:  `backdrop resource "ConstBackdropName" not found`,
 					Range: Range{
-						Start: Position{Line: 6, Character: 13},
-						End:   Position{Line: 6, Character: 30},
+						Start: Position{Line: 5, Character: 12},
+						End:   Position{Line: 5, Character: 29},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `backdrop resource "LiteralBackdropName" not found`,
 					Range: Range{
-						Start: Position{Line: 7, Character: 13},
-						End:   Position{Line: 7, Character: 34},
+						Start: Position{Line: 6, Character: 12},
+						End:   Position{Line: 6, Character: 33},
 					},
 				})
 			default:
@@ -460,24 +460,24 @@ onStart => {
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
-						Start: Position{Line: 3, Character: 2},
-						End:   Position{Line: 3, Character: 11},
+						Start: Position{Line: 2, Character: 1},
+						End:   Position{Line: 2, Character: 10},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
-						Start: Position{Line: 4, Character: 2},
-						End:   Position{Line: 4, Character: 11},
+						Start: Position{Line: 3, Character: 1},
+						End:   Position{Line: 3, Character: 10},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "sprite resource name must match type name for explicit auto-binding to work",
 					Range: Range{
-						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 12},
+						Start: Position{Line: 4, Character: 1},
+						End:   Position{Line: 4, Character: 11},
 					},
 				})
 			case "file:///MySprite1.spx":
@@ -486,24 +486,24 @@ onStart => {
 					Severity: SeverityWarning,
 					Message:  "auto-binding of resources can only happen in main.spx",
 					Range: Range{
-						Start: Position{Line: 2, Character: 5},
-						End:   Position{Line: 2, Character: 14},
+						Start: Position{Line: 1, Character: 4},
+						End:   Position{Line: 1, Character: 13},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
-						Start: Position{Line: 4, Character: 2},
-						End:   Position{Line: 4, Character: 19},
+						Start: Position{Line: 3, Character: 1},
+						End:   Position{Line: 3, Character: 18},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
-						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 11},
+						Start: Position{Line: 4, Character: 1},
+						End:   Position{Line: 4, Character: 10},
 					},
 				})
 			case "file:///MySprite2.spx":
@@ -512,24 +512,24 @@ onStart => {
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite1" not found`,
 					Range: Range{
-						Start: Position{Line: 3, Character: 2},
-						End:   Position{Line: 3, Character: 11},
+						Start: Position{Line: 2, Character: 1},
+						End:   Position{Line: 2, Character: 10},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
-						Start: Position{Line: 4, Character: 2},
-						End:   Position{Line: 4, Character: 19},
+						Start: Position{Line: 3, Character: 1},
+						End:   Position{Line: 3, Character: 18},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `sprite resource "MySprite2" not found`,
 					Range: Range{
-						Start: Position{Line: 5, Character: 2},
-						End:   Position{Line: 5, Character: 11},
+						Start: Position{Line: 4, Character: 1},
+						End:   Position{Line: 4, Character: 10},
 					},
 				})
 			default:
@@ -568,16 +568,16 @@ onStart => {
 					Severity: SeverityError,
 					Message:  "sprite costume resource name cannot be empty",
 					Range: Range{
-						Start: Position{Line: 3, Character: 13},
-						End:   Position{Line: 3, Character: 15},
+						Start: Position{Line: 2, Character: 12},
+						End:   Position{Line: 2, Character: 14},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `costume resource "NonExistentCostume" not found in sprite "MySprite"`,
 					Range: Range{
-						Start: Position{Line: 4, Character: 13},
-						End:   Position{Line: 4, Character: 33},
+						Start: Position{Line: 3, Character: 12},
+						End:   Position{Line: 3, Character: 32},
 					},
 				})
 			default:
@@ -616,16 +616,16 @@ onStart => {
 					Severity: SeverityError,
 					Message:  "sprite animation resource name cannot be empty",
 					Range: Range{
-						Start: Position{Line: 3, Character: 10},
-						End:   Position{Line: 3, Character: 12},
+						Start: Position{Line: 2, Character: 9},
+						End:   Position{Line: 2, Character: 11},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `animation resource "roll-in" not found in sprite "MySprite"`,
 					Range: Range{
-						Start: Position{Line: 4, Character: 10},
-						End:   Position{Line: 4, Character: 19},
+						Start: Position{Line: 3, Character: 9},
+						End:   Position{Line: 3, Character: 18},
 					},
 				})
 			default:
@@ -669,24 +669,24 @@ onStart => {
 					Severity: SeverityError,
 					Message:  "widget resource name cannot be empty",
 					Range: Range{
-						Start: Position{Line: 6, Character: 21},
-						End:   Position{Line: 6, Character: 23},
+						Start: Position{Line: 5, Character: 20},
+						End:   Position{Line: 5, Character: 22},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `widget resource "ConstWidgetName" not found`,
 					Range: Range{
-						Start: Position{Line: 7, Character: 21},
-						End:   Position{Line: 7, Character: 36},
+						Start: Position{Line: 6, Character: 20},
+						End:   Position{Line: 6, Character: 35},
 					},
 				})
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  `widget resource "LiteralWidgetName" not found`,
 					Range: Range{
-						Start: Position{Line: 8, Character: 21},
-						End:   Position{Line: 8, Character: 40},
+						Start: Position{Line: 7, Character: 20},
+						End:   Position{Line: 7, Character: 39},
 					},
 				})
 			default:
