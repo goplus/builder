@@ -20,8 +20,8 @@ func UnmarshalJSON(msg json.RawMessage, v any) error {
 // FromGopTokenPosition converts a [goptoken.Position] to a protocol [Position].
 func FromGopTokenPosition(p goptoken.Position) Position {
 	return Position{
-		Line:      uint32(p.Line),
-		Character: uint32(p.Column),
+		Line:      uint32(p.Line - 1),
+		Character: uint32(p.Column - 1),
 	}
 }
 

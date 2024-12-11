@@ -96,6 +96,32 @@ func (r *compileResult) innermostScope(pos token.Pos) *types.Scope {
 	return innermostScope
 }
 
+// objectAtFilePosition returns the object at the given position in the given file.
+func (r *compileResult) objectAtFilePosition(astFile *gopast.File, position Position) types.Object {
+	tokenPos := r.fset.Position(astFile.Pos())
+	tokenPos.Line = int(position.Line) + 1
+	tokenPos.Column = int(position.Character) + 1
+
+	var obj types.Object
+	gopast.Inspect(astFile, func(node gopast.Node) bool {
+		ident, ok := node.(*gopast.Ident)
+		if !ok {
+			return true
+		}
+		identPos := r.fset.Position(ident.Pos())
+		identEnd := r.fset.Position(ident.End())
+		if tokenPos.Line != identPos.Line ||
+			tokenPos.Column < identPos.Column ||
+			tokenPos.Column > identEnd.Column {
+			return true
+		}
+
+		obj = r.typeInfo.ObjectOf(ident)
+		return obj == nil
+	})
+	return obj
+}
+
 // addSpxResourceRef adds a spx resource reference to the compile result.
 func (r *compileResult) addSpxResourceRef(refKey SpxResourceRefKey, node gopast.Node) {
 	if !slices.Contains(r.spxResourceRefs[refKey], node) {
