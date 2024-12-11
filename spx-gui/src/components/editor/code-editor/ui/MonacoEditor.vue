@@ -43,7 +43,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  init: [Monaco, MonacoEditor]
+  init: [monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement]
 }>()
 
 const i18n = useI18n()
@@ -103,7 +103,7 @@ watchEffect(async (onClenaup) => {
   const resizeObserver = new ResizeObserver(handleResize)
   resizeObserver.observe(editorEl)
 
-  emit('init', monaco, editor)
+  emit('init', monaco, editor, editorEl)
   onClenaup(() => {
     editor.dispose()
     resizeObserver.disconnect()

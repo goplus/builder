@@ -18,6 +18,7 @@ import {
   containsPosition
 } from '../common'
 import type { TextDocument } from '../text-document'
+import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -56,7 +57,7 @@ export class HoverController extends Disposable {
     super()
   }
 
-  widgetEl = document.createElement('div')
+  widgetEl = makeContentWidgetEl()
 
   private widget: monaco.editor.IContentWidget = {
     getId: () => `hover-for-${this.ui.id}`,

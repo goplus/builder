@@ -24,7 +24,8 @@ import {
   type Diagnostic,
   makeAdvancedMarkdownString,
   stringifyDefinitionId,
-  DiagnosticSeverity
+  DiagnosticSeverity,
+  ResourceReferenceKind
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -184,7 +185,127 @@ function handleUIInit(ui: ICodeEditorUI) {
   {
     async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
       console.warn('TODO', ctx)
-      return []
+      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      ctx.signal.throwIfAborted()
+      const rrs: ResourceReference[] = []
+      const value = ctx.textDocument.getValue()
+      editorCtx.project.sounds
+        .map((s) => s.name)
+        .forEach((soundName) => {
+          const idx = value.indexOf(`"${soundName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + soundName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/sounds/${soundName}`
+              }
+            })
+          }
+        })
+      editorCtx.project.sprites
+        .map((s) => s.name)
+        .forEach((spriteName) => {
+          const idx = value.indexOf(`"${spriteName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + spriteName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/sprites/${spriteName}`
+              }
+            })
+          }
+        })
+      editorCtx.project.stage.backdrops
+        .map((b) => b.name)
+        .forEach((backdropName) => {
+          const idx = value.indexOf(`"${backdropName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + backdropName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/backdrops/${backdropName}`
+              }
+            })
+          }
+        })
+      editorCtx.project.stage.widgets
+        .map((w) => w.name)
+        .forEach((widgetName) => {
+          const idx = value.indexOf(`"${widgetName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + widgetName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/widgets/${widgetName}`
+              }
+            })
+          }
+        })
+      const sprite = editorCtx.project.sprites[0]
+      sprite.animations
+        .map((a) => a.name)
+        .forEach((animationName) => {
+          const idx = value.indexOf(`"${animationName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + animationName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/sprites/${sprite.name}/animations/${animationName}`
+              }
+            })
+          }
+        })
+      sprite.costumes
+        .map((c) => c.name)
+        .forEach((costumeName) => {
+          const idx = value.indexOf(`"${costumeName}"`)
+          if (idx >= 0) {
+            rrs.push({
+              kind: ResourceReferenceKind.StringLiteral,
+              range: {
+                start: ctx.textDocument.getPositionAt(idx),
+                end: ctx.textDocument.getPositionAt(idx + costumeName.length + 2)
+              },
+              resource: {
+                uri: `spx://resources/sprites/${sprite.name}/costumes/${costumeName}`
+              }
+            })
+          }
+        })
+      const irrIdx = value.indexOf(sprite.name + ' ')
+      if (irrIdx >= 0) {
+        rrs.push({
+          kind: ResourceReferenceKind.AutoBinding,
+          range: {
+            start: ctx.textDocument.getPositionAt(irrIdx),
+            end: ctx.textDocument.getPositionAt(irrIdx + 9)
+          },
+          resource: {
+            uri: `spx://resources/sprites/${sprite.name}`
+          }
+        })
+      }
+      return rrs
     }
   }
 

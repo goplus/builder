@@ -36,12 +36,11 @@
 import { computed, ref, watchEffect } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import EditorList from '../common/EditorList.vue'
-import { UIMenu, UIMenuItem, useModal, UIEmpty, UIButton } from '@/components/ui'
+import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { useAddAnimationByGroupingCostumes } from '@/components/asset'
 import AnimationDetail from './AnimationDetail.vue'
-import GroupCostumesModal from '@/components/asset/animation/GroupCostumesModal.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import { Animation } from '@/models/animation'
 import AnimationItem from './AnimationItem.vue'
 import galleryIcon from './gallery.svg'
 
@@ -62,34 +61,12 @@ watchEffect(() => {
   }
 })
 
-const groupCostumes = useModal(GroupCostumesModal)
+const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
 
 const handleGroupCostumes = useMessageHandle(
   async () => {
-    const { selectedCostumes, removeCostumes } = await groupCostumes({
-      sprite: props.sprite
-    })
-
-    editorCtx.project.history.doAction(
-      {
-        name: { en: 'Group costumes as animation', zh: '将造型合并为动画' }
-      },
-      () => {
-        const animation = Animation.create(
-          '',
-          selectedCostumes.map((costume) => costume.clone())
-        )
-        props.sprite.addAnimation(animation)
-        if (removeCostumes) {
-          for (let i = selectedCostumes.length - 1; i >= 0; i--) {
-            // Do not remove the last costume
-            if (props.sprite.costumes.length <= 1) break
-            props.sprite.removeCostume(selectedCostumes[i].id)
-          }
-        }
-        selectedAnimationId.value = animation.id
-      }
-    )
+    const animation = await addAnimationByGroupingCostumes(editorCtx.project, props.sprite)
+    selectedAnimationId.value = animation.id
   },
   {
     en: 'Failed to group costumes as animation',

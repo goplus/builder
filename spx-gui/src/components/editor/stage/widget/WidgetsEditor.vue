@@ -35,7 +35,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { UIMenu, UIMenuItem, UIEmpty, UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
 import { type Widget } from '@/models/widget'
-import { Monitor } from '@/models/widget/monitor'
+import { useAddMonitor } from '@/components/asset'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import EditorList from '../../common/EditorList.vue'
 import WidgetItem from './WidgetItem.vue'
@@ -50,20 +50,12 @@ function handleSelect(widget: Widget) {
   stage.value.selectWidget(widget.id)
 }
 
-const handleAddMonitor = useMessageHandle(
-  async () => {
-    const monitor = await Monitor.create()
-    const action = { name: { en: 'Add widget', zh: '添加控件' } }
-    await editorCtx.project.history.doAction(action, () => {
-      stage.value.addWidget(monitor)
-      stage.value.selectWidget(monitor.id)
-    })
-  },
-  {
-    en: 'Failed to add widget',
-    zh: '添加控件失败'
-  }
-).fn
+const addMonitor = useAddMonitor()
+
+const handleAddMonitor = useMessageHandle(() => addMonitor(editorCtx.project), {
+  en: 'Failed to add widget',
+  zh: '添加控件失败'
+}).fn
 
 onMounted(() => {
   stage.value.autoSelectWidget()

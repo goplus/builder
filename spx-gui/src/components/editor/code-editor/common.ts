@@ -17,11 +17,33 @@ export type Selection = {
   position: Position
 }
 
+export enum ResourceReferenceKind {
+  /** String literal as a resource-reference, e.g., `play "explosion"` */
+  StringLiteral,
+  /** Auto-binding variable as a resource-reference, e.g., `var explosion Sound` */
+  AutoBinding,
+  /** Reference for auto-binding variable as a resource-reference, e.g., `play explosion` */
+  AutoBindingReference,
+  /** Reference for constant as a resource-reference, e.g., `play EXPLOSION` (`EXPLOSION` is a constant) */
+  ConstantReference
+}
+
 export type ResourceIdentifier = {
+  /**
+   * URI of the resource. Examples:
+   * - `spx://resources/sprites/<name>`
+   * - `spx://resources/sounds/<name>`
+   * - `spx://resources/sprites/<sName>/costumes/<cName>`
+   */
   uri: string
 }
 
 export type TextDocumentIdentifier = {
+  /**
+   * URI of the text document. Examples:
+   * - `file:///main.spx`
+   * - `file:///<spriteName>.spx`
+   */
   uri: string
 }
 

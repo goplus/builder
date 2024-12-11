@@ -15,7 +15,7 @@ import {
 } from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
-import type { IResourceReferencesProvider } from './resource-reference'
+import { ResourceReferenceController, type IResourceReferencesProvider } from './resource-reference'
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
@@ -88,7 +88,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.completionController.registerProvider(provider)
   }
   registerResourceReferencesProvider(provider: IResourceReferencesProvider): void {
-    console.warn('TODO', provider)
+    this.resourceReferenceController.registerProvider(provider)
   }
   registerContextMenuProvider(provider: IContextMenuProvider): void {
     console.warn('TODO', provider)
@@ -133,7 +133,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.editor.focus()
   }
 
-  constructor(private project: Project) {
+  constructor(public project: Project) {
     super()
   }
 
@@ -144,6 +144,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   copilotController = new CopilotController(this)
   contextMenuController = new ContextMenuController(this)
   diagnosticsController = new DiagnosticsController(this)
+  resourceReferenceController = new ResourceReferenceController(this)
   documentBase: IDocumentBase | null = null
 
   /** All opened text documents in current editor, by ID uri */
@@ -249,6 +250,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     if (this._editor == null) throw new Error('Editor not initialized')
     return this._editor
   }
+  private _editorEl: HTMLElement | null = null
+  get editorEl() {
+    if (this._editorEl == null) throw new Error('Editor element not initialized')
+    return this._editorEl
+  }
 
   private isCopilotActiveRef = ref(false)
   get isCopilotActive() {
@@ -258,9 +264,10 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.isCopilotActiveRef.value = active
   }
 
-  init(monaco: Monaco, editor: MonacoEditor) {
+  init(monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement) {
     this._monaco = monaco
     this._editor = editor
+    this._editorEl = editorEl
 
     this.addDisposer(
       watchEffect(() => {
@@ -328,9 +335,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.copilotController.init()
     this.contextMenuController.init()
     this.diagnosticsController.init()
+    this.resourceReferenceController.init()
   }
 
   dispose() {
+    this.resourceReferenceController.dispose()
     this.diagnosticsController.dispose()
     this.contextMenuController.dispose()
     this.copilotController.dispose()

@@ -7,7 +7,7 @@
         :range="audioRange"
         :gain="gain"
         @update:range="recordingState === 'recorded' && (audioRange = $event)"
-        @record-started="recordingState = 'recording'"
+        @record-started="handleRecordStarted"
         @record-stopped="recordingState = 'recorded'"
       />
       <div v-if="recordingState === 'yetStarted'" class="recorder-waveform-overlay">
@@ -91,13 +91,17 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import dayjs from 'dayjs'
 import { fromBlob } from '@/models/common/file'
 import { Sound } from '@/models/sound'
+import type { Project } from '@/models/project'
 import { UIIconButton } from '@/components/ui'
 import VolumeSlider from './VolumeSlider.vue'
 import { WaveformRecorder } from './waveform'
+
+const props = defineProps<{
+  project: Project
+}>()
 
 const emit = defineEmits<{
   saved: [Sound]
@@ -111,11 +115,14 @@ const waveformRecorderRef = ref<InstanceType<typeof WaveformRecorder> | null>(nu
 const audioRange = ref({ left: 0, right: 1 })
 const gain = ref(1)
 
-const editorCtx = useEditorCtx()
-
 const handleGainUpdate = (v: number) => {
   gain.value = v
   waveformRecorderRef.value?.startPlayback()
+}
+
+const handleRecordStarted = () => {
+  recordingState.value = 'recording'
+  emit('recordStarted')
 }
 
 const stopRecording = () => {
@@ -129,7 +136,7 @@ const saveRecording = async () => {
   const file = fromBlob(`Recording_${dayjs().format('YYYY-MM-DD_HH:mm:ss')}.wav`, wav)
   const sound = await Sound.create('recording', file)
   const action = { name: { en: 'Add recording', zh: '添加录音' } }
-  await editorCtx.project.history.doAction(action, () => editorCtx.project.addSound(sound))
+  await props.project.history.doAction(action, () => props.project.addSound(sound))
   emit('saved', sound)
 }
 

@@ -1,70 +1,53 @@
 <template>
   <UIFormModal
     :visible="visible"
-    :title="
-      $t({
-        en: 'Record Sound',
-        zh: '录制声音'
-      })
-    "
+    :title="$t({ en: 'Record Sound', zh: '录制声音' })"
     center-title
-    @update:visible="handleUpdateShowRecorder"
+    @update:visible="handleFormModalVisibleUpdate"
   >
-    <SoundRecorder @saved="handleSaved" @record-started="recordStarted = true" />
-    <UIConfirmDialog
-      :visible="showDialog"
-      type="warning"
-      :title="$t({ en: 'Quit recording?', zh: '退出录音？' })"
-      :content="
-        $t({
-          en: 'The current content will not be saved. Are you sure you want to quit?',
-          zh: '当前内容不会被保存，确定要退出吗？'
-        })
-      "
-      :confirm-text="$t({ en: 'Quit', zh: '退出' })"
-      @cancelled="showDialog = false"
-      @resolved="closeModal()"
-    />
+    <SoundRecorder :project="project" @saved="handleSaved" @record-started="recordStarted = true" />
   </UIFormModal>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UIFormModal, UIConfirmDialog } from '@/components/ui'
-import SoundRecorder from './SoundRecorder.vue'
+import { useI18n } from '@/utils/i18n'
+import { useMessageHandle } from '@/utils/exception'
 import type { Sound } from '@/models/sound'
+import type { Project } from '@/models/project'
+import { UIFormModal, useConfirmDialog } from '@/components/ui'
+import SoundRecorder from './SoundRecorder.vue'
 
 const recordStarted = ref(false)
-const showDialog = ref(false)
 
 defineProps<{
   visible: boolean
+  project: Project
 }>()
 
 const emit = defineEmits<{
-  'update:visible': [boolean]
-  saved: [sound: Sound]
+  resolved: [sound: Sound]
+  cancelled: []
 }>()
 
-const handleUpdateShowRecorder = (visible: boolean) => {
-  if (!visible) {
-    if (recordStarted.value) {
-      showDialog.value = true
-    } else {
-      closeModal()
-    }
-  } else {
-    emit('update:visible', true)
-  }
-}
+const i18n = useI18n()
+const withConfirm = useConfirmDialog()
 
-function closeModal() {
-  emit('update:visible', false)
-  recordStarted.value = false
-  showDialog.value = false
-}
+const handleFormModalVisibleUpdate = useMessageHandle(async (visible: boolean) => {
+  if (visible) return
+  if (recordStarted.value) {
+    await withConfirm({
+      type: 'warning',
+      title: i18n.t({ en: 'Quit recording?', zh: '退出录音？' }),
+      content: i18n.t({
+        en: 'The current content will not be saved. Are you sure you want to quit?',
+        zh: '当前内容不会被保存，确定要退出吗？'
+      })
+    })
+  }
+  emit('cancelled')
+}).fn
 
 function handleSaved(sound: Sound) {
-  emit('saved', sound)
-  closeModal()
+  emit('resolved', sound)
 }
 </script>
