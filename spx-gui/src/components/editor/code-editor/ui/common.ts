@@ -77,10 +77,6 @@ export function toMonacoSelection(selection: Selection): monaco.ISelection {
   }
 }
 
-export function getSelectionRange(selection: Selection): Range {
-  return { start: selection.start, end: selection.position }
-}
-
 export function isRangeEmpty(range: Range) {
   return positionEq(range.start, range.end)
 }

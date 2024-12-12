@@ -313,8 +313,11 @@ export type CommandInfo<A extends any[], R> = {
 }
 
 export type Action<I extends any[] = any, R = any> = {
+  /** Title for the action. */
   title: string
+  /** Command to be executed when action is triggered. */
   command: Command<I, R>
+  /** Arguments passed to the command. */
   arguments: I
 }
 
@@ -332,4 +335,17 @@ export type TextEdit = {
 
 export type WorkspaceEdit = {
   changes?: { [uri: string]: TextEdit[] }
+}
+
+/** If p1 is after p2 */
+export function positionAfter(p1: Position, p2: Position) {
+  return p1.line > p2.line || (p1.line === p2.line && p1.column > p2.column)
+}
+
+export function selection2Range(selection: Selection): Range {
+  const reversed = positionAfter(selection.start, selection.position)
+  return {
+    start: reversed ? selection.position : selection.start,
+    end: reversed ? selection.start : selection.position
+  }
 }
