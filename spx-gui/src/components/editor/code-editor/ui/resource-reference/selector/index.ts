@@ -43,7 +43,7 @@ export type CreateMethod<T> = {
 }
 
 export type IResource = {
-  /** Radable name and also unique identifier in list */
+  /** Readable name and also unique identifier in list */
   name: string
 }
 
