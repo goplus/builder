@@ -49,7 +49,9 @@ function getTextForVNode(vnode: VNode): string {
 
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div class="code-view" :style="{ tabSize }" v-html="codeHtml"></div>
+  <code v-if="mode === 'inline'" class="code-view" :style="{ tabSize }" v-html="codeHtml"></code>
+  <!-- eslint-disable-next-line vue/no-v-html -->
+  <div v-else class="code-view" :style="{ tabSize }" v-html="codeHtml"></div>
 </template>
 
 <style lang="scss" scoped></style>

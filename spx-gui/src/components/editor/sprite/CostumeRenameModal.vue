@@ -13,7 +13,6 @@
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
 import type { Costume } from '@/models/costume'
-import type { Sprite } from '@/models/sprite'
 import { costumeNameTip, validateCostumeName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
@@ -23,13 +22,12 @@ import { type Project } from '@/models/project'
 const props = defineProps<{
   visible: boolean
   costume: Costume
-  sprite: Sprite
   project: Project
 }>()
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [void]
 }>()
 
 const { t } = useI18n()
@@ -52,6 +50,6 @@ async function handleSubmit() {
 
 function validateName(name: string) {
   if (name === props.costume.name) return
-  return t(validateCostumeName(name, props.sprite) ?? null)
+  return t(validateCostumeName(name, props.costume.parent) ?? null)
 }
 </script>

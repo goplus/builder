@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Emitter from '@/utils/emitter'
-import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
@@ -17,7 +16,8 @@ import {
   ChatExplainKind,
   type ChatExplainTargetCodeSegment,
   builtInCommandCopilotReview,
-  type ChatTopicReview
+  type ChatTopicReview,
+  builtInCommandGoToDefinition
 } from './ui'
 import {
   makeBasicMarkdownString,
@@ -42,7 +42,6 @@ const allItems = Object.values({
 })
 const allIds = allItems.map((item) => item.definition)
 
-const i18n = useI18n()
 const editorCtx = useEditorCtx()
 
 function handleUIInit(ui: ICodeEditorUI) {
@@ -73,7 +72,11 @@ function handleUIInit(ui: ICodeEditorUI) {
           .pop()!
           .replace(/^./, (c) => c.toLowerCase()),
         kind: item.kind,
-        documentation: item.detail
+        insertText: item.insertText,
+        documentation: makeAdvancedMarkdownString(`
+<definition-overview-wrapper>${item.overview}</definition-overview-wrapper>
+<definition-detail def-id="${stringifyDefinitionId(item.definition)}"></definition-detail>
+`)
       }))
     }
   })
@@ -95,7 +98,6 @@ function handleUIInit(ui: ICodeEditorUI) {
       }
       return [
         {
-          title: i18n.t({ en: 'Explain', zh: '解释' }),
           command: builtInCommandCopilotExplain,
           arguments: [explainTarget]
         }
@@ -119,12 +121,10 @@ function handleUIInit(ui: ICodeEditorUI) {
       }
       return [
         {
-          title: i18n.t({ en: 'Explain', zh: '解释' }),
           command: builtInCommandCopilotExplain,
           arguments: [explainTarget]
         },
         {
-          title: i18n.t({ en: 'Review', zh: '审查' }),
           command: builtInCommandCopilotReview,
           arguments: [reviewTarget]
         }
@@ -206,7 +206,6 @@ function handleUIInit(ui: ICodeEditorUI) {
 `)
         )
         actions.push({
-          title: 'Explain',
           command: builtInCommandCopilotExplain,
           arguments: [
             {
@@ -216,9 +215,27 @@ function handleUIInit(ui: ICodeEditorUI) {
             }
           ]
         })
-      } else {
-        contents.push(makeBasicMarkdownString(`<definition-overview-wrapper>${value}</definition-overview-wrapper>`))
       }
+      if (value === 'time') {
+        contents.push(
+          makeBasicMarkdownString(`<definition-overview-wrapper>var time int</definition-overview-wrapper>`)
+        )
+        actions.push({
+          command: builtInCommandGoToDefinition,
+          arguments: [
+            {
+              textDocument: {
+                uri: `file:///main.spx`
+              },
+              position: {
+                line: 2,
+                column: 2
+              }
+            }
+          ]
+        })
+      }
+      if (contents.length === 0) return null
       return {
         contents,
         actions

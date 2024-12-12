@@ -6,7 +6,7 @@ import type { CodeEditorUI } from '..'
 import type { TextDocument } from '../text-document'
 import { toMonacoPosition, type monaco, toMonacoRange } from '../common'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
-import { checkSelectTrigger } from './ResourceReferenceUI.vue'
+import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
 
 export type ResourceReferencesContext = BaseContext
@@ -58,26 +58,28 @@ export class ResourceReferenceController extends Disposable {
     this.refreshItems(provider, textDocument, this.lastTryCtrl.signal)
   }
 
-  private selectingRef = shallowRef<InternalResourceReference | null>(null)
-  get selecting() {
-    return this.selectingRef.value
+  private modifyingRef = shallowRef<InternalResourceReference | null>(null)
+  get modifying() {
+    return this.modifyingRef.value
   }
   private selectorComputed = computed(() => {
-    if (this.selecting == null) return null
-    return createResourceSelector(this.ui.project, this.selecting)
+    if (this.modifying == null) return null
+    return createResourceSelector(this.ui.project, this.modifying)
   })
   get selector() {
     return this.selectorComputed.value
   }
-  stopSelecting() {
-    this.selectingRef.value = null
+  startModifying(rrId: string) {
+    this.modifyingRef.value = this.items?.find((item) => item.id === rrId) ?? null
+  }
+  stopModifying() {
+    this.modifyingRef.value = null
     this.ui.editor.focus()
   }
   applySelected(newResourceName: string) {
-    const selecting = this.selecting
+    const selecting = this.modifying
     if (selecting == null) return
-    console.warn('TODO: confirm selecting', newResourceName)
-    this.stopSelecting()
+    this.stopModifying()
     const insertText = `"${newResourceName}"`
     this.ui.editor.executeEdits(
       'modify-resource-reference',
@@ -96,7 +98,6 @@ export class ResourceReferenceController extends Disposable {
         )
       ]
     )
-    // this.ui.editor.se
     this.ui.editor.focus()
   }
 
@@ -106,7 +107,7 @@ export class ResourceReferenceController extends Disposable {
     getDomNode: () => this.selectorWidgetEl,
     getPosition: () => {
       const monaco = this.ui.monaco
-      const selecting = this.selectingRef.value
+      const selecting = this.modifyingRef.value
       return {
         position: selecting == null ? null : toMonacoPosition(selecting.range.start),
         preference: [
@@ -144,7 +145,7 @@ export class ResourceReferenceController extends Disposable {
     )
 
     this.addDisposer(
-      watch(this.selectingRef, (selecting, _, onCleanup) => {
+      watch(this.modifyingRef, (selecting, _, onCleanup) => {
         if (selecting == null) return
         editor.addContentWidget(this.selectorWidget)
         onCleanup(() => editor.removeContentWidget(this.selectorWidget))
@@ -159,7 +160,7 @@ export class ResourceReferenceController extends Disposable {
       'mousedown',
       (e) => {
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkSelectTrigger(e.target)
+        const rrId = checkModifiable(e.target)
         if (rrId == null) return
         e.preventDefault()
         e.stopPropagation()
@@ -173,11 +174,11 @@ export class ResourceReferenceController extends Disposable {
       (e) => {
         if (clickingId == null) return
         if (!(e.target instanceof HTMLElement)) return
-        const rrId = checkSelectTrigger(e.target)
-        if (rrId === clickingId) {
+        const rrId = checkModifiable(e.target)
+        if (rrId != null && rrId === clickingId) {
           e.preventDefault()
           e.stopPropagation()
-          this.selectingRef.value = this.items?.find((item) => item.id === rrId) ?? null
+          this.startModifying(rrId)
         }
         clickingId = null
       },
@@ -186,10 +187,10 @@ export class ResourceReferenceController extends Disposable {
   }
 }
 
-export function isSelectabe(item: InternalResourceReference) {
+export function isModifiable(kind: ResourceReferenceKind) {
   return [
     ResourceReferenceKind.AutoBindingReference,
     ResourceReferenceKind.ConstantReference,
     ResourceReferenceKind.StringLiteral
-  ].includes(item.kind)
+  ].includes(kind)
 }

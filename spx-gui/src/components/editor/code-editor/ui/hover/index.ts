@@ -8,14 +8,22 @@ import {
   type Position,
   makeBasicMarkdownString
 } from '../../common'
-import { builtInCommandCopilotFixProblem, type CodeEditorUI } from '..'
+import {
+  builtInCommandCopilotFixProblem,
+  builtInCommandGoToResource,
+  isModifiable,
+  type CodeEditorUI,
+  builtInCommandModifyResourceReference,
+  builtInCommandRenameResource
+} from '..'
 import {
   fromMonacoPosition,
   toMonacoPosition,
   token2Signal,
   type monaco,
-  isSelectionEmpty,
-  containsPosition
+  containsPosition,
+  getResourceModel,
+  supportGoTo
 } from '../common'
 import type { TextDocument } from '../text-document'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
@@ -100,6 +108,38 @@ export class HoverController extends Disposable {
     return null
   }
 
+  private getResourceReferenceHover(textDocument: TextDocument, position: monaco.Position): InternalHover | null {
+    const resourceReferenceController = this.ui.resourceReferenceController
+    if (resourceReferenceController.items == null) return null
+    for (const reference of resourceReferenceController.items) {
+      if (!containsPosition(reference.range, fromMonacoPosition(position))) continue
+      const actions: Action[] = []
+      const resourceModel = getResourceModel(this.ui.project, reference.resource)
+      if (supportGoTo(resourceModel)) {
+        actions.push({
+          command: builtInCommandGoToResource,
+          arguments: [reference.resource]
+        })
+      }
+      if (isModifiable(reference.kind)) {
+        actions.push({
+          command: builtInCommandModifyResourceReference,
+          arguments: [reference]
+        })
+      }
+      actions.push({
+        command: builtInCommandRenameResource,
+        arguments: [reference.resource]
+      })
+      return {
+        contents: [makeBasicMarkdownString(`<resource-preview resource="${reference.resource.uri}" />`)],
+        range: reference.range,
+        actions
+      }
+    }
+    return null
+  }
+
   init() {
     const { monaco, editor } = this.ui
 
@@ -112,23 +152,32 @@ export class HoverController extends Disposable {
           if (this.provider == null) return
           const textDocument = this.ui.activeTextDocument
           if (textDocument == null) throw new Error('No active text document')
-          if (!isSelectionEmpty(this.ui.selection)) return
 
           const diagnosticsHover = this.getDiagnosticsHover(textDocument, position)
           if (diagnosticsHover != null) {
-            // TODO: merge with hover from provider?
             this.showHover(diagnosticsHover)
             return null
           }
 
+          const resourceReferenceHover = this.getResourceReferenceHover(textDocument, position)
+          if (resourceReferenceHover != null) {
+            this.showHover(resourceReferenceHover)
+            return null
+          }
+
           const signal = token2Signal(token)
-          const hover = await this.provider.provideHover(
+          const providedHover = await this.provider.provideHover(
             { textDocument, signal },
             { line: position.lineNumber, column: position.column }
           )
-          if (hover == null) return
-          const range = hover.range ?? textDocument.getDefaultRange(fromMonacoPosition(position))
-          this.showHover({ ...hover, range })
+          if (providedHover != null) {
+            this.showHover({
+              ...providedHover,
+              range: providedHover.range ?? textDocument.getDefaultRange(fromMonacoPosition(position))
+            })
+            return null
+          }
+
           return null
         }
       })
@@ -149,6 +198,12 @@ export class HoverController extends Disposable {
           e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT
         )
           this.hideHover()
+      })
+    )
+
+    this.addDisposable(
+      editor.onKeyDown((e) => {
+        if (e.keyCode === monaco.KeyCode.Escape) this.hideHover()
       })
     )
 

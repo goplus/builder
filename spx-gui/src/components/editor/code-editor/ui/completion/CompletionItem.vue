@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
+import DefinitionIcon from '../definition/DefinitionIcon.vue'
 import type { InternalCompletionItem } from '.'
 import { createMatches } from './fuzzy'
 
@@ -41,28 +42,38 @@ watchEffect(() => {
 
 <template>
   <li ref="wrapperRef" class="completion-item" :class="{ active }">
-    <!-- TODO: icon -->
-    <span v-for="(part, i) in parts" :key="i" :class="{ matched: part.isMatched }">{{ part.content }}</span>
+    <DefinitionIcon class="icon" :kind="item.kind" />
+    <code class="code"
+      ><span v-for="(part, i) in parts" :key="i" :class="{ matched: part.isMatched }">{{ part.content }}</span></code
+    >
   </li>
 </template>
 
 <style lang="scss" scoped>
 .completion-item {
-  padding: 0.5em;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: var(--ui-border-radius-1);
   cursor: pointer;
   &:hover {
-    background-color: #ccc;
+    background: var(--ui-color-grey-300);
   }
   &.active {
-    background-color: #aaa;
+    background: var(--ui-color-grey-400);
   }
 }
 
-.completion-item + .completion-item {
-  border-top: 1px solid #ccc;
+.icon {
+  margin-right: 4px;
+}
+
+.code {
+  font-family: var(--ui-font-family-code);
 }
 
 .matched {
-  color: red;
+  // TODO: reconfirm color here
+  color: var(--ui-color-primary-main);
 }
 </style>

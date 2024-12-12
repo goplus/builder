@@ -2,15 +2,17 @@ import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import { type Action, type BaseContext, type Selection, type Position } from '../../common'
-import { builtInCommandCopy, type CodeEditorUI, builtInCommandCut, builtInCommandPaste } from '..'
+import { builtInCommandCopy, type CodeEditorUI, builtInCommandCut, builtInCommandPaste, type InternalAction } from '..'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 import { toMonacoPosition, type monaco, isSelectionEmpty, fromMonacoPosition, fromMonacoSelection } from '../common'
 
 export type ContextMenuContext = BaseContext
 
-export type MenuItem = Action & {}
+export type MenuItem = Action
 
-export type MenuGroup = MenuItem[]
+export type InternalMenuItem = InternalAction
+
+export type MenuGroup = InternalMenuItem[]
 
 export type AbsolutePosition = {
   /** Top position in pixels, relative to the viewport */
@@ -43,24 +45,14 @@ export class ContextMenuController extends Disposable {
     super()
   }
 
-  private get builtinMenuItems(): MenuItem[] {
-    return [
-      {
-        title: this.ui.i18n.t({ en: 'Cut', zh: '剪切' }),
-        command: builtInCommandCut,
-        arguments: []
-      },
-      {
-        title: this.ui.i18n.t({ en: 'Copy', zh: '复制' }),
-        command: builtInCommandCopy,
-        arguments: []
-      },
-      {
-        title: this.ui.i18n.t({ en: 'Paste', zh: '粘贴' }),
-        command: builtInCommandPaste,
-        arguments: []
-      }
-    ]
+  private get builtinMenuItems(): InternalMenuItem[] {
+    return [builtInCommandCut, builtInCommandCopy, builtInCommandPaste].map(
+      (command) =>
+        this.ui.resolveAction({
+          command,
+          arguments: []
+        })!
+    )
   }
 
   private currentMenuDataRef = shallowRef<MenuData | null>(null)
@@ -114,7 +106,11 @@ export class ContextMenuController extends Disposable {
     const signal = this.lastShowMenuCtrl.signal
     const items = await fetchMenu?.({ textDocument, signal })
     signal.throwIfAborted()
-    const groups = [items, this.builtinMenuItems].filter((group) => group != null && group.length > 0) as MenuGroup[]
+    const groups = [this.builtinMenuItems]
+    const resolvedItems = items?.map((item) => this.ui.resolveAction(item)).filter((i) => i != null)
+    if (resolvedItems != null && resolvedItems?.length > 0) {
+      groups.unshift(resolvedItems as InternalMenuItem[])
+    }
     this.currentMenuDataRef.value = { groups, position }
   }
 
@@ -166,6 +162,12 @@ export class ContextMenuController extends Disposable {
             this.showMenuForRightClick(e)
             break
         }
+      })
+    )
+
+    this.addDisposable(
+      editor.onKeyDown((e) => {
+        if (e.keyCode === monaco.KeyCode.Escape) this.hideMenu()
       })
     )
 

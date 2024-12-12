@@ -20,6 +20,9 @@ function handleInsert() {
   if (codeEditorCtx.ui.selection != null) {
     range = selection2Range(codeEditorCtx.ui.selection)
   }
+  // TODO: Optimize inserting logic with inline context. For example:
+  // * If no space before cursor, insert a space before inserting snippet.
+  // * If current line isn't empty, insert a new line before inserting snippet for kind Command or Listen.
   codeEditorCtx.ui.insertSnippet(props.item.insertText, range)
   codeEditorCtx.ui.editor.focus()
 }
@@ -72,7 +75,6 @@ function handleExplain() {
   display: flex;
   flex-direction: column;
   justify-content: stretch;
-  gap: 4px;
   border-radius: var(--ui-border-radius-1);
   transition: 0.2s;
   cursor: pointer;

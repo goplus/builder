@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { UIMenu, UIMenuGroup, UIMenuItem, UIDropdown } from '@/components/ui'
-import type { ContextMenuController, MenuData, MenuItem } from '.'
+import type { ContextMenuController, InternalMenuItem, MenuData } from '.'
 
 const props = defineProps<{
   controller: ContextMenuController
@@ -15,7 +15,7 @@ const pos = computed(() => {
   }
 })
 
-function handleItemClick(item: MenuItem) {
+function handleItemClick(item: InternalMenuItem) {
   props.controller.executeMenuItem(item)
 }
 </script>

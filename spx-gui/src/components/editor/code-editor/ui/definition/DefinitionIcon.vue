@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DefinitionKind } from '../../../common'
+import { DefinitionKind } from '../../common'
 import iconRead from './read.svg?raw'
 import iconEffect from './effect.svg?raw'
 import iconListen from './listen.svg?raw'
@@ -27,5 +27,10 @@ function getIcon(kind: DefinitionKind) {
   width: 16px;
   height: 16px;
   color: var(--ui-color-yellow-main);
+
+  &:deep(svg) {
+    width: 100%;
+    height: 100%;
+  }
 }
 </style>

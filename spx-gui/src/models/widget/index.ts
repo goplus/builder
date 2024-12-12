@@ -15,3 +15,7 @@ export function loadWidget(config: RawWidgetConfig) {
   if (config.type === 'monitor') return Monitor.load({ ...config, type: 'monitor' })
   throw new Error(`unknown widget type ${config.type}`)
 }
+
+export function isWidget(v: unknown): v is Widget {
+  return v instanceof Monitor // || ...
+}

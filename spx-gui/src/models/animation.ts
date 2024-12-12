@@ -46,7 +46,7 @@ export type RawAnimationConfig = {
 export class Animation extends Disposable {
   id: string
 
-  private sprite: Sprite | null = null
+  sprite: Sprite | null = null
   setSprite(sprite: Sprite | null) {
     this.sprite = sprite
   }
