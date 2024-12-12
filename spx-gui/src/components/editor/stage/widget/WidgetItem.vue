@@ -2,7 +2,7 @@
   <UIEditorWidgetItem :name="widget.name" :selected="selected">
     <template #icon>
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div v-html="monitorIcon"></div>
+      <div v-html="getIcon(widget)"></div>
     </template>
     <UICornerIcon v-if="selected" type="trash" color="stage" @click="handleRemove" />
   </UIEditorWidgetItem>
@@ -14,7 +14,7 @@ import { useMessageHandle } from '@/utils/exception'
 import type { Widget } from '@/models/widget'
 import type { Stage } from '@/models/stage'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
-import monitorIcon from './monitor.svg?raw'
+import { getIcon } from './icon'
 
 const props = defineProps<{
   stage: Stage

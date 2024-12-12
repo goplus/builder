@@ -18,7 +18,6 @@
       </UIMenu>
     </template>
     <template #details>
-      <SoundRecorderModal v-model:visible="recorderVisible" @saved="handleRecorded" />
       <PanelList>
         <UIEmpty v-if="sounds.length === 0" size="medium">
           {{ $t({ en: 'Click + to add sound', zh: '点击 + 号添加声音' }) }}
@@ -49,8 +48,7 @@ import { UIMenu, UIMenuItem, UIEmpty } from '@/components/ui'
 import { AssetType } from '@/apis/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import { Sound } from '@/models/sound'
-import SoundRecorderModal from '@/components/editor/sound/SoundRecorderModal.vue'
-import { useAddAssetFromLibrary, useAddSoundFromLocalFile } from '@/components/asset'
+import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import CommonPanel from '../common/CommonPanel.vue'
 import PanelList from '../common/PanelList.vue'
@@ -92,15 +90,11 @@ const handleAddFromAssetLibrary = useMessageHandle(() => addAssetFromLibrary(edi
   zh: '从素材库添加失败'
 }).fn
 
-const recorderVisible = ref(false)
-
-function handleRecord() {
-  recorderVisible.value = true
-}
-
-function handleRecorded(sound: Sound) {
-  editorCtx.project.select({ type: 'sound', id: sound.id })
-}
+const addSoundFromRecording = useAddSoundByRecording(true)
+const handleRecord = useMessageHandle(() => addSoundFromRecording(editorCtx.project), {
+  en: 'Failed to record sound',
+  zh: '录音失败'
+}).fn
 </script>
 
 <style scoped lang="scss"></style>

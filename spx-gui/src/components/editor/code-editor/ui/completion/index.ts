@@ -10,6 +10,7 @@ import {
 import type { CodeEditorUI } from '..'
 import { toMonacoRange, type monaco, positionEq } from '../common'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
+import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 
 export type CompletionContext = BaseContext
 
@@ -45,7 +46,7 @@ export class CompletionController extends Emitter<{
     super()
   }
 
-  widgetEl = document.createElement('div')
+  widgetEl = makeContentWidgetEl()
 
   private widget = {
     getId: () => `completion-for-${this.ui.id}`,

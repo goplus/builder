@@ -35,7 +35,6 @@ export class DiagnosticsController extends Disposable {
   }
 
   private lastTryCtrl: AbortController | null = null
-
   private tryRefreshDiagnostics() {
     const textDocument = this.ui.activeTextDocument
     const provider = this.providerRef.value

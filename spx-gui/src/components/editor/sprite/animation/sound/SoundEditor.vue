@@ -30,7 +30,6 @@
         </UIMenu>
       </UIDropdown>
     </ul>
-    <SoundRecorderModal v-model:visible="recorderVisible" @saved="handleRecorded" />
   </UIDropdownModal>
 </template>
 
@@ -40,11 +39,9 @@ import type { Animation } from '@/models/animation'
 import { UIDropdownModal, UIDropdown, UIMenu, UIMenuItem, UIBlockItem, UIIcon } from '@/components/ui'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import SoundItem from './SoundItem.vue'
-import { useAddAssetFromLibrary, useAddSoundFromLocalFile } from '@/components/asset'
-import SoundRecorderModal from '@/components/editor/sound/SoundRecorderModal.vue'
+import { useAddAssetFromLibrary, useAddSoundFromLocalFile, useAddSoundByRecording } from '@/components/asset'
 import { useMessageHandle } from '@/utils/exception'
 import { AssetType } from '@/apis/asset'
-import type { Sound } from '@/models/sound'
 
 const props = defineProps<{
   animation: Animation
@@ -83,13 +80,14 @@ const handleAddFromAssetLibrary = useMessageHandle(
   { en: 'Failed to add sound from asset library', zh: '从素材库添加失败' }
 ).fn
 
-const recorderVisible = ref(false)
-function handleRecord() {
-  recorderVisible.value = true
-}
-function handleRecorded(sound: Sound) {
-  selected.value = sound.id
-}
+const addSoundFromRecording = useAddSoundByRecording(false)
+const handleRecord = useMessageHandle(
+  async () => {
+    const sound = await addSoundFromRecording(editorCtx.project)
+    selected.value = sound.id
+  },
+  { en: 'Failed to record sound', zh: '录音失败' }
+).fn
 
 async function handleConfirm() {
   await editorCtx.project.history.doAction({ name: actionName }, () => props.animation.setSound(selected.value))
