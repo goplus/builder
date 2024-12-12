@@ -39,8 +39,8 @@ onStart => {
 		require.Len(t, mainSpxChanges, 1)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 2, Character: 13},
-				End:   Position{Line: 2, Character: 22},
+				Start: Position{Line: 1, Character: 12},
+				End:   Position{Line: 1, Character: 21},
 			},
 			NewText: "backdrop2",
 		})
@@ -49,8 +49,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 14},
-				End:   Position{Line: 3, Character: 23},
+				Start: Position{Line: 2, Character: 13},
+				End:   Position{Line: 2, Character: 22},
 			},
 			NewText: "backdrop2",
 		})
@@ -87,8 +87,8 @@ onStart => {
 		require.Len(t, mainSpxChanges, 1)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 2, Character: 20},
-				End:   Position{Line: 2, Character: 29},
+				Start: Position{Line: 1, Character: 19},
+				End:   Position{Line: 1, Character: 28},
 			},
 			NewText: "backdrop2",
 		})
@@ -129,16 +129,16 @@ onStart => {
 		// require.Len(t, mainSpxChanges, 2)
 		// assert.Contains(t, mainSpxChanges, TextEdit{
 		// 	Range: Range{
-		// 		Start: Position{Line: 2, Character: 33},
-		// 		End:   Position{Line: 2, Character: 42},
+		// 		Start: Position{Line: 1, Character: 32},
+		// 		End:   Position{Line: 1, Character: 41},
 		// 	},
 		// 	NewText: "backdrop2",
 		// })
 		require.Len(t, mainSpxChanges, 1)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 13},
-				End:   Position{Line: 3, Character: 22},
+				Start: Position{Line: 2, Character: 12},
+				End:   Position{Line: 2, Character: 21},
 			},
 			NewText: "backdrop2",
 		})
@@ -147,8 +147,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 14},
-				End:   Position{Line: 3, Character: 23},
+				Start: Position{Line: 2, Character: 13},
+				End:   Position{Line: 2, Character: 22},
 			},
 			NewText: "backdrop2",
 		})
@@ -211,15 +211,15 @@ onStart => {
 		require.Len(t, mainSpxChanges, 2)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 8},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 7},
 			},
 			NewText: "Sound2",
 		})
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 5, Character: 7},
-				End:   Position{Line: 5, Character: 13},
+				Start: Position{Line: 4, Character: 6},
+				End:   Position{Line: 4, Character: 12},
 			},
 			NewText: "Sound2",
 		})
@@ -228,8 +228,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 7},
-				End:   Position{Line: 3, Character: 13},
+				Start: Position{Line: 2, Character: 6},
+				End:   Position{Line: 2, Character: 12},
 			},
 			NewText: "Sound2",
 		})
@@ -293,15 +293,15 @@ onStart => {
 		require.Len(t, mainSpxChanges, 2)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 9},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
 			},
 			NewText: "Sprite2",
 		})
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 5, Character: 1},
-				End:   Position{Line: 5, Character: 8},
+				Start: Position{Line: 4, Character: 0},
+				End:   Position{Line: 4, Character: 7},
 			},
 			NewText: "Sprite2",
 		})
@@ -310,8 +310,8 @@ onStart => {
 		require.Len(t, sprite1SpxChanges, 1)
 		assert.Contains(t, sprite1SpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 9},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
 			},
 			NewText: "Sprite2",
 		})
@@ -350,22 +350,22 @@ onStart => {
 		require.Len(t, mainSpxChanges, 3)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 9},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
 			},
 			NewText: "Sprite2",
 		})
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 10},
-				End:   Position{Line: 3, Character: 17},
+				Start: Position{Line: 2, Character: 9},
+				End:   Position{Line: 2, Character: 16},
 			},
 			NewText: "Sprite2",
 		})
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 5, Character: 1},
-				End:   Position{Line: 5, Character: 8},
+				Start: Position{Line: 4, Character: 0},
+				End:   Position{Line: 4, Character: 7},
 			},
 			NewText: "Sprite2",
 		})
@@ -374,8 +374,8 @@ onStart => {
 		require.Len(t, sprite1SpxChanges, 1)
 		assert.Contains(t, sprite1SpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 9},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
 			},
 			NewText: "Sprite2",
 		})
@@ -454,8 +454,8 @@ onStart => {
 		require.Len(t, mainSpxChanges, 1)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 5, Character: 22},
-				End:   Position{Line: 5, Character: 30},
+				Start: Position{Line: 4, Character: 21},
+				End:   Position{Line: 4, Character: 29},
 			},
 			NewText: "costume2",
 		})
@@ -464,8 +464,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 14},
-				End:   Position{Line: 3, Character: 22},
+				Start: Position{Line: 2, Character: 13},
+				End:   Position{Line: 2, Character: 21},
 			},
 			NewText: "costume2",
 		})
@@ -566,8 +566,8 @@ onStart => {
 		require.Len(t, mainSpxChanges, 1)
 		assert.Contains(t, mainSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 5, Character: 19},
-				End:   Position{Line: 5, Character: 24},
+				Start: Position{Line: 4, Character: 18},
+				End:   Position{Line: 4, Character: 23},
 			},
 			NewText: "anim2",
 		})
@@ -576,8 +576,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 11},
-				End:   Position{Line: 3, Character: 16},
+				Start: Position{Line: 2, Character: 10},
+				End:   Position{Line: 2, Character: 15},
 			},
 			NewText: "anim2",
 		})
@@ -674,8 +674,8 @@ onStart => {
 		require.Len(t, mySpriteSpxChanges, 1)
 		assert.Contains(t, mySpriteSpxChanges, TextEdit{
 			Range: Range{
-				Start: Position{Line: 3, Character: 22},
-				End:   Position{Line: 3, Character: 29},
+				Start: Position{Line: 2, Character: 21},
+				End:   Position{Line: 2, Character: 28},
 			},
 			NewText: "widget2",
 		})

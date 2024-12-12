@@ -42,8 +42,8 @@ onStart => {
 		require.Len(t, linksForMainSpx, 2)
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 3, Character: 2},
-				End:   Position{Line: 3, Character: 9},
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
 			},
 			Target: toURI("spx://resources/sounds/MySound"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -52,8 +52,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 4, Character: 2},
-				End:   Position{Line: 4, Character: 10},
+				Start: Position{Line: 3, Character: 1},
+				End:   Position{Line: 3, Character: 9},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -69,8 +69,8 @@ onStart => {
 		require.Len(t, linksForMySpriteSpx, 7)
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 4, Character: 13},
-				End:   Position{Line: 4, Character: 24},
+				Start: Position{Line: 3, Character: 12},
+				End:   Position{Line: 3, Character: 23},
 			},
 			Target: toURI("spx://resources/backdrops/backdrop1"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -79,8 +79,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 3, Character: 7},
-				End:   Position{Line: 3, Character: 15},
+				Start: Position{Line: 2, Character: 6},
+				End:   Position{Line: 2, Character: 14},
 			},
 			Target: toURI("spx://resources/sounds/sound1"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -89,8 +89,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 5, Character: 2},
-				End:   Position{Line: 5, Character: 10},
+				Start: Position{Line: 4, Character: 1},
+				End:   Position{Line: 4, Character: 9},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -99,8 +99,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 6, Character: 2},
-				End:   Position{Line: 6, Character: 10},
+				Start: Position{Line: 5, Character: 1},
+				End:   Position{Line: 5, Character: 9},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -109,8 +109,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 6, Character: 19},
-				End:   Position{Line: 6, Character: 26},
+				Start: Position{Line: 5, Character: 18},
+				End:   Position{Line: 5, Character: 25},
 			},
 			Target: toURI("spx://resources/sprites/MySprite/animations/anim1"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -119,8 +119,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 5, Character: 22},
-				End:   Position{Line: 5, Character: 32},
+				Start: Position{Line: 4, Character: 21},
+				End:   Position{Line: 4, Character: 31},
 			},
 			Target: toURI("spx://resources/sprites/MySprite/costumes/costume1"),
 			Data: SpxResourceRefDocumentLinkData{
@@ -129,8 +129,8 @@ onStart => {
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
-				Start: Position{Line: 7, Character: 21},
-				End:   Position{Line: 7, Character: 30},
+				Start: Position{Line: 6, Character: 20},
+				End:   Position{Line: 6, Character: 29},
 			},
 			Target: toURI("spx://resources/widgets/widget1"),
 			Data: SpxResourceRefDocumentLinkData{

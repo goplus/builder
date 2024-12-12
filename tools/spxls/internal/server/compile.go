@@ -124,6 +124,61 @@ func (r *compileResult) findDirectScopesAt(pos token.Pos) []*types.Scope {
 	})
 }
 
+// objectAtFilePosition returns the object at the given position in the given file.
+func (r *compileResult) objectAtFilePosition(astFile *gopast.File, position Position) types.Object {
+	tokenPos := r.fset.Position(astFile.Pos())
+	tokenPos.Line = int(position.Line) + 1
+	tokenPos.Column = int(position.Character) + 1
+
+	var obj types.Object
+	gopast.Inspect(astFile, func(node gopast.Node) bool {
+		ident, ok := node.(*gopast.Ident)
+		if !ok {
+			return true
+		}
+		identPos := r.fset.Position(ident.Pos())
+		identEnd := r.fset.Position(ident.End())
+		if tokenPos.Line != identPos.Line ||
+			tokenPos.Column < identPos.Column ||
+			tokenPos.Column > identEnd.Column {
+			return true
+		}
+
+		obj = r.typeInfo.ObjectOf(ident)
+		return obj == nil
+	})
+	return obj
+}
+
+// rangeTypeDecls iterates over all type declarations in the main package and
+// calls the given function for each type declaration.
+func (r *compileResult) rangeTypeDecls(f func(*gopast.TypeSpec, types.Object) error) error {
+	for _, file := range r.mainPkgFiles {
+		for _, decl := range file.Decls {
+			typeDecl, ok := decl.(*gopast.GenDecl)
+			if !ok || typeDecl.Tok != goptoken.TYPE {
+				continue
+			}
+
+			for _, spec := range typeDecl.Specs {
+				typeSpec, ok := spec.(*gopast.TypeSpec)
+				if !ok {
+					continue
+				}
+				typeName := r.typeInfo.ObjectOf(typeSpec.Name)
+				if typeName == nil {
+					continue
+				}
+
+				if err := f(typeSpec, typeName); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // addSpxResourceRef adds a spx resource reference to the compile result.
 func (r *compileResult) addSpxResourceRef(refKey SpxResourceRefKey, node gopast.Node, kind SpxResourceRefKind) {
 	if !slices.Contains(r.spxResourceRefs[refKey], SpxResourceRef{Node: node, Kind: kind}) {
@@ -308,6 +363,22 @@ func (s *Server) compile() (*compileResult, error) {
 	s.inspectForSpxResourceAutoBindingsAndRefsAtDecls(result)
 	s.inspectForSpxResourceRefs(result)
 	return result, nil
+}
+
+// compileAndGetASTFileForDocumentURI handles common compilation and file
+// retrieval logic for a given document URI. The returned astFile is probably
+// nil even if the compilation succeeded.
+func (s *Server) compileAndGetASTFileForDocumentURI(uri DocumentURI) (result *compileResult, spxFile string, astFile *gopast.File, err error) {
+	result, err = s.compile()
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("failed to compile: %w", err)
+	}
+	spxFile, err = s.fromDocumentURI(uri)
+	if err != nil {
+		return nil, "", nil, fmt.Errorf("failed to get spx file from document URI %q: %w", uri, err)
+	}
+	astFile = result.mainPkgFiles[spxFile]
+	return
 }
 
 // inspectForSpxResourceRootDir inspects for spx resource root directory in

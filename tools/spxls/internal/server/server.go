@@ -9,6 +9,8 @@ import (
 
 	"github.com/goplus/builder/tools/spxls/internal"
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
+	gopast "github.com/goplus/gop/ast"
+	goptoken "github.com/goplus/gop/token"
 )
 
 // MessageReplier is an interface for sending messages back to the client.
@@ -105,31 +107,41 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentDeclaration(&params)
+		})
 	case "textDocument/definition":
 		var params DefinitionParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentDefinition(&params)
+		})
 	case "textDocument/typeDefinition":
 		var params TypeDefinitionParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentTypeDefinition(&params)
+		})
 	case "textDocument/implementation":
 		var params ImplementationParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentImplementation(&params)
+		})
 	case "textDocument/references":
 		var params ReferenceParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentReferences(&params)
+		})
 	case "textDocument/documentHighlight":
 		var params DocumentHighlightParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -353,4 +365,28 @@ func (s *Server) spxFiles() ([]string, error) {
 		files = append(files, entry.Name())
 	}
 	return files, nil
+}
+
+// createLocationFromPos creates a Location from a position.
+func (s *Server) createLocationFromPos(fset *goptoken.FileSet, pos goptoken.Pos) Location {
+	position := fset.Position(pos)
+	return Location{
+		URI: s.toDocumentURI(position.Filename),
+		Range: Range{
+			Start: FromGopTokenPosition(position),
+			End:   FromGopTokenPosition(position),
+		},
+	}
+}
+
+// createLocationFromIdent creates a Location from an ident position.
+func (s *Server) createLocationFromIdent(fset *goptoken.FileSet, ident *gopast.Ident) Location {
+	startPos := fset.Position(ident.Pos())
+	return Location{
+		URI: s.toDocumentURI(startPos.Filename),
+		Range: Range{
+			Start: FromGopTokenPosition(startPos),
+			End:   FromGopTokenPosition(fset.Position(ident.End())),
+		},
+	}
 }
