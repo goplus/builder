@@ -46,6 +46,9 @@ onStart => {
 				End:   Position{Line: 3, Character: 9},
 			},
 			Target: toURI("spx://resources/sounds/MySound"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindAutoBinding,
+			},
 		})
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
@@ -53,6 +56,9 @@ onStart => {
 				End:   Position{Line: 4, Character: 10},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindAutoBinding,
+			},
 		})
 
 		paramsForMySpriteSpx := &DocumentLinkParams{
@@ -67,6 +73,9 @@ onStart => {
 				End:   Position{Line: 4, Character: 24},
 			},
 			Target: toURI("spx://resources/backdrops/backdrop1"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindStringLiteral,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -74,6 +83,9 @@ onStart => {
 				End:   Position{Line: 3, Character: 15},
 			},
 			Target: toURI("spx://resources/sounds/sound1"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindStringLiteral,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -81,6 +93,9 @@ onStart => {
 				End:   Position{Line: 5, Character: 10},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindAutoBindingReference,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -88,6 +103,9 @@ onStart => {
 				End:   Position{Line: 6, Character: 10},
 			},
 			Target: toURI("spx://resources/sprites/MySprite"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindAutoBindingReference,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -95,6 +113,9 @@ onStart => {
 				End:   Position{Line: 6, Character: 26},
 			},
 			Target: toURI("spx://resources/sprites/MySprite/animations/anim1"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindStringLiteral,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -102,6 +123,9 @@ onStart => {
 				End:   Position{Line: 5, Character: 32},
 			},
 			Target: toURI("spx://resources/sprites/MySprite/costumes/costume1"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindStringLiteral,
+			},
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
@@ -109,6 +133,9 @@ onStart => {
 				End:   Position{Line: 7, Character: 30},
 			},
 			Target: toURI("spx://resources/widgets/widget1"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindStringLiteral,
+			},
 		})
 	})
 

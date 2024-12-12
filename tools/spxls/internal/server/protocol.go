@@ -52,6 +52,7 @@ type SpxResourceURI string
 // SpxGetDefinitionsParams represents parameters to get definitions at a
 // specific position in a document.
 type SpxGetDefinitionsParams struct {
+	// The text document position params.
 	TextDocumentPositionParams
 }
 
@@ -77,6 +78,13 @@ type SpxDefinitionIdentifier struct {
 
 	// Index in overloads.
 	OverloadIndex *int `json:"overloadIndex,omitempty"`
+}
+
+// SpxResourceRefDocumentLinkData represents data for a spx resource reference
+// document link.
+type SpxResourceRefDocumentLinkData struct {
+	// The kind of the spx resource reference.
+	Kind SpxResourceRefKind `json:"kind"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////

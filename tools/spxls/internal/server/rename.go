@@ -15,11 +15,11 @@ import (
 // matching the reference key.
 func (s *Server) spxRenameResourceAtRefs(result *compileResult, refKey SpxResourceRefKey, newName string) map[DocumentURI][]TextEdit {
 	changes := make(map[DocumentURI][]TextEdit)
-	for _, node := range result.spxResourceRefs[refKey] {
-		startPos := result.fset.Position(node.Pos())
-		endPos := result.fset.Position(node.End())
+	for _, ref := range result.spxResourceRefs[refKey] {
+		startPos := result.fset.Position(ref.Node.Pos())
+		endPos := result.fset.Position(ref.Node.End())
 
-		if expr, ok := node.(gopast.Expr); ok && types.AssignableTo(result.typeInfo.TypeOf(expr), types.Typ[types.String]) {
+		if expr, ok := ref.Node.(gopast.Expr); ok && types.AssignableTo(result.typeInfo.TypeOf(expr), types.Typ[types.String]) {
 			if ident, ok := expr.(*gopast.Ident); ok {
 				// It has to be a constant. So we must find its declaration site and
 				// use the position of its value instead.

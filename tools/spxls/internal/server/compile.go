@@ -65,7 +65,7 @@ type compileResult struct {
 	typeInfo *goptypesutil.Info
 
 	// spxResourceRefs stores spx resource references.
-	spxResourceRefs map[SpxResourceRefKey][]gopast.Node
+	spxResourceRefs map[SpxResourceRefKey][]SpxResourceRef
 
 	// spxSoundResourceAutoBindings stores spx sound resource auto-bindings.
 	spxSoundResourceAutoBindings []types.Object
@@ -125,9 +125,9 @@ func (r *compileResult) findDirectScopesAt(pos token.Pos) []*types.Scope {
 }
 
 // addSpxResourceRef adds a spx resource reference to the compile result.
-func (r *compileResult) addSpxResourceRef(refKey SpxResourceRefKey, node gopast.Node) {
-	if !slices.Contains(r.spxResourceRefs[refKey], node) {
-		r.spxResourceRefs[refKey] = append(r.spxResourceRefs[refKey], node)
+func (r *compileResult) addSpxResourceRef(refKey SpxResourceRefKey, node gopast.Node, kind SpxResourceRefKind) {
+	if !slices.Contains(r.spxResourceRefs[refKey], SpxResourceRef{Node: node, Kind: kind}) {
+		r.spxResourceRefs[refKey] = append(r.spxResourceRefs[refKey], SpxResourceRef{Node: node, Kind: kind})
 	}
 }
 
@@ -191,7 +191,7 @@ func (s *Server) compile() (*compileResult, error) {
 			Selections: make(map[*gopast.SelectorExpr]*types.Selection),
 			Scopes:     make(map[gopast.Node]*types.Scope),
 		},
-		spxResourceRefs: make(map[SpxResourceRefKey][]gopast.Node),
+		spxResourceRefs: make(map[SpxResourceRefKey][]SpxResourceRef),
 		diagnostics:     make(map[DocumentURI][]Diagnostic, len(spxFiles)),
 	}
 
@@ -418,14 +418,14 @@ func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compile
 					switch {
 					case isSpxSoundResourceAutoBinding:
 						refKey := SpxSoundResourceRefKey{SoundName: ident.Name}
-						result.addSpxResourceRef(refKey, ident)
+						result.addSpxResourceRef(refKey, ident, SpxResourceRefKindAutoBinding)
 						result.addSpxSoundResourceAutoBinding(obj)
 						if _, err := s.getSpxSoundResource(ident.Name); err != nil {
 							subDiags = collectDiagnosticsFromGetSpxResourceError(err, SpxResourceTypeSound, ident.Name, identRange)
 						}
 					case isSpxSpriteResourceAutoBinding:
 						refKey := SpxSpriteResourceRefKey{SpriteName: ident.Name}
-						result.addSpxResourceRef(refKey, ident)
+						result.addSpxResourceRef(refKey, ident, SpxResourceRefKindAutoBinding)
 						result.addSpxSpriteResourceAutoBinding(obj)
 						if _, err := s.getSpxSpriteResource(ident.Name); err != nil {
 							subDiags = collectDiagnosticsFromGetSpxResourceError(err, SpxResourceTypeSprite, ident.Name, identRange)
@@ -592,7 +592,11 @@ func (s *Server) inspectSpxBackdropResourceRefAtExpr(result *compileResult, expr
 	if !ok || !ri.validateResourceName(spxBackdropName, SpxResourceTypeBackdrop) {
 		return nil
 	}
-	ri.result.addSpxResourceRef(SpxBackdropResourceRefKey{BackdropName: spxBackdropName}, expr)
+	spxResourceRefKind := SpxResourceRefKindStringLiteral
+	if _, ok := expr.(*gopast.Ident); ok {
+		spxResourceRefKind = SpxResourceRefKindConstantReference
+	}
+	ri.result.addSpxResourceRef(SpxBackdropResourceRefKey{BackdropName: spxBackdropName}, expr, spxResourceRefKind)
 
 	spxBackdropResource, err := s.getSpxBackdropResource(spxBackdropName)
 	if err != nil {
@@ -632,7 +636,7 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 						return nil
 					}
 					spxSpriteName = obj.Name()
-					ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, fun.X)
+					ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, fun.X, SpxResourceRefKindAutoBindingReference)
 				}
 			}
 		}
@@ -645,12 +649,17 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			return nil
 		}
 	} else {
+		var spxResourceRefKind SpxResourceRefKind
 		switch ri.getTypeName() {
 		case spxSpriteNameTypeName:
 			var ok bool
 			spxSpriteName, ok = ri.getStringResourceName(spxSpriteNameTypeName)
 			if !ok {
 				return nil
+			}
+			spxResourceRefKind = SpxResourceRefKindStringLiteral
+			if _, ok := expr.(*gopast.Ident); ok {
+				spxResourceRefKind = SpxResourceRefKindConstantReference
 			}
 		case spxSpriteTypeName:
 			ident, ok := expr.(*gopast.Ident)
@@ -670,13 +679,14 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 				return nil
 			}
 			spxSpriteName = obj.Name()
+			spxResourceRefKind = SpxResourceRefKindAutoBindingReference
 		default:
 			return nil
 		}
 		if !ri.validateResourceName(spxSpriteName, SpxResourceTypeSprite) {
 			return nil
 		}
-		ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, expr)
+		ri.result.addSpxResourceRef(SpxSpriteResourceRefKey{SpriteName: spxSpriteName}, expr, spxResourceRefKind)
 	}
 
 	spxSpriteResource, err := s.getSpxSpriteResource(spxSpriteName)
@@ -694,13 +704,20 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
 	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
 
-	var spxSpriteCostumeName string
+	var (
+		spxSpriteCostumeName string
+		spxResourceRefKind   SpxResourceRefKind
+	)
 	switch ri.getTypeName() {
 	case spxSpriteCostumeNameTypeName:
 		var ok bool
 		spxSpriteCostumeName, ok = ri.getStringResourceName(spxSpriteCostumeNameTypeName)
 		if !ok {
 			return nil
+		}
+		spxResourceRefKind = SpxResourceRefKindStringLiteral
+		if _, ok := expr.(*gopast.Ident); ok {
+			spxResourceRefKind = SpxResourceRefKindConstantReference
 		}
 	default:
 		return nil
@@ -711,7 +728,7 @@ func (s *Server) inspectSpxSpriteCostumeResourceRefAtExpr(result *compileResult,
 	ri.result.addSpxResourceRef(SpxSpriteCostumeResourceRefKey{
 		SpriteName:  spxSpriteResource.Name,
 		CostumeName: spxSpriteCostumeName,
-	}, expr)
+	}, expr, spxResourceRefKind)
 
 	idx := slices.IndexFunc(spxSpriteResource.Costumes, func(c SpxSpriteCostumeResource) bool {
 		return c.Name == spxSpriteCostumeName
@@ -734,13 +751,20 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
 	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
 
-	var spxSpriteAnimationName string
+	var (
+		spxSpriteAnimationName string
+		spxResourceRefKind     SpxResourceRefKind
+	)
 	switch ri.getTypeName() {
 	case spxSpriteAnimationNameTypeName:
 		var ok bool
 		spxSpriteAnimationName, ok = ri.getStringResourceName(spxSpriteAnimationNameTypeName)
 		if !ok {
 			return nil
+		}
+		spxResourceRefKind = SpxResourceRefKindStringLiteral
+		if _, ok := expr.(*gopast.Ident); ok {
+			spxResourceRefKind = SpxResourceRefKindConstantReference
 		}
 	default:
 		return nil
@@ -751,7 +775,7 @@ func (s *Server) inspectSpxSpriteAnimationResourceRefAtExpr(result *compileResul
 	ri.result.addSpxResourceRef(SpxSpriteAnimationResourceRefKey{
 		SpriteName:    spxSpriteResource.Name,
 		AnimationName: spxSpriteAnimationName,
-	}, expr)
+	}, expr, spxResourceRefKind)
 
 	idx := slices.IndexFunc(spxSpriteResource.Animations, func(a SpxSpriteAnimationResource) bool {
 		return a.Name == spxSpriteAnimationName
@@ -774,13 +798,20 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
 	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
 
-	var spxSoundName string
+	var (
+		spxSoundName       string
+		spxResourceRefKind SpxResourceRefKind
+	)
 	switch ri.getTypeName() {
 	case spxSoundNameTypeName:
 		var ok bool
 		spxSoundName, ok = ri.getStringResourceName(spxSoundNameTypeName)
 		if !ok {
 			return nil
+		}
+		spxResourceRefKind = SpxResourceRefKindStringLiteral
+		if _, ok := expr.(*gopast.Ident); ok {
+			spxResourceRefKind = SpxResourceRefKindConstantReference
 		}
 	case spxSoundTypeName:
 		ident, ok := expr.(*gopast.Ident)
@@ -800,13 +831,14 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 			return nil
 		}
 		spxSoundName = obj.Name()
+		spxResourceRefKind = SpxResourceRefKindAutoBindingReference
 	default:
 		return nil
 	}
 	if !ri.validateResourceName(spxSoundName, SpxResourceTypeSound) {
 		return nil
 	}
-	ri.result.addSpxResourceRef(SpxSoundResourceRefKey{SoundName: spxSoundName}, expr)
+	ri.result.addSpxResourceRef(SpxSoundResourceRefKey{SoundName: spxSoundName}, expr, spxResourceRefKind)
 
 	spxSoundResource, err := s.getSpxSoundResource(spxSoundName)
 	if err != nil {
@@ -823,7 +855,10 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 	documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
 	ri := newSpxResourceInspector(result, documentURI, expr, declaredType)
 
-	var spxWidgetName string
+	var (
+		spxWidgetName      string
+		spxResourceRefKind SpxResourceRefKind
+	)
 	switch ri.getTypeName() {
 	case spxWidgetNameTypeName:
 		var ok bool
@@ -831,13 +866,17 @@ func (s *Server) inspectSpxWidgetResourceRefAtExpr(result *compileResult, expr g
 		if !ok {
 			return nil
 		}
+		spxResourceRefKind = SpxResourceRefKindStringLiteral
+		if _, ok := expr.(*gopast.Ident); ok {
+			spxResourceRefKind = SpxResourceRefKindConstantReference
+		}
 	default:
 		return nil
 	}
 	if !ri.validateResourceName(spxWidgetName, SpxResourceTypeWidget) {
 		return nil
 	}
-	ri.result.addSpxResourceRef(SpxWidgetResourceRefKey{WidgetName: spxWidgetName}, expr)
+	ri.result.addSpxResourceRef(SpxWidgetResourceRefKey{WidgetName: spxWidgetName}, expr, spxResourceRefKind)
 
 	spxWidgetResource, err := s.getSpxWidgetResource(spxWidgetName)
 	if err != nil {

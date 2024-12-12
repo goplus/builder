@@ -217,3 +217,31 @@ interface SpxDefinitionIdentifier {
   overloadIndex?: number;
 }
 ```
+
+## Other JSON structures
+
+### Document link data types
+
+```typescript
+/**
+ * The data of a spx resource reference DocumentLink.
+ */
+interface SpxResourceRefDocumentLinkData {
+  /**
+   * The kind of the spx resource reference.
+   */
+  kind: SpxResourceRefKind
+}
+```
+
+```typescript
+/**
+ * The kind of the spx resource reference.
+ *
+ * - stringLiteral: String literal as a resource-reference, e.g., `play "explosion"`
+ * - autoBinding: Auto-binding variable as a resource-reference, e.g., `var explosion Sound`
+ * - autoBindingReference: Reference for auto-binding variable as a resource-reference, e.g., `play explosion`
+ * - constantReference: Reference for constant as a resource-reference, e.g., `play EXPLOSION` (`EXPLOSION` is a constant)
+ */
+type SpxResourceRefKind = 'stringLiteral' | 'autoBinding' | 'autoBindingReference' | 'constantReference'
+```

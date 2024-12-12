@@ -26,7 +26,7 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]Documen
 	var links []DocumentLink
 	for refKey, refs := range result.spxResourceRefs {
 		for _, ref := range refs {
-			startPos := result.fset.Position(ref.Pos())
+			startPos := result.fset.Position(ref.Node.Pos())
 			if startPos.Filename != spxFile {
 				continue
 			}
@@ -34,9 +34,12 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]Documen
 			links = append(links, DocumentLink{
 				Range: Range{
 					Start: FromGopTokenPosition(startPos),
-					End:   FromGopTokenPosition(result.fset.Position(ref.End())),
+					End:   FromGopTokenPosition(result.fset.Position(ref.Node.End())),
 				},
 				Target: &target,
+				Data: SpxResourceRefDocumentLinkData{
+					Kind: ref.Kind,
+				},
 			})
 		}
 	}
