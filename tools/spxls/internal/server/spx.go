@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
+
+	gopast "github.com/goplus/gop/ast"
 )
 
 // SpxResourceType is the type of a spx resource.
@@ -21,6 +23,27 @@ const (
 	SpxResourceTypeWidget    SpxResourceType = "widget"
 )
 
+// SpxResourceRefKey is the key of a spx resource reference.
+type SpxResourceRefKey interface {
+	URI() SpxResourceURI
+}
+
+// SpxResourceRef is a reference to a spx resource.
+type SpxResourceRef struct {
+	Node gopast.Node
+	Kind SpxResourceRefKind
+}
+
+// SpxResourceRefKind is the kind of a spx resource reference.
+type SpxResourceRefKind string
+
+const (
+	SpxResourceRefKindStringLiteral        SpxResourceRefKind = "stringLiteral"
+	SpxResourceRefKindAutoBinding          SpxResourceRefKind = "autoBinding"
+	SpxResourceRefKindAutoBindingReference SpxResourceRefKind = "autoBindingReference"
+	SpxResourceRefKindConstantReference    SpxResourceRefKind = "constantReference"
+)
+
 // readSpxResourceFile reads and returns the content of a resource file from the spx workspace.
 func (s *Server) readSpxResourceFile(subPath string) ([]byte, error) {
 	spxResourceRootDir := s.spxResourceRootDir
@@ -28,11 +51,6 @@ func (s *Server) readSpxResourceFile(subPath string) ([]byte, error) {
 		spxResourceRootDir = "assets"
 	}
 	return fs.ReadFile(s.workspaceRootFS, path.Join(spxResourceRootDir, subPath))
-}
-
-// SpxResourceRefKey is the key of a spx resource reference.
-type SpxResourceRefKey interface {
-	URI() SpxResourceURI
 }
 
 // ParseSpxResourceURI parses a spx resource URI and returns the corresponding
