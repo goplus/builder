@@ -28,6 +28,7 @@ import {
 } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
 import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
+import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
 import { type ICodeEditorUI, CodeEditorUI } from '.'
 import MonacoEditorComp from './MonacoEditor.vue'
@@ -37,6 +38,7 @@ import CompletionUI from './completion/CompletionUI.vue'
 import CopilotUI from './copilot/CopilotUI.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
+import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 import type { Monaco, MonacoEditor, monaco } from './common'
 
 const props = defineProps<{
@@ -47,12 +49,14 @@ const emit = defineEmits<{
   init: [ui: ICodeEditorUI]
 }>()
 
-const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project))
+const i18n = useI18n()
+const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project, i18n))
 
 const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   language: 'spx',
   theme,
-  tabSize
+  tabSize,
+  contextmenu: false
 }
 const highlighterComputed = useAsyncComputed(getHighlighter)
 
@@ -61,6 +65,7 @@ async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor, edit
     id: 'spx'
   })
   const highlighter = await untilNotNull(highlighterComputed)
+  // TODO: this causes extra-padding issue when rendering selection
   shikiToMonaco(highlighter, monaco)
 
   // copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
@@ -233,6 +238,7 @@ watchEffect((onCleanup) => {
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
+    <ContextMenuUI :controller="uiRef.contextMenuController" />
   </div>
 </template>
 

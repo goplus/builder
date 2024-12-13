@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Emitter from '@/utils/emitter'
+import { useI18n } from '@/utils/i18n'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
@@ -13,7 +14,10 @@ import {
   type ResourceReference,
   type ResourceReferencesContext,
   builtInCommandCopilotExplain,
-  ChatExplainKind
+  ChatExplainKind,
+  type ChatExplainTargetCodeSegment,
+  builtInCommandCopilotReview,
+  type ChatTopicReview
 } from './ui'
 import {
   makeBasicMarkdownString,
@@ -25,7 +29,8 @@ import {
   makeAdvancedMarkdownString,
   stringifyDefinitionId,
   DiagnosticSeverity,
-  ResourceReferenceKind
+  ResourceReferenceKind,
+  selection2Range
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -37,6 +42,7 @@ const allItems = Object.values({
 })
 const allIds = allItems.map((item) => item.definition)
 
+const i18n = useI18n()
 const editorCtx = useEditorCtx()
 
 function handleUIInit(ui: ICodeEditorUI) {
@@ -73,13 +79,56 @@ function handleUIInit(ui: ICodeEditorUI) {
   })
 
   ui.registerContextMenuProvider({
-    async provideContextMenu(ctx, position) {
-      console.warn('TODO', ctx, position)
-      return []
+    async provideContextMenu({ textDocument }, position) {
+      const word = textDocument.getWordAtPosition(position)
+      if (word == null) return []
+      const wordStart = { ...position, column: word.startColumn }
+      const wordEnd = { ...position, column: word.endColumn }
+      const explainTarget: ChatExplainTargetCodeSegment = {
+        kind: ChatExplainKind.CodeSegment,
+        codeSegment: {
+          // TODO: use definition info from LS and explain definition instead of code-segment
+          textDocument: textDocument.id,
+          range: { start: wordStart, end: wordEnd },
+          content: word.word
+        }
+      }
+      return [
+        {
+          title: i18n.t({ en: 'Explain', zh: '解释' }),
+          command: builtInCommandCopilotExplain,
+          arguments: [explainTarget]
+        }
+      ]
     },
-    async provideSelectionContextMenu(ctx, selection) {
-      console.warn('TODO', ctx, selection)
-      return []
+    async provideSelectionContextMenu({ textDocument }, selection) {
+      const range = selection2Range(selection)
+      const code = textDocument.getValueInRange(range)
+      const explainTarget: ChatExplainTargetCodeSegment = {
+        kind: ChatExplainKind.CodeSegment,
+        codeSegment: {
+          textDocument: textDocument.id,
+          range,
+          content: code
+        }
+      }
+      const reviewTarget: Omit<ChatTopicReview, 'kind'> = {
+        textDocument: textDocument.id,
+        range,
+        code
+      }
+      return [
+        {
+          title: i18n.t({ en: 'Explain', zh: '解释' }),
+          command: builtInCommandCopilotExplain,
+          arguments: [explainTarget]
+        },
+        {
+          title: i18n.t({ en: 'Review', zh: '审查' }),
+          command: builtInCommandCopilotReview,
+          arguments: [reviewTarget]
+        }
+      ]
     }
   })
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { UITooltip } from '@/components/ui'
+import { selection2Range } from '../../common'
 import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import { ChatExplainKind, builtInCommandCopilotExplain } from '..'
-import { getSelectionRange } from '../common'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import type { APIReferenceItem } from '.'
 
@@ -18,7 +18,7 @@ function handleInsert() {
   const startPosition = { line: 1, column: 1 }
   let range = { start: startPosition, end: startPosition }
   if (codeEditorCtx.ui.selection != null) {
-    range = getSelectionRange(codeEditorCtx.ui.selection)
+    range = selection2Range(codeEditorCtx.ui.selection)
   }
   codeEditorCtx.ui.insertSnippet(props.item.insertText, range)
   codeEditorCtx.ui.editor.focus()

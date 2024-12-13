@@ -2,6 +2,7 @@ import { uniqueId } from 'lodash'
 import { ref, shallowRef, watchEffect } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
+import type { I18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
 import {
   type Command,
@@ -19,7 +20,13 @@ import { ResourceReferenceController, type IResourceReferencesProvider } from '.
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
-import { CopilotController, type ICopilot, ChatTopicKind, type ChatTopicExplainTarget } from './copilot'
+import {
+  CopilotController,
+  type ICopilot,
+  ChatTopicKind,
+  type ChatTopicExplainTarget,
+  type ChatTopicReview
+} from './copilot'
 import type { IFormattingEditProvider } from './formatting'
 import {
   type Monaco,
@@ -72,10 +79,14 @@ export interface ICodeEditorUI {
 
 export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'spx.copilot.inspire'
 export const builtInCommandCopilotExplain: Command<[target: ChatTopicExplainTarget], void> = 'spx.copilot.explain'
+export const builtInCommandCopilotReview: Command<[target: Omit<ChatTopicReview, 'kind'>], void> = 'spx.copilot.review'
 export const builtInCommandCopilotFixProblem: Command<
   [{ textDocument: TextDocumentIdentifier; problem: Diagnostic }],
   void
 > = 'spx.copilot.fixProblem'
+export const builtInCommandCopy: Command<[], void> = 'editor.action.copy'
+export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
+export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
 // const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
 // const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
 // const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'
@@ -91,7 +102,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.resourceReferenceController.registerProvider(provider)
   }
   registerContextMenuProvider(provider: IContextMenuProvider): void {
-    console.warn('TODO', provider)
+    this.contextMenuController.registerProvider(provider)
   }
   registerDiagnosticsProvider(provider: IDiagnosticsProvider): void {
     this.diagnosticsController.registerProvider(provider)
@@ -133,7 +144,10 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.editor.focus()
   }
 
-  constructor(public project: Project) {
+  constructor(
+    public project: Project,
+    public i18n: I18n
+  ) {
     super()
   }
 
@@ -289,10 +303,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
     this.registerCommand(builtInCommandCopilotInspire, {
       icon: 'TODO',
-      title: {
-        en: 'Ask copilot',
-        zh: '向 Copilot 提问'
-      },
+      title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
         this.copilotController.startChat({
           kind: ChatTopicKind.Inspire,
@@ -303,10 +314,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
     this.registerCommand(builtInCommandCopilotExplain, {
       icon: 'TODO',
-      title: {
-        en: 'Explain',
-        zh: '解释'
-      },
+      title: { en: 'Explain', zh: '解释' },
       handler: (target) => {
         this.copilotController.startChat({
           kind: ChatTopicKind.Explain,
@@ -315,17 +323,63 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
 
+    this.registerCommand(builtInCommandCopilotReview, {
+      icon: 'TODO',
+      title: { en: 'Review', zh: '审查' },
+      handler: (target) => {
+        this.copilotController.startChat({
+          kind: ChatTopicKind.Review,
+          ...target
+        })
+      }
+    })
+
     this.registerCommand(builtInCommandCopilotFixProblem, {
       icon: 'TODO',
-      title: {
-        en: 'Fix problem',
-        zh: '修复问题'
-      },
+      title: { en: 'Fix problem', zh: '修复问题' },
       handler: (params) => {
         this.copilotController.startChat({
           kind: ChatTopicKind.FixProblem,
           ...params
         })
+      }
+    })
+
+    // Ideally we should use `editor.trigger(source, 'editor.action.xxx')` to implement copy/cut/paste,
+    // while these actions are missing in the `editor.getSupportedActions()`, see details in https://github.com/microsoft/monaco-editor/issues/2598.
+    // As a workaround, we use `document.execCommand` to implement these actions.
+    this.registerCommand(builtInCommandCopy, {
+      icon: 'TODO',
+      title: { en: 'Copy', zh: '复制' },
+      handler: () => {
+        editor.focus()
+        document.execCommand('copy')
+      }
+    })
+    this.registerCommand(builtInCommandCut, {
+      icon: 'TODO',
+      title: { en: 'Cut', zh: '剪切' },
+      handler: () => {
+        editor.focus()
+        document.execCommand('cut')
+      }
+    })
+    this.registerCommand(builtInCommandPaste, {
+      icon: 'TODO',
+      title: { en: 'Paste', zh: '粘贴' },
+      handler: async () => {
+        try {
+          // This is slightly different from monaco's built-in paste behavior, for example, when pasting a "line".
+          // TODO: keep consistent with monaco's built-in behavior
+          const selection = editor.getSelection()
+          if (selection == null) return
+          const text = await navigator.clipboard.readText()
+          editor.executeEdits('editor', [{ range: selection, text }])
+          editor.focus()
+        } catch (error) {
+          editor.focus()
+          document.execCommand('paste')
+        }
       }
     })
 
