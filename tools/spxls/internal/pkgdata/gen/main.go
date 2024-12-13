@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -12,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
+	_ "github.com/goplus/spx"
 	"golang.org/x/tools/go/gcexportdata"
 )
 

@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-//go:generate go run ./gen.go
+//go:generate go run ./gen/main.go
 
 //go:embed pkgdata.zip
 var pkgdataZip []byte

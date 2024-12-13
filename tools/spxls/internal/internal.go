@@ -1,9 +1,6 @@
 package internal
 
-import (
-	"github.com/goplus/mod/gopmod"
-	_ "github.com/goplus/spx"
-)
+import "github.com/goplus/mod/gopmod"
 
 func init() {
 	gopmod.SpxProject.Works = []*gopmod.Class{{Ext: ".spx", Class: "SpriteImpl"}}
