@@ -99,19 +99,12 @@ func (s *Server) spxRenameResourceAtRefs(result *compileResult, refKey SpxResour
 			if ident, ok := expr.(*gopast.Ident); ok {
 				// It has to be a constant. So we must find its declaration site and
 				// use the position of its value instead.
-				constObj := result.typeInfo.ObjectOf(ident)
-				for ident, obj := range result.typeInfo.Defs {
-					if obj != constObj {
-						continue
-					}
-					parent, ok := ident.Obj.Decl.(*gopast.ValueSpec)
-					if !ok || len(parent.Values) == 0 {
-						continue
-					}
-					if slices.Contains(parent.Names, ident) {
+				defIdent := result.defIdentOf(result.typeInfo.ObjectOf(ident))
+				if defIdent != nil {
+					parent, ok := defIdent.Obj.Decl.(*gopast.ValueSpec)
+					if ok && slices.Contains(parent.Names, defIdent) && len(parent.Values) > 0 {
 						startPos = result.fset.Position(parent.Values[0].Pos())
 						endPos = result.fset.Position(parent.Values[0].End())
-						break
 					}
 				}
 			}

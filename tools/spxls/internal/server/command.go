@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"slices"
 
+	"github.com/goplus/builder/tools/spxls/internal/util"
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
 )
@@ -127,12 +128,11 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		return nil, nil
 	}
 	innermostScope := result.innermostScopeAt(pos)
-	universalScope := result.mainPkg.Scope().Parent()
 
 	var definitions []SpxDefinitionIdentifier
-	addDefinition := func(pkg, name string, overloadId *string) {
+	addDefinition := func(pkg, name string, overloadID *string) {
 		def := SpxDefinitionIdentifier{
-			OverloadId: overloadId,
+			OverloadID: overloadID,
 		}
 		if pkg != "" {
 			def.Package = &pkg
@@ -141,7 +141,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			def.Name = &name
 		}
 		if !slices.ContainsFunc(definitions, func(def SpxDefinitionIdentifier) bool {
-			return fromStringPtr(def.Name) == name && fromStringPtr(def.OverloadId) == fromStringPtr(overloadId)
+			return fromStringPtr(def.Name) == name && fromStringPtr(def.OverloadID) == fromStringPtr(overloadID)
 		}) {
 			definitions = append(definitions, def)
 		}
@@ -168,7 +168,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		if !ok {
 			continue
 		}
-		if !spxEventHandlerFuncNameRE.MatchString(funcIdent.Name) {
+		if !isSpxEventHandlerFuncName(funcIdent.Name) {
 			continue
 		}
 		funcObj := result.typeInfo.ObjectOf(funcIdent)
@@ -187,21 +187,18 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		if funcRecv == nil {
 			continue
 		}
-		funcRecvType := funcRecv.Type()
-		if ptr, ok := funcRecvType.(*types.Pointer); ok {
-			funcRecvType = ptr.Elem()
-		}
+		funcRecvType := unwrapPointerType(funcRecv.Type())
 
 		if paramCount := funcSig.Params().Len(); paramCount > 0 {
 			lastParamType := funcSig.Params().At(paramCount - 1).Type()
 			if _, ok := lastParamType.(*types.Signature); ok {
-				calledEventHandlers[funcRecvType.String()+"."+funcIdent.Name] = struct{}{}
+				calledEventHandlers[funcRecvType.String()+"."+toLowerCamelCase(funcIdent.Name)] = struct{}{}
 			}
 		}
 	}
 
 	// Add local definitions from innermost scope and its parents.
-	for scope := innermostScope; scope != nil && scope != universalScope; scope = scope.Parent() {
+	for scope := innermostScope; scope != nil && scope != types.Universe; scope = scope.Parent() {
 		isInMainScope := innermostScope == astFileScope && scope == result.mainPkg.Scope()
 		for _, name := range scope.Names() {
 			obj := scope.Lookup(name)
@@ -217,57 +214,61 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 				continue
 			}
 
-			objType := obj.Type()
-			if ptr, ok := objType.(*types.Pointer); ok {
-				objType = ptr.Elem()
-			}
-			if _, ok := objType.Underlying().(*types.Struct); !ok {
+			typ := unwrapPointerType(obj.Type())
+			if _, ok := typ.Underlying().(*types.Struct); !ok {
 				continue
 			}
-			walkStruct(
-				objType,
-				func(named *types.Named, namedParents []*types.Named, field *types.Var) {
-					fieldPkgPath := field.Pkg().Path()
-					if !field.Exported() && fieldPkgPath != "main" {
-						return
+			walkStruct(typ, func(named *types.Named, namedParents []*types.Named, member types.Object) {
+				memberPkgPath := member.Pkg().Path()
+				if !member.Exported() && memberPkgPath != "main" {
+					return
+				}
+
+				switch member := member.(type) {
+				case *types.Var:
+					addDefinition(memberPkgPath, member.Name(), nil)
+				case *types.Func:
+					var methodNames []string
+					if methodOverloads := expandGoptOverloadedMethod(member); len(methodOverloads) > 0 {
+						methodNames = make([]string, 0, len(methodOverloads))
+						for _, method := range methodOverloads {
+							_, methodName, _ := util.SplitGoptMethod(method.Name())
+							methodNames = append(methodNames, methodName)
+						}
+					} else {
+						methodNames = []string{member.Name()}
 					}
 
-					addDefinition(fieldPkgPath, field.Name(), nil)
-				},
-				func(named *types.Named, namedParents []*types.Named, method *types.Func) {
-					methodPkgPath := method.Pkg().Path()
-					if !method.Exported() && methodPkgPath != "main" {
-						return
-					}
+					for _, methodName := range methodNames {
+						funcName, overloadID := parseGopFuncName(methodName)
+						if _, ok := calledEventHandlers[named.String()+"."+funcName]; ok {
+							return
+						}
 
-					funcName, overloadId := parseGopFuncName(method.Name())
-					if _, ok := calledEventHandlers[named.String()+"."+funcName]; ok {
-						return
-					}
+						receiverName := named.Obj().Name()
+						if memberPkgPath == spxPkgPath {
+							if receiverName != "SpriteImpl" && receiverName != "Game" {
+								for _, namedParent := range namedParents {
+									if namedParent.Obj().Pkg().Path() != spxPkgPath {
+										continue
+									}
 
-					receiverName := named.Obj().Name()
-					if methodPkgPath == spxPkgPath {
-						if receiverName != "SpriteImpl" && receiverName != "Game" {
-							for _, namedParent := range namedParents {
-								if namedParent.Obj().Pkg().Path() != spxPkgPath {
-									continue
-								}
-
-								namedParentName := namedParent.Obj().Name()
-								if namedParentName == "SpriteImpl" || namedParentName == "Game" {
-									receiverName = namedParentName
-									break
+									namedParentName := namedParent.Obj().Name()
+									if namedParentName == "SpriteImpl" || namedParentName == "Game" {
+										receiverName = namedParentName
+										break
+									}
 								}
 							}
+							if receiverName == "SpriteImpl" {
+								receiverName = "Sprite"
+							}
 						}
-						if receiverName == "SpriteImpl" {
-							receiverName = "Sprite"
-						}
-					}
 
-					addDefinition(methodPkgPath, receiverName+"."+funcName, overloadId)
-				},
-			)
+						addDefinition(memberPkgPath, receiverName+"."+funcName, overloadID)
+					}
+				}
+			})
 		}
 	}
 
@@ -276,20 +277,20 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		if obj := result.spxPkg.Scope().Lookup(name); obj != nil {
 			name := obj.Name()
 
-			var overloadId *string
+			var overloadID *string
 			if _, ok := obj.(*types.Func); ok {
-				name, overloadId = parseGopFuncName(name)
+				name, overloadID = parseGopFuncName(name)
 			}
 
 			if obj.Exported() {
-				addDefinition(spxPkgPath, name, overloadId)
+				addDefinition(spxPkgPath, name, overloadID)
 			}
 		}
 	}
 
 	// Add builtin definitions.
-	for _, name := range universalScope.Names() {
-		if obj := universalScope.Lookup(name); obj != nil && obj.Pkg() == nil {
+	for _, name := range types.Universe.Names() {
+		if obj := types.Universe.Lookup(name); obj != nil && obj.Pkg() == nil {
 			addDefinition("builtin", obj.Name(), nil)
 		}
 	}

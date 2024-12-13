@@ -51,7 +51,7 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Game.play"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -60,7 +60,7 @@ onStart => {
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Sprite.turn"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -85,7 +85,7 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Game.play"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -94,7 +94,7 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Sprite.turn"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -119,7 +119,7 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Game.play"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -128,11 +128,16 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Sprite.turn"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
 			Name:    toStringPtr("Sprite.onStart"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Sprite.clone"),
+			OverloadID: toStringPtr("1"),
 		}))
 	})
 
@@ -171,7 +176,7 @@ onStart => {
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package:    toStringPtr(spxPkgPath),
 			Name:       toStringPtr("Game.play"),
-			OverloadId: toStringPtr("1"),
+			OverloadID: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -194,6 +199,6 @@ func spxDefinitionIdentifierSliceContains(defs []SpxDefinitionIdentifier, def Sp
 	return slices.ContainsFunc(defs, func(d SpxDefinitionIdentifier) bool {
 		return fromStringPtr(d.Package) == fromStringPtr(def.Package) &&
 			fromStringPtr(d.Name) == fromStringPtr(def.Name) &&
-			fromStringPtr(d.OverloadId) == fromStringPtr(def.OverloadId)
+			fromStringPtr(d.OverloadID) == fromStringPtr(def.OverloadID)
 	})
 }

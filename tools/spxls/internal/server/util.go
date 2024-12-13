@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
-	"strings"
 
+	"github.com/goplus/gogen"
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
 )
@@ -17,6 +17,16 @@ func gopASTFileMapToSlice(fileMap map[string]*gopast.File) []*gopast.File {
 		files = append(files, file)
 	}
 	return files
+}
+
+// unwrapPointerType returns the underlying type of t. For pointer types, it
+// returns the element type that the pointer points to. For non-pointer types,
+// it returns the type unchanged.
+func unwrapPointerType(t types.Type) types.Type {
+	if ptr, ok := t.(*types.Pointer); ok {
+		return ptr.Elem()
+	}
+	return t
 }
 
 // getStringLitOrConstValue attempts to get the value from a string literal or
@@ -85,13 +95,16 @@ func fromIntPtr(i *int) int {
 	return *i
 }
 
-// walkStruct walks a struct and calls the given functions for each field and
-// method.
-func walkStruct(
-	typ types.Type,
-	onField func(named *types.Named, namedParents []*types.Named, field *types.Var),
-	onMethod func(named *types.Named, namedParents []*types.Named, method *types.Func),
-) {
+// toLowerCamelCase converts the first character of a Go identifier to lowercase.
+func toLowerCamelCase(s string) string {
+	if s == "" {
+		return s
+	}
+	return string(s[0]|32) + s[1:]
+}
+
+// walkStruct walks a struct and calls the given function for each field and method.
+func walkStruct(typ types.Type, onMember func(named *types.Named, namedParents []*types.Named, member types.Object)) {
 	seenFields := make(map[string]struct{})
 	seenMethods := make(map[string]struct{})
 
@@ -106,33 +119,30 @@ func walkStruct(
 		for i := range st.NumFields() {
 			field := st.Field(i)
 			if field.Embedded() {
-				fieldType := field.Type()
-				if ptr, ok := fieldType.(*types.Pointer); ok {
-					fieldType = ptr.Elem()
-				}
+				fieldType := unwrapPointerType(field.Type())
 				if _, ok := fieldType.Underlying().(*types.Struct); ok {
 					walk(fieldType, append(namedParents, named))
 				}
 			}
-			if onField != nil {
+			if onMember != nil {
 				if _, ok := seenFields[field.Name()]; ok {
 					continue
 				}
 				seenFields[field.Name()] = struct{}{}
 
-				onField(named, namedParents, field)
+				onMember(named, namedParents, field)
 			}
 		}
 
 		for i := range named.NumMethods() {
 			method := named.Method(i)
-			if onMethod != nil {
+			if onMember != nil {
 				if _, ok := seenMethods[method.Name()]; ok {
 					continue
 				}
 				seenMethods[method.Name()] = struct{}{}
 
-				onMethod(named, namedParents, method)
+				onMember(named, namedParents, method)
 			}
 		}
 	}
@@ -141,22 +151,51 @@ func walkStruct(
 
 // gopOverloadFuncNameRE is the regular expression of the Go+ overloaded
 // function name.
-var gopOverloadFuncNameRE = regexp.MustCompile(`^(.+)__(\d+)$`)
+var gopOverloadFuncNameRE = regexp.MustCompile(`^(.+)__([0-9a-z])$`)
+
+// isGopOverloadedFuncName reports whether the given function name is a Go+
+// overloaded function name.
+func isGopOverloadedFuncName(name string) bool {
+	return gopOverloadFuncNameRE.MatchString(name)
+}
 
 // parseGopFuncName parses the Go+ overloaded function name.
-func parseGopFuncName(name string) (funcName string, overloadId *string) {
-	funcName = name
-	if matches := gopOverloadFuncNameRE.FindStringSubmatch(funcName); len(matches) == 3 {
-		funcName = matches[1]
-		overloadId = &matches[2]
+func parseGopFuncName(name string) (parsedName string, overloadID *string) {
+	parsedName = name
+	if matches := gopOverloadFuncNameRE.FindStringSubmatch(parsedName); len(matches) == 3 {
+		parsedName = matches[1]
+		overloadID = &matches[2]
 	}
-	funcName = strings.ToLower(string(funcName[0])) + funcName[1:] // Make it lowerCamelCase.
+	parsedName = toLowerCamelCase(parsedName)
 	return
+}
+
+// expandGoptOverloadedMethod expands the given Go+ template method to all
+// its overloads.
+func expandGoptOverloadedMethod(method *types.Func) []*types.Func {
+	typ, objs := gogen.CheckSigFuncExObjects(method.Type().(*types.Signature))
+	if typ == nil {
+		return nil
+	}
+	if _, ok := typ.(*gogen.TyTemplateRecvMethod); !ok {
+		return nil
+	}
+	overloads := make([]*types.Func, 0, len(objs))
+	for _, obj := range objs {
+		overloads = append(overloads, obj.(*types.Func))
+	}
+	return overloads
 }
 
 // spxEventHandlerFuncNameRE is the regular expression of the spx event handler
 // function name.
 var spxEventHandlerFuncNameRE = regexp.MustCompile(`^on[A-Z]\w*$`)
+
+// isSpxEventHandlerFuncName reports whether the given function name is an
+// spx event handler function name.
+func isSpxEventHandlerFuncName(name string) bool {
+	return spxEventHandlerFuncNameRE.MatchString(name)
+}
 
 // isMainPkgObject reports whether the given object is defined in the main package.
 func isMainPkgObject(obj types.Object) bool {

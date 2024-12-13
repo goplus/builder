@@ -38,6 +38,7 @@ const (
 var (
 	errNoValidSpxFiles = errors.New("no valid spx files found in main package")
 	errNoMainSpxFile   = errors.New("no valid main.spx file found in main package")
+	errStopIteration   = errors.New("stop iteration")
 )
 
 // compileResult contains the compile results and additional information from
@@ -52,6 +53,10 @@ type compileResult struct {
 	// mainASTPkg is the main package AST.
 	mainASTPkg *gopast.Package
 
+	// mainASTPkgSpecToGenDecl maps each spec in the main package AST to its
+	// parent general declaration.
+	mainASTPkgSpecToGenDecl map[gopast.Spec]*gopast.GenDecl
+
 	// mainSpxFile is the main.spx file path.
 	mainSpxFile string
 
@@ -64,6 +69,9 @@ type compileResult struct {
 	// typeInfo contains type information collected during the compile
 	// process.
 	typeInfo *goptypesutil.Info
+
+	// spxSpriteNames stores spx sprite names.
+	spxSpriteNames []string
 
 	// spxResourceRefs stores spx resource references.
 	spxResourceRefs map[SpxResourceRefKey][]SpxResourceRef
@@ -166,33 +174,31 @@ func (r *compileResult) identAndObjectAtASTFilePosition(astFile *gopast.File, po
 	return foundIdent, r.typeInfo.ObjectOf(foundIdent)
 }
 
-// rangeTypeDecls iterates over all type declarations in the main package and
-// calls the given function for each type declaration.
-func (r *compileResult) rangeTypeDecls(f func(*gopast.TypeSpec, types.Object) error) error {
-	for _, astFile := range r.mainASTPkg.Files {
-		for _, decl := range astFile.Decls {
-			typeDecl, ok := decl.(*gopast.GenDecl)
-			if !ok || typeDecl.Tok != goptoken.TYPE {
-				continue
-			}
-
-			for _, spec := range typeDecl.Specs {
-				typeSpec, ok := spec.(*gopast.TypeSpec)
-				if !ok {
-					continue
-				}
-				typeName := r.typeInfo.ObjectOf(typeSpec.Name)
-				if typeName == nil {
-					continue
-				}
-
-				if err := f(typeSpec, typeName); err != nil {
-					return err
-				}
-			}
+// defIdentOf returns the identifier where the given object is defined.
+func (r *compileResult) defIdentOf(obj types.Object) *gopast.Ident {
+	if obj == nil {
+		return nil
+	}
+	for ident, o := range r.typeInfo.Defs {
+		if o == obj {
+			return ident
 		}
 	}
 	return nil
+}
+
+// refIdentsOf returns all identifiers where the given object is referenced.
+func (r *compileResult) refIdentsOf(obj types.Object) []*gopast.Ident {
+	if obj == nil {
+		return nil
+	}
+	var idents []*gopast.Ident
+	for ident, o := range r.typeInfo.Uses {
+		if o == obj {
+			idents = append(idents, ident)
+		}
+	}
+	return idents
 }
 
 // isInMainSpxFirstVarBlock returns true if the given position is in the first
@@ -297,9 +303,10 @@ func (s *Server) compile() (*compileResult, error) {
 	}
 
 	result := &compileResult{
-		fset:       goptoken.NewFileSet(),
-		mainPkg:    types.NewPackage("main", "main"),
-		mainASTPkg: &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
+		fset:                    goptoken.NewFileSet(),
+		mainPkg:                 types.NewPackage("main", "main"),
+		mainASTPkg:              &gopast.Package{Name: "main", Files: make(map[string]*gopast.File)},
+		mainASTPkgSpecToGenDecl: make(map[gopast.Spec]*gopast.GenDecl),
 		typeInfo: &goptypesutil.Info{
 			Types:      make(map[gopast.Expr]types.TypeAndValue),
 			Defs:       make(map[*gopast.Ident]types.Object),
@@ -365,8 +372,30 @@ func (s *Server) compile() (*compileResult, error) {
 		}
 		if astFile.Name.Name == "main" {
 			result.mainASTPkg.Files[spxFile] = astFile
-			if result.mainSpxFile == "" && path.Base(spxFile) == "main.spx" {
+			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
 				result.mainSpxFile = spxFile
+
+				for _, decl := range astFile.Decls {
+					genDecl, ok := decl.(*gopast.GenDecl)
+					if !ok {
+						continue
+					}
+					for _, spec := range genDecl.Specs {
+						result.mainASTPkgSpecToGenDecl[spec] = genDecl
+					}
+				}
+
+				gopast.Inspect(astFile, func(n gopast.Node) bool {
+					if result.mainSpxFirstVarBlock == nil {
+						if decl, ok := n.(*gopast.GenDecl); ok && decl.Tok == goptoken.VAR {
+							result.mainSpxFirstVarBlock = decl
+							return false
+						}
+					}
+					return true
+				})
+			} else {
+				result.spxSpriteNames = append(result.spxSpriteNames, strings.TrimSuffix(spxFileBaseName, ".spx"))
 			}
 		}
 	}
@@ -382,16 +411,6 @@ func (s *Server) compile() (*compileResult, error) {
 		}
 		return result, nil
 	}
-
-	gopast.Inspect(result.mainASTPkg.Files[result.mainSpxFile], func(n gopast.Node) bool {
-		if result.mainSpxFirstVarBlock == nil {
-			if decl, ok := n.(*gopast.GenDecl); ok && decl.Tok == goptoken.VAR {
-				result.mainSpxFirstVarBlock = decl
-				return false
-			}
-		}
-		return true
-	})
 
 	result.spxPkg, err = s.importer.Import(spxPkgPath)
 	if err != nil {
@@ -520,22 +539,20 @@ func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compile
 		case spxSpriteTypeName:
 			isSpxSpriteResourceAutoBinding = true
 		default:
-			for _, typeName := range result.mainPkg.Scope().Names() {
-				if typeName == "main" {
+			for _, spxSpriteName := range result.spxSpriteNames {
+				if objTypeName != "main."+spxSpriteName {
 					continue
 				}
-				if objTypeName == "main."+typeName {
-					if ident.Name != typeName {
-						result.addDiagnostics(documentURI, Diagnostic{
-							Severity: SeverityError,
-							Range:    identRange,
-							Message:  "sprite resource name must match type name for explicit auto-binding to work",
-						})
-						continue
-					}
-					isSpxSpriteResourceAutoBinding = true
-					break
+				if ident.Name != spxSpriteName {
+					result.addDiagnostics(documentURI, Diagnostic{
+						Severity: SeverityError,
+						Range:    identRange,
+						Message:  "sprite resource name must match type name for explicit auto-binding to work",
+					})
+					continue
 				}
+				isSpxSpriteResourceAutoBinding = true
+				break
 			}
 		}
 		if isSpxSoundResourceAutoBinding || isSpxSpriteResourceAutoBinding {
@@ -591,7 +608,6 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			if !ok {
 				break
 			}
-
 			funcSig, ok := funcTV.Type.(*types.Signature)
 			if !ok {
 				break
@@ -599,10 +615,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 			var spxSpriteResource *SpxSpriteResource
 			if recv := funcSig.Recv(); recv != nil {
-				recvType := recv.Type()
-				if ptr, ok := recvType.(*types.Pointer); ok {
-					recvType = ptr.Elem()
-				}
+				recvType := unwrapPointerType(recv.Type())
 				switch recvType.String() {
 				case spxSpriteTypeName, spxSpriteImplTypeName:
 					spxSpriteResource = s.inspectSpxSpriteResourceRefAtExpr(result, expr, recvType)
@@ -613,17 +626,11 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 			for i, arg := range expr.Args {
 				var paramType types.Type
 				if i < funcSig.Params().Len() {
-					paramType = funcSig.Params().At(i).Type()
-					if ptr, ok := paramType.(*types.Pointer); ok {
-						paramType = ptr.Elem()
-					}
+					paramType = unwrapPointerType(funcSig.Params().At(i).Type())
 					lastParamType = paramType
 				} else {
 					// Use the last parameter type for variadic functions.
 					paramType = lastParamType
-				}
-				if ptr, ok := paramType.(*types.Pointer); ok {
-					paramType = ptr.Elem()
 				}
 				switch paramType.String() {
 				case spxBackdropNameTypeName:
@@ -645,10 +652,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 				}
 			}
 		default:
-			typ := tv.Type
-			if ptr, ok := typ.(*types.Pointer); ok {
-				typ = ptr.Elem()
-			}
+			typ := unwrapPointerType(tv.Type)
 			switch typ.String() {
 			case spxBackdropNameTypeName:
 				s.inspectSpxBackdropResourceRefAtExpr(result, expr, typ)
@@ -664,11 +668,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 	// Check all identifier uses for auto-bindings.
 	for ident, obj := range result.typeInfo.Uses {
-		objType := obj.Type()
-		if ptr, ok := objType.(*types.Pointer); ok {
-			objType = ptr.Elem()
-		}
-
+		objType := unwrapPointerType(obj.Type())
 		switch objType.String() {
 		case spxSpriteTypeName:
 			if slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
@@ -683,11 +683,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 	// Check implicit objects.
 	for node, obj := range result.typeInfo.Implicits {
-		objType := obj.Type()
-		if ptr, ok := objType.(*types.Pointer); ok {
-			objType = ptr.Elem()
-		}
-
+		objType := unwrapPointerType(obj.Type())
 		switch objType.String() {
 		case spxSpriteTypeName, spxSpriteImplTypeName:
 			if typeAssert, ok := node.(*gopast.TypeAssertExpr); ok {
@@ -698,10 +694,7 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 
 	// Check selections for method calls and field accesses.
 	for sel, selection := range result.typeInfo.Selections {
-		recv := selection.Recv()
-		if ptr, ok := recv.(*types.Pointer); ok {
-			recv = ptr.Elem()
-		}
+		recv := unwrapPointerType(selection.Recv())
 
 		var spxSpriteResource *SpxSpriteResource
 		switch recv.String() {

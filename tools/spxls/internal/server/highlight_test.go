@@ -42,21 +42,21 @@ onStart => {
 				Start: Position{Line: 2, Character: 1},
 				End:   Position{Line: 2, Character: 9},
 			},
-			Kind: Read,
+			Kind: Text,
 		})
 		assert.Contains(t, *highlights, DocumentHighlight{
 			Range: Range{
 				Start: Position{Line: 2, Character: 1},
 				End:   Position{Line: 2, Character: 9},
 			},
-			Kind: Write,
+			Kind: Text,
 		})
 		assert.Contains(t, *highlights, DocumentHighlight{
 			Range: Range{
 				Start: Position{Line: 4, Character: 0},
 				End:   Position{Line: 4, Character: 8},
 			},
-			Kind: Read,
+			Kind: Text,
 		})
 
 		highlights, err = s.textDocumentDocumentHighlight(&DocumentHighlightParams{
@@ -72,7 +72,7 @@ onStart => {
 				Start: Position{Line: 2, Character: 10},
 				End:   Position{Line: 2, Character: 16},
 			},
-			Kind: Read,
+			Kind: Text,
 		})
 	})
 }

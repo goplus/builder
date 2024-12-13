@@ -34,26 +34,11 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 		return nil, nil
 	}
 
-	locations := s.findDefinitionLocations(result, obj)
-	if len(locations) > 0 {
-		locations = deduplicateLocations(locations)
-		if len(locations) == 1 {
-			return locations[0], nil
-		}
-		return locations, nil
+	defIdent := result.defIdentOf(obj)
+	if defIdent == nil {
+		return nil, nil
 	}
-	return nil, nil
-}
-
-// findDefinitionLocations returns all locations where the given object is defined.
-func (s *Server) findDefinitionLocations(result *compileResult, obj types.Object) []Location {
-	var locations []Location
-	for ident, objDef := range result.typeInfo.Defs {
-		if objDef == obj {
-			locations = append(locations, s.createLocationFromIdent(result.fset, ident))
-		}
-	}
-	return locations
+	return s.createLocationFromIdent(result.fset, defIdent), nil
 }
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_typeDefinition
@@ -74,10 +59,7 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 		return nil, nil
 	}
 
-	objType := obj.Type()
-	if ptr, ok := objType.(*types.Pointer); ok {
-		objType = ptr.Elem()
-	}
+	objType := unwrapPointerType(obj.Type())
 	named, ok := objType.(*types.Named)
 	if !ok {
 		return nil, nil
@@ -174,7 +156,10 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 	}
 
 	if params.Context.IncludeDeclaration {
-		locations = append(locations, s.findDefinitionLocations(result, obj)...)
+		defIdent := result.defIdentOf(obj)
+		if defIdent != nil {
+			locations = append(locations, s.createLocationFromIdent(result.fset, defIdent))
+		}
 	}
 
 	return deduplicateLocations(locations), nil
@@ -182,11 +167,13 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 
 // findReferenceLocations returns all locations where the given object is referenced.
 func (s *Server) findReferenceLocations(result *compileResult, obj types.Object) []Location {
-	var locations []Location
-	for ident, objUse := range result.typeInfo.Uses {
-		if objUse == obj {
-			locations = append(locations, s.createLocationFromIdent(result.fset, ident))
-		}
+	refIdents := result.refIdentsOf(obj)
+	if len(refIdents) == 0 {
+		return nil
+	}
+	locations := make([]Location, 0, len(refIdents))
+	for _, refIdent := range refIdents {
+		locations = append(locations, s.createLocationFromIdent(result.fset, refIdent))
 	}
 	return locations
 }
@@ -223,10 +210,18 @@ func (s *Server) findEmbeddedInterfaceReferences(result *compileResult, iface *t
 		}
 		seenIfaces[current] = true
 
-		if err := result.rangeTypeDecls(func(typeSpec *gopast.TypeSpec, typeName types.Object) error {
+		for spec := range result.mainASTPkgSpecToGenDecl {
+			typeSpec, ok := spec.(*gopast.TypeSpec)
+			if !ok {
+				continue
+			}
+			typeName := result.typeInfo.ObjectOf(typeSpec.Name)
+			if typeName == nil {
+				continue
+			}
 			embedIface, ok := typeName.Type().Underlying().(*types.Interface)
 			if !ok {
-				return nil
+				continue
 			}
 
 			for i := range embedIface.NumEmbeddeds() {
@@ -238,9 +233,6 @@ func (s *Server) findEmbeddedInterfaceReferences(result *compileResult, iface *t
 					find(embedIface)
 				}
 			}
-			return nil
-		}); err != nil {
-			return
 		}
 	}
 	find(iface)
@@ -251,23 +243,25 @@ func (s *Server) findEmbeddedInterfaceReferences(result *compileResult, iface *t
 // implement the given interface method.
 func (s *Server) findImplementingMethodReferences(result *compileResult, iface *types.Interface, methodName string) []Location {
 	var locations []Location
-	if err := result.rangeTypeDecls(func(typeSpec *gopast.TypeSpec, typeName types.Object) error {
-		named, ok := typeName.Type().(*types.Named)
+	for spec := range result.mainASTPkgSpecToGenDecl {
+		typeSpec, ok := spec.(*gopast.TypeSpec)
 		if !ok {
-			return nil
+			continue
 		}
-		if !types.Implements(named, iface) {
-			return nil
+		typeName := result.typeInfo.ObjectOf(typeSpec.Name)
+		if typeName == nil {
+			continue
+		}
+		named, ok := typeName.Type().(*types.Named)
+		if !ok || !types.Implements(named, iface) {
+			continue
 		}
 
 		method, index, _ := types.LookupFieldOrMethod(named, false, named.Obj().Pkg(), methodName)
 		if method == nil || index == nil {
-			return nil
+			continue
 		}
 		locations = append(locations, s.findReferenceLocations(result, method)...)
-		return nil
-	}); err != nil {
-		return nil
 	}
 	return locations
 }
@@ -279,28 +273,27 @@ func (s *Server) findInterfaceMethodReferences(result *compileResult, fn *types.
 	recvType := fn.Type().(*types.Signature).Recv().Type()
 	seenIfaces := make(map[*types.Interface]bool)
 
-	if err := result.rangeTypeDecls(func(typeSpec *gopast.TypeSpec, typeName types.Object) error {
-		ifaceType, ok := typeName.Type().Underlying().(*types.Interface)
+	for spec := range result.mainASTPkgSpecToGenDecl {
+		typeSpec, ok := spec.(*gopast.TypeSpec)
 		if !ok {
-			return nil
+			continue
 		}
-		if !types.Implements(recvType, ifaceType) {
-			return nil
+		typeName := result.typeInfo.ObjectOf(typeSpec.Name)
+		if typeName == nil {
+			continue
 		}
-		if seenIfaces[ifaceType] {
-			return nil
+		ifaceType, ok := typeName.Type().Underlying().(*types.Interface)
+		if !ok || !types.Implements(recvType, ifaceType) || seenIfaces[ifaceType] {
+			continue
 		}
 		seenIfaces[ifaceType] = true
 
 		method, index, _ := types.LookupFieldOrMethod(ifaceType, false, typeName.Pkg(), fn.Name())
 		if method == nil || index == nil {
-			return nil
+			continue
 		}
 		locations = append(locations, s.findReferenceLocations(result, method)...)
 		locations = append(locations, s.findEmbeddedInterfaceReferences(result, ifaceType, fn.Name())...)
-		return nil
-	}); err != nil {
-		return nil
 	}
 	return locations
 }
@@ -315,13 +308,21 @@ func (s *Server) handleEmbeddedFieldReferences(result *compileResult, obj types.
 		}
 
 		seenTypes := make(map[types.Type]bool)
-		if err := result.rangeTypeDecls(func(typeSpec *gopast.TypeSpec, typeName types.Object) error {
-			if named, ok := typeName.Type().(*types.Named); ok {
-				locations = append(locations, s.findEmbeddedMethodReferences(result, fn, named, recv.Type(), seenTypes)...)
+		for spec := range result.mainASTPkgSpecToGenDecl {
+			typeSpec, ok := spec.(*gopast.TypeSpec)
+			if !ok {
+				continue
 			}
-			return nil
-		}); err != nil {
-			return nil
+			typeName := result.typeInfo.ObjectOf(typeSpec.Name)
+			if typeName == nil {
+				continue
+			}
+			named, ok := typeName.Type().(*types.Named)
+			if !ok {
+				continue
+			}
+
+			locations = append(locations, s.findEmbeddedMethodReferences(result, fn, named, recv.Type(), seenTypes)...)
 		}
 	}
 	return locations
@@ -362,13 +363,21 @@ func (s *Server) findEmbeddedMethodReferences(result *compileResult, fn *types.F
 		}
 	}
 	if hasEmbed {
-		if err := result.rangeTypeDecls(func(typeSpec *gopast.TypeSpec, typeName types.Object) error {
-			if embedNamed, ok := typeName.Type().(*types.Named); ok {
-				locations = append(locations, s.findEmbeddedMethodReferences(result, fn, embedNamed, named, seenTypes)...)
+		for spec := range result.mainASTPkgSpecToGenDecl {
+			typeSpec, ok := spec.(*gopast.TypeSpec)
+			if !ok {
+				continue
 			}
-			return nil
-		}); err != nil {
-			return nil
+			typeName := result.typeInfo.ObjectOf(typeSpec.Name)
+			if typeName == nil {
+				continue
+			}
+			named, ok := typeName.Type().(*types.Named)
+			if !ok {
+				continue
+			}
+
+			locations = append(locations, s.findEmbeddedMethodReferences(result, fn, named, named, seenTypes)...)
 		}
 	}
 	return locations
