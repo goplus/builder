@@ -50,22 +50,22 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModal, UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
+import { UITextInput, UINumberInput, UIButtonGroup, UIButtonGroupItem, UIIcon } from '@/components/ui'
 import { round } from '@/utils/utils'
 import { debounce } from 'lodash'
 import { useMessageHandle } from '@/utils/exception'
 import type { Monitor } from '@/models/widget/monitor'
+import { useRenameWidget } from '@/components/asset'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import EditorItemDetail from '../../../common/EditorItemDetail.vue'
 import monitorIcon from '../monitor.svg?raw'
-import WidgetRenameModal from '../WidgetRenameModal.vue'
 
 const props = defineProps<{
   monitor: Monitor
 }>()
 
 const editorCtx = useEditorCtx()
-const renameWidget = useModal(WidgetRenameModal)
+const renameWidget = useRenameWidget()
 
 const handleRename = useMessageHandle(
   () =>

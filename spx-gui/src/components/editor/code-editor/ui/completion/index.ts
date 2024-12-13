@@ -8,7 +8,7 @@ import {
   type ITextDocument
 } from '../../common'
 import type { CodeEditorUI } from '..'
-import { toMonacoRange, type monaco, positionEq } from '../common'
+import { type monaco, positionEq } from '../common'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 
@@ -19,7 +19,7 @@ export type CompletionItemKind = DefinitionKind
 export type CompletionItem = {
   label: string
   kind: CompletionItemKind
-  // TODO: support `insertText`
+  insertText: string
   documentation: DefinitionDocumentationString
 }
 
@@ -169,20 +169,15 @@ export class CompletionController extends Emitter<{
     this.startCompletion(textDocument, position)
   }
 
-  applyCompletionItem(item: InternalCompletionItem) {
+  async applyCompletionItem(item: InternalCompletionItem) {
     const { editor, cursorPosition } = this.ui
     if (this.currentCompletion == null) return
     const { wordStart, position } = this.currentCompletion
     if (!positionEq(cursorPosition, position)) return
-    editor.executeEdits('completion', [
-      {
-        range: toMonacoRange({
-          start: wordStart,
-          end: position
-        }),
-        text: item.label
-      }
-    ])
+    await this.ui.insertSnippet(item.insertText, {
+      start: wordStart,
+      end: position
+    })
     this.stopCompletion()
     editor.focus()
   }

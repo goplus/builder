@@ -12,7 +12,6 @@
 
 <script setup lang="ts">
 import { UITextInput, UIForm, UIFormItem, useForm } from '@/components/ui'
-import type { Sprite } from '@/models/sprite'
 import { animationNameTip, validateAnimationName } from '@/models/common/asset-name'
 import { useI18n } from '@/utils/i18n'
 import RenameModal from '../panels/common/RenameModal.vue'
@@ -23,13 +22,12 @@ import type { Animation } from '@/models/animation'
 const props = defineProps<{
   visible: boolean
   animation: Animation
-  sprite: Sprite
   project: Project
 }>()
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [void]
 }>()
 
 const { t } = useI18n()
@@ -52,6 +50,6 @@ async function handleSubmit() {
 
 function validateName(name: string) {
   if (name === props.animation.name) return
-  return t(validateAnimationName(name, props.sprite) ?? null)
+  return t(validateAnimationName(name, props.animation.sprite) ?? null)
 }
 </script>

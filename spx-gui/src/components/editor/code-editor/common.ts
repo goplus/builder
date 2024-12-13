@@ -196,7 +196,7 @@ export function makeAdvancedMarkdownString(value: string | LocaleMessage): Advan
   return { value, flag: 'advanced' }
 }
 
-export type Icon = string
+export type CommandIconType = 'explain' | 'fix' | 'goto' | 'modify' | 'rename'
 
 /**
  * Documentation string for a definition. Typically:
@@ -307,18 +307,18 @@ interface CommandConstraint<A, R> {}
 export type Command<A extends any[], R> = string & CommandConstraint<A, R>
 export type CommandHandler<A extends any[], R> = (...args: A) => R | Promise<R>
 export type CommandInfo<A extends any[], R> = {
-  icon: Icon
+  icon: CommandIconType
   title: LocaleMessage
   handler: CommandHandler<A, R>
 }
 
-export type Action<I extends any[] = any, R = any> = {
-  /** Title for the action. */
-  title: string
+export type Action<A extends any[] = any, R = any> = {
+  /** Title for the action. Command title will be used if not provided. */
+  title?: string
   /** Command to be executed when action is triggered. */
-  command: Command<I, R>
+  command: Command<A, R>
   /** Arguments passed to the command. */
-  arguments: I
+  arguments: A
 }
 
 export type BaseContext = {

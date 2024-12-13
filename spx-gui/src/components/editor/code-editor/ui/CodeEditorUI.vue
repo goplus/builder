@@ -30,6 +30,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
+import type { ResourceIdentifier } from '../common'
 import { type ICodeEditorUI, CodeEditorUI } from '.'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
@@ -39,7 +40,21 @@ import CopilotUI from './copilot/CopilotUI.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
-import type { Monaco, MonacoEditor, monaco } from './common'
+import { getResourceModel, type Monaco, type MonacoEditor, type monaco } from './common'
+import { Sprite } from '@/models/sprite'
+import {
+  useRenameAnimation,
+  useRenameBackdrop,
+  useRenameCostume,
+  useRenameSound,
+  useRenameSprite,
+  useRenameWidget
+} from '@/components/asset'
+import { Sound } from '@/models/sound'
+import { Costume } from '@/models/costume'
+import { Animation } from '@/models/animation'
+import { Backdrop } from '@/models/backdrop'
+import { isWidget } from '@/models/widget'
 
 const props = defineProps<{
   project: Project
@@ -50,7 +65,27 @@ const emit = defineEmits<{
 }>()
 
 const i18n = useI18n()
-const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project, i18n))
+
+const renameSprite = useRenameSprite()
+const renameSound = useRenameSound()
+const renameCostume = useRenameCostume()
+const renameBackdrop = useRenameBackdrop()
+const renameAnimation = useRenameAnimation()
+const renameWidget = useRenameWidget()
+
+function renameResource(resourceId: ResourceIdentifier) {
+  const project = props.project
+  const model = getResourceModel(project, resourceId)
+  if (model instanceof Sprite) return renameSprite({ project, sprite: model })
+  if (model instanceof Sound) return renameSound({ project, sound: model })
+  if (model instanceof Costume) return renameCostume({ project, costume: model })
+  if (model instanceof Backdrop) return renameBackdrop({ project, backdrop: model })
+  if (model instanceof Animation) return renameAnimation({ project, animation: model })
+  if (isWidget(model)) return renameWidget({ project, widget: model })
+  throw new Error(`Rename resource (${resourceId.uri}) not supported`)
+}
+
+const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project, i18n, renameResource))
 
 const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   language: 'spx',
@@ -325,5 +360,6 @@ watchEffect((onCleanup) => {
 
 :global(.code-editor-content-widget) {
   z-index: 10; // Ensure content widget is above other elements, especially cursor
+  padding: 2px 0; // Gap between content widget and text
 }
 </style>

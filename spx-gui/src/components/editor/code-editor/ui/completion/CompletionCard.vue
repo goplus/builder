@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
 import { MonacoKeyCode, type monaco } from '../common'
+import MarkdownView from '../markdown/MarkdownView.vue'
+import CodeEditorCard from '../CodeEditorCard.vue'
 import type { CompletionController, InternalCompletionItem } from '.'
 import CompletionItemComp from './CompletionItem.vue'
-import CompletionItemDetail from './CompletionItemDetail.vue'
 
 const props = defineProps<{
   controller: CompletionController
@@ -65,7 +66,7 @@ function handleWheel(e: WheelEvent) {
 </script>
 
 <template>
-  <section class="completion-card" @wheel="handleWheel">
+  <CodeEditorCard class="completion-card" @wheel="handleWheel">
     <ul class="list">
       <CompletionItemComp
         v-for="(item, i) in items"
@@ -75,32 +76,43 @@ function handleWheel(e: WheelEvent) {
         @click="applyItem(item)"
       />
     </ul>
-    <CompletionItemDetail v-if="activeItem" class="detail" :item="activeItem" />
-  </section>
+    <div v-if="activeItem != null" class="completion-item-detail">
+      <MarkdownView class="detail-content" v-bind="activeItem.documentation" />
+    </div>
+  </CodeEditorCard>
 </template>
 
 <style lang="scss" scoped>
 .completion-card {
+  width: 360px;
   max-height: 200px;
-  padding: 8px;
+  padding: 12px 0 12px 12px;
   display: flex;
-  justify-content: stretch;
-  background-color: #fff;
-  border: 1px solid #333;
+  align-items: stretch;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .list {
+  padding-right: 12px;
   flex: 0 0 auto;
-  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-.detail {
-  width: 160px;
+.completion-item-detail {
+  flex: 1 1 0;
+  padding: 6px 12px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border-left: 1px solid var(--ui-color-dividing-line-2);
+}
+
+.detail-content {
+  font-size: 10px;
 }
 </style>

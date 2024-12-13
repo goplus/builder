@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [void]
 }>()
 
 const { t } = useI18n()
@@ -42,6 +42,7 @@ function handleCancel() {
 
 async function handleSubmit() {
   if (form.value.name !== props.sound.name) {
+    // TODO: inform language server first to update references, then rename the model
     const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
     await props.project.history.doAction(action, () => props.sound.setName(form.value.name))
   }

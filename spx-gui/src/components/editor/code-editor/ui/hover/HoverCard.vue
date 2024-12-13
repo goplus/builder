@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { UIButton } from '@/components/ui'
+import { computed } from 'vue'
+import type { InternalAction } from '..'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
-import type { Action } from '../../common'
 import MarkdownView from '../markdown/MarkdownView.vue'
+import CodeEditorCard from '../CodeEditorCard.vue'
 import type { HoverController, InternalHover } from '.'
+import ActionButton from './ActionButton.vue'
 
 const props = defineProps<{
   hover: InternalHover
@@ -12,7 +14,11 @@ const props = defineProps<{
 
 const codeEditorCtx = useCodeEditorCtx()
 
-function handleAction(action: Action) {
+const actions = computed(() => {
+  return props.hover.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
+})
+
+async function handleAction(action: InternalAction) {
   // TODO: exception handling
   codeEditorCtx.ui.executeCommand(action.command, ...action.arguments)
   props.controller.hideHover()
@@ -20,18 +26,23 @@ function handleAction(action: Action) {
 </script>
 
 <template>
-  <section class="hover-card">
-    <ul class="contents">
+  <CodeEditorCard class="hover-card">
+    <ul class="body">
       <li v-for="(content, i) in hover.contents" :key="i" class="content">
         <MarkdownView v-bind="content" />
       </li>
     </ul>
-    <footer v-if="hover.actions.length > 0" class="actions">
-      <UIButton v-for="(action, i) in hover.actions" :key="i" @click="handleAction(action)">
+    <footer v-if="actions.length > 0" class="footer">
+      <ActionButton
+        v-for="(action, i) in actions"
+        :key="i"
+        :icon="action.commandInfo.icon"
+        @click="handleAction(action)"
+      >
         {{ action.title }}
-      </UIButton>
+      </ActionButton>
     </footer>
-  </section>
+  </CodeEditorCard>
 </template>
 
 <style lang="scss" scoped>
@@ -39,17 +50,27 @@ function handleAction(action: Action) {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 4px;
-  background-color: #fff;
-  border: 1px solid #333;
+  padding: 8px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .content {
-  white-space: pre;
+  width: 320px;
+  padding: 6px 8px;
+  // TODO: reconfirm font size here
+  font-size: 12px;
 }
 
-.actions {
-  padding: 4px 0 0;
-  border-top: 1px solid #333;
+.footer {
+  margin-top: 6px;
+  padding: 14px 8px 8px;
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid var(--ui-color-dividing-line-2);
 }
 </style>

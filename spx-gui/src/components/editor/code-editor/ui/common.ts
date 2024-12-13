@@ -3,7 +3,15 @@ import { Cancelled } from '@/utils/exception'
 import { Sprite } from '@/models/sprite'
 import { stageCodeFilePaths, type Stage } from '@/models/stage'
 import type { Action, Project } from '@/models/project'
-import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
+import {
+  type Range,
+  type Position,
+  type TextDocumentIdentifier,
+  type Selection,
+  type ResourceIdentifier
+} from '../common'
+import { Sound } from '@/models/sound'
+import { isWidget } from '@/models/widget'
 
 export type { monaco }
 export type Monaco = typeof import('monaco-editor')
@@ -192,4 +200,63 @@ export function getCodeOwner(project: Project, textDocumentId: TextDocumentIdent
     }
   }
   return null
+}
+
+/** Implemented by `Sprite`, `Sound` etc. */
+export type IResourceModel = {
+  /** Readable name and also unique identifier in list */
+  name: string
+}
+
+export function getResourceModel(project: Project, resourceId: ResourceIdentifier): IResourceModel {
+  const parsed = new URL(resourceId.uri)
+  if (parsed.protocol !== 'spx:' || parsed.host !== 'resources')
+    throw new Error(`Invalid resource URI: ${resourceId.uri}`)
+  const parts = parsed.pathname.split('/')
+  switch (parts[1]) {
+    case 'sounds': {
+      const sound = project.sounds.find((s) => s.name === parts[2])
+      if (sound == null) throw new Error(`Sound not found: ${parts[2]}`)
+      return sound
+    }
+    case 'sprites': {
+      const sprite = project.sprites.find((s) => s.name === parts[2])
+      if (sprite == null) throw new Error(`Sprite not found: ${parts[2]}`)
+      switch (parts[3]) {
+        case 'animations': {
+          const animation = sprite.animations.find((a) => a.name === parts[4])
+          if (animation == null) throw new Error(`Animation not found: ${parts[4]}`)
+          return animation
+        }
+        case 'costumes': {
+          const costume = sprite.costumes.find((c) => c.name === parts[4])
+          if (costume == null) throw new Error(`Costume not found: ${parts[4]}`)
+          return costume
+        }
+        default:
+          return sprite
+      }
+    }
+    case 'backdrops': {
+      const backdrop = project.stage.backdrops.find((b) => b.name === parts[2])
+      if (backdrop == null) throw new Error(`Backdrop not found: ${parts[2]}`)
+      return backdrop
+    }
+    case 'widgets': {
+      const widget = project.stage.widgets.find((w) => w.name === parts[2])
+      if (widget == null) throw new Error(`Widget not found: ${parts[2]}`)
+      return widget
+    }
+    default:
+      throw new Error(`Unsupported resource type: ${parts[1]}`)
+  }
+}
+
+export function supportGoTo(resourceModel: IResourceModel): boolean {
+  // Currently, we do not support "go to detail" for other types of resources due to two reasons:
+  // 1. The "selected" state of certain resource types, such as animations, is still managed within the Component, making it difficult to control from here.
+  // 2. The "selected" state of some resource types, like costumes and backdrops, affects game behavior.
+  // TODO: Refactor to address issue 1 and reconsider user interactions to address issue 2, then enable this feature for all resource types.
+  // Related issue: https://github.com/goplus/builder/issues/1139
+  return resourceModel instanceof Sprite || resourceModel instanceof Sound || isWidget(resourceModel)
 }

@@ -4,6 +4,9 @@ import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
+import { Sprite } from '@/models/sprite'
+import { Sound } from '@/models/sound'
+import { isWidget } from '@/models/widget'
 import {
   type Command,
   type CommandInfo,
@@ -12,11 +15,18 @@ import {
   type TextDocumentIdentifier,
   type Selection,
   type IDocumentBase,
-  type Diagnostic
+  type Diagnostic,
+  type Action,
+  type TextDocumentPosition,
+  type ResourceIdentifier
 } from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
-import { ResourceReferenceController, type IResourceReferencesProvider } from './resource-reference'
+import {
+  ResourceReferenceController,
+  type IResourceReferencesProvider,
+  type InternalResourceReference
+} from './resource-reference'
 import { ContextMenuController, type IContextMenuProvider } from './context-menu'
 import { DiagnosticsController, type IDiagnosticsProvider } from './diagnostics'
 import { APIReferenceController, type IAPIReferenceProvider } from './api-reference'
@@ -38,7 +48,9 @@ import {
   fromMonacoSelection,
   isRangeEmpty,
   toMonacoPosition,
-  getCodeOwner
+  getCodeOwner,
+  getResourceModel,
+  supportGoTo
 } from './common'
 import { TextDocument } from './text-document'
 
@@ -87,9 +99,19 @@ export const builtInCommandCopilotFixProblem: Command<
 export const builtInCommandCopy: Command<[], void> = 'editor.action.copy'
 export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
 export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
-// const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
-// const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
-// const builtInCommandResourceReferenceModify: Command<[TextDocumentRange, ResourceIdentifier], void> = 'spx.resourceReference.modify'
+export const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
+export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'spx.goToResource'
+// export const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
+export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
+export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
+  'spx.modifyResourceReference'
+
+export type InternalAction<A extends any[] = any, R = any> = {
+  title: string
+  command: Command<A, R>
+  commandInfo: CommandInfo<A, R>
+  arguments: A
+}
 
 export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void {
@@ -120,14 +142,28 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.documentBase = documentBase
   }
 
-  private commandHandlers = new Map<Command<any, any>, CommandInfo<any, any>>()
+  private commands = new Map<Command<any, any>, CommandInfo<any, any>>()
+  getCommandInfo<A extends any[], R>(command: Command<A, R>): CommandInfo<A, R> | null {
+    return this.commands.get(command) ?? null
+  }
   async executeCommand<A extends any[], R>(command: Command<A, R>, ...input: A): Promise<R> {
-    const info = this.commandHandlers.get(command)
+    const info = this.getCommandInfo(command)
     if (info == null) throw new Error(`Command not found: ${command}`)
     return info.handler(...input)
   }
   registerCommand<A extends any[], R>(command: Command<A, R>, info: CommandInfo<A, R>): void {
-    this.commandHandlers.set(command, info)
+    this.commands.set(command, info)
+  }
+
+  resolveAction<A extends any[], R>(action: Action<A, R>): InternalAction<A, R> | null {
+    const info = this.getCommandInfo(action.command)
+    if (info == null) return null
+    return {
+      title: action.title ?? this.i18n.t(info.title),
+      command: action.command,
+      commandInfo: info,
+      arguments: action.arguments
+    }
   }
 
   open(textDocument: TextDocumentIdentifier): void
@@ -146,7 +182,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
 
   constructor(
     public project: Project,
-    public i18n: I18n
+    public i18n: I18n,
+    private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
   }
@@ -302,7 +339,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     )
 
     this.registerCommand(builtInCommandCopilotInspire, {
-      icon: 'TODO',
+      icon: 'explain', // TODO
       title: { en: 'Ask copilot', zh: '向 Copilot 提问' },
       handler: (problem) => {
         this.copilotController.startChat({
@@ -313,7 +350,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     })
 
     this.registerCommand(builtInCommandCopilotExplain, {
-      icon: 'TODO',
+      icon: 'explain',
       title: { en: 'Explain', zh: '解释' },
       handler: (target) => {
         this.copilotController.startChat({
@@ -324,7 +361,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     })
 
     this.registerCommand(builtInCommandCopilotReview, {
-      icon: 'TODO',
+      icon: 'explain', // TODO
       title: { en: 'Review', zh: '审查' },
       handler: (target) => {
         this.copilotController.startChat({
@@ -335,7 +372,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     })
 
     this.registerCommand(builtInCommandCopilotFixProblem, {
-      icon: 'TODO',
+      icon: 'fix',
       title: { en: 'Fix problem', zh: '修复问题' },
       handler: (params) => {
         this.copilotController.startChat({
@@ -349,7 +386,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     // while these actions are missing in the `editor.getSupportedActions()`, see details in https://github.com/microsoft/monaco-editor/issues/2598.
     // As a workaround, we use `document.execCommand` to implement these actions.
     this.registerCommand(builtInCommandCopy, {
-      icon: 'TODO',
+      icon: 'explain', // TODO
       title: { en: 'Copy', zh: '复制' },
       handler: () => {
         editor.focus()
@@ -357,7 +394,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
     this.registerCommand(builtInCommandCut, {
-      icon: 'TODO',
+      icon: 'explain', // TODO
       title: { en: 'Cut', zh: '剪切' },
       handler: () => {
         editor.focus()
@@ -365,7 +402,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       }
     })
     this.registerCommand(builtInCommandPaste, {
-      icon: 'TODO',
+      icon: 'explain', // TODO
       title: { en: 'Paste', zh: '粘贴' },
       handler: async () => {
         try {
@@ -380,6 +417,46 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           editor.focus()
           document.execCommand('paste')
         }
+      }
+    })
+
+    this.registerCommand(builtInCommandGoToDefinition, {
+      icon: 'goto',
+      title: { en: 'Go to definition', zh: '跳转到定义' },
+      handler: async (params) => {
+        const { textDocument, position } = params
+        this.open(textDocument, position)
+      }
+    })
+
+    this.registerCommand(builtInCommandGoToResource, {
+      icon: 'goto',
+      title: { en: 'View detail', zh: '查看详情' },
+      handler: async (resource) => {
+        const resourceModel = getResourceModel(this.project, resource)
+        if (!supportGoTo(resourceModel)) throw new Error(`Go to resource (${resource.uri}) not supported`)
+        if (resourceModel instanceof Sprite) return this.project.select({ type: 'sprite', id: resourceModel.id })
+        if (resourceModel instanceof Sound) return this.project.select({ type: 'sound', id: resourceModel.id })
+        if (isWidget(resourceModel)) {
+          this.project.select({ type: 'stage' })
+          this.project.stage.selectWidget(resourceModel.id)
+        }
+      }
+    })
+
+    this.registerCommand(builtInCommandModifyResourceReference, {
+      icon: 'modify',
+      title: { en: 'Modify', zh: '修改' },
+      handler: (rr) => {
+        this.resourceReferenceController.startModifying(rr.id)
+      }
+    })
+
+    this.registerCommand(builtInCommandRenameResource, {
+      icon: 'rename',
+      title: { en: 'Rename', zh: '重命名' },
+      handler: async (resource) => {
+        await this.renameResourceHandler(resource)
       }
     })
 

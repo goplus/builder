@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends IResource">
 import { ref } from 'vue'
 import { UIDropdownModal, UIDropdown, UIBlockItem, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
+import ResourceItem from '../../resource/ResourceItem.vue'
 import { type IResourceSelector, type IResource, type CreateMethod } from '.'
 
 const props = defineProps<{
@@ -46,10 +47,10 @@ function handleWheel(e: WheelEvent) {
   >
     <ul class="items">
       <component
-        :is="selector.itemComponent"
+        :is="ResourceItem"
         v-for="item in selector.items"
         :key="item.name"
-        :item="item"
+        :resource="item"
         :selected="item.name === selected"
         @click="handleSelect(item.name)"
       />
@@ -71,7 +72,6 @@ function handleWheel(e: WheelEvent) {
 
 <style lang="scss" scoped>
 .resource-selector {
-  margin: 2px 0;
   overflow: hidden;
   // TODO: share style with `.ui-dropdown-content` in `src/components/ui/UIDropdown.vue`?
   border-radius: var(--ui-border-radius-2);

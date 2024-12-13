@@ -27,7 +27,7 @@ export type RawCostumeConfig = Omit<CostumeInits, 'id'> & {
 export class Costume {
   id: string
 
-  private parent: Sprite | Animation | null = null
+  parent: Sprite | Animation | null = null
   setParent(parent: Sprite | Animation | null) {
     this.parent = parent
   }

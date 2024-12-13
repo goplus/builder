@@ -48,18 +48,18 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { UIIcon, UITab, UITabs, useModal } from '@/components/ui'
+import { UIIcon, UITab, UITabs } from '@/components/ui'
 import type { Sound } from '@/models/sound'
 import { useFileUrl } from '@/utils/file'
 import AssetName from '@/components/asset/AssetName.vue'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import DumbSoundPlayer from './DumbSoundPlayer.vue'
-import SoundRenameModal from './SoundRenameModal.vue'
 import VolumeSlider from './VolumeSlider.vue'
 import { fromBlob } from '@/models/common/file'
 import { useMessageHandle } from '@/utils/exception'
 import { UIButton } from '@/components/ui'
+import { useRenameSound } from '@/components/asset'
 import { formatDuration, useAudioDuration } from '@/utils/audio'
 import { WaveformPlayer } from './waveform'
 
@@ -68,7 +68,7 @@ const props = defineProps<{
 }>()
 
 const editorCtx = useEditorCtx()
-const renameSound = useModal(SoundRenameModal)
+const renameSound = useRenameSound()
 
 const handleNameEdit = useMessageHandle(
   () =>

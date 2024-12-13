@@ -3,10 +3,14 @@ function getResourceReferenceCls(suffix?: string) {
   return ['code-editor-resource-reference', suffix].filter(Boolean).join('-')
 }
 
-export function checkSelectTrigger(el: HTMLElement): string | null {
+/**
+ * Check if the element stands for icon of a modifiable resource reference.
+ * If so, return the id of the resource reference.
+ */
+export function checkModifiable(el: HTMLElement): string | null {
   const clss = el.classList
   if (!clss.contains(getResourceReferenceCls('icon'))) return null
-  if (!clss.contains(getResourceReferenceCls('selectable'))) return null
+  if (!clss.contains(getResourceReferenceCls('modifiable'))) return null
   const idClsPrefix = getResourceReferenceCls('id-')
   for (const cls of clss) {
     if (cls.startsWith(idClsPrefix)) return cls.slice(idClsPrefix.length)
@@ -19,7 +23,7 @@ export function checkSelectTrigger(el: HTMLElement): string | null {
 import { onUnmounted, watchEffect } from 'vue'
 import type { monaco } from '../common'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
-import { isSelectabe, type ResourceReferenceController } from '.'
+import { isModifiable, type ResourceReferenceController } from '.'
 import ResourceSelector from './selector/ResourceSelector.vue'
 
 const props = defineProps<{
@@ -44,8 +48,8 @@ watchEffect(() => {
 
   const decorations = items.map<monaco.editor.IModelDeltaDecoration>((item) => {
     const clss = ['icon', `id-${item.id}`]
-    if (isSelectabe(item)) {
-      clss.push('selectable')
+    if (isModifiable(item.kind)) {
+      clss.push('modifiable')
     }
     return {
       range: {
@@ -74,7 +78,7 @@ watchEffect(() => {
     <ResourceSelector
       v-if="controller.selector != null"
       :selector="controller.selector"
-      @cancel="controller.stopSelecting()"
+      @cancel="controller.stopModifying()"
       @selected="(newName) => controller.applySelected(newName)"
     />
   </Teleport>
@@ -103,10 +107,10 @@ watchEffect(() => {
     transform: translate(-50%, -50%) scale(0.8);
     filter: opacity(0.6);
   }
-  &.code-editor-resource-reference-selectable::after {
+  &.code-editor-resource-reference-modifiable::after {
     cursor: pointer;
   }
-  &.code-editor-resource-reference-selectable:hover::after {
+  &.code-editor-resource-reference-modifiable:hover::after {
     filter: opacity(1);
   }
 }

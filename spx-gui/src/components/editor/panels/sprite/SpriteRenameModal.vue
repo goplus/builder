@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancelled: []
-  resolved: []
+  resolved: [void]
 }>()
 
 const { t } = useI18n()

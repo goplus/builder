@@ -7,6 +7,7 @@ import CodeLink from './CodeLink.vue'
 import DefinitionOverviewWrapper from './DefinitionOverviewWrapper.vue'
 import DefinitionDetail from './DefinitionDetail.vue'
 import CodeBlock from './CodeBlock.vue'
+import ResourcePreview from './ResourcePreview.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -37,7 +38,14 @@ const basicComponents = {
    * </definition-overview-wrapper>
    * ```
    */
-  'definition-overview-wrapper': DefinitionOverviewWrapper
+  'definition-overview-wrapper': DefinitionOverviewWrapper,
+  /**
+   * Usage:
+   * ```html
+   * <resource-preview resource="spx://resources/sprites/NiuXiaoQi" />
+   * ```
+   */
+  'resource-preview': ResourcePreview
 }
 const advancedComponents = {
   ...basicComponents,
@@ -70,7 +78,6 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-size: 13px;
   line-height: 1.53846;
 
   :deep(ul),
@@ -81,6 +88,9 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
     padding-left: 1.5em;
   }
 
+  :deep(h4) {
+    font-size: 1.2em;
+  }
   :deep(ul) {
     list-style: square;
   }
@@ -92,13 +102,13 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   }
   :deep(:not(pre) > code) {
     // TODO: keep consistent with component `UICode`
-    display: inline-block;
-    font-size: 12px;
-    line-height: 18px;
-    padding: 0 4px;
+    font-size: 0.85em;
+    padding: 2px 4px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-500);
     background: var(--ui-color-grey-300);
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   :deep(blockquote) {
     // TODO: confirm style detail here

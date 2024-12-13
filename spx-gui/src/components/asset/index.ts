@@ -20,6 +20,13 @@ import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
+// TODO: Consider moving these components from `components/editor/` to `components/asset/`
+import SpriteRenameModal from '../editor/panels/sprite/SpriteRenameModal.vue'
+import SoundRenameModal from '../editor/sound/SoundRenameModal.vue'
+import CostumeRenameModal from '../editor/sprite/CostumeRenameModal.vue'
+import BackdropRenameModal from '../editor/stage/backdrop/BackdropRenameModal.vue'
+import AnimationRenameModal from '../editor/sprite/AnimationRenameModal.vue'
+import WidgetRenameModal from '../editor/stage/widget/WidgetRenameModal.vue'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
@@ -186,4 +193,28 @@ export function useAddMonitor(autoSelect = true) {
     })
     return monitor
   }
+}
+
+export function useRenameSprite() {
+  return useModal(SpriteRenameModal)
+}
+
+export function useRenameSound() {
+  return useModal(SoundRenameModal)
+}
+
+export function useRenameCostume() {
+  return useModal(CostumeRenameModal)
+}
+
+export function useRenameBackdrop() {
+  return useModal(BackdropRenameModal)
+}
+
+export function useRenameAnimation() {
+  return useModal(AnimationRenameModal)
+}
+
+export function useRenameWidget() {
+  return useModal(WidgetRenameModal)
 }
