@@ -40,8 +40,7 @@
           <ListResultWrapper v-slot="slotProps" :query-ret="queryRet" :height="436">
             <!-- fixed asset-list height to keep the layout stable -->
             <ul class="asset-list" style="height: 436px">
-              <component
-                :is="ItemComponent"
+              <ItemComponent
                 v-for="asset in slotProps.data.data"
                 :key="asset.id"
                 :asset="asset"
