@@ -6,11 +6,10 @@ export type Category = {
 }
 
 export const categories: Category[] = [
+  { value: 'People', message: { en: 'People', zh: '人物' } },
   { value: 'Animals', message: { en: 'Animals', zh: '动物' } },
-  { value: 'People', message: { en: 'People', zh: '人类' } },
-  { value: 'Sports', message: { en: 'Sports', zh: '运动' } },
-  { value: 'Food', message: { en: 'Food', zh: '食物' } },
-  { value: 'Fantasy', message: { en: 'Fantasy', zh: '幻想' } }
+  { value: 'Nature', message: { en: 'Nature', zh: '自然' } },
+  { value: 'UI', message: { en: 'UI', zh: '界面' } }
 ]
 
 export const categoryAll: Category = { value: '*', message: { en: 'All', zh: '所有' } }
