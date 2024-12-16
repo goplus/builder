@@ -5,6 +5,8 @@ ARG GO_BASE_IMAGE=golang:1.23.4
 ARG NODE_BASE_IMAGE=node:20.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
 
+################################################################################
+
 FROM ${GOP_BASE_IMAGE} AS gop-builder
 
 WORKDIR /app
@@ -24,11 +26,21 @@ RUN ./build.sh
 WORKDIR /app/spx-backend
 RUN gop build -o spx-backend ./cmd/spx-backend
 
+################################################################################
+
 FROM ${GO_BASE_IMAGE} AS go-builder
+
+WORKDIR /app
+
+COPY tools ./tools
+
+ARG GOPROXY
 
 # Build WASM for spxls
 WORKDIR /app/tools/spxls
 RUN ./build.sh
+
+################################################################################
 
 FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
@@ -50,6 +62,8 @@ COPY --from=go-builder /app/tools/spxls/spxls.wasm /app/spx-gui/src/assets/spxls
 ARG NODE_ENV
 
 RUN npm run build
+
+################################################################################
 
 FROM ${NGINX_BASE_IMAGE}
 
