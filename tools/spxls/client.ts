@@ -1,4 +1,4 @@
-import { Files, NewSpxls, NotificationMessage, RequestMessage, ResponseMessage, Spxls } from '.'
+import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type Spxls } from '.'
 
 /**
  * Client wrapper for the spxls.
@@ -40,7 +40,10 @@ export class Spxlc {
    */
   private handleResponseMessage(message: ResponseMessage): void {
     const pending = this.pendingRequests.get(message.id)
-    if (pending == null) throw new Error(`no pending request found for id: ${message.id}`)
+    if (pending == null) {
+      console.warn(`no pending request found for message ID: ${message.id}`, message)
+      return
+    }
     this.pendingRequests.delete(message.id)
 
     if ('error' in message) pending.reject(message.error)
@@ -54,7 +57,10 @@ export class Spxlc {
    */
   private handleNotificationMessage(message: NotificationMessage): void {
     const handler = this.notificationHandlers.get(message.method)
-    if (handler == null) throw new Error(`no notification handler found for method: ${message.method}`)
+    if (handler == null) {
+      console.warn(`no notification handler found for method: ${message.method}`, message)
+      return
+    }
 
     handler(message.params)
   }
@@ -66,20 +72,38 @@ export class Spxlc {
    * @returns Promise that resolves with the response.
    */
   request<T>(method: string, params?: any): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const id = this.nextRequestId++
-
+    const id = this.nextRequestId++
+    /* eslint-disable no-console */
+    // TODO: remove debug logs
+    console.debug(`[${id}][${method}] params:`, params)
+    const sendAt = Date.now()
+    return new Promise<T>((resolve, reject) => {
       const message: RequestMessage = {
         jsonrpc: '2.0',
         id,
         method,
         params
       }
-      const err = this.ls.handleMessage(message)
-      if (err != null) reject(err)
-
       this.pendingRequests.set(id, { resolve, reject })
-    })
+      const err = this.ls.handleMessage(message)
+      if (err != null) {
+        reject(err)
+        this.pendingRequests.delete(id)
+      }
+    }).then(
+      result => {
+        const time = Date.now() - sendAt
+        console.debug(`[${id}][${method}] took ${time}ms`)
+        console.debug(`[${id}][${method}] result:`, result)
+        return result
+      },
+      err => {
+        const time = Date.now() - sendAt
+        console.debug(`[${id}][${method}] took ${time}ms`)
+        console.debug(`[${id}][${method}] error:`, err)
+        throw err
+      }
+    )
   }
 
   /**

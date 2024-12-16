@@ -3,7 +3,7 @@ import Emitter from '@/utils/emitter'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
-import { Spxlc } from './lsp'
+import { SpxLSPClient } from './lsp'
 import {
   CodeEditorUIComp,
   type ICodeEditorUI,
@@ -30,7 +30,8 @@ import {
   stringifyDefinitionId,
   DiagnosticSeverity,
   ResourceReferenceKind,
-  selection2Range
+  selection2Range,
+  toLSPPosition
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -40,24 +41,28 @@ const allItems = Object.values({
   ...spxDocumentationItems,
   ...gopDocumentationItems
 })
-const allIds = allItems.map((item) => item.definition)
 
 const editorCtx = useEditorCtx()
 
 function handleUIInit(ui: ICodeEditorUI) {
+  // TODO: dispose these properly
   const copilot = new Copilot()
   const documentBase = new DocumentBase()
-  const spxlc = new Spxlc()
+  // TODO: reuse the same LSP client for all `CodeEditor` instances
+  const lspClient = new SpxLSPClient(editorCtx.project)
+  lspClient.init()
 
   ui.registerAPIReferenceProvider({
     async provideAPIReference(ctx, position) {
-      console.warn('TODO: get api references from LS', ctx, position, spxlc)
-      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      const definitions = await lspClient.getDefinitions({
+        // TODO: support signal
+        textDocument: ctx.textDocument.id,
+        position: toLSPPosition(position)
+      })
       ctx.signal.throwIfAborted()
-      const documentations = (await Promise.all(allIds.map((id) => documentBase.getDocumentation(id)))).filter(
-        () => Math.random() > 0.4
-      )
-      return documentations as DefinitionDocumentationItem[]
+      if (definitions == null) return []
+      const defWithDocs = await Promise.all(definitions.map(def => documentBase.getDocumentation(def)))
+      return defWithDocs.filter(d => d != null) as DefinitionDocumentationItem[]
     }
   })
 
@@ -189,11 +194,10 @@ function handleUIInit(ui: ICodeEditorUI) {
       const range = ctx.textDocument.getDefaultRange(position)
       let value = ctx.textDocument.getValueInRange(range)
       if (value.trim() === '') return null
-      const methodName = value[0].toUpperCase() + value.slice(1)
       // TODO: get definition ID from LS
       const definitionID: DefinitionIdentifier = {
         package: 'github.com/goplus/spx',
-        name: `Sprite.${methodName}`
+        name: `Sprite.${value}`
       }
       const definition = await documentBase.getDocumentation(definitionID)
       const contents: DefinitionDocumentationString[] = []

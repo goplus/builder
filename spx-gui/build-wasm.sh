@@ -1,5 +1,10 @@
 #!/bin/bash
+set -e
+
 echo Run this script from 'spx-gui' directory
+
+# Go v1.21.3 expected
+go version
 
 cd ../tools/fmt
 source ./build.sh

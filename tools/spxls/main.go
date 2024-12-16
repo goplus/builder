@@ -113,8 +113,8 @@ func ConvertJSFilesToMap(files js.Value) map[string][]byte {
 	for i := 0; i < keys.Length(); i++ {
 		key := keys.Index(i).String()
 		value := files.Get(key)
-		if value.InstanceOf(js.Global().Get("Uint8Array")) {
-			result[key] = JSUint8ArrayToBytes(value)
+		if value.InstanceOf(js.Global().Get("Object")) {
+			result[key] = JSUint8ArrayToBytes(value.Get("content"))
 		}
 	}
 	return result

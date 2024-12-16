@@ -1,5 +1,5 @@
 {
   "framework": "vite",
-  "installCommand": "source ../scripts/install-golang.sh && npm install",
-  "buildCommand": "export PATH=$PATH:/usr/local/go/bin && sh build-wasm.sh && npm run build"
+  "installCommand": "source ./vercel-install.sh",
+  "buildCommand": "source ./vercel-build.sh"
 }

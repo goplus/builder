@@ -1,6 +1,6 @@
 module github.com/goplus/builder/tools/spxls
 
-go 1.22.0
+go 1.23.4
 
 require (
 	github.com/goplus/gogen v1.15.2
@@ -10,6 +10,9 @@ require (
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/tools v0.23.0
 )
+
+// https://github.com/nighca/mod/tree/web TODO: any better way to fix this?
+replace github.com/goplus/mod v0.13.10 => github.com/nighca/mod v0.0.0-20240805065729-b50535825ae2
 
 require (
 	github.com/ajstarks/svgo v0.0.0-20210927141636-6d70534b1098 // indirect

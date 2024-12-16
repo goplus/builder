@@ -28,11 +28,6 @@ jobs:
           cache: npm
           cache-dependency-path: spx-gui/package-lock.json
 
-      - name: Setup Go 1.21.3
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21.3'
-
       - name: Install modules
         working-directory: spx-gui
         run: npm install
@@ -45,9 +40,23 @@ jobs:
         working-directory: spx-gui
         run: npm run lint
 
+      - name: Setup Go 1.21.3
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.3'
+
       - name: Build WASM
         working-directory: spx-gui
         run: npm run build-wasm
+
+      - name: Setup Go 1.23.4
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.4'
+
+      - name: Build WASM for spxls
+        working-directory: spx-gui
+        run: npm run build-spxls
 
       - name: Run Vitest
         working-directory: spx-gui

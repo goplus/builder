@@ -118,7 +118,10 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 	// Find the innermost scope contains the position.
 	tokenFile := result.fset.File(astFile.Pos())
-	lineStart := tokenFile.LineStart(int(param.Position.Line) + 1)
+	// Gop compiler may truncate the last empty line of the file, so we need to adjust the line number to avoid panic.
+	// TODO: Check if this should be fixed by gop compiler.
+	line := min(int(param.Position.Line)+1, tokenFile.LineCount())
+	lineStart := tokenFile.LineStart(line)
 	pos := tokenFile.Pos(tokenFile.Offset(lineStart) + int(param.Position.Character))
 	if !pos.IsValid() {
 		return nil, nil
