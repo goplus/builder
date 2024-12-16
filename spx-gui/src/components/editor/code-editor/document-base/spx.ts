@@ -14,7 +14,7 @@ export const clone: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Clone'
+    name: 'Sprite.clone'
   },
   insertText: 'clone',
   overview: 'clone',
@@ -29,7 +29,7 @@ export const onCloned: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnCloned'
+    name: 'Sprite.onCloned'
   },
   insertText: 'onCloned => {\n\t${1}\n}',
   overview: 'onCloned => { ... }',
@@ -44,7 +44,7 @@ export const onTouchStart0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnTouchStart',
+    name: 'Sprite.onTouchStart',
     overloadId: '0'
   },
   insertText: 'onTouchStart => {\n\t${1}\n}',
@@ -60,7 +60,7 @@ export const onTouchStart1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnTouchStart',
+    name: 'Sprite.onTouchStart',
     overloadId: '1'
   },
   insertText: 'onTouchStart sprite => {\n\t${1}\n}',
@@ -76,7 +76,7 @@ export const onTouchStart2: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnTouchStart',
+    name: 'Sprite.onTouchStart',
     overloadId: '2'
   },
   insertText: 'onTouchStart ${1:name}, => {\n\t${2}\n}',
@@ -92,7 +92,7 @@ export const onTouchStart3: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnTouchStart',
+    name: 'Sprite.onTouchStart',
     overloadId: '3'
   },
   insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
@@ -108,7 +108,7 @@ export const onMoving: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnMoving'
+    name: 'Sprite.onMoving'
   },
   insertText: 'onMoving => {\n\t${1}\n}',
   overview: 'onMoving => { ... }',
@@ -123,7 +123,7 @@ export const onTurning: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnTurning'
+    name: 'Sprite.onTurning'
   },
   insertText: 'onTurning => {\n\t${1}\n}',
   overview: 'onTurning => { ... }',
@@ -138,7 +138,7 @@ export const die: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Die'
+    name: 'Sprite.die'
   },
   insertText: 'die',
   overview: 'die',
@@ -153,7 +153,7 @@ export const hide: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Hide'
+    name: 'Sprite.hide'
   },
   insertText: 'hide',
   overview: 'hide',
@@ -168,7 +168,7 @@ export const show: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Show'
+    name: 'Sprite.show'
   },
   insertText: 'show',
   overview: 'show',
@@ -183,7 +183,7 @@ export const visible: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Visible'
+    name: 'Sprite.visible'
   },
   insertText: 'visible',
   overview: 'visible',
@@ -198,7 +198,7 @@ export const costumeName: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.CostumeName'
+    name: 'Sprite.costumeName'
   },
   insertText: 'costumeName',
   overview: 'costumeName',
@@ -213,7 +213,7 @@ export const setCostume: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetCostume'
+    name: 'Sprite.setCostume'
   },
   insertText: 'setCostume ${1:name}',
   overview: 'setCostume name',
@@ -228,7 +228,7 @@ export const animate: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Animate'
+    name: 'Sprite.animate'
   },
   insertText: 'animate ${1:name}',
   overview: 'animate name',
@@ -243,7 +243,7 @@ export const say0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Say',
+    name: 'Sprite.say',
     overloadId: '0'
   },
   insertText: 'say ${1:""}',
@@ -259,7 +259,7 @@ export const say1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Say',
+    name: 'Sprite.say',
     overloadId: '1'
   },
   insertText: 'say ${1:""}, ${2:seconds}',
@@ -275,7 +275,7 @@ export const think0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Think',
+    name: 'Sprite.think',
     overloadId: '0'
   },
   insertText: 'think ${1:""}',
@@ -291,7 +291,7 @@ export const think1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Think',
+    name: 'Sprite.think',
     overloadId: '1'
   },
   insertText: 'think ${1:""}, ${2:seconds}',
@@ -307,7 +307,7 @@ export const distanceTo: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.DistanceTo'
+    name: 'Sprite.distanceTo'
   },
   insertText: 'distanceTo(${1:target})',
   overview: 'distanceTo(target)',
@@ -322,7 +322,7 @@ export const move: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Move'
+    name: 'Sprite.move'
   },
   insertText: 'move ${1:distance}',
   overview: 'move distance',
@@ -337,7 +337,7 @@ export const step: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Step'
+    name: 'Sprite.step'
   },
   insertText: 'step ${1:distance}',
   overview: 'step distance',
@@ -352,7 +352,7 @@ export const goto: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Goto'
+    name: 'Sprite.goto'
   },
   insertText: 'goto ${1:target}',
   overview: 'goto target',
@@ -367,7 +367,7 @@ export const glide0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Glide',
+    name: 'Sprite.glide',
     overloadId: '0'
   },
   insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
@@ -383,7 +383,7 @@ export const glide1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Glide',
+    name: 'Sprite.glide',
     overloadId: '1'
   },
   insertText: 'glide(target Sprite, ${1:seconds})',
@@ -399,7 +399,7 @@ export const setXYpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetXYpos'
+    name: 'Sprite.setXYpos'
   },
   insertText: 'setXYpos ${1:x}, ${2:y}',
   overview: 'setXYpos x, y',
@@ -414,7 +414,7 @@ export const changeXYpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.ChangeXYpos'
+    name: 'Sprite.changeXYpos'
   },
   insertText: 'changeXYpos ${1:dX}, ${2:dY}',
   overview: 'changeXYpos dX, dY',
@@ -429,7 +429,7 @@ export const xpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Xpos'
+    name: 'Sprite.xpos'
   },
   insertText: 'xpos',
   overview: 'xpos',
@@ -444,7 +444,7 @@ export const setXpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetXpos'
+    name: 'Sprite.setXpos'
   },
   insertText: 'setXpos ${1:x}',
   overview: 'setXpos x',
@@ -459,7 +459,7 @@ export const changeXpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.ChangeXpos'
+    name: 'Sprite.changeXpos'
   },
   insertText: 'changeXpos ${1:dX}',
   overview: 'changeXpos dX',
@@ -474,7 +474,7 @@ export const ypos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Ypos'
+    name: 'Sprite.ypos'
   },
   insertText: 'ypos',
   overview: 'ypos',
@@ -489,7 +489,7 @@ export const setYpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetYpos'
+    name: 'Sprite.setYpos'
   },
   insertText: 'setYpos ${1:y}',
   overview: 'setYpos y',
@@ -504,7 +504,7 @@ export const changeYpos: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.ChangeYpos'
+    name: 'Sprite.changeYpos'
   },
   insertText: 'changeYpos ${1:dY}',
   overview: 'changeYpos dY',
@@ -519,7 +519,7 @@ export const setRotationStyle: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetRotationStyle'
+    name: 'Sprite.setRotationStyle'
   },
   insertText: 'setRotationStyle ${1:style}',
   overview: 'setRotationStyle style',
@@ -534,7 +534,7 @@ export const heading: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Heading'
+    name: 'Sprite.heading'
   },
   insertText: 'heading',
   overview: 'heading',
@@ -549,7 +549,7 @@ export const turn: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Turn'
+    name: 'Sprite.turn'
   },
   insertText: 'turn ${1:dDirection}',
   overview: 'turn dDirection',
@@ -564,7 +564,7 @@ export const turnTo0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.TurnTo',
+    name: 'Sprite.turnTo',
     overloadId: '0'
   },
   insertText: 'turnTo ${1:direction}',
@@ -580,7 +580,7 @@ export const turnTo1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.TurnTo',
+    name: 'Sprite.turnTo',
     overloadId: '1'
   },
   insertText: 'turnTo ${1:target}',
@@ -596,7 +596,7 @@ export const setHeading: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetHeading'
+    name: 'Sprite.setHeading'
   },
   insertText: 'setHeading ${1:direction}',
   overview: 'setHeading direction',
@@ -611,7 +611,7 @@ export const changeHeading: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.ChangeHeading'
+    name: 'Sprite.changeHeading'
   },
   insertText: 'changeHeading ${1:dDirection}',
   overview: 'changeHeading dDirection',
@@ -626,7 +626,7 @@ export const size: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Size'
+    name: 'Sprite.size'
   },
   insertText: 'size',
   overview: 'size',
@@ -641,7 +641,7 @@ export const setSize: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.SetSize'
+    name: 'Sprite.setSize'
   },
   insertText: 'setSize ${1:size}',
   overview: 'setSize size',
@@ -656,7 +656,7 @@ export const changeSize: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.ChangeSize'
+    name: 'Sprite.changeSize'
   },
   insertText: 'changeSize ${1:dSize}',
   overview: 'changeSize dSize',
@@ -671,7 +671,7 @@ export const touching: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.Touching'
+    name: 'Sprite.touching'
   },
   insertText: 'touching(${1:target})',
   overview: 'touching(target)',
@@ -686,7 +686,7 @@ export const bounceOffEdge: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.BounceOffEdge'
+    name: 'Sprite.bounceOffEdge'
   },
   insertText: 'bounceOffEdge',
   overview: 'bounceOffEdge',
@@ -701,7 +701,7 @@ export const mouseHitItem: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.MouseHitItem'
+    name: 'Game.mouseHitItem'
   },
   insertText: 'mouseHitItem',
   overview: 'mouseHitItem',
@@ -716,7 +716,7 @@ export const backdropName: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.BackdropName'
+    name: 'Game.backdropName'
   },
   insertText: 'backdropName',
   overview: 'backdropName',
@@ -731,7 +731,7 @@ export const backdropIndex: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.BackdropIndex'
+    name: 'Game.backdropIndex'
   },
   insertText: 'backdropIndex',
   overview: 'backdropIndex',
@@ -746,7 +746,7 @@ export const startBackdrop0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.StartBackdrop',
+    name: 'Game.startBackdrop',
     overloadId: '0'
   },
   insertText: 'startBackdrop ${1:backdrop}',
@@ -762,7 +762,7 @@ export const startBackdrop1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.StartBackdrop',
+    name: 'Game.startBackdrop',
     overloadId: '1'
   },
   insertText: 'startBackdrop ${1:backdrop}, ${2:wait}',
@@ -778,7 +778,7 @@ export const nextBackdrop: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.NextBackdrop'
+    name: 'Game.nextBackdrop'
   },
   insertText: 'nextBackdrop',
   overview: 'nextBackdrop',
@@ -793,7 +793,7 @@ export const prevBackdrop: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.PrevBackdrop'
+    name: 'Game.prevBackdrop'
   },
   insertText: 'prevBackdrop',
   overview: 'prevBackdrop', // TODO: optional argument `wait`
@@ -808,7 +808,7 @@ export const keyPressed: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.KeyPressed'
+    name: 'Game.keyPressed'
   },
   insertText: 'keyPressed ${1:key}',
   overview: 'keyPressed(key)',
@@ -823,7 +823,7 @@ export const mouseX: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.MouseX'
+    name: 'Game.mouseX'
   },
   insertText: 'mouseX',
   overview: 'mouseX',
@@ -838,7 +838,7 @@ export const mouseY: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.MouseY'
+    name: 'Game.mouseY'
   },
   insertText: 'mouseY',
   overview: 'mouseY',
@@ -853,7 +853,7 @@ export const mousePressed: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.MousePressed'
+    name: 'Game.mousePressed'
   },
   insertText: 'mousePressed',
   overview: 'mousePressed',
@@ -868,7 +868,7 @@ export const wait: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Wait'
+    name: 'Game.wait'
   },
   insertText: 'wait ${1:seconds}',
   overview: 'wait seconds',
@@ -883,7 +883,7 @@ export const play0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '0'
   },
   insertText: 'play ${1:sound}',
@@ -899,7 +899,7 @@ export const play1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '1'
   },
   insertText: 'play ${1:sound}, ${2:wait}',
@@ -915,7 +915,7 @@ export const play2: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '2'
   },
   insertText: 'play ${1:sound}, ${2:options}',
@@ -931,7 +931,7 @@ export const play3: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '3'
   },
   insertText: 'play ${1:"sound"}',
@@ -947,7 +947,7 @@ export const play4: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '4'
   },
   insertText: 'play ${1:"sound"}, ${2:wait}',
@@ -963,7 +963,7 @@ export const play5: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Play',
+    name: 'Game.play',
     overloadId: '5'
   },
   insertText: 'play ${1:"sound"}, ${2:options}',
@@ -979,7 +979,7 @@ export const stopAllSounds: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.StopAllSounds'
+    name: 'Game.stopAllSounds'
   },
   insertText: 'stopAllSounds',
   overview: 'stopAllSounds',
@@ -994,7 +994,7 @@ export const volume: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.Volume'
+    name: 'Game.volume'
   },
   insertText: 'volume',
   overview: 'volume',
@@ -1009,7 +1009,7 @@ export const setVolume: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.SetVolume'
+    name: 'Game.setVolume'
   },
   insertText: 'setVolume ${1:volume}',
   overview: 'setVolume volume',
@@ -1024,7 +1024,7 @@ export const changeVolume: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.ChangeVolume'
+    name: 'Game.changeVolume'
   },
   insertText: 'changeVolume ${1:dVolume}',
   overview: 'changeVolume dVolume',
@@ -1039,7 +1039,7 @@ export const broadcast0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Broadcast',
+    name: 'Game.broadcast',
     overloadId: '0'
   },
   insertText: 'broadcast ${1:"message"}',
@@ -1055,7 +1055,7 @@ export const broadcast1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Broadcast',
+    name: 'Game.broadcast',
     overloadId: '1'
   },
   insertText: 'broadcast ${1:"message"}, ${2:wait}',
@@ -1071,7 +1071,7 @@ export const broadcast2: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Broadcast',
+    name: 'Game.broadcast',
     overloadId: '2'
   },
   insertText: 'broadcast ${1:"message"}, ${2:data}, ${3:wait}',
@@ -1087,7 +1087,7 @@ export const onStart: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnStart'
+    name: 'Game.onStart'
   },
   insertText: 'onStart => {\n\t${1}\n}',
   overview: 'onStart => { ... }',
@@ -1102,7 +1102,7 @@ export const onClickGame: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnClick'
+    name: 'Game.onClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
   overview: 'onClick => { ... }',
@@ -1117,7 +1117,7 @@ export const onClickSprite: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Sprite.OnClick'
+    name: 'Sprite.onClick'
   },
   insertText: 'onClick => {\n\t${1}\n}',
   overview: 'onClick => { ... }',
@@ -1132,7 +1132,7 @@ export const onAnyKey: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnAnyKey'
+    name: 'Game.onAnyKey'
   },
   insertText: 'onAnyKey key => {\n\t${1}\n}',
   overview: 'onAnyKey key => { ... }',
@@ -1147,7 +1147,7 @@ export const onKey0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnKey',
+    name: 'Game.onKey',
     overloadId: '0'
   },
   insertText: 'onKey ${1:key}, => {\n\t${2}\n}',
@@ -1163,7 +1163,7 @@ export const onKey1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnKey',
+    name: 'Game.onKey',
     overloadId: '1'
   },
   insertText: 'onKey [${1:}], key => {\n\t${2}\n}',
@@ -1179,7 +1179,7 @@ export const onKey2: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnKey',
+    name: 'Game.onKey',
     overloadId: '2'
   },
   insertText: 'onKey [${1:}], => {\n\t${2}\n}',
@@ -1195,7 +1195,7 @@ export const onMsg0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnMsg',
+    name: 'Game.onMsg',
     overloadId: '0'
   },
   insertText: 'onMsg (message, data) => {\n\t${1}\n}',
@@ -1211,7 +1211,7 @@ export const onMsg1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnMsg',
+    name: 'Game.onMsg',
     overloadId: '1'
   },
   insertText: 'onMsg ${1:message}, => {\n\t${2}\n}',
@@ -1227,7 +1227,7 @@ export const onBackdrop0: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnBackdrop',
+    name: 'Game.onBackdrop',
     overloadId: '0'
   },
   insertText: 'onBackdrop backdrop => {\n\t${1}\n}',
@@ -1243,7 +1243,7 @@ export const onBackdrop1: DefinitionDocumentationItem = {
   kind: DefinitionKind.Listen,
   definition: {
     package: packageSpx,
-    name: 'Game.OnBackdrop',
+    name: 'Game.onBackdrop',
     overloadId: '1'
   },
   insertText: 'onBackdrop ${1:backdrop}, => {\n\t${2}\n}',
@@ -1259,7 +1259,7 @@ export const rand: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.Rand'
+    name: 'Game.rand'
   },
   insertText: 'rand(${1:from}, ${2:to})',
   overview: 'rand(from, to)',
@@ -1274,7 +1274,7 @@ export const exit: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.Exit'
+    name: 'Game.exit'
   },
   insertText: 'exit',
   overview: 'exit',
@@ -1289,7 +1289,7 @@ export const getWidget: DefinitionDocumentationItem = {
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Game.GetWidget'
+    name: 'Game.getWidget'
   },
   insertText: 'getWidget(${1:Monitor}, ${2:name})',
   overview: 'getWidget(type, name)',

@@ -1,4 +1,5 @@
 import { mapValues } from 'lodash'
+import type * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
 
@@ -347,5 +348,12 @@ export function selection2Range(selection: Selection): Range {
   return {
     start: reversed ? selection.position : selection.start,
     end: reversed ? selection.start : selection.position
+  }
+}
+
+export function toLSPPosition(pos: Position): lsp.Position {
+  return {
+    line: pos.line - 1,
+    character: pos.column - 1
   }
 }

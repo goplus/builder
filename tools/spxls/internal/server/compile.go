@@ -553,8 +553,19 @@ func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 				}
 			}
 
+			var lastParamType types.Type
 			for i, arg := range expr.Args {
-				paramType := funSig.Params().At(i).Type()
+				var paramType types.Type
+				if i < funSig.Params().Len() {
+					paramType = funSig.Params().At(i).Type()
+					if ptr, ok := paramType.(*types.Pointer); ok {
+						paramType = ptr.Elem()
+					}
+					lastParamType = paramType
+				} else {
+					// Use the last parameter type for variadic functions.
+					paramType = lastParamType
+				}
 				if ptr, ok := paramType.(*types.Pointer); ok {
 					paramType = ptr.Elem()
 				}

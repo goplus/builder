@@ -1,10 +1,11 @@
 # All-in-one Dockerfile for building the SPX GUI
 
 ARG GOP_BASE_IMAGE=ghcr.io/goplus/gop:1.2
+ARG GO_BASE_IMAGE=golang:1.23.4
 ARG NODE_BASE_IMAGE=node:20.11.1
 ARG NGINX_BASE_IMAGE=nginx:1.27
 
-FROM ${GOP_BASE_IMAGE} AS go-builder
+FROM ${GOP_BASE_IMAGE} AS gop-builder
 
 WORKDIR /app
 
@@ -23,6 +24,12 @@ RUN ./build.sh
 WORKDIR /app/spx-backend
 RUN gop build -o spx-backend ./cmd/spx-backend
 
+FROM ${GO_BASE_IMAGE} AS go-builder
+
+# Build WASM for spxls
+WORKDIR /app/tools/spxls
+RUN ./build.sh
+
 FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/spx-gui
@@ -36,8 +43,9 @@ RUN npm install
 COPY spx-gui .
 COPY docs ../docs
 COPY tools ../tools
-COPY --from=go-builder /app/tools/fmt/static/main.wasm /app/spx-gui/src/assets/format.wasm
-COPY --from=go-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/main.wasm
+COPY --from=gop-builder /app/tools/fmt/static/main.wasm /app/spx-gui/src/assets/format.wasm
+COPY --from=gop-builder /app/tools/ispx/main.wasm /app/spx-gui/src/assets/ispx/main.wasm
+COPY --from=go-builder /app/tools/spxls/spxls.wasm /app/spx-gui/src/assets/spxls.wasm
 
 ARG NODE_ENV
 
@@ -45,7 +53,7 @@ RUN npm run build
 
 FROM ${NGINX_BASE_IMAGE}
 
-COPY --from=go-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
+COPY --from=gop-builder /app/spx-backend/spx-backend /app/spx-backend/spx-backend
 COPY --from=frontend-builder /app/spx-gui/dist /usr/share/nginx/html
 COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
 

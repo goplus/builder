@@ -10,17 +10,20 @@ export interface Spxls {
   handleMessage(message: RequestMessage | NotificationMessage): Error | null
 }
 
-/**
- * Creates a new instance of the spx language server.
- *
- * @param filesProvider - Function that provides access to the workspace files. All paths in the returned Files are
- *                       relative to the workspace root. This will be called whenever the language server needs to
- *                       access the file system.
- *
- * @param messageReplier - Function called when the language server needs to reply to the client. The client should
- *                        handle these messages according to the LSP specification.
- */
-export function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): Spxls | Error
+
+declare global {
+  /**
+   * Creates a new instance of the spx language server.
+   *
+   * @param filesProvider - Function that provides access to the workspace files. All paths in the returned Files are
+   *                       relative to the workspace root. This will be called whenever the language server needs to
+   *                       access the file system.
+   *
+   * @param messageReplier - Function called when the language server needs to reply to the client. The client should
+   *                        handle these messages according to the LSP specification.
+   */
+  function NewSpxls(filesProvider: () => Files, messageReplier: (message: ResponseMessage | NotificationMessage) => void): Spxls | Error
+}
 
 /**
  * A general message as defined by JSON-RPC. The language server protocol always uses “2.0” as the `jsonrpc` version.
@@ -118,7 +121,7 @@ export interface NotificationMessage extends Message {
   * Map from relative path to file.
   */
 export type Files = {
-  [path: string]: File
+  [path: string]: File | undefined
 }
 
 /**
