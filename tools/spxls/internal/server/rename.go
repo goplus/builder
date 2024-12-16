@@ -3,13 +3,89 @@ package server
 import (
 	"errors"
 	"fmt"
-	"go/token"
 	"go/types"
 	"io/fs"
 	"slices"
 
 	gopast "github.com/goplus/gop/ast"
+	goptoken "github.com/goplus/gop/token"
 )
+
+// See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_prepareRename
+func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range, error) {
+	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
+	if err != nil {
+		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if astFile == nil {
+		return nil, nil
+	}
+
+	ident, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	if !isRenameableObject(obj) {
+		return nil, nil
+	}
+
+	return &Range{
+		Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
+		End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+	}, nil
+}
+
+// See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_rename
+func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error) {
+	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
+	if err != nil {
+		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if astFile == nil {
+		return nil, nil
+	}
+	if result.hasErrorSeverityDiagnostic {
+		return nil, errors.New("cannot rename symbol when there are unresolved error severity diagnostics")
+	}
+
+	if refKey, _ := result.spxResourceRefAtASTFilePosition(astFile, params.Position); refKey != nil {
+		return s.spxRenameResourcesWithCompileResult(result, []SpxRenameResourceParams{{
+			Resource: SpxResourceIdentifier{
+				URI: refKey.URI(),
+			},
+			NewName: params.NewName,
+		}})
+	}
+
+	ident, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	if !isRenameableObject(obj) {
+		return nil, nil
+	}
+
+	workspaceEdit := WorkspaceEdit{
+		Changes: map[DocumentURI][]TextEdit{
+			s.toDocumentURI(spxFile): {
+				{
+					Range: Range{
+						Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
+						End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+					},
+					NewText: params.NewName,
+				},
+			},
+		},
+	}
+	for _, refLoc := range s.findReferenceLocations(result, obj) {
+		workspaceEdit.Changes[refLoc.URI] = append(workspaceEdit.Changes[refLoc.URI], TextEdit{
+			Range:   refLoc.Range,
+			NewText: params.NewName,
+		})
+	}
+	return &workspaceEdit, nil
+}
 
 // spxRenameResourceAtRefs updates resource names at reference locations by
 // matching the reference key.
@@ -91,7 +167,7 @@ func (s *Server) spxRenameSpriteResource(result *compileResult, refKey SpxSprite
 	}
 	changes := s.spxRenameResourceAtRefs(result, refKey, newName)
 	for expr, tv := range result.typeInfo.Types {
-		if expr == nil || expr.Pos() == token.NoPos || !tv.IsType() {
+		if expr == nil || expr.Pos() == goptoken.NoPos || !tv.IsType() {
 			continue
 		}
 		if tv.Type.String() == "main."+refKey.SpriteName {

@@ -72,8 +72,8 @@ func (mfs *MapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 		}
 	}
 
-	dirs := map[string]struct{}{}
-	files := map[string]struct{}{}
+	dirs := make(map[string]struct{})
+	files := make(map[string]struct{})
 	prefix := ""
 	if name != "." {
 		prefix = name + "/"

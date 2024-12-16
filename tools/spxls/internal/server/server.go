@@ -72,18 +72,6 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 			return s.replyParseError(c.ID(), err)
 		}
 		return errors.New("TODO")
-	case "textDocument/inlayHint":
-		var params InlayHintParams
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
-	case "inlayHint/resolve":
-		var hint InlayHint
-		if err := UnmarshalJSON(c.Params(), &hint); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
 	case "textDocument/completion":
 		var params CompletionParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -101,7 +89,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentSignatureHelp(&params)
+		})
 	case "textDocument/declaration":
 		var params DeclarationParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -147,7 +137,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentDocumentHighlight(&params)
+		})
 	case "textDocument/documentLink":
 		var params DocumentLinkParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -164,24 +156,6 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		s.runWithResponse(c.ID(), func() (any, error) {
 			return s.documentLinkResolve(&params)
 		})
-	case "textDocument/documentSymbol":
-		var params DocumentSymbolParams
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
-	case "workspace/symbol":
-		var params WorkspaceSymbolParams
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
-	case "workspaceSymbol/resolve":
-		var params WorkspaceSymbol
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
 	case "textDocument/diagnostic":
 		var params DocumentDiagnosticParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -198,12 +172,6 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		s.runWithResponse(c.ID(), func() (any, error) {
 			return s.workspaceDiagnostic(&params)
 		})
-	case "textDocument/codeAction":
-		var params CodeActionParams
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
 	case "textDocument/formatting":
 		var params DocumentFormattingParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -212,12 +180,22 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		s.runWithResponse(c.ID(), func() (any, error) {
 			return s.textDocumentFormatting(&params)
 		})
+	case "textDocument/prepareRename":
+		var params PrepareRenameParams
+		if err := UnmarshalJSON(c.Params(), &params); err != nil {
+			return s.replyParseError(c.ID(), err)
+		}
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentPrepareRename(&params)
+		})
 	case "textDocument/rename":
 		var params RenameParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentRename(&params)
+		})
 	case "textDocument/semanticTokens/full":
 		var params SemanticTokensParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
@@ -273,8 +251,6 @@ func (s *Server) handleNotification(n *jsonrpc2.Notification) error {
 			return fmt.Errorf("failed to parse didClose params: %w", err)
 		}
 		return errors.New("TODO")
-	default:
-		return fmt.Errorf("unsupported notification method: %s", n.Method())
 	}
 	return nil
 }

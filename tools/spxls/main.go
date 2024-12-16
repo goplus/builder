@@ -110,7 +110,7 @@ func ConvertJSFilesToMap(files js.Value) map[string][]byte {
 	}
 	result := make(map[string][]byte)
 	keys := js.Global().Get("Object").Call("keys", files)
-	for i := 0; i < keys.Length(); i++ {
+	for i := range keys.Length() {
 		key := keys.Index(i).String()
 		value := files.Get(key)
 		if value.InstanceOf(js.Global().Get("Object")) {

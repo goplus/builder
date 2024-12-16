@@ -49,7 +49,7 @@ func getStringLitOrConstValue(expr gopast.Expr, tv types.TypeAndValue) (string, 
 // deduplicateLocations deduplicates locations.
 func deduplicateLocations(locations []Location) []Location {
 	result := make([]Location, 0, len(locations))
-	seen := map[string]struct{}{}
+	seen := make(map[string]struct{})
 	for _, loc := range locations {
 		key := fmt.Sprintf("%s:%d:%d", loc.URI, loc.Range.Start.Line, loc.Range.Start.Character)
 		if _, ok := seen[key]; !ok {
@@ -125,7 +125,7 @@ func walkStruct(
 			}
 		}
 
-		for i := 0; i < named.NumMethods(); i++ {
+		for i := range named.NumMethods() {
 			method := named.Method(i)
 			if onMethod != nil {
 				if _, ok := seenMethods[method.Name()]; ok {
@@ -160,7 +160,21 @@ func parseGopFuncName(name string) (funcName string, overloadIndex *int) {
 // function name.
 var spxEventHandlerFuncNameRE = regexp.MustCompile(`^on[A-Z]\w*$`)
 
-// isMainPkgObject returns true if the given object is defined in the main package.
+// isMainPkgObject reports whether the given object is defined in the main package.
 func isMainPkgObject(obj types.Object) bool {
 	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == "main"
+}
+
+// isRenameableObject reports whether the given object can be renamed.
+func isRenameableObject(obj types.Object) bool {
+	if !isMainPkgObject(obj) || obj.Parent() == types.Universe {
+		return false
+	}
+	switch obj.(type) {
+	case *types.Var, *types.Const, *types.TypeName, *types.Func, *types.Label:
+		return true
+	case *types.PkgName:
+		return false
+	}
+	return false
 }

@@ -29,7 +29,7 @@ func (s *Server) textDocumentDefinition(params *DefinitionParams) (any, error) {
 		return nil, nil
 	}
 
-	obj := result.objectAtFilePosition(astFile, params.Position)
+	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}
@@ -69,7 +69,7 @@ func (s *Server) textDocumentTypeDefinition(params *TypeDefinitionParams) (any, 
 		return nil, nil
 	}
 
-	obj := result.objectAtFilePosition(astFile, params.Position)
+	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}
@@ -103,7 +103,7 @@ func (s *Server) textDocumentImplementation(params *ImplementationParams) (any, 
 		return nil, nil
 	}
 
-	obj := result.objectAtFilePosition(astFile, params.Position)
+	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
 	if !isMainPkgObject(obj) {
 		return nil, nil
 	}
@@ -134,7 +134,7 @@ func (s *Server) findImplementingMethodDefinitions(result *compileResult, iface 
 			continue
 		}
 
-		for i := 0; i < named.NumMethods(); i++ {
+		for i := range named.NumMethods() {
 			method := named.Method(i)
 			if method.Name() != methodName {
 				continue
@@ -159,7 +159,7 @@ func (s *Server) textDocumentReferences(params *ReferenceParams) ([]Location, er
 		return nil, nil
 	}
 
-	obj := result.objectAtFilePosition(astFile, params.Position)
+	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
 	if obj == nil {
 		return nil, nil
 	}
@@ -229,7 +229,7 @@ func (s *Server) findEmbeddedInterfaceReferences(result *compileResult, iface *t
 				return nil
 			}
 
-			for i := 0; i < embedIface.NumEmbeddeds(); i++ {
+			for i := range embedIface.NumEmbeddeds() {
 				if types.Identical(embedIface.EmbeddedType(i), current) {
 					method, index, _ := types.LookupFieldOrMethod(embedIface, false, typeName.Pkg(), methodName)
 					if method != nil && index != nil {
@@ -342,7 +342,7 @@ func (s *Server) findEmbeddedMethodReferences(result *compileResult, fn *types.F
 
 	var locations []Location
 	hasEmbed := false
-	for i := 0; i < st.NumFields(); i++ {
+	for i := range st.NumFields() {
 		field := st.Field(i)
 		if !field.Embedded() {
 			continue
