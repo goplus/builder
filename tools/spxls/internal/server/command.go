@@ -43,7 +43,7 @@ func (s *Server) spxRenameResources(params []SpxRenameResourceParams) (*Workspac
 	result, err := s.compile()
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil // No valid spx files found in workspace.
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to compile: %w", err)
 	}
@@ -51,6 +51,11 @@ func (s *Server) spxRenameResources(params []SpxRenameResourceParams) (*Workspac
 		return nil, errors.New("cannot rename spx resources when there are unresolved error severity diagnostics")
 	}
 
+	return s.spxRenameResourcesWithCompileResult(result, params)
+}
+
+// spxRenameResourcesWithCompileResult renames spx resources in the workspace with the given compile result.
+func (s *Server) spxRenameResourcesWithCompileResult(result *compileResult, params []SpxRenameResourceParams) (*WorkspaceEdit, error) {
 	workspaceEdit := WorkspaceEdit{
 		Changes: make(map[DocumentURI][]TextEdit),
 	}
@@ -92,13 +97,6 @@ func (s *Server) spxRenameResources(params []SpxRenameResourceParams) (*Workspac
 
 // spxGetDefinitions gets spx definitions at a specific position in a document.
 func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefinitionIdentifier, error) {
-	result, err := s.compile()
-	if err != nil {
-		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil // No valid spx files found in workspace.
-		}
-		return nil, fmt.Errorf("failed to compile: %w", err)
-	}
 	if l := len(params); l == 0 {
 		return nil, nil
 	} else if l > 1 {
@@ -106,13 +104,15 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	}
 	param := params[0]
 
-	spxFile, err := s.fromDocumentURI(param.TextDocument.URI)
+	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(param.TextDocument.URI)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get spx file from document URI %q: %w", param.TextDocument.URI, err)
+		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	astFile, ok := result.mainPkgFiles[spxFile]
-	if !ok {
-		return nil, nil // No AST file found for the spx file, probably compile failed.
+	if astFile == nil {
+		return nil, nil
 	}
 	astFileScope := result.typeInfo.Scopes[astFile]
 
@@ -126,7 +126,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	if !pos.IsValid() {
 		return nil, nil
 	}
-	innermostScope := result.innermostScope(pos)
+	innermostScope := result.innermostScopeAt(pos)
 	universalScope := result.mainPkg.Scope().Parent()
 
 	var definitions []SpxDefinitionIdentifier
@@ -148,7 +148,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	}
 
 	// Find called event handlers.
-	calledEventHandlers := map[string]struct{}{}
+	calledEventHandlers := make(map[string]struct{})
 	for expr, tv := range result.typeInfo.Types {
 		if expr == nil || expr.Pos() == goptoken.NoPos || tv.IsType() {
 			continue // Skip type identifiers.
@@ -164,38 +164,38 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		if !ok {
 			continue
 		}
-		funIdent, ok := callExpr.Fun.(*gopast.Ident)
+		funcIdent, ok := callExpr.Fun.(*gopast.Ident)
 		if !ok {
 			continue
 		}
-		if !spxEventHandlerFuncNameRE.MatchString(funIdent.Name) {
+		if !spxEventHandlerFuncNameRE.MatchString(funcIdent.Name) {
 			continue
 		}
-		funObj := result.typeInfo.ObjectOf(funIdent)
-		if funObj == nil || funObj.Pkg() == nil || funObj.Pkg().Path() != spxPkgPath {
+		funcObj := result.typeInfo.ObjectOf(funcIdent)
+		if funcObj == nil || funcObj.Pkg() == nil || funcObj.Pkg().Path() != spxPkgPath {
 			continue
 		}
-		funTV, ok := result.typeInfo.Types[callExpr.Fun]
+		funcTV, ok := result.typeInfo.Types[callExpr.Fun]
 		if !ok {
 			continue
 		}
-		funSig, ok := funTV.Type.(*types.Signature)
+		funcSig, ok := funcTV.Type.(*types.Signature)
 		if !ok {
 			continue
 		}
-		funRecv := funSig.Recv()
-		if funRecv == nil {
+		funcRecv := funcSig.Recv()
+		if funcRecv == nil {
 			continue
 		}
-		recvType := funRecv.Type()
-		if ptr, ok := recvType.(*types.Pointer); ok {
-			recvType = ptr.Elem()
+		funcRecvType := funcRecv.Type()
+		if ptr, ok := funcRecvType.(*types.Pointer); ok {
+			funcRecvType = ptr.Elem()
 		}
 
-		if paramCount := funSig.Params().Len(); paramCount > 0 {
-			lastParamType := funSig.Params().At(paramCount - 1).Type()
+		if paramCount := funcSig.Params().Len(); paramCount > 0 {
+			lastParamType := funcSig.Params().At(paramCount - 1).Type()
 			if _, ok := lastParamType.(*types.Signature); ok {
-				calledEventHandlers[recvType.String()+"."+funIdent.Name] = struct{}{}
+				calledEventHandlers[funcRecvType.String()+"."+funcIdent.Name] = struct{}{}
 			}
 		}
 	}

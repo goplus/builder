@@ -1,26 +1,18 @@
 package server
 
-import (
-	"errors"
-	"fmt"
-)
+import "errors"
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_documentLink
 func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]DocumentLink, error) {
-	spxFile, err := s.fromDocumentURI(params.TextDocument.URI)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get path from document uri: %w", err)
-	}
-
-	result, err := s.compile()
+	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
-			return nil, nil // No valid spx files found in workspace.
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to compile: %w", err)
+		return nil, err
 	}
-	if _, ok := result.mainPkgFiles[spxFile]; !ok {
-		return nil, nil // Cannot find the spx file in workspace.
+	if astFile == nil {
+		return nil, nil
 	}
 
 	var links []DocumentLink

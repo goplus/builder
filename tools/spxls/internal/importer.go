@@ -2,26 +2,26 @@ package internal
 
 import (
 	"fmt"
-	"go/token"
 	"go/types"
 	"sync"
 
 	"github.com/goplus/builder/tools/spxls/internal/pkgdata"
+	goptoken "github.com/goplus/gop/token"
 	"golang.org/x/tools/go/gcexportdata"
 )
 
 // importer implements [types.Importer].
 type importer struct {
 	mu     sync.Mutex
-	fset   *token.FileSet
+	fset   *goptoken.FileSet
 	loaded map[string]*types.Package
 }
 
 // NewImporter returns a new [types.Importer] that reads package data from the
 // embedded pkgdata.
-func NewImporter(fset *token.FileSet) types.Importer {
+func NewImporter(fset *goptoken.FileSet) types.Importer {
 	if fset == nil {
-		fset = token.NewFileSet()
+		fset = goptoken.NewFileSet()
 	}
 	loaded := make(map[string]*types.Package)
 	loaded["unsafe"] = types.Unsafe
