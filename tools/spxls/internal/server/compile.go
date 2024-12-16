@@ -86,7 +86,15 @@ type compileResult struct {
 // position. It returns nil if not found.
 func (r *compileResult) innermostScopeAt(pos goptoken.Pos) *types.Scope {
 	var innermostScope *types.Scope
+	mainPkgScope := r.mainPkg.Scope()
+	// The `MainEntry` scope is the last child of the main package and covers all positions in the workspace.
+	// We need to skip `MainEntry` when searching for the innermost scope, as the file scope will be more precise.
+	// Especially for positions in trailing empty lines of a file, the file scope does not contain them in its position range.
+	mainEntryScope := mainPkgScope.Child(mainPkgScope.Len() - 1)
 	for _, scope := range r.typeInfo.Scopes {
+		if scope == mainEntryScope {
+			continue
+		}
 		if scope.Contains(pos) && (innermostScope == nil || innermostScope.Contains(scope.Pos())) {
 			innermostScope = scope
 		}

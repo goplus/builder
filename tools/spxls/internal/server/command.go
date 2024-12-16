@@ -130,9 +130,9 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	universalScope := result.mainPkg.Scope().Parent()
 
 	var definitions []SpxDefinitionIdentifier
-	addDefinition := func(pkg, name string, overloadIndex *int) {
+	addDefinition := func(pkg, name string, overloadId *string) {
 		def := SpxDefinitionIdentifier{
-			OverloadIndex: overloadIndex,
+			OverloadId: overloadId,
 		}
 		if pkg != "" {
 			def.Package = &pkg
@@ -141,7 +141,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			def.Name = &name
 		}
 		if !slices.ContainsFunc(definitions, func(def SpxDefinitionIdentifier) bool {
-			return fromStringPtr(def.Name) == name && fromIntPtr(def.OverloadIndex) == fromIntPtr(overloadIndex)
+			return fromStringPtr(def.Name) == name && fromStringPtr(def.OverloadId) == fromStringPtr(overloadId)
 		}) {
 			definitions = append(definitions, def)
 		}
@@ -240,7 +240,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 						return
 					}
 
-					funcName, overloadIndex := parseGopFuncName(method.Name())
+					funcName, overloadId := parseGopFuncName(method.Name())
 					if _, ok := calledEventHandlers[named.String()+"."+funcName]; ok {
 						return
 					}
@@ -265,7 +265,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 						}
 					}
 
-					addDefinition(methodPkgPath, receiverName+"."+funcName, overloadIndex)
+					addDefinition(methodPkgPath, receiverName+"."+funcName, overloadId)
 				},
 			)
 		}
@@ -276,13 +276,13 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		if obj := result.spxPkg.Scope().Lookup(name); obj != nil {
 			name := obj.Name()
 
-			var overloadIndex *int
+			var overloadId *string
 			if _, ok := obj.(*types.Func); ok {
-				name, overloadIndex = parseGopFuncName(name)
+				name, overloadId = parseGopFuncName(name)
 			}
 
 			if obj.Exported() {
-				addDefinition(spxPkgPath, name, overloadIndex)
+				addDefinition(spxPkgPath, name, overloadId)
 			}
 		}
 	}
