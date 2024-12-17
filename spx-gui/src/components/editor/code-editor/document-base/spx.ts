@@ -1082,7 +1082,7 @@ export const broadcast2: DefinitionDocumentationItem = {
   })
 }
 
-export const onStart: DefinitionDocumentationItem = {
+export const gameOnStart: DefinitionDocumentationItem = {
   categories: [categories.event.game],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1097,7 +1097,15 @@ export const onStart: DefinitionDocumentationItem = {
   })
 }
 
-export const onClickGame: DefinitionDocumentationItem = {
+export const spriteOnStart: DefinitionDocumentationItem = {
+  ...gameOnStart,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onStart'
+  }
+}
+
+export const gameOnClick: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1112,7 +1120,7 @@ export const onClickGame: DefinitionDocumentationItem = {
   })
 }
 
-export const onClickSprite: DefinitionDocumentationItem = {
+export const spriteOnClick: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1142,7 +1150,7 @@ export const onAnyKey: DefinitionDocumentationItem = {
   })
 }
 
-export const onKey0: DefinitionDocumentationItem = {
+export const gameOnKey0: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1158,7 +1166,7 @@ export const onKey0: DefinitionDocumentationItem = {
   })
 }
 
-export const onKey1: DefinitionDocumentationItem = {
+export const gameOnKey1: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1174,7 +1182,7 @@ export const onKey1: DefinitionDocumentationItem = {
   })
 }
 
-export const onKey2: DefinitionDocumentationItem = {
+export const gameOnKey2: DefinitionDocumentationItem = {
   categories: [categories.event.sensing],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1190,7 +1198,34 @@ export const onKey2: DefinitionDocumentationItem = {
   })
 }
 
-export const onMsg0: DefinitionDocumentationItem = {
+export const spriteOnKey0: DefinitionDocumentationItem = {
+  ...gameOnKey0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onKey',
+    overloadId: '0'
+  }
+}
+
+export const spriteOnKey1: DefinitionDocumentationItem = {
+  ...gameOnKey1,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onKey',
+    overloadId: '1'
+  }
+}
+
+export const spriteOnKey2: DefinitionDocumentationItem = {
+  ...gameOnKey2,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onKey',
+    overloadId: '2'
+  }
+}
+
+export const gameOnMsg0: DefinitionDocumentationItem = {
   categories: [categories.event.message],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1206,7 +1241,7 @@ export const onMsg0: DefinitionDocumentationItem = {
   })
 }
 
-export const onMsg1: DefinitionDocumentationItem = {
+export const gameOnMsg1: DefinitionDocumentationItem = {
   categories: [categories.event.message],
   kind: DefinitionKind.Listen,
   definition: {
@@ -1220,6 +1255,24 @@ export const onMsg1: DefinitionDocumentationItem = {
     en: 'Listen to specific message broadcasted',
     zh: '指定消息被广播时执行'
   })
+}
+
+export const spriteOnMsg0: DefinitionDocumentationItem = {
+  ...gameOnMsg0,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onMsg',
+    overloadId: '0'
+  }
+}
+
+export const spriteOnMsg1: DefinitionDocumentationItem = {
+  ...gameOnMsg1,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.onMsg',
+    overloadId: '1'
+  }
 }
 
 export const onBackdrop0: DefinitionDocumentationItem = {

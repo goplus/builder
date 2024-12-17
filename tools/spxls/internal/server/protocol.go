@@ -76,8 +76,8 @@ type SpxDefinitionIdentifier struct {
 	// - `for_statement_with_single_condition`
 	Name *string `json:"name,omitempty"`
 
-	// Index in overloads.
-	OverloadIndex *int `json:"overloadIndex,omitempty"`
+	// Overload Identifier.
+	OverloadId *string `json:"overloadId,omitempty"`
 }
 
 // SpxResourceRefDocumentLinkData represents data for a spx resource reference

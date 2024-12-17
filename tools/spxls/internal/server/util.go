@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
-	"strconv"
 	"strings"
 
 	gopast "github.com/goplus/gop/ast"
@@ -145,12 +144,11 @@ func walkStruct(
 var gopOverloadFuncNameRE = regexp.MustCompile(`^(.+)__(\d+)$`)
 
 // parseGopFuncName parses the Go+ overloaded function name.
-func parseGopFuncName(name string) (funcName string, overloadIndex *int) {
+func parseGopFuncName(name string) (funcName string, overloadId *string) {
 	funcName = name
 	if matches := gopOverloadFuncNameRE.FindStringSubmatch(funcName); len(matches) == 3 {
 		funcName = matches[1]
-		idx, _ := strconv.Atoi(matches[2])
-		overloadIndex = &idx
+		overloadId = &matches[2]
 	}
 	funcName = strings.ToLower(string(funcName[0])) + funcName[1:] // Make it lowerCamelCase.
 	return

@@ -49,18 +49,18 @@ onStart => {
 			Name:    toStringPtr("MySprite"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Game.play"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Game.play"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
 			Name:    toStringPtr("Game.onStart"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Sprite.turn"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Sprite.turn"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -83,18 +83,18 @@ onStart => {
 			Name:    toStringPtr("println"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Game.play"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Game.play"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
 			Name:    toStringPtr("Game.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Sprite.turn"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Sprite.turn"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxFileScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
@@ -117,22 +117,73 @@ onStart => {
 			Name:    toStringPtr("println"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Game.play"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Game.play"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
 			Name:    toStringPtr("Game.onStart"),
 		}))
 		assert.True(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
-			Package:       toStringPtr(spxPkgPath),
-			Name:          toStringPtr("Sprite.turn"),
-			OverloadIndex: toIntPtr(1),
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Sprite.turn"),
+			OverloadId: toStringPtr("1"),
 		}))
 		assert.False(t, spxDefinitionIdentifierSliceContains(mySpriteSpxOnStartScopeDefs, SpxDefinitionIdentifier{
 			Package: toStringPtr(spxPkgPath),
 			Name:    toStringPtr("Sprite.onStart"),
+		}))
+	})
+
+	t.Run("TrailingEmptyLinesOfSpriteCode", func(t *testing.T) {
+		s := New(vfs.NewMapFS(func() map[string][]byte {
+			return map[string][]byte{
+				"main.spx": []byte(`
+var (
+	MySprite Sprite
+)
+MySprite.turn Left
+run "assets", {Title: "My Game"}
+`),
+				"MySprite.spx": []byte(`
+onStart => {
+	MySprite.turn Right
+}
+
+
+`),
+				"assets/sprites/MySprite/index.json": []byte(`{}`),
+			}
+		}), nil)
+
+		mainSpxFileScopeParams := []SpxGetDefinitionsParams{
+			{
+				TextDocumentPositionParams: TextDocumentPositionParams{
+					TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+					Position:     Position{Line: 5, Character: 0},
+				},
+			},
+		}
+		mainSpxFileScopeDefs, err := s.spxGetDefinitions(mainSpxFileScopeParams)
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxFileScopeDefs)
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package:    toStringPtr(spxPkgPath),
+			Name:       toStringPtr("Game.play"),
+			OverloadId: toStringPtr("1"),
+		}))
+		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: toStringPtr(spxPkgPath),
+			Name:    toStringPtr("Game.onStart"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: toStringPtr(spxPkgPath),
+			Name:    toStringPtr("Sprite.onStart"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: toStringPtr(spxPkgPath),
+			Name:    toStringPtr("Sprite.onClick"),
 		}))
 	})
 }
@@ -143,6 +194,6 @@ func spxDefinitionIdentifierSliceContains(defs []SpxDefinitionIdentifier, def Sp
 	return slices.ContainsFunc(defs, func(d SpxDefinitionIdentifier) bool {
 		return fromStringPtr(d.Package) == fromStringPtr(def.Package) &&
 			fromStringPtr(d.Name) == fromStringPtr(def.Name) &&
-			fromIntPtr(d.OverloadIndex) == fromIntPtr(def.OverloadIndex)
+			fromStringPtr(d.OverloadId) == fromStringPtr(def.OverloadId)
 	})
 }

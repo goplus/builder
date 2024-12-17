@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/fs"
 	"path"
+	"slices"
 	"strings"
 	"time"
 )
@@ -112,6 +113,9 @@ func (mfs *MapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 			isDir:   false,
 		})
 	}
+	slices.SortFunc(entries, func(a, b fs.DirEntry) int {
+		return strings.Compare(a.Name(), b.Name())
+	})
 	return entries, nil
 }
 
