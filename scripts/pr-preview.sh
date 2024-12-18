@@ -17,6 +17,7 @@ docker build \
 	-f ./Dockerfile \
 	-t "${CONTAINER_IMAGE}" \
 	--build-arg GOP_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/gop:1.2" \
+	--build-arg GO_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/golang:1.23.4" \
 	--build-arg NODE_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/node:20.11.1" \
 	--build-arg NGINX_BASE_IMAGE="${GOPLUS_REGISTRY_REPO}/nginx:1.27" \
 	--build-arg GOPROXY=https://goproxy.cn,direct \
