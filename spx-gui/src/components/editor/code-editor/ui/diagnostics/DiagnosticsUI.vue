@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
-import { DiagnosticSeverity } from '../../common'
+import { DiagnosticSeverity, type Diagnostic } from '../../common'
 import type { monaco } from '../common'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import type { DiagnosticsController } from '.'
@@ -18,20 +18,16 @@ function getDecorationsCollection() {
 }
 
 function getDiagnosticCls(severity: DiagnosticSeverity, suffix?: string) {
-  const name = {
-    [DiagnosticSeverity.Error]: 'error',
-    [DiagnosticSeverity.Warning]: 'warning'
-  }[severity]
-  return ['code-editor-diagnostic', name, suffix].filter(Boolean).join('-')
+  return ['code-editor-diagnostic', severity, suffix].filter(Boolean).join('-')
 }
 
 watchEffect((onCleanUp) => {
   const diagnostics = props.controller.diagnostics
   if (diagnostics == null) return
 
-  const decorations: monaco.editor.IModelDeltaDecoration[] = []
+  const inlineDecorations: monaco.editor.IModelDeltaDecoration[] = []
   for (const diagnostic of diagnostics) {
-    decorations.push({
+    inlineDecorations.push({
       range: {
         startLineNumber: diagnostic.range.start.line,
         startColumn: diagnostic.range.start.column,
@@ -43,12 +39,28 @@ watchEffect((onCleanUp) => {
         inlineClassName: getDiagnosticCls(diagnostic.severity)
       }
     })
-    decorations.push({
+  }
+  const byLine: Map<number, Diagnostic> = new Map()
+  for (const diagnostic of diagnostics) {
+    for (let l = diagnostic.range.start.line; l <= diagnostic.range.end.line; l++) {
+      // deduplicate diagnostics by line
+      const existed = byLine.get(l)
+      if (
+        existed == null ||
+        (existed.severity === DiagnosticSeverity.Warning && diagnostic.severity === DiagnosticSeverity.Error)
+      ) {
+        byLine.set(l, diagnostic)
+      }
+    }
+  }
+  const lineDecorations: monaco.editor.IModelDeltaDecoration[] = []
+  for (const [line, diagnostic] of byLine.entries()) {
+    lineDecorations.push({
       range: {
-        startLineNumber: diagnostic.range.start.line,
-        startColumn: diagnostic.range.start.column,
-        endLineNumber: diagnostic.range.end.line,
-        endColumn: diagnostic.range.end.column
+        startLineNumber: line,
+        startColumn: 0,
+        endLineNumber: line,
+        endColumn: 0
       },
       options: {
         isWholeLine: true,
@@ -56,10 +68,12 @@ watchEffect((onCleanUp) => {
         linesDecorationsClassName: getDiagnosticCls(diagnostic.severity, 'line-header')
       }
     })
+    // TODO: append message to the line end
   }
 
   const decorationsCollection = getDecorationsCollection()
-  decorationsCollection.append(decorations)
+  decorationsCollection.append(inlineDecorations)
+  decorationsCollection.append(lineDecorations)
   onCleanUp(() => decorationsCollection.clear())
 })
 </script>

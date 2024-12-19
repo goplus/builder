@@ -1,6 +1,5 @@
 import { computed, shallowRef, watch } from 'vue'
-import { Disposable } from '@/utils/disposable'
-import type Emitter from '@/utils/emitter'
+import Emitter from '@/utils/emitter'
 import { ResourceReferenceKind, type BaseContext, type Range, type ResourceIdentifier } from '../../common'
 import type { CodeEditorUI } from '..'
 import type { TextDocument } from '../text-document'
@@ -28,7 +27,9 @@ export interface IResourceReferencesProvider
   provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]>
 }
 
-export class ResourceReferenceController extends Disposable {
+export class ResourceReferenceController extends Emitter<{
+  didStartModifying: void
+}> {
   private providerRef = shallowRef<IResourceReferencesProvider | null>(null)
   registerProvider(provider: IResourceReferencesProvider) {
     this.providerRef.value = provider
@@ -71,6 +72,7 @@ export class ResourceReferenceController extends Disposable {
   }
   startModifying(rrId: string) {
     this.modifyingRef.value = this.items?.find((item) => item.id === rrId) ?? null
+    this.emit('didStartModifying')
   }
   stopModifying() {
     this.modifyingRef.value = null
@@ -187,9 +189,9 @@ export class ResourceReferenceController extends Disposable {
   }
 }
 
-export function isModifiable(kind: ResourceReferenceKind) {
+export function isModifiableKind(kind: ResourceReferenceKind) {
   return [
-    ResourceReferenceKind.AutoBindingReference,
+    // ResourceReferenceKind.AutoBindingReference, // consider cases like `Foo.say "xxx"`, modifying `Foo` is complicated
     ResourceReferenceKind.ConstantReference,
     ResourceReferenceKind.StringLiteral
   ].includes(kind)

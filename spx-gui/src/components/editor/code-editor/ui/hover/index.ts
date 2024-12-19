@@ -1,4 +1,5 @@
 import { shallowRef, watch } from 'vue'
+import { debounce } from 'lodash'
 import { Disposable } from '@/utils/disposable'
 import {
   type Action,
@@ -6,12 +7,13 @@ import {
   type DefinitionDocumentationString,
   type Range,
   type Position,
-  makeBasicMarkdownString
+  makeBasicMarkdownString,
+  getResourceModel
 } from '../../common'
 import {
   builtInCommandCopilotFixProblem,
   builtInCommandGoToResource,
-  isModifiable,
+  isModifiableKind,
   type CodeEditorUI,
   builtInCommandModifyResourceReference,
   builtInCommandRenameResource
@@ -22,7 +24,6 @@ import {
   token2Signal,
   type monaco,
   containsPosition,
-  getResourceModel,
   supportGoTo
 } from '../common'
 import type { TextDocument } from '../text-document'
@@ -89,7 +90,11 @@ export class HoverController extends Disposable {
     for (const diagnostic of diagnosticsController.diagnostics) {
       if (!containsPosition(diagnostic.range, fromMonacoPosition(position))) continue
       return {
-        contents: [makeBasicMarkdownString(diagnostic.message)],
+        contents: [
+          makeBasicMarkdownString(
+            `<diagnostic-item severity="${diagnostic.severity}">${diagnostic.message}"</diagnostic-item>`
+          )
+        ],
         range: diagnostic.range,
         actions: [
           {
@@ -115,13 +120,13 @@ export class HoverController extends Disposable {
       if (!containsPosition(reference.range, fromMonacoPosition(position))) continue
       const actions: Action[] = []
       const resourceModel = getResourceModel(this.ui.project, reference.resource)
-      if (supportGoTo(resourceModel)) {
+      if (resourceModel != null && supportGoTo(resourceModel)) {
         actions.push({
           command: builtInCommandGoToResource,
           arguments: [reference.resource]
         })
       }
-      if (isModifiable(reference.kind)) {
+      if (isModifiableKind(reference.kind)) {
         actions.push({
           command: builtInCommandModifyResourceReference,
           arguments: [reference]
@@ -141,7 +146,7 @@ export class HoverController extends Disposable {
   }
 
   init() {
-    const { monaco, editor } = this.ui
+    const { monaco, editor, resourceReferenceController } = this.ui
 
     this.addDisposable(
       monaco.languages.registerHoverProvider('spx', {
@@ -192,18 +197,27 @@ export class HoverController extends Disposable {
     )
 
     this.addDisposable(
-      editor.onMouseMove((e) => {
-        if (
-          e.target.type !== monaco.editor.MouseTargetType.CONTENT_WIDGET &&
-          e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT
-        )
-          this.hideHover()
-      })
+      editor.onMouseMove(
+        // debounce to avoid hiding when mouse moving from text to hover-widget, while through CONTENT_EMPTY
+        debounce((e: monaco.editor.IEditorMouseEvent) => {
+          if (
+            e.target.type !== monaco.editor.MouseTargetType.CONTENT_WIDGET &&
+            e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT
+          )
+            this.hideHover()
+        }, 100)
+      )
     )
 
     this.addDisposable(
-      editor.onKeyDown((e) => {
-        if (e.keyCode === monaco.KeyCode.Escape) this.hideHover()
+      editor.onKeyDown(() => {
+        this.hideHover()
+      })
+    )
+
+    this.addDisposer(
+      resourceReferenceController.on('didStartModifying', () => {
+        this.hideHover()
       })
     )
 

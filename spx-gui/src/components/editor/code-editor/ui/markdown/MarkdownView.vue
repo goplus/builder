@@ -8,6 +8,7 @@ import DefinitionOverviewWrapper from './DefinitionOverviewWrapper.vue'
 import DefinitionDetail from './DefinitionDetail.vue'
 import CodeBlock from './CodeBlock.vue'
 import ResourcePreview from './ResourcePreview.vue'
+import DiagnosticItem from './DiagnosticItem.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -45,7 +46,15 @@ const basicComponents = {
    * <resource-preview resource="spx://resources/sprites/NiuXiaoQi" />
    * ```
    */
-  'resource-preview': ResourcePreview
+  'resource-preview': ResourcePreview,
+  /**
+   * Usage:
+   * ```html
+   * <diagnostic-item severity="error">
+   *   Diagnostic message here (Markdown supported)
+   * </diagnostic-item>
+   */
+  'diagnostic-item': DiagnosticItem
 }
 const advancedComponents = {
   ...basicComponents,

@@ -4,7 +4,7 @@ import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
-import { isWidget, type Widget } from '@/models/widget'
+import { type Widget } from '@/models/widget'
 import { Costume } from '@/models/costume'
 import type { LocaleMessage } from '@/utils/i18n'
 import {
@@ -17,7 +17,7 @@ import {
   useAddMonitor,
   useAddCostumeFromLocalFile
 } from '@/components/asset'
-import { getResourceModel, type IResourceModel } from '../../common'
+import { parseResourceURI, type IResourceModel } from '../../../common'
 import type { InternalResourceReference } from '..'
 
 export type CreateMethod<T> = {
@@ -34,8 +34,8 @@ export interface IResourceSelector<T extends IResource> {
   title: LocaleMessage
   /** List of all selectable resources */
   items: T[]
-  /** Current selected resource */
-  currentItem: T
+  /** Current selected resource name */
+  currentItemName: string
   /** Methods to create new resources */
   useCreateMethods(): Array<CreateMethod<T>>
 }
@@ -48,7 +48,7 @@ class SoundSelector implements IResourceSelector<Sound> {
 
   constructor(
     private project: Project,
-    public currentItem: Sound
+    public currentItemName: string
   ) {}
 
   useCreateMethods() {
@@ -80,7 +80,7 @@ class SpriteSelector implements IResourceSelector<Sprite> {
 
   constructor(
     private project: Project,
-    public currentItem: Sprite
+    public currentItemName: string
   ) {}
 
   useCreateMethods() {
@@ -105,14 +105,11 @@ class AnimationSelector implements IResourceSelector<Animation> {
     return this.sprite.animations
   }
 
-  private sprite: Sprite
   constructor(
     private project: Project,
-    public currentItem: Animation
-  ) {
-    if (currentItem.sprite == null) throw new Error('Sprite expected')
-    this.sprite = currentItem.sprite
-  }
+    private sprite: Sprite,
+    public currentItemName: string
+  ) {}
 
   useCreateMethods() {
     const addAnimationByGroupingCostumes = useAddAnimationByGroupingCostumes()
@@ -133,7 +130,7 @@ class BackdropSelector implements IResourceSelector<Backdrop> {
 
   constructor(
     private project: Project,
-    public currentItem: Backdrop
+    public currentItemName: string
   ) {}
 
   useCreateMethods() {
@@ -160,7 +157,7 @@ class WidgetSelector implements IResourceSelector<Widget> {
 
   constructor(
     private project: Project,
-    public currentItem: Widget
+    public currentItemName: string
   ) {}
 
   useCreateMethods() {
@@ -180,14 +177,11 @@ class CostumeSelector implements IResourceSelector<Costume> {
     return this.sprite.costumes
   }
 
-  private sprite: Sprite
   constructor(
     private project: Project,
-    public currentItem: Costume
-  ) {
-    if (!(currentItem.parent instanceof Sprite)) throw new Error('Costume sprite expeceted')
-    this.sprite = currentItem.parent
-  }
+    private sprite: Sprite,
+    public currentItemName: string
+  ) {}
 
   useCreateMethods() {
     const addFromLocalFile = useAddCostumeFromLocalFile(false)
@@ -201,12 +195,29 @@ class CostumeSelector implements IResourceSelector<Costume> {
 }
 
 export function createResourceSelector(project: Project, rr: InternalResourceReference): IResourceSelector<any> {
-  const resourceModel = getResourceModel(project, rr.resource)
-  if (resourceModel instanceof Sound) return new SoundSelector(project, resourceModel)
-  if (resourceModel instanceof Sprite) return new SpriteSelector(project, resourceModel)
-  if (resourceModel instanceof Animation) return new AnimationSelector(project, resourceModel)
-  if (resourceModel instanceof Backdrop) return new BackdropSelector(project, resourceModel)
-  if (resourceModel instanceof Costume) return new CostumeSelector(project, resourceModel)
-  if (isWidget(resourceModel)) return new WidgetSelector(project, resourceModel)
-  throw new Error(`Unknown resource model: ${resourceModel}`)
+  const parsed = parseResourceURI(rr.resource.uri)
+  switch (parsed[0].type) {
+    case 'sound':
+      return new SoundSelector(project, parsed[0].name)
+    case 'sprite': {
+      const spriteName = parsed[0].name
+      if (parsed.length === 1) return new SpriteSelector(project, spriteName)
+      const sprite = project.sprites.find((s) => s.name === spriteName)
+      if (sprite == null) throw new Error(`Sprite not found: ${spriteName}`)
+      switch (parsed[1].type) {
+        case 'animation':
+          return new AnimationSelector(project, sprite, parsed[1].name)
+        case 'costume':
+          return new CostumeSelector(project, sprite, parsed[1].name)
+        default:
+          throw new Error(`Unexpected sub-resource type: ${parsed[1].type}`)
+      }
+    }
+    case 'backdrop':
+      return new BackdropSelector(project, parsed[0].name)
+    case 'widget':
+      return new WidgetSelector(project, parsed[0].name)
+    default:
+      throw new Error(`Unexpected resource type: ${parsed[0].type}`)
+  }
 }

@@ -8,7 +8,8 @@ import {
   type Position,
   type TextDocumentIdentifier,
   type Selection,
-  type ResourceIdentifier
+  type IResourceModel,
+  positionEq
 } from '../common'
 import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
@@ -32,11 +33,6 @@ export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   if (token.isCancellationRequested) ctrl.abort()
   else token.onCancellationRequested((e) => ctrl.abort(e ?? new Cancelled()))
   return ctrl.signal
-}
-
-export function positionEq(a: Position | null, b: Position | null) {
-  if (a == null || b == null) return a == b
-  return a.line === b.line && a.column === b.column
 }
 
 export function fromMonacoPosition(position: monaco.IPosition): Position {
@@ -200,56 +196,6 @@ export function getCodeOwner(project: Project, textDocumentId: TextDocumentIdent
     }
   }
   return null
-}
-
-/** Implemented by `Sprite`, `Sound` etc. */
-export type IResourceModel = {
-  /** Readable name and also unique identifier in list */
-  name: string
-}
-
-export function getResourceModel(project: Project, resourceId: ResourceIdentifier): IResourceModel {
-  const parsed = new URL(resourceId.uri)
-  if (parsed.protocol !== 'spx:' || parsed.host !== 'resources')
-    throw new Error(`Invalid resource URI: ${resourceId.uri}`)
-  const parts = parsed.pathname.split('/')
-  switch (parts[1]) {
-    case 'sounds': {
-      const sound = project.sounds.find((s) => s.name === parts[2])
-      if (sound == null) throw new Error(`Sound not found: ${parts[2]}`)
-      return sound
-    }
-    case 'sprites': {
-      const sprite = project.sprites.find((s) => s.name === parts[2])
-      if (sprite == null) throw new Error(`Sprite not found: ${parts[2]}`)
-      switch (parts[3]) {
-        case 'animations': {
-          const animation = sprite.animations.find((a) => a.name === parts[4])
-          if (animation == null) throw new Error(`Animation not found: ${parts[4]}`)
-          return animation
-        }
-        case 'costumes': {
-          const costume = sprite.costumes.find((c) => c.name === parts[4])
-          if (costume == null) throw new Error(`Costume not found: ${parts[4]}`)
-          return costume
-        }
-        default:
-          return sprite
-      }
-    }
-    case 'backdrops': {
-      const backdrop = project.stage.backdrops.find((b) => b.name === parts[2])
-      if (backdrop == null) throw new Error(`Backdrop not found: ${parts[2]}`)
-      return backdrop
-    }
-    case 'widgets': {
-      const widget = project.stage.widgets.find((w) => w.name === parts[2])
-      if (widget == null) throw new Error(`Widget not found: ${parts[2]}`)
-      return widget
-    }
-    default:
-      throw new Error(`Unsupported resource type: ${parts[1]}`)
-  }
 }
 
 export function supportGoTo(resourceModel: IResourceModel): boolean {

@@ -42,6 +42,10 @@ import arrowRightSmall from './arrow-right-small.svg?raw'
 import calendar from './calendar.svg?raw'
 import remix from './remix.svg?raw'
 import heartHollow from './heart-hollow.svg?raw'
+import info from './info.svg?raw'
+import warning from './warning.svg?raw'
+import error from './error.svg?raw'
+import success from './success.svg?raw'
 
 const typeIconMap = {
   file,
@@ -80,7 +84,11 @@ const typeIconMap = {
   arrowRightSmall,
   calendar,
   remix,
-  heartHollow
+  heartHollow,
+  info,
+  warning,
+  error,
+  success
 }
 
 export type Type = keyof typeof typeIconMap

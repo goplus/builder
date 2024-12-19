@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const createMethods = props.selector.useCreateMethods()
 
-const selected = ref(props.selector.currentItem.name)
+const selected = ref(props.selector.currentItemName)
 function handleSelect(name: string) {
   selected.value = name
 }

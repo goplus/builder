@@ -1,6 +1,9 @@
 import { shallowRef, watchEffect } from 'vue'
+import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
-import { until, untilNotNull } from '@/utils/utils'
+import { timeout, until, untilNotNull } from '@/utils/utils'
+import { extname } from '@/utils/path'
+import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
 import spxlsWasmUrl from '@/assets/spxls.wasm?url'
@@ -26,7 +29,6 @@ async function loadGoWasm(wasmUrl: string) {
 }
 
 export class SpxLSPClient extends Disposable {
-
   constructor(private project: Project) {
     super()
   }
@@ -38,13 +40,20 @@ export class SpxLSPClient extends Disposable {
   async loadFiles(signal: AbortSignal) {
     this.isFilesStale.value = true
     const files = this.project.exportGameFiles()
+    const debugFiles: Record<string, string> = {}
     const loadedFiles: SpxlsFiles = {}
-    await Promise.all(Object.entries(files).map(async ([path, file]) => {
-      if (file == null) return
-      // TODO: can we omit static files like images & audios to reduce size of `files`?
-      const ab = await file.arrayBuffer()
-      loadedFiles[path] = { content: new Uint8Array(ab) }
-    }))
+    await Promise.all(
+      Object.entries(files).map(async ([path, file]) => {
+        if (file == null) return
+        const ext = extname(path)
+        if (['.spx', '.json'].includes(ext)) {
+          // Only `.spx` & `.json` files are needed for `spxls`
+          const ab = await file.arrayBuffer()
+          loadedFiles[path] = { content: new Uint8Array(ab) }
+          debugFiles[path] = await toText(file)
+        }
+      })
+    )
     signal.throwIfAborted()
     this.files = loadedFiles
     this.isFilesStale.value = false
@@ -53,7 +62,11 @@ export class SpxLSPClient extends Disposable {
   private async prepareRquest() {
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
-      until(() => !this.isFilesStale.value)
+      // Typically requests are triggered earlier than file-loading:
+      // * file-loading: editor-event -> model-update -> file-loading
+      // * request: editor-event -> request
+      // Here we add `timeout(0)` to ensure that file-loading triggered before request really starts.
+      timeout(0).then(() => until(() => !this.isFilesStale.value))
     ])
     return spxlc
   }
@@ -66,14 +79,29 @@ export class SpxLSPClient extends Disposable {
 
   private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
     const spxlc = await this.prepareRquest()
-    return spxlc.request<R>('workspace/executeCommand', {
+    return spxlc.request<R>(lsp.ExecuteCommandRequest.method, {
       command,
       arguments: args
     })
   }
 
-  async getDefinitions(...params: spxGetDefinitions.Arguments): Promise<spxGetDefinitions.Result> {
-    return this.executeCommand<spxGetDefinitions.Arguments, spxGetDefinitions.Result>(spxGetDefinitions.command, ...params)
+  async workspaceExecuteCommandSpxGetDefinitions(
+    ...params: spxGetDefinitions.Arguments
+  ): Promise<spxGetDefinitions.Result> {
+    return this.executeCommand<spxGetDefinitions.Arguments, spxGetDefinitions.Result>(
+      spxGetDefinitions.command,
+      ...params
+    )
   }
 
+  async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
+    const spxlc = await this.prepareRquest()
+    return spxlc.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
+  }
+
+  async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
+    const spxlc = await this.prepareRquest()
+    const report = await spxlc.request<any>(lsp.DocumentDiagnosticRequest.method, params)
+    return report.value // TODO: this should be fixed in `spxls`, see type `DocumentDiagnosticReport` there for more details
+  }
 }

@@ -30,7 +30,7 @@ import { getCleanupSignal } from '@/utils/disposable'
 import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
 import type { Project } from '@/models/project'
-import type { ResourceIdentifier } from '../common'
+import { getResourceModel, type ResourceIdentifier } from '../common'
 import { type ICodeEditorUI, CodeEditorUI } from '.'
 import MonacoEditorComp from './MonacoEditor.vue'
 import APIReferenceUI from './api-reference/APIReferenceUI.vue'
@@ -40,7 +40,7 @@ import CopilotUI from './copilot/CopilotUI.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
-import { getResourceModel, type Monaco, type MonacoEditor, type monaco } from './common'
+import { type Monaco, type MonacoEditor, type monaco } from './common'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -76,6 +76,7 @@ const renameWidget = useRenameWidget()
 function renameResource(resourceId: ResourceIdentifier) {
   const project = props.project
   const model = getResourceModel(project, resourceId)
+  if (model == null) throw new Error(`Resource (${resourceId.uri}) not found`)
   if (model instanceof Sprite) return renameSprite({ project, sprite: model })
   if (model instanceof Sound) return renameSound({ project, sound: model })
   if (model instanceof Costume) return renameCostume({ project, costume: model })

@@ -1,9 +1,7 @@
 <template>
   <UIModal>
     <div class="container">
-      <div class="icon">
-        <img :src="iconMap[type]" alt="icon" />
-      </div>
+      <UIIcon class="icon" :type="type" />
       <div class="main">
         <div class="title">
           {{ title }}
@@ -15,23 +13,13 @@
 </template>
 
 <script setup lang="ts">
+import UIIcon from '../icons/UIIcon.vue'
 import UIModal from '../modal/UIModal.vue'
-import errorSvg from './icons/error.svg'
-import warningSvg from './icons/warning.svg'
-import infoSvg from './icons/info.svg'
-import successSvg from './icons/success.svg'
 
 defineProps<{
   title: string
   type: 'info' | 'warning' | 'error' | 'success'
 }>()
-
-const iconMap = {
-  info: infoSvg,
-  warning: warningSvg,
-  error: errorSvg,
-  success: successSvg
-}
 </script>
 <style scoped lang="scss">
 .icon {
