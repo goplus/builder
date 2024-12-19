@@ -4,15 +4,15 @@ import { selection2Range } from '../../common'
 import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
-import { ChatExplainKind, builtInCommandCopilotExplain } from '..'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import { ChatExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import type { APIReferenceItem } from '.'
 
 const props = defineProps<{
   item: APIReferenceItem
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 
 function handleInsert() {
   const startPosition = { line: 1, column: 1 }

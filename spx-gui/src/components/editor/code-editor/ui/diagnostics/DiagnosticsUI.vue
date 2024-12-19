@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue'
 import { DiagnosticSeverity, type Diagnostic } from '../../common'
-import type { monaco } from '../common'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import type { monaco } from '../../monaco'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import type { DiagnosticsController } from '.'
 
 const props = defineProps<{
   controller: DiagnosticsController
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 
 let dc: monaco.editor.IEditorDecorationsCollection | null = null
 function getDecorationsCollection() {

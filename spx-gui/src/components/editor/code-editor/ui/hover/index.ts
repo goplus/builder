@@ -8,7 +8,8 @@ import {
   type Range,
   type Position,
   makeBasicMarkdownString,
-  getResourceModel
+  getResourceModel,
+  type ITextDocument
 } from '../../common'
 import {
   builtInCommandCopilotFixProblem,
@@ -17,16 +18,9 @@ import {
   type CodeEditorUI,
   builtInCommandModifyResourceReference,
   builtInCommandRenameResource
-} from '..'
-import {
-  fromMonacoPosition,
-  toMonacoPosition,
-  token2Signal,
-  type monaco,
-  containsPosition,
-  supportGoTo
-} from '../common'
-import type { TextDocument } from '../text-document'
+} from '../code-editor-ui'
+import { fromMonacoPosition, toMonacoPosition, token2Signal, containsPosition, supportGoTo } from '../common'
+import type { monaco } from '../../monaco'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 
 export type Hover = {
@@ -84,7 +78,7 @@ export class HoverController extends Disposable {
     }
   }
 
-  private getDiagnosticsHover(textDocument: TextDocument, position: monaco.Position): InternalHover | null {
+  private getDiagnosticsHover(textDocument: ITextDocument, position: monaco.Position): InternalHover | null {
     const diagnosticsController = this.ui.diagnosticsController
     if (diagnosticsController.diagnostics == null) return null
     for (const diagnostic of diagnosticsController.diagnostics) {
@@ -113,7 +107,7 @@ export class HoverController extends Disposable {
     return null
   }
 
-  private getResourceReferenceHover(textDocument: TextDocument, position: monaco.Position): InternalHover | null {
+  private getResourceReferenceHover(textDocument: ITextDocument, position: monaco.Position): InternalHover | null {
     const resourceReferenceController = this.ui.resourceReferenceController
     if (resourceReferenceController.items == null) return null
     for (const reference of resourceReferenceController.items) {

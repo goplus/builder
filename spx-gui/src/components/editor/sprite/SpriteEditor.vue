@@ -6,10 +6,10 @@
       <UITab value="animations">{{ $t({ en: 'Animations', zh: '动画' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code' && codeEditor != null" :code-editor="codeEditor" />
+      <FormatButton v-if="selectedTab === 'code'" :code-file-path="sprite.codeFilePath" />
     </template>
   </EditorHeader>
-  <CodeEditor v-show="selectedTab === 'code'" ref="codeEditor" />
+  <CodeEditorUI v-show="selectedTab === 'code'" ref="codeEditor" :code-file-path="sprite.codeFilePath" />
   <CostumesEditor v-show="selectedTab === 'costumes'" :sprite="sprite" />
   <!-- We use v-if to prevent AnimationEditor from running in the background -->
   <AnimationEditor v-if="selectedTab === 'animations'" :sprite="sprite" />
@@ -19,7 +19,7 @@
 import { ref } from 'vue'
 import type { Sprite } from '@/models/sprite'
 import { UITabs, UITab } from '@/components/ui'
-import CodeEditor from '../code-editor/CodeEditor.vue'
+import CodeEditorUI from '../code-editor/ui/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import CostumesEditor from './CostumesEditor.vue'
@@ -30,5 +30,4 @@ defineProps<{
 }>()
 
 const selectedTab = ref<'code' | 'costumes' | 'animations'>('code')
-const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 </script>

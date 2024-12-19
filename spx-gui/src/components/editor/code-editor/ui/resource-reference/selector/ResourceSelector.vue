@@ -1,8 +1,8 @@
-<script setup lang="ts" generic="T extends IResource">
+<script setup lang="ts" generic="T extends SelectableResource">
 import { ref } from 'vue'
 import { UIDropdownModal, UIDropdown, UIBlockItem, UIIcon, UIMenu, UIMenuItem } from '@/components/ui'
 import ResourceItem from '../../resource/ResourceItem.vue'
-import { type IResourceSelector, type IResource, type CreateMethod } from '.'
+import { type IResourceSelector, type SelectableResource, type CreateMethod } from '.'
 
 const props = defineProps<{
   selector: IResourceSelector<T>

@@ -1,11 +1,11 @@
 <script lang="ts">
-export type CodeEditorCtx = {
+export type CodeEditorUICtx = {
   ui: CodeEditorUI
 }
-const codeEditorCtxInjectionKey: InjectionKey<CodeEditorCtx> = Symbol('code-editor-ctx')
-export function useCodeEditorCtx() {
-  const ctx = inject(codeEditorCtxInjectionKey)
-  if (ctx == null) throw new Error('useCodeEditorCtx should be called inside of CodeEditorUI')
+const codeEditorUICtxInjectionKey: InjectionKey<CodeEditorUICtx> = Symbol('code-editor-ui-ctx')
+export function useCodeEditorUICtx() {
+  const ctx = inject(codeEditorUICtxInjectionKey)
+  if (ctx == null) throw new Error('useCodeEditorUICtx should be called inside of CodeEditorUI')
   return ctx
 }
 
@@ -17,30 +17,11 @@ export function makeContentWidgetEl() {
 </script>
 
 <script setup lang="ts">
-import { type InjectionKey, inject, provide, ref, watchEffect } from 'vue'
-import { shikiToMonaco } from '@shikijs/monaco'
-import {
-  computedShallowReactive,
-  untilNotNull,
-  useAsyncComputed,
-  useComputedDisposable,
-  useLocalStorage
-} from '@/utils/utils'
+import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
+import { computedShallowReactive, untilNotNull, useLocalStorage } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { getHighlighter, theme, tabSize } from '@/utils/spx/highlighter'
+import { theme, tabSize } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
-import type { Project } from '@/models/project'
-import { getResourceModel, type ResourceIdentifier } from '../common'
-import { type ICodeEditorUI, CodeEditorUI } from '.'
-import MonacoEditorComp from './MonacoEditor.vue'
-import APIReferenceUI from './api-reference/APIReferenceUI.vue'
-import HoverUI from './hover/HoverUI.vue'
-import CompletionUI from './completion/CompletionUI.vue'
-import CopilotUI from './copilot/CopilotUI.vue'
-import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
-import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
-import ContextMenuUI from './context-menu/ContextMenuUI.vue'
-import { type Monaco, type MonacoEditor, type monaco } from './common'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -55,17 +36,27 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
+import { useEditorCtx } from '../../EditorContextProvider.vue'
+import { useCodeEditorCtx } from '../context'
+import { getResourceModel, getTextDocumentId, type ResourceIdentifier } from '../common'
+import { type MonacoEditor, type monaco } from '../monaco'
+import { CodeEditorUI } from './code-editor-ui'
+import MonacoEditorComp, { type InitData as MonacoEditorInitData } from './MonacoEditor.vue'
+import APIReferenceUI from './api-reference/APIReferenceUI.vue'
+import HoverUI from './hover/HoverUI.vue'
+import CompletionUI from './completion/CompletionUI.vue'
+import CopilotUI from './copilot/CopilotUI.vue'
+import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
+import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
+import ContextMenuUI from './context-menu/ContextMenuUI.vue'
 
 const props = defineProps<{
-  project: Project
-}>()
-
-const emit = defineEmits<{
-  init: [ui: ICodeEditorUI]
+  codeFilePath: string
 }>()
 
 const i18n = useI18n()
-
+const editorCtx = useEditorCtx()
+const codeEditorCtx = useCodeEditorCtx()
 const renameSprite = useRenameSprite()
 const renameSound = useRenameSound()
 const renameCostume = useRenameCostume()
@@ -73,20 +64,29 @@ const renameBackdrop = useRenameBackdrop()
 const renameAnimation = useRenameAnimation()
 const renameWidget = useRenameWidget()
 
-function renameResource(resourceId: ResourceIdentifier) {
-  const project = props.project
-  const model = getResourceModel(project, resourceId)
+function renameResource(resourceId: ResourceIdentifier): Promise<void> {
+  const model = getResourceModel(editorCtx.project, resourceId)
   if (model == null) throw new Error(`Resource (${resourceId.uri}) not found`)
-  if (model instanceof Sprite) return renameSprite({ project, sprite: model })
-  if (model instanceof Sound) return renameSound({ project, sound: model })
-  if (model instanceof Costume) return renameCostume({ project, costume: model })
-  if (model instanceof Backdrop) return renameBackdrop({ project, backdrop: model })
-  if (model instanceof Animation) return renameAnimation({ project, animation: model })
-  if (isWidget(model)) return renameWidget({ project, widget: model })
+  if (model instanceof Sprite) return renameSprite(model)
+  if (model instanceof Sound) return renameSound(model)
+  if (model instanceof Costume) return renameCostume(model)
+  if (model instanceof Backdrop) return renameBackdrop(model)
+  if (model instanceof Animation) return renameAnimation(model)
+  if (isWidget(model)) return renameWidget(model)
   throw new Error(`Rename resource (${resourceId.uri}) not supported`)
 }
 
-const uiRef = useComputedDisposable(() => new CodeEditorUI(props.project, i18n, renameResource))
+const uiRef = computed(() => {
+  const mainTextDocumentId = getTextDocumentId(props.codeFilePath)
+  return new CodeEditorUI(
+    mainTextDocumentId,
+    editorCtx.project,
+    i18n,
+    codeEditorCtx.getMonaco(),
+    codeEditorCtx.getTextDocument,
+    renameResource
+  )
+})
 
 const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   language: 'spx',
@@ -94,108 +94,39 @@ const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = 
   tabSize,
   contextmenu: false
 }
-const highlighterComputed = useAsyncComputed(getHighlighter)
 
-async function handleMonacoEditorInit(monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement) {
-  monaco.languages.register({
-    id: 'spx'
-  })
-  const highlighter = await untilNotNull(highlighterComputed)
-  // TODO: this causes extra-padding issue when rendering selection
-  shikiToMonaco(highlighter, monaco)
+const monacEditorInitDataRef = shallowRef<MonacoEditorInitData | null>(null)
 
-  // copied from https://github.com/goplus/vscode-gop/blob/dc065c1701ec54a719747ff41d2054e9ed200eb8/languages/gop.language-configuration.json
-  monaco.languages.setLanguageConfiguration('spx', {
-    comments: {
-      lineComment: '//',
-      blockComment: ['/*', '*/']
-    },
-    brackets: [
-      ['{', '}'],
-      ['[', ']'],
-      ['(', ')']
-    ],
-    autoClosingPairs: [
-      {
-        open: '{',
-        close: '}'
-      },
-      {
-        open: '[',
-        close: ']'
-      },
-      {
-        open: '(',
-        close: ')'
-      },
-      {
-        open: '`',
-        close: '`',
-        notIn: ['string']
-      },
-      {
-        open: '"',
-        close: '"',
-        notIn: ['string']
-      },
-      {
-        open: "'",
-        close: "'",
-        notIn: ['string', 'comment']
-      }
-    ],
-    surroundingPairs: [
-      {
-        open: '{',
-        close: '}'
-      },
-      {
-        open: '[',
-        close: ']'
-      },
-      {
-        open: '(',
-        close: ')'
-      },
-      {
-        open: '"',
-        close: '"'
-      },
-      {
-        open: "'",
-        close: "'"
-      },
-      {
-        open: '`',
-        close: '`'
-      }
-    ],
-    indentationRules: {
-      increaseIndentPattern: new RegExp(
-        '^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}"\'`]*|\\([^)"\'`]*)$'
-      ),
-      decreaseIndentPattern: new RegExp('^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|\\)[,]?)$')
-    },
-    folding: {
-      markers: {
-        start: new RegExp('^\\s*//\\s*#?region\\b'),
-        end: new RegExp('^\\s*//\\s*#?endregion\\b')
-      }
-    }
-  })
-
-  uiRef.value.init(monaco, editor, editorEl)
-  emit('init', uiRef.value)
+async function handleMonacoEditorInit(editor: MonacoEditor, editorEl: HTMLElement) {
+  monacEditorInitDataRef.value = [editor, editorEl]
 }
+
+watch(
+  uiRef,
+  async (ui, _, onCleanUp) => {
+    const signal = getCleanupSignal(onCleanUp)
+    signal.addEventListener('abort', () => ui.dispose())
+
+    const initData = await untilNotNull(monacEditorInitDataRef)
+    signal.throwIfAborted()
+    ui.init(...initData)
+
+    codeEditorCtx.attachUI(ui)
+    signal.addEventListener('abort', () => {
+      codeEditorCtx.detachUI(ui)
+    })
+  },
+  { immediate: true }
+)
 
 function handleCopilotTriggerClick() {
   uiRef.value.setIsCopilotActive(true)
 }
 
-const codeEditorCtx = computedShallowReactive<CodeEditorCtx>(() => ({
+const codeEditorUICtx = computedShallowReactive<CodeEditorUICtx>(() => ({
   ui: uiRef.value
 }))
-provide(codeEditorCtxInjectionKey, codeEditorCtx)
+provide(codeEditorUICtxInjectionKey, codeEditorUICtx)
 
 // TOOD: use percentage instead of px as default width
 const defaultSidebarWidth = 280 // px
@@ -269,7 +200,12 @@ watchEffect((onCleanup) => {
       <CopilotUI v-show="uiRef.isCopilotActive" class="copilot" :controller="uiRef.copilotController" />
     </aside>
     <div ref="resizeHandleEl" class="resize-handle" :style="{ left: `${sidebarWidth}px` }"></div>
-    <MonacoEditorComp class="monaco-editor" :options="monacoEditorOptions" @init="handleMonacoEditorInit" />
+    <MonacoEditorComp
+      class="monaco-editor"
+      :monaco="codeEditorCtx.getMonaco()"
+      :options="monacoEditorOptions"
+      @init="handleMonacoEditorInit"
+    />
     <HoverUI :controller="uiRef.hoverController" />
     <CompletionUI :controller="uiRef.completionController" />
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />

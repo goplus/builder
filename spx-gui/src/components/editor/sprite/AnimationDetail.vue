@@ -30,18 +30,10 @@ const editorCtx = useEditorCtx()
 const renameCostume = useRenameAnimation()
 const sound = computed(() => editorCtx.project.sounds.find((sound) => sound.id === props.animation.sound) ?? null)
 
-const handleRename = useMessageHandle(
-  () => {
-    return renameCostume({
-      animation: props.animation,
-      project: editorCtx.project
-    })
-  },
-  {
-    en: 'Rename animation failed',
-    zh: '重命名动画失败'
-  }
-).fn
+const handleRename = useMessageHandle(() => renameCostume(props.animation), {
+  en: 'Rename animation failed',
+  zh: '重命名动画失败'
+}).fn
 </script>
 
 <style lang="scss" scoped>

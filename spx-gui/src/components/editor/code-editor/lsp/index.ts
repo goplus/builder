@@ -9,7 +9,7 @@ import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
 import spxlsWasmUrl from '@/assets/spxls.wasm?url'
 import { Spxlc } from './spxls/client'
 import type { Files as SpxlsFiles } from './spxls'
-import { spxGetDefinitions } from './spxls/commands'
+import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
 
 function loadScript(url: string) {
   return new Promise((resolve, reject) => {
@@ -94,6 +94,15 @@ export class SpxLSPClient extends Disposable {
     )
   }
 
+  async workspaceExecuteCommandspxRenameResources(
+    ...params: spxRenameResources.Arguments
+  ): Promise<spxRenameResources.Result> {
+    return this.executeCommand<spxRenameResources.Arguments, spxRenameResources.Result>(
+      spxRenameResources.command,
+      ...params
+    )
+  }
+
   async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
     const spxlc = await this.prepareRquest()
     return spxlc.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
@@ -101,6 +110,6 @@ export class SpxLSPClient extends Disposable {
 
   async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
     const spxlc = await this.prepareRquest()
-    return spxlc.request<any>(lsp.DocumentDiagnosticRequest.method, params)
+    return spxlc.request(lsp.DocumentDiagnosticRequest.method, params)
   }
 }

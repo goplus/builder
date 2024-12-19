@@ -3,6 +3,7 @@ import { useQuery as useVueQuery, useQueryClient as useVueQueryClient } from '@t
 import { type LocaleMessage } from './i18n'
 import { getCleanupSignal, type OnCleanup } from './disposable'
 import { useAction, type ActionException } from './exception'
+import { timeout, until } from './utils'
 
 export type QueryRet<T> = {
   isLoading: Ref<boolean>
@@ -98,4 +99,19 @@ export function useQueryCache<T>() {
     invalidate,
     invalidateWithOptimisticValue
   }
+}
+
+export async function untilQueryLoaded<T>(queryRet: QueryRet<T>, signal?: AbortSignal): Promise<T> {
+  // Trigger failed query to refetch. `timeout(0)` to avoid dependency cycle.
+  await timeout(0)
+  if (!queryRet.isLoading.value && queryRet.error.value != null) {
+    queryRet.refetch(signal)
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    until(() => !queryRet.isLoading.value, signal).then(() => {
+      if (queryRet.error.value != null) reject(queryRet.error.value)
+      else resolve(queryRet.data.value!)
+    })
+  })
 }
