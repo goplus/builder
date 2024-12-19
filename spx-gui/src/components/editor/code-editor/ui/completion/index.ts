@@ -5,10 +5,11 @@ import {
   type BaseContext,
   type DefinitionDocumentationString,
   type Position,
-  type ITextDocument
+  type ITextDocument,
+  positionEq
 } from '../../common'
 import type { CodeEditorUI } from '..'
-import { type monaco, positionEq } from '../common'
+import { type monaco } from '../common'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 

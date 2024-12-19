@@ -90,7 +90,10 @@ func (r *compileResult) innermostScopeAt(pos goptoken.Pos) *types.Scope {
 	// The `MainEntry` scope is the last child of the main package and covers all positions in the workspace.
 	// We need to skip `MainEntry` when searching for the innermost scope, as the file scope will be more precise.
 	// Especially for positions in trailing empty lines of a file, the file scope does not contain them in its position range.
-	mainEntryScope := mainPkgScope.Child(mainPkgScope.Len() - 1)
+	var mainEntryScope *types.Scope
+	if mainPkgScope.Len() > 0 {
+		mainEntryScope = mainPkgScope.Child(mainPkgScope.Len() - 1)
+	}
 	for _, scope := range r.typeInfo.Scopes {
 		if scope == mainEntryScope {
 			continue
@@ -315,7 +318,7 @@ func (s *Server) compile() (*compileResult, error) {
 	gpfs := vfs.NewGopParserFS(s.workspaceRootFS)
 	for _, spxFile := range spxFiles {
 		documentURI := s.toDocumentURI(spxFile)
-		result.diagnostics[documentURI] = nil
+		result.diagnostics[documentURI] = []Diagnostic{}
 
 		astFile, err := gopparser.ParseFSEntry(result.fset, gpfs, spxFile, nil, gopparser.Config{
 			Mode: gopparser.AllErrors | gopparser.ParseComments,

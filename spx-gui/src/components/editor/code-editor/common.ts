@@ -1,7 +1,8 @@
 import { mapValues } from 'lodash'
-import type * as lsp from 'vscode-languageserver-protocol'
+import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
+import type { Project } from '@/models/project'
 
 export type Position = {
   line: number
@@ -20,13 +21,13 @@ export type Selection = {
 
 export enum ResourceReferenceKind {
   /** String literal as a resource-reference, e.g., `play "explosion"` */
-  StringLiteral,
+  StringLiteral = 'stringLiteral',
   /** Auto-binding variable as a resource-reference, e.g., `var explosion Sound` */
-  AutoBinding,
+  AutoBinding = 'autoBinding',
   /** Reference for auto-binding variable as a resource-reference, e.g., `play explosion` */
-  AutoBindingReference,
+  AutoBindingReference = 'autoBindingReference',
   /** Reference for constant as a resource-reference, e.g., `play EXPLOSION` (`EXPLOSION` is a constant) */
-  ConstantReference
+  ConstantReference = 'constantReference'
 }
 
 export type ResourceIdentifier = {
@@ -130,8 +131,8 @@ export function parseDefinitionId(idStr: DefinitionIdString): DefinitionIdentifi
 }
 
 export enum DiagnosticSeverity {
-  Error,
-  Warning
+  Error = 'error',
+  Warning = 'warning'
 }
 
 export type Diagnostic = {
@@ -356,4 +357,98 @@ export function toLSPPosition(pos: Position): lsp.Position {
     line: pos.line - 1,
     character: pos.column - 1
   }
+}
+
+export function fromLSPPosition(pos: lsp.Position): Position {
+  return {
+    line: pos.line + 1,
+    column: pos.character + 1
+  }
+}
+
+export function fromLSPRange(range: lsp.Range): Range {
+  return {
+    start: fromLSPPosition(range.start),
+    end: fromLSPPosition(range.end)
+  }
+}
+
+export function fromLSPSeverity(severity: lsp.DiagnosticSeverity): DiagnosticSeverity | null {
+  switch (severity) {
+    case lsp.DiagnosticSeverity.Error:
+      return DiagnosticSeverity.Error
+    case lsp.DiagnosticSeverity.Warning:
+      return DiagnosticSeverity.Warning
+    default:
+      return null
+  }
+}
+
+export function isResourceUri(uri: string): boolean {
+  return uri.startsWith('spx://resources/')
+}
+
+/** Implemented by `Sprite`, `Sound` etc. */
+export type IResourceModel = {
+  /** Readable name and also unique identifier in list */
+  name: string
+}
+
+export type ResourceType = 'sound' | 'sprite' | 'backdrop' | 'widget' | 'animation' | 'costume'
+export type ResourceNameWithType = { name: string; type: ResourceType }
+
+export function parseResourceURI(uri: string): ResourceNameWithType[] {
+  if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
+  const url = new URL(uri)
+  const parts = url.pathname.slice(1).split('/').map(decodeURIComponent)
+  const parsed: ResourceNameWithType[] = []
+  for (let i = 0; i < parts.length; ) {
+    const type = (
+      {
+        sounds: 'sound',
+        sprites: 'sprite',
+        backdrops: 'backdrop',
+        widgets: 'widget',
+        animations: 'animation',
+        costumes: 'costume'
+      } as const
+    )[parts[i]]
+    const name = parts[i + 1]
+    if (type == null || name == null) throw new Error(`Invalid resource uri: ${uri}`)
+    parsed.push({ name, type })
+    i += 2
+  }
+  return parsed
+}
+
+export function getResourceModel(project: Project, resourceId: ResourceIdentifier): IResourceModel | null {
+  const parsed = parseResourceURI(resourceId.uri)
+  switch (parsed[0].type) {
+    case 'sound':
+      return project.sounds.find((s) => s.name === parsed[0].name) ?? null
+    case 'sprite': {
+      const sprite = project.sprites.find((s) => s.name === parsed[0].name)
+      if (sprite == null) return null
+      if (parsed.length === 1) return sprite
+      switch (parsed[1].type) {
+        case 'animation':
+          return sprite.animations.find((a) => a.name === parsed[1].name) ?? null
+        case 'costume':
+          return sprite.costumes.find((c) => c.name === parsed[1].name) ?? null
+        default:
+          throw new Error(`Invalid resource type: ${parsed[1].type}`)
+      }
+    }
+    case 'backdrop':
+      return project.stage.backdrops.find((b) => b.name === parsed[0].name) ?? null
+    case 'widget':
+      return project.stage.widgets.find((w) => w.name === parsed[0].name) ?? null
+    default:
+      throw new Error(`Invalid resource type: ${parsed[0].type}`)
+  }
+}
+
+export function positionEq(a: Position | null, b: Position | null) {
+  if (a == null || b == null) return a == b
+  return a.line === b.line && a.column === b.column
 }

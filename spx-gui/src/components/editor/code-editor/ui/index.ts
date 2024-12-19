@@ -18,7 +18,8 @@ import {
   type Diagnostic,
   type Action,
   type TextDocumentPosition,
-  type ResourceIdentifier
+  type ResourceIdentifier,
+  getResourceModel
 } from '../common'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
@@ -49,7 +50,6 @@ import {
   isRangeEmpty,
   toMonacoPosition,
   getCodeOwner,
-  getResourceModel,
   supportGoTo
 } from './common'
 import { TextDocument } from './text-document'
@@ -434,6 +434,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       title: { en: 'View detail', zh: '查看详情' },
       handler: async (resource) => {
         const resourceModel = getResourceModel(this.project, resource)
+        if (resourceModel == null) throw new Error(`Resource not found: ${resource.uri}`)
         if (!supportGoTo(resourceModel)) throw new Error(`Go to resource (${resource.uri}) not supported`)
         if (resourceModel instanceof Sprite) return this.project.select({ type: 'sprite', id: resourceModel.id })
         if (resourceModel instanceof Sound) return this.project.select({ type: 'sound', id: resourceModel.id })

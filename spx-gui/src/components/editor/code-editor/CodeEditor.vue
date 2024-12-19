@@ -1,5 +1,96 @@
+<script lang="ts">
+class ResourceReferencesProvider
+  extends Emitter<{
+    didChangeResourceReferences: []
+  }>
+  implements IResourceReferencesProvider
+{
+  constructor(private lspClient: SpxLSPClient) {
+    super()
+  }
+  async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
+    const result = await this.lspClient.textDocumentDocumentLink({
+      textDocument: ctx.textDocument.id
+    })
+    if (result == null) return []
+    const rrs: ResourceReference[] = []
+    for (const documentLink of result) {
+      if (!isDocumentLinkForResourceReference(documentLink)) continue
+      rrs.push({
+        kind: documentLink.data.kind,
+        range: fromLSPRange(documentLink.range),
+        resource: { uri: documentLink.target }
+      })
+    }
+    return rrs
+  }
+}
+
+class DiagnosticsProvider
+  extends Emitter<{
+    didChangeDiagnostics: []
+  }>
+  implements IDiagnosticsProvider
+{
+  constructor(
+    private runtime: Runtime,
+    private lspClient: SpxLSPClient
+  ) {
+    super()
+  }
+  private adaptDiagnosticRange({ start, end }: Range, textDocument: ITextDocument) {
+    // make sure the range is not empty, so that the diagnostic info can be displayed as inline decorations
+    // TODO: it's a workaround, should be fixed in the server side
+    if (positionEq(start, end)) {
+      const code = textDocument.getValue()
+      let offsetStart = textDocument.getOffsetAt(start)
+      let offsetEnd = offsetStart
+      let adaptedByEnd = false
+      for (let i = offsetEnd; i < code.length; i++) {
+        if (code[i] !== '\n') {
+          offsetEnd = i + 1
+          adaptedByEnd = true
+        }
+      }
+      if (!adaptedByEnd) {
+        for (let i = offsetStart; i >= 0; i--) {
+          if (code[i] !== '\n') {
+            offsetStart = i
+            break
+          }
+        }
+      }
+      start = textDocument.getPositionAt(offsetStart)
+      end = textDocument.getPositionAt(offsetEnd)
+    }
+    return { start, end }
+  }
+  async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
+    // TODO: get diagnostics from runtime
+    const diagnostics: Diagnostic[] = []
+    const report = await this.lspClient.textDocumentDiagnostic({
+      textDocument: ctx.textDocument.id
+    })
+    if (report.kind !== DocumentDiagnosticReportKind.Full) throw new Error(`Report kind ${report.kind} not suppoprted`)
+    for (const item of report.items) {
+      const severity = item.severity == null ? null : fromLSPSeverity(item.severity)
+      if (severity === null) continue
+      const range = this.adaptDiagnosticRange(fromLSPRange(item.range), ctx.textDocument)
+      diagnostics.push({
+        range,
+        severity,
+        message: item.message
+      })
+    }
+    return diagnostics
+  }
+}
+</script>
+
 <script setup lang="ts">
+import { DocumentDiagnosticReportKind } from 'vscode-languageserver-protocol'
 import Emitter from '@/utils/emitter'
+import type { Runtime } from '@/models/runtime'
 import { useEditorCtx } from '../EditorContextProvider.vue'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
@@ -28,13 +119,17 @@ import {
   type Diagnostic,
   makeAdvancedMarkdownString,
   stringifyDefinitionId,
-  DiagnosticSeverity,
-  ResourceReferenceKind,
   selection2Range,
-  toLSPPosition
+  toLSPPosition,
+  fromLSPRange,
+  fromLSPSeverity,
+  positionEq,
+  type ITextDocument,
+  type Range
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
+import { isDocumentLinkForResourceReference } from './lsp/spxls/methods'
 
 // mock data for test
 const allItems = Object.values({
@@ -45,6 +140,8 @@ const allItems = Object.values({
 const editorCtx = useEditorCtx()
 
 function handleUIInit(ui: ICodeEditorUI) {
+  ;(window as any).ui = ui // for debugging only
+
   // TODO: dispose these properly
   const copilot = new Copilot()
   const documentBase = new DocumentBase()
@@ -54,15 +151,15 @@ function handleUIInit(ui: ICodeEditorUI) {
 
   ui.registerAPIReferenceProvider({
     async provideAPIReference(ctx, position) {
-      const definitions = await lspClient.getDefinitions({
+      const definitions = await lspClient.workspaceExecuteCommandSpxGetDefinitions({
         // TODO: support signal
         textDocument: ctx.textDocument.id,
         position: toLSPPosition(position)
       })
       ctx.signal.throwIfAborted()
       if (definitions == null) return []
-      const defWithDocs = await Promise.all(definitions.map(def => documentBase.getDocumentation(def)))
-      return defWithDocs.filter(d => d != null) as DefinitionDocumentationItem[]
+      const defWithDocs = await Promise.all(definitions.map((def) => documentBase.getDocumentation(def)))
+      return defWithDocs.filter((d) => d != null) as DefinitionDocumentationItem[]
     }
   })
 
@@ -139,45 +236,7 @@ function handleUIInit(ui: ICodeEditorUI) {
 
   ui.registerCopilot(copilot)
 
-  class DiagnosticsProvider
-    extends Emitter<{
-      didChangeDiagnostics: []
-    }>
-    implements IDiagnosticsProvider
-  {
-    async provideDiagnostics(ctx: DiagnosticsContext): Promise<Diagnostic[]> {
-      console.warn('TODO', ctx, editorCtx.runtime)
-      await new Promise<void>((resolve) => setTimeout(resolve, 100))
-      ctx.signal.throwIfAborted()
-      const diagnostics: Diagnostic[] = []
-      const value = ctx.textDocument.getValue()
-      const errIdx = value.indexOf('err')
-      if (errIdx >= 0) {
-        diagnostics.push({
-          range: {
-            start: ctx.textDocument.getPositionAt(errIdx),
-            end: ctx.textDocument.getPositionAt(errIdx + 3)
-          },
-          severity: DiagnosticSeverity.Error,
-          message: 'This is an error'
-        })
-      }
-      const warningIdx = value.indexOf('warn')
-      if (warningIdx >= 0) {
-        diagnostics.push({
-          range: {
-            start: ctx.textDocument.getPositionAt(warningIdx),
-            end: ctx.textDocument.getPositionAt(warningIdx + 4)
-          },
-          severity: DiagnosticSeverity.Warning,
-          message: 'This is a warning'
-        })
-      }
-      return diagnostics
-    }
-  }
-
-  ui.registerDiagnosticsProvider(new DiagnosticsProvider())
+  ui.registerDiagnosticsProvider(new DiagnosticsProvider(editorCtx.runtime, lspClient))
 
   ui.registerFormattingEditProvider({
     async provideDocumentFormattingEdits(ctx) {
@@ -247,139 +306,7 @@ function handleUIInit(ui: ICodeEditorUI) {
     }
   })
 
-  class ResourceReferencesProvider
-    extends Emitter<{
-      didChangeResourceReferences: []
-    }>
-    implements IResourceReferencesProvider
-  {
-    async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
-      console.warn('TODO', ctx)
-      await new Promise<void>((resolve) => setTimeout(resolve, 100))
-      ctx.signal.throwIfAborted()
-      const rrs: ResourceReference[] = []
-      const value = ctx.textDocument.getValue()
-      editorCtx.project.sounds
-        .map((s) => s.name)
-        .forEach((soundName) => {
-          const idx = value.indexOf(`"${soundName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + soundName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/sounds/${soundName}`
-              }
-            })
-          }
-        })
-      editorCtx.project.sprites
-        .map((s) => s.name)
-        .forEach((spriteName) => {
-          const idx = value.indexOf(`"${spriteName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + spriteName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/sprites/${spriteName}`
-              }
-            })
-          }
-        })
-      editorCtx.project.stage.backdrops
-        .map((b) => b.name)
-        .forEach((backdropName) => {
-          const idx = value.indexOf(`"${backdropName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + backdropName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/backdrops/${backdropName}`
-              }
-            })
-          }
-        })
-      editorCtx.project.stage.widgets
-        .map((w) => w.name)
-        .forEach((widgetName) => {
-          const idx = value.indexOf(`"${widgetName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + widgetName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/widgets/${widgetName}`
-              }
-            })
-          }
-        })
-      const sprite = editorCtx.project.sprites[0]
-      sprite.animations
-        .map((a) => a.name)
-        .forEach((animationName) => {
-          const idx = value.indexOf(`"${animationName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + animationName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/sprites/${sprite.name}/animations/${animationName}`
-              }
-            })
-          }
-        })
-      sprite.costumes
-        .map((c) => c.name)
-        .forEach((costumeName) => {
-          const idx = value.indexOf(`"${costumeName}"`)
-          if (idx >= 0) {
-            rrs.push({
-              kind: ResourceReferenceKind.StringLiteral,
-              range: {
-                start: ctx.textDocument.getPositionAt(idx),
-                end: ctx.textDocument.getPositionAt(idx + costumeName.length + 2)
-              },
-              resource: {
-                uri: `spx://resources/sprites/${sprite.name}/costumes/${costumeName}`
-              }
-            })
-          }
-        })
-      const irrIdx = value.indexOf(sprite.name + ' ')
-      if (irrIdx >= 0) {
-        rrs.push({
-          kind: ResourceReferenceKind.AutoBinding,
-          range: {
-            start: ctx.textDocument.getPositionAt(irrIdx),
-            end: ctx.textDocument.getPositionAt(irrIdx + 9)
-          },
-          resource: {
-            uri: `spx://resources/sprites/${sprite.name}`
-          }
-        })
-      }
-      return rrs
-    }
-  }
-
-  ui.registerResourceReferencesProvider(new ResourceReferencesProvider())
+  ui.registerResourceReferencesProvider(new ResourceReferencesProvider(lspClient))
   ui.registerDocumentBase(documentBase)
 }
 

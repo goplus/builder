@@ -23,7 +23,7 @@ export function checkModifiable(el: HTMLElement): string | null {
 import { onUnmounted, watchEffect } from 'vue'
 import type { monaco } from '../common'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
-import { isModifiable, type ResourceReferenceController } from '.'
+import { isModifiableKind, type ResourceReferenceController } from '.'
 import ResourceSelector from './selector/ResourceSelector.vue'
 
 const props = defineProps<{
@@ -48,7 +48,7 @@ watchEffect(() => {
 
   const decorations = items.map<monaco.editor.IModelDeltaDecoration>((item) => {
     const clss = ['icon', `id-${item.id}`]
-    if (isModifiable(item.kind)) {
+    if (isModifiableKind(item.kind)) {
       clss.push('modifiable')
     }
     return {
@@ -105,9 +105,11 @@ watchEffect(() => {
     width: 16px;
     height: 16px;
     transform: translate(-50%, -50%) scale(0.8);
-    filter: opacity(0.6);
+    filter: opacity(0.4);
+    cursor: not-allowed;
   }
   &.code-editor-resource-reference-modifiable::after {
+    filter: opacity(0.6);
     cursor: pointer;
   }
   &.code-editor-resource-reference-modifiable:hover::after {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getResourceModel } from '../common'
+import { getResourceModel } from '../../common'
 import { useCodeEditorCtx } from '../CodeEditorUI.vue'
 import ResourceItem from '../resource/ResourceItem.vue'
 
@@ -15,7 +15,7 @@ const resourceModel = computed(() => getResourceModel(codeEditorCtx.ui.project, 
 
 <template>
   <!-- TODO: disable hover effect -->
-  <ResourceItem :resource="resourceModel" :selected="false" />
+  <ResourceItem v-if="resourceModel != null" :resource="resourceModel" :selected="false" />
 </template>
 
 <style lang="scss" scoped></style>
