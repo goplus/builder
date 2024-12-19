@@ -112,4 +112,19 @@ export class SpxLSPClient extends Disposable {
     const spxlc = await this.prepareRquest()
     return spxlc.request(lsp.DocumentDiagnosticRequest.method, params)
   }
+
+  async textDocumentHover(params: lsp.HoverParams): Promise<lsp.Hover | null> {
+    const spxlc = await this.prepareRquest()
+    return spxlc.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
+  }
+
+  async textDocumentDefinition(params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
+    const spxlc = await this.prepareRquest()
+    return spxlc.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
+  }
+
+  async textDocumentTypeDefinition(params: lsp.TypeDefinitionParams): Promise<lsp.Definition | null> {
+    const spxlc = await this.prepareRquest()
+    return spxlc.request<lsp.Definition | null>(lsp.TypeDefinitionRequest.method, params)
+  }
 }

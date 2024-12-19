@@ -15,13 +15,5 @@ const props = defineProps<{
 </template>
 
 <style lang="scss" scoped>
-.message-content {
-  gap: 8px;
-  font-size: 13px;
-  line-height: 1.53846;
-
-  :deep(p) {
-    padding: 4px 0;
-  }
-}
+.message-content {}
 </style>

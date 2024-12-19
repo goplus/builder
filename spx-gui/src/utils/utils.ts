@@ -267,3 +267,7 @@ export function usePageTitle(
 export function timeout(duration = 0) {
   return new Promise<void>((resolve) => setTimeout(() => resolve(), duration))
 }
+
+export function trimLineBreaks(str: string) {
+  return str.replace(/^\n+|\n+$/g, '')
+}
