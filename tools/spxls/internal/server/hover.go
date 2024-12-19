@@ -111,37 +111,28 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 // builtinDefinitionOverviews contains overview descriptions for Go builtin
 // functions and types.
 var builtinDefinitionOverviews = map[string]string{
+	// Variables.
+	"nil": "var nil",
+
+	// Constants.
+	"false": "const false bool",
+	"iota":  "const iota untyped int",
+	"true":  "const true bool",
+
+	// Types.
 	"any":        "type any interface{}",
-	"append":     "func append(slice []T, elems ...T) []T",
 	"bool":       "type bool bool",
 	"byte":       "type byte = uint8",
-	"cap":        "func cap(v Type) int",
-	"clear":      "func clear(m Type)",
-	"close":      "func close(c chan<- Type)",
-	"complex":    "func complex(r, i FloatType) ComplexType",
 	"complex64":  "type complex64 complex64",
 	"complex128": "type complex128 complex128",
-	"copy":       "func copy(dst, src []Type) int",
-	"delete":     "func delete(m map[Type]Type1, key Type)",
 	"error":      "type error interface { Error() string }",
 	"float32":    "type float32 float32",
 	"float64":    "type float64 float64",
-	"imag":       "func imag(c ComplexType) FloatType",
 	"int":        "type int int",
 	"int8":       "type int8 int8",
 	"int16":      "type int16 int16",
 	"int32":      "type int32 int32",
 	"int64":      "type int64 int64",
-	"len":        "func len(v Type) int",
-	"make":       "func make(t Type, size ...IntegerType) Type",
-	"max":        "func max(x Type, y ...Type) Type",
-	"min":        "func min(x Type, y ...Type) Type",
-	"new":        "func new(Type) *Type",
-	"panic":      "func panic(v interface{})",
-	"print":      "func print(args ...Type)",
-	"println":    "func println(args ...Type)",
-	"real":       "func real(c ComplexType) FloatType",
-	"recover":    "func recover() interface{}",
 	"rune":       "type rune = int32",
 	"string":     "type string string",
 	"uint":       "type uint uint",
@@ -150,6 +141,26 @@ var builtinDefinitionOverviews = map[string]string{
 	"uint32":     "type uint32 uint32",
 	"uint64":     "type uint64 uint64",
 	"uintptr":    "type uintptr uintptr",
+
+	// Functions.
+	"append":  "func append(slice []T, elems ...T) []T",
+	"cap":     "func cap(v Type) int",
+	"clear":   "func clear(m Type)",
+	"close":   "func close(c chan<- Type)",
+	"complex": "func complex(r, i FloatType) ComplexType",
+	"copy":    "func copy(dst, src []Type) int",
+	"delete":  "func delete(m map[Type]Type1, key Type)",
+	"imag":    "func imag(c ComplexType) FloatType",
+	"len":     "func len(v Type) int",
+	"make":    "func make(t Type, size ...IntegerType) Type",
+	"max":     "func max(x Type, y ...Type) Type",
+	"min":     "func min(x Type, y ...Type) Type",
+	"new":     "func new(Type) *Type",
+	"panic":   "func panic(v interface{})",
+	"print":   "func print(args ...Type)",
+	"println": "func println(args ...Type)",
+	"real":    "func real(c ComplexType) FloatType",
+	"recover": "func recover() interface{}",
 }
 
 // hoverSpxResource represents a SPX resource used in hover displays.
