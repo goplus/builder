@@ -208,8 +208,8 @@ interface SpxDefinitionIdentifier {
    */
   name?: string;
 
-  /** Index in overloads. */
-  overloadIndex?: number;
+  /** Overload Identifier.. */
+  overloadId?: string;
 }
 ```
 

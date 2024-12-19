@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	goptoken "github.com/goplus/gop/token"
 )
@@ -77,7 +78,22 @@ type SpxDefinitionIdentifier struct {
 	Name *string `json:"name,omitempty"`
 
 	// Overload Identifier.
-	OverloadId *string `json:"overloadId,omitempty"`
+	OverloadID *string `json:"overloadId,omitempty"`
+}
+
+// String implements [fmt.Stringer].
+func (id SpxDefinitionIdentifier) String() string {
+	s := "gop:"
+	if id.Package != nil {
+		s += *id.Package
+	}
+	if id.Name != nil {
+		s += "?" + url.QueryEscape(*id.Name)
+		if id.OverloadID != nil {
+			s += "#" + url.QueryEscape(*id.OverloadID)
+		}
+	}
+	return s
 }
 
 // SpxResourceRefDocumentLinkData represents data for a spx resource reference

@@ -42,13 +42,13 @@ func (imp *importer) Import(path string) (*types.Package, error) {
 
 	export, err := pkgdata.OpenExport(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open export file: %w", err)
+		return nil, fmt.Errorf("failed to open package export file: %w", err)
 	}
 	defer export.Close()
 
 	pkg, err := gcexportdata.Read(export, imp.fset, imp.loaded, path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse export data: %w", err)
+		return nil, fmt.Errorf("failed to parse package export data: %w", err)
 	}
 	return pkg, nil
 }
