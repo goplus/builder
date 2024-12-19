@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { getResourceModel } from '../../common'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import ResourceItem from '../resource/ResourceItem.vue'
 
 const props = defineProps<{
@@ -9,7 +9,7 @@ const props = defineProps<{
   resource: string
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 const resourceModel = computed(() => getResourceModel(codeEditorCtx.ui.project, { uri: props.resource }))
 </script>
 

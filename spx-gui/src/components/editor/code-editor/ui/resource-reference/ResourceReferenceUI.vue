@@ -21,8 +21,8 @@ export function checkModifiable(el: HTMLElement): string | null {
 
 <script setup lang="ts">
 import { onUnmounted, watchEffect } from 'vue'
-import type { monaco } from '../common'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import type { monaco } from '../../monaco'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { isModifiableKind, type ResourceReferenceController } from '.'
 import ResourceSelector from './selector/ResourceSelector.vue'
 
@@ -30,7 +30,7 @@ const props = defineProps<{
   controller: ResourceReferenceController
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 
 let dc: monaco.editor.IEditorDecorationsCollection | null = null
 function getDecorationsCollection() {

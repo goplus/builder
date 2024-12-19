@@ -25,19 +25,18 @@ export function useEditorCtx() {
 import { provide, type InjectionKey } from 'vue'
 import { Project } from '@/models/project'
 import type { UserInfo } from '@/stores/user'
-import { computedShallowReactive, useComputedDisposable } from '@/utils/utils'
+import { computedShallowReactive } from '@/utils/utils'
 
 const props = defineProps<{
   project: Project
   userInfo: UserInfo
+  runtime: Runtime
 }>()
-
-const runtimeRef = useComputedDisposable(() => new Runtime(props.project))
 
 const editorCtx = computedShallowReactive<EditorCtx>(() => ({
   project: props.project,
   userInfo: props.userInfo,
-  runtime: runtimeRef.value
+  runtime: props.runtime
 }))
 
 provide(editorCtxKey, editorCtx)

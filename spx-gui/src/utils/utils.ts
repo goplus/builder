@@ -67,11 +67,11 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
 }
 
 /** Like `computed`, while dispose the value properly */
-export function useComputedDisposable<T extends Disposable>(getter: () => T) {
+export function useComputedDisposable<T extends Disposable | null>(getter: () => T) {
   const r = shallowRef<T>()
   watchEffect((onCleanup) => {
     const value = getter()
-    onCleanup(() => value.dispose())
+    onCleanup(() => value?.dispose())
     r.value = value
   })
   return r as ShallowRef<T>

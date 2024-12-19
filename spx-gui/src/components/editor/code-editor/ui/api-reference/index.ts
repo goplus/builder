@@ -2,7 +2,7 @@ import { debounce } from 'lodash'
 import { shallowRef, watchEffect } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
 import { type BaseContext, type Position, type DefinitionDocumentationItem } from '../../common'
-import type { CodeEditorUI } from '..'
+import type { CodeEditorUI } from '../code-editor-ui'
 
 export type APIReferenceItem = DefinitionDocumentationItem
 

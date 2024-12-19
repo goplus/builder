@@ -6,11 +6,11 @@
       <UITab value="backdrops">{{ $t({ en: 'Backdrops', zh: '背景' }) }}</UITab>
     </UITabs>
     <template #extra>
-      <FormatButton v-if="selectedTab === 'code' && codeEditor != null" :code-editor="codeEditor" />
+      <FormatButton v-if="selectedTab === 'code'" :code-file-path="stage.codeFilePath" />
       <BackdropModeSelector v-if="selectedTab === 'backdrops'" />
     </template>
   </EditorHeader>
-  <CodeEditor v-show="selectedTab === 'code'" ref="codeEditor" />
+  <CodeEditorUI v-show="selectedTab === 'code'" ref="codeEditor" :code-file-path="stage.codeFilePath" />
   <WidgetsEditor v-if="selectedTab === 'widgets'" />
   <BackdropsEditor v-if="selectedTab === 'backdrops'" />
 </template>
@@ -20,7 +20,7 @@ import { ref, watchEffect } from 'vue'
 import type { Stage } from '@/models/stage'
 import { UITabs, UITab } from '@/components/ui'
 import { useEditorCtx } from '../EditorContextProvider.vue'
-import CodeEditor from '../code-editor/CodeEditor.vue'
+import CodeEditorUI from '../code-editor/ui/CodeEditorUI.vue'
 import FormatButton from '../code-editor/FormatButton.vue'
 import EditorHeader from '../common/EditorHeader.vue'
 import BackdropsEditor from './backdrop/BackdropsEditor.vue'
@@ -39,6 +39,4 @@ watchEffect(() => {
     selectedTab.value = 'widgets'
   }
 })
-
-const codeEditor = ref<InstanceType<typeof CodeEditor>>()
 </script>

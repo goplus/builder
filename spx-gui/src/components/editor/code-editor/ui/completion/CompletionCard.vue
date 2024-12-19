@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { MonacoKeyCode, type monaco } from '../common'
+import { MonacoKeyCode, type monaco } from '../../monaco'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
 import type { CompletionController, InternalCompletionItem } from '.'

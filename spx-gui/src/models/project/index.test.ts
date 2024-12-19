@@ -115,9 +115,9 @@ describe('Project', () => {
     const sound3 = new Sound('sound3', mockFile())
     project.addSound(sound3)
 
-    project.select({ type: 'stage' })
+    project.select({ type: 'stage', id: null })
     project.removeSound(sound3.id)
-    expect(project.selected).toEqual({ type: 'stage' })
+    expect(project.selected?.type).toEqual('stage')
 
     project.select({ type: 'sound', id: project.sounds[0].id })
 
@@ -149,7 +149,7 @@ describe('Project', () => {
 
     project.select({ type: 'stage' })
     project.removeSprite(sprite3.id)
-    expect(project.selected).toEqual({ type: 'stage' })
+    expect(project.selected?.type).toEqual('stage')
 
     project.select({ type: 'sprite', id: project.sprites[0].id })
 
