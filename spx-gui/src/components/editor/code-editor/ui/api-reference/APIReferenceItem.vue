@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { UITooltip } from '@/components/ui'
 import { selection2Range } from '../../common'
-import DefinitionOverviewWrapper from '../markdown/DefinitionOverviewWrapper.vue'
-import DefinitionDetailWrapper from '../markdown/DefinitionDetailWrapper.vue'
+import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
+import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import { ChatExplainKind, builtInCommandCopilotExplain } from '../code-editor-ui'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
@@ -40,7 +40,7 @@ function handleExplain() {
   <li class="api-reference-item" @click="handleInsert">
     <DefinitionOverviewWrapper class="overview" :kind="item.kind">{{ item.overview }}</DefinitionOverviewWrapper>
     <DefinitionDetailWrapper>
-      <MarkdownView v-bind="item.detail" class="detail" />
+      <MarkdownView v-bind="item.detail" />
     </DefinitionDetailWrapper>
     <UITooltip>
       <template #trigger>
@@ -75,6 +75,7 @@ function handleExplain() {
   display: flex;
   flex-direction: column;
   justify-content: stretch;
+  gap: 4px;
   border-radius: var(--ui-border-radius-1);
   transition: 0.2s;
   cursor: pointer;
@@ -95,18 +96,6 @@ function handleExplain() {
   line-height: 20px;
   word-break: break-all;
   color: var(--ui-color-title);
-}
-
-.detail {
-  font-size: 10px;
-  color: var(--ui-color-hint-1);
-  line-height: 20px;
-
-  :deep(:not(pre) > code) {
-    font-size: inherit;
-    line-height: 1.6;
-    padding: 1px 4px;
-  }
 }
 
 .explain-btn {

@@ -184,12 +184,9 @@ type hoverDefinition struct {
 func formatHoverDefinitions(defs ...hoverDefinition) string {
 	var sb strings.Builder
 	for _, def := range defs {
-		sb.WriteString("<definition-overview-wrapper>")
-		sb.WriteString(def.Overview)
-		sb.WriteString("</definition-overview-wrapper>\n")
-		sb.WriteString(fmt.Sprintf("<definition-detail def-id=%q>\n", def.ID))
+		sb.WriteString(fmt.Sprintf("<definition-item def-id=%q overview=%q>\n", def.ID, def.Overview))
 		sb.WriteString(def.Detail)
-		sb.WriteString("</definition-detail>\n")
+		sb.WriteString("</definition-item>\n")
 	}
 	return sb.String()
 }

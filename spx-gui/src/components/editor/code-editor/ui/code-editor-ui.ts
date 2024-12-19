@@ -19,7 +19,8 @@ import {
   type Action,
   type TextDocumentPosition,
   type ResourceIdentifier,
-  getResourceModel
+  getResourceModel,
+  type TextDocumentRange
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor } from '../monaco'
@@ -95,7 +96,8 @@ export const builtInCommandCopilotFixProblem: Command<
 export const builtInCommandCopy: Command<[], void> = 'editor.action.copy'
 export const builtInCommandCut: Command<[], void> = 'editor.action.cut'
 export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
-export const builtInCommandGoToDefinition: Command<[TextDocumentPosition], void> = 'spx.goToDefinition'
+export const builtInCommandGoToDefinition: Command<[TextDocumentPosition | TextDocumentRange], void> =
+  'spx.goToDefinition'
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'spx.goToResource'
 // export const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
@@ -373,8 +375,8 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       icon: 'goto',
       title: { en: 'Go to definition', zh: '跳转到定义' },
       handler: async (params) => {
-        const { textDocument, position } = params
-        this.open(textDocument, position)
+        if ('position' in params) this.open(params.textDocument, params.position)
+        else this.open(params.textDocument, params.range)
       }
     })
 

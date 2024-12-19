@@ -57,13 +57,15 @@ async function handleAction(action: InternalAction) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .content {
   width: 320px;
   padding: 6px 8px;
-  // TODO: reconfirm font size here
-  font-size: 12px;
 }
 
 .footer {

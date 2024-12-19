@@ -113,7 +113,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>var count int</definition-overview-wrapper>\n<definition-detail def-id=\"gop:main?count\">\ncount is a variable.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:main?count\" overview=\"var count int\">\ncount is a variable.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 11, Character: 1},
@@ -132,7 +132,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>const MaxCount = 100</definition-overview-wrapper>\n<definition-detail def-id=\"gop:main?MaxCount\">\nMaxCount is a constant.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:main?MaxCount\" overview=\"const MaxCount = 100\">\nMaxCount is a constant.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 17, Character: 6},
@@ -151,7 +151,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>func Add(x int, y int) int</definition-overview-wrapper>\n<definition-detail def-id=\"gop:main?Game.Add\">\nAdd is a function.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:main?Game.Add\" overview=\"func Add(x int, y int) int\">\nAdd is a function.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 20, Character: 5},
@@ -170,7 +170,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>type Point struct{X int; Y int}</definition-overview-wrapper>\n<definition-detail def-id=\"gop:main?Point\">\nPoint is a type.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:main?Point\" overview=\"type Point struct{X int; Y int}\">\nPoint is a type.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 25, Character: 5},
@@ -189,7 +189,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>field X int</definition-overview-wrapper>\n<definition-detail def-id=\"gop:main?Point.X\">\nX is a field.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:main?Point.X\" overview=\"field X int\">\nX is a field.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 27, Character: 1},
@@ -234,7 +234,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>type int8 int8</definition-overview-wrapper>\n<definition-detail def-id=\"gop:builtin?int8\">\nint8 is the set of all signed 8-bit integers.\nRange: -128 through 127.\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:builtin?int8\" overview=\"type int8 int8\">\nint8 is the set of all signed 8-bit integers.\nRange: -128 through 127.\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 33, Character: 12},
@@ -312,6 +312,25 @@ onStart => {
 			End:   Position{Line: 37, Character: 19},
 		}, mySpriteSetCostumeFuncHover.Range)
 
+		mySpriteOnStartFuncHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 1, Character: 1},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mySpriteOnStartFuncHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.onStart\" overview=\"func onStart(onStart func())\">\n</definition-item>\n",
+			},
+			Range: Range{
+				Start: Position{Line: 1, Character: 0},
+				End:   Position{Line: 1, Character: 7},
+			},
+		}, mySpriteOnStartFuncHover)
+
 		mySpriteCloneFuncHover, err := s.textDocumentHover(&HoverParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
@@ -323,7 +342,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>func clone()</definition-overview-wrapper>\n<definition-detail def-id=\"gop:github.com/goplus/spx?Sprite.clone#0\">\n</definition-detail>\n<definition-overview-wrapper>func clone(data interface{})</definition-overview-wrapper>\n<definition-detail def-id=\"gop:github.com/goplus/spx?Sprite.clone#1\">\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#0\" overview=\"func clone()\">\n</definition-item>\n<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#1\" overview=\"func clone(data interface{})\">\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 3, Character: 1},
@@ -342,7 +361,7 @@ onStart => {
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-overview-wrapper>field X int</definition-overview-wrapper>\n<definition-detail def-id=\"gop:image?Point.X\">\n</definition-detail>\n",
+				Value: "<definition-item def-id=\"gop:image?Point.X\" overview=\"field X int\">\n</definition-item>\n",
 			},
 			Range: Range{
 				Start: Position{Line: 4, Character: 12},

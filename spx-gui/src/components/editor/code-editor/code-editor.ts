@@ -1,4 +1,4 @@
-import { DocumentDiagnosticReportKind } from 'vscode-languageserver-protocol'
+import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import type { Runtime } from '@/models/runtime'
@@ -18,14 +18,14 @@ import {
   type ChatExplainTargetCodeSegment,
   builtInCommandCopilotReview,
   type ChatTopicReview,
-  builtInCommandGoToDefinition
+  builtInCommandGoToDefinition,
+  type HoverContext,
+  type Hover
 } from './ui/code-editor-ui'
 import {
-  makeBasicMarkdownString,
   type Action,
   type DefinitionDocumentationItem,
   type DefinitionDocumentationString,
-  type DefinitionIdentifier,
   type Diagnostic,
   makeAdvancedMarkdownString,
   stringifyDefinitionId,
@@ -39,7 +39,10 @@ import {
   type TextDocumentIdentifier,
   type ResourceIdentifier,
   fromLSPTextEdit,
-  textDocumentId2ResourceModelId
+  textDocumentId2ResourceModelId,
+  parseDefinitionId,
+  type Position,
+  type TextDocumentRange
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -104,6 +107,7 @@ class DiagnosticsProvider
         if (code[i] !== '\n') {
           offsetEnd = i + 1
           adaptedByEnd = true
+          break
         }
       }
       if (!adaptedByEnd) {
@@ -125,7 +129,8 @@ class DiagnosticsProvider
     const report = await this.lspClient.textDocumentDiagnostic({
       textDocument: ctx.textDocument.id
     })
-    if (report.kind !== DocumentDiagnosticReportKind.Full) throw new Error(`Report kind ${report.kind} not supported`)
+    if (report.kind !== lsp.DocumentDiagnosticReportKind.Full)
+      throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
       const severity = item.severity == null ? null : fromLSPSeverity(item.severity)
       if (severity === null) continue
@@ -140,10 +145,84 @@ class DiagnosticsProvider
   }
 }
 
+class HoverProvider {
+  constructor(
+    private lspClient: SpxLSPClient,
+    private documentBase: DocumentBase
+  ) {}
+
+  private async getExplainAction(lspHover: lsp.Hover) {
+    let definition: DefinitionDocumentationItem | null = null
+    if (!lsp.MarkupContent.is(lspHover.contents)) return null
+    // TODO: get definition ID from LS `textDocument/documentLink`
+    const matched = lspHover.contents.value.match(/def-id="([^"]+)"/)
+    if (matched == null) return null
+    const defId = parseDefinitionId(matched[1])
+    definition = await this.documentBase.getDocumentation(defId)
+    if (definition == null) return null
+    return {
+      command: builtInCommandCopilotExplain,
+      arguments: [
+        {
+          kind: ChatExplainKind.Definition,
+          overview: definition.overview,
+          definition: definition.definition
+        }
+      ]
+    }
+  }
+
+  private async getGoToDefinitionAction(params: lsp.TextDocumentPositionParams) {
+    const lspClient = this.lspClient
+    const [definition, typeDefinition] = (
+      await Promise.all([lspClient.textDocumentDefinition(params), lspClient.textDocumentTypeDefinition(params)])
+    ).map((def) => {
+      if (def == null) return null
+      if (Array.isArray(def)) return def[0]
+      return def
+    })
+    const location = definition ?? typeDefinition
+    if (location == null) return null
+    return {
+      command: builtInCommandGoToDefinition,
+      arguments: [
+        {
+          textDocument: { uri: location.uri },
+          range: fromLSPRange(location.range)
+        } satisfies TextDocumentRange
+      ]
+    }
+  }
+
+  async provideHover(ctx: HoverContext, position: Position): Promise<Hover | null> {
+    const lspParams = {
+      textDocument: ctx.textDocument.id,
+      position: toLSPPosition(position)
+    }
+    const lspHover = await this.lspClient.textDocumentHover(lspParams)
+    if (lspHover == null) return null
+    const contents: DefinitionDocumentationString[] = []
+    if (lsp.MarkupContent.is(lspHover.contents)) {
+      // For now, we only support MarkupContent
+      contents.push(makeAdvancedMarkdownString(lspHover.contents.value))
+    }
+    let range: Range | undefined = undefined
+    if (lspHover.range != null) range = fromLSPRange(lspHover.range)
+    const actions: Action[] = []
+    for (const a of await Promise.all([this.getExplainAction(lspHover), this.getGoToDefinitionAction(lspParams)])) {
+      if (a != null) actions.push(a)
+    }
+    return { contents, range, actions }
+  }
+}
+
 export class CodeEditor extends Disposable {
   private copilot: Copilot
   private documentBase: DocumentBase
   private lspClient: SpxLSPClient
+  private resourceReferencesProvider: ResourceReferencesProvider
+  private diagnosticsProvider: DiagnosticsProvider
+  private hoverProvider: HoverProvider
 
   constructor(
     private project: Project,
@@ -154,6 +233,9 @@ export class CodeEditor extends Disposable {
     this.copilot = new Copilot()
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
+    this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)
+    this.diagnosticsProvider = new DiagnosticsProvider(this.runtime, this.lspClient)
+    this.hoverProvider = new HoverProvider(this.lspClient, this.documentBase)
   }
 
   /** All opened text documents in current editor, by resourceModel ID */
@@ -226,9 +308,9 @@ export class CodeEditor extends Disposable {
           kind: item.kind,
           insertText: item.insertText,
           documentation: makeAdvancedMarkdownString(`
-  <definition-overview-wrapper>${item.overview}</definition-overview-wrapper>
-  <definition-detail def-id="${stringifyDefinitionId(item.definition)}"></definition-detail>
-  `)
+<definition-item overview="${item.overview}" def-id="${stringifyDefinitionId(item.definition)}">
+</definition-item>
+`)
         }))
       }
     })
@@ -285,8 +367,7 @@ export class CodeEditor extends Disposable {
     })
 
     ui.registerCopilot(copilot)
-
-    ui.registerDiagnosticsProvider(new DiagnosticsProvider(this.runtime, lspClient))
+    ui.registerDiagnosticsProvider(this.diagnosticsProvider)
 
     ui.registerFormattingEditProvider({
       async provideDocumentFormattingEdits(ctx) {
@@ -295,68 +376,8 @@ export class CodeEditor extends Disposable {
       }
     })
 
-    ui.registerHoverProvider({
-      async provideHover(ctx, position) {
-        console.warn('TODO', ctx, position)
-        await new Promise<void>((resolve) => setTimeout(resolve, 100))
-        ctx.signal.throwIfAborted()
-        const range = ctx.textDocument.getDefaultRange(position)
-        const value = ctx.textDocument.getValueInRange(range)
-        if (value.trim() === '') return null
-        // TODO: get definition ID from LS
-        const definitionID: DefinitionIdentifier = {
-          package: 'github.com/goplus/spx',
-          name: `Sprite.${value}`
-        }
-        const definition = await documentBase.getDocumentation(definitionID)
-        const contents: DefinitionDocumentationString[] = []
-        const actions: Action[] = []
-        if (definition != null) {
-          contents.push(
-            makeAdvancedMarkdownString(`
-  <definition-overview-wrapper>${definition.overview}</definition-overview-wrapper>
-  <definition-detail def-id="${stringifyDefinitionId(definition.definition)}"></definition-detail>
-  `)
-          )
-          actions.push({
-            command: builtInCommandCopilotExplain,
-            arguments: [
-              {
-                kind: ChatExplainKind.Definition,
-                overview: definition.overview,
-                definition: definition.definition
-              }
-            ]
-          })
-        }
-        if (value === 'time') {
-          contents.push(
-            makeBasicMarkdownString(`<definition-overview-wrapper>var time int</definition-overview-wrapper>`)
-          )
-          actions.push({
-            command: builtInCommandGoToDefinition,
-            arguments: [
-              {
-                textDocument: {
-                  uri: `file:///main.spx`
-                },
-                position: {
-                  line: 2,
-                  column: 2
-                }
-              }
-            ]
-          })
-        }
-        if (contents.length === 0) return null
-        return {
-          contents,
-          actions
-        }
-      }
-    })
-
-    ui.registerResourceReferencesProvider(new ResourceReferencesProvider(lspClient))
+    ui.registerHoverProvider(this.hoverProvider)
+    ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
     ui.registerDocumentBase(documentBase)
   }
 

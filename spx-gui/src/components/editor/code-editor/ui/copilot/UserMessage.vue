@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
 import type { BasicMarkdownString } from '../../common'
-import MessageContent from './MessageContent.vue'
+import MarkdownView from '../markdown/MarkdownView.vue'
 
 defineProps<{
   content: BasicMarkdownString
@@ -13,7 +13,7 @@ const editorCtx = useEditorCtx()
 <template>
   <section class="user-message">
     <img class="avatar" :src="editorCtx.userInfo.avatar" />
-    <MessageContent class="content" v-bind="content" />
+    <MarkdownView class="content" v-bind="content" />
   </section>
 </template>
 
