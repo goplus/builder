@@ -150,7 +150,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 	// Find called event handlers.
 	calledEventHandlers := make(map[string]struct{})
 	for expr, tv := range result.typeInfo.Types {
-		if expr == nil || expr.Pos() == goptoken.NoPos || tv.IsType() {
+		if expr == nil || !expr.Pos().IsValid() || tv.IsType() {
 			continue // Skip type identifiers.
 		}
 		if expr.Pos() < goptoken.Pos(tokenFile.Base()) ||

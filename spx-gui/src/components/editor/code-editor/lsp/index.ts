@@ -101,7 +101,6 @@ export class SpxLSPClient extends Disposable {
 
   async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
     const spxlc = await this.prepareRquest()
-    const report = await spxlc.request<any>(lsp.DocumentDiagnosticRequest.method, params)
-    return report.value // TODO: this should be fixed in `spxls`, see type `DocumentDiagnosticReport` there for more details
+    return spxlc.request<any>(lsp.DocumentDiagnosticRequest.method, params)
   }
 }

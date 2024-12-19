@@ -204,7 +204,7 @@ func (r *compileResult) refIdentsOf(obj types.Object) []*gopast.Ident {
 	return idents
 }
 
-// isInMainSpxFirstVarBlock returns true if the given position is in the first
+// isInMainSpxFirstVarBlock reports whether the given position is in the first
 // var block in main.spx.
 func (r *compileResult) isInMainSpxFirstVarBlock(pos goptoken.Pos) bool {
 	return r.mainSpxFirstVarBlock != nil &&
@@ -224,11 +224,11 @@ func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, po
 		if node == nil {
 			return true
 		}
-		nodePos := r.fset.Position(node.Pos())
-		nodeEnd := r.fset.Position(node.End())
-		if tokenPos.Line == nodePos.Line &&
-			tokenPos.Column >= nodePos.Column &&
-			tokenPos.Column <= nodeEnd.Column {
+		startPos := r.fset.Position(node.Pos())
+		endPos := r.fset.Position(node.End())
+		if tokenPos.Line == startPos.Line &&
+			tokenPos.Column >= startPos.Column &&
+			tokenPos.Column <= endPos.Column {
 			if foundNode == nil || (node.Pos() >= foundNode.Pos() && node.End() <= foundNode.End()) {
 				foundNode = node
 			}
@@ -601,7 +601,7 @@ func (s *Server) inspectForSpxResourceAutoBindingsAndRefsAtDecls(result *compile
 func (s *Server) inspectForSpxResourceRefs(result *compileResult) {
 	// Check all type-checked expressions.
 	for expr, tv := range result.typeInfo.Types {
-		if expr == nil || expr.Pos() == goptoken.NoPos || tv.IsType() {
+		if expr == nil || !expr.Pos().IsValid() || tv.IsType() {
 			continue // Skip type identifiers.
 		}
 

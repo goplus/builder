@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	gopast "github.com/goplus/gop/ast"
-	goptoken "github.com/goplus/gop/token"
 )
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_prepareRename
@@ -160,7 +159,7 @@ func (s *Server) spxRenameSpriteResource(result *compileResult, refKey SpxSprite
 	}
 	changes := s.spxRenameResourceAtRefs(result, refKey, newName)
 	for expr, tv := range result.typeInfo.Types {
-		if expr == nil || expr.Pos() == goptoken.NoPos || !tv.IsType() {
+		if expr == nil || !expr.Pos().IsValid() || !tv.IsType() {
 			continue
 		}
 		if tv.Type.String() == "main."+refKey.SpriteName {
