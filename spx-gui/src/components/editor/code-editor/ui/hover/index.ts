@@ -92,7 +92,7 @@ export class HoverController extends Disposable {
       return {
         contents: [
           makeBasicMarkdownString(
-            `<diagnostic-item severity="${diagnostic.severity}">${diagnostic.message}"</diagnostic-item>`
+            `<diagnostic-item severity="${diagnostic.severity}">${diagnostic.message}</diagnostic-item>`
           )
         ],
         range: diagnostic.range,

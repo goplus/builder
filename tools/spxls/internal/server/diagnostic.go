@@ -7,7 +7,7 @@ func (s *Server) textDocumentDiagnostic(params *DocumentDiagnosticParams) (*Docu
 		return nil, err
 	}
 
-	return &DocumentDiagnosticReport{Value: &RelatedFullDocumentDiagnosticReport{
+	return &DocumentDiagnosticReport{Value: RelatedFullDocumentDiagnosticReport{
 		FullDocumentDiagnosticReport: FullDocumentDiagnosticReport{
 			Kind:  string(DiagnosticFull),
 			Items: result.diagnostics[params.TextDocument.URI],
@@ -24,8 +24,8 @@ func (s *Server) workspaceDiagnostic(params *WorkspaceDiagnosticParams) (*Worksp
 
 	var items []WorkspaceDocumentDiagnosticReport
 	for file, fileDiags := range result.diagnostics {
-		items = append(items, Or_WorkspaceDocumentDiagnosticReport{
-			Value: &WorkspaceFullDocumentDiagnosticReport{
+		items = append(items, WorkspaceDocumentDiagnosticReport{
+			Value: WorkspaceFullDocumentDiagnosticReport{
 				URI: DocumentURI(file),
 				FullDocumentDiagnosticReport: FullDocumentDiagnosticReport{
 					Kind:  string(DiagnosticFull),
