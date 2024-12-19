@@ -212,6 +212,38 @@ func (r *compileResult) isInMainSpxFirstVarBlock(pos goptoken.Pos) bool {
 		pos <= r.mainSpxFirstVarBlock.End()
 }
 
+// isSpxAutoGenMethodDecl reports whether the given function declaration is a
+// spx auto-generated method declaration.
+func (r *compileResult) isSpxAutoGenMethodDecl(decl *gopast.FuncDecl) bool {
+	if decl.Recv == nil || len(decl.Recv.List) != 1 {
+		return false
+	}
+	starExpr, ok := decl.Recv.List[0].Type.(*gopast.StarExpr)
+	if !ok {
+		return false
+	}
+	typ, ok := starExpr.X.(*gopast.Ident)
+	if !ok {
+		return false
+	}
+	if !isMainPkgObject(r.typeInfo.ObjectOf(typ)) {
+		return false
+	}
+	if typ.Name == "Game" {
+		switch decl.Name.Name {
+		case "Main", "MainEntry":
+			return true
+		}
+	}
+	if slices.Contains(r.spxSpriteNames, typ.Name) {
+		switch decl.Name.Name {
+		case "Main", "Classfname":
+			return true
+		}
+	}
+	return false
+}
+
 // spxResourceRefAtASTFilePosition returns the spx resource reference at the
 // given position in the given AST file.
 func (r *compileResult) spxResourceRefAtASTFilePosition(astFile *gopast.File, position Position) (SpxResourceRefKey, SpxResourceRef) {

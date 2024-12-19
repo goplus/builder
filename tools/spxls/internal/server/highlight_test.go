@@ -28,51 +28,45 @@ onStart => {
 			}
 		}), nil)
 
-		highlights, err := s.textDocumentDocumentHighlight(&DocumentHighlightParams{
+		mySpriteHighlights, err := s.textDocumentDocumentHighlight(&DocumentHighlightParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 				Position:     Position{Line: 2, Character: 1},
 			},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, highlights)
-		assert.Len(t, *highlights, 3)
-		assert.Contains(t, *highlights, DocumentHighlight{
+		require.NotNil(t, mySpriteHighlights)
+		assert.Len(t, *mySpriteHighlights, 2)
+		assert.Contains(t, *mySpriteHighlights, DocumentHighlight{
 			Range: Range{
 				Start: Position{Line: 2, Character: 1},
 				End:   Position{Line: 2, Character: 9},
 			},
-			Kind: Text,
+			Kind: Write,
 		})
-		assert.Contains(t, *highlights, DocumentHighlight{
-			Range: Range{
-				Start: Position{Line: 2, Character: 1},
-				End:   Position{Line: 2, Character: 9},
-			},
-			Kind: Text,
-		})
-		assert.Contains(t, *highlights, DocumentHighlight{
+		assert.Contains(t, *mySpriteHighlights, DocumentHighlight{
 			Range: Range{
 				Start: Position{Line: 4, Character: 0},
 				End:   Position{Line: 4, Character: 8},
 			},
-			Kind: Text,
+			Kind: Read,
 		})
 
-		highlights, err = s.textDocumentDocumentHighlight(&DocumentHighlightParams{
+		leftHighlights, err := s.textDocumentDocumentHighlight(&DocumentHighlightParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
-				Position:     Position{Line: 2, Character: 10},
+				Position:     Position{Line: 4, Character: 14},
 			},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, highlights)
-		assert.Contains(t, *highlights, DocumentHighlight{
+		require.NotNil(t, leftHighlights)
+		assert.Len(t, *leftHighlights, 1)
+		assert.Contains(t, *leftHighlights, DocumentHighlight{
 			Range: Range{
-				Start: Position{Line: 2, Character: 10},
-				End:   Position{Line: 2, Character: 16},
+				Start: Position{Line: 4, Character: 14},
+				End:   Position{Line: 4, Character: 18},
 			},
-			Kind: Text,
+			Kind: Read,
 		})
 	})
 }
