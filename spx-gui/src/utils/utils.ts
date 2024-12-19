@@ -67,11 +67,11 @@ export function computedShallowReactive<T extends object>(getter: () => T) {
 }
 
 /** Like `computed`, while dispose the value properly */
-export function useComputedDisposable<T extends Disposable>(getter: () => T) {
+export function useComputedDisposable<T extends Disposable | null>(getter: () => T) {
   const r = shallowRef<T>()
   watchEffect((onCleanup) => {
     const value = getter()
-    onCleanup(() => value.dispose())
+    onCleanup(() => value?.dispose())
     r.value = value
   })
   return r as ShallowRef<T>
@@ -266,4 +266,8 @@ export function usePageTitle(
 
 export function timeout(duration = 0) {
   return new Promise<void>((resolve) => setTimeout(() => resolve(), duration))
+}
+
+export function trimLineBreaks(str: string) {
+  return str.replace(/^\n+|\n+$/g, '')
 }

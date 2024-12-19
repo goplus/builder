@@ -1,66 +1,28 @@
 <script lang="ts">
 import { debounce } from 'lodash'
-import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import loader from '@monaco-editor/loader'
 import { untilNotNull } from '@/utils/utils'
-import type { monaco, Monaco, MonacoEditor } from './common'
+import { type Monaco, type MonacoEditor, type monaco as tmonaco } from '../monaco'
 
-let monacoPromise: Promise<Monaco> | null = null
-
-function getLoaderConfig(lang: Lang) {
-  const loaderConfig = {
-    paths: {
-      vs: 'https://builder-static.gopluscdn.com/libs/monaco-editor/0.45.0/min/vs'
-    }
-  }
-  if (lang === 'en') return loaderConfig
-  const locale: string = {
-    zh: 'zh-cn'
-  }[lang]
-  return {
-    ...loaderConfig,
-    'vs/nls': {
-      availableLanguages: {
-        '*': locale
-      }
-    }
-  }
-}
-
-self.MonacoEnvironment = {
-  getWorker() {
-    return new EditorWorker()
-  }
-}
+export type InitData = [editor: MonacoEditor, editorEl: HTMLElement]
 </script>
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import { useI18n, type Lang } from '@/utils/i18n'
 
 const props = defineProps<{
-  options: monaco.editor.IStandaloneEditorConstructionOptions
+  monaco: Monaco
+  options: tmonaco.editor.IStandaloneEditorConstructionOptions
 }>()
 
 const emit = defineEmits<{
-  init: [monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement]
+  init: InitData
 }>()
-
-const i18n = useI18n()
-
-async function getMonaco() {
-  if (monacoPromise != null) return monacoPromise
-  loader.config(getLoaderConfig(i18n.lang.value))
-  return (monacoPromise = loader.init().then((monaco) => {
-    // TODO: do general configuration for monaco here
-    return monaco
-  }))
-}
 
 const editorElRef = ref<HTMLDivElement>()
 
 watchEffect(async (onClenaup) => {
-  const [monaco, editorEl] = await Promise.all([getMonaco(), untilNotNull(editorElRef)])
+  const monaco = props.monaco
+  const editorEl = await untilNotNull(editorElRef)
 
   const editor = monaco.editor.create(editorEl, {
     minimap: { enabled: false },
@@ -103,7 +65,7 @@ watchEffect(async (onClenaup) => {
   const resizeObserver = new ResizeObserver(handleResize)
   resizeObserver.observe(editorEl)
 
-  emit('init', monaco, editor, editorEl)
+  emit('init', editor, editorEl)
   onClenaup(() => {
     editor.dispose()
     resizeObserver.disconnect()

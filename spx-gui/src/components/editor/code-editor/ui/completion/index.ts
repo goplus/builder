@@ -8,8 +8,8 @@ import {
   type ITextDocument,
   positionEq
 } from '../../common'
-import type { CodeEditorUI } from '..'
-import { type monaco } from '../common'
+import type { CodeEditorUI } from '../code-editor-ui'
+import { type monaco } from '../../monaco'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 

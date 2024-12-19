@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { InternalAction } from '..'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import type { InternalAction } from '../code-editor-ui'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
 import type { HoverController, InternalHover } from '.'
@@ -12,7 +12,7 @@ const props = defineProps<{
   controller: HoverController
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 
 const actions = computed(() => {
   return props.hover.actions.map((a) => codeEditorCtx.ui.resolveAction(a)).filter((a) => a != null) as InternalAction[]
@@ -57,13 +57,15 @@ async function handleAction(action: InternalAction) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .content {
   width: 320px;
   padding: 6px 8px;
-  // TODO: reconfirm font size here
-  font-size: 12px;
 }
 
 .footer {

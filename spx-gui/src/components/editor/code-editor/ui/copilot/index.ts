@@ -11,7 +11,7 @@ import {
   makeBasicMarkdownString,
   type TextDocumentIdentifier
 } from '../../common'
-import type { CodeEditorUI } from '..'
+import type { CodeEditorUI } from '../code-editor-ui'
 import { makeCodeBlock, makeCodeLinkWithRange } from '../markdown'
 
 export enum ChatTopicKind {

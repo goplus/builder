@@ -3,6 +3,14 @@ import * as lsp from 'vscode-languageserver-protocol'
 import type { LocaleMessage } from '@/utils/i18n'
 import type Emitter from '@/utils/emitter'
 import type { Project } from '@/models/project'
+import { ResourceModelIdentifier, type ResourceModel, type ResourceModelType } from '@/models/common/resource-model'
+import { Sprite } from '@/models/sprite'
+import { Sound } from '@/models/sound'
+import { Backdrop } from '@/models/backdrop'
+import { Costume } from '@/models/costume'
+import { Animation } from '@/models/animation'
+import { isWidget } from '@/models/widget'
+import { stageCodeFilePaths } from '@/models/stage'
 
 export type Position = {
   line: number
@@ -30,14 +38,20 @@ export enum ResourceReferenceKind {
   ConstantReference = 'constantReference'
 }
 
+/**
+ * URI of the resource. Examples:
+ * - `spx://resources/sprites/<name>`
+ * - `spx://resources/sounds/<name>`
+ * - `spx://resources/sprites/<sName>/costumes/<cName>`
+ */
+export type ResourceURI = string
+
+export function isResourceUri(uri: string): uri is ResourceURI {
+  return uri.startsWith('spx://resources/')
+}
+
 export type ResourceIdentifier = {
-  /**
-   * URI of the resource. Examples:
-   * - `spx://resources/sprites/<name>`
-   * - `spx://resources/sounds/<name>`
-   * - `spx://resources/sprites/<sName>/costumes/<cName>`
-   */
-  uri: string
+  uri: ResourceURI
 }
 
 export type TextDocumentIdentifier = {
@@ -163,6 +177,7 @@ export interface ITextDocument
   getValueInRange(range: Range): string
   getWordAtPosition(position: Position): WordAtPosition | null
   getDefaultRange(position: Position): Range
+  pushEdits(edits: TextEdit[]): void
 }
 
 export type MarkdownStringFlag = 'basic' | 'advanced'
@@ -384,18 +399,19 @@ export function fromLSPSeverity(severity: lsp.DiagnosticSeverity): DiagnosticSev
   }
 }
 
-export function isResourceUri(uri: string): boolean {
-  return uri.startsWith('spx://resources/')
+export function fromLSPTextEdit(edit: lsp.TextEdit): TextEdit {
+  return {
+    range: fromLSPRange(edit.range),
+    newText: edit.newText
+  }
 }
 
-/** Implemented by `Sprite`, `Sound` etc. */
-export type IResourceModel = {
-  /** Readable name and also unique identifier in list */
+export type ResourceType = ResourceModelType
+
+export type ResourceNameWithType = {
+  type: ResourceType
   name: string
 }
-
-export type ResourceType = 'sound' | 'sprite' | 'backdrop' | 'widget' | 'animation' | 'costume'
-export type ResourceNameWithType = { name: string; type: ResourceType }
 
 export function parseResourceURI(uri: string): ResourceNameWithType[] {
   if (!isResourceUri(uri)) throw new Error(`Invalid resource URI: ${uri}`)
@@ -421,7 +437,7 @@ export function parseResourceURI(uri: string): ResourceNameWithType[] {
   return parsed
 }
 
-export function getResourceModel(project: Project, resourceId: ResourceIdentifier): IResourceModel | null {
+export function getResourceModel(project: Project, resourceId: ResourceIdentifier): ResourceModel | null {
   const parsed = parseResourceURI(resourceId.uri)
   switch (parsed[0].type) {
     case 'sound':
@@ -448,7 +464,59 @@ export function getResourceModel(project: Project, resourceId: ResourceIdentifie
   }
 }
 
+export function getResourceURI(resource: ResourceModel): string {
+  if (resource instanceof Sprite) return `spx://resources/sprites/${encodeURIComponent(resource.name)}`
+  if (resource instanceof Sound) return `spx://resources/sounds/${encodeURIComponent(resource.name)}`
+  if (resource instanceof Backdrop) return `spx://resources/backdrops/${encodeURIComponent(resource.name)}`
+  if (resource instanceof Costume) {
+    const parent = resource.parent
+    if (parent == null) throw new Error(`Costume ${resource.name} has no sprite`)
+    if (!(parent instanceof Sprite)) throw new Error(`Invalid parent type: ${parent}`)
+    return `spx://resources/sprites/${encodeURIComponent(parent.name)}/costumes/${encodeURIComponent(resource.name)}`
+  }
+  if (resource instanceof Animation) {
+    const sprite = resource.sprite
+    if (sprite == null) throw new Error(`Animation ${resource.name} has no sprite`)
+    return `spx://resources/sprites/${encodeURIComponent(sprite.name)}/animations/${encodeURIComponent(resource.name)}`
+  }
+  if (isWidget(resource)) return `spx://resources/widgets/${encodeURIComponent(resource.name)}`
+  throw new Error(`Unsupported resource type: ${resource}`)
+}
+
+export function getResourceIdentifier(resource: ResourceModel): ResourceIdentifier {
+  return { uri: getResourceURI(resource) }
+}
+
 export function positionEq(a: Position | null, b: Position | null) {
   if (a == null || b == null) return a == b
   return a.line === b.line && a.column === b.column
+}
+
+const textDocumentURIPrefix = 'file:///'
+
+export function getTextDocumentId(codeFilePath: string) {
+  return { uri: textDocumentURIPrefix + codeFilePath }
+}
+
+export function getCodeFilePath(textDocumentURI: string) {
+  if (!textDocumentURI.startsWith(textDocumentURIPrefix))
+    throw new Error(`Invalid text document URI: ${textDocumentURI}`)
+  return textDocumentURI.slice(textDocumentURIPrefix.length)
+}
+
+export function textDocumentId2ResourceModelId(
+  id: TextDocumentIdentifier,
+  project: Project
+): ResourceModelIdentifier | null {
+  const codeFilePath = getCodeFilePath(id.uri)
+  if (stageCodeFilePaths.includes(codeFilePath)) {
+    return new ResourceModelIdentifier('stage')
+  } else {
+    for (const sprite of project.sprites) {
+      if (sprite.codeFilePath === codeFilePath) {
+        return new ResourceModelIdentifier('sprite', sprite.id)
+      }
+    }
+  }
+  return null
 }

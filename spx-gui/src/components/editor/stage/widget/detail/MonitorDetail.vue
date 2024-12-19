@@ -66,15 +66,10 @@ const props = defineProps<{
 
 const editorCtx = useEditorCtx()
 const renameWidget = useRenameWidget()
-
-const handleRename = useMessageHandle(
-  () =>
-    renameWidget({
-      widget: props.monitor,
-      project: editorCtx.project
-    }),
-  { en: 'Failed to rename widget', zh: '重命名控件失败' }
-).fn
+const handleRename = useMessageHandle(() => renameWidget(props.monitor), {
+  en: 'Failed to rename widget',
+  zh: '重命名控件失败'
+}).fn
 
 // We call wrapUpdateHandler `withDebounce: false` here, because:
 // 1. Unlike `UINumberInput`, debounce for value-update causes delay of `UITextInput` UI-update

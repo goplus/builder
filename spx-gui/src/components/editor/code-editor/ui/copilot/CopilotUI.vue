@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { UIIcon } from '@/components/ui'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import CopilotInput from './CopilotInput.vue'
 import type { CopilotController } from '.'
 import CopilotRound from './CopilotRound.vue'
@@ -10,7 +10,7 @@ const props = defineProps<{
   controller: CopilotController
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 const bodyRef = ref<HTMLElement>()
 const inputRef = ref<InstanceType<typeof CopilotInput>>()
 

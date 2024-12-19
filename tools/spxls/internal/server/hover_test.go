@@ -312,6 +312,25 @@ onStart => {
 			End:   Position{Line: 37, Character: 19},
 		}, mySpriteSetCostumeFuncHover.Range)
 
+		mySpriteOnStartFuncHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 1, Character: 1},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mySpriteOnStartFuncHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<definition-overview-wrapper>func onStart(onStart func())</definition-overview-wrapper>\n<definition-detail def-id=\"gop:github.com/goplus/spx?Sprite.onStart\">\n</definition-detail>\n",
+			},
+			Range: Range{
+				Start: Position{Line: 1, Character: 0},
+				End:   Position{Line: 1, Character: 7},
+			},
+		}, mySpriteOnStartFuncHover)
+
 		mySpriteCloneFuncHover, err := s.textDocumentHover(&HoverParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},

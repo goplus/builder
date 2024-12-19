@@ -1,29 +1,39 @@
 <script setup lang="ts">
+import { useSlotText } from '@/utils/vnode'
 import type { DefinitionKind } from '../../common'
-import DefinitionIcon from '../definition/DefinitionIcon.vue'
-import CodeView from './CodeView.vue'
+import CodeView from '../markdown/CodeView.vue'
+import DefinitionIcon from './DefinitionIcon.vue'
 
 defineProps<{
   kind?: DefinitionKind
 }>()
+
+const childrenText = useSlotText()
 </script>
 
 <template>
-  <h4 class="definition-overview-wrapper">
+  <h4 class="definition-overview-wrapper" :title="childrenText">
     <DefinitionIcon v-if="kind != null" class="icon" :kind="kind" />
     <CodeView class="code" mode="inline"><slot></slot></CodeView>
   </h4>
 </template>
 
 <style lang="scss" scoped>
+@import '@/utils/utils';
+
 .definition-overview-wrapper {
+  display: flex;
   color: var(--ui-color-title);
 
-  &:not(:last-child) {
-    margin-bottom: 4px;
+  .icon {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    margin-right: 4px;
   }
 
   .code {
+    @include text-ellipsis;
+    flex: 1 1 0;
     // Clear style from `code` in `MarkdownView`
     font-size: inherit;
     padding: 0;
@@ -31,10 +41,5 @@ defineProps<{
     border: none;
     background: none;
   }
-}
-
-.icon {
-  margin-top: 2px;
-  margin-right: 4px;
 }
 </style>

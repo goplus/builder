@@ -132,14 +132,10 @@ const emit = defineEmits<{
 
 const renameSprite = useRenameSprite()
 
-const handleNameEdit = useMessageHandle(
-  () =>
-    renameSprite({
-      sprite: props.sprite,
-      project: props.project
-    }),
-  { en: 'Failed to rename sprite', zh: '重命名精灵失败' }
-).fn
+const handleNameEdit = useMessageHandle(() => renameSprite(props.sprite), {
+  en: 'Failed to rename sprite',
+  zh: '重命名精灵失败'
+}).fn
 
 const handleXUpdate = wrapUpdateHandler((x: number | null) => props.sprite.setX(x ?? 0))
 const handleYUpdate = wrapUpdateHandler((y: number | null) => props.sprite.setY(y ?? 0))

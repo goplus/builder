@@ -4,11 +4,11 @@
       <EditorNavbar :project="project" />
     </header>
     <main v-if="userInfo" class="editor-main">
-      <UILoading v-if="isLoading" />
-      <UIError v-else-if="error != null" :retry="refetch">
-        {{ $t(error.userMessage) }}
+      <UILoading v-if="allQueryRet.isLoading.value" />
+      <UIError v-else-if="allQueryRet.error.value != null" :retry="allQueryRet.refetch">
+        {{ $t(allQueryRet.error.value.userMessage) }}
       </UIError>
-      <EditorContextProvider v-else-if="project != null" :project="project" :user-info="userInfo">
+      <EditorContextProvider v-else :project="project!" :runtime="runtimeRef!" :user-info="userInfo">
         <ProjectEditor />
       </EditorContextProvider>
     </main>
@@ -21,16 +21,18 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { AutoSaveMode, Project } from '@/models/project'
 import { getProjectEditorRoute } from '@/router'
-import { useQuery } from '@/utils/query'
+import { untilQueryLoaded, useQuery } from '@/utils/query'
 import { getStringParam } from '@/utils/route'
 import { clear } from '@/models/common/local'
+import { Runtime } from '@/models/runtime'
 import { UILoading, UIError, useConfirmDialog, useMessage } from '@/components/ui'
 import { useI18n } from '@/utils/i18n'
 import { useNetwork } from '@/utils/network'
-import { untilNotNull, usePageTitle } from '@/utils/utils'
+import { untilNotNull, useComputedDisposable, usePageTitle } from '@/utils/utils'
 import EditorNavbar from '@/components/editor/navbar/EditorNavbar.vue'
 import EditorContextProvider from '@/components/editor/EditorContextProvider.vue'
 import ProjectEditor from '@/components/editor/ProjectEditor.vue'
+import { useProvideCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { usePublishProject } from '@/components/project'
 
 const props = defineProps<{
@@ -100,18 +102,30 @@ const askToOpenCachedVersionForCurrent = (cachedName: string): Promise<boolean> 
   )
 }
 
-const {
-  data: project,
-  isLoading,
-  error,
-  refetch
-} = useQuery(
+const projectQueryRet = useQuery(
   () => {
     // We need to read `userInfo.value?.name` & `projectName.value` synchronously,
     // so their change will drive `useQuery` to re-fetch
     return loadProject(userInfo.value?.name, props.projectName)
   },
   { en: 'Failed to load project', zh: '加载项目失败' }
+)
+
+const project = projectQueryRet.data
+
+const runtimeRef = useComputedDisposable(() => {
+  if (project.value == null) return null
+  return new Runtime(project.value)
+})
+
+const codeEditorQueryRet = useProvideCodeEditorCtx(project, runtimeRef)
+
+const allQueryRet = useQuery((signal) =>
+  Promise.all([
+    untilQueryLoaded(projectQueryRet, signal),
+    untilNotNull(runtimeRef, signal),
+    untilQueryLoaded(codeEditorQueryRet, signal)
+  ])
 )
 
 // `?publish`

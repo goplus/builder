@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue'
-import { MonacoKeyCode, type monaco } from '../common'
+import { MonacoKeyCode, type monaco } from '../../monaco'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
 import type { CompletionController, InternalCompletionItem } from '.'
@@ -58,15 +58,10 @@ watchEffect((onCleanup) => {
 function applyItem(item: InternalCompletionItem) {
   props.controller.applyCompletionItem(item)
 }
-
-function handleWheel(e: WheelEvent) {
-  // Prevent monaco editor from handling wheel event in completion card, see details in https://github.com/microsoft/monaco-editor/issues/2304
-  e.stopPropagation()
-}
 </script>
 
 <template>
-  <CodeEditorCard class="completion-card" @wheel="handleWheel">
+  <CodeEditorCard class="completion-card">
     <ul class="list">
       <CompletionItemComp
         v-for="(item, i) in items"
@@ -110,9 +105,5 @@ function handleWheel(e: WheelEvent) {
   overflow-y: auto;
   scrollbar-width: thin;
   border-left: 1px solid var(--ui-color-dividing-line-2);
-}
-
-.detail-content {
-  font-size: 10px;
 }
 </style>
