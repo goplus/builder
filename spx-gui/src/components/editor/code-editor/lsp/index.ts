@@ -94,7 +94,7 @@ export class SpxLSPClient extends Disposable {
     )
   }
 
-  async workspaceExecuteCommandspxRenameResources(
+  async workspaceExecuteCommandSpxRenameResources(
     ...params: spxRenameResources.Arguments
   ): Promise<spxRenameResources.Result> {
     return this.executeCommand<spxRenameResources.Arguments, spxRenameResources.Result>(

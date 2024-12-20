@@ -125,7 +125,7 @@ class DiagnosticsProvider
     const report = await this.lspClient.textDocumentDiagnostic({
       textDocument: ctx.textDocument.id
     })
-    if (report.kind !== DocumentDiagnosticReportKind.Full) throw new Error(`Report kind ${report.kind} not suppoprted`)
+    if (report.kind !== DocumentDiagnosticReportKind.Full) throw new Error(`Report kind ${report.kind} not supported`)
     for (const item of report.items) {
       const severity = item.severity == null ? null : fromLSPSeverity(item.severity)
       if (severity === null) continue
@@ -184,7 +184,7 @@ export class CodeEditor extends Disposable {
 
   /** Update references in code for resource renaming, should be called before model name update */
   async updateResourceReferencesOnRename(resource: ResourceIdentifier, newName: string) {
-    const workspaceEdit = await this.lspClient.workspaceExecuteCommandspxRenameResources({ resource, newName })
+    const workspaceEdit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({ resource, newName })
     if (workspaceEdit == null || workspaceEdit.changes == null) return
     for (const [uri, edits] of Object.entries(workspaceEdit.changes)) {
       const textDocument = this.getTextDocument({ uri })
