@@ -338,9 +338,12 @@ func (s *Server) compile() (*compileResult, error) {
 			Mode: gopparser.AllErrors | gopparser.ParseComments,
 		})
 		if err != nil {
-			// Handle parse errors.
-			var parseErr gopscanner.ErrorList
+			var (
+				parseErr gopscanner.ErrorList
+				codeErr  *gogen.CodeError
+			)
 			if errors.As(err, &parseErr) {
+				// Handle parse errors.
 				for _, e := range parseErr {
 					result.addDiagnostics(documentURI, Diagnostic{
 						Severity: SeverityError,
@@ -351,12 +354,8 @@ func (s *Server) compile() (*compileResult, error) {
 						Message: e.Msg,
 					})
 				}
-				continue
-			}
-
-			// Handle code generation errors.
-			var codeErr *gogen.CodeError
-			if errors.As(err, &codeErr) {
+			} else if errors.As(err, &codeErr) {
+				// Handle code generation errors.
 				position := codeErr.Fset.Position(codeErr.Pos)
 				result.addDiagnostics(documentURI, Diagnostic{
 					Severity: SeverityError,
@@ -366,21 +365,19 @@ func (s *Server) compile() (*compileResult, error) {
 					},
 					Message: codeErr.Error(),
 				})
-				continue
+			} else {
+				// Handle unknown errors.
+				result.addDiagnostics(documentURI, Diagnostic{
+					Severity: SeverityError,
+					Range: Range{
+						Start: Position{Line: 0, Character: 0},
+						End:   Position{Line: 0, Character: 0},
+					},
+					Message: fmt.Sprintf("failed to parse spx file: %v", err),
+				})
 			}
-
-			// Handle unknown errors.
-			result.addDiagnostics(documentURI, Diagnostic{
-				Severity: SeverityError,
-				Range: Range{
-					Start: Position{Line: 0, Character: 0},
-					End:   Position{Line: 0, Character: 0},
-				},
-				Message: fmt.Sprintf("failed to parse spx file: %v", err),
-			})
-			continue
 		}
-		if astFile.Name.Name == "main" {
+		if astFile != nil && astFile.Name.Name == "main" {
 			result.mainASTPkg.Files[spxFile] = astFile
 			if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
 				result.mainSpxFile = spxFile
