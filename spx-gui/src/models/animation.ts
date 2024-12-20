@@ -43,6 +43,11 @@ export type RawAnimationConfig = {
   onPlay?: ActionConfig
 }
 
+export type AnimationExportLoadOptions = {
+  sounds: Sound[]
+  includeId?: boolean
+}
+
 export class Animation extends Disposable {
   id: string
 
@@ -127,7 +132,7 @@ export class Animation extends Disposable {
       anitype
     }: RawAnimationConfig,
     costumes: Costume[],
-    sounds: Sound[]
+    { sounds, includeId = true }: AnimationExportLoadOptions
   ): [animation: Animation, animationCostumeNames: string[]] {
     frameFrom = frameFrom ?? from
     frameTo = frameTo ?? to
@@ -149,7 +154,7 @@ export class Animation extends Disposable {
       else soundId = sound.id
     }
     const animation = new Animation(name, {
-      id,
+      id: includeId ? id : undefined,
       duration,
       sound: soundId
     })
@@ -165,7 +170,8 @@ export class Animation extends Disposable {
 
   export(
     /** Path of directory which contains the sprite's config file */
-    { basePath, sounds, includeId = true }: { basePath: string; includeId?: boolean; sounds: Sound[] }
+    basePath: string,
+    { sounds, includeId = true }: AnimationExportLoadOptions
   ): [RawAnimationConfig, RawCostumeConfig[], Files] {
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}

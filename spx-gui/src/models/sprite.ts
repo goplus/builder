@@ -81,6 +81,12 @@ function getSpriteCodeFilePath(name: string) {
 
 export const spriteConfigFileName = 'index.json'
 
+export type SpriteExportLoadOptions = {
+  sounds: Sound[]
+  includeId?: boolean
+  includeCode?: boolean
+}
+
 export class Sprite extends Disposable {
   id: string
 
@@ -286,7 +292,11 @@ export class Sprite extends Disposable {
     })
   }
 
-  static async load(name: string, files: Files, sounds: Sound[]) {
+  static async load(
+    name: string,
+    files: Files,
+    { sounds, includeId = true, includeCode = true }: SpriteExportLoadOptions
+  ) {
     const pathPrefix = getSpriteAssetPath(name)
     const configFile = files[join(pathPrefix, spriteConfigFileName)]
     if (configFile == null) return null
@@ -303,13 +313,16 @@ export class Sprite extends Disposable {
       animBindings,
       ...inits
     } = (await toConfig(configFile)) as RawSpriteConfig
-    const codeFile = files[getSpriteCodeFilePath(name)]
-    const code = codeFile != null ? await toText(codeFile) : ''
+    let code = ''
+    if (includeCode) {
+      const codeFile = files[getSpriteCodeFilePath(name)]
+      if (codeFile != null) code = await toText(codeFile)
+    }
 
     const costumes: Costume[] = []
     if (costumeConfigs != null) {
       for (const config of costumeConfigs) {
-        costumes.push(Costume.load(config, files, pathPrefix))
+        costumes.push(Costume.load(config, files, { basePath: pathPrefix, includeId }))
       }
     } else {
       if (costumeSet != null) console.warn(`unsupported field: costumeSet for sprite ${name}`)
@@ -321,7 +334,7 @@ export class Sprite extends Disposable {
     const animations: Animation[] = []
     if (animationConfigs != null) {
       for (const [name, config] of Object.entries(animationConfigs)) {
-        const [animation, animationCostumes] = Animation.load(name, config!, costumes, sounds)
+        const [animation, animationCostumes] = Animation.load(name, config!, costumes, { sounds, includeId })
         animations.push(animation)
         for (const c of animationCostumes) animationCostumeSet.add(c)
       }
@@ -333,7 +346,7 @@ export class Sprite extends Disposable {
 
     const sprite = new Sprite(name, code, {
       ...inits,
-      id,
+      id: includeId ? id : undefined,
       costumeIndex: inits.costumeIndex ?? currentCostumeIndex,
       animationBindings: {
         [State.default]: animationNameToId(defaultAnimation),
@@ -354,12 +367,12 @@ export class Sprite extends Disposable {
     return sprite
   }
 
-  static async loadAll(files: Files, sounds: Sound[]) {
+  static async loadAll(files: Files, options: SpriteExportLoadOptions) {
     const spriteNames = listDirs(files, spriteAssetPath)
     const sprites = (
       await Promise.all(
         spriteNames.map(async (spriteName) => {
-          const sprite = await Sprite.load(spriteName, files, sounds)
+          const sprite = await Sprite.load(spriteName, files, options)
           if (sprite == null) console.warn('failed to load sprite:', spriteName)
           return sprite
         })
@@ -368,15 +381,7 @@ export class Sprite extends Disposable {
     return sprites
   }
 
-  export({
-    includeCode = true,
-    includeId = true,
-    sounds
-  }: {
-    includeCode?: boolean
-    includeId?: boolean
-    sounds: Sound[]
-  }): Files {
+  export({ includeCode = true, includeId = true, sounds }: SpriteExportLoadOptions): Files {
     const assetPath = getSpriteAssetPath(this.name)
     const costumeConfigs: RawCostumeConfig[] = []
     const files: Files = {}
@@ -387,10 +392,7 @@ export class Sprite extends Disposable {
     }
     const animationConfigs: Record<string, RawAnimationConfig> = {}
     for (const a of this.animations) {
-      const [animationConfig, animationCostumesConfigs, animationFiles] = a.export({
-        basePath: assetPath,
-        sounds
-      })
+      const [animationConfig, animationCostumesConfigs, animationFiles] = a.export(assetPath, { sounds, includeId })
       animationConfigs[a.name] = animationConfig
       costumeConfigs.push(...animationCostumesConfigs)
       Object.assign(files, animationFiles)

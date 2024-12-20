@@ -20,7 +20,7 @@ describe('Sprite', () => {
     sprite.addAnimation(animation1)
     sprite.addAnimation(animation2)
     const exported = sprite.export({ sounds: [] })
-    const [loadedSprite] = await Sprite.loadAll(exported, [])
+    const [loadedSprite] = await Sprite.loadAll(exported, { sounds: [] })
     expect(loadedSprite.costumes.map((c) => c.name)).toEqual(['costume1', 'costume2'])
     expect(loadedSprite.animations.map((c) => c.name)).toEqual(['animation1', 'animation2'])
     expect(loadedSprite.animations[0].costumes.map((c) => c.name)).toEqual(['costume3', 'costume4'])
@@ -35,7 +35,7 @@ describe('Sprite', () => {
     expect(sprite.getAnimationBoundStates(animation.id)).toEqual([State.die, State.turn])
 
     const exported = sprite.export({ sounds: [] })
-    const imported = await Sprite.loadAll(exported, [])
+    const imported = await Sprite.loadAll(exported, { sounds: [] })
 
     expect(imported[0].getAnimationBoundStates(animation.id)).toEqual([State.die, State.turn])
   })

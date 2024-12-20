@@ -323,7 +323,7 @@ export class Project extends Disposable {
     } = config
 
     const sounds = await Sound.loadAll(files)
-    const sprites = await Sprite.loadAll(files, sounds)
+    const sprites = await Sprite.loadAll(files, { sounds })
 
     const widgets: RawWidgetConfig[] = []
     const zorder: string[] = []
