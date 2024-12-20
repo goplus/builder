@@ -118,8 +118,7 @@ describe('Animation', () => {
     // id should be not null and not empty
     expect(id).not.toBeNull()
 
-    const exportedId = animation.export({
-      basePath: '',
+    const exportedId = animation.export('', {
       includeId: false,
       sounds: project.sounds
     })[0].builder_id

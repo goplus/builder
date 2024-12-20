@@ -21,6 +21,10 @@ export type RawSoundConfig = Omit<SoundInits, 'id'> & {
 export const soundAssetPath = 'assets/sounds'
 export const soundConfigFileName = 'index.json'
 
+export type SoundExportLoadOptions = {
+  includeId?: boolean
+}
+
 export class Sound extends Disposable {
   id: string
 
@@ -70,7 +74,7 @@ export class Sound extends Disposable {
     return new Sound(getSoundName(null, nameBase), adaptedFile, inits)
   }
 
-  static async load(name: string, files: Files) {
+  static async load(name: string, files: Files, { includeId = true }: SoundExportLoadOptions = {}) {
     const pathPrefix = join(soundAssetPath, name)
     const configFile = files[join(pathPrefix, soundConfigFileName)]
     if (configFile == null) return null
@@ -78,15 +82,18 @@ export class Sound extends Disposable {
     if (path == null) throw new Error(`path expected for sound ${name}`)
     const file = files[resolve(pathPrefix, path)]
     if (file == null) throw new Error(`file ${path} for sound ${name} not found`)
-    return new Sound(name, file, { ...inits, id })
+    return new Sound(name, file, {
+      ...inits,
+      id: includeId ? id : undefined
+    })
   }
 
-  static async loadAll(files: Files) {
+  static async loadAll(files: Files, options?: SoundExportLoadOptions) {
     const soundNames = listDirs(files, soundAssetPath)
     const sounds = (
       await Promise.all(
         soundNames.map(async (soundName) => {
-          const sound = await Sound.load(soundName, files)
+          const sound = await Sound.load(soundName, files, options)
           if (sound == null) console.warn('failed to load sound:', soundName)
           return sound
         })
@@ -96,7 +103,7 @@ export class Sound extends Disposable {
   }
 
   // config is included in files
-  export({ includeId = true }: { includeId?: boolean } = {}): Files {
+  export({ includeId = true }: SoundExportLoadOptions = {}): Files {
     const filename = this.name + extname(this.file.name)
     const config: RawSoundConfig = {
       rate: this.rate,

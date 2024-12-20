@@ -24,6 +24,13 @@ export type RawCostumeConfig = Omit<CostumeInits, 'id'> & {
   path?: string
 }
 
+export type CostumeExportLoadOptions = {
+  /** Path of directory which contains the sprite's config file */
+  basePath: string
+  includeId?: boolean
+  namePrefix?: string
+}
+
 export class Costume {
   id: string
 
@@ -141,26 +148,19 @@ export class Costume {
   static load(
     { builder_id: id, name, path, ...inits }: RawCostumeConfig,
     files: Files,
-    /** Path of directory which contains the sprite's config file */
-    basePath: string
+    { basePath, includeId }: CostumeExportLoadOptions
   ) {
     if (name == null) throw new Error(`name expected for costume`)
     if (path == null) throw new Error(`path expected for costume ${name}`)
     const file = files[resolve(basePath, path)]
     if (file == null) throw new Error(`file ${path} for costume ${name} not found`)
-    return new Costume(name, file, { ...inits, id })
+    return new Costume(name, file, {
+      ...inits,
+      id: includeId ? id : undefined
+    })
   }
 
-  export({
-    basePath,
-    includeId = true,
-    namePrefix = ''
-  }: {
-    /** Path of directory which contains the sprite's config file */
-    basePath: string
-    includeId?: boolean
-    namePrefix?: string
-  }): [RawCostumeConfig, Files] {
+  export({ basePath, includeId = true, namePrefix = '' }: CostumeExportLoadOptions): [RawCostumeConfig, Files] {
     const name = namePrefix + this.name
     const filename = name + extname(this.img.name)
     const config: RawCostumeConfig = {
