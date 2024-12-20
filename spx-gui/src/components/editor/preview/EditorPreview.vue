@@ -4,10 +4,24 @@
       <div class="header">
         {{ $t({ en: 'Preview', zh: '预览' }) }}
       </div>
-      <UIButton ref="runButtonRef" class="button" type="primary" icon="play" @click="setRunning('debug')">
+      <UIButton
+        ref="runButtonRef"
+        class="button"
+        type="primary"
+        icon="play"
+        :loading="startDebugging.isLoading.value"
+        @click="startDebugging.fn"
+      >
         {{ $t({ en: 'Run', zh: '运行' }) }}
       </UIButton>
-      <UIButton ref="fullScreenRunButtonRef" class="button" type="primary" icon="play" @click="setRunning('run')">
+      <UIButton
+        ref="fullScreenRunButtonRef"
+        class="button"
+        type="primary"
+        icon="play"
+        :loading="startRunning.isLoading.value"
+        @click="startRunning.fn"
+      >
         {{ $t({ en: 'Full screen', zh: '全屏' }) }}
       </UIButton>
     </UICardHeader>
@@ -42,20 +56,44 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
+import { useAction, useMessageHandle } from '@/utils/exception'
 import type { RunningMode } from '@/models/runtime'
 import { useEditorCtx } from '@/components/editor/EditorContextProvider.vue'
+import { useCodeEditorCtx } from '@/components/editor/code-editor/context'
 import { UICard, UICardHeader, UIButton } from '@/components/ui'
 import StageViewer from './stage-viewer/StageViewer.vue'
 import RunnerContainer from './RunnerContainer.vue'
 import InPlaceRunner from './InPlaceRunner.vue'
 
 const editorCtx = useEditorCtx()
+const codeEditorCtx = useCodeEditorCtx()
 
 const running = computed(() => editorCtx.runtime.running)
 
 function setRunning(running: RunningMode) {
   editorCtx.runtime.setRunning(running)
 }
+
+const formatWorkspace = useAction(
+  () =>
+    editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditorCtx.formatWorkspace()
+    ),
+  {
+    en: 'Failed to format code',
+    zh: '格式化代码失败'
+  }
+)
+
+const startRunning = useMessageHandle(async () => {
+  await formatWorkspace()
+  setRunning('run')
+})
+
+const startDebugging = useMessageHandle(async () => {
+  await formatWorkspace()
+  setRunning('debug')
+})
 
 const fullScreenRunButtonRef = ref<InstanceType<typeof UIButton>>()
 const modalStyle = computed(() => {

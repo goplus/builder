@@ -113,6 +113,10 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		return nil, err
 	}
 	if astFile == nil {
+		diagnostics := result.diagnostics[param.TextDocument.URI]
+		if len(diagnostics) > 0 {
+			return nil, fmt.Errorf("failed to compile file: %s", diagnostics[0].Message)
+		}
 		return nil, nil
 	}
 	astFileScope := result.typeInfo.Scopes[astFile]

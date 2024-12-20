@@ -9,7 +9,8 @@ import {
   type Position,
   makeBasicMarkdownString,
   getResourceModel,
-  type ITextDocument
+  type ITextDocument,
+  containsPosition
 } from '../../common'
 import {
   builtInCommandCopilotFixProblem,
@@ -19,7 +20,7 @@ import {
   builtInCommandModifyResourceReference,
   builtInCommandRenameResource
 } from '../code-editor-ui'
-import { fromMonacoPosition, toMonacoPosition, token2Signal, containsPosition, supportGoTo } from '../common'
+import { fromMonacoPosition, toMonacoPosition, token2Signal, supportGoTo } from '../common'
 import type { monaco } from '../../monaco'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 

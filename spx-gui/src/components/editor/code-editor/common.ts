@@ -328,6 +328,7 @@ export type CommandInfo<A extends any[], R> = {
   title: LocaleMessage
   handler: CommandHandler<A, R>
 }
+export type CommandArgs<C> = C extends Command<infer A, any> ? A : never
 
 export type Action<A extends any[] = any, R = any> = {
   /** Title for the action. Command title will be used if not provided. */
@@ -357,6 +358,22 @@ export type WorkspaceEdit = {
 /** If p1 is after p2 */
 export function positionAfter(p1: Position, p2: Position) {
   return p1.line > p2.line || (p1.line === p2.line && p1.column > p2.column)
+}
+
+export function isRangeEmpty(range: Range) {
+  return positionEq(range.start, range.end)
+}
+
+export function isSelectionEmpty(selection: Selection | null) {
+  if (selection == null) return true
+  return positionEq(selection.start, selection.position)
+}
+
+export function containsPosition(range: Range, position: Position) {
+  if (position.line < range.start.line || position.line > range.end.line) return false
+  if (position.line === range.start.line && position.column < range.start.column) return false
+  if (position.line === range.end.line && position.column > range.end.column) return false
+  return true
 }
 
 export function selection2Range(selection: Selection): Range {

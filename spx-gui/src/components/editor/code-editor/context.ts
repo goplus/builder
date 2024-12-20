@@ -6,7 +6,7 @@ import { getHighlighter } from '@/utils/spx/highlighter'
 import { untilQueryLoaded, useQuery, type QueryRet } from '@/utils/query'
 import type { Project } from '@/models/project'
 import type { Runtime } from '@/models/runtime'
-import { type ResourceIdentifier, type TextDocumentIdentifier } from './common'
+import { type Position, type ResourceIdentifier, type TextDocumentIdentifier } from './common'
 import { type ICodeEditorUI } from './ui/code-editor-ui'
 import { TextDocument } from './text-document'
 import { getMonaco, type monaco, type Monaco } from './monaco'
@@ -18,7 +18,11 @@ export type CodeEditorCtx = {
   getMonaco(): Monaco
   getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null
   formatTextDocument(id: TextDocumentIdentifier): Promise<void>
-  updateResourceReferencesOnRename(resource: ResourceIdentifier, newName: string): Promise<void>
+  formatWorkspace(): Promise<void>
+  /** Update code for renaming */
+  rename(id: TextDocumentIdentifier, position: Position, newName: string): Promise<void>
+  /** Update code for resource renaming, should be called before model name update */
+  renameResource(resource: ResourceIdentifier, newName: string): Promise<void>
 }
 
 const codeEditorCtxInjectionKey: InjectionKey<CodeEditorCtx> = Symbol('code-editor-ctx')
@@ -167,9 +171,17 @@ export function useProvideCodeEditorCtx(
       if (editorRef.value == null) throw new Error('Code editor not initialized')
       return editorRef.value.formatTextDocument(id)
     },
-    updateResourceReferencesOnRename(resource: ResourceIdentifier, newName: string) {
+    formatWorkspace() {
       if (editorRef.value == null) throw new Error('Code editor not initialized')
-      return editorRef.value.updateResourceReferencesOnRename(resource, newName)
+      return editorRef.value.formatWorkspace()
+    },
+    rename(id: TextDocumentIdentifier, position: Position, newName: string) {
+      if (editorRef.value == null) throw new Error('Code editor not initialized')
+      return editorRef.value.rename(id, position, newName)
+    },
+    renameResource(resource: ResourceIdentifier, newName: string) {
+      if (editorRef.value == null) throw new Error('Code editor not initialized')
+      return editorRef.value.renameResource(resource, newName)
     }
   })
 

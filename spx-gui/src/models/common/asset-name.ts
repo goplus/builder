@@ -1,5 +1,5 @@
 import type { LocaleMessage } from '@/utils/i18n'
-import { keywords, typeKeywords } from '@/utils/spx'
+import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
 import type { Project } from '../project'
 import type { Stage } from '../stage'
 import type { Sprite } from '../sprite'
@@ -26,17 +26,11 @@ function validateGopIdentifierAssetName(name: string) {
   if (err != null) return err
   // spx code is go+ code, and the asset name will compiled to an identifier of go+
   // so asset name rules is depend on the identifier rules of go+.
-  const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
-  if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
-  if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
-  if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
+  return validateGopIdentifierName(name)
 }
 
 function getGopIdentifierAssetNameTip(asset: LocaleMessage) {
-  return {
-    en: `The ${asset.en} name can only contain Chineses / English letters, digits, and the character _.`,
-    zh: `${asset.zh}名称只能包含中英文字符、数字及下划线`
-  }
+  return getGopIdentifierNameTip(asset)
 }
 
 export const spriteNameTip = getGopIdentifierAssetNameTip({ en: 'sprite', zh: '精灵' })

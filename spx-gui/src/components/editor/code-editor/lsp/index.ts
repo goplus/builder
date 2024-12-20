@@ -59,7 +59,7 @@ export class SpxLSPClient extends Disposable {
     this.isFilesStale.value = false
   }
 
-  private async prepareRquest() {
+  private async prepareRequest() {
     const [spxlc] = await Promise.all([
       untilNotNull(this.spxlcRef),
       // Typically requests are triggered earlier than file-loading:
@@ -78,7 +78,7 @@ export class SpxLSPClient extends Disposable {
   }
 
   private async executeCommand<A extends any[], R>(command: string, ...args: A): Promise<R> {
-    const spxlc = await this.prepareRquest()
+    const spxlc = await this.prepareRequest()
     return spxlc.request<R>(lsp.ExecuteCommandRequest.method, {
       command,
       arguments: args
@@ -104,27 +104,42 @@ export class SpxLSPClient extends Disposable {
   }
 
   async textDocumentDocumentLink(params: lsp.DocumentLinkParams): Promise<lsp.DocumentLink[] | null> {
-    const spxlc = await this.prepareRquest()
+    const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.DocumentLink[] | null>(lsp.DocumentLinkRequest.method, params)
   }
 
   async textDocumentDiagnostic(params: lsp.DocumentDiagnosticParams): Promise<lsp.DocumentDiagnosticReport> {
-    const spxlc = await this.prepareRquest()
-    return spxlc.request(lsp.DocumentDiagnosticRequest.method, params)
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.DocumentDiagnosticReport>(lsp.DocumentDiagnosticRequest.method, params)
   }
 
   async textDocumentHover(params: lsp.HoverParams): Promise<lsp.Hover | null> {
-    const spxlc = await this.prepareRquest()
+    const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
   }
 
   async textDocumentDefinition(params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
-    const spxlc = await this.prepareRquest()
+    const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
   }
 
   async textDocumentTypeDefinition(params: lsp.TypeDefinitionParams): Promise<lsp.Definition | null> {
-    const spxlc = await this.prepareRquest()
+    const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.Definition | null>(lsp.TypeDefinitionRequest.method, params)
+  }
+
+  async textDocumentPrepareRename(params: lsp.PrepareRenameParams): Promise<lsp.PrepareRenameResult | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.PrepareRenameResult | null>(lsp.PrepareRenameRequest.method, params)
+  }
+
+  async textDocumentRename(params: lsp.RenameParams): Promise<lsp.WorkspaceEdit | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.WorkspaceEdit | null>(lsp.RenameRequest.method, params)
+  }
+
+  async textDocumentFormatting(params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
   }
 }

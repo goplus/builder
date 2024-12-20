@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { UIButton } from '@/components/ui'
 import { useMessageHandle } from '@/utils/exception'
+import { useEditorCtx } from '../EditorContextProvider.vue'
 import { useCodeEditorCtx } from './context'
 import { getTextDocumentId } from './common'
 
@@ -14,12 +15,13 @@ const props = defineProps<{
   codeFilePath: string
 }>()
 
+const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
 const handleFormat = useMessageHandle(
-  () => {
-    const textDocumentId = getTextDocumentId(props.codeFilePath)
-    return codeEditorCtx.formatTextDocument(textDocumentId)
-  },
+  () =>
+    editorCtx.project.history.doAction({ name: { en: 'Format code', zh: '格式化代码' } }, () =>
+      codeEditorCtx.formatTextDocument(getTextDocumentId(props.codeFilePath))
+    ),
   {
     en: 'Failed to format',
     zh: '格式化失败'

@@ -273,6 +273,7 @@ function handleCategoryClick(id: string) {
   flex: 1 1 0;
   padding: 0 16px 12px;
   overflow-y: auto;
+  scrollbar-width: thin;
 
   .subcategory-wrapper {
     padding-bottom: 20px;

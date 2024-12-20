@@ -117,6 +117,57 @@ onStart => {
 		})
 	})
 
+	t.Run("Rename reference", func(t *testing.T) {
+		s := New(vfs.NewMapFS(func() map[string][]byte {
+			return map[string][]byte{
+				"main.spx": []byte(`
+var (
+	MySprite Sprite
+)
+const Foo = "bar"
+MySprite.turn Left
+run "assets", {Title: "My Game"}
+`),
+				"MySprite.spx": []byte(`
+println Foo
+onStart => {
+	MySprite.turn Right
+}
+`),
+				"assets/sprites/MySprite/index.json": []byte(`{}`),
+			}
+		}), nil)
+
+		workspaceEdit, err := s.textDocumentRename(&RenameParams{
+			TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+			Position:     Position{Line: 1, Character: 9},
+			NewName:      "Bar",
+		})
+		require.NoError(t, err)
+		require.NotNil(t, workspaceEdit)
+		require.NotNil(t, workspaceEdit.Changes)
+
+		mainSpxChanges := workspaceEdit.Changes["file:///main.spx"]
+		require.Len(t, mainSpxChanges, 1)
+		assert.Contains(t, mainSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 4, Character: 6},
+				End:   Position{Line: 4, Character: 9},
+			},
+			NewText: "Bar",
+		})
+
+		mySpriteSpxChanges := workspaceEdit.Changes["file:///MySprite.spx"]
+		require.Len(t, mySpriteSpxChanges, 1)
+		assert.Contains(t, mySpriteSpxChanges, TextEdit{
+			Range: Range{
+				Start: Position{Line: 1, Character: 8},
+				End:   Position{Line: 1, Character: 11},
+			},
+			NewText: "Bar",
+		})
+	})
+
 	t.Run("SpxResource", func(t *testing.T) {
 		s := New(vfs.NewMapFS(func() map[string][]byte {
 			return map[string][]byte{

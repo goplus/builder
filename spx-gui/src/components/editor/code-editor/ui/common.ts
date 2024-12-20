@@ -60,22 +60,6 @@ export function toMonacoSelection(selection: Selection): monaco.ISelection {
   }
 }
 
-export function isRangeEmpty(range: Range) {
-  return positionEq(range.start, range.end)
-}
-
-export function isSelectionEmpty(selection: Selection | null) {
-  if (selection == null) return true
-  return positionEq(selection.start, selection.position)
-}
-
-export function containsPosition(range: Range, position: Position) {
-  if (position.line < range.start.line || position.line > range.end.line) return false
-  if (position.line === range.start.line && position.column < range.start.column) return false
-  if (position.line === range.end.line && position.column > range.end.column) return false
-  return true
-}
-
 export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
   // TODO: check if this is correct
   return { uri: uri.toString() }

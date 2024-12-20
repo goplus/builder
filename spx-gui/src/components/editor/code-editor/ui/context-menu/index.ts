@@ -1,7 +1,7 @@
 import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
-import { type Action, type BaseContext, type Selection, type Position } from '../../common'
+import { type Action, type BaseContext, type Selection, type Position, isSelectionEmpty } from '../../common'
 import type { monaco } from '../../monaco'
 import {
   builtInCommandCopy,
@@ -11,7 +11,7 @@ import {
   type InternalAction
 } from '../code-editor-ui'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
-import { toMonacoPosition, isSelectionEmpty, fromMonacoPosition, fromMonacoSelection } from '../common'
+import { toMonacoPosition, fromMonacoPosition, fromMonacoSelection } from '../common'
 
 export type ContextMenuContext = BaseContext
 

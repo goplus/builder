@@ -8,6 +8,7 @@ import { getMimeFromExt } from '../file'
 import { stripExt } from '../path'
 import { toWav } from '../audio'
 import { toJpeg } from '../img'
+import type { LocaleMessage } from '../i18n'
 
 export const keywords = [
   'func',
@@ -143,4 +144,23 @@ export async function adaptImg(file: File): Promise<File> {
   const jpegBlob = await toJpeg(await toNativeFile(file))
   const jpegFileName = stripExt(file.name) + '.jpeg'
   return fromBlob(jpegFileName, jpegBlob)
+}
+
+export function validateGopIdentifierName(name: string) {
+  const regex = /^[\u4e00-\u9fa5a-zA-Z_][\u4e00-\u9fa5a-zA-Z0-9_]*$/
+  if (!regex.test(name)) return { en: 'Invalid name', zh: '格式不正确' }
+  if (typeKeywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
+  if (keywords.includes(name)) return { en: 'Conflict with keywords', zh: '与关键字冲突' }
+}
+
+export function getGopIdentifierNameTip(target?: LocaleMessage) {
+  if (target == null)
+    return {
+      en: 'The name can only contain Chineses / English letters, digits, and the character _.',
+      zh: '名称只能包含中英文字符、数字及下划线'
+    }
+  return {
+    en: `The ${target.en} name can only contain Chineses / English letters, digits, and the character _.`,
+    zh: `${target.zh}名称只能包含中英文字符、数字及下划线`
+  }
 }
