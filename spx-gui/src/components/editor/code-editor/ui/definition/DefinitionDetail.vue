@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useAsyncComputed } from '@/utils/utils'
+import { useSlotText } from '@/utils/vnode'
 import { parseDefinitionId, type DefinitionDocumentationItem } from '../../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
-import MarkdownView from './MarkdownView.vue'
-import { useAsyncComputed } from '@/utils/utils'
+import MarkdownView from '../markdown/MarkdownView.vue'
 
 const props = defineProps<{
   defId: string
@@ -17,12 +19,15 @@ const documentation = useAsyncComputed<DefinitionDocumentationItem | null>(async
   if (documentBase == null) return null
   return documentBase.getDocumentation(defId)
 })
+
+const childrenText = useSlotText()
+const hasContent = computed(() => documentation.value != null || childrenText.value !== '')
 </script>
 
 <template>
-  <DefinitionDetailWrapper>
+  <DefinitionDetailWrapper v-if="hasContent">
     <MarkdownView v-if="documentation != null" v-bind="documentation.detail" />
-    <MarkdownView v-else value="TODO: use default slot" />
+    <MarkdownView v-else :value="childrenText" />
   </DefinitionDetailWrapper>
 </template>
 

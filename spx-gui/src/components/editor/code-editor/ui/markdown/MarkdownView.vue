@@ -3,9 +3,8 @@ import { computed } from 'vue'
 import { useI18n, type LocaleMessage } from '@/utils/i18n'
 import MarkdownView from '@/components/common/markdown-vue/MarkdownView'
 import type { MarkdownStringFlag } from '../../common'
+import DefinitionItem from '../definition/DefinitionItem.vue'
 import CodeLink from './CodeLink.vue'
-import DefinitionOverviewWrapper from './DefinitionOverviewWrapper.vue'
-import DefinitionDetail from './DefinitionDetail.vue'
 import CodeBlock from './CodeBlock.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
@@ -34,15 +33,6 @@ const basicComponents = {
   /**
    * Usage:
    * ```html
-   * <definition-overview-wrapper>
-   *   func onStart(callback func())
-   * </definition-overview-wrapper>
-   * ```
-   */
-  'definition-overview-wrapper': DefinitionOverviewWrapper,
-  /**
-   * Usage:
-   * ```html
    * <resource-preview resource="spx://resources/sprites/NiuXiaoQi" />
    * ```
    */
@@ -61,11 +51,11 @@ const advancedComponents = {
   /**
    * Usage:
    * ```html
-   * <definition-detail def-id="gop:fmt?Println">
+   * <definition-item def-id="gop:fmt?Println" overview="func Println(a ...interface{}) void">
    *   Default detail content here (Markdown supported)
-   * </definition-detail>
+   * </definition-item>
    */
-  'definition-detail': DefinitionDetail
+  'definition-item': DefinitionItem
 }
 
 const components = computed(() => {
@@ -86,19 +76,42 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
 .markdown-view {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  line-height: 1.53846;
+  gap: 1em;
+
+  font-size: 12px;
+  line-height: 1.75;
+  color: inherit;
+
+  :deep(h1, h2, h3, h4, h5, h6) {
+    margin: 1em 0;
+    color: var(--ui-color-title);
+  }
+
+  :deep(h1) {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  :deep(h2) {
+    font-size: 16px;
+    line-height: 1.625;
+  }
+
+  :deep(h3) {
+    font-size: 14px;
+    line-height: 1.57143;
+  }
+
+  :deep(h4, h5, h6) {
+    font-size: 13px;
+    line-height: 1.53846;
+  }
 
   :deep(ul),
   :deep(ol) {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     padding-left: 1.5em;
-  }
-
-  :deep(h4) {
-    font-size: 1.2em;
   }
   :deep(ul) {
     list-style: square;
@@ -106,24 +119,44 @@ const markdownValue = computed(() => (typeof props.value === 'string' ? props.va
   :deep(ol) {
     list-style: decimal;
   }
+
+  :deep(a) {
+    color: inherit;
+    text-decoration: underline;
+    &:hover,
+    &:active {
+      color: var(--ui-color-primary-main);
+    }
+  }
+
+  :deep(blockquote) {
+    position: relative;
+    padding-left: 20px;
+    &:before {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      border-radius: 1px;
+      background-color: var(--ui-color-grey-800);
+    }
+  }
+
   :deep(code) {
     font-family: var(--ui-font-family-code);
   }
   :deep(:not(pre) > code) {
     // TODO: keep consistent with component `UICode`
-    font-size: 0.85em;
-    padding: 2px 4px;
+    font-size: 0.83em;
+    line-height: 1.6;
+    padding: 4px 4px;
     border-radius: 4px;
     border: 1px solid var(--ui-color-grey-500);
-    background: var(--ui-color-grey-300);
+    background: var(--ui-color-grey-100);
     word-break: break-word;
     overflow-wrap: break-word;
-  }
-  :deep(blockquote) {
-    // TODO: confirm style detail here
-    padding: 0 0.6em;
-    border-radius: 4px;
-    background-color: var(--ui-color-grey-300);
   }
 }
 </style>

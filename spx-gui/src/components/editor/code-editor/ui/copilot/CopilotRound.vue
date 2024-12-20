@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RoundState, type Round } from '.'
-import MessageContent from './MessageContent.vue'
+import MarkdownView from '../markdown/MarkdownView.vue'
 import UserMessage from './UserMessage.vue'
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ function handleWrapper(wrapper: unknown) {
 <template>
   <section :ref="handleWrapper" class="copilot-round">
     <UserMessage :content="round.problem" />
-    <MessageContent v-if="round.answer != null" class="answer" v-bind="round.answer" />
+    <MarkdownView v-if="round.answer != null" class="answer" v-bind="round.answer" />
     <div v-else class="abnormal">
       <div v-if="round.state === RoundState.Loading" class="loading">
         <svg

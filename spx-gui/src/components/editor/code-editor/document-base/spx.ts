@@ -79,8 +79,8 @@ export const onTouchStart2: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '2'
   },
-  insertText: 'onTouchStart ${1:name}, => {\n\t${2}\n}',
-  overview: 'onTouchStart name, => { ... }',
+  insertText: 'onTouchStart ${1:spriteName}, => {\n\t${2}\n}',
+  overview: 'onTouchStart spriteName, => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name',
     zh: '当前精灵与指定名字的精灵开始接触时执行'
@@ -95,8 +95,8 @@ export const onTouchStart3: DefinitionDocumentationItem = {
     name: 'Sprite.onTouchStart',
     overloadId: '3'
   },
-  insertText: 'onTouchStart ${1:name}, sprite => {\n\t${2}\n}',
-  overview: 'onTouchStart name, sprite => { ... }',
+  insertText: 'onTouchStart ${1:spriteName}, sprite => {\n\t${2}\n}',
+  overview: 'onTouchStart spriteName, sprite => { ... }',
   detail: makeBasicMarkdownString({
     en: 'Listen to current sprite starting to be touched by sprite of given name (and get the sprite)',
     zh: '当前精灵与指定名字的精灵开始接触时执行（并获得精灵信息）'
@@ -213,7 +213,8 @@ export const setCostume: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.setCostume'
+    name: 'Sprite.setCostume',
+    overloadId: '0'
   },
   insertText: 'setCostume ${1:name}',
   overview: 'setCostume name',
@@ -302,18 +303,51 @@ export const think1: DefinitionDocumentationItem = {
   })
 }
 
-export const distanceTo: DefinitionDocumentationItem = {
+export const distanceTo0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.distanceTo'
+    name: 'Sprite.distanceTo',
+    overloadId: '0'
   },
-  insertText: 'distanceTo(${1:target})',
-  overview: 'distanceTo(target)',
+  insertText: 'distanceTo(${1:sprite})',
+  overview: 'distanceTo(sprite)',
   detail: makeBasicMarkdownString({
-    en: 'Get the distance from current sprite to given target',
-    zh: '获取当前精灵到指定目标的距离'
+    en: 'Get the distance from current sprite to given sprite',
+    zh: '获取当前精灵到指定精灵的距离'
+  })
+}
+
+export const distanceTo1: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.distanceTo',
+    overloadId: '1'
+  },
+  insertText: 'distanceTo(${1:spriteName})',
+  overview: 'distanceTo(spriteName)',
+  detail: makeBasicMarkdownString({
+    en: 'Get the distance from current sprite to the sprite with given name, e.g., `distanceTo("Enemy")`',
+    zh: '获取当前精灵到指定名字的精灵的距离，如：`distanceTo("Enemy")`'
+  })
+}
+
+export const distanceTo2: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.distanceTo',
+    overloadId: '2'
+  },
+  insertText: 'distanceTo(${1:obj})',
+  overview: 'distanceTo(obj)',
+  detail: makeBasicMarkdownString({
+    en: 'Get the distance from current sprite to given object, e.g., `distanceTo(Mouse)`',
+    zh: '获取当前精灵到指定对象的距离，如：`distanceTo(Mouse)`'
   })
 }
 
@@ -337,7 +371,8 @@ export const step: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.step'
+    name: 'Sprite.step',
+    overloadId: '0'
   },
   insertText: 'step ${1:distance}',
   overview: 'step distance',
@@ -347,18 +382,51 @@ export const step: DefinitionDocumentationItem = {
   })
 }
 
-export const goto: DefinitionDocumentationItem = {
+export const goto0: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.goto'
+    name: 'Sprite.goto',
+    overloadId: '0'
   },
-  insertText: 'goto ${1:target}',
-  overview: 'goto target',
+  insertText: 'goto ${1:sprite}',
+  overview: 'goto sprite',
   detail: makeBasicMarkdownString({
-    en: 'Move to given target',
-    zh: '移动到指定目标'
+    en: 'Move to given sprite',
+    zh: '移动到指定精灵'
+  })
+}
+
+export const goto1: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.goto',
+    overloadId: '1'
+  },
+  insertText: 'goto ${1:spriteName}',
+  overview: 'goto spriteName',
+  detail: makeBasicMarkdownString({
+    en: 'Move to the sprite with given name, e.g., `goto "Enemy"`',
+    zh: '移动到指定名字的精灵，如：`goto "Enemy"`'
+  })
+}
+
+export const goto2: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.goto',
+    overloadId: '2'
+  },
+  insertText: 'goto ${1:obj}',
+  overview: 'goto obj',
+  detail: makeBasicMarkdownString({
+    en: 'Move to given obj, e.g., `goto Mouse`',
+    zh: '移动到指定对象，如：`goto Mouse`'
   })
 }
 
@@ -373,7 +441,7 @@ export const glide0: DefinitionDocumentationItem = {
   insertText: 'glide ${1:x}, ${2:y}, ${3:seconds}',
   overview: 'glide x, y, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given position (X, Y), with glide animation',
+    en: 'Move to given position (X, Y), using a glide animation',
     zh: '滑行到指定位置（X，Y）'
   })
 }
@@ -386,11 +454,43 @@ export const glide1: DefinitionDocumentationItem = {
     name: 'Sprite.glide',
     overloadId: '1'
   },
-  insertText: 'glide(target Sprite, ${1:seconds})',
-  overview: 'glide target, seconds',
+  insertText: 'glide {$1:sprite}, ${2:seconds}',
+  overview: 'glide sprite, seconds',
   detail: makeBasicMarkdownString({
-    en: 'Move to given target, with glide animation',
-    zh: '滑行到指定目标'
+    en: 'Move to given sprite, using a glide animation',
+    zh: '滑行到指定精灵'
+  })
+}
+
+export const glide2: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.glide',
+    overloadId: '2'
+  },
+  insertText: 'glide ${1:spriteName}, ${2:seconds}',
+  overview: 'glide spriteName, seconds',
+  detail: makeBasicMarkdownString({
+    en: 'Move to the sprite with given name, using a glide animation',
+    zh: '滑行到指定名称的精灵'
+  })
+}
+
+export const glide3: DefinitionDocumentationItem = {
+  categories: [categories.motion.position],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.glide',
+    overloadId: '3'
+  },
+  insertText: 'glide ${1:obj}, ${2:seconds}',
+  overview: 'glide obj, seconds',
+  detail: makeBasicMarkdownString({
+    en: 'Move to given obj, using a glide animation, e.g., `glide Mouse, 2`',
+    zh: '滑行到指定对象，如：`glide Mouse, 2`'
   })
 }
 
@@ -544,22 +644,87 @@ export const heading: DefinitionDocumentationItem = {
   })
 }
 
-export const turn: DefinitionDocumentationItem = {
+export const turn0: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Sprite.turn'
+    name: 'Sprite.turn',
+    overloadId: '0'
   },
-  insertText: 'turn ${1:dDirection}',
-  overview: 'turn dDirection',
+  insertText: 'turn ${1:degree}',
+  overview: 'turn degree',
   detail: makeBasicMarkdownString({
-    en: 'Turn with given direction change, e.g., `turn Left`',
-    zh: '转动给定的角度，如：`turn Left`'
+    en: 'Turn with given degree, e.g., `turn 90`',
+    zh: '转动给定的角度，如：`turn 90`'
+  })
+}
+
+export const turn1: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turn',
+    overloadId: '1'
+  },
+  insertText: 'turn ${1:direction}',
+  overview: 'turn direction',
+  detail: makeBasicMarkdownString({
+    en: 'Turn with given direction, e.g., `turn Left`',
+    zh: '朝给定的方向转动，如：`turn Left`'
   })
 }
 
 export const turnTo0: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '0'
+  },
+  insertText: 'turnTo ${1:sprite}',
+  overview: 'turnTo sprite',
+  detail: makeBasicMarkdownString({
+    en: 'Turn heading to given sprite',
+    zh: '将朝向转到指定精灵'
+  })
+}
+
+export const turnTo1: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '1'
+  },
+  insertText: 'turnTo ${1:spriteName}',
+  overview: 'turnTo spriteName',
+  detail: makeBasicMarkdownString({
+    en: 'Turn heading to given sprite by name, e.g., `turnTo "Enemy"`',
+    zh: '将朝向转到指定名字的精灵，如：`turnTo "Enemy"`'
+  })
+}
+
+export const turnTo2: DefinitionDocumentationItem = {
+  categories: [categories.motion.heading],
+  kind: DefinitionKind.Command,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.turnTo',
+    overloadId: '2'
+  },
+  insertText: 'turnTo ${1:degree}',
+  overview: 'turnTo degree',
+  detail: makeBasicMarkdownString({
+    en: 'Turn heading to given degree, e.g., `turnTo 90`',
+    zh: '将朝向转到指定角度，如：`turnTo 90`'
+  })
+}
+
+export const turnTo3: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
@@ -575,19 +740,19 @@ export const turnTo0: DefinitionDocumentationItem = {
   })
 }
 
-export const turnTo1: DefinitionDocumentationItem = {
+export const turnTo4: DefinitionDocumentationItem = {
   categories: [categories.motion.heading],
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
     name: 'Sprite.turnTo',
-    overloadId: '1'
+    overloadId: '4'
   },
-  insertText: 'turnTo ${1:target}',
-  overview: 'turnTo target',
+  insertText: 'turnTo ${1:obj}',
+  overview: 'turnTo obj',
   detail: makeBasicMarkdownString({
-    en: 'Turn heading to given target',
-    zh: '将朝向转到指定目标'
+    en: 'Turn heading to given object, e.g., `turnTo Mouse`',
+    zh: '将朝向转到指定对象，如：`turnTo Mouse`'
   })
 }
 
@@ -666,18 +831,51 @@ export const changeSize: DefinitionDocumentationItem = {
   })
 }
 
-export const touching: DefinitionDocumentationItem = {
+export const touching0: DefinitionDocumentationItem = {
   categories: [categories.sensing.distance],
   kind: DefinitionKind.Read,
   definition: {
     package: packageSpx,
-    name: 'Sprite.touching'
+    name: 'Sprite.touching',
+    overloadId: '0'
   },
-  insertText: 'touching(${1:target})',
-  overview: 'touching(target)',
+  insertText: 'touching(${1:spriteName})',
+  overview: 'touching(spriteName)',
   detail: makeBasicMarkdownString({
-    en: 'Check if current sprite touching specified target',
-    zh: '检查当前精灵是否与指定目标接触'
+    en: 'Check if current sprite touching sprite with given name',
+    zh: '检查当前精灵是否与指定名字的精灵接触'
+  })
+}
+
+export const touching1: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.touching',
+    overloadId: '1'
+  },
+  insertText: 'touching(${1:sprite})',
+  overview: 'touching(sprite)',
+  detail: makeBasicMarkdownString({
+    en: 'Check if current sprite touching given sprite',
+    zh: '检查当前精灵是否与指定精灵接触'
+  })
+}
+
+export const touching2: DefinitionDocumentationItem = {
+  categories: [categories.sensing.distance],
+  kind: DefinitionKind.Read,
+  definition: {
+    package: packageSpx,
+    name: 'Sprite.touching',
+    overloadId: '2'
+  },
+  insertText: 'touching(${1:obj})',
+  overview: 'touching(obj)',
+  detail: makeBasicMarkdownString({
+    en: 'Check if current sprite touching given object, e.g., `touching(Mouse)`',
+    zh: '检查当前精灵是否与指定对象接触，如：`touching(Mouse)`'
   })
 }
 
@@ -749,11 +947,11 @@ export const startBackdrop0: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '0'
   },
-  insertText: 'startBackdrop ${1:backdrop}',
-  overview: 'startBackdrop backdrop',
+  insertText: 'startBackdrop ${1:backdropName}',
+  overview: 'startBackdrop backdropName',
   detail: makeBasicMarkdownString({
-    en: 'Set the current backdrop by specifying name or index, e.g., `startBackdrop "backdrop1"`',
-    zh: '通过指定名称或索引切换背景，如：`startBackdrop "backdrop1"`'
+    en: 'Set the current backdrop by specifying name, e.g., `startBackdrop "backdrop1"`',
+    zh: '通过指定名称切换背景，如：`startBackdrop "backdrop1"`'
   })
 }
 
@@ -765,11 +963,11 @@ export const startBackdrop1: DefinitionDocumentationItem = {
     name: 'Game.startBackdrop',
     overloadId: '1'
   },
-  insertText: 'startBackdrop ${1:backdrop}, ${2:wait}',
-  overview: 'startBackdrop backdrop, wait',
+  insertText: 'startBackdrop ${1:backdropName}, ${2:wait}',
+  overview: 'startBackdrop backdropName, wait',
   detail: makeBasicMarkdownString({
-    en: 'Set the current backdrop by specifying name or index, with waiting, e.g., `startBackdrop "backdrop1", true`',
-    zh: '通过指定名称或索引切换背景，并等待切换完成，如：`startBackdrop "backdrop1", true`'
+    en: 'Set the current backdrop by specifying name, with waiting, e.g., `startBackdrop "backdrop1", true`',
+    zh: '通过指定名称切换背景，并等待切换完成，如：`startBackdrop "backdrop1", true`'
   })
 }
 
@@ -778,7 +976,8 @@ export const nextBackdrop: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.nextBackdrop'
+    name: 'Game.nextBackdrop',
+    overloadId: '0'
   },
   insertText: 'nextBackdrop',
   overview: 'nextBackdrop',
@@ -793,7 +992,8 @@ export const prevBackdrop: DefinitionDocumentationItem = {
   kind: DefinitionKind.Command,
   definition: {
     package: packageSpx,
-    name: 'Game.prevBackdrop'
+    name: 'Game.prevBackdrop',
+    overloadId: '0'
   },
   insertText: 'prevBackdrop',
   overview: 'prevBackdrop', // TODO: optional argument `wait`
