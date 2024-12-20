@@ -1,32 +1,11 @@
 import type * as monaco from 'monaco-editor'
 import { Cancelled } from '@/utils/exception'
+import type { ResourceModel } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
-import { stageCodeFilePaths, type Stage } from '@/models/stage'
-import type { Action, Project } from '@/models/project'
-import {
-  type Range,
-  type Position,
-  type TextDocumentIdentifier,
-  type Selection,
-  type IResourceModel,
-  positionEq
-} from '../common'
 import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
-
-export type { monaco }
-export type Monaco = typeof import('monaco-editor')
-export type MonacoEditor = monaco.editor.IStandaloneCodeEditor
-export { KeyCode as MonacoKeyCode } from 'monaco-editor'
-
-declare module 'monaco-editor' {
-  namespace editor {
-    interface IStandaloneCodeEditor {
-      // It is actually supported while not in the type definition
-      onDidType: (callback: (text: string) => void) => monaco.IDisposable
-    }
-  }
-}
+import { type Range, type Position, type TextDocumentIdentifier, type Selection, positionEq } from '../common'
+import type { Monaco } from '../monaco'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -106,99 +85,7 @@ export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.
   return monaco.Uri.parse(id.uri)
 }
 
-const textDocumentURIPrefix = 'file:///'
-
-export function getTextDocumentURI(codeFilePath: string) {
-  return textDocumentURIPrefix + codeFilePath
-}
-
-export function getCodeFilePath(textDocumentURI: string) {
-  if (!textDocumentURI.startsWith(textDocumentURIPrefix))
-    throw new Error(`Invalid text document URI: ${textDocumentURI}`)
-  return textDocumentURI.slice(textDocumentURIPrefix.length)
-}
-
-export interface ICodeOwner {
-  getTextDocumentId(): TextDocumentIdentifier
-  getCode(): string
-  setCode(newCode: string): Promise<void>
-}
-
-class CodeOwnerStage implements ICodeOwner {
-  action: Action
-  constructor(
-    private stage: Stage,
-    private project: Project
-  ) {
-    this.action = {
-      name: { en: 'Update stage code', zh: '修改舞台代码' },
-      mergeable: true
-    }
-  }
-  getTextDocumentId() {
-    return { uri: getTextDocumentURI(this.stage.codeFilePath) }
-  }
-  getCode() {
-    return this.stage.code
-  }
-  setCode(newCode: string) {
-    return this.project.history.doAction(this.action, () => {
-      this.stage.setCode(newCode)
-    })
-  }
-}
-
-class CodeOwnerSprite implements ICodeOwner {
-  action: Action
-  constructor(
-    private sprite: Sprite,
-    private project: Project
-  ) {
-    this.action = {
-      name: { en: `Update ${sprite.name} code`, zh: `修改 ${sprite.name} 代码` },
-      mergeable: true
-    }
-  }
-  getTextDocumentId() {
-    return { uri: getTextDocumentURI(this.sprite.codeFilePath) }
-  }
-  getCode() {
-    return this.sprite.code
-  }
-  setCode(newCode: string) {
-    return this.project.history.doAction(this.action, () => {
-      this.sprite.setCode(newCode)
-    })
-  }
-}
-
-export function getSelectedCodeOwner(project: Project): ICodeOwner | null {
-  const selected = project.selected
-  if (selected == null) return null
-  switch (selected.type) {
-    case 'sprite':
-      return new CodeOwnerSprite(project.selectedSprite!, project)
-    case 'stage':
-      return new CodeOwnerStage(project.stage, project)
-    default:
-      return null
-  }
-}
-
-export function getCodeOwner(project: Project, textDocumentId: TextDocumentIdentifier): ICodeOwner | null {
-  const codeFilePath = getCodeFilePath(textDocumentId.uri)
-  if (stageCodeFilePaths.includes(codeFilePath)) {
-    return new CodeOwnerStage(project.stage, project)
-  }
-  for (const sprite of project.sprites) {
-    if (sprite.codeFilePath === codeFilePath) {
-      return new CodeOwnerSprite(sprite, project)
-    }
-  }
-  return null
-}
-
-export function supportGoTo(resourceModel: IResourceModel): boolean {
+export function supportGoTo(resourceModel: ResourceModel): boolean {
   // Currently, we do not support "go to detail" for other types of resources due to two reasons:
   // 1. The "selected" state of certain resource types, such as animations, is still managed within the Component, making it difficult to control from here.
   // 2. The "selected" state of some resource types, like costumes and backdrops, affects game behavior.

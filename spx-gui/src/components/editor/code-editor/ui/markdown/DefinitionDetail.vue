@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { parseDefinitionId, type DefinitionDocumentationItem } from '../../common'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import DefinitionDetailWrapper from './DefinitionDetailWrapper.vue'
 import MarkdownView from './MarkdownView.vue'
 import { useAsyncComputed } from '@/utils/utils'
@@ -9,7 +9,7 @@ const props = defineProps<{
   defId: string
 }>()
 
-const codeEditorCtx = useCodeEditorCtx()
+const codeEditorCtx = useCodeEditorUICtx()
 
 const documentation = useAsyncComputed<DefinitionDocumentationItem | null>(async () => {
   const defId = parseDefinitionId(props.defId)

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
 import { useI18n } from '@/utils/i18n'
-import type { Range, Position } from '../../common'
-import { getCodeFilePath } from '../common'
-import { useCodeEditorCtx } from '../CodeEditorUI.vue'
+import { type Range, type Position, getCodeFilePath } from '../../common'
+import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 
 const props = defineProps<{
   /** Text document URI, e.g., `file:///NiuXiaoQi.spx` */
@@ -16,7 +15,7 @@ const props = defineProps<{
 
 const slots = useSlots()
 const i18n = useI18n()
-const codeEditorContext = useCodeEditorCtx()
+const codeEditorContext = useCodeEditorUICtx()
 
 const file = computed(() => {
   const codeFilePath = getCodeFilePath(props.file)

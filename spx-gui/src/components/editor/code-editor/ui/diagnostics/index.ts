@@ -2,8 +2,8 @@ import { shallowRef, watch } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import type Emitter from '@/utils/emitter'
 import { type BaseContext, type Diagnostic } from '../../common'
-import type { CodeEditorUI } from '..'
-import type { TextDocument } from '../text-document'
+import type { CodeEditorUI } from '../code-editor-ui'
+import type { TextDocument } from '../../text-document'
 
 export type DiagnosticsContext = BaseContext
 

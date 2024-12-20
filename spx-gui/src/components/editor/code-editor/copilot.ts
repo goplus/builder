@@ -1,7 +1,8 @@
+import { Disposable } from '@/utils/disposable'
 import { makeBasicMarkdownString, type BasicMarkdownString } from './common'
-import type { Chat, ChatContext, ICopilot } from './ui'
+import type { Chat, ChatContext, ICopilot } from './ui/code-editor-ui'
 
-export class Copilot implements ICopilot {
+export class Copilot extends Disposable implements ICopilot {
   async getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString> {
     console.warn('TODO', ctx, chat)
     return Promise.race([

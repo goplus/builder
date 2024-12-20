@@ -1,4 +1,5 @@
 import { AssetType } from '@/apis/asset'
+import type { ResourceModel } from '@/models/common/resource-model'
 import type { Project } from '@/models/project'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
@@ -6,6 +7,7 @@ import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { type Widget } from '@/models/widget'
 import { Costume } from '@/models/costume'
+import type { Stage } from '@/models/stage'
 import type { LocaleMessage } from '@/utils/i18n'
 import {
   useAddAssetFromLibrary,
@@ -17,7 +19,7 @@ import {
   useAddMonitor,
   useAddCostumeFromLocalFile
 } from '@/components/asset'
-import { parseResourceURI, type IResourceModel } from '../../../common'
+import { parseResourceURI } from '../../../common'
 import type { InternalResourceReference } from '..'
 
 export type CreateMethod<T> = {
@@ -27,9 +29,9 @@ export type CreateMethod<T> = {
   handler: () => Promise<T | T[]>
 }
 
-export type IResource = IResourceModel
+export type SelectableResource = Exclude<ResourceModel, Stage>
 
-export interface IResourceSelector<T extends IResource> {
+export interface IResourceSelector<T extends SelectableResource> {
   /** Title for `ResourceSelector` */
   title: LocaleMessage
   /** List of all selectable resources */

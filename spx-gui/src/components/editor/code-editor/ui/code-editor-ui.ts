@@ -1,5 +1,5 @@
 import { uniqueId } from 'lodash'
-import { ref, shallowRef, watchEffect } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
@@ -21,6 +21,8 @@ import {
   type ResourceIdentifier,
   getResourceModel
 } from '../common'
+import { TextDocument } from '../text-document'
+import type { Monaco, MonacoEditor } from '../monaco'
 import { HoverController, type IHoverProvider } from './hover'
 import { CompletionController, type ICompletionProvider } from './completion'
 import {
@@ -40,19 +42,13 @@ import {
 } from './copilot'
 import type { IFormattingEditProvider } from './formatting'
 import {
-  type Monaco,
-  type MonacoEditor,
-  getSelectedCodeOwner,
-  type ICodeOwner,
   fromMonacoPosition,
   toMonacoRange,
   fromMonacoSelection,
   isRangeEmpty,
   toMonacoPosition,
-  getCodeOwner,
   supportGoTo
 } from './common'
-import { TextDocument } from './text-document'
 
 export * from './hover'
 export * from './completion'
@@ -62,8 +58,6 @@ export * from './diagnostics'
 export * from './api-reference'
 export * from './copilot'
 export * from './formatting'
-
-export { default as CodeEditorUIComp } from './CodeEditorUI.vue'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void
@@ -87,6 +81,8 @@ export interface ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, position: Position): void
   /** Open a text document in the editor, and select the given range */
   open(textDocument: TextDocumentIdentifier, range: Range): void
+
+  dispose(): void
 }
 
 export const builtInCommandCopilotInspire: Command<[problem: string], void> = 'spx.copilot.inspire'
@@ -170,7 +166,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   open(textDocument: TextDocumentIdentifier, position: Position): void
   open(textDocument: TextDocumentIdentifier, range: Range): void
   open(textDocument: TextDocumentIdentifier, positionOrRange?: Position | Range): void {
-    this.openTextDocument(textDocument)
+    this.setActiveTextDocument(textDocument)
     if (positionOrRange == null) return
     if ('line' in positionOrRange) {
       this.editor.setPosition(toMonacoPosition(positionOrRange))
@@ -181,8 +177,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
 
   constructor(
+    private mainTextDocumentId: TextDocumentIdentifier,
     public project: Project,
     public i18n: I18n,
+    public monaco: Monaco,
+    private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
     private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
@@ -198,69 +197,29 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   resourceReferenceController = new ResourceReferenceController(this)
   documentBase: IDocumentBase | null = null
 
-  /** All opened text documents in current editor, by ID uri */
-  private textDocuments = new Map<string, TextDocument>()
-  /** The "main" (initially opened) text document ID */
-  private mainTextDocumentIdRef = shallowRef<TextDocumentIdentifier | null>(null)
   /** Current active text document ID */
   private activeTextDocumentIdRef = shallowRef<TextDocumentIdentifier | null>(null)
 
-  getTextDocument(id: TextDocumentIdentifier): TextDocument | null {
-    return this.textDocuments.get(id.uri) ?? null
-  }
-
-  private addTextDocument(textDocument: TextDocument) {
-    this.textDocuments.set(textDocument.id.uri, textDocument)
-    this.addDisposable(textDocument)
-  }
-
-  private setActiveTextDocument(activeId: TextDocumentIdentifier | null) {
-    if (activeId == null) {
-      this.activeTextDocumentIdRef.value = null
-      this.editor.setModel(null)
-      return
-    }
-    const textDocument = this.textDocuments.get(activeId.uri)
-    if (textDocument == null) throw new Error(`Text document not exist: ${activeId.uri}`)
-    this.activeTextDocumentIdRef.value = activeId
-    this.editor.setModel(textDocument.monacoTextModel)
-  }
-
-  /** The "main" (initially opened) text document */
-  get mainTextDocument() {
-    if (this.mainTextDocumentIdRef.value == null) return null
-    return this.getTextDocument(this.mainTextDocumentIdRef.value) ?? null
-  }
   /** Current active text document */
   get activeTextDocument() {
     if (this.activeTextDocumentIdRef.value == null) return null
     return this.getTextDocument(this.activeTextDocumentIdRef.value)
   }
 
-  private initMainTextDocument(mainCodeOwner: ICodeOwner | null) {
-    this.textDocuments.clear()
-    if (mainCodeOwner == null) {
-      this.mainTextDocumentIdRef.value = null
-      this.setActiveTextDocument(null)
-    } else {
-      const mainTextDocument = new TextDocument(mainCodeOwner, this.monaco)
-      this.mainTextDocumentIdRef.value = mainTextDocument.id
-      this.addTextDocument(mainTextDocument)
-      this.setActiveTextDocument(mainTextDocument.id)
+  private setActiveTextDocument(activeId: TextDocumentIdentifier | null) {
+    const textDocument = activeId != null ? this.getTextDocument(activeId) : null
+    if (textDocument == null) {
+      this.activeTextDocumentIdRef.value = null
+      this.editor.setModel(null)
+      return
     }
+    this.activeTextDocumentIdRef.value = textDocument.id
+    this.editor.setModel(textDocument.monacoTextModel)
   }
 
-  private openTextDocument(id: TextDocumentIdentifier) {
-    if (this.getTextDocument(id) == null) {
-      const codeOwner = getCodeOwner(this.project, id)
-      if (codeOwner == null) {
-        console.warn(`Code file not exist for ${id.uri}`)
-        return
-      }
-      const textDocument = new TextDocument(codeOwner, this.monaco)
-      this.addTextDocument(textDocument)
-    }
-    this.setActiveTextDocument(id)
+  /** The "main" (initially opened) text document */
+  get mainTextDocument() {
+    return this.getTextDocument(this.mainTextDocumentId)
   }
 
   async insertSnippet(snippet: string, range: Range) {
@@ -291,11 +250,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return this.selectionRef.value
   }
 
-  private _monaco: Monaco | null = null
-  get monaco() {
-    if (this._monaco == null) throw new Error('Monaco not initialized')
-    return this._monaco
-  }
   private _editor: MonacoEditor | null = null
   get editor() {
     if (this._editor == null) throw new Error('Editor not initialized')
@@ -315,16 +269,11 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.isCopilotActiveRef.value = active
   }
 
-  init(monaco: Monaco, editor: MonacoEditor, editorEl: HTMLElement) {
-    this._monaco = monaco
+  init(editor: MonacoEditor, editorEl: HTMLElement) {
     this._editor = editor
     this._editorEl = editorEl
 
-    this.addDisposer(
-      watchEffect(() => {
-        this.initMainTextDocument(getSelectedCodeOwner(this.project))
-      })
-    )
+    this.setActiveTextDocument(this.mainTextDocumentId)
 
     this.addDisposable(
       editor.onDidChangeCursorPosition((e) => {
@@ -478,6 +427,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     this.completionController.dispose()
     this.hoverController.dispose()
     this.apiReferenceController.dispose()
+    this._editor?.setModel(null)
     super.dispose()
   }
 }

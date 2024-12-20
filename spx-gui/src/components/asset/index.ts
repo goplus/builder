@@ -14,19 +14,19 @@ import { Sprite } from '@/models/sprite'
 import { Animation } from '@/models/animation'
 import { saveFiles } from '@/models/common/cloud'
 import { Monitor } from '@/models/widget/monitor'
+import * as assetName from '@/models/common/asset-name'
+import type { Costume } from '@/models/costume'
+import type { Widget } from '@/models/widget'
 import SoundRecorderModal from '../editor/sound/SoundRecorderModal.vue'
+import { useEditorCtx } from '../editor/EditorContextProvider.vue'
+import { useCodeEditorCtx } from '../editor/code-editor/context'
+import { getResourceIdentifier } from '../editor/code-editor/common'
 import AssetLibraryModal from './library/AssetLibraryModal.vue'
 import AssetAddModal from './library/AssetAddModal.vue'
 import LoadFromScratchModal from './scratch/LoadFromScratchModal.vue'
 import PreprocessModal from './preprocessing/PreprocessModal.vue'
 import GroupCostumesModal from './animation/GroupCostumesModal.vue'
-// TODO: Consider moving these components from `components/editor/` to `components/asset/`
-import SpriteRenameModal from '../editor/panels/sprite/SpriteRenameModal.vue'
-import SoundRenameModal from '../editor/sound/SoundRenameModal.vue'
-import CostumeRenameModal from '../editor/sprite/CostumeRenameModal.vue'
-import BackdropRenameModal from '../editor/stage/backdrop/BackdropRenameModal.vue'
-import AnimationRenameModal from '../editor/sprite/AnimationRenameModal.vue'
-import WidgetRenameModal from '../editor/stage/widget/WidgetRenameModal.vue'
+import RenameModal from './RenameModal.vue'
 
 function selectAsset(project: Project, asset: AssetModel | undefined) {
   if (asset instanceof Sprite) project.select({ type: 'sprite', id: asset.id })
@@ -196,25 +196,145 @@ export function useAddMonitor(autoSelect = true) {
 }
 
 export function useRenameSprite() {
-  return useModal(SpriteRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameSprite(sprite: Sprite) {
+    return invokeRenameModal({
+      target: {
+        name: sprite.name,
+        validateName(name) {
+          return assetName.validateSpriteName(name, editorCtx.project)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename sprite', zh: '重命名精灵' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(sprite), newName)
+            sprite.setName(newName)
+          })
+        },
+        inputTip: assetName.spriteNameTip
+      }
+    })
+  }
 }
 
 export function useRenameSound() {
-  return useModal(SoundRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameSound(sound: Sound) {
+    return invokeRenameModal({
+      target: {
+        name: sound.name,
+        validateName(name) {
+          return assetName.validateSoundName(name, editorCtx.project)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename sound', zh: '重命名声音' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(sound), newName)
+            sound.setName(newName)
+          })
+        },
+        inputTip: assetName.soundNameTip
+      }
+    })
+  }
 }
 
 export function useRenameCostume() {
-  return useModal(CostumeRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameCostume(costume: Costume) {
+    return invokeRenameModal({
+      target: {
+        name: costume.name,
+        validateName(name) {
+          return assetName.validateCostumeName(name, costume.parent)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename costume', zh: '重命名造型' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(costume), newName)
+            costume.setName(newName)
+          })
+        },
+        inputTip: assetName.costumeNameTip
+      }
+    })
+  }
 }
 
 export function useRenameBackdrop() {
-  return useModal(BackdropRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameBackdrop(backdrop: Backdrop) {
+    return invokeRenameModal({
+      target: {
+        name: backdrop.name,
+        validateName(name) {
+          return assetName.validateBackdropName(name, editorCtx.project.stage)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename backdrop', zh: '重命名背景' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(backdrop), newName)
+            backdrop.setName(newName)
+          })
+        },
+        inputTip: assetName.backdropNameTip
+      }
+    })
+  }
 }
 
 export function useRenameAnimation() {
-  return useModal(AnimationRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameAnimation(animation: Animation) {
+    return invokeRenameModal({
+      target: {
+        name: animation.name,
+        validateName(name) {
+          return assetName.validateAnimationName(name, animation.sprite)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename animation', zh: '重命名动画' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(animation), newName)
+            animation.setName(newName)
+          })
+        },
+        inputTip: assetName.animationNameTip
+      }
+    })
+  }
 }
 
 export function useRenameWidget() {
-  return useModal(WidgetRenameModal)
+  const editorCtx = useEditorCtx()
+  const codeEditorCtx = useCodeEditorCtx()
+  const invokeRenameModal = useModal(RenameModal)
+  return async function renameWidget(widget: Widget) {
+    return invokeRenameModal({
+      target: {
+        name: widget.name,
+        validateName(name) {
+          return assetName.validateWidgetName(name, editorCtx.project.stage)
+        },
+        async setName(newName) {
+          const action = { name: { en: 'Rename widget', zh: '重命名控件' } }
+          await editorCtx.project.history.doAction(action, async () => {
+            await codeEditorCtx.updateResourceReferencesOnRename(getResourceIdentifier(widget), newName)
+            widget.setName(newName)
+          })
+        },
+        inputTip: assetName.widgetNameTip
+      }
+    })
+  }
 }

@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import type { ResourceModel } from '@/models/common/resource-model'
 import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { Costume } from '@/models/costume'
 import { Sound } from '@/models/sound'
 import { Sprite } from '@/models/sprite'
 import { isWidget } from '@/models/widget'
-import { type IResourceModel } from '../../common'
 import AnimationItem from './AnimationItem.vue'
 import BackdropItem from './BackdropItem.vue'
 import CostumeItem from './CostumeItem.vue'
@@ -14,7 +14,7 @@ import SpriteItem from './SpriteItem.vue'
 import WidgetItem from './WidgetItem.vue'
 
 defineProps<{
-  resource: IResourceModel
+  resource: ResourceModel
   selected: boolean
 }>()
 </script>
