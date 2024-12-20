@@ -36,7 +36,7 @@ func (s *Server) textDocumentSignatureHelp(params *SignatureHelpParams) (*Signat
 	for i := range sig.Params().Len() {
 		param := sig.Params().At(i)
 		paramsInfo = append(paramsInfo, ParameterInformation{
-			Label: param.Name() + " " + param.Type().String(),
+			Label: param.Name() + " " + getSimplifiedTypeString(param.Type()),
 			// TODO: Add documentation.
 		})
 	}
@@ -54,7 +54,7 @@ func (s *Server) textDocumentSignatureHelp(params *SignatureHelpParams) (*Signat
 	if results := sig.Results(); results != nil && results.Len() > 0 {
 		var returnTypes []string
 		for i := range results.Len() {
-			returnTypes = append(returnTypes, results.At(i).Type().String())
+			returnTypes = append(returnTypes, getSimplifiedTypeString(results.At(i).Type()))
 		}
 		label += " (" + strings.Join(returnTypes, ", ") + ")"
 	}

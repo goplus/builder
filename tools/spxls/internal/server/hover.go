@@ -14,7 +14,7 @@ import (
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_hover
 func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
-	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
+	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
 			return nil, nil
@@ -89,7 +89,7 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 		case *types.Const:
 			defs = append(defs, makeConstHoverDefinition(result, obj))
 		case *types.Func:
-			defs = append(defs, makeFuncHoverDefinition(result, obj)...)
+			defs = append(defs, makeFuncHoverDefinition(result, spxFile, astFile, ident, obj)...)
 		case *types.TypeName:
 			defs = append(defs, makeTypeHoverDefinition(result, obj))
 		case *types.PkgName:
@@ -112,12 +112,12 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 // functions and types.
 var builtinDefinitionOverviews = map[string]string{
 	// Variables.
-	"nil": "var nil",
+	"nil": "var nil Type",
 
 	// Constants.
-	"false": "const false bool",
-	"iota":  "const iota untyped int",
-	"true":  "const true bool",
+	"false": "const false = 0 != 0",
+	"iota":  "const iota = 0",
+	"true":  "const true = 0 == 0",
 
 	// Types.
 	"any":        "type any interface{}",
@@ -207,7 +207,7 @@ func makeVarHoverDefinition(result *compileResult, v *types.Var) hoverDefinition
 	}
 	overview.WriteString(v.Name())
 	overview.WriteString(" ")
-	overview.WriteString(v.Type().String())
+	overview.WriteString(getSimplifiedTypeString(v.Type()))
 
 	var detail, typeName string
 	if pkgPath == "main" {
@@ -324,20 +324,47 @@ func makeConstHoverDefinition(result *compileResult, c *types.Const) hoverDefini
 }
 
 // makeFuncHoverDefinition makes hover definition for functions.
-func makeFuncHoverDefinition(result *compileResult, fun *types.Func) []hoverDefinition {
+func makeFuncHoverDefinition(result *compileResult, spxFile string, astFile *gopast.File, ident *gopast.Ident, fun *types.Func) []hoverDefinition {
 	pkg := fun.Pkg()
 	pkgPath := pkg.Path()
 	defIdent := result.defIdentOf(fun)
 
-	overview, parsedName, recvTypeNamed, overloadID := makeFuncHoverDefinitionOverview(fun)
-	var recvTypeNamedName string
-	if recvTypeNamed != nil {
-		recvTypeNamedName = recvTypeNamed.Obj().Name()
-		if pkgPath == spxPkgPath {
-			switch recvTypeNamedName {
-			case "Sprite":
-				recvTypeNamedName = "SpriteImpl"
+	overview, parsedName, recvTypeName, overloadID := makeFuncHoverDefinitionOverview(fun)
+	if recvTypeName != "" {
+		var actualRecvTypeName string
+		if path, _ := util.PathEnclosingInterval(astFile, ident.Pos(), ident.End()); len(path) > 0 {
+			for _, node := range slices.Backward(path) {
+				sel, ok := node.(*gopast.SelectorExpr)
+				if !ok {
+					continue
+				}
+				tv, ok := result.typeInfo.Types[sel.X]
+				if !ok {
+					continue
+				}
+				if named, ok := unwrapPointerType(tv.Type).(*types.Named); ok {
+					actualRecvTypeName = named.Obj().Name()
+					break
+				}
 			}
+		}
+		if actualRecvTypeName == "" && pkgPath == spxPkgPath {
+			astFileScope := result.typeInfo.Scopes[astFile]
+			innermostScope := result.innermostScopeAt(ident.Pos())
+			if innermostScope == astFileScope {
+				if spxFile == result.mainSpxFile {
+					actualRecvTypeName = "Game"
+				} else {
+					actualRecvTypeName = "SpriteImpl"
+				}
+			}
+		}
+		if actualRecvTypeName != "" {
+			recvTypeName = actualRecvTypeName
+		}
+
+		if pkgPath == spxPkgPath && recvTypeName == "Sprite" {
+			recvTypeName = "SpriteImpl"
 		}
 	}
 
@@ -348,20 +375,20 @@ func makeFuncHoverDefinition(result *compileResult, fun *types.Func) []hoverDefi
 			detail = decl.Doc.Text()
 		}
 	} else if pkgDoc, err := pkgdata.GetPkgDoc(pkgPath); err == nil {
-		if recvTypeNamed == nil {
+		if recvTypeName == "" {
 			detail = pkgDoc.Funcs[fun.Name()]
-		} else if spxRecvTypeDoc, ok := pkgDoc.Types[recvTypeNamedName]; ok {
+		} else if spxRecvTypeDoc, ok := pkgDoc.Types[recvTypeName]; ok {
 			detail = spxRecvTypeDoc.Methods[fun.Name()]
 		}
 	}
 
 	idName := parsedName
-	if recvTypeNamed != nil {
-		recvTypeNamedNameToDisplay := recvTypeNamedName
-		if pkgPath == spxPkgPath && recvTypeNamedName == "SpriteImpl" {
-			recvTypeNamedNameToDisplay = "Sprite"
+	if recvTypeName != "" {
+		recvTypeDisplayName := recvTypeName
+		if pkgPath == spxPkgPath && recvTypeDisplayName == "SpriteImpl" {
+			recvTypeDisplayName = "Sprite"
 		}
-		idName = recvTypeNamedNameToDisplay + "." + idName
+		idName = recvTypeDisplayName + "." + idName
 	}
 	defs := []hoverDefinition{
 		{
@@ -381,8 +408,8 @@ func makeFuncHoverDefinition(result *compileResult, fun *types.Func) []hoverDefi
 	if err != nil {
 		return defs
 	}
-	if recvTypeNamed != nil {
-		recvType := pkg.Scope().Lookup(recvTypeNamedName).Type()
+	if recvTypeName != "" {
+		recvType := pkg.Scope().Lookup(recvTypeName).Type()
 		if recvType == nil {
 			return defs
 		}
@@ -390,7 +417,7 @@ func makeFuncHoverDefinition(result *compileResult, fun *types.Func) []hoverDefi
 			return defs
 		}
 
-		recvTypeDoc, ok := pkgDoc.Types[recvTypeNamedName]
+		recvTypeDoc, ok := pkgDoc.Types[recvTypeName]
 		if !ok {
 			return defs
 		}
@@ -468,7 +495,7 @@ func makeFuncHoverDefinition(result *compileResult, fun *types.Func) []hoverDefi
 
 // makeFuncHoverDefinitionOverview makes hover definition overview for the
 // provided function.
-func makeFuncHoverDefinitionOverview(fun *types.Func) (overview, parsedName string, recvTypeNamed *types.Named, overloadID *string) {
+func makeFuncHoverDefinitionOverview(fun *types.Func) (overview, parsedName, recvTypeName string, overloadID *string) {
 	pkg := fun.Pkg()
 	pkgPath := pkg.Path()
 	isGopPkg := pkg.Scope().Lookup(util.GopPackage) != nil
@@ -482,23 +509,18 @@ func makeFuncHoverDefinitionOverview(fun *types.Func) (overview, parsedName stri
 	if recv := sig.Recv(); recv != nil {
 		recvType := unwrapPointerType(recv.Type())
 		if named, ok := recvType.(*types.Named); ok {
-			recvTypeNamed = named
+			recvTypeName = named.Obj().Name()
 		}
 	} else if isGopPkg {
 		switch {
 		case strings.HasPrefix(name, util.GoptPrefix):
-			recvTypeName, methodName, ok := util.SplitGoptMethod(name)
+			splitRecvTypeName, methodName, ok := util.SplitGoptMethod(name)
 			if !ok {
 				break
 			}
 			name = methodName
+			recvTypeName = splitRecvTypeName
 			isGoptMethod = true
-
-			recvTypeObj := pkg.Scope().Lookup(recvTypeName)
-			if recvTypeObj == nil {
-				break
-			}
-			recvTypeNamed = recvTypeObj.Type().(*types.Named)
 		}
 	}
 
@@ -523,14 +545,14 @@ func makeFuncHoverDefinitionOverview(fun *types.Func) (overview, parsedName stri
 		param := sig.Params().At(i)
 		sb.WriteString(param.Name())
 		sb.WriteString(" ")
-		sb.WriteString(param.Type().String())
+		sb.WriteString(getSimplifiedTypeString(param.Type()))
 	}
 	sb.WriteString(")")
 
 	if results := sig.Results(); results.Len() > 0 {
 		if results.Len() == 1 {
 			sb.WriteString(" ")
-			sb.WriteString(results.At(0).Type().String())
+			sb.WriteString(getSimplifiedTypeString(results.At(0).Type()))
 		} else {
 			sb.WriteString(" (")
 			for i := range results.Len() {
@@ -542,7 +564,7 @@ func makeFuncHoverDefinitionOverview(fun *types.Func) (overview, parsedName stri
 					sb.WriteString(name)
 					sb.WriteString(" ")
 				}
-				sb.WriteString(result.Type().String())
+				sb.WriteString(getSimplifiedTypeString(result.Type()))
 			}
 			sb.WriteString(")")
 		}
@@ -563,9 +585,9 @@ func makeTypeHoverDefinition(result *compileResult, typeName *types.TypeName) ho
 	overview.WriteString(typeName.Name())
 	overview.WriteString(" ")
 	if named, ok := typeName.Type().(*types.Named); ok {
-		overview.WriteString(named.Underlying().String())
+		overview.WriteString(getSimplifiedTypeString(named.Underlying()))
 	} else {
-		overview.WriteString(typeName.Type().String())
+		overview.WriteString(getSimplifiedTypeString(typeName.Type()))
 	}
 
 	var detail string

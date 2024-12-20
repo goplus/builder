@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"slices"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
 	gopast "github.com/goplus/gop/ast"
@@ -46,8 +47,7 @@ func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) 
 
 		kind := Text
 
-		for i := len(path) - 2; i >= 0; i-- {
-			parent := path[i]
+		for _, parent := range slices.Backward(path[:len(path)-1]) {
 			switch p := parent.(type) {
 			case *gopast.ValueSpec:
 				for _, name := range p.Names {

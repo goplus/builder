@@ -50,9 +50,14 @@ fmt.Println(int8(1))
 play MySound
 MySprite.turn Left
 MySprite.setCostume "costume1"
+Game.onClick => {}
+onClick => {}
+on "MySprite"
 run "assets", {Title: "My Game"}
 `),
 				"MySprite.spx": []byte(`
+MySprite.onClick => {}
+onClick => {}
 onStart => {
 	MySprite.turn Right
 	clone
@@ -312,29 +317,100 @@ onStart => {
 			End:   Position{Line: 37, Character: 19},
 		}, mySpriteSetCostumeFuncHover.Range)
 
-		mySpriteOnStartFuncHover, err := s.textDocumentHover(&HoverParams{
+		GameOnClickHover, err := s.textDocumentHover(&HoverParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
-				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
-				Position:     Position{Line: 1, Character: 1},
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 38, Character: 5},
 			},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, mySpriteOnStartFuncHover)
+		require.NotNil(t, GameOnClickHover)
 		assert.Equal(t, &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.onStart\" overview=\"func onStart(onStart func())\">\n</definition-item>\n",
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Game.onClick\" overview=\"func onClick(onClick func())\">\n</definition-item>\n",
 			},
 			Range: Range{
-				Start: Position{Line: 1, Character: 0},
-				End:   Position{Line: 1, Character: 7},
+				Start: Position{Line: 38, Character: 5},
+				End:   Position{Line: 38, Character: 12},
 			},
-		}, mySpriteOnStartFuncHover)
+		}, GameOnClickHover)
+
+		mainSpxOnClickHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 39, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxOnClickHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Game.onClick\" overview=\"func onClick(onClick func())\">\n</definition-item>\n",
+			},
+			Range: Range{
+				Start: Position{Line: 39, Character: 0},
+				End:   Position{Line: 39, Character: 7},
+			},
+		}, mainSpxOnClickHover)
+
+		mainSpxOnHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+				Position:     Position{Line: 40, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxOnHover)
+		assert.Contains(t, mainSpxOnHover.Contents.Value, `def-id="gop:github.com/goplus/spx?Game.on#2"`)
+		assert.Equal(t, Range{
+			Start: Position{Line: 40, Character: 0},
+			End:   Position{Line: 40, Character: 2},
+		}, mainSpxOnHover.Range)
+
+		mySpriteOnClickFuncHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 1, Character: 9},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mySpriteOnClickFuncHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.onClick\" overview=\"func onClick(onClick func())\">\n</definition-item>\n",
+			},
+			Range: Range{
+				Start: Position{Line: 1, Character: 9},
+				End:   Position{Line: 1, Character: 16},
+			},
+		}, mySpriteOnClickFuncHover)
+
+		mySpriteSpxOnClickFuncHover, err := s.textDocumentHover(&HoverParams{
+			TextDocumentPositionParams: TextDocumentPositionParams{
+				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
+				Position:     Position{Line: 2, Character: 0},
+			},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, mySpriteSpxOnClickFuncHover)
+		assert.Equal(t, &Hover{
+			Contents: MarkupContent{
+				Kind:  Markdown,
+				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.onClick\" overview=\"func onClick(onClick func())\">\n</definition-item>\n",
+			},
+			Range: Range{
+				Start: Position{Line: 2, Character: 0},
+				End:   Position{Line: 2, Character: 7},
+			},
+		}, mySpriteSpxOnClickFuncHover)
 
 		mySpriteCloneFuncHover, err := s.textDocumentHover(&HoverParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
-				Position:     Position{Line: 3, Character: 1},
+				Position:     Position{Line: 5, Character: 1},
 			},
 		})
 		require.NoError(t, err)
@@ -345,15 +421,15 @@ onStart => {
 				Value: "<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#0\" overview=\"func clone()\">\n</definition-item>\n<definition-item def-id=\"gop:github.com/goplus/spx?Sprite.clone#1\" overview=\"func clone(data interface{})\">\n</definition-item>\n",
 			},
 			Range: Range{
-				Start: Position{Line: 3, Character: 1},
-				End:   Position{Line: 3, Character: 6},
+				Start: Position{Line: 5, Character: 1},
+				End:   Position{Line: 5, Character: 6},
 			},
 		}, mySpriteCloneFuncHover)
 
 		imagePointFieldHover, err := s.textDocumentHover(&HoverParams{
 			TextDocumentPositionParams: TextDocumentPositionParams{
 				TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
-				Position:     Position{Line: 4, Character: 12},
+				Position:     Position{Line: 6, Character: 12},
 			},
 		})
 		require.NoError(t, err)
@@ -364,8 +440,8 @@ onStart => {
 				Value: "<definition-item def-id=\"gop:image?Point.X\" overview=\"field X int\">\n</definition-item>\n",
 			},
 			Range: Range{
-				Start: Position{Line: 4, Character: 12},
-				End:   Position{Line: 4, Character: 13},
+				Start: Position{Line: 6, Character: 12},
+				End:   Position{Line: 6, Character: 13},
 			},
 		}, imagePointFieldHover)
 	})
