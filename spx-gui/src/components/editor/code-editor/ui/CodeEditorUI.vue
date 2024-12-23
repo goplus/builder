@@ -59,6 +59,8 @@ import CopilotUI from './copilot/CopilotUI.vue'
 import DiagnosticsUI from './diagnostics/DiagnosticsUI.vue'
 import ResourceReferenceUI from './resource-reference/ResourceReferenceUI.vue'
 import ContextMenuUI from './context-menu/ContextMenuUI.vue'
+import DocumentTabs from './document-tab/DocumentTabs.vue'
+import ZoomControl from './ZoomControl.vue'
 
 const props = defineProps<{
   codeFilePath: string
@@ -117,13 +119,17 @@ const uiRef = computed(() => {
   )
 })
 
-const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
+const initialFontSize = 12
+const fontSize = useLocalStorage('spx-gui-code-font-size', initialFontSize)
+
+const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstructionOptions>(() => ({
   language: 'spx',
   theme,
   tabSize,
   insertSpaces,
+  fontSize: fontSize.value,
   contextmenu: false
-}
+}))
 
 const monacEditorInitDataRef = shallowRef<MonacoEditorInitData | null>(null)
 
@@ -140,6 +146,13 @@ watch(
     const initData = await untilNotNull(monacEditorInitDataRef)
     signal.throwIfAborted()
     ui.init(...initData)
+
+    ui.editor.onDidChangeConfiguration((e) => {
+      const fontSizeId = ui.monaco.editor.EditorOption.fontSize
+      if (e.hasChanged(fontSizeId)) {
+        fontSize.value = ui.editor.getOptions().get(fontSizeId)
+      }
+    })
 
     codeEditorCtx.attachUI(ui)
     signal.addEventListener('abort', () => {
@@ -200,6 +213,19 @@ watchEffect((onCleanup) => {
   )
   signal.addEventListener('abort', endResizing)
 })
+
+function zoomIn() {
+  uiRef.value.editor.trigger('keyboard', `editor.action.fontZoomIn`, {})
+}
+
+function zoomOut() {
+  uiRef.value.editor.trigger('keyboard', `editor.action.fontZoomOut`, {})
+}
+
+function zoomReset() {
+  uiRef.value.editor.updateOptions({ fontSize: initialFontSize })
+  uiRef.value.editor.trigger('keyboard', `editor.action.fontZoomReset`, {})
+}
 </script>
 
 <template>
@@ -241,6 +267,10 @@ watchEffect((onCleanup) => {
     <DiagnosticsUI :controller="uiRef.diagnosticsController" />
     <ResourceReferenceUI :controller="uiRef.resourceReferenceController" />
     <ContextMenuUI :controller="uiRef.contextMenuController" />
+    <aside class="right-sidebar">
+      <DocumentTabs class="document-tabs" />
+      <ZoomControl class="zoom-control" @in="zoomIn" @out="zoomOut" @reset="zoomReset" />
+    </aside>
   </div>
 </template>
 
@@ -323,10 +353,31 @@ watchEffect((onCleanup) => {
 .monaco-editor {
   flex: 1 1 0;
   min-width: 0;
+  margin: 12px 0;
 }
 
 :global(.code-editor-content-widget) {
   z-index: 10; // Ensure content widget is above other elements, especially cursor
   padding: 2px 0; // Gap between content widget and text
+}
+
+.right-sidebar {
+  padding: 12px 8px;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+
+  .document-tabs {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .zoom-control {
+    flex: 0 0 auto;
+  }
 }
 </style>

@@ -30,13 +30,26 @@ watch(
     const signal = getCleanupSignal(onCleanup)
     const projectRunner = await untilNotNull(projectRunnerRef)
     signal.throwIfAborted()
-    projectRunner.run()
+    editorCtx.runtime.clearOutputs()
+    projectRunner.run().then(() => {
+      editorCtx.runtime.setRunning({ mode: 'debug', initializing: false })
+    })
     signal.addEventListener('abort', () => {
       projectRunner.stop()
     })
   },
   { immediate: true }
 )
+
+defineExpose({
+  async rerun() {
+    editorCtx.runtime.setRunning({ mode: 'debug', initializing: true })
+    const projectRunner = await untilNotNull(projectRunnerRef)
+    editorCtx.runtime.clearOutputs()
+    await projectRunner.rerun()
+    editorCtx.runtime.setRunning({ mode: 'debug', initializing: false })
+  }
+})
 </script>
 
 <template>

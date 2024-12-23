@@ -6,17 +6,25 @@ import type { Project } from '@/models/project'
 // TODO: move TextDocumentRange to some proper place
 import type { TextDocumentRange } from '../components/editor/code-editor/common'
 
-export type RunningMode =
-  /** Not running */
-  | 'none'
-  /** Debugging, run in place */
-  | 'debug'
-  /** Running full screen */
-  | 'run'
+export type RunningState =
+  | {
+      /** Not running */
+      mode: 'none'
+    }
+  | {
+      /** Debugging, run in place */
+      mode: 'debug'
+      /** Initializing for debug */
+      initializing: boolean
+    }
+  | {
+      /** Running full screen */
+      mode: 'run'
+    }
 
 export enum RuntimeOutputKind {
-  Error,
-  Log
+  Error = 'error',
+  Log = 'log'
 }
 
 export interface RuntimeOutput {
@@ -29,13 +37,10 @@ export interface RuntimeOutput {
 export class Runtime extends Emitter<{
   didChangeOutput: void
 }> {
-  running: RunningMode = 'none'
+  running: RunningState = { mode: 'none' }
 
-  setRunning(running: RunningMode) {
+  setRunning(running: RunningState) {
     this.running = running
-    if (running === 'debug') {
-      this.clearOutputs()
-    }
   }
 
   outputs: RuntimeOutput[] = []
@@ -48,7 +53,7 @@ export class Runtime extends Emitter<{
     this.outputs.push(output)
   }
 
-  private clearOutputs() {
+  clearOutputs() {
     this.outputs.splice(0, this.outputs.length)
   }
 
@@ -70,7 +75,7 @@ export class Runtime extends Emitter<{
         () => reactiveThis.project.filesHash,
         async (_, oldHash) => {
           if (oldHash == null) return
-          await until(() => reactiveThis.running === 'none')
+          await until(() => reactiveThis.running.mode === 'none')
           reactiveThis.clearOutputs()
         }
       )

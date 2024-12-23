@@ -1,5 +1,5 @@
 import { uniqueId } from 'lodash'
-import { ref, shallowRef } from 'vue'
+import { ref, shallowReactive, shallowRef } from 'vue'
 import { Disposable } from '@/utils/disposable'
 import { timeout } from '@/utils/utils'
 import type { I18n } from '@/utils/i18n'
@@ -21,7 +21,8 @@ import {
   type ResourceIdentifier,
   getResourceModel,
   type TextDocumentRange,
-  isRangeEmpty
+  isRangeEmpty,
+  textDocumentIdEq
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor } from '../monaco'
@@ -188,6 +189,23 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   resourceReferenceController = new ResourceReferenceController(this)
   documentBase: IDocumentBase | null = null
 
+  /** Temporary text document IDs */
+  private tempTextDocumentIds = shallowReactive<TextDocumentIdentifier[]>([])
+
+  /** Temporary text documents */
+  get tempTextDocuments() {
+    return this.tempTextDocumentIds.map((id) => {
+      const doc = this.getTextDocument(id)
+      if (doc == null) throw new Error(`Text document not found: ${id.uri}`)
+      return doc
+    })
+  }
+
+  closeTempTextDocuments() {
+    this.setActiveTextDocument(this.mainTextDocumentId)
+    this.tempTextDocumentIds.splice(0)
+  }
+
   /** Current active text document ID */
   private activeTextDocumentIdRef = shallowRef<TextDocumentIdentifier | null>(null)
 
@@ -203,6 +221,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       this.activeTextDocumentIdRef.value = null
       this.editor.setModel(null)
       return
+    }
+    if (
+      !textDocumentIdEq(textDocument.id, this.mainTextDocumentId) &&
+      !this.tempTextDocumentIds.some((id) => textDocumentIdEq(id, textDocument.id))
+    ) {
+      this.tempTextDocumentIds.push(textDocument.id)
     }
     this.activeTextDocumentIdRef.value = textDocument.id
     this.editor.setModel(textDocument.monacoTextModel)

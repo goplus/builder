@@ -48,7 +48,7 @@ export function initMonaco(
       { token: 'string', foreground: color.green[300] },
       { token: 'operator', foreground: color.blue.main },
       { token: 'number', foreground: color.blue[600] },
-      { token: 'keyword', foreground: color.red[300] },
+      { token: 'keyword', foreground: color.red[600] },
       { token: 'typeKeywords', foreground: color.purple.main },
       { token: 'brackets', foreground: color.title }
     ],

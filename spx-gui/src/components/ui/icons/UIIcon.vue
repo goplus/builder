@@ -9,6 +9,7 @@ import file from './file.svg?raw'
 import arrowDown from './arrow-down.svg?raw'
 import arrowUp from './arrow-up.svg?raw'
 import play from './play.svg?raw'
+import playHollow from './play-hollow.svg?raw'
 import playCircle from './play-circle.svg?raw'
 import loading from './loading.svg?raw'
 import check from './check.svg?raw'
@@ -25,6 +26,7 @@ import more from './more.svg?raw'
 import exchange from './exchange.svg?raw'
 import search from './search.svg?raw'
 import close from './close.svg?raw'
+import closeCircle from './close-circle.svg?raw'
 import rotate from './rotate.svg?raw'
 import share from './share.svg?raw'
 import arrowAlt from './arrow-alt.svg?raw'
@@ -52,6 +54,7 @@ const typeIconMap = {
   arrowDown,
   arrowUp,
   play,
+  playHollow,
   playCircle,
   loading,
   check,
@@ -68,6 +71,7 @@ const typeIconMap = {
   exchange,
   search,
   close,
+  closeCircle,
   rotate,
   share,
   arrowAlt,

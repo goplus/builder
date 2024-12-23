@@ -36,4 +36,8 @@ const codeHtml = computed(() => {
   <div v-else class="code-view" :style="{ tabSize }" v-html="codeHtml"></div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.code-view {
+  font-family: var(--ui-font-family-code);
+}
+</style>

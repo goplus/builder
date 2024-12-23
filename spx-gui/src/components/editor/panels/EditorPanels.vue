@@ -1,5 +1,5 @@
 <template>
-  <div v-show="running !== 'debug'" class="editor-panels">
+  <div v-show="running.mode !== 'debug'" class="editor-panels">
     <UICard class="main">
       <SpritesPanel :expanded="expandedPanel === 'sprites'" @expand="expand('sprites')" />
       <SoundsPanel :expanded="expandedPanel === 'sounds'" @expand="expand('sounds')" />
@@ -8,7 +8,7 @@
       <StagePanel></StagePanel>
     </UICard>
   </div>
-  <ConsolePanel v-show="running === 'debug'" class="console-panel" />
+  <ConsolePanel v-show="running.mode === 'debug'" class="console-panel" />
 </template>
 
 <script setup lang="ts">

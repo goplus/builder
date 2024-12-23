@@ -9,6 +9,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import { registerPlayer } from '@/utils/player-registry'
+import { until } from '@/utils/utils'
 import { useFileUrl } from '@/utils/file'
 import { Project } from '@/models/project'
 import { UIImg, UILoading } from '@/components/ui'
@@ -16,14 +17,13 @@ import IframeDisplay, { preload } from './IframeDisplay.vue'
 
 const props = defineProps<{ project: Project }>()
 
-const zipData = ref<ArrayBuffer | null>(null)
-const loading = ref(false)
-
 const emit = defineEmits<{
   console: [type: 'log' | 'warn', args: unknown[]]
 }>()
 
 const [thumbnailUrl, thumbnailUrlLoading] = useFileUrl(() => props.project.thumbnail)
+const zipData = ref<ArrayBuffer | null>(null)
+const loading = ref(false)
 
 const handleConsole = (type: 'log' | 'warn', args: unknown[]) => {
   emit('console', type, args)
@@ -50,6 +50,7 @@ defineExpose({
     registered.onStart()
     const gbpFile = await props.project.exportGbpFile()
     zipData.value = await gbpFile.arrayBuffer()
+    await until(() => !loading.value)
   },
   stop() {
     zipData.value = null

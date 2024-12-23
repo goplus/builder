@@ -106,14 +106,18 @@ function renderHastNode(node: hast.Node, components: Components, key?: string | 
 function renderHastElement(element: hast.Element, components: Components, key?: string | number): VNode {
   let props: Record<string, string | number | boolean>
   let type: string | Component
-  let children: VRendered | (() => VRendered)
+  let children: VRendered | (() => VRendered) | undefined
   const customComponents = components.custom ?? {}
   if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
     type = customComponents[element.tagName]
     props = hastProps2VueProps(element.properties)
-    // Use function slot for custom components to avoid Vue warning:
-    // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
-    children = () => element.children.map((c, i) => renderHastNode(c, components, i))
+    if (element.children.length === 0) {
+      children = undefined
+    } else {
+      // Use function slot for custom components to avoid Vue warning:
+      // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
+      children = () => element.children.map((c, i) => renderHastNode(c, components, i))
+    }
   } else if (
     // Render code blocks with `components.codeBlock`
     // TODO: It may be simpler to recognize & process code blocks based on mdast instead of hast
