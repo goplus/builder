@@ -215,3 +215,14 @@ func isRenameableObject(obj types.Object) bool {
 	}
 	return false
 }
+
+// getSimplifiedTypeString returns the string representation of the given type,
+// with the spx package name omitted while other packages use their short names.
+func getSimplifiedTypeString(typ types.Type) string {
+	return types.TypeString(typ, func(p *types.Package) string {
+		if p.Path() == spxPkgPath {
+			return ""
+		}
+		return p.Name()
+	})
+}

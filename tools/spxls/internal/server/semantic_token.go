@@ -316,7 +316,7 @@ func (s *Server) textDocumentSemanticTokensFull(params *SemanticTokensParams) (*
 				addToken(node.Rparen, node.Rparen+1, OperatorType, nil)
 			}
 		case *gopast.FuncDecl:
-			if result.isSpxAutoGenMethodDecl(node) {
+			if node.Shadow {
 				break
 			}
 
