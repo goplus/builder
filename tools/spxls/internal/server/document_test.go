@@ -39,7 +39,7 @@ onStart => {
 		}
 		linksForMainSpx, err := s.textDocumentDocumentLink(paramsForMainSpx)
 		require.NoError(t, err)
-		require.Len(t, linksForMainSpx, 2)
+		require.Len(t, linksForMainSpx, 8)
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 2, Character: 1},
@@ -52,6 +52,20 @@ onStart => {
 		})
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 8},
+			},
+			Target: toURI("gop:main?MySound"),
+		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 2, Character: 10},
+				End:   Position{Line: 2, Character: 15},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Sound"),
+		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
 				Start: Position{Line: 3, Character: 1},
 				End:   Position{Line: 3, Character: 9},
 			},
@@ -60,13 +74,41 @@ onStart => {
 				Kind: SpxResourceRefKindAutoBinding,
 			},
 		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 3, Character: 1},
+				End:   Position{Line: 3, Character: 9},
+			},
+			Target: toURI("gop:main?MySprite"),
+		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 3, Character: 10},
+				End:   Position{Line: 3, Character: 16},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Sprite"),
+		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 5, Character: 0},
+				End:   Position{Line: 5, Character: 3},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Game.run"),
+		})
+		assert.Contains(t, linksForMainSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 5, Character: 15},
+				End:   Position{Line: 5, Character: 20},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Game.Title"),
+		})
 
 		paramsForMySpriteSpx := &DocumentLinkParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///MySprite.spx"},
 		}
 		linksForMySpriteSpx, err := s.textDocumentDocumentLink(paramsForMySpriteSpx)
 		require.NoError(t, err)
-		require.Len(t, linksForMySpriteSpx, 7)
+		require.Len(t, linksForMySpriteSpx, 24)
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 3, Character: 12},
@@ -86,6 +128,13 @@ onStart => {
 			Data: SpxResourceRefDocumentLinkData{
 				Kind: SpxResourceRefKindStringLiteral,
 			},
+		})
+		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 2, Character: 1},
+				End:   Position{Line: 2, Character: 5},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Game.play#3"),
 		})
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{

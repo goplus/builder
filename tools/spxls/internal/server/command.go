@@ -132,22 +132,16 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		return nil, nil
 	}
 	innermostScope := result.innermostScopeAt(pos)
+	if innermostScope == nil {
+		return nil, nil
+	}
 
-	var definitions []SpxDefinitionIdentifier
-	addDefinition := func(pkg, name string, overloadID *string) {
-		def := SpxDefinitionIdentifier{
-			OverloadID: overloadID,
-		}
-		if pkg != "" {
-			def.Package = &pkg
-		}
-		if name != "" {
-			def.Name = &name
-		}
-		if !slices.ContainsFunc(definitions, func(def SpxDefinitionIdentifier) bool {
-			return fromStringPtr(def.Name) == name && fromStringPtr(def.OverloadID) == fromStringPtr(overloadID)
+	var definitionIDs []SpxDefinitionIdentifier
+	addDefinitionID := func(defID SpxDefinitionIdentifier) {
+		if !slices.ContainsFunc(definitionIDs, func(existingDefID SpxDefinitionIdentifier) bool {
+			return existingDefID.String() == defID.String()
 		}) {
-			definitions = append(definitions, def)
+			definitionIDs = append(definitionIDs, defID)
 		}
 	}
 
@@ -209,7 +203,10 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			if obj == nil {
 				continue
 			}
-			addDefinition(obj.Pkg().Name(), obj.Name(), nil)
+			addDefinitionID(SpxDefinitionIdentifier{
+				Package: util.ToPtr(obj.Pkg().Name()),
+				Name:    util.ToPtr(obj.Name()),
+			})
 
 			isThis := name == "this"
 			isSpxFileMatch := spxFile == name+".spx" || (spxFile == result.mainSpxFile && name == "Game")
@@ -230,7 +227,10 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 				switch member := member.(type) {
 				case *types.Var:
-					addDefinition(memberPkgPath, member.Name(), nil)
+					addDefinitionID(SpxDefinitionIdentifier{
+						Package: util.ToPtr(memberPkgPath),
+						Name:    util.ToPtr(member.Name()),
+					})
 				case *types.Func:
 					var methodNames []string
 					if methodOverloads := expandGoptOverloadedMethod(member); len(methodOverloads) > 0 {
@@ -244,14 +244,14 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 					}
 
 					for _, methodName := range methodNames {
-						funcName, overloadID := parseGopFuncName(methodName)
-						if _, ok := calledEventHandlers[named.String()+"."+funcName]; ok {
+						parsedName, overloadID := parseGopFuncName(methodName)
+						if _, ok := calledEventHandlers[named.String()+"."+parsedName]; ok {
 							return
 						}
 
-						receiverName := named.Obj().Name()
+						recvTypeName := named.Obj().Name()
 						if memberPkgPath == spxPkgPath {
-							if receiverName != "SpriteImpl" && receiverName != "Game" {
+							if recvTypeName != "SpriteImpl" && recvTypeName != "Game" {
 								for _, namedParent := range namedParents {
 									if namedParent.Obj().Pkg().Path() != spxPkgPath {
 										continue
@@ -259,17 +259,21 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 									namedParentName := namedParent.Obj().Name()
 									if namedParentName == "SpriteImpl" || namedParentName == "Game" {
-										receiverName = namedParentName
+										recvTypeName = namedParentName
 										break
 									}
 								}
 							}
-							if receiverName == "SpriteImpl" {
-								receiverName = "Sprite"
+							if recvTypeName == "SpriteImpl" {
+								recvTypeName = "Sprite"
 							}
 						}
 
-						addDefinition(memberPkgPath, receiverName+"."+funcName, overloadID)
+						addDefinitionID(SpxDefinitionIdentifier{
+							Package:    util.ToPtr(memberPkgPath),
+							Name:       util.ToPtr(recvTypeName + "." + parsedName),
+							OverloadID: overloadID,
+						})
 					}
 				}
 			})
@@ -287,35 +291,26 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			}
 
 			if obj.Exported() {
-				addDefinition(spxPkgPath, name, overloadID)
+				addDefinitionID(SpxDefinitionIdentifier{
+					Package:    util.ToPtr(spxPkgPath),
+					Name:       util.ToPtr(name),
+					OverloadID: overloadID,
+				})
 			}
 		}
 	}
 
-	// Add builtin definitions.
-	for _, name := range types.Universe.Names() {
-		if obj := types.Universe.Lookup(name); obj != nil && obj.Pkg() == nil {
-			addDefinition("builtin", obj.Name(), nil)
-		}
-	}
-
 	// Add other definitions.
-	for _, def := range generalDefinitions {
-		addDefinition("", *def.Name, nil)
+	for _, def := range GetSpxBuiltinDefinitions() {
+		addDefinitionID(def.ID)
+	}
+	for _, def := range SpxGeneralDefinitions {
+		addDefinitionID(def.ID)
 	}
 	if innermostScope == astFileScope {
-		addDefinition("", "func_declaration", nil)
+		for _, def := range SpxFileScopeDefinitions {
+			addDefinitionID(def.ID)
+		}
 	}
-
-	return definitions, nil
-}
-
-// generalDefinitions are general definitions that are scope-independent.
-var generalDefinitions = []SpxDefinitionIdentifier{
-	{Name: toStringPtr("for_iterate")},
-	{Name: toStringPtr("for_loop_with_condition")},
-	{Name: toStringPtr("for_loop_with_range")},
-	{Name: toStringPtr("if_statement")},
-	{Name: toStringPtr("if_else_statement")},
-	{Name: toStringPtr("var_declaration")},
+	return definitionIDs, nil
 }

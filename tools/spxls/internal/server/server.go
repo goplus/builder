@@ -150,14 +150,6 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		s.runWithResponse(c.ID(), func() (any, error) {
 			return s.textDocumentDocumentLink(&params)
 		})
-	case "documentLink/resolve":
-		var params DocumentLink
-		if err := UnmarshalJSON(c.Params(), &params); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		s.runWithResponse(c.ID(), func() (any, error) {
-			return s.documentLinkResolve(&params)
-		})
 	case "textDocument/diagnostic":
 		var params DocumentDiagnosticParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {

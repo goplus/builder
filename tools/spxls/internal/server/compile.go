@@ -7,9 +7,9 @@ import (
 	"io/fs"
 	"path"
 	"slices"
-	"sort"
 	"strings"
 
+	"github.com/goplus/builder/tools/spxls/internal/util"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/goplus/gogen"
 	gopast "github.com/goplus/gop/ast"
@@ -93,55 +93,17 @@ type compileResult struct {
 // innermostScopeAt returns the innermost scope that contains the given
 // position. It returns nil if not found.
 func (r *compileResult) innermostScopeAt(pos goptoken.Pos) *types.Scope {
-	var innermostScope *types.Scope
-	mainPkgScope := r.mainPkg.Scope()
-	// The `MainEntry` scope is the last child of the main package and covers all positions in the workspace.
-	// We need to skip `MainEntry` when searching for the innermost scope, as the file scope will be more precise.
-	// Especially for positions in trailing empty lines of a file, the file scope does not contain them in its position range.
-	var mainEntryScope *types.Scope
-	if mainPkgScope.Len() > 0 {
-		mainEntryScope = mainPkgScope.Child(mainPkgScope.Len() - 1)
+	fileScope := r.typeInfo.Scopes[r.mainASTPkg.Files[r.fset.Position(pos).Filename]]
+	if fileScope == nil {
+		return nil
 	}
+	innermostScope := fileScope
 	for _, scope := range r.typeInfo.Scopes {
-		if scope == mainEntryScope {
-			continue
-		}
-		if scope.Contains(pos) && (innermostScope == nil || innermostScope.Contains(scope.Pos())) {
+		if scope.Contains(pos) && fileScope.Contains(scope.Pos()) && innermostScope.Contains(scope.Pos()) {
 			innermostScope = scope
 		}
 	}
-	if innermostScope == nil {
-		// Fallback to file scope as a last resort.
-		innermostScope = r.typeInfo.Scopes[r.mainASTPkg.Files[r.fset.Position(pos).Filename]]
-	}
 	return innermostScope
-}
-
-// directScopesAt returns all scopes that directly contain the position, meaning
-// the scope contains the position but none of its children scopes do.
-func (r *compileResult) directScopesAt(pos goptoken.Pos) []*types.Scope {
-	// Collect all scopes containing the pos.
-	var scopes []*types.Scope
-	for _, scope := range r.typeInfo.Scopes {
-		if scope.Contains(pos) {
-			scopes = append(scopes, scope)
-		}
-	}
-
-	// Sort from innermost to outermost.
-	sort.Slice(scopes, func(i, j int) bool {
-		return scopes[i].Pos() >= scopes[j].Pos() && scopes[i].End() <= scopes[j].End()
-	})
-
-	// Keep only scopes whose children don't contain the pos.
-	return slices.DeleteFunc(scopes, func(scope *types.Scope) bool {
-		for i := range scope.NumChildren() {
-			if scope.Child(i).Contains(pos) {
-				return true
-			}
-		}
-		return false
-	})
 }
 
 // identAndObjectAtASTFilePosition returns the identifier and object at the
@@ -202,6 +164,51 @@ func (r *compileResult) refIdentsOf(obj types.Object) []*gopast.Ident {
 		}
 	}
 	return idents
+}
+
+// inferSelectorTypeNameForIdent infers the selector type name for the given
+// identifier. It returns empty string if no selector can be inferred.
+func (r *compileResult) inferSelectorTypeNameForIdent(ident *gopast.Ident) string {
+	astFile, ok := r.mainASTPkg.Files[r.fset.Position(ident.Pos()).Filename]
+	if !ok {
+		return ""
+	}
+	if path, _ := util.PathEnclosingInterval(astFile, ident.Pos(), ident.End()); len(path) > 0 {
+		for _, node := range slices.Backward(path) {
+			sel, ok := node.(*gopast.SelectorExpr)
+			if !ok {
+				continue
+			}
+			tv, ok := r.typeInfo.Types[sel.X]
+			if !ok {
+				continue
+			}
+			if named, ok := unwrapPointerType(tv.Type).(*types.Named); ok {
+				typeName := named.Obj().Name()
+				if named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == spxPkgPath && typeName == "Sprite" {
+					typeName = "SpriteImpl"
+				}
+				return typeName
+			}
+			if iface, ok := unwrapPointerType(tv.Type).(*types.Interface); ok && iface.String() != "interface{}" {
+				return iface.String()
+			}
+		}
+	}
+	if obj := r.typeInfo.ObjectOf(ident); obj != nil {
+		if obj.Pkg() != nil && obj.Pkg().Path() == spxPkgPath {
+			astFileScope := r.typeInfo.Scopes[astFile]
+			innermostScope := r.innermostScopeAt(ident.Pos())
+			if innermostScope == astFileScope {
+				spxFile := r.fset.Position(ident.Pos()).Filename
+				if spxFile == r.mainSpxFile {
+					return "Game"
+				}
+				return "SpriteImpl"
+			}
+		}
+	}
+	return ""
 }
 
 // isInMainSpxFirstVarBlock reports whether the given position is in the first
