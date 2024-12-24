@@ -4,7 +4,7 @@ import type { ResourceModel } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
 import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
-import { type Range, type Position, type TextDocumentIdentifier, type Selection, positionEq } from '../common'
+import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
 import type { Monaco } from '../monaco'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {

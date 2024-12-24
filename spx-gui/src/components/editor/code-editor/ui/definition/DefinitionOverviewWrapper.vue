@@ -23,6 +23,10 @@ const childrenText = useSlotText()
   display: flex;
   color: var(--ui-color-title);
 
+  // Clear style from `h4` in `MarkdownView`
+  font-size: 12px !important;
+  line-height: 1.75 !important;
+
   .icon {
     flex: 0 0 auto;
     margin-top: 2px;
@@ -32,8 +36,10 @@ const childrenText = useSlotText()
   .code {
     flex: 1 1 0;
     word-break: break-all;
+
     // Clear style from `code` in `MarkdownView`
     font-size: inherit;
+    line-height: inherit;
     padding: 0;
     border-radius: 0;
     border: none;

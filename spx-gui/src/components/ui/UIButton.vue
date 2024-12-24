@@ -129,10 +129,10 @@ const icon = computed(() => (props.loading ? 'loading' : props.icon))
 .type-danger {
   --ui-button-color: var(--ui-color-grey-100);
   --ui-button-bg-color: var(--ui-color-danger-main);
-  --ui-button-shadow-color: var(--ui-color-danger-300);
+  --ui-button-shadow-color: var(--ui-color-danger-600);
 
   &:hover:not(:active, :disabled) {
-    --ui-button-bg-color: var(--ui-color-danger-100);
+    --ui-button-bg-color: var(--ui-color-danger-400);
   }
 }
 

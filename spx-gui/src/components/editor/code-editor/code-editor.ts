@@ -485,6 +485,11 @@ export class CodeEditor extends Disposable {
     if (idx !== -1) this.uis.splice(idx, 1)
   }
 
+  getAttachedUI() {
+    if (this.uis.length === 0) return null
+    return this.uis[this.uis.length - 1]
+  }
+
   init() {
     this.lspClient.init()
   }

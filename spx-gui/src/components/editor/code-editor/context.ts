@@ -15,6 +15,7 @@ import { CodeEditor } from './code-editor'
 export type CodeEditorCtx = {
   attachUI(ui: ICodeEditorUI): void
   detachUI(ui: ICodeEditorUI): void
+  getAttachedUI(): ICodeEditorUI | null
   getMonaco(): Monaco
   getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null
   formatTextDocument(id: TextDocumentIdentifier): Promise<void>
@@ -158,6 +159,10 @@ export function useProvideCodeEditorCtx(
     detachUI(ui: ICodeEditorUI) {
       if (editorRef.value == null) throw new Error('Code editor not initialized')
       editorRef.value.detachUI(ui)
+    },
+    getAttachedUI() {
+      if (editorRef.value == null) throw new Error('Code editor not initialized')
+      return editorRef.value.getAttachedUI()
     },
     getMonaco() {
       if (monacoRef.value == null) throw new Error('Monaco not initialized')

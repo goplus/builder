@@ -90,7 +90,7 @@ watchEffect((onCleanUp) => {
 }
 
 .code-editor-diagnostic-error {
-  text-decoration: underline wavy var(--ui-color-red-300);
+  text-decoration: underline wavy var(--ui-color-red-600);
 }
 .code-editor-diagnostic-error-line-body {
   background-color: rgba(255, 70, 70, 0.1);

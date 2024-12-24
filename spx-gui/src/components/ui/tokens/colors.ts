@@ -45,9 +45,12 @@ export const blue = {
 } as const
 
 export const red = {
-  100: '#f15d64',
-  200: '#ef4149',
-  300: '#bc292e',
+  100: '#feefef',
+  200: '#fdc7c7',
+  300: '#ff97a0',
+  400: '#f15d64',
+  500: '#ef4149',
+  600: '#bc292e',
   main: '#ef4149'
 } as const
 

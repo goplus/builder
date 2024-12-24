@@ -537,3 +537,18 @@ export function textDocumentId2ResourceModelId(
   }
   return null
 }
+
+export function textDocumentIdEq(a: TextDocumentIdentifier | null, b: TextDocumentIdentifier | null) {
+  if (a == null || b == null) return a === b
+  return a.uri === b.uri
+}
+
+export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
+  const codeFilePath = getCodeFilePath(id.uri)
+  if (stageCodeFilePaths.includes(codeFilePath)) {
+    return { en: 'Stage', zh: '舞台' }
+  } else {
+    const spriteName = codeFilePath.replace(/\.spx$/, '')
+    return { en: spriteName, zh: spriteName }
+  }
+}
