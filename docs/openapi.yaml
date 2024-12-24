@@ -906,7 +906,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/CopilotMessage"
                 examples:
-                  - role: assistant
+                  - role: copilot
                     content:
                       type: text
                       text: Hello!
@@ -1348,7 +1348,7 @@ components:
           description: Role of the message.
           enum:
             - user
-            - assistant
+            - copilot
           examples:
             - user
         content:
