@@ -872,6 +872,45 @@ paths:
                     format: uri
                     description: URL of the processed image with background removed.
 
+  /copilot/message:
+    post:
+      tags:
+        - Copilot
+      summary: Generate a message
+      description: Generate a message by sending a list of input messages.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  description: Input messages.
+                  items:
+                    $ref: "#/components/schemas/CopilotMessage"
+                  examples:
+                    - - role: user
+                        content:
+                          type: text
+                          text: Hello, world!
+
+      responses:
+        "201":
+          description: Message successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopilotMessage"
+                examples:
+                  - role: copilot
+                    content:
+                      type: text
+                      text: Hello!
+
   /util/upinfo:
     get:
       tags:
@@ -1300,6 +1339,33 @@ components:
           items:
             type: object
           description: Array of result items.
+
+    CopilotMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          description: Role of the message.
+          enum:
+            - user
+            - copilot
+          examples:
+            - user
+        content:
+          type: object
+          properties:
+            type:
+              type: string
+              description: Type of the message. Fow now, only `"text"` is supported.
+              enum:
+                - text
+              examples:
+                - text
+            text:
+              type: string
+              description: Text content of the message.
+              examples:
+                - Hello!
 
   parameters:
     SortOrder:
