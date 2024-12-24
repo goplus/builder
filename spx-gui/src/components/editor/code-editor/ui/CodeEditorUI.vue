@@ -20,8 +20,9 @@ export function makeContentWidgetEl() {
 import { type InjectionKey, inject, provide, ref, watchEffect, shallowRef, watch, computed } from 'vue'
 import { computedShallowReactive, untilNotNull, useLocalStorage } from '@/utils/utils'
 import { getCleanupSignal } from '@/utils/disposable'
-import { theme, tabSize } from '@/utils/spx/highlighter'
+import { theme, tabSize, insertSpaces } from '@/utils/spx/highlighter'
 import { useI18n } from '@/utils/i18n'
+import { getGopIdentifierNameTip, validateGopIdentifierName } from '@/utils/spx'
 import { Sprite } from '@/models/sprite'
 import {
   useRenameAnimation,
@@ -36,9 +37,18 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import { Backdrop } from '@/models/backdrop'
 import { isWidget } from '@/models/widget'
+import { useModal } from '@/components/ui'
+import RenameModal from '@/components/common/RenameModal.vue'
 import { useEditorCtx } from '../../EditorContextProvider.vue'
 import { useCodeEditorCtx } from '../context'
-import { getResourceModel, getTextDocumentId, type ResourceIdentifier } from '../common'
+import {
+  getResourceModel,
+  getTextDocumentId,
+  type Position,
+  type Range,
+  type ResourceIdentifier,
+  type TextDocumentIdentifier
+} from '../common'
 import { type MonacoEditor, type monaco } from '../monaco'
 import { CodeEditorUI } from './code-editor-ui'
 import MonacoEditorComp, { type InitData as MonacoEditorInitData } from './MonacoEditor.vue'
@@ -57,12 +67,30 @@ const props = defineProps<{
 const i18n = useI18n()
 const editorCtx = useEditorCtx()
 const codeEditorCtx = useCodeEditorCtx()
+const invokeRenameModal = useModal(RenameModal)
 const renameSprite = useRenameSprite()
 const renameSound = useRenameSound()
 const renameCostume = useRenameCostume()
 const renameBackdrop = useRenameBackdrop()
 const renameAnimation = useRenameAnimation()
 const renameWidget = useRenameWidget()
+
+function rename(textDocumentId: TextDocumentIdentifier, position: Position, range: Range): Promise<void> {
+  const textDocument = codeEditorCtx.getTextDocument(textDocumentId)
+  if (textDocument == null) throw new Error(`Text document (${textDocumentId.uri}) not found`)
+  const name = textDocument.getValueInRange(range)
+  return invokeRenameModal({
+    target: {
+      name,
+      validateName: validateGopIdentifierName,
+      applyName: (newName) =>
+        editorCtx.project.history.doAction({ name: { en: 'Rename', zh: '重命名' } }, () =>
+          codeEditorCtx.rename(textDocumentId, position, newName)
+        ),
+      inputTip: getGopIdentifierNameTip()
+    }
+  })
+}
 
 function renameResource(resourceId: ResourceIdentifier): Promise<void> {
   const model = getResourceModel(editorCtx.project, resourceId)
@@ -84,6 +112,7 @@ const uiRef = computed(() => {
     i18n,
     codeEditorCtx.getMonaco(),
     codeEditorCtx.getTextDocument,
+    rename,
     renameResource
   )
 })
@@ -92,6 +121,7 @@ const monacoEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = 
   language: 'spx',
   theme,
   tabSize,
+  insertSpaces,
   contextmenu: false
 }
 

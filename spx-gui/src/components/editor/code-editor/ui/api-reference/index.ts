@@ -1,6 +1,7 @@
 import { debounce } from 'lodash'
 import { shallowRef, watchEffect } from 'vue'
 import { Disposable, getCleanupSignal } from '@/utils/disposable'
+import { timeout } from '@/utils/utils'
 import { type BaseContext, type Position, type DefinitionDocumentationItem } from '../../common'
 import type { CodeEditorUI } from '../code-editor-ui'
 
@@ -45,6 +46,10 @@ export class APIReferenceController extends Disposable {
         if (activeTextDocument == null) return
         const context: APIReferenceContext = { textDocument: activeTextDocument, signal }
         updateItems(provider, context, cursorPosition)
+
+        // Do not wait for debouncing to finish if there is no existing items
+        await timeout(0) // `timeout(0)` to avoid `this.items` collected as dep of `watchEffect`
+        if (this.items == null) updateItems.flush()
       })
     )
   }

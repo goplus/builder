@@ -20,7 +20,8 @@ import {
   type TextDocumentPosition,
   type ResourceIdentifier,
   getResourceModel,
-  type TextDocumentRange
+  type TextDocumentRange,
+  isRangeEmpty
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor } from '../monaco'
@@ -41,15 +42,7 @@ import {
   type ChatTopicExplainTarget,
   type ChatTopicReview
 } from './copilot'
-import type { IFormattingEditProvider } from './formatting'
-import {
-  fromMonacoPosition,
-  toMonacoRange,
-  fromMonacoSelection,
-  isRangeEmpty,
-  toMonacoPosition,
-  supportGoTo
-} from './common'
+import { fromMonacoPosition, toMonacoRange, fromMonacoSelection, toMonacoPosition, supportGoTo } from './common'
 
 export * from './hover'
 export * from './completion'
@@ -58,7 +51,6 @@ export * from './context-menu'
 export * from './diagnostics'
 export * from './api-reference'
 export * from './copilot'
-export * from './formatting'
 
 export interface ICodeEditorUI {
   registerHoverProvider(provider: IHoverProvider): void
@@ -68,7 +60,6 @@ export interface ICodeEditorUI {
   registerDiagnosticsProvider(provider: IDiagnosticsProvider): void
   registerAPIReferenceProvider(provider: IAPIReferenceProvider): void
   registerCopilot(copilot: ICopilot): void
-  registerFormattingEditProvider(provider: IFormattingEditProvider): void
   registerDocumentBase(documentBase: IDocumentBase): void
 
   /** Execute a command */
@@ -99,7 +90,7 @@ export const builtInCommandPaste: Command<[], void> = 'editor.action.paste'
 export const builtInCommandGoToDefinition: Command<[TextDocumentPosition | TextDocumentRange], void> =
   'spx.goToDefinition'
 export const builtInCommandGoToResource: Command<[ResourceIdentifier], void> = 'spx.goToResource'
-// export const builtInCommandRename: Command<[TextDocumentPosition], void> = 'spx.rename'
+export const builtInCommandRename: Command<[TextDocumentPosition & TextDocumentRange], void> = 'spx.rename'
 export const builtInCommandRenameResource: Command<[ResourceIdentifier], void> = 'spx.renameResource'
 export const builtInCommandModifyResourceReference: Command<[InternalResourceReference], void> =
   'spx.modifyResourceReference'
@@ -132,9 +123,6 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
   }
   registerCopilot(copilot: ICopilot): void {
     this.copilotController.registerCopilot(copilot)
-  }
-  registerFormattingEditProvider(provider: IFormattingEditProvider): void {
-    console.warn('TODO', provider)
   }
   registerDocumentBase(documentBase: IDocumentBase): void {
     this.documentBase = documentBase
@@ -184,6 +172,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     public i18n: I18n,
     public monaco: Monaco,
     private getTextDocument: (id: TextDocumentIdentifier) => TextDocument | null,
+    private renameHandler: (textDocument: TextDocumentIdentifier, position: Position, range: Range) => Promise<void>,
     private renameResourceHandler: (resource: ResourceIdentifier) => Promise<void>
   ) {
     super()
@@ -401,6 +390,15 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       title: { en: 'Modify', zh: '修改' },
       handler: (rr) => {
         this.resourceReferenceController.startModifying(rr.id)
+      }
+    })
+
+    this.registerCommand(builtInCommandRename, {
+      icon: 'rename',
+      title: { en: 'Rename', zh: '重命名' },
+      handler: async (params) => {
+        const { textDocument, position, range } = params
+        await this.renameHandler(textDocument, position, range)
       }
     })
 

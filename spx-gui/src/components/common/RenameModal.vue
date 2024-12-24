@@ -1,8 +1,12 @@
 <script lang="ts">
 export interface IRenameTarget {
+  /** Current name */
   name: string
+  /** Validate the new name */
   validateName(newName: string): LocaleMessage | null | undefined
-  setName(newName: string): Promise<void>
+  /** Apply the new name */
+  applyName(newName: string): Promise<void>
+  /** Tip for new name input */
   inputTip: LocaleMessage
 }
 </script>
@@ -31,7 +35,7 @@ const form = useForm({
 const handleSubmit = useMessageHandle(
   async () => {
     if (form.value.name !== props.target.name) {
-      await props.target.setName(form.value.name)
+      await props.target.applyName(form.value.name)
     }
     emit('resolved')
   },

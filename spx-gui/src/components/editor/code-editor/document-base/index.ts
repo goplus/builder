@@ -22,4 +22,8 @@ export class DocumentBase extends Disposable {
     const key = stringifyDefinitionId(defId)
     return this.storage.get(key) ?? null
   }
+
+  async getAllDocumentations(): Promise<DefinitionDocumentationItem[]> {
+    return [...this.storage.values()]
+  }
 }

@@ -36,7 +36,7 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_rename
 func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error) {
-	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
+	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
 			return nil, nil
@@ -59,18 +59,25 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 		}})
 	}
 
-	ident, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
 
+	defIdent := result.defIdentOf(obj)
+	if defIdent == nil {
+		return nil, fmt.Errorf("failed to find definition of object %q", obj.Name())
+	}
+
+	defLoc := s.createLocationFromIdent(result.fset, defIdent)
+
 	workspaceEdit := WorkspaceEdit{
 		Changes: map[DocumentURI][]TextEdit{
-			s.toDocumentURI(spxFile): {
+			defLoc.URI: {
 				{
 					Range: Range{
-						Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-						End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+						Start: FromGopTokenPosition(result.fset.Position(defIdent.Pos())),
+						End:   FromGopTokenPosition(result.fset.Position(defIdent.End())),
 					},
 					NewText: params.NewName,
 				},

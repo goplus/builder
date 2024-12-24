@@ -1,6 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
+import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
@@ -17,10 +18,14 @@ import {
   ChatExplainKind,
   type ChatExplainTargetCodeSegment,
   builtInCommandCopilotReview,
-  type ChatTopicReview,
   builtInCommandGoToDefinition,
   type HoverContext,
-  type Hover
+  type Hover,
+  type ContextMenuContext,
+  type IContextMenuProvider,
+  type IHoverProvider,
+  builtInCommandRename,
+  type MenuItem
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -42,7 +47,10 @@ import {
   textDocumentId2ResourceModelId,
   parseDefinitionId,
   type Position,
-  type TextDocumentRange
+  type Selection,
+  type CommandArgs,
+  getTextDocumentId,
+  containsPosition
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
@@ -145,7 +153,7 @@ class DiagnosticsProvider
   }
 }
 
-class HoverProvider {
+class HoverProvider implements IHoverProvider {
   constructor(
     private lspClient: SpxLSPClient,
     private documentBase: DocumentBase
@@ -172,10 +180,10 @@ class HoverProvider {
     }
   }
 
-  private async getGoToDefinitionAction(params: lsp.TextDocumentPositionParams) {
+  private async getGoToDefinitionAction(position: Position, lspParams: lsp.TextDocumentPositionParams) {
     const lspClient = this.lspClient
     const [definition, typeDefinition] = (
-      await Promise.all([lspClient.textDocumentDefinition(params), lspClient.textDocumentTypeDefinition(params)])
+      await Promise.all([lspClient.textDocumentDefinition(lspParams), lspClient.textDocumentTypeDefinition(lspParams)])
     ).map((def) => {
       if (def == null) return null
       if (Array.isArray(def)) return def[0]
@@ -183,14 +191,32 @@ class HoverProvider {
     })
     const location = definition ?? typeDefinition
     if (location == null) return null
+    const range = fromLSPRange(location.range)
+    if (containsPosition(range, position)) return null
     return {
       command: builtInCommandGoToDefinition,
       arguments: [
         {
           textDocument: { uri: location.uri },
-          range: fromLSPRange(location.range)
-        } satisfies TextDocumentRange
-      ]
+          range
+        }
+      ] satisfies CommandArgs<typeof builtInCommandGoToDefinition>
+    }
+  }
+
+  private async getRenameAction(ctx: HoverContext, position: Position, lspParams: lsp.TextDocumentPositionParams) {
+    const lspClient = this.lspClient
+    const result = await lspClient.textDocumentPrepareRename(lspParams)
+    if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
+    return {
+      command: builtInCommandRename,
+      arguments: [
+        {
+          textDocument: ctx.textDocument.id,
+          position,
+          range: fromLSPRange(result)
+        }
+      ] satisfies CommandArgs<typeof builtInCommandRename>
     }
   }
 
@@ -203,16 +229,99 @@ class HoverProvider {
     if (lspHover == null) return null
     const contents: DefinitionDocumentationString[] = []
     if (lsp.MarkupContent.is(lspHover.contents)) {
-      // For now, we only support MarkupContent
+      // For now, we support MarkupContent only
       contents.push(makeAdvancedMarkdownString(lspHover.contents.value))
     }
     let range: Range | undefined = undefined
     if (lspHover.range != null) range = fromLSPRange(lspHover.range)
-    const actions: Action[] = []
-    for (const a of await Promise.all([this.getExplainAction(lspHover), this.getGoToDefinitionAction(lspParams)])) {
-      if (a != null) actions.push(a)
-    }
+    const maybeActions = await Promise.all([
+      this.getExplainAction(lspHover),
+      this.getGoToDefinitionAction(position, lspParams),
+      this.getRenameAction(ctx, position, lspParams)
+    ])
+    const actions = maybeActions.filter((a) => a != null) as Action[]
     return { contents, range, actions }
+  }
+}
+
+class ContextMenuProvider implements IContextMenuProvider {
+  constructor(private lspClient: SpxLSPClient) {}
+
+  private getExplainMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
+    const word = textDocument.getWordAtPosition(position)
+    if (word == null) return null
+    const wordStart = { ...position, column: word.startColumn }
+    const wordEnd = { ...position, column: word.endColumn }
+    const explainTarget: ChatExplainTargetCodeSegment = {
+      kind: ChatExplainKind.CodeSegment,
+      codeSegment: {
+        // TODO: use definition info from LS and explain definition instead of code-segment
+        textDocument: textDocument.id,
+        range: { start: wordStart, end: wordEnd },
+        content: word.word
+      }
+    }
+    return {
+      command: builtInCommandCopilotExplain,
+      arguments: [explainTarget] satisfies CommandArgs<typeof builtInCommandCopilotExplain>
+    }
+  }
+
+  private async getRenameMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
+    const lspParams = {
+      textDocument: textDocument.id,
+      position: toLSPPosition(position)
+    }
+    const result = await this.lspClient.textDocumentPrepareRename(lspParams)
+    if (result == null || !lsp.Range.is(result)) return null // For now, we support Range only
+    return {
+      command: builtInCommandRename,
+      arguments: [
+        {
+          textDocument: textDocument.id,
+          position,
+          range: fromLSPRange(result)
+        }
+      ] satisfies CommandArgs<typeof builtInCommandRename>
+    }
+  }
+
+  async provideContextMenu(ctx: ContextMenuContext, position: Position) {
+    const maybeMenuItems: Array<MenuItem | null> = await Promise.all([
+      this.getExplainMenuItemForPosition(ctx, position),
+      this.getRenameMenuItemForPosition(ctx, position)
+    ])
+    return maybeMenuItems.filter((item) => item != null) as MenuItem[]
+  }
+
+  async provideSelectionContextMenu({ textDocument }: ContextMenuContext, selection: Selection) {
+    const range = selection2Range(selection)
+    const code = textDocument.getValueInRange(range)
+    return [
+      {
+        command: builtInCommandCopilotExplain,
+        arguments: [
+          {
+            kind: ChatExplainKind.CodeSegment,
+            codeSegment: {
+              textDocument: textDocument.id,
+              range,
+              content: code
+            }
+          }
+        ] satisfies CommandArgs<typeof builtInCommandCopilotExplain>
+      },
+      {
+        command: builtInCommandCopilotReview,
+        arguments: [
+          {
+            textDocument: textDocument.id,
+            range,
+            code
+          }
+        ] satisfies CommandArgs<typeof builtInCommandCopilotReview>
+      }
+    ]
   }
 }
 
@@ -261,17 +370,52 @@ export class CodeEditor extends Disposable {
   }
 
   async formatTextDocument(id: TextDocumentIdentifier) {
-    console.warn('TODO: format', id)
+    const textDocument = this.getTextDocument(id)
+    if (textDocument == null) return
+    const edits = await this.lspClient.textDocumentFormatting({
+      textDocument: id,
+      options: lsp.FormattingOptions.create(tabSize, insertSpaces)
+    })
+    if (edits == null) return
+    textDocument.pushEdits(edits.map(fromLSPTextEdit))
   }
 
-  /** Update references in code for resource renaming, should be called before model name update */
-  async updateResourceReferencesOnRename(resource: ResourceIdentifier, newName: string) {
-    const workspaceEdit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({ resource, newName })
-    if (workspaceEdit == null || workspaceEdit.changes == null) return
+  async formatWorkspace() {
+    const { stage, sprites } = this.project
+    const textDocuments = [stage.codeFilePath, ...sprites.map((s) => s.codeFilePath)]
+      .map((codeFilePath) => this.getTextDocument(getTextDocumentId(codeFilePath)))
+      .filter((td) => td != null) as TextDocument[]
+    await Promise.all(textDocuments.map((td) => this.formatTextDocument(td.id)))
+  }
+
+  private applyWorkspaceEdit(workspaceEdit: lsp.WorkspaceEdit) {
+    if (workspaceEdit.changes == null) return // For now, we support `changes` only
     for (const [uri, edits] of Object.entries(workspaceEdit.changes)) {
       const textDocument = this.getTextDocument({ uri })
-      textDocument?.pushEdits(edits.map(fromLSPTextEdit))
+      if (textDocument == null) {
+        console.warn(`Text document not found for uri: ${uri}`)
+        continue
+      }
+      textDocument.pushEdits(edits.map(fromLSPTextEdit))
     }
+  }
+
+  /** Update code for renaming */
+  async rename(id: TextDocumentIdentifier, position: Position, newName: string) {
+    const edit = await this.lspClient.textDocumentRename({
+      textDocument: id,
+      position: toLSPPosition(position),
+      newName
+    })
+    if (edit == null) return
+    this.applyWorkspaceEdit(edit)
+  }
+
+  /** Update code for resource renaming, should be called before model name update */
+  async renameResource(resource: ResourceIdentifier, newName: string) {
+    const edit = await this.lspClient.workspaceExecuteCommandSpxRenameResources({ resource, newName })
+    if (edit == null) return
+    this.applyWorkspaceEdit(edit)
   }
 
   private uis: ICodeEditorUI[] = []
@@ -283,15 +427,28 @@ export class CodeEditor extends Disposable {
 
     ui.registerAPIReferenceProvider({
       async provideAPIReference(ctx, position) {
-        const definitions = await lspClient.workspaceExecuteCommandSpxGetDefinitions({
-          // TODO: support signal
-          textDocument: ctx.textDocument.id,
-          position: toLSPPosition(position)
-        })
+        const definitions = await lspClient
+          .workspaceExecuteCommandSpxGetDefinitions({
+            // TODO: support signal
+            textDocument: ctx.textDocument.id,
+            position: toLSPPosition(position)
+          })
+          .catch((e) => {
+            console.warn('Failed to get definitions', e)
+            return null
+          })
         ctx.signal.throwIfAborted()
-        if (definitions == null) return []
-        const defWithDocs = await Promise.all(definitions.map((def) => documentBase.getDocumentation(def)))
-        return defWithDocs.filter((d) => d != null) as DefinitionDocumentationItem[]
+        let apiReferenceItems: DefinitionDocumentationItem[]
+        if (definitions != null && definitions.length > 0) {
+          const maybeDocumentationItems = await Promise.all(
+            definitions.map((def) => documentBase.getDocumentation(def))
+          )
+          apiReferenceItems = maybeDocumentationItems.filter((d) => d != null) as DefinitionDocumentationItem[]
+        } else {
+          // There may be compiling errors, so we fallback to all items
+          apiReferenceItems = await documentBase.getAllDocumentations()
+        }
+        return apiReferenceItems
       }
     })
 
@@ -315,67 +472,9 @@ export class CodeEditor extends Disposable {
       }
     })
 
-    ui.registerContextMenuProvider({
-      async provideContextMenu({ textDocument }, position) {
-        const word = textDocument.getWordAtPosition(position)
-        if (word == null) return []
-        const wordStart = { ...position, column: word.startColumn }
-        const wordEnd = { ...position, column: word.endColumn }
-        const explainTarget: ChatExplainTargetCodeSegment = {
-          kind: ChatExplainKind.CodeSegment,
-          codeSegment: {
-            // TODO: use definition info from LS and explain definition instead of code-segment
-            textDocument: textDocument.id,
-            range: { start: wordStart, end: wordEnd },
-            content: word.word
-          }
-        }
-        return [
-          {
-            command: builtInCommandCopilotExplain,
-            arguments: [explainTarget]
-          }
-        ]
-      },
-      async provideSelectionContextMenu({ textDocument }, selection) {
-        const range = selection2Range(selection)
-        const code = textDocument.getValueInRange(range)
-        const explainTarget: ChatExplainTargetCodeSegment = {
-          kind: ChatExplainKind.CodeSegment,
-          codeSegment: {
-            textDocument: textDocument.id,
-            range,
-            content: code
-          }
-        }
-        const reviewTarget: Omit<ChatTopicReview, 'kind'> = {
-          textDocument: textDocument.id,
-          range,
-          code
-        }
-        return [
-          {
-            command: builtInCommandCopilotExplain,
-            arguments: [explainTarget]
-          },
-          {
-            command: builtInCommandCopilotReview,
-            arguments: [reviewTarget]
-          }
-        ]
-      }
-    })
-
+    ui.registerContextMenuProvider(new ContextMenuProvider(this.lspClient))
     ui.registerCopilot(copilot)
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
-
-    ui.registerFormattingEditProvider({
-      async provideDocumentFormattingEdits(ctx) {
-        console.warn('TODO', ctx)
-        return []
-      }
-    })
-
     ui.registerHoverProvider(this.hoverProvider)
     ui.registerResourceReferencesProvider(this.resourceReferencesProvider)
     ui.registerDocumentBase(documentBase)
