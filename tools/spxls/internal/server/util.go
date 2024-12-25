@@ -69,32 +69,6 @@ func deduplicateLocations(locations []Location) []Location {
 	return result
 }
 
-// toStringPtr returns a pointer to the string.
-func toStringPtr(s string) *string {
-	return &s
-}
-
-// fromStringPtr returns the string value from a pointer to a string.
-func fromStringPtr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-// toIntPtr returns a pointer to the int.
-func toIntPtr(i int) *int {
-	return &i
-}
-
-// fromIntPtr returns the int value from a pointer to an int.
-func fromIntPtr(i *int) int {
-	if i == nil {
-		return 0
-	}
-	return *i
-}
-
 // toLowerCamelCase converts the first character of a Go identifier to lowercase.
 func toLowerCamelCase(s string) string {
 	if s == "" {

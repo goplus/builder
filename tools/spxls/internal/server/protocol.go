@@ -50,6 +50,11 @@ type SpxResourceIdentifier struct {
 // SpxResourceURI represents a URI string for a spx resource.
 type SpxResourceURI string
 
+// HTML returns the HTML representation of the spx resource URI.
+func (u SpxResourceURI) HTML() string {
+	return fmt.Sprintf("<resource-preview resource=%q />\n", u)
+}
+
 // SpxGetDefinitionsParams represents parameters to get definitions at a
 // specific position in a document.
 type SpxGetDefinitionsParams struct {
