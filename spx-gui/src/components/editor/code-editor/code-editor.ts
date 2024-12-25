@@ -13,11 +13,9 @@ import {
   type DiagnosticsContext,
   type IDiagnosticsProvider,
   type IResourceReferencesProvider,
-  type ResourceReference,
   type ResourceReferencesContext,
   builtInCommandCopilotExplain,
   ChatExplainKind,
-  type ChatExplainTargetCodeSegment,
   builtInCommandCopilotReview,
   builtInCommandGoToDefinition,
   type HoverContext,
@@ -44,9 +42,9 @@ import {
   type Range,
   type TextDocumentIdentifier,
   type ResourceIdentifier,
+  type ResourceReference,
   fromLSPTextEdit,
   textDocumentId2ResourceModelId,
-  parseDefinitionId,
   type Position,
   type Selection,
   type CommandArgs,
@@ -55,7 +53,6 @@ import {
 } from './common'
 import * as spxDocumentationItems from './document-base/spx'
 import * as gopDocumentationItems from './document-base/gop'
-import { isDocumentLinkForResourceReference } from './lsp/spxls/methods'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
 
@@ -67,7 +64,7 @@ const allItems = Object.values({
 
 class ResourceReferencesProvider
   extends Emitter<{
-    didChangeResourceReferences: []
+    didChangeResourceReferences: [] // TODO
   }>
   implements IResourceReferencesProvider
 {
@@ -75,20 +72,7 @@ class ResourceReferencesProvider
     super()
   }
   async provideResourceReferences(ctx: ResourceReferencesContext): Promise<ResourceReference[]> {
-    const result = await this.lspClient.textDocumentDocumentLink({
-      textDocument: ctx.textDocument.id
-    })
-    if (result == null) return []
-    const rrs: ResourceReference[] = []
-    for (const documentLink of result) {
-      if (!isDocumentLinkForResourceReference(documentLink)) continue
-      rrs.push({
-        kind: documentLink.data.kind,
-        range: fromLSPRange(documentLink.range),
-        resource: { uri: documentLink.target }
-      })
-    }
-    return rrs
+    return this.lspClient.getResourceReferences(ctx.textDocument.id)
   }
 }
 
@@ -160,13 +144,10 @@ class HoverProvider implements IHoverProvider {
     private documentBase: DocumentBase
   ) {}
 
-  private async getExplainAction(lspHover: lsp.Hover) {
+  private async getExplainAction(textDocument: TextDocumentIdentifier, position: Position) {
     let definition: DefinitionDocumentationItem | null = null
-    if (!lsp.MarkupContent.is(lspHover.contents)) return null
-    // TODO: get definition ID from LS `textDocument/documentLink`
-    const matched = lspHover.contents.value.match(/def-id="([^"]+)"/)
-    if (matched == null) return null
-    const defId = parseDefinitionId(matched[1])
+    const defId = await this.lspClient.getDefinition(textDocument, position)
+    if (defId == null) return null
     definition = await this.documentBase.getDocumentation(defId)
     if (definition == null) return null
     return {
@@ -236,7 +217,7 @@ class HoverProvider implements IHoverProvider {
     let range: Range | undefined = undefined
     if (lspHover.range != null) range = fromLSPRange(lspHover.range)
     const maybeActions = await Promise.all([
-      this.getExplainAction(lspHover),
+      this.getExplainAction(ctx.textDocument.id, position),
       this.getGoToDefinitionAction(position, lspParams),
       this.getRenameAction(ctx, position, lspParams)
     ])
@@ -246,25 +227,25 @@ class HoverProvider implements IHoverProvider {
 }
 
 class ContextMenuProvider implements IContextMenuProvider {
-  constructor(private lspClient: SpxLSPClient) {}
+  constructor(
+    private lspClient: SpxLSPClient,
+    private documentBase: DocumentBase
+  ) {}
 
-  private getExplainMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
-    const word = textDocument.getWordAtPosition(position)
-    if (word == null) return null
-    const wordStart = { ...position, column: word.startColumn }
-    const wordEnd = { ...position, column: word.endColumn }
-    const explainTarget: ChatExplainTargetCodeSegment = {
-      kind: ChatExplainKind.CodeSegment,
-      codeSegment: {
-        // TODO: use definition info from LS and explain definition instead of code-segment
-        textDocument: textDocument.id,
-        range: { start: wordStart, end: wordEnd },
-        content: word.word
-      }
-    }
+  private async getExplainMenuItemForPosition({ textDocument }: ContextMenuContext, position: Position) {
+    const defId = await this.lspClient.getDefinition(textDocument.id, position)
+    if (defId == null) return null
+    const definition = await this.documentBase.getDocumentation(defId)
+    if (definition == null) return null
     return {
       command: builtInCommandCopilotExplain,
-      arguments: [explainTarget] satisfies CommandArgs<typeof builtInCommandCopilotExplain>
+      arguments: [
+        {
+          kind: ChatExplainKind.Definition,
+          overview: definition.overview,
+          definition: definition.definition
+        }
+      ] satisfies CommandArgs<typeof builtInCommandCopilotExplain>
     }
   }
 
@@ -474,7 +455,7 @@ export class CodeEditor extends Disposable {
       }
     })
 
-    ui.registerContextMenuProvider(new ContextMenuProvider(this.lspClient))
+    ui.registerContextMenuProvider(new ContextMenuProvider(lspClient, documentBase))
     ui.registerCopilot(copilot)
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)
     ui.registerHoverProvider(this.hoverProvider)

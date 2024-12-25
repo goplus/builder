@@ -54,6 +54,12 @@ export type ResourceIdentifier = {
   uri: ResourceURI
 }
 
+export type ResourceReference = {
+  kind: ResourceReferenceKind
+  range: Range
+  resource: ResourceIdentifier
+}
+
 export type TextDocumentIdentifier = {
   /**
    * URI of the text document. Examples:
