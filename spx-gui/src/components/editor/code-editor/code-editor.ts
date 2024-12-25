@@ -2,6 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
+import type { I18n } from '@/utils/i18n'
 import type { Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
@@ -336,10 +337,11 @@ export class CodeEditor extends Disposable {
   constructor(
     private project: Project,
     private runtime: Runtime,
-    private monaco: Monaco
+    private monaco: Monaco,
+    private i18n: I18n
   ) {
     super()
-    this.copilot = new Copilot()
+    this.copilot = new Copilot(i18n, project)
     this.documentBase = new DocumentBase()
     this.lspClient = new SpxLSPClient(project)
     this.resourceReferencesProvider = new ResourceReferencesProvider(this.lspClient)

@@ -75,10 +75,7 @@ export type ChatTopicFixProblem = {
 
 export type ChatTopic = ChatTopicInspire | ChatTopicExplain | ChatTopicReview | ChatTopicFixProblem
 
-export enum MessageRole {
-  User,
-  Copilot
-}
+export type MessageRole = 'user' | 'copilot'
 
 export type ChatMessage = {
   role: MessageRole
@@ -201,8 +198,8 @@ export class CopilotController extends Disposable {
     const currentChat = this.currentChat
     if (currentChat == null) throw new Error('No active chat')
     const messages = currentChat.rounds.flatMap((round) => {
-      const roundMessages = [{ role: MessageRole.User, content: round.problem }]
-      if (round.answer != null) roundMessages.push({ role: MessageRole.Copilot, content: round.answer })
+      const roundMessages: ChatMessage[] = [{ role: 'user', content: round.problem }]
+      if (round.answer != null) roundMessages.push({ role: 'copilot', content: round.answer })
       return roundMessages
     })
     return {

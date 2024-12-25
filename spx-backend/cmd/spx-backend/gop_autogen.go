@@ -95,6 +95,10 @@ type post_asset struct {
 	yap.Handler
 	*AppV2
 }
+type post_copilot_message struct {
+	yap.Handler
+	*AppV2
+}
 type post_project_release struct {
 	yap.Handler
 	*AppV2
@@ -192,7 +196,7 @@ func (this *AppV2) MainEntry() {
 	}
 }
 func (this *AppV2) Main() {
-	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
+	yap.Gopt_AppV2_Main(this, new(delete_asset_id), new(delete_project_owner_name), new(delete_project_owner_name_liking), new(delete_user_username_following), new(get_asset_id), new(get_assets_list), new(get_project_release_owner_project_release), new(get_project_releases_list), new(get_project_owner_name), new(get_project_owner_name_liking), new(get_projects_list), new(get_user_username), new(get_user_username_following), new(get_users_list), new(get_util_upinfo), new(post_aigc_matting), new(post_asset), new(post_copilot_message), new(post_project_release), new(post_project), new(post_project_owner_name_liking), new(post_project_owner_name_view), new(post_user_username_following), new(post_util_fileurls), new(post_util_fmtcode), new(put_asset_id), new(put_project_owner_name), new(put_user))
 }
 //line cmd/spx-backend/delete_asset_#id.yap:6
 func (this *delete_asset_id) Main(_gop_arg0 *yap.Context) {
@@ -952,6 +956,49 @@ func (this *post_asset) Main(_gop_arg0 *yap.Context) {
 }
 func (this *post_asset) Classfname() string {
 	return "post_asset"
+}
+//line cmd/spx-backend/post_copilot_message.yap:10
+func (this *post_copilot_message) Main(_gop_arg0 *yap.Context) {
+	this.Handler.Main(_gop_arg0)
+//line cmd/spx-backend/post_copilot_message.yap:10:1
+	ctx := &this.Context
+//line cmd/spx-backend/post_copilot_message.yap:11:1
+	if
+//line cmd/spx-backend/post_copilot_message.yap:11:1
+	_, isAuthed := ensureAuthedUser(ctx); !isAuthed {
+//line cmd/spx-backend/post_copilot_message.yap:12:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:15:1
+	params := &controller.GenerateMessageParams{}
+//line cmd/spx-backend/post_copilot_message.yap:16:1
+	if !parseJSON(ctx, params) {
+//line cmd/spx-backend/post_copilot_message.yap:17:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:19:1
+	if
+//line cmd/spx-backend/post_copilot_message.yap:19:1
+	ok, msg := params.Validate(); !ok {
+//line cmd/spx-backend/post_copilot_message.yap:20:1
+		replyWithCodeMsg(ctx, errorInvalidArgs, msg)
+//line cmd/spx-backend/post_copilot_message.yap:21:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:24:1
+	result, err := this.ctrl.GenerateMessage(ctx.Context(), params)
+//line cmd/spx-backend/post_copilot_message.yap:25:1
+	if err != nil {
+//line cmd/spx-backend/post_copilot_message.yap:26:1
+		replyWithInnerError(ctx, err)
+//line cmd/spx-backend/post_copilot_message.yap:27:1
+		return
+	}
+//line cmd/spx-backend/post_copilot_message.yap:29:1
+	this.Json__1(result)
+}
+func (this *post_copilot_message) Classfname() string {
+	return "post_copilot_message"
 }
 //line cmd/spx-backend/post_project-release.yap:10
 func (this *post_project_release) Main(_gop_arg0 *yap.Context) {

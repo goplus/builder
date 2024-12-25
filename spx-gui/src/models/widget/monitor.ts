@@ -37,7 +37,7 @@ export class Monitor extends BaseWidget {
   }
 
   constructor(name: string, { label, variableName, ...extraInits }: MonitorInits) {
-    super(name, extraInits)
+    super(name, 'monitor', extraInits)
     this.label = label ?? ''
     this.variableName = variableName ?? ''
     return reactive(this) as this

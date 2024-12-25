@@ -1,8 +1,8 @@
 import { reactive } from 'vue'
+import { nanoid } from 'nanoid'
 import { Disposable } from '@/utils/disposable'
 import { validateWidgetName } from '../common/asset-name'
 import type { Stage } from '../stage'
-import { nanoid } from 'nanoid'
 
 export type BaseWidgetInits = {
   id?: string
@@ -13,12 +13,14 @@ export type BaseWidgetInits = {
 }
 
 export type BaseRawWidgetConfig = Omit<BaseWidgetInits, 'id'> & {
+  type?: string
   builder_id?: string
   name?: string
 }
 
 export class BaseWidget extends Disposable {
   id: string
+  type: string
 
   private stage: Stage | null = null
   setStage(stage: Stage | null) {
@@ -52,9 +54,10 @@ export class BaseWidget extends Disposable {
     this.visible = visible
   }
 
-  constructor(name: string, inits?: BaseWidgetInits) {
+  constructor(name: string, type: string, inits?: BaseWidgetInits) {
     super()
     this.name = name
+    this.type = type
     this.x = inits?.x ?? 0
     this.y = inits?.y ?? 0
     this.size = inits?.size ?? 1
@@ -63,13 +66,15 @@ export class BaseWidget extends Disposable {
     return reactive(this) as this
   }
 
-  static load({ builder_id: id, name, ...inits }: BaseRawWidgetConfig) {
+  static load({ builder_id: id, type, name, ...inits }: BaseRawWidgetConfig) {
     if (name == null) throw new Error('name expected for widget')
-    return new BaseWidget(name, { ...inits, id })
+    if (type == null) throw new Error('type expected for widget')
+    return new BaseWidget(name, type, { ...inits, id })
   }
 
   export(): BaseRawWidgetConfig {
     return {
+      type: this.type,
       name: this.name,
       x: this.x,
       y: this.y,

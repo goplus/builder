@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/anthropics/anthropic-sdk-go"
+	anthropicOption "github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goplus/builder/spx-backend/internal/aigc"
@@ -36,10 +38,11 @@ type contextKey struct {
 
 // Controller is the controller for the service.
 type Controller struct {
-	db            *gorm.DB
-	kodo          *kodoConfig
-	aigcClient    *aigc.AigcClient
-	casdoorClient casdoorClient
+	db              *gorm.DB
+	kodo            *kodoConfig
+	aigcClient      *aigc.AigcClient
+	casdoorClient   casdoorClient
+	anthropicClient *anthropic.Client
 }
 
 // New creates a new controller.
@@ -62,12 +65,17 @@ func New(ctx context.Context) (*Controller, error) {
 	kodoConfig := newKodoConfig(logger)
 	aigcClient := aigc.NewAigcClient(mustEnv(logger, "AIGC_ENDPOINT"))
 	casdoorClient := newCasdoorClient(logger)
+	anthropicClient := anthropic.NewClient(
+		anthropicOption.WithAPIKey(mustEnv(logger, "ANTHROPIC_API_KEY")),
+		anthropicOption.WithBaseURL(mustEnv(logger, "ANTHROPIC_ENDPOINT")),
+	)
 
 	return &Controller{
-		db:            db,
-		kodo:          kodoConfig,
-		aigcClient:    aigcClient,
-		casdoorClient: casdoorClient,
+		db:              db,
+		kodo:            kodoConfig,
+		aigcClient:      aigcClient,
+		casdoorClient:   casdoorClient,
+		anthropicClient: anthropicClient,
 	}, nil
 }
 
