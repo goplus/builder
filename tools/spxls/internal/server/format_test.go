@@ -5,6 +5,7 @@ import (
 
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServerTextDocumentFormatting(t *testing.T) {
@@ -27,9 +28,9 @@ run "assets",    { Title:    "Bullet (by Go+)" }
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.NoError(t, err)
-		assert.Len(t, edits, 1)
-		assert.Equal(t, TextEdit{
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
 				End:   Position{Line: 8, Character: 0},
@@ -43,7 +44,7 @@ var (
 
 run "assets", {Title: "Bullet (by Go+)"}
 `,
-		}, edits[0])
+		})
 	})
 
 	t.Run("NonSpxFile", func(t *testing.T) {
@@ -57,8 +58,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.NoError(t, err)
-		assert.Nil(t, edits)
+		require.NoError(t, err)
+		require.Nil(t, edits)
 	})
 
 	t.Run("FileNotFound", func(t *testing.T) {
@@ -70,8 +71,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.Error(t, err)
-		assert.Nil(t, edits)
+		require.Error(t, err)
+		require.Nil(t, edits)
 	})
 
 	t.Run("NoChangesNeeded", func(t *testing.T) {
@@ -85,8 +86,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.NoError(t, err)
-		assert.Nil(t, edits)
+		require.NoError(t, err)
+		require.Nil(t, edits)
 	})
 
 	t.Run("FormatError", func(t *testing.T) {
@@ -100,9 +101,9 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to format document")
-		assert.Nil(t, edits)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to format document")
+		require.Nil(t, edits)
 	})
 
 	t.Run("WithFormatSpx", func(t *testing.T) {
@@ -110,19 +111,33 @@ run "assets", {Title: "Bullet (by Go+)"}
 			return map[string][]byte{
 				"main.spx": []byte(`// A spx game.
 
-func Func1() {}
-
 var (
-	MyAircraft MyAircraft
+	// The aircraft.
+	MyAircraft MyAircraft // The only aircraft.
 )
 
-func Func2() {}
+var Bullet Bullet // The first bullet.
 
-var Bullet Bullet
+// The second bullet.
+var Bullet2 Bullet
 
-func Func3() {}
+var (
+	// The third bullet.
+	Bullet3 Bullet
+)
 
-run "assets", {Title: "Bullet (by Go+)"}
+// The fifth var block.
+var (
+	Bullet4 Bullet // The fourth bullet.
+)
+
+// The last var block.
+var (
+	// The fifth bullet.
+	Bullet5 Bullet
+
+	Bullet6 Bullet // The sixth bullet.
+)
 `),
 			}
 		}), nil)
@@ -131,28 +146,39 @@ run "assets", {Title: "Bullet (by Go+)"}
 		}
 
 		edits, err := s.textDocumentFormatting(params)
-		assert.NoError(t, err)
-		assert.Len(t, edits, 1)
-		assert.Equal(t, TextEdit{
+		require.NoError(t, err)
+		require.Len(t, edits, 1)
+		assert.Contains(t, edits, TextEdit{
 			Range: Range{
 				Start: Position{Line: 0, Character: 0},
-				End:   Position{Line: 15, Character: 0},
+				End:   Position{Line: 29, Character: 0},
 			},
 			NewText: `// A spx game.
 
 var (
-	MyAircraft MyAircraft
-	Bullet     Bullet
+	// The aircraft.
+	MyAircraft MyAircraft // The only aircraft.
+
+	Bullet Bullet // The first bullet.
+
+	// The second bullet.
+	Bullet2 Bullet
+
+	// The third bullet.
+	Bullet3 Bullet
+
+	// The fifth var block.
+
+	Bullet4 Bullet // The fourth bullet.
+
+	// The last var block.
+
+	// The fifth bullet.
+	Bullet5 Bullet
+
+	Bullet6 Bullet // The sixth bullet.
 )
-
-func Func1() {}
-
-func Func2() {}
-
-func Func3() {}
-
-run "assets", {Title: "Bullet (by Go+)"}
 `,
-		}, edits[0])
+		})
 	})
 }
