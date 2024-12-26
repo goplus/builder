@@ -79,13 +79,9 @@ func (s *Server) handleCall(c *jsonrpc2.Call) error {
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {
 			return s.replyParseError(c.ID(), err)
 		}
-		return errors.New("TODO")
-	case "completionItem/resolve":
-		var item CompletionItem
-		if err := UnmarshalJSON(c.Params(), &item); err != nil {
-			return s.replyParseError(c.ID(), err)
-		}
-		return errors.New("TODO")
+		s.runWithResponse(c.ID(), func() (any, error) {
+			return s.textDocumentCompletion(&params)
+		})
 	case "textDocument/signatureHelp":
 		var params SignatureHelpParams
 		if err := UnmarshalJSON(c.Params(), &params); err != nil {

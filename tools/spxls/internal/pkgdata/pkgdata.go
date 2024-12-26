@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/pkgdoc"
 )
@@ -17,13 +18,33 @@ import (
 //go:embed pkgdata.zip
 var pkgdataZip []byte
 
+const (
+	pkgExportSuffix = ".pkgexport"
+	pkgDocSuffix    = ".pkgdoc"
+)
+
+// ListPkgs lists all packages in the pkgdata.zip file.
+func ListPkgs() ([]string, error) {
+	zr, err := zip.NewReader(bytes.NewReader(pkgdataZip), int64(len(pkgdataZip)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zip reader: %w", err)
+	}
+	pkgs := make([]string, 0, len(zr.File)/2)
+	for _, f := range zr.File {
+		if strings.HasSuffix(f.Name, pkgExportSuffix) {
+			pkgs = append(pkgs, strings.TrimSuffix(f.Name, pkgExportSuffix))
+		}
+	}
+	return pkgs, nil
+}
+
 // OpenExport opens a package export file.
 func OpenExport(pkgPath string) (io.ReadCloser, error) {
 	zr, err := zip.NewReader(bytes.NewReader(pkgdataZip), int64(len(pkgdataZip)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create zip reader: %w", err)
 	}
-	pkgExportFile := pkgPath + ".pkgexport"
+	pkgExportFile := pkgPath + pkgExportSuffix
 	for _, f := range zr.File {
 		if f.Name == pkgExportFile {
 			return f.Open()
@@ -38,7 +59,7 @@ func GetPkgDoc(pkgPath string) (*pkgdoc.PkgDoc, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create zip reader: %w", err)
 	}
-	pkgDocFile := pkgPath + ".pkgdoc"
+	pkgDocFile := pkgPath + pkgDocSuffix
 	for _, f := range zr.File {
 		if f.Name == pkgDocFile {
 			rc, err := f.Open()

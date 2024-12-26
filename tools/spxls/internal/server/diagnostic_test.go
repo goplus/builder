@@ -159,12 +159,12 @@ func TestServerWorkspaceDiagnostic(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, report)
 		assert.Len(t, report.Items, 3)
-		foundFiles := make(map[string]bool)
+		foundFiles := make(map[string]struct{})
 		for _, item := range report.Items {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			relPath, err := s.fromDocumentURI(fullReport.URI)
 			require.NoError(t, err)
-			foundFiles[relPath] = true
+			foundFiles[relPath] = struct{}{}
 			assert.Equal(t, string(DiagnosticFull), fullReport.Kind)
 			assert.Empty(t, fullReport.Items)
 		}
@@ -192,7 +192,7 @@ var (
 		for _, item := range report.Items {
 			fullReport := item.Value.(WorkspaceFullDocumentDiagnosticReport)
 			if fullReport.URI == "file:///main.spx" {
-				require.Len(t, fullReport.Items, 2)
+				require.Len(t, fullReport.Items, 3)
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityError,
 					Message:  "expected ')', found 'EOF'",
@@ -207,6 +207,14 @@ var (
 					Range: Range{
 						Start: Position{Line: 3, Character: 23},
 						End:   Position{Line: 3, Character: 23},
+					},
+				})
+				assert.Contains(t, fullReport.Items, Diagnostic{
+					Severity: SeverityError,
+					Message:  `sprite resource "MyAircraft" not found`,
+					Range: Range{
+						Start: Position{Line: 3, Character: 1},
+						End:   Position{Line: 3, Character: 11},
 					},
 				})
 			} else {

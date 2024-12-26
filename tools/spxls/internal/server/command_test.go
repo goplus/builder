@@ -142,6 +142,46 @@ onStart => {
 		}))
 	})
 
+	t.Run("ParseError", func(t *testing.T) {
+		s := New(vfs.NewMapFS(func() map[string][]byte {
+			return map[string][]byte{
+				"main.spx": []byte(`
+// Invalid syntax
+var (
+	MySprite Sprite
+`),
+			}
+		}), nil)
+
+		mainSpxFileScopeParams := []SpxGetDefinitionsParams{
+			{
+				TextDocumentPositionParams: TextDocumentPositionParams{
+					TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
+					Position:     Position{Line: 0, Character: 0},
+				},
+			},
+		}
+		mainSpxFileScopeDefs, err := s.spxGetDefinitions(mainSpxFileScopeParams)
+		require.NoError(t, err)
+		require.NotNil(t, mainSpxFileScopeDefs)
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr("builtin"),
+			Name:    util.ToPtr("println"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr("main"),
+			Name:    util.ToPtr("MySprite"),
+		}))
+		assert.True(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(spxPkgPath),
+			Name:    util.ToPtr("Game.onStart"),
+		}))
+		assert.False(t, spxDefinitionIdentifierSliceContains(mainSpxFileScopeDefs, SpxDefinitionIdentifier{
+			Package: util.ToPtr(spxPkgPath),
+			Name:    util.ToPtr("Sprite.onStart"),
+		}))
+	})
+
 	t.Run("TrailingEmptyLinesOfSpriteCode", func(t *testing.T) {
 		s := New(vfs.NewMapFS(func() map[string][]byte {
 			return map[string][]byte{

@@ -144,14 +144,10 @@ func parseGopFuncName(name string) (parsedName string, overloadID *string) {
 	return
 }
 
-// expandGoptOverloadedMethod expands the given Go+ template method to all
-// its overloads.
-func expandGoptOverloadedMethod(method *types.Func) []*types.Func {
-	typ, objs := gogen.CheckSigFuncExObjects(method.Type().(*types.Signature))
+// expandGopOverloadedFunc expands the given Go+ function to all its overloads.
+func expandGopOverloadedFunc(fun *types.Func) []*types.Func {
+	typ, objs := gogen.CheckSigFuncExObjects(fun.Type().(*types.Signature))
 	if typ == nil {
-		return nil
-	}
-	if _, ok := typ.(*gogen.TyTemplateRecvMethod); !ok {
 		return nil
 	}
 	overloads := make([]*types.Func, 0, len(objs))

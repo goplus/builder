@@ -231,7 +231,31 @@ var (
 		}
 
 		links, err := s.textDocumentDocumentLink(params)
-		assert.NoError(t, err)
-		assert.Nil(t, links)
+		require.NoError(t, err)
+		require.Len(t, links, 3)
+		assert.Contains(t, links, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 3, Character: 1},
+				End:   Position{Line: 3, Character: 8},
+			},
+			Target: toURI("spx://resources/sounds/MySound"),
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: SpxResourceRefKindAutoBinding,
+			},
+		})
+		assert.Contains(t, links, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 3, Character: 1},
+				End:   Position{Line: 3, Character: 8},
+			},
+			Target: toURI("gop:main?MySound"),
+		})
+		assert.Contains(t, links, DocumentLink{
+			Range: Range{
+				Start: Position{Line: 3, Character: 9},
+				End:   Position{Line: 3, Character: 14},
+			},
+			Target: toURI("gop:github.com/goplus/spx?Sound"),
+		})
 	})
 }

@@ -16,11 +16,27 @@ type SpxDefinition struct {
 	ID       SpxDefinitionIdentifier
 	Overview string
 	Detail   string
+
+	CompletionItemLabel            string
+	CompletionItemKind             CompletionItemKind
+	CompletionItemInsertText       string
+	CompletionItemInsertTextFormat InsertTextFormat
 }
 
 // HTML returns the HTML representation of the definition.
 func (def SpxDefinition) HTML() string {
 	return fmt.Sprintf("<definition-item def-id=%q overview=%q>\n%s</definition-item>\n", def.ID, def.Overview, def.Detail)
+}
+
+// CompletionItem constructs a [CompletionItem] from the definition.
+func (def SpxDefinition) CompletionItem() CompletionItem {
+	return CompletionItem{
+		Label:            def.CompletionItemLabel,
+		Kind:             def.CompletionItemKind,
+		Documentation:    &Or_CompletionItem_documentation{Value: MarkupContent{Kind: Markdown, Value: def.HTML()}},
+		InsertText:       def.CompletionItemInsertText,
+		InsertTextFormat: &def.CompletionItemInsertTextFormat,
+	}
 }
 
 var (
@@ -30,31 +46,61 @@ var (
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("for_iterate")},
 			Overview: "for i, v <- set { ... }",
 			Detail:   "Iterate within given set",
+
+			CompletionItemLabel:            "for",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "for ${1:i}, ${2:v} <- ${3:set} {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("for_loop_with_condition")},
 			Overview: "for condition { ... }",
 			Detail:   "Loop with condition",
+
+			CompletionItemLabel:            "for",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "for ${1:condition} {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("for_loop_with_range")},
 			Overview: "for i <- start:end { ... }",
 			Detail:   "Loop with range",
+
+			CompletionItemLabel:            "for",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "for ${1:i} <- ${2:start}:${3:end} {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("if_statement")},
 			Overview: "if condition { ... }",
 			Detail:   "If statement",
+
+			CompletionItemLabel:            "if",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "if ${1:condition} {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("if_else_statement")},
 			Overview: "if condition { ... } else { ... }",
 			Detail:   "If else statement",
+
+			CompletionItemLabel:            "if",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "if ${1:condition} {\n\t${2:}\n} else {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 		{
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("var_declaration")},
 			Overview: "var name type",
 			Detail:   "Variable declaration, e.g., `var count int`",
+
+			CompletionItemLabel:            "var",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "var ${1:name} $0",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 	}
 
@@ -65,6 +111,11 @@ var (
 			ID:       SpxDefinitionIdentifier{Name: util.ToPtr("func_declaration")},
 			Overview: "func name(params) { ... }",
 			Detail:   "Function declaration, e.g., `func add(a int, b int) int {}`",
+
+			CompletionItemLabel:            "func",
+			CompletionItemKind:             KeywordCompletion,
+			CompletionItemInsertText:       "func ${1:name}(${2:params}) ${3:returnType} {\n\t$0\n}",
+			CompletionItemInsertTextFormat: SnippetTextFormat,
 		},
 	}
 
@@ -153,6 +204,20 @@ func GetSpxBuiltinDefinition(name string) SpxDefinition {
 		}
 	}
 
+	completionItemKind := TextCompletion
+	if keyword, _, ok := strings.Cut(overview, " "); ok {
+		switch keyword {
+		case "var":
+			completionItemKind = VariableCompletion
+		case "const":
+			completionItemKind = ConstantCompletion
+		case "type":
+			completionItemKind = StructCompletion
+		case "func":
+			completionItemKind = FunctionCompletion
+		}
+	}
+
 	return SpxDefinition{
 		ID: SpxDefinitionIdentifier{
 			Package: util.ToPtr(pkgPath),
@@ -160,6 +225,11 @@ func GetSpxBuiltinDefinition(name string) SpxDefinition {
 		},
 		Overview: overview,
 		Detail:   detail,
+
+		CompletionItemLabel:            name,
+		CompletionItemKind:             completionItemKind,
+		CompletionItemInsertText:       name,
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
 
@@ -259,6 +329,10 @@ func NewSpxDefinitionForVar(result *compileResult, v *types.Var, selectorTypeNam
 	if selectorTypeName != "" {
 		idName = selectorTypeName + "." + idName
 	}
+	completionItemKind := VariableCompletion
+	if strings.HasPrefix(overview.String(), "field ") {
+		completionItemKind = FieldCompletion
+	}
 	return SpxDefinition{
 		ID: SpxDefinitionIdentifier{
 			Package: &pkgPath,
@@ -266,6 +340,11 @@ func NewSpxDefinitionForVar(result *compileResult, v *types.Var, selectorTypeNam
 		},
 		Overview: overview.String(),
 		Detail:   detail,
+
+		CompletionItemLabel:            v.Name(),
+		CompletionItemKind:             completionItemKind,
+		CompletionItemInsertText:       v.Name(),
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
 
@@ -307,6 +386,11 @@ func NewSpxDefinitionForConst(result *compileResult, c *types.Const) SpxDefiniti
 		},
 		Overview: overview.String(),
 		Detail:   detail,
+
+		CompletionItemLabel:            c.Name(),
+		CompletionItemKind:             ConstantCompletion,
+		CompletionItemInsertText:       c.Name(),
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
 
@@ -355,6 +439,11 @@ func NewSpxDefinitionForType(result *compileResult, typeName *types.TypeName) Sp
 		},
 		Overview: overview.String(),
 		Detail:   detail,
+
+		CompletionItemLabel:            typeName.Name(),
+		CompletionItemKind:             StructCompletion,
+		CompletionItemInsertText:       typeName.Name(),
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
 
@@ -362,6 +451,13 @@ func NewSpxDefinitionForType(result *compileResult, typeName *types.TypeName) Sp
 // function. It returns multiple definitions if the function has overloaded
 // variants.
 func NewSpxDefinitionsForFunc(result *compileResult, fun *types.Func, recvTypeNameOverride string) []SpxDefinition {
+	if funcOverloads := expandGopOverloadedFunc(fun); len(funcOverloads) > 0 {
+		// When encountering a overload signature like `func(__gop_overload_args__ interface{_()})`,
+		// we expand it to concrete overloads and use the first one as the default representation.
+		// All overload variants will still be included in the returned definitions.
+		fun = funcOverloads[0]
+	}
+
 	pkg := fun.Pkg()
 	pkgPath := pkg.Path()
 	defIdent := result.defIdentOf(fun)
@@ -407,6 +503,11 @@ func NewSpxDefinitionsForFunc(result *compileResult, fun *types.Func, recvTypeNa
 			},
 			Overview: overview,
 			Detail:   detail,
+
+			CompletionItemLabel:            parsedName,
+			CompletionItemKind:             FunctionCompletion,
+			CompletionItemInsertText:       parsedName,
+			CompletionItemInsertTextFormat: PlainTextTextFormat,
 		},
 	}
 
@@ -447,7 +548,7 @@ func NewSpxDefinitionsForFunc(result *compileResult, fun *types.Func, recvTypeNa
 				}
 
 				methodName := method.Name()
-				if methodOverloads := expandGoptOverloadedMethod(method); len(methodOverloads) > 0 {
+				if methodOverloads := expandGopOverloadedFunc(method); len(methodOverloads) > 0 {
 					for i := range methodOverloads {
 						method = methodOverloads[i]
 						methodName = method.Name()
@@ -470,6 +571,11 @@ func NewSpxDefinitionsForFunc(result *compileResult, fun *types.Func, recvTypeNa
 						},
 						Overview: overview,
 						Detail:   doc,
+
+						CompletionItemLabel:            parsedName,
+						CompletionItemKind:             FunctionCompletion,
+						CompletionItemInsertText:       parsedName,
+						CompletionItemInsertTextFormat: PlainTextTextFormat,
 					})
 				}
 			})
@@ -497,6 +603,11 @@ func NewSpxDefinitionsForFunc(result *compileResult, fun *types.Func, recvTypeNa
 				},
 				Overview: overview,
 				Detail:   doc,
+
+				CompletionItemLabel:            parsedName,
+				CompletionItemKind:             FunctionCompletion,
+				CompletionItemInsertText:       parsedName,
+				CompletionItemInsertTextFormat: PlainTextTextFormat,
 			})
 		}
 	}
@@ -616,5 +727,10 @@ func NewSpxDefinitionForPkg(result *compileResult, pkgName *types.PkgName) SpxDe
 		},
 		Overview: "package " + pkgName.Name(),
 		Detail:   detail,
+
+		CompletionItemLabel:            pkgName.Name(),
+		CompletionItemKind:             ModuleCompletion,
+		CompletionItemInsertText:       pkgName.Name(),
+		CompletionItemInsertTextFormat: PlainTextTextFormat,
 	}
 }
