@@ -42,7 +42,8 @@ func (s *Server) textDocumentFormatting(params *DocumentFormattingParams) ([]Tex
 
 	// Simply replace the entire document.
 	lines := bytes.Count(content, []byte("\n"))
-	lastLineLen := len(bytes.TrimRight(bytes.Split(content, []byte("\n"))[lines], "\r"))
+	lastNewLine := bytes.LastIndex(content, []byte("\n"))
+	lastLineLen := len(content) - (lastNewLine + 1)
 	return []TextEdit{
 		{
 			Range: Range{
@@ -68,20 +69,15 @@ func formatSpx(src []byte) ([]byte, error) {
 
 	// Find all var blocks and function declarations.
 	var (
-		firstVarBlock *gopast.GenDecl
-		varsToMerge   []*gopast.GenDecl
-		funcDecls     []gopast.Decl
-		otherDecls    []gopast.Decl
+		varBlocks  []*gopast.GenDecl
+		funcDecls  []gopast.Decl
+		otherDecls []gopast.Decl
 	)
 	for _, decl := range f.Decls {
 		switch d := decl.(type) {
 		case *gopast.GenDecl:
 			if d.Tok == goptoken.VAR {
-				if firstVarBlock == nil {
-					firstVarBlock = d
-				} else {
-					varsToMerge = append(varsToMerge, d)
-				}
+				varBlocks = append(varBlocks, d)
 			} else {
 				otherDecls = append(otherDecls, d)
 			}
@@ -96,20 +92,23 @@ func formatSpx(src []byte) ([]byte, error) {
 	//
 	// See https://github.com/goplus/builder/issues/591 and https://github.com/goplus/builder/issues/752.
 	newDecls := make([]gopast.Decl, 0, len(f.Decls))
-	if firstVarBlock != nil {
+	if len(varBlocks) > 0 {
 		// Merge multiple var blocks into a single one.
-		firstVarBlock.Lparen = goptoken.Pos(1) // Force parenthesized form.
-		for _, varBlock := range varsToMerge {
-			for _, spec := range varBlock.Specs {
-				valueSpec, ok := spec.(*gopast.ValueSpec)
-				if !ok {
-					return nil, fmt.Errorf("unexpected non-value spec in var block: %T", spec)
+		firstVarBlock := varBlocks[0]
+		firstVarBlock.Lparen = firstVarBlock.Pos()
+		if len(varBlocks) > 1 {
+			firstVarBlock.Rparen = varBlocks[len(varBlocks)-1].End()
+			for _, varBlock := range varBlocks[1:] {
+				for _, spec := range varBlock.Specs {
+					valueSpec, ok := spec.(*gopast.ValueSpec)
+					if !ok {
+						return nil, fmt.Errorf("unexpected non-value spec in var block: %T", spec)
+					}
+					firstVarBlock.Specs = append(firstVarBlock.Specs, valueSpec)
 				}
-				for _, name := range valueSpec.Names {
-					name.NamePos = goptoken.NoPos
-				}
-				firstVarBlock.Specs = append(firstVarBlock.Specs, valueSpec)
 			}
+		} else {
+			firstVarBlock.Rparen = firstVarBlock.End()
 		}
 		newDecls = append(newDecls, firstVarBlock)
 	}
