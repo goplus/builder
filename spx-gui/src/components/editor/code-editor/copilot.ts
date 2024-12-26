@@ -1,27 +1,161 @@
 import { Disposable } from '@/utils/disposable'
+import type { I18n } from '@/utils/i18n'
+import { generateMessage, type Message } from '@/apis/copilot'
+import type { Project } from '@/models/project'
+import type { Stage } from '@/models/stage'
+import type { Sprite } from '@/models/sprite'
+import type { Sound } from '@/models/sound'
+import type { Widget } from '@/models/widget'
+import type { Animation } from '@/models/animation'
+import type { Backdrop } from '@/models/backdrop'
+import type { Chat, ChatContext, ChatMessage, ICopilot } from './ui/code-editor-ui'
 import { makeBasicMarkdownString, type BasicMarkdownString } from './common'
-import type { Chat, ChatContext, ICopilot } from './ui/code-editor-ui'
+
+const maxChatMessageCount = 20
+const maxCodeLength = 2000
 
 export class Copilot extends Disposable implements ICopilot {
+  constructor(
+    private i18n: I18n,
+    private project: Project
+  ) {
+    super()
+  }
+
+  private makeContextMessage(): Message {
+    let currentTarget: string
+    if (this.project.selectedSprite != null) {
+      currentTarget = this.i18n.t({
+        en: `Sprite ${this.project.selectedSprite.name}`,
+        zh: `精灵 ${this.project.selectedSprite.name}`
+      })
+    } else if (this.project.selected?.type === 'stage') {
+      currentTarget = this.i18n.t({ en: 'Stage', zh: '舞台' })
+    } else {
+      throw new Error(`Invalid project selected state: ${this.project.selected?.type}`)
+    }
+    const projectInfo = JSON.stringify(getProjectInfo(this.project))
+    return {
+      role: 'user',
+      content: {
+        type: 'text',
+        text: this.i18n.t({
+          en: `Here is some context information:
+I opened a project:
+<project-info>
+${projectInfo}
+</project-info>
+Now I am working on ${currentTarget}`,
+          zh: `这里是一些上下文信息：
+我打开了一个项目：
+<project-info>
+${projectInfo}
+</project-info>
+我现在正在编辑${currentTarget}`
+        })
+      }
+    }
+  }
+
+  private chatMessage2Message({ role, content }: ChatMessage): Message {
+    const contentText = typeof content.value === 'string' ? content.value : this.i18n.t(content.value)
+    return {
+      role,
+      content: {
+        type: 'text',
+        text: contentText
+      }
+    }
+  }
+
+  private makeSkippingMessage(toSkip: number): Message {
+    return {
+      role: 'user',
+      content: {
+        type: 'text',
+        text: this.i18n.t({
+          en: `(${toSkip} messages skipped)`,
+          zh: `（跳过了 ${toSkip} 条消息）`
+        })
+      }
+    }
+  }
+
   async getChatCompletion(ctx: ChatContext, chat: Chat): Promise<BasicMarkdownString> {
-    console.warn('TODO', ctx, chat)
-    return Promise.race([
-      new Promise<never>((_, reject) => ctx.signal.addEventListener('abort', () => reject(ctx.signal.reason))),
-      new Promise((resolve) => setTimeout(resolve, 1000)).then(() =>
-        makeBasicMarkdownString(`
-I do not have access to real-time information, including the specifics of the \`turn\` API for the spx game engine.  My knowledge is based on the data I was trained on.  To understand the \`turn\` API, you should consult the official spx documentation or the source code itself.  The GitHub repository you linked ([https://github.com/goplus/spx](https://github.com/goplus/spx)) is the best place to find this information.
+    const messages = [this.makeContextMessage()]
+    const toSkip = chat.messages.length - maxChatMessageCount
+    // skip chat messages in range `[1, toSkip]`
+    chat.messages.forEach((message, i) => {
+      if (i === 0) {
+        messages.push(this.chatMessage2Message(message))
+        if (toSkip > 0) messages.push(this.makeSkippingMessage(toSkip))
+        return
+      }
+      if (i > toSkip) messages.push(this.chatMessage2Message(message))
+    })
+    const message = await generateMessage(messages, ctx.signal)
+    return makeBasicMarkdownString(message.content.text)
+  }
+}
 
-Based on the context of the provided tutorials, it's likely that the \`turn\` function or method within the spx game engine is related to game logic and sprite movement.  The tutorials show examples of sprites moving randomly using functions like \`step\` and \`turn\`.  It's probable that \`turn\` modifies the rotation or orientation of a sprite, potentially in conjunction with \`step\` to control its movement direction.  However, without access to the engine's API documentation, this is just speculation.
+function getProjectInfo(project: Project) {
+  const codeLength = [project.stage.code.length, ...project.sprites.map((s) => s.code.length)].reduce(
+    (a, b) => a + b,
+    0
+  )
+  const codeSampleRatio = Math.min(maxCodeLength / codeLength, 1)
+  return {
+    name: project.name,
+    desc: project.description,
+    instructions: project.instructions,
+    stage: getStageInfo(project.stage, codeSampleRatio),
+    sprites: project.sprites.map((s) => getSpriteInfo(s, codeSampleRatio)),
+    sounds: project.sounds.map(getSoundInfo)
+  }
+}
 
-To find the precise functionality of \`turn\`, I recommend the following steps:
+function getStageInfo(stage: Stage, codeSampleRatio: number) {
+  return {
+    mapSize: stage.getMapSize(),
+    widgets: stage.widgets.map(getWidgetInfo),
+    backdrops: stage.backdrops.map(getBackdropInfo),
+    defaultBackdrop: stage.defaultBackdrop?.name,
+    code: getCodeInfo(stage.code, codeSampleRatio)
+  }
+}
 
-1. **Check the spx documentation:** Look for official documentation or tutorials that explain the API.
-2. **Examine the source code:** The GitHub repository contains the source code.  Search for the \`turn\` function or method within the relevant files.  The surrounding code will provide context and explain its usage.
-3. **Search the spx issues and discussions:** The GitHub repository likely has issues or discussions where users have asked about the \`turn\` API.  These discussions might provide helpful insights.
+function getSpriteInfo(sprite: Sprite, codeSampleRatio: number) {
+  return {
+    name: sprite.name,
+    visible: sprite.visible,
+    animations: sprite.animations.map(getAnimationInfo),
+    code: getCodeInfo(sprite.code, codeSampleRatio)
+  }
+}
 
-Remember to always refer to the official documentation for the most accurate and up-to-date information.
-`)
-      )
-    ])
+function getSoundInfo(sound: Sound) {
+  return sound.name
+}
+
+function getBackdropInfo(backdrop: Backdrop) {
+  return backdrop.name
+}
+
+function getWidgetInfo(widget: Widget) {
+  return {
+    type: widget.type,
+    name: widget.name
+  }
+}
+
+function getAnimationInfo(animation: Animation) {
+  return animation.name
+}
+
+function getCodeInfo(code: string, codeSampleRatio: number) {
+  return {
+    len: code.length,
+    // TODO: consider sampling code based on AST
+    sampled: code.slice(0, Math.floor(code.length * codeSampleRatio))
   }
 }

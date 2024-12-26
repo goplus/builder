@@ -2,6 +2,7 @@ import { Disposable } from '@/utils/disposable'
 import { type DefinitionIdentifier, type DefinitionDocumentationItem, stringifyDefinitionId } from '../common'
 import * as gopDefinitions from './gop'
 import * as spxDefinitions from './spx'
+import './helpers'
 
 export class DocumentBase extends Disposable {
   private storage = new Map<string, DefinitionDocumentationItem>()

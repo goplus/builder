@@ -24,7 +24,7 @@ const basicComponents = {
   /**
    * Usage:
    * ```html
-   * <code-link file="file://NiuXiaoQi.spx" position="10,20">
+   * <code-link file="file:///NiuXiaoQi.spx" position="10,20">
    *   Default link text here
    * </code-link>
    * ```

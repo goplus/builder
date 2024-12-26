@@ -136,7 +136,7 @@ export function useProvideCodeEditorCtx(
         untilNotNull(runtimeRef),
         untilQueryLoaded(monacoQueryRet)
       ])
-      return new CodeEditor(project, runtime, monaco)
+      return new CodeEditor(project, runtime, monaco, i18n)
     },
     { en: 'Failed to load code editor', zh: '加载代码编辑器失败' }
   )

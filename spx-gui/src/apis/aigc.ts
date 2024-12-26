@@ -1,5 +1,5 @@
 /**
- * @desc AI-related APIs of spx-backend
+ * @desc AIGC-related APIs of spx-backend
  */
 
 import { client } from './common'
