@@ -7,9 +7,18 @@ import { toText } from '@/models/common/file'
 import type { Project } from '@/models/project'
 import wasmExecScriptUrl from '@/assets/wasm_exec.js?url'
 import spxlsWasmUrl from '@/assets/spxls.wasm?url'
+import {
+  fromLSPRange,
+  type DefinitionIdentifier,
+  type Position,
+  type ResourceReference,
+  type TextDocumentIdentifier,
+  containsPosition
+} from '../common'
 import { Spxlc } from './spxls/client'
 import type { Files as SpxlsFiles } from './spxls'
 import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
+import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
 
 function loadScript(url: string) {
   return new Promise((resolve, reject) => {
@@ -141,5 +150,35 @@ export class SpxLSPClient extends Disposable {
   async textDocumentFormatting(params: lsp.DocumentFormattingParams): Promise<lsp.TextEdit[] | null> {
     const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
+  }
+
+  // Higher-level APIs
+
+  async getResourceReferences(textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
+    const documentLinks = await this.textDocumentDocumentLink({ textDocument })
+    if (documentLinks == null) return []
+    const rrs: ResourceReference[] = []
+    for (const documentLink of documentLinks) {
+      if (!isDocumentLinkForResourceReference(documentLink)) continue
+      rrs.push({
+        kind: documentLink.data.kind,
+        range: fromLSPRange(documentLink.range),
+        resource: { uri: documentLink.target }
+      })
+    }
+    return rrs
+  }
+
+  async getDefinition(textDocument: TextDocumentIdentifier, position: Position): Promise<DefinitionIdentifier | null> {
+    const documentLinks = await this.textDocumentDocumentLink({ textDocument })
+    if (documentLinks == null) return null
+    for (const documentLink of documentLinks) {
+      const definition = parseDocumentLinkForDefinition(documentLink)
+      if (definition == null) continue
+      const range = fromLSPRange(documentLink.range)
+      if (!containsPosition(range, position)) continue
+      return definition
+    }
+    return null
   }
 }

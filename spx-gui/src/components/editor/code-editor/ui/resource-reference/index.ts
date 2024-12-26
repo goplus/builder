@@ -1,6 +1,6 @@
 import { computed, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
-import { ResourceReferenceKind, type BaseContext, type Range, type ResourceIdentifier } from '../../common'
+import { ResourceReferenceKind, type BaseContext, type ResourceReference } from '../../common'
 import type { TextDocument } from '../../text-document'
 import type { monaco } from '../../monaco'
 import { toMonacoPosition, toMonacoRange } from '../common'
@@ -10,12 +10,6 @@ import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
 
 export type ResourceReferencesContext = BaseContext
-
-export type ResourceReference = {
-  kind: ResourceReferenceKind
-  range: Range
-  resource: ResourceIdentifier
-}
 
 export type InternalResourceReference = ResourceReference & {
   id: string
