@@ -10,6 +10,8 @@ import { toWav } from '../audio'
 import { toJpeg } from '../img'
 import type { LocaleMessage } from '../i18n'
 
+export const packageSpx = 'github.com/goplus/spx'
+
 export const keywords = [
   'func',
   'main',

@@ -237,6 +237,12 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return this.getTextDocument(this.mainTextDocumentId)
   }
 
+  async insertText(text: string, range: Range) {
+    const editor = this.editor
+    const inserting = { range: toMonacoRange(range), text }
+    editor.executeEdits('insertText', [inserting])
+  }
+
   async insertSnippet(snippet: string, range: Range) {
     const editor = this.editor
     // `executeEdits` does not support snippet, so we have to split the insertion into two steps:
@@ -244,7 +250,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     // 2. insert the snippet with `snippetController2`
     if (!isRangeEmpty(range)) {
       const removing = { range: toMonacoRange(range), text: '' }
-      editor.executeEdits('snippet', [removing])
+      editor.executeEdits('insertSnippet', [removing])
       await timeout(0) // NOTE: the timeout is necessary, or the cursor position will be wrong after snippet inserted
     }
     // it's strange but it works, see details in https://github.com/Microsoft/monaco-editor/issues/342
@@ -375,7 +381,7 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
           const selection = editor.getSelection()
           if (selection == null) return
           const text = await navigator.clipboard.readText()
-          editor.executeEdits('editor', [{ range: selection, text }])
+          editor.executeEdits('paste', [{ range: selection, text }])
           editor.focus()
         } catch (error) {
           editor.focus()

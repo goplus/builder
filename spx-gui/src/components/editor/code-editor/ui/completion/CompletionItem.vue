@@ -15,7 +15,7 @@ type Part = {
 }
 
 const parts = computed(() => {
-  const matches = createMatches(props.item.score)
+  const matches = createMatches(props.item.score ?? undefined)
   const parts: Part[] = []
   let lastEnd = 0
   for (const match of matches) {
@@ -51,6 +51,7 @@ watchEffect(() => {
 
 <style lang="scss" scoped>
 .completion-item {
+  min-width: 8em;
   display: flex;
   align-items: center;
   padding: 8px;

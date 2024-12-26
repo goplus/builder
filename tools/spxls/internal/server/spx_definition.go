@@ -36,6 +36,9 @@ func (def SpxDefinition) CompletionItem() CompletionItem {
 		Documentation:    &Or_CompletionItem_documentation{Value: MarkupContent{Kind: Markdown, Value: def.HTML()}},
 		InsertText:       def.CompletionItemInsertText,
 		InsertTextFormat: &def.CompletionItemInsertTextFormat,
+		Data: &CompletionItemData{
+			Definition: &def.ID,
+		},
 	}
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { MonacoKeyCode, type monaco } from '../../monaco'
 import MarkdownView from '../markdown/MarkdownView.vue'
 import CodeEditorCard from '../CodeEditorCard.vue'
@@ -13,6 +13,10 @@ const props = defineProps<{
 
 const activeIdx = ref(0)
 const activeItem = computed<InternalCompletionItem | null>(() => props.items[activeIdx.value] ?? null)
+
+watch(activeItem, (item) => {
+  if (item == null) activeIdx.value = 0
+})
 
 function moveActiveUp() {
   const newIdx = activeIdx.value - 1
@@ -71,8 +75,8 @@ function applyItem(item: InternalCompletionItem) {
         @click="applyItem(item)"
       />
     </ul>
-    <div v-if="activeItem != null" class="completion-item-detail">
-      <MarkdownView v-bind="activeItem.documentation" />
+    <div class="completion-item-detail">
+      <MarkdownView v-if="activeItem?.documentation != null" v-bind="activeItem.documentation" />
     </div>
   </CodeEditorCard>
 </template>
