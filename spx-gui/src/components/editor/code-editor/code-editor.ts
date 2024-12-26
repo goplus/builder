@@ -3,6 +3,7 @@ import { Disposable } from '@/utils/disposable'
 import Emitter from '@/utils/emitter'
 import { insertSpaces, tabSize } from '@/utils/spx/highlighter'
 import type { I18n } from '@/utils/i18n'
+import { packageSpx } from '@/utils/spx'
 import type { Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
@@ -24,7 +25,12 @@ import {
   type IContextMenuProvider,
   type IHoverProvider,
   builtInCommandRename,
-  type MenuItem
+  type MenuItem,
+  type ICompletionProvider,
+  type CompletionContext,
+  type CompletionItem,
+  InsertTextFormat,
+  CompletionItemKind
 } from './ui/code-editor-ui'
 import {
   type Action,
@@ -32,7 +38,6 @@ import {
   type DefinitionDocumentationString,
   type Diagnostic,
   makeAdvancedMarkdownString,
-  stringifyDefinitionId,
   selection2Range,
   toLSPPosition,
   fromLSPRange,
@@ -49,18 +54,11 @@ import {
   type Selection,
   type CommandArgs,
   getTextDocumentId,
-  containsPosition
+  containsPosition,
+  makeBasicMarkdownString
 } from './common'
-import * as spxDocumentationItems from './document-base/spx'
-import * as gopDocumentationItems from './document-base/gop'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
-
-// mock data for test
-const allItems = Object.values({
-  ...spxDocumentationItems,
-  ...gopDocumentationItems
-})
 
 class ResourceReferencesProvider
   extends Emitter<{
@@ -223,6 +221,94 @@ class HoverProvider implements IHoverProvider {
     ])
     const actions = maybeActions.filter((a) => a != null) as Action[]
     return { contents, range, actions }
+  }
+}
+
+class CompletionProvider implements ICompletionProvider {
+  constructor(
+    private lspClient: SpxLSPClient,
+    private documentBase: DocumentBase
+  ) {}
+
+  private getCompletionItemKind(kind: lsp.CompletionItemKind | undefined): CompletionItemKind {
+    switch (kind) {
+      case lsp.CompletionItemKind.Method:
+      case lsp.CompletionItemKind.Function:
+      case lsp.CompletionItemKind.Constructor:
+        return CompletionItemKind.Function
+      case lsp.CompletionItemKind.Field:
+      case lsp.CompletionItemKind.Variable:
+      case lsp.CompletionItemKind.Property:
+        return CompletionItemKind.Variable
+      case lsp.CompletionItemKind.Interface:
+      case lsp.CompletionItemKind.Enum:
+      case lsp.CompletionItemKind.Struct:
+      case lsp.CompletionItemKind.TypeParameter:
+        return CompletionItemKind.Type
+      case lsp.CompletionItemKind.Module:
+        return CompletionItemKind.Package
+      case lsp.CompletionItemKind.Keyword:
+      case lsp.CompletionItemKind.Operator:
+        return CompletionItemKind.Statement
+      case lsp.CompletionItemKind.EnumMember:
+      case lsp.CompletionItemKind.Text:
+      case lsp.CompletionItemKind.Constant:
+        return CompletionItemKind.Constant
+      default:
+        return CompletionItemKind.Unknown
+    }
+  }
+
+  private getInsertTextFormat(insertTextFormat: lsp.InsertTextFormat | undefined): InsertTextFormat {
+    switch (insertTextFormat) {
+      case lsp.InsertTextFormat.Snippet:
+        return InsertTextFormat.Snippet
+      default:
+        return InsertTextFormat.PlainText
+    }
+  }
+
+  async provideCompletion(ctx: CompletionContext, position: Position): Promise<CompletionItem[]> {
+    const items = await this.lspClient.getCompletionItems({
+      textDocument: ctx.textDocument.id,
+      position: toLSPPosition(position)
+    })
+    const maybeItems = await Promise.all(
+      items.map(async (item) => {
+        const result: CompletionItem = {
+          label: item.label,
+          kind: this.getCompletionItemKind(item.kind),
+          insertText: item.label,
+          insertTextFormat: InsertTextFormat.PlainText,
+          documentation: null
+        }
+
+        const defId = item.data?.definition
+        const definition = defId != null ? await this.documentBase.getDocumentation(defId) : null
+
+        // Skip APIs from spx while without documentation, they are assumed not recommended
+        if (defId != null && defId.package === packageSpx && definition == null) return null
+
+        if (definition != null) {
+          result.kind = definition.kind
+          result.insertText = definition.insertText
+          result.insertTextFormat = InsertTextFormat.Snippet
+          result.documentation = makeBasicMarkdownString(definition.overview)
+        }
+
+        if (item.documentation != null) {
+          const docStr = lsp.MarkupContent.is(item.documentation) ? item.documentation.value : item.documentation
+          result.documentation = makeAdvancedMarkdownString(docStr)
+        }
+
+        if (item.insertText != null) {
+          result.insertText = item.insertText
+          result.insertTextFormat = this.getInsertTextFormat(item.insertTextFormat)
+        }
+        return result
+      })
+    )
+    return maybeItems.filter((item) => item != null) as CompletionItem[]
   }
 }
 
@@ -435,26 +521,7 @@ export class CodeEditor extends Disposable {
       }
     })
 
-    ui.registerCompletionProvider({
-      async provideCompletion(ctx, position) {
-        console.warn('TODO', ctx, position)
-        await new Promise<void>((resolve) => setTimeout(resolve, 100))
-        ctx.signal.throwIfAborted()
-        return allItems.map((item) => ({
-          label: item.definition
-            .name!.split('.')
-            .pop()!
-            .replace(/^./, (c) => c.toLowerCase()),
-          kind: item.kind,
-          insertText: item.insertText,
-          documentation: makeAdvancedMarkdownString(`
-<definition-item overview="${item.overview}" def-id="${stringifyDefinitionId(item.definition)}">
-</definition-item>
-`)
-        }))
-      }
-    })
-
+    ui.registerCompletionProvider(new CompletionProvider(this.lspClient, documentBase))
     ui.registerContextMenuProvider(new ContextMenuProvider(lspClient, documentBase))
     ui.registerCopilot(copilot)
     ui.registerDiagnosticsProvider(this.diagnosticsProvider)

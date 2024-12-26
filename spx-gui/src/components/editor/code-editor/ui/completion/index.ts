@@ -1,27 +1,33 @@
 import { computed, shallowReactive, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import {
-  DefinitionKind,
+  DefinitionKind as CompletionItemKind,
   type BaseContext,
   type DefinitionDocumentationString,
   type Position,
   type ITextDocument,
   positionEq
 } from '../../common'
-import type { CodeEditorUI } from '../code-editor-ui'
 import { type monaco } from '../../monaco'
-import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
+import type { CodeEditorUI } from '../code-editor-ui'
 import { makeContentWidgetEl } from '../CodeEditorUI.vue'
+import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
 
 export type CompletionContext = BaseContext
 
-export type CompletionItemKind = DefinitionKind
+export { CompletionItemKind }
+
+export enum InsertTextFormat {
+  PlainText,
+  Snippet
+}
 
 export type CompletionItem = {
   label: string
   kind: CompletionItemKind
   insertText: string
-  documentation: DefinitionDocumentationString
+  insertTextFormat: InsertTextFormat
+  documentation: DefinitionDocumentationString | null
 }
 
 export interface ICompletionProvider {
@@ -30,7 +36,7 @@ export interface ICompletionProvider {
 
 export type InternalCompletionItem = CompletionItem & {
   /** Fuzzy score */
-  score: FuzzyScore
+  score: FuzzyScore | null
   /** Index in original list */
   originalIdx: number
 }
@@ -175,10 +181,14 @@ export class CompletionController extends Emitter<{
     if (this.currentCompletion == null) return
     const { wordStart, position } = this.currentCompletion
     if (!positionEq(cursorPosition, position)) return
-    await this.ui.insertSnippet(item.insertText, {
-      start: wordStart,
-      end: position
-    })
+    const range = { start: wordStart, end: position }
+    switch (item.insertTextFormat) {
+      case InsertTextFormat.PlainText:
+        await this.ui.insertText(item.insertText, range)
+        break
+      case InsertTextFormat.Snippet:
+        await this.ui.insertSnippet(item.insertText, range)
+    }
     this.stopCompletion()
     editor.focus()
   }
@@ -265,13 +275,17 @@ export class CompletionController extends Emitter<{
 }
 
 function shouldTriggerCompletion(char: string) {
-  return /\w/.test(char)
+  return /[\w.]/.test(char)
 }
 
 function compareItems(a: InternalCompletionItem, b: InternalCompletionItem) {
-  if (a.score[0] > b.score[0]) {
+  if (a.score != null && b.score == null) {
     return -1
-  } else if (a.score[0] < b.score[0]) {
+  } else if (a.score == null && b.score != null) {
+    return 1
+  } else if (a.score != null && b.score !== null && a.score[0] > b.score[0]) {
+    return -1
+  } else if (a.score != null && b.score !== null && a.score[0] < b.score[0]) {
     return 1
   } else if (a.originalIdx < b.originalIdx) {
     return -1
@@ -283,6 +297,7 @@ function compareItems(a: InternalCompletionItem, b: InternalCompletionItem) {
 }
 
 function filterAndSort(items: CompletionItem[], word: string): InternalCompletionItem[] {
+  if (word === '') return items.map((item, i) => ({ ...item, score: null, originalIdx: i }))
   const wordLow = word.toLowerCase()
   const result: InternalCompletionItem[] = []
   items.forEach((item, i) => {

@@ -99,7 +99,11 @@ export enum DefinitionKind {
   /** Constant definition */
   Constant,
   /** Package definition */
-  Package
+  Package,
+  /** Type definition */
+  Type,
+  /** Unknown definition kind */
+  Unknown
 }
 
 export type DefinitionIdentifier = {

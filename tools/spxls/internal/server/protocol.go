@@ -1156,6 +1156,12 @@ type CompletionItem struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
+// CompletionItemData represents data in a completion item.
+type CompletionItemData struct {
+	// The corresponding definition of the completion item.
+	Definition *SpxDefinitionIdentifier `json:"definition,omitempty"`
+}
+
 // In many cases the items of an actual completion result share the same
 // value for properties like `commitCharacters` or the range of a text
 // edit. A completion list can therefore define item defaults which will

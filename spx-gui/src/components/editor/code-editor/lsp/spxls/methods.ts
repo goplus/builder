@@ -28,3 +28,13 @@ export function parseDocumentLinkForDefinition(link: lsp.DocumentLink): Definiti
     return null
   }
 }
+
+/** CompletionItemData represents data in a completion item. */
+export type CompletionItemData = {
+  /** The corresponding definition of the completion item */
+  definition?: DefinitionIdentifier
+}
+
+export interface CompletionItem extends lsp.CompletionItem {
+  data?: CompletionItemData
+}

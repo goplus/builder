@@ -18,7 +18,11 @@ import {
 import { Spxlc } from './spxls/client'
 import type { Files as SpxlsFiles } from './spxls'
 import { spxGetDefinitions, spxRenameResources } from './spxls/commands'
-import { isDocumentLinkForResourceReference, parseDocumentLinkForDefinition } from './spxls/methods'
+import {
+  type CompletionItem,
+  isDocumentLinkForResourceReference,
+  parseDocumentLinkForDefinition
+} from './spxls/methods'
 
 function loadScript(url: string) {
   return new Promise((resolve, reject) => {
@@ -127,6 +131,13 @@ export class SpxLSPClient extends Disposable {
     return spxlc.request<lsp.Hover | null>(lsp.HoverRequest.method, params)
   }
 
+  async textDocumentCompletion(
+    params: lsp.CompletionParams
+  ): Promise<lsp.CompletionList | lsp.CompletionItem[] | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.CompletionList | lsp.CompletionItem[] | null>(lsp.CompletionRequest.method, params)
+  }
+
   async textDocumentDefinition(params: lsp.DefinitionParams): Promise<lsp.Definition | null> {
     const spxlc = await this.prepareRequest()
     return spxlc.request<lsp.Definition | null>(lsp.DefinitionRequest.method, params)
@@ -180,5 +191,12 @@ export class SpxLSPClient extends Disposable {
       return definition
     }
     return null
+  }
+
+  async getCompletionItems(params: lsp.CompletionParams) {
+    const completionResult = await this.textDocumentCompletion(params)
+    if (completionResult == null) return []
+    if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
+    return completionResult as CompletionItem[]
   }
 }

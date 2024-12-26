@@ -1,4 +1,5 @@
 import type { LocaleMessage } from '@/utils/i18n'
+import { packageSpx } from '@/utils/spx'
 import {
   DefinitionKind,
   type DefinitionDocumentationItem,
@@ -6,8 +7,6 @@ import {
   categories,
   type DefinitionDocumentationCategory
 } from '../common'
-
-const packageSpx = 'github.com/goplus/spx'
 
 export const clone: DefinitionDocumentationItem = {
   categories: [categories.motion.position],
