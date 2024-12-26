@@ -104,7 +104,7 @@ export class Project extends Disposable {
   releaseCount?: number
   remixCount?: number
 
-  /** Files' hash of game content, available when project under editing */
+  /** Files' hash of game content, available when project is under editing */
   filesHash?: string
   private lastSyncedFilesHash?: string
   /** If there is any change of game content not synced (to cloud) yet. */
@@ -113,6 +113,9 @@ export class Project extends Disposable {
     if (this.filesHash == null) return false
     return this.lastSyncedFilesHash !== this.filesHash
   }
+
+  /** Modification time in milliseconds of project state, available when project is under editing */
+  modTime?: number
 
   stage: Stage
   sprites: Sprite[]
@@ -553,7 +556,12 @@ export class Project extends Disposable {
     )
   }
 
-  /** watch for all changes, auto save to local cache, or touch all files to trigger lazy loading to ensure they are in memory */
+  /**
+   * Watch for all changes to:
+   * 1. Auto save to local cache when enabled.
+   * 2. Touch all files to trigger lazy loading when not in local cache mode.
+   * 3. Update modification time.
+   */
   private autoSaveToLocalCache: (() => void) | null = null
   private startAutoSaveToLocalCache(localCacheKey: string) {
     const saveToLocalCache = debounce(() => this.saveToLocalCache(localCacheKey), 1000)
@@ -569,6 +577,7 @@ export class Project extends Disposable {
     this.autoSaveToLocalCache = () => {
       if (this.autoSaveMode === AutoSaveMode.LocalCache) saveToLocalCache()
       else touchFiles()
+      this.modTime = Date.now()
     }
 
     this.addDisposer(
@@ -588,6 +597,7 @@ export class Project extends Disposable {
     if (this.lastSyncedFilesHash == null) {
       this.lastSyncedFilesHash = this.filesHash
     }
+    this.modTime = Date.now()
     this.startAutoSaveToCloud(localCacheKey)
     this.startAutoSaveToLocalCache(localCacheKey)
 

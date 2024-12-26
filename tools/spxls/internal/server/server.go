@@ -6,6 +6,7 @@ import (
 	"go/types"
 	"io/fs"
 	"strings"
+	"sync"
 
 	"github.com/goplus/builder/tools/spxls/internal"
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
@@ -30,6 +31,8 @@ type Server struct {
 	spxResourceRootDir string
 	replier            MessageReplier
 	importer           types.Importer
+	compileCacheMu     sync.Mutex
+	lastCompileCache   *compileCache
 }
 
 // New creates a new Server instance.
@@ -322,7 +325,7 @@ func (s *Server) spxFiles() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var files []string
+	files := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue

@@ -3,16 +3,14 @@ package server
 import (
 	"testing"
 
-	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServerTextDocumentHover(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 import (
 	"fmt"
 	"image"
@@ -55,7 +53,7 @@ onClick => {}
 on "MySprite"
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 MySprite.onClick => {}
 onClick => {}
 onStart => {
@@ -64,9 +62,8 @@ onStart => {
 	imagePoint.X = 100
 }
 `),
-				"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
-				"assets/sounds/MySound/index.json":   []byte(`{}`),
-			}
+			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
+			"assets/sounds/MySound/index.json":   []byte(`{}`),
 		}), nil)
 
 		mySoundHover, err := s.textDocumentHover(&HoverParams{
@@ -447,10 +444,8 @@ onStart => {
 	})
 
 	t.Run("InvalidPosition", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`var x int`),
-			}
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`var x int`),
 		}), nil)
 
 		hover, err := s.textDocumentHover(&HoverParams{

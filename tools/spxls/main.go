@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"syscall/js"
+	"time"
 
 	"github.com/goplus/builder/tools/spxls/internal/jsonrpc2"
 	"github.com/goplus/builder/tools/spxls/internal/server"
@@ -33,7 +34,7 @@ func NewSpxls(this js.Value, args []js.Value) any {
 	s := &Spxls{
 		messageReplier: args[1],
 	}
-	s.server = server.New(vfs.NewMapFS(func() map[string][]byte {
+	s.server = server.New(vfs.NewMapFS(func() map[string]vfs.MapFile {
 		files := filesProvider.Invoke()
 		return ConvertJSFilesToMap(files)
 	}), s)
@@ -104,17 +105,20 @@ func JSUint8ArrayToBytes(uint8Array js.Value) []byte {
 }
 
 // ConvertJSFilesToMap converts a JavaScript object of files to a map.
-func ConvertJSFilesToMap(files js.Value) map[string][]byte {
+func ConvertJSFilesToMap(files js.Value) map[string]vfs.MapFile {
 	if files.Type() != js.TypeObject {
 		return nil
 	}
-	result := make(map[string][]byte)
 	keys := js.Global().Get("Object").Call("keys", files)
+	result := make(map[string]vfs.MapFile, keys.Length())
 	for i := range keys.Length() {
 		key := keys.Index(i).String()
 		value := files.Get(key)
 		if value.InstanceOf(js.Global().Get("Object")) {
-			result[key] = JSUint8ArrayToBytes(value.Get("content"))
+			result[key] = vfs.MapFile{
+				Content: JSUint8ArrayToBytes(value.Get("content")),
+				ModTime: time.UnixMilli(int64(value.Get("modTime").Int())),
+			}
 		}
 	}
 	return result

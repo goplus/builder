@@ -3,16 +3,14 @@ package server
 import (
 	"testing"
 
-	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServerTextDocumentImplementation(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 type MyInterface interface {
 	myMethod()
 }
@@ -27,7 +25,6 @@ func (t MyType2) myMethod() {}
 
 var x MyInterface
 `),
-			}
 		}), nil)
 
 		implementations, err := s.textDocumentImplementation(&ImplementationParams{
@@ -58,14 +55,12 @@ var x MyInterface
 	})
 
 	t.Run("NonInterfaceMethod", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 type MyType struct{}
 
 func (t MyType) myMethod() {}
 `),
-			}
 		}), nil)
 
 		implementation, err := s.textDocumentImplementation(&ImplementationParams{
@@ -88,12 +83,10 @@ func (t MyType) myMethod() {}
 	})
 
 	t.Run("InvalidPosition", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 type MyType struct{}
 `),
-			}
 		}), nil)
 
 		implementation, err := s.textDocumentImplementation(&ImplementationParams{

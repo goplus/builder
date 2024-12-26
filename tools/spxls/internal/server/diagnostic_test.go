@@ -3,7 +3,6 @@ package server
 import (
 	"testing"
 
-	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,9 +52,7 @@ onCloned => {
 
 func TestServerTextDocumentDiagnostic(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return newTestFileMap()
-		}), nil)
+		s := New(newMapFSWithoutModTime(newTestFileMap()), nil)
 		params := &DocumentDiagnosticParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 		}
@@ -71,15 +68,13 @@ func TestServerTextDocumentDiagnostic(t *testing.T) {
 	})
 
 	t.Run("ParseError", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			fileMap := newTestFileMap()
-			fileMap["main.spx"] = []byte(`
+		fileMap := newTestFileMap()
+		fileMap["main.spx"] = []byte(`
 // Invalid syntax, missing closing parenthesis
 var (
 	MyAircraft MyAircraft
 `)
-			return fileMap
-		}), nil)
+		s := New(newMapFSWithoutModTime(fileMap), nil)
 		params := &DocumentDiagnosticParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
 		}
@@ -111,11 +106,9 @@ var (
 	})
 
 	t.Run("NonSpxFile", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			fileMap := newTestFileMap()
-			fileMap["main.gop"] = []byte(`echo "Hello, Go+!"`)
-			return fileMap
-		}), nil)
+		fileMap := newTestFileMap()
+		fileMap["main.gop"] = []byte(`echo "Hello, Go+!"`)
+		s := New(newMapFSWithoutModTime(fileMap), nil)
 		params := &DocumentDiagnosticParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.gop"},
 		}
@@ -131,9 +124,7 @@ var (
 	})
 
 	t.Run("FileNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return newTestFileMap()
-		}), nil)
+		s := New(newMapFSWithoutModTime(newTestFileMap()), nil)
 		params := &DocumentDiagnosticParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///notexist.spx"},
 		}
@@ -151,9 +142,7 @@ var (
 
 func TestServerWorkspaceDiagnostic(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return newTestFileMap()
-		}), nil)
+		s := New(newMapFSWithoutModTime(newTestFileMap()), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
 		require.NoError(t, err)
@@ -174,15 +163,13 @@ func TestServerWorkspaceDiagnostic(t *testing.T) {
 	})
 
 	t.Run("ParseError", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 // Invalid syntax, missing closing parenthesis
 var (
 	MyAircraft MyAircraft
 `),
-				"MyAircraft.spx": []byte(`var x int`),
-			}
+			"MyAircraft.spx": []byte(`var x int`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -224,9 +211,7 @@ var (
 	})
 
 	t.Run("EmptyWorkspace", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{}
-		}), nil)
+		s := New(newMapFSWithoutModTime(map[string][]byte{}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
 		require.EqualError(t, err, "no valid spx files found in main package")
@@ -234,9 +219,8 @@ var (
 	})
 
 	t.Run("SoundResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 var (
 	AutoBindingSoundName Sound
 )
@@ -246,7 +230,7 @@ var (
 )
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 const ConstSoundName = "ConstSoundName"
 var (
 	VarSoundName          string
@@ -262,7 +246,6 @@ onStart => {
 	play AutoBindingSoundName2
 }
 `),
-			}
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -356,14 +339,13 @@ onStart => {
 	})
 
 	t.Run("BackdropResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 onBackdrop "", func() {}
 onBackdrop "NonExistentBackdrop", func() {}
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 const ConstBackdropName = "ConstBackdropName"
 var VarBackdropName string
 VarBackdropName = "VarBackdropName"
@@ -373,7 +355,6 @@ onStart => {
 	onBackdrop VarBackdropName, func() {}
 }
 `),
-			}
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -427,9 +408,8 @@ onStart => {
 	})
 
 	t.Run("SpriteResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 var (
 	MySprite1  Sprite
 	MySprite2  MySprite2
@@ -437,21 +417,20 @@ var (
 )
 run "assets", {Title: "My Game"}
 `),
-				"MySprite1.spx": []byte(`
+			"MySprite1.spx": []byte(`
 var MySprite3 Sprite
 onStart => {
 	animate "roll-in"
 	MySprite2.animate "roll-out"
 }
 `),
-				"MySprite2.spx": []byte(`
+			"MySprite2.spx": []byte(`
 onStart => {
 	MySprite1.animate "roll-out"
 	animate "roll-in"
 	MySprite2.animate "roll-out"
 }
 `),
-			}
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -547,19 +526,17 @@ onStart => {
 	})
 
 	t.Run("SpriteCostumeResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 onStart => {
 	setCostume ""
 	setCostume "NonExistentCostume"
 }
 `),
-				"assets/sprites/MySprite/index.json": []byte(`{}`),
-			}
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -595,19 +572,17 @@ onStart => {
 	})
 
 	t.Run("SpriteAnimationResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 onStart => {
 	animate ""
 	animate "roll-in"
 }
 `),
-				"assets/sprites/MySprite/index.json": []byte(`{}`),
-			}
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -643,12 +618,11 @@ onStart => {
 	})
 
 	t.Run("WidgetResourceNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 const ConstWidgetName = "ConstWidgetName"
 var VarWidgetName string
 VarWidgetName = "VarWidgetName"
@@ -659,8 +633,7 @@ onStart => {
 	getWidget Monitor, VarWidgetName
 }
 `),
-				"assets/index.json": []byte(`{}`),
-			}
+			"assets/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})

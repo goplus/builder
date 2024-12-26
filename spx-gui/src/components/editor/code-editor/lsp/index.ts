@@ -62,7 +62,10 @@ export class SpxLSPClient extends Disposable {
         if (['.spx', '.json'].includes(ext)) {
           // Only `.spx` & `.json` files are needed for `spxls`
           const ab = await file.arrayBuffer()
-          loadedFiles[path] = { content: new Uint8Array(ab) }
+          loadedFiles[path] = {
+            content: new Uint8Array(ab),
+            modTime: this.project.modTime ?? Date.now()
+          }
           debugFiles[path] = await toText(file)
         }
       })

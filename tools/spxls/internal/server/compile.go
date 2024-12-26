@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"go/types"
 	"io/fs"
+	"maps"
 	"path"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
 	"github.com/goplus/builder/tools/spxls/internal/vfs"
@@ -302,16 +304,77 @@ func (r *compileResult) addDiagnostics(documentURI DocumentURI, diags ...Diagnos
 	r.diagnostics[documentURI] = append(r.diagnostics[documentURI], dedupedDiags...)
 }
 
+// compileCache represents a cache for compilation results.
+type compileCache struct {
+	result          *compileResult
+	spxFileModTimes map[string]time.Time
+}
+
 // compile compiles spx source files and returns compile result.
-//
-// TODO: Move diagnostics from [compileResult] to error return value by using
-// [errors.Join].
 func (s *Server) compile() (*compileResult, error) {
 	spxFiles, err := s.spxFiles()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get spx files: %w", err)
 	}
+	if len(spxFiles) == 0 {
+		return nil, errNoValidSpxFiles
+	}
+	slices.Sort(spxFiles)
 
+	s.compileCacheMu.Lock()
+	defer s.compileCacheMu.Unlock()
+
+	// Try to use cache first.
+	if cache := s.lastCompileCache; cache != nil {
+		// Check if spx file set has changed.
+		cachedSpxFiles := slices.Sorted(maps.Keys(cache.spxFileModTimes))
+		if slices.Equal(spxFiles, cachedSpxFiles) {
+			// Check if any spx file has been modified.
+			modified := false
+			for _, spxFile := range spxFiles {
+				fi, err := fs.Stat(s.workspaceRootFS, spxFile)
+				if err != nil {
+					return nil, fmt.Errorf("failed to stat file %q: %w", spxFile, err)
+				}
+				if cachedModTime, ok := cache.spxFileModTimes[spxFile]; !ok || !fi.ModTime().Equal(cachedModTime) {
+					modified = true
+					break
+				}
+			}
+			if !modified {
+				return cache.result, nil
+			}
+		}
+	}
+
+	// Compile uncached if cache is not used.
+	result, err := s.compileUncached(spxFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update cache.
+	modTimes := make(map[string]time.Time, len(spxFiles))
+	for _, spxFile := range spxFiles {
+		fi, err := fs.Stat(s.workspaceRootFS, spxFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat file %q: %w", spxFile, err)
+		}
+		modTimes[spxFile] = fi.ModTime()
+	}
+	s.lastCompileCache = &compileCache{
+		result:          result,
+		spxFileModTimes: modTimes,
+	}
+
+	return result, nil
+}
+
+// compileUncached compiles spx source files without using cache.
+//
+// TODO: Move diagnostics from [compileResult] to error return value by using
+// [errors.Join].
+func (s *Server) compileUncached(spxFiles []string) (*compileResult, error) {
 	result := &compileResult{
 		fset:                    goptoken.NewFileSet(),
 		mainPkg:                 types.NewPackage("main", "main"),
@@ -419,6 +482,7 @@ func (s *Server) compile() (*compileResult, error) {
 		return result, nil
 	}
 
+	var err error
 	result.spxPkg, err = s.importer.Import(spxPkgPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to import spx package: %w", err)
