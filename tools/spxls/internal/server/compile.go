@@ -766,11 +766,6 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 				obj := result.typeInfo.ObjectOf(ident)
 				if obj != nil {
 					if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
-						ri.result.addDiagnostics(ri.documentURI, Diagnostic{
-							Severity: SeverityError,
-							Range:    ri.exprRange,
-							Message:  fmt.Sprintf("cannot find auto-binding for sprite resource %q", obj.Name()),
-						})
 						return nil
 					}
 					spxSpriteName = obj.Name()
@@ -779,11 +774,6 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 			}
 		}
 		if !ri.validateResourceName(spxSpriteName, SpxResourceTypeSprite) {
-			ri.result.addDiagnostics(ri.documentURI, Diagnostic{
-				Severity: SeverityWarning,
-				Range:    ri.exprRange,
-				Message:  "cannot determine sprite name",
-			})
 			return nil
 		}
 	} else {
@@ -809,11 +799,6 @@ func (s *Server) inspectSpxSpriteResourceRefAtExpr(result *compileResult, expr g
 				return nil
 			}
 			if !slices.Contains(result.spxSpriteResourceAutoBindings, obj) {
-				ri.result.addDiagnostics(ri.documentURI, Diagnostic{
-					Severity: SeverityError,
-					Range:    ri.exprRange,
-					Message:  fmt.Sprintf("cannot find auto-binding for sprite resource %q", obj.Name()),
-				})
 				return nil
 			}
 			spxSpriteName = obj.Name()
@@ -961,11 +946,6 @@ func (s *Server) inspectSpxSoundResourceRefAtExpr(result *compileResult, expr go
 			return nil
 		}
 		if !slices.Contains(result.spxSoundResourceAutoBindings, obj) {
-			ri.result.addDiagnostics(ri.documentURI, Diagnostic{
-				Severity: SeverityError,
-				Range:    ri.exprRange,
-				Message:  fmt.Sprintf("cannot find auto-binding for sound resource %q", obj.Name()),
-			})
 			return nil
 		}
 		spxSoundName = obj.Name()

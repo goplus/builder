@@ -15,7 +15,7 @@ import (
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#textDocument_completion
 func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionItem, error) {
-	result, _, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
+	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
 			return nil, nil
@@ -40,6 +40,7 @@ func (s *Server) textDocumentCompletion(params *CompletionParams) ([]CompletionI
 
 	ctx := &completionContext{
 		result:         result,
+		spxFile:        spxFile,
 		astFile:        astFile,
 		pos:            pos,
 		innermostScope: innermostScope,
@@ -66,6 +67,7 @@ const (
 // completionContext represents the context for completion operations.
 type completionContext struct {
 	result         *compileResult
+	spxFile        string
 	astFile        *gopast.File
 	pos            goptoken.Pos
 	innermostScope *types.Scope
@@ -256,6 +258,7 @@ func (ctx *completionContext) collectGeneralCompletions() ([]CompletionItem, err
 
 	// Add all visible objects in the scope.
 	for scope := ctx.innermostScope; scope != nil; scope = scope.Parent() {
+		isInMainScope := ctx.innermostScope == ctx.fileScope && scope == ctx.result.mainPkg.Scope()
 		for _, name := range scope.Names() {
 			obj := scope.Lookup(name)
 			if obj == nil || !obj.Exported() && obj.Pkg() != ctx.result.mainPkg {
@@ -273,6 +276,65 @@ func (ctx *completionContext) collectGeneralCompletions() ([]CompletionItem, err
 				addItems(NewSpxDefinitionsForFunc(ctx.result, obj, "")...)
 			case *types.PkgName:
 				addItems(NewSpxDefinitionForPkg(ctx.result, obj))
+			}
+
+			isThis := name == "this"
+			isSpxFileMatch := ctx.spxFile == name+".spx" || (ctx.spxFile == ctx.result.mainSpxFile && name == "Game")
+			isMainScopeObj := isInMainScope && isSpxFileMatch
+			if !isThis && !isMainScopeObj {
+				continue
+			}
+
+			typ := unwrapPointerType(obj.Type())
+			if _, ok := typ.Underlying().(*types.Struct); !ok {
+				continue
+			}
+			walkStruct(typ, func(named *types.Named, namedParents []*types.Named, member types.Object) {
+				memberPkgPath := member.Pkg().Path()
+				if !member.Exported() && memberPkgPath != "main" {
+					return
+				}
+
+				switch member := member.(type) {
+				case *types.Var:
+					addItems(NewSpxDefinitionForVar(ctx.result, member, ""))
+				case *types.Func:
+					recvTypeName := named.Obj().Name()
+					if memberPkgPath == spxPkgPath {
+						if recvTypeName != "SpriteImpl" && recvTypeName != "Game" {
+							for _, namedParent := range namedParents {
+								if namedParent.Obj().Pkg().Path() != spxPkgPath {
+									continue
+								}
+								namedParentName := namedParent.Obj().Name()
+								if namedParentName == "SpriteImpl" || namedParentName == "Game" {
+									recvTypeName = namedParentName
+									break
+								}
+							}
+						}
+						if recvTypeName == "SpriteImpl" {
+							recvTypeName = "Sprite"
+						}
+					}
+					addItems(NewSpxDefinitionsForFunc(ctx.result, member, recvTypeName)...)
+				}
+			})
+		}
+	}
+
+	// Add other spx definitions.
+	for _, name := range ctx.result.spxPkg.Scope().Names() {
+		if obj := ctx.result.spxPkg.Scope().Lookup(name); obj != nil && obj.Exported() {
+			switch obj := obj.(type) {
+			case *types.Var:
+				addItems(NewSpxDefinitionForVar(ctx.result, obj, ""))
+			case *types.Const:
+				addItems(NewSpxDefinitionForConst(ctx.result, obj))
+			case *types.TypeName:
+				addItems(NewSpxDefinitionForType(ctx.result, obj))
+			case *types.Func:
+				addItems(NewSpxDefinitionsForFunc(ctx.result, obj, "")...)
 			}
 		}
 	}
