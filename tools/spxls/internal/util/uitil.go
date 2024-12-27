@@ -27,6 +27,9 @@ const (
 // SplitGoptMethod splits a Go+ template method name into receiver type name and
 // method name.
 func SplitGoptMethod(name string) (recvTypeName string, methodName string, ok bool) {
+	if !strings.HasPrefix(name, GoptPrefix) {
+		return "", "", false
+	}
 	recvTypeName, methodName, ok = strings.Cut(name[len(GoptPrefix):], "_")
 	if !ok {
 		return "", "", false

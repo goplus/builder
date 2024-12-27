@@ -22,7 +22,7 @@ func (s *Server) textDocumentDocumentHighlight(params *DocumentHighlightParams) 
 		return nil, nil
 	}
 
-	_, targetObj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	targetObj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if targetObj == nil {
 		return nil, nil
 	}

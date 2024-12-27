@@ -169,7 +169,8 @@ func TestServerWorkspaceDiagnostic(t *testing.T) {
 var (
 	MyAircraft MyAircraft
 `),
-			"MyAircraft.spx": []byte(`var x int`),
+			"MyAircraft.spx":    []byte(`var x int`),
+			"assets/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -246,6 +247,7 @@ onStart => {
 	play AutoBindingSoundName2
 }
 `),
+			"assets/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -283,7 +285,7 @@ onStart => {
 					},
 				})
 			case "file:///MySprite.spx":
-				require.Len(t, fullReport.Items, 6)
+				require.Len(t, fullReport.Items, 5)
 				assert.Contains(t, fullReport.Items, Diagnostic{
 					Severity: SeverityWarning,
 					Message:  "auto-binding of resources can only happen in main.spx",
@@ -324,14 +326,6 @@ onStart => {
 						End:   Position{Line: 12, Character: 26},
 					},
 				})
-				assert.Contains(t, fullReport.Items, Diagnostic{
-					Severity: SeverityError,
-					Message:  `cannot find auto-binding for sound resource "AutoBindingSoundName2"`,
-					Range: Range{
-						Start: Position{Line: 13, Character: 6},
-						End:   Position{Line: 13, Character: 27},
-					},
-				})
 			default:
 				assert.Empty(t, fullReport.Items)
 			}
@@ -355,6 +349,7 @@ onStart => {
 	onBackdrop VarBackdropName, func() {}
 }
 `),
+			"assets/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -431,6 +426,7 @@ onStart => {
 	MySprite2.animate "roll-out"
 }
 `),
+			"assets/index.json": []byte(`{}`),
 		}), nil)
 
 		report, err := s.workspaceDiagnostic(&WorkspaceDiagnosticParams{})
@@ -536,6 +532,7 @@ onStart => {
 	setCostume "NonExistentCostume"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -582,6 +579,7 @@ onStart => {
 	animate "roll-in"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 

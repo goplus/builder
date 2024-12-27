@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"go/types"
-	"io/fs"
 	"slices"
 
 	gopast "github.com/goplus/gop/ast"
@@ -23,7 +22,11 @@ func (s *Server) textDocumentPrepareRename(params *PrepareRenameParams) (*Range,
 		return nil, nil
 	}
 
-	ident, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	ident := result.identAtASTFilePosition(astFile, params.Position)
+	if ident == nil {
+		return nil, nil
+	}
+	obj := result.typeInfo.ObjectOf(ident)
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
@@ -50,21 +53,21 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 		return nil, errors.New("cannot rename symbol when there are unresolved error severity diagnostics")
 	}
 
-	if refKey, _ := result.spxResourceRefAtASTFilePosition(astFile, params.Position); refKey != nil {
+	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, params.Position); spxResourceRef != nil {
 		return s.spxRenameResourcesWithCompileResult(result, []SpxRenameResourceParams{{
 			Resource: SpxResourceIdentifier{
-				URI: refKey.URI(),
+				URI: spxResourceRef.ID.URI(),
 			},
 			NewName: params.NewName,
 		}})
 	}
 
-	_, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
+	obj := result.typeInfo.ObjectOf(result.identAtASTFilePosition(astFile, params.Position))
 	if !isRenameableObject(obj) {
 		return nil, nil
 	}
 
-	defIdent := result.defIdentOf(obj)
+	defIdent := result.defIdentFor(obj)
 	if defIdent == nil {
 		return nil, fmt.Errorf("failed to find definition of object %q", obj.Name())
 	}
@@ -93,83 +96,90 @@ func (s *Server) textDocumentRename(params *RenameParams) (*WorkspaceEdit, error
 	return &workspaceEdit, nil
 }
 
-// spxRenameResourceAtRefs updates resource names at reference locations by
-// matching the reference key.
-func (s *Server) spxRenameResourceAtRefs(result *compileResult, refKey SpxResourceRefKey, newName string) map[DocumentURI][]TextEdit {
+// spxRenameResourceAtRefs updates spx resource names at reference locations by
+// matching the spx resource ID.
+func (s *Server) spxRenameResourceAtRefs(result *compileResult, id SpxResourceID, newName string) map[DocumentURI][]TextEdit {
 	changes := make(map[DocumentURI][]TextEdit)
-	for _, ref := range result.spxResourceRefs[refKey] {
-		startPos := result.fset.Position(ref.Node.Pos())
-		endPos := result.fset.Position(ref.Node.End())
+	seenTextEdits := make(map[DocumentURI]map[TextEdit]struct{})
+	for _, ref := range result.spxResourceRefs {
+		if ref.ID != id {
+			continue
+		}
+
+		nodePos := result.fset.Position(ref.Node.Pos())
+		nodeEnd := result.fset.Position(ref.Node.End())
 
 		if expr, ok := ref.Node.(gopast.Expr); ok && types.AssignableTo(result.typeInfo.TypeOf(expr), types.Typ[types.String]) {
 			if ident, ok := expr.(*gopast.Ident); ok {
 				// It has to be a constant. So we must find its declaration site and
 				// use the position of its value instead.
-				defIdent := result.defIdentOf(result.typeInfo.ObjectOf(ident))
+				defIdent := result.defIdentFor(result.typeInfo.ObjectOf(ident))
 				if defIdent != nil {
 					parent, ok := defIdent.Obj.Decl.(*gopast.ValueSpec)
 					if ok && slices.Contains(parent.Names, defIdent) && len(parent.Values) > 0 {
-						startPos = result.fset.Position(parent.Values[0].Pos())
-						endPos = result.fset.Position(parent.Values[0].End())
+						nodePos = result.fset.Position(parent.Values[0].Pos())
+						nodeEnd = result.fset.Position(parent.Values[0].End())
 					}
 				}
 			}
 
 			// Adjust positions to exclude quotes.
-			startPos.Offset++
-			startPos.Column++
-			endPos.Offset--
-			endPos.Column--
+			nodePos.Offset++
+			nodePos.Column++
+			nodeEnd.Offset--
+			nodeEnd.Column--
 		}
 
-		documentURI := s.toDocumentURI(startPos.Filename)
+		documentURI := s.toDocumentURI(nodePos.Filename)
 		textEdit := TextEdit{
 			Range: Range{
-				Start: FromGopTokenPosition(startPos),
-				End:   FromGopTokenPosition(endPos),
+				Start: FromGopTokenPosition(nodePos),
+				End:   FromGopTokenPosition(nodeEnd),
 			},
 			NewText: newName,
 		}
-		if !slices.Contains(changes[documentURI], textEdit) {
-			changes[documentURI] = append(changes[documentURI], textEdit)
+
+		if _, ok := seenTextEdits[documentURI]; !ok {
+			seenTextEdits[documentURI] = make(map[TextEdit]struct{})
 		}
+		if _, ok := seenTextEdits[documentURI][textEdit]; ok {
+			continue
+		}
+		seenTextEdits[documentURI][textEdit] = struct{}{}
+
+		changes[documentURI] = append(changes[documentURI], textEdit)
 	}
 	return changes
 }
 
 // spxRenameBackdropResource renames a spx backdrop resource.
-func (s *Server) spxRenameBackdropResource(result *compileResult, refKey SpxBackdropResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	if _, err := s.getSpxBackdropResource(newName); err == nil {
+func (s *Server) spxRenameBackdropResource(result *compileResult, id SpxBackdropResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	if result.spxResourceSet.Backdrop(newName) != nil {
 		return nil, fmt.Errorf("backdrop resource %q already exists", newName)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("failed to check if backdrop resource %q already exists", newName)
 	}
-	return s.spxRenameResourceAtRefs(result, refKey, newName), nil
+	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
 // spxRenameSoundResource renames a spx sound resource.
-func (s *Server) spxRenameSoundResource(result *compileResult, refKey SpxSoundResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	if _, err := s.getSpxSoundResource(newName); err == nil {
+func (s *Server) spxRenameSoundResource(result *compileResult, id SpxSoundResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	if result.spxResourceSet.Sound(newName) != nil {
 		return nil, fmt.Errorf("sound resource %q already exists", newName)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("failed to check if sound resource %q already exists", newName)
 	}
-	return s.spxRenameResourceAtRefs(result, refKey, newName), nil
+	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
 // spxRenameSpriteResource renames a spx sprite resource.
-func (s *Server) spxRenameSpriteResource(result *compileResult, refKey SpxSpriteResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	if _, err := s.getSpxSpriteResource(newName); err == nil {
+func (s *Server) spxRenameSpriteResource(result *compileResult, id SpxSpriteResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	if result.spxResourceSet.Sprite(newName) != nil {
 		return nil, fmt.Errorf("sprite resource %q already exists", newName)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("failed to check if sprite resource %q already exists", newName)
 	}
-	changes := s.spxRenameResourceAtRefs(result, refKey, newName)
+	changes := s.spxRenameResourceAtRefs(result, id, newName)
+	seenTextEdits := make(map[DocumentURI]map[TextEdit]struct{})
 	for expr, tv := range result.typeInfo.Types {
 		if expr == nil || !expr.Pos().IsValid() || !tv.IsType() {
 			continue
 		}
-		if tv.Type.String() == "main."+refKey.SpriteName {
+		if tv.Type.String() == "main."+id.SpriteName {
 			documentURI := s.toDocumentURI(result.fset.Position(expr.Pos()).Filename)
 			textEdit := TextEdit{
 				Range: Range{
@@ -178,48 +188,53 @@ func (s *Server) spxRenameSpriteResource(result *compileResult, refKey SpxSprite
 				},
 				NewText: newName,
 			}
-			if !slices.Contains(changes[documentURI], textEdit) {
-				changes[documentURI] = append(changes[documentURI], textEdit)
+
+			if _, ok := seenTextEdits[documentURI]; !ok {
+				seenTextEdits[documentURI] = make(map[TextEdit]struct{})
 			}
+			if _, ok := seenTextEdits[documentURI][textEdit]; ok {
+				continue
+			}
+			seenTextEdits[documentURI][textEdit] = struct{}{}
+
+			changes[documentURI] = append(changes[documentURI], textEdit)
 		}
 	}
 	return changes, nil
 }
 
 // spxRenameSpriteCostumeResource renames a spx sprite costume resource.
-func (s *Server) spxRenameSpriteCostumeResource(result *compileResult, refKey SpxSpriteCostumeResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	spxSpriteResource, err := s.getSpxSpriteResource(refKey.SpriteName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get sprite resource %q: %w", refKey.SpriteName, err)
+func (s *Server) spxRenameSpriteCostumeResource(result *compileResult, id SpxSpriteCostumeResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	spxSpriteResource := result.spxResourceSet.Sprite(id.SpriteName)
+	if spxSpriteResource == nil {
+		return nil, fmt.Errorf("sprite resource %q not found", id.SpriteName)
 	}
 	for _, costume := range spxSpriteResource.Costumes {
 		if costume.Name == newName {
 			return nil, fmt.Errorf("sprite costume resource %q already exists", newName)
 		}
 	}
-	return s.spxRenameResourceAtRefs(result, refKey, newName), nil
+	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
 // spxRenameSpriteAnimationResource renames a spx sprite animation resource.
-func (s *Server) spxRenameSpriteAnimationResource(result *compileResult, refKey SpxSpriteAnimationResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	spxSpriteResource, err := s.getSpxSpriteResource(refKey.SpriteName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get sprite resource %q: %w", refKey.SpriteName, err)
+func (s *Server) spxRenameSpriteAnimationResource(result *compileResult, id SpxSpriteAnimationResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	spxSpriteResource := result.spxResourceSet.Sprite(id.SpriteName)
+	if spxSpriteResource == nil {
+		return nil, fmt.Errorf("sprite resource %q not found", id.SpriteName)
 	}
 	for _, animation := range spxSpriteResource.Animations {
 		if animation.Name == newName {
 			return nil, fmt.Errorf("sprite animation resource %q already exists", newName)
 		}
 	}
-	return s.spxRenameResourceAtRefs(result, refKey, newName), nil
+	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }
 
 // spxRenameWidgetResource renames a spx widget resource.
-func (s *Server) spxRenameWidgetResource(result *compileResult, refKey SpxWidgetResourceRefKey, newName string) (map[DocumentURI][]TextEdit, error) {
-	if _, err := s.getSpxWidgetResource(newName); err == nil {
+func (s *Server) spxRenameWidgetResource(result *compileResult, id SpxWidgetResourceID, newName string) (map[DocumentURI][]TextEdit, error) {
+	if result.spxResourceSet.Widget(newName) != nil {
 		return nil, fmt.Errorf("widget resource %q already exists", newName)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("failed to check if widget resource %q already exists", newName)
 	}
-	return s.spxRenameResourceAtRefs(result, refKey, newName), nil
+	return s.spxRenameResourceAtRefs(result, id, newName), nil
 }

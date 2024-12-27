@@ -52,7 +52,7 @@ onStart => {
 				Start: Position{Line: 2, Character: 1},
 				End:   Position{Line: 2, Character: 8},
 			},
-			Target: toURI("gop:main?MySound"),
+			Target: toURI("gop:main?Game.MySound"),
 		})
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
@@ -76,7 +76,7 @@ onStart => {
 				Start: Position{Line: 3, Character: 1},
 				End:   Position{Line: 3, Character: 9},
 			},
-			Target: toURI("gop:main?MySprite"),
+			Target: toURI("gop:main?Game.MySprite"),
 		})
 		assert.Contains(t, linksForMainSpx, DocumentLink{
 			Range: Range{
@@ -105,7 +105,7 @@ onStart => {
 		}
 		linksForMySpriteSpx, err := s.textDocumentDocumentLink(paramsForMySpriteSpx)
 		require.NoError(t, err)
-		require.Len(t, linksForMySpriteSpx, 24)
+		require.Len(t, linksForMySpriteSpx, 25)
 		assert.Contains(t, linksForMySpriteSpx, DocumentLink{
 			Range: Range{
 				Start: Position{Line: 3, Character: 12},
@@ -239,7 +239,7 @@ var (
 				Start: Position{Line: 3, Character: 1},
 				End:   Position{Line: 3, Character: 8},
 			},
-			Target: toURI("gop:main?MySound"),
+			Target: toURI("gop:main?Game.MySound"),
 		})
 		assert.Contains(t, links, DocumentLink{
 			Range: Range{

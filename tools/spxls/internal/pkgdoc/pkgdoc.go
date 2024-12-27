@@ -4,9 +4,12 @@ import (
 	"go/ast"
 	"go/doc"
 	"go/token"
+	"path"
 	"strings"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
+	gopast "github.com/goplus/gop/ast"
+	goptoken "github.com/goplus/gop/token"
 )
 
 // PkgDoc is the documentation for a package.
@@ -16,8 +19,20 @@ type PkgDoc struct {
 	Name   string
 	Vars   map[string]string
 	Consts map[string]string
-	Types  map[string]TypeDoc
+	Types  map[string]*TypeDoc
 	Funcs  map[string]string
+}
+
+// typeDoc returns the documentation for the given type name. It creates a new
+// [TypeDoc] if the type name is not found.
+func (p *PkgDoc) typeDoc(typeName string) *TypeDoc {
+	if _, ok := p.Types[typeName]; !ok {
+		p.Types[typeName] = &TypeDoc{
+			Fields:  make(map[string]string),
+			Methods: make(map[string]string),
+		}
+	}
+	return p.Types[typeName]
 }
 
 // TypeDoc is the documentation for a type.
@@ -36,7 +51,7 @@ func New(pkg *ast.Package, pkgPath string) *PkgDoc {
 		Name:   pkg.Name,
 		Vars:   make(map[string]string),
 		Consts: make(map[string]string),
-		Types:  make(map[string]TypeDoc),
+		Types:  make(map[string]*TypeDoc),
 		Funcs:  make(map[string]string),
 	}
 
@@ -80,11 +95,8 @@ func New(pkg *ast.Package, pkgPath string) *PkgDoc {
 			}
 		}
 
-		typeDoc := TypeDoc{
-			Doc:     t.Doc,
-			Fields:  make(map[string]string),
-			Methods: make(map[string]string),
-		}
+		typeDoc := pkgDoc.typeDoc(t.Name)
+		typeDoc.Doc = t.Doc
 		for _, spec := range t.Decl.Specs {
 			typeSpec, ok := spec.(*ast.TypeSpec)
 			if !ok {
@@ -113,7 +125,6 @@ func New(pkg *ast.Package, pkgPath string) *PkgDoc {
 				typeDoc.Methods[m.Name] = m.Doc
 			}
 		}
-		pkgDoc.Types[t.Name] = typeDoc
 	}
 
 	for _, f := range docPkg.Funcs {
@@ -128,16 +139,133 @@ func New(pkg *ast.Package, pkgPath string) *PkgDoc {
 		case strings.HasPrefix(f.Name, util.GoptPrefix):
 			recvTypeName, methodName, ok := util.SplitGoptMethod(f.Name)
 			if !ok {
-				break
+				continue
 			}
-			recvTypeDoc, ok := pkgDoc.Types[recvTypeName]
-			if !ok {
-				recvTypeDoc = TypeDoc{
-					Methods: make(map[string]string),
+			pkgDoc.typeDoc(recvTypeName).Methods[methodName] = f.Doc
+		}
+	}
+
+	return pkgDoc
+}
+
+// NewForSpxMainPackage creates a new [PkgDoc] for the spx main package.
+func NewForSpxMainPackage(pkg *gopast.Package) *PkgDoc {
+	pkgDoc := &PkgDoc{
+		Path:   "main",
+		Name:   "main",
+		Vars:   make(map[string]string),
+		Consts: make(map[string]string),
+		Types:  make(map[string]*TypeDoc),
+		Funcs:  make(map[string]string),
+	}
+
+	for _, astFile := range pkg.Files {
+		if astFile.Doc != nil {
+			pkgDoc.Doc = astFile.Doc.Text()
+			break
+		}
+	}
+
+	for spxFile, astFile := range pkg.Files {
+		var spxBaseSelectorTypeName string
+		if spxFileBaseName := path.Base(spxFile); spxFileBaseName == "main.spx" {
+			spxBaseSelectorTypeName = "Game"
+		} else {
+			spxBaseSelectorTypeName = strings.TrimSuffix(spxFileBaseName, ".spx")
+		}
+		spxBaseSelectorTypeDoc := pkgDoc.typeDoc(spxBaseSelectorTypeName)
+
+		var firstVarBlock *gopast.GenDecl
+		for _, decl := range astFile.Decls {
+			switch decl := decl.(type) {
+			case *gopast.GenDecl:
+				if firstVarBlock == nil && decl.Tok == goptoken.VAR {
+					firstVarBlock = decl
 				}
-				pkgDoc.Types[recvTypeName] = recvTypeDoc
+
+				for _, spec := range decl.Specs {
+					var doc string
+					switch spec := spec.(type) {
+					case *gopast.ValueSpec:
+						if spec.Doc != nil {
+							doc = spec.Doc.Text()
+						}
+					case *gopast.TypeSpec:
+						if spec.Doc != nil {
+							doc = spec.Doc.Text()
+						}
+					case *gopast.ImportSpec:
+						if spec.Doc != nil {
+							doc = spec.Doc.Text()
+						}
+					}
+					if doc == "" && decl.Doc != nil && len(decl.Specs) == 1 {
+						doc = decl.Doc.Text()
+					}
+
+					switch spec := spec.(type) {
+					case *gopast.ValueSpec:
+						for _, name := range spec.Names {
+							switch decl.Tok {
+							case goptoken.VAR:
+								if decl == firstVarBlock {
+									spxBaseSelectorTypeDoc.Fields[name.Name] = doc
+								} else {
+									pkgDoc.Vars[name.Name] = doc
+								}
+							case goptoken.CONST:
+								pkgDoc.Consts[name.Name] = doc
+							}
+						}
+					case *gopast.TypeSpec:
+						if structType, ok := spec.Type.(*gopast.StructType); ok {
+							typeDoc := pkgDoc.typeDoc(spec.Name.Name)
+							typeDoc.Doc = doc
+							for _, field := range structType.Fields.List {
+								fieldDoc := ""
+								if field.Doc != nil {
+									fieldDoc = field.Doc.Text()
+								}
+
+								if len(field.Names) == 0 {
+									ident, ok := field.Type.(*gopast.Ident)
+									if !ok {
+										continue
+									}
+									typeDoc.Fields[ident.Name] = fieldDoc
+								} else {
+									for _, name := range field.Names {
+										typeDoc.Fields[name.Name] = fieldDoc
+									}
+								}
+							}
+						}
+					}
+				}
+			case *gopast.FuncDecl:
+				if decl.Shadow {
+					continue
+				}
+
+				var doc string
+				if decl.Doc != nil {
+					doc = decl.Doc.Text()
+				}
+
+				var recvTypeDoc *TypeDoc
+				if decl.Recv == nil {
+					recvTypeDoc = spxBaseSelectorTypeDoc
+				} else if len(decl.Recv.List) == 1 {
+					recvType := decl.Recv.List[0].Type
+					if star, ok := recvType.(*gopast.StarExpr); ok {
+						recvType = star.X
+					}
+					recvTypeName := recvType.(*gopast.Ident).Name
+					recvTypeDoc = pkgDoc.typeDoc(recvTypeName)
+				}
+
+				recvTypeDoc.Methods[decl.Name.Name] = doc
 			}
-			recvTypeDoc.Methods[methodName] = f.Doc
 		}
 	}
 

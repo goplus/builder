@@ -22,6 +22,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -79,6 +80,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -112,7 +114,7 @@ onStart => {
 		})
 	})
 
-	t.Run("Rename reference", func(t *testing.T) {
+	t.Run("RenameReference", func(t *testing.T) {
 		s := New(newMapFSWithoutModTime(map[string][]byte{
 			"main.spx": []byte(`
 var (
@@ -128,6 +130,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -175,6 +178,7 @@ onStart => {
 	MySprite.turn Right
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
@@ -234,10 +238,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameBackdropResource(result, refKey.(SpxBackdropResourceRefKey), "backdrop2")
+		changes, err := s.spxRenameBackdropResource(result, id.(SpxBackdropResourceID), "backdrop2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -280,10 +284,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameBackdropResource(result, refKey.(SpxBackdropResourceRefKey), "backdrop2")
+		changes, err := s.spxRenameBackdropResource(result, id.(SpxBackdropResourceID), "backdrop2")
 		require.NoError(t, err)
 		require.Len(t, changes, 1)
 
@@ -319,10 +323,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameBackdropResource(result, refKey.(SpxBackdropResourceRefKey), "backdrop2")
+		changes, err := s.spxRenameBackdropResource(result, id.(SpxBackdropResourceID), "backdrop2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -368,10 +372,10 @@ run "assets", {Title: "My Game"}
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/backdrops/backdrop1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameBackdropResource(result, refKey.(SpxBackdropResourceRefKey), "backdrop2")
+		changes, err := s.spxRenameBackdropResource(result, id.(SpxBackdropResourceID), "backdrop2")
 		require.EqualError(t, err, `backdrop resource "backdrop2" already exists`)
 		require.Nil(t, changes)
 	})
@@ -392,16 +396,17 @@ onStart => {
 	play Sound1
 }
 `),
+			"assets/index.json":               []byte(`{}`),
 			"assets/sounds/Sound1/index.json": []byte(`{"path":"sound1.wav"}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sounds/Sound1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sounds/Sound1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSoundResource(result, refKey.(SpxSoundResourceRefKey), "Sound2")
+		changes, err := s.spxRenameSoundResource(result, id.(SpxSoundResourceID), "Sound2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -439,6 +444,7 @@ onStart => {
 play "Sound1"
 run "assets", {Title: "My Game"}
 `),
+			"assets/index.json":               []byte(`{}`),
 			"assets/sounds/Sound1/index.json": []byte(`{"path":"sound1.wav"}`),
 			"assets/sounds/Sound2/index.json": []byte(`{"path":"sound2.wav"}`),
 		}), nil)
@@ -446,10 +452,10 @@ run "assets", {Title: "My Game"}
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sounds/Sound1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sounds/Sound1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSoundResource(result, refKey.(SpxSoundResourceRefKey), "Sound2")
+		changes, err := s.spxRenameSoundResource(result, id.(SpxSoundResourceID), "Sound2")
 		require.EqualError(t, err, `sound resource "Sound2" already exists`)
 		require.Nil(t, changes)
 	})
@@ -470,16 +476,17 @@ onStart => {
 	Sprite1.turn Right
 }
 `),
+			"assets/index.json":                 []byte(`{}`),
 			"assets/sprites/Sprite1/index.json": []byte(`{}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteResource(result, refKey.(SpxSpriteResourceRefKey), "Sprite2")
+		changes, err := s.spxRenameSpriteResource(result, id.(SpxSpriteResourceID), "Sprite2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -525,16 +532,17 @@ onStart => {
 	Sprite1.turn Right
 }
 `),
+			"assets/index.json":                 []byte(`{}`),
 			"assets/sprites/Sprite1/index.json": []byte(`{}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteResource(result, refKey.(SpxSpriteResourceRefKey), "Sprite2")
+		changes, err := s.spxRenameSpriteResource(result, id.(SpxSpriteResourceID), "Sprite2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -594,6 +602,7 @@ onStart => {
 	Sprite2.turn Right
 }
 `),
+			"assets/index.json":                 []byte(`{}`),
 			"assets/sprites/Sprite1/index.json": []byte(`{}`),
 			"assets/sprites/Sprite2/index.json": []byte(`{}`),
 		}), nil)
@@ -601,10 +610,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/Sprite1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteResource(result, refKey.(SpxSpriteResourceRefKey), "Sprite2")
+		changes, err := s.spxRenameSpriteResource(result, id.(SpxSpriteResourceID), "Sprite2")
 		require.EqualError(t, err, `sprite resource "Sprite2" already exists`)
 		require.Nil(t, changes)
 	})
@@ -625,16 +634,17 @@ onStart => {
 	setCostume "costume1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/costumes/costume1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/costumes/costume1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteCostumeResource(result, refKey.(SpxSpriteCostumeResourceRefKey), "costume2")
+		changes, err := s.spxRenameSpriteCostumeResource(result, id.(SpxSpriteCostumeResourceID), "costume2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -673,16 +683,17 @@ onStart => {
 	setCostume "costume1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"},{"name":"costume2"}]}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/costumes/costume1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/costumes/costume1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteCostumeResource(result, refKey.(SpxSpriteCostumeResourceRefKey), "costume2")
+		changes, err := s.spxRenameSpriteCostumeResource(result, id.(SpxSpriteCostumeResourceID), "costume2")
 		require.EqualError(t, err, `sprite costume resource "costume2" already exists`)
 		require.Nil(t, changes)
 	})
@@ -701,17 +712,18 @@ onStart => {
 	setCostume "costume1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"costumes":[{"name":"costume1"}]}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/NonExistentSprite/costumes/costume1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/NonExistentSprite/costumes/costume1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteCostumeResource(result, refKey.(SpxSpriteCostumeResourceRefKey), "costume2")
-		require.EqualError(t, err, `failed to get sprite resource "NonExistentSprite": open assets/sprites/NonExistentSprite/index.json: file does not exist`)
+		changes, err := s.spxRenameSpriteCostumeResource(result, id.(SpxSpriteCostumeResourceID), "costume2")
+		require.EqualError(t, err, `sprite resource "NonExistentSprite" not found`)
 		require.Nil(t, changes)
 	})
 }
@@ -731,16 +743,17 @@ onStart => {
 	animate "anim1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"fAnimations":{"anim1":{}}}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/animations/anim1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/animations/anim1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteAnimationResource(result, refKey.(SpxSpriteAnimationResourceRefKey), "anim2")
+		changes, err := s.spxRenameSpriteAnimationResource(result, id.(SpxSpriteAnimationResourceID), "anim2")
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 
@@ -779,16 +792,17 @@ onStart => {
 	animate "anim1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"fAnimations":{"anim1":{},"anim2":{}}}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/animations/anim1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/MySprite/animations/anim1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteAnimationResource(result, refKey.(SpxSpriteAnimationResourceRefKey), "anim2")
+		changes, err := s.spxRenameSpriteAnimationResource(result, id.(SpxSpriteAnimationResourceID), "anim2")
 		require.EqualError(t, err, `sprite animation resource "anim2" already exists`)
 		require.Nil(t, changes)
 	})
@@ -807,17 +821,18 @@ onStart => {
 	animate "anim1"
 }
 `),
+			"assets/index.json":                  []byte(`{}`),
 			"assets/sprites/MySprite/index.json": []byte(`{"fAnimations":{"anim1":{}}}`),
 		}), nil)
 		result, err := s.compile()
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/NonExistentSprite/animations/anim1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/sprites/NonExistentSprite/animations/anim1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameSpriteAnimationResource(result, refKey.(SpxSpriteAnimationResourceRefKey), "anim2")
-		require.EqualError(t, err, `failed to get sprite resource "NonExistentSprite": open assets/sprites/NonExistentSprite/index.json: file does not exist`)
+		changes, err := s.spxRenameSpriteAnimationResource(result, id.(SpxSpriteAnimationResourceID), "anim2")
+		require.EqualError(t, err, `sprite resource "NonExistentSprite" not found`)
 		require.Nil(t, changes)
 	})
 }
@@ -839,10 +854,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/widgets/widget1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/widgets/widget1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameWidgetResource(result, refKey.(SpxWidgetResourceRefKey), "widget2")
+		changes, err := s.spxRenameWidgetResource(result, id.(SpxWidgetResourceID), "widget2")
 		require.NoError(t, err)
 		require.Len(t, changes, 1)
 
@@ -873,10 +888,10 @@ onStart => {
 		require.NoError(t, err)
 		require.False(t, result.hasErrorSeverityDiagnostic)
 
-		refKey, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/widgets/widget1"))
+		id, err := ParseSpxResourceURI(SpxResourceURI("spx://resources/widgets/widget1"))
 		require.NoError(t, err)
 
-		changes, err := s.spxRenameWidgetResource(result, refKey.(SpxWidgetResourceRefKey), "widget2")
+		changes, err := s.spxRenameWidgetResource(result, id.(SpxWidgetResourceID), "widget2")
 		require.EqualError(t, err, `widget resource "widget2" already exists`)
 		require.Nil(t, changes)
 	})

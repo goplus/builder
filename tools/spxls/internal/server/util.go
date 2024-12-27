@@ -3,12 +3,33 @@ package server
 import (
 	"fmt"
 	"go/types"
+	"io/fs"
 	"regexp"
+	"strings"
 
 	"github.com/goplus/gogen"
 	gopast "github.com/goplus/gop/ast"
 	goptoken "github.com/goplus/gop/token"
 )
+
+// listSpxFiles returns a list of .spx files in the rootFS.
+func listSpxFiles(rootFS fs.ReadDirFS) ([]string, error) {
+	entries, err := fs.ReadDir(rootFS, ".")
+	if err != nil {
+		return nil, err
+	}
+	files := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if !strings.HasSuffix(entry.Name(), ".spx") {
+			continue
+		}
+		files = append(files, entry.Name())
+	}
+	return files, nil
+}
 
 // gopASTFileMapToSlice converts a map of [gopast.File] to a slice of [gopast.File].
 func gopASTFileMapToSlice(fileMap map[string]*gopast.File) []*gopast.File {
@@ -77,50 +98,82 @@ func toLowerCamelCase(s string) string {
 	return string(s[0]|32) + s[1:]
 }
 
-// walkStruct walks a struct and calls the given function for each field and method.
-func walkStruct(typ types.Type, onMember func(named *types.Named, namedParents []*types.Named, member types.Object)) {
-	seenFields := make(map[string]struct{})
-	seenMethods := make(map[string]struct{})
-
-	var walk func(typ types.Type, namedParents []*types.Named)
-	walk = func(typ types.Type, namedParents []*types.Named) {
-		st, ok := typ.Underlying().(*types.Struct)
-		if !ok {
-			return
+// walkStruct walks a struct and calls the given onMember for each field and
+// method. If onMember returns false, the walk is stopped.
+func walkStruct(named *types.Named, onMember func(member types.Object, selector *types.Named) bool) {
+	walked := make(map[*types.Named]struct{})
+	seenMembers := make(map[string]struct{})
+	var walk func(named *types.Named, namedPath []*types.Named) bool
+	walk = func(named *types.Named, namedPath []*types.Named) bool {
+		if _, ok := walked[named]; ok {
+			return true
 		}
-		named := typ.(*types.Named)
+		walked[named] = struct{}{}
+
+		st, ok := named.Underlying().(*types.Struct)
+		if !ok {
+			return true
+		}
+
+		selector := named
+		for _, named := range namedPath {
+			if !isExportedOrMainPkgObject(named.Obj()) {
+				break
+			}
+			selector = named
+
+			typeName := selector.Obj().Name()
+			if isSpxPkgObject(selector.Obj()) && (typeName == "Game" || typeName == "SpriteImpl") {
+				break
+			}
+		}
 
 		for i := range st.NumFields() {
 			field := st.Field(i)
-			if field.Embedded() {
-				fieldType := unwrapPointerType(field.Type())
-				if _, ok := fieldType.Underlying().(*types.Struct); ok {
-					walk(fieldType, append(namedParents, named))
-				}
+			if _, ok := seenMembers[field.Name()]; ok || !isExportedOrMainPkgObject(field) {
+				continue
 			}
-			if onMember != nil {
-				if _, ok := seenFields[field.Name()]; ok {
-					continue
-				}
-				seenFields[field.Name()] = struct{}{}
+			seenMembers[field.Name()] = struct{}{}
 
-				onMember(named, namedParents, field)
+			if !onMember(field, selector) {
+				return false
 			}
 		}
-
 		for i := range named.NumMethods() {
 			method := named.Method(i)
-			if onMember != nil {
-				if _, ok := seenMethods[method.Name()]; ok {
-					continue
-				}
-				seenMethods[method.Name()] = struct{}{}
+			if _, ok := seenMembers[method.Name()]; ok || !isExportedOrMainPkgObject(method) {
+				continue
+			}
+			seenMembers[method.Name()] = struct{}{}
 
-				onMember(named, namedParents, method)
+			if !onMember(method, selector) {
+				return false
 			}
 		}
+		for i := range st.NumFields() {
+			field := st.Field(i)
+			if !field.Embedded() {
+				continue
+			}
+			fieldType := unwrapPointerType(field.Type())
+			namedField, ok := fieldType.(*types.Named)
+			if !ok || !isNamedStructType(namedField) {
+				continue
+			}
+
+			if !walk(namedField, append(namedPath, namedField)) {
+				return false
+			}
+		}
+		return true
 	}
-	walk(typ, nil)
+	walk(named, []*types.Named{named})
+}
+
+// isNamedStructType reports whether the given named type is a struct type.
+func isNamedStructType(named *types.Named) bool {
+	_, ok := named.Underlying().(*types.Struct)
+	return ok
 }
 
 // gopOverloadFuncNameRE is the regular expression of the Go+ overloaded
@@ -145,6 +198,7 @@ func parseGopFuncName(name string) (parsedName string, overloadID *string) {
 }
 
 // expandGopOverloadedFunc expands the given Go+ function to all its overloads.
+// It returns nil if the function is not overloaded.
 func expandGopOverloadedFunc(fun *types.Func) []*types.Func {
 	typ, objs := gogen.CheckSigFuncExObjects(fun.Type().(*types.Signature))
 	if typ == nil {
@@ -167,9 +221,20 @@ func isSpxEventHandlerFuncName(name string) bool {
 	return spxEventHandlerFuncNameRE.MatchString(name)
 }
 
+// isSpxPkgObject reports whether the given object is defined in the spx package.
+func isSpxPkgObject(obj types.Object) bool {
+	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == spxPkgPath
+}
+
 // isMainPkgObject reports whether the given object is defined in the main package.
 func isMainPkgObject(obj types.Object) bool {
 	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == "main"
+}
+
+// isExportedOrMainPkgObject reports whether the given object is exported or
+// defined in the main package.
+func isExportedOrMainPkgObject(obj types.Object) bool {
+	return obj != nil && (obj.Exported() || isMainPkgObject(obj))
 }
 
 // isRenameableObject reports whether the given object can be renamed.

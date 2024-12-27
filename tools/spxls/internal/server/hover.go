@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"go/types"
 	"strings"
 )
 
@@ -19,44 +18,32 @@ func (s *Server) textDocumentHover(params *HoverParams) (*Hover, error) {
 		return nil, nil
 	}
 
-	if refKey, ref := result.spxResourceRefAtASTFilePosition(astFile, params.Position); refKey != nil {
+	if spxResourceRef := result.spxResourceRefAtASTFilePosition(astFile, params.Position); spxResourceRef != nil {
 		return &Hover{
 			Contents: MarkupContent{
 				Kind:  Markdown,
-				Value: refKey.URI().HTML(),
+				Value: spxResourceRef.ID.URI().HTML(),
 			},
 			Range: Range{
-				Start: FromGopTokenPosition(result.fset.Position(ref.Node.Pos())),
-				End:   FromGopTokenPosition(result.fset.Position(ref.Node.End())),
+				Start: FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.Pos())),
+				End:   FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.End())),
 			},
 		}, nil
 	}
 
-	ident, obj := result.identAndObjectAtASTFilePosition(astFile, params.Position)
-	if obj == nil {
+	ident := result.identAtASTFilePosition(astFile, params.Position)
+	if ident == nil {
+		return nil, nil
+	}
+
+	spxDefs := result.spxDefinitionsForIdent(ident)
+	if spxDefs == nil {
 		return nil, nil
 	}
 
 	var hoverContent strings.Builder
-	if obj.Pkg() == nil {
-		hoverContent.WriteString(GetSpxBuiltinDefinition(obj.Name()).HTML())
-	} else {
-		switch obj := obj.(type) {
-		case *types.Var:
-			hoverContent.WriteString(NewSpxDefinitionForVar(result, obj, result.inferSelectorTypeNameForIdent(ident)).HTML())
-		case *types.Const:
-			hoverContent.WriteString(NewSpxDefinitionForConst(result, obj).HTML())
-		case *types.TypeName:
-			hoverContent.WriteString(NewSpxDefinitionForType(result, obj).HTML())
-		case *types.Func:
-			for _, def := range NewSpxDefinitionsForFunc(result, obj, result.inferSelectorTypeNameForIdent(ident)) {
-				hoverContent.WriteString(def.HTML())
-			}
-		case *types.PkgName:
-			hoverContent.WriteString(NewSpxDefinitionForPkg(result, obj).HTML())
-		default:
-			return nil, nil
-		}
+	for _, spxDef := range spxDefs {
+		hoverContent.WriteString(spxDef.HTML())
 	}
 	return &Hover{
 		Contents: MarkupContent{

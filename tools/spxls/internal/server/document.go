@@ -2,13 +2,13 @@ package server
 
 import (
 	"errors"
-	"go/types"
+	"slices"
 
 	gopast "github.com/goplus/gop/ast"
 )
 
 // See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification#textDocument_documentLink
-func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]DocumentLink, error) {
+func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) (links []DocumentLink, err error) {
 	result, spxFile, astFile, err := s.compileAndGetASTFileForDocumentURI(params.TextDocument.URI)
 	if err != nil {
 		if errors.Is(err, errNoValidSpxFiles) || errors.Is(err, errNoMainSpxFile) {
@@ -20,75 +20,61 @@ func (s *Server) textDocumentDocumentLink(params *DocumentLinkParams) ([]Documen
 		return nil, nil
 	}
 
-	var links []DocumentLink
-
-	for refKey, refs := range result.spxResourceRefs {
-		for _, ref := range refs {
-			startPos := result.fset.Position(ref.Node.Pos())
-			if startPos.Filename != spxFile {
-				continue
-			}
-			target := URI(refKey.URI())
-			links = append(links, DocumentLink{
-				Range: Range{
-					Start: FromGopTokenPosition(startPos),
-					End:   FromGopTokenPosition(result.fset.Position(ref.Node.End())),
-				},
-				Target: &target,
-				Data: SpxResourceRefDocumentLinkData{
-					Kind: ref.Kind,
-				},
-			})
+	if linksIface, ok := result.computedCache.documentLinks.Load(params.TextDocument.URI); ok {
+		return linksIface.([]DocumentLink), nil
+	}
+	defer func() {
+		if err == nil {
+			result.computedCache.documentLinks.Store(params.TextDocument.URI, slices.Clip(links))
 		}
+	}()
+
+	// Add links for spx resource references.
+	links = slices.Grow(links, len(result.spxResourceRefs))
+	for _, spxResourceRef := range result.spxResourceRefs {
+		nodePos := result.fset.Position(spxResourceRef.Node.Pos())
+		if nodePos.Filename != spxFile {
+			continue
+		}
+		target := URI(spxResourceRef.ID.URI())
+		links = append(links, DocumentLink{
+			Range: Range{
+				Start: FromGopTokenPosition(nodePos),
+				End:   FromGopTokenPosition(result.fset.Position(spxResourceRef.Node.End())),
+			},
+			Target: &target,
+			Data: SpxResourceRefDocumentLinkData{
+				Kind: spxResourceRef.Kind,
+			},
+		})
 	}
 
-	gopast.Inspect(astFile, func(node gopast.Node) bool {
-		if node == nil || !node.Pos().IsValid() {
-			return true
+	// Add links for spx definitions.
+	links = slices.Grow(links, len(result.typeInfo.Defs)+len(result.typeInfo.Uses))
+	addLinksForIdent := func(ident *gopast.Ident) {
+		identPos := result.fset.Position(ident.Pos())
+		if identPos.Filename != spxFile {
+			return
 		}
-		ident, ok := node.(*gopast.Ident)
-		if !ok {
-			return true
-		}
-		obj := result.typeInfo.ObjectOf(ident)
-		if obj == nil {
-			return true
-		}
-
-		identRange := Range{
-			Start: FromGopTokenPosition(result.fset.Position(ident.Pos())),
-			End:   FromGopTokenPosition(result.fset.Position(ident.End())),
-		}
-		addLinks := func(defs ...SpxDefinition) {
-			for _, def := range defs {
-				target := URI(def.ID.String())
+		if spxDefs := result.spxDefinitionsForIdent(ident); spxDefs != nil {
+			identRange := Range{
+				Start: FromGopTokenPosition(identPos),
+				End:   FromGopTokenPosition(result.fset.Position(ident.End())),
+			}
+			for _, spxDef := range spxDefs {
+				target := URI(spxDef.ID.String())
 				links = append(links, DocumentLink{
 					Range:  identRange,
 					Target: &target,
 				})
 			}
 		}
-
-		if obj.Pkg() == nil {
-			addLinks(GetSpxBuiltinDefinition(obj.Name()))
-		} else {
-			switch obj := obj.(type) {
-			case *types.Var:
-				addLinks(NewSpxDefinitionForVar(result, obj, result.inferSelectorTypeNameForIdent(ident)))
-			case *types.Const:
-				addLinks(NewSpxDefinitionForConst(result, obj))
-			case *types.TypeName:
-				addLinks(NewSpxDefinitionForType(result, obj))
-			case *types.Func:
-				addLinks(NewSpxDefinitionsForFunc(result, obj, result.inferSelectorTypeNameForIdent(ident))...)
-			case *types.PkgName:
-				addLinks(NewSpxDefinitionForPkg(result, obj))
-			default:
-				return true
-			}
-		}
-		return true
-	})
-
-	return links, nil
+	}
+	for ident := range result.typeInfo.Defs {
+		addLinksForIdent(ident)
+	}
+	for ident := range result.typeInfo.Uses {
+		addLinksForIdent(ident)
+	}
+	return
 }

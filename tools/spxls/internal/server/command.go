@@ -60,36 +60,43 @@ func (s *Server) spxRenameResourcesWithCompileResult(result *compileResult, para
 	workspaceEdit := WorkspaceEdit{
 		Changes: make(map[DocumentURI][]TextEdit),
 	}
+	seenTextEdits := make(map[DocumentURI]map[TextEdit]struct{})
 	for _, param := range params {
-		refKey, err := ParseSpxResourceURI(param.Resource.URI)
+		id, err := ParseSpxResourceURI(param.Resource.URI)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse spx resource URI: %w", err)
 		}
 		var changes map[DocumentURI][]TextEdit
-		switch refKey := refKey.(type) {
-		case SpxBackdropResourceRefKey:
-			changes, err = s.spxRenameBackdropResource(result, refKey, param.NewName)
-		case SpxSoundResourceRefKey:
-			changes, err = s.spxRenameSoundResource(result, refKey, param.NewName)
-		case SpxSpriteResourceRefKey:
-			changes, err = s.spxRenameSpriteResource(result, refKey, param.NewName)
-		case SpxSpriteCostumeResourceRefKey:
-			changes, err = s.spxRenameSpriteCostumeResource(result, refKey, param.NewName)
-		case SpxSpriteAnimationResourceRefKey:
-			changes, err = s.spxRenameSpriteAnimationResource(result, refKey, param.NewName)
-		case SpxWidgetResourceRefKey:
-			changes, err = s.spxRenameWidgetResource(result, refKey, param.NewName)
+		switch id := id.(type) {
+		case SpxBackdropResourceID:
+			changes, err = s.spxRenameBackdropResource(result, id, param.NewName)
+		case SpxSoundResourceID:
+			changes, err = s.spxRenameSoundResource(result, id, param.NewName)
+		case SpxSpriteResourceID:
+			changes, err = s.spxRenameSpriteResource(result, id, param.NewName)
+		case SpxSpriteCostumeResourceID:
+			changes, err = s.spxRenameSpriteCostumeResource(result, id, param.NewName)
+		case SpxSpriteAnimationResourceID:
+			changes, err = s.spxRenameSpriteAnimationResource(result, id, param.NewName)
+		case SpxWidgetResourceID:
+			changes, err = s.spxRenameWidgetResource(result, id, param.NewName)
 		default:
-			return nil, fmt.Errorf("unsupported spx resource type: %T", refKey)
+			return nil, fmt.Errorf("unsupported spx resource type: %T", id)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to rename spx resource %q: %w", param.Resource.URI, err)
 		}
 		for documentURI, textEdits := range changes {
+			if _, ok := seenTextEdits[documentURI]; !ok {
+				seenTextEdits[documentURI] = make(map[TextEdit]struct{})
+			}
 			for _, textEdit := range textEdits {
-				if !slices.Contains(workspaceEdit.Changes[documentURI], textEdit) {
-					workspaceEdit.Changes[documentURI] = append(workspaceEdit.Changes[documentURI], textEdit)
+				if _, ok := seenTextEdits[documentURI][textEdit]; ok {
+					continue
 				}
+				seenTextEdits[documentURI][textEdit] = struct{}{}
+
+				workspaceEdit.Changes[documentURI] = append(workspaceEdit.Changes[documentURI], textEdit)
 			}
 		}
 	}
@@ -132,12 +139,19 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 		return nil, nil
 	}
 
-	var definitionIDs []SpxDefinitionIdentifier
-	addDefinitionID := func(defID SpxDefinitionIdentifier) {
-		if !slices.ContainsFunc(definitionIDs, func(existingDefID SpxDefinitionIdentifier) bool {
-			return existingDefID.String() == defID.String()
-		}) {
-			definitionIDs = append(definitionIDs, defID)
+	var defIDs []SpxDefinitionIdentifier
+	seenDefIDs := make(map[string]struct{})
+	addDefID := func(defID SpxDefinitionIdentifier) {
+		if _, ok := seenDefIDs[defID.String()]; ok {
+			return
+		}
+		seenDefIDs[defID.String()] = struct{}{}
+		defIDs = append(defIDs, defID)
+	}
+	addDefs := func(defs ...SpxDefinition) {
+		defIDs = slices.Grow(defIDs, len(defs))
+		for _, def := range defs {
+			addDefID(def.ID)
 		}
 	}
 
@@ -166,7 +180,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			continue
 		}
 		funcObj := result.typeInfo.ObjectOf(funcIdent)
-		if funcObj == nil || funcObj.Pkg() == nil || funcObj.Pkg().Path() != spxPkgPath {
+		if !isSpxPkgObject(funcObj) {
 			continue
 		}
 		funcTV, ok := result.typeInfo.Types[callExpr.Fun]
@@ -174,19 +188,15 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			continue
 		}
 		funcSig, ok := funcTV.Type.(*types.Signature)
-		if !ok {
+		if !ok || funcSig.Recv() == nil {
 			continue
 		}
-		funcRecv := funcSig.Recv()
-		if funcRecv == nil {
-			continue
-		}
-		funcRecvType := unwrapPointerType(funcRecv.Type())
 
 		if paramCount := funcSig.Params().Len(); paramCount > 0 {
 			lastParamType := funcSig.Params().At(paramCount - 1).Type()
 			if _, ok := lastParamType.(*types.Signature); ok {
-				calledEventHandlers[funcRecvType.String()+"."+toLowerCamelCase(funcIdent.Name)] = struct{}{}
+				funcRecvTypeName := result.selectorTypeNameForIdent(funcIdent)
+				calledEventHandlers[funcRecvTypeName+"."+toLowerCamelCase(funcIdent.Name)] = struct{}{}
 			}
 		}
 	}
@@ -199,7 +209,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			if obj == nil {
 				continue
 			}
-			addDefinitionID(SpxDefinitionIdentifier{
+			addDefID(SpxDefinitionIdentifier{
 				Package: util.ToPtr(obj.Pkg().Name()),
 				Name:    util.ToPtr(obj.Name()),
 			})
@@ -210,101 +220,29 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 			if !isThis && !isMainScopeObj {
 				continue
 			}
-
-			typ := unwrapPointerType(obj.Type())
-			if _, ok := typ.Underlying().(*types.Struct); !ok {
+			named, ok := unwrapPointerType(obj.Type()).(*types.Named)
+			if !ok || !isNamedStructType(named) {
 				continue
 			}
-			walkStruct(typ, func(named *types.Named, namedParents []*types.Named, member types.Object) {
-				memberPkgPath := member.Pkg().Path()
-				if !member.Exported() && memberPkgPath != "main" {
-					return
-				}
 
-				switch member := member.(type) {
-				case *types.Var:
-					addDefinitionID(SpxDefinitionIdentifier{
-						Package: util.ToPtr(memberPkgPath),
-						Name:    util.ToPtr(member.Name()),
-					})
-				case *types.Func:
-					var methodNames []string
-					if methodOverloads := expandGopOverloadedFunc(member); len(methodOverloads) > 0 {
-						methodNames = make([]string, 0, len(methodOverloads))
-						for _, method := range methodOverloads {
-							_, methodName, _ := util.SplitGoptMethod(method.Name())
-							methodNames = append(methodNames, methodName)
-						}
-					} else {
-						methodNames = []string{member.Name()}
-					}
-
-					for _, methodName := range methodNames {
-						parsedName, overloadID := parseGopFuncName(methodName)
-						if _, ok := calledEventHandlers[named.String()+"."+parsedName]; ok {
-							return
-						}
-
-						recvTypeName := named.Obj().Name()
-						if memberPkgPath == spxPkgPath {
-							if recvTypeName != "SpriteImpl" && recvTypeName != "Game" {
-								for _, namedParent := range namedParents {
-									if namedParent.Obj().Pkg().Path() != spxPkgPath {
-										continue
-									}
-
-									namedParentName := namedParent.Obj().Name()
-									if namedParentName == "SpriteImpl" || namedParentName == "Game" {
-										recvTypeName = namedParentName
-										break
-									}
-								}
-							}
-							if recvTypeName == "SpriteImpl" {
-								recvTypeName = "Sprite"
-							}
-						}
-
-						addDefinitionID(SpxDefinitionIdentifier{
-							Package:    util.ToPtr(memberPkgPath),
-							Name:       util.ToPtr(recvTypeName + "." + parsedName),
-							OverloadID: overloadID,
-						})
+			for _, def := range result.spxDefinitionsForNamedStruct(named) {
+				if def.ID.Name != nil {
+					if _, ok := calledEventHandlers[*def.ID.Name]; ok {
+						continue
 					}
 				}
-			})
-		}
-	}
-
-	// Add other spx definitions.
-	for _, name := range result.spxPkg.Scope().Names() {
-		if obj := result.spxPkg.Scope().Lookup(name); obj != nil && obj.Exported() {
-			name := obj.Name()
-
-			var overloadID *string
-			if _, ok := obj.(*types.Func); ok {
-				name, overloadID = parseGopFuncName(name)
+				addDefID(def.ID)
 			}
-
-			addDefinitionID(SpxDefinitionIdentifier{
-				Package:    util.ToPtr(spxPkgPath),
-				Name:       util.ToPtr(name),
-				OverloadID: overloadID,
-			})
 		}
 	}
 
 	// Add other definitions.
-	for _, def := range GetSpxBuiltinDefinitions() {
-		addDefinitionID(def.ID)
-	}
-	for _, def := range SpxGeneralDefinitions {
-		addDefinitionID(def.ID)
-	}
+	addDefs(GetSpxPkgDefinitions()...)
+	addDefs(GetSpxBuiltinDefinitions()...)
+	addDefs(SpxGeneralDefinitions...)
 	if innermostScope == astFileScope {
-		for _, def := range SpxFileScopeDefinitions {
-			addDefinitionID(def.ID)
-		}
+		addDefs(SpxFileScopeDefinitions...)
 	}
-	return definitionIDs, nil
+
+	return defIDs, nil
 }
