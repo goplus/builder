@@ -278,7 +278,7 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 
 	// Add other spx definitions.
 	for _, name := range result.spxPkg.Scope().Names() {
-		if obj := result.spxPkg.Scope().Lookup(name); obj != nil {
+		if obj := result.spxPkg.Scope().Lookup(name); obj != nil && obj.Exported() {
 			name := obj.Name()
 
 			var overloadID *string
@@ -286,13 +286,11 @@ func (s *Server) spxGetDefinitions(params []SpxGetDefinitionsParams) ([]SpxDefin
 				name, overloadID = parseGopFuncName(name)
 			}
 
-			if obj.Exported() {
-				addDefinitionID(SpxDefinitionIdentifier{
-					Package:    util.ToPtr(spxPkgPath),
-					Name:       util.ToPtr(name),
-					OverloadID: overloadID,
-				})
-			}
+			addDefinitionID(SpxDefinitionIdentifier{
+				Package:    util.ToPtr(spxPkgPath),
+				Name:       util.ToPtr(name),
+				OverloadID: overloadID,
+			})
 		}
 	}
 
