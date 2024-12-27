@@ -128,7 +128,9 @@ const monacoEditorOptions = computed<monaco.editor.IStandaloneEditorConstruction
   tabSize,
   insertSpaces,
   fontSize: fontSize.value,
-  contextmenu: false
+  contextmenu: false,
+  // TODO: preserve `semanticHighlighting` of theme (in `@shikijs/monaco`), then remove this line
+  'semanticHighlighting.enabled': true
 }))
 
 const monacEditorInitDataRef = shallowRef<MonacoEditorInitData | null>(null)

@@ -11,6 +11,7 @@ import { Costume } from '@/models/costume'
 import { Animation } from '@/models/animation'
 import { isWidget } from '@/models/widget'
 import { stageCodeFilePaths } from '@/models/stage'
+import type { Monaco, monaco } from './monaco'
 
 export type Position = {
   line: number
@@ -561,4 +562,12 @@ export function textDocumentId2CodeFileName(id: TextDocumentIdentifier) {
     const spriteName = codeFilePath.replace(/\.spx$/, '')
     return { en: spriteName, zh: spriteName }
   }
+}
+
+export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
+  return { uri: uri.toString() }
+}
+
+export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.Uri {
+  return monaco.Uri.parse(id.uri)
 }

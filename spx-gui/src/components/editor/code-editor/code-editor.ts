@@ -8,7 +8,7 @@ import type { Runtime } from '@/models/runtime'
 import type { Project } from '@/models/project'
 import { Copilot } from './copilot'
 import { DocumentBase } from './document-base'
-import { SpxLSPClient } from './lsp'
+import { SpxLSPClient, semanticTokenLegend } from './lsp'
 import {
   type ICodeEditorUI,
   type DiagnosticsContext,
@@ -55,7 +55,8 @@ import {
   type CommandArgs,
   getTextDocumentId,
   containsPosition,
-  makeBasicMarkdownString
+  makeBasicMarkdownString,
+  fromMonacoUri
 } from './common'
 import { TextDocument, createTextDocument } from './text-document'
 import { type Monaco } from './monaco'
@@ -542,6 +543,22 @@ export class CodeEditor extends Disposable {
 
   init() {
     this.lspClient.init()
+
+    this.addDisposable(
+      this.monaco.languages.registerDocumentSemanticTokensProvider('spx', {
+        getLegend: () => semanticTokenLegend,
+        provideDocumentSemanticTokens: async (model) => {
+          const tokens = await this.lspClient.textDocumentSemanticTokens({
+            textDocument: fromMonacoUri(model.uri)
+          })
+          if (tokens == null) return { data: new Uint32Array(0) }
+          return { data: new Uint32Array(tokens.data) } // TODO: pass data with array buffer instead of number array
+        },
+        releaseDocumentSemanticTokens() {
+          // do nothing
+        }
+      })
+    )
   }
 
   dispose(): void {
