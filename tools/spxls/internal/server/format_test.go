@@ -3,16 +3,14 @@ package server
 import (
 	"testing"
 
-	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServerTextDocumentFormatting(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 // A spx game.
 
 var (
@@ -21,7 +19,6 @@ var (
 )
 run "assets",    { Title:    "Bullet (by Go+)" }
 `),
-			}
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
@@ -48,10 +45,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 	})
 
 	t.Run("NonSpxFile", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.gop": []byte(`echo "Hello, Go+!"`),
-			}
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.gop": []byte(`echo "Hello, Go+!"`),
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.gop"},
@@ -63,9 +58,7 @@ run "assets", {Title: "Bullet (by Go+)"}
 	})
 
 	t.Run("FileNotFound", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return nil
-		}), nil)
+		s := New(newMapFSWithoutModTime(map[string][]byte{}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///notexist.spx"},
 		}
@@ -76,10 +69,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 	})
 
 	t.Run("NoChangesNeeded", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`run "assets", {Title: "Bullet (by Go+)"}` + "\n"),
-			}
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`run "assets", {Title: "Bullet (by Go+)"}` + "\n"),
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
@@ -91,10 +82,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 	})
 
 	t.Run("FormatError", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte("vbr Foobar string"),
-			}
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte("vbr Foobar string"),
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},
@@ -107,9 +96,8 @@ run "assets", {Title: "Bullet (by Go+)"}
 	})
 
 	t.Run("WithFormatSpx", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`// A spx game.
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`// A spx game.
 
 var (
 	// The aircraft.
@@ -139,7 +127,6 @@ var (
 	Bullet6 Bullet // The sixth bullet.
 )
 `),
-			}
 		}), nil)
 		params := &DocumentFormattingParams{
 			TextDocument: TextDocumentIdentifier{URI: "file:///main.spx"},

@@ -8,14 +8,14 @@ import (
 	"testing"
 )
 
-func newTestMapFS() (fs.FS, map[string][]byte) {
-	files := map[string][]byte{
-		"foo.txt":                []byte("foo"),
-		"dir/bar.txt":            []byte("bar"),
-		"dir/subdir/another.txt": []byte("another"),
-		"other/file.txt":         []byte("other"),
+func newTestMapFS() (fs.FS, map[string]MapFile) {
+	files := map[string]MapFile{
+		"foo.txt":                {Content: []byte("foo")},
+		"dir/bar.txt":            {Content: []byte("bar")},
+		"dir/subdir/another.txt": {Content: []byte("another")},
+		"other/file.txt":         {Content: []byte("other")},
 	}
-	fsys := NewMapFS(func() map[string][]byte {
+	fsys := NewMapFS(func() map[string]MapFile {
 		return files
 	})
 	return fsys, files
@@ -36,7 +36,7 @@ func TestMapFSOpen(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := files["foo.txt"]
+		want := files["foo.txt"].Content
 		if !bytes.Equal(got, want) {
 			t.Errorf("content mismatch: got %q, want %q", got, want)
 		}
@@ -160,8 +160,8 @@ func TestMapFSFile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if size := info.Size(); size != int64(len(want)) {
-				t.Errorf("size mismatch: got %d, want %d", size, len(want))
+			if size := info.Size(); size != int64(len(want.Content)) {
+				t.Errorf("size mismatch: got %d, want %d", size, len(want.Content))
 			}
 
 			got, err := io.ReadAll(f)
@@ -169,8 +169,8 @@ func TestMapFSFile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !bytes.Equal(got, want) {
-				t.Errorf("content mismatch: got %q, want %q", got, want)
+			if !bytes.Equal(got, want.Content) {
+				t.Errorf("content mismatch: got %q, want %q", got, want.Content)
 			}
 		})
 	}

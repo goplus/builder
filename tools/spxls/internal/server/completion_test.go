@@ -4,16 +4,14 @@ import (
 	"testing"
 
 	"github.com/goplus/builder/tools/spxls/internal/util"
-	"github.com/goplus/builder/tools/spxls/internal/vfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServerTextDocumentCompletion(t *testing.T) {
 	t.Run("Normal", func(t *testing.T) {
-		s := New(vfs.NewMapFS(func() map[string][]byte {
-			return map[string][]byte{
-				"main.spx": []byte(`
+		s := New(newMapFSWithoutModTime(map[string][]byte{
+			"main.spx": []byte(`
 var (
 	MySprite Sprite
 )
@@ -21,13 +19,12 @@ var (
 MySprite.
 run "assets", {Title: "My Game"}
 `),
-				"MySprite.spx": []byte(`
+			"MySprite.spx": []byte(`
 onStart => {
 	MySprite.turn Right
 }
 `),
-				"assets/sprites/MySprite/index.json": []byte(`{}`),
-			}
+			"assets/sprites/MySprite/index.json": []byte(`{}`),
 		}), nil)
 
 		emptyLineItems, err := s.textDocumentCompletion(&CompletionParams{

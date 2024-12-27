@@ -129,4 +129,5 @@ export type Files = {
  */
 export type File = {
   content: Uint8Array
+  modTime: number // unix timestamp in milliseconds
 }

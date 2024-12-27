@@ -9,15 +9,20 @@ import (
 	"time"
 )
 
+// MapFile represents a file's content and metadata in the map file system.
+type MapFile struct {
+	Content []byte
+	ModTime time.Time
+}
+
 // GetFileMapFunc is the type for function that returns a map of files.
-type GetFileMapFunc func() map[string][]byte
+type GetFileMapFunc func() map[string]MapFile
 
 // MapFS implements [fs.ReadDirFS] using a map of files.
 type MapFS struct {
 	getFileMap GetFileMapFunc
 	fileMode   fs.FileMode
 	dirMode    fs.FileMode
-	modTime    time.Time
 }
 
 // NewMapFS creates a new map file system.
@@ -26,7 +31,6 @@ func NewMapFS(getFileMap GetFileMapFunc) *MapFS {
 		getFileMap: getFileMap,
 		fileMode:   0444,
 		dirMode:    0444 | fs.ModeDir,
-		modTime:    time.Now(),
 	}
 }
 
@@ -39,15 +43,15 @@ func (mfs *MapFS) Open(name string) (fs.File, error) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
 
-	content, ok := fileMap[name]
+	mf, ok := fileMap[name]
 	if !ok {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrNotExist}
 	}
 	return &file{
 		name:    name,
-		content: content,
+		content: mf.Content,
 		mode:    mfs.fileMode,
-		modTime: mfs.modTime,
+		modTime: mf.ModTime,
 	}, nil
 }
 
@@ -97,19 +101,27 @@ func (mfs *MapFS) ReadDir(name string) ([]fs.DirEntry, error) {
 
 	entries := make([]fs.DirEntry, 0, len(dirs)+len(files))
 	for d := range dirs {
+		var latestModTime time.Time
+		dirPrefix := prefix + d + "/"
+		for p, mf := range fileMap {
+			if strings.HasPrefix(p, dirPrefix) && mf.ModTime.After(latestModTime) {
+				latestModTime = mf.ModTime
+			}
+		}
 		entries = append(entries, &dirEntry{
 			name:    d,
 			mode:    mfs.dirMode,
-			modTime: mfs.modTime,
+			modTime: latestModTime,
 			isDir:   true,
 		})
 	}
 	for f := range files {
+		mf := fileMap[prefix+f]
 		entries = append(entries, &dirEntry{
 			name:    f,
-			size:    int64(len(fileMap[prefix+f])),
+			size:    int64(len(mf.Content)),
 			mode:    mfs.fileMode,
-			modTime: mfs.modTime,
+			modTime: mf.ModTime,
 			isDir:   false,
 		})
 	}
@@ -127,21 +139,27 @@ func (mfs *MapFS) Stat(name string) (fs.FileInfo, error) {
 
 	fileMap := mfs.getFileMap()
 	if name == "." {
+		var latestModTime time.Time
+		for _, mf := range fileMap {
+			if mf.ModTime.After(latestModTime) {
+				latestModTime = mf.ModTime
+			}
+		}
 		return &fileInfo{
 			name:    ".",
 			mode:    mfs.dirMode,
-			modTime: mfs.modTime,
+			modTime: latestModTime,
 			isDir:   true,
 		}, nil
 	}
 
-	content, ok := fileMap[name]
+	mf, ok := fileMap[name]
 	if ok {
 		return &fileInfo{
 			name:    path.Base(name),
-			size:    int64(len(content)),
+			size:    int64(len(mf.Content)),
 			mode:    mfs.fileMode,
-			modTime: mfs.modTime,
+			modTime: mf.ModTime,
 			isDir:   false,
 		}, nil
 	}
@@ -149,10 +167,13 @@ func (mfs *MapFS) Stat(name string) (fs.FileInfo, error) {
 	// Check if it's a directory by looking for files with this prefix.
 	prefix := name + "/"
 	hasPrefix := false
-	for p := range fileMap {
+	var latestModTime time.Time
+	for p, mf := range fileMap {
 		if strings.HasPrefix(p, prefix) {
 			hasPrefix = true
-			break
+			if mf.ModTime.After(latestModTime) {
+				latestModTime = mf.ModTime
+			}
 		}
 	}
 
@@ -160,7 +181,7 @@ func (mfs *MapFS) Stat(name string) (fs.FileInfo, error) {
 		return &fileInfo{
 			name:    path.Base(name),
 			mode:    mfs.dirMode,
-			modTime: mfs.modTime,
+			modTime: latestModTime,
 			isDir:   true,
 		}, nil
 	}
