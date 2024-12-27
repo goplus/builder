@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { UITooltip } from '@/components/ui'
-import { selection2Range } from '../../common'
 import DefinitionOverviewWrapper from '../definition/DefinitionOverviewWrapper.vue'
 import DefinitionDetailWrapper from '../definition/DefinitionDetailWrapper.vue'
 import MarkdownView from '../markdown/MarkdownView.vue'
@@ -15,15 +14,7 @@ const props = defineProps<{
 const codeEditorCtx = useCodeEditorUICtx()
 
 function handleInsert() {
-  const startPosition = { line: 1, column: 1 }
-  let range = { start: startPosition, end: startPosition }
-  if (codeEditorCtx.ui.selection != null) {
-    range = selection2Range(codeEditorCtx.ui.selection)
-  }
-  // TODO: Optimize inserting logic with inline context. For example:
-  // * If no space before cursor, insert a space before inserting snippet.
-  // * If current line isn't empty, insert a new line before inserting snippet for kind Command or Listen.
-  codeEditorCtx.ui.insertSnippet(props.item.insertText, range)
+  codeEditorCtx.ui.insertSnippet(props.item.insertText)
   codeEditorCtx.ui.editor.focus()
 }
 

@@ -22,7 +22,8 @@ import {
   getResourceModel,
   type TextDocumentRange,
   isRangeEmpty,
-  textDocumentIdEq
+  textDocumentIdEq,
+  selection2Range
 } from '../common'
 import { TextDocument } from '../text-document'
 import type { Monaco, MonacoEditor } from '../monaco'
@@ -237,13 +238,29 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
     return this.getTextDocument(this.mainTextDocumentId)
   }
 
-  async insertText(text: string, range: Range) {
-    const editor = this.editor
-    const inserting = { range: toMonacoRange(range), text }
-    editor.executeEdits('insertText', [inserting])
+  private getSelectionRange() {
+    const pos = { line: 1, column: 1 }
+    let range = { start: pos, end: pos }
+    if (this.selection != null) {
+      range = selection2Range(this.selection)
+    }
+    return range
   }
 
-  async insertSnippet(snippet: string, range: Range) {
+  // TODO: Optimize inserting logic with inline context. For example:
+  // * If no space before cursor, insert a space before inserting snippet.
+  // * If current line isn't empty, insert a new line before inserting snippet for kind Command or Listen.
+
+  async insertText(text: string, range: Range = this.getSelectionRange()) {
+    this.activeTextDocument?.pushEdits([
+      {
+        range,
+        newText: text
+      }
+    ])
+  }
+
+  async insertSnippet(snippet: string, range: Range = this.getSelectionRange()) {
     const editor = this.editor
     // `executeEdits` does not support snippet, so we have to split the insertion into two steps:
     // 1. remove the range with `executeEdits`
@@ -253,7 +270,9 @@ export class CodeEditorUI extends Disposable implements ICodeEditorUI {
       editor.executeEdits('insertSnippet', [removing])
       await timeout(0) // NOTE: the timeout is necessary, or the cursor position will be wrong after snippet inserted
     }
-    // it's strange but it works, see details in https://github.com/Microsoft/monaco-editor/issues/342
+    // It's weird but works, see details in https://github.com/Microsoft/monaco-editor/issues/342
+    // While it prevents us to wrap a history action around the snippet insertion. See details in `TextDocument.withChangeKindProgram`
+    // TODO: Use better way to insert snippet
     const contribution = editor.getContribution('snippetController2')
     if (contribution == null) throw new Error('Snippet contribution not found')
     ;(contribution as any).insert(snippet)

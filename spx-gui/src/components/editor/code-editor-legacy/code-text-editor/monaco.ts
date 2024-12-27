@@ -45,7 +45,7 @@ export function initMonaco(
     rules: [
       // TODO: review colors here
       { token: 'comment', foreground: color.hint[2], fontStyle: 'italic' },
-      { token: 'string', foreground: color.green[300] },
+      { token: 'string', foreground: color.green[600] },
       { token: 'operator', foreground: color.blue.main },
       { token: 'number', foreground: color.blue[600] },
       { token: 'keyword', foreground: color.red[600] },

@@ -55,9 +55,12 @@ export const red = {
 } as const
 
 export const green = {
-  100: '#90e05a',
-  200: '#63ce29',
-  300: '#3ca80c',
+  100: '#e0f8e3',
+  200: '#cbf1cd',
+  300: '#b0ea90',
+  400: '#90e05a',
+  500: '#63ce29',
+  600: '#3ca80c',
   main: '#63ce29'
 } as const
 

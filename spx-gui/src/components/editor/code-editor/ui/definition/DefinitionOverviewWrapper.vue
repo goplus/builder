@@ -8,7 +8,7 @@ defineProps<{
   kind?: DefinitionKind
 }>()
 
-const childrenText = useSlotText()
+const childrenText = useSlotText('default', true)
 </script>
 
 <template>
