@@ -6,6 +6,7 @@ import type { MarkdownStringFlag } from '../../common'
 import DefinitionItem from '../definition/DefinitionItem.vue'
 import CodeLink from './CodeLink'
 import CodeBlock from './CodeBlock.vue'
+import CodeChange from './CodeChange.vue'
 import ResourcePreview from './ResourcePreview.vue'
 import DiagnosticItem from './DiagnosticItem.vue'
 
@@ -30,6 +31,15 @@ const basicComponents = {
    * ```
    */
   'code-link': CodeLink,
+  /**
+   * Usage:
+   * ```html
+   * <code-change file="file:///NiuXiaoQi.spx" line-range="1-10">
+   *   New code content here
+   * </code-change>
+   * ```
+   */
+  'code-change': CodeChange,
   /**
    * Usage:
    * ```html

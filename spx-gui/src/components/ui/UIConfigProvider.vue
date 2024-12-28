@@ -60,7 +60,7 @@ const themeOverrides: GlobalThemeOverrides = {
     warningColor: uiVariables.color.yellow.main,
     warningColorHover: uiVariables.color.yellow[100],
     successColor: uiVariables.color.success.main,
-    successColorHover: uiVariables.color.success[100],
+    successColorHover: uiVariables.color.success[400],
     infoColor: uiVariables.color.primary.main,
     infoColorHover: uiVariables.color.primary[100],
 

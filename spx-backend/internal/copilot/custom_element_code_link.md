@@ -10,15 +10,17 @@ Text document URI, e.g., `file:///NiuXiaoQi.spx`
 
 ### `position`
 
-`${line},${column}`, e.g., `10,20`.
-
-`line` & `column` are numbers start from 1. `1,1` means the first column of the first line.
+Format: `${line},${column}`, e.g., `10,20`. `line` & `column` are numbers start from 1. `1,1` means the first column of the first line.
 
 ### `range`
 
-`${startLine},${startColumn}-${endLine}${endColumn}`, e.g., `10,20-12,10`
+Format: `${startLine},${startColumn}-${endLine}${endColumn}`, e.g., `10,20-12,10`
 
 `startLine`, `startColumn`, `endLine`, `endColumn` are numbers start from 1. `10,20-12,10` means the range from line 10, column 20 to line 12, column 10. The end position is exclusive.
+
+### children
+
+The text to display in the link.
 
 ## Examples
 

@@ -118,8 +118,9 @@ func (ctrl *Controller) GenerateMessage(ctx context.Context, params *GenerateMes
 		// * Switch to official API
 		// * Use `[]anthropic.TextBlockParam` instead of `string`
 		// * Enable prompt caching if it helps
-		System:   anthropic.Raw[[]anthropic.TextBlockParam](copilot.SystemPrompt),
-		Messages: anthropic.F(messages),
+		System:      anthropic.Raw[[]anthropic.TextBlockParam](copilot.SystemPrompt),
+		Messages:    anthropic.F(messages),
+		Temperature: anthropic.F(0.3),
 	})
 	if err != nil {
 		logger.Printf("failed to generate message: %v", err)

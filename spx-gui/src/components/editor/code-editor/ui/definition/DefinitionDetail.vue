@@ -20,7 +20,7 @@ const documentation = useAsyncComputed<DefinitionDocumentationItem | null>(async
   return documentBase.getDocumentation(defId)
 })
 
-const childrenText = useSlotText()
+const childrenText = useSlotText('default', true)
 const hasContent = computed(() => documentation.value != null || childrenText.value !== '')
 </script>
 

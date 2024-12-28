@@ -9,19 +9,32 @@ const props = withDefaults(
     /** Only `spx` supported now. */
     language?: string
     mode: 'block' | 'inline'
+    /** If show line numbers */
+    lineNumbers?: boolean
+    /** Is code for addition */
+    addition?: boolean
+    /** Is code for deletion */
+    deletion?: boolean
   }>(),
   {
-    language: 'spx'
+    language: 'spx',
+    lineNumbers: false,
+    addition: false,
+    deletion: false
   }
 )
 
 const childrenText = useSlotText()
 const highlighter = useAsyncComputed(getHighlighter)
 
+const hasLineNumbers = computed(() => {
+  return props.lineNumbers && props.mode === 'block' && childrenText.value.split('\n').length > 1
+})
+
 const codeHtml = computed(() => {
   if (highlighter.value == null) return ''
-  const code = childrenText.value
-  return highlighter.value.codeToHtml(code, {
+  const codeToDisplay = childrenText.value.replace(/\n$/, '') // omit last line break when displaying
+  return highlighter.value.codeToHtml(codeToDisplay, {
     lang: props.language,
     structure: props.mode === 'block' ? 'classic' : 'inline',
     theme
@@ -30,14 +43,83 @@ const codeHtml = computed(() => {
 </script>
 
 <template>
-  <!-- eslint-disable-next-line vue/no-v-html -->
+  <!-- eslint-disable vue/no-v-html -->
   <code v-if="mode === 'inline'" class="code-view" :style="{ tabSize }" v-html="codeHtml"></code>
-  <!-- eslint-disable-next-line vue/no-v-html -->
-  <div v-else class="code-view" :style="{ tabSize }" v-html="codeHtml"></div>
+  <div
+    v-else
+    class="code-view block"
+    :class="{ 'has-line-numbers': hasLineNumbers, addition, deletion }"
+    :style="{ tabSize }"
+    v-html="codeHtml"
+  ></div>
 </template>
 
 <style lang="scss" scoped>
 .code-view {
   font-family: var(--ui-font-family-code);
+}
+
+.block :deep(pre) {
+  min-width: fit-content;
+}
+
+.has-line-numbers {
+  container-type: inline-size;
+
+  :deep(pre) {
+    position: relative;
+    padding-left: 26px;
+    counter-reset: step;
+    counter-increment: step 0;
+  }
+
+  :deep(.line::before) {
+    content: counter(step);
+    counter-increment: step;
+    position: absolute;
+    left: 0;
+    width: 18px;
+    display: inline-block;
+    text-align: right;
+    color: #34819b;
+  }
+
+  // If the container is too narrow, hide line numbers
+  @container (width < 15em) {
+    :deep(pre) {
+      padding-left: 0;
+    }
+    :deep(.line::before) {
+      content: none;
+    }
+  }
+}
+
+.addition,
+.deletion {
+  :deep(pre) {
+    position: relative;
+    padding-left: 24px;
+  }
+  :deep(.line::before) {
+    position: absolute;
+    left: 8px;
+    width: 1em;
+    display: inline-block;
+  }
+}
+
+.addition {
+  background: var(--ui-color-green-100);
+  :deep(code .line::before) {
+    content: '+';
+  }
+}
+
+.deletion {
+  background: var(--ui-color-red-100);
+  :deep(code .line::before) {
+    content: '-';
+  }
 }
 </style>

@@ -48,6 +48,9 @@ import info from './info.svg?raw'
 import warning from './warning.svg?raw'
 import error from './error.svg?raw'
 import success from './success.svg?raw'
+import apply from './apply.svg?raw'
+import insert from './insert.svg?raw'
+import copy from './copy.svg?raw'
 
 const typeIconMap = {
   file,
@@ -92,7 +95,10 @@ const typeIconMap = {
   info,
   warning,
   error,
-  success
+  success,
+  apply,
+  insert,
+  copy
 }
 
 export type Type = keyof typeof typeIconMap

@@ -19,7 +19,7 @@ export function getTextForVNode(vnode: VNode): string {
   return ''
 }
 
-export function useSlotText(name = 'default', trimLineBreaks = true) {
+export function useSlotText(name = 'default', trimLineBreaks = false) {
   const slots = useSlots()
   return computed(() => {
     let text = getTextForVNodeChild(slots[name]?.())
