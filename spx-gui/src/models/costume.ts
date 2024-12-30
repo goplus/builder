@@ -3,9 +3,7 @@ import { nanoid } from 'nanoid'
 
 import { extname, resolve } from '@/utils/path'
 import { adaptImg } from '@/utils/spx'
-import { Disposable } from '@/utils/disposable'
-import { File, type Files } from './common/file'
-import type { Size } from './common'
+import { File, type Files, getImageSize } from './common/file'
 import { getCostumeName, validateCostumeName } from './common/asset-name'
 import type { Sprite } from './sprite'
 import type { Animation } from './animation'
@@ -71,24 +69,8 @@ export class Costume {
     this.bitmapResolution = bitmapResolution
   }
 
-  private async getRawSize() {
-    const d = new Disposable()
-    const imgUrl = await this.img.url((fn) => d.addDisposer(fn))
-    return new Promise<Size>((resolve, reject) => {
-      const img = new window.Image()
-      img.src = imgUrl
-      img.onload = () => {
-        resolve({
-          width: img.width,
-          height: img.height
-        })
-      }
-      img.onerror = (e) => {
-        reject(new Error(`load image failed: ${e.toString()}`))
-      }
-    }).finally(() => {
-      d.dispose()
-    })
+  async getRawSize() {
+    return getImageSize(this.img)
   }
 
   async getSize() {

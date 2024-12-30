@@ -7,8 +7,9 @@
 import { markRaw } from 'vue'
 import { getMimeFromExt } from '@/utils/file'
 import { extname } from '@/utils/path'
-import type { Disposer } from '@/utils/disposable'
+import { Disposable, type Disposer } from '@/utils/disposable'
 import { Cancelled } from '@/utils/exception'
+import type { Size } from '.'
 
 export type Options = {
   /** MIME type of file */
@@ -119,6 +120,41 @@ export function fromConfig(name: string, config: unknown, options?: Options) {
 export async function toConfig(file: File) {
   const text = await toText(file)
   return JSON.parse(text) as unknown
+}
+
+async function getSVGImageSize(svgFile: File) {
+  const svgText = await toText(svgFile)
+  const parser = new DOMParser()
+  const svg = parser.parseFromString(svgText, 'image/svg+xml').documentElement
+  if (!(svg instanceof SVGSVGElement)) throw new Error(`invalid svg: ${svgFile.name}`)
+  // Keep consistent with spx, for details see https://github.com/goplus/spx/blob/15b2e572746f3aaea519c2d9c0027188b50b62c8/internal/svgr/svg.go#L39
+  const { width, height } = svg.viewBox.baseVal
+  return { width, height }
+}
+
+async function getBitmapImageSize(bitmapImgFile: File) {
+  const d = new Disposable()
+  const imgUrl = await bitmapImgFile.url((fn) => d.addDisposer(fn))
+  return new Promise<Size>((resolve, reject) => {
+    const img = new window.Image()
+    img.src = imgUrl
+    img.onload = () => {
+      resolve({
+        width: img.width,
+        height: img.height
+      })
+    }
+    img.onerror = (e) => {
+      reject(new Error(`load image failed: ${e.toString()}`))
+    }
+  }).finally(() => {
+    d.dispose()
+  })
+}
+
+export async function getImageSize(file: File) {
+  if (file.type === 'image/svg+xml') return getSVGImageSize(file)
+  return getBitmapImageSize(file)
 }
 
 export function listDirs(
