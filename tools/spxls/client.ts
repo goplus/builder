@@ -1,10 +1,15 @@
-import { type Files, type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj, type Spxls } from '.'
+import { type NotificationMessage, type RequestMessage, type ResponseMessage, type ResponseError as ResponseErrorObj } from '.'
+
+/** Connection between the client and the language server. */
+export interface IConnection {
+  sendMessage(message: RequestMessage | NotificationMessage): void
+  onMessage(handler: (message: ResponseMessage | NotificationMessage) => void): void
+}
 
 /**
  * Client wrapper for the spxls.
  */
 export class Spxlc {
-  private ls: Spxls
   private nextRequestId: number = 1
   private pendingRequests = new Map<number, {
     resolve: (response: any) => void
@@ -14,12 +19,10 @@ export class Spxlc {
 
   /**
    * Creates a new client instance.
-   * @param filesProvider Function that provides access to workspace files.
+   * @param connection The connection to the language server.
    */
-  constructor(filesProvider: () => Files) {
-    const ls = NewSpxls(filesProvider, this.handleMessage.bind(this))
-    if (ls instanceof Error) throw ls
-    this.ls = ls
+  constructor(private connection: IConnection) {
+    connection.onMessage(m => this.handleMessage(m))
   }
 
   /**
@@ -68,7 +71,7 @@ export class Spxlc {
   }
 
   /**
-   * Sends a request to the language server and waits for response.
+   * Sends a request to the language server and waits for response. TODO: support signal for cancellation.
    * @param method LSP method name.
    * @param params Method parameters.
    * @returns Promise that resolves with the response.
@@ -87,8 +90,9 @@ export class Spxlc {
         params
       }
       this.pendingRequests.set(id, { resolve, reject })
-      const err = this.ls.handleMessage(message)
-      if (err != null) {
+      try {
+        this.connection.sendMessage(message)
+      } catch (err) {
         reject(err)
         this.pendingRequests.delete(id)
       }
@@ -119,8 +123,7 @@ export class Spxlc {
       method,
       params
     }
-    const err = this.ls.handleMessage(message)
-    if (err != null) throw err
+    this.connection.sendMessage(message)
   }
 
   /**
