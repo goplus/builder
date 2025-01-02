@@ -25,18 +25,16 @@ const basicComponents = {
   /**
    * Usage:
    * ```html
-   * <code-link file="file:///NiuXiaoQi.spx" position="10,20">
-   *   Default link text here
-   * </code-link>
+   * <code-link file="file:///NiuXiaoQi.spx" position="10,20">Default link text</code-link>
    * ```
    */
   'code-link': CodeLink,
   /**
    * Usage:
    * ```html
-   * <code-change file="file:///NiuXiaoQi.spx" line-range="1-10">
+   * <pre is="code-change" file="file:///NiuXiaoQi.spx" line-range="1-10">
    *   New code content here
-   * </code-change>
+   * </pre>
    * ```
    */
   'code-change': CodeChange,

@@ -25,16 +25,16 @@ const props = withDefaults(
 )
 
 const childrenText = useSlotText()
+const codeToDisplay = computed(() => childrenText.value.replace(/\n$/, '')) // omit last line break when displaying
 const highlighter = useAsyncComputed(getHighlighter)
 
 const hasLineNumbers = computed(() => {
-  return props.lineNumbers && props.mode === 'block' && childrenText.value.split('\n').length > 1
+  return props.lineNumbers && props.mode === 'block' && codeToDisplay.value.split('\n').length > 1
 })
 
 const codeHtml = computed(() => {
   if (highlighter.value == null) return ''
-  const codeToDisplay = childrenText.value.replace(/\n$/, '') // omit last line break when displaying
-  return highlighter.value.codeToHtml(codeToDisplay, {
+  return highlighter.value.codeToHtml(codeToDisplay.value, {
     lang: props.language,
     structure: props.mode === 'block' ? 'classic' : 'inline',
     theme

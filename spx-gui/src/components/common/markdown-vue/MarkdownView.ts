@@ -4,7 +4,7 @@ import { html, find } from 'property-information'
 import type * as hast from 'hast'
 import { toHast } from 'mdast-util-to-hast'
 import { raw } from 'hast-util-raw'
-import { defaultSchema, sanitize, type Schema } from 'hast-util-sanitize'
+import { defaultSchema, sanitize, type Schema as SanitizeSchema } from 'hast-util-sanitize'
 
 type Components = {
   /** Component for rendering code blocks */
@@ -25,6 +25,12 @@ type Components = {
    *  Content
    * </my-comp2>
    * ```
+   * Or: (for custom elements whose content contains blank lines, see details in https://github.com/goplus/builder/pull/1193)
+   * ```markdown
+   * <pre is="my-comp1" prop1="value1" prop2="value2">
+   *  Content
+   * </pre>
+   * ```
    */
   custom?: Record<string, Component>
 }
@@ -42,21 +48,7 @@ export default defineComponent<Props>(
       const mdast = fromMarkdown(props.value)
       const hast = toHast(mdast, { allowDangerousHtml: true })
       const rawProcessed = raw(hast, { tagfilter: false })
-
-      // XSS protection
-      const sanitizeSchema: Schema = {
-        tagNames: (defaultSchema.tagNames ?? []).concat(...Object.keys(customComponents)),
-        attributes: {
-          ...defaultSchema.attributes,
-          ...Object.entries(customComponents).reduce(
-            (attrs, [tagName, component]) => {
-              attrs[tagName] = getComponentPropNames(component).map(camelCase2KebabCase)
-              return attrs
-            },
-            {} as Record<string, string[]>
-          )
-        }
-      }
+      const sanitizeSchema = getSanitizeSchema(customComponents)
       return sanitize(rawProcessed, sanitizeSchema)
     })
     return function render() {
@@ -111,13 +103,16 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
   if (Object.prototype.hasOwnProperty.call(customComponents, element.tagName)) {
     type = customComponents[element.tagName]
     props = hastProps2VueProps(element.properties)
-    if (element.children.length === 0) {
-      children = undefined
-    } else {
-      // Use function slot for custom components to avoid Vue warning:
-      // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
-      children = () => element.children.map((c, i) => renderHastNode(c, components, i))
-    }
+    children = renderComponentChildren(element.children, components)
+  } else if (
+    element.tagName === 'pre' &&
+    typeof element.properties.is === 'string' &&
+    Object.prototype.hasOwnProperty.call(customComponents, element.properties.is)
+  ) {
+    const { is, ...properties } = element.properties
+    type = customComponents[is]
+    props = hastProps2VueProps(properties)
+    children = renderComponentChildren(element.children, components)
   } else if (
     // Render code blocks with `components.codeBlock`
     // TODO: It may be simpler to recognize & process code blocks based on mdast instead of hast
@@ -136,7 +131,7 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
       language = className[0].split('-')[1]
     }
     props = { language }
-    children = () => codeEl.children.map((c, i) => renderHastNode(c, components, i))
+    children = renderComponentChildren(codeEl.children, components)
   } else {
     type = element.tagName
     props = hastProps2VueProps(element.properties)
@@ -146,6 +141,13 @@ function renderHastElement(element: hast.Element, components: Components, key?: 
   // here we use random key to force re-render the component as a workaround. TODO: find the reason and fix it
   key = key + '' + Math.random()
   return h(type, { ...props, key }, children)
+}
+
+function renderComponentChildren(children: hast.ElementContent[], components: Components) {
+  if (children.length === 0) return undefined
+  // Use function slot for components' children to avoid Vue warning:
+  // [Vue warn]: Non-function value encountered for default slot. Prefer function slots for better performance.
+  return () => children.map((c, i) => renderHastNode(c, components, i))
 }
 
 function hastProps2VueProps(properties: hast.Properties) {
@@ -175,4 +177,19 @@ function getComponentPropNames(compDef: Component): string[] {
   if (props == null) return []
   if (Array.isArray(props)) return props
   return Object.keys(props)
+}
+
+/** Get sanitize schema for `hast-util-sanitize` to prevent XSS */
+function getSanitizeSchema(customComponents: Record<string, Component>): SanitizeSchema {
+  const allCustomPropNames: string[] = []
+  const tagNames = [...(defaultSchema.tagNames ?? [])]
+  const attributes = { ...defaultSchema.attributes }
+  Object.entries(customComponents).forEach(([tagName, component]) => {
+    tagNames.push(tagName)
+    const propNames = getComponentPropNames(component).map(camelCase2KebabCase)
+    allCustomPropNames.push(...propNames)
+    attributes[tagName] = propNames
+  })
+  attributes.pre = [...(defaultSchema.attributes?.pre ?? []), 'is', ...allCustomPropNames]
+  return { tagNames, attributes }
 }
