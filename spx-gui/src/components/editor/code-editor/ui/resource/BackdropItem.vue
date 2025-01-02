@@ -9,7 +9,7 @@ import type { Backdrop } from '@/models/backdrop'
 
 const props = defineProps<{
   item: Backdrop
-  selected: boolean
+  selected?: boolean
 }>()
 const [imgSrc, imgLoading] = useFileUrl(() => props.item.img)
 </script>

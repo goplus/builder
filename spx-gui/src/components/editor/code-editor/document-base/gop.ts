@@ -89,7 +89,10 @@ export const functionDeclaration: DefinitionDocumentationItem = {
 export const println: DefinitionDocumentationItem = {
   categories: [categories.game.others],
   kind: DefinitionKind.Command,
-  definition: { name: 'println' }, // TODO
+  definition: {
+    package: 'fmt',
+    name: 'println'
+  },
   insertText: 'println ${1}',
   overview: 'println msg, ...',
   detail: makeBasicMarkdownString({

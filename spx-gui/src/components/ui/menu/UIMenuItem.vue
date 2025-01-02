@@ -49,10 +49,12 @@ function handleClick(e: MouseEvent) {
 
 <style lang="scss" scoped>
 .ui-menu-item {
-  padding: 8px 20px 8px 12px;
+  padding: 8px 40px 8px 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  border-radius: var(--ui-border-radius-1);
+  color: var(--ui-color-grey-1000);
 
   &.disabled {
     cursor: not-allowed;
@@ -66,20 +68,18 @@ function handleClick(e: MouseEvent) {
     cursor: pointer;
 
     &:hover {
-      background-color: var(--ui-color-grey-400);
+      background-color: var(--ui-color-grey-300);
     }
   }
 
   &:not(.in-group) {
-    margin: 8px 0;
-
     & + .ui-menu-item {
-      margin-top: 16px;
+      margin-top: 13px;
       position: relative;
       &:before {
         content: '';
         position: absolute;
-        top: -8px;
+        top: -7px;
         left: 0;
         width: 100%;
         height: 0;

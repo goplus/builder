@@ -13,10 +13,16 @@ import SoundItem from './SoundItem.vue'
 import SpriteItem from './SpriteItem.vue'
 import WidgetItem from './WidgetItem.vue'
 
-defineProps<{
-  resource: ResourceModel
-  selected: boolean
-}>()
+withDefaults(
+  defineProps<{
+    resource: ResourceModel
+    /** If `selected` not provided, the item is considered as non-interactive */
+    selected?: boolean
+  }>(),
+  {
+    selected: undefined
+  }
+)
 </script>
 
 <template>

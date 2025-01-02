@@ -29,10 +29,22 @@ provide(
 
 <style lang="scss" scoped>
 .ui-menu-group {
-  padding: 8px 0px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .ui-menu-group + .ui-menu-group {
-  border-top: 1px solid var(--ui-color-dividing-line-2);
+  margin-top: 13px;
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 0;
+    width: 100%;
+    height: 0;
+    border-top: 1px solid var(--ui-color-dividing-line-2);
+  }
 }
 </style>

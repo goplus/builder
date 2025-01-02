@@ -14,6 +14,6 @@ import { getIcon } from '@/components/editor/stage/widget/icon'
 
 defineProps<{
   item: Widget
-  selected: boolean
+  selected?: boolean
 }>()
 </script>

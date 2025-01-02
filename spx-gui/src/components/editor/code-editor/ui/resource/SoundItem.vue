@@ -14,7 +14,7 @@ import SoundPlayer from '@/components/editor/sound/SoundPlayer.vue'
 
 const props = defineProps<{
   item: Sound
-  selected: boolean
+  selected?: boolean
 }>()
 
 const [audioSrc] = useFileUrl(() => props.item.file)

@@ -1,5 +1,5 @@
 <template>
-  <UIBlockItem class="ui-sprite-item" size="large" :active="selected">
+  <UIBlockItem class="ui-sprite-item" size="large" :active="selected" :interactive="selected != null">
     <UIImg class="img" :src="imgSrc" :loading="imgLoading" />
     <UIBlockItemTitle size="large">
       {{ name }}
@@ -13,12 +13,17 @@ import UICornerIcon from './UICornerIcon.vue'
 import UIImg from '../UIImg.vue'
 import UIBlockItemTitle from './UIBlockItemTitle.vue'
 
-defineProps<{
-  imgSrc: string | null
-  imgLoading: boolean
-  name: string
-  selected: boolean
-}>()
+withDefaults(
+  defineProps<{
+    imgSrc: string | null
+    imgLoading: boolean
+    name: string
+    selected?: boolean
+  }>(),
+  {
+    selected: undefined
+  }
+)
 </script>
 <style scoped lang="scss">
 .ui-sprite-item {

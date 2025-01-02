@@ -15,7 +15,6 @@ function handleWheel(e: WheelEvent) {
 .code-editor-card {
   border-radius: var(--ui-border-radius-1);
   background: var(--ui-color-grey-100);
-  border: 1px solid var(--ui-color-grey-400); // debug purpose, TODO: remove me
-  box-shadow: 0px 16px 32px -12px rgba(14, 18, 27, 0.1);
+  box-shadow: 0px 8px 28px 8px rgba(36, 41, 47, 0.08);
 }
 </style>

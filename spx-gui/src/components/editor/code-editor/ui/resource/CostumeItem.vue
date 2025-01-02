@@ -9,7 +9,7 @@ import type { Costume } from '@/models/costume'
 
 const props = defineProps<{
   item: Costume
-  selected: boolean
+  selected?: boolean
 }>()
 const [imgSrc, imgLoading] = useFileUrl(() => props.item.img)
 </script>
