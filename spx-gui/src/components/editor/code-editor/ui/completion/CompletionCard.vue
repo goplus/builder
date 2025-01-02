@@ -83,8 +83,8 @@ function applyItem(item: InternalCompletionItem) {
 
 <style lang="scss" scoped>
 .completion-card {
-  width: 360px;
-  max-height: 200px;
+  width: 447px;
+  max-height: 227px;
   padding: 12px 0 12px 12px;
   display: flex;
   align-items: stretch;

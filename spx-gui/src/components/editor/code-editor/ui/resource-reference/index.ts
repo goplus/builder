@@ -2,10 +2,8 @@ import { computed, shallowRef, watch } from 'vue'
 import Emitter from '@/utils/emitter'
 import { ResourceReferenceKind, type BaseContext, type ResourceReference } from '../../common'
 import type { TextDocument } from '../../text-document'
-import type { monaco } from '../../monaco'
-import { toMonacoPosition, toMonacoRange } from '../common'
+import { toMonacoRange } from '../common'
 import type { CodeEditorUI } from '../code-editor-ui'
-import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 import { checkModifiable } from './ResourceReferenceUI.vue'
 import { createResourceSelector } from './selector'
 import { debounce } from 'lodash'
@@ -99,23 +97,6 @@ export class ResourceReferenceController extends Emitter<{
     this.ui.editor.focus()
   }
 
-  selectorWidgetEl = makeContentWidgetEl()
-  private selectorWidget: monaco.editor.IContentWidget = {
-    getId: () => `resource-reference-selector-for-${this.ui.id}`,
-    getDomNode: () => this.selectorWidgetEl,
-    getPosition: () => {
-      const monaco = this.ui.monaco
-      const selecting = this.modifyingRef.value
-      return {
-        position: selecting == null ? null : toMonacoPosition(selecting.range.start),
-        preference: [
-          monaco.editor.ContentWidgetPositionPreference.BELOW,
-          monaco.editor.ContentWidgetPositionPreference.ABOVE
-        ]
-      }
-    }
-  }
-
   init() {
     const { editor, editorEl } = this.ui
 
@@ -142,14 +123,6 @@ export class ResourceReferenceController extends Emitter<{
       )
     )
 
-    this.addDisposer(
-      watch(this.modifyingRef, (selecting, _, onCleanup) => {
-        if (selecting == null) return
-        editor.addContentWidget(this.selectorWidget)
-        onCleanup(() => editor.removeContentWidget(this.selectorWidget))
-      })
-    )
-
     let clickingId: string | null = null
 
     // Attach event to the dom element with `capture` instead of listening to monaco-editor,
@@ -164,7 +137,7 @@ export class ResourceReferenceController extends Emitter<{
         e.stopPropagation()
         clickingId = rrId
       },
-      { capture: true }
+      { capture: true, signal: this.getSignal() }
     )
 
     editorEl.addEventListener(
@@ -180,8 +153,10 @@ export class ResourceReferenceController extends Emitter<{
         }
         clickingId = null
       },
-      { capture: true }
+      { capture: true, signal: this.getSignal() }
     )
+
+    this.addDisposable(editor.onMouseDown(() => this.stopModifying()))
   }
 }
 

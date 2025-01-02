@@ -10,7 +10,6 @@ import {
 } from '../../common'
 import { type monaco } from '../../monaco'
 import type { CodeEditorUI } from '../code-editor-ui'
-import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 import { fuzzyScoreGracefulAggressive as fuzzyScore, type FuzzyScore } from './fuzzy'
 
 export type CompletionContext = BaseContext
@@ -52,25 +51,6 @@ export class CompletionController extends Emitter<{
   constructor(private ui: CodeEditorUI) {
     super()
   }
-
-  widgetEl = makeContentWidgetEl()
-
-  private widget = {
-    getId: () => `completion-for-${this.ui.id}`,
-    getDomNode: () => this.widgetEl,
-    getPosition: () => {
-      if (this.nonEmptyItems == null) return null
-      const monaco = this.ui.monaco
-      const cursorPos = this.ui.editor.getPosition()
-      return {
-        position: cursorPos,
-        preference: [
-          monaco.editor.ContentWidgetPositionPreference.BELOW,
-          monaco.editor.ContentWidgetPositionPreference.ABOVE
-        ]
-      }
-    }
-  } satisfies monaco.editor.IContentWidget
 
   private currentCompletionRef = shallowRef<{
     ctrl: AbortController
@@ -223,15 +203,6 @@ export class CompletionController extends Emitter<{
       })
     )
 
-    // Manage completion widget (visibility, position, ...)
-    editor.addContentWidget(this.widget)
-    this.addDisposer(() => editor.removeContentWidget(this.widget))
-    this.addDisposer(
-      watch(
-        () => this.nonEmptyItems,
-        () => editor.layoutContentWidget(this.widget)
-      )
-    )
     this.addDisposer(
       watch(
         () => [this.ui.activeTextDocument, this.ui.cursorPosition] as const,
@@ -242,7 +213,6 @@ export class CompletionController extends Emitter<{
             !positionEq(this.currentCompletion.position, position)
           ) {
             this.stopCompletion()
-            editor.layoutContentWidget(this.widget)
           }
         }
       )

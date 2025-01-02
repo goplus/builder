@@ -40,7 +40,7 @@ function handleWheel(e: WheelEvent) {
   <UIDropdownModal
     class="resource-selector"
     :title="$t(props.selector.title)"
-    style="width: 320px; max-height: 300px"
+    style="width: 408px; max-height: 316px"
     @cancel="emit('cancel')"
     @confirm="handleConfirm"
     @wheel="handleWheel"
@@ -84,7 +84,7 @@ function handleWheel(e: WheelEvent) {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 12px;
+  gap: 8px;
 }
 
 .add {

@@ -36,6 +36,7 @@ function handleClick(e: MouseEvent) {
   display: flex;
   padding: 0;
   border: none;
+  outline: none;
   background: var(--ui-color-grey-100);
   cursor: pointer;
   color: var(--ui-color-yellow-main);

@@ -1,6 +1,5 @@
-import { shallowRef, watch } from 'vue'
-import { debounce } from 'lodash'
-import { Disposable } from '@/utils/disposable'
+import { shallowRef } from 'vue'
+import Emitter from '@/utils/emitter'
 import {
   type Action,
   type BaseContext,
@@ -12,6 +11,7 @@ import {
   type ITextDocument,
   containsPosition
 } from '../../common'
+import type { monaco } from '../../monaco'
 import {
   builtInCommandCopilotFixProblem,
   builtInCommandGoToResource,
@@ -20,9 +20,7 @@ import {
   builtInCommandModifyResourceReference,
   builtInCommandRenameResource
 } from '../code-editor-ui'
-import { fromMonacoPosition, toMonacoPosition, token2Signal, supportGoTo } from '../common'
-import type { monaco } from '../../monaco'
-import { makeContentWidgetEl } from '../CodeEditorUI.vue'
+import { fromMonacoPosition, token2Signal, supportGoTo } from '../common'
 
 export type Hover = {
   contents: DefinitionDocumentationString[]
@@ -40,7 +38,10 @@ export interface IHoverProvider {
   provideHover(ctx: HoverContext, position: Position): Promise<Hover | null>
 }
 
-export class HoverController extends Disposable {
+export class HoverController extends Emitter<{
+  cardMouseEnter: void
+  cardMouseLeave: void
+}> {
   currentHoverRef = shallowRef<InternalHover | null>(null)
 
   private showHover(hover: InternalHover) {
@@ -61,22 +62,24 @@ export class HoverController extends Disposable {
     super()
   }
 
-  widgetEl = makeContentWidgetEl()
+  /** `toHide` records the hover that is "planned" to be hiden, while with delay */
+  private toHide: InternalHover | null = null
 
-  private widget: monaco.editor.IContentWidget = {
-    getId: () => `hover-for-${this.ui.id}`,
-    getDomNode: () => this.widgetEl,
-    getPosition: () => {
-      const monaco = this.ui.monaco
-      const hover = this.currentHoverRef.value
-      return {
-        position: hover == null ? null : toMonacoPosition(hover.range.start),
-        preference: [
-          monaco.editor.ContentWidgetPositionPreference.ABOVE,
-          monaco.editor.ContentWidgetPositionPreference.BELOW
-        ]
+  /** Hide current hover with delay, to avoid flickering when mouse moves quickly */
+  private hideHoverWithDelay() {
+    const currentHover = this.currentHoverRef.value
+    if (currentHover == null) return
+    this.toHide = currentHover
+    setTimeout(() => {
+      if (this.currentHoverRef.value === this.toHide) {
+        this.hideHover()
       }
-    }
+    }, 150)
+  }
+
+  /** Cancel "planned" hiding */
+  private cancelHidingHover() {
+    this.toHide = null
   }
 
   private getDiagnosticsHover(textDocument: ITextDocument, position: monaco.Position): InternalHover | null {
@@ -146,8 +149,6 @@ export class HoverController extends Disposable {
     this.addDisposable(
       monaco.languages.registerHoverProvider('spx', {
         provideHover: async (_, position, token) => {
-          this.hideHover()
-
           // TODO: use `onMouseMove` as trigger?
           if (this.provider == null) return
           const textDocument = this.ui.activeTextDocument
@@ -183,32 +184,33 @@ export class HoverController extends Disposable {
       })
     )
 
-    this.addDisposer(
-      watch(this.currentHoverRef, (hover, _, onCleanup) => {
-        if (hover == null) return
-        editor.addContentWidget(this.widget)
-        onCleanup(() => editor.removeContentWidget(this.widget))
+    this.addDisposable(
+      editor.onMouseMove((e: monaco.editor.IEditorMouseEvent) => {
+        if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) {
+          this.hideHoverWithDelay()
+          return
+        }
+        const currentHover = this.currentHoverRef.value
+        const position = fromMonacoPosition(e.target.position)
+        if (currentHover != null && containsPosition(currentHover.range, position)) {
+          this.cancelHidingHover()
+          return
+        }
+        this.hideHoverWithDelay()
       })
     )
 
     this.addDisposable(
-      editor.onMouseMove(
-        // debounce to avoid hiding when mouse moving from text to hover-widget, while through CONTENT_EMPTY
-        debounce((e: monaco.editor.IEditorMouseEvent) => {
-          if (
-            e.target.type !== monaco.editor.MouseTargetType.CONTENT_WIDGET &&
-            e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT
-          )
-            this.hideHover()
-        }, 100)
-      )
-    )
-
-    this.addDisposable(
-      editor.onKeyDown(() => {
-        this.hideHover()
+      editor.onMouseLeave(() => {
+        this.hideHoverWithDelay()
       })
     )
+
+    this.on('cardMouseEnter', () => this.cancelHidingHover())
+    this.on('cardMouseLeave', () => this.hideHoverWithDelay())
+
+    this.addDisposable(editor.onKeyDown(() => this.hideHover()))
+    this.addDisposable(editor.onMouseDown(() => this.hideHover()))
 
     this.addDisposer(
       resourceReferenceController.on('didStartModifying', () => {

@@ -20,8 +20,10 @@ export function checkModifiable(el: HTMLElement): string | null {
 </script>
 
 <script setup lang="ts">
-import { onUnmounted, watchEffect } from 'vue'
+import { onUnmounted, watchEffect, ref } from 'vue'
+import { UIDropdown, type DropdownPos } from '@/components/ui'
 import type { monaco } from '../../monaco'
+import { toAbsolutePosition } from '../common'
 import { useCodeEditorUICtx } from '../CodeEditorUI.vue'
 import { isModifiableKind, type ResourceReferenceController } from '.'
 import ResourceSelector from './selector/ResourceSelector.vue'
@@ -30,11 +32,11 @@ const props = defineProps<{
   controller: ResourceReferenceController
 }>()
 
-const codeEditorCtx = useCodeEditorUICtx()
+const codeEditorUICtx = useCodeEditorUICtx()
 
 let dc: monaco.editor.IEditorDecorationsCollection | null = null
 function getDecorationsCollection() {
-  if (dc == null) dc = codeEditorCtx.ui.editor.createDecorationsCollection([])
+  if (dc == null) dc = codeEditorUICtx.ui.editor.createDecorationsCollection([])
   return dc
 }
 
@@ -71,17 +73,46 @@ watchEffect(() => {
   })
   getDecorationsCollection().set(decorations)
 })
+
+const dropdownVisible = ref(false)
+const dropdownPos = ref<DropdownPos>({ x: 0, y: 0 })
+
+watchEffect(() => {
+  const { modifying, selector } = props.controller
+  if (modifying == null || selector == null) {
+    dropdownVisible.value = false
+    return
+  }
+  const aPos = toAbsolutePosition(modifying.range.start, codeEditorUICtx.ui.editor)
+  if (aPos == null) {
+    dropdownVisible.value = false
+    return
+  }
+  dropdownVisible.value = true
+  dropdownPos.value = {
+    x: aPos.left,
+    y: aPos.top,
+    width: 0,
+    height: aPos.height
+  }
+})
 </script>
 
 <template>
-  <Teleport :to="controller.selectorWidgetEl">
+  <UIDropdown
+    :visible="dropdownVisible"
+    trigger="manual"
+    :pos="dropdownPos"
+    placement="bottom-start"
+    :offset="{ x: 0, y: 4 }"
+  >
     <ResourceSelector
       v-if="controller.selector != null"
       :selector="controller.selector"
       @cancel="controller.stopModifying()"
       @selected="(newName) => controller.applySelected(newName)"
     />
-  </Teleport>
+  </UIDropdown>
 </template>
 
 <style lang="scss">

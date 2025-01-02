@@ -5,10 +5,11 @@ import type { ContextMenuController, InternalMenuItem, MenuData } from '.'
 
 const props = defineProps<{
   controller: ContextMenuController
-  data: MenuData
+  data: MenuData | null
 }>()
 
 const pos = computed(() => {
+  if (props.data == null) return { x: 0, y: 0 }
   return {
     x: props.data.position.left,
     y: props.data.position.top
@@ -21,9 +22,9 @@ function handleItemClick(item: InternalMenuItem) {
 </script>
 
 <template>
-  <UIDropdown class="context-menu" trigger="manual" visible :pos="pos" placement="bottom-start">
+  <UIDropdown class="context-menu" trigger="manual" :visible="data != null" :pos="pos" placement="bottom-start">
     <UIMenu>
-      <UIMenuGroup v-for="(group, i) in data.groups" :key="i">
+      <UIMenuGroup v-for="(group, i) in data?.groups" :key="i">
         <UIMenuItem v-for="(item, j) in group" :key="j" @click="handleItemClick(item)">
           {{ item.title }}
         </UIMenuItem>
