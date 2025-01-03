@@ -166,6 +166,11 @@ export class SpxLSPClient extends Disposable {
     return spxlc.request<lsp.TextEdit[] | null>(lsp.DocumentFormattingRequest.method, params)
   }
 
+  async textDocumentSemanticTokens(params: lsp.SemanticTokensParams): Promise<lsp.SemanticTokens | null> {
+    const spxlc = await this.prepareRequest()
+    return spxlc.request<lsp.SemanticTokens | null>(lsp.SemanticTokensRequest.method, params)
+  }
+
   // Higher-level APIs
 
   async getResourceReferences(textDocument: TextDocumentIdentifier): Promise<ResourceReference[]> {
@@ -202,4 +207,31 @@ export class SpxLSPClient extends Disposable {
     if (!Array.isArray(completionResult)) return [] // For now, we support CompletionItem[] only
     return completionResult as CompletionItem[]
   }
+}
+
+// Keep in sync with `tools/spxls/internal/server/semantic_token.go`
+export const semanticTokenLegend = {
+  tokenTypes: [
+    lsp.SemanticTokenTypes.namespace,
+    lsp.SemanticTokenTypes.type,
+    lsp.SemanticTokenTypes.interface,
+    lsp.SemanticTokenTypes.struct,
+    lsp.SemanticTokenTypes.parameter,
+    lsp.SemanticTokenTypes.variable,
+    lsp.SemanticTokenTypes.property,
+    lsp.SemanticTokenTypes.function,
+    lsp.SemanticTokenTypes.method,
+    lsp.SemanticTokenTypes.keyword,
+    lsp.SemanticTokenTypes.comment,
+    lsp.SemanticTokenTypes.string,
+    lsp.SemanticTokenTypes.number,
+    lsp.SemanticTokenTypes.operator,
+    'label' // since LSP 3.18.0, Not supported by `vscode-languageserver-protocol` yet
+  ],
+  tokenModifiers: [
+    lsp.SemanticTokenModifiers.declaration,
+    lsp.SemanticTokenModifiers.readonly,
+    lsp.SemanticTokenModifiers.static,
+    lsp.SemanticTokenModifiers.defaultLibrary
+  ]
 }

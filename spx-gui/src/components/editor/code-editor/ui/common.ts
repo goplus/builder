@@ -4,8 +4,7 @@ import type { ResourceModel } from '@/models/common/resource-model'
 import { Sprite } from '@/models/sprite'
 import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
-import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
-import type { Monaco } from '../monaco'
+import { type Range, type Position, type Selection } from '../common'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -58,15 +57,6 @@ export function toMonacoSelection(selection: Selection): monaco.ISelection {
     positionLineNumber: selection.position.line,
     positionColumn: selection.position.column
   }
-}
-
-export function fromMonacoUri(uri: monaco.Uri): TextDocumentIdentifier {
-  // TODO: check if this is correct
-  return { uri: uri.toString() }
-}
-
-export function toMonacoUri(id: TextDocumentIdentifier, monaco: Monaco): monaco.Uri {
-  return monaco.Uri.parse(id.uri)
 }
 
 export function supportGoTo(resourceModel: ResourceModel): boolean {

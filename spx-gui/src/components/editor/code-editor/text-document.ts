@@ -11,7 +11,8 @@ import {
   type TextDocumentIdentifier,
   type WordAtPosition,
   type TextEdit,
-  getTextDocumentId
+  getTextDocumentId,
+  toMonacoUri
 } from './common'
 import { toMonacoPosition, toMonacoRange, fromMonacoPosition } from './ui/common'
 import type { Monaco, monaco } from './monaco'
@@ -114,7 +115,11 @@ export class TextDocument
   ) {
     super()
 
-    this.monacoTextModel = monaco.editor.createModel(codeOwner.getCode() ?? '', 'spx')
+    this.monacoTextModel = monaco.editor.createModel(
+      codeOwner.getCode() ?? '',
+      'spx',
+      toMonacoUri(this.codeOwner.getTextDocumentId(), monaco)
+    )
 
     this.addDisposer(
       watch(
