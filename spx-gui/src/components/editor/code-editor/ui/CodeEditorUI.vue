@@ -8,12 +8,6 @@ export function useCodeEditorUICtx() {
   if (ctx == null) throw new Error('useCodeEditorUICtx should be called inside of CodeEditorUI')
   return ctx
 }
-
-export function makeContentWidgetEl() {
-  const el = document.createElement('div')
-  el.className = 'code-editor-content-widget'
-  return el
-}
 </script>
 
 <script setup lang="ts">
@@ -354,11 +348,6 @@ function zoomReset() {
   flex: 1 1 0;
   min-width: 0;
   margin: 12px 0;
-}
-
-:global(.code-editor-content-widget) {
-  z-index: 10; // Ensure content widget is above other elements, especially cursor
-  padding: 2px 0; // Gap between content widget and text
 }
 
 .right-sidebar {

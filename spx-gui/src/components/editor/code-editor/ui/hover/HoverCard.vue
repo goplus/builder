@@ -26,7 +26,11 @@ async function handleAction(action: InternalAction) {
 </script>
 
 <template>
-  <CodeEditorCard class="hover-card">
+  <CodeEditorCard
+    class="hover-card"
+    @mouseenter="controller.emit('cardMouseEnter')"
+    @mouseleave="controller.emit('cardMouseLeave')"
+  >
     <ul class="body">
       <li v-for="(content, i) in hover.contents" :key="i" class="content">
         <MarkdownView v-bind="content" />
@@ -64,7 +68,7 @@ async function handleAction(action: InternalAction) {
 }
 
 .content {
-  width: 320px;
+  width: 328px;
   padding: 6px 8px;
 }
 

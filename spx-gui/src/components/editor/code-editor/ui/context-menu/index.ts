@@ -10,7 +10,6 @@ import {
   builtInCommandPaste,
   type InternalAction
 } from '../code-editor-ui'
-import { makeContentWidgetEl } from '../CodeEditorUI.vue'
 import { toMonacoPosition, fromMonacoPosition, fromMonacoSelection } from '../common'
 
 export type ContextMenuContext = BaseContext
@@ -72,7 +71,7 @@ export class ContextMenuController extends Disposable {
     return { selection: this.ui.selection! }
   }
 
-  menuTriggerWidgetEl = makeContentWidgetEl()
+  menuTriggerWidgetEl = document.createElement('div')
 
   private menuTriggerWidget = {
     getId: () => `context-menu-trigger-for-${this.ui.id}`,

@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { computed, inject, useSlots } from 'vue'
-import { useDropdown } from '../UIDropdown.vue'
+import { useDropdown } from '../UIDropdown'
 import { ctxKey } from './UIMenu.vue'
 
 const props = withDefaults(

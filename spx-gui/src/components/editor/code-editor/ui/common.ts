@@ -5,7 +5,7 @@ import { Sprite } from '@/models/sprite'
 import { Sound } from '@/models/sound'
 import { isWidget } from '@/models/widget'
 import { type Range, type Position, type TextDocumentIdentifier, type Selection } from '../common'
-import type { Monaco } from '../monaco'
+import type { Monaco, MonacoEditor } from '../monaco'
 
 export function token2Signal(token: monaco.CancellationToken): AbortSignal {
   const ctrl = new AbortController()
@@ -76,4 +76,24 @@ export function supportGoTo(resourceModel: ResourceModel): boolean {
   // TODO: Refactor to address issue 1 and reconsider user interactions to address issue 2, then enable this feature for all resource types.
   // Related issue: https://github.com/goplus/builder/issues/1139
   return resourceModel instanceof Sprite || resourceModel instanceof Sound || isWidget(resourceModel)
+}
+
+/** Position in pixels relative to the viewport's top-left corner */
+export type AbsolutePosition = {
+  top: number
+  left: number
+  height: number
+}
+
+export function toAbsolutePosition(position: Position, editor: MonacoEditor): AbsolutePosition | null {
+  const mPos = toMonacoPosition(position)
+  const editorPos = editor.getDomNode()?.getBoundingClientRect()
+  if (editorPos == null) return null
+  const scrolledVisiblePos = editor.getScrolledVisiblePosition(mPos)
+  if (scrolledVisiblePos == null) return null
+  return {
+    top: editorPos.top + scrolledVisiblePos.top,
+    left: editorPos.left + scrolledVisiblePos.left,
+    height: scrolledVisiblePos.height
+  }
 }

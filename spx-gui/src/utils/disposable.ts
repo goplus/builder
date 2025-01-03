@@ -13,13 +13,13 @@ export interface IDisposable {
 export class Disposable implements IDisposable {
   private disposers: Disposer[] = []
 
-  private _isDisposed = false
+  private ctrl = new AbortController()
   get isDisposed() {
-    return this._isDisposed
+    return this.ctrl.signal.aborted
   }
 
   addDisposer(disposer: Disposer) {
-    if (this._isDisposed) throw new Error('disposed')
+    if (this.isDisposed) throw new Error('disposed')
     this.disposers.push(disposer)
   }
 
@@ -28,11 +28,15 @@ export class Disposable implements IDisposable {
   }
 
   dispose() {
-    if (this._isDisposed) return
-    this._isDisposed = true
+    if (this.isDisposed) return
+    this.ctrl.abort(new Cancelled('dispose'))
     while (this.disposers.length > 0) {
       this.disposers.pop()?.()
     }
+  }
+
+  getSignal() {
+    return this.ctrl.signal
   }
 }
 

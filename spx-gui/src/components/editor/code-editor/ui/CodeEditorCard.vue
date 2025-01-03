@@ -1,12 +1,5 @@
-<script setup lang="ts">
-function handleWheel(e: WheelEvent) {
-  // Prevent monaco editor from handling wheel event in completion card, see details in https://github.com/microsoft/monaco-editor/issues/2304
-  e.stopPropagation()
-}
-</script>
-
 <template>
-  <div class="code-editor-card" @wheel="handleWheel">
+  <div class="code-editor-card">
     <slot></slot>
   </div>
 </template>
