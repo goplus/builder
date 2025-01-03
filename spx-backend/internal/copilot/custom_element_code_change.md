@@ -2,6 +2,8 @@
 
 Display a change in the code. The change shows the difference between the original code and the new code. The user can apply the change by clicking "Apply" button in the element.
 
+NOTE: Instead of `<code-change>`, you should use `<pre is="code-change">` to properly wrap the code change.
+
 ## Attributes
 
 ### `file`
@@ -25,10 +27,10 @@ The new code.
 ### Basic example
 
 ```xml
-<code-change file="file:///NiuXiaoQi.spx" line-range="10-12">
+<pre is="code-change" file="file:///NiuXiaoQi.spx" line-range="10-12">
 show
 say "Hello, world!"
-</code-change>
+</pre>
 ```
 
 This is a change in the code of sprite `NiuXiaoQi`. The original code is line 10 & line 11. The new code is `show\nsay "Hello, world!"\n`.

@@ -81,9 +81,9 @@ const handleApply = useMessageHandle(
         </BlockActionBtn>
       </BlockFooter>
     </template>
-    <template v-else>
-      <p>{{ $t({ en: 'Invalid code position', zh: '无效的代码位置' }) }}</p>
-    </template>
+    <div v-else class="invalid">
+      <p>{{ $t({ en: 'Invalid code change', zh: '无效的代码变更' }) }}</p>
+    </div>
   </BlockWrapper>
 </template>
 
@@ -101,5 +101,10 @@ const handleApply = useMessageHandle(
 }
 .code {
   padding-right: 8px;
+}
+.invalid {
+  padding: 8px;
+  text-align: center;
+  color: var(--ui-color-hint-2);
 }
 </style>
